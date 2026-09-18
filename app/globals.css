@@ -1277,7 +1277,11 @@ button {
   min-height: 0;
   flex: 1 1 auto;
   overflow-y: auto;
-  padding-right: 10px;
+  /* 카드 호버 확대(scale 1.14)가 **맨 왼쪽·맨 위에서 잘리던** 것을 막는 여유 (사용자 지적
+     2026-09-18). overflow 는 **패딩 박스**에서 자르므로 여기 패딩이 곧 삐져나갈 자리다.
+     음수 마진으로 되돌리면 안 된다 — 부모 .results 도 overflow:hidden 이라 거기서 또 잘리고,
+     그리드에 패딩을 주면 가로 스크롤이 생긴다(둘 다 해보고 확인). */
+  padding: 14px 14px 0;
 }
 .filter-panel::-webkit-scrollbar,
 .results-scroll::-webkit-scrollbar {
@@ -1877,6 +1881,7 @@ legend {
   /* 한 줄 5명 — 카드가 세로로 길어져(명판 레이아웃) 사용자가 5열을 허용했다 (2026-09-18).
      종전엔 4명(사용자 확정 2026-07-18). */
   grid-template-columns: repeat(5, minmax(0, 1fr));
+
   gap: 11px;
   display: grid;
 }
@@ -1921,8 +1926,20 @@ legend {
 .operator-grid.mini .portrait {
   aspect-ratio: 4 / 5;
 }
+.operator-grid.mini .portrait img {
+  padding: 10px 8px 0;
+}
+/* 미니 카드는 **펼치지 않는다** — 소속·출신·종족도 태그도 숨겨 놔서 펼칠 내용이 없는데
+   선만 올라가고 얼굴만 작아졌다 (사용자 지적 2026-09-18 "연두색 선이 위로 올라올 필요가
+   없어보이는데?"). 확대(scale)는 그대로 두고 선·얼굴은 고정한다. */
+.operator-grid.mini .operator-card:hover .card-reveal,
+.operator-grid.mini .operator-card.peek .card-reveal,
+.operator-grid.mini .operator-card:focus-visible .card-reveal {
+  grid-template-rows: auto 0fr;
+}
 .operator-grid.mini .card-reveal {
-  padding: 9px 7px 5px;
+  grid-template-rows: auto 0fr;   /* 이름 줄이 한 줄일 수도, 두 줄일 수도 */
+  padding: 7px 7px 6px;
 }
 .operator-grid.mini .tags {
   display: none;
@@ -1931,15 +1948,18 @@ legend {
   top: 6px;
   left: 7px;
 }
+/* 미니 카드 이름은 길면 **두 줄로 흘린다** — 한 줄 말줌표로 자르면 누군지 모른다
+   (사용자 요청 2026-09-18 "이름이 너무 길어서 짤리는경우는 자동으로 흘러가는 방식으로").
+   패널이 그만큼 자라고 얼굴 행이 줄지만, 미니는 원래 얼굴보다 이름이 중요하다. */
 .operator-grid.mini .card-reveal h3 {
   font-size: 10.5px;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
-/* 절반 폭 카드는 여백도 절반 — 위 줄이 작아진 만큼 위쪽을 덜 띄운다 */
-.operator-grid.mini .portrait img {
-  inset: 15px 8px 0;
-  width: calc(100% - 16px);
-  height: calc(100% - 15px);
-}
+/* 절반 폭 카드는 여백도 절반. 밑변은 여기서도 --plate 에 붙는다 */
+
 /* 카드가 절반이 됐으니 **안쪽 글자도 같이 줄인다** (사용자 지적 2026-09-16).
    직군 태그·미실장 배지는 각자 font-size 를 갖고 있어서 부모만 줄여선 안 줄어든다. */
 .operator-grid.mini .portrait-meta {
@@ -2022,14 +2042,15 @@ legend {
 /* 펼침 — 마우스 호버(hover 가능한 기기만) · 키보드 포커스 · 터치 꾹(.peek, JS). 살짝
    커지며 이웃 위로 올라오고, 패널의 grid 행이 0fr→1fr 로 열린다. 패널이 펼쳐질 자리를
    카드 안에서 만들지 않으므로 그리드는 그대로다. */
+/* 펼침 — 패널 높이를 **고정**한다(--plate 와 같은 값이어야 아바타 밑변이 선에 붙는다).
+   내용이 넘치면 잘린다: 이름 한 줄 + 소속·출신·종족 두 줄 + 태그 한 줄이 들어갈 크기다. */
 @media (hover: hover) {
   .operator-card:hover {
-    transform: translateY(-4px) scale(1.05);
+    transform: translateY(-4px) scale(1.14);
     z-index: 6;
   }
   .operator-card:hover .card-reveal {
-    grid-template-rows: auto 1fr;
-    padding-bottom: 10px;
+    grid-template-rows: 16px 1fr;
   }
   .operator-card:hover .card-more {
     opacity: 1;
@@ -2037,13 +2058,12 @@ legend {
 }
 .operator-card.peek,
 .operator-card:focus-visible {
-  transform: translateY(-4px) scale(1.05);
+  transform: translateY(-4px) scale(1.14);
   z-index: 6;
 }
 .operator-card.peek .card-reveal,
 .operator-card:focus-visible .card-reveal {
-  grid-template-rows: auto 1fr;
-  padding-bottom: 10px;
+  grid-template-rows: 16px 1fr;
 }
 .operator-card.peek .card-more,
 .operator-card:focus-visible .card-more {
@@ -2068,6 +2088,13 @@ legend {
     radial-gradient(120% 95% at 76% 104%, color-mix(in srgb, var(--accent) 82%, #fff) 0, #0000 64%),
     linear-gradient(180deg, #252d32, #171d21 74%);
   aspect-ratio: 5 / 6;
+  /* **2행 그리드**: 위는 얼굴, 아래는 이름 패널. 패널이 내용만큼 자라면 얼굴 행(1fr)이
+     그만큼 줄고, 얼굴은 아래 정렬이라 **밑변이 늘 라임 선에 붙는다** (사용자 확정
+     2026-09-18: "섬네일의 밑 변은 연두색 줄에 맞춰서 늘어났다 줄어들었다 항상 거기
+     붙어있어야함"). 종전엔 패널 높이를 92px 로 박아 두고 아바타를 그 숫자에 맞췄는데,
+     태그가 두 줄이 되면 패널 밖으로 잘렸다 — 숫자를 없애니 그 문제도 같이 사라졌다. */
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   position: relative;
   overflow: hidden;
 }
@@ -2133,16 +2160,17 @@ legend {
    글자를 얹어야 하므로). 윗선이 라임 헤어라인이다. */
 .card-reveal {
   z-index: 3;
-  position: absolute;
-  inset: auto 0 0 0;
+  grid-row: 2;
   display: grid;
-  grid-template-rows: auto 0fr;
-  padding: 13px 10px 7px;
+  /* 접힘: 이름 한 줄. 펼침: 아래 행이 0fr→1fr 로 열린다. 높이는 **내용이 정한다** —
+     그만큼 위 얼굴 행이 줄어든다. */
+  grid-template-rows: 16px 0fr;
+  padding: 8px 10px 7px;
   background: linear-gradient(180deg, #0e121500, #0e1215d9 34%, #0e1215f0);
   border-top: 1px solid color-mix(in srgb, var(--lime) 72%, #0000);
   transition:
-    grid-template-rows 0.28s ease,
-    padding 0.28s ease;
+    height 0.28s ease,
+    grid-template-rows 0.28s ease;
 }
 .card-more {
   min-height: 0;
@@ -2169,7 +2197,7 @@ legend {
 .operator-card.peek .card-reveal h3,
 .operator-card:focus-visible .card-reveal h3 { white-space: normal; }
 .portrait-facts {
-  margin-top: 4px;
+  margin-top: 3px;
   display: flex;
   flex-wrap: wrap;
   gap: 1px 10px;
@@ -2234,15 +2262,22 @@ legend {
 .portrait img {
   z-index: 1;
   object-fit: contain;
-  object-position: center top;
-  position: absolute;
-  /* 꽉 채우면 얼굴이 부담스럽다(사용자 지적) — 양옆 13px·위 22px 들여 숨 쉴 틈을 주고,
-     위 줄(별·직군)과도 안 겹치게 한다. 아래 남는 자리는 이름 패널이 받는다.
-     ⚠ inset 만으로는 안 된다: 절대배치 **대체요소(img)** 는 left/right 로 늘어나지 않고
-     고유 크기(180px)를 쓰다가 max-width:100% 에 잘려 결국 폭을 꽉 채운다. 크기를 명시한다. */
-  inset: 22px 13px 0;
-  width: calc(100% - 26px);
-  height: calc(100% - 22px);
+  /* **밑변을 패널 윗선(--plate)에 붙박는다** — 라임 선이 섬네일 밑변에 정확히 놓인다
+     (사용자 지적 2026-09-18: 미실장 스트립에서 선이 4px 위에 걸려 발을 잘랐다).
+     정사각 비율 + 폭 고정이라 카드가 넓어지든 좁아지든 밑변은 늘 선 위다. 위 여백은
+     남는 만큼 저절로 생긴다(= 카드높이 - --plate - 얼굴폭). 양옆 13px 은 "얼굴이 부담
+     스럽다"는 지적으로 둔 숨 쉴 틈.
+     ⚠ inset 만으로는 크기가 안 잡힌다: 절대배치 **대체요소(img)** 는 left/right 로 늘어나지
+     않고 고유 크기(180px)를 쓰다가 max-width:100% 에 잘려 폭을 꽉 채운다. 그래서 명시한다. */
+  grid-row: 1;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  /* 아래 정렬이 핵심 — 그려진 얼굴의 밑변이 콘텐츠 상자 밑변(=패널 윗변)에 붙는다.
+     패딩이 숨 쉴 틈(위 16 · 옆 13, 사용자 요청 "얼굴이 좀 부담스러운데 패딩 좀"). */
+  object-position: center bottom;
+  padding: 16px 13px 0;
 }
 .name-line {
   justify-content: space-between;
@@ -2269,11 +2304,14 @@ legend {
   font-size: 11.5px;
   font-style: normal;
 }
+/* 태그는 오른쪽에서 잘리지 말고 **아랫줄 왼쪽으로 흘러간다** (사용자 요청 2026-09-18
+   "너무길어서 오른쪽 짤릴거 같으면 자동으로 왼쪽으로 흘러가는 방식"). 두 줄까지만 —
+   그 아래는 패널이 얼굴을 너무 많이 먹는다. */
 .tags {
-  white-space: nowrap;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 4px;
-  margin-top: 7px;
+  margin-top: 5px;
+  max-height: 46px;
   display: flex;
   overflow: hidden;
 }

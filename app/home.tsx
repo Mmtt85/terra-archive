@@ -2872,7 +2872,9 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
               <span><i>{t("출신")}</i>{operator.birthplace ?? t("불명")}</span>
               <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
             </small>
-            <div className="tags">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</div>
+            {/* 태그는 4개까지 — 카드에선 요약이면 충분하고, 더 넣으면 패널이 자라 얼굴을
+                너무 많이 먹는다(7개짜리가 있다). 전부는 상세 모달에 있다. */}
+            <div className="tags">{operator.concepts.slice(0, 4).map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</div>
           </div>
         </div>
       </div>
