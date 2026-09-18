@@ -2856,18 +2856,17 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
         event.preventDefault(); onSelect(operator);
       }}
       aria-label={t("{name} 상세 정보 열기", { name: operator.name })} style={{ "--accent": accentOf(operator), "--delay": `${(index % 12) * 25}ms` } as React.CSSProperties}>
-      {/* 카드는 얼굴·성급·직군만 보여준다 (사용자 제안 2026-09-18 "성급, 얼굴, 직군만 남기고
-          마우스오버 하면 좀 확대되면서 지금 카드 내용들 나오고"). 이름·소속·출신·종족·컨셉
-          태그는 호버하면 카드가 살짝 커지며 아래에서 올라오는 패널(.card-reveal)에 나온다.
-          터치 기기엔 호버가 없으니 그냥 눌러서 상세 모달로 간다 — 정보는 모달에 다 있다.
-          이름은 링크의 aria-label 과 img alt 에 남아 크롤러·스크린리더는 그대로 읽는다. */}
+      {/* 카드엔 얼굴·성급·직군·이름만 보인다 (사용자 제안 2026-09-18). 소속·출신·종족·컨셉
+          태그는 호버(터치는 꾹)하면 카드가 살짝 커지며 아래 패널(.card-reveal)이 펼쳐져 나온다.
+          한 번 터치는 상세 모달. */}
       <div className="portrait" ref={portraitRef}>
-        <div className="portrait-meta"><span data-rarity={operator.rarity}>{"★".repeat(operator.rarity)}</span></div>
+        {/* 위 줄: 성급 별 + 직군 (사용자 지시 2026-09-18 "성급 오른쪽에다가 직군을 써줘") */}
+        <div className="portrait-meta"><span data-rarity={operator.rarity}>{"★".repeat(operator.rarity)}</span><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
         {visible && <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} decoding="async" />}
+        {/* 아래 패널: 접힌 채엔 이름 한 줄, 펼치면 소속·출신·종족·컨셉 태그 */}
         <div className="card-reveal">
-          <div className="plate-eyebrow"><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
+          <h3>{operator.name}</h3>
           <div className="card-more">
-            <h3>{operator.name}</h3>
             <small className="portrait-facts">
               <span><i>{t("소속")}</i>{operator.faction}</span>
               <span><i>{t("출신")}</i>{operator.birthplace ?? t("불명")}</span>
