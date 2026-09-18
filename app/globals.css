@@ -1934,9 +1934,11 @@ legend {
 .operator-grid.mini .card-reveal h3 {
   font-size: 10.5px;
 }
-/* 절반 폭 카드에선 아바타가 88%면 왼쫑 위 성급·직군 칩을 덮는다 */
+/* 절반 폭 카드는 여백도 절반 — 위 줄이 작아진 만큼 위쪽을 덜 띄운다 */
 .operator-grid.mini .portrait img {
-  max-width: 74%;
+  inset: 15px 8px 0;
+  width: calc(100% - 16px);
+  height: calc(100% - 15px);
 }
 /* 카드가 절반이 됐으니 **안쪽 글자도 같이 줄인다** (사용자 지적 2026-09-16).
    직군 태그·미실장 배지는 각자 font-size 를 갖고 있어서 부모만 줄여선 안 줄어든다. */
@@ -2235,8 +2237,12 @@ legend {
   object-position: center top;
   position: absolute;
   /* 꽉 채우면 얼굴이 부담스럽다(사용자 지적) — 양옆 13px·위 22px 들여 숨 쉴 틈을 주고,
-     위 줄(별·직군)과도 안 겹치게 한다. 아래 남는 자리는 이름 패널이 받는다. */
+     위 줄(별·직군)과도 안 겹치게 한다. 아래 남는 자리는 이름 패널이 받는다.
+     ⚠ inset 만으로는 안 된다: 절대배치 **대체요소(img)** 는 left/right 로 늘어나지 않고
+     고유 크기(180px)를 쓰다가 max-width:100% 에 잘려 결국 폭을 꽉 채운다. 크기를 명시한다. */
   inset: 22px 13px 0;
+  width: calc(100% - 26px);
+  height: calc(100% - 22px);
 }
 .name-line {
   justify-content: space-between;
