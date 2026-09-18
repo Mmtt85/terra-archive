@@ -2835,6 +2835,8 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
   // 속도가 다 다르다 … 아주 길면 너무 심하게 빨라진다"). CSS 만으로는 넘친 거리를 알 수
   // 없어서 여기서 재고, 거리에 비례한 지속시간을 요소에 심는다(--flow-ms). 안 넘치면 0ms —
   // 지속시간 0 인 애니메이션은 아예 안 돈다. 카드가 보일 때 한 번, 웹폰트 로드 후 한 번.
+  const remeasureRef = useRef<() => void>(() => { /* 첫 측정 전 */ });
+  const remeasure = () => remeasureRef.current();
   useEffect(() => {
     if (!visible) return;
     const root = portraitRef.current;
@@ -2855,20 +2857,28 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
       // 가로 — 이름·태그
       for (const el of root.querySelectorAll<HTMLElement>(".card-reveal h3 > span, .tags-track")) {
         const box = el.parentElement;
-        if (box) flow(el, el.getBoundingClientRect().width - box.clientWidth);
+        const w = box ? box.clientWidth : 0;
+        flow(el, w > 0 ? el.getBoundingClientRect().width - w : 0);
       }
       // 세로 — 소속·출신·종족이 두 줄을 넘을 때 (만트라처럼 소속이 긴 오퍼, 실측 8장).
       // 이동량은 픽셀이라 CSS 변수로 넘긴다(가로처럼 컨테이너 단위를 못 쓴다 — 부모 높이가
       // max-height 로 정해져 있어 100cqh 가 내용 높이를 안 알려준다).
       for (const el of root.querySelectorAll<HTMLElement>(".facts-track")) {
         const box = el.parentElement;
-        if (!box) continue;
-        const over = el.getBoundingClientRect().height - box.clientHeight;
-        el.style.setProperty("--flow-y", `${-Math.round(Math.max(0, over))}px`);
-        flow(el, over);
+        const h = box ? box.clientHeight : 0;
+        const over = h > 0 ? el.getBoundingClientRect().height - h : 0;
+        // ⚠ 높이가 0 이면 **안 넘친 것으로 친다**. content-visibility:auto 로 레이아웃이
+        //   건너뛰어진 카드는 부모가 0 으로 잡혀 "전체 높이만큼 넘쳤다"가 되고, 그러면 블록이
+        //   통째로 위로 빠져나가 사라진다 (사용자 지적 2026-09-18). 넘침이 상자보다 큰 것도
+        //   같은 오측정이다. ⚠ 건너뛰지 말고 **0 으로 덮어써야** 한다 — 앞서 잘못 심긴 값이
+        //   남아 안 넘치는 카드가 계속 올라가 버렸다.
+        const ok = over > 1 && over <= h;
+        el.style.setProperty("--flow-y", ok ? `${-Math.round(over)}px` : "0px");
+        flow(el, ok ? over : 0);
       }
     };
     measure();
+    remeasureRef.current = measure;   // 호버할 때 다시 — 그때가 레이아웃이 확실한 순간이다
     document.fonts?.ready.then(measure).catch(() => { /* 폰트 API 없으면 첫 측정으로 충분 */ });
   }, [visible, portraitRef]);
   // 터치 기기: **꾹 누르면**(350ms) 카드가 커지며 패널이 열리고, 그냥 한 번 누르면 모달
@@ -2893,7 +2903,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
   // 클릭은 종전대로 가로채 모달을 연다 (미실장 오퍼는 상세 라우트가 없어 목록 주소로).
   return (
     <a className={`operator-card${operator.unreleased ? " fut-dim" : ""}${peek ? " peek" : ""}`} href={operatorHref(locale, operator)}
-      onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold}
+      onPointerEnter={remeasure} onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold}
       onContextMenu={(event) => { if (held.current || peek) event.preventDefault(); }}
       onClick={(event) => {
         if (held.current) { held.current = false; event.preventDefault(); return; }   // 꾹 누른 뒤 뗀 것 — 모달 아님
