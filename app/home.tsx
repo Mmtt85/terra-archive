@@ -231,9 +231,9 @@ export type Operator = {
 // ⚠ 직군 이름은 언어마다 다르므로 **jobCode**(언어 무관)로 잡는다.
 /** 마퀴가 흐르는 속도(px/초) — 글자 길이와 무관하게 이 값으로 고정된다 */
 const FLOW_PX_PER_SEC = 40;
-/** 흐르기 전후로 멈춰 서서 읽을 시간(ms). 끝에서 1초는 사용자 요청(2026-09-18). */
+/** 흐르기 전후로 멈춰 서서 읽을 시간(ms). 끝 멈춤은 사용자가 1초 → 2초로 올렸다(2026-09-18). */
 const FLOW_HOLD_START = 600;
-const FLOW_HOLD_END = 1000;
+const FLOW_HOLD_END = 2000;
 const JOB_HUE: Record<string, number> = {
   WARRIOR: 6,    // 가드 — 붉은계
   PIONEER: 36,   // 뱅가드 — 앰버
