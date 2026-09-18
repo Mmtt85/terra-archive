@@ -7669,6 +7669,10 @@ html.dark .tags-track > span {
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    /* 아래 margin-bottom 상쇄값과 짝이다 — 확장부 줄 높이를 33px로 못박아 둔다.
+       (내용 자연 높이는 ko/en/ja · 761~1920px 전부 32.8px 로 같다.)
+       내용이 이보다 커지는 날이 오면 그 초과분만큼만 본문이 밀린다 — 안전한 쪽으로 어긋난다. */
+    min-height: 33px;
   }
   .header-sub .header-sub-right {
     display: flex;
@@ -7692,6 +7696,20 @@ html.dark .tags-track > span {
   /* 접힘: 2줄(미래시·다크모드·언어)만 사라진다. 이벤트·공식방송은 1줄 소속이라 유지. */
   .site-header.collapsed .header-sub {
     display: none;
+  }
+  /* 펼쳐도 **본문이 밀려 내려가지 않는다** (사용자 요청 2026-09-19).
+     main.site-main 은 100dvh 세로 flex 이고 헤더는 그 첫 행이라, 헤더가 커진 만큼
+     .site-scroll 이 통째로 내려간다. 확장부가 더하는 높이(확장부 33 + row-gap 10 = 43px)를
+     음수 margin 으로 되돌리면 **흐름상 높이는 접힘 때와 같아지고**, 확장부는 본문 위에
+     겹쳐 뜬다 (헤더가 z-index:20 이라 본문보다 위에 그려진다).
+     ⚠ 헤더 **내부는 한 줄도 건드리지 않는다** — 확장부를 absolute 로 띄우거나 JS 로 높이를
+       재는 방법은 2026-09-19 에 네 번 실패했다. absolute 는 좌우 패딩(1400px+ 는 15%)과
+       접기 핸들 위치를 따로 맞춰야 해서 버튼이 오른쪽 끝으로 붙고 핸들이 안 따라왔다.
+       여기서는 배치·배경·테두리·핸들이 전부 종전 그대로고 바깥 높이만 상쇄된다.
+     ⚠ 끄는 중(.dragging)에는 상쇄하지 않는다 — 인라인 max-height 로 헤더가 줄어드는
+       동안에도 상쇄가 걸리면 본문이 화면 위로 끌려 올라간다. */
+  .site-header:not(.collapsed):not(.dragging) {
+    margin-bottom: -43px;
   }
   /* 접기 핸들은 PC에선 오른쪽(헤더 콘텐츠 패딩과 정렬) — 중앙은 이벤트 드롭다운과 동선이
      겹친다 (사용자 확정 2026-07-22). 모바일은 중앙 유지. */
