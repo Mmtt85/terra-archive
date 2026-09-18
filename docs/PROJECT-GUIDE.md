@@ -704,7 +704,8 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
   이름 OCR(tesseract, 상한 84%)은 제거됨. **라이브 화면 공유(getDisplayMedia)도 제거** —
   Chrome이 환경에 따라 절반해상도 흐린 프레임을 고집해 인식이 붕괴(4K 제약·contentHint로도
   미해결), 스크린샷 픽셀만이 검증된 경로. 픽스처 152셀 식별·정예화 100% — 회귀는
-  `npx tsx scripts/verify-scan.ts` (fixtures/scanner/ 로컬 전용).
+  `npx tsx scripts/verify-scan.ts` (fixtures/scanner/). ⚠ **픽스처는 2026-09-18에 비웠다** —
+  돌리려면 스샷과 `expected/labels.json` 을 다시 만들어야 한다.
 - 내보내기: JSON(가져오기용) / PNG(A·B조 모두, 다운로드 아닌 미리보기 모달).
   localStorage 키 `terra-archive-infra-v3`.
 - 로직 검증법: planner.tsx의 컴포넌트 이전 부분을 esbuild로 번들해 node에서 `optimize(ops)` 실행.
@@ -1453,7 +1454,7 @@ BETA, 리플레이의 테마·난이도). 서식이 있는 제목은 `**`를 벗
 참가자 줄을 읽은 패치(`bandRows`)면 상대 자리를 **통째로 갈아 끼운다** — 자리별로 병합하면 밀려나기 전
 값이 유령 자리로 남아 없는 참가자가 하나 더 생긴다.
 
-픽스처는 `fixtures/lens/screenshots/{11,22,33,44}.png` (사용자 제공, git 미추적): 11 = 아무도 안 골랐다(0줄),
+픽스처는 `fixtures/lens/screenshots/{11,22,33,44}.png` (사용자 제공, git 미추적 — **2026-09-18에 비웠다**): 11 = 아무도 안 골랐다(0줄),
 22 = 셋이 골랐다(3줄), 33 = 넷 다(4줄), 44 = 동맹 로비(0줄). ⚠ v2 f026 은 체크박스가 **막 켜지는 번쩍임**
 프레임이라 흰빛에 가까워 청록 마스크에 안 잡힌다 — 애니메이션 한 프레임이고 브리지는 화면이 잠잠할 때만
 프레임을 내보내므로 실사용에서 굳지 않는다 (하한 2/3).
@@ -1469,6 +1470,8 @@ BETA, 리플레이의 테마·난이도). 서식이 있는 제목은 `**`를 벗
 
 회귀 하네스: `npx tsx scripts/verify-autochess.ts` (grid·bond·face·band·text 다섯 코어, `--quick` 은 약 1분) — 픽스처는 `fixtures/lens/ac-frames/v1|v2/*.png`(녹화 프레임, ffmpeg
 `fps=2`/`fps=1`)·`fixtures/lens/screenshots/` (git 미추적 로컬 전용 — 없으면 조용히 건너뛴다). 정답 라벨은 하네스 코드 안에 있다.
+⚠ **픽스처는 2026-09-18에 통째로 비웠다** (사용자 판단: 다시 찍을 때면 게임 화면이 어차피 달라져 있다). 지금 하네스를 돌리면
+다섯 코어가 전부 '건너뜀'으로 조용히 지나간다 — **초록불이 검증을 뜻하지 않는다.** 인식을 다시 손대기 전에 녹화부터 다시 뜬다.
 브라우저와 node 가 같은 특징을 내도록 크롭·축소는 `lens/pix.ts` 순수 JS 로만 한다 (sharp/canvas 는 디코드에만).
 
 ### 위수 협의 — 특질 중복 판정은 **설명문이 아니라 blackboard** (2026-08-26)

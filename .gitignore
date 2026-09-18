@@ -85,13 +85,19 @@ scripts/story-cn/
 scripts/records-cn/_src/
 
 # 위수 협의·록라 인식 회귀 픽스처 — 게임 스크린샷/녹화라 크고(45MB) 개인 화면이 찍힌다.
-# fixtures/lens/expected.json(작은 기대값)만 커밋하고 원본 이미지는 로컬에만 둔다.
+# ⚠ 2026-09-18에 `fixtures/` 를 통째로 비웠다 (사용자 판단: 다시 찍을 때면 게임 화면이
+#   어차피 달라져 있다). 아래 규칙은 **다시 찍었을 때를 위한 것**이라 남겨 둔다 —
+#   원본 이미지는 로컬에만 두고 작은 기대값 JSON만 커밋한다.
 /fixtures/lens/screenshots/
+/fixtures/scanner/screenshots/
 # tesseract 언어 모델(kor·chi_sim 등, 각 2~20MB) — 검증 스크립트가 리포 루트에 받아 두는
 # 캐시지 소스가 아니다. 지워도 다음 실행에 다시 받는다.
 /*.traineddata
 # 위수 협의 PRTS 녹화 프레임(2026-09-07, 수백 MB) — 로컬 전용. 기대값은 scripts/verify-autochess.ts 에 코드로 둔다.
 /fixtures/lens/ac-frames/
+
+# 스크린샷 저장 경로가 비었을 때 만들어지는 쓰레기 폴더 (2026-09-05에 한 번 커밋됐다)
+/undefined/
 
 # 위수 협의 인식 실험 스크립트 (측정용 — 정본은 scripts/verify-ac/*)
 /scripts/ac-lab/
