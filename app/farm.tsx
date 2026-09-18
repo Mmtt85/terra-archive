@@ -13,7 +13,7 @@ import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
 import farmData from "./data/farm.json";
 import costsData from "./data/costs.json";
-import type { Operator } from "./home";
+import { accentOf, type Operator } from "./home";
 import { useI18n, type Locale } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
@@ -679,7 +679,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
               const groups = buildGroups(operator, entry, t);
               const allFull = groups.every((group) => targetOf(id, group) === group.steps.length);
               return (
-                <article key={id} className="cost-op" style={{ "--accent": operator.accent } as React.CSSProperties}>
+                <article key={id} className="cost-op" style={{ "--accent": accentOf(operator) } as React.CSSProperties}>
                   <header>
                     <img src={asset(operator.image)} alt="" width={180} height={180} />
                     <button type="button" className="cost-chip-name" onClick={() => onShowOperator(id)} title={t("{name} 상세 정보 열기", { name: operator.name })}>{operator.name}</button>

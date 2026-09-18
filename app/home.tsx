@@ -216,6 +216,39 @@ export type Operator = {
   unreleased?: boolean;
 };
 
+// ── 카드 색 (2026-09-18 사용자 요청 "통일감있고 예쁜"으로 전면 교체) ──────────────
+// 종전엔 `operator.accent` — 손으로 고른 54색을 444명에게 나눠 준 값이라 같은 색이
+// 73명씩 겹쳤고, 직군·진영·성급 무엇과도 대응하지 않았으며(직군별 통일 0/8) 27명은
+// 기본 회색 그대로였다. 설계 근거도 없다(배포본에서 복원한 프로토타입 스타일).
+//
+// 이제 **직군별 색상대 + 오퍼별 변주**로 만든다. 그리드가 직군으로 읽히면서도 같은
+// 직군 카드가 다 똑같아 보이지는 않는다. 채도·명도는 한 값으로 고정해 톤을 맞춘다.
+// ⚠ **채도를 올리지 말 것** (사용자 지적 2026-09-18 "너무 형형색색한데 사이트 전체 톤에
+//   맞춰줄 수 없어"). 사이트 팔레트는 --ink #131719 / --paper #f1f0eb / --lime #dfff00 의
+//   절제된 톤이라, 채도 42%로는 카드만 무지개가 된다. 18%까지 내리면 직군 차이가
+//   '따뜻함/차가움' 정도로만 남아 먹색 계열로 읽힌다 — 그게 이 사이트의 톤이다.
+//   직군 이름은 카드에 글자로 이미 적혀 있으니 색이 직군을 혼자 설명할 필요가 없다.
+// ⚠ 직군 이름은 언어마다 다르므로 **jobCode**(언어 무관)로 잡는다.
+const JOB_HUE: Record<string, number> = {
+  WARRIOR: 6,    // 가드 — 붉은계
+  PIONEER: 36,   // 뱅가드 — 앰버
+  MEDIC: 104,    // 메딕 — 녹색
+  SUPPORT: 168,  // 서포터 — 청록
+  SNIPER: 200,   // 스나이퍼 — 시안블루
+  TANK: 228,     // 디펜더 — 블루
+  CASTER: 272,   // 캐스터 — 보라
+  SPECIAL: 330,  // 스페셜리스트 — 자홍
+};
+/** 카드·모달 배경색. id 해시라 **빌드마다 같은 색**이 나와 데이터에 저장할 필요가 없다. */
+export const accentOf = (o: Operator) => {
+  const base = JOB_HUE[o.jobCode] ?? 210;
+  let n = 0;
+  for (let i = 0; i < o.id.length; i++) n = (n * 31 + o.id.charCodeAt(i)) >>> 0;
+  // 성급이 높을수록 띠가 살짝만 더 살아난다 — 인게임도 레어도가 올라갈수록 화려해진다.
+  // 폭을 좁게 잡아(채도 14~24%) 여전히 먹색 계열로 읽히게 한다.
+  return `hsl(${(base + (n % 17) - 8 + 360) % 360} ${12 + o.rarity * 2}% ${30 + o.rarity}%)`;
+};
+
 const SYNERGY_POTS = ["어비설팟", "쉐이팟", "쉐라그팟", "카시미어팟", "미노스팟", "아베무팟", "소각팟", "라테라노팟", "탄약팟", "라인랩팟", "라이오스 파티"];
 
 // 직군 표시 순서의 정본은 jobCode — 표시명은 로케일 데이터에서 뽑는다
@@ -2801,7 +2834,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
         event.preventDefault(); onSelect(operator);
       }}
-      aria-label={t("{name} 상세 정보 열기", { name: operator.name })} style={{ "--accent": operator.accent, "--delay": `${(index % 12) * 25}ms` } as React.CSSProperties}>
+      aria-label={t("{name} 상세 정보 열기", { name: operator.name })} style={{ "--accent": accentOf(operator), "--delay": `${(index % 12) * 25}ms` } as React.CSSProperties}>
       <div className="portrait" ref={portraitRef}>
         <span className="portrait-grid" />
         <div className="portrait-info">
@@ -3174,7 +3207,7 @@ function OperatorFile({ operator, onUpgrade, includeFuture, operators, onRelated
 function OperatorModal({ operator, onClose, onUpgrade, includeFuture, onPinChange, operators, onRelated }: { operator: Operator; onClose: () => void; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean; onPinChange?: (pinned: boolean) => void; operators?: Operator[]; onRelated?: (op: Operator) => void }) {
   return (
     <ModalWindow label={`${operator.name} · ${operator.code}`} className="operator-modal" onClose={onClose} onPinChange={onPinChange}
-      style={{ "--accent": operator.accent } as React.CSSProperties}>
+      style={{ "--accent": accentOf(operator) } as React.CSSProperties}>
       <OperatorFile operator={operator} onUpgrade={onUpgrade} includeFuture={includeFuture} operators={operators} onRelated={onRelated} />
     </ModalWindow>
   );
@@ -3196,7 +3229,7 @@ function OperatorPage({ operator, onUpgrade, includeFuture, listHref, onBack, op
           e.preventDefault(); onBack();
         }}>← {t("오퍼 목록으로")}</a>
       <section className="operator-modal operator-page" aria-label={`${operator.name} · ${operator.code}`}
-        style={{ "--accent": operator.accent } as React.CSSProperties}>
+        style={{ "--accent": accentOf(operator) } as React.CSSProperties}>
         <OperatorFile operator={operator} onUpgrade={onUpgrade} includeFuture={includeFuture} operators={operators} onRelated={onRelated} />
       </section>
     </div>
