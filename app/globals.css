@@ -2200,9 +2200,11 @@ legend {
    한번에 다 안보이는 문자열들은 전부다 마퀴"). 넘치지 않으면 이동량이 0 이라 가만히 있고,
    화면 밖 카드는 `content-visibility: auto` 덕에 렌더 자체를 건너뛴다.
    3s — 7s 는 "너무 느리다"는 지적을 받았다. */
+/* 지속시간은 JS 가 넘친 거리에 비례해 심어 준다(--flow-ms) — 속도가 일정해진다.
+   안 넘치면 0ms 라 아예 돌지 않는다. */
 .card-reveal h3 > span,
 .tags-track {
-  animation: card-flow 3.4s linear 0.6s infinite;
+  animation: card-flow var(--flow-ms, 0ms) linear 0.6s infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .card-reveal h3 > span,
@@ -2325,8 +2327,8 @@ legend {
 /* 한 방향으로 **일정한 속도**(linear)로 쭉 흘렀다가 처음으로 되돌아온다 — 왕복(alternate)
    도, 가속(ease)도 쓰지 않는다 (사용자 지시 2026-09-18). 앞뒤 짧은 정지는 읽을 틈이다. */
 @keyframes card-flow {
-  0%, 14% { transform: translateX(0); }
-  86%, 100% { transform: translateX(min(0px, calc(100cqw - 100%))); }
+  0%, 10% { transform: translateX(0); }
+  90%, 100% { transform: translateX(min(0px, calc(100cqw - 100%))); }
 }
 .tags {
   container-type: inline-size;

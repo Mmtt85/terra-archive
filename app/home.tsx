@@ -229,6 +229,8 @@ export type Operator = {
 //   '따뜻함/차가움' 정도로만 남아 먹색 계열로 읽힌다 — 그게 이 사이트의 톤이다.
 //   직군 이름은 카드에 글자로 이미 적혀 있으니 색이 직군을 혼자 설명할 필요가 없다.
 // ⚠ 직군 이름은 언어마다 다르므로 **jobCode**(언어 무관)로 잡는다.
+/** 마퀴가 흐르는 속도(px/초) — 글자 길이와 무관하게 이 값으로 고정된다 */
+const FLOW_PX_PER_SEC = 40;
 const JOB_HUE: Record<string, number> = {
   WARRIOR: 6,    // 가드 — 붉은계
   PIONEER: 36,   // 뱅가드 — 앰버
@@ -2826,6 +2828,26 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
   // 카드가 화면 근처에 실제로 들어오기 전엔 이미지 자체를 마운트하지 않는다 — 진입 즉시
   // 420장이 전부 요청되던 문제 대응 (스크롤·필터링 시에만 그때그때 받아옴, 2026-07-22)
   const [portraitRef, visible] = useLazyVisible<HTMLDivElement>();
+  // 마퀴 **속도 고정** (사용자 지적 2026-09-18: "N초에 걸쳐서 끝까지 간다는 조건이면 각자
+  // 속도가 다 다르다 … 아주 길면 너무 심하게 빨라진다"). CSS 만으로는 넘친 거리를 알 수
+  // 없어서 여기서 재고, 거리에 비례한 지속시간을 요소에 심는다(--flow-ms). 안 넘치면 0ms —
+  // 지속시간 0 인 애니메이션은 아예 안 돈다. 카드가 보일 때 한 번, 웹폰트 로드 후 한 번.
+  useEffect(() => {
+    if (!visible) return;
+    const root = portraitRef.current;
+    if (!root) return;
+    const measure = () => {
+      for (const el of root.querySelectorAll<HTMLElement>(".card-reveal h3 > span, .tags-track")) {
+        const box = el.parentElement;
+        if (!box) continue;
+        const over = el.getBoundingClientRect().width - box.clientWidth;
+        // 앞뒤 10%씩은 읽을 틈이라 흐르는 구간이 80% — 그만큼 시간을 더 준다(×1.25)
+        el.style.setProperty("--flow-ms", over > 1 ? `${Math.round((over / FLOW_PX_PER_SEC) * 1250)}ms` : "0ms");
+      }
+    };
+    measure();
+    document.fonts?.ready.then(measure).catch(() => { /* 폰트 API 없으면 첫 측정으로 충분 */ });
+  }, [visible, portraitRef]);
   // 터치 기기: **꾹 누르면**(350ms) 카드가 커지며 패널이 열리고, 그냥 한 번 누르면 모달
   // (사용자 요청 2026-09-18). 꾹 누른 뒤 손을 떼면 그 클릭은 모달로 이어지지 않는다.
   // 스크롤이 시작되면 pointercancel 이 와서 저절로 닫힌다. iOS 의 링크 미리보기·이미지
