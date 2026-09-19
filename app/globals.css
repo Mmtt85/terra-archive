@@ -98,11 +98,29 @@ body {
   background: var(--paper);
   color: var(--ink);
   margin: 0;
+  /* 본문 서체 (2026-09-19) — 종전엔 Arial + 시스템 한글 폴백이라 한글과 라틴·숫자의
+     리듬이 따로 놀았다. SUITE 가 본문, 그 서체에 없는 글자(밍졘·파죰카 등 4자)는
+     Pretendard 가 받는다 — 순서를 바꾸지 말 것. 파일·사정은 public/fonts/site.css,
+     <link> 는 layout.tsx. 둘 다 못 받아 오면 그 뒤가 종전 조합 그대로다. */
   font-family:
+    "SUITE Variable",
+    "Pretendard Variable",
+    Pretendard,
     Arial,
     Apple SD Gothic Neo,
     Noto Sans KR,
     sans-serif;
+}
+/* ── 굵기 체계 (2026-09-19 Pretendard 도입) ─────────────────────────────────
+   Arial 은 700·800·900 이 **전부 같은 굵기**로 찍혀서, 종전 CSS 는 셋을 아무렇게나
+   섞어 써도 똑같아 보였다. Pretendard 는 셋이 실제로 다르게 찍혀 글자가 통통해졌다
+   (사용자 지적). 그래서 전부 한 단계씩 낮췄다 — 900→800 · 800→700 · 700→600.
+   앞으로는 이 세 단계만 쓴다:
+     600 = 본문 볼드(카드 이름·칩·표 숫자)  700 = 소제목·강조  800 = 큰 제목·히어로
+   <b>·<strong> 은 리셋이 bolder(=700)로 잡으므로 본문 볼드와 같은 600 으로 맞춘다. */
+b,
+strong {
+  font-weight: 600;
 }
 /* 일본어 페이지는 Meiryo 우선 — Meiryo가 있는 클라이언트(주로 Windows)는 자동으로 Meiryo,
    없으면 폴백으로 렌더된다 (하이드레이션 후 home.tsx가 html lang을 ja로 바꿈). 사용자 요청 2026-07. */
@@ -198,7 +216,7 @@ button {
   margin: 0 auto;
   padding: 0 28px;
   font-size: clamp(16px, 2vw, 27px);
-  font-weight: 900;
+  font-weight: 800;
 }
 .header-tagline em {
   color: #0000;
@@ -211,7 +229,7 @@ button {
   align-items: center;
   gap: 12px;
   font-size: 17px;
-  font-weight: 900;
+  font-weight: 800;
   text-decoration: none;
   display: flex;
 }
@@ -372,7 +390,7 @@ button {
   background: transparent;
   padding: 6px 11px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
   cursor: pointer;
   transition: 0.15s;
@@ -411,7 +429,7 @@ button {
   background: transparent;
   padding: 5px 8px;
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
   cursor: pointer;
   transition: 0.15s;
@@ -495,7 +513,7 @@ button {
   padding: 2px 7px;
   border-radius: 6px;
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.35;
   text-align: center;
@@ -542,7 +560,7 @@ button {
   border-radius: 6px;
   background: transparent;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
   text-decoration: none;
   white-space: nowrap;
@@ -561,7 +579,7 @@ button {
   background: none;
   font: inherit;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--muted);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -591,7 +609,7 @@ button {
 }
 .chlog-loading {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--muted);
 }
@@ -603,7 +621,7 @@ button {
   border-radius: 6px;
   background: transparent;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--muted);
   cursor: pointer;
   transition: 0.15s;
@@ -621,7 +639,7 @@ button {
 }
 .chlog-donate a {
   color: var(--ink);
-  font-weight: 800;
+  font-weight: 700;
   text-underline-offset: 3px;
 }
 
@@ -644,7 +662,7 @@ button {
   margin-left: 12px;
   padding: 6px 11px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
   text-decoration: none;
   background: transparent;
@@ -659,7 +677,7 @@ button {
 /* 라임 원색은 밝은 종이 위에서 1.46:1이라 사실상 안 보인다 — 배경에 맞춰 도는
    --tint-lime-ink(라이트 #5b6b00 · 다크 #c6d96e)를 쓴다 (2026-08-25) */
 .promo-trigger .promo-mark { color: var(--tint-lime-ink); }
-.promo-trigger .promo-hint { font-size: 11px; font-weight: 700; color: var(--muted); }
+.promo-trigger .promo-hint { font-size: 11px; font-weight: 600; color: var(--muted); }
 /* 확장부의 작은 버튼 — 옆에 붙는 '공식 방송'(.bcast-trigger)과 같은 치수로 맞춘다.
    종전엔 배너 섬네일을 통째로 품은 큰 버튼이 헤더 1줄에 누워 있었다
    (사용자 요청 2026-07-30: "확장헤더에 넣자, 누르면 섬네일이랑 이벤트 보이도록"). */
@@ -671,7 +689,7 @@ button {
   background: transparent;
   padding: 6px 11px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
   cursor: pointer;
   transition: 0.15s;
@@ -686,7 +704,7 @@ button {
 .event-trigger .event-hint {
   font-family: monospace;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--muted);
 }
 /* 아직 시작 전이면 눈에 띄게 — 진행중(D-N)과 구분 */
@@ -734,7 +752,7 @@ button {
   padding: 6px 0;
   border-top: 1px dashed var(--line);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .event-menu li:first-child {
   border-top: 0;
@@ -888,7 +906,7 @@ button {
 }
 .bcast-state {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--muted);
 }
 .bcast-state.live {
@@ -899,7 +917,7 @@ button {
 }
 .bcast-card strong {
   font-size: 13.5px;
-  font-weight: 800;
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1022,7 +1040,7 @@ button {
     background: var(--chip);
     color: var(--lime);
     font-size: 11.5px;
-    font-weight: 700;
+    font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
   }
@@ -1334,7 +1352,7 @@ button {
 .search-label {
   margin: 24px 0 9px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   display: block;
 }
 .search-wrap {
@@ -1490,7 +1508,7 @@ fieldset {
 legend {
   margin-bottom: 10px;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 800;
 }
 .multi-hint {
   color: var(--muted);
@@ -1551,7 +1569,7 @@ legend {
 .concept-box input.has-pick {
   color: var(--lime);
   border-color: var(--border-strong);
-  font-weight: 800;
+  font-weight: 700;
 }
 .concept-box button {
   color: #fff;
@@ -1563,7 +1581,7 @@ legend {
   gap: 5px;
   padding: 8px 12px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   display: inline-flex;
 }
 /* ⚠ --accent는 오퍼 카드·모달에만 걸리는 변수라 필터 패널에선 비어 있다 —
@@ -1638,7 +1656,7 @@ legend {
   background: 0 0;
   padding: 7px 10px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -1764,7 +1782,7 @@ legend {
 }
 .attr-drop button.selected {
   background: var(--bg-soft);
-  font-weight: 800;
+  font-weight: 700;
 }
 .attr-drop button span {
   color: #8b9294;
@@ -1804,14 +1822,14 @@ legend {
   letter-spacing: .5px;
   padding: 4px 8px 5px;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .attr-drop button.attr-sub-all {
   border-bottom: 1px dashed var(--border-strong);
   border-radius: 0;
   margin-bottom: 3px;
   padding-bottom: 8px;
-  font-weight: 700;
+  font-weight: 600;
 }
 /* 그 자리에서 아래로 (터치) — 들여쓰기와 좌측선으로 계층을 보인다 */
 .attr-sub {
@@ -1829,7 +1847,7 @@ legend {
   margin-top: 9px;
   padding: 8px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .more-filter:hover {
   border-color: var(--border-hover);
@@ -1875,7 +1893,7 @@ legend {
   border: 0;
   padding: 5px 9px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .operator-grid {
   /* 한 줄 5명 — 카드가 세로로 길어져(명판 레이아웃) 사용자가 5열을 허용했다 (2026-09-18).
@@ -2217,7 +2235,7 @@ html.dark .tags-track > span {
   letter-spacing: -0.3px;
   margin: 0;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.25;
   word-break: keep-all;
   white-space: nowrap;
@@ -2264,7 +2282,7 @@ html.dark .tags-track > span {
   gap: 5px;
   color: var(--ink3);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.4;
   word-break: keep-all; /* 한국어 어절 단위 줄바꿈 — 글자 단위 세로 꺾임 방지 */
 }
@@ -2408,7 +2426,7 @@ html.dark .tags-track > span {
   color: var(--ink2);
   padding: 2px 5px;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
 }
 /* 첫 태그(대표 컨셉)만 라임 — 카드에서 라임이 쓰이는 두 곳 중 하나.
    글자색은 라임을 잉크에 섞는다: 라이트에선 짙은 올리브(라임 원색은 흰 바탕에서 1.9:1로
@@ -2535,7 +2553,7 @@ html.dark .tags-track > span {
 .confirm-title {
   margin: 0 0 10px;
   font-size: 17px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--ink);
 }
@@ -2569,13 +2587,13 @@ html.dark .tags-track > span {
 .chlog-detail-head .chlog-kind { margin-top: 0; max-width: none; }
 .chlog-detail-date {
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--muted);
 }
 .chlog-detail-title {
   margin: 0 0 12px;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.5;
   word-break: keep-all;
 }
@@ -2604,7 +2622,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   border-radius: 6px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
   text-decoration: none;
   transition: 0.15s;
@@ -2629,7 +2647,7 @@ html.dark .tags-track > span {
   cursor: pointer;
   padding: 9px 20px;
   font-size: 13.5px;
-  font-weight: 700;
+  font-weight: 600;
   border: 1px solid var(--line);
   border-radius: 2px;
   background: var(--white);
@@ -2812,7 +2830,7 @@ html.dark .tags-track > span {
   color: var(--ink);
   background: var(--bg-soft);
   border-color: var(--border-strong);
-  font-weight: 800;
+  font-weight: 700;
 }
 .modal-rail button.active em {
   color: var(--accent);
@@ -2874,7 +2892,7 @@ html.dark .tags-track > span {
   gap: 6px;
   padding: 8px 12px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   transition: all 0.15s;
   display: inline-flex;
 }
@@ -2985,7 +3003,7 @@ html.dark .tags-track > span {
   background: var(--ink);
   color: var(--paper);
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.5;
   letter-spacing: 0.02em;
 }
@@ -3061,7 +3079,7 @@ html.dark .tags-track > span {
 /* 레벨을 타는 수치 — 어느 숫자가 레벨로 바뀌는지 문장에서 바로 보이게 */
 .skill-val {
   color: var(--accent);
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 /* '등록된 …이 없습니다' 같은 빈 상태 안내. font-size를 안 주면 루트(16px)를 그대로 물려받아
@@ -3172,7 +3190,7 @@ html.dark .tags-track > span {
 .skill-range > b {
   color: var(--muted);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .skill-range-grids {
   align-items: center;
@@ -3339,7 +3357,7 @@ html.dark .tags-track > span {
 }
 .module-levels .module-stats {
   color: var(--ink);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* 모듈 이야기 — 눌러야 펼쳐지는 산문 (사용자 요청 2026-08-02 "바로 보이게는 안 해도 되니까").
@@ -3355,7 +3373,7 @@ html.dark .tags-track > span {
   width: 100%;
   padding: 10px 14px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   display: flex;
 }
 .module-story-toggle:hover {
@@ -3397,7 +3415,7 @@ html.dark .tags-track > span {
   color: var(--ink2);
   padding: 7px 12px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
 }
@@ -3469,7 +3487,7 @@ html.dark .tags-track > span {
   margin-left: 6px;
   opacity: 0.7;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   font-style: normal;
 }
 .skin-stage {
@@ -3501,13 +3519,13 @@ html.dark .tags-track > span {
 .skin-lightbox figcaption {
   color: #ffffffd0;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   text-align: center;
 }
 .skin-lightbox figcaption em {
   color: #ffffff88;
   font-style: normal;
-  font-weight: 700;
+  font-weight: 600;
 }
 .skin-lightbox-empty {
   color: #ffffffaa;
@@ -3522,7 +3540,7 @@ html.dark .tags-track > span {
 .skin-meta h4 {
   margin: 0 0 10px;
   font-size: 16px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.02em;
 }
 .skin-meta dl {
@@ -3539,12 +3557,12 @@ html.dark .tags-track > span {
   flex: none;
   width: 62px;
   color: var(--muted);
-  font-weight: 800;
+  font-weight: 700;
 }
 .skin-meta dd {
   margin: 0;
   color: var(--ink);
-  font-weight: 700;
+  font-weight: 600;
 }
 .skin-content,
 .skin-usage {
@@ -3599,14 +3617,14 @@ html.dark .tags-track > span {
   color: var(--muted);
 }
 .voice-cv > span {
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.01em;
 }
 .voice-cv em {
   font-style: normal;
 }
 .voice-cv em b {
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink3);
   margin-right: 4px;
 }
@@ -3630,7 +3648,7 @@ html.dark .tags-track > span {
   align-items: baseline;
   gap: 5px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink3);
   min-width: 0;
 }
@@ -3699,7 +3717,7 @@ html.dark .tags-track > span {
 .profile-doc h4 {
   margin: 0;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.01em;
 }
 .profile-doc > summary {
@@ -3752,7 +3770,7 @@ html.dark .tags-track > span {
   margin-top: 12px;
   color: var(--ink);
   font-size: 11.5px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: 0.02em;
 }
 /* 기본정보·종합검진 — "[항목] 값" 나열이라 표로 */
@@ -3773,14 +3791,14 @@ html.dark .tags-track > span {
 .profile-facts dt {
   color: var(--muted);
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 .profile-facts dd {
   margin: 0;
   color: var(--ink);
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   text-align: right;
 }
 .infra-list {
@@ -3811,7 +3829,7 @@ html.dark .tags-track > span {
 }
 .infra-list article > div span {
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 800;
 }
 .infra-list article > div small {
   color: var(--muted);
@@ -3943,7 +3961,7 @@ html.dark .tags-track > span {
   border-radius: 6px;
   background: transparent;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
   cursor: pointer;
   transition: 0.15s;
@@ -4008,7 +4026,7 @@ html.dark .tags-track > span {
 }
 .invest-raise {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
   background: color-mix(in srgb, var(--lime) 30%, transparent);
   border-radius: 4px;
@@ -4016,7 +4034,7 @@ html.dark .tags-track > span {
 }
 .invest-syn {
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: #8f7fc0;
   border: 1px solid color-mix(in srgb, #8f7fc0 55%, transparent);
   border-radius: 4px;
@@ -4034,7 +4052,7 @@ html.dark .tags-track > span {
 }
 .inv-gain {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   border-radius: 5px;
   padding: 1px 7px;
 }
@@ -4049,7 +4067,7 @@ html.dark .tags-track > span {
 /* 예상 회수일 — 누르면 완성 비용 내역이 펼쳐지는 버튼 (사용자 지정 2026-08-05) */
 .invest-payback {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   border: 1px solid color-mix(in srgb, #c8912f 45%, transparent);
   border-radius: 5px;
   padding: 1px 8px;
@@ -4107,7 +4125,7 @@ html.dark .tags-track > span {
   background: transparent;
   color: var(--ink);
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
@@ -4133,7 +4151,7 @@ html.dark .tags-track > span {
 }
 .invest-mattoggle-box::after {
   content: "✓";
-  font-weight: 900;
+  font-weight: 800;
 }
 .invest-mattoggle.on .invest-mattoggle-box {
   background: #c8912f;
@@ -4176,7 +4194,7 @@ html.dark .tags-track > span {
 .invest-costmodal-title em {
   font-style: normal;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--muted);
   background: var(--bg-soft);
   border-radius: 5px;
@@ -4193,7 +4211,7 @@ html.dark .tags-track > span {
   border: 1px solid color-mix(in srgb, #c8912f 40%, transparent);
   color: #8a5a1e;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   text-align: center;
 }
 :root[data-theme="dark"] .invest-costmodal-days,
@@ -4226,7 +4244,7 @@ html.dark .tags-track > span {
   font-variant-numeric: tabular-nums;
 }
 .invest-costdetail td:last-child {
-  font-weight: 700;
+  font-weight: 600;
   color: #8a5a1e;
   white-space: nowrap;
 }
@@ -4238,7 +4256,7 @@ html.dark .tags-track > span {
 .invest-costdetail tr.sum td {
   border-top: 1px solid var(--line);
   padding-top: 5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
 }
 :root[data-theme="dark"] .invest-costdetail tr.sum td:last-child,
@@ -4255,13 +4273,13 @@ html.dark .tags-track > span {
   font-size: 11.5px;
 }
 .inv-cost-ap {
-  font-weight: 800;
+  font-weight: 700;
   color: #8a5a1e;
   cursor: help;
 }
 .inv-cost-ap em {
   font-style: normal;
-  font-weight: 700;
+  font-weight: 600;
   opacity: 0.7;
 }
 :root[data-theme="dark"] .inv-cost-ap,
@@ -4277,7 +4295,7 @@ html.dark .tags-track > span {
 }
 .invest-basis > summary {
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--accent);
   padding: 4px 0;
 }
@@ -4301,7 +4319,7 @@ html.dark .tags-track > span {
   padding: 3px 12px;
   cursor: pointer;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   flex: none;
 }
 .invest-apply:hover {
@@ -4331,7 +4349,7 @@ html.dark .tags-track > span {
 }
 .invest-applied {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: #2f7d3a;
   white-space: nowrap;
   flex: none;
@@ -4348,7 +4366,7 @@ html.dark .tags-track > span {
   padding: 5px 10px;
   cursor: pointer;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 .invest-revert:hover {
@@ -4382,7 +4400,7 @@ html.dark .tags-track > span {
   padding: 4px 11px;
   cursor: pointer;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .invest-temp-bar button.revert {
   border-color: #c08a2e;
@@ -4399,7 +4417,7 @@ html.dark .tags-track > span {
   padding: 5px 12px;
   cursor: pointer;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 .invest-applyall:hover {
@@ -4414,7 +4432,7 @@ html.dark .tags-track > span {
   padding: 5px 12px;
   cursor: pointer;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 .invest-applysel:not(:disabled):hover {
@@ -4425,7 +4443,7 @@ html.dark .tags-track > span {
   background: var(--bg-soft);
   color: var(--muted);
   border-color: var(--line);
-  font-weight: 700;
+  font-weight: 600;
 }
 .invest-note-sub {
   margin-top: 2px;
@@ -4466,7 +4484,7 @@ html.dark .tags-track > span {
   padding-top: 7px;
 }
 .inv-cost-label {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
 }
 .inv-mat {
@@ -5175,7 +5193,7 @@ html.dark .tags-track > span {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--muted);
 }
 .prio-setting label.on {
@@ -5203,7 +5221,7 @@ html.dark .tags-track > span {
   color: var(--ink2);
   padding: 10px 13px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
 }
@@ -5296,7 +5314,7 @@ html.dark .tags-track > span {
   background: transparent;
   padding: 8px 16px;
   font-size: 13.5px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .shift-tabs button.selected {
@@ -5351,7 +5369,7 @@ html.dark .tags-track > span {
   background: var(--chip);
   color: var(--lime);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 .room-clock {
@@ -5361,7 +5379,7 @@ html.dark .tags-track > span {
   background: var(--chip);
   color: var(--lime);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   font-style: normal;
   letter-spacing: -0.3px;
   white-space: nowrap;
@@ -5384,7 +5402,7 @@ html.dark .tags-track > span {
   background: transparent;
   /* ⚠ font 단축 속성에 family로 inherit을 쓰면 선언 전체가 무효다 — 개별 속성으로 쓴다 */
   font-size: 8px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.4;
   letter-spacing: 0.04em;
   vertical-align: middle;
@@ -5411,7 +5429,7 @@ html.dark .tags-track > span {
   background: linear-gradient(135deg, #ff5a3c, #ff2d78);
   color: #fff;
   font-size: 9.5px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: 0.02em;
   line-height: 1.5;
   pointer-events: none;      /* 버튼 위에 떠 있으므로 클릭을 가로채지 않게 */
@@ -5603,7 +5621,7 @@ html.dark .tags-track > span {
   padding: 8px 16px;
   cursor: pointer;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 .srb-run:not(:disabled):hover {
@@ -5622,7 +5640,7 @@ html.dark .tags-track > span {
 .srb-run .srb-sub {
   margin-left: 8px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   font-style: normal;
   opacity: 0.72;
 }
@@ -5639,14 +5657,14 @@ html.dark .tags-track > span {
   white-space: nowrap;
 }
 .ship-raisebar .srb-top {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 12px;
   color: var(--ink);
   white-space: nowrap;
 }
 .ship-raisebar .srb-gain {
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 .ship-raisebar .srb-gain .a {
@@ -5678,7 +5696,7 @@ html.dark .tags-track > span {
   padding: 4px 10px;
   cursor: pointer;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 /* 추천 완료 상태에선 메인 버튼(.srb-run 37.5px)과 나란히 서므로 같은 높이·모서리로 */
@@ -5686,7 +5704,7 @@ html.dark .tags-track > span {
   padding: 8px 14px;
   border-radius: 8px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .ship-raisebar .srb-btns button.run {
   border-color: var(--lime);
@@ -5703,7 +5721,7 @@ html.dark .tags-track > span {
 }
 .raise-delta {
   font-style: normal;
-  font-weight: 700;
+  font-weight: 600;
 }
 .raise-delta.up {
   color: #2f7d3a;
@@ -5876,7 +5894,7 @@ html.dark .tags-track > span {
   top: 2px;
   right: 2px;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 8.5px;
   line-height: 1;
   padding: 2px 4px;
@@ -5930,7 +5948,7 @@ html.dark .tags-track > span {
   vertical-align: middle;
   color: #ffffffcc;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.4;
   letter-spacing: 0;
 }
@@ -5956,7 +5974,7 @@ html.dark .tags-track > span {
 .room-modal .rh-eff-total {
   color: #ffffffc4;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
@@ -5977,7 +5995,7 @@ html.dark .tags-track > span {
   padding: 2.5px 7px;
   color: #ffffffcc;
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 .room-modal .rh-eff-parts span b {
@@ -6065,7 +6083,7 @@ html.dark .tags-track > span {
 }
 .crew-card p em {
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
 }
 /* 이 방에선 안 걸리는 스킬 (씬 '편집 α'·팔라스 '승리의 계책'은 작전기록 전용) — 목록에서
@@ -6083,7 +6101,7 @@ html.dark .tags-track > span {
   color: var(--ink3);
   font-size: 11px;
   font-style: normal;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 .crew-card small {
@@ -6156,7 +6174,7 @@ html.dark .tags-track > span {
   color: var(--lime);
   padding: 9px 14px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -6189,7 +6207,7 @@ html.dark .tags-track > span {
   background: transparent;
   padding: 11px 13px;
   font-size: 13.5px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   text-align: left;
   display: flex;
@@ -6250,7 +6268,7 @@ html.dark .tags-track > span {
 .main-tabs .tab-sub {
   padding: 9px 12px;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
   gap: 6px;
 }
@@ -6271,7 +6289,7 @@ html.dark .tags-track > span {
 .main-tabs .tab-sub.selected .tab-sub-mark { opacity: 0.75; }
 .tab-sub-mark {
   opacity: 0.5;
-  font-weight: 800;
+  font-weight: 700;
 }
 /* 묶음 헤더 오른쪽 화살표 — 플라이아웃이 왼쪽(right:100%)으로 열리므로 ◂ 방향 */
 .tab-group-arrow {
@@ -6282,7 +6300,7 @@ html.dark .tags-track > span {
 .tab-sub-future {
   font-style: normal;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   padding: 1px 5px;
   margin-left: 4px;
   color: var(--on-lime);
@@ -6293,7 +6311,7 @@ html.dark .tags-track > span {
 .tab-sub-past {
   font-style: normal;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   padding: 1px 5px;
   margin-left: 4px;
   color: var(--muted);
@@ -6346,7 +6364,7 @@ html.dark .tags-track > span {
   font-size: 12.5px;
 }
 .flow-branch {
-  font-weight: 900;
+  font-weight: 800;
   font-size: 12.5px;
 }
 .flow-tree li img {
@@ -6395,7 +6413,7 @@ html.dark .tags-track > span {
   background: var(--bg-panel);
   padding: 3px 7px 3px 3px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .sub-chip img {
   width: 18px;
@@ -6422,7 +6440,7 @@ html.dark .tags-track > span {
   background: var(--white);
   padding: 11px 16px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
 }
@@ -6456,7 +6474,7 @@ html.dark .tags-track > span {
   color: #fff;
   padding: 9px 13px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .roster-tools button.apply {
@@ -6473,7 +6491,7 @@ html.dark .tags-track > span {
   color: #fff;
   padding: 9px 13px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
 }
@@ -6515,7 +6533,7 @@ html.dark .tags-track > span {
   color: #ffffffcc;
   padding: 8px 15px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
 }
@@ -6585,7 +6603,7 @@ html.dark .tags-track > span {
   color: var(--ink);
   padding: 9px 14px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
 }
@@ -6623,7 +6641,7 @@ html.dark .tags-track > span {
   flex-direction: column;
   gap: 5px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--muted);
   letter-spacing: 0.04em;
 }
@@ -6697,7 +6715,7 @@ html.dark .tags-track > span {
   background: var(--white);
   padding: 5px 8px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .bulk-group button:hover {
@@ -6764,7 +6782,7 @@ html.dark .tags-track > span {
 }
 .roster-grid span {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.25;
 }
 .elite-toggle {
@@ -6847,7 +6865,7 @@ html.dark .tags-track > span {
 .save-pending {
   position: relative;
   border-color: var(--border-strong) !important;
-  font-weight: 900;
+  font-weight: 800;
   background: var(--lime);
   animation: save-pending-blink 1s ease-in-out 5 both;
 }
@@ -6917,7 +6935,7 @@ html.dark .tags-track > span {
   color: var(--on-lime);
   padding: 9px 14px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   text-decoration: none;
 }
 
@@ -6981,7 +6999,7 @@ html.dark .tags-track > span {
   background: transparent;
   color: var(--ink);
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
@@ -7007,7 +7025,7 @@ html.dark .tags-track > span {
 }
 .recruit-prized-box::after {
   content: "✓";
-  font-weight: 900;
+  font-weight: 800;
 }
 .recruit-prized-toggle.on .recruit-prized-box {
   background: #c8912f;
@@ -7055,7 +7073,7 @@ html.dark .tags-track > span {
   color: #fff;
   padding: 5px 9px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .recruit-combo > header > b {
   color: #fff;
@@ -7080,7 +7098,7 @@ html.dark .tags-track > span {
   background: var(--white);
   padding: 3px 8px 3px 3px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .recruit-combo li img {
   width: 24px;
@@ -7101,7 +7119,7 @@ html.dark .tags-track > span {
   margin-left: 5px;
   font-style: normal;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--tint-warm-ink);
   background: var(--tint-warm);
   padding: 1px 4px;
@@ -7135,7 +7153,7 @@ html.dark .tags-track > span {
   cursor: pointer;
   padding: 12px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .dict-toggle:hover {
   border-color: var(--border-hover);
@@ -7171,7 +7189,7 @@ html.dark .tags-track > span {
   cursor: pointer;
   padding: 0 18px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .clear-btn:hover {
   background: var(--lime);
@@ -7241,7 +7259,7 @@ html.dark .tags-track > span {
   color: var(--lime);
   padding: 12px 22px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.3px;
   box-shadow: 0 10px 30px #0006;
   animation:
@@ -7291,7 +7309,7 @@ html.dark .tags-track > span {
   background: var(--bg-faint);
   color: var(--ink);
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -7426,7 +7444,7 @@ html.dark .tags-track > span {
   width: auto;
   min-width: 34px;
   padding: 0 5px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 .crew-pin.on {
@@ -7477,7 +7495,7 @@ html.dark .tags-track > span {
 }
 .bench > span {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--muted);
 }
 .bench-search {
@@ -7504,7 +7522,7 @@ html.dark .tags-track > span {
 }
 .bench-busy > span {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--muted);
 }
 .sub-chip.busy {
@@ -7558,7 +7576,7 @@ html.dark .tags-track > span {
   color: var(--tint-warm-ink);
   font: inherit;
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .chip-fix:hover { background: var(--tint-warm-ink); color: var(--white); }
@@ -7569,7 +7587,7 @@ html.dark .tags-track > span {
   margin: 2px 4px 0;
   font-style: normal;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25;
   color: var(--tint-warm-ink);
   word-break: keep-all;
@@ -7768,7 +7786,7 @@ html.dark .tags-track > span {
   cursor: pointer;
   padding: 12px 18px;
   font-size: 13.5px;
-  font-weight: 800;
+  font-weight: 700;
   box-shadow: 0 8px 24px #0005;
 }
 .feedback-fab:hover {
@@ -7807,7 +7825,7 @@ html.dark .tags-track > span {
   background: 0 0;
   padding: 8px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .feedback-kind button.selected {
@@ -7850,7 +7868,7 @@ html.dark .tags-track > span {
   background: transparent;
   padding: 6px 10px;
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--muted);
   cursor: pointer;
   transition: 0.15s;
@@ -7900,7 +7918,7 @@ html.dark .tags-track > span {
   background: color-mix(in srgb, var(--lime) 16%, var(--bg-panel));
   color: var(--ink);
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   pointer-events: none;   /* drop 이벤트는 아래 패널이 받아야 한다 */
 }
 /* /admin 피드백 행의 첨부 이미지 — 클릭하면 원본 새 탭 */
@@ -7976,7 +7994,7 @@ html.dark .tags-track > span {
   color: var(--lime);
   padding: 6px 10px;
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -8014,7 +8032,7 @@ html.dark .tags-track > span {
   cursor: pointer;
   padding: 8px 16px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .feedback-send:disabled {
   opacity: 0.45;
@@ -8038,7 +8056,7 @@ html.dark .tags-track > span {
   background: linear-gradient(135deg, #ff5a3c, #ff2d78);
   color: #fff;
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 800;
   line-height: 1;
 }
 .fb-board-panel {
@@ -8058,7 +8076,7 @@ html.dark .tags-track > span {
   cursor: pointer;
   padding: 7px 12px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 .fb-new-btn:hover {
@@ -8083,7 +8101,7 @@ html.dark .tags-track > span {
 }
 .fb-reviewed-chip {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--lime);
   white-space: nowrap;
 }
@@ -8119,7 +8137,7 @@ html.dark .tags-track > span {
 }
 .fb-kind-chip {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   padding: 2px 6px;
   border-radius: 4px;
   border: 1px solid var(--line);
@@ -8133,7 +8151,7 @@ html.dark .tags-track > span {
 }
 .fb-reply-chip {
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--lime);
   white-space: nowrap;
 }
@@ -8287,7 +8305,7 @@ html.dark .tags-track > span {
 .fb-new-tag {
   font-style: normal;
   font-size: 9.5px;
-  font-weight: 900;
+  font-weight: 800;
   color: #fff;
   background: linear-gradient(135deg, #ff5a3c, #ff2d78);
   padding: 1px 6px;
@@ -8304,7 +8322,7 @@ html.dark .tags-track > span {
   color: var(--muted);
   padding: 3px 9px;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .fb-tool-btn:hover:not(:disabled) {
@@ -8392,7 +8410,7 @@ html.dark .tags-track > span {
   color: inherit;
   padding: 3px 8px;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .fb-code-row button:hover,
@@ -8446,7 +8464,7 @@ html.dark .tags-track > span {
   background: 0 0;
   color: var(--muted);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   padding: 0;
 }
@@ -8491,7 +8509,7 @@ html.dark .tags-track > span {
   background: var(--chip);
   color: var(--lime);
   padding: 11px 18px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .admin-gate p {
@@ -8536,7 +8554,7 @@ html.dark .tags-track > span {
   background: var(--white);
   padding: 8px 12px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .admin-tools button.selected {
@@ -8644,7 +8662,7 @@ html.dark .tags-track > span {
   background: 0 0;
   color: #c0392b;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   padding: 5px 10px;
 }
@@ -8679,7 +8697,7 @@ html.dark .tags-track > span {
   font-style: normal;
   color: var(--ok);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .admin-row > header .review-btn {
   color: var(--ok);
@@ -8697,7 +8715,7 @@ html.dark .tags-track > span {
   font-style: normal;
   color: #b26a00;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .admin-row > header .handling-btn {
   color: #b26a00;
@@ -8738,7 +8756,7 @@ html.dark .tags-track > span {
   color: var(--tint-lime-ink);
   padding: 3px 8px;
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   text-decoration: none;
 }
 .page-chip:hover {
@@ -8802,7 +8820,7 @@ html.dark .tags-track > span {
 }
 .rule-group summary small {
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 600;
 }
 .rule-row {
   display: flex;
@@ -8817,7 +8835,7 @@ html.dark .tags-track > span {
   margin-top: 8px;
 }
 .rule-row code {
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 .rule-row.status-draft code {
@@ -8856,7 +8874,7 @@ html.dark .tags-track > span {
   background: var(--white);
   padding: 3px 9px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -8910,7 +8928,7 @@ html.dark .tags-track > span {
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 /* /admin 파일 저장소(R2) 탭 */
 .file-drop {
@@ -8921,7 +8939,7 @@ html.dark .tags-track > span {
   text-align: center;
   color: var(--muted);
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .file-drop.drag {
@@ -9018,7 +9036,7 @@ html.dark .tags-track > span {
   margin-left: 5px;
   font-style: normal;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--gold-ink);
   background: var(--tint-gold);
   padding: 1px 4px;
@@ -9047,7 +9065,7 @@ html.dark .tags-track > span {
   background: var(--white);
   padding: 9px 16px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .confirm-actions .confirm-yes {
@@ -9123,7 +9141,7 @@ html.dark .tags-track > span {
   font-size: 12.5px;
 }
 .chip-stage .chip-zone {
-  font-weight: 700;
+  font-weight: 600;
 }
 .chip-stage .farm-sanity {
   margin-left: auto;
@@ -9182,7 +9200,7 @@ html.dark .tags-track > span {
   background: var(--white);
   padding: 8px 12px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
 }
@@ -9209,7 +9227,7 @@ html.dark .tags-track > span {
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .farm-perm-toggle input {
@@ -9350,11 +9368,11 @@ html.dark .tags-track > span {
   color: var(--blue-ink);
 }
 .farm-rate {
-  font-weight: 800;
+  font-weight: 700;
 }
 .farm-sanity {
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 600;
 }
 @media (max-width: 760px) {
   .farm {
@@ -9410,7 +9428,7 @@ html.dark .tags-track > span {
   background: var(--white);
   padding: 9px 18px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   letter-spacing: -0.2px;
   /* 내용보다 좁아지지 않는다 — 위 세로 쪼개짐의 직접 원인 */
@@ -9733,7 +9751,7 @@ html.dark .tags-track > span {
   background: var(--white);
   padding: 7px 16px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   letter-spacing: 0.3px;
 }
@@ -9767,7 +9785,7 @@ html.dark .tags-track > span {
   align-items: center;
   gap: 8px;
   font-size: 15px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.3px;
   margin: 0 0 13px;
   padding-left: 11px;
@@ -9839,7 +9857,7 @@ html.dark .tags-track > span {
 }
 .chron-item-name {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.35;
   word-break: keep-all;
   overflow-wrap: anywhere;
@@ -9921,7 +9939,7 @@ html.dark .tags-track > span {
 }
 .story-search-menu .ss-name {
   font-size: 13.5px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .story-search-menu .ss-meta {
   font-size: 12px;
@@ -10011,7 +10029,7 @@ html.dark .story-card:hover .story-thumb img {
 .digest-group > h3 {
   margin: 0 0 12px;
   font-size: 13.5px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.2px;
   border-left: 3px solid var(--line);
   padding-left: 9px;
@@ -10039,7 +10057,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .digest-group-link .digest-group-anchor {
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 600;
   opacity: 0;
   transition: opacity 0.15s;
 }
@@ -10184,7 +10202,7 @@ html.dark .story-card:hover .story-thumb img {
   background: var(--white);
   padding: 8px 14px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
 }
@@ -10293,7 +10311,7 @@ html.dark .story-card:hover .story-thumb img {
 .story-tagline {
   margin: 0 0 14px;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.6;
 }
 .story-disclaimer {
@@ -10352,7 +10370,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 0;
   background: var(--white);
   padding: 9px 18px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13px;
   cursor: pointer;
   color: var(--muted);
@@ -10408,7 +10426,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 0;
   background: var(--white);
   padding: 5px 11px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 11.5px;
   cursor: pointer;
   color: var(--muted);
@@ -10431,7 +10449,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 0;
   background: var(--white);
   padding: 6px 16px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 12px;
   cursor: pointer;
   color: var(--muted);
@@ -10571,7 +10589,7 @@ html.dark .story-card:hover .story-thumb img {
   margin-left: 8px;
   color: var(--muted);
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .sc-body {
   max-width: 860px;
@@ -10591,7 +10609,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .sc-name {
   color: #8a6d3b;
-  font-weight: 900;
+  font-weight: 800;
   font-size: 13.5px;
   padding-top: 2px;
   word-break: keep-all;
@@ -10729,12 +10747,12 @@ html.dark .story-card:hover .story-thumb img {
   border: 1px solid var(--border-strong);
   padding: 5px 11px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .sc-br {
   margin: 12px 0 8px 140px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--muted);
 }
 .sc-ep-foot {
@@ -10748,7 +10766,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 10px 16px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13px;
   cursor: pointer;
 }
@@ -10967,7 +10985,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 0;
   background: none;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.2px;
   color: var(--muted);
 }
@@ -11178,7 +11196,7 @@ html.dark .story-card:hover .story-thumb img {
   border-left: 3px solid var(--border-strong);
 }
 .about-card-highlight strong {
-  font-weight: 800;
+  font-weight: 700;
 }
 .about-card-bullets {
   margin: 0 0 14px;
@@ -11361,7 +11379,7 @@ html.dark .story-card:hover .story-thumb img {
 .ac-simband-card:hover { border-color: var(--border-hover); }
 .ac-simband-card img { width: 22px; height: 22px; flex: none; object-fit: contain; }
 .ac-simband-card > span { display: flex; align-items: center; gap: 7px; flex: none; min-width: 0; }
-.ac-simband-card b { font-size: 13px; font-weight: 900; white-space: nowrap; }
+.ac-simband-card b { font-size: 13px; font-weight: 800; white-space: nowrap; }
 /* 설명은 한 줄로 잘라 흘린다 — 두 줄이면 카드가 다시 줄 높이를 깨뜨린다 */
 .ac-simband-card small {
   min-width: 0;
@@ -11419,7 +11437,7 @@ html.dark .story-card:hover .story-thumb img {
 .roster-section-head {
   margin: 14px 2px 8px;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0.75;
   display: flex;
@@ -11431,7 +11449,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .roster-section-head em {
   font-style: normal;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 11px;
   padding: 1px 6px;
   border-radius: 999px;
@@ -11556,7 +11574,7 @@ html.dark .story-card:hover .story-thumb img {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .cost-parts input {
@@ -11704,7 +11722,7 @@ html.dark .story-card:hover .story-thumb img {
   padding: 4px 8px;
   margin-left: auto;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -11733,7 +11751,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .cost-row-group {
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.25;
   white-space: normal;
   word-break: keep-all;
@@ -11877,7 +11895,7 @@ html.dark .story-card:hover .story-thumb img {
   color: var(--lime);
   padding: 6px 11px;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   transition: 0.15s;
@@ -12008,14 +12026,14 @@ html.dark .story-card:hover .story-thumb img {
 }
 .item-stages li span {
   text-align: right;
-  font-weight: 700;
+  font-weight: 600;
 }
 .cost-chip-name {
   border: 0;
   background: none;
   padding: 0;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .cost-chip-name:hover {
@@ -12038,7 +12056,7 @@ html.dark .story-card:hover .story-thumb img {
   background: none;
   padding: 6px 10px;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .cost-clear:hover {
@@ -12090,7 +12108,7 @@ html.dark .story-card:hover .story-thumb img {
   background: var(--paper);
   padding: 6px 8px;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   text-align: left;
   color: var(--ink);
 }
@@ -12267,20 +12285,20 @@ html.dark .pt-stage {
   min-width: 3ch;
   font-variant-numeric: tabular-nums;
   font-size: 30px;
-  font-weight: 900;
+  font-weight: 800;
   line-height: 1;
   letter-spacing: -0.02em;
 }
 .pt-lv small {
   font-family: monospace;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.12em;
   opacity: 0.7;
 }
 .pt-name {
   font-size: clamp(22px, 3vw, 30px);
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--pt-over);
   text-shadow: var(--pt-over-shadow);
@@ -12337,7 +12355,7 @@ html.dark .pt-stage {
 .pt-group-cap {
   flex: none;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.14em;
   color: var(--pt-ink);
   opacity: 0.62;
@@ -12414,7 +12432,7 @@ html.dark .pt-stage {
 }
 .pt-ko {
   font-size: clamp(14.5px, 1.6vw, 18px);
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.015em;
   color: var(--pt-ink);
   overflow: hidden;
@@ -12486,7 +12504,7 @@ html.dark .pt-stage {
   background: #000000a6;
   color: #fff;
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 800;
   line-height: 1;
   cursor: pointer;
   opacity: 0.72;
@@ -12539,7 +12557,7 @@ html.dark .pt-stage {
 }
 .pt-banner-txt b {
   font-size: 12.5px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--pt-strip-ink);
   text-shadow: 0 1px 5px #000c;
   overflow: hidden;
@@ -12549,7 +12567,7 @@ html.dark .pt-stage {
 .pt-banner-txt small {
   font-family: monospace;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   color: color-mix(in srgb, var(--pt-strip-ink) 72%, transparent);
   text-shadow: 0 1px 5px #000c;
 }
@@ -12595,12 +12613,12 @@ html.dark .pt-stage {
   text-align: center;
   font-family: monospace;
   font-size: 12.5px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.03em;
 }
 .pt-gauge small {
   font-size: 8px;
-  font-weight: 800;
+  font-weight: 700;
   opacity: 0.62;
 }
 
@@ -12982,7 +13000,7 @@ html.dark.rg-theme.rg6 .site-header {
   padding: 2px 8px;
   border-radius: 10px;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
 }
 /* 중국어 원문 병기 (CN 선행 토픽) — 인라인 표기용 */
 .rg-cn {
@@ -13107,7 +13125,7 @@ html.dark.rg-theme.rg6 .site-header {
   position: relative;
 }
 .rg-zonecard-name {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 14px;
   line-height: 1.3;
 }
@@ -13247,7 +13265,7 @@ html.rg-theme {
   flex-wrap: wrap;
 }
 .rg-topic {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13px;
   line-height: 1.2;
   padding: 5px 12px;
@@ -13264,7 +13282,7 @@ html.rg-theme {
   color: var(--rgmut);
   background: 0 0;
   cursor: default;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13px;
   line-height: 1.2;
 }
@@ -13382,7 +13400,7 @@ html.rg-theme {
   border: 0;
   border-radius: 4px;
   color: var(--rgtext2);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 9.5px;
   line-height: 1.3;
   cursor: pointer;
@@ -13442,7 +13460,7 @@ html.rg-theme {
 }
 .rg-topicsel-label {
   grid-column: 1;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 9.5px;
   line-height: 1;
   letter-spacing: 1.6px;
@@ -13457,7 +13475,7 @@ html.rg-theme {
   gap: 8px;
   /* 오른쪽 한섭/중섭 미니 토글 자리 — 긴 테마명이 그 밑으로 파고들지 않게 (2026-08-04) */
   padding-right: 88px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 12.5px;
   line-height: 1.25;
 }
@@ -13525,7 +13543,7 @@ html.rg-theme {
   flex: 1;
 }
 .rg-topicsel-future {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 10px;
   line-height: 1;
   font-style: normal;
@@ -13589,7 +13607,7 @@ html.rg-theme {
   background: 0 0;
   color: var(--rgink);
   padding: 3px 9px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
@@ -13644,7 +13662,7 @@ html.rg-theme {
   white-space: nowrap;
   display: flex;
   align-items: center;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 13px;
   line-height: 1.2;
   color: var(--rgmut);
@@ -13667,7 +13685,7 @@ html.rg-theme {
   background: var(--rgcard);
   color: var(--rgink);
   padding: 7px 14px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13.5px;
   line-height: 1;
   cursor: pointer;
@@ -13766,7 +13784,7 @@ html.rg-theme {
   background: var(--rgdeep);
   color: var(--rgink);
   padding: 7px 16px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
@@ -13964,7 +13982,7 @@ html.rg-theme {
   margin-bottom: 5px;
 }
 .rg-stagecard-name {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 12.5px;
   line-height: 1.35;
   padding: 0 6px;
@@ -14018,7 +14036,7 @@ html.rg-theme {
 
 /* 조우 */
 .rg-enc-title {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13.5px;
   color: var(--rgink);
 }
@@ -14067,7 +14085,7 @@ html.rg-theme {
 }
 .rg-relic-obtain em {
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
   margin-right: 6px;
   color: var(--ink3, var(--ink2));
 }
@@ -14300,7 +14318,7 @@ html.rg-theme {
   background: var(--rgcard);
   color: var(--rgink);
   padding: 6px 12px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 12.5px;
   line-height: 1;
   cursor: pointer;
@@ -14463,7 +14481,7 @@ html.rg-theme {
 .rg-chip.boss {
   border-color: var(--rggold);
   color: var(--rggold);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* 전시관 */
@@ -14623,7 +14641,7 @@ html.rg-theme {
 }
 .rg-ending-cond li::marker {
   color: var(--rggold);
-  font-weight: 800;
+  font-weight: 700;
 }
 .rg-ending-change {
   margin: 0;
@@ -14643,7 +14661,7 @@ html.rg-theme {
 .rg-ending-sec > h4 {
   margin: 0 0 7px;
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--rggold);
@@ -14693,7 +14711,7 @@ html.rg-theme {
 .rg-rec-row strong {
   flex: none;
   min-width: 110px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .rg-rec-btn span,
 .rg-rec-row span {
@@ -14704,7 +14722,7 @@ html.rg-theme {
   flex: none;
   font-style: normal;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--rggold);
   white-space: nowrap;
 }
@@ -14750,7 +14768,7 @@ html.rg-theme {
   gap: 7px;
   margin: 0 0 2px -30px;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--rggold);
 }
 .rg-rec-who img {
@@ -14849,7 +14867,7 @@ button.rg-visitor-scene-row:hover {
   background: color-mix(in srgb, var(--rggold) 7%, transparent);
 }
 .rg-visitor-where {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 11.5px;
   color: var(--rggold);
 }
@@ -14960,7 +14978,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   background: 0 0;
   padding: 0;
   font: inherit;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--rggold);
   cursor: pointer;
   text-decoration: underline dotted;
@@ -14975,7 +14993,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   background: 0 0;
   padding: 0;
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   color: #d8b8f0;
   cursor: pointer;
   text-decoration: underline dotted;
@@ -15240,7 +15258,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   height: 15px;
   line-height: 15px;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 800;
   text-align: center;
   color: #16130d;
   background: var(--rc, var(--rgcrim));
@@ -15271,7 +15289,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   border-color: var(--rggold);
 }
 .rg-enemy-name {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13.5px;
 }
 .rg-enemy-cnt {
@@ -15448,7 +15466,7 @@ main.site-main > .site-header {
   border-radius: 8px 0 0 8px;
   padding: 8px 12px;
   font-size: 0.85rem;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .lens-open-btn:hover {
@@ -15491,7 +15509,7 @@ main.site-main > .site-header {
   color: var(--ink2);
   border-radius: 0 8px 8px 0;
   font-size: 0.85rem;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .lens-help-btn:hover {
@@ -15514,7 +15532,7 @@ main.site-main > .site-header {
   padding: 7px 14px;
   border-radius: 999px;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
   background: color-mix(in srgb, var(--lime) 14%, var(--paper));
   border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
@@ -15589,7 +15607,7 @@ main.site-main > .site-header {
   align-items: center;
   gap: 8px;
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
   animation: lens-warp-pulse 1.1s ease-in-out infinite;
 }
@@ -15631,7 +15649,7 @@ main.site-main > .site-header {
   border-radius: 999px;
   padding: 7px 14px;
   font-size: 0.88rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .lens-chip:hover {
@@ -15677,7 +15695,7 @@ main.site-main > .site-header {
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.6;
-  font-weight: 700;
+  font-weight: 600;
 }
 .lens-help ol,
 .lens-help ul {
@@ -15725,7 +15743,7 @@ main.site-main > .site-header {
   border-radius: 50%;
   background: var(--lime);
   color: #1c2413;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 0.85rem;
   display: flex;
   align-items: center;
@@ -15898,7 +15916,7 @@ main.site-main > .site-header {
 .rg-invmodal .rg-filterbar button {
   padding: 3px 8px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.5;
   border-radius: var(--r-sm);
 }
@@ -15911,7 +15929,7 @@ main.site-main > .site-header {
   margin-left: auto;
   border-color: color-mix(in srgb, var(--rggold) 55%, var(--rgline)) !important;
   color: var(--rggold) !important;
-  font-weight: 800;
+  font-weight: 700;
 }
 .rg-filterbar .rg-inv-sum + .rg-inv-clear {
   margin-left: 6px;
@@ -15952,7 +15970,7 @@ main.site-main > .site-header {
 .rg-efftot-grp h5 {
   margin: 0 0 5px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--rgmuted);
 }
@@ -15995,7 +16013,7 @@ main.site-main > .site-header {
   border: 0 !important;
   background: none !important;
   padding-left: 0 !important;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--rgink) !important;
 }
 .rg-efftot-none,
@@ -16028,7 +16046,7 @@ main.site-main > .site-header {
      크기: 57×30 → 50×23 (사용자 지적 2026-07-29 "버튼 좀 큰 것 같다").
      카드 제목이 14px인데 알약이 12px+상하 8px 패딩이라 이름만큼 눈에 띄었다.
      종전 주석의 "박스 크기 바꾸지 말 것(2026-07-24)"은 이 지시로 대체됐다. */
-  font-weight: 700;
+  font-weight: 600;
   font-size: 11px;
   line-height: 1;
   padding: 5px 8px;
@@ -16065,7 +16083,7 @@ main.site-main > .site-header {
   color: var(--rgink);
   /* 박스 크기는 유지, 폰트만 축소 — font 단축+inherit는 무효라 롱핸드 (사용자 확정 2026-07-24) */
   padding: 11px 14px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
@@ -16164,7 +16182,7 @@ main.site-main > .site-header {
   border: none;
   border-radius: 8px;
   padding: 9px 18px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .scanner-primary:disabled {
@@ -16480,7 +16498,7 @@ main.site-main > .site-header {
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
   border: 1px solid var(--bg-panel2);
   background: var(--bg-soft);
   color: var(--ink2);
@@ -16665,7 +16683,7 @@ main.site-main > .site-header {
 }
 .bridge-toast b {
   color: var(--ink2);
-  font-weight: 700;
+  font-weight: 600;
 }
 .bridge-toast.busy b {
   color: var(--accent, #b98a2f);
@@ -16676,7 +16694,7 @@ main.site-main > .site-header {
   background: transparent;
   color: var(--ink2);
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 4px 8px;
   border-radius: 5px;
   cursor: pointer;
@@ -16697,7 +16715,7 @@ main.site-main > .site-header {
   background: transparent;
   color: var(--ink3, var(--ink2));
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 4px 8px;
   border-radius: 5px;
   cursor: pointer;
@@ -16738,7 +16756,7 @@ main.site-main > .site-header {
 .br-theme {
   font-size: 12px;
   color: var(--accent, #b98a2f);
-  font-weight: 700;
+  font-weight: 600;
 }
 .br-imported {
   font-size: 10.5px;
@@ -16754,7 +16772,7 @@ main.site-main > .site-header {
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 1px 6px;
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .br-range {
@@ -16796,7 +16814,7 @@ main.site-main > .site-header {
 .br-type {
   flex: none;
   min-width: 52px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
   font-size: 11px;
 }
@@ -16830,7 +16848,7 @@ main.site-main > .site-header {
 .br-emg {
   font-style: normal;
   color: #c0392b;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 10.5px;
   margin-right: 5px;
 }
@@ -16880,7 +16898,7 @@ main.site-main > .site-header {
 }
 .bridge-status b {
   color: var(--ink2);
-  font-weight: 700;
+  font-weight: 600;
 }
 .bridge-status.busy b {
   color: var(--accent, #b98a2f);
@@ -16965,7 +16983,7 @@ main.site-main > .site-header {
   color: var(--lime);
   padding: 9px 14px;
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -16980,7 +16998,7 @@ main.site-main > .site-header {
   background: var(--tint-lime, var(--bg-soft));
   color: var(--tint-lime-ink, var(--ink));
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .omni-msg {
   margin: 0;
@@ -17033,7 +17051,7 @@ main.site-main > .site-header {
 }
 .omni-name {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -17061,7 +17079,7 @@ main.site-main > .site-header {
   color: var(--ink2);
   padding: 5px 9px;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .omni-more:disabled {
@@ -17150,7 +17168,7 @@ main.site-main > .site-header {
   background: var(--tint-lime, var(--bg-soft));
   color: var(--tint-lime-ink, var(--ink2));
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 /* 비제어 입력의 부수 UI를 CSS로 — 지우기(×)는 입력이 있을 때만, [바로가기]는 비었으면 흐리게.
@@ -17174,14 +17192,14 @@ main.site-main > .site-header {
   border: 1px dashed var(--line);
   color: var(--muted);
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 /* 통합전략 자료 자동 로딩 상태 (버튼이 아니라 안내 — 사용자 요청 2026-07-25) */
 .omni-loading {
   color: var(--muted);
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .omni-loading::before {
   content: "⋯ ";
@@ -17294,7 +17312,7 @@ main.site-main > .site-header {
   color: var(--ink2);
   font-family: inherit;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .drop-btn.on {
@@ -17457,7 +17475,7 @@ main.site-main > .site-header {
   gap: 6px;
   margin-bottom: 9px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   display: flex;
 }
 .summon-list {
@@ -17501,7 +17519,7 @@ main.site-main > .site-header {
 .summon-stats dd {
   margin: 1px 0 0;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .summon-range {
   flex: none;
@@ -17521,7 +17539,7 @@ main.site-main > .site-header {
 .summon-sub > b {
   color: var(--muted);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .summon-sub p {
   margin: 5px 0 0;
@@ -17532,7 +17550,7 @@ main.site-main > .site-header {
   color: var(--ink);
   margin-right: 6px;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
 }
 .summon-skill + .summon-skill {
   margin-top: 8px;
@@ -17907,7 +17925,7 @@ main.site-main > .site-header {
   background: var(--ink);
   color: var(--bg-panel);
   border-color: transparent;
-  font-weight: 700;
+  font-weight: 600;
 }
 .chibi-chat-progress {
   height: 8px;
@@ -18017,7 +18035,7 @@ main.site-main > .site-header {
   white-space: nowrap;
   color: var(--muted);
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
 }
 .mw-pin {
@@ -18112,7 +18130,7 @@ main.site-main > .site-header {
   color: var(--ink2);
   text-decoration: none;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   transition: border-color 0.15s, color 0.15s;
 }
 .op-related-chip:hover {
@@ -18167,7 +18185,7 @@ main.site-main > .site-header {
   color: var(--ink2);
   text-decoration: none;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   transition: border-color 0.15s, color 0.15s;
 }
 .story-related-list a:hover {
@@ -18683,7 +18701,7 @@ main.site-main > .site-header {
   background: var(--white);
   color: var(--ink2);
   padding: 5px 12px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
@@ -18709,7 +18727,7 @@ main.site-main > .site-header {
   background: var(--white);
   color: var(--ink2);
   padding: 5px 10px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
@@ -18726,7 +18744,7 @@ main.site-main > .site-header {
 }
 .st-simtime {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -18755,7 +18773,7 @@ main.site-main > .site-header {
   margin-left: 4px;
   padding: 2.5px 9px;
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
@@ -18778,7 +18796,7 @@ main.site-main > .site-header {
   align-items: center;
   margin: 0 0 4px;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
 }
 .st-routekey span {
@@ -18860,7 +18878,7 @@ main.site-main > .site-header {
   transform: translate(-50%, calc(-100% - 10px));
   padding: 4px 8px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.4;
   white-space: nowrap;
   color: var(--white);
@@ -18899,7 +18917,7 @@ main.site-main > .site-header {
   height: 15px;
   line-height: 15px;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 800;
   text-align: center;
   color: #16130d;
   background: var(--rc, #b3372e);
@@ -18953,7 +18971,7 @@ main.site-main > .site-header {
   background: var(--white);
   color: var(--ink2);
   padding: 7px 16px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
@@ -19114,7 +19132,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 }
 .st-enemy-stats b.up {
   color: #b3372e;
-  font-weight: 800;
+  font-weight: 700;
 }
 .st-enemy-name {
   display: flex;
@@ -19326,7 +19344,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   flex: none;
   padding: 8px 16px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--white);
   background: var(--ink);
   border: 1px solid var(--ink);
@@ -19400,7 +19418,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .sb-views button {
   padding: 7px 13px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
@@ -19467,7 +19485,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   white-space: nowrap;
   font-style: normal;
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   padding: 2px 8px 2px 4px;
   border: 1px solid var(--line);
   color: var(--ink2);
@@ -19586,7 +19604,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   align-items: center;
   padding: 3px 8px 3px 4px;
   font-size: 11px;     /* 12.5 → 11.5 → 11px (사용자 지적 2026-08-12, 두 번) */
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.3;
   border: 1px solid var(--line);
   background: var(--white);
@@ -19596,7 +19614,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   font-style: normal;
   margin-left: 4px;
   color: var(--muted);
-  font-weight: 800;
+  font-weight: 700;
 }
 /* 지도 마커 색과 짝 — 이름 앞 작은 점 */
 .sb-ob i.dot {
@@ -19689,7 +19707,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   gap: 5px;
   padding: 5px 11px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
@@ -19759,7 +19777,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   gap: 4px;
   font-style: normal;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
 }
 .sb-stres img { width: 20px; height: 20px; object-fit: contain; background: #10141c; border-radius: 4px; }
@@ -19788,7 +19806,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-picks button {
   padding: 5px 12px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
@@ -19803,7 +19821,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   gap: 5px;
   font-style: normal;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 4px 9px 4px 5px;
   border: 1px solid var(--line);
 }
@@ -19813,7 +19831,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-atlist button {
   padding: 4px 10px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
@@ -19848,7 +19866,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   padding: 2px 8px 2px 3px;
   font: inherit;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
@@ -19865,7 +19883,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-season-sub {
   margin-left: 10px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--muted);
   vertical-align: 3px;
 }
@@ -19876,7 +19894,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-cards .sb-card.sb-card-noimg > .sb-cmeta,
 .sb-cards .sb-card.sb-card-noimg > .sb-cdesc { grid-column: 1; }
 /* 지역 카드의 자원 줄 — 오브젝트는 개수까지 (사용자 요청 2026-08-12) */
-.sb-stres i.ob b { font-weight: 800; color: var(--ink2); }
+.sb-stres i.ob b { font-weight: 700; color: var(--ink2); }
 .sb-stres i.ob { opacity: 0.95; }
 /* 상세 모달 — 본문이 창 가장자리에 딱 붙던 문제 수정 (사용자 지적 2026-08-12).
    .mw-body에 패딩이 없는 게 기본이라 모달마다 자기 여백을 준다 (item-modal과 같은 관례). */
@@ -19912,7 +19930,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   padding: 1px 6px;
   font: inherit;
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
   color: #fff;
   background: #10141cd0;
@@ -19988,7 +20006,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   padding: 1px 4px;
   font-style: normal;
   font-size: 9.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: #fff;
   background: #10141cc0;
 }
@@ -20026,7 +20044,7 @@ p.sb-trline { margin-top: 2px; }
   background: var(--bg-faint); cursor: pointer; text-align: left; font: inherit; color: inherit;
 }
 .rec-item:hover { border-color: var(--border-hover); }
-.rec-item > b { font-size: 13.5px; font-weight: 900; letter-spacing: -0.01em; }
+.rec-item > b { font-size: 13.5px; font-weight: 800; letter-spacing: -0.01em; }
 /* 미실장 배지 — .future-badge 자체엔 여백이 없고 자리마다 붙인다 (.modal-rarity 8px 등).
    여기선 기록명에 딱 달라붙어 있었다 (사용자 지적 2026-09-04). */
 .rec-item > b .future-badge { margin-left: 7px; }
@@ -20107,7 +20125,7 @@ p.sb-trline { margin-top: 2px; }
 .ac-sub {
   margin-left: 10px;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--muted);
 }
 .ac-views { margin-bottom: 8px; }
@@ -20122,7 +20140,7 @@ p.sb-trline { margin-top: 2px; }
 .ac-subtabs button {
   padding: 6px 14px;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
@@ -20160,7 +20178,7 @@ p.sb-trline { margin-top: 2px; }
    드롭다운과 한 줄이라 높이는 .ac-garsel-btn 과 맞추되, 필터가 아니라 **되돌리기**라
    테두리를 점선으로 두어 눌러야 할 버튼처럼 보이지 않게 한다. */
 .ac-filters-clear {
-  padding: 7px 12px; font-size: 12px; font-weight: 700; font-family: inherit;
+  padding: 7px 12px; font-size: 12px; font-weight: 600; font-family: inherit;
   color: var(--muted); background: none; white-space: nowrap;
   border: 1px dashed var(--line); border-radius: var(--r-sm, 6px); cursor: pointer;
 }
@@ -20176,7 +20194,7 @@ p.sb-trline { margin-top: 2px; }
   gap: 5px;
   padding: 7px 11px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
@@ -20200,7 +20218,7 @@ p.sb-trline { margin-top: 2px; }
 .ac-garsel-btn {
   padding: 7px 10px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   font-family: inherit;
   color: var(--ink2);
   background: var(--white);
@@ -20292,7 +20310,7 @@ p.sb-trline { margin-top: 2px; }
 .sb-chip.ac-feed {
   background: color-mix(in srgb, var(--lime) 22%, transparent);
   border-color: color-mix(in srgb, var(--lime) 45%, var(--line));
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* 맹약 메뉴(23개)만 스크롤 — 특질 메뉴에 걸면 서브메뉴 플라이아웃이 잘린다 */
@@ -20349,7 +20367,7 @@ p.sb-trline { margin-top: 2px; }
   overflow: hidden;
   max-width: 100%;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -20419,7 +20437,7 @@ p.sb-trline { margin-top: 2px; }
   font-style: normal;
   font-size: 10.5px;
   font-family: monospace;
-  font-weight: 800;
+  font-weight: 700;
   opacity: 0.55;
 }
 /* 서브메뉴 펼침 버튼 — 데스크탑은 행 호버로도 열리지만, 키보드·터치스크린 노트북은
@@ -20476,7 +20494,7 @@ p.sb-trline { margin-top: 2px; }
 .ac-tier {
   font-style: normal;
   font-size: 10.5px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: 0.02em;
   padding: 2px 6px;
   border-radius: 3px;
@@ -20489,7 +20507,7 @@ p.sb-trline { margin-top: 2px; }
 .ac-t4 { background: #7a5fae; }
 .ac-t5 { background: #c08a2e; }
 .ac-t6 { background: #b3543a; }
-.ac-star { font-style: normal; font-size: 11px; font-weight: 800; color: #c08a2e; }
+.ac-star { font-style: normal; font-size: 11px; font-weight: 700; color: #c08a2e; }
 /* 금색이 흰 종이 위에서 2.93:1 — 라이트에서만 한 단계 어둡게 (다크는 그대로 잘 보인다) */
 html:not(.dark) .ac-star { color: #8f6512; }
 .ac-warn { border-color: #b3543a; color: #b3543a; }
@@ -20511,7 +20529,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   border: 1px solid color-mix(in srgb, #c8891a 20%, transparent);
 }
 .ac-ways > em {
-  font-style: normal; font-weight: 800; font-size: 11px; letter-spacing: .02em;
+  font-style: normal; font-weight: 700; font-size: 11px; letter-spacing: .02em;
   opacity: .78; margin-right: 3px;
 }
 .ac-ways .sb-chip { background: color-mix(in srgb, #c8891a 12%, var(--white)); }
@@ -20541,7 +20559,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   border-color: color-mix(in srgb, #c8891a 44%, transparent);
 }
 .dark .ac-ways .sb-chip { background: color-mix(in srgb, #c8891a 14%, transparent); }
-.ac-hp { font-weight: 800; }
+.ac-hp { font-weight: 700; }
 
 /* ── 맹약 카드 ── */
 .ac-bondsec { margin-top: 4px; }
@@ -20588,7 +20606,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
 .ac-bondmeta i {
   font-style: normal;
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   padding: 2px 7px;
   border-radius: 999px;
   border: 1px solid var(--line);
@@ -20628,7 +20646,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   justify-content: center;
   height: 100%;
   color: var(--muted);
-  font-weight: 800;
+  font-weight: 700;
 }
 .ac-facemini .ac-face-t {
   /* ⚠ 위 `.ac-facemini em`(색: --muted)이 티어 배지의 흰 글자를 덮어 색색 배지 위에
@@ -20646,7 +20664,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
 .ac-facemore {
   align-self: center;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--muted);
 }
 
@@ -20685,7 +20703,7 @@ button.ac-card:hover { border-color: var(--border-hover); background: var(--pape
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--muted);
 }
 .ac-cname { display: block; font-size: 14px; }
@@ -20709,7 +20727,7 @@ button.ac-card:hover { border-color: var(--border-hover); background: var(--pape
   padding: 3px 9px 3px 4px;
   font: inherit;
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink2);
   /* ⚠ --chip은 '어두운 판'(라이트에서 #131719 = 잉크색) 토큰이다 — 이미지 뒤에 까는 용도라
      글자 칩에 쓰면 라이트에서 **검정 배경 + 검정 글씨**가 된다 (실측 대비 1.74:1,
@@ -20757,7 +20775,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   gap: 4px;
   flex: none;
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -20773,14 +20791,14 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   color: #fff;
   font-size: 9.5px;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 .sb-chip.ac-goldchip {
   background: color-mix(in srgb, #c08a2e 18%, transparent);
   border-color: color-mix(in srgb, #c08a2e 55%, var(--line));
   color: var(--ink);
-  font-weight: 800;
+  font-weight: 700;
 }
 /* 골든일 때만 달라지는 스킬 설명 — 능력줄과 같은 금색 계열로 묶는다 */
 .ac-skmod-d.gold {
@@ -20813,7 +20831,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-goldhead {
   margin: 12px 0 4px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   color: #c08a2e;
 }
 .ac-eqd { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--ink2); }
@@ -20854,7 +20872,7 @@ html.dark .ac-krfix { color: #d8b153; }
   color: var(--muted);
   background: var(--paper);
 }
-.ac-table tbody th { font-weight: 800; background: var(--paper); }
+.ac-table tbody th { font-weight: 700; background: var(--paper); }
 .ac-gold-row td, .ac-gold-row th { background: color-mix(in srgb, #c08a2e 7%, var(--white)); }
 .ac-table-sm { font-size: 12px; }
 .ac-table-sm th, .ac-table-sm td { padding: 6px 9px; }
@@ -20862,7 +20880,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-diy {
   font-style: normal;
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   margin-left: 6px;
   color: var(--muted);
 }
@@ -20883,7 +20901,7 @@ html.dark .ac-krfix { color: #d8b153; }
   border: 1px solid var(--line);
 }
 .ac-round b { font-size: 11.5px; color: var(--muted); }
-.ac-round span { font-size: 14px; font-weight: 800; }
+.ac-round span { font-size: 14px; font-weight: 700; }
 
 /* ── 모드·보상 ── */
 .ac-buffs {
@@ -20931,7 +20949,7 @@ html.dark .ac-krfix { color: #d8b153; }
   padding: 5px 12px 5px 7px;
   font: inherit;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
@@ -20961,7 +20979,7 @@ html.dark .ac-krfix { color: #d8b153; }
   margin: 0 0 6px;
   font-size: 12.5px;
 }
-.ac-bosshead span { font-size: 11px; font-weight: 700; color: var(--muted); }
+.ac-bosshead span { font-size: 11px; font-weight: 600; color: var(--muted); }
 .ac-bosshead em { font-style: normal; font-size: 11.5px; font-weight: 500; color: var(--muted); }
 .ac-bosscard { background: var(--paper); }
 .ac-enkey {
@@ -21018,7 +21036,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-encard-meta em {
   font-style: normal;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--muted);
 }
 .ac-enw { color: var(--ink); }
@@ -21049,7 +21067,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-enminicard .ac-enface { width: 40px; height: 40px; }
 .ac-enminicard span { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .ac-enminicard b { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ac-enminicard em { font-style: normal; font-size: 10.5px; font-weight: 700; color: var(--muted); }
+.ac-enminicard em { font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--muted); }
 
 /* ── 티어 묶음 — 오퍼레이터·아이템 목록을 T1~T6으로 나눈다 (사용자 지시 2026-08-22) ── */
 .ac-tiersec { margin-top: 14px; }
@@ -21081,7 +21099,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-diyop b {
   min-width: 0;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -21102,9 +21120,9 @@ html.dark .ac-krfix { color: #d8b153; }
   border: 1px solid var(--line);
 }
 .ac-ms img { width: 26px; height: 26px; object-fit: contain; flex: none; }
-.ac-ms-lv { font-size: 11px; font-weight: 800; color: var(--muted); min-width: 18px; }
-.ac-ms b { flex: 1; min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ac-ms-c { font-weight: 800; }
+.ac-ms-lv { font-size: 11px; font-weight: 700; color: var(--muted); min-width: 18px; }
+.ac-ms b { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-ms-c { font-weight: 700; }
 .ac-ms-tk { font-size: 10.5px; color: var(--muted); }
 
 /* ── 상세 모달 ── */
@@ -21159,7 +21177,7 @@ html.dark .ac-krfix { color: #d8b153; }
   display: block;
   margin-bottom: 3px;
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--lime);
 }
 .ac-kv { margin: 0; padding: 0; list-style: none; }
@@ -21183,7 +21201,7 @@ html.dark .ac-krfix { color: #d8b153; }
 }
 /* ⚠ em이 아니라 span — 티어 배지(.ac-tier)도 em이라, em을 잡으면 배지 글자까지
    muted로 덮여 색판 위에서 안 보인다 (2026-08-22 실측) */
-.ac-tierhead span { font-size: 11px; font-weight: 700; color: var(--muted); }
+.ac-tierhead span { font-size: 11px; font-weight: 600; color: var(--muted); }
 .ac-oplist { display: flex; flex-direction: column; gap: 4px; }
 .ac-oprow {
   display: grid;
@@ -21236,7 +21254,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-oprow-gar em {
   font-style: normal;
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--muted);
   margin-right: 5px;
   white-space: nowrap;
@@ -21271,7 +21289,7 @@ html.dark .ac-krfix { color: #d8b153; }
      (실측 2026-08-29 — height 를 96px 로 줘도 패딩이 이겼다). */
   padding: 0;
   align-items: center; justify-content: center;
-  border-style: dashed; color: var(--muted); font-size: 20px; font-weight: 700;
+  border-style: dashed; color: var(--muted); font-size: 20px; font-weight: 600;
   cursor: pointer;   /* 누르면 기물 고르기 모달 */
 }
 .ac-slot.empty:hover { border-color: var(--lime); color: var(--lime); }
@@ -21292,7 +21310,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-slot.locked span { font-size: 15px; line-height: 1; }
 .ac-slot.locked img { width: 30px; height: 30px; object-fit: contain; }
 .ac-slot.locked b {
-  font-size: 10px; font-weight: 800; line-height: 1.25;
+  font-size: 10px; font-weight: 700; line-height: 1.25;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
 .ac-slot.locked i { font-style: normal; font-size: 9.5px; opacity: 0.85; }
@@ -21319,7 +21337,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-slot-face img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
 .ac-slot.sm .ac-slot-face img { width: 32px; height: 32px; }
 .ac-slot-face b {
-  font-size: 11px; font-weight: 700; line-height: 1.3; text-align: center;
+  font-size: 11px; font-weight: 600; line-height: 1.3; text-align: center;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
 /* 정비구역 칸은 82px 뿐 — 여백·간격·이름 줄높이를 줄여 애초에 넘치지 않게 한다 */
@@ -21331,7 +21349,7 @@ html.dark .ac-krfix { color: #d8b153; }
   font-size: 11px; color: var(--muted);
 }
 .ac-slot-act button:hover { background: color-mix(in srgb, var(--line) 40%, transparent); }
-.ac-slot-act button.on { color: var(--lime); font-weight: 800; }
+.ac-slot-act button.on { color: var(--lime); font-weight: 700; }
 /* 정예화(골든) 토글 — 별표는 즐겨찾기로 읽혀서 게임 용어를 글자로 적는다 */
 /* ⚠ 켜짐/꺼짐 **둘 다** 여백을 0 으로 못 박고 가운데 정렬한다 — .on 에만 줬더니 꺼짐
    상태가 전역 버튼 여백을 물어 글자가 아래로 밀렸다 (사용자 지적 2026-08-29).
@@ -21339,7 +21357,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-slot-act button.ac-goldbtn {
   display: flex; align-items: center; justify-content: center;
   margin: 0; padding: 0; border: 0; border-radius: 0; line-height: 1;
-  font-size: 9.5px; font-weight: 800; letter-spacing: -0.2px;
+  font-size: 9.5px; font-weight: 700; letter-spacing: -0.2px;
 }
 /* 정비구역 칸은 더 좁다 — 글자를 한 단계 줄여 × 와 나란히 들어가게 */
 .ac-slot.sm .ac-slot-act button.ac-goldbtn { font-size: 8.5px; }
@@ -21375,18 +21393,18 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-gainw i { font-style: normal; font-size: 10.5px; color: var(--muted); }
 .ac-gainchips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; }
 .ac-gainchip { display: inline-flex; align-items: center; gap: 4px; }
-.ac-gainchip em { font-style: normal; font-size: 12px; font-weight: 800; }
+.ac-gainchip em { font-style: normal; font-size: 12px; font-weight: 700; }
 .ac-gainchip u { text-decoration: none; font-size: 10px; color: var(--muted); }
 /* 대상 맹약 미발동 — 발동해야 세는 특질이라 합계 밖. 흐리게 눕힌다 */
 .ac-gainchip.off { opacity: 0.5; }
-.ac-gaintop { font-size: 11.5px; font-weight: 700; color: var(--ink2); }
+.ac-gaintop { font-size: 11.5px; font-weight: 600; color: var(--ink2); }
 /* 자금 등 자원 라벨 — 아이콘 + 글자 (/ac/type/ 아이콘은 중간 회색이라 양쪽 테마에서 그대로 보인다) */
-.ac-gainres { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; color: var(--ink2); }
+.ac-gainres { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--ink2); }
 .ac-gainres img { width: 14px; height: 14px; object-fit: contain; }
 
 /* 맹약 상세 — 시뮬레이터에서 넣은 중첩 기준으로 푼 실제 값 (사용자 지시 2026-08-30) */
-.ac-atstack { margin-left: 8px; font-weight: 700; color: var(--ink2); }
-.ac-stack-now { margin-left: 6px; font-weight: 800; color: var(--ink); }
+.ac-atstack { margin-left: 8px; font-weight: 600; color: var(--ink2); }
+.ac-stack-now { margin-left: 6px; font-weight: 700; color: var(--ink); }
 
 /* ── 전투 맵 (제보 c3d2c056, 2026-08-30) — 카드 격자 → 모달.
    작전 도감·통합전략과 같은 규약이다 (사용자 지적 2026-08-30 "다른 기능들처럼 모달로").
@@ -21400,7 +21418,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-mapcard-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ac-mapcard-body { min-width: 0; }
 .ac-mapcard-body > b {
-  font-size: 12.5px; font-weight: 800; max-width: 100%;
+  font-size: 12.5px; font-weight: 700; max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* ⚠ flex 자식의 기본 min-width 는 auto — 긴 모드 목록이 카드(150px)를 200px 로 밀어
@@ -21417,7 +21435,7 @@ html.dark .ac-krfix { color: #d8b153; }
 /* 단독/협동 — 리더 맵만 갈리므로 그 제목 줄에 붙인다 */
 .ac-mapmode { display: inline-flex; gap: 4px; margin-left: 10px; }
 .ac-mapmode button {
-  padding: 3px 10px; font: inherit; font-size: 11px; font-weight: 700; color: var(--muted);
+  padding: 3px 10px; font: inherit; font-size: 11px; font-weight: 600; color: var(--muted);
   background: none; border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
 }
 .ac-mapmode button.on { color: var(--ink); border-color: var(--ink2); }
@@ -21439,14 +21457,14 @@ html.dark .ac-krfix { color: #d8b153; }
 /* 일반 라운드의 후보 적 — 유형별로 **이 자리에** 다 펼친다 (다른 탭으로 안 보낸다) */
 .ac-mappool { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
 .ac-mappoolhead {
-  margin: 0 0 3px; font-size: 11px; font-weight: 800; color: var(--ink2);
+  margin: 0 0 3px; font-size: 11px; font-weight: 700; color: var(--ink2);
   display: flex; align-items: baseline; gap: 5px;
 }
 .ac-mappoolhead .sb-count { font-size: 10.5px; }
 .ac-mappool .ac-mapenemies { margin: 0; gap: 4px; }
 .ac-mappool .ac-bondchip { cursor: pointer; font-size: 10.5px; }
 /* 보스 카드의 라운드·단독/협동 — 이름 아랫줄로 (이름과 한 줄이면 삐져나간다) */
-.ac-wavemode { display: block; font-style: normal; font-size: 10px; font-weight: 700; color: var(--muted); }
+.ac-wavemode { display: block; font-style: normal; font-size: 10px; font-weight: 600; color: var(--muted); }
 /* 전장 모달 안의 라운드 카드 줄 — 지형 바로 밑에 붙는다 */
 .ac-waverow { margin-top: 8px; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
 /* 라운드를 고르면 그 자리에서 펼친다 — 모달을 또 띄우지 않는다 (사용자 지시 2026-08-30) */
@@ -21472,7 +21490,7 @@ html.dark .ac-krfix { color: #d8b153; }
   cursor: pointer; border-left: 3px solid var(--rc, var(--line)); min-width: 0;
 }
 .ac-mapencard.pinned { border-color: var(--rc); background: color-mix(in srgb, var(--rc) 12%, var(--paper)); }
-.ac-mapencard.pinned .ac-encard-body > b::after { content: " ✓"; color: var(--rc); font-weight: 900; }
+.ac-mapencard.pinned .ac-encard-body > b::after { content: " ✓"; color: var(--rc); font-weight: 800; }
 .ac-mapencard-face { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; flex: none; cursor: pointer; }
 .ac-mapencard .ac-encard-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ac-mapencard .ac-encard-body > b {
@@ -21495,7 +21513,7 @@ html.dark .ac-krfix { color: #d8b153; }
   background: var(--lime); color: #16181a;
   border: 1px solid color-mix(in srgb, var(--lime) 70%, #000);
   border-radius: 999px; cursor: pointer;
-  padding: 8px 18px; font-size: 13px; font-weight: 800; font-family: inherit;
+  padding: 8px 18px; font-size: 13px; font-weight: 700; font-family: inherit;
   white-space: nowrap;
 }
 .ac-simcta:hover { background: color-mix(in srgb, var(--lime) 85%, #fff); }
@@ -21545,7 +21563,7 @@ html.dark .ac-krfix { color: #d8b153; }
   background: color-mix(in srgb, var(--lime) 8%, var(--bg-soft));
   font-size: 12.5px; line-height: 1.5;
 }
-.ac-lockbar > strong { font-weight: 800; }
+.ac-lockbar > strong { font-weight: 700; }
 
 /* 밴 리스트 — PRTS 연결 중에만, 전략 위 (2026-09-06) */
 .ac-bannote {
@@ -21566,7 +21584,7 @@ html.dark .ac-krfix { color: #d8b153; }
   filter: grayscale(0.85); opacity: 0.85;
 }
 .ac-banchip:hover { filter: none; opacity: 1; background: var(--bg-soft); }
-.ac-banchip > b { font-weight: 700; }
+.ac-banchip > b { font-weight: 600; }
 /* 후보 — 아직 확정 아님. 점선 테두리로 확정과 한눈에 구분한다 (거짓말 방지) */
 .ac-banchip.maybe { border-style: dashed; opacity: 0.6; }
 .ac-banmaybe-note { margin: 10px 0 6px; font-size: 12px; }
@@ -21600,7 +21618,7 @@ html.dark .ac-krfix { color: #d8b153; }
 /* .sb-count 는 .sb-h3 밖에서는 크기가 없다 — 쓰는 자리에서 정해 준다 (.ac-mappoolhead 와 같은 규약) */
 .ac-banhead .sb-count { font-style: normal; font-size: 10.5px; color: var(--muted); }
 /* 줄 맹약을 못 읽어 남은 기물 — 맹약 칩 자리에 글자만 (.ac-mappoolhead 와 같은 톤) */
-.ac-banhead-rest { font-style: normal; font-size: 11px; font-weight: 800; color: var(--ink2); }
+.ac-banhead-rest { font-style: normal; font-size: 11px; font-weight: 700; color: var(--ink2); }
 @media (max-width: 560px) {
   /* 좁으면 한 칸으로 접힌다 (.ac-morphgrp 와 같은 브레이크포인트) — 머리 바로 아래에 칩이 붙어
      한 덩어리로 읽히도록, 칩 줄의 구분선은 지우고 간격만 남긴다 */
@@ -21693,12 +21711,12 @@ html.dark .ac-krfix { color: #d8b153; }
 /* PRTS 로 읽은 '지금 고른 전략' 표 — 전략 목록에서 현재 판의 상태를 알아보게 (사용자 지시 2026-09-07
    "위수협의 메뉴 내의 기물이라든가 그런거도 다 밴이라든지 선택된 전략이라든지 등의 현재상태 반영") */
 .ac-bandcard.picked { border-color: var(--teal, #16b47f); box-shadow: inset 0 0 0 1px var(--teal, #16b47f); }
-.ac-nowchip { background: var(--teal, #16b47f); color: #fff; border-color: transparent; font-weight: 800; }
+.ac-nowchip { background: var(--teal, #16b47f); color: #fff; border-color: transparent; font-weight: 700; }
 .ac-nowchip.other { background: var(--ink2); }
 
 /* 맹약 카드의 '밴 N명' — 이 맹약 후보가 깎였다는 뜻이라 경고 톤(.ac-warn)과 같은 자리, 붉은 색으로.
    (사용자 요청 2026-09-07 "밴당한 기물이 존재하는 맹약은 맹약 카드에서 일부 밴 기물 당했다고 표시") */
-.ac-banwarn { color: #e0323f; font-weight: 800; font-style: normal; }
+.ac-banwarn { color: #e0323f; font-weight: 700; font-style: normal; }
 /* 밴이 있는 맹약은 카드째로 옅게 물들인다 (사용자 지시 2026-09-07 "해당 카드도 살짝 빨간색 계열의
    백그라운드 컬러를 주자") — 목록을 훑을 때 뱃지보다 배경이 먼저 눈에 든다. */
 .ac-bondcard:has(.ac-banwarn) { background: color-mix(in srgb, #e0323f 7%, var(--white)); }
@@ -21718,7 +21736,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-modemark {
   margin-right: auto; align-self: center;
   padding: 2px 8px; border-radius: 999px;
-  font-size: 11px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;
+  font-size: 11px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap;
   color: var(--white); background: #c8323c;
 }
 
@@ -21750,7 +21768,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-runbar-top > span button,
 .ac-runbar-top > span a { pointer-events: auto; }
 .ac-runbar-top > button:not(.ac-runbar-hit) { position: relative; z-index: 1; }
-.ac-runbar > strong { font-weight: 800; }
+.ac-runbar > strong { font-weight: 700; }
 .ac-runbar-dot {
   width: 8px; height: 8px; border-radius: 50%; flex: none;
   background: var(--lime);
@@ -21763,13 +21781,13 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-runbar-mode {
   padding: 1px 8px; border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
-  font-size: 11.5px; font-weight: 800;
+  font-size: 11.5px; font-weight: 700;
 }
 
 
 /* 전략 칩 — 내 전략(확정/고르는 중)·다른 참가자(연합). 아이콘은 전략 아트를 작게 (2026-09-07) */
 .ac-runbar-band { display: inline-flex; align-items: center; gap: 6px; color: var(--ink2); }
-.ac-runbar-band > b { font-weight: 800; color: var(--ink3); }
+.ac-runbar-band > b { font-weight: 700; color: var(--ink3); }
 .ac-runbar-band img { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; flex: none; }
 .ac-runbar-seat { display: inline-flex; align-items: center; gap: 4px; }
 .ac-runbar-seat + .ac-runbar-seat { margin-left: 6px; }
@@ -21789,12 +21807,12 @@ html.dark .ac-krfix { color: #d8b153; }
 /* 런바의 밴 목록 버튼 — 읽은 상태 문구가 있던 자리. margin-left:auto 는 .ac-runbar-btn 에서 오는데,
    전략 칩이 그 뒤에 오므로 여기서는 밀지 않는다 (문구 자리를 그대로 이어받는다). */
 .ac-runbar-btn.ac-prtsview { margin-left: 0; }
-.ac-runbar-btn.ac-prtsview.on { border-color: var(--border-hover); background: var(--white); font-weight: 700; }
+.ac-runbar-btn.ac-prtsview.on { border-color: var(--border-hover); background: var(--white); font-weight: 600; }
 /* 연결 끊기 — 박스 맨 오른쪽으로 밀어 둔다 */
 .ac-runbar-off {
   margin-left: auto; padding: 4px 12px;
   border: 1px solid color-mix(in srgb, #e0323f 40%, var(--line)); border-radius: 999px;
-  background: var(--bg); color: #e0323f; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  background: var(--bg); color: #e0323f; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
   transition: 0.12s;
 }
 .ac-runbar-off:hover { background: color-mix(in srgb, #e0323f 10%, var(--white)); border-color: #e0323f; }
@@ -21816,7 +21834,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-runbar-btn + .ac-runbar-btn { margin-left: 0; }
 .ac-runbar-btn:hover:not(:disabled) { background: var(--bg-soft); }
 .ac-runbar-btn:disabled { opacity: 0.45; cursor: default; }
-.ac-runbar-btn[aria-pressed="true"] { border-color: var(--lime); font-weight: 800; }
+.ac-runbar-btn[aria-pressed="true"] { border-color: var(--lime); font-weight: 700; }
 /* 좁은 화면에서는 제목 위로 겹치므로 흐름 안으로 되돌린다 (버튼 줄 통째로) */
 @media (max-width: 760px) {
   .ac-ctarow {
@@ -21837,7 +21855,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-pickmodal .ac-pickcard .ac-thumb { width: 34px; height: 34px; }
 .ac-pickmodal .ac-pickcard .ac-cname { font-size: 12px; }
 .ac-pickmodal .ac-tiersec { margin-bottom: 12px; }
-.ac-stackin { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; font-size: 12px; font-weight: 700; }
+.ac-stackin { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; font-size: 12px; font-weight: 600; }
 .ac-stackin input {
   width: 84px; padding: 4px 8px; font-size: 12.5px;
   border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink);
@@ -21913,11 +21931,11 @@ html.dark .ac-bring-dial {
 /* 숫자는 원 **안쪽 아래**에 둔다 — 테두리에 걸쳐 겹쳐 보였다 (사용자 지적 2026-08-29) */
 .ac-bring-dial em {
   position: absolute; inset: auto 0 3px 0; text-align: center;
-  font-style: normal; font-size: 10px; font-weight: 800; line-height: 1;
+  font-style: normal; font-size: 10px; font-weight: 700; line-height: 1;
   color: var(--muted);
 }
 .ac-bring b {
-  font-size: 10.5px; font-weight: 700; line-height: 1.2; text-align: center;
+  font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: center;
   color: var(--muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
@@ -21971,16 +21989,16 @@ html.dark .ac-bring-dial {
 }
 .ac-bstat-head img { width: 20px; height: 20px; object-fit: contain; }
 .ac-bstat-head b { font-size: 13px; }
-.sb-chip.ac-on { color: var(--lime); border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); font-weight: 800; }
+.sb-chip.ac-on { color: var(--lime); border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); font-weight: 700; }
 .sb-chip.ac-off { color: var(--muted); }
 .ac-bstat-steps { margin: 0; padding: 0 10px 8px 10px; list-style: none; font-size: 12px; line-height: 1.55; }
 .ac-bstat-steps li { display: flex; gap: 6px; padding: 3px 0; }
 .ac-bstat-steps li.off, .ac-bstat-steps li.unknown { color: var(--muted); }
 .ac-bstat-mark { flex: none; width: 12px; text-align: center; }
 /* 중첩 게이트는 **판정하지 않는다**는 뜻이라 물음표를 눈에 띄게 남긴다 (autochess-board.ts) */
-.ac-bstat-steps li.unknown .ac-bstat-mark { color: var(--lime); font-weight: 800; }
+.ac-bstat-steps li.unknown .ac-bstat-mark { color: var(--lime); font-weight: 700; }
 .ac-bstat-steps em {
-  flex: none; font-style: normal; font-size: 10.5px; font-weight: 800;
+  flex: none; font-style: normal; font-size: 10.5px; font-weight: 700;
   color: var(--muted); white-space: nowrap; padding-top: 1px;
 }
 
@@ -22002,7 +22020,7 @@ html.dark .ac-bring-dial {
    .ac-card 의 클릭 가능한 모양을 그대로 쓰고, 보상 자금만 눈에 띄게 세운다. */
 .ac-huntcard { text-align: left; cursor: pointer; }
 .ac-huntcard .ac-cmeta { flex-wrap: wrap; gap: 4px; }
-.sb-chip.ac-coin { color: var(--lime); border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); font-weight: 800; }
+.sb-chip.ac-coin { color: var(--lime); border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); font-weight: 700; }
 @media (max-width: 560px) {
   .ac-oprow { grid-template-columns: 40px 1fr; }
   .ac-oprow-gar { grid-column: 1 / -1; }
@@ -22021,7 +22039,7 @@ html.dark .ac-bring-dial {
 .main-tabs .tab-submenu2 .tab-sub2 {
   padding: 8px 12px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
   /* 테마 이름이 길다("침몰자의 블랙플로우" + 미래시 표식) — 접지 말고 패널을 늘린다.
      왼쪽으로 열리므로(right:100%) 늘어나도 화면 밖으로 밀려나지 않는다. */
@@ -22117,7 +22135,7 @@ html.dark .ac-bring-dial {
 .sb-chip.ac-df {
   background: color-mix(in srgb, var(--lime) 22%, transparent);
   border-color: color-mix(in srgb, var(--lime) 45%, var(--line));
-  font-weight: 800;
+  font-weight: 700;
 }
 .ac-skmod-d {
   margin: 6px 0 0;
@@ -22143,7 +22161,7 @@ html.dark .ac-bring-dial {
   color: var(--ink2);
   font: inherit;
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.5;
   white-space: nowrap;
   cursor: pointer;
@@ -22161,7 +22179,7 @@ html.dark .ac-bring-dial {
   margin-left: 5px;
   font-style: normal;
   font-size: 0.82em;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -22195,7 +22213,7 @@ html.dark .ac-bring-dial {
   background: var(--bg-panel);
   color: var(--ink);
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .ac-morphlink:hover {
@@ -22236,9 +22254,9 @@ html.dark .ac-bring-dial {
   font-size: 12px;
   line-height: 1.5;
 }
-.ac-stack > li > b { min-width: 92px; font-weight: 800; }
+.ac-stack > li > b { min-width: 92px; font-weight: 700; }
 .ac-stack > li > .ac-stack-eq { color: var(--muted); }
-.ac-stack em { font-style: normal; font-weight: 800; color: var(--ink); }
+.ac-stack em { font-style: normal; font-weight: 700; color: var(--ink); }
 .ac-stack > li > i {
   font-style: normal;
   font-size: 11.5px;
@@ -22253,10 +22271,10 @@ html.dark .ac-bring-dial {
   gap: 3px 10px;
   margin: 4px 0 0;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink2);
 }
-.ac-stacksum em { font-style: normal; margin-left: 3px; color: var(--muted); font-weight: 700; }
+.ac-stacksum em { font-style: normal; margin-left: 3px; color: var(--muted); font-weight: 600; }
 
 /* ── 변형 구조체 대응표 — 맹약 칩 한 줄 + 그 맹약을 주는 장비들 (2026-08-24).
       게임은 "해당 장비의 재능에서 확인"이라며 표를 안 주는데, 이 장비의 값어치가
@@ -22295,7 +22313,7 @@ html.dark .ac-bring-dial {
 }
 .ac-morphitem:hover { border-color: var(--border-hover); }
 .ac-morphitem img { width: 20px; height: 20px; object-fit: contain; }
-.ac-morphitem b { font-weight: 700; }
+.ac-morphitem b { font-weight: 600; }
 @media (max-width: 560px) {
   .ac-morphgrp { grid-template-columns: minmax(0, 1fr); }
 }
@@ -22328,7 +22346,7 @@ html.dark .ac-bring-dial {
 .ac-subnote:hover { border-color: var(--lime); color: var(--ink); }
 .ac-subnote em {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   font-style: normal;
   letter-spacing: -0.01em;
 }
@@ -22386,7 +22404,7 @@ html.dark .ac-bring-dial {
 }
 .ac-opdex b {
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -22467,13 +22485,13 @@ html.dark .ac-bring-dial {
   background: transparent;
   color: var(--ink);
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .el-subtabs button i {
   font-style: normal;
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   opacity: 0.6;
 }
 .el-subtabs button.on {
@@ -22773,7 +22791,7 @@ html.dark .ac-bring-dial {
   padding: 0 11px;
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.06em;
 }
 /* 전체 모드에서만 위쪽 줄에 화 제목 — 인라인이면 바로 위에 같은 제목이 있다 */
@@ -22785,7 +22803,7 @@ html.dark .ac-bring-dial {
   margin-right: auto;
   color: #aab3c2;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   opacity: 0.5;
 }
 
@@ -22852,10 +22870,10 @@ html[lang="ja"] .vn-box {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
   font-size: 0.82em;
-  font-weight: 700;
+  font-weight: 600;
 }
 .vn-opts { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
-.vn-opts i { font-style: normal; font-size: 0.78em; font-weight: 800; color: #8d97a8; }
+.vn-opts i { font-style: normal; font-size: 0.78em; font-weight: 700; color: #8d97a8; }
 .vn-opts span {
   padding: 3px 12px;
   border: 1px solid rgba(255, 255, 255, 0.24);
@@ -23482,7 +23500,7 @@ html[lang="ja"] .vn-box {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 700;
+  font-weight: 600;
 }
 /* 이벤트 목록 줄이 도감으로 갈 때는 버튼이다 — 링크(<a>)와 같은 모양으로 맞춘다 */
 .event-menu .event-row-btn {

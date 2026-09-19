@@ -48,6 +48,11 @@ export default function RootLayout({
   // 하이드레이션 직후엔 Home이 document.documentElement.lang을 다시 로케일로 맞춘다.
   return (
     <html lang="ko" suppressHydrationWarning>
+      {/* 본문 서체 SUITE(둥근 본문) + Pretendard(빠진 글자 받침) — public/fonts/ 에 자체 호스팅.
+          ⚠ next/font 로 불러오면 안 된다 (한글 92조각이 Link 헤더를 넘겨 프리렌더가 전부
+            죽는다 — app/story-vn.tsx·그 CSS 머리말 주석 참조). public 의 정적 파일을
+            <link> 로 부르면 번들러가 건드리지 않아 안전하다. */}
+      <link rel="stylesheet" href="/fonts/site.css" />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
