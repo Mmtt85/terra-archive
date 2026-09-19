@@ -11468,7 +11468,7 @@ html.dark .story-card:hover .story-thumb img {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-height: var(--ac-bandh);
 }
 .ac-simband-row > .sb-dim {
@@ -11484,7 +11484,7 @@ html.dark .story-card:hover .story-thumb img {
   flex: 1 1 240px;
   min-width: 0;
   height: var(--ac-bandh);
-  padding: 0 10px;
+  padding: 0 8px;
   border: 1px solid var(--line);
   background: var(--bg-faint);
   text-align: left;
@@ -11494,7 +11494,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .ac-simband-card:hover { border-color: var(--border-hover); }
 .ac-simband-card img { width: 22px; height: 22px; flex: none; object-fit: contain; }
-.ac-simband-card > span { display: flex; align-items: center; gap: 7px; flex: none; min-width: 0; }
+.ac-simband-card > span { display: flex; align-items: center; gap: 8px; flex: none; min-width: 0; }
 .ac-simband-card b { font-size: 13px; font-weight: 800; white-space: nowrap; }
 /* 설명은 한 줄로 잘라 흘린다 — 두 줄이면 카드가 다시 줄 높이를 깨뜨린다 */
 .ac-simband-card small {
@@ -13117,7 +13117,7 @@ html.rg-theme.rg6 .site-header {
 .rg-emodal-immune {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
   margin: 8px 0 4px;
   font-size: 13px;
@@ -13142,7 +13142,7 @@ html.rg-theme.rg6 .site-header {
   font-weight: 400;
   font-style: normal;
   color: var(--rgmut);
-  margin-left: 6px;
+  margin-left: 4px;
   letter-spacing: 0.3px;
 }
 /* 이름 서브 표기(한국어 번역) — 중국어 다음 줄에 표시 (사용자 확정) */
@@ -13167,7 +13167,7 @@ html.rg-theme.rg6 .site-header {
 }
 /* 환경 뷰 (실토피아·유토피아) */
 .rg-env-h {
-  margin: 26px 0 6px;
+  margin: 24px 0 4px;
   font-size: 16px;
   color: var(--rggold);
 }
@@ -13179,7 +13179,7 @@ html.rg-theme.rg6 .site-header {
   font-style: normal;
   color: #59dddc;
   border: 1px solid #2a5a55;
-  padding: 1px 5px;
+  padding: 1px 4px;
   border-radius: var(--r-pill);
   margin-right: 4px;
 }
@@ -13192,17 +13192,17 @@ html.rg-theme.rg6 .site-header {
   border-color: #6a342a;
 }
 .rg-scrap-group {
-  margin: 0 0 22px;
+  margin: 0 0 20px;
 }
 .rg-scrap-type {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-size: 14px;
   color: var(--rggold);
 }
 .rg-scrap-type em {
   font-style: normal;
   color: var(--rgmut);
-  margin-left: 6px;
+  margin-left: 4px;
   font-size: 12px;
 }
 .rg-scrap-hint {
@@ -13223,7 +13223,7 @@ html.rg-theme.rg6 .site-header {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  gap: 10px;
+  gap: 8px;
   margin: 0 0 2px;
   width: 100%;
 }
@@ -13233,7 +13233,7 @@ html.rg-theme.rg6 .site-header {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 4px;
   min-height: 118px;
   padding: 12px;
   border: 1px solid var(--rgline);
@@ -13335,7 +13335,7 @@ html.rg-theme {
      — 느린 폰에선 그 순간이 ~9초 뒤라 CLS 0.26(Poor)로 집계됐다. 섹션 최소 높이를 화면만큼
      잡아 footer를 처음부터 접힘 아래로 내리면, 내용이 자라도 보이는 것은 아무것도 안 움직인다. */
   min-height: 100vh;
-  padding: 34px clamp(22px, 5vw, 76px) 60px;
+  padding: 24px clamp(20px, 5vw, 76px) 32px;   /* 화면 상하 리듬 (2026-09-20) */
   color: var(--rgink);
 }
 
@@ -13345,7 +13345,7 @@ html.rg-theme {
   border: 1px solid var(--rgline);
   overflow: hidden;
   background: #0d0609;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 .rg-hero-kv {
   position: absolute;
@@ -13360,7 +13360,7 @@ html.rg-theme {
 }
 .rg-hero-text {
   position: relative;
-  padding: 26px 28px 30px;
+  padding: 24px 24px 32px;
   max-width: 620px;
 }
 .rg-eyebrow {
@@ -13385,9 +13385,9 @@ html.rg-theme {
   font-style: normal;
   color: var(--rggold);
   border: 1px solid var(--rggold);
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: var(--r-pill);
-  margin-left: 10px;
+  margin-left: 8px;
   vertical-align: 6px;
   text-shadow: none;
 }
@@ -13395,14 +13395,14 @@ html.rg-theme {
   display: flex;
   gap: 8px;
   align-items: center;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   flex-wrap: wrap;
 }
 .rg-topic {
   font-weight: 600;
   font-size: 13px;
   line-height: 1.25;
-  padding: 5px 12px;
+  padding: 4px 12px;
   border: 1px solid var(--rgline);
   border-radius: var(--r-pill);
 }
@@ -13433,9 +13433,9 @@ html.rg-theme {
   font-style: normal;
   color: var(--rggold);
   border: 1px solid var(--rggold);
-  padding: 2px 5px;
+  padding: 2px 4px;
   border-radius: var(--r-pill);
-  margin-left: 6px;
+  margin-left: 4px;
   vertical-align: 1px;
 }
 .rg-line {
@@ -13471,11 +13471,11 @@ html.rg-theme {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 9px;
+  gap: 4px 8px;
   border: 1px solid #6a3040;
   background: #150a0ecc;
   backdrop-filter: blur(6px);
-  padding: 6px 12px;
+  padding: 4px 12px;
   width: min(420px, calc(100% - 36px));
   box-shadow: var(--sh-2);
 }
@@ -13497,7 +13497,7 @@ html.rg-theme {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: 4px;
 }
 .rg-headtools .lens-open-wrap {
   margin-left: 0; /* 열 안에서는 오른쪽 정렬을 부모가 맡는다 */
@@ -13505,7 +13505,7 @@ html.rg-theme {
 /* 도구 버튼 컴팩트 — 히어로 위에 얹히는 열이라 작을수록 아트를 덜 가린다
    (사용자 요청 2026-08-04) */
 .rg-headtools .lens-open-wrap button {
-  padding: 6px 10px;
+  padding: 4px 8px;
   font-size: 0.79rem;
 }
 .rg-headtools .lens-help-btn {
@@ -13529,7 +13529,7 @@ html.rg-theme {
   border-radius: var(--r-sm);
 }
 .rg-serversel button {
-  padding: 2px 6px;
+  padding: 2px 4px;
   background: none;
   border: 0;
   border-radius: var(--r-sm);
@@ -13559,7 +13559,7 @@ html.rg-theme {
 .rg-serversel > .new-badge {
   top: -10px;
   right: -6px;
-  padding: 1px 5px;
+  padding: 1px 4px;
   font-size: 9px;
   white-space: nowrap;
 }
@@ -13572,13 +13572,13 @@ html.rg-theme {
   display: grid;
   grid-template-columns: 1fr auto;
   row-gap: 3px;
-  column-gap: 10px;
+  column-gap: 8px;
   align-items: center;
   text-align: left;
   background: color-mix(in srgb, var(--rgcard) 82%, transparent);
   backdrop-filter: blur(6px);
   border: 1px solid var(--rgline);
-  padding: 6px 11px;
+  padding: 4px 12px;
   cursor: pointer;
   box-shadow: var(--sh-2);
   color: var(--rgink);
@@ -13631,8 +13631,8 @@ html.rg-theme {
 }
 .rg-topicsel-menu {
   list-style: none;
-  margin: 6px 0 0;
-  padding: 5px;
+  margin: 4px 0 0;
+  padding: 4px;
   position: absolute;
   left: 0;
   right: 0;
@@ -13653,9 +13653,9 @@ html.rg-theme {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   text-align: left;
-  padding: 10px 11px;
+  padding: 8px 12px;
   background: none;
   border: 0;
   color: var(--rgtext2);
@@ -13683,7 +13683,7 @@ html.rg-theme {
   font-style: normal;
   color: var(--rggold);
   border: 1px solid;
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: var(--r-pill);
   white-space: nowrap;
 }
@@ -13709,7 +13709,7 @@ html.rg-theme {
   place-items: center;
   width: 25px;
   height: 29px;
-  margin-right: 6px;
+  margin-right: 4px;
   flex: none;
   font: 800 13px/1 var(--mono);
   font-style: normal;
@@ -13740,7 +13740,7 @@ html.rg-theme {
   border: 1px solid var(--rgline);
   background: 0 0;
   color: var(--rgink);
-  padding: 3px 9px;
+  padding: 3px 8px;
   font-weight: 600;
   font-size: 12px;
   line-height: 1;
@@ -13808,17 +13808,17 @@ html.rg-theme {
 /* 섹션 탭 */
 .rg-tabs {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
-  margin: 18px 0 22px;
+  margin: 16px 0 20px;
   border-bottom: 2px solid var(--rgcrim);
-  padding-bottom: 10px;
+  padding-bottom: 8px;
 }
 .rg-tabs button {
   border: 1px solid var(--rgline);
   background: var(--rgcard);
   color: var(--rgink);
-  padding: 7px 14px;
+  padding: 8px 12px;
   font-weight: 600;
   font-size: 13px;
   line-height: 1;
@@ -13839,7 +13839,7 @@ html.rg-theme {
 .rg-map {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 14px;
+  gap: 12px;
   align-items: start;
 }
 .rg-zone {
@@ -13867,8 +13867,8 @@ html.rg-theme {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 14px 18px;
+  gap: 8px;
+  padding: 12px 16px;
   cursor: pointer;
   list-style: none;
   flex-wrap: wrap;
@@ -13899,25 +13899,25 @@ html.rg-theme {
 }
 .rg-zone-body {
   position: relative;
-  padding: 2px 18px 16px;
+  padding: 2px 16px 16px;
 }
 .rg-stage-hint {
   font-weight: 500;
   font-size: 11px;
   line-height: 1;
   color: var(--rgmut);
-  margin-left: 6px;
+  margin-left: 4px;
 }
 .rg-modal-modes {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   margin: 0 0 12px;
 }
 .rg-modal-modes button {
   border: 1px solid var(--rgline);
   background: var(--rgdeep);
   color: var(--rgink);
-  padding: 7px 16px;
+  padding: 8px 16px;
   font-weight: 600;
   font-size: 13px;
   line-height: 1;
@@ -13947,7 +13947,7 @@ html.rg-theme {
   margin: 0 0 8px;
 }
 .rg-modal-modes.rg-maptabs button {
-  padding: 5px 12px;
+  padding: 4px 12px;
   font-size: 12px;
 }
 .rg-zone-wide {
@@ -13957,7 +13957,7 @@ html.rg-theme {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   flex-wrap: wrap;
 }
 .rg-zone-sum:hover h3 {
@@ -13985,11 +13985,11 @@ html.rg-theme {
   font: 800 11px/1 var(--mono);
   background: #c23b4e;
   color: #fff;
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: var(--r-pill);
 }
 .rg-zone-desc {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-size: 13px;
   line-height: 1.75;
   color: var(--rgtext2);
@@ -13997,10 +13997,10 @@ html.rg-theme {
   text-shadow: 0 1px 6px #000c;
 }
 .rg-stage-group {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 .rg-stage-group h4 {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   font-size: 12px;
   letter-spacing: 0.3px;
   color: var(--rgink);
@@ -14036,7 +14036,7 @@ html.rg-theme {
 .rg-nodetype-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 @media (max-width: 900px) {
   .rg-nodetype-list {
@@ -14046,7 +14046,7 @@ html.rg-theme {
 .rg-nodetype {
   border: 1px solid var(--rgline);
   background: var(--rgdeep);
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 .rg-nodetype h4 {
   display: flex;
@@ -14096,7 +14096,7 @@ html.rg-theme {
   border: 1px solid var(--rgline);
   background: var(--rgdeep);
   color: var(--rgink);
-  padding: 0 0 6px;
+  padding: 0 0 4px;
   cursor: pointer;
   font: inherit;
   transition: 0.12s;
@@ -14113,13 +14113,13 @@ html.rg-theme {
   aspect-ratio: 16/9;
   object-fit: fill;
   background: #140b0e;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 .rg-stagecard-name {
   font-weight: 600;
   font-size: 12px;
   line-height: 1.45;
-  padding: 0 6px;
+  padding: 0 4px;
   display: block;
 }
 .rg-stagecard.emg {
@@ -14140,7 +14140,7 @@ html.rg-theme {
 .rg-enc-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 6px;
+  gap: 4px;
 }
 .rg-enc-thumb {
   width: 93px;
@@ -14158,7 +14158,7 @@ html.rg-theme {
   border: 1px solid var(--rgline);
   background: var(--rgdeep);
   color: var(--rgink);
-  padding: 9px 11px;
+  padding: 8px 12px;
   cursor: pointer;
   font: inherit;
   text-align: left;
@@ -14180,7 +14180,7 @@ html.rg-theme {
   background: var(--rgsel);
   border: 1px solid var(--rgmodalline);
   color: var(--rggold);
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: var(--r-pill);
   white-space: nowrap;
 }
@@ -14189,12 +14189,12 @@ html.rg-theme {
   width: calc(100% - 24px);
   aspect-ratio: 16 / 9;
   object-fit: cover;
-  margin: 0 12px 10px;
+  margin: 0 12px 8px;
   border: 1px solid var(--rgline);
 }
 .rg-enc-cg.modal {
   width: 100%;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
 /* 상세 모달 섬네일은 목록(40px)보다 확실히 크게 (사용자 확정 2026-07-24) */
 .rg-relic-icon.lg {
@@ -14220,7 +14220,7 @@ html.rg-theme {
 .rg-relic-obtain em {
   font-style: normal;
   font-weight: 700;
-  margin-right: 6px;
+  margin-right: 4px;
   color: var(--ink3, var(--ink2));
 }
 .rg-cond-node.relic {
@@ -14241,7 +14241,7 @@ html.rg-theme {
 }
 .rg-enc-note {
   margin: 0 12px 8px;
-  padding: 7px 9px;
+  padding: 8px 8px;
   font-size: 12px;
   line-height: 1.6;
   background: var(--rgsel);
@@ -14256,11 +14256,11 @@ html.rg-theme {
   margin-right: 0;
 }
 .rg-enc-body .rg-enc-choices {
-  padding: 0 0 0 18px;
+  padding: 0 0 0 16px;
 }
 .rg-enc-choices {
   margin: 0;
-  padding: 0 12px 12px 28px;
+  padding: 0 12px 12px 24px;
   font-size: 12px;
   line-height: 1.75;
   color: var(--rgtext2);
@@ -14284,7 +14284,7 @@ html.rg-theme {
   color: var(--rggold);
 }
 .rg-choice-caret {
-  margin-left: 6px;
+  margin-left: 4px;
   color: var(--rgmut);
   font-size: 11px;
 }
@@ -14295,14 +14295,14 @@ html.rg-theme {
 .rg-choice-prob {
   color: var(--rggold);
   font-size: 10px;
-  margin-right: 5px;
+  margin-right: 4px;
 }
 .rg-choice-branch {
   font-weight: 600;
 }
 .rg-choice-prob-pct {
-  margin-left: 6px;
-  padding: 0 5px;
+  margin-left: 4px;
+  padding: 0 4px;
   border: 1px solid var(--rgline);
   border-radius: var(--r-md);
   font-size: 10px;
@@ -14320,7 +14320,7 @@ html.rg-theme {
 }
 .rg-choice-note {
   display: block;
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-left: 2px solid var(--rgline);
   font-size: 12px;
   line-height: 1.6;
@@ -14334,8 +14334,8 @@ html.rg-theme {
 /* 조우에서 이어지는 전투 맵 — 선택지 목록 아래에 카드로 (사용자 요청 2026-08-16).
    조우 본문이 좁아 한 줄 2장, 좁은 화면에선 1장. */
 .rg-enc-battles {
-  margin: 4px 12px 12px 28px;
-  padding-top: 10px;
+  margin: 4px 12px 12px 24px;
+  padding-top: 8px;
   border-top: 1px solid var(--rgline);
 }
 .rg-enc-battles > strong {
@@ -14366,7 +14366,7 @@ html.rg-theme {
   color: var(--rgink);
 }
 .rg-choice-head strong[lang="zh"] {
-  margin-right: 6px;
+  margin-right: 4px;
 } /* 중국어 대표 + 한국어 뒤 */
 .rg-choice-kr {
   color: var(--rgtext2);
@@ -14380,7 +14380,7 @@ html.rg-theme {
   content: " — ";
 }
 .rg-choice-next {
-  margin: 2px 0 6px 4px;
+  margin: 2px 0 4px 4px;
   padding-left: 12px;
   border-left: 2px solid var(--rgline);
 }
@@ -14401,8 +14401,8 @@ html.rg-theme {
 }
 /* 라운드 반복 선택지의 변형 결과 목록 (받기 보상·춤 HP 소모 등) */
 .rg-choice-variants {
-  margin: 2px 0 6px 4px;
-  padding: 0 0 0 14px;
+  margin: 2px 0 4px 4px;
+  padding: 0 0 0 12px;
   list-style: none;
   border-left: 2px solid var(--rgline);
 }
@@ -14420,16 +14420,16 @@ html.rg-theme {
 .rg-filterbar {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   position: relative;   /* 검색 제안 드롭다운(.suggest-drop) 앵커 (2026-08-10) */
 }
 .rg-filterbar input[type="search"] {
   border: 1px solid var(--rgline);
   background: var(--rgdeep);
   color: var(--rgink);
-  padding: 7px 11px;
+  padding: 8px 12px;
   font-weight: 500;
   font-size: 13px;
   line-height: 1;
@@ -14451,7 +14451,7 @@ html.rg-theme {
   border: 1px solid var(--rgline);
   background: var(--rgcard);
   color: var(--rgink);
-  padding: 6px 12px;
+  padding: 4px 12px;
   font-weight: 600;
   font-size: 12px;
   line-height: 1;
@@ -14472,14 +14472,14 @@ html.rg-theme {
 .rg-enemy-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 .rg-enemy-cell.row {
   flex-direction: row;
   align-items: center;
   text-align: left;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 .rg-enemy-cell.row .rg-enemy-face {
   width: 72px;
@@ -14523,7 +14523,7 @@ html.rg-theme {
 }
 .rg-rank {
   font: 800 11px/1 var(--mono);
-  padding: 3px 6px;
+  padding: 3px 4px;
   border-radius: var(--r-xs);
   background: var(--rgsel);
   color: var(--rgtext2);
@@ -14542,14 +14542,14 @@ html.rg-theme {
   gap: 4px;
 }
 .rg-stats.sub {
-  margin-top: 6px;
+  margin-top: 4px;
 }
 .rg-stat {
   font: 700 12px/1 var(--mono);
   border: 1px solid var(--rgline);
   background: var(--rgdeep);
   color: var(--rgink);
-  padding: 4px 7px;
+  padding: 4px 8px;
   border-radius: var(--r-xs);
   white-space: nowrap;
 }
@@ -14564,12 +14564,12 @@ html.rg-theme {
   background: #241a0c;
 }
 .rg-enemy-more {
-  margin-top: 9px;
+  margin-top: 8px;
   border-top: 1px dashed var(--rgline);
-  padding-top: 9px;
+  padding-top: 8px;
 }
 .rg-enemy-more p {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   font-size: 12px;
   line-height: 1.6;
   color: var(--rgtext2);
@@ -14587,19 +14587,19 @@ html.rg-theme {
 .rg-appear strong {
   display: block;
   font-size: 12px;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   color: var(--rggold);
 }
 .rg-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
 }
 .rg-chip {
   border: 1px solid var(--rgline);
   background: var(--rgdeep);
   color: var(--rgink);
-  padding: 4px 9px;
+  padding: 4px 8px;
   font-weight: 600;
   font-size: 12px;
   line-height: 1.25;
@@ -14622,17 +14622,17 @@ html.rg-theme {
 .rg-relic-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 9px;
+  gap: 8px;
 }
 .rg-capsule-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 .rg-relic {
   border: 1px solid var(--rgline);
   background: var(--rgcard);
-  padding: 11px 13px;
+  padding: 12px 12px;
 }
 .rg-relic.fusion {
   border-color: #8a6a2a;
@@ -14641,8 +14641,8 @@ html.rg-theme {
 .rg-relic header {
   display: flex;
   align-items: baseline;
-  gap: 7px;
-  margin-bottom: 5px;
+  gap: 8px;
+  margin-bottom: 4px;
   flex-wrap: wrap;
 }
 .rg-relic h4 {
@@ -14661,7 +14661,7 @@ html.rg-theme {
   aspect-ratio: 3/4;
   object-fit: cover;
   border: 1px solid var(--rgline);
-  margin-bottom: 9px;
+  margin-bottom: 8px;
 }
 .rg-cap-en {
   font-weight: 600;
@@ -14674,11 +14674,11 @@ html.rg-theme {
   font: 800 11px/1 var(--mono);
   background: #8a6a2a;
   color: #fff;
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: var(--r-pill);
 }
 .rg-relic-usage {
-  margin: 0 0 5px;
+  margin: 0 0 4px;
   font-size: 13px;
   line-height: 1.6;
   font-weight: 600;
@@ -14713,7 +14713,7 @@ html.rg-theme {
 .rg-diff-table th,
 .rg-diff-table td {
   border-bottom: 1px solid var(--rgline);
-  padding: 9px 13px;
+  padding: 8px 12px;
   text-align: left;
   font-size: 13px;
   line-height: 1.6;
@@ -14742,36 +14742,36 @@ html.rg-theme {
 .rg-endings {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 .rg-ending {
   border: 1px solid var(--rgline);
   background: var(--rgcard);
-  padding: 16px 18px;
+  padding: 16px 16px;
 }
 .rg-ending h3 {
   margin: 0 0 8px;
   font-size: 16px;
   letter-spacing: -0.3px;
   border-left: 4px solid var(--rgcrim);
-  padding-left: 10px;
+  padding-left: 8px;
   color: #f4e7d3;
 }
 .rg-ending-desc {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-size: 13px;
   line-height: 1.75;
   color: var(--rgtext2);
 }
 .rg-ending-cond {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   padding-left: 20px;
   font-size: 13px;
   line-height: 1.75;
   color: var(--rgink);
 }
 .rg-ending-cond li {
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 .rg-ending-cond li::marker {
   color: var(--rggold);
@@ -14787,13 +14787,13 @@ html.rg-theme {
    (사용자 지시 2026-08-17 "중구난방이니 나눠서 하나씩 볼 수 있게") */
 .rg-ending-sec {
   margin-top: 12px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--rgline);
   border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--rgline) 12%, transparent);
 }
 .rg-ending-sec > h4 {
-  margin: 0 0 7px;
+  margin: 0 0 8px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -14801,7 +14801,7 @@ html.rg-theme {
   color: var(--rggold);
 }
 .rg-ending-sec > h4 em {
-  margin-left: 6px;
+  margin-left: 4px;
   font-style: normal;
   font-weight: 600;
   color: var(--rgmut);
@@ -14814,16 +14814,16 @@ html.rg-theme {
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 /* 조각 행 — 원문이 있으면 통째로 버튼(읽기), 없으면 정적 행. 이름/조건 2단 */
 .rg-rec-btn,
 .rg-rec-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: baseline;
   width: 100%;
-  padding: 7px 10px;
+  padding: 8px 8px;
   border: 1px solid var(--rgline);
   border-radius: var(--r-sm);
   background: transparent;
@@ -14891,7 +14891,7 @@ html.rg-theme {
    창이 좁게 리사이즈돼도 깨지지 않게 화자를 왼쪽 거터가 아니라 **윗줄**에 둔다. */
 .rg-rec-body .rg-rec-say {
   margin: 0 0 0.5em;
-  padding-left: 30px;
+  padding-left: 32px;
 }
 .rg-rec-body .rg-rec-say.cont {
   margin-top: -0.3em;
@@ -14899,7 +14899,7 @@ html.rg-theme {
 .rg-rec-who {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   margin: 0 0 2px -30px;
   font-size: 12px;
   font-weight: 800;
@@ -14917,7 +14917,7 @@ html.rg-theme {
 
 /* 월간 방문객 — 전시관 서브탭 (사용자 소원 2026-08-17) */
 .rg-visitor-note {
-  margin: 0 0 14px;
+  margin: 0 0 12px;
   font-size: 12px;
   line-height: 1.6;
   color: var(--rgmut);
@@ -14930,12 +14930,12 @@ html.rg-theme {
 .rg-visitor {
   border: 1px solid var(--rgline);
   border-radius: var(--r-md);
-  padding: 13px 15px;
+  padding: 12px 16px;
 }
 .rg-visitor > header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 8px;
 }
 .rg-visitor-face {
@@ -14952,7 +14952,7 @@ html.rg-theme {
 .rg-visitor-team {
   display: inline-flex;
   align-items: baseline;
-  gap: 7px;
+  gap: 8px;
   font-size: 12px;
   color: var(--rggold);
 }
@@ -14972,7 +14972,7 @@ html.rg-theme {
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 .rg-visitor-scenes li {
   display: block;
@@ -14984,7 +14984,7 @@ html.rg-theme {
   display: grid;
   gap: 2px;
   width: 100%;
-  padding: 7px 10px;
+  padding: 8px 8px;
   border: 0;
   border-left: 2px solid var(--rgline);
   background: transparent;
@@ -15029,7 +15029,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
 /* 적 상세 모달 — 원본 해상도(158px) 초상을 왼쪽에 크게 (피드백 반영 2026-07-18) */
 .rg-emodal-cols {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   align-items: flex-start;
   margin-bottom: 8px;
 }
@@ -15062,22 +15062,22 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   }
 }
 .rg-emodal-row {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   font-size: 13px;
   color: var(--rgtext2);
 }
 .rg-emodal-row strong {
   color: var(--rggold);
-  margin-right: 6px;
+  margin-right: 4px;
 }
 .rg-emodal-desc {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   font-size: 12px;
   font-style: italic;
   color: var(--rgmut);
 }
 .rg-emodal-ability {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-size: 13px;
   line-height: 1.75;
   color: var(--rgtext2);
@@ -15085,13 +15085,13 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
 }
 /* 스탯 컨텍스트 안내 — 어떤 배율이 반영된 수치인지 명시 (도감/노드 상세 불일치 방지) */
 .rg-ctx-note {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   font-size: 12px;
   color: var(--rggold);
   opacity: 0.85;
 }
 .rg-emodal .rg-stats.sub {
-  margin-top: 7px;
+  margin-top: 8px;
 }
 .rg-emodal .rg-appear {
   margin-top: 12px;
@@ -15155,7 +15155,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
 /* 본문 여백 — 종전 패널 패딩(20px 22px)을 그대로 창 본문으로 옮겼다.
    .mw-window를 함께 쓴 (0,3,0) 선택자라 .mw-body의 기본값·:has() 예외보다 뒤에 온다. */
 .mw-window.rg-modal .mw-body {
-  padding: 20px 22px;
+  padding: 20px 20px;
 }
 /* 창 크롬은 사이트 공통 색(--line/--muted)이라 록라의 어두운 판 위에서 안 보인다 */
 .mw-window.rg-modal .mw-chrome {
@@ -15180,18 +15180,18 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   justify-content: space-between;
   flex-wrap: wrap;   /* 일반/긴급 탭이 머리로 들어와(in-head) 좁은 화면에선 접힌다 (2026-08-10) */
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .rg-modal-head > div {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .rg-modal-head h3 {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   font-size: 18px;
   letter-spacing: -0.3px;
@@ -15250,7 +15250,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   aspect-ratio: 16/9;
   object-fit: fill;
   border: 1px solid var(--rgline);
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
 .rg-modal-cols {
   display: grid;
@@ -15282,7 +15282,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
 }
 .rg-modal-elite {
   margin: 0 0 8px;
-  padding: 8px 11px;
+  padding: 8px 12px;
   background: #2b1016;
   border-left: 3px solid var(--rgcrim);
   font-size: 12px;
@@ -15293,7 +15293,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
 .rg-modal-enemies {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 7px;
+  gap: 8px;
   margin-top: 0;
 }
 .rg-enemy-cell {
@@ -15301,11 +15301,11 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   border: 1px solid var(--rgline);
   background: var(--rgdeep);
   color: var(--rgink);
-  padding: 9px 7px;
+  padding: 8px 8px;
   cursor: pointer;
   text-align: center;
   font: inherit;
@@ -15321,7 +15321,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
 .rg-enemy-cell-head {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 .rg-enemy-cell .rg-enemy-name {
   font-size: 12px;
@@ -15413,7 +15413,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   border: 1px solid var(--rgline);
   background: var(--rgdeep);
   color: var(--rgink);
-  padding: 7px 11px;
+  padding: 8px 12px;
   cursor: pointer;
   text-align: left;
   font: inherit;
@@ -15436,7 +15436,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
 
 @media (max-width: 720px) {
   .rg {
-    padding: 26px 16px 48px;
+    padding: 24px 16px 48px;
   }
   .rg-endings {
     grid-template-columns: 1fr;
@@ -15915,7 +15915,7 @@ main.site-main > .site-header {
 .rg-rmulti-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 .rg-rmulti-item header {
   display: flex;
@@ -15974,7 +15974,7 @@ main.site-main > .site-header {
   max-height: calc(100vh - 16px);
   min-width: 260px;
   min-height: 180px;
-  padding: 12px 14px;
+  padding: 12px 12px;
   display: flex;
   flex-direction: column;
   /* 백드롭이 없으니 배경이 페이지와 같으면 창 경계가 안 보인다 (사용자 지적 2026-07-29:
@@ -15995,7 +15995,7 @@ main.site-main > .site-header {
   overflow-y: auto;
   overflow-x: hidden;
   margin: 0 -14px -12px;
-  padding: 0 14px 12px;
+  padding: 0 12px 12px;
 }
 /* ── 크기 손잡이 — 네 변 + 네 모서리 (사용자 지시 2026-07-29).
    CSS resize는 오른쪽 아래 한 곳뿐이라 직접 만든다. 모서리가 변보다 위에 오도록
@@ -16031,10 +16031,10 @@ main.site-main > .site-header {
    기본 폭(420px)에선 1열이고 대략 500px부터 2열이 된다. */
 .rg-invmodal .rg-relic-grid {
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 6px;
+  gap: 4px;
 }
 .rg-invmodal .rg-relic {
-  padding: 7px 9px;
+  padding: 8px 8px;
 }
 .rg-invmodal .rg-relic h4 {
   font-size: 12px;
@@ -16066,7 +16066,7 @@ main.site-main > .site-header {
 }
 .rg-invmodal .rg-inv-tabcnt {
   font-size: 9px;
-  padding: 1px 5px;
+  padding: 1px 4px;
 }
 /* 효과 총합 열기 버튼 — 탭 줄 오른쪽, '전체 비우기' 앞 */
 .rg-inv-sum {
@@ -16076,14 +16076,14 @@ main.site-main > .site-header {
   font-weight: 700;
 }
 .rg-filterbar .rg-inv-sum + .rg-inv-clear {
-  margin-left: 6px;
+  margin-left: 4px;
 }
 /* 창 안 버튼은 11px이라 기본 배지(9.5px)가 글자만큼 커 보인다 — 버튼에 맞춰 한 단계 줄인다.
    오른쪽 옆이 '전체 비우기'라 밖으로 내밀지 않고 버튼 모서리 안쪽에 걸친다. */
 .rg-invmodal .rg-filterbar .new-badge {
   top: -8px;
   right: -4px;
-  padding: 0.5px 5px;
+  padding: 0.5px 4px;
   font-size: 9px;
 }
 /* 효과 총합 모달 — 떠 있는 보유 창(150)보다 위 */
@@ -16095,7 +16095,7 @@ main.site-main > .site-header {
   cursor: grab;
   touch-action: none;          /* 모바일에서 창을 끌 때 페이지가 같이 스크롤되지 않게 */
   user-select: none;
-  margin: -14px -16px 10px;    /* 패딩 밖까지 손잡이로 — 모서리 근처를 잡아도 잡힌다 */
+  margin: -14px -16px 8px;    /* 패딩 밖까지 손잡이로 — 모서리 근처를 잡아도 잡힌다 */
   padding: 14px 16px 10px;
 }
 .rg-inv-grab.dragging {
@@ -16109,10 +16109,10 @@ main.site-main > .site-header {
    조건부 줄(cond)·누계 획득 줄(get)은 전체 적용 줄보다 한 단계 낮은 위계로 둔다. */
 /* 묶음(아군·적군·판 수치·조건부·누계) — 제목 + 알약 줄 */
 .rg-efftot-grp {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .rg-efftot-grp h5 {
-  margin: 0 0 5px;
+  margin: 0 0 4px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -16121,16 +16121,16 @@ main.site-main > .site-header {
 .rg-efftot-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 6px;
+  gap: 4px;
+  margin: 0 0 4px;
   padding: 0;
   list-style: none;
 }
 .rg-efftot-row li {
   display: flex;
   align-items: baseline;
-  gap: 5px;
-  padding: 3px 9px;
+  gap: 4px;
+  padding: 3px 8px;
   border: 1px solid var(--rgline);
   border-radius: var(--r-pill);
   background: var(--rgcard);
@@ -16163,7 +16163,7 @@ main.site-main > .site-header {
 .rg-efftot-none,
 .rg-efftot-rest,
 .rg-efftot-note {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   font-size: 11px;
   line-height: 1.45;
   color: var(--rgmuted);
@@ -16177,8 +16177,8 @@ main.site-main > .site-header {
   background: var(--rggold);
   color: #241616;
   border-radius: var(--r-pill);
-  padding: 2px 6px;
-  margin-left: 6px;
+  padding: 2px 4px;
+  margin-left: 4px;
 }
 .rg-inv-btn {
   margin-left: auto;
@@ -16193,7 +16193,7 @@ main.site-main > .site-header {
   font-weight: 600;
   font-size: 11px;
   line-height: 1;
-  padding: 5px 8px;
+  padding: 4px 8px;
   border-radius: var(--r-pill);
   cursor: pointer;
   white-space: nowrap;
@@ -16220,7 +16220,7 @@ main.site-main > .site-header {
 .rg-inv-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   margin-top: 12px;
   border: 1px solid color-mix(in srgb, var(--rggold) 55%, var(--rgline));
   background: transparent;
@@ -16261,7 +16261,7 @@ main.site-main > .site-header {
   color: var(--rgmut);
   font-size: 13px;
   line-height: 1.75;
-  margin: 18px 4px;
+  margin: 16px 4px;
 }
 
 /* 렌즈 하이라이트 — /rogue 전시관 카드에 도착 표시 (스크롤 타깃) */
@@ -16683,11 +16683,11 @@ main.site-main > .site-header {
 .term-modal .term-ops img { width: 34px; height: 34px; }
 
 /* ── 다단계 시스템 카드(붕괴 패러다임) — 카드 1장 안 단계별 [섬네일+이름+효과] 행 ── */
-.rg-stage-list { display: flex; flex-direction: column; gap: 10px; }
-.rg-stage { display: flex; gap: 9px; align-items: flex-start; }
+.rg-stage-list { display: flex; flex-direction: column; gap: 8px; }
+.rg-stage { display: flex; gap: 8px; align-items: flex-start; }
 .rg-stage .rg-relic-icon { flex: none; }
 .rg-stage h4 { margin: 0 0 3px; }
-.rg-stage-lb { font-size: 11px; font-style: normal; opacity: 0.6; margin-left: 5px; }
+.rg-stage-lb { font-size: 11px; font-style: normal; opacity: 0.6; margin-left: 4px; }
 .rg-stage-modal { margin: 0 0 12px; }
 
 /* ── 헤더 만능검색 (사용자 요청 2026-07-25) ─────────────────────────────────
@@ -18145,7 +18145,7 @@ main.site-main > .site-header {
      · 본문 컨테이너가 스스로 패딩을 갖는 모달 → 바로 아래 :has()가 0으로 되돌린다
    값은 가장 최근 관례(.ac-modal)와 같은 12px 22px 24px. */
 .mw-body {
-  padding: 12px 22px 24px;
+  padding: 12px 20px 24px;
 }
 /* 자체 여백을 가진 본문 컨테이너를 **직접** 품은 창은 위 기본값을 물린다 — 겹치면 두 겹이 된다.
    (:has 미지원 브라우저에서는 여백이 두 겹이 될 뿐 내용이 잘리지는 않는다.)
@@ -19112,7 +19112,7 @@ main.site-main > .site-header {
 /* 작전 환경 탭(일반/고난·긴급) — 통전 .rg-modal-modes와 같은 짜임, 사이트 밝은 팔레트 */
 .st-envs {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   margin: 0 0 12px;
 }
 .st-envs button {
@@ -19238,7 +19238,7 @@ main.site-main > .site-header {
    누를 수 있다는 걸 커서로도 알려준다 (사용자 지시 2026-08-13). */
 button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 /* 적 도감 상세를 모달 안에 그대로 싣는다 — 위 요약과 겹치지 않게 선으로 끊는다 */
-.sb-dexfull { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sb-dexfull { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .st-enemy.reinforced {
   border-color: var(--amber-ink);
 }
@@ -19441,7 +19441,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
      전체가 좌우로 71px씩 밀려났다** — 화면에 보이던 게 전부 움직이니 값이 크게 잡힌다.
      width:100%면 폭이 내용과 무관하게 min(칸 너비, 1080px)으로 고정된다. */
   width: 100%;
-  padding: 26px 20px 60px;
+  padding: 24px 20px 32px;   /* 화면 상하 리듬 (2026-09-20) */
   /* /sim은 프리렌더 SEO 페이지라 껍데기(제목·소개·검색란)가 먼저 그려지고 목록 데이터는
      나중에 온다. 그 사이 본문이 550px밖에 안 돼 푸터가 첫 화면에 들어왔다가 목록이
      도착하며 밀려났다 — 실측 CLS 모바일 0.281 · 노트북 0.159 (2026-08-13).
@@ -19461,7 +19461,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   color: var(--ink2);
 }
 .sim-note {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   max-width: 760px;
   font-size: 12px;
   line-height: 1.6;
@@ -19470,7 +19470,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 /* 시뮬레이터의 계층 필터 — 도감과 같은 부품이지만 여기선 사이드 패널이 아니라 본문 폭이라
    위아래 여백만 준다 (사용자 요청 2026-08-16) */
 .sim-filter {
-  margin: 18px 0 4px;
+  margin: 16px 0 4px;
   /* 데이터 도착 전에도 같은 자리를 잡아 둔다 — 이유는 sim-launcher.tsx 쪽 주석 참조 */
   min-height: 62px;
 }
@@ -19481,7 +19481,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 18px 0 4px;
+  margin: 16px 0 4px;
   max-width: 540px;
 }
 .sim-search {
@@ -19556,16 +19556,16 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .sb-guide {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 26px 20px 60px;
+  padding: 24px 20px 32px;   /* 화면 상하 리듬 (2026-09-20) */
 }
 .sb-views {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
   margin: 16px 0 4px;
 }
 .sb-views button {
-  padding: 7px 13px;
+  padding: 8px 12px;
   font-size: 13px;
   font-weight: 600;
   color: var(--ink2);
@@ -19578,21 +19578,21 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   background: var(--ink);
   border-color: var(--ink);
 }
-.sb-views .tab-sub-future { margin-left: 5px; }
+.sb-views .tab-sub-future { margin-left: 4px; }
 /* ⚠ 좌우 margin 을 0 으로 **못 박는다** — .heading-search 가 `margin: 0 20px` 를 갖고 있어서
    생존연산 검색란만 왼쪽이 20px 들어가 있었다 (사용자 지적 2026-09-05 "검색란 왼쪽에
    이유없이 살짝 띄워져있는거 딱 붙여줘 다른데랑 마찬가지로"). 위수 협의에서 같은 지적을
    받아 .ac-filters .search-wrap 을 0 으로 둔 것과 같은 자리다 — margin-top 만 주면 좌우가 남는다. */
-.sb-search { margin: 10px 0 0; }
+.sb-search { margin: 8px 0 0; }
 .sb-h3 {
-  margin: 26px 0 6px;
+  margin: 24px 0 4px;
   font-size: 16px;
 }
 .sb-h3 .sb-count {
   font-style: normal;
   font-size: 12px;
   color: var(--muted);
-  margin-left: 6px;
+  margin-left: 4px;
 }
 .sb-grid {
   display: grid;
@@ -19602,17 +19602,17 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 }
 .sb-grid-s { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .sb-card {
-  padding: 12px 14px;
+  padding: 12px 12px;
   border: 1px solid var(--line);
   background: var(--white);
 }
 .sb-card h4 {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   font-size: 14px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 .sb-card p { margin: 4px 0 0; font-size: 12px; line-height: 1.6; }
 .sb-dim { color: var(--muted); }
@@ -19646,7 +19646,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .sb-chip.a-SURVIVE { border-color: #2e7d4f; color: #2e7d4f; }
 .sb-chip.a-BATTLE { border-color: var(--crimson); color: var(--crimson); }
 .sb-chip.a-GATHER { border-color: #8a6d1f; color: #8a6d1f; }
-.sb-recipes { margin: 6px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.75; }
+.sb-recipes { margin: 4px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.75; }
 .sb-variants {
   margin: 8px 0 0;
   padding: 8px 0 0;
@@ -19659,15 +19659,15 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .sb-variants .v-ALPHA { color: var(--crimson); }
 .sb-variants .v-BETA { color: #2f5f9e; }
 .sb-choices { margin: 8px 0 0; padding-left: 0; list-style: none; font-size: 12px; line-height: 1.6; }
-.sb-choices li { padding: 5px 0; border-top: 1px dashed var(--line); }
+.sb-choices li { padding: 4px 0; border-top: 1px dashed var(--line); }
 .sb-choices li span { display: block; color: var(--muted); }
 .sb-lv {
   font-style: normal;
   font-size: 10px;
   color: var(--muted);
-  margin-left: 6px;
+  margin-left: 4px;
 }
-.sb-table-wrap { overflow-x: auto; margin-top: 10px; }
+.sb-table-wrap { overflow-x: auto; margin-top: 8px; }
 .sb-table {
   width: 100%;
   border-collapse: collapse;
@@ -19675,7 +19675,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   line-height: 1.6;
 }
 .sb-table th, .sb-table td {
-  padding: 7px 10px;
+  padding: 8px 8px;
   border: 1px solid var(--line);
   text-align: left;
   vertical-align: top;
@@ -19688,7 +19688,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .sb-table td.sb-desc { min-width: 260px; color: var(--ink2); }
 .sb-cn, .sb-cn-td {
   display: inline-block;
-  margin-left: 7px;
+  margin-left: 8px;
   font-size: 11px;
   font-weight: 500;
   color: var(--muted);
@@ -19701,7 +19701,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   height: 32px;
   flex: none;
   vertical-align: -10px;
-  margin-right: 7px;
+  margin-right: 8px;
   object-fit: contain;
   background: #10141c;
   border-radius: var(--r-sm);
@@ -19746,7 +19746,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-obs {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 8px;
 }
 .sb-ob {
   display: inline-flex;
@@ -19769,7 +19769,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-ob i.dot {
   width: 8px;
   height: 8px;
-  margin-right: 5px;
+  margin-right: 4px;
   border-radius: 50%;
   flex: none;
 }
@@ -19778,15 +19778,15 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-nodekey {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
-  margin-top: 10px;
+  gap: 4px 12px;
+  margin-top: 8px;
   font-size: 12px;
   font-weight: 600;
 }
 .sb-nodekey span {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 .sb-nodekey img {
   width: 26px;
@@ -19806,7 +19806,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 /* 지역 카드 — 맵 프리뷰가 주인공. 생존연산 도면은 **원본 비율 그대로** 둔다
    (사용자 확정 2026-08-12 "얘는 원본비율이 잘 맞네" — 16:9 크롭을 걷어냄.
    원본이 640×179부터 세로형까지 제각각이라 카드 높이가 서로 다른 게 정상). */
-.sb-map-card { padding: 0 0 10px; overflow: hidden; }
+.sb-map-card { padding: 0 0 8px; overflow: hidden; }
 .sb-map-card img {
   display: block;
   width: 100%;
@@ -19847,14 +19847,14 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
   margin: 12px 0 2px;
 }
 .sb-filters button {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 11px;
+  gap: 4px;
+  padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
   color: var(--ink2);
@@ -19874,7 +19874,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(288px, 1fr));
-  gap: 10px;
+  gap: 8px;
   margin-top: 12px;
 }
 .sb-cards .sb-card {
@@ -19882,9 +19882,9 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   grid-template-columns: auto minmax(0, 1fr);
   grid-template-rows: auto auto auto;
   align-items: center;
-  column-gap: 11px;
+  column-gap: 12px;
   row-gap: 3px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -19934,7 +19934,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-modal { max-width: 620px; }
 .sb-dt h2 { margin: 0; font-size: 18px; }
 .sb-dt h4 { margin: 16px 0 4px; font-size: 13px; }
-.sb-dt p { margin: 6px 0 0; font-size: 13px; line-height: 1.75; }
+.sb-dt p { margin: 4px 0 0; font-size: 13px; line-height: 1.75; }
 .sb-dt-head {
   display: flex;
   align-items: center;
@@ -19948,12 +19948,12 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   object-fit: contain;
   background: #10141c;
   border-radius: var(--r-md);
-  padding: 5px;
+  padding: 4px;
 }
 /* 상세 안의 변형 선택 (위험도·환경압력·편성) */
-.sb-picks { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0 6px; }
+.sb-picks { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 4px; }
 .sb-picks button {
-  padding: 5px 12px;
+  padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
   color: var(--ink2);
@@ -19963,22 +19963,22 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 }
 .sb-picks button.on { color: var(--white); background: var(--crimson, var(--crimson)); border-color: var(--crimson, var(--crimson)); }
 /* 인라인 자원 나열 */
-.sb-obs-inline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.sb-obs-inline { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .sb-obs-inline i {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-style: normal;
   font-size: 12px;
   font-weight: 600;
-  padding: 4px 9px 4px 5px;
+  padding: 4px 8px 4px 4px;
   border: 1px solid var(--line);
 }
 .sb-obs-inline img { width: 24px; height: 24px; object-fit: contain; background: #10141c; border-radius: var(--r-sm); }
 /* 적 상세의 등장 지역 목록 */
-.sb-atlist { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.sb-atlist { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .sb-atlist button {
-  padding: 4px 10px;
+  padding: 4px 8px;
   font-size: 12px;
   font-weight: 600;
   color: var(--ink2);
@@ -19987,7 +19987,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   cursor: pointer;
 }
 .sb-atlist button:hover { color: var(--white); background: var(--ink); border-color: var(--border-hover); }
-.sb-atlist em { font-style: normal; margin-left: 5px; color: var(--muted); }
+.sb-atlist em { font-style: normal; margin-left: 4px; color: var(--muted); }
 .sb-atlist button:hover em { color: currentColor; opacity: .62; }
 /* 자원 목록 버튼 — 클릭 = 지도에서 그것만 강조.
    ⚠ `font: inherit`을 쓰면 위에서 잡은 font-size(11px)까지 부모 16px로 되돌아간다
@@ -20027,10 +20027,10 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-matchip em { font-style: normal; color: var(--muted); }
 .sb-matchip:hover em { color: currentColor; opacity: .62; }
 .sb-recipes-chip { list-style: none; padding-left: 0; }
-.sb-recipes-chip li { margin-bottom: 5px; }
+.sb-recipes-chip li { margin-bottom: 4px; }
 /* 시즌 부제 */
 .sb-season-sub {
-  margin-left: 10px;
+  margin-left: 8px;
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
@@ -20048,17 +20048,17 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 /* 상세 모달 — 본문이 창 가장자리에 딱 붙던 문제 수정 (사용자 지적 2026-08-12).
    .mw-body에 패딩이 없는 게 기본이라 모달마다 자기 여백을 준다 (item-modal과 같은 관례). */
 .sb-modal { max-width: 640px; }
-.sb-modal .mw-body { padding: 8px 22px 22px; }
+.sb-modal .mw-body { padding: 8px 20px 20px; }
 .sb-dt { padding: 0; }
 .sb-dt > p:first-of-type { margin-top: 8px; }
-.sb-dt .st-facts { margin-top: 10px; }
+.sb-dt .st-facts { margin-top: 8px; }
 .sb-dt .sb-cmeta { margin-top: 4px; }
 
 /* 시즌 전체 지도 — 절반 크기 (사용자 지시 2026-08-12), 구역 폴리곤 오버레이 얹음 */
 .sb-worldwrap {
   position: relative;
   width: min(50%, 560px);
-  margin-top: 10px;
+  margin-top: 8px;
   border: 1px solid var(--line);
   background: #10141c;
 }
@@ -20076,7 +20076,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-worldlabels button {
   position: absolute;
   transform: translate(-50%, -50%);
-  padding: 1px 6px;
+  padding: 1px 4px;
   font: inherit;
   font-size: 10px;
   font-weight: 700;
@@ -20115,7 +20115,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 /* ── 신시즌 전체 지도 — 격자 노드 배치 (V3는 노드 좌표가 데이터에 있다) ── */
 .sb-nodemap {
   width: min(62%, 620px);
-  margin-top: 10px;
+  margin-top: 8px;
   padding: 8px;
   border: 1px solid var(--line);
   background: #10141c;
@@ -20132,7 +20132,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   width: min(360px, 100%);
-  margin-top: 6px;
+  margin-top: 4px;
 }
 .sb-subgrid .cell { aspect-ratio: 1; border: 1px solid var(--line); background: #10141c; }
 .sb-subgrid .cell.empty { border-style: dashed; background: none; opacity: .3; }
@@ -20173,7 +20173,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   background: #10141c;
 }
 /* 조우 상세의 장면 묶음 */
-.sb-step + .sb-step { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.sb-step + .sb-step { margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--line); }
 
 /* CN 원문 아래 한국어 비공식 번역 줄 (사용자 요청 2026-08-12 — 원문이 메인, 번역이 서브) */
 .sb-trline {
@@ -20269,10 +20269,10 @@ p.sb-trline { margin-top: 2px; }
   width: 100%;
   max-width: 1120px;
   margin: 0 auto;
-  padding: 26px 20px 60px;
+  padding: 24px 20px 32px;   /* 화면 상하 리듬 (2026-09-20) */
 }
 .ac-sub {
-  margin-left: 10px;
+  margin-left: 8px;
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
@@ -20283,11 +20283,11 @@ p.sb-trline { margin-top: 2px; }
 .ac-subtabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin: 14px 0 2px;
+  gap: 4px;
+  margin: 12px 0 2px;
 }
 .ac-subtabs button {
-  padding: 6px 14px;
+  padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
   color: var(--ink2);
@@ -20321,13 +20321,13 @@ p.sb-trline { margin-top: 2px; }
   /* 9.5em = 가장 긴 기본 라벨('진영 맹약 전체')보다 조금 넉넉하게. 고른 맹약 이름이
      이보다 길어지는 경우는 없다 — 넘치면 늘어나되 줄어들지는 않는다. */
   min-width: 9.5em; text-align: left; white-space: nowrap;
-  display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 4px;
 }
 /* 조건 한 번에 풀기 (사용자 요청 2026-08-29) — 걸린 게 있을 때만 나온다.
    드롭다운과 한 줄이라 높이는 .ac-garsel-btn 과 맞추되, 필터가 아니라 **되돌리기**라
    테두리를 점선으로 두어 눌러야 할 버튼처럼 보이지 않게 한다. */
 .ac-filters-clear {
-  padding: 7px 12px; font-size: 12px; font-weight: 600; font-family: inherit;
+  padding: 8px 12px; font-size: 12px; font-weight: 600; font-family: inherit;
   color: var(--muted); background: none; white-space: nowrap;
   border: 1px dashed var(--line); border-radius: var(--r-sm, 6px); cursor: pointer;
 }
@@ -20340,8 +20340,8 @@ p.sb-trline { margin-top: 2px; }
 .ac-modebar button {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 7px 11px;
+  gap: 4px;
+  padding: 8px 12px;
   font-size: 12px;
   font-weight: 700;
   color: var(--ink2);
@@ -20355,8 +20355,8 @@ p.sb-trline { margin-top: 2px; }
   border-color: var(--ink);
 }
 .ac-modebar button img { width: 16px; height: 16px; object-fit: contain; }
-.ac-modebar { margin: 10px 0 8px; }
-.ac-count { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+.ac-modebar { margin: 8px 0 8px; }
+.ac-count { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
 
 /* ── 특질 필터 메뉴 (사용자 요청 2026-08-23) — 발동 시점·효과 유형으로 거른다.
    네이티브 select로 못 만든 이유: '맹약이 중첩될 때마다' 항목이 맹약별 서브메뉴를
@@ -20365,7 +20365,7 @@ p.sb-trline { margin-top: 2px; }
   position: relative;
 }
 .ac-garsel-btn {
-  padding: 7px 10px;
+  padding: 8px 8px;
   font-size: 12px;
   font-weight: 600;
   font-family: inherit;
@@ -20392,7 +20392,7 @@ p.sb-trline { margin-top: 2px; }
   left: 0;
   min-width: 220px;
   margin: 0;
-  padding: 5px;
+  padding: 4px;
   list-style: none;
   background: var(--bg-panel);
   border: 1px solid var(--line);
@@ -20409,16 +20409,16 @@ p.sb-trline { margin-top: 2px; }
 .ac-sim-bonds {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin-top: 16px;
 }
 .ac-sim-bondcard {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   flex: 1 1 320px;
   max-width: 520px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   background: var(--bg-panel);
@@ -20453,7 +20453,7 @@ p.sb-trline { margin-top: 2px; }
   line-height: 1.45;
 }
 .ac-sim-group {
-  margin-top: 6px;
+  margin-top: 4px;
 }
 /* 중첩 기여 배지 — 이 카드가 조합의 엔진임을 표시 (기여자는 그룹 맨 앞에 정렬된다) */
 .sb-chip.ac-feed {
@@ -20497,7 +20497,7 @@ p.sb-trline { margin-top: 2px; }
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 5px 3px 6px;
+  padding: 4px 3px 4px;
   text-align: center;
 }
 .ac-bandmenu .ac-bandtile img {
@@ -20554,7 +20554,7 @@ p.sb-trline { margin-top: 2px; }
   gap: 8px;
   align-items: center;
   width: 100%;
-  padding: 7px 9px;
+  padding: 8px 8px;
   border: 0;
   border-radius: var(--r-sm);
   background: transparent;
@@ -20613,7 +20613,7 @@ p.sb-trline { margin-top: 2px; }
                     포인터가 행→서브로 건너는 동안 틈에서 mouseleave가 발화해 닫힌다 (감사 2026-08-23) */
   min-width: 150px;
   margin: 0;
-  padding: 5px;
+  padding: 4px;
   list-style: none;
   background: var(--bg-panel);
   border: 1px solid var(--line);
@@ -20629,7 +20629,7 @@ p.sb-trline { margin-top: 2px; }
      옆으로 내밀면 화면 밖으로 나간다 */
   .ac-garsel-sub {
     position: static;
-    margin: 2px 0 4px 14px;
+    margin: 2px 0 4px 12px;
     border: 0;
     border-left: 2px solid var(--line);
     border-radius: 0;
@@ -20645,7 +20645,7 @@ p.sb-trline { margin-top: 2px; }
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  padding: 2px 6px;
+  padding: 2px 4px;
   border-radius: var(--r-xs);
   color: #fff;
   white-space: nowrap;
@@ -20671,8 +20671,8 @@ html:not(.dark) .ac-star { color: #8f6512; }
 /* 획득 경로 — 위(맹약 칩 줄)와 붙어 보여 별개 항목인 걸 못 읽었다 (사용자 지적 2026-09-02).
    여백만 벌리면 붕 뜨므로 옅은 구분선 + 살짝 들여쓴 블록으로 묶는다. */
 .ac-ways {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-  margin: 12px 0 0; padding: 9px 11px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  margin: 12px 0 0; padding: 8px 12px;
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--gold) 7%, var(--white));
   border: 1px solid color-mix(in srgb, var(--gold) 20%, transparent);
@@ -20691,7 +20691,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
    인라인 스타일과 싸운다. absolute로 되돌리면 모달 overflow에 잘린다 (2026-09-02 지적). */
 .ac-tip {
   display: block;
-  padding: 7px 10px;
+  padding: 8px 8px;
   font-size: 11px; font-weight: 600; line-height: 1.45;
   white-space: normal; text-align: left; word-break: keep-all;
   color: var(--white); background: var(--ink);
@@ -20716,13 +20716,13 @@ html:not(.dark) .ac-star { color: #8f6512; }
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 12px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 .ac-bondcard {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 13px 14px;
+  padding: 12px 12px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -20735,7 +20735,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
 .ac-bondcard > header {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
 }
 /* 맹약 아이콘은 **흰 실루엣**이라 밝은 카드 위에서는 보이지 않는다 — 게임처럼 어두운
    원판에 얹는다 (모달 헤더는 .ac-dt-head가 이미 어두운 var(--chip) 판을 깔고 있다) */
@@ -20756,7 +20756,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   font-style: normal;
   font-size: 10px;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: var(--r-pill);
   border: 1px solid var(--line);
   color: var(--muted);
@@ -20828,7 +20828,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 14px;
+  padding: 12px 12px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -20837,7 +20837,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
 }
 button.ac-card { cursor: pointer; transition: 0.12s; }
 button.ac-card:hover { border-color: var(--border-hover); background: var(--paper); }
-.ac-card > header { display: flex; align-items: flex-start; gap: 10px; }
+.ac-card > header { display: flex; align-items: flex-start; gap: 8px; }
 .ac-card > header > div { min-width: 0; }
 .ac-thumb {
   width: 44px;
@@ -20873,7 +20873,7 @@ button.ac-card:hover { border-color: var(--border-hover); background: var(--pape
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 9px 3px 4px;
+  padding: 3px 8px 3px 4px;
   font: inherit;
   font-size: 11px;
   font-weight: 700;
@@ -20911,7 +20911,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
-  padding: 8px 10px;
+  padding: 8px 8px;
   font-size: 12px;
   line-height: 1.6;
   background: var(--paper);
@@ -20934,7 +20934,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
    지금은 다른 것만 골든 줄이 덧붙으므로, 그 줄이 스스로 골든임을 말해야 한다. */
 .ac-gar-gold {
   margin-left: 4px;
-  padding: 1px 5px;
+  padding: 1px 4px;
   border-radius: var(--r-xs);
   background: #8a6d1d;
   color: #fff;
@@ -20955,14 +20955,14 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   padding-left: 8px;
   border-left: 2px solid var(--gold);
 }
-.ac-skmod-d.gold .ac-gar-gold { margin: 0 6px 0 0; }
+.ac-skmod-d.gold .ac-gar-gold { margin: 0 4px 0 0; }
 /* 특질 문구의 줄바꿈 보존 — 게임 원문이 두 줄인 능력이 6종 있다
    (그라벨·파인콘·라플란드 더 데카덴차·데겐블레허). .ac-skmod-d 와 같은 처리. */
 .ac-gar-txt { min-width: 0; white-space: pre-line; }
 /* 골든 문구가 일반과 똑같은 기물 — 비워 두면 빠뜨린 걸로 읽혀서 한 마디 적는다 */
 .ac-garsame {
   margin: 3px 0 0;
-  padding-left: 10px;
+  padding-left: 8px;
   font-size: 11px;
   color: var(--muted);
 }
@@ -20991,19 +20991,19 @@ html.dark .ac-krfix { color: var(--gold); }
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 .ac-rule {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 11px 13px;
+  padding: 12px 12px;
   background: var(--white);
   border: 1px solid var(--line);
 }
 .ac-rule b { font-size: 14px; }
 .ac-rule span { font-size: 11px; color: var(--muted); }
-.ac-tablewrap { overflow-x: auto; margin-top: 10px; }
+.ac-tablewrap { overflow-x: auto; margin-top: 8px; }
 .ac-table {
   width: 100%;
   border-collapse: collapse;
@@ -21011,7 +21011,7 @@ html.dark .ac-krfix { color: var(--gold); }
   background: var(--white);
 }
 .ac-table th, .ac-table td {
-  padding: 7px 10px;
+  padding: 8px 8px;
   border: 1px solid var(--line);
   text-align: left;
   white-space: nowrap;
@@ -21024,20 +21024,20 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-table tbody th { font-weight: 700; background: var(--paper); }
 .ac-gold-row td, .ac-gold-row th { background: color-mix(in srgb, var(--gold) 7%, var(--white)); }
 .ac-table-sm { font-size: 12px; }
-.ac-table-sm th, .ac-table-sm td { padding: 6px 9px; }
+.ac-table-sm th, .ac-table-sm td { padding: 4px 8px; }
 .ac-goldmark { font-size: 11px; color: var(--muted); }
 .ac-diy {
   font-style: normal;
   font-size: 10px;
   font-weight: 700;
-  margin-left: 6px;
+  margin-left: 4px;
   color: var(--muted);
 }
 .ac-rounds {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 4px;
+  margin-top: 8px;
 }
 .ac-round {
   display: flex;
@@ -21045,7 +21045,7 @@ html.dark .ac-krfix { color: var(--gold); }
   align-items: center;
   gap: 1px;
   min-width: 52px;
-  padding: 7px 6px;
+  padding: 8px 4px;
   background: var(--white);
   border: 1px solid var(--line);
 }
@@ -21057,10 +21057,10 @@ html.dark .ac-krfix { color: var(--gold); }
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 .ac-buff {
-  padding: 9px 12px;
+  padding: 8px 12px;
   background: var(--white);
   border: 1px solid var(--line);
 }
@@ -21070,7 +21070,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-buff span { font-size: 12px; line-height: 1.6; color: var(--ink2); }
 /* ── 특수 적 — 이름만 늘어놓지 않고 초상 카드로 (사용자 지시 2026-08-22).
       누르면 적 도감과 같은 상세 모달이 열린다. ── */
-.ac-enemygrp { margin-top: 18px; }
+.ac-enemygrp { margin-top: 16px; }
 /* 유형 아이콘은 흰 실루엣이라 밝은 배경에서 사라진다 — 맹약 아이콘과 같은 어두운 원판을
    깐다. 전역 `img { display: block }` 때문에 h3 안에서 줄바꿈이 나므로 inline-block 명시. */
 .ac-etypeico {
@@ -21079,7 +21079,7 @@ html.dark .ac-krfix { color: var(--gold); }
   height: 22px;
   object-fit: contain;
   vertical-align: -6px;
-  margin-right: 5px;
+  margin-right: 4px;
   padding: 3px;
   background: var(--chip);
   border-radius: 50%;
@@ -21088,14 +21088,14 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-etypebar {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin: 14px 0 2px;
+  gap: 4px;
+  margin: 12px 0 2px;
 }
 .ac-etypebar button {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 12px 5px 7px;
+  gap: 4px;
+  padding: 4px 12px 4px 8px;
   font: inherit;
   font-size: 12px;
   font-weight: 600;
@@ -21119,13 +21119,13 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-etypebar button:hover { border-color: var(--border-hover); }
 .ac-etypebar button.on { color: var(--on-lime); background: var(--lime); border-color: var(--lime); }
 /* 리더 적 — 유형 추첨과 별개라 맨 위에 따로 (히든 리더는 아래 묶음) */
-.ac-bossgrp { margin-top: 10px; }
+.ac-bossgrp { margin-top: 8px; }
 .ac-bosshead {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 7px;
-  margin: 0 0 6px;
+  gap: 8px;
+  margin: 0 0 4px;
   font-size: 12px;
 }
 .ac-bosshead span { font-size: 11px; font-weight: 600; color: var(--muted); }
@@ -21142,15 +21142,15 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-encards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(186px, 1fr));
-  gap: 6px;
+  gap: 4px;
   margin-top: 8px;
 }
 .ac-encard {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
   align-items: center;
-  gap: 9px;
-  padding: 6px 10px 6px 6px;
+  gap: 8px;
+  padding: 4px 8px 4px 4px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -21181,7 +21181,7 @@ html.dark .ac-krfix { color: var(--gold); }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ac-encard-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 2px; }
+.ac-encard-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 2px; }
 .ac-encard-meta em {
   font-style: normal;
   font-size: 10px;
@@ -21192,18 +21192,18 @@ html.dark .ac-krfix { color: var(--gold); }
 /* 적 모달 — .en-file이 자체 패딩을 갖고 있어 두 덩이를 쌓으면 사이가 벌어진다.
    바깥 여백은 .ac-modal .mw-body가 대므로 여기선 지우고 사이 간격만 준다. */
 .ac-enmodal .en-file { padding: 0; }
-.ac-enmodal .ac-enextra { margin-top: 18px; }
+.ac-enmodal .ac-enextra { margin-top: 16px; }
 .ac-enmini {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-  gap: 6px;
+  gap: 4px;
   margin-top: 8px;
 }
 .ac-enminicard {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 9px 5px 5px;
+  padding: 4px 8px 4px 4px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -21219,20 +21219,20 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-enminicard em { font-style: normal; font-size: 10px; font-weight: 600; color: var(--muted); }
 
 /* ── 티어 묶음 — 오퍼레이터·아이템 목록을 T1~T6으로 나눈다 (사용자 지시 2026-08-22) ── */
-.ac-tiersec { margin-top: 14px; }
-.ac-tiersec > .ac-tierhead { margin: 0 0 6px; }
+.ac-tiersec { margin-top: 12px; }
+.ac-tiersec > .ac-tierhead { margin: 0 0 4px; }
 
 /* ── 자유 선택 칸 후보 — ★6 전원, 이 모드 상점에도 있는 오퍼는 점으로 표시 ── */
 .ac-diypool {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
   gap: 4px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 .ac-diyop {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
   padding: 4px 8px 4px 4px;
   text-align: left;
@@ -21256,14 +21256,14 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-msgrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 6px;
-  margin-top: 10px;
+  gap: 4px;
+  margin-top: 8px;
 }
 .ac-ms {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 6px 10px;
+  gap: 8px;
+  padding: 4px 8px;
   font-size: 12px;
   background: var(--white);
   border: 1px solid var(--line);
@@ -21279,13 +21279,13 @@ html.dark .ac-krfix { color: var(--gold); }
    너무 넓어서 능력 줄과 표가 창 끝까지 늘어나고, 좌우 여백이 없어 글자가 테두리에 붙었다
    (사용자 지적 2026-08-22 — 기물·맹약 모달 둘 다). */
 .ac-modal { max-width: 720px; }
-.ac-modal .mw-body { padding: 12px 22px 24px; overflow-y: auto; }
+.ac-modal .mw-body { padding: 12px 20px 24px; overflow-y: auto; }
 .ac-dt { padding: 0; }
 .ac-dt-head {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 6px;
+  gap: 12px;
+  margin-bottom: 4px;
 }
 .ac-dt-head > img,
 .ac-dt-head > .ac-thumb {
@@ -21297,14 +21297,14 @@ html.dark .ac-krfix { color: var(--gold); }
   border-radius: var(--r-sm);
 }
 .ac-dt-head > div { min-width: 0; }
-.ac-dt-head h2 { margin: 0 0 6px; font-size: 18px; line-height: 1.25; }
+.ac-dt-head h2 { margin: 0 0 4px; font-size: 18px; line-height: 1.25; }
 .ac-dt-head .ac-cmeta { margin: 0; }
-.ac-dt-head .ac-bondline { margin-top: 6px; }
-.ac-dt h4 { margin: 20px 0 7px; font-size: 13px; }
+.ac-dt-head .ac-bondline { margin-top: 4px; }
+.ac-dt h4 { margin: 20px 0 8px; font-size: 13px; }
 .ac-dt h4:first-of-type { margin-top: 16px; }
 .ac-dt p { font-size: 12px; line-height: 1.75; }
 .ac-dt .ac-tablewrap { margin-top: 8px; }
-.ac-dt .ac-gar + .ac-gar { margin-top: 6px; }
+.ac-dt .ac-gar + .ac-gar { margin-top: 4px; }
 .ac-steps {
   margin: 0;
   padding: 0;
@@ -21316,7 +21316,7 @@ html.dark .ac-krfix { color: var(--gold); }
 /* ⚠ 자식 선택자 — 효과 줄 안에 '실제 수치' 목록(.ac-stack li)이 들어와서(2026-08-24),
    자손 선택자로 두면 안쪽 줄까지 같은 카드 배경·왼쪽 띠를 뒤집어쓴다. */
 .ac-steps > li {
-  padding: 9px 11px;
+  padding: 8px 12px;
   font-size: 12px;
   line-height: 1.6;
   background: var(--paper);
@@ -21332,20 +21332,20 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-kv { margin: 0; padding: 0; list-style: none; }
 .ac-kv li {
   display: flex;
-  gap: 10px;
-  padding: 6px 0;
+  gap: 8px;
+  padding: 4px 0;
   font-size: 12px;
   border-bottom: 1px solid var(--line);
 }
 .ac-kv li span { flex: none; min-width: 64px; color: var(--muted); }
 /* 맹약 모달의 소속 오퍼레이터 — 얼굴 + 이름 + **그 오퍼의 위수 협의 능력** 한 줄
    (사용자 지시 2026-08-22 "오퍼 섬네일이랑 함께 위수 협의 능력도 표시해줘") */
-.ac-tiergrp { margin-bottom: 14px; }
+.ac-tiergrp { margin-bottom: 12px; }
 .ac-tierhead {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin: 0 0 6px;
+  gap: 8px;
+  margin: 0 0 4px;
   font-size: 12px;
 }
 /* ⚠ em이 아니라 span — 티어 배지(.ac-tier)도 em이라, em을 잡으면 배지 글자까지
@@ -21356,9 +21356,9 @@ html.dark .ac-krfix { color: var(--gold); }
   display: grid;
   grid-template-columns: 40px minmax(112px, 178px) 1fr;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 6px 9px;
+  padding: 4px 8px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -21399,23 +21399,23 @@ html.dark .ac-krfix { color: var(--gold); }
    (사용자 제보 2026-08-26). 능력 하나가 한 덩이가 되게 블록으로 세우고,
    원문이 두 줄인 능력은 pre-line 으로 그 줄바꿈까지 살린다. */
 .ac-oprow-gar > span { display: block; white-space: pre-line; }
-.ac-oprow-gar > span + span { margin-top: 5px; }
+.ac-oprow-gar > span + span { margin-top: 4px; }
 .ac-oprow-gar em {
   font-style: normal;
   font-size: 10px;
   font-weight: 700;
   color: var(--muted);
-  margin-right: 5px;
+  margin-right: 4px;
   white-space: nowrap;
 }
-.ac-note { margin: 0 0 6px; font-size: 11px; }
+.ac-note { margin: 0 0 4px; font-size: 11px; }
 /* ── 편성 계산기 (2026-08-29) ─────────────────────────────────────────────
    전장 8칸 · 덱 10칸을 격자로 깔고, 아래에 맹약 상태를 쌓는다. 칸은 얼굴+이름 버튼과
    조작 버튼(정예화·빼기)이 겹치지 않게 세로로 나눈다 — 카드 안에 버튼을 또 넣는 게 아니라
    형제로 두는 것이 규약이다 (버튼 중첩은 HTML 위반, 2026-08-22 하이드레이션 오류 전례). */
-.ac-board { margin: 0 0 18px; }
+.ac-board { margin: 0 0 16px; }
 .ac-slots {
-  display: grid; gap: 8px; margin: 6px 0 14px;
+  display: grid; gap: 8px; margin: 4px 0 12px;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   /* ⚠ 행 높이를 **못 박는다.** 격자는 align-items 뿐 아니라 align-content 기본값도
      stretch 라, 컨테이너가 세로로 늘어나면 그 여백이 자동 행 트랙으로 통째로 들어간다 —
@@ -21451,7 +21451,7 @@ html.dark .ac-krfix { color: var(--gold); }
 }
 /* 9번째 배치 칸 — 아이템 '인사부 파일'을 먹어야 열린다. 눌러서 해금한다. */
 .ac-slot.locked {
-  padding: 4px 5px; gap: 2px; align-items: center; justify-content: center;
+  padding: 4px 4px; gap: 2px; align-items: center; justify-content: center;
   border-style: dashed; cursor: pointer; text-align: center;
   color: var(--muted); background: color-mix(in srgb, var(--line) 22%, transparent);
 }
@@ -21478,7 +21478,7 @@ html.dark .ac-krfix { color: var(--gold); }
    버튼 안에서는 가운데인데 그 버튼의 아랫부분이 잘려서, '골든' 글자가 아래로 치우쳐 보였다
    (사용자가 세 번 지적). 이제 모자라면 이름 쪽이 줄고 버튼 줄은 그대로 남는다. */
 .ac-slot-face {
-  border: 0; background: none; cursor: pointer; padding: 8px 6px 4px;
+  border: 0; background: none; cursor: pointer; padding: 8px 4px 4px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 4px; min-width: 0;
   flex: 1 1 auto; min-height: 0;
@@ -21490,7 +21490,7 @@ html.dark .ac-krfix { color: var(--gold); }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
 /* 정비구역 칸은 82px 뿐 — 여백·간격·이름 줄높이를 줄여 애초에 넘치지 않게 한다 */
-.ac-slot.sm .ac-slot-face { padding: 6px 5px 2px; gap: 2px; }
+.ac-slot.sm .ac-slot-face { padding: 4px 4px 2px; gap: 2px; }
 .ac-slot.sm .ac-slot-face b { font-size: 10px; line-height: 1.25; }
 .ac-slot-act { display: flex; align-items: stretch; border-top: 1px solid var(--line); flex: 0 0 auto; }
 .ac-slot-act button {
@@ -21529,10 +21529,10 @@ html.dark .ac-krfix { color: var(--gold); }
 }
 .ac-clear:hover { color: var(--ink); border-color: var(--ink2); }
 /* 판 비우기 · 공유 링크 복사 — 한 줄에 나란히 */
-.ac-simfoot { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+.ac-simfoot { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
 
 /* ── 중첩 수급 총정리 (사용자 요청 2026-08-30) — 시점별 확정 합계 + 조건부 목록 ── */
-.ac-gains { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.ac-gains { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
 .ac-gainrow {
   display: grid; grid-template-columns: 130px 1fr; gap: 4px 12px; align-items: start;
   border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper); padding: 8px 12px;
@@ -21540,7 +21540,7 @@ html.dark .ac-krfix { color: var(--gold); }
 @media (max-width: 560px) { .ac-gainrow { grid-template-columns: 1fr; } }
 .ac-gainw b { display: block; font-size: 12px; }
 .ac-gainw i { font-style: normal; font-size: 10px; color: var(--muted); }
-.ac-gainchips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; }
+.ac-gainchips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 0; }
 .ac-gainchip { display: inline-flex; align-items: center; gap: 4px; }
 .ac-gainchip em { font-style: normal; font-size: 12px; font-weight: 700; }
 .ac-gainchip u { text-decoration: none; font-size: 10px; color: var(--muted); }
@@ -21553,7 +21553,7 @@ html.dark .ac-krfix { color: var(--gold); }
 
 /* 맹약 상세 — 시뮬레이터에서 넣은 중첩 기준으로 푼 실제 값 (사용자 지시 2026-08-30) */
 .ac-atstack { margin-left: 8px; font-weight: 600; color: var(--ink2); }
-.ac-stack-now { margin-left: 6px; font-weight: 700; color: var(--ink); }
+.ac-stack-now { margin-left: 4px; font-weight: 700; color: var(--ink); }
 
 /* ── 전투 맵 (제보 c3d2c056, 2026-08-30) — 카드 격자 → 모달.
    작전 도감·통합전략과 같은 규약이다 (사용자 지적 2026-08-30 "다른 기능들처럼 모달로").
@@ -21561,7 +21561,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-mapcards { grid-template-columns: repeat(auto-fill, minmax(205px, 1fr)); gap: 8px; }
 .ac-mapcard {
   display: flex; align-items: center; gap: 8px; text-align: left;
-  cursor: pointer; padding: 8px 10px; min-width: 0; overflow: hidden;
+  cursor: pointer; padding: 8px 8px; min-width: 0; overflow: hidden;
 }
 .ac-mapcardface { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex: none; }
 .ac-mapcard-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -21582,13 +21582,13 @@ html.dark .ac-krfix { color: var(--gold); }
 }
 .ac-mapcard-body > em { font-style: normal; font-size: 11px; color: var(--muted); }
 /* 단독/협동 — 리더 맵만 갈리므로 그 제목 줄에 붙인다 */
-.ac-mapmode { display: inline-flex; gap: 4px; margin-left: 10px; }
+.ac-mapmode { display: inline-flex; gap: 4px; margin-left: 8px; }
 .ac-mapmode button {
-  padding: 3px 10px; font: inherit; font-size: 11px; font-weight: 600; color: var(--muted);
+  padding: 3px 8px; font: inherit; font-size: 11px; font-weight: 600; color: var(--muted);
   background: none; border: 1px solid var(--line); border-radius: var(--r-pill); cursor: pointer;
 }
 .ac-mapmode button.on { color: var(--ink); border-color: var(--ink2); }
-.ac-mapbosses { margin-bottom: 10px; }
+.ac-mapbosses { margin-bottom: 8px; }
 /* 모달 — 지도가 가로로 넓어(17칸) 창을 넉넉히 준다 */
 /* 전투 맵만 특수 — 지도(21칸)와 적 카드 2열을 나란히 담아야 한다
    (사용자 지시 2026-08-30 "위수협의 전투맵만 특수로 모달 너비를 늘리자") */
@@ -21596,18 +21596,18 @@ html.dark .ac-krfix { color: var(--gold); }
    max-width 만 얹으면 960 에서 안 움직인다 (실측 2026-08-30). width 를 같이 덮는다. */
 .ac-mapmodal { width: min(1360px, calc(100vw - 24px)); max-width: none; }
 .ac-mapbody { padding: 2px 0; }
-.ac-mapcap { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 8px; }
+.ac-mapcap { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0 0 8px; }
 .ac-mapcap > b { font-size: 12px; }
 .ac-mapcap > em { font-style: normal; font-size: 11px; color: var(--muted); }
-.ac-mapenemies { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.ac-mapenemies { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; }
 .ac-mapenface { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex: none; }
-.ac-mapboard { margin-bottom: 14px; }
+.ac-mapboard { margin-bottom: 12px; }
 .ac-mapnote { font-size: 11px; line-height: 1.6; margin: 2px 0 0; }
 /* 일반 라운드의 후보 적 — 유형별로 **이 자리에** 다 펼친다 (다른 탭으로 안 보낸다) */
 .ac-mappool { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
 .ac-mappoolhead {
   margin: 0 0 3px; font-size: 11px; font-weight: 700; color: var(--ink2);
-  display: flex; align-items: baseline; gap: 5px;
+  display: flex; align-items: baseline; gap: 4px;
 }
 .ac-mappoolhead .sb-count { font-size: 10px; }
 .ac-mappool .ac-mapenemies { margin: 0; gap: 4px; }
@@ -21620,7 +21620,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-mapcard.on { border-color: var(--lime); background: color-mix(in srgb, var(--lime) 12%, var(--paper)); }
 /* 지도 | 등장 적 2단 — 통합전략 모달(.rg-modal-cols)과 같은 규격.
    지도 확대(⤢)는 .st-routewrap.big 을 :has() 로 받아 넓힌다 (route-map-rules). */
-.ac-mapcols { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+.ac-mapcols { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; align-items: start; }
 .ac-mapcols:has(.st-routewrap.big) { grid-template-columns: minmax(0, 62%) minmax(0, 1fr); }
 .ac-mapcols:has(.st-routewrap.full) { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 760px) { .ac-mapcols { grid-template-columns: minmax(0, 1fr); } }
@@ -21628,14 +21628,14 @@ html.dark .ac-krfix { color: var(--gold); }
    (사용자 지적 2026-08-30). 격자로 깔아 지도 높이 안에 담는다. */
 .ac-mapencol {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 6px; min-width: 0; align-content: start;
+  gap: 4px; min-width: 0; align-content: start;
 }
 .ac-mapencol > .ac-wavecap, .ac-mapencol > .ac-mapnote { grid-column: 1 / -1; }
-.ac-wavecap { margin: 0 0 2px; gap: 5px 8px; }
+.ac-wavecap { margin: 0 0 2px; gap: 4px 8px; }
 .ac-wavecap > b { font-size: 12px; }
 /* 등장 적 카드 — 경로 색을 --rc 로 물려받아 테두리에 쓴다 (route-map-rules) */
 .ac-mapencard {
-  display: flex; align-items: center; gap: 6px; text-align: left; padding: 5px 7px;
+  display: flex; align-items: center; gap: 4px; text-align: left; padding: 4px 8px;
   cursor: pointer; border-left: 3px solid var(--rc, var(--line)); min-width: 0;
 }
 .ac-mapencard.pinned { border-color: var(--rc); background: color-mix(in srgb, var(--rc) 12%, var(--paper)); }
@@ -21662,7 +21662,7 @@ html.dark .ac-krfix { color: var(--gold); }
   background: var(--lime); color: #16181a;
   border: 1px solid color-mix(in srgb, var(--lime) 70%, #000);
   border-radius: var(--r-pill); cursor: pointer;
-  padding: 8px 18px; font-size: 13px; font-weight: 700; font-family: inherit;
+  padding: 8px 16px; font-size: 13px; font-weight: 700; font-family: inherit;
   white-space: nowrap;
 }
 .ac-simcta:hover { background: color-mix(in srgb, var(--lime) 85%, #fff); }
@@ -21678,7 +21678,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-prtscta {
   background: var(--bg); color: inherit;
   border-color: color-mix(in srgb, var(--lime) 45%, var(--line));
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 4px;
 }
 .ac-prtscta:hover:not(:disabled) { background: var(--bg-soft); }
 .ac-prtscta.on {
@@ -21705,8 +21705,8 @@ html.dark .ac-krfix { color: var(--gold); }
 
 
 .ac-lockbar {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
-  margin: 0 0 14px; padding: 8px 12px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
+  margin: 0 0 12px; padding: 8px 12px;
   border: 1px solid color-mix(in srgb, var(--lime) 40%, var(--line));
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--lime) 8%, var(--bg-soft));
@@ -21716,17 +21716,17 @@ html.dark .ac-krfix { color: var(--gold); }
 
 /* 밴 리스트 — PRTS 연결 중에만, 전략 위 (2026-09-06) */
 .ac-bannote {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-size: 12px; line-height: 1.6;
   color: var(--ink3);
 }
 .ac-banrow {
   list-style: none; margin: 0; padding: 0;
-  display: flex; flex-wrap: wrap; gap: 6px;
+  display: flex; flex-wrap: wrap; gap: 4px;
 }
 .ac-banchip {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 3px 10px 3px 3px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px 3px 3px;
   border: 1px solid var(--line); border-radius: var(--r-pill);
   background: var(--bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
   /* 밴 = 못 쓰는 기물이라 죽은 색으로 (읽을 수는 있어야 하니 회색조 + 살짝 흐리게) */
@@ -21736,7 +21736,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-banchip > b { font-weight: 600; }
 /* 후보 — 아직 확정 아님. 점선 테두리로 확정과 한눈에 구분한다 (거짓말 방지) */
 .ac-banchip.maybe { border-style: dashed; opacity: 0.6; }
-.ac-banmaybe-note { margin: 10px 0 6px; font-size: 12px; }
+.ac-banmaybe-note { margin: 8px 0 4px; font-size: 12px; }
 /* 맹약별 그룹 (사용자 요청 2026-09-07 "밴 리스트는 맹약별로 그루핑을 좀 해 줘") —
    게임의 '사용 제한 오퍼레이터' 화면과 같은 배치다 (fixtures/lens/screenshots/ban2.jpg 실물):
    왼쪽에 맹약, 오른쪽에 그 줄의 카드, 줄 사이에 가는 구분선.
@@ -21752,7 +21752,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-bangroups {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
-  column-gap: 10px;
+  column-gap: 8px;
   align-items: start;
   margin-top: 8px;
 }
@@ -21772,7 +21772,7 @@ html.dark .ac-krfix { color: var(--gold); }
   /* 좁으면 한 칸으로 접힌다 (.ac-morphgrp 와 같은 브레이크포인트) — 머리 바로 아래에 칩이 붙어
      한 덩어리로 읽히도록, 칩 줄의 구분선은 지우고 간격만 남긴다 */
   .ac-bangroups { grid-template-columns: minmax(0, 1fr); }
-  .ac-bangroups > .ac-banrow { margin-top: 0; padding-top: 6px; border-top: 0; }
+  .ac-bangroups > .ac-banrow { margin-top: 0; padding-top: 4px; border-top: 0; }
 }
 
 
@@ -21851,11 +21851,11 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-grid4 { grid-template-columns: repeat(4, 1fr); }
 /* 아이템 강화판 한 줄 — 기물 골든 능력(.ac-gar.gold)과 같은 금색 계열로 묶는다 */
 .ac-eqd.gold {
-  margin-top: 5px;
+  margin-top: 4px;
   padding-left: 8px;
   border-left: 2px solid var(--gold);
 }
-.ac-eqd.gold .ac-gar-gold { margin: 0 6px 0 0; }
+.ac-eqd.gold .ac-gar-gold { margin: 0 4px 0 0; }
 
 /* PRTS 로 읽은 '지금 고른 전략' 표 — 전략 목록에서 현재 판의 상태를 알아보게 (사용자 지시 2026-09-07
    "위수협의 메뉴 내의 기물이라든가 그런거도 다 밴이라든지 선택된 전략이라든지 등의 현재상태 반영") */
@@ -21872,7 +21872,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-bondcard:has(.ac-banwarn):hover { background: color-mix(in srgb, #e0323f 12%, var(--white)); }
 
 /* PRTS 읽은 값 보기 버튼 — 제목 줄의 PRTS 버튼 오른쪽에 붙는다 */
-.ac-prtsview .sb-count { margin-left: 5px; font-style: normal; font-size: 10px; opacity: 0.85; }
+.ac-prtsview .sb-count { margin-left: 4px; font-style: normal; font-size: 10px; opacity: 0.85; }
 
 
 /* 시뮬레이션 종류 — 제목 줄 **오른쪽**에 (사용자 요청 2026-09-07 "난이도도 모달창 오른쪽 위에다가
@@ -21935,15 +21935,15 @@ html.dark .ac-krfix { color: var(--gold); }
 
 
 /* 전략 칩 — 내 전략(확정/고르는 중)·다른 참가자(연합). 아이콘은 전략 아트를 작게 (2026-09-07) */
-.ac-runbar-band { display: inline-flex; align-items: center; gap: 6px; color: var(--ink2); }
+.ac-runbar-band { display: inline-flex; align-items: center; gap: 4px; color: var(--ink2); }
 .ac-runbar-band > b { font-weight: 700; color: var(--ink3); }
 .ac-runbar-band img { width: 18px; height: 18px; border-radius: var(--r-sm); object-fit: cover; flex: none; }
 .ac-runbar-seat { display: inline-flex; align-items: center; gap: 4px; }
-.ac-runbar-seat + .ac-runbar-seat { margin-left: 6px; }
+.ac-runbar-seat + .ac-runbar-seat { margin-left: 4px; }
 /* 런바의 전략 칩 — 누르면 전략 상세가 열린다 (사용자 지시 2026-09-07 "현재 전략은 굳이 모달창
    필요 없이 바깥에다"). 칩 모양은 런바 글자 크기에 맞춰 작게, 배경은 런바 위에서 살짝 뜨게. */
 .ac-runbar-bandbtn {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; gap: 4px;
   padding: 2px 8px 2px 3px;
   border: 1px solid var(--line); border-radius: var(--r-pill);
   background: var(--bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
@@ -21967,7 +21967,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-runbar-off:hover { background: color-mix(in srgb, #e0323f 10%, var(--white)); border-color: #e0323f; }
 /* 박스 안에서 펼쳐지는 밴 목록 — 위 줄과 가는 선으로 가른다 */
 .ac-runbar > .ac-banlist {
-  margin: 0; padding: 10px 0 0;
+  margin: 0; padding: 8px 0 0;
   border-top: 1px solid color-mix(in srgb, var(--lime) 30%, var(--line));
 }
 /* 기물 카드도 배경을 붉게 (사용자 지시 2026-09-07 "오퍼레이터(기물) 탭에서도 밴당한애들은
@@ -21988,7 +21988,7 @@ html.dark .ac-krfix { color: var(--gold); }
 @media (max-width: 760px) {
   .ac-ctarow {
     position: static; transform: none; width: fit-content;
-    margin: 10px auto 0;
+    margin: 8px auto 0;
   }
 }
 /* 담기 모달의 위 여백이 38px 이나 됐다 (사용자 지적 2026-08-29 "패딩이 좀 큰 거 같음").
@@ -22004,7 +22004,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-pickmodal .ac-pickcard .ac-thumb { width: 34px; height: 34px; }
 .ac-pickmodal .ac-pickcard .ac-cname { font-size: 12px; }
 .ac-pickmodal .ac-tiersec { margin-bottom: 12px; }
-.ac-stackin { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; font-size: 12px; font-weight: 600; }
+.ac-stackin { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; font-size: 12px; font-weight: 600; }
 .ac-stackin input {
   width: 84px; padding: 4px 8px; font-size: 12px;
   border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper); color: var(--ink);
@@ -22014,7 +22014,7 @@ html.dark .ac-krfix { color: var(--gold); }
 /* 맹약 배지 줄 — 인게임처럼 동그란 다이얼을 가로로 늘어놓는다 (사용자 지시 2026-08-29).
    가운데 숫자는 **인원**이다 (게임은 중첩을 띄우지만 그건 편성만으로 못 구한다). */
 .ac-bring-row {
-  display: flex; flex-wrap: wrap; gap: 10px 14px; margin: 4px 0 14px;
+  display: flex; flex-wrap: wrap; gap: 8px 12px; margin: 4px 0 12px;
 }
 .ac-bring {
   border: 0; background: none; cursor: pointer; padding: 0;
@@ -22026,7 +22026,7 @@ html.dark .ac-krfix { color: var(--gold); }
   border: 2px solid var(--line); background: var(--paper);
 }
 /* 아이콘을 살짝 위로 — 아래 숫자와 4px 겹쳤다 (실측 2026-08-29) */
-.ac-bring-dial img { width: 21px; height: 21px; object-fit: contain; margin-bottom: 9px; }
+.ac-bring-dial img { width: 21px; height: 21px; object-fit: contain; margin-bottom: 8px; }
 /* 진행 링 — 기물이 하나 늘 때마다 테두리가 1/min 씩 차오른다 (인게임과 같은 표현,
    사용자 지시 2026-08-29). conic-gradient 를 원판으로 깔고 가운데를 마스크로 파내
    **띠**만 남긴다. --p 는 컴포넌트가 백분율로 넣어 준다. */
@@ -22111,10 +22111,10 @@ html.dark .ac-bring-dial {
 
 /* 배지를 눌러 여는 작은 창 */
 .ac-peekbody { padding: 2px 0; }
-.ac-peekhead { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.ac-peekhead { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
 .ac-peekhead img { width: 22px; height: 22px; object-fit: contain; }
 .ac-peekbody .ac-bstat-steps { padding: 0; }
-.ac-peekbody .ac-clear { margin-top: 10px; }
+.ac-peekbody .ac-clear { margin-top: 8px; }
 /* 작은 창 다듬기 (사용자 지적 2026-08-30 "레이아웃이 좀 이상하니 보기좋게") ─────
    ① 수치 상자를 문구 **아래**로 내린다 — 단계 li 가 가로 flex 라 상자가 문구 옆으로
       떠밀려 두 칸짜리 표처럼 보였다. 글머리(12px)+간격(6px)만큼 들여써 문구와 맞춘다.
@@ -22126,7 +22126,7 @@ html.dark .ac-bring-dial {
    떨어졌다(들여쓰기도 잃는다). 남는 폭을 먹게 해서 같은 줄에 붙인다. */
 .ac-bstat-steps li > span:not(.ac-bstat-mark) { flex: 1 1 0; min-width: 0; }
 /* 줄바꿈 담당 — 100% 를 차지해 반드시 다음 줄로 내려간다 (상자 자체는 내용 폭) */
-.ac-peekbody .ac-stackrow { flex: 0 0 100%; margin-left: 18px; }
+.ac-peekbody .ac-stackrow { flex: 0 0 100%; margin-left: 16px; }
 .ac-peekbody .ac-stack > li > b { min-width: 0; }
 .ac-peekbody .ac-stackin .sb-dim { flex: 1 1 100%; }
 
@@ -22134,14 +22134,14 @@ html.dark .ac-bring-dial {
 .ac-bstat.on { border-color: color-mix(in srgb, var(--lime) 50%, var(--line)); }
 .ac-bstat-head {
   width: 100%; border: 0; background: none; cursor: pointer;
-  display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px 10px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 8px 8px;
 }
 .ac-bstat-head img { width: 20px; height: 20px; object-fit: contain; }
 .ac-bstat-head b { font-size: 13px; }
 .sb-chip.ac-on { color: var(--lime); border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); font-weight: 700; }
 .sb-chip.ac-off { color: var(--muted); }
-.ac-bstat-steps { margin: 0; padding: 0 10px 8px 10px; list-style: none; font-size: 12px; line-height: 1.6; }
-.ac-bstat-steps li { display: flex; gap: 6px; padding: 3px 0; }
+.ac-bstat-steps { margin: 0; padding: 0 8px 8px 8px; list-style: none; font-size: 12px; line-height: 1.6; }
+.ac-bstat-steps li { display: flex; gap: 4px; padding: 3px 0; }
 .ac-bstat-steps li.off, .ac-bstat-steps li.unknown { color: var(--muted); }
 .ac-bstat-mark { flex: none; width: 12px; text-align: center; }
 /* 중첩 게이트는 **판정하지 않는다**는 뜻이라 물음표를 눈에 띄게 남긴다 (autochess-board.ts) */
@@ -22151,11 +22151,11 @@ html.dark .ac-bring-dial {
   color: var(--muted); white-space: nowrap; padding-top: 1px;
 }
 
-.ac-picklist { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.ac-picklist { display: grid; gap: 4px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .ac-pickone {
-  display: flex; align-items: center; gap: 7px; min-width: 0; text-align: left;
+  display: flex; align-items: center; gap: 8px; min-width: 0; text-align: left;
   border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper);
-  cursor: pointer; padding: 5px 8px;
+  cursor: pointer; padding: 4px 8px;
 }
 .ac-pickone:disabled { opacity: 0.4; cursor: default; }
 .ac-pickone img { width: 28px; height: 28px; border-radius: var(--r-sm); object-fit: cover; flex: none; }
@@ -22175,7 +22175,7 @@ html.dark .ac-bring-dial {
   .ac-oprow-gar { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
-  .ac-guide { padding: 20px 14px 48px; }
+  .ac-guide { padding: 20px 12px 48px; }
   .ac-cards, .ac-bondcards { grid-template-columns: 1fr; }
 }
 
@@ -22235,7 +22235,7 @@ html.dark .ac-bring-dial {
 /* 전략 해금 조건 — 게임 문구 그대로 (37개 중 25개만 조건이 있다) */
 .ac-unlock {
   margin: 0;
-  padding: 9px 12px;
+  padding: 8px 12px;
   font-size: 13px;
   line-height: 1.6;
   background: var(--paper);
@@ -22248,7 +22248,7 @@ html.dark .ac-bring-dial {
 /* 기물 상세의 스킬·모듈 설명 카드 — 도감 링크(ac-oplink)를 대체 (사용자 확정 2026-08-23) */
 .ac-skmod {
   margin-top: 8px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   background: var(--bg-panel);
@@ -22256,7 +22256,7 @@ html.dark .ac-bring-dial {
 .ac-skmod > header {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
   font-size: 12px;
 }
@@ -22275,7 +22275,7 @@ html.dark .ac-bring-dial {
   border-left: 3px solid #b98a2b;
 }
 .ac-skmod-cap {
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--ink) 10%, transparent);
   font: 800 10.5px var(--mono);
@@ -22287,7 +22287,7 @@ html.dark .ac-bring-dial {
   font-weight: 700;
 }
 .ac-skmod-d {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: var(--ink2);
   font-size: 12px;
   line-height: 1.6;
@@ -22303,7 +22303,7 @@ html.dark .ac-bring-dial {
   /* 좌우 여백은 1px만 — 칩 안쪽 패딩이 이미 띄워 주는데 여기에 여백까지 주면
      한국어 문장에서 "…시뮬레이션 에서" 처럼 조사 앞이 벌어진다 */
   margin: 0 1px;
-  padding: 1px 7px;
+  padding: 1px 8px;
   border: 1px solid transparent;
   border-radius: var(--r-pill);
   background: var(--bg-soft);
@@ -22325,7 +22325,7 @@ html.dark .ac-bring-dial {
 /* 전략 이름 뒤의 대표 오퍼레이터 — '집중 케어 (와파린)'. 커뮤니티가 부르는 이름이
    이쪽이라 목록·제목 어디서든 같이 보인다 (사용자 확정 2026-08-24). */
 .ac-bandby {
-  margin-left: 5px;
+  margin-left: 4px;
   font-style: normal;
   font-size: 0.82em;
   font-weight: 600;
@@ -22349,14 +22349,14 @@ html.dark .ac-bring-dial {
 .ac-morphnote {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 10px;
+  gap: 4px 8px;
   align-items: center;
 }
 .ac-morphlink {
   display: inline-flex;
-  gap: 5px;
+  gap: 4px;
   align-items: center;
-  padding: 3px 9px;
+  padding: 3px 8px;
   border: 1px solid var(--line);
   border-radius: var(--r-pill);
   background: var(--bg-panel);
@@ -22385,8 +22385,8 @@ html.dark .ac-bring-dial {
 .ac-stack {
   width: fit-content;
   max-width: 100%;
-  margin: 7px 0 0;
-  padding: 6px 10px;
+  margin: 8px 0 0;
+  padding: 4px 8px;
   list-style: none;
   background: var(--bg-faint);
   border: 1px solid var(--line);
@@ -22417,7 +22417,7 @@ html.dark .ac-bring-dial {
 .ac-stacksum {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px 10px;
+  gap: 3px 8px;
   margin: 4px 0 0;
   font-size: 11px;
   font-weight: 600;
@@ -22431,7 +22431,7 @@ html.dark .ac-bring-dial {
 .ac-morphmap {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   margin-top: 8px;
 }
 .ac-morphgrp {
@@ -22439,16 +22439,16 @@ html.dark .ac-bring-dial {
   grid-template-columns: 118px minmax(0, 1fr);
   gap: 8px;
   align-items: start;
-  padding: 6px 8px;
+  padding: 4px 8px;
   background: var(--bg-faint);
   border: 1px solid var(--line);
 }
 /* 맹약 칩은 그리드 칸을 꽉 채우지 않게 — 기본 stretch면 118px짜리 빈 상자가 된다 */
 .ac-morphgrp > .ac-bondchip { justify-self: start; }
-.ac-morphitems { display: flex; flex-wrap: wrap; gap: 5px; }
+.ac-morphitems { display: flex; flex-wrap: wrap; gap: 4px; }
 .ac-morphitem {
   display: inline-flex;
-  gap: 5px;
+  gap: 4px;
   align-items: center;
   padding: 3px 8px 3px 4px;
   text-align: left;
@@ -22478,8 +22478,8 @@ html.dark .ac-bring-dial {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 9px 4px 8px;
+  gap: 4px;
+  padding: 4px 8px 4px 8px;
   border: 1px solid var(--line);
   border-radius: var(--r-pill);
   background: var(--bg-panel);
@@ -22524,10 +22524,10 @@ html.dark .ac-bring-dial {
 .ac-opdex {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  margin: 10px 0 2px;
-  padding: 8px 12px 8px 9px;
+  margin: 8px 0 2px;
+  padding: 8px 12px 8px 8px;
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   background: var(--bg-panel);
@@ -22581,7 +22581,7 @@ html.dark .ac-bring-dial {
   }
 }
 .ac-skmod-stats {
-  margin: 5px 0 0;
+  margin: 4px 0 0;
   color: var(--muted);
   font: 700 11.5px var(--mono);
 }
@@ -23629,7 +23629,7 @@ html[lang="ja"] .vn-box {
 /* 위수 협의 — 제목 옆 시즌 표식 (시즌마다 수치·기물이 다르다) */
 .ac-season {
   display: inline-block;
-  margin-left: 10px;
+  margin-left: 8px;
   padding: 2px 8px;
   border: 1px solid var(--lime);
   color: var(--lime);
