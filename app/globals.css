@@ -16079,65 +16079,33 @@ main.site-main > .site-header {
   top: -16px;
 }
 /* ── 보유 리스트는 '떠 있는 창' (사용자 지시 2026-07-29) ──────────────────
-   모달이 아니다: 백드롭을 렌더하지 않으므로 바깥 클릭으로 닫히지 않고 뒤를 덮지도 않는다.
+   모달이 아니다: 백드롭이 투명하므로 바깥 클릭으로 닫히지 않고 뒤를 덮지도 않는다.
    담으면서 가이드를 계속 보라는 창이라 화면을 막으면 목적이 사라진다.
-   z-index 9000 = 공용 창(ModalWindow)보다 위. 공용 창은 z 200에서 시작해 창을 열 때마다
-   1씩 올라가므로(zTop) 종전의 150으로는 모달 몇 개만 열려도 밑에 깔린다 (2026-08-24
-   록라 모달 공통화). 연결 상태 토스트(10000)만 더 위다. */
-/* 보유 리스트 창 — 2026-09-20 부터 공통 창(ModalWindow)이 위치·크기·손잡이를 맡는다.
-   여기 남는 것은 **생김새뿐**이다 (position·z-index·손잡이 규칙은 공통 창 몫). */
+   위치·크기·손잡이·앞뒤(z)는 전부 공통 창(ModalWindow)이 맡는다 — 2026-09-20. */
+/* 생김새는 **다른 록라 모달과 똑같다** (사용자 지적 2026-09-20: "이상한 옛날식 모달창").
+   ⚠ 종전엔 여기서 배경(카드색+흰색 8%)·금색 섞은 테두리·전용 그림자·자체 패딩을 따로 줘서,
+   속을 공통 창으로 갈아끼운 뒤에도 화면은 옛 패널 그대로였다 — 구현만 바꾸고 껍데기를
+   남기면 사용자에겐 아무것도 안 바뀐 것이다. 색·테두리·모서리·본문 여백은 `.rg-modal`과
+   `.mw-window.rg-modal .mw-body`가, 떠 있는 창의 그림자는 `.mw-backdrop.mw-pinned
+   .mw-window`가 이미 정한다 — 여기서 덮지 말 것. 남는 것은 기본 크기뿐이다.
+   (2026-07-29의 '백드롭이 없어 창 경계가 안 보인다'는 그 공통 그림자가 대신 해결한다.) */
 .rg-invmodal {
   width: min(420px, calc(100vw - 16px));
   height: min(62vh, calc(100vh - 16px));
-  padding: 0 12px 12px;
-  /* 백드롭이 없으니 배경이 페이지와 같으면 창 경계가 안 보인다 (사용자 지적 2026-07-29:
-     --rgmodal #0d1a17 vs --rgbg #0a1413 — 거의 같은 색이었다). 카드색을 흰색으로 살짝
-     띄우고 테두리에 테마 강조색을 섞어 '떠 있는 창'으로 읽히게 한다. 테마 3종 공용이라
-     하드코딩 대신 color-mix로 상대 계산. */
-  background: color-mix(in srgb, var(--rgcard) 92%, #fff 8%);
-  border: 1px solid color-mix(in srgb, var(--rggold) 42%, var(--rgmodalline));
-  box-shadow: 0 18px 56px #000e, 0 0 0 1px #0009;
-  /* 손잡이를 직접 만들었으므로 네이티브 resize는 쓰지 않는다.
-     가로 스크롤도 두지 않는다 (사용자 지적) — 좁은 창에서 옆으로 잘리면 읽을 수 없다. */
-  overflow: hidden;
 }
-/* 머리·탭 고정, 목록만 세로 스크롤 */
+/* 머리·탭 고정, 목록만 세로 스크롤.
+   음수 마진은 `.mw-window.rg-modal .mw-body`의 패딩(20px)과 짝이다 — 목록이 창 끝까지
+   닿아 스크롤바가 본문 안쪽이 아니라 창 가장자리에 선다. 둘 중 하나만 바꾸면 어긋난다. */
 .rg-inv-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  margin: 0 -14px -12px;
-  padding: 0 12px 12px;
+  margin: 0 -20px -20px;
+  padding: 0 20px 20px;
 }
-/* ── 크기 손잡이 — 네 변 + 네 모서리 (사용자 지시 2026-07-29).
-   CSS resize는 오른쪽 아래 한 곳뿐이라 직접 만든다. 모서리가 변보다 위에 오도록
-   JSX에서 뒤에 그린다(같은 z-index면 나중 것이 위). */
-.rg-rs {
-  position: absolute;
-  z-index: 3;
-  touch-action: none;
-}
-.rg-rs-n, .rg-rs-s { left: 10px; right: 10px; height: 6px; cursor: ns-resize; }
-.rg-rs-e, .rg-rs-w { top: 10px; bottom: 10px; width: 6px; cursor: ew-resize; }
-.rg-rs-n { top: 0; }
-.rg-rs-s { bottom: 0; }
-.rg-rs-w { left: 0; }
-.rg-rs-e { right: 0; }
-.rg-rs-ne, .rg-rs-nw, .rg-rs-se, .rg-rs-sw { width: 12px; height: 12px; }
-.rg-rs-nw { top: 0; left: 0; cursor: nwse-resize; }
-.rg-rs-ne { top: 0; right: 0; cursor: nesw-resize; }
-.rg-rs-sw { bottom: 0; left: 0; cursor: nesw-resize; }
-.rg-rs-se { bottom: 0; right: 0; cursor: nwse-resize; }
-/* 오른쪽 아래에만 잡는 곳임을 알리는 빗금 — 나머지 변은 커서로 안내 */
-.rg-rs-se::after {
-  content: "";
-  position: absolute;
-  inset: 3px 3px 2px 2px;
-  border-right: 2px solid color-mix(in srgb, var(--rggold) 55%, transparent);
-  border-bottom: 2px solid color-mix(in srgb, var(--rggold) 55%, transparent);
-  border-bottom-right-radius: 3px;
-}
+/* 크기 손잡이(.rg-rs*) 8개는 2026-09-20에 지웠다 — 공통 창(.mw-rs)이 같은 일을 한다.
+   JSX가 더는 그리지 않는데 규칙만 남아 있어서 한동안 '아직 옛 패널'처럼 보였다. */
 /* 창 안에서는 카드를 한 단계 작게 — 떠 있는 창이라 폭이 좁다 (사용자 지시: 내용 줄이기).
    창을 오른쪽으로 늘리면 한 줄에 여러 장이 들어간다 (사용자 요청 2026-07-29) —
    고정 1열이 아니라 auto-fill. 230px는 [아이콘+이름+보유중 알약]이 눌리지 않는 최소폭이라,
