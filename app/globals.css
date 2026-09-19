@@ -1303,7 +1303,10 @@ button {
 .explorer {
   grid-template-columns: 300px minmax(0, 1fr);
   align-items: stretch;
-  gap: 36px;
+  /* 도감 여백을 한 단계 좁히고 값을 통일한다 (사용자 요청 2026-09-20 "약간 여백이
+     있어보이네. 좁힌 후 통일시켜줘"). 이 화면의 세로 리듬은 8 / 12 / 24 세 단계다:
+     8 = 목록 안쪽 · 12 = 머리글과 내용 사이 · 24 = 칸과 칸, 화면 상하. */
+  gap: 24px;
   width: min(100%, 1600px);
   /* .site-scroll(헤더 제외 나머지 전부)의 실제 높이를 그대로 채운다 — 예전엔
      calc(100dvh - 78px)로 헤더 높이를 하드코딩해서, 헤더가 접힘/펼침·이벤트 배너 줄바꿈 등으로
@@ -1313,7 +1316,7 @@ button {
      flex 계산 높이를 그대로 물려받아 헤더 높이가 얼마든 항상 정확히 맞는다. */
   height: 100%;
   margin: auto;
-  padding: 36px clamp(18px, 4vw, 64px);
+  padding: 24px clamp(18px, 4vw, 64px);
   display: grid;
   overflow: hidden;
 }
@@ -1345,7 +1348,7 @@ button {
      2026-09-18). overflow 는 **패딩 박스**에서 자르므로 여기 패딩이 곧 삐져나갈 자리다.
      음수 마진으로 되돌리면 안 된다 — 부모 .results 도 overflow:hidden 이라 거기서 또 잘리고,
      그리드에 패딩을 주면 가로 스크롤이 생긴다(둘 다 해보고 확인). */
-  padding: 14px 14px 0;
+  padding: 12px 14px 0;   /* 머리글 바로 아래 — 이 화면의 머리글↔내용 간격은 12px */
 }
 .filter-panel::-webkit-scrollbar,
 .results-scroll::-webkit-scrollbar {
@@ -1361,7 +1364,7 @@ button {
   border-bottom: 2px solid var(--border-strong);
   justify-content: space-between;
   align-items: end;
-  padding-bottom: 16px;
+  padding-bottom: 12px;
   display: flex;
 }
 .results-heading {
@@ -1369,7 +1372,7 @@ button {
   flex: 0 0 auto;
   z-index: 6;
   background: var(--paper);
-  padding-top: 6px;
+  padding-top: 0;
 }
 /* 활성 필터 칩 줄도 헤딩과 함께 고정(스크롤 안 함) */
 .results > .active-filters {
@@ -1928,10 +1931,16 @@ legend {
   font-size: 20px;
 }
 .active-filters {
-  gap: 7px;
-  min-height: 42px;
-  padding: 11px 0;
+  gap: 6px;
+  min-height: 40px;
+  padding: 10px 0;
   display: flex;
+}
+/* 고른 조건이 없으면 이 줄은 **자리를 차지하지 않는다** — 종전엔 비어 있어도 42px 띠가
+   남아 결과 머리글과 목록 사이가 휑했다 (사용자 지적 2026-09-20 "미실장 문구 위쪽에
+   여백이 좀 많다"). 조건을 고르면 그때 나타난다. */
+.active-filters:empty {
+  display: none;
 }
 .active-filters button {
   background: var(--lime);
@@ -1955,8 +1964,8 @@ legend {
    19명이 앞자리를 다 먹어, 한섭 유저가 그걸 훑고 내려가야 최신 한섭 오퍼가 나왔다.
    흑백 처리(.fut-dim)는 종전대로 <html data-fut> 가 건다. */
 .future-strip {
-  margin-bottom: 16px;
-  padding-bottom: 14px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
 }
 .future-strip > h3 {
