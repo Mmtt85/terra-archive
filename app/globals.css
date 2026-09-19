@@ -13334,7 +13334,12 @@ html.rg-theme {
      첫 화면(top 541)에 보였다가, 하이드레이션이 본문(1,265px+)을 채우는 순간 통째로 밀려났다
      — 느린 폰에선 그 순간이 ~9초 뒤라 CLS 0.26(Poor)로 집계됐다. 섹션 최소 높이를 화면만큼
      잡아 footer를 처음부터 접힘 아래로 내리면, 내용이 자라도 보이는 것은 아무것도 안 움직인다. */
-  min-height: 100vh;
+  /* ⚠ 100vh 가 아니라 **100%** 다 (2026-09-20). 스크롤 영역(.site-scroll)은 헤더를 뺀
+     높이(실측 871px)인데 100vh(950px)를 주면 내용이 짧아도 늘 79px 이 넘쳐 스크롤바가
+     생기고 푸터가 화면 밖으로 밀렸다 (사용자 지적: "이유없이 세로로 길다").
+     100% 면 보이는 영역과 정확히 같아 — 푸터는 여전히 첫 화면 **밖**에서 시작하므로
+     아래 CLS 가드의 목적은 그대로다. 자리표시(.tab-loading)와 값을 반드시 맞출 것. */
+  min-height: 100%;
   padding: 24px clamp(20px, 5vw, 76px) 32px;   /* 화면 상하 리듬 (2026-09-20) */
   color: var(--rgink);
   /* 이 섹션을 독립된 층으로 만든다 — 그래야 배경 키비주얼(.rg-kv-page, z -1)이 이 섹션
@@ -13351,7 +13356,7 @@ html.rg-theme {
   /* 키비주얼이 페이지 배경으로 나갔으니 이 상자는 **비쳐야** 한 장의 그림으로 읽힌다.
      ⚠ 다만 **완전히 투명하면 글이 안 읽힌다** (2026-09-20: 없앴다가 사용자가 무르자고 했다).
      종전 55% → 35% 로 낮추고 흐림도 2 → 1px — 그림은 상자를 가로질러 이어지되 글은 산다. */
-  background: color-mix(in srgb, #0d0609 35%, transparent);
+  background: color-mix(in srgb, #0d0609 26%, transparent);
   backdrop-filter: blur(1px);
   margin-bottom: 16px;
 }
@@ -13497,13 +13502,15 @@ html.rg-theme {
      종전엔 히어로 안 우하단 absolute 였다 (2026-09-20 사용자 요청으로 이동). */
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 4px 8px;
+  /* 한 줄로 쭉 (사용자 요청 2026-09-20) — 도구 열(340px)로 옮긴 뒤 팬텀·미즈키처럼
+     등급 이름이 긴 테마에서 숫자 칸이 다음 줄로 접혔다. 슬라이더가 줄어들며 자리를 낸다. */
+  flex-wrap: nowrap;
+  gap: 8px;
   border: 1px solid #6a3040;
   background: #150a0ecc;
   backdrop-filter: blur(6px);
   padding: 4px 12px;
-  width: min(420px, calc(100% - 36px));
+  width: 100%;
   box-shadow: var(--sh-2);
 }
 /* 테마 변경 드롭다운 — 배너 오른쪽 위 (사용자 요청 2026-07-18) */
@@ -13787,9 +13794,9 @@ html.rg-theme {
 }
 /* 난이도 슬라이더 — 네이티브 흰 트랙 대신 테마색 트랙/썸 (사용자 요청 2026-07-19) */
 .rg-diffbar input[type="range"] {
-  flex: 1 1 120px;
+  flex: 1 1 60px;        /* 한 줄 유지를 위해 더 줄어들 수 있게 */
   accent-color: var(--rgcrim);
-  min-width: 90px;
+  min-width: 56px;
   appearance: none;
   -webkit-appearance: none;
   height: 5px;
@@ -15549,7 +15556,12 @@ main.site-main > .site-header {
    본문이 아무리 길게 도착해도 '보이던 것이 움직인' 게 아니라 CLS로 세지 않는다.
    vh를 쓴 건 의도적이다 — 모바일에서 dvh/svh는 툴바가 보일 때 더 작아져 여백이 모자란다. */
 .tab-loading {
-  min-height: 100vh;
+  /* ⚠ 100vh 가 아니라 **100%** 다 (2026-09-20). 스크롤 영역(.site-scroll)은 헤더를 뺀
+     높이(실측 871px)인데 100vh(950px)를 주면 내용이 짧아도 늘 79px 이 넘쳐 스크롤바가
+     생기고 푸터가 화면 밖으로 밀렸다 (사용자 지적: "이유없이 세로로 길다").
+     100% 면 보이는 영역과 정확히 같아 — 푸터는 여전히 첫 화면 **밖**에서 시작하므로
+     아래 CLS 가드의 목적은 그대로다. 자리표시(.tab-loading)와 값을 반드시 맞출 것. */
+  min-height: 100%;
 }
 /* ⚠ **자리표시가 비켜난 뒤에도 같은 높이가 유지돼야 한다** (실측 2026-08-25).
    자리표시만 100vh면, 도착한 본문이 그보다 **짧을 때** 푸터가 접힘 아래(1519)에서
@@ -15578,7 +15590,12 @@ main.site-main > .site-header {
 .site-scroll > section.explorer,
 .site-scroll > section.sb-guide,
 .site-scroll > section.ac-guide {
-  min-height: 100vh;
+  /* ⚠ 100vh 가 아니라 **100%** 다 (2026-09-20). 스크롤 영역(.site-scroll)은 헤더를 뺀
+     높이(실측 871px)인데 100vh(950px)를 주면 내용이 짧아도 늘 79px 이 넘쳐 스크롤바가
+     생기고 푸터가 화면 밖으로 밀렸다 (사용자 지적: "이유없이 세로로 길다").
+     100% 면 보이는 영역과 정확히 같아 — 푸터는 여전히 첫 화면 **밖**에서 시작하므로
+     아래 CLS 가드의 목적은 그대로다. 자리표시(.tab-loading)와 값을 반드시 맞출 것. */
+  min-height: 100%;
 }
 .site-scroll {
   flex: 1 1 auto;
