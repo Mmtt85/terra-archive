@@ -1564,7 +1564,9 @@ button {
 }
 fieldset {
   border: 0;
-  margin: 28px 0 0;
+  /* 필터 묶음 사이 = 블록 간격 16 (2026-09-20 여백 통일). 종전 28px 은 도감 필터판·공채
+     태그판·시뮬 필터를 한 화면에 여러 개 쌓았을 때 화면이 성기게 보이던 주범이었다. */
+  margin: 16px 0 0;
   padding: 0;
 }
 legend {
@@ -7049,11 +7051,11 @@ html.dark .tags-track > span {
 .recruit {
   width: min(100%, 1200px);
   margin: 0 auto;
-  padding: 34px clamp(18px, 4vw, 64px) 80px;
+  padding: 24px clamp(18px, 4vw, 64px) 32px;
 }
 .recruit-head h2 {
   letter-spacing: -1px;
-  margin: 8px 0 10px;
+  margin: 4px 0 8px;
   font-size: 30px;
 }
 .recruit-head p {
@@ -7066,11 +7068,11 @@ html.dark .tags-track > span {
 .recruit-tags {
   border: 1px solid var(--line);
   background: var(--white);
-  margin-top: 22px;
-  padding: 6px 20px 16px;
+  margin-top: 16px;
+  padding: 8px 16px 16px;
 }
 .recruit-tags fieldset {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
 }
 .recruit-picked {
   display: flex;
@@ -9186,7 +9188,8 @@ html.dark .tags-track > span {
 
 /* ── 재료 파밍 효율표 탭 ─────────────────────────────── */
 .farm {
-  padding: 34px clamp(22px, 5vw, 76px) 60px;
+  /* 도감·인프라·스토리와 같은 리듬 (2026-09-20) */
+  padding: 24px clamp(22px, 5vw, 76px) 32px;
 }
 .farm-head {
   max-width: 860px;
@@ -9285,6 +9288,12 @@ html.dark .tags-track > span {
 .farm-source {
   color: var(--muted) !important;
   font-size: 12px !important;
+}
+/* 계산기 상자 안쪽 주의 문구 — 설명 문단 바로 밑에 한 급 작게 (2026-09-20) */
+.cost-future-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 .farm-tools {
   display: flex;
@@ -9494,7 +9503,8 @@ html.dark .tags-track > span {
 
 /* ── AI 스토리 요약 탭 ─────────────────────────────── */
 .story {
-  padding: 34px clamp(22px, 5vw, 76px) 60px;
+  /* 도감·인프라와 같은 리듬 (2026-09-20) — 8 / 12 / 16 / 24 / 32 */
+  padding: 24px clamp(22px, 5vw, 76px) 32px;
 }
 .story-head h2 {
   margin: 6px 0 12px;
@@ -9515,14 +9525,14 @@ html.dark .tags-track > span {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
-  margin: 20px 0 24px;
+  gap: 12px;
+  margin: 16px 0;
 }
 /* 요약 ↔ 테라 연대기 뷰 토글 */
 .story-viewtabs {
   display: flex;
   gap: 8px;
-  margin: 22px 0 6px;
+  margin: 16px 0 0;
   /* 줄을 넘긴다 — 종전엔 nowrap이라 모바일에서 5개가 한 줄에 욱여넣어지며 버튼이
      49×118로 찌그러졌고, 글자가 "테/마/별"처럼 한 자씩 세로로 쪼개졌다
      (사용자 지적 2026-08-08). 넓은 화면은 어차피 한 줄에 들어가 변화 없다. */
@@ -10130,7 +10140,7 @@ html.dark .story-card:hover .story-thumb img {
 .digest-groups {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;   /* 묶음과 묶음 = 섹션 경계 */
 }
 .digest-group > h3 {
   margin: 0 0 12px;
@@ -11600,8 +11610,8 @@ html.dark .story-card:hover .story-thumb img {
 .cost-calc {
   border: 1px solid var(--line);
   background: var(--white);
-  padding: 20px 22px 22px;
-  margin: 24px 0 30px;
+  padding: 16px 16px 16px;
+  margin: 16px 0;
 }
 .cost-calc-head h3 {
   margin: 6px 0 8px;
@@ -11619,8 +11629,8 @@ html.dark .story-card:hover .story-thumb img {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
-  margin: 16px 0 4px;
+  gap: 12px;
+  margin: 12px 0 0;
 }
 .cost-search {
   position: relative;
@@ -11686,7 +11696,7 @@ html.dark .story-card:hover .story-thumb img {
   accent-color: var(--ink);
 }
 .cost-empty {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   color: var(--muted);
   font-size: 13px;
 }
@@ -11839,19 +11849,38 @@ html.dark .story-card:hover .story-thumb img {
 .cost-row.group-start {
   margin-top: 6px;
 }
+/* 그룹 경계선은 **줄에 한 번만** 긋는다 (2026-09-20).
+   ⚠ 종전엔 칸마다(.cost-row-group·-step·-items) border-top 을 걸었는데, 세 칸의
+     align-self 가 제각각(center / center / stretch)이라 칸마다 상자 위쪽 높이가 달라
+     점선이 최대 12px 어긋났다 (사용자 지적 "저 실선이 어긋나고 있었네").
+     칸 정렬을 바꾸면 'E2·Lv. [90]' 같은 한 줄짜리 내용이 흐트러지므로, 선 자체를
+     줄의 ::before 로 옮겼다 — 구조상 언제나 한 높이다.
+   왼쪽 28px(레일 칼럼 20 + gap 8)은 비운다 — 레일이 지나는 자리라 종전과 같다. */
+.cost-row.group-start {
+  position: relative;
+}
+.cost-row.group-start::before {
+  content: "";
+  position: absolute;
+  left: 28px;
+  right: 0;
+  top: 0;
+  border-top: 1px dashed var(--line);
+}
 .cost-row.group-start .cost-row-group,
 .cost-row.group-start .cost-row-step,
 .cost-row.group-start .cost-row-items {
-  border-top: 1px dashed var(--line);
   padding-top: 8px;
 }
 .cost-row.group-start:first-child {
   margin-top: 0;
 }
+.cost-row.group-start:first-child::before {
+  display: none;
+}
 .cost-row.group-start:first-child .cost-row-group,
 .cost-row.group-start:first-child .cost-row-step,
 .cost-row.group-start:first-child .cost-row-items {
-  border-top: 0;
   padding-top: 4px;
 }
 .cost-row-group {

@@ -406,7 +406,6 @@ export function UpgradeSim({ operators, includeFuture, onShowOperator }: { opera
   });
   return (
     <section className="farm" aria-label={t("육성 비용 계산기")}>
-      <p className="farm-source cost-future-note">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
       <CostCalculator operators={operators} includeFuture={includeFuture} onShowOperator={onShowOperator} onShowItem={setShownItem} />
       {shownItem && (
         <ItemModal key={`it-${itemRaise}`} id={shownItem} onClose={() => setShownItem(null)} onShowItem={setShownItem} onShowStage={sub.openStage} />
@@ -636,6 +635,9 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
         <span className="section-no">COST CALCULATOR</span>
         <h2>{t("육성 비용 계산기")}</h2>
         <p>{t("오퍼레이터를 추가하면 레벨·정예화(게임 순서대로 E0 만렙 → 정예화1 → E1 만렙 → 정예화2 → E2 만렙), 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 레벨업 단계는 올릴 목표 레벨을 직접 입력할 수 있고, 그 레벨을 만렙보다 낮게 두면 다음 정예화는 잠깁니다(왼쪽 레일을 아래로 끌면 만렙까지 한 번에 채워집니다). 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.")}</p>
+        {/* 미실장 번역 주의 — 상자 **안쪽** 설명 끝에 붙인다 (사용자 지적 2026-09-20:
+            "굳이 박스 위쪽에다 적어둘 필요 없을듯"). */}
+        <p className="cost-future-note">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
       </div>
       <div className="cost-tools">
         <div className="search-wrap cost-search">
