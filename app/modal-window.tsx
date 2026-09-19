@@ -30,8 +30,8 @@
 //   · 확인 대화상자(confirm.tsx) — 예/아니오 한 줄, 창으로 만들 내용이 없다
 //   · 라이트박스(.skin-lightbox·.fb-lightbox) — 이미지 한 장을 덮어 띄우는 뷰어
 //   · 드롭다운·팁 풍선·만능검색 패널 — 포커스를 잃으면 사라지는 일시 UI
-//   · 록라 보유 리스트(.rg-invmodal) — 백드롭 없이 상시 떠 있는 창. 이미 창이고, 위치·크기를
-//     localStorage에 저장하는데 이 컴포넌트는 그 값을 돌려주지 않는다 (rogue.tsx 주석 참조)
+//   (록라 보유 리스트는 2026-09-20에 이 컴포넌트로 들어왔다 — onGeometry 로 위치·크기를
+//    돌려주게 해서 "저장값을 못 돌려받는다"는 옛 사유를 없앴다. defaultPinned 로 연다.)
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -67,13 +67,17 @@ const MIN_H = 200;
 type Pos = { x: number; y: number };
 type Size = { w: number; h: number };
 
-export function ModalWindow({ label, className, style, onClose, permanent, defaultPos, initialSize, chrome, onPinChange, onGeometry, children }: {
+export function ModalWindow({ label, className, style, onClose, permanent, defaultPinned, defaultPos, initialSize, chrome, onPinChange, onGeometry, children }: {
   label: string;
   className?: string;
   style?: React.CSSProperties;
   onClose: () => void;
   /** true = 항상 창 모드(백드롭 없음·고정 버튼 없음) — 치비 대화창처럼 상시 떠 있는 창 */
   permanent?: boolean;
+  /** 📌를 **켠 채로 열되 버튼은 남긴다** — 열자마자 뒤를 덮지 않는 창이지만, 다른 모달과
+   *  겉모습·조작이 같아야 하는 화면용 (통합전략 보유 리스트, 사용자 지시 2026-09-20:
+   *  "제안 게시판이랑 같아? 다르지?"). permanent 와 달리 사용자가 고정을 풀 수 있다. */
+  defaultPinned?: boolean;
   defaultPos?: Pos;
   initialSize?: Size;
   /** 크롬 바에 끼워 넣을 추가 버튼 (제목과 고정·닫기 사이) */
@@ -87,7 +91,7 @@ export function ModalWindow({ label, className, style, onClose, permanent, defau
 }) {
   const { t } = useI18n();
   const [z, setZ] = useState(() => ++zTop);
-  const [pinned, setPinned] = useState(!!permanent);
+  const [pinned, setPinned] = useState(!!permanent || !!defaultPinned);
   const [pos, setPos] = useState<Pos | null>(defaultPos ?? null);
   const [size, setSize] = useState<Size | null>(initialSize ?? null);
   const panelRef = useRef<HTMLElement>(null);

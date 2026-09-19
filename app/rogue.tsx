@@ -1302,6 +1302,63 @@ export default function RogueGuide({ initialTopic }: {
      (사용자 요청 2026-09-20). 카드와 모달이 같은 정의를 쓰도록 여기 한 곳에 모은다. */
   const mapSections: { id: string; show: boolean; label: string; name: React.ReactNode; cls?: string; count: React.ReactNode; body: React.ReactNode }[] = [
     {
+      id: "enc",
+      show: true,
+      label: `${t("우연한 만남")}`,
+      name: <>{t("우연한 만남")}</>,
+      count: <>{data.encounters.length}</>,
+      body: (<>
+          <p className="rg-zone-desc">{topic === "rogue_6" ? t("비전투 노드에서 발생하는 이벤트입니다. 출시 직후라 출현 층 정보는 아직 정리되지 않았습니다.") : t("비전투 노드에서 발생하는 이벤트입니다. 출현 층 표기는 위키 실측 기반입니다.")}</p>
+          <div className="rg-enc-list">
+            {[...data.encounters]
+              .sort((a, b) => (a.floors?.[0] ?? 99) - (b.floors?.[0] ?? 99) || (a.floors?.length ?? 9) - (b.floors?.length ?? 9) || a.title.localeCompare(b.title, "ko"))
+              .map((enc) => (
+                <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
+                  {enc.bg
+                    ? <img className="rg-enc-thumb" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
+                    : <span className="rg-enc-thumb none" aria-hidden />}
+                  <span className="rg-enc-txt">
+                    {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
+                    <span className="rg-enc-title"><Nm name={enc.title} cn={enc.cn} /></span>
+                  </span>
+                </button>
+              ))}
+          </div>
+      </>),
+    },
+  {
+      id: "nodes",
+      show: otherNodes.length > 0,
+      label: `${t("기타 노드")}`,
+      name: <>{t("기타 노드")}</>,
+      count: <>{otherNodes.length}</>,
+      body: (<>
+          <p className="rg-zone-desc">{t("지도에서 마주치는 전투 외 특수 노드들입니다.")}</p>
+          <div className="rg-nodetype-list">
+            {otherNodes.map((nt) => (
+              <article key={nt.id} className={`rg-nodetype${nt.id === "DUEL" && duelStages.length > 0 ? " wide" : ""}`}>
+                <h4>
+                  {/* 게임 지도에 그려지는 그 글리프를 그대로 병기 — 종류가 많은 테마일수록
+                      글자보다 그림이 빠르다 (제보 2026-07-29). 아이콘이 없는 타입은 글자만. */}
+                  <NodeIco id={nt.id} />
+                  {/* cn 병기(Nm)는 두 줄짜리라 flex 아이템 하나로 묶어야 아이콘 옆에 쌓인다 */}
+                  <span className="rg-nodetype-title"><Nm name={nt.name} cn={nt.cn} /></span>
+                </h4>
+                {nt.func && <p className="rg-nodetype-func">{nt.func}</p>}
+                {nt.desc && <p>{nt.desc}</p>}
+                {nt.id === "DUEL" && duelStages.length > 0 && (
+                  <>
+                    <div className="rg-stage-cards">
+                      {duelStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+                    </div>
+                  </>
+                )}
+              </article>
+            ))}
+          </div>
+      </>),
+    },
+    {
       id: "boss",
       show: orphanBosses.length > 0,
       label: `${t("험난한 길 (보스)")}`,
@@ -1380,64 +1437,7 @@ export default function RogueGuide({ initialTopic }: {
           </div>
       </>),
     },
-    {
-      id: "nodes",
-      show: otherNodes.length > 0,
-      label: `${t("기타 노드")}`,
-      name: <>{t("기타 노드")}</>,
-      count: <>{otherNodes.length}</>,
-      body: (<>
-          <p className="rg-zone-desc">{t("지도에서 마주치는 전투 외 특수 노드들입니다.")}</p>
-          <div className="rg-nodetype-list">
-            {otherNodes.map((nt) => (
-              <article key={nt.id} className={`rg-nodetype${nt.id === "DUEL" && duelStages.length > 0 ? " wide" : ""}`}>
-                <h4>
-                  {/* 게임 지도에 그려지는 그 글리프를 그대로 병기 — 종류가 많은 테마일수록
-                      글자보다 그림이 빠르다 (제보 2026-07-29). 아이콘이 없는 타입은 글자만. */}
-                  <NodeIco id={nt.id} />
-                  {/* cn 병기(Nm)는 두 줄짜리라 flex 아이템 하나로 묶어야 아이콘 옆에 쌓인다 */}
-                  <span className="rg-nodetype-title"><Nm name={nt.name} cn={nt.cn} /></span>
-                </h4>
-                {nt.func && <p className="rg-nodetype-func">{nt.func}</p>}
-                {nt.desc && <p>{nt.desc}</p>}
-                {nt.id === "DUEL" && duelStages.length > 0 && (
-                  <>
-                    <div className="rg-stage-cards">
-                      {duelStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
-                    </div>
-                  </>
-                )}
-              </article>
-            ))}
-          </div>
-      </>),
-    },
-    {
-      id: "enc",
-      show: true,
-      label: `${t("우연한 만남")}`,
-      name: <>{t("우연한 만남")}</>,
-      count: <>{data.encounters.length}</>,
-      body: (<>
-          <p className="rg-zone-desc">{topic === "rogue_6" ? t("비전투 노드에서 발생하는 이벤트입니다. 출시 직후라 출현 층 정보는 아직 정리되지 않았습니다.") : t("비전투 노드에서 발생하는 이벤트입니다. 출현 층 표기는 위키 실측 기반입니다.")}</p>
-          <div className="rg-enc-list">
-            {[...data.encounters]
-              .sort((a, b) => (a.floors?.[0] ?? 99) - (b.floors?.[0] ?? 99) || (a.floors?.length ?? 9) - (b.floors?.length ?? 9) || a.title.localeCompare(b.title, "ko"))
-              .map((enc) => (
-                <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
-                  {enc.bg
-                    ? <img className="rg-enc-thumb" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
-                    : <span className="rg-enc-thumb none" aria-hidden />}
-                  <span className="rg-enc-txt">
-                    {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
-                    <span className="rg-enc-title"><Nm name={enc.title} cn={enc.cn} /></span>
-                  </span>
-                </button>
-              ))}
-          </div>
-      </>),
-    },
-  ];
+    ];
 
   // 적 → 등장 스테이지 역매핑
   const enemyStages = useMemo(() => {
@@ -2277,6 +2277,10 @@ export default function RogueGuide({ initialTopic }: {
           </>)}
 
           {!mapHits && (<>
+          {/* 지도판 — 층 카드가 가운데에서 **역아치(∪)**를 그리고, 묶음 카드(조우 전투·기타
+              노드·우연한 만남)가 그 왼쪽·오른쪽에 끼어든다 (사용자 지시 2026-09-20).
+              좁은 화면에서는 이 판이 풀려 위아래 두 줄로 돌아간다 — CSS 쪽에 조건. */}
+          <div className="rg-mapfield">
           {/* 층 카드 — 가로 일렬, 클릭하면 층 상세 모달 (사용자 확정 2026-07) */}
           <div className="rg-zone-cards">
           {data.zones.map((z) => {
@@ -2309,6 +2313,7 @@ export default function RogueGuide({ initialTopic }: {
                 <span className="rg-sec-go" aria-hidden>▸</span>
               </button>
             ))}
+          </div>
           </div>
 
 
@@ -2785,14 +2790,17 @@ export default function RogueGuide({ initialTopic }: {
           머리를 잡아 옮길 수 있다. 담으면서 가이드를 계속 보라는 창이라 화면을 막으면 안 된다.
           닫기는 × 버튼뿐 — Esc도 막지 않는다(다른 모달과 달리 여긴 Esc 핸들러 자체가 없다). */}
       {invOpen && (
-        /* 상시 떠 있는 창 — 백드롭 없이 뒤를 계속 보며 담는다 (사용자 지시 2026-07-29).
-           ModalWindow 의 permanent 가 바로 그 모드다: 백드롭 투명·클릭 통과·고정 버튼 없음.
+        /* 📌를 켠 채로 열되 버튼은 남긴다 (defaultPinned) — 열자마자 뒤를 덮지 않는 건
+           종전과 같고(사용자 지시 2026-07-29: 담으면서 가이드를 계속 봐야 한다),
+           고정 버튼과 백드롭 동작은 제안 게시판 등 다른 창과 똑같아진다
+           (사용자 지시 2026-09-20: "제안 모달 창이랑 보유 리스트 모달창이 같아? 다르지?").
+           permanent 였을 땐 📌가 아예 안 그려져 이 창만 혼자 달라 보였다.
            위치·크기는 onGeometry 로 받아 localStorage 에 저장한다 — 이것 때문에 공통 창으로
            못 옮긴다고 적혀 있었는데, 통지 하나를 더해 해결했다 (사용자 요청 2026-09-20). */
         <ModalWindow
           label={`🎒 ${t("보유 리스트")}`}
           className="rg-modal rg-invmodal"
-          permanent
+          defaultPinned
           /* 저장된 자리가 없으면 오른쪽 위 — 가이드 본문을 덜 가린다 (종전 기본값 그대로) */
           defaultPos={invPos ?? (typeof window === "undefined" ? undefined
             : { x: Math.max(8, window.innerWidth - 444), y: 84 })}
