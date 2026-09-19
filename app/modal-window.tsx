@@ -67,7 +67,7 @@ const MIN_H = 200;
 type Pos = { x: number; y: number };
 type Size = { w: number; h: number };
 
-export function ModalWindow({ label, className, style, onClose, permanent, defaultPos, initialSize, chrome, onPinChange, children }: {
+export function ModalWindow({ label, className, style, onClose, permanent, defaultPos, initialSize, chrome, onPinChange, onGeometry, children }: {
   label: string;
   className?: string;
   style?: React.CSSProperties;
@@ -80,6 +80,9 @@ export function ModalWindow({ label, className, style, onClose, permanent, defau
   chrome?: React.ReactNode;
   /** 고정 상태 변화 통지 — 해시 동기화 등 외부 상태가 고정 창을 닫아버리지 않게 게이트할 때 사용 */
   onPinChange?: (pinned: boolean) => void;
+  /** 끌기·크기 조절이 **끝났을 때** 위치·크기 통지 — 창 자리를 저장하는 화면용
+   *  (통합전략 보유 리스트). 저장한 값은 다음에 defaultPos·initialSize 로 돌려주면 된다. */
+  onGeometry?: (g: { pos: Pos | null; size: Size | null }) => void;
   children: React.ReactNode;
 }) {
   const { t } = useI18n();
@@ -141,6 +144,7 @@ export function ModalWindow({ label, className, style, onClose, permanent, defau
     dragRef.current = null;
     setDragging(false);
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    onGeometry?.({ pos, size });
   };
 
   const onResizeStart = (e: React.PointerEvent, dir: string) => {
@@ -177,6 +181,7 @@ export function ModalWindow({ label, className, style, onClose, permanent, defau
     if (!rsRef.current) return;
     rsRef.current = null;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    onGeometry?.({ pos, size });
   };
 
   // 화면 크기가 바뀌면 창을 다시 안쪽으로

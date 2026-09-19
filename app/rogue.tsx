@@ -1443,10 +1443,7 @@ export default function RogueGuide({ initialTopic }: {
   // ── 떠 있는 창의 위치 (사용자 지시 2026-07-29: "윗쪽 잡고 드래그하면 위치이동")
   // 위치는 토픽과 무관한 작업 공간이라 테마별이 아니라 하나만 저장한다.
   const INV_POS_KEY = "ta:rogue-inv-pos";
-  const invPanelRef = useRef<HTMLDivElement>(null);
-  const invDragRef = useRef<{ dx: number; dy: number } | null>(null);
   const [invPos, setInvPos] = useState<{ x: number; y: number } | null>(null);
-  const [invDragging, setInvDragging] = useState(false);
   const [effOpen, setEffOpen] = useState(false);          // 효과 총합 모달
   // 사용자가 CSS resize 손잡이로 바꾼 크기를 기억한다 (사용자 지시 2026-07-29)
   const INV_SIZE_KEY = "ta:rogue-inv-size";
@@ -1454,114 +1451,24 @@ export default function RogueGuide({ initialTopic }: {
   useEffect(() => {
     if (!invOpen) return;
     try {
-      const raw = localStorage.getItem(INV_SIZE_KEY);
-      if (raw) setInvSize(JSON.parse(raw) as { w: number; h: number });
+      const rs = localStorage.getItem(INV_SIZE_KEY);
+      if (rs) setInvSize(JSON.parse(rs) as { w: number; h: number });
+      const rp = localStorage.getItem(INV_POS_KEY);
+      if (rp) setInvPos(JSON.parse(rp) as { x: number; y: number });
     } catch { /* 프라이빗 모드 등 */ }
   }, [invOpen]);
-  // 크기 조절 — CSS `resize`는 **오른쪽 아래 한 곳뿐**이라 네 변 어디서나 잡을 수 있게
-  // 직접 만든다 (사용자 지시 2026-07-29). 왼쪽·위 변을 끌면 크기와 함께 위치도 움직인다.
-  const INV_MIN_W = 260;
-  const INV_MIN_H = 180;
-  const INV_GRIPS = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];   // 모서리를 뒤에 둬서 변보다 위에
-  const invRsRef = useRef<{ dir: string; px: number; py: number; x: number; y: number; w: number; h: number } | null>(null);
-  const onInvResizeStart = (e: React.PointerEvent, dir: string) => {
-    const el = invPanelRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    invRsRef.current = { dir, px: e.clientX, py: e.clientY, x: r.left, y: r.top, w: r.width, h: r.height };
-    e.currentTarget.setPointerCapture(e.pointerId);
-    e.preventDefault();
-    e.stopPropagation();                      // 헤더 드래그(이동)와 겹치지 않게
-  };
-  const onInvResizeMove = (e: React.PointerEvent) => {
-    const s = invRsRef.current;
-    if (!s) return;
-    const dx = e.clientX - s.px;
-    const dy = e.clientY - s.py;
-    let { x, y, w, h } = s;
-    // 오른쪽·아래로 늘릴 땐 **창을 움직이지 말고 크기를 화면 끝에서 멈춘다** — 그러지 않으면
-    // 화면 끝에 닿는 순간 창 전체가 왼쪽으로 끌려간다(실측). 왼쪽·위는 원래 위치가 함께 움직인다.
-    if (s.dir.includes("e")) w = Math.min(Math.max(INV_MIN_W, s.w + dx), window.innerWidth - 8 - s.x);
-    if (s.dir.includes("s")) h = Math.min(Math.max(INV_MIN_H, s.h + dy), window.innerHeight - 8 - s.y);
-    if (s.dir.includes("w")) {
-      w = Math.min(Math.max(INV_MIN_W, s.w - dx), s.x + s.w - 8);
-      x = s.x + (s.w - w);
-    }
-    if (s.dir.includes("n")) {
-      h = Math.min(Math.max(INV_MIN_H, s.h - dy), s.y + s.h - 8);
-      y = s.y + (s.h - h);
-    }
-    setInvSize({ w, h });
-    setInvPos({ x, y });
-  };
-  const onInvResizeEnd = (e: React.PointerEvent) => {
-    if (!invRsRef.current) return;
-    invRsRef.current = null;
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+  /* 크기 조절·이동·화면 밖 보정은 이제 공통 창(ModalWindow)이 맡는다 — 종전엔 여기서
+     손잡이 8개·clamp·배치 effect 를 직접 구현했다 (2026-09-20 제거, 약 90줄). */
+  /** 공통 창(ModalWindow)이 끌기·크기 조절을 끝낼 때마다 자리를 기억한다 */
+  const saveInvGeometry = ({ pos, size }: { pos: { x: number; y: number } | null; size: { w: number; h: number } | null }) => {
+    if (pos) setInvPos(pos);
+    if (size) setInvSize(size);
     try {
-      if (invSize) localStorage.setItem(INV_SIZE_KEY, JSON.stringify(invSize));
-      if (invPos) localStorage.setItem(INV_POS_KEY, JSON.stringify(invPos));
+      if (size) localStorage.setItem(INV_SIZE_KEY, JSON.stringify(size));
+      if (pos) localStorage.setItem(INV_POS_KEY, JSON.stringify(pos));
     } catch { /* 프라이빗 모드 등 */ }
   };
-  // 창이 화면 밖으로 나가지 않게 — 저장된 위치를 복원할 때 창 크기가 달라졌을 수 있다.
-  // 창이 화면보다 크면(모바일) 위쪽에 붙인다.
-  const clampInv = (x: number, y: number) => {
-    const el = invPanelRef.current;
-    const w = el?.offsetWidth ?? 420;
-    const h = el?.offsetHeight ?? 320;
-    return {
-      x: Math.max(8, Math.min(x, window.innerWidth - w - 8)),
-      y: Math.max(8, Math.min(y, Math.max(8, window.innerHeight - h - 8))),
-    };
-  };
-  // 처음 열 때 위치 결정 — 저장된 값이 있으면 그걸로, 없으면 오른쪽 위(가이드 본문을 덜 가린다)
-  useEffect(() => {
-    if (!invOpen) return;
-    let saved: { x: number; y: number } | null = null;
-    try {
-      const raw = localStorage.getItem(INV_POS_KEY);
-      if (raw) saved = JSON.parse(raw) as { x: number; y: number };
-    } catch { /* 프라이빗 모드 등 */ }
-    // 레이아웃이 잡힌 뒤에 재보정해야 창 크기를 알 수 있다
-    const place = () => setInvPos(clampInv(
-      saved?.x ?? window.innerWidth - (invPanelRef.current?.offsetWidth ?? 440) - 24,
-      saved?.y ?? 84,
-    ));
-    place();
-    const raf = requestAnimationFrame(place);
-    return () => cancelAnimationFrame(raf);
-  }, [invOpen]);
-  // 창 크기가 바뀌면 화면 밖으로 밀려나지 않게 다시 안으로
-  useEffect(() => {
-    if (!invOpen) return;
-    const onResize = () => setInvPos((p) => (p ? clampInv(p.x, p.y) : p));
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [invOpen]);
-  const onInvDragStart = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest("button")) return;   // 닫기 버튼은 드래그가 아니다
-    const el = invPanelRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    invDragRef.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
-    setInvDragging(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-    e.preventDefault();                                        // 헤더 텍스트가 드래그 선택되지 않게
-  };
-  const onInvDragMove = (e: React.PointerEvent) => {
-    const d = invDragRef.current;
-    if (d) setInvPos(clampInv(e.clientX - d.dx, e.clientY - d.dy));
-  };
-  const onInvDragEnd = (e: React.PointerEvent) => {
-    if (!invDragRef.current) return;
-    invDragRef.current = null;
-    setInvDragging(false);
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-    setInvPos((p) => {
-      if (p) try { localStorage.setItem(INV_POS_KEY, JSON.stringify(p)); } catch { /* 프라이빗 모드 등 */ }
-      return p;
-    });
-  };
+
   const ownedRelics = useMemo(() => relicsAll.filter((r) => inv.has(r.id)), [relicsAll, inv]);
   const ownedRes = useMemo(() => resItems.filter((i) => inv.has(i.id)), [resItems, inv]); // eslint-disable-line react-hooks/exhaustive-deps
   // 비우기 확인은 사이트 공용 확인 모달(useConfirm) — window.confirm 금지 (사용자 확정 2026-07-24)
@@ -2014,10 +1921,13 @@ export default function RogueGuide({ initialTopic }: {
     const seed = initialTopic ? ROGUE_INDEX[initialTopic]?.[locale] ?? ROGUE_INDEX[initialTopic]?.ko : null;
     return (
       <section className={`rg${!initialTopic || initialTopic === "rogue_1" ? "" : " rg" + initialTopic.split("_")[1]}`} aria-labelledby="rg-title">
+        {/* 테마 키비주얼 — 히어로 상자가 아니라 **페이지 배경**으로 깔린다
+            (사용자 제안 2026-09-20). 스크롤과 무관하게 제자리(fixed), 아래로 갈수록
+            사라지는 마스크 + 낮은 불투명도라 글을 가리지 않는다. CSS: .rg-kv-page */}
+        {initialTopic && <img className="rg-kv-page" src={asset(`/rogue/kv${initialTopic.split("_")[1]}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
         {seed && (
           <header className="rg-head">
             <div className="rg-hero">
-              <img className="rg-hero-kv" src={asset(`/rogue/kv${initialTopic!.split("_")[1]}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
               <div className="rg-hero-text">
                 <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
                 <h2 id="rg-title">{seed.name}</h2>
@@ -2049,9 +1959,10 @@ export default function RogueGuide({ initialTopic }: {
 
   return (
     <section className={`rg${topic === "rogue_1" ? "" : " rg" + topic.split("_")[1]}`} aria-labelledby="rg-title">
+      {/* 테마 키비주얼 — 히어로 상자가 아니라 페이지 배경 (위 프리렌더 분기와 같은 그림) */}
+      <img className="rg-kv-page" src={asset(`/rogue/kv${topic.split("_")[1]}.webp`)} alt="" aria-hidden decoding="async" />
       <header className="rg-head">
         <div className="rg-hero">
-          <img className="rg-hero-kv" src={asset(`/rogue/kv${topic.split("_")[1]}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
           <div className="rg-hero-text">
             <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
             {/* 제목은 현재 테마 이름 — 테마 전환은 햄버거 '통합전략 가이드' 부메뉴/드롭다운 (사용자 확정 2026-07-18) */}
@@ -2869,27 +2780,21 @@ export default function RogueGuide({ initialTopic }: {
           머리를 잡아 옮길 수 있다. 담으면서 가이드를 계속 보라는 창이라 화면을 막으면 안 된다.
           닫기는 × 버튼뿐 — Esc도 막지 않는다(다른 모달과 달리 여긴 Esc 핸들러 자체가 없다). */}
       {invOpen && (
-        <div className="rg-modal rg-invmodal" role="dialog" aria-label={t("보유 리스트")}
-          ref={invPanelRef}
-          style={{ ...(invPos ? { left: invPos.x, top: invPos.y } : {}),
-                   ...(invSize ? { width: invSize.w, height: invSize.h } : {}) }}>
-          {/* 네 변 + 네 모서리 크기 손잡이 (사용자 지시 2026-07-29) */}
-          {INV_GRIPS.map((d) => (
-            <div key={d} className={`rg-rs rg-rs-${d}`} onPointerDown={(e) => onInvResizeStart(e, d)}
-              onPointerMove={onInvResizeMove} onPointerUp={onInvResizeEnd} onPointerCancel={onInvResizeEnd} />
-          ))}
-          <header className={`rg-modal-head rg-inv-grab${invDragging ? " dragging" : ""}`}
-            onPointerDown={onInvDragStart} onPointerMove={onInvDragMove}
-            onPointerUp={onInvDragEnd} onPointerCancel={onInvDragEnd}>
-              <div title={t("게임에서 얻은 소장품·자원을 담아두는 목록입니다. 카드의 「＋ 보유」 버튼으로 추가하며, 이 브라우저에 테마별로 저장됩니다.")}>
-                <h3>🎒 {t("보유 리스트")}</h3>
-                <span className="rg-modal-zone">{t(TOPICS.find((tp) => tp.id === topic)?.name ?? "")}</span>
-              </div>
-              {/* 보유 리스트는 모달이 아니라 상시 떠 있는 창이라 공통 창으로 옮기지 않았다
-                  (위치·크기를 localStorage에 저장하는데 ModalWindow는 그걸 돌려주지 않는다) —
-                  자체 닫기 버튼도 그대로 둔다 */}
-              <button type="button" className="rg-modal-close" onClick={() => setInvOpen(false)} aria-label={t("닫기")}>×</button>
-            </header>
+        /* 상시 떠 있는 창 — 백드롭 없이 뒤를 계속 보며 담는다 (사용자 지시 2026-07-29).
+           ModalWindow 의 permanent 가 바로 그 모드다: 백드롭 투명·클릭 통과·고정 버튼 없음.
+           위치·크기는 onGeometry 로 받아 localStorage 에 저장한다 — 이것 때문에 공통 창으로
+           못 옮긴다고 적혀 있었는데, 통지 하나를 더해 해결했다 (사용자 요청 2026-09-20). */
+        <ModalWindow
+          label={`🎒 ${t("보유 리스트")}`}
+          className="rg-modal rg-invmodal"
+          permanent
+          /* 저장된 자리가 없으면 오른쪽 위 — 가이드 본문을 덜 가린다 (종전 기본값 그대로) */
+          defaultPos={invPos ?? (typeof window === "undefined" ? undefined
+            : { x: Math.max(8, window.innerWidth - 444), y: 84 })}
+          initialSize={invSize ?? undefined}
+          onGeometry={saveInvGeometry}
+          chrome={<span className="rg-modal-zone">{t(TOPICS.find((tp) => tp.id === topic)?.name ?? "")}</span>}
+          onClose={() => setInvOpen(false)}>
             {/* 안내문은 창을 키우지 않도록 헤더 툴팁으로 내렸다 (사용자 지시 2026-07-29: 내용 줄이기) */}
             <div className="rg-filterbar rg-inv-tabs">
               <button type="button" className={invTab === "relic" ? "on" : ""} onClick={() => setInvTab("relic")}>
@@ -2932,7 +2837,7 @@ export default function RogueGuide({ initialTopic }: {
               </div>
             )}
             </div>
-        </div>
+        </ModalWindow>
       )}
       {effOpen && (
         <EffectTotals items={ownedRelics} onClose={() => setEffOpen(false)}
