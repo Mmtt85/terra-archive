@@ -121,6 +121,21 @@ body {
     Noto Sans KR,
     sans-serif;
 }
+/* ── 타이포 체계 (2026-09-19 정리) ─────────────────────────────────────────
+   종전엔 글자 크기 34종·행간 20종·자간(px) 21종이 뒤섞여 있었다. 0.5px 차이는 낱개로는
+   안 보이면서 모이면 "크기가 제각각"으로 읽힌다 (사용자가 카드 작업 때 "폰트 크기가
+   이질감"이라고 짚은 것이 이것이다). 아래 단계 **안에서만** 고른다.
+
+   크기  9 · 10 · 11 · 12 · 13 · 14 · 16 · 18 · 20 · 22 · 26 · 30 (px)
+         └ 본문·UI 는 10~14 에서, 제목은 16 위에서 고른다. 반올림 값(10.5·12.5 …) 금지.
+         └ 예외 하나: 포탈 배너의 장식 숫자 92px.
+   행간  1 (단일행·아이콘) · 1.25 (제목) · 1.45 (UI 여러 줄) · 1.6 (본문) · 1.75 (긴 글)
+   자간  -2 · -1 · -0.5 · -0.3 · 0.3 · 0.5 · 1 · 2 (px). em 단위 자간은 큰 제목에만,
+         종전 값 그대로 뒀다 (글자 크기에 비례해야 하는 자리라 px 로 바꾸면 안 된다).
+
+   ⚠ 크기를 바꾸면 글자 폭이 변해 레이아웃이 따라 움직인다. 고칠 때는 폭 390·768·1280·
+     1440 에서 요소 좌표를 전후 대조할 것 (2026-09-19 실측: 6화면×4폭 2,680개 요소에서
+     줄바꿈이 새로 생긴 요소 0개, 가로 스크롤 변화 없음을 확인하고 넣었다). */
 /* ── 굵기 체계 (2026-09-19 Pretendard 도입) ─────────────────────────────────
    Arial 은 700·800·900 이 **전부 같은 굵기**로 찍혀서, 종전 CSS 는 셋을 아무렇게나
    섞어 써도 똑같아 보였다. Pretendard 는 셋이 실제로 다르게 찍혀 글자가 통통해졌다
@@ -238,14 +253,14 @@ button {
   letter-spacing: -0.5px;
   align-items: center;
   gap: 12px;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   text-decoration: none;
   display: flex;
 }
 .brand small {
   color: var(--muted);
-  letter-spacing: 1.2px;
+  letter-spacing: 1px;
   margin-top: 3px;
   font: 600 10px/1 monospace;
   display: block;
@@ -399,7 +414,7 @@ button {
   border: 1px solid var(--line);
   background: transparent;
   padding: 6px 11px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink);
   cursor: pointer;
@@ -438,7 +453,7 @@ button {
   border-radius: var(--r-sm);
   background: transparent;
   padding: 5px 8px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink);
   cursor: pointer;
@@ -522,10 +537,10 @@ button {
   margin-top: 1px;
   padding: 2px 7px;
   border-radius: var(--r-sm);
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  line-height: 1.35;
+  line-height: 1.45;
   text-align: center;
   word-break: keep-all;      /* 한국어·일본어가 글자 단위로 쪼개지지 않게 */
   border: 1px solid var(--line);
@@ -558,7 +573,7 @@ button {
 }
 .chlog-text {
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--ink2);
 }
 /* 신기능 바로가기 — 본문 끝에 붙는 작은 칩 (a·button 공용) */
@@ -588,7 +603,7 @@ button {
   border: 0;
   background: none;
   font: inherit;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--muted);
   text-decoration: underline;
@@ -630,7 +645,7 @@ button {
   border: 1px dashed var(--line);
   border-radius: var(--r-sm);
   background: transparent;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--muted);
   cursor: pointer;
@@ -671,7 +686,7 @@ button {
      한 칸 더 벌린다 (사용자 지적 2026-08-22). 모서리도 옆 칩과 같은 6px. */
   margin-left: 12px;
   padding: 6px 11px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink);
   text-decoration: none;
@@ -698,7 +713,7 @@ button {
   border: 1px solid var(--line);
   background: transparent;
   padding: 6px 11px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink);
   cursor: pointer;
@@ -800,7 +815,7 @@ button {
 .event-menu-note {
   margin: 8px 0 0;
   font-size: 11px;
-  line-height: 1.5;
+  line-height: 1.45;
   color: var(--muted);
 }
 
@@ -926,7 +941,7 @@ button {
   color: var(--ink);
 }
 .bcast-card strong {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -934,7 +949,7 @@ button {
 }
 .bcast-date {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 /* 버튼 아이콘 (단색 글리프) */
@@ -946,7 +961,7 @@ button {
   opacity: 0.75;
 }
 .tab-icon {
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .main-tabs button.selected .tab-icon,
 .btn-icon {
@@ -957,7 +972,7 @@ button {
   .bcast-trigger {
     margin-left: 8px;
     padding: 4px 7px;
-    font-size: 11.5px;
+    font-size: 11px;
     gap: 4px;
   }
   .site-header .future-toggle {
@@ -972,7 +987,7 @@ button {
   .site-header .about-icon {
     width: 27px;
     height: 27px;
-    font-size: 13.5px;
+    font-size: 13px;
     margin-left: 8px;
   }
   /* 모바일 줄 구성 (사용자 배치 지시 2026-07-20):
@@ -1008,7 +1023,7 @@ button {
     order: 1;
     margin-left: 8px;
     padding: 4px 7px;
-    font-size: 11.5px;
+    font-size: 11px;
     gap: 5px;
   }
   /* '기간 한정'은 모바일에서도 남긴다 (사용자 지시 2026-08-22) — 폭이 빠듯해 한 급 줄인다 */
@@ -1049,7 +1064,7 @@ button {
     border: 1px solid var(--border-strong);
     background: var(--chip);
     color: var(--lime);
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
@@ -1205,7 +1220,7 @@ button {
 }
 .eyebrow,
 .section-no {
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   color: var(--muted);
   font: 700 11px monospace;
 }
@@ -1239,8 +1254,8 @@ button {
   z-index: 1;
   color: var(--ink3);
   margin: 0;
-  font-size: 12.5px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.6;
   position: relative;
 }
 .hero > p br,
@@ -1344,9 +1359,9 @@ button {
 }
 .panel-heading h2,
 .results-heading h2 {
-  letter-spacing: -1.2px;
+  letter-spacing: -1px;
   margin: 6px 0 0;
-  font-size: 24px;
+  font-size: 22px;
 }
 .reset {
   color: var(--muted);
@@ -1402,7 +1417,7 @@ button {
   color: var(--ink);
   cursor: pointer;
   padding: 5px 8px;
-  font-size: 12.5px;   /* 사이트 목록 톤(.attr-drop)과 동일 — 13px는 "이상하게 크다" (사용자 지적) */
+  font-size: 12px;   /* 사이트 목록 톤(.attr-drop)과 동일 — 13px는 "이상하게 크다" (사용자 지적) */
   text-align: left;
 }
 .suggest-drop button:hover {
@@ -1423,7 +1438,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12.5px;
+  font-size: 12px;
   padding-left: 0;
 }
 .suggest-drop .sg-sub {
@@ -1436,7 +1451,7 @@ button {
 .suggest-drop .sg-more {
   color: #8b9294;
   padding: 6px 9px;
-  font-size: 11.5px;
+  font-size: 11px;
 }
 /* 입력란이 전체 폭 줄(.rg-filterbar·.roster-tools)에 바로 들어 있는 곳은 드롭다운이
    줄 전체 폭을 받아 너무 길어진다 (사용자 지적 2026-08-10) — 입력란 폭 수준으로 캡 */
@@ -1456,7 +1471,7 @@ button {
   width: 100%;
   min-width: 0;
   padding: 12px 11px;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 .heading-search {
   flex: 1 1 auto;
@@ -1466,7 +1481,7 @@ button {
   align-self: end;
 }
 .heading-search span {
-  font-size: 17px;
+  font-size: 16px;
 }
 .heading-search input {
   height: 100%;
@@ -1476,7 +1491,7 @@ button {
   border: 0;
   background: 0 0;
   cursor: pointer;
-  font-size: 19px;
+  font-size: 18px;
   line-height: 1;
   padding: 0 12px;
   color: var(--muted);
@@ -1523,7 +1538,7 @@ legend {
 .multi-hint {
   color: var(--muted);
   margin-left: 7px;
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 600;
 }
 .filter-list {
@@ -1568,7 +1583,7 @@ legend {
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .concept-box input:focus {
   border-color: var(--border-strong);
@@ -1633,7 +1648,7 @@ legend {
   gap: 10px;
   width: 100%;
   padding: 7px 8px;
-  font-size: 12.5px;
+  font-size: 12px;
   display: flex;
 }
 .concept-drop button.active,
@@ -1649,7 +1664,7 @@ legend {
 .concept-miss {
   color: var(--muted);
   margin: 8px 0 0;
-  font-size: 11.5px;
+  font-size: 11px;
 }
 /* 통합 속성 필터 — 카테고리 버튼 행 + 선택 시 값 태그 펼침 (2026-07-22) */
 .attr-cats {
@@ -1700,7 +1715,7 @@ legend {
   background: var(--lime);
   border-radius: var(--r-pill);
   padding: 1px 6px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 .attr-cat .attr-caret {
   color: var(--muted);
@@ -1755,7 +1770,7 @@ legend {
   background: var(--white);
   color: var(--ink);
   padding: 7px 9px;
-  font-size: 12.5px;
+  font-size: 12px;
   outline: 0;
 }
 .attr-drop .attr-search input:focus {
@@ -1776,7 +1791,7 @@ legend {
   gap: 8px;
   width: 100%;
   padding: 7px 8px;
-  font-size: 12.5px;
+  font-size: 12px;
   display: flex;
 }
 .attr-drop button:hover {
@@ -1829,7 +1844,7 @@ legend {
 }
 .attr-sub-head {
   color: #8b9294;
-  letter-spacing: .5px;
+  letter-spacing: 0.5px;
   padding: 4px 8px 5px;
   font-size: 10px;
   font-weight: 700;
@@ -1979,7 +1994,7 @@ legend {
 /* 미니 카드 이름도 한 줄 마퀴 (사용자 요청 2026-09-18 "미니카드도 이름이 너무 길어서
    짤리는경우는 자동으로 흘러가는 방식으로") */
 .operator-grid.mini .card-reveal h3 {
-  font-size: 10.5px;
+  font-size: 10px;
 }
 /* 절반 폭 카드는 여백도 절반. 밑변은 여기서도 --plate 에 붙는다 */
 
@@ -1991,10 +2006,10 @@ legend {
   font-size: 9px;
 }
 .operator-grid.mini .portrait-meta span {
-  font-size: 8px;
+  font-size: 9px;
 }
 .operator-grid.mini .portrait-meta b {
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: 0.5px;
 }
 /* 스트립 제목이 이미 '미실장'이라고 말한다 — 카드마다 또 붙일 이유가 없다
@@ -2147,7 +2162,7 @@ legend {
 .portrait-meta b {
   color: var(--ink2);
   font: 800 10px monospace;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -2244,7 +2259,7 @@ html.dark .tags-track > span {
   color: var(--ink);
   letter-spacing: -0.3px;
   margin: 0;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.25;
   word-break: keep-all;
@@ -2293,7 +2308,7 @@ html.dark .tags-track > span {
   color: var(--ink3);
   font-size: 10px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.45;
   word-break: keep-all; /* 한국어 어절 단위 줄바꿈 — 글자 단위 세로 꺾임 방지 */
 }
 /* 라벨(소속·출신·종족)은 작고 흐리게 — 값이 읽혀야 하고 라벨은 안내만 한다 */
@@ -2304,7 +2319,7 @@ html.dark .tags-track > span {
   background: #0000;
   padding: 0;
   font: 700 8.5px monospace;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
 }
 .results-tools {
   display: flex;
@@ -2332,7 +2347,7 @@ html.dark .tags-track > span {
   width: 27px;
   height: 27px;
   cursor: pointer;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1;
 }
 .sort-direction:hover {
@@ -2384,7 +2399,7 @@ html.dark .tags-track > span {
   display: flex;
 }
 .name-line h3 {
-  letter-spacing: -0.7px;
+  letter-spacing: -0.5px;
   margin: 0;
   font-size: 16px;
 }
@@ -2399,7 +2414,7 @@ html.dark .tags-track > span {
   color: var(--muted);
   text-align: right;
   flex-shrink: 0;
-  font-size: 11.5px;
+  font-size: 11px;
   font-style: normal;
 }
 /* ── 넘치는 한 줄은 흐른다 (마퀴) ────────────────────────────────────────────
@@ -2521,7 +2536,7 @@ html.dark .tags-track > span {
   border-radius: 50%;
   width: 38px;
   height: 38px;
-  font-size: 25px;
+  font-size: 26px;
   line-height: 1;
   position: absolute;
   top: 14px;
@@ -2562,7 +2577,7 @@ html.dark .tags-track > span {
 }
 .confirm-title {
   margin: 0 0 10px;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--ink);
@@ -2596,15 +2611,15 @@ html.dark .tags-track > span {
 }
 .chlog-detail-head .chlog-kind { margin-top: 0; max-width: none; }
 .chlog-detail-date {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--muted);
 }
 .chlog-detail-title {
   margin: 0 0 12px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.45;
   word-break: keep-all;
 }
 /* 본문 — detailBlocks()가 문장·열거 단위로 갈라 준 덩어리를 **문단마다 띄워** 그린다.
@@ -2613,7 +2628,7 @@ html.dark .tags-track > span {
   overflow: auto;
   margin: 0 -4px;
   padding: 0 4px;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.75;
   color: var(--ink2);
   word-break: keep-all;
@@ -2640,12 +2655,12 @@ html.dark .tags-track > span {
 .chlog-detail-go:hover { border-color: var(--border-hover); }
 @media (max-width: 560px) {
   .chlog-detail .mw-body { padding: 12px 16px 18px; }
-  .chlog-detail-title { font-size: 14.5px; }
+  .chlog-detail-title { font-size: 14px; }
 }
 .confirm-message {
   margin: 0 0 22px;
   font-size: 14px;
-  line-height: 1.65;
+  line-height: 1.6;
   color: var(--ink2);
 }
 .confirm-actions {
@@ -2656,7 +2671,7 @@ html.dark .tags-track > span {
 .confirm-actions button {
   cursor: pointer;
   padding: 9px 20px;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   border: 1px solid var(--line);
   border-radius: var(--r-xs);
@@ -2751,14 +2766,14 @@ html.dark .tags-track > span {
 .modal-kicker,
 .detail-no {
   color: #c9ced0;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   font: 700 11px monospace;
 }
 .modal-title-block h2 {
   letter-spacing: -0.06em;
   margin: 2px 0 1px;
   font-size: clamp(18px, 2vw, 23px);
-  line-height: 1.05;
+  line-height: 1;
 }
 .modal-rarity {
   color: #f0c34c;
@@ -2779,13 +2794,13 @@ html.dark .tags-track > span {
 }
 /* 직군과 세부직군을 위아래가 아니라 **옆으로** 둔다 (한 줄 아낀다) */
 .class-line b {
-  font-size: 13.5px;
+  font-size: 13px;
   display: inline;
 }
 .class-line small {
   color: #c8ced0;
   margin: 0 0 0 7px;
-  font-size: 11.5px;
+  font-size: 11px;
   display: inline;
 }
 .modal-scroll {
@@ -2870,7 +2885,7 @@ html.dark .tags-track > span {
   font: 700 10px monospace;
 }
 .modal-facts b {
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.45;
   word-break: keep-all;
 }
@@ -2964,13 +2979,13 @@ html.dark .tags-track > span {
   padding: 15px;
 }
 .detail-list b {
-  font-size: 14.5px;
+  font-size: 14px;
 }
 .detail-list p {
   color: var(--ink3);
   margin: 7px 0 0;
-  font-size: 13.5px;
-  line-height: 1.65;
+  font-size: 13px;
+  line-height: 1.6;
 }
 /* 재능 설명은 효과마다 한 줄이다(app/desc-lines.ts) — 이름과 첫 줄 사이보다
    줄끼리를 좁게 둬야 한 재능이 한 덩어리로 읽힌다 */
@@ -3014,7 +3029,7 @@ html.dark .tags-track > span {
   color: var(--paper);
   font-size: 9px;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.45;
   letter-spacing: 0.02em;
 }
 @supports (color: color-mix(in lab, red, red)) {
@@ -3051,8 +3066,8 @@ html.dark .tags-track > span {
 .skill-detail p {
   color: var(--ink3);
   margin: 10px 0 0;
-  font-size: 13.5px;
-  line-height: 1.7;
+  font-size: 13px;
+  line-height: 1.75;
 }
 /* 스킬 레벨 탭 — 1~7 + 특화 M1~M3을 **한 줄**로. 레벨마다 설명을 늘어놓으면 모달이
    배로 길어져서, 여기서 고른 레벨의 숫자를 문장 안에 갈아 끼운다 (사용자 요청 2026-08-01). */
@@ -3135,7 +3150,7 @@ html.dark .tags-track > span {
 }
 .stat-head > * {
   font: 700 10px monospace;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   word-break: keep-all;
 }
 .attack-range {
@@ -3225,7 +3240,7 @@ html.dark .tags-track > span {
   flex-wrap: wrap;
   gap: 10px;
   margin: 7px 0 0;
-  font-size: 10.5px;
+  font-size: 10px;
   display: flex;
 }
 .skill-range-legend span {
@@ -3275,7 +3290,7 @@ html.dark .tags-track > span {
 .potential-list p {
   margin: 0;
   padding: 10px 11px;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.45;
 }
 /* 재능 강화형 잠재의 실제 증가폭 — 설명 아래 한 단 작게 (사용자 요청 2026-09-04).
@@ -3362,8 +3377,8 @@ html.dark .tags-track > span {
 .module-levels p {
   color: var(--ink3);
   margin: 8px 0 0;
-  font-size: 13.5px;
-  line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.6;
 }
 .module-levels .module-stats {
   color: var(--ink);
@@ -3401,7 +3416,7 @@ html.dark .tags-track > span {
 .module-story p {
   color: var(--ink2);
   margin: 0 0 9px;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.75;
   white-space: pre-wrap;
 }
@@ -3496,7 +3511,7 @@ html.dark .tags-track > span {
 .skin-stage {
   margin-left: 6px;
   opacity: 0.7;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   font-style: normal;
 }
@@ -3528,7 +3543,7 @@ html.dark .tags-track > span {
 }
 .skin-lightbox figcaption {
   color: #ffffffd0;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   text-align: center;
 }
@@ -3578,8 +3593,8 @@ html.dark .tags-track > span {
 .skin-usage {
   margin: 0 0 8px;
   color: var(--ink3);
-  font-size: 12.5px;
-  line-height: 1.8;
+  font-size: 12px;
+  line-height: 1.75;
   white-space: pre-wrap;
 }
 .skin-usage {
@@ -3591,9 +3606,9 @@ html.dark .tags-track > span {
   padding-left: 12px;
   border-left: 2px solid var(--accent);
   color: var(--ink3);
-  font-size: 12.5px;
+  font-size: 12px;
   font-style: italic;
-  line-height: 1.8;
+  line-height: 1.75;
   white-space: pre-wrap;
 }
 /* 섹션 제목 옆 개수 배지 */
@@ -3689,7 +3704,7 @@ html.dark .tags-track > span {
   padding: 11px 14px;
   cursor: pointer;
   list-style: none;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .voice-set > summary::-webkit-details-marker {
   display: none;
@@ -3771,15 +3786,15 @@ html.dark .tags-track > span {
 .profile-text p {
   margin: 8px 0 0;
   color: var(--ink3);
-  font-size: 12.5px;
-  line-height: 1.85;
+  font-size: 12px;
+  line-height: 1.75;
   white-space: pre-wrap;
 }
 .profile-lead {
   display: block;
   margin-top: 12px;
   color: var(--ink);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
@@ -3800,14 +3815,14 @@ html.dark .tags-track > span {
 }
 .profile-facts dt {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
 }
 .profile-facts dd {
   margin: 0;
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   text-align: right;
 }
@@ -3873,7 +3888,7 @@ html.dark .tags-track > span {
 }
 .empty p {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .empty button {
   background: var(--chip);
@@ -3953,7 +3968,7 @@ html.dark .tags-track > span {
 .invest-empty {
   color: var(--muted);
   font-size: 12px;
-  line-height: 1.55;
+  line-height: 1.6;
   margin: 8px 0 4px;
   flex: none;
 }
@@ -4020,7 +4035,7 @@ html.dark .tags-track > span {
   flex-wrap: wrap;
 }
 .invest-title b {
-  font-size: 15px;
+  font-size: 14px;
 }
 .invest-title b.op-link {
   cursor: pointer;
@@ -4043,7 +4058,7 @@ html.dark .tags-track > span {
   padding: 1px 7px;
 }
 .invest-syn {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   color: #8f7fc0;
   border: 1px solid color-mix(in srgb, #8f7fc0 55%, transparent);
@@ -4134,7 +4149,7 @@ html.dark .tags-track > span {
   border-radius: var(--r-md);
   background: transparent;
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -4183,7 +4198,7 @@ html.dark .tags-track > span {
   color: #1a1206;
 }
 .invest-matnote {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--muted);
 }
 /* 완성 비용 내역 — 회수 버튼이 여는 별도 모달 (2026-08-05) */
@@ -4195,7 +4210,7 @@ html.dark .tags-track > span {
 }
 .invest-costmodal-title {
   margin: 0 0 10px;
-  font-size: 15px;
+  font-size: 14px;
   display: flex;
   align-items: baseline;
   gap: 9px;
@@ -4203,7 +4218,7 @@ html.dark .tags-track > span {
 }
 .invest-costmodal-title em {
   font-style: normal;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--muted);
   background: var(--bg-soft);
@@ -4211,7 +4226,7 @@ html.dark .tags-track > span {
   padding: 2px 7px;
 }
 .invest-costdetail {
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .invest-costmodal-days {
   margin: 0 0 10px;
@@ -4220,7 +4235,7 @@ html.dark .tags-track > span {
   background: color-mix(in srgb, #c8912f 14%, transparent);
   border: 1px solid color-mix(in srgb, #c8912f 40%, transparent);
   color: #8a5a1e;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   text-align: center;
 }
@@ -4275,12 +4290,12 @@ html.dark .tags-track > span {
 }
 .invest-costcalc {
   margin: 7px 0 0;
-  line-height: 1.5;
+  line-height: 1.45;
   color: var(--ink);
 }
 .invest-costcalc.dim {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 11px;
 }
 .inv-cost-ap {
   font-weight: 700;
@@ -4342,7 +4357,7 @@ html.dark .tags-track > span {
   border-radius: var(--r-sm);
   padding: 3px 9px;
   cursor: pointer;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   flex: none;
 }
@@ -4461,7 +4476,7 @@ html.dark .tags-track > span {
   border-top: 1px dotted var(--line);
 }
 .invest-place {
-  font-size: 12.5px;
+  font-size: 12px;
   margin-top: 5px;
   color: var(--ink);
 }
@@ -4474,7 +4489,7 @@ html.dark .tags-track > span {
   gap: 4px 12px;
 }
 .invest-rooms li {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--muted);
 }
 .invest-rooms em {
@@ -4623,7 +4638,7 @@ html.dark .tags-track > span {
   margin-top: 6px;
   color: #767b7d;
   font: 400 10px/1.4 monospace;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
 }
 @keyframes rise {
   0% {
@@ -4722,14 +4737,14 @@ html.dark .tags-track > span {
     overscroll-behavior: contain;
   }
   .server-chip {
-    font-size: 9.5px;
+    font-size: 9px;
   }
   .hero {
     min-height: auto;
     padding: 24px 22px;
   }
   .hero h1 {
-    font-size: 32px;
+    font-size: 30px;
   }
   .hero > p br {
     display: none;
@@ -4902,7 +4917,7 @@ html.dark .tags-track > span {
     display: none;
   }
   .hero h1 {
-    font-size: 29px;
+    font-size: 30px;
   }
   .hero-stats div {
     min-width: 85px;
@@ -4975,8 +4990,8 @@ html.dark .tags-track > span {
 }
 .planner-controls h2 {
   margin: 6px 0 0;
-  font-size: 32px;
-  letter-spacing: -1.2px;
+  font-size: 30px;
+  letter-spacing: -1px;
 }
 /* 우선 생산 설정 (라디오) — 버튼 줄과 분리된 설정 행, 다음 자동편성부터 적용 */
 .prio-setting {
@@ -4992,7 +5007,7 @@ html.dark .tags-track > span {
 }
 .prio-label {
   font: 800 12px monospace;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   color: var(--muted);
 }
 /* 기지 배치(243/153) 라벨 — 우선 생산 그룹과 시각 구분 (2026-07-24) */
@@ -5174,7 +5189,7 @@ html.dark .tags-track > span {
 }
 .room-level-lbl {
   font: 800 11px monospace;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   color: var(--ink2);
   margin-right: 2px;
 }
@@ -5230,7 +5245,7 @@ html.dark .tags-track > span {
   background: var(--bg-panel);
   color: var(--ink2);
   padding: 10px 13px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
@@ -5252,7 +5267,7 @@ html.dark .tags-track > span {
   color: var(--lime);
   border-color: var(--border-strong);
   padding: 16px 26px;
-  font-size: 15.5px;
+  font-size: 16px;
   border-radius: var(--r-md);
 }
 /* 핵심 2버튼 호버는 **확실히 티나게** (사용자 요청 2026-07-28) — 라임 반전 + 살짝 떠오름.
@@ -5310,7 +5325,7 @@ html.dark .tags-track > span {
   font: 800 18px monospace;
 }
 .planner-summary .wide b {
-  font-size: 14.5px;
+  font-size: 14px;
   font-family: inherit;
 }
 .shift-tabs {
@@ -5323,7 +5338,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   background: transparent;
   padding: 8px 16px;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -5411,9 +5426,9 @@ html.dark .tags-track > span {
   color: var(--muted);
   background: transparent;
   /* ⚠ font 단축 속성에 family로 inherit을 쓰면 선언 전체가 무효다 — 개별 속성으로 쓴다 */
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.45;
   letter-spacing: 0.04em;
   vertical-align: middle;
   opacity: 0.75;
@@ -5438,10 +5453,10 @@ html.dark .tags-track > span {
   border-radius: var(--r-pill);
   background: linear-gradient(135deg, #ff5a3c, #ff2d78);
   color: #fff;
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  line-height: 1.5;
+  line-height: 1.45;
   pointer-events: none;      /* 버튼 위에 떠 있으므로 클릭을 가로채지 않게 */
   box-shadow: 0 0 0 1px rgba(255, 45, 120, 0.35), 0 2px 8px rgba(255, 45, 120, 0.45);
   animation: new-badge-pulse 1.8s ease-in-out infinite;
@@ -5610,7 +5625,7 @@ html.dark .tags-track > span {
   align-items: center;
   flex-wrap: wrap;
   gap: 5px 10px;
-  font-size: 11.5px;
+  font-size: 11px;
 }
 .ship-raisebar.boxed {
   padding: 7px 12px;
@@ -5673,7 +5688,7 @@ html.dark .tags-track > span {
   white-space: nowrap;
 }
 .ship-raisebar .srb-gain {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -5705,7 +5720,7 @@ html.dark .tags-track > span {
   border-radius: var(--r-sm);
   padding: 4px 10px;
   cursor: pointer;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -5713,7 +5728,7 @@ html.dark .tags-track > span {
 .ship-raisebar.idle .srb-btns button {
   padding: 8px 14px;
   border-radius: var(--r-md);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 .ship-raisebar .srb-btns button.run {
@@ -5834,8 +5849,8 @@ html.dark .tags-track > span {
   align-items: center;
 }
 .ship-room-head b {
-  font-size: 15px;
-  letter-spacing: -0.4px;
+  font-size: 14px;
+  letter-spacing: -0.5px;
 }
 /* ⚠ 제목을 white-space:nowrap + 말줄임으로 한 줄에 못박아 보았다 (자동편성 후 붙는 지속
    시계 배지가 제목 칸을 좁혀 두 줄로 접히면서 카드가 21px 커지는 CLS 때문). 한국어는
@@ -5905,7 +5920,7 @@ html.dark .tags-track > span {
   right: 2px;
   font-style: normal;
   font-weight: 700;
-  font-size: 8.5px;
+  font-size: 9px;
   line-height: 1;
   padding: 2px 4px;
   border-radius: var(--r-xs);
@@ -5959,7 +5974,7 @@ html.dark .tags-track > span {
   color: #ffffffcc;
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.45;
   letter-spacing: 0;
 }
 /* 헤더 아랫줄 — 왼쪽 조 탭, 오른쪽 종합 효율 (사용자 요청 2026-07-30: 스크롤해도 총합이
@@ -5991,7 +6006,7 @@ html.dark .tags-track > span {
 .room-modal .rh-eff-total b {
   margin-left: 7px;
   color: #fff;
-  font-size: 23px;
+  font-size: 22px;
   letter-spacing: -0.03em;
 }
 .room-modal .rh-eff-parts {
@@ -6004,7 +6019,7 @@ html.dark .tags-track > span {
   border: 1px solid #ffffff26;
   padding: 2.5px 7px;
   color: #ffffffcc;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -6026,7 +6041,7 @@ html.dark .tags-track > span {
   }
   .room-modal .room-modal-head h2 {
     margin: 5px 0 8px;
-    font-size: 23px;
+    font-size: 22px;
   }
   .room-modal .rh-eff-total b {
     font-size: 20px;
@@ -6076,7 +6091,7 @@ html.dark .tags-track > span {
   outline-offset: -2px;
 }
 .crew-card b {
-  font-size: 15px;
+  font-size: 14px;
 }
 .crew-card b i {
   color: var(--star-ink);
@@ -6183,13 +6198,13 @@ html.dark .tags-track > span {
   background: var(--chip);
   color: var(--lime);
   padding: 9px 14px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
 }
 .nav-toggle span {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
 }
 .main-tabs {
@@ -6216,7 +6231,7 @@ html.dark .tags-track > span {
   text-decoration: none;
   background: transparent;
   padding: 11px 13px;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   text-align: left;
@@ -6277,7 +6292,7 @@ html.dark .tags-track > span {
 }
 .main-tabs .tab-sub {
   padding: 9px 12px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ink2);
   gap: 6px;
@@ -6328,7 +6343,7 @@ html.dark .tags-track > span {
   background: color-mix(in srgb, var(--muted) 16%, transparent);
 }
 .planner-summary .strategy {
-  font-size: 13.5px;
+  font-size: 13px;
   font-family: inherit;
 }
 /* 숙소도 클릭 → 상세 모달 (2026-07-24) — 흐린 톤은 유지하되 클릭 가능 표시 */
@@ -6371,11 +6386,11 @@ html.dark .tags-track > span {
 }
 .flow-tree li {
   margin-top: 8px;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .flow-branch {
   font-weight: 800;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .flow-tree li img {
   width: 22px;
@@ -6449,7 +6464,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--border-strong);
   background: var(--white);
   padding: 11px 16px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
@@ -6472,7 +6487,7 @@ html.dark .tags-track > span {
   background: #ffffff18;
   color: #fff;
   padding: 9px 11px;
-  font-size: 12.5px;
+  font-size: 12px;
   min-width: 180px;
 }
 .roster-tools input::placeholder {
@@ -6585,14 +6600,14 @@ html.dark .tags-track > span {
 }
 .import-way h4 {
   margin: 0 0 8px;
-  font-size: 13.5px;
+  font-size: 13px;
   letter-spacing: 0.02em;
 }
 .import-way p {
   margin: 0 0 12px;
   color: var(--ink3);
-  font-size: 12.5px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
 }
 /* 게임 로그인은 입력 폼이 있어 한 줄 전체를 쓴다 */
 .import-login {
@@ -6693,7 +6708,7 @@ html.dark .tags-track > span {
   border-left: 3px solid var(--lime);
   background: var(--white);
   padding: 10px 13px;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
 }
 .import-msg.error {
@@ -6702,7 +6717,7 @@ html.dark .tags-track > span {
 .import-privacy {
   margin: 0;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 11px;
   line-height: 1.6;
 }
 .roster-bulk {
@@ -6900,7 +6915,7 @@ html.dark .tags-track > span {
 }
 .help-list li {
   color: var(--ink3);
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.75;
   margin-top: 6px;
 }
@@ -6956,7 +6971,7 @@ html.dark .tags-track > span {
   padding: 34px clamp(18px, 4vw, 64px) 80px;
 }
 .recruit-head h2 {
-  letter-spacing: -1.2px;
+  letter-spacing: -1px;
   margin: 8px 0 10px;
   font-size: 30px;
 }
@@ -6964,8 +6979,8 @@ html.dark .tags-track > span {
   color: var(--ink3);
   max-width: 760px;
   margin: 0;
-  font-size: 12.5px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
 }
 .recruit-tags {
   border: 1px solid var(--line);
@@ -6990,7 +7005,7 @@ html.dark .tags-track > span {
   color: var(--muted);
   text-align: center;
   margin: 60px 0;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 /* 4★ 이상 확정 조합만 보기 토글 — 체크박스형(.invest-mattoggle과 같은 골드 계열,
    테마 변수에 안 기대 라이트/다크 모두 대비 보장). 사용자 제보 2026-08-16 */
@@ -7008,7 +7023,7 @@ html.dark .tags-track > span {
   border-radius: var(--r-md);
   background: transparent;
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -7141,8 +7156,8 @@ html.dark .tags-track > span {
   background: var(--tint-warm2);
   color: var(--tint-warm2-ink);
   padding: 8px 11px;
-  font-size: 11.5px;
-  line-height: 1.55;
+  font-size: 11px;
+  line-height: 1.6;
 }
 @media (max-width: 760px) {
   .recruit {
@@ -7162,7 +7177,7 @@ html.dark .tags-track > span {
   color: var(--muted);
   cursor: pointer;
   padding: 12px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 .dict-toggle:hover {
@@ -7172,7 +7187,7 @@ html.dark .tags-track > span {
 .recruit-dict > p {
   color: var(--ink3);
   margin: 14px 2px 0;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
 }
 .quick-wrap {
@@ -7186,7 +7201,7 @@ html.dark .tags-track > span {
   border: 1px solid #bbbcb7;
   background: var(--white);
   padding: 11px 12px;
-  font-size: 13.5px;
+  font-size: 13px;
   outline: 0;
 }
 .quick-wrap input:focus {
@@ -7198,7 +7213,7 @@ html.dark .tags-track > span {
   color: var(--lime);
   cursor: pointer;
   padding: 0 18px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 .clear-btn:hover {
@@ -7226,8 +7241,8 @@ html.dark .tags-track > span {
   max-width: 760px;
   margin: 14px 0 0;
   padding: 12px 15px;
-  font-size: 12.5px;
-  line-height: 1.7;
+  font-size: 12px;
+  line-height: 1.75;
 }
 /* 기본 상태에 투명 outline을 깔아 두면 hover 시 색만 부드럽게 차오른다
    (없던 outline이 생기면 기본색이 한순간 비쳐 깜빡여 보임) */
@@ -7249,7 +7264,7 @@ html.dark .tags-track > span {
   color: var(--ink3);
   margin: 0 0 14px;
   padding: 11px 14px;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
 }
 /* ⚠ 방 상세 안에서는 이 margin이 **안 먹는다.** `.detail-section > p { margin: 0 }`(본문 리셋)이
@@ -7318,7 +7333,7 @@ html.dark .tags-track > span {
   border-radius: var(--r-pill);
   background: var(--bg-faint);
   color: var(--ink);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
@@ -7408,7 +7423,7 @@ html.dark .tags-track > span {
   color: var(--ink);
   width: 24px;
   height: 24px;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
 }
@@ -7424,7 +7439,7 @@ html.dark .tags-track > span {
   color: var(--muted);
   width: 24px;
   height: 24px;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
 }
@@ -7516,7 +7531,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 7px 9px;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .bench-chips {
   display: flex;
@@ -7546,7 +7561,7 @@ html.dark .tags-track > span {
 }
 .sub-chip.busy em {
   font-family: inherit;
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--muted);
 }
 /* 검색어에 걸렸지만 **보유 목록에 없어** 후보에 아예 안 잡히는 오퍼 (제보 2026-08-24:
@@ -7562,7 +7577,7 @@ html.dark .tags-track > span {
 .bench-unowned .sub-chip.unowned img { opacity: 0.55; }
 .bench-unowned .sub-chip.unowned em {
   font-family: inherit;
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--muted);
 }
 /* 이 시설 스킬이 정예화·레벨로 잠긴 후보 — 기여가 +0으로만 떠서 이유를 알 수 없었다.
@@ -7574,7 +7589,7 @@ html.dark .tags-track > span {
 .sub-chip.locked img { opacity: 0.6; }
 .sub-chip.locked em.need {
   font-family: inherit;
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--tint-warm-ink);
 }
 .chip-fix {
@@ -7585,7 +7600,7 @@ html.dark .tags-track > span {
   background: var(--tint-warm);
   color: var(--tint-warm-ink);
   font: inherit;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -7795,7 +7810,7 @@ html.dark .tags-track > span {
   color: var(--lime);
   cursor: pointer;
   padding: 12px 18px;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   box-shadow: var(--sh-2);
 }
@@ -7849,7 +7864,7 @@ html.dark .tags-track > span {
   border: 1px solid #bbbcb7;
   background: var(--white);
   padding: 10px;
-  font-size: 12.5px;
+  font-size: 12px;
   resize: vertical;
   outline: 0;
 }
@@ -7868,8 +7883,8 @@ html.dark .tags-track > span {
 .fb-attach-hint {
   margin: 6px 0 4px;
   padding: 0 14px;
-  font-size: 10.5px;
-  line-height: 1.5;
+  font-size: 10px;
+  line-height: 1.45;
   color: var(--muted);
 }
 .fb-attach-btn {
@@ -7877,7 +7892,7 @@ html.dark .tags-track > span {
   border-radius: var(--r-sm);
   background: transparent;
   padding: 6px 10px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--muted);
   cursor: pointer;
@@ -7927,7 +7942,7 @@ html.dark .tags-track > span {
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--lime) 16%, var(--bg-panel));
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   pointer-events: none;   /* drop 이벤트는 아래 패널이 받아야 한다 */
 }
@@ -7963,7 +7978,7 @@ html.dark .tags-track > span {
 }
 /* 답변 수정 폼 — 목록 자리에서 바로 고친다 (2026-08-29) */
 .fb-admin-reply-edit {
-  flex: 1 1 100%; min-width: 0; font: inherit; font-size: 12.5px; line-height: 1.55;
+  flex: 1 1 100%; min-width: 0; font: inherit; font-size: 12px; line-height: 1.6;
   padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r-md);
   background: var(--paper); color: var(--ink); resize: vertical;
 }
@@ -7973,14 +7988,14 @@ html.dark .tags-track > span {
 }
 .fb-admin-reply time {
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 10px;
   white-space: nowrap;
 }
 .fb-admin-reply button {
   border: 1px solid var(--line);
   background: 0 0;
   color: inherit;
-  font-size: 10.5px;
+  font-size: 10px;
   padding: 1px 6px;
   cursor: pointer;
 }
@@ -8003,7 +8018,7 @@ html.dark .tags-track > span {
   background: var(--chip);
   color: var(--lime);
   padding: 6px 10px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -8041,7 +8056,7 @@ html.dark .tags-track > span {
   color: var(--lime);
   cursor: pointer;
   padding: 8px 16px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 .feedback-send:disabled {
@@ -8095,8 +8110,8 @@ html.dark .tags-track > span {
 }
 .fb-privacy {
   color: var(--muted);
-  font-size: 10.5px;
-  line-height: 1.4;
+  font-size: 10px;
+  line-height: 1.45;
 }
 /* 새로고침 ↻ — 도구 행 오른쪽 끝 */
 .fb-refresh-btn {
@@ -8157,10 +8172,10 @@ html.dark .tags-track > span {
 }
 .fb-board-head time {
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 10px;
 }
 .fb-reply-chip {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--lime);
   white-space: nowrap;
@@ -8192,8 +8207,8 @@ html.dark .tags-track > span {
 .fb-thread-msg {
   margin: 0;
   white-space: pre-wrap;
-  font-size: 12.5px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.6;
 }
 .fb-thread .fb-images {
   margin-top: 0;
@@ -8205,7 +8220,7 @@ html.dark .tags-track > span {
 .fb-noreply {
   margin: 0;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 11px;
 }
 .fb-reply {
   border-left: 3px solid var(--lime);
@@ -8231,8 +8246,8 @@ html.dark .tags-track > span {
 .fb-reply p {
   margin: 0;
   white-space: pre-wrap;
-  font-size: 12.5px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.6;
 }
 /* 관리자 모드 — 답변 말풍선의 삭제 × (시간 오른쪽) */
 .fb-reply-del {
@@ -8281,7 +8296,7 @@ html.dark .tags-track > span {
   padding: 14px 16px 16px;
 }
 .fb-thread-date {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--muted);
 }
 /* 첨부 이미지 확대 — 새 탭 대신 오버레이 (사용자 지시 2026-08-17). body 포털이라
@@ -8314,7 +8329,7 @@ html.dark .tags-track > span {
 }
 .fb-new-tag {
   font-style: normal;
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 800;
   color: #fff;
   background: linear-gradient(135deg, #ff5a3c, #ff2d78);
@@ -8331,7 +8346,7 @@ html.dark .tags-track > span {
   background: 0 0;
   color: var(--muted);
   padding: 3px 9px;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -8359,7 +8374,7 @@ html.dark .tags-track > span {
   background: var(--white);
   color: inherit;
   padding: 8px;
-  font-size: 12.5px;
+  font-size: 12px;
   resize: vertical;
   outline: 0;
 }
@@ -8368,15 +8383,15 @@ html.dark .tags-track > span {
 }
 .fb-act-err {
   color: #e0483c;
-  font-size: 10.5px;
+  font-size: 10px;
 }
 .fb-board-empty {
   margin: 0;
   padding: 26px 14px;
   text-align: center;
   color: var(--muted);
-  font-size: 12.5px;
-  line-height: 1.7;
+  font-size: 12px;
+  line-height: 1.75;
 }
 .fb-retry-btn {
   border: 1px solid var(--line);
@@ -8402,7 +8417,7 @@ html.dark .tags-track > span {
 }
 .fb-code-row > small {
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 10px;
 }
 .fb-code-row code {
   font-size: 11px;
@@ -8419,7 +8434,7 @@ html.dark .tags-track > span {
   background: 0 0;
   color: inherit;
   padding: 3px 8px;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -8445,7 +8460,7 @@ html.dark .tags-track > span {
   background: var(--white);
   color: inherit;
   padding: 5px 8px;
-  font-size: 11.5px;
+  font-size: 11px;
   outline: 0;
 }
 .fb-code-entry input:focus {
@@ -8454,13 +8469,13 @@ html.dark .tags-track > span {
 .fb-code-err {
   flex-basis: 100%;
   color: #e0483c;
-  font-size: 10.5px;
+  font-size: 10px;
 }
 .fb-code-warn {
   flex-basis: 100%;
   color: var(--muted);
-  font-size: 10.5px;
-  line-height: 1.5;
+  font-size: 10px;
+  line-height: 1.45;
 }
 .fb-code-hint {
   color: var(--muted);
@@ -8511,7 +8526,7 @@ html.dark .tags-track > span {
 .admin-gate input {
   border: 1px solid #bbbcb7;
   padding: 11px 12px;
-  font-size: 13.5px;
+  font-size: 13px;
   outline: 0;
 }
 .admin-gate button {
@@ -8546,7 +8561,7 @@ html.dark .tags-track > span {
 }
 .admin h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 22px;
   letter-spacing: -1px;
 }
 .admin h1 small {
@@ -8584,7 +8599,7 @@ html.dark .tags-track > span {
 }
 .admin-status {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 12px;
   margin: 16px 0;
 }
 /* 게임 데이터 갱신 필요 여부 (크론 워커 /datacheck와 번들 데이터 비교) */
@@ -8592,7 +8607,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   padding: 14px 16px;
   margin-top: 16px;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 .data-status.ok {
   border-color: #59bb5588;
@@ -8629,11 +8644,11 @@ html.dark .tags-track > span {
 .data-status i {
   color: var(--muted);
   font-style: normal;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .data-status-minor {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .admin-list {
   display: grid;
@@ -8652,7 +8667,7 @@ html.dark .tags-track > span {
   margin-bottom: 6px;
 }
 .admin-row > header b {
-  font-size: 12.5px;
+  font-size: 12px;
   padding: 3px 7px;
   background: var(--bg-soft);
 }
@@ -8683,7 +8698,7 @@ html.dark .tags-track > span {
 }
 .admin-row p {
   margin: 4px 0;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.6;
   white-space: pre-wrap;
 }
@@ -8696,7 +8711,7 @@ html.dark .tags-track > span {
   background: #131719;
   color: #c8e0a8;
   padding: 12px;
-  font-size: 11.5px;
+  font-size: 11px;
   overflow-x: auto;
   max-height: 340px;
 }
@@ -8765,7 +8780,7 @@ html.dark .tags-track > span {
   background: var(--tint-lime);
   color: var(--tint-lime-ink);
   padding: 3px 8px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   text-decoration: none;
 }
@@ -8838,7 +8853,7 @@ html.dark .tags-track > span {
   gap: 10px;
   padding: 6px 0;
   border-top: 1px dashed var(--line);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .rule-group .rule-row:first-of-type,
 .rule-group details + .rule-row {
@@ -8910,7 +8925,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   background: var(--paper);
   padding: 6px 9px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-family: inherit;
 }
 .rule-editor header input {
@@ -8948,7 +8963,7 @@ html.dark .tags-track > span {
   padding: 26px 16px;
   text-align: center;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -8988,7 +9003,7 @@ html.dark .tags-track > span {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 14px;
 }
 .admin-tools .file-search {
   border: 1px solid var(--line);
@@ -9074,7 +9089,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 9px 16px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -9148,7 +9163,7 @@ html.dark .tags-track > span {
   gap: 7px;
   width: 100%;
   margin: 0;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .chip-stage .chip-zone {
   font-weight: 600;
@@ -9166,7 +9181,7 @@ html.dark .tags-track > span {
   border: 1px dashed var(--line);
   background: none;
   font: 700 11.5px monospace;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   color: var(--muted);
   cursor: pointer;
   transition: 0.15s;
@@ -9177,7 +9192,7 @@ html.dark .tags-track > span {
 }
 .farm-head h2 {
   margin: 6px 0 12px;
-  font-size: 28px;
+  font-size: 26px;
   letter-spacing: -0.5px;
 }
 .farm-head p {
@@ -9188,7 +9203,7 @@ html.dark .tags-track > span {
 }
 .farm-source {
   color: var(--muted) !important;
-  font-size: 12.5px !important;
+  font-size: 12px !important;
 }
 .farm-tools {
   display: flex;
@@ -9209,7 +9224,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 8px 12px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
@@ -9276,7 +9291,7 @@ html.dark .tags-track > span {
 }
 .farm-card h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: -0.3px;
 }
 .farm-tier {
@@ -9402,7 +9417,7 @@ html.dark .tags-track > span {
 }
 .story-head h2 {
   margin: 6px 0 12px;
-  font-size: 28px;
+  font-size: 26px;
   letter-spacing: -0.5px;
 }
 .story-head p {
@@ -9413,7 +9428,7 @@ html.dark .tags-track > span {
 }
 .story-source {
   color: var(--muted) !important;
-  font-size: 12.5px !important;
+  font-size: 12px !important;
 }
 .story-tools {
   display: flex;
@@ -9440,7 +9455,7 @@ html.dark .tags-track > span {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   /* 내용보다 좁아지지 않는다 — 위 세로 쪼개짐의 직접 원인 */
   white-space: nowrap;
   flex: 0 0 auto;
@@ -9479,7 +9494,7 @@ html.dark .tags-track > span {
 .chron-note {
   color: var(--ink3);
   font-size: 12px;
-  line-height: 1.7;
+  line-height: 1.75;
   background: var(--bg-soft2);
   border-left: 3px solid var(--lime);
   padding: 12px 15px;
@@ -9533,7 +9548,7 @@ html.dark .tags-track > span {
   padding: 1px 3px;
   cursor: pointer;
   font: 800 9px/1.3 monospace;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
   color: #a2a49c;
   white-space: nowrap;
   border-radius: var(--r-xs);
@@ -9742,7 +9757,7 @@ html.dark .tags-track > span {
 .chron-tip b {
   display: block;
   font-size: 13px;
-  line-height: 1.35;
+  line-height: 1.45;
 }
 .chron-tip-meta {
   display: block;
@@ -9794,7 +9809,7 @@ html.dark .tags-track > span {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: -0.3px;
   margin: 0 0 13px;
@@ -9868,7 +9883,7 @@ html.dark .tags-track > span {
 .chron-item-name {
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.45;
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
@@ -9878,7 +9893,7 @@ html.dark .tags-track > span {
 .chron-item-ep {
   flex: none;
   font: 800 9px monospace;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
   color: var(--chip-ink);
   background: var(--chip);
   padding: 3px 6px;
@@ -9948,7 +9963,7 @@ html.dark .tags-track > span {
   opacity: 0.5;
 }
 .story-search-menu .ss-name {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 .story-search-menu .ss-meta {
@@ -9957,7 +9972,7 @@ html.dark .tags-track > span {
 }
 .story-search-empty {
   padding: 12px 10px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: #7c8087;
 }
 .story-grid {
@@ -10038,9 +10053,9 @@ html.dark .story-card:hover .story-thumb img {
 }
 .digest-group > h3 {
   margin: 0 0 12px;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   border-left: 3px solid var(--line);
   padding-left: 9px;
   display: flex;
@@ -10149,7 +10164,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .story-card.guest .story-card-info h3 {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 /* 게스트 카드 클릭 → 원래 카드 도착 강조 ("여기입니다") */
 .story-card.spotlight a,
@@ -10189,7 +10204,7 @@ html.dark .story-card:hover .story-thumb img {
   margin: 0 0 4px;
   font-size: 14px;
   letter-spacing: -0.3px;
-  line-height: 1.35;
+  line-height: 1.45;
 }
 .story-card-info span {
   font: 700 12px monospace;
@@ -10320,7 +10335,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .story-tagline {
   margin: 0 0 14px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.6;
 }
@@ -10329,8 +10344,8 @@ html.dark .story-card:hover .story-thumb img {
   padding: 9px 12px;
   background: color-mix(in srgb, var(--lime) 20%, transparent);
   border-left: 3px solid var(--lime);
-  font-size: 12.5px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
   color: var(--ink2);
 }
 /* 등장인물 스탠딩 CG 참조 갤러리 — 가로 스크롤, 상반신 크롭 */
@@ -10437,7 +10452,7 @@ html.dark .story-card:hover .story-thumb img {
   background: var(--white);
   padding: 5px 11px;
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 11px;
   cursor: pointer;
   color: var(--muted);
 }
@@ -10476,18 +10491,18 @@ html.dark .story-card:hover .story-thumb img {
   font-size: 13px;
 }
 .reader-font-sm .story-body blockquote p {
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .reader-font-lg .sc-line,
 .reader-font-lg .sc-narr,
 .reader-font-lg .sc-st {
-  font-size: 17.5px;
+  font-size: 18px;
 }
 .reader-font-lg .story-body p {
-  font-size: 17px;
+  font-size: 16px;
 }
 .reader-font-lg .story-body blockquote p {
-  font-size: 16.5px;
+  font-size: 16px;
 }
 /* 삽화 크기 3단계 — 전문 컷씬(.sc-cut)·요약 삽화(.story-body figure) 공통.
    figure 자체 폭을 줄여 가운데 정렬해야 테두리가 이미지에 딱 맞는다(작게일 때 빈 테두리 방지).
@@ -10525,7 +10540,7 @@ html.dark .story-card:hover .story-thumb img {
   /* 모바일: 전문/요약 토글 버튼을 컴팩트하게 (사용자 피드백 2026-07-20) */
   .story-mode-bar button {
     padding: 6px 12px;
-    font-size: 11.5px;
+    font-size: 11px;
   }
   /* 읽기 설정: 글자 크기 / 삽화 크기를 각각 한 줄씩 두 줄로, 버튼도 축소 */
   .story-reader-prefs {
@@ -10581,24 +10596,24 @@ html.dark .story-card:hover .story-thumb img {
   background: var(--white);
   color: var(--ink);
   padding: 6px 8px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
 .sc-ep-count {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 .sc-ep-title {
   margin: 0 0 16px;
-  font-size: 21px;
-  letter-spacing: -0.4px;
+  font-size: 20px;
+  letter-spacing: -0.5px;
 }
 .sc-ep-title small {
   margin-left: 8px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 .sc-body {
@@ -10606,7 +10621,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .sc-line {
   margin: 0 0 10px;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.75;
   white-space: pre-line;
   display: grid;
@@ -10620,7 +10635,7 @@ html.dark .story-card:hover .story-thumb img {
 .sc-name {
   color: #8a6d3b;
   font-weight: 800;
-  font-size: 13.5px;
+  font-size: 13px;
   padding-top: 2px;
   word-break: keep-all;
   /* 화자 썸네일 + 이름 — 오른쪽 정렬 유지 (피드백 반영 2026-07-18) */
@@ -10667,7 +10682,7 @@ html.dark .story-card:hover .story-thumb img {
   margin: 14px 0;
   padding-left: 140px;
   font-size: 14px;
-  line-height: 1.8;
+  line-height: 1.75;
   color: var(--ink3);
   font-style: italic;
   white-space: pre-line;
@@ -10676,7 +10691,7 @@ html.dark .story-card:hover .story-thumb img {
   margin: 16px 0;
   padding: 12px 16px 12px 140px;
   font-size: 14px;
-  line-height: 1.8;
+  line-height: 1.75;
   color: var(--ink3);
   white-space: pre-line;
   background: var(--bg-soft);
@@ -10697,8 +10712,8 @@ html.dark .story-card:hover .story-thumb img {
 }
 .sc-future-note p {
   margin: 8px 0 0;
-  font-size: 13.5px;
-  line-height: 1.8;
+  font-size: 13px;
+  line-height: 1.75;
   color: var(--ink3);
   word-break: keep-all;
 }
@@ -10761,7 +10776,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .sc-br {
   margin: 12px 0 8px 140px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--muted);
 }
@@ -10863,7 +10878,7 @@ html.dark .story-card:hover .story-thumb img {
   gap: 3px;
 }
 .ent-peek-text b {
-  font-size: 12.5px;
+  font-size: 12px;
   letter-spacing: -0.3px;
 }
 .ent-peek-text span {
@@ -10933,15 +10948,15 @@ html.dark .story-card:hover .story-thumb img {
 }
 .story-body h3 {
   margin: 34px 0 12px;
-  font-size: 19px;
-  letter-spacing: -0.4px;
+  font-size: 18px;
+  letter-spacing: -0.5px;
   padding-bottom: 8px;
   border-bottom: 2px solid var(--border-strong);
 }
 .story-body p {
   margin: 0 0 14px;
-  font-size: 14.5px;
-  line-height: 1.9;
+  font-size: 14px;
+  line-height: 1.75;
   color: var(--ink2);
 }
 .story-body figure {
@@ -10955,7 +10970,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .story-body figcaption {
   padding: 8px 12px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--muted);
   border-top: 1px solid var(--line);
   background: var(--white);
@@ -10994,9 +11009,9 @@ html.dark .story-card:hover .story-thumb img {
   padding: 5px 0 0;
   border: 0;
   background: none;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   color: var(--muted);
 }
 @media (max-width: 560px) {
@@ -11035,7 +11050,7 @@ html.dark .story-card:hover .story-thumb img {
     gap: 10px;
   }
   .story-detail-head h2 {
-    font-size: 24px;
+    font-size: 22px;
   }
 }
 
@@ -11051,7 +11066,7 @@ html.dark .story-card:hover .story-thumb img {
   margin-left: auto; /* 우측 그룹(미래시·햄버거·언어·소개)을 헤더 오른쪽 끝으로 밀어낸다 */
   margin-right: 10px; /* 햄버거 버튼과 간격 */
   font: 700 12px/1 monospace;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
   cursor: pointer;
 }
 .future-toggle input {
@@ -11107,15 +11122,15 @@ html.dark .story-card:hover .story-thumb img {
   margin: 0 0 14px;
 }
 .about-intro {
-  font-size: 15px;
-  line-height: 1.7;
+  font-size: 14px;
+  line-height: 1.75;
   max-width: 68ch;
   margin: 0;
 }
 .about-lead {
   font: 700 12.5px/1.4 monospace;
   color: var(--muted);
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
   margin: 0 0 14px;
 }
 .about-features {
@@ -11186,7 +11201,7 @@ html.dark .story-card:hover .story-thumb img {
 .about-shot-cap {
   font: 700 12px/1.4 monospace;
   color: var(--muted);
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
   margin: 7px 0 0;
 }
 .about-hero .about-shot-fig {
@@ -11199,7 +11214,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .about-card-highlight {
   font-size: 14px;
-  line-height: 1.65;
+  line-height: 1.6;
   margin: 0 0 12px;
   padding: 12px 14px;
   background: var(--paper);
@@ -11217,7 +11232,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .about-card-bullets li {
   font-size: 14px;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 .about-card-go {
   align-self: flex-start;
@@ -11247,23 +11262,23 @@ html.dark .story-card:hover .story-thumb img {
 .about-note h4 {
   font-size: 14px;
   margin: 0 0 8px;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
 }
 .about-note p {
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.6;
   margin: 0;
   color: var(--ink);
 }
 .about-cta {
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--muted);
   text-align: center;
   margin: 8px 0 0;
 }
 /* 문의 메일 한 줄 — cta 바로 아래, 한 단 더 작고 조용하게 */
 .about-contact {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--muted);
   text-align: center;
   margin: 4px 0 0;
@@ -11345,9 +11360,9 @@ html.dark .story-card:hover .story-thumb img {
   border: 1px solid #b06dff;
   background: var(--ink);
   color: var(--white);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.45;
   pointer-events: none;       /* 툴팁이 커서를 가리면 pointermove 가 끊겨 깜빡인다 */
   animation: 0.12s both fadeIn;
 }
@@ -11395,7 +11410,7 @@ html.dark .story-card:hover .story-thumb img {
   min-width: 0;
   flex: 1 1 auto;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 11px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -11412,7 +11427,7 @@ html.dark .story-card:hover .story-thumb img {
   border-radius: var(--r-xs);
   padding: 2px 6px;
   font: 800 10.5px/1 monospace;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   font-style: normal;
   vertical-align: middle;
 }
@@ -11446,7 +11461,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .roster-section-head {
   margin: 14px 2px 8px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0.75;
@@ -11468,7 +11483,7 @@ html.dark .story-card:hover .story-thumb img {
 .roster-card .future-badge {
   margin-left: 4px;
   padding: 1px 4px;
-  font-size: 9.5px;
+  font-size: 9px;
 }
 /* 미실장 안내문 — 오퍼 모달 히어로(어두운 그라데이션) 위에 뜨므로 밝은 글자 사용.
    max-width로 제목 블록(flex:none, 내용폭 추종)이 넓어지는 걸 막아 별명 제보 폼이 밀리지 않게 한다 */
@@ -11483,8 +11498,8 @@ html.dark .story-card:hover .story-thumb img {
   border-left: 3px solid #b06dff;
   margin: 0 0 9px;
   padding: 8px 10px;
-  font-size: 11.5px;
-  line-height: 1.55;
+  font-size: 11px;
+  line-height: 1.6;
 }
 /* 미실장 안내 — 헤더 오른쪽 세로단에서 '육성 비용 계산' 버튼 위에 쌓인다.
    제목 블록(왼쪽 열)에 두면 문장이 길어 히어로 높이를 밀어 올렸고, 흐름 밖으로 띄우니
@@ -11496,8 +11511,8 @@ html.dark .story-card:hover .story-thumb img {
   border-radius: 0 var(--r-sm) var(--r-sm) 0;
   margin: 0;
   padding: 7px 9px;
-  font-size: 10.5px;
-  line-height: 1.55;
+  font-size: 10px;
+  line-height: 1.6;
   text-align: left;
 }
 
@@ -11511,13 +11526,13 @@ html.dark .story-card:hover .story-thumb img {
 .cost-calc-head h3 {
   margin: 6px 0 8px;
   font-size: 20px;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.5px;
 }
 .cost-calc-head p {
   margin: 0;
   max-width: 760px;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--ink2);
 }
 .cost-tools {
@@ -11554,7 +11569,7 @@ html.dark .story-card:hover .story-thumb img {
   border-bottom: 1px solid var(--line);
   background: none;
   padding: 7px 10px;
-  font-size: 13.5px;
+  font-size: 13px;
   cursor: pointer;
   text-align: left;
 }
@@ -11731,7 +11746,7 @@ html.dark .story-card:hover .story-thumb img {
   background: none;
   padding: 4px 8px;
   margin-left: auto;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
@@ -11760,7 +11775,7 @@ html.dark .story-card:hover .story-thumb img {
   padding-top: 4px;
 }
 .cost-row-group {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   line-height: 1.25;
   white-space: normal;
@@ -11774,7 +11789,7 @@ html.dark .story-card:hover .story-thumb img {
 .cost-grp-b {
   display: block;
   font-weight: 600;
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--muted);
 }
 .cost-row-step {
@@ -11856,7 +11871,7 @@ html.dark .story-card:hover .story-thumb img {
     gap: 6px;
   }
   .cost-row-group {
-    font-size: 10.5px;
+    font-size: 10px;
     letter-spacing: -0.02em;
   }
   .cost-row-step {
@@ -11881,7 +11896,7 @@ html.dark .story-card:hover .story-thumb img {
     height: 19px;
   }
   .cost-mini i {
-    font-size: 10.5px;
+    font-size: 10px;
   }
 }
 .cost-total-head {
@@ -11892,7 +11907,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .cost-total-head b {
   font-size: 14px;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
 }
 .cost-total-actions {
   display: flex;
@@ -11904,7 +11919,7 @@ html.dark .story-card:hover .story-thumb img {
   background: var(--chip);
   color: var(--lime);
   padding: 6px 11px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -11972,7 +11987,7 @@ html.dark .story-card:hover .story-thumb img {
 .item-modal h3 {
   margin: 0 0 6px;
   font-size: 18px;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.5px;
 }
 .item-farmable-badge {
   display: inline-block;
@@ -11986,7 +12001,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .item-desc {
   margin: 0 0 8px;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.75;
   color: var(--ink2);
 }
@@ -11995,8 +12010,8 @@ html.dark .story-card:hover .story-thumb img {
   padding: 8px 10px;
   border-left: 3px solid var(--line);
   background: var(--paper);
-  font-size: 12.5px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
   color: var(--muted);
 }
 .item-craft,
@@ -12053,7 +12068,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 0;
   background: none;
   padding: 0 3px;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
   color: var(--muted);
   cursor: pointer;
@@ -12065,7 +12080,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 1px solid var(--line);
   background: none;
   padding: 6px 10px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -12101,7 +12116,7 @@ html.dark .story-card:hover .story-thumb img {
   opacity: 0.8;
 }
 .cost-lmd b {
-  font-size: 19px;
+  font-size: 18px;
   letter-spacing: -0.3px;
 }
 .cost-items {
@@ -12117,7 +12132,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 1px solid var(--line);
   background: var(--paper);
   padding: 6px 8px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   text-align: left;
   color: var(--ink);
@@ -12153,7 +12168,7 @@ html.dark .story-card:hover .story-thumb img {
   font-style: normal;
 }
 .cost-item b {
-  line-height: 1.35;
+  line-height: 1.45;
 }
 @media (max-width: 900px) {
   .future-toggle {
@@ -12314,7 +12329,7 @@ html.dark .pt-stage {
   text-shadow: var(--pt-over-shadow);
 }
 .pt-sub {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.6;
   color: color-mix(in srgb, var(--pt-over) 78%, transparent);
@@ -12465,7 +12480,7 @@ html.dark .pt-stage {
 .pt-desc {
   font-size: 12px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--pt-mut);
   white-space: normal;
   overflow-wrap: anywhere;   /* 긴 낱말이 칸을 밀지 않게 */
@@ -12566,7 +12581,7 @@ html.dark .pt-stage {
   margin-top: auto;
 }
 .pt-banner-txt b {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 800;
   color: var(--pt-strip-ink);
   text-shadow: 0 1px 5px #000c;
@@ -12622,12 +12637,12 @@ html.dark .pt-stage {
   min-width: 4ch;
   text-align: center;
   font-family: monospace;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: -0.03em;
 }
 .pt-gauge small {
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   opacity: 0.62;
 }
@@ -12693,7 +12708,7 @@ html.dark .pt-stage {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: minmax(56px, auto);
   }
-  .pt-t-terminal .pt-ko { font-size: 19px; }
+  .pt-t-terminal .pt-ko { font-size: 18px; }
 }
 @media (max-width: 520px) {
   .pt-player { max-width: none; }
@@ -13009,7 +13024,7 @@ html.dark.rg-theme.rg6 .site-header {
   color: var(--rgink);
   padding: 2px 8px;
   border-radius: var(--r-md);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 /* 중국어 원문 병기 (CN 선행 토픽) — 인라인 표기용 */
@@ -13019,7 +13034,7 @@ html.dark.rg-theme.rg6 .site-header {
   font-style: normal;
   color: var(--rgmut);
   margin-left: 6px;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
 }
 /* 이름 서브 표기(한국어 번역) — 중국어 다음 줄에 표시 (사용자 확정) */
 .rg-sub {
@@ -13028,7 +13043,7 @@ html.dark.rg-theme.rg6 .site-header {
   font-weight: 400;
   color: var(--rgmut);
   margin-top: 2px;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
 }
 /* 목록 아이템: 층 라벨 윗줄 + 이름 아랫줄 */
 .rg-enc-txt {
@@ -13072,19 +13087,19 @@ html.dark.rg-theme.rg6 .site-header {
 }
 .rg-scrap-type {
   margin: 0 0 10px;
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--rggold);
 }
 .rg-scrap-type em {
   font-style: normal;
   color: var(--rgmut);
   margin-left: 6px;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .rg-scrap-hint {
   display: block;
   font-weight: 400;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--rgmut);
   margin-top: 3px;
 }
@@ -13137,7 +13152,7 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-zonecard-name {
   font-weight: 600;
   font-size: 14px;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .rg-zonecard .rg-zone-counts {
@@ -13246,13 +13261,13 @@ html.rg-theme {
   min-width: 0;
   white-space: nowrap;
   font: 800 11.5px/1 monospace;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   color: var(--rggold);
 }
 .rg-head h2 {
   margin: 8px 0 12px;
   font-size: 30px;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.5px;
   color: #f4e7d3;
   text-shadow: 0 2px 14px #000c;
 }
@@ -13277,7 +13292,7 @@ html.rg-theme {
 .rg-topic {
   font-weight: 600;
   font-size: 13px;
-  line-height: 1.2;
+  line-height: 1.25;
   padding: 5px 12px;
   border: 1px solid var(--rgline);
   border-radius: var(--r-pill);
@@ -13294,7 +13309,7 @@ html.rg-theme {
   cursor: default;
   font-weight: 600;
   font-size: 13px;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 .rg-topic.off.ready {
   color: var(--rgink);
@@ -13317,14 +13332,14 @@ html.rg-theme {
 .rg-line {
   margin: 0;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--rgtext2);
   white-space: pre-line;
   text-shadow: 0 1px 8px #000c;
 }
 .rg-disclaimer {
   margin: 0 0 8px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--rggold);
 }
 /* 중국섭에서 록라 제목 오른쪽에 붙는 CN 원제 (사용자 요청 2026-08-04) */
@@ -13411,8 +13426,8 @@ html.rg-theme {
   border-radius: var(--r-sm);
   color: var(--rgtext2);
   font-weight: 600;
-  font-size: 9.5px;
-  line-height: 1.3;
+  font-size: 9px;
+  line-height: 1.25;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
@@ -13436,7 +13451,7 @@ html.rg-theme {
   top: -10px;
   right: -6px;
   padding: 1px 5px;
-  font-size: 8.5px;
+  font-size: 9px;
   white-space: nowrap;
 }
 .rg-topicsel {
@@ -13471,9 +13486,9 @@ html.rg-theme {
 .rg-topicsel-label {
   grid-column: 1;
   font-weight: 600;
-  font-size: 9.5px;
+  font-size: 9px;
   line-height: 1;
-  letter-spacing: 1.6px;
+  letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--rggold);
   opacity: 0.9;
@@ -13486,7 +13501,7 @@ html.rg-theme {
   /* 오른쪽 한섭/중섭 미니 토글 자리 — 긴 테마명이 그 밑으로 파고들지 않게 (2026-08-04) */
   padding-right: 88px;
   font-weight: 600;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.25;
 }
 .rg-topicsel-arrow {
@@ -13537,7 +13552,7 @@ html.rg-theme {
   color: var(--rgtext2);
   font-weight: 600;
   font-size: 13px;
-  line-height: 1.3;
+  line-height: 1.25;
   cursor: pointer;
 }
 .rg-topicsel-menu li :where(button, a):hover {
@@ -13674,7 +13689,7 @@ html.rg-theme {
   align-items: center;
   font-weight: 700;
   font-size: 13px;
-  line-height: 1.2;
+  line-height: 1.25;
   color: var(--rgmut);
 }
 .rg-diff-cur.on {
@@ -13696,7 +13711,7 @@ html.rg-theme {
   color: var(--rgink);
   padding: 7px 14px;
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1;
   cursor: pointer;
   transition: 0.12s;
@@ -13762,7 +13777,7 @@ html.rg-theme {
 }
 .rg-zone-arrow {
   color: var(--rggold);
-  font-size: 12.5px;
+  font-size: 12px;
   transition: transform 0.15s;
 }
 .rg-zone[open] .rg-zone-arrow {
@@ -13779,7 +13794,7 @@ html.rg-theme {
 }
 .rg-stage-hint {
   font-weight: 500;
-  font-size: 11.5px;
+  font-size: 11px;
   line-height: 1;
   color: var(--rgmut);
   margin-left: 6px;
@@ -13848,7 +13863,7 @@ html.rg-theme {
 }
 .rg-zone h3 {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
   letter-spacing: -0.3px;
   color: #f4e7d3;
   text-shadow: 0 1px 8px #000;
@@ -13867,7 +13882,7 @@ html.rg-theme {
 .rg-zone-desc {
   margin: 0 0 10px;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--rgtext2);
   white-space: pre-line;
   text-shadow: 0 1px 6px #000c;
@@ -13877,7 +13892,7 @@ html.rg-theme {
 }
 .rg-stage-group h4 {
   margin: 0 0 6px;
-  font-size: 12.5px;
+  font-size: 12px;
   letter-spacing: 0.3px;
   color: var(--rgink);
 }
@@ -13929,7 +13944,7 @@ html.rg-theme {
   align-items: center;
   gap: 8px;
   margin: 0 0 4px;
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--rggold);
 }
 /* 지도 노드 글리프 — 원본이 어두운 배경에 흰 그림이라 그대로 얹으면 카드에 묻힌다.
@@ -13949,17 +13964,17 @@ html.rg-theme {
 .rg-nodetype p {
   margin: 0 0 4px;
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--rgtext2);
 }
 /* 기능 설명(func) — 플레이버 텍스트보다 위, 본문색으로 또렷하게 */
 .rg-nodetype .rg-nodetype-func {
   color: var(--rgink);
-  font-size: 13.5px;
+  font-size: 13px;
 }
 .rg-nodetype .rg-nodetype-func + p {
   color: var(--rgmut, var(--rgtext2));
-  font-size: 12.5px;
+  font-size: 12px;
   font-style: italic;
 }
 .rg-nodetype.wide {
@@ -13993,8 +14008,8 @@ html.rg-theme {
 }
 .rg-stagecard-name {
   font-weight: 600;
-  font-size: 12.5px;
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.45;
   padding: 0 6px;
   display: block;
 }
@@ -14047,7 +14062,7 @@ html.rg-theme {
 /* 조우 */
 .rg-enc-title {
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--rgink);
 }
 .rg-enc-floors {
@@ -14090,7 +14105,7 @@ html.rg-theme {
 }
 .rg-relic-obtain {
   margin: 8px 0 0;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--ink2);
 }
 .rg-relic-obtain em {
@@ -14111,14 +14126,14 @@ html.rg-theme {
 .rg-enc-desc {
   margin: 0;
   padding: 0 12px 8px;
-  font-size: 12.5px;
-  line-height: 1.7;
+  font-size: 12px;
+  line-height: 1.75;
   color: var(--rgtext2);
 }
 .rg-enc-note {
   margin: 0 12px 8px;
   padding: 7px 9px;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
   background: var(--rgsel);
   border-left: 3px solid var(--rggold);
@@ -14137,8 +14152,8 @@ html.rg-theme {
 .rg-enc-choices {
   margin: 0;
   padding: 0 12px 12px 28px;
-  font-size: 12.5px;
-  line-height: 1.7;
+  font-size: 12px;
+  line-height: 1.75;
   color: var(--rgtext2);
 }
 .rg-enc-choices strong {
@@ -14181,7 +14196,7 @@ html.rg-theme {
   padding: 0 5px;
   border: 1px solid var(--rgline);
   border-radius: var(--r-md);
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--rgmut);
   white-space: nowrap;
 }
@@ -14226,7 +14241,7 @@ html.rg-theme {
 }
 .rg-enc-battles-random {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--rgmut);
 }
 @media (max-width: 720px) {
@@ -14264,7 +14279,7 @@ html.rg-theme {
   margin: 2px 0;
   padding: 0;
   font-size: 12px;
-  line-height: 1.65;
+  line-height: 1.6;
   color: var(--rgmut);
 }
 .rg-choice-result::before {
@@ -14307,7 +14322,7 @@ html.rg-theme {
   color: var(--rgink);
   padding: 7px 11px;
   font-weight: 500;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1;
   min-width: 180px;
 }
@@ -14329,7 +14344,7 @@ html.rg-theme {
   color: var(--rgink);
   padding: 6px 12px;
   font-weight: 600;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
 }
@@ -14446,8 +14461,8 @@ html.rg-theme {
 }
 .rg-enemy-more p {
   margin: 0 0 6px;
-  font-size: 12.5px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
   color: var(--rgtext2);
 }
 .rg-enemy-more strong {
@@ -14477,8 +14492,8 @@ html.rg-theme {
   color: var(--rgink);
   padding: 4px 9px;
   font-weight: 600;
-  font-size: 12.5px;
-  line-height: 1.3;
+  font-size: 12px;
+  line-height: 1.25;
   cursor: pointer;
   border-radius: var(--r-xs);
   transition: 0.12s;
@@ -14524,7 +14539,7 @@ html.rg-theme {
 .rg-relic h4 {
   margin: 0;
   font-size: 14px;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   color: #f4e7d3;
 }
 .rg-relic-no {
@@ -14542,7 +14557,7 @@ html.rg-theme {
 .rg-cap-en {
   font-weight: 600;
   font-size: 12px;
-  line-height: 1.2;
+  line-height: 1.25;
   font-style: italic;
   color: var(--rggold);
 }
@@ -14556,7 +14571,7 @@ html.rg-theme {
 .rg-relic-usage {
   margin: 0 0 5px;
   font-size: 13px;
-  line-height: 1.65;
+  line-height: 1.6;
   font-weight: 600;
   color: var(--rgink);
 }
@@ -14566,8 +14581,8 @@ html.rg-theme {
 }
 .rg-relic-desc {
   margin: 0 0 4px;
-  font-size: 12.5px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
   color: var(--rgmut);
 }
 .rg-relic-obtain {
@@ -14627,7 +14642,7 @@ html.rg-theme {
 }
 .rg-ending h3 {
   margin: 0 0 8px;
-  font-size: 16.5px;
+  font-size: 16px;
   letter-spacing: -0.3px;
   border-left: 4px solid var(--rgcrim);
   padding-left: 10px;
@@ -14643,7 +14658,7 @@ html.rg-theme {
   margin: 0 0 10px;
   padding-left: 20px;
   font-size: 13px;
-  line-height: 1.8;
+  line-height: 1.75;
   color: var(--rgink);
 }
 .rg-ending-cond li {
@@ -14655,7 +14670,7 @@ html.rg-theme {
 }
 .rg-ending-change {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 12px;
   font-style: italic;
   color: var(--rgmut);
 }
@@ -14670,7 +14685,7 @@ html.rg-theme {
 }
 .rg-ending-sec > h4 {
   margin: 0 0 7px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -14704,8 +14719,8 @@ html.rg-theme {
   border-radius: var(--r-sm);
   background: transparent;
   font: inherit;
-  font-size: 12.5px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.6;
   text-align: left;
   color: inherit;
 }
@@ -14757,8 +14772,8 @@ html.rg-theme {
 }
 .rg-rec-body p {
   margin: 0 0 0.9em;
-  font-size: 13.5px;
-  line-height: 1.85;
+  font-size: 13px;
+  line-height: 1.75;
 }
 .rg-rec-status {
   color: var(--rgmut);
@@ -14794,7 +14809,7 @@ html.rg-theme {
 /* 월간 방문객 — 전시관 서브탭 (사용자 소원 2026-08-17) */
 .rg-visitor-note {
   margin: 0 0 14px;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
   color: var(--rgmut);
 }
@@ -14823,7 +14838,7 @@ html.rg-theme {
 }
 .rg-visitor-who h4 {
   margin: 0;
-  font-size: 14.5px;
+  font-size: 14px;
 }
 .rg-visitor-team {
   display: inline-flex;
@@ -14839,7 +14854,7 @@ html.rg-theme {
 }
 .rg-visitor-desc {
   margin: 0 0 8px;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
   color: var(--rgmut);
 }
@@ -14852,8 +14867,8 @@ html.rg-theme {
 }
 .rg-visitor-scenes li {
   display: block;
-  font-size: 12.5px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.6;
 }
 /* 장면 행 — 원문이 있으면 통째로 버튼(읽기). 정적/버튼 공용 골격 */
 .rg-visitor-scene-row {
@@ -14878,7 +14893,7 @@ button.rg-visitor-scene-row:hover {
 }
 .rg-visitor-where {
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--rggold);
 }
 .rg-visitor-quote {
@@ -14948,21 +14963,21 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
 }
 .rg-emodal-desc {
   margin: 0 0 6px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-style: italic;
   color: var(--rgmut);
 }
 .rg-emodal-ability {
   margin: 0 0 10px;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--rgtext2);
   white-space: pre-line;
 }
 /* 스탯 컨텍스트 안내 — 어떤 배율이 반영된 수치인지 명시 (도감/노드 상세 불일치 방지) */
 .rg-ctx-note {
   margin: 0 0 6px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--rggold);
   opacity: 0.85;
 }
@@ -15116,7 +15131,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   color: var(--rgink);
   width: 30px;
   height: 30px;
-  font-size: 17px;
+  font-size: 16px;
   cursor: pointer;
   line-height: 1;
 }
@@ -15152,7 +15167,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
 .rg-modal-desc {
   margin: 0 0 8px;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--rgtext2);
   white-space: pre-line;
 }
@@ -15161,7 +15176,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   padding: 8px 11px;
   background: #2b1016;
   border-left: 3px solid var(--rgcrim);
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
   font-weight: 600;
   color: #f0b9c0;
@@ -15200,8 +15215,8 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   gap: 5px;
 }
 .rg-enemy-cell .rg-enemy-name {
-  font-size: 12.5px;
-  line-height: 1.3;
+  font-size: 12px;
+  line-height: 1.25;
 }
 .rg-enemy-cell .rg-stats {
   justify-content: center;
@@ -15300,7 +15315,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
 }
 .rg-enemy-name {
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 .rg-enemy-cnt {
   font: 800 12.5px/1 monospace;
@@ -15639,7 +15654,7 @@ main.site-main > .site-header {
 .lens-verdict {
   margin: 0;
   font-size: 0.94rem;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 .lens-verdict strong {
   color: var(--lime-ink, inherit);
@@ -15715,7 +15730,7 @@ main.site-main > .site-header {
   flex-direction: column;
   gap: 5px;
   font-size: 0.88rem;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--ink2);
 }
 /* 사용법 — 제일 눈에 띄는 스텝 카드 (사용자 요청 2026-07-24) */
@@ -15903,7 +15918,7 @@ main.site-main > .site-header {
   padding: 7px 9px;
 }
 .rg-invmodal .rg-relic h4 {
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .rg-invmodal .rg-relic-icon {
   width: 26px;
@@ -15911,7 +15926,7 @@ main.site-main > .site-header {
 }
 .rg-invmodal .rg-relic-usage {
   margin-top: 3px;
-  font-size: 11.5px;
+  font-size: 11px;
   line-height: 1.45;
 }
 .rg-invmodal .rg-inv-tabs {
@@ -15927,11 +15942,11 @@ main.site-main > .site-header {
   padding: 3px 8px;
   font-size: 11px;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.45;
   border-radius: var(--r-sm);
 }
 .rg-invmodal .rg-inv-tabcnt {
-  font-size: 9.5px;
+  font-size: 9px;
   padding: 1px 5px;
 }
 /* 효과 총합 열기 버튼 — 탭 줄 오른쪽, '전체 비우기' 앞 */
@@ -15950,7 +15965,7 @@ main.site-main > .site-header {
   top: -8px;
   right: -4px;
   padding: 0.5px 5px;
-  font-size: 8.5px;
+  font-size: 9px;
 }
 /* 효과 총합 모달 — 떠 있는 보유 창(150)보다 위 */
 .rg-effmodal {
@@ -16011,11 +16026,11 @@ main.site-main > .site-header {
 .rg-efftot-row.cond li,
 .rg-efftot-row.get li {
   padding: 2px 8px;
-  font-size: 11.5px;
+  font-size: 11px;
 }
 .rg-efftot-row.cond li b,
 .rg-efftot-row.get li b {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--rgink);
 }
 /* 조건 이름 / '누계 획득' 머리표 — 알약이 아니라 라벨 */
@@ -16031,7 +16046,7 @@ main.site-main > .site-header {
 .rg-efftot-note {
   margin: 6px 0 0;
   font-size: 11px;
-  line-height: 1.5;
+  line-height: 1.45;
   color: var(--rgmuted);
 }
 .rg-efftot-note {
@@ -16125,8 +16140,8 @@ main.site-main > .site-header {
 }
 .rg-inv-empty {
   color: var(--rgmut);
-  font-size: 13.5px;
-  line-height: 1.7;
+  font-size: 13px;
+  line-height: 1.75;
   margin: 18px 4px;
 }
 
@@ -16180,7 +16195,7 @@ main.site-main > .site-header {
   padding-left: 18px;
   color: var(--muted);
   font-size: 0.9rem;
-  line-height: 1.7;
+  line-height: 1.75;
 }
 .scanner-err {
   color: #d9534f;
@@ -16544,7 +16559,7 @@ main.site-main > .site-header {
 .term-backdrop { z-index: 110; }
 .term-modal { max-width: 480px; width: min(480px, 92vw); padding: 20px 22px 18px; }
 .term-modal .term-head h2 { margin: 2px 0 10px; font-size: 20px; }
-.term-modal .term-line { margin: 0 0 7px; font-size: 13.5px; line-height: 1.6; white-space: pre-line; }
+.term-modal .term-line { margin: 0 0 7px; font-size: 13px; line-height: 1.6; white-space: pre-line; }
 .term-modal .term-ops { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0 10px; }
 .term-modal .term-ops img { width: 34px; height: 34px; }
 
@@ -16575,7 +16590,7 @@ main.site-main > .site-header {
   background: var(--bg-soft, var(--white));
   color: var(--muted);
   padding: 8px 11px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1;
   cursor: pointer;
@@ -16653,8 +16668,8 @@ main.site-main > .site-header {
   border-radius: var(--r-sm);
   background: var(--header-solid);
   color: var(--muted);
-  font-size: 10.5px;
-  line-height: 1.4;
+  font-size: 10px;
+  line-height: 1.45;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -16681,8 +16696,8 @@ main.site-main > .site-header {
   border-radius: var(--r-md);
   background: var(--header-solid, var(--white));
   color: var(--muted);
-  font-size: 11.5px;
-  line-height: 1.4;
+  font-size: 11px;
+  line-height: 1.45;
   font-variant-numeric: tabular-nums;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
 }
@@ -16703,7 +16718,7 @@ main.site-main > .site-header {
   border: 1px solid var(--border-strong);
   background: transparent;
   color: var(--ink2);
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   padding: 4px 8px;
   border-radius: var(--r-sm);
@@ -16724,7 +16739,7 @@ main.site-main > .site-header {
   border: 1px solid var(--border-strong);
   background: transparent;
   color: var(--ink3, var(--ink2));
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   padding: 4px 8px;
   border-radius: var(--r-sm);
@@ -16769,7 +16784,7 @@ main.site-main > .site-header {
   font-weight: 600;
 }
 .br-imported {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--muted);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
@@ -16787,7 +16802,7 @@ main.site-main > .site-header {
 }
 .br-range {
   margin: 4px 0 8px;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -16859,7 +16874,7 @@ main.site-main > .site-header {
   font-style: normal;
   color: #c0392b;
   font-weight: 700;
-  font-size: 10.5px;
+  font-size: 10px;
   margin-right: 5px;
 }
 .br-meta {
@@ -16881,7 +16896,7 @@ main.site-main > .site-header {
   color: var(--muted);
 }
 .br-empty, .br-err {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--muted);
   margin: 12px 2px;
 }
@@ -16975,13 +16990,13 @@ main.site-main > .site-header {
   background: 0 0;
   color: var(--ink);
   padding: 10px 4px;
-  font-size: 15px;
+  font-size: 14px;
 }
 .omni-clear {
   border: 0;
   background: 0 0;
   color: var(--muted);
-  font-size: 19px;
+  font-size: 18px;
   line-height: 1;
   padding: 2px 6px;
   cursor: pointer;
@@ -16992,7 +17007,7 @@ main.site-main > .site-header {
   background: var(--chip);
   color: var(--lime);
   padding: 9px 14px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
@@ -17057,7 +17072,7 @@ main.site-main > .site-header {
 }
 .omni-icon em {
   font-style: normal;
-  font-size: 15px;
+  font-size: 14px;
 }
 .omni-name {
   font-size: 14px;
@@ -17070,7 +17085,7 @@ main.site-main > .site-header {
   margin-left: auto;
   padding-left: 10px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 11px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -17088,7 +17103,7 @@ main.site-main > .site-header {
   background: var(--bg-faint);
   color: var(--ink2);
   padding: 5px 9px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -17168,7 +17183,7 @@ main.site-main > .site-header {
   font-weight: 600;
   opacity: 0.72;
   margin-left: 8px;
-  font-size: 11.5px;
+  font-size: 11px;
 }
 .omni-learned {
   flex: none;
@@ -17177,7 +17192,7 @@ main.site-main > .site-header {
   border-radius: var(--r-pill);
   background: var(--tint-lime, var(--bg-soft));
   color: var(--tint-lime-ink, var(--ink2));
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -17201,14 +17216,14 @@ main.site-main > .site-header {
   border-radius: var(--r-pill);
   border: 1px dashed var(--line);
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   white-space: nowrap;
 }
 /* 통합전략 자료 자동 로딩 상태 (버튼이 아니라 안내 — 사용자 요청 2026-07-25) */
 .omni-loading {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
 }
 .omni-loading::before {
@@ -17387,7 +17402,7 @@ main.site-main > .site-header {
   border-radius: var(--r-sm);
   background: transparent;
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
@@ -17398,7 +17413,7 @@ main.site-main > .site-header {
 .drop-menu li > button em {
   font-style: normal;
   font-family: monospace;
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--muted);
 }
 .drop-menu li > button:hover:not(:disabled) {
@@ -17558,8 +17573,8 @@ main.site-main > .site-header {
 }
 .summon-sub p {
   margin: 5px 0 0;
-  font-size: 12.5px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.6;
 }
 .summon-sub i {
   color: var(--ink);
@@ -17575,8 +17590,8 @@ main.site-main > .site-header {
   color: var(--muted);
   max-width: 260px;
   margin: 5px 0 0;
-  font-size: 10.5px;
-  line-height: 1.5;
+  font-size: 10px;
+  line-height: 1.45;
 }
 
 /* 미래 모듈(중섭 선행) — 실장 모듈과 한눈에 갈리도록 보라 테두리 (2026-08-01) */
@@ -17607,7 +17622,7 @@ main.site-main > .site-header {
 .maa-note {
   color: var(--muted);
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 .maa-download {
   margin-top: 14px;
@@ -17715,7 +17730,7 @@ main.site-main > .site-header {
   position: absolute;
   top: 22%;
   right: 26%;
-  font-size: 15px;
+  font-size: 14px;
   animation: chibi-anger-pop 0.8s ease-in-out infinite alternate;
   pointer-events: none;
 }
@@ -17837,7 +17852,7 @@ main.site-main > .site-header {
   padding: 8px 12px;
   border-radius: var(--r-lg);
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -17895,7 +17910,7 @@ main.site-main > .site-header {
 .chibi-chat-note {
   padding: 6px 14px 8px;
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 10px;
   line-height: 1.45;
   text-align: center;
 }
@@ -18049,7 +18064,7 @@ main.site-main > .site-header {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
 }
@@ -18078,7 +18093,7 @@ main.site-main > .site-header {
   margin: 0;
   border: 0;
   background: none;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
   padding: 2px 6px;
   /* .modal-close의 38px 원형 규격 무효화 — 이 버튼이 크롬 바 높이를 끌어올리고 있었다 */
@@ -18199,7 +18214,7 @@ main.site-main > .site-header {
   padding: 5px 10px;
   color: var(--ink2);
   text-decoration: none;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   transition: border-color 0.15s, color 0.15s;
 }
@@ -18295,7 +18310,7 @@ main.site-main > .site-header {
   flex-direction: column;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 10px;
-  line-height: 1.35;
+  line-height: 1.45;
   color: var(--muted);
   min-width: 0;
 }
@@ -18355,7 +18370,7 @@ main.site-main > .site-header {
 .en-head-main h2 {
   margin: 0;
   font-size: 22px;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 .en-badges {
   display: flex;
@@ -18376,7 +18391,7 @@ main.site-main > .site-header {
 .en-desc {
   margin: 0;
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--ink);
   white-space: pre-line;
 }
@@ -18407,7 +18422,7 @@ main.site-main > .site-header {
   align-items: baseline;
   gap: 8px;
   margin: 0 0 8px;
-  font-size: 15px;
+  font-size: 14px;
 }
 .en-block > h3 em {
   font-style: normal;
@@ -18661,7 +18676,7 @@ main.site-main > .site-header {
 .st-head-main h2 {
   margin: 0;
   font-size: 22px;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 .st-badges {
   display: flex;
@@ -18767,7 +18782,7 @@ main.site-main > .site-header {
 .st-simnote {
   margin: 0 0 6px;
   font-size: 11px;
-  line-height: 1.5;
+  line-height: 1.45;
   color: var(--muted);
 }
 /* 지상/비행 선 스타일 범례 — 지도 **바깥** 오른쪽 위 (사용자 정정 2026-08-10) */
@@ -18787,7 +18802,7 @@ main.site-main > .site-header {
 .st-mapscale {
   margin-left: 4px;
   padding: 2.5px 9px;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--ink2);
   background: var(--white);
@@ -18810,7 +18825,7 @@ main.site-main > .site-header {
   gap: 10px;
   align-items: center;
   margin: 0 0 4px;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--ink2);
 }
@@ -18843,7 +18858,7 @@ main.site-main > .site-header {
   flex-wrap: wrap;
   gap: 3px 10px;
   margin-top: 5px;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--ink2);
 }
@@ -18894,7 +18909,7 @@ main.site-main > .site-header {
   padding: 4px 8px;
   font-size: 11px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.45;
   white-space: nowrap;
   color: var(--white);
   background: var(--ink);
@@ -19009,7 +19024,7 @@ main.site-main > .site-header {
 .st-desc {
   margin: 0;
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.75;
   white-space: pre-line;
 }
 /* 긴급 작전 제한 조건 — 일반 설명 자리에 경고 톤으로 */
@@ -19051,7 +19066,7 @@ main.site-main > .site-header {
   align-items: baseline;
   gap: 8px;
   margin: 0 0 8px;
-  font-size: 15px;
+  font-size: 14px;
 }
 .st-block > h3 em {
   font-style: normal;
@@ -19135,7 +19150,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   flex: 1;
   min-width: 0;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 10.5px;
+  font-size: 10px;
   line-height: 1.6;
   color: var(--muted);
 }
@@ -19317,12 +19332,12 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 }
 .sim-head h2 {
   margin: 2px 0 0;
-  font-size: 24px;
+  font-size: 22px;
 }
 .sim-intro {
   margin: 12px 0 4px;
   max-width: 760px;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.75;
   color: var(--ink2);
 }
@@ -19330,7 +19345,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   margin: 6px 0 0;
   max-width: 760px;
   font-size: 12px;
-  line-height: 1.65;
+  line-height: 1.6;
   color: var(--muted);
 }
 /* 시뮬레이터의 계층 필터 — 도감과 같은 부품이지만 여기선 사이드 패널이 아니라 본문 폭이라
@@ -19374,12 +19389,12 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 }
 .sim-sec h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
 }
 .sim-sec h3 em {
   margin-left: 8px;
   font-style: normal;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--muted);
 }
@@ -19452,7 +19467,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .sb-search { margin: 10px 0 0; }
 .sb-h3 {
   margin: 26px 0 6px;
-  font-size: 15.5px;
+  font-size: 16px;
 }
 .sb-h3 .sb-count {
   font-style: normal;
@@ -19480,7 +19495,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   align-items: center;
   gap: 6px;
 }
-.sb-card p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.6; }
+.sb-card p { margin: 4px 0 0; font-size: 12px; line-height: 1.6; }
 .sb-dim { color: var(--muted); }
 /* ⚠ .sb-dim은 색만 잡는다 — 본문 안내문에 그냥 쓰면 브라우저 기본 16px로 나와 옆의
    .sim-note(12px)·.ac-count(12px)보다 크게 튄다 (사용자 지적 2026-08-23: 자유 선택 칸·
@@ -19491,7 +19506,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .ac-guide > * > * > .sb-dim {
   max-width: 760px;
   font-size: 12px;
-  line-height: 1.65;
+  line-height: 1.6;
 }
 .sb-chip {
   display: inline-flex;
@@ -19499,7 +19514,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   gap: 3px;
   white-space: nowrap;
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   padding: 2px 8px 2px 4px;
   border: 1px solid var(--line);
@@ -19512,24 +19527,24 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .sb-chip.a-SURVIVE { border-color: #2e7d4f; color: #2e7d4f; }
 .sb-chip.a-BATTLE { border-color: #b3372e; color: #b3372e; }
 .sb-chip.a-GATHER { border-color: #8a6d1f; color: #8a6d1f; }
-.sb-recipes { margin: 6px 0 0; padding-left: 16px; font-size: 12.5px; line-height: 1.7; }
+.sb-recipes { margin: 6px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.75; }
 .sb-variants {
   margin: 8px 0 0;
   padding: 8px 0 0;
   border-top: 1px dashed var(--line);
   list-style: none;
-  font-size: 12.5px;
-  line-height: 1.7;
+  font-size: 12px;
+  line-height: 1.75;
 }
 .sb-variants b { display: inline-block; min-width: 18px; }
 .sb-variants .v-ALPHA { color: #b3372e; }
 .sb-variants .v-BETA { color: #2f5f9e; }
-.sb-choices { margin: 8px 0 0; padding-left: 0; list-style: none; font-size: 12.5px; line-height: 1.65; }
+.sb-choices { margin: 8px 0 0; padding-left: 0; list-style: none; font-size: 12px; line-height: 1.6; }
 .sb-choices li { padding: 5px 0; border-top: 1px dashed var(--line); }
 .sb-choices li span { display: block; color: var(--muted); }
 .sb-lv {
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--muted);
   margin-left: 6px;
 }
@@ -19537,8 +19552,8 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .sb-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.6;
 }
 .sb-table th, .sb-table td {
   padding: 7px 10px;
@@ -19548,7 +19563,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 }
 .sb-table th {
   background: color-mix(in srgb, var(--ink) 5%, var(--white));
-  font-size: 11.5px;
+  font-size: 11px;
   white-space: nowrap;
 }
 .sb-table td.sb-desc { min-width: 260px; color: var(--ink2); }
@@ -19620,7 +19635,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   padding: 3px 8px 3px 4px;
   font-size: 11px;     /* 12.5 → 11.5 → 11px (사용자 지적 2026-08-12, 두 번) */
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.25;
   border: 1px solid var(--line);
   background: var(--white);
 }
@@ -19646,7 +19661,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   flex-wrap: wrap;
   gap: 6px 14px;
   margin-top: 10px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 .sb-nodekey span {
@@ -19772,12 +19787,12 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 }
 .sb-thumb-en { object-fit: cover; }
 .sb-thumb-dim { background: #1d2330; }
-.sb-cname { font-size: 13.5px; line-height: 1.4; }
+.sb-cname { font-size: 13px; line-height: 1.45; }
 .sb-cname .sb-lv { color: var(--amber-ink); margin-left: 4px; font-style: normal; font-size: 11px; }
 .sb-cmeta { display: flex; flex-wrap: wrap; gap: 4px; }
 .sb-cdesc {
-  font-size: 11.5px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.45;
   color: var(--muted);
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -19798,9 +19813,9 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-stres img { width: 20px; height: 20px; object-fit: contain; background: #10141c; border-radius: var(--r-sm); }
 /* 상세 모달 */
 .sb-modal { max-width: 620px; }
-.sb-dt h2 { margin: 0; font-size: 19px; }
+.sb-dt h2 { margin: 0; font-size: 18px; }
 .sb-dt h4 { margin: 16px 0 4px; font-size: 13px; }
-.sb-dt p { margin: 6px 0 0; font-size: 13px; line-height: 1.7; }
+.sb-dt p { margin: 6px 0 0; font-size: 13px; line-height: 1.75; }
 .sb-dt-head {
   display: flex;
   align-items: center;
@@ -19944,7 +19959,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   transform: translate(-50%, -50%);
   padding: 1px 6px;
   font: inherit;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
   color: #fff;
@@ -19968,8 +19983,8 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   width: 122px;
   padding: 4px 0;
   font-style: normal;
-  font-size: 15px;
-  line-height: 1.2;
+  font-size: 14px;
+  line-height: 1.25;
   text-align: center;
   color: #2a1a06;
   background: linear-gradient(180deg, #ffd166, #f0a92c);
@@ -20020,7 +20035,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   bottom: 0;
   padding: 1px 4px;
   font-style: normal;
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 700;
   color: #fff;
   background: #10141cc0;
@@ -20046,7 +20061,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   display: block;
   margin-top: 3px;
   font-size: 12px;
-  line-height: 1.65;
+  line-height: 1.6;
   color: var(--muted);
 }
 p.sb-trline { margin-top: 2px; }
@@ -20059,11 +20074,11 @@ p.sb-trline { margin-top: 2px; }
   background: var(--bg-faint); cursor: pointer; text-align: left; font: inherit; color: inherit;
 }
 .rec-item:hover { border-color: var(--border-hover); }
-.rec-item > b { font-size: 13.5px; font-weight: 800; letter-spacing: -0.01em; }
+.rec-item > b { font-size: 13px; font-weight: 800; letter-spacing: -0.01em; }
 /* 미실장 배지 — .future-badge 자체엔 여백이 없고 자리마다 붙인다 (.modal-rarity 8px 등).
    여기선 기록명에 딱 달라붙어 있었다 (사용자 지적 2026-09-04). */
 .rec-item > b .future-badge { margin-left: 7px; }
-.rec-tag { color: var(--muted); font-size: 12.5px; }
+.rec-tag { color: var(--muted); font-size: 12px; }
 .rec-chips { margin-left: auto; display: flex; gap: 4px; }
 .rec-chips i {
   font-style: normal; font-size: 11px; padding: 2px 7px; border-radius: var(--r-pill);
@@ -20106,8 +20121,8 @@ p.sb-trline { margin-top: 2px; }
   border-left: 3px solid #b06dff;
   margin: 12px 0 2px;
   padding: 8px 10px;
-  font-size: 11.5px;
-  line-height: 1.55;
+  font-size: 11px;
+  line-height: 1.6;
 }
 
 /* 파밍 스테이지 배지의 이벤트명 병기 — 긴 이름은 말줄임 (제안 2026-08-19) */
@@ -20123,7 +20138,7 @@ p.sb-trline { margin-top: 2px; }
 /* 생산방 고정 안내 — 바로 아래 오퍼 카드(crew-list)와 붙지 않게 아래 간격을 넉넉히,
    안내문이라 본문보다 작게 (사용자 지적 2026-08-19 ×2 — 처음에 위 간격만 줘서 재지적) */
 /* 간격은 .dorm-note 기본값(24px)이 맡는다 — 여기선 글자 크기만 (안내문이라 본문보다 작게) */
-.dorm-note.pin-note { font-size: 11.5px; }
+.dorm-note.pin-note { font-size: 11px; }
 
 /* ══ 위수 협의(오토체스) 가이드 — /autochess (2026-08-22) ═══════════════════
    생존연산 가이드(.sb-*)와 같은 규격을 공유하고, 이 모드에만 있는 것(티어 색·맹약 칩·
@@ -20139,7 +20154,7 @@ p.sb-trline { margin-top: 2px; }
 }
 .ac-sub {
   margin-left: 10px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--muted);
 }
@@ -20154,7 +20169,7 @@ p.sb-trline { margin-top: 2px; }
 }
 .ac-subtabs button {
   padding: 6px 14px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ink2);
   background: var(--white);
@@ -20309,14 +20324,14 @@ p.sb-trline { margin-top: 2px; }
   font-size: 12px;
 }
 .ac-sim-bondcard b {
-  font-size: 13.5px;
+  font-size: 13px;
 }
 .ac-sim-bondcard em {
   flex-basis: 100%;
   color: var(--muted);
   font-style: normal;
-  font-size: 11.5px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.45;
 }
 .ac-sim-group {
   margin-top: 6px;
@@ -20381,7 +20396,7 @@ p.sb-trline { margin-top: 2px; }
 .ac-bandmenu .ac-bandtile b {
   overflow: hidden;
   max-width: 100%;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1.25;
   white-space: nowrap;
@@ -20425,7 +20440,7 @@ p.sb-trline { margin-top: 2px; }
   border-radius: var(--r-sm);
   background: transparent;
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
@@ -20450,7 +20465,7 @@ p.sb-trline { margin-top: 2px; }
 }
 .ac-garsel-menu li > button em {
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 10px;
   font-family: monospace;
   font-weight: 700;
   opacity: 0.55;
@@ -20508,7 +20523,7 @@ p.sb-trline { margin-top: 2px; }
 /* 티어(코스트) 색 — 1~6이 한눈에 갈라져야 목록이 읽힌다. 게임의 등급색과 같은 계열. */
 .ac-tier {
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.02em;
   padding: 2px 6px;
@@ -20558,7 +20573,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
 .ac-tip {
   display: block;
   padding: 7px 10px;
-  font-size: 11px; font-weight: 600; line-height: 1.5;
+  font-size: 11px; font-weight: 600; line-height: 1.45;
   white-space: normal; text-align: left; word-break: keep-all;
   color: var(--white); background: var(--ink);
   border: 1px solid var(--border-hover); border-radius: var(--r-sm);
@@ -20612,7 +20627,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   background: var(--chip);
   border-radius: 50%;
 }
-.ac-bondcard > header b { font-size: 14.5px; }
+.ac-bondcard > header b { font-size: 14px; }
 .ac-bondmeta {
   margin-left: auto;
   display: flex;
@@ -20620,7 +20635,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
 }
 .ac-bondmeta i {
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   padding: 2px 7px;
   border-radius: var(--r-pill);
@@ -20630,7 +20645,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
 }
 .ac-bonddesc {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
   color: var(--ink2);
   display: -webkit-box;
@@ -20670,7 +20685,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   position: absolute;
   right: 0;
   bottom: 0;
-  font-size: 8.5px;
+  font-size: 9px;
   line-height: 1;
   padding: 1px 3px;
   border-radius: var(--r-xs) 0 0 0;
@@ -20741,7 +20756,7 @@ button.ac-card:hover { border-color: var(--border-hover); background: var(--pape
   gap: 4px;
   padding: 3px 9px 3px 4px;
   font: inherit;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink2);
   /* ⚠ --chip은 '어두운 판'(라이트에서 #131719 = 잉크색) 토큰이다 — 이미지 뒤에 까는 용도라
@@ -20761,7 +20776,7 @@ button.ac-card:hover { border-color: var(--border-hover); background: var(--pape
    고른다(클래스가 제각각이라). 스킬 아이콘(283장)은 컬러 원화라 건드리지 않는다. */
 html:not(.dark) img[src*="/ac/bond/"],
 html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
-.ac-bondchip.sm { font-size: 10.5px; padding: 2px 8px 2px 3px; }
+.ac-bondchip.sm { font-size: 10px; padding: 2px 8px 2px 3px; }
 .ac-bondchip img { width: 15px; height: 15px; object-fit: contain; }
 .ac-bondchip.sm img { width: 13px; height: 13px; }
 .ac-bondchip:hover { border-color: var(--border-hover); }
@@ -20778,7 +20793,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   align-items: flex-start;
   gap: 3px;
   padding: 8px 10px;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
   background: var(--paper);
   border-left: 3px solid var(--line);
@@ -20789,7 +20804,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   align-items: center;
   gap: 4px;
   flex: none;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--muted);
   white-space: nowrap;
@@ -20804,7 +20819,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   border-radius: var(--r-xs);
   background: #8a6d1d;
   color: #fff;
-  font-size: 9.5px;
+  font-size: 9px;
   font-style: normal;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -20838,8 +20853,8 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-krfix {
   display: block;
   margin-top: 4px;
-  font-size: 11.5px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.45;
   color: #b8912f;
 }
 html.dark .ac-krfix { color: #d8b153; }
@@ -20849,8 +20864,8 @@ html.dark .ac-krfix { color: #d8b153; }
   font-weight: 700;
   color: #c08a2e;
 }
-.ac-eqd { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--ink2); }
-.ac-efflist { margin: 4px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.7; color: var(--muted); }
+.ac-eqd { margin: 0; font-size: 12px; line-height: 1.6; color: var(--ink2); }
+.ac-efflist { margin: 4px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.75; color: var(--muted); }
 
 /* ── 물자관리소 ── */
 .ac-rules {
@@ -20867,13 +20882,13 @@ html.dark .ac-krfix { color: #d8b153; }
   background: var(--white);
   border: 1px solid var(--line);
 }
-.ac-rule b { font-size: 15px; }
-.ac-rule span { font-size: 11.5px; color: var(--muted); }
+.ac-rule b { font-size: 14px; }
+.ac-rule span { font-size: 11px; color: var(--muted); }
 .ac-tablewrap { overflow-x: auto; margin-top: 10px; }
 .ac-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 12px;
   background: var(--white);
 }
 .ac-table th, .ac-table td {
@@ -20883,7 +20898,7 @@ html.dark .ac-krfix { color: #d8b153; }
   white-space: nowrap;
 }
 .ac-table thead th {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--muted);
   background: var(--paper);
 }
@@ -20894,7 +20909,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-goldmark { font-size: 11px; color: var(--muted); }
 .ac-diy {
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   margin-left: 6px;
   color: var(--muted);
@@ -20915,7 +20930,7 @@ html.dark .ac-krfix { color: #d8b153; }
   background: var(--white);
   border: 1px solid var(--line);
 }
-.ac-round b { font-size: 11.5px; color: var(--muted); }
+.ac-round b { font-size: 11px; color: var(--muted); }
 .ac-round span { font-size: 14px; font-weight: 700; }
 
 /* ── 모드·보상 ── */
@@ -20932,7 +20947,7 @@ html.dark .ac-krfix { color: #d8b153; }
 }
 /* ⚠ 자식 선택자 필수 — 본문(span) 안에는 rich()가 만든 <b>가 섞여 있어서, 그냥 .ac-buff b로
    잡으면 굵은 조각마다 줄바꿈이 생긴다 (2026-08-22 실측) */
-.ac-buff > b { display: block; font-size: 12.5px; margin-bottom: 2px; }
+.ac-buff > b { display: block; font-size: 12px; margin-bottom: 2px; }
 .ac-buff span { font-size: 12px; line-height: 1.6; color: var(--ink2); }
 /* ── 특수 적 — 이름만 늘어놓지 않고 초상 카드로 (사용자 지시 2026-08-22).
       누르면 적 도감과 같은 상세 모달이 열린다. ── */
@@ -20992,10 +21007,10 @@ html.dark .ac-krfix { color: #d8b153; }
   align-items: baseline;
   gap: 7px;
   margin: 0 0 6px;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .ac-bosshead span { font-size: 11px; font-weight: 600; color: var(--muted); }
-.ac-bosshead em { font-style: normal; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+.ac-bosshead em { font-style: normal; font-size: 11px; font-weight: 500; color: var(--muted); }
 .ac-bosscard { background: var(--paper); }
 .ac-enkey {
   font-style: normal;
@@ -21004,7 +21019,7 @@ html.dark .ac-krfix { color: #d8b153; }
   letter-spacing: 0.1em;
   color: var(--muted);
 }
-.ac-endim { margin-left: 4px; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+.ac-endim { margin-left: 4px; font-size: 11px; font-weight: 500; color: var(--muted); }
 .ac-encards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(186px, 1fr));
@@ -21042,7 +21057,7 @@ html.dark .ac-krfix { color: #d8b153; }
   color: var(--muted);
 }
 .ac-encard-body b {
-  font-size: 12.5px;
+  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -21050,7 +21065,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-encard-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 2px; }
 .ac-encard-meta em {
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--muted);
 }
@@ -21082,7 +21097,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-enminicard .ac-enface { width: 40px; height: 40px; }
 .ac-enminicard span { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .ac-enminicard b { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ac-enminicard em { font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--muted); }
+.ac-enminicard em { font-style: normal; font-size: 10px; font-weight: 600; color: var(--muted); }
 
 /* ── 티어 묶음 — 오퍼레이터·아이템 목록을 T1~T6으로 나눈다 (사용자 지시 2026-08-22) ── */
 .ac-tiersec { margin-top: 14px; }
@@ -21113,7 +21128,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-diyop img { width: 30px; height: 30px; object-fit: cover; border-radius: var(--r-xs); background: var(--chip); }
 .ac-diyop b {
   min-width: 0;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -21138,7 +21153,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-ms-lv { font-size: 11px; font-weight: 700; color: var(--muted); min-width: 18px; }
 .ac-ms b { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ac-ms-c { font-weight: 700; }
-.ac-ms-tk { font-size: 10.5px; color: var(--muted); }
+.ac-ms-tk { font-size: 10px; color: var(--muted); }
 
 /* ── 상세 모달 ── */
 /* 폭·여백은 생존연산 모달(.sb-modal)과 같은 규격. .operator-modal 기본 폭 960px은 이 내용엔
@@ -21163,12 +21178,12 @@ html.dark .ac-krfix { color: #d8b153; }
   border-radius: var(--r-sm);
 }
 .ac-dt-head > div { min-width: 0; }
-.ac-dt-head h2 { margin: 0 0 6px; font-size: 18px; line-height: 1.3; }
+.ac-dt-head h2 { margin: 0 0 6px; font-size: 18px; line-height: 1.25; }
 .ac-dt-head .ac-cmeta { margin: 0; }
 .ac-dt-head .ac-bondline { margin-top: 6px; }
 .ac-dt h4 { margin: 20px 0 7px; font-size: 13px; }
 .ac-dt h4:first-of-type { margin-top: 16px; }
-.ac-dt p { font-size: 12.5px; line-height: 1.7; }
+.ac-dt p { font-size: 12px; line-height: 1.75; }
 .ac-dt .ac-tablewrap { margin-top: 8px; }
 .ac-dt .ac-gar + .ac-gar { margin-top: 6px; }
 .ac-steps {
@@ -21183,15 +21198,15 @@ html.dark .ac-krfix { color: #d8b153; }
    자손 선택자로 두면 안쪽 줄까지 같은 카드 배경·왼쪽 띠를 뒤집어쓴다. */
 .ac-steps > li {
   padding: 9px 11px;
-  font-size: 12.5px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
   background: var(--paper);
   border-left: 3px solid var(--line);
 }
 .ac-stepcond {
   display: block;
   margin-bottom: 3px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--lime);
 }
@@ -21200,7 +21215,7 @@ html.dark .ac-krfix { color: #d8b153; }
   display: flex;
   gap: 10px;
   padding: 6px 0;
-  font-size: 12.5px;
+  font-size: 12px;
   border-bottom: 1px solid var(--line);
 }
 .ac-kv li span { flex: none; min-width: 64px; color: var(--muted); }
@@ -21252,13 +21267,13 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-oprow-bonds .ac-bondchip.nation:hover,
 .ac-bondline span.ac-bondchip.nation:hover { border-color: color-mix(in srgb, var(--lime) 55%, var(--line)); }
 .ac-oprow-main b {
-  font-size: 12.5px;
+  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .ac-oprow-meta { display: flex; align-items: center; gap: 4px; }
-.ac-oprow-gar { min-width: 0; font-size: 12px; line-height: 1.55; }
+.ac-oprow-gar { min-width: 0; font-size: 12px; line-height: 1.6; }
 /* 맹약 모달의 오퍼 행 — 특질이 **둘인 기물이 9종** 있다 (니어 더 래디언트 나이트·메테오·
    해럴드·그라벨·틴맨·이그제큐터 디 엑스 포에데레·산탈라·로즈몬티스·데겐블레허).
    span 이 인라인이라 두 능력이 한 줄로 이어 붙어 "개행이 안 된다"로 보였다
@@ -21268,13 +21283,13 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-oprow-gar > span + span { margin-top: 5px; }
 .ac-oprow-gar em {
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--muted);
   margin-right: 5px;
   white-space: nowrap;
 }
-.ac-note { margin: 0 0 6px; font-size: 11.5px; }
+.ac-note { margin: 0 0 6px; font-size: 11px; }
 /* ── 편성 계산기 (2026-08-29) ─────────────────────────────────────────────
    전장 8칸 · 덱 10칸을 격자로 깔고, 아래에 맹약 상태를 쌓는다. 칸은 얼굴+이름 버튼과
    조작 버튼(정예화·빼기)이 겹치지 않게 세로로 나눈다 — 카드 안에 버튼을 또 넣는 게 아니라
@@ -21322,13 +21337,13 @@ html.dark .ac-krfix { color: #d8b153; }
   color: var(--muted); background: color-mix(in srgb, var(--line) 22%, transparent);
 }
 .ac-slot.locked:hover { border-color: var(--lime); color: var(--ink2); }
-.ac-slot.locked span { font-size: 15px; line-height: 1; }
+.ac-slot.locked span { font-size: 14px; line-height: 1; }
 .ac-slot.locked img { width: 30px; height: 30px; object-fit: contain; }
 .ac-slot.locked b {
   font-size: 10px; font-weight: 700; line-height: 1.25;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
-.ac-slot.locked i { font-style: normal; font-size: 9.5px; opacity: 0.85; }
+.ac-slot.locked i { font-style: normal; font-size: 9px; opacity: 0.85; }
 /* 시뮬레이터 모달 — 목록 탭보다 폭이 좁으니 안쪽 여백을 줄여 칸이 더 들어가게 */
 .ac-simbody { padding: 0; }
 /* 첫 제목(맹약 N)의 sb-h3 기본 margin-top 26px 이 .mw-body 패딩 12px 위에 또 얹혀
@@ -21352,7 +21367,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-slot-face img { width: 40px; height: 40px; border-radius: var(--r-md); object-fit: cover; }
 .ac-slot.sm .ac-slot-face img { width: 32px; height: 32px; }
 .ac-slot-face b {
-  font-size: 11px; font-weight: 600; line-height: 1.3; text-align: center;
+  font-size: 11px; font-weight: 600; line-height: 1.25; text-align: center;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
 /* 정비구역 칸은 82px 뿐 — 여백·간격·이름 줄높이를 줄여 애초에 넘치지 않게 한다 */
@@ -21372,10 +21387,10 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-slot-act button.ac-goldbtn {
   display: flex; align-items: center; justify-content: center;
   margin: 0; padding: 0; border: 0; border-radius: 0; line-height: 1;
-  font-size: 9.5px; font-weight: 700; letter-spacing: -0.2px;
+  font-size: 9px; font-weight: 700; letter-spacing: -0.3px;
 }
 /* 정비구역 칸은 더 좁다 — 글자를 한 단계 줄여 × 와 나란히 들어가게 */
-.ac-slot.sm .ac-slot-act button.ac-goldbtn { font-size: 8.5px; }
+.ac-slot.sm .ac-slot-act button.ac-goldbtn { font-size: 9px; }
 /* ⚠ 선택자를 .ac-slot-act button.on(0-2-1) 보다 높여야 한다 — .ac-goldbtn.on(0-2-0) 은
    특이도에서 져서 글자색이 라임으로 남고, 라임 배경 위 라임 글자가 되어 안 읽혔다
    (실측 2026-08-29 — 이 세션에서 같은 함정에 세 번째다). */
@@ -21391,7 +21406,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .sb-h3 .ac-note { margin-left: 8px; font-weight: 500; }
 .ac-clear {
   border: 1px solid var(--line); border-radius: var(--r-md); background: none; cursor: pointer;
-  padding: 4px 12px; font-size: 11.5px; color: var(--muted);
+  padding: 4px 12px; font-size: 11px; color: var(--muted);
 }
 .ac-clear:hover { color: var(--ink); border-color: var(--ink2); }
 /* 판 비우기 · 공유 링크 복사 — 한 줄에 나란히 */
@@ -21405,16 +21420,16 @@ html.dark .ac-krfix { color: #d8b153; }
 }
 @media (max-width: 560px) { .ac-gainrow { grid-template-columns: 1fr; } }
 .ac-gainw b { display: block; font-size: 12px; }
-.ac-gainw i { font-style: normal; font-size: 10.5px; color: var(--muted); }
+.ac-gainw i { font-style: normal; font-size: 10px; color: var(--muted); }
 .ac-gainchips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; }
 .ac-gainchip { display: inline-flex; align-items: center; gap: 4px; }
 .ac-gainchip em { font-style: normal; font-size: 12px; font-weight: 700; }
 .ac-gainchip u { text-decoration: none; font-size: 10px; color: var(--muted); }
 /* 대상 맹약 미발동 — 발동해야 세는 특질이라 합계 밖. 흐리게 눕힌다 */
 .ac-gainchip.off { opacity: 0.5; }
-.ac-gaintop { font-size: 11.5px; font-weight: 600; color: var(--ink2); }
+.ac-gaintop { font-size: 11px; font-weight: 600; color: var(--ink2); }
 /* 자금 등 자원 라벨 — 아이콘 + 글자 (/ac/type/ 아이콘은 중간 회색이라 양쪽 테마에서 그대로 보인다) */
-.ac-gainres { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--ink2); }
+.ac-gainres { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--ink2); }
 .ac-gainres img { width: 14px; height: 14px; object-fit: contain; }
 
 /* 맹약 상세 — 시뮬레이터에서 넣은 중첩 기준으로 푼 실제 값 (사용자 지시 2026-08-30) */
@@ -21433,7 +21448,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-mapcard-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ac-mapcard-body { min-width: 0; }
 .ac-mapcard-body > b {
-  font-size: 12.5px; font-weight: 700; max-width: 100%;
+  font-size: 12px; font-weight: 700; max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* ⚠ flex 자식의 기본 min-width 는 auto — 긴 모드 목록이 카드(150px)를 200px 로 밀어
@@ -21444,7 +21459,7 @@ html.dark .ac-krfix { color: #d8b153; }
 /* 설명(모드 목록 등)은 한 줄로는 안 담긴다 — 두 줄까지 접어 보여 준다 */
 .ac-mapcard-body > em {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden; line-height: 1.4;
+  overflow: hidden; line-height: 1.45;
 }
 .ac-mapcard-body > em { font-style: normal; font-size: 11px; color: var(--muted); }
 /* 단독/협동 — 리더 맵만 갈리므로 그 제목 줄에 붙인다 */
@@ -21463,21 +21478,21 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-mapmodal { width: min(1360px, calc(100vw - 24px)); max-width: none; }
 .ac-mapbody { padding: 2px 0; }
 .ac-mapcap { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 8px; }
-.ac-mapcap > b { font-size: 12.5px; }
-.ac-mapcap > em { font-style: normal; font-size: 11.5px; color: var(--muted); }
+.ac-mapcap > b { font-size: 12px; }
+.ac-mapcap > em { font-style: normal; font-size: 11px; color: var(--muted); }
 .ac-mapenemies { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
 .ac-mapenface { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex: none; }
 .ac-mapboard { margin-bottom: 14px; }
-.ac-mapnote { font-size: 11.5px; line-height: 1.55; margin: 2px 0 0; }
+.ac-mapnote { font-size: 11px; line-height: 1.6; margin: 2px 0 0; }
 /* 일반 라운드의 후보 적 — 유형별로 **이 자리에** 다 펼친다 (다른 탭으로 안 보낸다) */
 .ac-mappool { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
 .ac-mappoolhead {
   margin: 0 0 3px; font-size: 11px; font-weight: 700; color: var(--ink2);
   display: flex; align-items: baseline; gap: 5px;
 }
-.ac-mappoolhead .sb-count { font-size: 10.5px; }
+.ac-mappoolhead .sb-count { font-size: 10px; }
 .ac-mappool .ac-mapenemies { margin: 0; gap: 4px; }
-.ac-mappool .ac-bondchip { cursor: pointer; font-size: 10.5px; }
+.ac-mappool .ac-bondchip { cursor: pointer; font-size: 10px; }
 /* 보스 카드의 라운드·단독/협동 — 이름 아랫줄로 (이름과 한 줄이면 삐져나간다) */
 .ac-wavemode { display: block; font-style: normal; font-size: 10px; font-weight: 600; color: var(--muted); }
 /* 전장 모달 안의 라운드 카드 줄 — 지형 바로 밑에 붙는다 */
@@ -21498,7 +21513,7 @@ html.dark .ac-krfix { color: #d8b153; }
 }
 .ac-mapencol > .ac-wavecap, .ac-mapencol > .ac-mapnote { grid-column: 1 / -1; }
 .ac-wavecap { margin: 0 0 2px; gap: 5px 8px; }
-.ac-wavecap > b { font-size: 12.5px; }
+.ac-wavecap > b { font-size: 12px; }
 /* 등장 적 카드 — 경로 색을 --rc 로 물려받아 테두리에 쓴다 (route-map-rules) */
 .ac-mapencard {
   display: flex; align-items: center; gap: 6px; text-align: left; padding: 5px 7px;
@@ -21509,13 +21524,13 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-mapencard-face { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; flex: none; cursor: pointer; }
 .ac-mapencard .ac-encard-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ac-mapencard .ac-encard-body > b {
-  font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+  font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
 .ac-mapencard .ac-encard-meta { font-size: 10px; gap: 4px; }
 /* 조건부 — 수치를 합치지 않고 설명문 그대로 (기물 이름 굵게) */
-.ac-gaincond { margin: 2px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--muted); }
+.ac-gaincond { margin: 2px 0 0; font-size: 11px; line-height: 1.6; color: var(--muted); }
 .ac-gaincond > b { color: var(--ink2); }
-.ac-gaincond i { font-style: normal; font-size: 10.5px; }
+.ac-gaincond i { font-style: normal; font-size: 10px; }
 
 /* 덱편성 시뮬레이터 — **탭이 아니라** 제목 줄 한가운데의 버튼이다 (사용자 지시 2026-08-29
    "위수협의: 맹약 이 있는 줄의 정 가운데에다 … 탭 사이에 끼면 안 돼").
@@ -21576,14 +21591,14 @@ html.dark .ac-krfix { color: #d8b153; }
   border: 1px solid color-mix(in srgb, var(--lime) 40%, var(--line));
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--lime) 8%, var(--bg-soft));
-  font-size: 12.5px; line-height: 1.5;
+  font-size: 12px; line-height: 1.45;
 }
 .ac-lockbar > strong { font-weight: 700; }
 
 /* 밴 리스트 — PRTS 연결 중에만, 전략 위 (2026-09-06) */
 .ac-bannote {
   margin: 0 0 10px;
-  font-size: 12.5px; line-height: 1.6;
+  font-size: 12px; line-height: 1.6;
   color: var(--ink3);
 }
 .ac-banrow {
@@ -21631,7 +21646,7 @@ html.dark .ac-krfix { color: #d8b153; }
       뜻해서, 밴 줄에 붙이면 없는 뜻이 생긴다. */
 .ac-banhead { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 /* .sb-count 는 .sb-h3 밖에서는 크기가 없다 — 쓰는 자리에서 정해 준다 (.ac-mappoolhead 와 같은 규약) */
-.ac-banhead .sb-count { font-style: normal; font-size: 10.5px; color: var(--muted); }
+.ac-banhead .sb-count { font-style: normal; font-size: 10px; color: var(--muted); }
 /* 줄 맹약을 못 읽어 남은 기물 — 맹약 칩 자리에 글자만 (.ac-mappoolhead 와 같은 톤) */
 .ac-banhead-rest { font-style: normal; font-size: 11px; font-weight: 700; color: var(--ink2); }
 @media (max-width: 560px) {
@@ -21738,7 +21753,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-bondcard:has(.ac-banwarn):hover { background: color-mix(in srgb, #e0323f 12%, var(--white)); }
 
 /* PRTS 읽은 값 보기 버튼 — 제목 줄의 PRTS 버튼 오른쪽에 붙는다 */
-.ac-prtsview .sb-count { margin-left: 5px; font-style: normal; font-size: 10.5px; opacity: 0.85; }
+.ac-prtsview .sb-count { margin-left: 5px; font-style: normal; font-size: 10px; opacity: 0.85; }
 
 
 /* 시뮬레이션 종류 — 제목 줄 **오른쪽**에 (사용자 요청 2026-09-07 "난이도도 모달창 오른쪽 위에다가
@@ -21768,7 +21783,7 @@ html.dark .ac-krfix { color: #d8b153; }
   border: 1px solid color-mix(in srgb, var(--lime) 40%, var(--line));
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--lime) 7%, var(--bg-soft));
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .ac-runbar-top { position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
 /* 박스 전체 클릭 판 — 뒤에 깔린 투명 버튼 (사용자 지시 2026-09-07 "어딜 눌러도 그냥 열려서").
@@ -21796,7 +21811,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-runbar-mode {
   padding: 1px 8px; border-radius: var(--r-pill);
   border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
-  font-size: 11.5px; font-weight: 700;
+  font-size: 11px; font-weight: 700;
 }
 
 
@@ -21872,10 +21887,10 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-pickmodal .ac-tiersec { margin-bottom: 12px; }
 .ac-stackin { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; font-size: 12px; font-weight: 600; }
 .ac-stackin input {
-  width: 84px; padding: 4px 8px; font-size: 12.5px;
+  width: 84px; padding: 4px 8px; font-size: 12px;
   border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper); color: var(--ink);
 }
-.ac-stackin .sb-dim { flex: 1 1 260px; font-weight: 500; line-height: 1.5; }
+.ac-stackin .sb-dim { flex: 1 1 260px; font-weight: 500; line-height: 1.45; }
 
 /* 맹약 배지 줄 — 인게임처럼 동그란 다이얼을 가로로 늘어놓는다 (사용자 지시 2026-08-29).
    가운데 숫자는 **인원**이다 (게임은 중첩을 띄우지만 그건 편성만으로 못 구한다). */
@@ -21950,7 +21965,7 @@ html.dark .ac-bring-dial {
   color: var(--muted);
 }
 .ac-bring b {
-  font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: center;
+  font-size: 10px; font-weight: 600; line-height: 1.25; text-align: center;
   color: var(--muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
@@ -22006,14 +22021,14 @@ html.dark .ac-bring-dial {
 .ac-bstat-head b { font-size: 13px; }
 .sb-chip.ac-on { color: var(--lime); border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); font-weight: 700; }
 .sb-chip.ac-off { color: var(--muted); }
-.ac-bstat-steps { margin: 0; padding: 0 10px 8px 10px; list-style: none; font-size: 12px; line-height: 1.55; }
+.ac-bstat-steps { margin: 0; padding: 0 10px 8px 10px; list-style: none; font-size: 12px; line-height: 1.6; }
 .ac-bstat-steps li { display: flex; gap: 6px; padding: 3px 0; }
 .ac-bstat-steps li.off, .ac-bstat-steps li.unknown { color: var(--muted); }
 .ac-bstat-mark { flex: none; width: 12px; text-align: center; }
 /* 중첩 게이트는 **판정하지 않는다**는 뜻이라 물음표를 눈에 띄게 남긴다 (autochess-board.ts) */
 .ac-bstat-steps li.unknown .ac-bstat-mark { color: var(--lime); font-weight: 700; }
 .ac-bstat-steps em {
-  flex: none; font-style: normal; font-size: 10.5px; font-weight: 700;
+  flex: none; font-style: normal; font-size: 10px; font-weight: 700;
   color: var(--muted); white-space: nowrap; padding-top: 1px;
 }
 
@@ -22027,7 +22042,7 @@ html.dark .ac-bring-dial {
 .ac-pickone img { width: 28px; height: 28px; border-radius: var(--r-sm); object-fit: cover; flex: none; }
 .ac-pickone b { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ac-pickbonds {
-  font-size: 10.5px; color: var(--muted); margin-left: auto; flex: none;
+  font-size: 10px; color: var(--muted); margin-left: auto; flex: none;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46%;
 }
 
@@ -22078,7 +22093,7 @@ html.dark .ac-bring-dial {
   }
   .main-tabs .tab-submenu2 .tab-sub2 {
     padding: 6px 10px;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--muted);
   }
@@ -22124,7 +22139,7 @@ html.dark .ac-bring-dial {
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 /* 게임 스킬·모듈 아이콘은 흰 선화라 밝은 배경에서 안 보인다 — 어두운 판을 깐다 */
 .ac-skmod-ic {
@@ -22155,7 +22170,7 @@ html.dark .ac-bring-dial {
 .ac-skmod-d {
   margin: 6px 0 0;
   color: var(--ink2);
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
   white-space: pre-line;   /* 스킬 설명의 줄바꿈 보존 */
 }
@@ -22175,9 +22190,9 @@ html.dark .ac-bring-dial {
   background: var(--bg-soft);
   color: var(--ink2);
   font: inherit;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.45;
   white-space: nowrap;
   cursor: pointer;
   transition: 0.12s;
@@ -22227,7 +22242,7 @@ html.dark .ac-bring-dial {
   border-radius: var(--r-pill);
   background: var(--bg-panel);
   color: var(--ink);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -22267,14 +22282,14 @@ html.dark .ac-bring-dial {
   align-items: baseline;
   gap: 3px 12px;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 .ac-stack > li > b { min-width: 92px; font-weight: 700; }
 .ac-stack > li > .ac-stack-eq { color: var(--muted); }
 .ac-stack em { font-style: normal; font-weight: 700; color: var(--ink); }
 .ac-stack > li > i {
   font-style: normal;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--muted);
   margin-left: auto;
 }
@@ -22285,7 +22300,7 @@ html.dark .ac-bring-dial {
   flex-wrap: wrap;
   gap: 3px 10px;
   margin: 4px 0 0;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--ink2);
 }
@@ -22319,7 +22334,7 @@ html.dark .ac-bring-dial {
   padding: 3px 8px 3px 4px;
   text-align: left;
   font: inherit;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--ink);
   background: var(--white);
   border: 1px solid var(--line);
@@ -22372,7 +22387,7 @@ html.dark .ac-bring-dial {
   min-width: 0;
 }
 .ac-subnote b {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -22418,7 +22433,7 @@ html.dark .ac-bring-dial {
   flex: 1;
 }
 .ac-opdex b {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ink);
   overflow: hidden;
@@ -22477,12 +22492,12 @@ html.dark .ac-bring-dial {
 }
 .el-note {
   color: var(--muted);
-  font-size: 11.5px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.45;
 }
 .el-note.big {
   margin: 0 0 12px;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .el-subtabs {
   display: flex;
@@ -22499,13 +22514,13 @@ html.dark .ac-bring-dial {
   border-radius: var(--r-pill);
   background: transparent;
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
 .el-subtabs button i {
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   opacity: 0.6;
 }
@@ -22526,7 +22541,7 @@ html.dark .ac-bring-dial {
 }
 .el-hits {
   margin: 0 0 8px;
-  font-size: 11.5px;
+  font-size: 11px;
 }
 .el-entries {
   display: flex;
@@ -22547,13 +22562,13 @@ html.dark .ac-bring-dial {
   margin-bottom: 6px;
 }
 .el-entry > header b {
-  font-size: 13.5px;
+  font-size: 13px;
 }
 .el-tag {
   color: var(--muted);
   font-size: 11px;
   font-style: normal;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 /* 본문은 게임 원문의 줄바꿈을 그대로 살린다 — 편지·기사·의뢰서라 문단 나눔이 곧 호흡이다 */
 .el-body {
@@ -22788,7 +22803,7 @@ html.dark .ac-bring-dial {
   border-radius: var(--r-lg);
   background: rgba(6, 8, 14, 0.5);
   color: #e9edf5;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
   opacity: 0.32;
@@ -22817,7 +22832,7 @@ html.dark .ac-bring-dial {
   white-space: nowrap;
   margin-right: auto;
   color: #aab3c2;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   opacity: 0.5;
 }
@@ -22846,7 +22861,7 @@ html.dark .ac-bring-dial {
        브라우저는 아래 선언만 버리고 종전 동작을 그대로 쓴다. */
   font-size: clamp(13.5px, 1.45vw, 17.5px);
   font-size: clamp(13px, calc(0.84cqw + 10.5px), 30px);
-  line-height: 1.78;
+  line-height: 1.75;
   letter-spacing: -0.005em;
   word-break: keep-all;      /* 한국어는 어절 단위로 줄바꿈해야 읽힌다 */
   overflow-wrap: anywhere;   /* 그래도 안 들어가는 긴 토큰은 잘라 넘긴다 */
@@ -22985,8 +23000,8 @@ html[lang="ja"] .vn-box {
 .it-card-name {
   display: block;
   grid-column: 2;
-  font-size: 13.5px;
-  line-height: 1.35;
+  font-size: 13px;
+  line-height: 1.45;
   letter-spacing: -0.3px;
   overflow-wrap: anywhere;
 }
@@ -23023,7 +23038,7 @@ html[lang="ja"] .vn-box {
 .it-obtain {
   margin: 0 0 6px;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--ink2);
   white-space: pre-line;
 }
@@ -23046,8 +23061,8 @@ html[lang="ja"] .vn-box {
   color: var(--ink2);
   font-family: inherit;
   font-weight: inherit;
-  font-size: 12.5px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.45;
   text-align: left;
   text-decoration: none;
   cursor: pointer;
@@ -23164,8 +23179,8 @@ html[lang="ja"] .vn-box {
   min-width: 0;
 }
 .ev-card-name {
-  font-size: 14.5px;
-  line-height: 1.3;
+  font-size: 14px;
+  line-height: 1.25;
   letter-spacing: -0.3px;
   overflow-wrap: anywhere;
 }
@@ -23174,11 +23189,11 @@ html[lang="ja"] .vn-box {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--muted);
 }
 .ev-card-counts {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--ink2);
 }
 .ev-type {
@@ -23207,7 +23222,7 @@ html[lang="ja"] .vn-box {
   padding: 2px 7px 2px 2px;
   border: 1px solid var(--line);
   background: var(--bg-faint);
-  font-size: 11.5px;
+  font-size: 11px;
 }
 .ev-op-chip img {
   width: 22px;
@@ -23331,7 +23346,7 @@ html[lang="ja"] .vn-box {
   color: inherit;
   text-align: left;
   font: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
   cursor: pointer;
 }
 .ev-op:hover,
@@ -23466,7 +23481,7 @@ html[lang="ja"] .vn-box {
 }
 .ev-mat b {
   display: block;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
 }
 .ev-mat .farm-tier {
@@ -23543,11 +23558,11 @@ html[lang="ja"] .vn-box {
   contain-intrinsic-size: auto 196px auto 86px;
 }
 .ev-grid.mini .ev-card-name {
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .ev-grid.mini .ev-card-meta,
 .ev-grid.mini .ev-card-counts {
-  font-size: 10.5px;
+  font-size: 10px;
 }
 .ev-grid.mini .ev-card-ops {
   display: none;
