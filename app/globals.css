@@ -13218,6 +13218,42 @@ html.rg-theme.rg6 .site-header {
   color: var(--rgmut);
 }
 /* 층 카드 — 가로 일렬 (클릭 → 층 상세 모달) */
+/* 지도 탭 묶음 카드 — 층 카드(.rg-zone-cards)와 같은 결, 누르면 모달이 열린다
+   (사용자 요청 2026-09-20: 아코디언 → 카드+모달). */
+.rg-sec-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.rg-sec-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid var(--rgline);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--rgcard) 88%, transparent);
+  color: var(--rgink);
+  cursor: pointer;
+}
+.rg-sec-card:hover {
+  border-color: color-mix(in srgb, var(--rgcrim) 60%, var(--rgline));
+}
+.rg-sec-card h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.rg-sec-card .rg-zone-counts {
+  flex: 0 0 auto;
+}
+.rg-sec-card .rg-sec-go {
+  color: var(--rgmut);
+}
 .rg-zone-cards {
   grid-column: 1 / -1;
   display: grid;

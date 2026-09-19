@@ -1297,6 +1297,148 @@ export default function RogueGuide({ initialTopic }: {
     });
   }, [active]);
 
+  /* 지도 탭 묶음(험난한 길·조우 전투·시련·추격전·거점전·기타 노드·우연한 만남) —
+     종전엔 아래로 열리는 아코디언이었다. 카드로 바꾸고 누르면 모달에서 펼친다
+     (사용자 요청 2026-09-20). 카드와 모달이 같은 정의를 쓰도록 여기 한 곳에 모은다. */
+  const mapSections: { id: string; show: boolean; label: string; name: React.ReactNode; cls?: string; count: React.ReactNode; body: React.ReactNode }[] = [
+    {
+      id: "boss",
+      show: orphanBosses.length > 0,
+      label: `${t("험난한 길 (보스)")}`,
+      name: <>{t("험난한 길 (보스)")}</>,
+      cls: "boss",
+      count: <>{t("작전 {n}개", { n: orphanBosses.length })}</>,
+      body: (<>
+          <p className="rg-zone-desc">{t("각 구역 끝에서 마주치는 강력한 적입니다.")}</p>
+          <div className="rg-stage-cards">
+            {orphanBosses.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} boss />)}
+          </div>
+      </>),
+    },
+    {
+      id: "event",
+      show: (evStages.length > 0 || specialStages.length > 0),
+      label: `${t("조우 전투")} · ${t("특수")}`,
+      name: <>{t("조우 전투")} · {t("특수")}</>,
+      count: <>{t("작전 {n}개", { n: evStages.length + specialStages.length })}</>,
+      body: (<>
+          <p className="rg-zone-desc">{t("우연한 만남 등 이벤트에서 발생하는 전투입니다. 카드를 열면 일반/긴급 탭이 있는 경우 전환할 수 있습니다.")}</p>
+          <div className="rg-stage-cards">
+            {evStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+            {specialStages.map((s) => <StageCard key={s.id} pair={pairOf(s)} onOpen={setStageOpen} />)}
+          </div>
+      </>),
+    },
+    {
+      id: "trial",
+      show: trialStages.length > 0,
+      label: `${t("시련·특수 전투")}`,
+      name: <>{t("시련·특수 전투")}</>,
+      count: <>{t("작전 {n}개", { n: trialStages.length })}</>,
+      body: (<>
+          <div className="rg-stage-cards">
+            {trialStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+          </div>
+      </>),
+    },
+    {
+      id: "incident",
+      show: incidentStages.length > 0,
+      label: `${t("조우 전투")}`,
+      name: <>{t("조우 전투")}</>,
+      count: <>{t("작전 {n}개", { n: incidentStages.length })}</>,
+      body: (<>
+          <p className="rg-zone-desc">{t("우연한 만남 등 이벤트에서 발생하는 전투입니다. 카드를 열면 일반/긴급 탭이 있는 경우 전환할 수 있습니다.")}</p>
+          <div className="rg-stage-cards">
+            {incidentStages.map((s) => <StageCard key={s.id} pair={pairOf(s)} onOpen={setStageOpen} />)}
+          </div>
+      </>),
+    },
+    {
+      id: "chase",
+      show: chaseStages.length > 0,
+      label: `${t("추격전")}`,
+      name: <>{t("추격전")}</>,
+      count: <>{t("작전 {n}개", { n: chaseStages.length })}</>,
+      body: (<>
+          <p className="rg-zone-desc">{t("행동력이 다 떨어지면 강제로 발생하는 전투입니다. 보스 층에서는 보스 특수판으로 대체됩니다.")}</p>
+          <div className="rg-stage-cards">
+            {chaseStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+          </div>
+      </>),
+    },
+    {
+      id: "savage",
+      show: savageStages.length > 0,
+      label: `${t("거점전 ('주민' 거점)")}`,
+      name: <>{t("거점전 ('주민' 거점)")}</>,
+      count: <>{t("작전 {n}개", { n: savageStages.length })}</>,
+      body: (<>
+          <p className="rg-zone-desc">{t("난이도(보밀등급) 4 이상에서만 나타나는 '주민' 거점 노드의 전투입니다. 거점을 격파해 '주민'을 옮겨내면 '주민'의 악의를 완전히 없앨 수 있습니다.")}</p>
+          <div className="rg-stage-cards">
+            {savageStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+          </div>
+      </>),
+    },
+    {
+      id: "nodes",
+      show: otherNodes.length > 0,
+      label: `${t("기타 노드")}`,
+      name: <>{t("기타 노드")}</>,
+      count: <>{otherNodes.length}</>,
+      body: (<>
+          <p className="rg-zone-desc">{t("지도에서 마주치는 전투 외 특수 노드들입니다.")}</p>
+          <div className="rg-nodetype-list">
+            {otherNodes.map((nt) => (
+              <article key={nt.id} className={`rg-nodetype${nt.id === "DUEL" && duelStages.length > 0 ? " wide" : ""}`}>
+                <h4>
+                  {/* 게임 지도에 그려지는 그 글리프를 그대로 병기 — 종류가 많은 테마일수록
+                      글자보다 그림이 빠르다 (제보 2026-07-29). 아이콘이 없는 타입은 글자만. */}
+                  <NodeIco id={nt.id} />
+                  {/* cn 병기(Nm)는 두 줄짜리라 flex 아이템 하나로 묶어야 아이콘 옆에 쌓인다 */}
+                  <span className="rg-nodetype-title"><Nm name={nt.name} cn={nt.cn} /></span>
+                </h4>
+                {nt.func && <p className="rg-nodetype-func">{nt.func}</p>}
+                {nt.desc && <p>{nt.desc}</p>}
+                {nt.id === "DUEL" && duelStages.length > 0 && (
+                  <>
+                    <div className="rg-stage-cards">
+                      {duelStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+                    </div>
+                  </>
+                )}
+              </article>
+            ))}
+          </div>
+      </>),
+    },
+    {
+      id: "enc",
+      show: true,
+      label: `${t("우연한 만남")}`,
+      name: <>{t("우연한 만남")}</>,
+      count: <>{data.encounters.length}</>,
+      body: (<>
+          <p className="rg-zone-desc">{topic === "rogue_6" ? t("비전투 노드에서 발생하는 이벤트입니다. 출시 직후라 출현 층 정보는 아직 정리되지 않았습니다.") : t("비전투 노드에서 발생하는 이벤트입니다. 출현 층 표기는 위키 실측 기반입니다.")}</p>
+          <div className="rg-enc-list">
+            {[...data.encounters]
+              .sort((a, b) => (a.floors?.[0] ?? 99) - (b.floors?.[0] ?? 99) || (a.floors?.length ?? 9) - (b.floors?.length ?? 9) || a.title.localeCompare(b.title, "ko"))
+              .map((enc) => (
+                <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
+                  {enc.bg
+                    ? <img className="rg-enc-thumb" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
+                    : <span className="rg-enc-thumb none" aria-hidden />}
+                  <span className="rg-enc-txt">
+                    {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
+                    <span className="rg-enc-title"><Nm name={enc.title} cn={enc.cn} /></span>
+                  </span>
+                </button>
+              ))}
+          </div>
+      </>),
+    },
+  ];
+
   // 적 → 등장 스테이지 역매핑
   const enemyStages = useMemo(() => {
     const m = new Map<string, Stage[]>();
@@ -1445,6 +1587,7 @@ export default function RogueGuide({ initialTopic }: {
   const INV_POS_KEY = "ta:rogue-inv-pos";
   const [invPos, setInvPos] = useState<{ x: number; y: number } | null>(null);
   const [effOpen, setEffOpen] = useState(false);          // 효과 총합 모달
+  const [secOpen, setSecOpen] = useState("");             // 지도 탭 묶음 카드 → 모달
   // 사용자가 CSS resize 손잡이로 바꾼 크기를 기억한다 (사용자 지시 2026-07-29)
   const INV_SIZE_KEY = "ta:rogue-inv-size";
   const [invSize, setInvSize] = useState<{ w: number; h: number } | null>(null);
@@ -2157,163 +2300,24 @@ export default function RogueGuide({ initialTopic }: {
           </div>
 
           {/* 층이 배정되지 않은 보스(험난한 길) — 층 큐레이션이 없는 토픽에서 보스맵이 누락되지 않도록 폴백 */}
-          {orphanBosses.length > 0 && (
-          <details className="rg-zone rg-zone-wide" open>
-            <summary className="rg-zone-sum">
-              <h3 className="boss">{t("험난한 길 (보스)")}</h3>
-              <span className="rg-zone-counts">{t("작전 {n}개", { n: orphanBosses.length })}</span>
-              <span className="rg-zone-arrow" aria-hidden>▾</span>
-            </summary>
-            <div className="rg-zone-body">
-              <p className="rg-zone-desc">{t("각 구역 끝에서 마주치는 강력한 적입니다.")}</p>
-              <div className="rg-stage-cards">
-                {orphanBosses.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} boss />)}
-              </div>
-            </div>
-          </details>
-          )}
+          {/* 묶음은 아코디언이 아니라 **카드** — 누르면 모달에서 펼친다 (사용자 요청 2026-09-20) */}
+          <div className="rg-sec-cards">
+            {mapSections.filter((sec) => sec.show).map((sec) => (
+              <button key={sec.id} type="button" className="rg-sec-card" onClick={() => setSecOpen(sec.id)}>
+                <h3 className={sec.cls}>{sec.name}</h3>
+                <span className="rg-zone-counts">{sec.count}</span>
+                <span className="rg-sec-go" aria-hidden>▸</span>
+              </button>
+            ))}
+          </div>
 
-          {(evStages.length > 0 || specialStages.length > 0) && (
-          <details className="rg-zone rg-zone-wide">
-            <summary className="rg-zone-sum">
-              <h3>{t("조우 전투")} · {t("특수")}</h3>
-              <span className="rg-zone-counts">{t("작전 {n}개", { n: evStages.length + specialStages.length })}</span>
-              <span className="rg-zone-arrow" aria-hidden>▾</span>
-            </summary>
-            <div className="rg-zone-body">
-              <p className="rg-zone-desc">{t("우연한 만남 등 이벤트에서 발생하는 전투입니다. 카드를 열면 일반/긴급 탭이 있는 경우 전환할 수 있습니다.")}</p>
-              <div className="rg-stage-cards">
-                {evStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
-                {specialStages.map((s) => <StageCard key={s.id} pair={pairOf(s)} onOpen={setStageOpen} />)}
-              </div>
-            </div>
-          </details>
-          )}
 
-          {trialStages.length > 0 && (
-          <details className="rg-zone rg-zone-wide">
-            <summary className="rg-zone-sum">
-              <h3>{t("시련·특수 전투")}</h3>
-              <span className="rg-zone-counts">{t("작전 {n}개", { n: trialStages.length })}</span>
-              <span className="rg-zone-arrow" aria-hidden>▾</span>
-            </summary>
-            <div className="rg-zone-body">
-              <div className="rg-stage-cards">
-                {trialStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
-              </div>
-            </div>
-          </details>
-          )}
 
-          {incidentStages.length > 0 && (
-          <details className="rg-zone rg-zone-wide">
-            <summary className="rg-zone-sum">
-              <h3>{t("조우 전투")}</h3>
-              <span className="rg-zone-counts">{t("작전 {n}개", { n: incidentStages.length })}</span>
-              <span className="rg-zone-arrow" aria-hidden>▾</span>
-            </summary>
-            <div className="rg-zone-body">
-              <p className="rg-zone-desc">{t("우연한 만남 등 이벤트에서 발생하는 전투입니다. 카드를 열면 일반/긴급 탭이 있는 경우 전환할 수 있습니다.")}</p>
-              <div className="rg-stage-cards">
-                {incidentStages.map((s) => <StageCard key={s.id} pair={pairOf(s)} onOpen={setStageOpen} />)}
-              </div>
-            </div>
-          </details>
-          )}
 
-          {chaseStages.length > 0 && (
-          <details className="rg-zone rg-zone-wide">
-            <summary className="rg-zone-sum">
-              <h3>{t("추격전")}</h3>
-              <span className="rg-zone-counts">{t("작전 {n}개", { n: chaseStages.length })}</span>
-              <span className="rg-zone-arrow" aria-hidden>▾</span>
-            </summary>
-            <div className="rg-zone-body">
-              <p className="rg-zone-desc">{t("행동력이 다 떨어지면 강제로 발생하는 전투입니다. 보스 층에서는 보스 특수판으로 대체됩니다.")}</p>
-              <div className="rg-stage-cards">
-                {chaseStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
-              </div>
-            </div>
-          </details>
-          )}
 
-          {savageStages.length > 0 && (
-          <details className="rg-zone rg-zone-wide">
-            <summary className="rg-zone-sum">
-              <h3>{t("거점전 ('주민' 거점)")}</h3>
-              <span className="rg-zone-counts">{t("작전 {n}개", { n: savageStages.length })}</span>
-              <span className="rg-zone-arrow" aria-hidden>▾</span>
-            </summary>
-            <div className="rg-zone-body">
-              <p className="rg-zone-desc">{t("난이도(보밀등급) 4 이상에서만 나타나는 '주민' 거점 노드의 전투입니다. 거점을 격파해 '주민'을 옮겨내면 '주민'의 악의를 완전히 없앨 수 있습니다.")}</p>
-              <div className="rg-stage-cards">
-                {savageStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
-              </div>
-            </div>
-          </details>
-          )}
 
           {/* 기타 노드 — 전투·우연한 만남 외 노드 타입 설명. 외나무다리 상세에 결투 전투 포함 (사용자 요청 2026-07-18) */}
-          {otherNodes.length > 0 && (
-          <details className="rg-zone rg-zone-wide">
-            <summary className="rg-zone-sum">
-              <h3>{t("기타 노드")}</h3>
-              <span className="rg-zone-counts">{otherNodes.length}</span>
-              <span className="rg-zone-arrow" aria-hidden>▾</span>
-            </summary>
-            <div className="rg-zone-body">
-              <p className="rg-zone-desc">{t("지도에서 마주치는 전투 외 특수 노드들입니다.")}</p>
-              <div className="rg-nodetype-list">
-                {otherNodes.map((nt) => (
-                  <article key={nt.id} className={`rg-nodetype${nt.id === "DUEL" && duelStages.length > 0 ? " wide" : ""}`}>
-                    <h4>
-                      {/* 게임 지도에 그려지는 그 글리프를 그대로 병기 — 종류가 많은 테마일수록
-                          글자보다 그림이 빠르다 (제보 2026-07-29). 아이콘이 없는 타입은 글자만. */}
-                      <NodeIco id={nt.id} />
-                      {/* cn 병기(Nm)는 두 줄짜리라 flex 아이템 하나로 묶어야 아이콘 옆에 쌓인다 */}
-                      <span className="rg-nodetype-title"><Nm name={nt.name} cn={nt.cn} /></span>
-                    </h4>
-                    {nt.func && <p className="rg-nodetype-func">{nt.func}</p>}
-                    {nt.desc && <p>{nt.desc}</p>}
-                    {nt.id === "DUEL" && duelStages.length > 0 && (
-                      <>
-                        <div className="rg-stage-cards">
-                          {duelStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
-                        </div>
-                      </>
-                    )}
-                  </article>
-                ))}
-              </div>
-            </div>
-          </details>
-          )}
 
-          <details className="rg-zone rg-zone-wide">
-            <summary className="rg-zone-sum">
-              <h3>{t("우연한 만남")}</h3>
-              <span className="rg-zone-counts">{data.encounters.length}</span>
-              <span className="rg-zone-arrow" aria-hidden>▾</span>
-            </summary>
-            <div className="rg-zone-body">
-              <p className="rg-zone-desc">{topic === "rogue_6" ? t("비전투 노드에서 발생하는 이벤트입니다. 출시 직후라 출현 층 정보는 아직 정리되지 않았습니다.") : t("비전투 노드에서 발생하는 이벤트입니다. 출현 층 표기는 위키 실측 기반입니다.")}</p>
-              <div className="rg-enc-list">
-                {[...data.encounters]
-                  .sort((a, b) => (a.floors?.[0] ?? 99) - (b.floors?.[0] ?? 99) || (a.floors?.length ?? 9) - (b.floors?.length ?? 9) || a.title.localeCompare(b.title, "ko"))
-                  .map((enc) => (
-                    <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
-                      {enc.bg
-                        ? <img className="rg-enc-thumb" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
-                        : <span className="rg-enc-thumb none" aria-hidden />}
-                      <span className="rg-enc-txt">
-                        {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
-                        <span className="rg-enc-title"><Nm name={enc.title} cn={enc.cn} /></span>
-                      </span>
-                    </button>
-                  ))}
-              </div>
-            </div>
-          </details>
           </>)}
         </div>
       )}
@@ -2840,6 +2844,21 @@ export default function RogueGuide({ initialTopic }: {
             </div>
         </ModalWindow>
       )}
+      {/* 지도 탭 묶음 카드의 내용 — 카드와 같은 정의(mapSections)를 그대로 편다 */}
+      {secOpen && (() => {
+        const sec = mapSections.find((x) => x.id === secOpen);
+        return sec ? (
+          <ModalWindow key={sec.id} label={sec.label} className="rg-modal rg-secmodal" onClose={() => setSecOpen("")}>
+            <header className="rg-modal-head">
+              <div>
+                <h3 className={sec.cls}>{sec.name}</h3>
+                <span className="rg-modal-zone">{sec.count}</span>
+              </div>
+            </header>
+            {sec.body}
+          </ModalWindow>
+        ) : null;
+      })()}
       {effOpen && (
         <EffectTotals items={ownedRelics} onClose={() => setEffOpen(false)}
           label={t(TOPICS.find((tp) => tp.id === topic)?.name ?? "")} />
