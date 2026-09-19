@@ -4547,6 +4547,10 @@ html.dark .tags-track > span {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  /* 항목 사이 **최소** 간격 — 종전엔 space-between 이 남긴 여유가 간격 노릇을 했는데,
+     줄이 꽉 차면 그 여유가 0이 되어 후원·문의·언어가 서로 달라붙었다 (2026-09-19 제보).
+     여유가 있으면 space-between 이 이보다 넓게 벌린다. */
+  column-gap: 22px;
 }
 /* 사이트 메뉴 링크 줄 — 푸터 첫 줄을 통째로 쓰고 기존 한 줄(고지·후원·언어)은 그 아래.
    검색엔진에 내부 링크를 주는 게 1차 목적이라(헤더 메뉴는 전부 버튼) 눈에 안 띄게 낮은 대비. */
@@ -4640,6 +4644,8 @@ html.dark .tags-track > span {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  /* 14px 고정 — 20px 로 넓혔더니 1280px 에서 묶음이 다음 줄로 밀렸다 (실측: 푸터 96→113).
+     이 줄은 1280px 에서 5px 여유로 겨우 한 줄이라, 여기를 넓히려면 먼저 폭을 재 볼 것. */
   gap: 14px;
   margin-left: auto;          /* 줄이 바뀌어도 오른쪽 끝에 — 종전 언어 링크 자리 그대로 */
 }
@@ -15486,6 +15492,9 @@ main.site-main > .site-header {
      고지문이 줄을 넘겨서라도 자리를 내준다. 안 그러면 언어·배포시각 묶음이 제 줄로 밀린다.
      (좁은 폭에서는 고지문을 접으면 오히려 푸터가 높아져서 여기서만 적용한다 — 실측) */
   .site-scroll > footer > p:not([class]) {
+    /* 기준 폭을 줄여 두면 한 줄에 다 선다 (flex 는 줄을 나눌 때 flex-basis 로 판단하고
+       shrink 는 그 뒤에 적용해서, basis 가 크면 묶음이 다음 줄로 밀린다).
+       늘어나도 괜찮다 — 항목 사이 최소 간격은 푸터의 column-gap 이 지킨다. */
     flex: 1 1 320px;
     min-width: 0;
   }
