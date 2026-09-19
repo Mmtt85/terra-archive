@@ -13218,6 +13218,39 @@ html.rg-theme.rg6 .site-header {
   color: var(--rgmut);
 }
 /* 층 카드 — 가로 일렬 (클릭 → 층 상세 모달) */
+/* ── [시제품] 지도처럼 흩뿌린 배치 (사용자 스케치 2026-09-20) ──────────────
+   층 카드와 묶음 카드를 격자에 두되 카드마다 위아래로 어긋나게 밀고 살짝 기울여,
+   게임 지도의 노드가 이어지는 느낌을 낸다. 배치는 nth-child 로 고정이라 새로고침해도
+   같은 모양이고, 좁은 화면(≤760px)에서는 흐트러짐 없이 평범한 격자로 돌아간다.
+   ⚠ transform 은 **자리(레이아웃)를 바꾸지 않는다** — 아래로 민 만큼 컨테이너에 여백을
+     더 줘야 카드가 다음 줄과 겹치지 않는다. */
+@media (min-width: 761px) {
+  .rg-zone-cards,
+  .rg-sec-cards {
+    align-items: start;
+    padding-bottom: 34px;
+    row-gap: 4px;
+  }
+  .rg-zone-cards > *,
+  .rg-sec-cards > * {
+    transform: translateY(var(--dy, 0px)) rotate(var(--rot, 0deg));
+    transition: transform 0.16s ease;
+  }
+  .rg-zone-cards > *:hover,
+  .rg-sec-cards > *:hover {
+    transform: translateY(calc(var(--dy, 0px) - 3px)) rotate(0deg);
+  }
+  .rg-zone-cards > *:nth-child(6n + 1) { --dy: 0px;  --rot: -1.1deg; }
+  .rg-zone-cards > *:nth-child(6n + 2) { --dy: 26px; --rot: 1.4deg; }
+  .rg-zone-cards > *:nth-child(6n + 3) { --dy: 12px; --rot: -0.6deg; }
+  .rg-zone-cards > *:nth-child(6n + 4) { --dy: 30px; --rot: 0.9deg; }
+  .rg-zone-cards > *:nth-child(6n + 5) { --dy: 6px;  --rot: -1.5deg; }
+  .rg-zone-cards > *:nth-child(6n + 6) { --dy: 20px; --rot: 0.5deg; }
+  .rg-sec-cards > *:nth-child(4n + 1) { --dy: 14px; --rot: 1.2deg; }
+  .rg-sec-cards > *:nth-child(4n + 2) { --dy: 0px;  --rot: -1deg; }
+  .rg-sec-cards > *:nth-child(4n + 3) { --dy: 22px; --rot: 0.7deg; }
+  .rg-sec-cards > *:nth-child(4n + 4) { --dy: 8px;  --rot: -0.8deg; }
+}
 /* 지도 탭 묶음 카드 — 층 카드(.rg-zone-cards)와 같은 결, 누르면 모달이 열린다
    (사용자 요청 2026-09-20: 아코디언 → 카드+모달). */
 .rg-sec-cards {
