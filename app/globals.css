@@ -45,6 +45,16 @@
   --ok-ring: #d9ecd7; /* 성공(녹색) 텍스트·포커스 링 */
   --bad: #c62828; /* 경고·라이브(적색) */
   --on-lime: #131719;
+  /* 강조 3색 (2026-09-20 정리) — 종전엔 거의 같은 색이 기능마다 따로 박혀 있었다:
+     금색 5종(var(--gold)·var(--gold)·var(--gold)·var(--gold)·var(--gold)) · 위험색 4종(var(--danger)·var(--danger)·
+     var(--danger)·var(--danger)). 눈으로는 구분이 안 되면서 화면마다 미묘하게 달라 보였다.
+     새 규칙은 이 셋 중에서 고른다 — 기능마다 새 빨강·새 금색을 만들지 말 것. */
+  --gold: #c08a2e;     /* 금색 강조 — 이벤트·육성 되돌리기·공채 확정·위수협 골드 */
+  /* 흰 글자를 얹는 **금색 바탕**용 — 다크에서도 밝히지 않는다. --gold 를 그대로 쓰면
+     다크에서 #e0b13e 가 되어 흰 글자 대비가 3.04:1 → 2.0:1 로 떨어진다 (실측 2026-09-20). */
+  --gold-deep: #c08a2e;
+  --danger: #c0392b;   /* 위험·오류 — 삭제 버튼, 실패 메시지, 보스 등급 */
+  --crimson: #b3372e;  /* 작전·시뮬의 진홍 강조 (var(--crimson, …) 로 이미 쓰이던 이름) */
   /* 그림자 3단계 (2026-09-19 정리 — 종전 80종이 제각각이었다). 용도로 고른다:
      sh-1 살짝 든 것(칩·썸네일) · sh-2 떠 있는 것(드롭다운·플로팅 패널) · sh-3 덮는 것(모달).
      포커스 링·글로우·레트로 오프셋(4px 4px 0)은 의미가 달라 토큰으로 묶지 않는다. */
@@ -91,6 +101,8 @@ html.dark {
   --ok: #74c97b;
   --ok-ring: #1d3320;
   --bad: #e05a5a;
+  --gold: #e0b13e;     /* 다크에선 한 단계 밝게 — 어두운 바탕에서 갈색으로 주저앉는다 */
+  --danger: #e0483c;
   /* 다크에선 같은 세기로는 안 보인다 — 검정 비중을 올린다 */
   --sh-1: 0 2px 8px #00000059;
   --sh-2: 0 10px 26px #00000080;
@@ -724,7 +736,7 @@ button {
   border-color: var(--border-hover);
 }
 .event-trigger .event-mark {
-  color: var(--accent, #b98a2f);
+  color: var(--accent, var(--gold));
 }
 .event-trigger .event-hint {
   font-family: monospace;
@@ -734,7 +746,7 @@ button {
 }
 /* 아직 시작 전이면 눈에 띄게 — 진행중(D-N)과 구분 */
 .event-trigger .event-hint.upcoming {
-  color: var(--accent, #b98a2f);
+  color: var(--accent, var(--gold));
 }
 .event-trigger .event-caret {
   font-size: 11px;
@@ -795,7 +807,7 @@ button {
   text-underline-offset: 3px;
 }
 .event-menu li a:hover .event-row-name {
-  color: var(--accent, #b98a2f);
+  color: var(--accent, var(--gold));
 }
 .event-menu .event-banner {
   display: block;
@@ -2692,8 +2704,8 @@ html.dark .tags-track > span {
   background: #000;
 }
 .confirm-ok.danger {
-  background: #c0392b;
-  border-color: #c0392b;
+  background: var(--danger);
+  border-color: var(--danger);
   color: #fff;
 }
 .confirm-ok.danger:hover {
@@ -4044,7 +4056,7 @@ html.dark .tags-track > span {
   color: var(--lime);
 }
 .invest-stars {
-  color: #d9a441;
+  color: var(--gold);
   font-style: normal;
   font-size: 11px;
   letter-spacing: -1px;
@@ -4093,19 +4105,19 @@ html.dark .tags-track > span {
 .invest-payback {
   font-size: 12px;
   font-weight: 600;
-  border: 1px solid color-mix(in srgb, #c8912f 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
   border-radius: var(--r-sm);
   padding: 1px 8px;
   color: #8a5a1e;
-  background: color-mix(in srgb, #c8912f 14%, transparent);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
   white-space: nowrap;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
 .invest-payback:hover,
 .invest-payback.on {
-  background: color-mix(in srgb, #c8912f 28%, transparent);
-  border-color: #c8912f;
+  background: color-mix(in srgb, var(--gold) 28%, transparent);
+  border-color: var(--gold);
 }
 .invest-payback::after {
   content: " ⌄";
@@ -4117,16 +4129,16 @@ html.dark .tags-track > span {
 }
 :root[data-theme="dark"] .invest-payback,
 .dark .invest-payback {
-  color: #e0b13e;
-  background: color-mix(in srgb, #e0b13e 16%, transparent);
-  border-color: color-mix(in srgb, #e0b13e 45%, transparent);
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  border-color: color-mix(in srgb, var(--gold) 45%, transparent);
 }
 :root[data-theme="dark"] .invest-payback:hover,
 .dark .invest-payback:hover,
 :root[data-theme="dark"] .invest-payback.on,
 .dark .invest-payback.on {
-  background: color-mix(in srgb, #e0b13e 28%, transparent);
-  border-color: #e0b13e;
+  background: color-mix(in srgb, var(--gold) 28%, transparent);
+  border-color: var(--gold);
 }
 /* 회수일 기준 전환 — 기본은 용문폐·경험치, 켜면 재료까지 (2026-08-05) */
 .invest-matbar {
@@ -4145,7 +4157,7 @@ html.dark .tags-track > span {
   gap: 8px;
   margin-top: 10px;
   padding: 6px 12px;
-  border: 1.5px solid color-mix(in srgb, #c8912f 50%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--gold) 50%, transparent);
   border-radius: var(--r-md);
   background: transparent;
   color: var(--ink);
@@ -4155,17 +4167,17 @@ html.dark .tags-track > span {
   transition: background 0.15s, border-color 0.15s;
 }
 .invest-mattoggle:hover {
-  border-color: #c8912f;
+  border-color: var(--gold);
 }
 .invest-mattoggle.on {
-  border-color: #c8912f;
-  background: color-mix(in srgb, #c8912f 13%, transparent);
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 13%, transparent);
 }
 .invest-mattoggle-box {
   width: 16px;
   height: 16px;
   flex: none;
-  border: 1.5px solid #c8912f;
+  border: 1.5px solid var(--gold);
   border-radius: var(--r-sm);
   background: var(--white);
   display: grid;
@@ -4179,22 +4191,22 @@ html.dark .tags-track > span {
   font-weight: 800;
 }
 .invest-mattoggle.on .invest-mattoggle-box {
-  background: #c8912f;
+  background: var(--gold);
   color: #fff;
 }
 :root[data-theme="dark"] .invest-mattoggle,
 .dark .invest-mattoggle,
 :root[data-theme="dark"] .invest-mattoggle-box,
 .dark .invest-mattoggle-box {
-  border-color: #e0b13e;
+  border-color: var(--gold);
 }
 :root[data-theme="dark"] .invest-mattoggle.on,
 .dark .invest-mattoggle.on {
-  background: color-mix(in srgb, #e0b13e 16%, transparent);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
 }
 :root[data-theme="dark"] .invest-mattoggle.on .invest-mattoggle-box,
 .dark .invest-mattoggle.on .invest-mattoggle-box {
-  background: #e0b13e;
+  background: var(--gold);
   color: #1a1206;
 }
 .invest-matnote {
@@ -4232,8 +4244,8 @@ html.dark .tags-track > span {
   margin: 0 0 10px;
   padding: 7px 11px;
   border-radius: var(--r-md);
-  background: color-mix(in srgb, #c8912f 14%, transparent);
-  border: 1px solid color-mix(in srgb, #c8912f 40%, transparent);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
   color: #8a5a1e;
   font-size: 14px;
   font-weight: 700;
@@ -4241,9 +4253,9 @@ html.dark .tags-track > span {
 }
 :root[data-theme="dark"] .invest-costmodal-days,
 .dark .invest-costmodal-days {
-  color: #e0b13e;
-  background: color-mix(in srgb, #e0b13e 15%, transparent);
-  border-color: color-mix(in srgb, #e0b13e 40%, transparent);
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 15%, transparent);
+  border-color: color-mix(in srgb, var(--gold) 40%, transparent);
 }
 .invest-costdetail tr.off th,
 .invest-costdetail tr.off td {
@@ -4275,7 +4287,7 @@ html.dark .tags-track > span {
 }
 :root[data-theme="dark"] .invest-costdetail td:last-child,
 .dark .invest-costdetail td:last-child {
-  color: #e0b13e;
+  color: var(--gold);
 }
 .invest-costdetail tr.sum th,
 .invest-costdetail tr.sum td {
@@ -4286,7 +4298,7 @@ html.dark .tags-track > span {
 }
 :root[data-theme="dark"] .invest-costdetail tr.sum td:last-child,
 .dark .invest-costdetail tr.sum td:last-child {
-  color: #e0b13e;
+  color: var(--gold);
 }
 .invest-costcalc {
   margin: 7px 0 0;
@@ -4309,7 +4321,7 @@ html.dark .tags-track > span {
 }
 :root[data-theme="dark"] .inv-cost-ap,
 .dark .inv-cost-ap {
-  color: #e0b13e;
+  color: var(--gold);
 }
 /* 회수일 계산 근거 — 접힌 각주 */
 .invest-basis {
@@ -4384,8 +4396,8 @@ html.dark .tags-track > span {
   color: #7fd18c;
 }
 .invest-revert {
-  border: 1px solid #c08a2e;
-  background: color-mix(in srgb, #c08a2e 14%, transparent);
+  border: 1px solid var(--gold);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
   color: var(--ink);
   border-radius: var(--r-sm);
   padding: 5px 10px;
@@ -4395,7 +4407,7 @@ html.dark .tags-track > span {
   white-space: nowrap;
 }
 .invest-revert:hover {
-  background: color-mix(in srgb, #c08a2e 26%, transparent);
+  background: color-mix(in srgb, var(--gold) 26%, transparent);
 }
 /* 편성 화면 상단 임시 적용 배너 (모달 닫아도 미리보기 상태를 알리고 되돌리기 제공) */
 .invest-temp-bar {
@@ -4428,8 +4440,8 @@ html.dark .tags-track > span {
   font-weight: 600;
 }
 .invest-temp-bar button.revert {
-  border-color: #c08a2e;
-  background: color-mix(in srgb, #c08a2e 16%, transparent);
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
 }
 .invest-temp-bar button:hover {
   border-color: var(--lime);
@@ -5754,8 +5766,8 @@ html.dark .tags-track > span {
   color: #17201a;
 }
 .ship-raisebar .srb-btns button.revert {
-  border-color: #c08a2e;
-  background: color-mix(in srgb, #c08a2e 16%, transparent);
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
 }
 .ship-raisebar .srb-btns button:hover {
   filter: brightness(1.05);
@@ -5769,7 +5781,7 @@ html.dark .tags-track > span {
   color: #2f7d3a;
 }
 .raise-delta.down {
-  color: #b3502e;
+  color: var(--danger);
 }
 :root[data-theme="dark"] .raise-delta.up,
 .dark .raise-delta.up {
@@ -5923,7 +5935,7 @@ html.dark .tags-track > span {
   background: #7fb2e0;
 } /* 1정 */
 .op-elite.e2 {
-  background: var(--room-accent, #e6b34d);
+  background: var(--room-accent, var(--gold));
   color: #0e1213;
 } /* 2정 — 방 강조색 */
 /* 육성 추천 임시 적용 오퍼 — 완성 가정 미리보기임을 썸네일에 표시 (사용자 요청 2026-07-21) */
@@ -6729,7 +6741,7 @@ html.dark .tags-track > span {
   line-height: 1.6;
 }
 .import-msg.error {
-  border-left-color: #c0392b;
+  border-left-color: var(--danger);
 }
 .import-privacy {
   margin: 0;
@@ -7036,7 +7048,7 @@ html.dark .tags-track > span {
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  border: 1.5px solid color-mix(in srgb, #c8912f 50%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--gold) 50%, transparent);
   border-radius: var(--r-md);
   background: transparent;
   color: var(--ink);
@@ -7046,17 +7058,17 @@ html.dark .tags-track > span {
   transition: background 0.15s, border-color 0.15s;
 }
 .recruit-prized-toggle:hover {
-  border-color: #c8912f;
+  border-color: var(--gold);
 }
 .recruit-prized-toggle.on {
-  border-color: #c8912f;
-  background: color-mix(in srgb, #c8912f 13%, transparent);
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 13%, transparent);
 }
 .recruit-prized-box {
   width: 16px;
   height: 16px;
   flex: none;
-  border: 1.5px solid #c8912f;
+  border: 1.5px solid var(--gold);
   border-radius: var(--r-sm);
   background: var(--white);
   display: grid;
@@ -7070,18 +7082,18 @@ html.dark .tags-track > span {
   font-weight: 800;
 }
 .recruit-prized-toggle.on .recruit-prized-box {
-  background: #c8912f;
+  background: var(--gold);
   color: #fff;
 }
 .dark .recruit-prized-toggle,
 .dark .recruit-prized-box {
-  border-color: #e0b13e;
+  border-color: var(--gold);
 }
 .dark .recruit-prized-toggle.on {
-  background: color-mix(in srgb, #e0b13e 16%, transparent);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
 }
 .dark .recruit-prized-toggle.on .recruit-prized-box {
-  background: #e0b13e;
+  background: var(--gold);
   color: #1a1206;
 }
 .recruit-results {
@@ -7435,8 +7447,8 @@ html.dark .tags-track > span {
   position: absolute;
   top: 8px;
   right: 38px;
-  border: 1px solid #c08a2e;
-  background: color-mix(in srgb, #c08a2e 16%, var(--white));
+  border: 1px solid var(--gold);
+  background: color-mix(in srgb, var(--gold) 16%, var(--white));
   color: var(--ink);
   width: 24px;
   height: 24px;
@@ -7445,7 +7457,7 @@ html.dark .tags-track > span {
   cursor: pointer;
 }
 .crew-revert:hover {
-  background: color-mix(in srgb, #c08a2e 32%, var(--white));
+  background: color-mix(in srgb, var(--gold) 32%, var(--white));
 }
 .crew-remove {
   position: absolute;
@@ -7461,8 +7473,8 @@ html.dark .tags-track > span {
   cursor: pointer;
 }
 .crew-remove:hover {
-  background: #c0392b;
-  border-color: #c0392b;
+  background: var(--danger);
+  border-color: var(--danger);
   color: #fff;
 }
 /* 숙소 고정 토글 (📌) — ✕ 왼쪽. 켜져 있으면 라임 테두리로 "자동편성이 안 건드림"을 표시 */
@@ -8287,7 +8299,7 @@ html.dark .tags-track > span {
 .fb-reply-editform textarea { width: 100%; }
 .fb-reply-editbtns { display: flex; gap: 6px; margin-top: 6px; }
 .fb-reply-del:hover {
-  color: #e0483c;
+  color: var(--danger);
 }
 /* 게시판 안 관리자 답변 폼은 admin 페이지의 .fb-admin-reply-form 스타일을 그대로 쓴다 */
 .fb-thread .fb-admin-reply-form textarea {
@@ -8376,8 +8388,8 @@ html.dark .tags-track > span {
   cursor: default;
 }
 .fb-tool-btn.danger:hover {
-  border-color: #e0483c;
-  color: #e0483c;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 .fb-edit-area {
   display: flex;
@@ -8399,7 +8411,7 @@ html.dark .tags-track > span {
   border-color: var(--border-strong);
 }
 .fb-act-err {
-  color: #e0483c;
+  color: var(--danger);
   font-size: 10px;
 }
 .fb-board-empty {
@@ -8485,7 +8497,7 @@ html.dark .tags-track > span {
 }
 .fb-code-err {
   flex-basis: 100%;
-  color: #e0483c;
+  color: var(--danger);
   font-size: 10px;
 }
 .fb-code-warn {
@@ -8702,16 +8714,16 @@ html.dark .tags-track > span {
 .admin-row > header button {
   border: 1px solid var(--line);
   background: 0 0;
-  color: #c0392b;
+  color: var(--danger);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   padding: 5px 10px;
 }
 .admin-row > header button:hover {
-  background: #c0392b;
+  background: var(--danger);
   color: #fff;
-  border-color: #c0392b;
+  border-color: var(--danger);
 }
 .admin-row p {
   margin: 4px 0;
@@ -16348,8 +16360,8 @@ main.site-main > .site-header {
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
 }
 .scanner-preview-x:hover {
-  background: #c0392b;
-  border-color: #c0392b;
+  background: var(--danger);
+  border-color: var(--danger);
   color: #fff;
 }
 .scanner-previews img {
@@ -16625,7 +16637,7 @@ main.site-main > .site-header {
   text-align: left;
 }
 .omni-trigger:hover {
-  border-color: var(--accent, #b98a2f);
+  border-color: var(--accent, var(--gold));
 }
 .omni-trigger > span[aria-hidden] {
   font-size: 16px;
@@ -16670,8 +16682,8 @@ main.site-main > .site-header {
 }
 /* 테마별 게임연결 버튼 (/rogue 툴바) — 켜지면 그 테마로 인식이 고정된 상태 */
 .bridge-topic-btn.on {
-  border-color: var(--accent, #b98a2f);
-  color: var(--accent, #b98a2f);
+  border-color: var(--accent, var(--gold));
+  color: var(--accent, var(--gold));
 }
 .bridge-topic-btn.on > span[aria-hidden] {
   animation: bridge-pulse 2s ease-in-out infinite;
@@ -16738,7 +16750,7 @@ main.site-main > .site-header {
   font-weight: 600;
 }
 .bridge-toast.busy b {
-  color: var(--accent, #b98a2f);
+  color: var(--accent, var(--gold));
 }
 .bridge-toast-off {
   flex: none;
@@ -16753,8 +16765,8 @@ main.site-main > .site-header {
   white-space: nowrap;
 }
 .bridge-toast-off:hover {
-  border-color: #c0392b;
-  color: #c0392b;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 /* 맵 노드 자동 이동 토글 — 연결 토스트 안, '연결 끊기' 왼쪽 (제보 f1c050b2, 2026-09-05).
    연결 중에만 필요한 설정이라 /rogue 툴바가 아니라 여기 붙였다 (사용자 확정: PRTS 전용). */
@@ -16807,7 +16819,7 @@ main.site-main > .site-header {
 }
 .br-theme {
   font-size: 12px;
-  color: var(--accent, #b98a2f);
+  color: var(--accent, var(--gold));
   font-weight: 600;
 }
 .br-imported {
@@ -16876,7 +16888,7 @@ main.site-main > .site-header {
   font-weight: 500;
 }
 .bridge-replay-row.t-battle-result .br-type {
-  color: var(--accent, #b98a2f);
+  color: var(--accent, var(--gold));
 }
 .br-name {
   flex: 1;
@@ -16899,7 +16911,7 @@ main.site-main > .site-header {
 }
 .br-emg {
   font-style: normal;
-  color: #c0392b;
+  color: var(--danger);
   font-weight: 700;
   font-size: 10px;
   margin-right: 5px;
@@ -16928,7 +16940,7 @@ main.site-main > .site-header {
   margin: 12px 2px;
 }
 .br-err {
-  color: #c0392b;
+  color: var(--danger);
 }
 .bridge-replay footer {
   display: flex;
@@ -16942,7 +16954,7 @@ main.site-main > .site-header {
   margin: 0;
 }
 .bridge-dot {
-  color: var(--accent, #b98a2f);
+  color: var(--accent, var(--gold));
   animation: bridge-pulse 2s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -16953,15 +16965,15 @@ main.site-main > .site-header {
   font-weight: 600;
 }
 .bridge-status.busy b {
-  color: var(--accent, #b98a2f);
+  color: var(--accent, var(--gold));
 }
 .bridge-status.err {
-  color: #c0392b;
+  color: var(--danger);
 }
 .bridge-trigger.on {
   background: var(--bg-soft2);
-  border-color: var(--accent, #b98a2f);
-  color: var(--accent, #b98a2f);
+  border-color: var(--accent, var(--gold));
+  color: var(--accent, var(--gold));
 }
 .bridge-trigger.on > span[aria-hidden] {
   animation: bridge-pulse 2s ease-in-out infinite;
@@ -18359,8 +18371,8 @@ main.site-main > .site-header {
   color: var(--amber-ink);
 }
 .en-rank.r-boss {
-  border-color: #b8433a;
-  color: #b8433a;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 /* ── 적 상세 (모달 · 상세 페이지 공용) ─────────────────────────────────────── */
@@ -18962,8 +18974,8 @@ main.site-main > .site-header {
 }
 .st-enemy.has-route:hover,
 .st-enemy.pinned {
-  border-color: var(--rc, #b3372e);
-  box-shadow: 0 0 0 1px var(--rc, #b3372e);
+  border-color: var(--rc, var(--crimson));
+  box-shadow: 0 0 0 1px var(--rc, var(--crimson));
 }
 .st-enemy.pinned::after {
   content: "✓";
@@ -18977,7 +18989,7 @@ main.site-main > .site-header {
   font-weight: 800;
   text-align: center;
   color: #16130d;
-  background: var(--rc, #b3372e);
+  background: var(--rc, var(--crimson));
   border-radius: 50%;
 }
 /* 경로 모드의 섬네일 — 호버 시 그 적의 선 색 링으로 '클릭됨'을 보여준다
@@ -18986,7 +18998,7 @@ main.site-main > .site-header {
   cursor: pointer;
 }
 .st-enemy-face-btn:hover {
-  outline: 2px solid var(--rc, #b3372e);
+  outline: 2px solid var(--rc, var(--crimson));
   outline-offset: 1px;
   filter: brightness(1.18);
 }
@@ -19040,12 +19052,12 @@ main.site-main > .site-header {
 }
 /* 고난·긴급은 안 골라도 빨간 계열로 — 한눈에 알아보게 (사용자 요청 2026-08-10) */
 .st-envs button.hard {
-  border-color: #b3372e88;
-  color: #b3372e;
+  border-color: var(--crimson)88;
+  color: var(--crimson);
 }
 .st-envs button.hard.on {
-  background: #b3372e;
-  border-color: #b3372e;
+  background: var(--crimson);
+  border-color: var(--crimson);
   color: #fff;
 }
 .st-desc {
@@ -19056,8 +19068,8 @@ main.site-main > .site-header {
 }
 /* 긴급 작전 제한 조건 — 일반 설명 자리에 경고 톤으로 */
 .st-desc.st-chg {
-  border: 1px solid #b3372e55;
-  background: #b3372e14;
+  border: 1px solid var(--crimson)55;
+  background: var(--crimson)14;
   padding: 10px 12px;
 }
 .st-note {
@@ -19188,7 +19200,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   text-overflow: ellipsis;
 }
 .st-enemy-stats b.up {
-  color: #b3372e;
+  color: var(--crimson);
   font-weight: 700;
 }
 .st-enemy-name {
@@ -19408,8 +19420,8 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   cursor: pointer;
 }
 .sim-search-btn:hover {
-  background: var(--crimson, #b3372e);
-  border-color: var(--crimson, #b3372e);
+  background: var(--crimson, var(--crimson));
+  border-color: var(--crimson, var(--crimson));
 }
 .sim-sec {
   margin-top: 24px;
@@ -19449,7 +19461,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   border-radius: 50%;
 }
 .sim-card:hover .sim-card-play {
-  background: var(--crimson, #b3372e);
+  background: var(--crimson, var(--crimson));
   border-color: transparent;
 }
 /* 경로 데이터가 없는 작전 — 시뮬 없이 상세로만 간다는 표시(카드 메타의 em 문구) */
@@ -19550,9 +19562,9 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 }
 /* 아이콘 없는 칩은 좌우 여백을 같게 */
 .sb-chip:not(:has(img)) { padding-left: 8px; }
-.sb-chip.warn { border-color: #b3372e; color: #b3372e; }
+.sb-chip.warn { border-color: var(--crimson); color: var(--crimson); }
 .sb-chip.a-SURVIVE { border-color: #2e7d4f; color: #2e7d4f; }
-.sb-chip.a-BATTLE { border-color: #b3372e; color: #b3372e; }
+.sb-chip.a-BATTLE { border-color: var(--crimson); color: var(--crimson); }
 .sb-chip.a-GATHER { border-color: #8a6d1f; color: #8a6d1f; }
 .sb-recipes { margin: 6px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.75; }
 .sb-variants {
@@ -19564,7 +19576,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   line-height: 1.75;
 }
 .sb-variants b { display: inline-block; min-width: 18px; }
-.sb-variants .v-ALPHA { color: #b3372e; }
+.sb-variants .v-ALPHA { color: var(--crimson); }
 .sb-variants .v-BETA { color: #2f5f9e; }
 .sb-choices { margin: 8px 0 0; padding-left: 0; list-style: none; font-size: 12px; line-height: 1.6; }
 .sb-choices li { padding: 5px 0; border-top: 1px dashed var(--line); }
@@ -19869,7 +19881,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   border: 1px solid var(--line);
   cursor: pointer;
 }
-.sb-picks button.on { color: var(--white); background: var(--crimson, #b3372e); border-color: var(--crimson, #b3372e); }
+.sb-picks button.on { color: var(--white); background: var(--crimson, var(--crimson)); border-color: var(--crimson, var(--crimson)); }
 /* 인라인 자원 나열 */
 .sb-obs-inline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .sb-obs-inline i {
@@ -19996,7 +20008,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   pointer-events: auto;
   cursor: pointer;
 }
-.sb-worldlabels button:hover { background: #b3372ee0; }
+.sb-worldlabels button:hover { background: var(--crimson)e0; }
 .sb-worldlabels button em { font-style: normal; color: #ffd166; margin-left: 3px; }
 @media (max-width: 720px) { .sb-worldwrap { width: 100%; } }
 
@@ -20562,9 +20574,9 @@ p.sb-trline { margin-top: 2px; }
 .ac-t2 { background: #4d8b6a; }
 .ac-t3 { background: #3f7ea8; }
 .ac-t4 { background: #7a5fae; }
-.ac-t5 { background: #c08a2e; }
+.ac-t5 { background: var(--gold-deep); }   /* 흰 글자 바탕 — 위 주석 참조 */
 .ac-t6 { background: #b3543a; }
-.ac-star { font-style: normal; font-size: 11px; font-weight: 700; color: #c08a2e; }
+.ac-star { font-style: normal; font-size: 11px; font-weight: 700; color: var(--gold); }
 /* 금색이 흰 종이 위에서 2.93:1 — 라이트에서만 한 단계 어둡게 (다크는 그대로 잘 보인다) */
 html:not(.dark) .ac-star { color: #8f6512; }
 .ac-warn { border-color: #b3543a; color: #b3543a; }
@@ -20572,9 +20584,9 @@ html:not(.dark) .ac-star { color: #8f6512; }
 /* 보급센터에 안 뜨는 기물 — 목록에 섞여 있으면 "왜 상점에 없지?"가 되므로 눈에 띄게
    (사용자 확정 2026-09-02). 경고가 아니라 '조건부'라서 붉은색은 피하고 호박색을 쓴다. */
 .ac-offshop {
-  background: color-mix(in srgb, #c8891a 18%, var(--white));
+  background: color-mix(in srgb, var(--gold) 18%, var(--white));
   color: color-mix(in srgb, #8a5c00 82%, var(--ink));
-  border: 1px solid color-mix(in srgb, #c8891a 34%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 34%, transparent);
 }
 /* 획득 경로 — 위(맹약 칩 줄)와 붙어 보여 별개 항목인 걸 못 읽었다 (사용자 지적 2026-09-02).
    여백만 벌리면 붕 뜨므로 옅은 구분선 + 살짝 들여쓴 블록으로 묶는다. */
@@ -20582,17 +20594,17 @@ html:not(.dark) .ac-star { color: #8f6512; }
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
   margin: 12px 0 0; padding: 9px 11px;
   border-radius: var(--r-md);
-  background: color-mix(in srgb, #c8891a 7%, var(--white));
-  border: 1px solid color-mix(in srgb, #c8891a 20%, transparent);
+  background: color-mix(in srgb, var(--gold) 7%, var(--white));
+  border: 1px solid color-mix(in srgb, var(--gold) 20%, transparent);
 }
 .ac-ways > em {
   font-style: normal; font-weight: 700; font-size: 11px; letter-spacing: .02em;
   opacity: .78; margin-right: 3px;
 }
-.ac-ways .sb-chip { background: color-mix(in srgb, #c8891a 12%, var(--white)); }
+.ac-ways .sb-chip { background: color-mix(in srgb, var(--gold) 12%, var(--white)); }
 /* 데이터로 확정 못 한 경로 — 확정된 것과 같은 무게로 읽히면 안 된다 */
 .ac-ways .sb-chip.maybe { opacity: .66; border: 1px dashed color-mix(in srgb, var(--ink) 32%, transparent); }
-.dark .ac-ways { background: color-mix(in srgb, #c8891a 9%, transparent); border-color: color-mix(in srgb, #c8891a 26%, transparent); }
+.dark .ac-ways { background: color-mix(in srgb, var(--gold) 9%, transparent); border-color: color-mix(in srgb, var(--gold) 26%, transparent); }
 
 /* 배지 설명 (TipChip) — title의 1초 지연 없이 즉시.
    ⚠ 위치는 **JS가 fixed 로 잡는다** (body portal). 여기에 position/left/top 을 다시 쓰면
@@ -20609,13 +20621,13 @@ html:not(.dark) .ac-star { color: #8f6512; }
 }
 .ac-offshop, .ac-kind { cursor: help; }
 /* 칩이 포커스를 받을 수 있게 됐다 (키보드로도 설명이 뜬다) — 기본 outline은 유지 */
-.ac-offshop:focus-visible, .ac-kind:focus-visible { outline: 2px solid var(--accent, #b98a2f); outline-offset: 1px; }
+.ac-offshop:focus-visible, .ac-kind:focus-visible { outline: 2px solid var(--accent, var(--gold)); outline-offset: 1px; }
 .dark .ac-offshop {
-  background: color-mix(in srgb, #c8891a 24%, transparent);
+  background: color-mix(in srgb, var(--gold) 24%, transparent);
   color: #f0c470;
-  border-color: color-mix(in srgb, #c8891a 44%, transparent);
+  border-color: color-mix(in srgb, var(--gold) 44%, transparent);
 }
-.dark .ac-ways .sb-chip { background: color-mix(in srgb, #c8891a 14%, transparent); }
+.dark .ac-ways .sb-chip { background: color-mix(in srgb, var(--gold) 14%, transparent); }
 .ac-hp { font-weight: 700; }
 
 /* ── 맹약 카드 ── */
@@ -20825,7 +20837,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   background: var(--paper);
   border-left: 3px solid var(--line);
 }
-.ac-gar.gold { border-left-color: #c08a2e; background: color-mix(in srgb, #c08a2e 8%, var(--paper)); }
+.ac-gar.gold { border-left-color: var(--gold); background: color-mix(in srgb, var(--gold) 8%, var(--paper)); }
 .ac-gar-type {
   display: inline-flex;
   align-items: center;
@@ -20852,8 +20864,8 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   letter-spacing: 0.02em;
 }
 .sb-chip.ac-goldchip {
-  background: color-mix(in srgb, #c08a2e 18%, transparent);
-  border-color: color-mix(in srgb, #c08a2e 55%, var(--line));
+  background: color-mix(in srgb, var(--gold) 18%, transparent);
+  border-color: color-mix(in srgb, var(--gold) 55%, var(--line));
   color: var(--ink);
   font-weight: 700;
 }
@@ -20861,7 +20873,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-skmod-d.gold {
   margin-top: 4px;
   padding-left: 8px;
-  border-left: 2px solid #c08a2e;
+  border-left: 2px solid var(--gold);
 }
 .ac-skmod-d.gold .ac-gar-gold { margin: 0 6px 0 0; }
 /* 특질 문구의 줄바꿈 보존 — 게임 원문이 두 줄인 능력이 6종 있다
@@ -20882,14 +20894,14 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   margin-top: 4px;
   font-size: 11px;
   line-height: 1.45;
-  color: #b8912f;
+  color: var(--gold);
 }
-html.dark .ac-krfix { color: #d8b153; }
+html.dark .ac-krfix { color: var(--gold); }
 .ac-goldhead {
   margin: 12px 0 4px;
   font-size: 12px;
   font-weight: 700;
-  color: #c08a2e;
+  color: var(--gold);
 }
 .ac-eqd { margin: 0; font-size: 12px; line-height: 1.6; color: var(--ink2); }
 .ac-efflist { margin: 4px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.75; color: var(--muted); }
@@ -20930,7 +20942,7 @@ html.dark .ac-krfix { color: #d8b153; }
   background: var(--paper);
 }
 .ac-table tbody th { font-weight: 700; background: var(--paper); }
-.ac-gold-row td, .ac-gold-row th { background: color-mix(in srgb, #c08a2e 7%, var(--white)); }
+.ac-gold-row td, .ac-gold-row th { background: color-mix(in srgb, var(--gold) 7%, var(--white)); }
 .ac-table-sm { font-size: 12px; }
 .ac-table-sm th, .ac-table-sm td { padding: 6px 9px; }
 .ac-goldmark { font-size: 11px; color: var(--muted); }
@@ -21761,7 +21773,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-eqd.gold {
   margin-top: 5px;
   padding-left: 8px;
-  border-left: 2px solid #c08a2e;
+  border-left: 2px solid var(--gold);
 }
 .ac-eqd.gold .ac-gar-gold { margin: 0 6px 0 0; }
 
