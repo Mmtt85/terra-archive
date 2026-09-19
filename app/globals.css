@@ -148,7 +148,8 @@ body {
 
    크기  9 · 10 · 11 · 12 · 13 · 14 · 16 · 18 · 20 · 22 · 26 · 30 (px)
          └ 본문·UI 는 10~14 에서, 제목은 16 위에서 고른다. 반올림 값(10.5·12.5 …) 금지.
-         └ 예외 하나: 포탈 배너의 장식 숫자 92px.
+         └ 예외 둘: 포탈 배너의 장식 숫자 92px, 미니카드 성급·직군 배지 8px
+           (52~96px 카드 위의 마이크로 배지 — 9px 면 별 여섯 개가 카드를 넘긴다).
    행간  1 (단일행·아이콘) · 1.25 (제목) · 1.45 (UI 여러 줄) · 1.6 (본문) · 1.75 (긴 글)
    자간  -2 · -1 · -0.5 · -0.3 · 0.3 · 0.5 · 1 · 2 (px). em 단위 자간은 큰 제목에만,
          종전 값 그대로 뒀다 (글자 크기에 비례해야 하는 자리라 px 로 바꾸면 안 된다).
@@ -1974,7 +1975,9 @@ legend {
 }
 /* 절반 크기 = 한 줄에 두 배로 */
 .operator-grid.mini {
-  grid-template-columns: repeat(10, minmax(0, 1fr));
+  /* 한 줄 8장 (사용자 요청 2026-09-20 — 종전 10장은 카드가 61px 까지 좁아져 성급+직군이
+     들어갈 자리가 없었다). 아래 1450px 이하 규칙이 같은 값이라 그건 지웠다. */
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   /* 카드 높이를 **가장 긴 것에 전부 맞춘다** (사용자 요청 2026-09-16) — 이름이 길어
      두 줄이 되는 카드가 섞이면 줄마다 높이가 달라 들쭉날쭉했다. auto 행에서 1fr 은
      '가장 큰 행에 맞춘 균등 높이'라 이 한 줄이면 전 카드가 같아진다. */
@@ -2010,6 +2013,7 @@ legend {
 .operator-grid.mini .portrait-meta {
   top: 6px;
   left: 7px;
+  width: calc(100% - 15px);   /* left 7 + right 8 — 위 기본값과 짝 */
 }
 /* 미니 카드 이름도 한 줄 마퀴 (사용자 요청 2026-09-18 "미니카드도 이름이 너무 길어서
    짤리는경우는 자동으로 흘러가는 방식으로") */
@@ -2023,14 +2027,14 @@ legend {
 .operator-grid.mini .portrait-meta {
   gap: 3px;
   margin-bottom: 5px;
-  font-size: 9px;
+  font-size: 8px;
 }
 .operator-grid.mini .portrait-meta span {
-  font-size: 9px;
+  font-size: 8px;
 }
 .operator-grid.mini .portrait-meta b {
-  font-size: 9px;
-  letter-spacing: 0.5px;
+  font-size: 8px;
+  letter-spacing: 0.3px;
 }
 /* 스트립 제목이 이미 '미실장'이라고 말한다 — 카드마다 또 붙일 이유가 없다
    (사용자 지적 2026-09-16). 미래시를 켜면 본 그리드로 돌아가 배지가 다시 붙는다. */
@@ -2040,9 +2044,6 @@ legend {
 /* 좁은 칸에선 소속·출신·종족을 접는다 — 이름·성급·직군만 남긴다 */
 .operator-grid.mini .portrait-facts {
   display: none;
-}
-@media (max-width: 1450px) {
-  .operator-grid.mini { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 }
 @media (max-width: 1100px) {
   .operator-grid.mini { grid-template-columns: repeat(6, minmax(0, 1fr)); }
@@ -2178,11 +2179,30 @@ legend {
   align-items: center;
   gap: 7px;
   display: flex;
+  /* 성급+직군이 카드 폭을 넘으면 잘리는 대신 흘러간다 (사용자 지적 2026-09-20 — 미실장
+     미니카드는 폭이 52~96px 라 별 6개 + "스페셜리스트" 가 100px 을 넘겼다).
+     이름·태그와 같은 장치: 상자가 컨테이너 기준을 만들고(container-type), 안쪽 트랙이
+     `min(0px, 100cqw - 100%)` 만큼 왼쪽으로 흐른다. 넘치지 않으면 --flow-ms 가 0 이라 안 돈다. */
+  container-type: inline-size;
+  overflow: hidden;
+  /* ⚠ left+right 만으로는 폭이 안 잡힌다 — 이 상자는 grid 인 .portrait 의 절대배치 자식이라
+     폭이 내용 기준(shrink-to-fit)으로 잡히고, container-type 을 걸면 내용을 무시해 0이 된다
+     (실측 2026-09-20: 폭 0 → 메타 줄이 통째로 사라졌다). 폭을 명시해 고정한다. */
+  width: calc(100% - 18px);   /* left 10 + right 8 */
+}
+.meta-track {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;            /* 기본 7px · 미니 3px — 부모 값을 그대로 */
+  white-space: nowrap;
+  animation: card-flow var(--flow-ms, 0ms) linear infinite;
 }
 .portrait-meta b {
   color: var(--ink2);
-  font: 800 10px monospace;
-  letter-spacing: 1px;
+  /* 10px·자간 1px → 9px·0.5px (사용자 요청 2026-09-20 "폰트도 살짝 줄여줘").
+     별과 직군이 카드 폭을 덜 잡아먹어 마퀴가 도는 카드 수가 줄어든다. */
+  font: 800 9px monospace;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -2194,7 +2214,7 @@ legend {
 .portrait-meta span {
   color: var(--ink2);
   letter-spacing: -1px;
-  font-size: 11px;
+  font-size: 10px;
 }
 .portrait-meta span[data-rarity="4"] {
   color: #9fb4ff;
@@ -11468,12 +11488,11 @@ html.dark .story-card:hover .story-thumb img {
   font-style: normal;
   vertical-align: middle;
 }
-/* 카드 오버레이(.portrait-info)는 48% 폭이라 배지가 끼면 직군 글자가 세로로 꺾인다 —
-   메타 줄은 내용 폭만큼 가로로 뻗게 하고(이미지 위로 살짝 겹쳐도 텍스트 섀도로 가독 유지) 줄바꿈 금지 */
-.portrait-meta {
-  width: max-content;
-  max-width: 195%;
-}
+/* (삭제 2026-09-20) 종전엔 여기서 메타 줄을 `width: max-content; max-width: 195%` 로 두어
+   **카드 밖까지 뻗게** 했다. 옛 카드(.portrait-info 오버레이, 폭 48%)에서 직군 글자가 세로로
+   꺾이는 걸 막으려던 것인데, 그 오버레이는 2026-09-18 카드 재설계 때 사라졌고 이 규칙만 남아
+   미실장 미니카드(폭 52~96px)에서 성급+직군이 최대 54px 카드 밖으로 삐져나와 잘려 보였다
+   (사용자 지적). 지금은 위쪽 .portrait-meta 가 폭을 카드에 맞추고, 넘치면 마퀴로 흘린다. */
 .portrait-meta b,
 .portrait-meta .future-badge {
   white-space: nowrap;

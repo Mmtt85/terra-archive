@@ -2867,7 +2867,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
     };
     const measure = () => {
       // 가로 — 이름·태그
-      for (const el of root.querySelectorAll<HTMLElement>(".card-reveal h3 > span, .tags-track")) {
+      for (const el of root.querySelectorAll<HTMLElement>(".card-reveal h3 > span, .tags-track, .meta-track")) {
         const box = el.parentElement;
         const w = box ? box.clientWidth : 0;
         flow(el, w > 0 ? el.getBoundingClientRect().width - w : 0);
@@ -2928,7 +2928,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
           한 번 터치는 상세 모달. */}
       <div className="portrait" ref={portraitRef}>
         {/* 위 줄: 성급 별 + 직군 (사용자 지시 2026-09-18 "성급 오른쪽에다가 직군을 써줘") */}
-        <div className="portrait-meta"><span data-rarity={operator.rarity}>{"★".repeat(operator.rarity)}</span><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
+        <div className="portrait-meta">{/* 성급+직군이 카드 폭을 넘으면 흘러간다 — 미실장 미니카드는 폭이 52~96px 라 별 6개에 "스페셜리스트" 같은 긴 직군이 붙으면 100px 을 넘긴다 (사용자 지적 2026-09-20). 이름·태그와 같은 마퀴 장치(.meta-track ← home.tsx 측정 → --flow-ms). */}<div className="meta-track"><span data-rarity={operator.rarity}>{"★".repeat(operator.rarity)}</span><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div></div>
         {visible && <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} decoding="async" />}
         {/* 아래 패널: 접힌 채엔 이름 한 줄, 펼치면 소속·출신·종족·컨셉 태그 */}
         <div className="card-reveal">
