@@ -1602,6 +1602,23 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     return () => { cancelAnimationFrame(raf); clearTimeout(later); };
   }, [headerCollapsed, headerTucked]);
 
+  // 헤더 바깥을 누르면 펼친 헤더가 스스로 접힌다 (사용자 요청 2026-09-20).
+  // ⚠ click 으로 듣는다 — pointerdown 이면 손가락으로 **본문을 스크롤하려고 짚는 순간**
+  //   접혀 버린다 (스크롤은 click 을 만들지 않는다).
+  // ⚠ 헤더 안의 드롭다운(언어·햄버거·이벤트·방송)은 전부 헤더 DOM 안에 있어 contains 로
+  //   함께 걸러진다. 모달은 포털이라 밖으로 잡히지만, 모달을 여는 순간 접히는 게 자연스럽다.
+  useEffect(() => {
+    if (headerCollapsed || headerTucked) return;
+    const onClick = (e: MouseEvent) => {
+      const el = e.target as Node | null;
+      if (el && headerRef.current?.contains(el)) return;
+      setHeaderCollapsed(true);
+    };
+    // 캡처 단계에서 듣는다 — 본문 쪽에서 stopPropagation 하는 핸들러가 있어도 놓치지 않는다
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [headerCollapsed, headerTucked]);
+
   // 모바일 sticky 요소(스토리 레일)가 가변 높이 헤더 아래에 붙도록 헤더 높이를 CSS 변수로 노출
   useEffect(() => {
     if (typeof window === "undefined") return;
