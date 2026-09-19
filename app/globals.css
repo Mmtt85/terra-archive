@@ -44,7 +44,13 @@
   --ok: #2e7d32;
   --ok-ring: #d9ecd7; /* 성공(녹색) 텍스트·포커스 링 */
   --bad: #c62828; /* 경고·라이브(적색) */
-  --on-lime: #131719; /* 라임 배경 위 텍스트 — 라임이 고정색이므로 양 모드 동일 */
+  --on-lime: #131719;
+  /* 그림자 3단계 (2026-09-19 정리 — 종전 80종이 제각각이었다). 용도로 고른다:
+     sh-1 살짝 든 것(칩·썸네일) · sh-2 떠 있는 것(드롭다운·플로팅 패널) · sh-3 덮는 것(모달).
+     포커스 링·글로우·레트로 오프셋(4px 4px 0)은 의미가 달라 토큰으로 묶지 않는다. */
+  --sh-1: 0 2px 8px #1f242518;
+  --sh-2: 0 10px 26px #1f242526;
+  --sh-3: 0 26px 72px #1f242540; /* 라임 배경 위 텍스트 — 라임이 고정색이므로 양 모드 동일 */
 }
 /* ── 다크모드 — html.dark (헤더 토글 + localStorage, 첫 페인트 전 인라인 스크립트가 부여) ── */
 html.dark {
@@ -85,6 +91,10 @@ html.dark {
   --ok: #74c97b;
   --ok-ring: #1d3320;
   --bad: #e05a5a;
+  /* 다크에선 같은 세기로는 안 보인다 — 검정 비중을 올린다 */
+  --sh-1: 0 2px 8px #00000059;
+  --sh-2: 0 10px 26px #00000080;
+  --sh-3: 0 26px 72px #000000b3;
 }
 * {
   box-sizing: border-box;
@@ -352,7 +362,7 @@ button {
   display: grid;
   place-items: center;
   background: #f00;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 .yt-mark {
   position: absolute;
@@ -360,7 +370,7 @@ button {
   bottom: 6px;
   width: 26px;
   height: 18px;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
 }
 .yt-icon {
   width: 20px;
@@ -425,7 +435,7 @@ button {
      그 안에 들어가는 컴팩트 치수 (실측 2026-07-27) */
   margin-left: 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: transparent;
   padding: 5px 8px;
   font-size: 11.5px;
@@ -442,7 +452,7 @@ button {
   position: relative;
   background: var(--white, #fff);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   width: min(620px, 100%);
   /* 위 여백만큼 아래도 남긴다 (사용자 지적 2026-07-30: 아래에 딱 달라붙는다).
      빼야 할 것이 **둘**이다 — ⓐ .modal-backdrop의 padding 24px×2 ⓑ 이 모달의 위 margin×2.
@@ -455,7 +465,7 @@ button {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 30px 100px #0008;
+  box-shadow: var(--sh-3);
 }
 /* 신기능만 토글·개발자 코멘트 버튼용 크롬 예외(.mw-title flex:none 등)는 2026-08-19 제거 —
    둘 다 사라진 뒤 margin-left:auto 담당자가 없어 ×가 제목 옆에 달라붙었다 (사용자 제보).
@@ -511,7 +521,7 @@ button {
   max-width: 38%;
   margin-top: 1px;
   padding: 2px 7px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -557,7 +567,7 @@ button {
   margin-left: 8px;
   padding: 1px 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: transparent;
   font-size: 11px;
   font-weight: 700;
@@ -618,7 +628,7 @@ button {
   min-width: 0;
   padding: 8px 12px;
   border: 1px dashed var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: transparent;
   font-size: 12.5px;
   font-weight: 700;
@@ -667,7 +677,7 @@ button {
   text-decoration: none;
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--lime) 55%, var(--line));
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   transition: 0.15s;
   white-space: nowrap;
@@ -807,7 +817,7 @@ button {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 30px 100px #0008;
+  box-shadow: var(--sh-3);
 }
 .bcast-list {
   padding: 12px;
@@ -874,7 +884,7 @@ button {
   font: 800 12px/1 sans-serif;
   border: 1px solid var(--line);
   padding: 3px 7px;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
 }
 /* 중국(비리비리) 방송 — 미래시 배지 + B站 마크 */
 .bcast-future {
@@ -882,7 +892,7 @@ button {
   border: 1px solid var(--lime);
   color: var(--ink);
   padding: 3px 6px;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
 }
 .bili-mark {
   position: absolute;
@@ -892,7 +902,7 @@ button {
   place-items: center;
   width: 26px;
   height: 18px;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   background: #00a1d6;
   color: #fff;
   font: 800 11px/1 sans-serif;
@@ -1124,7 +1134,7 @@ button {
     visibility: visible;
     bottom: -18px;
     border-top: 1px solid var(--line);
-    border-radius: 0 0 8px 8px;
+    border-radius: 0 0 var(--r-md) var(--r-md);
   }
   /* 펼칠 때 2줄째가 툭 나타나지 않게 아주 짧게 내려오며 뜬다 */
   .site-header:not(.collapsed):not(.tucked) .feedback-header-btn,
@@ -1308,7 +1318,7 @@ button {
 .filter-panel::-webkit-scrollbar-thumb,
 .results-scroll::-webkit-scrollbar-thumb {
   background: #b9bbb5;
-  border-radius: 10px;
+  border-radius: var(--r-md);
 }
 .panel-heading,
 .results-heading {
@@ -1375,8 +1385,8 @@ button {
   background: var(--white);
   border: 1px solid var(--border-strong);
   border-left: 3px solid var(--lime);
-  border-radius: 6px;
-  box-shadow: 0 8px 22px #0000001f;
+  border-radius: var(--r-sm);
+  box-shadow: var(--sh-2);
   padding: 4px;
   max-height: 320px;
   overflow-y: auto;
@@ -1387,7 +1397,7 @@ button {
   gap: 8px;
   width: 100%;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: 0 0;
   color: var(--ink);
   cursor: pointer;
@@ -1402,7 +1412,7 @@ button {
   flex: none;
   width: 26px;
   height: 26px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   object-fit: cover;
   background: var(--bg-soft);
 }
@@ -1595,7 +1605,7 @@ legend {
   z-index: 5;
   background: var(--white);
   border: 1px solid var(--border-strong);
-  border-radius: 6px;   /* 입력창·검색 버튼과 같은 값 */
+  border-radius: var(--r-sm);   /* 입력창·검색 버튼과 같은 값 */
   max-height: 260px;
   margin: 0;
   padding: 4px;
@@ -1607,7 +1617,7 @@ legend {
   min-width: 100%;
   max-width: min(92vw, 520px);
   overflow-y: auto;
-  box-shadow: 0 8px 22px #0000001f;
+  box-shadow: var(--sh-2);
 }
 .concept-drop li {
   margin: 0;
@@ -1617,7 +1627,7 @@ legend {
   cursor: pointer;
   background: 0 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   justify-content: space-between;
   align-items: center;
   gap: 10px;
@@ -1688,7 +1698,7 @@ legend {
   font: 800 10px monospace;
   color: var(--on-lime, #1a1a1a);
   background: var(--lime);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 1px 6px;
   line-height: 1.5;
 }
@@ -1715,7 +1725,7 @@ legend {
   max-width: min(92vw, 520px);
   background: var(--white);
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   border-left: 3px solid var(--lime);
   max-height: 300px;
   margin: 0;
@@ -1724,7 +1734,7 @@ legend {
   position: absolute;
   inset: calc(100% + 6px) auto auto 0;
   overflow-y: auto;
-  box-shadow: 0 8px 22px #0000001f;
+  box-shadow: var(--sh-2);
 }
 .attr-drop li {
   margin: 0;
@@ -1741,7 +1751,7 @@ legend {
 .attr-drop .attr-search input {
   width: 100%;
   border: 1px solid var(--border-strong);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: var(--white);
   color: var(--ink);
   padding: 7px 9px;
@@ -1761,7 +1771,7 @@ legend {
   cursor: pointer;
   background: 0 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   align-items: center;
   gap: 8px;
   width: 100%;
@@ -2022,7 +2032,7 @@ legend {
 .operator-card {
   border: 1px solid var(--line);
   background: var(--white);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   text-align: left;
   cursor: pointer;
   /* 화면 밖 카드(420장)의 레이아웃·페인트를 건너뛴다 — 모달 열기 INP 개선 (2026-08-09).
@@ -2422,7 +2432,7 @@ html.dark .tags-track > span {
 .tags-track > span {
   background: #0000;
   border: 1px solid var(--line);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   color: var(--ink2);
   padding: 2px 5px;
   font-size: 10px;
@@ -2478,7 +2488,7 @@ html.dark .tags-track > span {
   display: grid;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 30px 100px #0008;
+  box-shadow: var(--sh-3);
 }
 /* 오퍼 상세 **페이지**(/operators/<id>) — 창 모달과 같은 규격을 본문에 그대로 놓는다.
    창은 body 포털이라 프리렌더가 안 돼(document 없음) 색인용으로 못 쓴다 (2026-08-06).
@@ -2495,7 +2505,7 @@ html.dark .tags-track > span {
   margin: 0 auto;
   align-self: stretch;
   border-color: var(--line);
-  box-shadow: 0 12px 40px #1f24250f;
+  box-shadow: var(--sh-2);
 }
 @media (max-width: 720px) {
   .operator-page-wrap {
@@ -2536,7 +2546,7 @@ html.dark .tags-track > span {
   padding: 26px 26px 20px;
   background: var(--white);
   border: 1px solid var(--line);
-  box-shadow: 0 24px 70px #0009;
+  box-shadow: var(--sh-3);
   position: relative;
   animation: 0.18s both confirmPop;
 }
@@ -2569,7 +2579,7 @@ html.dark .tags-track > span {
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  box-shadow: 0 24px 70px #0009;
+  box-shadow: var(--sh-3);
   overflow: hidden;
 }
 /* 본문 래퍼 — 배지줄·제목·문단·바로가기를 세로로 쌓고, 넘치면 .chlog-detail-body만 구른다 */
@@ -2620,7 +2630,7 @@ html.dark .tags-track > span {
   margin-top: 14px;
   padding: 5px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-size: 12px;
   font-weight: 700;
   color: var(--ink);
@@ -2649,7 +2659,7 @@ html.dark .tags-track > span {
   font-size: 13.5px;
   font-weight: 600;
   border: 1px solid var(--line);
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   background: var(--white);
   color: var(--ink);
   transition: 0.12s;
@@ -2808,7 +2818,7 @@ html.dark .tags-track > span {
   cursor: pointer;
   background: 0 0;
   border: 1px solid #0000;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   align-items: baseline;
   gap: 7px;
   padding: 6px 8px;
@@ -2887,7 +2897,7 @@ html.dark .tags-track > span {
   white-space: nowrap;
   background: #ffffff1f;
   border: 1px solid #ffffff59;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
@@ -3472,7 +3482,7 @@ html.dark .tags-track > span {
   height: 26px;
   display: grid;
   place-items: center;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   background: #111719c4;
   color: #fff;
   font-size: 13px;
@@ -3745,7 +3755,7 @@ html.dark .tags-track > span {
 .profile-doc > summary em {
   flex: none;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: var(--chip);
   color: var(--lime);
   font: 800 10.5px monospace;
@@ -3884,7 +3894,7 @@ html.dark .tags-track > span {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--bg-panel);
   padding: 16px 18px 18px;
 }
@@ -3914,7 +3924,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   background: var(--bg-soft);
   color: var(--ink);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 5px 10px;
   cursor: pointer;
   font-size: 12px;
@@ -3929,7 +3939,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   background: var(--bg-soft);
   color: var(--muted);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   width: 30px;
   height: 30px;
   cursor: pointer;
@@ -3958,7 +3968,7 @@ html.dark .tags-track > span {
   margin-top: 8px;
   padding: 6px 12px;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: transparent;
   font-size: 12px;
   font-weight: 700;
@@ -3985,14 +3995,14 @@ html.dark .tags-track > span {
   gap: 12px;
   align-items: flex-start;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: var(--bg-faint);
   padding: 10px 12px;
 }
 .invest-card > img {
   width: 52px;
   height: 52px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   flex: none;
   background: var(--bg-soft);
 }
@@ -4029,7 +4039,7 @@ html.dark .tags-track > span {
   font-weight: 600;
   color: var(--ink);
   background: color-mix(in srgb, var(--lime) 30%, transparent);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   padding: 1px 7px;
 }
 .invest-syn {
@@ -4037,7 +4047,7 @@ html.dark .tags-track > span {
   font-weight: 600;
   color: #8f7fc0;
   border: 1px solid color-mix(in srgb, #8f7fc0 55%, transparent);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   padding: 0 6px;
 }
 :root[data-theme="dark"] .invest-syn,
@@ -4053,7 +4063,7 @@ html.dark .tags-track > span {
 .inv-gain {
   font-size: 12px;
   font-weight: 600;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   padding: 1px 7px;
 }
 .inv-gain.a {
@@ -4069,7 +4079,7 @@ html.dark .tags-track > span {
   font-size: 12px;
   font-weight: 600;
   border: 1px solid color-mix(in srgb, #c8912f 45%, transparent);
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   padding: 1px 8px;
   color: #8a5a1e;
   background: color-mix(in srgb, #c8912f 14%, transparent);
@@ -4121,7 +4131,7 @@ html.dark .tags-track > span {
   margin-top: 10px;
   padding: 6px 12px;
   border: 1.5px solid color-mix(in srgb, #c8912f 50%, transparent);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: transparent;
   color: var(--ink);
   font-size: 12.5px;
@@ -4141,7 +4151,7 @@ html.dark .tags-track > span {
   height: 16px;
   flex: none;
   border: 1.5px solid #c8912f;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: var(--white);
   display: grid;
   place-items: center;
@@ -4197,7 +4207,7 @@ html.dark .tags-track > span {
   font-weight: 600;
   color: var(--muted);
   background: var(--bg-soft);
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   padding: 2px 7px;
 }
 .invest-costdetail {
@@ -4206,7 +4216,7 @@ html.dark .tags-track > span {
 .invest-costmodal-days {
   margin: 0 0 10px;
   padding: 7px 11px;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: color-mix(in srgb, #c8912f 14%, transparent);
   border: 1px solid color-mix(in srgb, #c8912f 40%, transparent);
   color: #8a5a1e;
@@ -4315,7 +4325,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--lime);
   background: color-mix(in srgb, var(--lime) 16%, transparent);
   color: var(--ink);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 3px 12px;
   cursor: pointer;
   font-size: 12px;
@@ -4329,7 +4339,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   background: transparent;
   color: var(--muted);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 3px 9px;
   cursor: pointer;
   font-size: 11.5px;
@@ -4362,7 +4372,7 @@ html.dark .tags-track > span {
   border: 1px solid #c08a2e;
   background: color-mix(in srgb, #c08a2e 14%, transparent);
   color: var(--ink);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 5px 10px;
   cursor: pointer;
   font-size: 12px;
@@ -4381,7 +4391,7 @@ html.dark .tags-track > span {
   flex-wrap: wrap;
   margin: 12px 0 0;
   padding: 9px 14px;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   font-size: 13px;
   font-weight: 600;
   color: var(--ink);
@@ -4396,7 +4406,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   background: var(--bg-soft);
   color: var(--ink);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 4px 11px;
   cursor: pointer;
   font-size: 12px;
@@ -4413,7 +4423,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--lime);
   background: color-mix(in srgb, var(--lime) 16%, transparent);
   color: var(--ink);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 5px 12px;
   cursor: pointer;
   font-size: 12px;
@@ -4428,7 +4438,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--lime);
   background: var(--lime);
   color: #17201a;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 5px 12px;
   cursor: pointer;
   font-size: 12px;
@@ -4581,7 +4591,7 @@ html.dark .tags-track > span {
   color: #b6bbbd;
   text-decoration: none;
   border: 1px solid #303536;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 3px 10px;
   transition: color 0.15s, border-color 0.15s;
 }
@@ -5041,7 +5051,7 @@ html.dark .tags-track > span {
   right: 4px;
   padding: 2px 4px;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: none;
   color: var(--muted);
   font: 700 13px/1 monospace;
@@ -5085,7 +5095,7 @@ html.dark .tags-track > span {
   font-style: normal;
   margin-left: 6px;
   padding: 2px 5px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--room-accent, var(--lime)) 30%, transparent);
   /* ⚠ --ink 를 쓰면 안 된다 (사용자 제보 2026-08-25 "라이트에서 레벨이 어두워 안 보인다").
      시설 카드(.ship-room)는 **양 모드 모두 어두운 판**(#171b1d)인데 --ink 는 테마를 따라
@@ -5176,7 +5186,7 @@ html.dark .tags-track > span {
   color: var(--ink2);
   font: 700 12px/1 monospace;
   cursor: pointer;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
 }
 .room-level-sel button.on {
   background: var(--accent, var(--lime));
@@ -5243,7 +5253,7 @@ html.dark .tags-track > span {
   border-color: var(--border-strong);
   padding: 16px 26px;
   font-size: 15.5px;
-  border-radius: 9px;
+  border-radius: var(--r-md);
 }
 /* 핵심 2버튼 호버는 **확실히 티나게** (사용자 요청 2026-07-28) — 라임 반전 + 살짝 떠오름.
    종전 brightness(1.2)는 보조 버튼의 라임 반전보다 약해 위계가 뒤집혀 있었다.
@@ -5254,7 +5264,7 @@ html.dark .tags-track > span {
   color: var(--on-lime);
   border-color: var(--border-hover);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px #00000026;
+  box-shadow: var(--sh-2);
 }
 .planner-summary {
   display: grid;
@@ -5365,7 +5375,7 @@ html.dark .tags-track > span {
   display: inline-block;
   margin-left: 8px;
   padding: 2px 8px;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   background: var(--chip);
   color: var(--lime);
   font-size: 12px;
@@ -5375,7 +5385,7 @@ html.dark .tags-track > span {
 .room-clock {
   margin-right: 6px;
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: var(--chip);
   color: var(--lime);
   font-size: 11px;
@@ -5396,7 +5406,7 @@ html.dark .tags-track > span {
   display: inline-block;
   margin-left: 4px;
   padding: 0.5px 4px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid currentColor;
   color: var(--muted);
   background: transparent;
@@ -5425,7 +5435,7 @@ html.dark .tags-track > span {
   right: -8px;
   z-index: 1;
   padding: 1.5px 7px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: linear-gradient(135deg, #ff5a3c, #ff2d78);
   color: #fff;
   font-size: 9.5px;
@@ -5537,7 +5547,7 @@ html.dark .tags-track > span {
   font: 700 10px/1 monospace;
   padding: 3px 7px;
   border: 1px solid #3a4144;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   color: #aeb8bc;
   cursor: pointer;
   user-select: none;
@@ -5568,7 +5578,7 @@ html.dark .tags-track > span {
   }
 }
 .room-type-switch.flash {
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   animation: switch-flash 0.8s ease-in-out 2;
 }
 /* 육성 추천 임시 적용 표시 — 제어센터 왼쪽 빈 3칸(row1)에 넣어 레이아웃을 밀지 않는다
@@ -5604,7 +5614,7 @@ html.dark .tags-track > span {
 }
 .ship-raisebar.boxed {
   padding: 7px 12px;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: color-mix(in srgb, var(--lime) 10%, var(--bg-panel));
   border: 1px solid color-mix(in srgb, var(--lime) 40%, var(--line));
 }
@@ -5617,7 +5627,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--lime);
   background: color-mix(in srgb, var(--lime) 15%, var(--bg-panel));
   color: var(--ink);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 8px 16px;
   cursor: pointer;
   font-size: 13px;
@@ -5692,7 +5702,7 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   background: var(--bg-soft);
   color: var(--ink);
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   padding: 4px 10px;
   cursor: pointer;
   font-size: 11.5px;
@@ -5702,7 +5712,7 @@ html.dark .tags-track > span {
 /* 추천 완료 상태에선 메인 버튼(.srb-run 37.5px)과 나란히 서므로 같은 높이·모서리로 */
 .ship-raisebar.idle .srb-btns button {
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   font-size: 12.5px;
   font-weight: 700;
 }
@@ -5812,7 +5822,7 @@ html.dark .tags-track > span {
 .ship-room:hover {
   transform: translateY(-2px);
   border-color: var(--room-accent);
-  box-shadow: 0 10px 24px #1f242522;
+  box-shadow: var(--sh-2);
 }
 .ship-room:focus-visible {
   outline: 3px solid var(--lime);
@@ -5898,7 +5908,7 @@ html.dark .tags-track > span {
   font-size: 8.5px;
   line-height: 1;
   padding: 2px 4px;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   background: var(--lime);
   color: #17201a;
 }
@@ -6097,7 +6107,7 @@ html.dark .tags-track > span {
   margin-left: 6px;
   padding: 1px 7px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   color: var(--ink3);
   font-size: 11px;
   font-style: normal;
@@ -6194,7 +6204,7 @@ html.dark .tags-track > span {
   padding: 6px;
   background: var(--white);
   border: 1px solid var(--border-strong);
-  box-shadow: 0 12px 34px #00000022;
+  box-shadow: var(--sh-2);
 }
 .main-tabs.open {
   display: flex;
@@ -6244,7 +6254,7 @@ html.dark .tags-track > span {
   padding: 6px;
   background: var(--white);
   border: 1px solid var(--border-strong);
-  box-shadow: 0 12px 34px #00000022;
+  box-shadow: var(--sh-2);
 }
 /* ⚠ 자식 결합자(>)여야 한다 — 가이드 안에 모드별 2단 플라이아웃이 **중첩**돼 있어서
    후손 선택자로 두면 '가이드'에 마우스를 올리는 순간 통합전략·생존연산·위수협의 패널이
@@ -6821,7 +6831,7 @@ html.dark .tags-track > span {
   width: 100%;
   padding: 2px 4px;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: var(--white);
   color: var(--ink);
   font: 800 10px monospace;
@@ -6835,7 +6845,7 @@ html.dark .tags-track > span {
   display: inline-flex;
   vertical-align: middle;
   margin-left: 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
 }
@@ -6995,7 +7005,7 @@ html.dark .tags-track > span {
   gap: 8px;
   padding: 6px 12px;
   border: 1.5px solid color-mix(in srgb, #c8912f 50%, transparent);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: transparent;
   color: var(--ink);
   font-size: 12.5px;
@@ -7015,7 +7025,7 @@ html.dark .tags-track > span {
   height: 16px;
   flex: none;
   border: 1.5px solid #c8912f;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: var(--white);
   display: grid;
   place-items: center;
@@ -7261,7 +7271,7 @@ html.dark .tags-track > span {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.3px;
-  box-shadow: 0 10px 30px #0006;
+  box-shadow: var(--sh-2);
   animation:
     toastIn 0.22s ease-out,
     toastOut 0.3s ease-in 2.1s both;
@@ -7288,7 +7298,7 @@ html.dark .tags-track > span {
   font-weight: inherit;
   letter-spacing: inherit;
   padding: 3px 12px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -7305,7 +7315,7 @@ html.dark .tags-track > span {
   margin-left: 10px;
   padding: 4px 11px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--bg-faint);
   color: var(--ink);
   font-size: 11.5px;
@@ -7361,7 +7371,7 @@ html.dark .tags-track > span {
   padding: 6px;
   background: var(--white);
   border: 1px solid var(--border-strong);
-  box-shadow: 0 12px 34px #00000022;
+  box-shadow: var(--sh-2);
 }
 .more-menu button,
 .more-menu .import-label {
@@ -7571,7 +7581,7 @@ html.dark .tags-track > span {
   margin-left: 2px;
   padding: 1px 6px;
   border: 1px solid var(--tint-warm-ink);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--tint-warm);
   color: var(--tint-warm-ink);
   font: inherit;
@@ -7620,7 +7630,7 @@ html.dark .tags-track > span {
   padding: 0;
   border: 1px solid var(--line);
   border-top: 0;
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 var(--r-md) var(--r-md);
   /* 헤더 아래로 삐져나오는 판이라 반투명이면 뒤 본문이 비쳐 헤더와 달라 보인다 —
      같은 색의 불투명판을 쓴다 (사용자 지적 2026-07-26). */
   background: var(--header-solid);
@@ -7787,7 +7797,7 @@ html.dark .tags-track > span {
   padding: 12px 18px;
   font-size: 13.5px;
   font-weight: 700;
-  box-shadow: 0 8px 24px #0005;
+  box-shadow: var(--sh-2);
 }
 .feedback-fab:hover {
   background: var(--lime);
@@ -7804,9 +7814,9 @@ html.dark .tags-track > span {
   height: fit-content;
   max-height: calc(100dvh - 48px);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--white);
-  box-shadow: 0 30px 100px #0008;
+  box-shadow: var(--sh-3);
   overflow: hidden;
   animation: 0.18s both fadeIn;
 }
@@ -7864,7 +7874,7 @@ html.dark .tags-track > span {
 }
 .fb-attach-btn {
   border: 1px dashed var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: transparent;
   padding: 6px 10px;
   font-size: 11.5px;
@@ -7888,7 +7898,7 @@ html.dark .tags-track > span {
   height: 100%;
   object-fit: cover;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   display: block;
 }
 .fb-thumb button {
@@ -7914,7 +7924,7 @@ html.dark .tags-track > span {
   align-items: center;
   justify-content: center;
   border: 2px dashed var(--lime);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: color-mix(in srgb, var(--lime) 16%, var(--bg-panel));
   color: var(--ink);
   font-size: 12.5px;
@@ -7933,7 +7943,7 @@ html.dark .tags-track > span {
   max-height: 110px;
   max-width: 180px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 }
 /* /admin 게시판 답변 — 그 제안의 작성자만 보는 스레드 (docs/supabase-feedback-board.sql) */
 .fb-admin-replies {
@@ -7954,7 +7964,7 @@ html.dark .tags-track > span {
 /* 답변 수정 폼 — 목록 자리에서 바로 고친다 (2026-08-29) */
 .fb-admin-reply-edit {
   flex: 1 1 100%; min-width: 0; font: inherit; font-size: 12.5px; line-height: 1.55;
-  padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r-md);
   background: var(--paper); color: var(--ink); resize: vertical;
 }
 .fb-admin-reply-body {
@@ -8052,7 +8062,7 @@ html.dark .tags-track > span {
   height: 16px;
   padding: 0 4px;
   margin-left: 2px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: linear-gradient(135deg, #ff5a3c, #ff2d78);
   color: #fff;
   font-size: 10px;
@@ -8117,7 +8127,7 @@ html.dark .tags-track > span {
 }
 .fb-board-item {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--r-md);
 }
 .fb-board-item.open {
   border-color: var(--border-strong);
@@ -8139,7 +8149,7 @@ html.dark .tags-track > span {
   font-size: 10px;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--line);
   background: var(--chip);
   color: var(--lime);
@@ -8199,7 +8209,7 @@ html.dark .tags-track > span {
 }
 .fb-reply {
   border-left: 3px solid var(--lime);
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--r-md) var(--r-md) 0;
   background: color-mix(in srgb, var(--lime) 7%, transparent);
   padding: 8px 10px;
 }
@@ -8261,9 +8271,9 @@ html.dark .tags-track > span {
   height: fit-content;
   max-height: calc(100dvh - 48px);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--white);
-  box-shadow: 0 30px 100px #0008;
+  box-shadow: var(--sh-3);
   overflow: hidden;
   animation: 0.18s both fadeIn;
 }
@@ -8299,8 +8309,8 @@ html.dark .tags-track > span {
   max-height: 92dvh;
   object-fit: contain;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  box-shadow: 0 30px 100px #000;
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-3);
 }
 .fb-new-tag {
   font-style: normal;
@@ -8309,7 +8319,7 @@ html.dark .tags-track > span {
   color: #fff;
   background: linear-gradient(135deg, #ff5a3c, #ff2d78);
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .fb-thread-tools {
   display: flex;
@@ -8317,7 +8327,7 @@ html.dark .tags-track > span {
 }
 .fb-tool-btn {
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: 0 0;
   color: var(--muted);
   padding: 3px 9px;
@@ -8397,7 +8407,7 @@ html.dark .tags-track > span {
 .fb-code-row code {
   font-size: 11px;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: var(--chip);
   color: var(--lime); /* --chip은 라이트 테마에서도 어두운 칩면이라 잉크색이 묻힌다 */
   padding: 2px 6px;
@@ -8405,7 +8415,7 @@ html.dark .tags-track > span {
 .fb-code-row button,
 .fb-code-entry button {
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: 0 0;
   color: inherit;
   padding: 3px 8px;
@@ -8431,7 +8441,7 @@ html.dark .tags-track > span {
   flex: 1;
   min-width: 200px;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: var(--white);
   color: inherit;
   padding: 5px 8px;
@@ -8972,7 +8982,7 @@ html.dark .tags-track > span {
   object-fit: cover;
   border: 1px solid var(--line);
   background: var(--paper);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 .file-thumb-blank {
   display: inline-flex;
@@ -9048,7 +9058,7 @@ html.dark .tags-track > span {
   max-width: 340px;
   margin: auto;
   padding: 24px;
-  box-shadow: 0 20px 60px #0006;
+  box-shadow: var(--sh-3);
 }
 .confirm-dialog p {
   margin: 0 0 18px;
@@ -9526,7 +9536,7 @@ html.dark .tags-track > span {
   letter-spacing: 0.2px;
   color: #a2a49c;
   white-space: nowrap;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
 }
 .chron-railseg-yr:hover {
   color: var(--ink);
@@ -9568,7 +9578,7 @@ html.dark .tags-track > span {
   cursor: pointer;
   font: 700 16px/1 monospace;
   color: var(--ink);
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   display: grid;
   place-items: center;
   transition: 0.12s;
@@ -9583,7 +9593,7 @@ html.dark .tags-track > span {
   flex: 1 1 auto;
   height: 6px;
   background: var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   touch-action: none;
 }
@@ -9593,7 +9603,7 @@ html.dark .tags-track > span {
   top: 0;
   height: 100%;
   background: linear-gradient(90deg, #bfc4b7, var(--lime));
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   pointer-events: none;
 }
 .chron-slider-thumb {
@@ -9606,7 +9616,7 @@ html.dark .tags-track > span {
   border: 2px solid var(--lime);
   border-radius: 50%;
   cursor: grab;
-  box-shadow: 0 1px 5px #0003;
+  box-shadow: var(--sh-1);
   display: grid;
   place-items: center;
   touch-action: none;
@@ -9646,17 +9656,17 @@ html.dark .tags-track > span {
   background: var(--arc);
   border: 2px solid var(--white);
   border-radius: 50%;
-  box-shadow: 0 1px 3px #0002;
+  box-shadow: var(--sh-1);
   transition: transform 0.12s;
 }
 .chron-tick.k-main .chron-tick-dot {
   width: 12px;
   height: 12px;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   transform: rotate(45deg);
 }
 .chron-tick.k-roguelike .chron-tick-dot {
-  border-radius: 2px;
+  border-radius: var(--r-xs);
 }
 .chron-tick:hover .chron-tick-dot,
 .chron-tick.active .chron-tick-dot {
@@ -9690,11 +9700,11 @@ html.dark .tags-track > span {
   display: inline-block;
 }
 .chron-legend .lg-dot.lg-main {
-  border-radius: 1px;
+  border-radius: var(--r-xs);
   transform: rotate(45deg);
 }
 .chron-legend .lg-dot.lg-rl {
-  border-radius: 1px;
+  border-radius: var(--r-xs);
 }
 /* 호버 툴팁 (fixed — 스크롤/오버플로 클리핑 없음) */
 .chron-tip {
@@ -9706,8 +9716,8 @@ html.dark .tags-track > span {
   color: #fff;
   padding: 9px 12px;
   max-width: 260px;
-  box-shadow: 0 8px 24px #0004;
-  border-radius: 3px;
+  box-shadow: var(--sh-2);
+  border-radius: var(--r-xs);
 }
 .chron-tip::after {
   content: "";
@@ -9778,7 +9788,7 @@ html.dark .tags-track > span {
 }
 .chron-groups::-webkit-scrollbar-thumb {
   background: #c4c6bf;
-  border-radius: 10px;
+  border-radius: var(--r-md);
 }
 .chron-group h3 {
   display: flex;
@@ -9804,7 +9814,7 @@ html.dark .tags-track > span {
   font-style: normal;
   font: 800 10px monospace;
   padding: 2px 7px;
-  border-radius: 9px;
+  border-radius: var(--r-md);
 }
 /* 세로형 카드 — 제목이 잘리지 않게 배지 상단 / 제목 중앙(전체 표시) / 연도·날짜 하단 (사용자 요청 2026-07-20) */
 .chron-list {
@@ -9852,7 +9862,7 @@ html.dark .tags-track > span {
   color: #fff;
   background: #8b9294;
   padding: 4px 5px;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   white-space: nowrap;
 }
 .chron-item-name {
@@ -9872,7 +9882,7 @@ html.dark .tags-track > span {
   color: var(--chip-ink);
   background: var(--chip);
   padding: 3px 6px;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   white-space: nowrap;
 }
 .chron-item-bot {
@@ -9888,7 +9898,7 @@ html.dark .tags-track > span {
   color: var(--on-lime);
   background: var(--lime);
   padding: 3px 6px;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
 }
 .chron-item-meta {
   flex: none;
@@ -9914,7 +9924,7 @@ html.dark .tags-track > span {
   list-style: none;
   background: var(--white);
   border: 1px solid var(--border-strong);
-  box-shadow: 0 12px 34px #00000022;
+  box-shadow: var(--sh-2);
 }
 .story-search-menu li {
   list-style: none;
@@ -10395,7 +10405,7 @@ html.dark .story-card:hover .story-thumb img {
 .story-mode-bar .story-mode-n {
   margin-left: 5px;
   padding: 1px 5px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, currentColor 16%, transparent);
   font: 800 10.5px monospace;
   font-style: normal;
@@ -10806,7 +10816,7 @@ html.dark .story-card:hover .story-thumb img {
   text-decoration-thickness: 1.5px;
   text-underline-offset: 3px;
   cursor: pointer;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   transition:
     background 0.12s,
     text-decoration-color 0.12s;
@@ -10972,7 +10982,7 @@ html.dark .story-card:hover .story-thumb img {
   width: 100%;
   height: auto; /* 정사각 조각상 — 비율 예약으로 밀림 방지 */
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--white);
   box-shadow: 3px 4px 0 #13171914;
   transition: transform 0.2s;
@@ -11155,7 +11165,7 @@ html.dark .story-card:hover .story-thumb img {
 .about-shot {
   min-width: 0;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   overflow: hidden;
   background: var(--paper);
 }
@@ -11293,7 +11303,7 @@ html.dark .story-card:hover .story-thumb img {
   50% { background: #8a2be233; box-shadow: 0 0 0 2px #8a2be2, 0 0 12px #8a2be288; }
 }
 .future-toggle.flash {
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   animation: ft-flash 0.62s ease-in-out 4;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -11399,7 +11409,7 @@ html.dark .story-card:hover .story-thumb img {
   display: inline-block;
   background: #8a2be2;
   color: #fff;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   padding: 2px 6px;
   font: 800 10.5px/1 monospace;
   letter-spacing: 0.6px;
@@ -11432,7 +11442,7 @@ html.dark .story-card:hover .story-thumb img {
 .roster-card.future {
   outline: 1px dashed #8a2be2;
   outline-offset: -1px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 .roster-section-head {
   margin: 14px 2px 8px;
@@ -11452,7 +11462,7 @@ html.dark .story-card:hover .story-thumb img {
   font-weight: 600;
   font-size: 11px;
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, currentColor 14%, transparent);
 }
 .roster-card .future-badge {
@@ -11483,7 +11493,7 @@ html.dark .story-card:hover .story-thumb img {
   color: #e9e2f7;
   background: #ffffff14;
   border-left: 3px solid #b06dff;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
   margin: 0;
   padding: 7px 9px;
   font-size: 10.5px;
@@ -11784,7 +11794,7 @@ html.dark .story-card:hover .story-thumb img {
   margin-left: 4px;
   padding: 3px 4px;
   border: 1px solid var(--border-strong);
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   background: var(--card);
   color: var(--fg);
   font: 800 15px monospace;
@@ -12137,7 +12147,7 @@ html.dark .story-card:hover .story-thumb img {
   bottom: -3px;
   background: var(--chip);
   color: var(--lime);
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   padding: 1px 4px;
   font: 800 11px/1.3 monospace;
   font-style: normal;
@@ -12274,7 +12284,7 @@ html.dark .pt-stage {
   gap: 6px;
   width: fit-content;
   padding: 4px 14px 4px 12px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--pt-strip) 72%, transparent);
   color: var(--pt-strip-ink);
 }
@@ -12349,7 +12359,7 @@ html.dark .pt-stage {
   min-height: 0;
   padding: 8px 10px 10px;
   border: 1px solid var(--pt-line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--pt-plate) 45%, transparent);
 }
 .pt-group-cap {
@@ -12389,7 +12399,7 @@ html.dark .pt-stage {
   padding: 7px 12px;
   min-height: 0;             /* 화면이 짧으면 칸도 같이 줄어야 푸터가 한 화면에 들어온다 */
   border: 1px solid var(--pt-line);
-  border-radius: 4px;   /* 게임 UI는 각진 판 — 사이트 전역 라운딩을 여기서만 낮춘다 */
+  border-radius: var(--r-sm);   /* 게임 UI는 각진 판 — 사이트 전역 라운딩을 여기서만 낮춘다 */
   background: var(--pt-plate);
   color: var(--pt-ink);
   text-align: left;
@@ -12423,7 +12433,7 @@ html.dark .pt-stage {
   place-items: center;
   width: 20px;
   height: 20px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--pt-accent) 18%, transparent);
   /* 포인트색 그대로면 라이트 판 위에서 3.05:1이라 12px 글리프가 흐리다. 판의 본문색 쪽으로
      조금 섞어 4.7:1로 올린다 — 다크에선 --pt-ink가 밝은색이라 오히려 또렷해진다 (2026-08-25) */
@@ -12500,7 +12510,7 @@ html.dark .pt-stage {
   place-items: center;
   width: 20px;
   height: 20px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: #000000a6;
   color: #fff;
   font-size: 14px;
@@ -12710,7 +12720,7 @@ html.dark .pt-stage {
 .event-trigger.is-skeleton .sk-line {
   display: block;
   background: var(--line);
-  border-radius: 2px;
+  border-radius: var(--r-xs);
 }
 .event-trigger.is-skeleton .event-name.sk-line {
   width: 92px;
@@ -12998,7 +13008,7 @@ html.dark.rg-theme.rg6 .site-header {
   background: var(--rgsel);
   color: var(--rgink);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   font-size: 12.5px;
   font-weight: 600;
 }
@@ -13046,7 +13056,7 @@ html.dark.rg-theme.rg6 .site-header {
   color: #59dddc;
   border: 1px solid #2a5a55;
   padding: 1px 5px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   margin-right: 4px;
 }
 .rg-wlv.lv-b {
@@ -13170,7 +13180,7 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-map-zoom.zoom .rg-modal-map {
   transform: scale(2);
   transform-origin: top left;
-  box-shadow: 0 18px 60px #000c;
+  box-shadow: var(--sh-3);
 }
 .rg-map-zoom .rg-modal-map {
   transition: transform 0.18s ease;
@@ -13252,7 +13262,7 @@ html.rg-theme {
   color: var(--rggold);
   border: 1px solid var(--rggold);
   padding: 3px 7px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   margin-left: 10px;
   vertical-align: 6px;
   text-shadow: none;
@@ -13270,7 +13280,7 @@ html.rg-theme {
   line-height: 1.2;
   padding: 5px 12px;
   border: 1px solid var(--rgline);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .rg-topic.on {
   background: var(--rgcrim);
@@ -13300,7 +13310,7 @@ html.rg-theme {
   color: var(--rggold);
   border: 1px solid var(--rggold);
   padding: 2px 5px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   margin-left: 6px;
   vertical-align: 1px;
 }
@@ -13343,7 +13353,7 @@ html.rg-theme {
   backdrop-filter: blur(6px);
   padding: 6px 12px;
   width: min(420px, calc(100% - 36px));
-  box-shadow: 0 4px 24px #000a;
+  box-shadow: var(--sh-2);
 }
 /* 테마 변경 드롭다운 — 배너 오른쪽 위 (사용자 요청 2026-07-18) */
 /* 테마 변경 — 커스텀 드롭다운 (네이티브 select 교체, 2026-07-19).
@@ -13392,13 +13402,13 @@ html.rg-theme {
   padding: 2px;
   background: color-mix(in srgb, #0d0609 55%, transparent);
   border: 1px solid var(--rgline);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 }
 .rg-serversel button {
   padding: 2px 6px;
   background: none;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   color: var(--rgtext2);
   font-weight: 600;
   font-size: 9.5px;
@@ -13446,7 +13456,7 @@ html.rg-theme {
   border: 1px solid var(--rgline);
   padding: 6px 11px;
   cursor: pointer;
-  box-shadow: 0 4px 24px #0008;
+  box-shadow: var(--sh-2);
   color: var(--rgink);
   transition: border-color 0.15s;
 }
@@ -13510,7 +13520,7 @@ html.rg-theme {
   );
   backdrop-filter: blur(10px);
   border: 1px solid var(--rggold);
-  box-shadow: 0 14px 36px #000c;
+  box-shadow: var(--sh-2);
 }
 /* 항목은 실제 <a> — 버튼 시절 규격을 그대로 쓴다 (2026-08-06) */
 .rg-topicsel-menu li :where(button, a) {
@@ -13550,7 +13560,7 @@ html.rg-theme {
   color: var(--rggold);
   border: 1px solid;
   padding: 3px 7px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   white-space: nowrap;
 }
 @media (max-width: 860px) {
@@ -13611,7 +13621,7 @@ html.rg-theme {
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .rg-diff-chip.on {
   background: var(--rggold);
@@ -13626,7 +13636,7 @@ html.rg-theme {
   appearance: none;
   -webkit-appearance: none;
   height: 5px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--rgcrim) 28%, var(--rgdeep));
   cursor: pointer;
 }
@@ -13650,7 +13660,7 @@ html.rg-theme {
 }
 .rg-diffbar input[type="range"]::-moz-range-track {
   height: 5px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--rgcrim) 28%, var(--rgdeep));
 }
 .rg-diffbar input[type="range"]:focus-visible {
@@ -13834,7 +13844,7 @@ html.rg-theme {
   background: var(--rgcrim);
   color: #fff;
   padding: 3px 8px;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
 }
 .rg-zone h3 {
   margin: 0;
@@ -13852,7 +13862,7 @@ html.rg-theme {
   background: #c23b4e;
   color: #fff;
   padding: 3px 7px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .rg-zone-desc {
   margin: 0 0 10px;
@@ -14013,7 +14023,7 @@ html.rg-theme {
   height: 50px;
   object-fit: cover;
   border: 1px solid var(--rgline);
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   flex: none;
   background: var(--rgdeep);
 }
@@ -14047,7 +14057,7 @@ html.rg-theme {
   border: 1px solid var(--rgmodalline);
   color: var(--rggold);
   padding: 3px 7px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   white-space: nowrap;
 }
 .rg-enc-cg {
@@ -14170,7 +14180,7 @@ html.rg-theme {
   margin-left: 6px;
   padding: 0 5px;
   border: 1px solid var(--rgline);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   font-size: 10.5px;
   color: var(--rgmut);
   white-space: nowrap;
@@ -14374,7 +14384,7 @@ html.rg-theme {
   object-fit: contain;
   border: 1px solid var(--rgline);
   background: radial-gradient(circle at 50% 42%, var(--rgsel), var(--rgdeep));
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   flex: none;
 }
 .rg-enemy-face.none {
@@ -14390,7 +14400,7 @@ html.rg-theme {
 .rg-rank {
   font: 800 11px/1 monospace;
   padding: 3px 6px;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   background: var(--rgsel);
   color: var(--rgtext2);
 }
@@ -14416,7 +14426,7 @@ html.rg-theme {
   background: var(--rgdeep);
   color: var(--rgink);
   padding: 4px 7px;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   white-space: nowrap;
 }
 .rg-stat.up {
@@ -14470,7 +14480,7 @@ html.rg-theme {
   font-size: 12.5px;
   line-height: 1.3;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   transition: 0.12s;
   text-align: left;
 }
@@ -14541,7 +14551,7 @@ html.rg-theme {
   background: #8a6a2a;
   color: #fff;
   padding: 3px 7px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .rg-relic-usage {
   margin: 0 0 5px;
@@ -14807,7 +14817,7 @@ html.rg-theme {
 .rg-visitor-face {
   width: 44px;
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1px solid var(--rgline);
   object-fit: cover;
 }
@@ -14905,7 +14915,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   object-fit: contain;
   flex: none;
   border: 1px solid var(--rgmodalline);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: radial-gradient(circle at 50% 42%, var(--rgsel), var(--rgdeep));
 }
 .rg-emodal-portrait.none {
@@ -15016,7 +15026,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
   max-height: min(880px, 100svh - var(--modal-pad, 24px) * 2 - var(--modal-top));
   margin: var(--modal-top) auto auto;
   overflow: hidden;
-  box-shadow: 0 8px 48px #000c;
+  box-shadow: var(--sh-2);
 }
 /* 본문 여백 — 종전 패널 패딩(20px 22px)을 그대로 창 본문으로 옮겼다.
    .mw-window를 함께 쓴 (0,3,0) 선택자라 .mw-body의 기본값·:has() 예외보다 뒤에 온다. */
@@ -15088,7 +15098,7 @@ html.rg-theme .mw-backdrop:has(> .rg-modal) {
 .rg-kind {
   font: 800 11px/1 monospace;
   padding: 4px 8px;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   background: var(--rgsel);
   color: var(--rgtext2);
 }
@@ -15463,7 +15473,7 @@ main.site-main > .site-header {
   border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
   background: color-mix(in srgb, var(--lime) 10%, var(--white));
   color: var(--ink);
-  border-radius: 8px 0 0 8px;
+  border-radius: var(--r-md) 0 0 var(--r-md);
   padding: 8px 12px;
   font-size: 0.85rem;
   font-weight: 700;
@@ -15507,7 +15517,7 @@ main.site-main > .site-header {
   border-left: none;
   background: var(--bg-panel);
   color: var(--ink2);
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--r-md) var(--r-md) 0;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
@@ -15530,7 +15540,7 @@ main.site-main > .site-header {
   gap: 9px;
   max-width: min(560px, calc(100vw - 32px));
   padding: 7px 14px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--ink);
@@ -15555,7 +15565,7 @@ main.site-main > .site-header {
   height: 30px;
   max-width: 52px;
   object-fit: cover;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--line);
   flex: 0 0 auto;
 }
@@ -15572,7 +15582,7 @@ main.site-main > .site-header {
   background: var(--paper);
   color: var(--ink);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   overflow: hidden;
 }
 .lens-body {
@@ -15598,7 +15608,7 @@ main.site-main > .site-header {
   max-height: 260px;
   object-fit: contain;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--r-md);
 }
 /* 워프 중 — 스크린샷 오른쪽에서 펄스 (사용자 요청 2026-07-23) */
 .lens-status {
@@ -15646,7 +15656,7 @@ main.site-main > .site-header {
   border: 1px solid color-mix(in srgb, var(--lime) 50%, var(--line));
   background: color-mix(in srgb, var(--lime) 12%, var(--bg-panel));
   color: var(--ink);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 7px 14px;
   font-size: 0.88rem;
   font-weight: 600;
@@ -15662,7 +15672,7 @@ main.site-main > .site-header {
 }
 .lens-entity {
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 3px 8px;
   font-size: 0.8rem;
   background: var(--bg-panel);
@@ -15681,7 +15691,7 @@ main.site-main > .site-header {
   border: 1px solid var(--line);
   background: var(--bg-panel);
   color: var(--ink);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 4px 10px;
   font-size: 0.84rem;
   cursor: pointer;
@@ -15712,7 +15722,7 @@ main.site-main > .site-header {
 .lens-usage {
   margin-top: 12px;
   border: 1.5px solid color-mix(in srgb, var(--lime) 55%, var(--line));
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 12px 14px 14px;
   background: color-mix(in srgb, var(--lime) 7%, var(--paper));
 }
@@ -15988,7 +15998,7 @@ main.site-main > .site-header {
   gap: 5px;
   padding: 3px 9px;
   border: 1px solid var(--rgline);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--rgcard);
   font-size: 12px;
   color: var(--rgmuted);
@@ -16032,7 +16042,7 @@ main.site-main > .site-header {
   font-style: normal;
   background: var(--rggold);
   color: #241616;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 2px 6px;
   margin-left: 6px;
 }
@@ -16050,7 +16060,7 @@ main.site-main > .site-header {
   font-size: 11px;
   line-height: 1;
   padding: 5px 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   cursor: pointer;
   white-space: nowrap;
   opacity: 0.8; /* 이름보다 낮은 위계 — 호버 시 원복 */
@@ -16139,7 +16149,7 @@ main.site-main > .site-header {
   background: var(--paper);
   color: var(--ink);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   overflow: hidden;
 }
 /* (.scanner-head 는 2026-09-05 제거 — 스캐너·도움말이 공용 창으로 옮겨가며 제목줄은 .mw-chrome 이 맡는다) */
@@ -16180,7 +16190,7 @@ main.site-main > .site-header {
   background: var(--lime);
   color: #1a1d10;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 9px 18px;
   font-weight: 600;
   cursor: pointer;
@@ -16239,7 +16249,7 @@ main.site-main > .site-header {
   padding: 20px 18px;
   min-height: 110px;
   border: 2px dashed var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   color: var(--ink2);
   cursor: pointer;
   background: color-mix(in srgb, var(--card) 60%, transparent);
@@ -16304,7 +16314,7 @@ main.site-main > .site-header {
   height: 84px;
   width: auto;
   display: block;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--bg-panel2);
 }
 .scanner-previews figure:first-child img {
@@ -16331,7 +16341,7 @@ main.site-main > .site-header {
   width: 100%;
   max-width: 360px;
   height: auto;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1px solid var(--bg-panel2);
   display: block;
 }
@@ -16361,7 +16371,7 @@ main.site-main > .site-header {
 .scanner-badge-warn {
   font-size: 0.78rem;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .scanner-badge-ok {
   background: rgba(127, 224, 127, 0.18);
@@ -16379,7 +16389,7 @@ main.site-main > .site-header {
   box-sizing: border-box;
   padding: 7px 10px;
   border: 1px solid var(--bg-panel2);
-  border-radius: 7px;
+  border-radius: var(--r-sm);
   background: var(--bg-panel);
   color: var(--ink);
 }
@@ -16390,7 +16400,7 @@ main.site-main > .site-header {
   right: 0;
   background: var(--bg-panel2);
   border: 1px solid var(--border-strong);
-  border-radius: 7px;
+  border-radius: var(--r-sm);
   margin-top: 3px;
   overflow: hidden;
 }
@@ -16410,7 +16420,7 @@ main.site-main > .site-header {
   background: var(--bg-panel);
 }
 .scanner-add-list img {
-  border-radius: 5px;
+  border-radius: var(--r-sm);
 }
 /* 결과 목록만 내부 스크롤(상한) — 오퍼가 누적돼도 모달 높이는 안 커진다 */
 .scanner-grid {
@@ -16428,7 +16438,7 @@ main.site-main > .site-header {
   gap: 10px;
   padding: 6px 8px;
   border: 1px solid var(--bg-panel2);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: var(--bg-panel);
 }
 .scanner-card.uncertain {
@@ -16436,7 +16446,7 @@ main.site-main > .site-header {
   border-style: dashed;
 }
 .scanner-card img {
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   flex: 0 0 auto;
 }
 .scanner-card-info {
@@ -16474,7 +16484,7 @@ main.site-main > .site-header {
 }
 .scanner-foot button {
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1px solid var(--bg-panel2);
   background: var(--bg-panel);
   color: var(--ink);
@@ -16495,7 +16505,7 @@ main.site-main > .site-header {
   flex: 0 0 auto;
   min-width: 34px;
   padding: 3px 6px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   font-size: 0.72rem;
   font-weight: 600;
@@ -16561,7 +16571,7 @@ main.site-main > .site-header {
   align-items: center;
   gap: 7px;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: var(--bg-soft, var(--white));
   color: var(--muted);
   padding: 8px 11px;
@@ -16586,7 +16596,7 @@ main.site-main > .site-header {
   display: none;
   margin-left: auto;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   padding: 2px 5px;
   font-size: 10px;
   font-family: inherit;
@@ -16607,13 +16617,13 @@ main.site-main > .site-header {
 /* PRTS 링크 + ? 는 스샷 레이더처럼 **붙은 세그먼트**(왼쪽 조각 + ? 조각)이고,
    리플레이는 독립 버튼이다 (2026-07-26). ?를 리플레이 뒤에 두면 리플레이 도움말로 읽힌다. */
 .bridge-topic-btn {
-  border-radius: 8px 0 0 8px;
+  border-radius: var(--r-md) 0 0 var(--r-md);
 }
 .bridge-help-btn {
   margin-right: 8px;
 }
 .bridge-log-btn {
-  border-radius: 8px;
+  border-radius: var(--r-md);
   margin-right: 8px;
 }
 /* 테마별 게임연결 버튼 (/rogue 툴바) — 켜지면 그 테마로 인식이 고정된 상태 */
@@ -16640,7 +16650,7 @@ main.site-main > .site-header {
   max-width: min(46vw, 420px);
   padding: 3px 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: var(--header-solid);
   color: var(--muted);
   font-size: 10.5px;
@@ -16668,7 +16678,7 @@ main.site-main > .site-header {
   max-width: min(88vw, 460px);
   padding: 8px 10px;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: var(--header-solid, var(--white));
   color: var(--muted);
   font-size: 11.5px;
@@ -16696,7 +16706,7 @@ main.site-main > .site-header {
   font-size: 10.5px;
   font-weight: 600;
   padding: 4px 8px;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -16717,7 +16727,7 @@ main.site-main > .site-header {
   font-size: 10.5px;
   font-weight: 600;
   padding: 4px 8px;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -16762,7 +16772,7 @@ main.site-main > .site-header {
   font-size: 10.5px;
   color: var(--muted);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   padding: 1px 5px;
 }
 /* 난이도 — 판 내 불변이라 제목 옆에 1회만 (매 줄 표시 제거, 사용자 확정 2026-07-26) */
@@ -16770,7 +16780,7 @@ main.site-main > .site-header {
   font-size: 11px;
   color: var(--ink2);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   padding: 1px 6px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -16795,7 +16805,7 @@ main.site-main > .site-header {
 }
 .bridge-replay-list::-webkit-scrollbar-thumb {
   background: var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 .bridge-replay-row {
   display: flex;
@@ -16841,7 +16851,7 @@ main.site-main > .site-header {
   margin-left: 6px;
   color: var(--muted);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   padding: 0 4px;
   font-size: 10px;
 }
@@ -16866,7 +16876,7 @@ main.site-main > .site-header {
   margin-left: 5px;
   font-size: 10px;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   padding: 0 4px;
   color: var(--muted);
 }
@@ -16886,7 +16896,7 @@ main.site-main > .site-header {
 }
 /* 푸터 버튼도 .lens-open-btn 차용 — 세그먼트용 radius(8 0 0 8)를 완전한 radius로 되돌린다 */
 .bridge-replay footer .lens-open-btn {
-  border-radius: 8px;
+  border-radius: var(--r-md);
   margin: 0;
 }
 .bridge-dot {
@@ -16943,7 +16953,7 @@ main.site-main > .site-header {
   flex-direction: column;
   background: var(--white);
   border: 1px solid var(--border-strong);
-  box-shadow: 0 30px 90px #0007;
+  box-shadow: var(--sh-3);
 }
 .omni-bar {
   display: flex;
@@ -17164,7 +17174,7 @@ main.site-main > .site-header {
   flex: none;
   margin-left: 6px;
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--tint-lime, var(--bg-soft));
   color: var(--tint-lime-ink, var(--ink2));
   font-size: 10.5px;
@@ -17188,7 +17198,7 @@ main.site-main > .site-header {
   flex: none;
   margin-left: 6px;
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px dashed var(--line);
   color: var(--muted);
   font-size: 10.5px;
@@ -17209,10 +17219,15 @@ main.site-main > .site-header {
    :where(...)는 특이도 0 — 명시적으로 radius를 준 규칙(알약 999px·원형 50%·
    세그먼트 8 0 0 8 등)이 항상 이긴다. 즉 여기는 "radius가 없던 곳"에만 스민다.
    대상 클래스는 실렌더 감사(테두리/배경이 있는데 radius 0인 요소 수집)로 뽑았다. */
+/* 모서리 반경은 **이 다섯 단계만** 쓴다 (2026-09-19 정리 — 종전 14종: 1·2·3·4·5·6·7·8·
+   9·10·12·14·15·999px 이 뒤섞여 있었다. 낱개로는 구분이 안 되면서 모이면 무질서로 읽힌다).
+   새 규칙을 쓸 때 px 를 직접 적지 말고 토큰을 고를 것. 원형은 50%, 각지게는 0 그대로. */
 :root {
-  --r-sm: 6px;    /* 버튼·입력·배지·링크 칩 */
-  --r-md: 9px;    /* 카드·리스트 행·썸네일 */
-  --r-lg: 12px;   /* 모달·큰 패널·히어로 */
+  --r-xs: 3px;    /* 아주 작은 표식 — 점·미니 배지·눈금 */
+  --r-sm: 6px;    /* 버튼·입력·배지·태그·링크 칩 */
+  --r-md: 10px;   /* 카드·리스트 행·썸네일·패널 */
+  --r-lg: 14px;   /* 모달·큰 패널·히어로 */
+  --r-pill: 999px; /* 알약 (높이 절반보다 큰 값이면 무엇이든 같다) */
 }
 :where(button, input, select, textarea, kbd, a, h3) {
   border-radius: var(--r-sm);
@@ -17348,7 +17363,7 @@ main.site-main > .site-header {
   background: var(--bg-panel);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  box-shadow: 0 12px 32px #1f242533;
+  box-shadow: var(--sh-2);
 }
 /* 화면 오른끝 버튼만 — 열 때 실측해서 왼쪽으로 펼친다 */
 .drop-menu.align-right {
@@ -17485,7 +17500,7 @@ main.site-main > .site-header {
 .summon-card {
   border: 1px solid var(--line);
   border-left: 3px solid var(--lime);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 12px 14px;
 }
 .summon-card header h4 {
@@ -17585,7 +17600,7 @@ main.site-main > .site-header {
   font: inherit;
   padding: 4px 8px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: var(--bg-panel);
   color: inherit;
 }
@@ -17729,7 +17744,7 @@ main.site-main > .site-header {
 .chibi-chat {
   background: var(--bg-panel);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
 }
 .chibi-chat-row {
@@ -17798,7 +17813,7 @@ main.site-main > .site-header {
   font-size: 13px;
   line-height: 1;
   padding: 4px 6px;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   cursor: pointer;
   color: var(--muted);
 }
@@ -17820,7 +17835,7 @@ main.site-main > .site-header {
 .chibi-chat-msg {
   margin: 0;
   padding: 8px 12px;
-  border-radius: 15px;
+  border-radius: var(--r-lg);
   font-size: 13px;
   line-height: 1.55;
   white-space: pre-wrap;
@@ -17851,7 +17866,7 @@ main.site-main > .site-header {
   font-size: 13px;
   padding: 8px 14px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--bg-faint);
   color: inherit;
 }
@@ -17917,7 +17932,7 @@ main.site-main > .site-header {
   font-size: 13px;
   padding: 8px 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--bg-soft);
   cursor: pointer;
 }
@@ -17929,14 +17944,14 @@ main.site-main > .site-header {
 }
 .chibi-chat-progress {
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--bg-soft2);
   overflow: hidden;
 }
 .chibi-chat-progress i {
   display: block;
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: linear-gradient(90deg, #5c8b73, #7fb397);
   transition: width 0.3s ease;
 }
@@ -18045,7 +18060,7 @@ main.site-main > .site-header {
   font-size: 12px;
   line-height: 1;
   padding: 3px 6px;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   opacity: 0.45;
   filter: grayscale(1);
 }
@@ -18069,7 +18084,7 @@ main.site-main > .site-header {
   /* .modal-close의 38px 원형 규격 무효화 — 이 버튼이 크롬 바 높이를 끌어올리고 있었다 */
   width: auto;
   height: auto;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   color: var(--muted);
 }
@@ -18222,7 +18237,7 @@ main.site-main > .site-header {
 }
 .en-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 24px #1f242518;
+  box-shadow: var(--sh-2);
   border-color: var(--border-hover);
 }
 .en-card:focus-visible {
@@ -18552,7 +18567,7 @@ main.site-main > .site-header {
 }
 .st-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 24px #1f242518;
+  box-shadow: var(--sh-2);
   border-color: var(--border-hover);
 }
 .st-card:focus-visible {
@@ -18949,7 +18964,7 @@ main.site-main > .site-header {
 /* ⚠ 비율·맞춤 규칙은 건드리지 않는다 — 평소 .st-map 표시와 **똑같은 모습**을 크게만
    보여준다 (2026-08-10 라이트박스 전환 때 원본 비율로 풀었다가 사용자 지적으로 원복). */
 .st-map-zoom.zoom .st-map {
-  box-shadow: 0 18px 60px #000c;
+  box-shadow: var(--sh-3);
 }
 .st-map {
   display: block;
@@ -19489,7 +19504,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   padding: 2px 8px 2px 4px;
   border: 1px solid var(--line);
   color: var(--ink2);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 /* 아이콘 없는 칩은 좌우 여백을 같게 */
 .sb-chip:not(:has(img)) { padding-left: 8px; }
@@ -19555,7 +19570,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   margin-right: 7px;
   object-fit: contain;
   background: #10141c;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   padding: 2px;
 }
 .sb-cell-ico { white-space: nowrap; }
@@ -19568,7 +19583,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   flex: none;
   object-fit: contain;
   background: #1d2330;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 4px;
 }
 /* 요리 속성 칩 속 미니 아이콘 */
@@ -19591,7 +19606,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 }
 .sb-stage-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px #0003;
+  box-shadow: var(--sh-2);
 }
 /* 지역 모달의 자원·오브젝트 목록 — 채집물은 지도 마커 대신 여기 (사용자 확정 2026-08-12) */
 .sb-obs {
@@ -19644,7 +19659,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   height: 26px;
   object-fit: contain;
   background: #1d2330;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 3px;
 }
 /* 지역 상세 모달의 실사 도면 — 생존연산에 한해 st-map의 16:9 강제(fill)를 풀고
@@ -19746,13 +19761,13 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-cards .sb-card > .sb-cmeta { grid-column: 2; }
 .sb-cards .sb-card > .sb-cdesc { grid-column: 2; align-self: start; }
 .sb-clickable { cursor: pointer; transition: transform 0.14s, box-shadow 0.14s, border-color 0.14s; }
-.sb-clickable:hover { transform: translateY(-2px); box-shadow: 0 6px 16px #0003; border-color: var(--border-hover); }
+.sb-clickable:hover { transform: translateY(-2px); box-shadow: var(--sh-2); border-color: var(--border-hover); }
 .sb-thumb {
   width: 62px;
   height: 62px;
   object-fit: contain;
   background: #10141c;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 4px;
 }
 .sb-thumb-en { object-fit: cover; }
@@ -19780,7 +19795,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   font-weight: 600;
   color: var(--ink2);
 }
-.sb-stres img { width: 20px; height: 20px; object-fit: contain; background: #10141c; border-radius: 4px; }
+.sb-stres img { width: 20px; height: 20px; object-fit: contain; background: #10141c; border-radius: var(--r-sm); }
 /* 상세 모달 */
 .sb-modal { max-width: 620px; }
 .sb-dt h2 { margin: 0; font-size: 19px; }
@@ -19798,7 +19813,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   flex: none;
   object-fit: contain;
   background: #10141c;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 5px;
 }
 /* 상세 안의 변형 선택 (위험도·환경압력·편성) */
@@ -19825,7 +19840,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   padding: 4px 9px 4px 5px;
   border: 1px solid var(--line);
 }
-.sb-obs-inline img { width: 24px; height: 24px; object-fit: contain; background: #10141c; border-radius: 5px; }
+.sb-obs-inline img { width: 24px; height: 24px; object-fit: contain; background: #10141c; border-radius: var(--r-sm); }
 /* 적 상세의 등장 지역 목록 */
 .sb-atlist { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 .sb-atlist button {
@@ -19870,7 +19885,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   cursor: pointer;
 }
 .sb-matchip:hover { color: var(--white); background: var(--ink); border-color: var(--border-hover); }
@@ -19935,7 +19950,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   color: #fff;
   background: #10141cd0;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   pointer-events: auto;
   cursor: pointer;
 }
@@ -19958,7 +19973,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   text-align: center;
   color: #2a1a06;
   background: linear-gradient(180deg, #ffd166, #f0a92c);
-  box-shadow: 0 1px 4px #0006;
+  box-shadow: var(--sh-1);
   transform: rotate(45deg);
   pointer-events: none;
 }
@@ -20040,7 +20055,7 @@ p.sb-trline { margin-top: 2px; }
 .rec-list { display: flex; flex-direction: column; gap: 8px; }
 .rec-item {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
-  padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md);
   background: var(--bg-faint); cursor: pointer; text-align: left; font: inherit; color: inherit;
 }
 .rec-item:hover { border-color: var(--border-hover); }
@@ -20051,7 +20066,7 @@ p.sb-trline { margin-top: 2px; }
 .rec-tag { color: var(--muted); font-size: 12.5px; }
 .rec-chips { margin-left: auto; display: flex; gap: 4px; }
 .rec-chips i {
-  font-style: normal; font-size: 11px; padding: 2px 7px; border-radius: 999px;
+  font-style: normal; font-size: 11px; padding: 2px 7px; border-radius: var(--r-pill);
   background: var(--chip); border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
 }
 .op-record-modal {
@@ -20060,9 +20075,9 @@ p.sb-trline { margin-top: 2px; }
   place-self: center;
   height: min(82dvh, 900px);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--white);
-  box-shadow: 0 30px 100px #0008;
+  box-shadow: var(--sh-3);
   overflow: hidden;
   animation: 0.18s both fadeIn;
   display: flex; flex-direction: column;
@@ -20100,7 +20115,7 @@ p.sb-trline { margin-top: 2px; }
 
 /* 피드백 발신 국가 칩 — 관리자 화면 전용 (게시판 관리자 모드·/admin, 2026-08-19) */
 .fb-geo-chip {
-  font-style: normal; font-size: 11px; padding: 1px 7px; border-radius: 999px;
+  font-style: normal; font-size: 11px; padding: 1px 7px; border-radius: var(--r-pill);
   background: var(--chip); border: 1px solid var(--line); color: var(--muted);
   white-space: nowrap; margin-left: 6px;
 }
@@ -20144,7 +20159,7 @@ p.sb-trline { margin-top: 2px; }
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   cursor: pointer;
   transition: 0.12s;
 }
@@ -20248,7 +20263,7 @@ p.sb-trline { margin-top: 2px; }
   background: var(--bg-panel);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  box-shadow: 0 12px 32px #1f242533;
+  box-shadow: var(--sh-2);
 }
 /* ── 시뮬레이터 (view=build) — 맹약 조합 설계 (사용자 요청 2026-08-23) ── */
 .ac-garsel-icon {
@@ -20271,7 +20286,7 @@ p.sb-trline { margin-top: 2px; }
   max-width: 520px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--bg-panel);
   text-align: left;
   cursor: pointer;
@@ -20355,7 +20370,7 @@ p.sb-trline { margin-top: 2px; }
   width: 100%;
   aspect-ratio: 1;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   background: var(--bg-soft);
   object-fit: cover;
 }
@@ -20407,7 +20422,7 @@ p.sb-trline { margin-top: 2px; }
   width: 100%;
   padding: 7px 9px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--ink);
   font-size: 12.5px;
@@ -20450,7 +20465,7 @@ p.sb-trline { margin-top: 2px; }
   width: 28px;
   height: 26px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--ink);
   font-size: 11px;
@@ -20469,7 +20484,7 @@ p.sb-trline { margin-top: 2px; }
   background: var(--bg-panel);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  box-shadow: 0 12px 32px #1f242533;
+  box-shadow: var(--sh-2);
 }
 .ac-garsel-menu.align-right .ac-garsel-sub {
   left: auto;
@@ -20497,7 +20512,7 @@ p.sb-trline { margin-top: 2px; }
   font-weight: 800;
   letter-spacing: 0.02em;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   color: #fff;
   white-space: nowrap;
 }
@@ -20524,7 +20539,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
 .ac-ways {
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
   margin: 12px 0 0; padding: 9px 11px;
-  border-radius: 9px;
+  border-radius: var(--r-md);
   background: color-mix(in srgb, #c8891a 7%, var(--white));
   border: 1px solid color-mix(in srgb, #c8891a 20%, transparent);
 }
@@ -20546,7 +20561,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   font-size: 11px; font-weight: 600; line-height: 1.5;
   white-space: normal; text-align: left; word-break: keep-all;
   color: var(--white); background: var(--ink);
-  border: 1px solid var(--border-hover); border-radius: 7px;
+  border: 1px solid var(--border-hover); border-radius: var(--r-sm);
   box-shadow: 0 6px 20px rgba(0, 0, 0, .28);
   pointer-events: none;
 }
@@ -20608,7 +20623,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   font-size: 10.5px;
   font-weight: 700;
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--line);
   color: var(--muted);
   white-space: nowrap;
@@ -20635,7 +20650,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   height: 30px;
   flex: none;
   background: var(--chip);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   overflow: hidden;
 }
 .ac-facemini img { width: 100%; height: 100%; object-fit: cover; }
@@ -20658,7 +20673,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   font-size: 8.5px;
   line-height: 1;
   padding: 1px 3px;
-  border-radius: 2px 0 0 0;
+  border-radius: var(--r-xs) 0 0 0;
   height: auto;
 }
 .ac-facemore {
@@ -20696,7 +20711,7 @@ button.ac-card:hover { border-color: var(--border-hover); background: var(--pape
   flex: none;
   object-fit: cover;
   background: var(--chip);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 .ac-equipthumb, .ac-modethumb { object-fit: contain; padding: 3px; }
 .ac-face-diy {
@@ -20734,7 +20749,7 @@ button.ac-card:hover { border-color: var(--border-hover); background: var(--pape
      사용자 지적 2026-08-23). 표면 토큰으로 바꾼다. */
   background: color-mix(in srgb, var(--ink) 6%, var(--white));
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -20786,7 +20801,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-gar-gold {
   margin-left: 4px;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   background: #8a6d1d;
   color: #fff;
   font-size: 9.5px;
@@ -20953,7 +20968,7 @@ html.dark .ac-krfix { color: #d8b153; }
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   cursor: pointer;
   transition: 0.12s;
 }
@@ -21095,7 +21110,7 @@ html.dark .ac-krfix { color: #d8b153; }
   transition: 0.12s;
 }
 .ac-diyop:hover { background: var(--white); border-color: var(--line); }
-.ac-diyop img { width: 30px; height: 30px; object-fit: cover; border-radius: 3px; background: var(--chip); }
+.ac-diyop img { width: 30px; height: 30px; object-fit: cover; border-radius: var(--r-xs); background: var(--chip); }
 .ac-diyop b {
   min-width: 0;
   font-size: 11.5px;
@@ -21145,7 +21160,7 @@ html.dark .ac-krfix { color: #d8b153; }
   flex: none;
   object-fit: cover;
   background: var(--chip);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 }
 .ac-dt-head > div { min-width: 0; }
 .ac-dt-head h2 { margin: 0 0 6px; font-size: 18px; line-height: 1.3; }
@@ -21224,7 +21239,7 @@ html.dark .ac-krfix { color: #d8b153; }
   width: 40px;
   height: 40px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: var(--chip);
 }
 .ac-oprow-main { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
@@ -21276,7 +21291,7 @@ html.dark .ac-krfix { color: #d8b153; }
 }
 .ac-slots.deck { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); grid-auto-rows: 82px; }
 .ac-slot {
-  border: 1px solid var(--line); border-radius: 10px; background: var(--paper);
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper);
   display: flex; flex-direction: column; overflow: hidden; min-width: 0;
 }
 /* ⚠ height:100% 는 쓰지 않는다 — 격자 아이템의 퍼센트 높이가 행 트랙(96px)이 아닌 다른
@@ -21334,7 +21349,7 @@ html.dark .ac-krfix { color: #d8b153; }
   gap: 4px; min-width: 0;
   flex: 1 1 auto; min-height: 0;
 }
-.ac-slot-face img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+.ac-slot-face img { width: 40px; height: 40px; border-radius: var(--r-md); object-fit: cover; }
 .ac-slot.sm .ac-slot-face img { width: 32px; height: 32px; }
 .ac-slot-face b {
   font-size: 11px; font-weight: 600; line-height: 1.3; text-align: center;
@@ -21369,13 +21384,13 @@ html.dark .ac-krfix { color: #d8b153; }
   /* 버튼이 **둥근 칩**이라 칸을 못 채우고 좌·하단에 틈이 보였다 (사용자 지적 2026-08-29).
      여백·모서리를 지우고 칸의 왼쪽 아래 모서리만 따라가게 한다 (.ac-slot 이 10px 라운드에
      overflow:hidden 이라 실제로는 그 곡선대로 잘린다). */
-  border-radius: 0 0 0 9px;
+  border-radius: 0 0 0 var(--r-md);
 }
-.ac-slot.sm .ac-slot-act button.ac-goldbtn.on { border-radius: 0 0 0 8px; }
+.ac-slot.sm .ac-slot-act button.ac-goldbtn.on { border-radius: 0 0 0 var(--r-md); }
 /* 제목 옆 안내문 — sb-count 바로 뒤라 숫자에 붙어 읽혔다 */
 .sb-h3 .ac-note { margin-left: 8px; font-weight: 500; }
 .ac-clear {
-  border: 1px solid var(--line); border-radius: 8px; background: none; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--r-md); background: none; cursor: pointer;
   padding: 4px 12px; font-size: 11.5px; color: var(--muted);
 }
 .ac-clear:hover { color: var(--ink); border-color: var(--ink2); }
@@ -21386,7 +21401,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-gains { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
 .ac-gainrow {
   display: grid; grid-template-columns: 130px 1fr; gap: 4px 12px; align-items: start;
-  border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 8px 12px;
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper); padding: 8px 12px;
 }
 @media (max-width: 560px) { .ac-gainrow { grid-template-columns: 1fr; } }
 .ac-gainw b { display: block; font-size: 12px; }
@@ -21436,7 +21451,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-mapmode { display: inline-flex; gap: 4px; margin-left: 10px; }
 .ac-mapmode button {
   padding: 3px 10px; font: inherit; font-size: 11px; font-weight: 600; color: var(--muted);
-  background: none; border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+  background: none; border: 1px solid var(--line); border-radius: var(--r-pill); cursor: pointer;
 }
 .ac-mapmode button.on { color: var(--ink); border-color: var(--ink2); }
 .ac-mapbosses { margin-bottom: 10px; }
@@ -21512,7 +21527,7 @@ html.dark .ac-krfix { color: #d8b153; }
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   background: var(--lime); color: #16181a;
   border: 1px solid color-mix(in srgb, var(--lime) 70%, #000);
-  border-radius: 999px; cursor: pointer;
+  border-radius: var(--r-pill); cursor: pointer;
   padding: 8px 18px; font-size: 13px; font-weight: 700; font-family: inherit;
   white-space: nowrap;
 }
@@ -21541,12 +21556,12 @@ html.dark .ac-krfix { color: #d8b153; }
    붙어있잖아"). /rogue 툴바와 같은 세그먼트 규약을 알약 모양에 맞춰 옮긴 것 —
    왼쪽 반이 PRTS, 오른쪽 반이 ?, 가운데 테두리는 한 겹만 그린다. */
 .ac-prtsgrp { display: inline-flex; align-items: stretch; }
-.ac-prtsgrp .ac-prtscta { border-radius: 999px 0 0 999px; }
+.ac-prtsgrp .ac-prtscta { border-radius: var(--r-pill) 0 0 var(--r-pill); }
 .ac-prtsgrp .lens-help-btn {
   min-width: 34px; margin: 0; padding: 0 2px 0 0;
   border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
   border-left: none;
-  border-radius: 0 999px 999px 0;
+  border-radius: 0 var(--r-pill) var(--r-pill) 0;
   background: var(--bg);
   font-size: 13px;
 }
@@ -21578,7 +21593,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-banchip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 3px 10px 3px 3px;
-  border: 1px solid var(--line); border-radius: 999px;
+  border: 1px solid var(--line); border-radius: var(--r-pill);
   background: var(--bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
   /* 밴 = 못 쓰는 기물이라 죽은 색으로 (읽을 수는 있어야 하니 회색조 + 살짝 흐리게) */
   filter: grayscale(0.85); opacity: 0.85;
@@ -21653,7 +21668,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-banmark::before {
   content: ""; position: absolute;
   left: 2px; right: 2px; top: 50%; height: 2px;
-  margin-top: -1px; border-radius: 1px; background: var(--white);
+  margin-top: -1px; border-radius: var(--r-xs); background: var(--white);
   transform: rotate(-45deg);
 }
 /* .ac-facemini 는 overflow:hidden 이라 밖으로 걸치면 잘린다 — 안쪽에 붙이고 조금 줄인다 */
@@ -21673,7 +21688,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-oprow > .ac-thumbwrap { width: 40px; height: 40px; }
 .ac-oprow > .ac-thumbwrap > img,
 .ac-oprow > .ac-thumbwrap > .ac-face-diy {
-  width: 40px; height: 40px; object-fit: cover; border-radius: 4px; background: var(--chip);
+  width: 40px; height: 40px; object-fit: cover; border-radius: var(--r-sm); background: var(--chip);
 }
 /* 밴된 기물은 **줄·칸째로** 옅게 물들인다 (사용자 지적 2026-09-07 "한눈에 알아보기 쉽게") —
    15px 표식은 목록을 훑을 때 놓치기 쉽다. 맹약 모달의 소속 오퍼 목록·기물 카드·편성 칸 전부. */
@@ -21735,7 +21750,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .mw-chrome:has(.ac-modemark) .mw-title { flex: 0 1 auto; }
 .ac-modemark {
   margin-right: auto; align-self: center;
-  padding: 2px 8px; border-radius: 999px;
+  padding: 2px 8px; border-radius: var(--r-pill);
   font-size: 11px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap;
   color: var(--white); background: #c8323c;
 }
@@ -21779,7 +21794,7 @@ html.dark .ac-krfix { color: #d8b153; }
 @media (prefers-reduced-motion: reduce) { .ac-runbar-dot { animation: none; } }
 /* 독립/멀티 — 화면에서 가려낸 값이라 확정되기 전엔 아예 안 그린다 */
 .ac-runbar-mode {
-  padding: 1px 8px; border-radius: 999px;
+  padding: 1px 8px; border-radius: var(--r-pill);
   border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
   font-size: 11.5px; font-weight: 700;
 }
@@ -21788,7 +21803,7 @@ html.dark .ac-krfix { color: #d8b153; }
 /* 전략 칩 — 내 전략(확정/고르는 중)·다른 참가자(연합). 아이콘은 전략 아트를 작게 (2026-09-07) */
 .ac-runbar-band { display: inline-flex; align-items: center; gap: 6px; color: var(--ink2); }
 .ac-runbar-band > b { font-weight: 700; color: var(--ink3); }
-.ac-runbar-band img { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; flex: none; }
+.ac-runbar-band img { width: 18px; height: 18px; border-radius: var(--r-sm); object-fit: cover; flex: none; }
 .ac-runbar-seat { display: inline-flex; align-items: center; gap: 4px; }
 .ac-runbar-seat + .ac-runbar-seat { margin-left: 6px; }
 /* 런바의 전략 칩 — 누르면 전략 상세가 열린다 (사용자 지시 2026-09-07 "현재 전략은 굳이 모달창
@@ -21796,7 +21811,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-runbar-bandbtn {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 2px 8px 2px 3px;
-  border: 1px solid var(--line); border-radius: 999px;
+  border: 1px solid var(--line); border-radius: var(--r-pill);
   background: var(--bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
   transition: 0.12s;
 }
@@ -21811,7 +21826,7 @@ html.dark .ac-krfix { color: #d8b153; }
 /* 연결 끊기 — 박스 맨 오른쪽으로 밀어 둔다 */
 .ac-runbar-off {
   margin-left: auto; padding: 4px 12px;
-  border: 1px solid color-mix(in srgb, #e0323f 40%, var(--line)); border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #e0323f 40%, var(--line)); border-radius: var(--r-pill);
   background: var(--bg); color: #e0323f; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
   transition: 0.12s;
 }
@@ -21827,7 +21842,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-chesscard:has(.ac-banmark):hover { background: color-mix(in srgb, #e0323f 13%, var(--white)); }
 .ac-runbar-btn {
   margin-left: auto; padding: 4px 12px;
-  border: 1px solid var(--line); border-radius: 999px;
+  border: 1px solid var(--line); border-radius: var(--r-pill);
   background: var(--bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
 }
 /* 두 번째 버튼부터는 auto 여백을 주지 않는다 — 첫 버튼만 오른쪽으로 밀린다 */
@@ -21858,7 +21873,7 @@ html.dark .ac-krfix { color: #d8b153; }
 .ac-stackin { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; font-size: 12px; font-weight: 600; }
 .ac-stackin input {
   width: 84px; padding: 4px 8px; font-size: 12.5px;
-  border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper); color: var(--ink);
 }
 .ac-stackin .sb-dim { flex: 1 1 260px; font-weight: 500; line-height: 1.5; }
 
@@ -21981,7 +21996,7 @@ html.dark .ac-bring-dial {
 .ac-peekbody .ac-stack > li > b { min-width: 0; }
 .ac-peekbody .ac-stackin .sb-dim { flex: 1 1 100%; }
 
-.ac-bstat { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 8px; overflow: hidden; }
+.ac-bstat { border: 1px solid var(--line); border-radius: var(--r-md); margin: 0 0 8px; overflow: hidden; }
 .ac-bstat.on { border-color: color-mix(in srgb, var(--lime) 50%, var(--line)); }
 .ac-bstat-head {
   width: 100%; border: 0; background: none; cursor: pointer;
@@ -22005,11 +22020,11 @@ html.dark .ac-bring-dial {
 .ac-picklist { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .ac-pickone {
   display: flex; align-items: center; gap: 7px; min-width: 0; text-align: left;
-  border: 1px solid var(--line); border-radius: 9px; background: var(--paper);
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper);
   cursor: pointer; padding: 5px 8px;
 }
 .ac-pickone:disabled { opacity: 0.4; cursor: default; }
-.ac-pickone img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; flex: none; }
+.ac-pickone img { width: 28px; height: 28px; border-radius: var(--r-sm); object-fit: cover; flex: none; }
 .ac-pickone b { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ac-pickbonds {
   font-size: 10.5px; color: var(--muted); margin-left: auto; flex: none;
@@ -22101,7 +22116,7 @@ html.dark .ac-bring-dial {
   margin-top: 8px;
   padding: 9px 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: var(--bg-panel);
 }
 .ac-skmod > header {
@@ -22117,7 +22132,7 @@ html.dark .ac-bring-dial {
   width: 30px;
   height: 30px;
   padding: 3px;
-  border-radius: 7px;
+  border-radius: var(--r-sm);
   background: #23282b;
   object-fit: contain;
 }
@@ -22127,7 +22142,7 @@ html.dark .ac-bring-dial {
 }
 .ac-skmod-cap {
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--ink) 10%, transparent);
   font: 800 10.5px monospace;
   letter-spacing: 0.04em;
@@ -22156,7 +22171,7 @@ html.dark .ac-bring-dial {
   margin: 0 1px;
   padding: 1px 7px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--bg-soft);
   color: var(--ink2);
   font: inherit;
@@ -22209,7 +22224,7 @@ html.dark .ac-bring-dial {
   align-items: center;
   padding: 3px 9px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--bg-panel);
   color: var(--ink);
   font-size: 11.5px;
@@ -22241,7 +22256,7 @@ html.dark .ac-bring-dial {
   list-style: none;
   background: var(--bg-faint);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -22332,7 +22347,7 @@ html.dark .ac-bring-dial {
   gap: 6px;
   padding: 4px 9px 4px 8px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--bg-panel);
   color: var(--muted);
   cursor: pointer;
@@ -22380,7 +22395,7 @@ html.dark .ac-bring-dial {
   margin: 10px 0 2px;
   padding: 8px 12px 8px 9px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--bg-panel);
   color: var(--muted);
   cursor: pointer;
@@ -22481,7 +22496,7 @@ html.dark .ac-bring-dial {
   align-items: center;
   padding: 6px 11px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: transparent;
   color: var(--ink);
   font-size: 12.5px;
@@ -22503,7 +22518,7 @@ html.dark .ac-bring-dial {
   margin-bottom: 8px;
   padding: 8px 11px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--r-sm);
   background: var(--white);
   color: var(--ink);
   font: inherit;
@@ -22521,7 +22536,7 @@ html.dark .ac-bring-dial {
 .el-entry {
   padding: 11px 13px;
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--r-md);
   background: var(--white);
 }
 .el-entry > header {
@@ -22557,7 +22572,7 @@ html.dark .ac-bring-dial {
   display: inline-block;
   margin-bottom: 5px;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--lime) 18%, transparent);
   color: var(--ink);
   font: 800 10.5px monospace;
@@ -22605,7 +22620,7 @@ html.dark .ac-bring-dial {
   width: 100%;
   max-width: 420px;
   height: auto;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--line) 30%, var(--bg-panel));
 }
 
@@ -22646,7 +22661,7 @@ html.dark .ac-bring-dial {
      ⚠ size가 아니라 inline-size다 — 세로까지 가두면 aspect-ratio로 잡는 높이가 흔들린다. */
   container-type: inline-size;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: #000;
   cursor: pointer;
   user-select: none;
@@ -22721,7 +22736,7 @@ html.dark .ac-bring-dial {
 .vn-top-mid {
   margin-right: auto;
   padding: 3px 9px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(6, 8, 14, 0.5);
   color: #dfe5f0;
   font-size: 11px;
@@ -22770,7 +22785,7 @@ html.dark .ac-bring-dial {
   width: 40px;
   height: 72px;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: rgba(6, 8, 14, 0.5);
   color: #e9edf5;
   font-size: 24px;
@@ -22789,7 +22804,7 @@ html.dark .ac-bring-dial {
 .vn-obtn.vn-auto {
   width: auto;
   padding: 0 11px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -22867,7 +22882,7 @@ html[lang="ja"] .vn-box {
   margin: 0 0 6px;
   display: inline-block;
   padding: 2px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(255, 255, 255, 0.12);
   font-size: 0.82em;
   font-weight: 600;
@@ -22877,7 +22892,7 @@ html[lang="ja"] .vn-box {
 .vn-opts span {
   padding: 3px 12px;
   border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 0.92em;
 }
 .vn-br { margin: 0; color: #8d97a8; font-size: 0.86em; }
