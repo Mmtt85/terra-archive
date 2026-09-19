@@ -4631,14 +4631,25 @@ html.dark .tags-track > span {
   user-select: all;
   cursor: text;
 }
-/* 배포 시각 — 푸터 맨 아래 한 줄, 찾으면 보이는 정도로만 (사용자 요청: "아주 작게") */
+/* 언어 링크 + 배포 시각 묶음 — 배포 시각이 제 줄을 차지하지 않게 한 줄에 태운다
+   (사용자 요청 2026-09-19). 모바일(푸터가 block)에선 이 묶음이 가로 전체를 쓰며
+   언어는 왼쪽·시각은 오른쪽 끝에 서고, 데스크탑에선 묶음 자체가 하나의 flex 항목이라
+   고지·후원 줄 오른쪽 끝에 붙는다. 좁아서 줄이 바뀌어도 둘은 함께 움직인다. */
+.footer-tail {
+  order: 50;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-left: auto;          /* 줄이 바뀌어도 오른쪽 끝에 — 종전 언어 링크 자리 그대로 */
+}
+
+/* 배포 시각 — 찾으면 보이는 정도로만 (사용자 요청: "아주 작게") */
 .footer-build {
-  order: 99;
-  width: 100%;
-  margin-top: 6px;
   color: #767b7d;
   font: 400 10px/1.4 monospace;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 @keyframes rise {
   0% {
@@ -4904,7 +4915,7 @@ html.dark .tags-track > span {
     margin-bottom: 10px;
     padding-bottom: 9px;
   }
-  .footer-langs {
+  .footer-tail {
     margin-top: 10px;
   }
   .feedback-widget {
@@ -15470,6 +15481,13 @@ main.site-main > .site-header {
   }
   .site-scroll > footer {
     padding-inline: 15%;
+  }
+  /* 좌우 15% 패딩이라 고지·후원·문의·언어·배포시각이 한 줄에 다 서기엔 빠듯하다 —
+     고지문이 줄을 넘겨서라도 자리를 내준다. 안 그러면 언어·배포시각 묶음이 제 줄로 밀린다.
+     (좁은 폭에서는 고지문을 접으면 오히려 푸터가 높아져서 여기서만 적용한다 — 실측) */
+  .site-scroll > footer > p:not([class]) {
+    flex: 1 1 320px;
+    min-width: 0;
   }
 }
 

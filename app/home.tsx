@@ -2627,6 +2627,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         </nav>
         {/* 크롤러용 실제 언어 링크 — 헤더 전환기는 조건부 렌더 드롭다운이라 정적 HTML에
             /en·/ja 앵커가 하나도 없었다 (2026-07 색인 문제). 현재 탭 세그먼트를 보존한다. */}
+        {/* 언어 링크와 배포 시각은 한 줄로 묶는다 — 배포 시각이 푸터 맨 아래 한 줄을
+            통째로 먹고 있었다 (사용자 요청 2026-09-19). 묶음이라 좁은 폭에서도 둘이
+            같은 줄에 남고, 넓은 폭에선 묶음째로 오른쪽 끝에 붙는다. */}
+        <div className="footer-tail">
         <nav className="footer-langs" aria-label={t("언어 선택")}>
           {LOCALES.map((entry) => {
             const seg = TAB_SEG[tab];
@@ -2643,6 +2647,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {/* 배포 시각 — 화면 계산(인프라 엔진·데이터 JSON)은 빌드 시점에 번들로 굳으므로,
             "지금 보는 사이트가 언제 것인지"를 이 한 줄로 확인한다 (사용자 요청 2026-08-05). */}
         {BUILD_STAMP && <p className="footer-build">{t("배포 {t}", { t: BUILD_STAMP })}</p>}
+        </div>
       </footer>
       </div>{/* /.site-scroll */}
 
