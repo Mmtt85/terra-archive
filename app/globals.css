@@ -13337,17 +13337,21 @@ html.rg-theme {
   min-height: 100vh;
   padding: 24px clamp(20px, 5vw, 76px) 32px;   /* 화면 상하 리듬 (2026-09-20) */
   color: var(--rgink);
+  /* 이 섹션을 독립된 층으로 만든다 — 그래야 배경 키비주얼(.rg-kv-page, z -1)이 이 섹션
+     **안에서만** 맨 뒤로 가고, 바깥(main 의 그라디언트 배경) 뒤로는 안 빠진다.
+     isolation 없이 z -1 을 주면 main 배경에 가려 그림이 통째로 사라진다 (실측 2026-09-20). */
+  isolation: isolate;
 }
 
 /* 헤더 — 키비주얼 히어로 */
 .rg-hero {
   position: relative;
-  border: 1px solid var(--rgline);
+  border: 0;   /* 테두리 없이 배경 그림에 녹인다 (사용자 요청 2026-09-20) */
   overflow: hidden;
   /* 키비주얼이 페이지 배경으로 나갔으니 이 상자는 **비쳐야** 한 장의 그림으로 읽힌다.
-     검은 판은 걷어내고(2026-09-20 사용자 요청) 흐림도 한 단계 약하게 — 테두리만으로
-     영역을 알리고, 글은 그림 위에 그대로 얹힌다. */
-  background: none;
+     ⚠ 다만 **완전히 투명하면 글이 안 읽힌다** (2026-09-20: 없앴다가 사용자가 무르자고 했다).
+     종전 55% → 35% 로 낮추고 흐림도 2 → 1px — 그림은 상자를 가로질러 이어지되 글은 산다. */
+  background: color-mix(in srgb, #0d0609 35%, transparent);
   backdrop-filter: blur(1px);
   margin-bottom: 16px;
 }
@@ -13358,7 +13362,7 @@ html.rg-theme {
 .rg-kv-page {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: -1;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -13368,11 +13372,9 @@ html.rg-theme {
   -webkit-mask-image: linear-gradient(180deg, #000 0, #000 32%, transparent 82%);
   mask-image: linear-gradient(180deg, #000 0, #000 32%, transparent 82%);
 }
-/* 배경을 깔았으니 본문은 그 위로 */
-.rg > *:not(.rg-kv-page) {
-  position: relative;
-  z-index: 1;
-}
+/* ⚠ 본문에 z-index 를 일괄로 걸면 안 된다 — .rg-head(z 5)·.rg-headtools(z 30) 처럼
+   원래 층이 있던 요소까지 1로 눌려, 테마 변경 드롭다운이 탭 줄 **뒤로** 들어가 눌리지
+   않았다 (사용자 지적 2026-09-20). 배경만 맨 뒤(z -1)로 보내고 본문 층은 종전 그대로 둔다. */
 .rg-hero-kv {
   position: absolute;
   inset: 0;
@@ -13386,7 +13388,7 @@ html.rg-theme {
 }
 .rg-hero-text {
   position: relative;
-  padding: 24px 24px 32px;
+  padding: 16px 20px 20px;   /* 히어로 세로 축소 (사용자 요청 2026-09-20) */
   max-width: 620px;
 }
 .rg-eyebrow {
@@ -13491,9 +13493,8 @@ html.rg-theme {
 
 /* 난이도 바 */
 .rg-diffbar {
-  position: absolute;
-  right: 18px;
-  bottom: 16px;
+  /* PRTS·테마 변경과 같은 열(.rg-headtools)의 막내 — 열의 gap 이 세 요소를 똑같이 띄운다.
+     종전엔 히어로 안 우하단 absolute 였다 (2026-09-20 사용자 요청으로 이동). */
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -13526,6 +13527,10 @@ html.rg-theme {
   /* PRTS 버튼 줄과 테마 선택 줄은 성격이 다른 묶음이라 붙으면 한 덩어리로 읽힌다
      (사용자 지적 2026-09-20 "테마변경 버튼이 위에 PRTS버튼들이랑 너무 딱달라붙어있음"). */
   gap: 12px;
+}
+/* 열 안 순서: PRTS 줄 → 테마 변경 → 난이도 (DOM 은 난이도가 먼저라 order 로 내린다) */
+.rg-headtools .rg-diffbar {
+  order: 1;
 }
 .rg-headtools .lens-open-wrap {
   margin-left: 0; /* 열 안에서는 오른쪽 정렬을 부모가 맡는다 */

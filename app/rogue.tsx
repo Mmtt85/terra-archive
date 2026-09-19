@@ -1986,24 +1986,25 @@ export default function RogueGuide({ initialTopic }: {
             {data.line && <p className="rg-line">{data.line}</p>}
           </div>
 
-          {/* 난이도 선택 — 배너 우하단, 모든 스탯 표시에 반영 */}
-          <div className="rg-diffbar" role="group" aria-label={t("난이도 선택")}>
-            <span className="rg-diffbar-label">{t("난이도")}</span>
-            {hasEasy && <button type="button" className={`rg-diff-chip${grade < 0 ? " on" : ""}`} onClick={() => setGrade(-1)}>{t("쉬움")}</button>}
-            <input type="range" min={0} max={maxGrade} value={Math.max(0, grade)}
-              onChange={(e) => setGrade(Number(e.target.value))}
-              aria-label={t("난이도 등급")} />
-            <span className={`rg-diff-cur${grade >= 0 ? " on" : ""}`}>
-              {grade >= 0 && <em className="rg-diff-hex">{grade}</em>}
-              {grade < 0 ? easyName : normalName}
-            </span>
-          </div>
         </div>
 
         {/* 배너 오른쪽 위 도구 열 — 위: 게임연결·리플레이·스샷 레이더, 아래: 테마 변경
             (사용자 지정 2026-07-26). ⚠ .rg-hero 안에 두면 overflow:hidden에 펼친 메뉴가
             잘린다 — 반드시 .rg-head 직속(클리핑 밖)에 두고 absolute로 겹칠 것 */}
         <div className="rg-headtools">
+        {/* 난이도 — PRTS·테마 변경과 **같은 열**에 둬서 셋의 세로 간격이 같아진다
+          (사용자 요청 2026-09-20). 종전엔 히어로 안에 absolute 로 우하단에 박혀 있었다. */}
+          <div className="rg-diffbar" role="group" aria-label={t("난이도 선택")}>
+          <span className="rg-diffbar-label">{t("난이도")}</span>
+          {hasEasy && <button type="button" className={`rg-diff-chip${grade < 0 ? " on" : ""}`} onClick={() => setGrade(-1)}>{t("쉬움")}</button>}
+          <input type="range" min={0} max={maxGrade} value={Math.max(0, grade)}
+            onChange={(e) => setGrade(Number(e.target.value))}
+            aria-label={t("난이도 등급")} />
+          <span className={`rg-diff-cur${grade >= 0 ? " on" : ""}`}>
+            {grade >= 0 && <em className="rg-diff-hex">{grade}</em>}
+            {grade < 0 ? easyName : normalName}
+          </span>
+          </div>
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달. KR/EN/JA 화면 인식 (2026-07-25).
             블랙플로우(rogue_6)·중국섭 데이터는 중국어 병기라 중국어 화면도 전 로케일에서 인식한다. */}
         <div className="lens-open-wrap">
