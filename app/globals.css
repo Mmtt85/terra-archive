@@ -63,7 +63,15 @@
   --sh-3: 0 26px 72px #1f242540; /* 라임 배경 위 텍스트 — 라임이 고정색이므로 양 모드 동일 */
 }
 /* ── 다크모드 — html.dark (헤더 토글 + localStorage, 첫 페인트 전 인라인 스크립트가 부여) ── */
-html.dark {
+/* 통합전략(록라)은 라이트·다크와 무관하게 **항상 다크 테마**다 (사용자 확정 2026-09-20).
+   테마 배경·카드·글자색이 전부 다크 전제로 짜여 있어(--rg*), 라이트모드에서 사이트 토큰만
+   밝으면 헤더·모달·칩만 허옇게 떠서 '반쪽 다크'가 된다. 그래서 rg-theme 이 붙은 동안에는
+   아래 다크 토큰을 통째로 쓴다 — 페이지를 떠나면 rogue.tsx 가 클래스를 떼어 원래대로 돌아온다.
+   ⚠ 다크 전용 **컴포넌트** 규칙(html.dark .invest-*, .dark .recruit-* 등)은 전부 록라에
+     없는 화면이라 그대로 둔다. 록라 화면에 다크 전용 규칙을 새로 만들 일이 생기면
+     `html.dark` 대신 이 두 선택자를 함께 적을 것. */
+html.dark,
+html.rg-theme {
   color-scheme: dark;
   --lime: #a8bd4f; /* 다크에선 한 단계 더 차분하게 */
   --ink: #e3e7e6;
@@ -13002,32 +13010,32 @@ html.rg-theme.rg5 .mw-backdrop:has(> .rg-modal) {
 
 /* ── 다크모드 × 통합전략 — 토픽 테마색이 상단 헤더까지 이어진다 (사용자 요청 2026-07-18).
    헤더 텍스트·버튼은 전역 다크 변수(--ink 등)를 그대로 쓰므로 배경·경계선만 토픽색으로. ── */
-html.dark.rg-theme .site-header {
+html.rg-theme .site-header {
   background: #150a0ee6;
   --header-solid: #150a0e;
   border-bottom-color: #3c2129;
 }
-html.dark.rg-theme.rg2 .site-header {
+html.rg-theme.rg2 .site-header {
   background: #070d1ce6;
   --header-solid: #070d1c;
   border-bottom-color: #213858;
 }
-html.dark.rg-theme.rg3 .site-header {
+html.rg-theme.rg3 .site-header {
   background: #13151ae6;
   --header-solid: #13151a;
   border-bottom-color: #3e434e;
 }
-html.dark.rg-theme.rg4 .site-header {
+html.rg-theme.rg4 .site-header {
   background: #0f0505e6;
   --header-solid: #0f0505;
   border-bottom-color: #3d1815;
 }
-html.dark.rg-theme.rg5 .site-header {
+html.rg-theme.rg5 .site-header {
   background: #22131be6;
   --header-solid: #22131b;
   border-bottom-color: #573448;
 }
-html.dark.rg-theme.rg6 .site-header {
+html.rg-theme.rg6 .site-header {
   background: #0a1413e6;
   --header-solid: #0a1413;
   border-bottom-color: #1f3a34;
