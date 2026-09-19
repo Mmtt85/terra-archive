@@ -500,7 +500,25 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   const [view, setView] = useState<View>("bond");
   const [miscTab, setMiscTab] = useState<MiscTab>("enemy");
   const [etype, setEtype] = useState("");              // 특훈 적 유형 거르기 ("" = 전체)
-  const [bond, setBond] = useState<AcBond | null>(null);
+  /* 맹약 상세는 **여러 장이 겹쳐 뜬다** (사용자 요청 2026-09-20).
+     핵심 맹약 → 기물 → 그 기물의 부맹약처럼 타고 들어갈 때, 슬롯이 하나면 부맹약이
+     핵심 맹약 창을 덮어써서 뒤에 있던 창의 내용만 바뀌었다. 스택으로 쌓아 세 장이 같이 뜬다.
+     맨 위(마지막 원소)가 주소창 해시(m=bond~id)의 주인이다. */
+  const [bondStack, setBondStack] = useState<{ b: AcBond; uid: number }[]>([]);
+  const bondUid = useRef(0);
+  const bond = bondStack.length ? bondStack[bondStack.length - 1].b : null;
+  /** 맹약 창 열기 — 이미 떠 있는 맹약이면 **앞으로 끌어올린다**.
+   *  예: 쉐라그 맹약 → 기물 → 기물 창에서 다시 쉐라그를 누르면, 뒤에 깔려 있던 쉐라그 창이
+   *  앞으로 나와야 한다 (사용자 지시 2026-09-20). 아무 일도 안 일어나면 안 열리는 것처럼 보인다.
+   *  ⚠ ModalWindow 는 **마운트할 때** 맨 앞 z 를 받으므로, 끌어올리려면 uid 를 새로 줘서
+   *    다시 마운트시켜야 한다 — 그래서 uid 를 바꾼다.
+   *  이미 맨 앞에 있는 창(위에 다른 창이 없을 때)만 그대로 둔다 — 안 그러면 제 칩을 눌렀을 때
+   *  까딱 깜빡인다. 창은 다섯 장까지 쌓고 오래된 것부터 덜어낸다. */
+  const openBond = (b: AcBond) =>
+    setBondStack((st) => (st[st.length - 1]?.b.id === b.id && !chess && !equip && !enemy && !band ? st
+      : [...st.filter((x) => x.b.id !== b.id), { b, uid: ++bondUid.current }].slice(-5)));
+  /** 그 창만 닫는다 — 가운데 창을 닫아도 위아래는 남는다 */
+  const closeBond = (uid: number) => setBondStack((st) => st.filter((x) => x.uid !== uid));
   const [chess, setChess] = useState<AcChess | null>(null);
   // 기물 상세는 일반/골든을 **같이** 보여준다 (사용자 지시 2026-09-15 "탭으로 나누지 말고
   // 한눈에"). 종전엔 토글 하나가 능력·스킬·모듈을 전부 갈아끼웠는데, 골든이 뭐가 달라지는지
@@ -610,7 +628,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     setEnemy(kind === "enemy" && id ? id : null);
     setEquip(kind === "item" && id ? doc.equips.find((e) => e.id === id) ?? null : null);
     setBand(kind === "band" && id ? doc.bands.find((b) => b.id === id) ?? null : null);
-    setBond(kind === "bond" && id ? doc.bonds.find((b) => b.id === id) ?? null : null);
+    const hb = kind === "bond" && id ? doc.bonds.find((b) => b.id === id) ?? null : null;
+    setBondStack(hb ? [{ b: hb, uid: ++bondUid.current }] : []);   // 해시로 들어오면 한 장에서 다시 시작
     setChess(kind === "op" && id ? doc.chess.find((c) => c.id === id) ?? null : null);
   }
   /** 해시의 편성 파라미터 → 시뮬레이터 상태. 없는 기물 코드(옛 링크·오타)는 조용히 버린다.
@@ -1407,7 +1426,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     if (!b) return null;
     return (
       <button key={id} type="button" className={`ac-bondchip${small ? " sm" : ""}${b.nation ? " nation" : ""}`}
-        onClick={() => { setBond(b); }}>
+        onClick={() => { openBond(b); }}>
         <img src={bondIcon(id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
         {b.n}
       </button>
@@ -1461,7 +1480,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     });
   };
   const openRef = ([kind, id]: AcRef) => {
-    if (kind === "bond") { const b = bondById.get(id); if (b) setBond(b); return; }
+    if (kind === "bond") { const b = bondById.get(id); if (b) openBond(b); return; }
     if (kind === "item") { const e = doc.equips.find((x) => x.id === id); if (e) setEquip(e); return; }
     if (kind === "band") { const b = doc.bands.find((x) => x.id === id); if (b) setBand(b); return; }
     if (kind === "op") { const c = chessById.get(id); if (c) openChess(c); return; }
@@ -1469,7 +1488,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     // 모드는 상세 모달이 없다 — 게임 정보 → 모드 목록으로 데려간다. 목록이 뒤에 가려지지
     // 않게 열려 있는 창을 모두 닫는다.
     if (kind === "mode") {
-      setBond(null); setChess(null); setEquip(null); setBand(null); setEnemy(null);
+      setBondStack([]); setChess(null); setEquip(null); setBand(null); setEnemy(null);
       setView("misc"); setMiscTab("mode");
     }
   };
@@ -2096,7 +2115,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                     <h3 className="sb-h3">{nation ? t("진영 맹약") : t("특성 맹약")} <em className="sb-count">{rows.length}</em></h3>
                     <div className="ac-bondcards">
                       {rows.map((b) => (
-                        <button key={b.id} type="button" className="ac-bondcard" onClick={() => setBond(b)}>
+                        <button key={b.id} type="button" className="ac-bondcard" onClick={() => openBond(b)}>
                           <header>
                             <img src={bondIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                             <b>{b.n}</b>
@@ -2215,7 +2234,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                       const b = bondById.get(id);
                       if (!b) return null;
                       return (
-                        <button key={id} type="button" className="ac-sim-bondcard" onClick={() => setBond(b)}>
+                        <button key={id} type="button" className="ac-sim-bondcard" onClick={() => openBond(b)}>
                           <img src={bondIcon(id)} alt="" aria-hidden onError={hideErr} />
                           <span>
                             <b>{b.n}</b>
@@ -2849,7 +2868,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   </li>
                 ))}
               </ol>
-              <button type="button" className="ac-clear" onClick={() => { setPeek(""); setBond(b); }}>
+              <button type="button" className="ac-clear" onClick={() => { setPeek(""); openBond(b); }}>
                 {t("맹약 상세 보기")}
               </button>
             </div>
@@ -3182,22 +3201,24 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         </ModalWindow>
       )}
 
-      {bond && (
-        <ModalWindow key={bond.id} label={bond.n} className="operator-modal ac-modal"
-          chrome={banByBond.get(bond.id)
-            ? <span className="ac-modemark">{t("밴 {n}명", { n: banByBond.get(bond.id) ?? 0 })}</span> : null}
-          onClose={() => setBond(null)}>
+      {/* 맹약 상세 — 스택이라 여러 장이 겹쳐 뜬다 (핵심 맹약 → 기물 → 부맹약).
+          ModalWindow 는 **마운트 순서**로 앞뒤가 정해지므로 나중에 연 창이 앞에 온다. */}
+      {bondStack.map(({ b, uid }) => (
+        <ModalWindow key={uid} label={b.n} className="operator-modal ac-modal"
+          chrome={banByBond.get(b.id)
+            ? <span className="ac-modemark">{t("밴 {n}명", { n: banByBond.get(b.id) ?? 0 })}</span> : null}
+          onClose={() => closeBond(uid)}>
           <div className="ac-dt">
             <header className="ac-dt-head">
-              <img src={bondIcon(bond.id)} alt="" aria-hidden onError={hideErr} />
+              <img src={bondIcon(b.id)} alt="" aria-hidden onError={hideErr} />
               <div>
-                <h2>{bond.n}</h2>
+                <h2>{b.n}</h2>
                 <p className="ac-cmeta">
-                  <i className="sb-chip">{bond.nation ? t("진영 맹약") : t("특성 맹약")}</i>
-                  <i className="sb-chip">{bond.down ? t("{n}명 이하", { n: bond.min }) : t("{n}명부터", { n: bond.min })}</i>
-                  {bond.cond && BOND_COND_LABEL[bond.cond] && <i className="sb-chip">{t(BOND_COND_LABEL[bond.cond])}</i>}
-                  {bond.chess.length > 0 && <i className="sb-chip">{t("오퍼레이터 {n}명", { n: bond.chess.length })}</i>}
-                  {!funnyBonds.has(bond.id) && <i className="sb-chip ac-warn">{t("표준 시뮬레이션 제외")}</i>}
+                  <i className="sb-chip">{b.nation ? t("진영 맹약") : t("특성 맹약")}</i>
+                  <i className="sb-chip">{b.down ? t("{n}명 이하", { n: b.min }) : t("{n}명부터", { n: b.min })}</i>
+                  {b.cond && BOND_COND_LABEL[b.cond] && <i className="sb-chip">{t(BOND_COND_LABEL[b.cond])}</i>}
+                  {b.chess.length > 0 && <i className="sb-chip">{t("오퍼레이터 {n}명", { n: b.chess.length })}</i>}
+                  {!funnyBonds.has(b.id) && <i className="sb-chip ac-warn">{t("표준 시뮬레이션 제외")}</i>}
                 </p>
               </div>
             </header>
@@ -3205,8 +3226,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               {/* 시뮬레이터에서 중첩을 넣어 두면 그 기준으로 수치를 풀어 준다
                   (사용자 지시 2026-08-30 "중첩을 변경하면 해당 중첩에 맞춰서 맹약 상세에 뜨도록").
                   맹약 탭에서 그냥 연 경우엔 중첩이 없으니 종전대로 식만 보인다. */}
-              {(stacks[bond.id] ?? 0) > 0 && (
-                <em className="sb-count ac-atstack">{t("중첩 {n} 기준", { n: stacks[bond.id] })}</em>
+              {(stacks[b.id] ?? 0) > 0 && (
+                <em className="sb-count ac-atstack">{t("중첩 {n} 기준", { n: stacks[b.id] })}</em>
               )}
             </h4>
             {/* 게임 설명문이 "(중첩 수에 따라 변경)"·"(최대치 존재)"로 뭉갠 값의 **실제 숫자**를
@@ -3215,19 +3236,19 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 눈으로 다시 맞춰야 했다. 계수는 클뜯 전투 블랙보드에서 뽑는다 —
                 build-autochess.py stack_rows 참고, sk.s = 그 값이 걸린 단계 인덱스. */}
             <ol className="ac-steps">
-              {bond.steps.map((s, i) => (
+              {b.steps.map((s, i) => (
                 <li key={i}>
-                  {s.c && <span className="ac-stepcond">{acRich(s.c, bond.id)}</span>}
-                  <span className="ac-steptxt">{acRich(s.t, bond.id)}</span>
-                  {stackList(bond, i)}
+                  {s.c && <span className="ac-stepcond">{acRich(s.c, b.id)}</span>}
+                  <span className="ac-steptxt">{acRich(s.t, b.id)}</span>
+                  {stackList(b, i)}
                 </li>
               ))}
             </ol>
-            {bond.chess.length === 0
+            {b.chess.length === 0
               ? <p className="sb-dim">{t("소속 오퍼레이터가 따로 없는 맹약입니다 — 배치 조건만 맞으면 활성화됩니다.")}</p>
-              : <h4>{t("소속 오퍼레이터")} <em className="sb-count">{bond.chess.length}</em></h4>}
+              : <h4>{t("소속 오퍼레이터")} <em className="sb-count">{b.chess.length}</em></h4>}
             {[1, 2, 3, 4, 5, 6].map((tn) => {
-              const rows = bond.chess.map((id) => chessById.get(id)).filter((c): c is AcChess => !!c && c.t === tn);
+              const rows = b.chess.map((id) => chessById.get(id)).filter((c): c is AcChess => !!c && c.t === tn);
               if (!rows.length) return null;
               return (
                 <div key={tn} className="ac-tiergrp">
@@ -3239,7 +3260,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             {/* 자유 선택 칸으로 데려올 수 있는 이 맹약 오퍼 (사용자 요청 2026-08-23:
                 "골든글로우 같은 경우는 빅토리아 맹약 밑에 뜨게") — 상점 명단과 구분해 맨 밑에 */}
             {(() => {
-              const cand = diyPool.filter((o) => o.bonds?.includes(bond.id));
+              const cand = diyPool.filter((o) => o.bonds?.includes(b.id));
               if (!cand.length) return null;
               return (
                 <>
@@ -3262,7 +3283,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             })()}
           </div>
         </ModalWindow>
-      )}
+      ))}
 
       {/* ── 기물 상세 모달 ── */}
       {chess && (
