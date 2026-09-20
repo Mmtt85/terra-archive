@@ -58,7 +58,7 @@ export const PORTAL_TILES: PortalTile[] = [
     desc: "공개모집 태그 조합으로 확정·고성급 탐색", icon: "◎" },
   { id: "base", label: "재료파밍 도우미", tab: "farm", area: "sim", kind: "plate", group: "sim",
     desc: "정예화 재료의 최적 파밍지와 이성 효율표", icon: "◈" },
-  { id: "depot", label: "오퍼 육성 시뮬", tab: "upgrade", area: "sim", kind: "plate", group: "sim",
+  { id: "depot", label: "육성 비용 계산기", tab: "upgrade", area: "sim", kind: "plate", group: "sim",
     desc: "육성에 필요한 용문폐·재료 총량을 단계별로 계산", icon: "▦" },
   { id: "simulate", label: "작전 시뮬레이터", tab: "sim", area: "sim", kind: "plate", group: "sim",
     desc: "적이 언제 어디서 나와 어디로 가는지 재생", icon: "▶" },

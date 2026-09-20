@@ -7195,18 +7195,19 @@ html.dark .tags-track > span {
   font-size: 12px;
   line-height: 1.7;
 }
-/* 머리글 밑 참고표 손잡이 두 개 — 도움말 · 저격 조합 사전 (사용자 지시 2026-09-20).
-   종전엔 도움말이 접이식(<details>)이라 펼치는 순간 아래가 통째로 밀려 결과를 다시
-   찾아야 했고, 사전은 본문 맨 밑에 너비 100% 점선 막대로 깔려 있었다. 둘 다 창으로
-   뺐으니 여기 남는 건 여는 버튼뿐이고, 좁으면 두 줄로 접힌다. */
-.recruit-head-links {
+/* ── 머리글 밑 참고표 손잡이 (사용자 지시 2026-09-20) ───────────────────────────
+   화면 설명·참고표를 본문에 깔지 않고 여는 버튼만 남긴다. 접이식(<details>)은 펼치는
+   순간 아래가 통째로 밀려 보던 자리를 다시 찾아야 했고, 본문 맨 밑 너비 100% 막대는
+   자리만 먹었다. 좁으면 두 줄로 접힌다.
+   쓰는 곳: 공개채용 도우미(도움말·저격 조합 사전) · 재료 파밍 효율표(도움말). */
+.head-links {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin-top: 10px;
 }
-.recruit-head-links > button {
+.head-links > button {
   /* ⚠ inline-flex 금지 — rich() 가 돌려주는 조각(글 · <b>9시간</b> · 글)이 각자 flex
      아이템이 돼 gap 만큼 벌어지며 세 줄로 접힌다 (사용자 제보 2026-09-20). 글줄로 흐르게 둔다. */
   display: inline-block;
@@ -7222,12 +7223,12 @@ html.dark .tags-track > span {
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
-.recruit-head-links > button:hover {
+.head-links > button:hover {
   border-color: var(--border-hover);
   color: var(--ink);
 }
 /* 조합 수는 제목이 아니라 부연 — 묶음 소제목(.recruit-group > h3 > em)과 같은 규격 */
-.recruit-head-links > button > em {
+.head-links > button > em {
   margin-left: 7px;
   font-style: normal;
   font-size: 11px;
@@ -9522,11 +9523,40 @@ html.dark .tags-track > span {
   color: var(--muted) !important;
   font-size: 12px !important;
 }
-/* 계산기 상자 안쪽 주의 문구 — 설명 문단 바로 밑에 한 급 작게 (2026-09-20) */
-.cost-future-note {
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 12px;
+/* 안내 창 — 재료 파밍 효율표·육성 비용 계산기가 같이 쓴다 (사용자 지시 2026-09-20).
+   자리·크기는 .item-modal 관례(내용만큼만 높게, 화면 가운데), 모서리는 .mw-window 기본값. */
+.farm-guide-modal {
+  width: min(640px, 100%);
+  place-self: center;
+  height: fit-content;
+  max-height: min(84dvh, 640px);
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  box-shadow: var(--sh-2);
+}
+.farm-guide-modal p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ink2);
+}
+.farm-guide-modal p:last-child {
+  margin-bottom: 0;
+}
+/* 검색란 높이를 공개채용 도우미의 빠른 입력줄과 같게 (사용자 지시 2026-09-20).
+   ⚠ `.search-wrap` 자체는 도감·작전·스토리 등 열 곳이 함께 쓰므로 건드리지 않고
+   이 두 화면에만 건다 — 나머지 화면까지 같이 줄이려면 따로 확인하고 옮길 것.
+   높이를 실제로 정하는 건 입력란이 아니라 22px 짜리 ⌕ 글리프였다 (실측). */
+.farm-search > input,
+.cost-search > input {
+  padding: 7px 10px;
+  font-size: 12.5px;
+  line-height: 1.25;
+}
+.farm-search > span,
+.cost-search > span {
+  padding-left: 10px;
+  font-size: 17px;
 }
 .farm-tools {
   display: flex;
@@ -12797,6 +12827,10 @@ html.dark .pt-stage {
   color: color-mix(in srgb, var(--pt-accent) 72%, var(--pt-ink));
   font-size: 12px;
 }
+/* ⚠ 이름은 설명(.pt-desc)과 달리 **아직 한 줄 + …** 이다. 줄바꿈으로 바꿔 봤더니
+   (2026-09-20) 두 줄짜리 이름이 칸 높이를 넘겨 설명 아랫줄이 잘렸다 — 1440px 에선 딱
+   맞지만 1024px EN 에서 4px 넘친다(실측). 바꾸려면 칸 높이·글자 크기를 함께 손봐야 한다.
+   EN/JA 는 칸이 126px 뿐이라 긴 이름이 잘린다(1440px 기준 EN 9칸·JA 5칸). */
 .pt-ko {
   font-size: clamp(14.5px, 1.6vw, 18px);
   font-weight: 800;

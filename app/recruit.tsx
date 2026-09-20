@@ -346,7 +346,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
             접이식(<details>)이었을 땐 펼치는 순간 아래가 통째로 밀려 내려가 결과를 다시
             찾아야 했다 (사용자 지적 2026-09-20). 저격 조합 사전도 같은 줄에서 연다 —
             둘 다 "지금 고른 태그와 무관한 참고표"라 본문에 깔 이유가 없다. */}
-        <div className="recruit-head-links">
+        <div className="head-links">
           <button type="button" onClick={() => setShowGuide(true)}>
             {rich(t("성급 배지는 모집 시간 **9시간** 기준입니다 — 읽는 법과 시간별 출현 성급"))}
           </button>

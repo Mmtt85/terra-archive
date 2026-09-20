@@ -88,9 +88,9 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ja: { title: "素材周回ヘルパー - アークナイツ素材周回効率表 | テラアーカイブ", description: "アークナイツ素材周回効率表 — 昇進素材ごとの最適ステージと1個あたりの期待理性を、ペンギン急便の実測ドロップ統計で確認します。" },
   },
   upgrade: {
-    ko: { title: "오퍼 육성 시뮬 - 명일방주 육성 비용 계산기 | 테라 아카이브", description: "명일방주 오퍼레이터 육성 비용 계산기 — 레벨·정예화·스킬·특화·모듈 목표 단계까지 필요한 용문폐·경험치·재료 총량을 합산합니다." },
-    en: { title: "Operator Upgrade Sim - Arknights Upgrade Cost Calculator | Terra Archive", description: "Arknights operator upgrade cost calculator — total LMD, EXP, and materials needed to reach your target level, Elite, skills, masteries, and modules." },
-    ja: { title: "オペレーター育成シミュ - アークナイツ育成コスト計算機 | テラアーカイブ", description: "アークナイツ育成コスト計算機 — レベル・昇進・スキル・特化・モジュールの目標段階までに必要な龍門幣・経験値・素材の合計を集計します。" },
+    ko: { title: "육성 비용 계산기 - 명일방주 오퍼 육성 재료 계산 | 테라 아카이브", description: "명일방주 오퍼레이터 육성 비용 계산기 — 레벨·정예화·스킬·특화·모듈 목표 단계까지 필요한 용문폐·경험치·재료 총량을 합산합니다." },
+    en: { title: "Upgrade Cost Calculator - Arknights Operator Material Calculator | Terra Archive", description: "Arknights operator upgrade cost calculator — total LMD, EXP, and materials needed to reach your target level, Elite, skills, masteries, and modules." },
+    ja: { title: "育成コスト計算機 - アークナイツ オペレーター育成素材計算 | テラアーカイブ", description: "アークナイツ育成コスト計算機 — レベル・昇進・スキル・特化・モジュールの目標段階までに必要な龍門幣・経験値・素材の合計を集計します。" },
   },
   story: {
     ko: { title: "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브", description: "명일방주 이벤트 스토리 AI 요약 아카이브 — 사이드 스토리를 컷씬과 함께 10분 분량으로 요약합니다." },

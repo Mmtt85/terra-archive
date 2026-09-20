@@ -2016,12 +2016,11 @@ const D: Record<string, Pair> = {
   "재료 파밍": ["Farming", "素材周回"],
   "파밍·육성 시뮬": ["Farm & Sim", "周回・育成"],
   "재료파밍 도우미": ["Material Farming Helper", "素材周回ヘルパー"],
-  "오퍼 육성 시뮬": ["Upgrade Sim", "育成シミュ"],
   "육성 비용 계산": ["Upgrade cost", "育成コスト"],
   "정예화 재료의 최적 파밍지와 이성 효율표": ["Best farming stages and sanity efficiency", "昇進素材の最適ステージと理性効率表"],
   "육성에 필요한 용문폐·재료 총량을 단계별로 계산": ["LMD and materials to reach your upgrade goals", "育成に必要な龍門幣・素材の合計を段階ごとに計算"],
   "재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브": ["Material Farming Helper - Arknights Material Farming Efficiency | Terra Archive", "素材周回ヘルパー - アークナイツ素材周回効率表 | テラアーカイブ"],
-  "오퍼 육성 시뮬 - 명일방주 육성 비용 계산기 | 테라 아카이브": ["Operator Upgrade Sim - Arknights Upgrade Cost Calculator | Terra Archive", "オペレーター育成シミュ - アークナイツ育成コスト計算機 | テラアーカイブ"],
+  "육성 비용 계산기 - 명일방주 오퍼 육성 재료 계산 | 테라 아카이브": ["Upgrade Cost Calculator - Arknights Operator Material Calculator | Terra Archive", "育成コスト計算機 - アークナイツ オペレーター育成素材計算 | テラアーカイブ"],
   "재료 파밍 & 오퍼 육성 시뮬레이션": ["Material Farming & Operator Upgrade Simulator", "素材周回＆オペレーター育成シミュレーター"],
   "오퍼레이터 육성에 필요한 용문폐·재료 총량을 단계별로 계산하고, 각 재료를 어느 스테이지에서 파밍하는 게 가장 효율적인지 실측 드랍 통계로 확인합니다.": [
     "Calculate the LMD and materials needed to upgrade operators step by step, and check the most efficient farming stage for each material with measured drop statistics.",

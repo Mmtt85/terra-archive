@@ -93,7 +93,7 @@ const TAB_ENTRIES: { tab: Tab; label: string; alt: string[] }[] = [
   { tab: "planner", label: "인프라 자동편성기", alt: ["riic", "base", "기지", "기반시설", "인프라", "편성", "자동편성", "딸깍", "인프라딸깍", "시뮬레이터"] },
   { tab: "recruit", label: "공개채용 도우미", alt: ["recruit", "공개모집", "공채", "태그계산"] },
   { tab: "farm", label: "재료파밍 도우미", alt: ["farm", "재료", "파밍", "효율표", "드랍"] },
-  { tab: "upgrade", label: "오퍼 육성 시뮬", alt: ["upgrade", "육성", "비용", "계산기", "스킬특화", "모듈"] },
+  { tab: "upgrade", label: "육성 비용 계산기", alt: ["upgrade", "육성", "비용", "계산기", "스킬특화", "모듈", "육성 시뮬", "시뮬"] },
   { tab: "story", label: "스토리", alt: ["story", "요약", "전문", "연대기"] },
   { tab: "rogue", label: "통합전략 가이드", alt: ["rogue", "integrated strategies", "로그라이크", "통합전략", "is"] },
   { tab: "ra", label: "생존연산 가이드", alt: ["ra", "reclamation", "reclamation algorithm", "생존연산", "생존 연산", "샌드박스", "sandbox", "요리", "레시피", "生息演算"] },

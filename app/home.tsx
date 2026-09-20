@@ -1660,7 +1660,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             : tab === "sim"
             ? t("작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브")
             : tab === "upgrade"
-            ? t("오퍼 육성 시뮬 - 명일방주 육성 비용 계산기 | 테라 아카이브")
+            ? t("육성 비용 계산기 - 명일방주 오퍼 육성 재료 계산 | 테라 아카이브")
             : tab === "story"
               // 상세가 열려 있으면 스토리별 제목 — 상세 라우트의 <title>(app/seo-story.ts)과 같은 문구
               ? (storyTitle
@@ -1723,7 +1723,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     planner: t("인프라 자동편성기"),
     recruit: t("공개채용 도우미"),
     farm: t("재료파밍 도우미"),
-    upgrade: t("오퍼 육성 시뮬"),
+    upgrade: t("육성 비용 계산기"),
     sim: t("작전 시뮬레이터"),
     story: t("스토리"),
     rogue: t("통합전략 가이드"),
@@ -3702,7 +3702,7 @@ const subscribeNever = () => () => {};
 // 대화 액션 → 탭 라벨 (i18n 키 — 헤더 내비와 동일 사전)
 const CHAT_TAB_LABEL: Record<string, string> = {
   portal: "홈", planner: "인프라 자동편성기", archive: "오퍼 백과사전", enemy: "적 도감", stage: "작전 도감", sim: "작전 시뮬레이터", recruit: "공개채용 도우미",
-  farm: "재료파밍 도우미", upgrade: "오퍼 육성 시뮬", story: "스토리", rogue: "통합전략 가이드", ra: "생존연산 가이드", about: "테라 아카이브 소개",
+  farm: "재료파밍 도우미", upgrade: "육성 비용 계산기", story: "스토리", rogue: "통합전략 가이드", ra: "생존연산 가이드", about: "테라 아카이브 소개",
 };
 
 function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Operator[]; onNavigate: (tab: Tab) => void; onShowOperator: (op: Operator) => void }) {

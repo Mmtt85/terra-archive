@@ -192,7 +192,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "upgrade", icon: "▦", name: "오퍼 육성 시뮬",
+        tab: "upgrade", icon: "▦", name: "육성 비용 계산기",
         summary: "오퍼 육성에 드는 용문폐·경험치·재료 총량을 목표 단계까지 합산합니다.",
         bullets: [
           "레벨·정예화가 게임 순서(E0 만렙→정예화1→E1 만렙→…)대로 한 줄에 이어지고, 올릴 목표 레벨을 직접 입력",
@@ -362,7 +362,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "upgrade", icon: "▦", name: "Operator Upgrade Sim",
+        tab: "upgrade", icon: "▦", name: "Upgrade Cost Calculator",
         summary: "Totals the LMD, EXP, and materials an upgrade will cost, up to your target step.",
         bullets: [
           "Level and Elite chain in game order (E0 max → Elite 1 → E1 max → …), and you type the exact target level",
@@ -532,7 +532,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "upgrade", icon: "▦", name: "オペレーター育成シミュ",
+        tab: "upgrade", icon: "▦", name: "育成コスト計算機",
         summary: "オペレーター育成に必要な龍門幣・経験値・素材の合計を、目標段階まで集計します。",
         bullets: [
           "レベルと昇進がゲーム順（E0カンスト→昇進1→E1カンスト→…）に一列に並び、目標レベルを直接入力",
