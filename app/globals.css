@@ -1423,6 +1423,10 @@ button {
   align-items: center;
   display: flex;
   position: relative;   /* 제안 드롭다운(.suggest-drop) 앵커 (2026-08-10) */
+  /* 사이트 공통 검색란 세로폭 (사용자 지시 2026-09-20: "사이트 내 검색란 전부다 동일하게").
+     ⚠ **여백이 아니라 높이로 못 박는다** — 모바일 전역 규칙이 input 을 16px 로 올리므로
+     (iOS 포커스 확대 방지) 여백으로 맞추면 폰에서만 4~5px 씩 커진다 (실측). */
+  height: 32px;
 }
 /* 검색란 제안 드롭다운 (app/search-suggest.tsx) — 사이트 모든 검색란 공용.
    생김새는 속성 필터의 .attr-drop과 같은 결로 맞춘다. */
@@ -1497,9 +1501,16 @@ button {
   right: auto;
   width: min(340px, 100%);
 }
+/* ── 검색란 세로폭은 사이트 전체가 32px (사용자 지시 2026-09-20: "사이트 내 검색란
+   전부다 세로폭은 동일하게"). 종전 46px 은 화면마다 제각각인 데다 뚱뚱했다.
+   ⚠ 높이를 실제로 정하는 건 입력란이 아니라 **22px 짜리 ⌕ 글리프**였다 (실측) —
+   글리프를 안 줄이면 padding 을 아무리 줄여도 46px 에서 안 내려간다.
+   같은 32px 을 쓰는 곳: .quick-wrap(공채 빠른 입력) · .heading-search · .roster-tools
+   (인프라 보유 오퍼) · .rg-filterbar(통합전략). 예외는 유니버셜 서치 팔레트(.omni-bar,
+   모달의 주인공 입력칸)와 필터 드롭다운 안의 미니 검색(.attr-search). */
 .search-wrap span {
-  padding-left: 12px;
-  font-size: 22px;
+  padding-left: 10px;
+  font-size: 17px;
 }
 .search-wrap input {
   background: 0 0;
@@ -1507,21 +1518,20 @@ button {
   outline: 0;
   width: 100%;
   min-width: 0;
-  padding: 12px 11px;
-  font-size: 13px;
+  height: 100%;        /* 높이는 상자가 정한다 — 여백으로 키우지 말 것 (위 주석) */
+  padding: 0 10px;
+  font-size: 12.5px;
 }
 .heading-search {
   flex: 1 1 auto;
-  max-width: 340px;
-  height: 38px;
+  max-width: 340px;   /* 높이는 .search-wrap 공통값(32px) */
   margin: 0 20px;
   align-self: end;
 }
 .heading-search span {
-  font-size: 16px;
+  font-size: 17px;
 }
 .heading-search input {
-  height: 100%;
   padding: 0 4px 0 8px;
 }
 .search-clear {
@@ -1621,7 +1631,9 @@ legend {
   border: 1px solid var(--line);
   flex: 1;
   min-width: 0;
-  padding: 8px 10px;
+  /* 사이트 공통 검색란 높이 32px (2026-09-20) — 옆 '검색' 버튼도 같이 맞춘다 */
+  height: 32px;
+  padding: 0 10px;
   font-size: 12px;
 }
 .concept-box input:focus {
@@ -1643,7 +1655,8 @@ legend {
   flex: none;
   align-items: center;
   gap: 4px;
-  padding: 8px 12px;
+  height: 32px;        /* 검색란과 같은 높이 (2026-09-20) */
+  padding: 0 12px;
   font-size: 12px;
   font-weight: 700;
   display: inline-flex;
@@ -6569,8 +6582,12 @@ html.dark .tags-track > span {
   border: 1px solid #ffffff55;
   background: #ffffff18;
   color: #fff;
-  padding: 9px 11px;
-  font-size: 12px;
+  /* 사이트 공통 검색란 높이 32px (2026-09-20). ⚠ 이 줄은 align-items:stretch 라
+     **옆 버튼이 더 크면 입력란이 그만큼 늘어난다** — 아래 버튼 여백도 같이 맞춘 이유다
+     (실측: 버튼 39px 이 입력란을 38px 로 끌어올리고 있었다). */
+  height: 32px;
+  padding: 0 11px;
+  font-size: 12.5px;
   min-width: 180px;
 }
 .roster-tools input::placeholder {
@@ -6580,7 +6597,9 @@ html.dark .tags-track > span {
   border: 1px solid #ffffff55;
   background: transparent;
   color: #fff;
-  padding: 9px 13px;
+  /* 검색란과 같은 32px — 위 주석 참조 */
+  height: 32px;
+  padding: 0 13px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -7473,11 +7492,12 @@ html.dark .tags-track > span {
   flex: 1;
   border: 1px solid #bbbcb7;
   background: var(--white);
-  /* 44px 짜리 뚱뚱한 칸이었다 → 31px (사용자 지시 2026-09-20). 옆 버튼들은
-     .quick-wrap 의 align-items:stretch 로 따라 줄어든다. */
-  padding: 7px 11px;
+  /* 44px 짜리 뚱뚱한 칸이었다 → 사이트 공통 32px (사용자 지시 2026-09-20).
+     여백이 아니라 높이로 못 박는다 — 이유는 .search-wrap 주석 참조(모바일 16px 강제).
+     옆 버튼들은 .quick-wrap 의 align-items:stretch 로 따라온다. */
+  height: 32px;
+  padding: 0 11px;
   font-size: 12.5px;
-  line-height: 1.25;          /* 물려받은 1.6 이면 7px 여백을 줘도 35px 이 된다 */
   outline: 0;
 }
 .quick-wrap input:focus {
@@ -9564,21 +9584,6 @@ html.dark .tags-track > span {
 }
 .farm-guide-modal p:last-child {
   margin-bottom: 0;
-}
-/* 검색란 높이를 공개채용 도우미의 빠른 입력줄과 같게 (사용자 지시 2026-09-20).
-   ⚠ `.search-wrap` 자체는 도감·작전·스토리 등 열 곳이 함께 쓰므로 건드리지 않고
-   이 두 화면에만 건다 — 나머지 화면까지 같이 줄이려면 따로 확인하고 옮길 것.
-   높이를 실제로 정하는 건 입력란이 아니라 22px 짜리 ⌕ 글리프였다 (실측). */
-.farm-search > input,
-.cost-search > input {
-  padding: 7px 10px;
-  font-size: 12.5px;
-  line-height: 1.25;
-}
-.farm-search > span,
-.cost-search > span {
-  padding-left: 10px;
-  font-size: 17px;
 }
 .farm-tools {
   display: flex;
@@ -15136,10 +15141,11 @@ html.rg-theme {
   border: 1px solid var(--rgline);
   background: var(--rgdeep);
   color: var(--rgink);
-  padding: 8px 12px;
+  /* 사이트 공통 검색란 높이 32px (2026-09-20) */
+  height: 32px;
+  padding: 0 12px;
   font-weight: 500;
-  font-size: 13px;
-  line-height: 1;
+  font-size: 12.5px;
   min-width: 180px;
 }
 .rg-filterbar input[type="search"]::placeholder {

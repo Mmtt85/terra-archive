@@ -1680,7 +1680,8 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
   const { locale, t } = useI18n();
   const [view, setView] = useState<"digest" | "chronicle">("digest");
   // 기본 뷰는 테마별 (사용자 확정 2026-07-21)
-  const [group, setGroup] = useState<GroupMode>("theme");
+  // 기본은 **출시순** (사용자 지시 2026-09-20) — 종전 기본은 테마별이었다(2026-07-21)
+  const [group, setGroup] = useState<GroupMode>("release");
   const [selected, setSelected] = useState<StoryEvent | null>(
     () => (initialStory ? eventById.get(initialStory) ?? null : null));
 
@@ -1697,9 +1698,9 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
       if (detail) return;                              // 상세 진입 시 뷰/그룹 상태는 유지
       if (h === "#chronicle") setView("chronicle");
       else if (h === "#kind") { setView("digest"); setGroup("kind"); }
-      else if (h === "#release") { setView("digest"); setGroup("release"); }
-      // 기본(해시 없음·#story)은 테마별 (사용자 확정 2026-07-21)
-      else if (h === "#theme" || h.startsWith("#theme-") || h === "#story" || h === "") { setView("digest"); setGroup("theme"); }
+      else if (h === "#theme" || h.startsWith("#theme-")) { setView("digest"); setGroup("theme"); }
+      // 기본(해시 없음·#story)은 **출시순** (사용자 지시 2026-09-20, 종전 기본은 테마별)
+      else if (h === "#release" || h === "#story" || h === "") { setView("digest"); setGroup("release"); }
     };
     apply();
     document.documentElement.removeAttribute("data-story-detail");  // 목록 숨김 플래그 해제(상세 반영 후)
@@ -1895,9 +1896,10 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
       )}
 
       <div className="story-viewtabs" role="tablist">
+        {/* 기본 보기가 출시순이라 탭도 출시순이 맨 왼쪽 (사용자 지시 2026-09-20) */}
+        <button type="button" role="tab" aria-selected={view === "digest" && group === "release"} className={view === "digest" && group === "release" ? "on" : ""} onClick={() => goGroup("release")}>{t("출시순")}</button>
         <button type="button" role="tab" aria-selected={view === "digest" && group === "theme"} className={view === "digest" && group === "theme" ? "on" : ""} onClick={() => goGroup("theme")}>{t("테마별")}</button>
         <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
-        <button type="button" role="tab" aria-selected={view === "digest" && group === "release"} className={view === "digest" && group === "release" ? "on" : ""} onClick={() => goGroup("release")}>{t("출시순")}</button>
         <button type="button" role="tab" aria-selected={view === "chronicle"} className={view === "chronicle" ? "on" : ""} onClick={() => goView("chronicle")}>{t("테라 연대기")}</button>
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 (KR 클라 전용) */}
         {locale === "ko" && (
