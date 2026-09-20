@@ -7195,6 +7195,26 @@ html.dark .tags-track > span {
   font-size: 12px;
   line-height: 1.7;
 }
+/* 제목 줄 — 화면 이름 오른쪽에 참고표 손잡이를 붙인다 (사용자 지시 2026-09-20:
+   "두 버튼 다 타이틀 오른쪽에, 다른 시뮬레이터들도 다 통일").
+   쓰는 곳: 공개채용 도우미 · 재료 파밍 효율표 · 육성 비용 계산기 · 작전 시뮬레이터.
+   좁으면 손잡이가 통째로 다음 줄로 접힌다. */
+.head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 8px;
+  margin: 4px 0 12px;
+}
+/* 세로 여백은 줄이 가진다 — 화면마다 제각각이던 h2 마진을 여기서 한 값으로 모은다 */
+.head-row > h2 {
+  margin: 0;
+}
+.head-row > .head-links {
+  margin-top: 0;
+}
+
 /* ── 머리글 밑 참고표 손잡이 (사용자 지시 2026-09-20) ───────────────────────────
    화면 설명·참고표를 본문에 깔지 않고 여는 버튼만 남긴다. 접이식(<details>)은 펼치는
    순간 아래가 통째로 밀려 보던 자리를 다시 찾아야 했고, 본문 맨 밑 너비 100% 막대는
@@ -9509,7 +9529,9 @@ html.dark .tags-track > span {
   color: var(--ink);
 }
 .farm-head h2 {
-  margin: 6px 0 12px;
+  /* 세로 여백은 .head-row 가 가진다 (2026-09-20) — 여기 값이 남아 있으면 화면마다
+     제목 줄 높이가 달라진다. 이 규칙이 .head-row > h2 보다 뒤에 있어 그쪽이 진다. */
+  margin: 0;
   font-size: 26px;
   letter-spacing: -0.5px;
 }
@@ -9770,7 +9792,7 @@ html.dark .tags-track > span {
   padding: 24px clamp(22px, 5vw, 76px) 32px;
 }
 .story-head h2 {
-  margin: 6px 0 12px;
+  margin: 0;   /* 세로 여백은 .head-row 가 가진다 (2026-09-20) */
   font-size: 26px;
   letter-spacing: -0.5px;
 }
@@ -9783,6 +9805,25 @@ html.dark .tags-track > span {
 .story-source {
   color: var(--muted) !important;
   font-size: 12px !important;
+}
+/* 안내 창 — 세 문단뿐이라 좁게. 모서리는 .mw-window 기본값 (2026-09-20) */
+.story-guide-modal {
+  width: min(620px, 100%);
+  place-self: center;
+  height: fit-content;
+  max-height: min(84dvh, 620px);
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  box-shadow: var(--sh-2);
+}
+.story-guide-modal p {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ink2);
+}
+.story-guide-modal p:last-child {
+  margin-bottom: 0;
 }
 .story-tools {
   display: flex;
@@ -11876,9 +11917,13 @@ html.dark .story-card:hover .story-thumb img {
   padding: 16px 16px 16px;
   margin: 16px 0;
 }
-.cost-calc-head h3 {
-  margin: 6px 0 8px;
-  font-size: 20px;
+/* 제목이 <h3> 이던 시절의 규칙이라 <h2> 로 바뀐 뒤로 **아무것도 안 맞고 있었다** —
+   /upgrade 의 '육성 비용 계산기'가 본문과 같은 16px 로 나오고 있었다 (실측 2026-09-20).
+   같은 줄에 선 다른 화면(재료 파밍 효율표·스토리)과 같은 26px 로 맞춘다.
+   세로 여백은 .head-row 가 가진다. */
+.cost-calc-head h2 {
+  margin: 0;
+  font-size: 26px;
   letter-spacing: -0.5px;
 }
 .cost-calc-head p {
@@ -14141,13 +14186,19 @@ html.rg-theme {
   position: absolute;
   right: 18px;
   top: 16px;
+  /* 히어로 아래변까지 늘려(.rg-hero 의 margin-bottom 16px 만큼 빼고) 셋을 그 안에 고르게
+     벌린다 — space-between (사용자 지시 2026-09-20). 높이를 안 주면 space-between 이
+     할 일이 없어 gap 만 남는다. */
+  bottom: 16px;
   z-index: 30;
   width: min(340px, calc(100% - 36px));
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  justify-content: space-between;
   /* PRTS 버튼 줄과 테마 선택 줄은 성격이 다른 묶음이라 붙으면 한 덩어리로 읽힌다
-     (사용자 지적 2026-09-20 "테마변경 버튼이 위에 PRTS버튼들이랑 너무 딱달라붙어있음"). */
+     (사용자 지적 2026-09-20 "테마변경 버튼이 위에 PRTS버튼들이랑 너무 딱달라붙어있음").
+     남는 높이가 없을 때(좁은 화면)의 최소 간격 역할도 겸한다. */
   gap: 12px;
 }
 /* 열 안 순서: PRTS 줄 → 테마 변경 → 난이도 (DOM 은 난이도가 먼저라 order 로 내린다) */
@@ -20096,7 +20147,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   min-height: 100vh;
 }
 .sim-head h2 {
-  margin: 2px 0 0;
+  margin: 0;   /* 세로 여백은 .head-row 가 가진다 (2026-09-20) */
   font-size: 22px;
 }
 .sim-intro {
@@ -20115,8 +20166,26 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 }
 /* 시뮬레이터의 계층 필터 — 도감과 같은 부품이지만 여기선 사이드 패널이 아니라 본문 폭이라
    위아래 여백만 준다 (사용자 요청 2026-08-16) */
-.sim-filter {
+/* 세부 조건 · 검색란 · 검색 버튼을 한 줄에 (사용자 지시 2026-09-20).
+   세부 조건 상자는 legend 가 위에 얹혀 있어 **아랫변**을 기준으로 맞춘다.
+   좁으면 접혀 종전처럼 위아래로 쌓인다. */
+.sim-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 16px;
   margin: 16px 0 4px;
+}
+.sim-toolbar > .sim-filter {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.sim-toolbar > .sim-search-row {
+  flex: 0 1 460px;
+  /* 검색 줄만 아랫변에 딱 붙으면 상자 테두리와 닿는다 — 상자 안쪽 여백만큼 띄운다 */
+  margin-bottom: 8px;
+}
+.sim-filter {
   /* 데이터 도착 전에도 같은 자리를 잡아 둔다 — 이유는 sim-launcher.tsx 쪽 주석 참조 */
   min-height: 62px;
 }
@@ -20127,8 +20196,20 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 16px 0 4px;
   max-width: 540px;
+}
+/* 안내 창 — 소개 두 문단뿐이라 좁게. 모서리는 .mw-window 기본값 */
+.sim-guide-modal {
+  width: min(600px, 100%);
+  place-self: center;
+  height: fit-content;
+  max-height: min(84dvh, 620px);
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  box-shadow: var(--sh-2);
+}
+.sim-guide-modal .sim-intro {
+  margin-top: 0;
 }
 .sim-search {
   flex: 1;

@@ -1654,6 +1654,11 @@ const D: Record<string, Pair> = {
   "작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브": [
     "Stage Simulator - Arknights Enemy Spawn Timeline | Terra Archive",
     "作戦シミュレーター - アークナイツ敵出現タイムライン | テラアーカイブ"],
+  "작전 시뮬레이터 읽는 법": ["How to read this simulator", "作戦シミュレーターの読み方"],
+  "작전을 고르면 적이 **몇 초에 어디서 나와 어디로 가는지** 스폰 타임라인으로 재생합니다 — 읽는 법과 주의": [
+    "Pick a stage and watch **when and where each enemy spawns, and where it heads** on a spawn timeline — how to read it, and caveats",
+    "作戦を選ぶと、敵が**何秒後にどこから現れどこへ向かうか**をスポーンタイムラインで再生します — 読み方と注意",
+  ],
   "작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지, 스폰 타임라인을 재생해 보여줍니다. 배속·구간 이동으로 흐름을 훑고, 선이나 말을 누르면 적별 경로를 확인할 수 있습니다.": [
     "Pick an operation to replay its spawn timeline — when each enemy appears, which route it takes, and where it goes. Skim with playback speed and seeking, and click a line or unit to inspect that enemy's route.",
     "作戦を選ぶと、敵が何秒にどこから現れどの経路でどこへ向かうか、出現タイムラインを再生します。倍速・シークで流れを掴み、線や駒をクリックすると敵ごとの経路を確認できます。"],
@@ -2224,6 +2229,11 @@ const D: Record<string, Pair> = {
   "출시된 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.": [
     "An archive of all {count} stories released. AI reads the full story scripts and condenses each into a 10-minute digest with cutscenes. {done} available now — more on the way.",
     "公開されたストーリー{count}件のアーカイブです。AIがストーリースクリプト全文を読み込み、カットシーン付きの10分ダイジェストにまとめます。現在{done}件収録 — 順次追加されます。",
+  ],
+  "스토리 요약 안내": ["About these digests", "あらすじについて"],
+  "현재 {done}개 수록 · 요약에는 **결말 포함 스포일러**가 있습니다 — 안내": [
+    "{done} digests so far · they contain **full spoilers, including endings** — details",
+    "現在{done}本収録 · あらすじには**結末を含むネタバレ**があります — 案内",
   ],
   "요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.": [
     "Digests contain full spoilers including endings. Event titles & thumbnails from datamined game data · as of {date}.",

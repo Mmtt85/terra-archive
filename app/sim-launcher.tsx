@@ -13,7 +13,7 @@
 // 크롤러·새 탭·보조클릭용 딥링크로 남긴다.
 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { useI18n } from "./i18n";
+import { useI18n, rich } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
 import { AttributeFilter } from "./attr-filter";
@@ -98,6 +98,7 @@ export default function SimLauncher() {
   // 같은 날 요청대로 입력을 따라 라이브로 남긴다 (한 작전으로 바로 점프하는 용도).
   const { term, clear, inputRef, inputProps } = useSearchInput();
   const [committed, setCommitted] = useState("");
+  const [showGuide, setShowGuide] = useState(false);
   // 계층 필터 — 작전 도감과 **같은 부품·같은 조작** (사용자 요청 2026-08-16 "검색방식 똑같이").
   // 검색어는 종전대로 버튼·Enter로 확정하고(2026-08-10 확정 유지), 필터는 고르는 즉시 반영한다.
   const [types, setTypes] = useState<string[]>([]);
@@ -245,12 +246,29 @@ export default function SimLauncher() {
     <section className="sim-launch" aria-labelledby="sim-title">
       <header className="sim-head">
         <span className="section-no">STAGE SIMULATOR</span>
+        <div className="head-row">
         <h2 id="sim-title">{t("작전 시뮬레이터")}</h2>
+        {/* 안내 두 문단을 창으로 뺐다 (사용자 지시 2026-09-20, 다른 화면과 같은 규약).
+            ⚠ 이 화면은 "명일방주 시뮬레이터" 검색 유입을 노리는 SEO 표적 페이지고(맨 위
+            주석), 그 두 문단이 **프리렌더 HTML의 유일한 고유 본문**이었다 — 창 안은
+            프리렌더에 안 들어간다. 그래서 이 버튼 문구가 한 문장을 대신 들고 있다.
+            문구를 줄일 때 이 사정을 같이 볼 것. */}
+        <div className="head-links">
+          <button type="button" onClick={() => setShowGuide(true)}>
+            {rich(t("작전을 고르면 적이 **몇 초에 어디서 나와 어디로 가는지** 스폰 타임라인으로 재생합니다 — 읽는 법과 주의"))}
+          </button>
+        </div>
+        </div>
       </header>
-      {/* 이 소개 문단은 프리렌더되는 SEO 본문이다 — 데이터 로드와 무관하게 정적으로 그린다 */}
-      <p className="sim-intro">{t("작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지, 스폰 타임라인을 재생해 보여줍니다. 배속·구간 이동으로 흐름을 훑고, 선이나 말을 누르면 적별 경로를 확인할 수 있습니다.")}</p>
-      <p className="sim-note">{t("저지 없이 두었을 때의 기준 타임라인입니다.")} {t("처치 수 등 조건 분기 증원은 재생에 포함되지 않습니다.")} {t("통합전략 가이드의 전투 노드에서도 '이동 경로' 탭으로 같은 시뮬레이션을 재생할 수 있습니다.")}</p>
+      {showGuide && (
+        <ModalWindow label={t("작전 시뮬레이터 읽는 법")} className="sim-guide-modal" onClose={() => setShowGuide(false)}>
+          <p className="sim-intro">{t("작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지, 스폰 타임라인을 재생해 보여줍니다. 배속·구간 이동으로 흐름을 훑고, 선이나 말을 누르면 적별 경로를 확인할 수 있습니다.")}</p>
+          <p className="sim-note">{t("저지 없이 두었을 때의 기준 타임라인입니다.")} {t("처치 수 등 조건 분기 증원은 재생에 포함되지 않습니다.")} {t("통합전략 가이드의 전투 노드에서도 '이동 경로' 탭으로 같은 시뮬레이션을 재생할 수 있습니다.")}</p>
+        </ModalWindow>
+      )}
 
+      {/* 세부 조건 · 검색란 · 검색 버튼을 한 줄에 (사용자 지시 2026-09-20) — 좁으면 접힌다 */}
+      <div className="sim-toolbar">
       {/* 계층 필터 — 작전 도감과 같은 부품·같은 조작 (사용자 요청 2026-08-16)
           ⚠ 상자는 **작전 데이터가 오기 전에도 그린다**. 종전처럼 통째로 빼 두면 데이터가
              도착하는 순간 62px이 검색창 **위쪽에** 끼어들어 검색창부터 아래 화면 전체가
@@ -289,6 +307,7 @@ export default function SimLauncher() {
         </div>
         {/* 결과는 입력 즉시가 아니라 이 버튼(또는 Enter)으로 확정 (사용자 지시 2026-08-10) */}
         <button type="button" className="sim-search-btn" onClick={doSearch}>{t("검색")}</button>
+      </div>
       </div>
 
       {!doc || !sims ? (

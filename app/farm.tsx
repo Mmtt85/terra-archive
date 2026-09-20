@@ -266,11 +266,13 @@ export default function FarmGuide() {
     <section className="farm" aria-label={t("재료 파밍 효율표")}>
       <div className="farm-head">
         <span className="section-no">FARMING EFFICIENCY</span>
+        <div className="head-row">
         <h2>{t("재료 파밍 효율표")}</h2>
         <div className="head-links">
           <button type="button" onClick={() => setShowGuide(true)}>
             {rich(t("개당 기대 이성은 **낮을수록** 좋습니다 — 표 읽는 법과 출처"))}
           </button>
+        </div>
         </div>
       </div>
 
@@ -647,13 +649,15 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
     <div className="cost-calc">
       <div className="cost-calc-head">
         <span className="section-no">COST CALCULATOR</span>
-        <h2>{t("육성 비용 계산기")}</h2>
         {/* 한 번 읽으면 끝인 사용법이 머리글에 길게 깔려 있었다 — 창으로 뺐다
             (사용자 지시 2026-09-20, 공개채용 도우미·재료 파밍 효율표와 같은 규약) */}
+        <div className="head-row">
+        <h2>{t("육성 비용 계산기")}</h2>
         <div className="head-links">
           <button type="button" onClick={() => setShowGuide(true)}>
             {rich(t("목표 단계를 클릭하면 **앞 단계가 자동으로 포함**됩니다 — 쓰는 법"))}
           </button>
+        </div>
         </div>
       </div>
       {showGuide && (

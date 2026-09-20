@@ -41,6 +41,7 @@ import imageDimsData from "./data/story-image-dims.json";
 // 본문은 번들에 넣지 않는다 (전문 스크립트와 같은 규약: public/lore/data/<id>.json fetch).
 import loreIndexData from "./data/eventlore-index.json";
 import { rich, useI18n, type Locale } from "./i18n";
+import { ModalWindow } from "./modal-window";
 const SceneMode = lazy(() => import("./story-vn"));
 import type { LoreEvent } from "./eventlore";
 import { normSearch, useSearchInput } from "./search";
@@ -1784,6 +1785,8 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
   // 기본 꺼짐·비영속 (리프레시하면 꺼짐). 인덱스는 public/story/search.bin (앵커 3점 역색인).
   const [lensAuto, setLensAuto] = useState(false);
   const [lensHelp, setLensHelp] = useState(false);
+  // 안내 세 문단을 창으로 (사용자 지시 2026-09-20, 다른 화면과 같은 규약)
+  const [showGuide, setShowGuide] = useState(false);
   const [lensMsg, setLensMsg] = useState<string | null>(null);
   const [lensThumb, setLensThumb] = useState<string | null>(null);
   const [lensNav, setLensNav] = useState(0); // 같은 스토리 안 다른 ep 재이동 시 전문 뷰어 리마운트용
@@ -1869,14 +1872,27 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
     <section className="story" aria-label={t("스토리")}>
       <div className="story-head">
         <span className="section-no">AI STORY DIGEST</span>
-        <h2>{t("스토리")}</h2>
-        <p>{t("출시된 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
-        <p className="story-source">{t("요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.", { date: data.updated })}</p>
-        {/* 미실장 이벤트는 미래시와 무관하게 목록에 있으므로 안내도 항상 (2026-09-04 규칙 변경) */}
-        {data.events.some((event) => event.unreleased) && (
-          <p className="story-source">{t("미실장(중국 서버 선행) 이벤트의 제목은 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
-        )}
+        {/* 안내는 창으로 빼고 제목 오른쪽 손잡이만 남긴다 (사용자 지시 2026-09-20).
+            수록 개수와 스포일러 경고는 한눈에 볼 값이라 버튼 문구가 들고 있는다. */}
+        <div className="head-row">
+          <h2>{t("스토리")}</h2>
+          <div className="head-links">
+            <button type="button" onClick={() => setShowGuide(true)}>
+              {rich(t("현재 {done}개 수록 · 요약에는 **결말 포함 스포일러**가 있습니다 — 안내", { done: summarized }))}
+            </button>
+          </div>
+        </div>
       </div>
+      {showGuide && (
+        <ModalWindow label={t("스토리 요약 안내")} className="story-guide-modal" onClose={() => setShowGuide(false)}>
+          <p>{t("출시된 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
+          <p className="story-source">{t("요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.", { date: data.updated })}</p>
+          {/* 미실장 이벤트는 미래시와 무관하게 목록에 있으므로 안내도 항상 (2026-09-04 규칙 변경) */}
+          {data.events.some((event) => event.unreleased) && (
+            <p className="story-source">{t("미실장(중국 서버 선행) 이벤트의 제목은 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
+          )}
+        </ModalWindow>
+      )}
 
       <div className="story-viewtabs" role="tablist">
         <button type="button" role="tab" aria-selected={view === "digest" && group === "theme"} className={view === "digest" && group === "theme" ? "on" : ""} onClick={() => goGroup("theme")}>{t("테마별")}</button>

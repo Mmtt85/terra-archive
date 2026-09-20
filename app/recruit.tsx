@@ -341,11 +341,14 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     <section className="recruit" aria-label={t("공개모집 도우미")}>
       <div className="recruit-head">
         <span className="section-no">RECRUITMENT ASSIST</span>
-        <h2>{t("공개채용 도우미")}</h2>
         {/* 설명과 시간표는 한 번 읽으면 끝인데 263px 를 늘 깔고 있었다 (실측) — 창으로 뺐다.
             접이식(<details>)이었을 땐 펼치는 순간 아래가 통째로 밀려 내려가 결과를 다시
             찾아야 했다 (사용자 지적 2026-09-20). 저격 조합 사전도 같은 줄에서 연다 —
-            둘 다 "지금 고른 태그와 무관한 참고표"라 본문에 깔 이유가 없다. */}
+            둘 다 "지금 고른 태그와 무관한 참고표"라 본문에 깔 이유가 없다.
+            손잡이는 **제목 오른쪽**에 — 네 화면(공채·파밍·육성·작전 시뮬) 공통 규격
+            (.head-row, 사용자 지시 2026-09-20). */}
+        <div className="head-row">
+        <h2>{t("공개채용 도우미")}</h2>
         <div className="head-links">
           <button type="button" onClick={() => setShowGuide(true)}>
             {rich(t("성급 배지는 모집 시간 **9시간** 기준입니다 — 읽는 법과 시간별 출현 성급"))}
@@ -353,6 +356,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
           <button type="button" onClick={() => setShowDict(true)}>
             {t("4·5성 저격 조합 사전")}<em>{t("{n}개 조합", { n: SNIPE_DICT.length })}</em>
           </button>
+        </div>
         </div>
       </div>
 
