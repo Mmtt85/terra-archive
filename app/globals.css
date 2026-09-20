@@ -7081,6 +7081,9 @@ html.dark .tags-track > span {
     grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
     align-items: start;
     gap: 18px;
+    /* 아래 규칙이 태그 판의 margin-top(16px)을 0으로 누르므로 그만큼을 여기서 돌려준다 —
+       안 그러면 머리글 버튼 바로 밑에 입력창이 맞붙는다 (사용자 지적 2026-09-20) */
+    margin-top: 16px;
   }
   .recruit-split > .recruit-tags {
     position: sticky;
@@ -7157,21 +7160,79 @@ html.dark .tags-track > span {
 .recruit-group > .recruit-results {
   margin-top: 12px;
 }
-/* 접이식 도움말 — 설명·시간표를 여기로 넣었다 */
-.recruit-guide > summary {
+/* 도움말 창·저격 조합 사전 창 — 둘 다 본문에 깔던 것을 창으로 옮겼다 (사용자 지시 2026-09-20).
+   자리·크기는 .item-modal 관례를 따른다: 내용만큼만 높게, 화면 가운데.
+   (안 정해 주면 백드롭이 grid 라 좌상단에 붙고 max-height 까지 늘어난다)
+   모서리 반경은 안 적는다 — :where(.mw-window) 가 창 전체에 var(--r-lg) 를 깐다. */
+.recruit-dict-modal {
+  width: min(1040px, 100%);
+  place-self: center;
+  height: fit-content;
+  max-height: min(84dvh, 780px);
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  box-shadow: var(--sh-2);
+}
+.recruit-dict-lead {
+  color: var(--ink3);
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+/* 도움말은 설명·시간표 두 문단뿐이라 사전 창보다 훨씬 좁게 */
+.recruit-guide-modal {
+  width: min(560px, 100%);
+  place-self: center;
+  height: fit-content;
+  max-height: min(84dvh, 640px);
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  box-shadow: var(--sh-2);
+}
+.recruit-guide-p {
+  color: var(--ink3);
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+}
+/* 머리글 밑 참고표 손잡이 두 개 — 도움말 · 저격 조합 사전 (사용자 지시 2026-09-20).
+   종전엔 도움말이 접이식(<details>)이라 펼치는 순간 아래가 통째로 밀려 결과를 다시
+   찾아야 했고, 사전은 본문 맨 밑에 너비 100% 점선 막대로 깔려 있었다. 둘 다 창으로
+   뺐으니 여기 남는 건 여는 버튼뿐이고, 좁으면 두 줄로 접힌다. */
+.recruit-head-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.recruit-head-links > button {
+  /* ⚠ inline-flex 금지 — rich() 가 돌려주는 조각(글 · <b>9시간</b> · 글)이 각자 flex
+     아이템이 돼 gap 만큼 벌어지며 세 줄로 접힌다 (사용자 제보 2026-09-20). 글줄로 흐르게 둔다. */
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--white);
+  color: var(--ink3);
+  padding: 7px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: left;
   cursor: pointer;
-  font-size: 12.5px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.recruit-head-links > button:hover {
+  border-color: var(--border-hover);
+  color: var(--ink);
+}
+/* 조합 수는 제목이 아니라 부연 — 묶음 소제목(.recruit-group > h3 > em)과 같은 규격 */
+.recruit-head-links > button > em {
+  margin-left: 7px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--muted);
-  padding: 6px 0;
-}
-.recruit-guide[open] > summary {
-  margin-bottom: 10px;
-}
-.recruit-guide > p {
-  margin: 0 0 12px;
-}
-.recruit-guide > p:last-child {
-  margin-bottom: 4px;
 }
 .recruit-tags fieldset {
   margin: 12px 0 0;
@@ -7379,29 +7440,6 @@ html.dark .tags-track > span {
     padding: 2px 12px 12px;
   }
 }
-.recruit-dict {
-  margin-top: 30px;
-}
-.dict-toggle {
-  width: 100%;
-  border: 1px dashed #aaa9a2;
-  background: 0 0;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 12px;
-  font-size: 12px;
-  font-weight: 700;
-}
-.dict-toggle:hover {
-  border-color: var(--border-hover);
-  color: var(--ink);
-}
-.recruit-dict > p {
-  color: var(--ink3);
-  margin: 14px 2px 0;
-  font-size: 12px;
-  line-height: 1.6;
-}
 .quick-wrap {
   display: flex;
   align-items: stretch;
@@ -7409,15 +7447,72 @@ html.dark .tags-track > span {
   margin-top: 16px;
 }
 .quick-wrap input {
+  /* ⚠ min-width:0 을 주지 말 것 — 입력란의 고유 최소폭(약 170px)이 좁은 칸에서
+     스샷 버튼을 아랫줄로 밀어내는 장치다. 0으로 풀면 입력란이 24px 로 찌그러진다 (실측). */
   flex: 1;
   border: 1px solid #bbbcb7;
   background: var(--white);
-  padding: 11px 12px;
-  font-size: 13px;
+  /* 44px 짜리 뚱뚱한 칸이었다 → 31px (사용자 지시 2026-09-20). 옆 버튼들은
+     .quick-wrap 의 align-items:stretch 로 따라 줄어든다. */
+  padding: 7px 11px;
+  font-size: 12.5px;
+  line-height: 1.25;          /* 물려받은 1.6 이면 7px 여백을 줘도 35px 이 된다 */
   outline: 0;
 }
 .quick-wrap input:focus {
   border-color: var(--border-strong);
+}
+/* ── 빠른 입력 안내문 마퀴 (사용자 지시 2026-09-20) ──────────────────────────────
+   좌우 분할의 왼쪽 칸에선 입력란이 176px 뿐이라 안내문이 통째로 잘렸다. 네이티브
+   placeholder 는 애니메이션이 안 되므로 같은 자리에 겹쳐 그리고 흘려 보낸다 —
+   input 에는 공백 한 칸만 넣어 :placeholder-shown 이 살아 있게 한다
+   (.search-clear 와 같은 관례, app/search.ts 주석 참고).
+   ⚠ 사본을 둘 두고 -50% 만큼 밀어야 이음매 없이 돈다. 사본 간격(padding-right)은
+   recruit.tsx 의 PH_GAP 과 같아야 넘침 판정이 맞는다. */
+.quick-input {
+  position: relative;
+  flex: 1;
+  display: flex;
+}
+.quick-ph {
+  position: absolute;
+  inset: 1px 12px;            /* 테두리 1px + 입력란 좌우 여백 11px = 타이핑이 시작되는 자리 */
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+/* 글자가 들어오면 사라진다 — 네이티브 placeholder 와 같은 타이밍 */
+.quick-input > input:not(:placeholder-shown) ~ .quick-ph {
+  display: none;
+}
+.quick-ph-run {
+  display: flex;
+  flex: none;
+}
+.quick-ph-run > i {
+  padding-right: 36px;        /* = recruit.tsx PH_GAP */
+  font-style: normal;
+}
+/* 넘칠 때만 돈다 (data-run 은 recruit.tsx 가 재서 단다) — 안 넘치면 둘째 사본도 감춘다 */
+.quick-ph:not([data-run="1"]) > .quick-ph-run > i + i {
+  display: none;
+}
+.quick-ph[data-run="1"] > .quick-ph-run {
+  animation: quick-ph-run 14s linear infinite;
+}
+/* 포커스하면 멈춰 첫머리를 보여 준다 — 캐럿 옆에서 글자가 흐르면 거슬린다 */
+.quick-input > input:focus ~ .quick-ph > .quick-ph-run {
+  animation: none;
+}
+@keyframes quick-ph-run {
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quick-ph[data-run="1"] > .quick-ph-run { animation: none; }
 }
 .clear-btn {
   border: 1px solid var(--border-strong);
@@ -7438,12 +7533,21 @@ html.dark .tags-track > span {
   .quick-wrap {
     flex-wrap: wrap;
   }
-  .quick-wrap input {
+  /* 한 줄을 차지해야 하는 건 입력란을 **감싼 칸**이다 — 안쪽 input 에 걸면 칸은 그대로라
+     '클리어'가 같은 줄에 남는다 (마퀴 때문에 입력란을 .quick-input 으로 감싸면서 생긴 회귀) */
+  .quick-input {
     flex: 1 1 100%;
   }
   .clear-btn {
-    padding: 9px 16px;
+    /* 세로 여백은 입력란(7px)에 맞춘다 — 혼자 39px 이면 옆줄 버튼까지 끌어올린다.
+       '클리어'가 글자 단위로 짜부라지는 걸 막는 건 nowrap 쪽이다 */
+    padding: 6px 16px;
     white-space: nowrap;
+  }
+  /* 겹쳐 그린 안내문도 입력 글자와 크기가 같아야 한다 — 모바일에선 전역 규칙이
+     input 을 16px 로 올린다(iOS 포커스 확대 방지). 12.5px 로 두면 혼자 작아 보인다. */
+  .quick-ph {
+    font-size: 16px;
   }
 }
 .recruit-time-note {
@@ -16136,8 +16240,8 @@ main.site-main > .site-header {
   background: color-mix(in srgb, var(--lime) 10%, var(--white));
   color: var(--ink);
   border-radius: var(--r-md) 0 0 var(--r-md);
-  padding: 8px 12px;
-  font-size: 0.85rem;
+  padding: 6px 10px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -16174,13 +16278,13 @@ main.site-main > .site-header {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
+  min-width: 26px;
   border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
   border-left: none;
   background: var(--bg-panel);
   color: var(--ink2);
   border-radius: 0 var(--r-md) var(--r-md) 0;
-  font-size: 0.85rem;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -17895,10 +17999,16 @@ main.site-main > .site-header {
   .recruit-time-note, .recruit-tags, .recruit-picked, .recruit-combo, .low-time-note) {
   border-radius: var(--r-md);
 }
-/* 모달 패널 전부 — 컨테이너급만 (백드롭·내부 조각 제외) */
+/* 모달 패널 전부 — 컨테이너급만 (백드롭·내부 조각 제외)
+   ⚠ `.mw-window` 가 여기 있는 이유: 이건 **열거식 허용 목록**이라 공용 창(ModalWindow)으로
+   새 모달을 만들 때마다 자기 클래스를 여기 더하거나 자기 radius 를 적어야 했고, 그걸
+   빼먹으면 그 창만 각지게 떴다 (사용자 지적 2026-09-20: "공통컴포넌트는 둥그스름한데
+   얜 또 각져있다" — 저격 조합 사전 창). 창은 예외 없이 `.mw-window` 를 달고 나오므로
+   기본값을 여기서 깔아 준다. `:where()` 라 특이도가 0이고, 자기 값을 적은 창
+   (예: .chlog-detail 의 --r-md)은 그대로 이긴다. */
 :where(.operator-modal, .room-modal, .item-modal, .lens-modal, .scanner-modal,
   .term-modal, .confirm-modal, .bcast-modal, .rg-emodal, .rg-rmodal, .rg-zmodal,
-  .rg-invmodal, .rg-modal, .omni-panel, .bridge-replay) {
+  .rg-invmodal, .rg-modal, .omni-panel, .bridge-replay, .mw-window) {
   border-radius: var(--r-lg);
 }
 /* 세그먼트 컨트롤은 **컨테이너**를 굴리고 내부 버튼은 각지게 되돌린다 —

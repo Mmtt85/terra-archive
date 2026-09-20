@@ -4,6 +4,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
 import recruitData from "./data/recruit.json";
 import { useI18n, rich, type ExtraI18n } from "./i18n";
+import { ModalWindow } from "./modal-window";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 import { useSearchInput } from "./search";
 import { isNewFeature } from "./whats-new";
@@ -137,9 +138,18 @@ const ALL_TAG_NAMES = data.tags.map((tag) => tag.name);
 // 사용 흐름이라(사용자 제보 2026-08-16) 표시 필터는 세션을 넘어 기억한다
 const PRIZED_KEY = "ta-recruit-prized";
 
+// 빠른 입력 안내문 마퀴의 사본 간격 — globals.css `.quick-ph-run > i` 의 padding-right 와 같아야 한다
+const PH_GAP = 36;
+
 export default function RecruitHelper({ onShowOperator, extra }: { onShowOperator?: (id: string) => void; extra?: ExtraI18n | null } = {}) {
   const { t, locale } = useI18n();
   const [showDict, setShowDict] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  /* 빠른 입력 안내문은 좌우 분할의 왼쪽 칸(입력란 176px)에서 통째로 잘린다 (사용자 지적
+     2026-09-20). 네이티브 placeholder 는 애니메이션이 안 되니 같은 자리에 겹쳐 그려 흘린다 —
+     다만 **실제로 넘칠 때만**. 넘치는지는 CSS 가 알 수 없어 재서 data-run 을 다는데,
+     상태가 아니라 DOM 표시라 리렌더가 없다 (react-hooks/set-state-in-effect 도 피한다). */
+  const quickPhRef = useRef<HTMLSpanElement>(null);
   // 비제어 입력 — 타이핑 중 렌더 0회, 태그 자동 선택·조합 계산은 멈춘 뒤 0.5초에 (search.ts)
   const { term: quickTerm, set: setQuickTerm, inputProps: quickProps } = useSearchInput();
   const [manualOn, setManualOn] = useState<string[]>([]);   // 직접 클릭해 켠 태그
@@ -264,6 +274,19 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   // 자동인식 동안 창 전체가 드롭존 — 드래그 중이면 필을 드롭 가능 상태로 강조
   const lensDragging = useDropWatch(lensAuto && !lensOpen, handleLensShot);
 
+  // 안내문이 입력란보다 넓을 때만 흘린다 — 들어맞는 폭에서 글자가 움직이면 거슬리기만 한다
+  const quickPh = t("빠른 입력 — 태그 첫 글자를 이어서 입력 (예: 가메신생범)");
+  useEffect(() => {
+    const host = quickPhRef.current;
+    const copy = host?.querySelector("i");
+    if (!host || !copy) return;
+    const measure = () => { host.dataset.run = copy.offsetWidth - PH_GAP > host.clientWidth ? "1" : ""; };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [quickPh]);
+
   const results = useMemo(() => comboResults(picked), [picked]);
 
   // 4★ 이상 확정(floor ≥ 4) 조합만 남기는 표시 필터 — SSR엔 localStorage가 없으므로
@@ -281,10 +304,10 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   /* 성급이 다른 카드가 한 줄에 섞이면 등급이 읽히지 않는다 (사용자 지적 2026-09-20:
      "3성 이상이랑 5성 이상이 같은 줄에 있는 게 이상하지 않음?") — 배지가 같은 것끼리
      묶어 소제목을 달고 묶음마다 따로 격자를 깐다. results 가 이미 성급 내림차순이라
-     Map 삽입 순서가 곧 표시 순서다. */
-  const resultGroups = useMemo(() => {
+     Map 삽입 순서가 곧 표시 순서다. 저격 조합 사전도 같은 함수를 쓴다. */
+  const groupByBadge = (list: ComboResult[]) => {
     const groups = new Map<string, { label: string; floor: number; items: ComboResult[] }>();
-    for (const result of shownResults) {
+    for (const result of list) {
       const lowOnly = result.ops.length === 0;
       const key = lowOnly ? `low${result.floor}` : `${result.floor}${result.floor === result.ceil ? "f" : "u"}`;
       const label = lowOnly ? t("{n}★ · 저시간 전용", { n: result.floor })
@@ -294,21 +317,43 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
       group.items.push(result);
       groups.set(key, group);
     }
-    return [...groups.entries()];
-  }, [shownResults, t]);
+    /* 삽입 순서만으로는 같은 성급 안에서 「4★ 이상」이 「4★ 확정」보다 먼저 올 수 있다
+       (사전이 조합 길이순으로 정렬돼 있어서) — 성급 높은 순, 같으면 확정 먼저,
+       저시간 전용은 맨 뒤로 못 박는다. */
+    return [...groups.entries()].sort(([, a], [, b]) =>
+      (a.items[0].ops.length === 0 ? 1 : 0) - (b.items[0].ops.length === 0 ? 1 : 0)
+      || b.floor - a.floor
+      || (a.items[0].floor === a.items[0].ceil ? 0 : 1) - (b.items[0].floor === b.items[0].ceil ? 0 : 1));
+  };
+  const renderGroups = (list: ComboResult[]) => groupByBadge(list).map(([key, group]) => (
+    <section key={key} className="recruit-group">
+      <h3>
+        <span style={{ background: RARITY_COLORS[group.floor] }}>{group.label}</span>
+        <em>{t("{n}개 조합", { n: group.items.length })}</em>
+      </h3>
+      <div className="recruit-results">
+        {group.items.map((result) => <ComboCard key={result.combo.join("+")} result={result} onShowOperator={onShowOperator} tagLabel={tagLabel} opLabel={opLabel} />)}
+      </div>
+    </section>
+  ));
 
   return (
     <section className="recruit" aria-label={t("공개모집 도우미")}>
       <div className="recruit-head">
         <span className="section-no">RECRUITMENT ASSIST</span>
         <h2>{t("공개채용 도우미")}</h2>
-        {/* 설명과 시간표는 한 번 읽으면 끝인데 263px 를 늘 깔고 있었다 (실측) — 접어 두고
-            핵심 한 줄만 남긴다. 결과가 그만큼 위로 올라온다 (사용자 지시 2026-09-20). */}
-        <details className="recruit-guide">
-          <summary>{rich(t("성급 배지는 모집 시간 **9시간** 기준입니다 — 읽는 법과 시간별 출현 성급"))}</summary>
-          <p>{rich(t("게임 공개모집에 **제시된 태그 5개**를 아래에서 그대로 입력하세요. 실제 게임에서 체크할 수 있는 **최대 3개**짜리 조합 전부를 계산해, 높은 성급이 확정되는 조합부터 순서대로 보여줍니다. 성급 배지는 모집 시간 **9시간** 기준 — 6★는 고급 특별 채용이 있어야 나옵니다. 모집 시간을 낮추면 나오는 **1·2★**도 함께 표시되며, 각 결과에 필요한 시간 조건이 붙어 있습니다."))}</p>
-          <p className="recruit-time-note">{rich(t("**모집 시간별 출현 성급** — 1시간~3시간 50분: **1·2·3·4★** · 4시간~7시간 30분: **2·3·4·5★** · 7시간 40분 이상: **3·4·5★**만 출현. 저격 조합은 반드시 **7시간 40분 이상(보통 9시간)**으로 돌려야 3★ 미만이 섞이지 않습니다."))}</p>
-        </details>
+        {/* 설명과 시간표는 한 번 읽으면 끝인데 263px 를 늘 깔고 있었다 (실측) — 창으로 뺐다.
+            접이식(<details>)이었을 땐 펼치는 순간 아래가 통째로 밀려 내려가 결과를 다시
+            찾아야 했다 (사용자 지적 2026-09-20). 저격 조합 사전도 같은 줄에서 연다 —
+            둘 다 "지금 고른 태그와 무관한 참고표"라 본문에 깔 이유가 없다. */}
+        <div className="recruit-head-links">
+          <button type="button" onClick={() => setShowGuide(true)}>
+            {rich(t("성급 배지는 모집 시간 **9시간** 기준입니다 — 읽는 법과 시간별 출현 성급"))}
+          </button>
+          <button type="button" onClick={() => setShowDict(true)}>
+            {t("4·5성 저격 조합 사전")}<em>{t("{n}개 조합", { n: SNIPE_DICT.length })}</em>
+          </button>
+        </div>
       </div>
 
       {/* 넓은 화면에선 왼쪽 태그 판 · 오른쪽 결과로 갈라 스크롤을 줄인다 (사용자 지시
@@ -323,8 +368,14 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
           </div>
         )}
         <div className="quick-wrap">
-          <input {...quickProps}
-            placeholder={t("빠른 입력 — 태그 첫 글자를 이어서 입력 (예: 가메신생범)")} aria-label={t("태그 첫 글자 빠른 입력")} />
+          {/* placeholder 는 자리만 잡는 공백 한 칸 — 실제 안내문은 겹쳐 그린 .quick-ph 가
+              맡는다(마퀴). :placeholder-shown 이 풀리면 CSS 가 알아서 감춘다. */}
+          <div className="quick-input">
+            <input {...quickProps} placeholder=" " aria-label={t("태그 첫 글자 빠른 입력")} />
+            <span className="quick-ph" ref={quickPhRef} aria-hidden>
+              <span className="quick-ph-run"><i>{quickPh}</i><i>{quickPh}</i></span>
+            </span>
+          </div>
           <button type="button" className="clear-btn" onClick={clearAll}><span className="btn-icon" aria-hidden>↻</span>{t("클리어")}</button>
           {/* 스샷으로 태그 입력 — 버튼 자체가 자동인식 토글, ?는 도움말 모달 (KR 클라 전용) */}
           {locale === "ko" && (
@@ -382,36 +433,24 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
         <p className="recruit-empty">{t("태그를 선택하면 조합 결과가 여기에 표시됩니다.")}</p>
       ) : shownResults.length === 0 ? (
         <p className="recruit-empty">{t("이 태그로는 4★ 이상이 확정되는 조합이 없습니다 — 토글을 끄면 전체 조합이 표시됩니다.")}</p>
-      ) : (
-        resultGroups.map(([key, group]) => (
-          <section key={key} className="recruit-group">
-            <h3>
-              <span style={{ background: RARITY_COLORS[group.floor] }}>{group.label}</span>
-              <em>{t("{n}개 조합", { n: group.items.length })}</em>
-            </h3>
-            <div className="recruit-results">
-              {group.items.map((result) => <ComboCard key={result.combo.join("+")} result={result} onShowOperator={onShowOperator} tagLabel={tagLabel} opLabel={opLabel} />)}
-            </div>
-          </section>
-        ))
+      ) : renderGroups(shownResults)}
+
+      </div>
+      </div>
+
+      {/* 도움말·사전은 둘 다 공용 창(ModalWindow) — globals 의 "모달은 예외 없이 전부 이 창" 규칙 */}
+      {showGuide && (
+        <ModalWindow label={t("공개채용 도우미 읽는 법")} className="recruit-guide-modal" onClose={() => setShowGuide(false)}>
+          <p className="recruit-guide-p">{rich(t("게임 공개모집에 **제시된 태그 5개**를 아래에서 그대로 입력하세요. 실제 게임에서 체크할 수 있는 **최대 3개**짜리 조합 전부를 계산해, 높은 성급이 확정되는 조합부터 순서대로 보여줍니다. 성급 배지는 모집 시간 **9시간** 기준 — 6★는 고급 특별 채용이 있어야 나옵니다. 모집 시간을 낮추면 나오는 **1·2★**도 함께 표시되며, 각 결과에 필요한 시간 조건이 붙어 있습니다."))}</p>
+          <p className="recruit-time-note">{rich(t("**모집 시간별 출현 성급** — 1시간~3시간 50분: **1·2·3·4★** · 4시간~7시간 30분: **2·3·4·5★** · 7시간 40분 이상: **3·4·5★**만 출현. 저격 조합은 반드시 **7시간 40분 이상(보통 9시간)**으로 돌려야 3★ 미만이 섞이지 않습니다."))}</p>
+        </ModalWindow>
       )}
-
-      </div>
-      </div>
-
-      <div className="recruit-dict">
-        <button type="button" className="dict-toggle" onClick={() => setShowDict((current) => !current)}>
-          {t("4·5성 저격 조합 사전")} {showDict ? t("접기 ▲") : t("펼치기 ({n}개 조합) ▼", { n: SNIPE_DICT.length })}
-        </button>
-        {showDict && (
-          <>
-            <p>{rich(t("특별 채용·고급 특별 채용 없이도 **4★ 이상이 확정**되는 최소 태그 조합 전체입니다. 모집 태그에 아래 조합이 뜨면 놓치지 마세요. (태그를 더 얹어도 확정은 유지됩니다)"))}</p>
-            <div className="recruit-results">
-              {SNIPE_DICT.map((result) => <ComboCard key={result.combo.join("+")} result={result} onShowOperator={onShowOperator} tagLabel={tagLabel} opLabel={opLabel} />)}
-            </div>
-          </>
-        )}
-      </div>
+      {showDict && (
+        <ModalWindow label={t("4·5성 저격 조합 사전")} className="recruit-dict-modal" onClose={() => setShowDict(false)}>
+          <p className="recruit-dict-lead">{rich(t("특별 채용·고급 특별 채용 없이도 **4★ 이상이 확정**되는 최소 태그 조합 전체입니다. 모집 태그에 아래 조합이 뜨면 놓치지 마세요. (태그를 더 얹어도 확정은 유지됩니다)"))}</p>
+          {renderGroups(SNIPE_DICT)}
+        </ModalWindow>
+      )}
       {/* 도움말은 공용 창(ModalWindow)이라 백드롭·포털을 스스로 만든다 (2026-09-05) */}
       {lensOpen && (
         <Suspense fallback={null}>

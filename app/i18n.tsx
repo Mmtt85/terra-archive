@@ -1987,6 +1987,7 @@ const D: Record<string, Pair> = {
   "{n}★ 확정": ["{n}★ guaranteed", "{n}★確定"],
   "{n}개 조합": ["{n} combos", "{n}件の組み合わせ"],
   "태그 고치기": ["Change tags", "タグを変更"],
+  "공개채용 도우미 읽는 법": ["How to read this helper", "求人ヘルパーの読み方"],
   "성급 배지는 모집 시간 **9시간** 기준입니다 — 읽는 법과 시간별 출현 성급": [
     "Rarity badges assume a **9-hour** timer — how to read them, and what appears at each duration",
     "レア度バッジは募集時間**9時間**基準です — 読み方と時間ごとの出現レア度",
@@ -2006,8 +2007,6 @@ const D: Record<string, Pair> = {
     "このタグでは星4以上が確定する組み合わせはありません — トグルをオフにすると全ての組み合わせが表示されます。",
   ],
   "4·5성 저격 조합 사전": ["4★/5★ snipe combo dictionary", "星4・5狙い撃ち組み合わせ辞典"],
-  "접기 ▲": ["Collapse ▲", "閉じる ▲"],
-  "펼치기 ({n}개 조합) ▼": ["Expand ({n} combos) ▼", "開く（{n}組）▼"],
   "특별 채용·고급 특별 채용 없이도 **4★ 이상이 확정**되는 최소 태그 조합 전체입니다. 모집 태그에 아래 조합이 뜨면 놓치지 마세요. (태그를 더 얹어도 확정은 유지됩니다)": [
     "Every minimal tag combination that **guarantees 4★ or higher** without Senior/Top Operator. Don't miss these when they appear in your tags. (Adding more tags keeps the guarantee.)",
     "エリート・上級エリートなしでも**星4以上が確定**する最小タグ組み合わせの全リストです。募集タグに下の組み合わせが出たら見逃さないでください。（タグを追加しても確定は維持されます）",
