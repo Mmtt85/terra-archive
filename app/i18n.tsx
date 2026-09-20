@@ -1985,6 +1985,12 @@ const D: Record<string, Pair> = {
   "태그를 선택하면 조합 결과가 여기에 표시됩니다.": ["Pick tags and combo results will appear here.", "タグを選ぶと組み合わせ結果がここに表示されます。"],
   "{n}★ · 저시간 전용": ["{n}★ · low-time only", "{n}★ · 低時間限定"],
   "{n}★ 확정": ["{n}★ guaranteed", "{n}★確定"],
+  "{n}개 조합": ["{n} combos", "{n}件の組み合わせ"],
+  "태그 고치기": ["Change tags", "タグを変更"],
+  "성급 배지는 모집 시간 **9시간** 기준입니다 — 읽는 법과 시간별 출현 성급": [
+    "Rarity badges assume a **9-hour** timer — how to read them, and what appears at each duration",
+    "レア度バッジは募集時間**9時間**基準です — 読み方と時間ごとの出現レア度",
+  ],
   "{n}★ 이상": ["{n}★ or higher", "{n}★以上"],
   "추가 예정": ["Coming soon", "追加予定"],
   "3:50 이하": ["≤ 3:50", "3:50以下"],

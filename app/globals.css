@@ -7071,6 +7071,108 @@ html.dark .tags-track > span {
   margin-top: 16px;
   padding: 8px 16px 16px;
 }
+/* ── 좌우 분할 — 왼쪽 태그 판 · 오른쪽 결과 (사용자 지시 2026-09-20) ─────────────
+   종전엔 머리글(201) + 안내문(62) + 태그 판(427) 이 세로로 쌓여 결과가 739px 아래에서
+   시작했다. 보이는 높이가 921px 뿐이라 첫 화면엔 조합 한 장 반만 들어왔다 (실측).
+   1100px 이상에서 두 칸으로 가르고 태그 판을 붙여 둔다 — 결과만 스크롤된다. */
+@media (min-width: 1100px) {
+  .recruit-split {
+    display: grid;
+    grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+    align-items: start;
+    gap: 18px;
+  }
+  .recruit-split > .recruit-tags {
+    position: sticky;
+    top: 0;
+    margin-top: 0;
+    max-height: calc(100dvh - 120px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  /* 좁은 칸이라 태그 버튼을 한 단계 작게 — 네 그룹이 접히지 않고 들어간다 */
+  .recruit-split > .recruit-tags .filter-list button { font-size: 12px; padding: 4px 9px; }
+  .recruit-split > .recruit-tags .quick-wrap { flex-wrap: wrap; }
+  .recruit-main > .recruit-results-bar { margin-top: 0; }
+  .recruit-main > .recruit-results { margin-top: 10px; }
+}
+/* 태그 판 접기 — 좁은 화면에서 5/5 가 되면 요약 한 줄만 남는다 */
+.recruit-tags.collapsed > :not(.recruit-tags-sum) { display: none; }
+.recruit-tags.collapsed { padding: 8px 12px; }
+.recruit-tags-sum {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.recruit-tags-sum > button {
+  margin-left: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-soft);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+/* ── 성급 묶음 (사용자 지적 2026-09-20) ────────────────────────────────────
+   같은 배지끼리 모으고, 묶음 제목을 **그 성급 색 알약**으로 세워 한눈에 갈리게 한다.
+   카드 안 배지는 그대로 둔다 (사전 탭은 묶음이 없어 배지가 유일한 표시다).
+   제목 오른쪽으로 가는 실선이 묶음의 경계를 만든다. */
+.recruit-group + .recruit-group {
+  margin-top: 26px;
+}
+.recruit-group > h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+}
+.recruit-group > h3 > span {
+  flex: none;
+  padding: 3px 11px;
+  border-radius: var(--r-pill);
+  color: #fff;
+  font-size: 12px;
+  letter-spacing: 0.1px;
+}
+.recruit-group > h3 > em {
+  flex: none;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+/* 제목 뒤를 가로지르는 실선 — 묶음이 어디까지인지 보이게 */
+.recruit-group > h3::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--line);
+}
+.recruit-group > .recruit-results {
+  margin-top: 12px;
+}
+/* 접이식 도움말 — 설명·시간표를 여기로 넣었다 */
+.recruit-guide > summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 6px 0;
+}
+.recruit-guide[open] > summary {
+  margin-bottom: 10px;
+}
+.recruit-guide > p {
+  margin: 0 0 12px;
+}
+.recruit-guide > p:last-child {
+  margin-bottom: 4px;
+}
 .recruit-tags fieldset {
   margin: 12px 0 0;
 }
@@ -7150,11 +7252,20 @@ html.dark .tags-track > span {
   background: var(--gold);
   color: #1a1206;
 }
+/* ── 결과는 여러 열로 (사용자 지시 2026-09-20) ──────────────────────────────
+   종전엔 992px 짜리 카드를 한 줄에 하나씩 쌓아 18개가 3105px 이었다. 그 중 7개는
+   오퍼가 한 명뿐이라 가로가 거의 비어 있었다. 열을 자동으로 채우고, 오퍼가 넷 이상인
+   조합만 두 칸을 쓰게 해 큰 카드도 눌리지 않게 한다. */
 .recruit-results {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  align-items: start;
   gap: 12px;
   margin-top: 22px;
 }
+/* ⚠ 한때 오퍼가 넷 이상인 카드만 두 칸을 쓰게 했는데, 1칸·2칸이 섞이면서 줄이 어긋나
+   "중구난방"이 됐다 (사용자 지적 2026-09-20). **모든 카드가 한 칸**이라야 열이 맞는다 —
+   오퍼가 많은 조합은 폭 대신 높이로 자란다. */
 .recruit-combo {
   border: 1px solid var(--line);
   background: var(--white);
@@ -7166,10 +7277,13 @@ html.dark .tags-track > span {
 }
 .recruit-combo > header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 11px;
+}
+.recruit-combo > header > b {
+  flex: none;
 }
 .combo-tags {
   display: flex;
@@ -7190,10 +7304,13 @@ html.dark .tags-track > span {
   font: 800 12px var(--mono);
   letter-spacing: 0.5px;
 }
+/* 오퍼 칩은 **같은 폭 격자**로 (사용자 지적 2026-09-20: 중구난방).
+   종전엔 flex-wrap 이라 이름 길이대로 칩 폭이 달라 줄마다 개수가 제각각이었다
+   ("훔" 옆에 "아스베스토스"). 격자로 두면 세로줄이 맞는다. */
 .recruit-combo ul {
   list-style: none;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
   gap: 7px;
   margin: 0;
   padding: 0;
@@ -7207,6 +7324,18 @@ html.dark .tags-track > span {
   padding: 3px 8px 3px 3px;
   font-size: 12px;
   font-weight: 700;
+  min-width: 0;          /* 격자 칸을 넘지 않게 */
+}
+/* 이름이 칸보다 길면 줄바꿈 대신 말줄임 — 칩 높이가 들쭉날쭉해지지 않는다 */
+.recruit-combo li > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recruit-combo li > i {
+  margin-left: auto;
+  flex: none;
 }
 .recruit-combo li img {
   width: 24px;
@@ -14860,7 +14989,7 @@ html.rg-theme {
 /* 적 도감 — 사진 왼쪽·정보 오른쪽 가로형 카드 (피드백 반영 2026-07-18) */
 .rg-enemy-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: 8px;
 }
 .rg-enemy-cell.row {
