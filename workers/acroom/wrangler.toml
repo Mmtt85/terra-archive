@@ -1,0 +1,30 @@
+# 위수 협의 **파티 공유** 방 워커 (사이트 배포와 별개) — 2026-09-21
+# 게임의 '맹약 초대' 문구에 든 방 ID 하나 = Durable Object 하나. 같은 방에 들어온 사람(최대 4명)이
+# 고른 전략·목표 맹약을 WebSocket 으로 서로 본다. 채팅 없음. 마지막 사람이 나가면 60초 뒤 방을 지운다.
+# 저장하는 것: 방마다 참가자 닉네임·전략 id·맹약 id 몇 개 — 그게 전부고 방이 비면 통째로 사라진다.
+# 만든 지 6시간이 지난 방은 사람이 있어도 강제로 닫는다 (시험할 땐 `wrangler dev --var ROOM_TTL_MS:5000 --var SWEEP_MS:3000`).
+# 배포: `bash deploy.sh` · 점검: curl "https://terra-archive-acroom.nzkonaru.workers.dev/"
+name = "terra-archive-acroom"
+main = "src/index.js"
+# ⚠ 다른 워커(2026-07-01)와 다르다 — wrangler 4.92 의 로컬 런타임(wrangler dev)이 2026-05-22 까지만 안다.
+#   배포에는 어느 날짜든 되지만, 로컬에서 돌려 보려면 이 값이어야 한다. wrangler 를 올리면 맞춰도 된다.
+# ⚠ `wrangler dev` 는 루트 .wrangler/deploy/config.json 이 있으면 "설정이 둘"이라며 멎는다 — deploy.sh 처럼 잠시 치울 것.
+compatibility_date = "2026-05-01"
+
+[[durable_objects.bindings]]
+name = "ROOM"
+class_name = "AcRoom"
+
+# 열린 방 장부 (하나뿐, idFromName("lobby")) — GET /stats 가 읽는다
+[[durable_objects.bindings]]
+name = "LOBBY"
+class_name = "AcLobby"
+
+# SQLite 기반 클래스 — 무료 플랜에서도 Durable Object 를 쓸 수 있는 유일한 형태
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AcRoom"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["AcLobby"]

@@ -19,8 +19,9 @@
 | 배포 (주) | **https://terra-archive.pages.dev** — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드→스테이징→pages deploy). wrangler는 이 기기에 OAuth 로그인됨(운영자 클라우드플레어 계정), 프로젝트에 nodejs_compat 플래그 설정됨. **⚠️ 자동 실행 금지 — 배포는 사용자가 변경분을 모아서 직접 돌린다** (2026-07 규칙 변경). |
 | 방송 워커 | `terra-archive-broadcast` (workers/broadcast) — 6시간마다 유튜브 공식 채널 3개(KR·JP·GL)에서 방송 일정 자동 수집 → KV → https://terra-archive-broadcast.nzkonaru.workers.dev (프론트 폴백: app/data/broadcasts.json). 배포는 `bash workers/broadcast/deploy.sh`, 상세는 `.claude/skills/broadcast-check`. **중국 서버(미래시)는 비리비리 라이브룸**이라 워커가 아니라 GitHub Actions(`scripts/build-broadcasts-cn.py`)가 수집한다 — 비리비리가 클라우드플레어 이그레스를 412로 밴하기 때문 |
 | 계정 워커 | `terra-archive-account` (workers/account) — **요스타(KR/JP/EN) 이메일 인증코드 로그인 → 게임서버 syncData → 보유 오퍼 목록**. 보유 오퍼 설정 → 가져오기 → 게임 로그인이 호출한다 (`app/account.ts`). 무상태(KV·시크릿 없음, 이메일/코드/토큰 저장·로깅 안 함), Origin은 사이트+localhost만 허용. 배포 `bash workers/account/deploy.sh` · 점검 `curl ".../probe?server=kr"`. 브라우저에서 직접 못 부르는 이유: Yostar API가 CORS를 안 주고 MD5/HMAC 서명 + 안드로이드 UA 위장이 필요(Workers에 MD5가 없어 `src/md5.js` 자체 구현). **동기화하면 게임 세션이 끊긴다**(계정당 접속 1개) — UI에 반드시 경고를 남겨둘 것 |
+| 파티 방 워커 | `terra-archive-acroom` (workers/acroom) — **위수 협의 파티 공유**의 방. 게임의 '맹약 초대' 문구 속 방 ID 하나 = Durable Object 하나(SQLite 클래스, WebSocket 하이버네이션). 최대 4명, 마지막 사람이 나간 60초 뒤 알람이 방을 통째로 지운다. 저장은 전략 id·맹약 id·신호 id·처음 붙여 넣은 초대 문구 한 줄뿐, 계정·IP 없음. Origin은 사이트+localhost만. 배포 `bash workers/acroom/deploy.sh` · 점검 `curl https://terra-archive-acroom.nzkonaru.workers.dev/`. 상세는 아래 「위수 협의 파티 공유」 절 (2026-09-21) |
 | 스택 | vinext(Cloudflare용 Next 호환 런타임) + Next.js 16 / React 19 / Tailwind 4 |
-| 명령 | `npm run dev`(localhost:3000) / `npm run build` / `npm run lint` |
+| 명령 | `npm run dev`(localhost:3000) / `npm run build` / `npm run lint`. ⚠ dev 서버가 모든 페이지에 **500 "Network connection lost."** 를 내면 vinext 의 렌더 러너 워커가 죽은 것이다 (2026-09-21 실측 — HMR 연타·동시 빌드 뒤). 코드 문제가 아니니 `npm run dev` 를 다시 띄운다 |
 | 운영 수칙 | 수정하면 **빌드 확인 → 커밋 → git push 까지만** 진행하고 **멈춘다**. `scripts/deploy.sh`는 절대 자동 실행하지 않음 — 세션마다 자동 배포하면 토큰이 낭비되므로, 배포는 사용자가 여러 변경을 모아서 직접 실행한다 (2026-07 규칙). 모든 허가 요청은 기본 YES |
 | 알려진 무시 항목 | git author가 로컬 기본값(`<계정명>@local`). 스타터 템플릿 잔재(ChatGPT 인증·D1/drizzle·스켈레톤 테스트 등)는 2026-07 전부 제거됨 — `npm test` 스크립트 없음 |
 
@@ -1500,6 +1501,84 @@ BETA, 리플레이의 테마·난이도). 서식이 있는 제목은 `**`를 벗
 ⚠ **픽스처는 2026-09-18에 통째로 비웠다** (사용자 판단: 다시 찍을 때면 게임 화면이 어차피 달라져 있다). 지금 하네스를 돌리면
 다섯 코어가 전부 '건너뜀'으로 조용히 지나간다 — **초록불이 검증을 뜻하지 않는다.** 인식을 다시 손대기 전에 녹화부터 다시 뜬다.
 브라우저와 node 가 같은 특징을 내도록 크롭·축소는 `lens/pix.ts` 순수 JS 로만 한다 (sharp/canvas 는 디코드에만).
+
+### 위수 협의 파티 공유 — 방 하나에서 전략·목표 맹약을 서로 본다 (2026-09-21, 사용자 요청)
+
+연합 시뮬레이션은 게임이 **'맹약 초대' 문구**를 준다:
+`[kmk0im89g02bli]테라아카이브 박사님의 위수 협의: 맹약 초대 [초월 시뮬레이션]`.
+그 문구를 받은 사람들이 `/autochess` 제목 줄의 **파티 공유** 버튼 → 문구(또는 대괄호 속 ID만)를
+붙여 넣고 입장하면 같은 방에 모여, 각자 고른 **전략 하나 + 가고 싶은 맹약(최대 3개)** 을 서로 본다.
+**채팅은 없다** (사용자 확정: "어차피 귀찮아서 안 할 거"). 대신 **신호** — 미리 정한 한마디 세 개
+(연결이 끊겼어요, 죄송해요 · 잠시만요 · 준비됐어요)를 자기 자리의 '신호' 줄 버튼으로 올리고, 남의 자리에는
+같은 '신호' 줄에 올린 것만 보인다 (머리 오른쪽 배지로 두었다가 사용자 지시로 줄 안으로). 3분 뒤 스스로 내려간다
+(사용자 추가 요청 같은 날: "연결이 끊겼어요 죄송해요 라는 느낌의 의사를 전달 가능한 버튼").
+**닉네임도 방장 표시도 없다** (사용자 지시 "닉네임은 필요 없음" · "방장 표시도 필요 없겠다") — 자리는 **박사 1~4**,
+번호는 자리 번호다.
+
+- 파일: `app/autochess-party.tsx`(창·연결 훅) · `workers/acroom/`(방 워커) · CSS `.ac-party*` ·
+  해시 `p=<방ID>` 는 `autochess.tsx` 해시 기계가 다른 파라미터와 함께 읽고 쓴다 →
+  딥링크 `/autochess#bond?p=<방ID>`. 입장이 pushState 라 뒤로가기 = 나가기.
+  창은 **📌 고정된 채로 열린다**(`defaultPinned`, 사용자 지시) — 게임 옆에 띄워 두는 창이라 바깥 클릭·Esc 로
+  안 닫힌다. **× 로 닫으면 나간 것이다** (소켓이 끊긴다).
+- **'링크 복사' = 「{초대 문구 또는 방 ID}⏎{URL}」** (사용자 지시 — 이 꼴 그대로). 문구는
+  누군가 통째로 붙여 넣은 원문을 방이 `room.invite` 로 **처음 것 하나만** 기억해(그 방 ID 로 시작하는
+  한 줄만 받는다) ID 만 넣고 들어온 사람도 같은 원문을 복사해 간다. 아무도 원문을 안 넣었으면
+  방 ID 한 줄 — 게임 문구를 지어내지 않는다. 'ID 복사' 버튼은 두지 않는다 (사용자 지시).
+- 방 ID 는 **영숫자 14자** (`kmk0im89g02bli` 꼴) — 길이가 다르면 클라이언트도 워커도 잘못된 방으로 막는다 (사용자 지시).
+- **방은 만들지 않는다.** 처음 들어오는 순간 `idFromName(방ID)` 로 생기고, 마지막 사람이 나간
+  **60초 뒤** 알람이 storage 를 통째로 지운다 (그 안에 돌아오면 이어진다). 자리는 게임과 같은
+  **4개** — 다섯째는 `full` 을 받고 4001 로 끊긴다. 사람이 있는 동안은 10분마다 고아 행을 훑는다.
+  **만든 지 6시간이 지난 방은 사람이 있어도 강제로 닫는다** (사용자 요청 "혹시 모르니") — 순찰 알람이
+  `expired` 를 보내고 4002 로 끊은 뒤 통째로 지운다. 창은 '닫힌 방' 안내와 '입장 화면으로' 버튼을 남긴다.
+  시험은 `wrangler dev --var ROOM_TTL_MS:5000 --var SWEEP_MS:3000` (env 로 수명·순찰 주기를 줄일 수 있다).
+- **열린 방 수** — 제목 줄 파티 공유 버튼 오른쫝 '방 N개' (사용자 요청 "현재 세션이 몇 개 만들어져 있는지").
+  DO 는 목록을 못 뽑으므로 장부 DO 하나(`AcLobby`, `idFromName("lobby")`)를 둔다: 방이 생기면 `/up`, 지워지면
+  `/down`, 사람이 있는 동안 순찰(10분)마다 `/up`. 30분 넘게 소식 없는 항목은 `/stats` 를 읽을 때 걷어낸다.
+  사이트는 `GET /stats → {rooms}` 만 읽는다 (`usePartyRoomCount` — 마운트·60초마다·입장/나가기 뒤 0.8초).
+  값이 오기 전에도 칩이 자리를 차지해(min-width) 제목 줄이 흔들리지 않는다. 갱신은 20초마다 + 입장/나가기 뒤
+  0.8초와 65초(빈 방이 지워지는 60초 뒤) — 60초 주기였을 땐 "다 나가고 1분 지났는데 4개" 로 묵었다.
+- **전부 정리**: `curl -X POST -H "x-admin-key: $(cat .upload-admin-key)" https://terra-archive-acroom.nzkonaru.workers.dev/admin/purge`
+  → 장부의 방을 모두 `closed`(4003) 로 닫고 장부를 비운다 (사용자 요청 "세션 싹 다 삭제"). 시크릿 `ADMIN_KEY` 는
+  업로드 워커와 같은 `.upload-admin-key` 값 (`npx wrangler secret put ADMIN_KEY`, deploy.sh 처럼 루트 redirect 파일을
+  잠시 치우고). 장부에 없는 방(알림을 놓친 것)은 비면 60초 뒤 스스로 지워진다.
+- ⚠ `.new-badge` 는 absolute 라 버튼이 `position: relative` 여야 한다 — `.ac-ctarow .ac-simcta` 가 static 이어서
+  파티 공유의 새기능 배지가 줄 끝으로 달아났다 (`.ac-ctarow .ac-partycta { position: relative }` — 같은 특이도의
+  static 규칙을 이겨야 해서 부모 클래스까지 붙인다).
+- **한 사람 = uid** (`localStorage.ta-acparty-uid`, 첫 입장에 생성). 새로고침·탭 둘도 자리 하나.
+  내 선택(전략·맹약)은 **`sessionStorage["ta-acparty-me:<방ID>"]`** — 방마다·탭 세션에만. 판 중간
+  새로고침은 살아 돌아오고, **나가기·×·뒤로가기·다른 방 입장은 빈손**이다 (사용자 지시 "누군가 나갔으면
+  그 슬롯의 선택 내용은 초기화"). 서버 쪽 자리도 소켓이 끊기면 행을 지우므로 남들 화면에서도 비워진다.
+  **자리 번호(seat 0~3)는 들어올 때 비어 있는 가장 낮은 번호로 정해지고 나갈 때까지 안 바뀐다** — 누가
+  나가도 남은 사람의 칸이 밀리지 않는다 (사용자 지시 "누가 나가도 내 슬롯 위치를 변경하지 말아줘"). 화면은
+  `members.find(seat === i)` 로 칸을 채우고 빈 칸은 그 자리에 '빈 자리'로 남는다.
+  ⚠ 같은 방을 나갔다 바로 다시 들어오면 room 이 같아 옛 연결의 목록이 잠깐 보였다 — 입장마다 `gen` 을
+  올려 연결 상태를 세대로 가른다 (실측 2026-09-21).
+  '나가기' 는 `leave` 를 보내 같은 uid 의 다른 탭까지 내보내고, 창 닫기는 소켓만 닫는다.
+- 프로토콜(JSON 한 줄): ↑ `hello{uid,band,bonds,invite?}` · `set{band?,bonds?,sig?}`(sig "" = 내리기) ·
+  `leave` · 문자열 `ping`(25초, 워커의 자동 pong — 인스턴스를 깨우지 않음) / ↓ `welcome{uid}` ·
+  `state{id,invite,seats,members[{uid,seat,band,bonds,sig{k,at}|null,at,up}, …유령 자리 {uid:"",ghost:1,seat,sig}]}` ·
+  `full` · `expired` · `bye`.
+  워커는 값을 **정규식으로 거른다** (band_… · 영숫자 맹약 id · 신호 id 소문자 16자 · 초대 문구 160자 한 줄).
+  신호 만료(3분)는 서버 시각 `sig.at` 기준이라 클라이언트가 최신 `up` 과 제 시계의 차이를 보정한다.
+  서버는 id 만 알고 이름은 각자 자기 로케일 doc 에서 그린다 — 한·영·일 사용자가 한 방에 있어도 각자 제 말.
+- 신호는 스스로 사라지지 않는다 — 다시 눌러 내리거나 바꿀 때까지, 경과 시간과 함께 남는다. **신호를 올린 채
+  나가면 그 빈 자리에 신호만 남고**(`g:<seat>` 유령 자리, 인원에 안 셈) 다음 사람이 그 자리에 앉는 순간 지워진다
+  (사용자 지시 "바로 나가도 다음 사람이 들어오기 전까지는 계속 남아있게"). 처음엔 3분 자동 만료였다가 걷어냈다.
+- 칩 높이는 고정(전략 24px · 맹약 19px) — 전략을 고르는 순간 아이콘 없는 칩이 아이콘 칩으로 바뀌며 창 높이가
+  변했다 (사용자 지적). 자리 4칸은 `grid-auto-rows: 1fr` 로 늘 같은 높이, 빈 자리도 처음부터 같다.
+  전략 표기는 **오퍼 이름 (전략 이름)** 순 (사용자 지시). 입장 칸은 한 줄 `<input>`, 엔터 = 입장. 맹약 고르기는
+  하나 고르면 닫힌다 (둘째는 다시 열어서).
+- 다른 참가자의 전략·맹약 칩을 누르면 페이지의 상세 창(`setBand`/`openBond`)이 **위에 겹쳐** 뜬다.
+  둘 이상이 같은 맹약을 고르면 아래 '함께 고른 맹약' 한 줄에 모인다 — 겹침이 좋은지 나쁜지는
+  판단하지 않는다(모드마다 다를 수 있어 사람이 조율한다).
+- 로컬 개발: `localStorage.ta-acparty-ws = "ws://localhost:8799"` 로 로컬 `wrangler dev` 를 가리킬 수
+  있다. ⚠ `wrangler dev` 는 루트의 `.wrangler/deploy/config.json`(vinext 빌드 산출물)을 보면 "설정이
+  둘"이라며 멎는다 — deploy.sh 처럼 잠시 치워야 한다. 또 wrangler 4.92 의 로컬 런타임은 compat date
+  **2026-05-22 까지**라 이 워커만 `2026-05-01` 로 둔다 (다른 워커들의 2026-07-01 은 배포는 되고 로컬은 안 돈다).
+- 검증 스크립트는 세션 스크래치에 두고 커밋하지 않았다 — 워커 프로토콜은 `ws` 클라이언트로
+  (4명 → 5번째 full → set 전파 → leave → 재입장), 화면은 Playwright 두 컨텍스트로
+  (입장·전파·상세 창·초대 문구+링크 복사·한도 문구·신호 올리기/내리기·새로고침 유지·나가기·뒤로가기·
+  오답 문구·모바일 폭) 2026-09-21 통과.
 
 ### 위수 협의 — 특질 중복 판정은 **설명문이 아니라 blackboard** (2026-08-26)
 

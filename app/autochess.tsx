@@ -35,6 +35,7 @@ import { warmBandTemplates } from "./lens/acband-load";
 import { warmBondTemplates } from "./lens/acbond-load";
 import { useAcRun, acRun, setAcStack, setAcStacks, mergeAcRun, resetAcRun, isAcLock, acModeOf, AC_LOCK, BAN_VOTE_SURE } from "./autochess-run";
 import { solveAcBans } from "./lens/acsolve";
+import { AcPartyModal, ROOM_ID_RE, usePartyRoomCount } from "./autochess-party";
 
 // 전투 맵 (scripts/build-autochess-routes.py) — 작전 도감·통합전략과 **같은 렌더러**를 쓴다
 // (규칙: .claude/skills/route-map-rules). '전투 맵' 탭을 처음 눌렀을 때만 지연 로드한다.
@@ -768,6 +769,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   const acPrtsMobile = useSyncExternalStore(acNoSub, bridgeOnMobile, () => true);
   const acPrtsBlocked = acPrtsMobile || !acPrtsOk;
   const [acHelp, setAcHelp] = useState(false);
+  /** 파티 공유 창 — null 닫힘 · "" 입장 전(문구 붙여 넣기) · 그 외 = 연결된 방 ID (해시 p=) (2026-09-21) */
+  const [party, setParty] = useState<string | null>(null);
+  const partyRooms = usePartyRoomCount(party);   // 지금 열린 파티 공유 방 수 (버튼 오른쪽 칩)
   useEffect(() => {
     if (!acLocked) return;
     // 첫 인식에서 wasm·traineddata(~9MB) 로드로 수 초를 잃지 않게 연결 즉시 예열.
@@ -793,6 +797,18 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // ⚠ useEffect가 아니라 **useLayoutEffect** — 해시 반영이 페인트 뒤로 밀리면 기본 탭(맹약)이
   // 한 프레임 보였다가 딥링크 탭으로 튄다 (story.tsx #story-<id>와 같은 규약).
   useLayoutEffect(() => {
+    // 짧은 공유 링크 `/p/<방ID>` 로 들어온 경우 — 게시판 자동 링크가 # 앞에서 끊기기 때문에
+    // 예약문자 없는 주소로 나눠 준다 (사용자 제보 2026-09-21). Pages 는 그 주소를 **리라이트**해
+    // (주소 그대로, 내용만 위수 협의 페이지) 내려 주므로 방 ID 가 경로에 남아 있다.
+    // 해시 기계는 해시만 읽으니 여기서 한 번 접어 넣고 주소를 제 자리로 돌린다.
+    // 쿼리(?p=)도 함께 받는다 — 손으로 친 주소·옛 링크용.
+    const path = window.location.pathname;
+    const fromPath = path.match(/^\/(?:(en|ja)\/)?p\/([^/?#]+)\/?$/);
+    const roomFromUrl = fromPath?.[2] ?? new URLSearchParams(window.location.search).get("p");
+    if (roomFromUrl && ROOM_ID_RE.test(roomFromUrl)) {
+      const base = fromPath ? `${fromPath[1] ? `/${fromPath[1]}` : ""}/autochess` : path;
+      history.replaceState(null, "", `${base}#bond?p=${roomFromUrl.toLowerCase()}`);
+    }
     const apply = () => {
       // 전역 모달(#changelog·#broadcast…)이 떠 있으면 내 상태로 해석하지 않는다 — 그대로
       // 두면 다른 모달을 여는 순간 이 페이지의 필터·모달이 통째로 초기화된다 (2026-08-24)
@@ -816,6 +832,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       setTerm(p.get("q") ?? "");
       applyModalHash(p.get("m"));
       applySimHash(p);
+      // 파티 공유 방 — p=<방ID>. 없으면 창을 닫는다 (뒤로가기 = 나가기). 입장 전 화면("")은 해시에 없다.
+      const pid = p.get("p");
+      setParty(pid && ROOM_ID_RE.test(pid) ? pid.toLowerCase() : null);
     };
     apply();
     hydrated.current = true;
@@ -858,6 +877,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       if (simBand) p.set("bd", simBand);
     }
     if (curModal) p.set("m", `${curModal[0]}~${curModal[1]}`);
+    // 파티 공유 방은 탭·편성과 무관하게 싣는다 — 링크 하나로 같은 방에 들어온다
+    if (party) p.set("p", party);
     // ~는 URL에서 그대로 써도 되는 글자인데 URLSearchParams가 %7E로 인코딩한다 — 링크가
     // 읽히게 되돌린다 (해석은 decodeURIComponent가 하므로 양쪽 다 받는다)
     const qs = p.toString().replace(/%7E/g, "~");
@@ -868,13 +889,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       //   맨 위로 리셋한다. 네이티브 프로토타입을 직접 불러 라우터를 우회한다 (rogue.tsx 실측).
       // 모달이 새로 열린 경우만 히스토리를 쌓는다 — 시뮬레이터도 같은 규약이라 뒤로가기로 닫힌다
       const opening = (!!curModal && !/[?&]m=/.test(prevHash.current))
-        || (sim && !/[?&]sim=/.test(prevHash.current));
+        || (sim && !/[?&]sim=/.test(prevHash.current))
+        || (!!party && !/[?&]p=/.test(prevHash.current));
       if (opening) History.prototype.pushState.call(history, null, "", hash);
       else history.replaceState(null, "", hash || window.location.pathname + window.location.search);
     }
     prevHash.current = hash;
   }, [view, miscTab, bondN, bondT, tier, garFilter, jobFilter, subFilter, term, curModal?.[0], curModal?.[1],
-      sim, slots, bench, slot9On, goldMark, stacks, simBand]); // eslint-disable-line react-hooks/exhaustive-deps
+      sim, slots, bench, slot9On, goldMark, stacks, simBand, party]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // 검색 입력은 비제어(useSearchInput)라 뷰가 바뀌어 입력칸이 새로 마운트되면 빈칸이 된다.
@@ -1896,7 +1918,19 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           <button type="button" className="lens-help-btn"
             aria-label={t("PRTS 링크 도움말")} onClick={() => setAcHelp(true)}>?</button>
           </span>
-
+          {/* 파티 공유 — 게임의 '맹약 초대' 문구로 같은 방에 모여 전략·목표 맹약을 서로 본다
+              (사용자 요청 2026-09-21). 채팅 없음. 창을 닫으면 나간 것이다 (autochess-party.tsx). */}
+          <button type="button" className={`ac-simcta ac-prtscta ac-partycta${party !== null ? " on" : ""}`}
+            aria-haspopup="dialog"
+            title={t("게임의 맹약 초대 문구로 같은 방에 모여, 고른 전략과 가고 싶은 맹약을 서로 봅니다")}
+            onClick={() => { setParty((v) => (v === null ? "" : v)); closeMenus(); }}>
+            {t("파티 공유")}
+            {isNewFeature("ac-party") && <span className="new-badge">{t("새기능")}</span>}
+          </button>
+          {/* 지금 열린 방 수 — 버튼 오른쪽 (사용자 요청 2026-09-21). 자리를 미리 잡아 두어 값이 와도 줄이 안 흔들린다 */}
+          <span className="ac-party-count" title={t("지금 열린 파티 공유 방")}>
+            {partyRooms === null ? "" : t("방 {n}개", { n: partyRooms })}
+          </span>
         </div>
       </header>
       {/* 한 판 스트립 — 게임 연결이 켜져 있을 때만. **모달 밖**에 두는 게 핵심이다:
@@ -2821,6 +2855,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <Suspense fallback={null}>
           <AcBridgeHelpModal where="autochess" onClose={() => setAcHelp(false)} />
         </Suspense>
+      )}
+      {party !== null && (
+        <AcPartyModal doc={doc} roomId={party} onJoin={setParty} onClose={() => setParty(null)}
+          onShowBand={setBand} onShowBond={openBond} />
       )}
       {peek && (() => {
         const row = boardBonds.find((x) => x.b.id === peek);
