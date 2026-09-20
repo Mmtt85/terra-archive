@@ -17,8 +17,51 @@ cd "$(dirname "$0")/.."
 # 그 경고를 아무도 안 읽어서, 8/1에 중섭 신규 4명이 도감엔 뜨고 섬네일만 404인 채로
 # 배포됐다. 에셋 없는 배포는 "고쳐야 할 상태"를 만드는 것이라 성공보다 실패가 낫다.
 # 코드만 고쳤고 에셋은 확실히 그대로일 때만 --skip-r2 로 넘긴다.
-SKIP_R2=""
-for a in "$@"; do [ "$a" = "--skip-r2" ] && SKIP_R2=1; done
+# ── 플래그 ─────────────────────────────────────────────────────────────────────
+#   --skip-r2    R2 에셋 동기화를 건너뛴다 (코드만 고쳤고 에셋은 확실히 그대로일 때만)
+#   --one-phase  프리뷰 선행 업로드를 건너뛴다 (업로드·해싱이 2회 → 1회)
+#   --no-probe   무중단 프로브(최대 4분 대기)를 끈다
+#   --fast       = --no-probe  (사용자 요청 2026-09-21: "디플로이가 너무 오래 걸린다")
+#
+# ⚠ 한때 --fast 에 --one-phase 를 함께 묶었다가 **뺐다** (2026-09-21 실측). 배포 419초를
+#   단계별로 재 보니 프로브 대기가 220초(52%)로 압도적이었고, 1단계 선행 업로드 64초는
+#   **아끼는 게 아니라 옮기는 것**이었다 — 로그: 1단계 `Uploaded 17254 files (50.73 sec)`,
+#   2단계 `Uploaded 0 files (17663 already uploaded) (0.64 sec)`. --one-phase 로 끄면 그
+#   64초가 전환 쪽으로 옮겨갈 뿐이고, 2026-08-06 사고 때문에 넣은 블롭 선행 업로드 보호만
+#   잃는다. (그 64초의 정체는 따로 있다: 소스를 하나도 안 고쳐도 핵심 청크 5개의 내용 해시가
+#   매 빌드 새로 나와 — index·home·home-ko·dropdown·layout-segment-context — 그걸 참조하는
+#   html/rsc 17,213개가 통째로 달라진다. 중복 제거가 409개밖에 안 먹는 이유다.)
+ARGS=" $* "
+case "$ARGS" in *" --fast "*) ARGS="$ARGS --no-probe " ;; esac
+SKIP_R2=""; ONE_PHASE=""; NO_PROBE=""
+case "$ARGS" in *" --skip-r2 "*) SKIP_R2=1 ;; esac
+case "$ARGS" in *" --one-phase "*) ONE_PHASE=1 ;; esac
+case "$ARGS" in *" --no-probe "*) NO_PROBE=1 ;; esac
+
+# ── 단계별 소요 시간 ───────────────────────────────────────────────────────────
+# 어느 단계가 몇 초인지 아무 데도 안 남아서 "배포가 오래 걸린다"를 짐작으로만 말했다
+# (사용자 요청 2026-09-21). 실패해도 찍히도록 EXIT 트랩에서 출력한다.
+DEPLOY_STEPS=""; DEPLOY_TSTEP=$(date +%s); DEPLOY_SUMMARY_DONE=""
+step() {   # step "이름" — 직전 step 부터 지금까지를 그 이름으로 적는다
+  local now
+  now=$(date +%s)
+  DEPLOY_STEPS="${DEPLOY_STEPS}$1|$((now - DEPLOY_TSTEP))
+"
+  DEPLOY_TSTEP=$now
+}
+deploy_summary() {
+  if [ -n "$DEPLOY_SUMMARY_DONE" ] || [ -z "$DEPLOY_STEPS" ]; then return 0; fi
+  DEPLOY_SUMMARY_DONE=1
+  # ⚠ 이름을 **왼쪽에 두고 자리를 맞추지 않는다** — awk 의 %-28s 는 바이트로 세는데 한글은
+  # UTF-8 로 3바이트라 줄이 어긋난다 (실측). 숫자를 앞에 두면 정렬이 필요 없다.
+  printf '\n── 단계별 소요 ───────────────────────────────\n'
+  printf '%s' "$DEPLOY_STEPS" | awk -F'|' '
+    { n[NR] = $1; v[NR] = $2; t += $2 }
+    END {
+      for (i = 1; i <= NR; i++) printf "  %5d초  %3d%%  %s\n", v[i], (t ? v[i] * 100 / t : 0), n[i]
+      printf "  %5d초        합계\n", t
+    }'
+}
 if [ ! -f .r2-sync-key ] && [ -z "${R2_SYNC_KEY:-}" ] && [ -z "$SKIP_R2" ]; then
   echo "R2 동기화 키가 없다 (.r2-sync-key 또는 R2_SYNC_KEY) — 배포를 중단한다." >&2
   echo "에셋을 안 올리고 배포하면 신규 오퍼의 섬네일·스킬·프로필·보이스가 404가 된다." >&2
@@ -27,16 +70,18 @@ if [ ! -f .r2-sync-key ] && [ -z "${R2_SYNC_KEY:-}" ] && [ -z "$SKIP_R2" ]; then
 fi
 
 npm run build
+step "빌드 (npm run build)"
 
 if [ -f .r2-sync-key ] || [ -n "${R2_SYNC_KEY:-}" ]; then
   node scripts/r2-sync.mjs
 else
   echo "⚠ R2 동기화 건너뜀 (--skip-r2) — 에셋이 바뀌었다면 사이트에서 404가 난다" >&2
 fi
+step "R2 동기화"
 
 # dist/client가 정적 사이트 전체 (HTML + assets). 워커(_worker.js)는 올리지 않는다.
 STAGE=$(mktemp -d)
-trap 'rm -rf "$STAGE"' EXIT
+trap 'rm -rf "$STAGE"; deploy_summary' EXIT
 cp -r dist/client/. "$STAGE/"
 
 # R2로 옮긴 에셋 폴더는 Pages에 올리지 않는다 — 이게 배포가 빨라진 이유의 전부.
@@ -85,6 +130,18 @@ rm -f "$STAGE/admin.html" "$STAGE/admin.rsc"
 #   (Pages 리다이렉트는 정적 파일보다 먼저 평가되고, splat은 빈 문자열에도 매치된다)
 cat > "$STAGE/_redirects" <<'EOF'
 /admin https://admin.terra-archive.net/admin 301
+# 파티 공유 짧은 링크 — 게시판 자동 링크가 **#(해시) 앞에서 끊긴다** (사용자 제보 2026-09-21,
+# 디시: `…/autochess` 까지만 파랗고 `#bond?p=…` 는 맨 글자로 남는다). 그래서 공유 주소는
+# 예약문자가 하나도 없는 `/p/<방ID>` 꼴이다.
+# ⚠ **302 로 `?p=:splat` 에 넘기면 안 된다** — `:splat` 은 목적지의 **경로에서만** 치환되고
+#   쿼리 안에서는 글자 그대로 남아 `%3Asplat` 으로 인코딩된다 (2026-09-21 라이브 실측:
+#   `location: /autochess?p=%3Asplat`. 위 /avatars/* 처럼 경로에 쓴 규칙은 멀쩡하다).
+#   그래서 **리라이트(200)** 로 간다 — 주소는 `/p/<방ID>` 그대로 두고 내용만 위수 협의
+#   페이지를 내려 준다. 방 ID 는 화면이 location.pathname 에서 읽는다 (app/autochess.tsx).
+# ⚠ `/profiles/*` 같은 아래 규칙과 겹치지 않는다 — 매처가 `^/p/(?<splat>.*)$` 로 앵커링한다.
+/p/* /autochess 200
+/en/p/* /en/autochess 200
+/ja/p/* /ja/autochess 200
 /story/* https://files.terra-archive.net/assets/story/:splat 301
 /avatars/* https://files.terra-archive.net/assets/avatars/:splat 301
 /items/* https://files.terra-archive.net/assets/items/:splat 301
@@ -134,6 +191,7 @@ echo ".rsc content-type 규칙 1건(글롭) — 대상 $(find "$STAGE" -name "*.
 # 불러온다"). 파일명이 내용 해시라 재배포하면 옛 이름이 사라지고, 그 순간 열려 있던 탭의
 # 지연 로딩이 404를 맞는다. 최근 3회분을 남겨 두면 그 창 자체가 없어진다.
 node scripts/keep-assets.mjs "$STAGE" || true
+step "스테이지 준비 (복사·트림·검사)"
 
 # 2단계 배포 — **기본값** (끄려면 --one-phase)
 # Pages는 **파일 내용 해시로 프로젝트 전체에서 업로드를 중복 제거**한다("N files already
@@ -144,30 +202,35 @@ node scripts/keep-assets.mjs "$STAGE" || true
 # 2.3MB 청크였다(옛 청크가 아니라). 전환은 끝났는데 블롭을 엣지가 아직 못 읽는 상태였다는
 # 뜻이라, 블롭을 먼저 올려 두고 나중에 전환하는 이 순서가 그 창을 줄인다.
 # ⚠ Pages에는 프리뷰를 프로덕션으로 승격하는 CLI가 없다. 이건 승격이 아니라 '업로드 선행'이다.
-case " $* " in *" --one-phase "*) echo "2단계 배포 건너뜀 (--one-phase)" ;; *)
+if [ -n "$ONE_PHASE" ]; then
+  echo "1단계 선행 업로드 건너뜀 (--one-phase)"
+else
   echo "1단계: 프리뷰 브랜치(deploy-stage)에 먼저 업로드 — 블롭을 미리 올려 둔다"
   npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch deploy-stage --commit-dirty=true
-esac
+fi
+step "1단계 선행 업로드"
 
 # 무중단 실측 (2026-08-06 사용자 제보: "배포 끝나고 30~60초 접속이 안 되는 시간이 늘어난다").
 # 전환 전후를 1초 간격으로 찔러 **언제 몇 초 동안 무엇이** 안 됐는지 남긴다 — 원인이
 # 업로드 창인지·엣지 전파인지·브라우저에 남은 옛 청크인지에 따라 처방이 다르기 때문.
 # 끄려면: bash scripts/deploy.sh --no-probe
 PROBE_PID=""
-case " $* " in *" --no-probe "*) ;; *)
+if [ -z "$NO_PROBE" ]; then
   mkdir -p .ci
   node scripts/deploy-probe.mjs --seconds 240 > .ci/deploy-probe.log 2>&1 &
   PROBE_PID=$!
   echo "무중단 프로브 시작 (배포 후 요약 출력 — .ci/deploy-probe.log)"
-esac
+fi
 
 echo "2단계: 프로덕션 전환"
 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true
+step "2단계 프로덕션 전환"
 
 # 전환 직후 이번 빌드의 청크를 우리가 먼저 한 번 당겨 엣지에 올린다 (2026-08-06 밤).
 # 사용자보다 먼저 당겨 두면 첫 방문자가 404를 맞지 않는다. 안 뜨는 파일이 있으면 여기서
 # 이름이 찍힌다 — 그게 곧 사용자가 콘솔에서 볼 파일이다.
 node scripts/warm-assets.mjs --seconds 180 || true
+step "청크 예열 (warm-assets)"
 
 # 프로브는 전환 뒤 구간이 핵심이라 끝까지 기다렸다가 요약만 보여 준다
 if [ -n "$PROBE_PID" ]; then
@@ -175,13 +238,18 @@ if [ -n "$PROBE_PID" ]; then
   wait "$PROBE_PID" || true
   sed -n '/── 요약/,$p' .ci/deploy-probe.log
 fi
+step "프로브 대기"
 
 # 색인 통보(IndexNow) — 직전 커밋 대비 **실제로 바뀐** 페이지만 Bing·네이버에 알린다.
 # 바뀐 게 없으면 아무것도 안 쏜다. 실패해도 배포는 성공이다(부가 작업이라 || true).
 node scripts/indexnow.mjs || true
+step "색인 통보 (IndexNow)"
 
 # 관리자 사이트(admin.terra-archive.net)는 **별도 배포**다 (2026-07-28 재분리 — 한때 여기서
 # deploy-admin.sh를 이어 불렀지만, 본사이트 배포마다 관리자까지 딸려 나갈 이유가 없다).
 # 관리자 UI를 고쳤을 때만: bash scripts/deploy-admin.sh
 echo ""
 echo "✓ 본사이트 배포 완료 — 관리자 사이트는 별도입니다: bash scripts/deploy-admin.sh"
+if [ -z "$ONE_PHASE$NO_PROBE" ]; then
+  echo "  (코드만 조금 고친 배포라면 다음엔: bash scripts/deploy.sh --fast)"
+fi
