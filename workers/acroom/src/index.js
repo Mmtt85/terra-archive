@@ -51,6 +51,7 @@ const MAX_BONDS = 4;       // 클라이언트는 3개까지 고르게 한다 —
 const MSG_MAX = 2048;
 const WIPE_AFTER_MS = 60_000;          // 마지막 사람이 나간 뒤 방을 지우기까지
 const SWEEP_EVERY_MS = 10 * 60_000;    // 사람이 있는 동안 죽은 소켓·고아 행을 훑는 주기 (env.SWEEP_MS 로 시험용 단축)
+const STAT_LOG_MAX = 300;          // 하루에 남기는 방 기록 수 상한 (넘으면 오래된 것부터 버린다)
 const STAT_KEEP_DAYS = 120;        // 방 생성 통계를 며칠치 남길지 (그보다 옛날 것은 /up 때 지운다)
 const KST_MS = 9 * 3600_000;       // 하루의 경계는 **한국시간 0시** (사용자 기준 "0시~23시59분")
 /** ms → `YYYY-MM-DD` (한국시간 기준). UTC 로 끊으면 한국 오전 9시에 날짜가 바뀐다. */
@@ -197,7 +198,7 @@ export class AcLobby {
     if (url.pathname === "/statdays") {
       const days = [];
       for (const [key, v] of await this.storage.list({ prefix: "d:" })) {
-        days.push({ day: key.slice(2), n: v?.n ?? 0, nicks: v?.nicks ?? {}, unknown: v?.unknown ?? 0 });
+        days.push({ day: key.slice(2), n: v?.n ?? 0, nicks: v?.nicks ?? {}, unknown: v?.unknown ?? 0, log: v?.log ?? [] });
       }
       days.sort((a, b) => (a.day < b.day ? 1 : -1));   // 최신 날짜가 앞
       return json({ ok: true, days });
@@ -209,9 +210,13 @@ export class AcLobby {
         await this.storage.put(`r:${id}`, Date.now());
         // 방이 **새로 생긴** 순간에만 온다 (AcRoom.fetch 의 생성 분기) — 그래서 여기가 곧 카운터다.
         // 닉네임은 이때 아직 모른다(초대 문구는 hello 로 뒤늦게 온다) → 아래 /nick 이 채운다.
-        const day = dayKey(Date.now());
-        const cur = (await this.storage.get(`d:${day}`)) ?? { n: 0, nicks: {}, unknown: 0 };
+        const now = Date.now();
+        const day = dayKey(now);
+        const cur = (await this.storage.get(`d:${day}`)) ?? { n: 0, nicks: {}, unknown: 0, log: [] };
         cur.n += 1;
+        // 방 하나를 한 줄로 남긴다 — 닉네임은 아직 모르니 빈칸으로 두고 /nick 이 채운다.
+        // 방 id 로 짝을 찾으므로 순서가 뒤바뀌어도 상관없다.
+        cur.log = [...(cur.log ?? []), { id, at: now, nick: null }].slice(-STAT_LOG_MAX);
         await this.storage.put(`d:${day}`, cur);
         await this.prune();
       } else await this.storage.delete(`r:${id}`);
@@ -219,11 +224,14 @@ export class AcLobby {
     }
     // 만든 사람 닉네임 — 방에 초대 문구가 **처음** 들어올 때 한 번 온다
     if (request.method === "POST" && url.pathname === "/nick") {
-      const { nick, at } = await request.json().catch(() => ({}));
+      const { id, nick, at } = await request.json().catch(() => ({}));
       const day = dayKey(Number(at) || Date.now());
-      const cur = (await this.storage.get(`d:${day}`)) ?? { n: 0, nicks: {}, unknown: 0 };
+      const cur = (await this.storage.get(`d:${day}`)) ?? { n: 0, nicks: {}, unknown: 0, log: [] };
       if (typeof nick === "string" && nick) cur.nicks[nick] = (cur.nicks[nick] ?? 0) + 1;
       else cur.unknown = (cur.unknown ?? 0) + 1;
+      // 그 방의 줄에 닉네임을 채운다 — 없으면(상한에 밀려 잘린 줄) 집계만 올라가고 끝난다
+      const row = (cur.log ?? []).find((r) => r.id === id);
+      if (row) row.nick = typeof nick === "string" && nick ? nick : null;
       await this.storage.put(`d:${day}`, cur);
       return json({ ok: true });
     }

@@ -24567,7 +24567,15 @@ html[lang="ja"] .vn-box {
 .ac-stat > h4 > small { font-weight: 400; font-size: 11px; color: var(--muted); }
 /* 날짜별 막대 — 값은 막대 위, 날짜는 아래. 0인 날도 자리를 차지해야 간격이 안 밀린다 */
 .ac-stat-bars { display: flex; align-items: flex-end; gap: 4px; height: 92px; }
-.ac-stat-bar { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 2px; }
+.ac-stat-bar {
+  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-end; height: 100%; gap: 2px;
+  border: 0; background: transparent; padding: 0; font: inherit; cursor: pointer;
+  border-radius: var(--r-sm);
+}
+.ac-stat-bar:hover:not(:disabled) { background: var(--bg-soft); }
+.ac-stat-bar:disabled { cursor: default; }
+.ac-stat-bar:focus-visible { outline: 2px solid var(--lime); outline-offset: 1px; }
 .ac-stat-bar > b { font-size: 10px; font-weight: 700; color: var(--ink3); line-height: 1; }
 .ac-stat-bar > i { width: 100%; min-height: 2px; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--lime) 55%, var(--line)); }
 .ac-stat-bar.on > i { background: var(--lime); }
@@ -24581,6 +24589,22 @@ html[lang="ja"] .vn-box {
 .ac-stat-track > i { display: block; height: 100%; background: color-mix(in srgb, var(--lime) 60%, var(--line)); }
 .ac-stat-nicks em { font-style: normal; font-weight: 700; color: var(--ink2); }
 .ac-stat-nicks small { font-size: 9px; }
+/* 하루치 상세 창 — 막대를 누르면 방 목록 창 위에 겹쳐 뜬다 (2026-09-21) */
+.ac-daymodal { max-width: 560px; }
+.ac-stat-sum { display: flex; align-items: baseline; gap: 8px; }
+.ac-stat-sum > b { font-size: 22px; font-weight: 800; color: var(--lime); line-height: 1; }
+.ac-stat-sum > i { font-style: normal; font-size: 10px; margin-left: auto; }
+/* 시간대(0~23시) 분포 — 하루 중 언제 모이는지 */
+.ac-stat-hours { display: flex; align-items: flex-end; gap: 2px; height: 46px; padding-bottom: 12px; position: relative; }
+.ac-stat-hour { flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; position: relative; }
+.ac-stat-hour > i { width: 100%; min-height: 1px; border-radius: 1px 1px 0 0; background: var(--line); }
+.ac-stat-hour.has > i { background: color-mix(in srgb, var(--lime) 60%, var(--line)); }
+.ac-stat-hour > span { position: absolute; bottom: -12px; left: 0; font-size: 8px; color: var(--muted); }
+.ac-stat-log { display: flex; flex-direction: column; gap: 3px; margin: 0; padding: 0; list-style: none; max-height: 260px; overflow-y: auto; }
+.ac-stat-log > li { display: grid; grid-template-columns: 4em minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 11px; }
+.ac-stat-log time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.ac-stat-log > li > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-stat-log code { font-size: 9px; color: var(--muted); }
 /* 새기능 배지는 absolute 라 기준 상자가 필요하다 — .ac-ctarow 의 .ac-simcta 는 static 이어서 배지가 줄 끝(방 N개 칩)으로
    달아났다 (사용자 지적 2026-09-21 "새 기능 버튼은 파티공유 버튼에다"). */
 /* ⚠ left/top 도 같이 풀어야 한다 — .ac-simcta 기본값이 `left:50%; top:50%` 라

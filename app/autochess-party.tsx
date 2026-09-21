@@ -83,7 +83,8 @@ const ROOMS_POLL_MS = 5_000;   // 운영자 방 목록 자동 갱신 주기 (창
 /** `GET /admin/rooms` 한 줄 — 방 하나의 겉모습과 안에 앉은 사람들 */
 type AdminRoom = { id: string; at: number; invite: string; members: PartyMember[] };
 /** 일별 방 생성 집계 — 하루치가 한 줄 (`nicks` 는 닉네임 → 그날 만든 수, `unknown` 은 못 읽은 문구) */
-type StatDay = { day: string; n: number; nicks: Record<string, number>; unknown: number };
+type StatRoom = { id: string; at: number; nick: string | null };
+type StatDay = { day: string; n: number; nicks: Record<string, number>; unknown: number; log: StatRoom[] };
 const CHART_DAYS = 14;   // 막대그래프에 보여 줄 날 수 (그보다 옛날 것도 집계에는 들어간다)
 
 export const ROOM_ID_LEN = 14;
@@ -303,6 +304,9 @@ export function AcRoomsModal({ doc, onClose }: {
   const [rooms, setRooms] = useState<AdminRoom[] | null>(null);
   const [days, setDays] = useState<StatDay[]>([]);
   const [today, setToday] = useState("");
+  /** 막대를 누르면 그 날 상세를 **창으로** 연다 (사용자 지시 2026-09-21).
+   *  창 안에 창을 띄워도 된다 — ModalWindow 가 z 를 알아서 쌓는다. */
+  const [dayOpen, setDayOpen] = useState("");
   const [err, setErr] = useState("");
   const [open, setOpen] = useState("");
   const [busy, setBusy] = useState(false);
@@ -375,6 +379,7 @@ export function AcRoomsModal({ doc, onClose }: {
   const todayN = days.find((d) => d.day === today)?.n ?? 0;
   const unknownTotal = days.reduce((a, d) => a + (d.unknown ?? 0), 0);
   const chartMax = Math.max(1, ...chart.map((c) => c.n));
+
   const nickMax = Math.max(1, ...byNick.map((v) => v.n));
 
   return (
@@ -402,16 +407,22 @@ export function AcRoomsModal({ doc, onClose }: {
         {!err && days.length > 0 && (
           <section className="ac-stat">
             <h4>{t("오늘 만들어진 방 {n}개", { n: todayN })}<small>{today}</small></h4>
-            <div className="ac-stat-bars" role="img" aria-label={t("날짜별 방 생성 수")}>
+            {/* 막대를 누르면 그 날 상세 창이 열린다 (사용자 지시 2026-09-21).
+                ⚠ title 속성(네이티브 툴팁)에 기대지 않는다 — 여러 줄을 못 담고 모바일에서
+                아예 안 뜬다 (사용자가 전에 지적한 "마우스오버해도 보이지도 않고"). */}
+            <div className="ac-stat-bars">
               {chart.map((c) => (
-                <div key={c.day} className={`ac-stat-bar${c.day === today ? " on" : ""}`}
-                  title={`${c.day} · ${t("{n}개", { n: c.n })}`}>
+                <button type="button" key={c.day} disabled={!c.n}
+                  className={`ac-stat-bar${c.day === today ? " on" : ""}`}
+                  aria-label={`${c.day} · ${t("{n}개", { n: c.n })}`}
+                  onClick={() => setDayOpen(c.day)}>
                   <b>{c.n || ""}</b>
                   <i style={{ height: `${Math.round((c.n / chartMax) * 100)}%` }} />
                   <span>{c.day.slice(5).replace("-", "/")}</span>
-                </div>
+                </button>
               ))}
             </div>
+            <p className="ac-party-fine sb-dim">{t("막대를 누르면 그 날 누가 언제 만들었는지 볼 수 있습니다.")}</p>
             {byNick.length > 0 ? (
               <ul className="ac-stat-nicks">
                 {byNick.slice(0, 10).map((v) => (
@@ -467,6 +478,81 @@ export function AcRoomsModal({ doc, onClose }: {
             )}
           </section>
         ))}
+      </div>
+      {dayOpen && (
+        <AcDayModal day={days.find((d) => d.day === dayOpen) ?? { day: dayOpen, n: 0, nicks: {}, unknown: 0, log: [] }}
+          onClose={() => setDayOpen("")} />
+      )}
+    </ModalWindow>
+  );
+}
+
+/** 하루치 상세 — 막대를 누르면 방 목록 창 위에 겹쳐 뜬다 (사용자 지시 2026-09-21).
+ *  그 날 만들어진 방을 **시각 · 만든 사람 · 방 ID** 로 하나씩 보여 준다. */
+function AcDayModal({ day, onClose }: { day: StatDay; onClose: () => void }) {
+  const { t } = useI18n();
+  const log = useMemo(() => [...(day.log ?? [])].sort((a, b) => b.at - a.at), [day.log]);
+  const nicks = useMemo(
+    () => Object.entries(day.nicks ?? {}).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
+    [day.nicks]);
+  const top = Math.max(1, ...nicks.map(([, n]) => n));
+  const hhmm = (ms: number) => new Date(ms).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
+  /** 시간대(0~23시)별 분포 — 하루 중 언제 모이는지가 한눈에 보인다 */
+  const hours = useMemo(() => {
+    const out = Array.from({ length: 24 }, () => 0);
+    for (const r of day.log ?? []) out[new Date(r.at).getHours()] += 1;
+    return out;
+  }, [day.log]);
+  const hourMax = Math.max(1, ...hours);
+
+  return (
+    <ModalWindow label={`${day.day} · ${t("{n}개", { n: day.n })}`} className="operator-modal ac-modal ac-daymodal" onClose={onClose}>
+      <div className="ac-partybody">
+        <div className="ac-stat-sum">
+          <b>{t("{n}개", { n: day.n })}</b>
+          <span className="sb-dim">{t("만들어진 방")}</span>
+          {day.unknown > 0 && <i className="sb-chip">{t("만든 사람 모름 {n}", { n: day.unknown })}</i>}
+        </div>
+
+        {nicks.length > 0 && (
+          <ul className="ac-stat-nicks">
+            {nicks.map(([nick, n]) => (
+              <li key={nick}>
+                <b title={nick}>{nick}</b>
+                <span className="ac-stat-track"><i style={{ width: `${Math.round((n / top) * 100)}%` }} /></span>
+                <em>{t("{n}회", { n })}</em>
+                <small className="sb-dim">{day.n ? `${Math.round((n / day.n) * 100)}%` : ""}</small>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {log.length > 0 && (
+          <>
+            <div className="ac-stat-hours" role="img" aria-label={t("시간대별 방 생성 수")}>
+              {hours.map((n, h) => (
+                <div key={h} className={`ac-stat-hour${n ? " has" : ""}`} title={`${String(h).padStart(2, "0")}시 · ${t("{n}개", { n })}`}>
+                  <i style={{ height: `${Math.round((n / hourMax) * 100)}%` }} />
+                  {h % 6 === 0 && <span>{h}</span>}
+                </div>
+              ))}
+            </div>
+            <ul className="ac-stat-log">
+              {log.map((r) => (
+                <li key={`${r.id}-${r.at}`}>
+                  <time>{hhmm(r.at)}</time>
+                  <b>{r.nick ?? <i className="sb-dim">{t("알 수 없음")}</i>}</b>
+                  <code>{r.id}</code>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        {log.length === 0 && (
+          <p className="sim-note">{day.n > 0
+            ? t("이 날 기록은 집계만 남아 있습니다 — 방별 기록을 남기기 전에 만들어진 방입니다.")
+            : t("이 날 만들어진 방이 없습니다.")}</p>
+        )}
       </div>
     </ModalWindow>
   );
