@@ -32,7 +32,7 @@
 // 목록을 못 뽑으므로 장부 DO 하나(AcLobby, idFromName("lobby"))를 둔다. 방이 생기면 /up, 지워지면 /down,
 // 사람이 있는 동안 순찰마다 /up 으로 살아 있음을 알린다. 알림을 놓친 방은 30분 넘게 소식이 없으면 장부에서 뺀다.
 // 사이트는 GET /stats → {rooms:N} 만 읽는다.
-// **방 목록(운영자)**: `GET /admin/rooms` + `x-admin-key: <ADMIN_KEY 시크릿>` — 장부에 있는 방마다
+// **방 목록(운영자)**: `GET /admin/rooms` + `x-admin-key: <VIEW_KEY 시크릿, 없으면 ADMIN_KEY>` — 장부에 있는 방마다
 //   자리·전략·맹약·신호를 **자리를 먹지 않고** 돌려준다 (사이트의 '방 N개' 버튼이 부른다).
 // **전부 정리**: `POST /admin/purge` + `x-admin-key: <ADMIN_KEY 시크릿>` — 장부에 있는 방을 모두 닫고(`closed`, 4003)
 // 장부를 비운다 (사용자 요청 "세션 싹 다 삭제"). 시크릿은 업로드 워커와 같은 .upload-admin-key 값.
@@ -88,8 +88,14 @@ export default {
     // 운영자 방 목록 — 어느 방에 누가 무슨 전략·맹약으로 있는지 **들어가 보지 않고** 본다
     // (사용자 요청 2026-09-21). 자리를 먹지 않으므로 4명이 찬 방도 그대로 볼 수 있다.
     if (url.pathname === "/admin/rooms") {
-      if (!env.ADMIN_KEY) return json({ ok: false, error: "no-admin-key" }, 503);
-      if ((request.headers.get("x-admin-key") ?? "") !== env.ADMIN_KEY) return json({ ok: false, error: "forbidden" }, 403);
+      // ⚠ 키를 **둘로 가른다.** 이 키는 운영자 브라우저의 localStorage 에 놓인다 — 공개
+      //   사이트에 놓이는 값이므로 **보기만 되고 지우기는 안 되게** 한다 (app/feedback.ts 의
+      //   "공개 사이트 localStorage 에 키가 놓이는 트레이드오프" 와 같은 계열).
+      //   VIEW_KEY 가 있으면 그걸 쓰고, 없으면 ADMIN_KEY 로 떨어진다(설정 전에도 동작하게).
+      //   `/admin/purge` 는 언제나 ADMIN_KEY 전용 — 브라우저에 들어갈 일이 없다.
+      const viewKey = env.VIEW_KEY || env.ADMIN_KEY;
+      if (!viewKey) return json({ ok: false, error: "no-admin-key" }, 503);
+      if ((request.headers.get("x-admin-key") ?? "") !== viewKey) return json({ ok: false, error: "forbidden" }, 403);
       const { ids } = await (await lobby().fetch("https://lobby/list")).json();
       const rooms = [];
       for (const id of ids) {

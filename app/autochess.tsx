@@ -2865,8 +2865,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         </Suspense>
       )}
       {roomsOpen && (
-        <AcRoomsModal doc={doc} onClose={() => setRoomsOpen(false)}
-          onEnter={(id) => { setRoomsOpen(false); setParty(id); }} />
+        <AcRoomsModal doc={doc} onClose={() => setRoomsOpen(false)} />
       )}
       {party !== null && (
         <AcPartyModal doc={doc} roomId={party} onJoin={setParty} onClose={() => setParty(null)}

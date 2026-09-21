@@ -284,11 +284,13 @@ function useClock(on: boolean) {
  *  그 방 클릭하면 안에 들어가보지 않아도 알 수 있도록"). 워커의 `GET /admin/rooms` 는
  *  **자리를 먹지 않고** 방 안을 돌려주므로 4명이 찬 방도 그대로 들여다본다.
  *  ⚠ 권한은 **워커가** 판정한다 (`x-admin-key` ↔ ADMIN_KEY 시크릿). 화면에서 숨기는 것만으로는
- *  막은 게 아니다 — 여기 오는 값은 전부 서버가 통과시킨 뒤의 것이다. */
-export function AcRoomsModal({ doc, onClose, onEnter }: {
+ *  막은 게 아니다 — 여기 오는 값은 전부 서버가 통과시킨 뒤의 것이다.
+ *  ⚠ **보기 전용이다.** 입장 버튼을 두지 않는다 (사용자 지시 2026-09-21 "그냥 관음만 하고
+ *  싶은 거야") — 운영자가 끼면 자리를 하나 먹어 4명이 3명이 된다. 들어갈 일이 있으면 초대
+ *  문구의 방 ID 로 평소처럼 입장하면 된다. */
+export function AcRoomsModal({ doc, onClose }: {
   doc: AutochessDoc;
   onClose: () => void;
-  onEnter: (roomId: string) => void;
 }) {
   const { t } = useI18n();
   const bandById = useMemo(() => new Map(doc.bands.map((b) => [b.id, b])), [doc.bands]);
@@ -368,7 +370,6 @@ export function AcRoomsModal({ doc, onClose, onEnter }: {
                     ))}
                   </ul>
                 )}
-                <button type="button" className="ac-party-copy" onClick={() => onEnter(r.id)}>{t("이 방에 입장")}</button>
               </div>
             )}
           </section>

@@ -3068,7 +3068,6 @@ const D: Record<string, Pair> = {
   "열린 방 {n}개": ["{n} open rooms", "開いている部屋 {n}件"],
   "지금 열린 방이 없습니다.": ["No rooms are open right now.", "今開いている部屋はありません。"],
   "아무도 없습니다.": ["Nobody is in here.", "誰もいません。"],
-  "이 방에 입장": ["Join this room", "この部屋に入る"],
   "{n}시간 전": ["{n}h ago", "{n}時間前"],
   "관리자 키가 이 브라우저에 없습니다 — 제안 게시판에서 관리자 모드로 들어가세요.": ["No admin key in this browser — unlock admin mode from the suggestion board.", "このブラウザに管理者キーがありません — 提案ボードで管理者モードに入ってください。"],
   "워커가 이 키를 거부했습니다 — 방 워커의 ADMIN_KEY 시크릿과 값이 다릅니다.": ["The worker rejected this key — it differs from the room worker's ADMIN_KEY secret.", "ワーカーがこのキーを拒否しました — 部屋ワーカーの ADMIN_KEY と値が違います。"],
