@@ -35,7 +35,7 @@ import { warmBandTemplates } from "./lens/acband-load";
 import { warmBondTemplates } from "./lens/acbond-load";
 import { useAcRun, acRun, setAcStack, setAcStacks, mergeAcRun, resetAcRun, isAcLock, acModeOf, AC_LOCK, BAN_VOTE_SURE } from "./autochess-run";
 import { solveAcBans } from "./lens/acsolve";
-import { AcPartyModal, ROOM_ID_RE, usePartyRoomCount } from "./autochess-party";
+import { AcPartyModal, AcRoomsModal, ROOM_ID_RE, usePartyRoomCount } from "./autochess-party";
 
 // 전투 맵 (scripts/build-autochess-routes.py) — 작전 도감·통합전략과 **같은 렌더러**를 쓴다
 // (규칙: .claude/skills/route-map-rules). '전투 맵' 탭을 처음 눌렀을 때만 지연 로드한다.
@@ -772,6 +772,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   /** 파티 공유 창 — null 닫힘 · "" 입장 전(문구 붙여 넣기) · 그 외 = 연결된 방 ID (해시 p=) (2026-09-21) */
   const [party, setParty] = useState<string | null>(null);
   const partyRooms = usePartyRoomCount(party);   // 지금 열린 파티 공유 방 수 (버튼 오른쪽 칩)
+  const [roomsOpen, setRoomsOpen] = useState(false);   // 운영자 방 목록 창 (칩을 눌러 연다)
   useEffect(() => {
     if (!acLocked) return;
     // 첫 인식에서 wasm·traineddata(~9MB) 로드로 수 초를 잃지 않게 연결 즉시 예열.
@@ -1927,10 +1928,17 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             {t("파티 공유")}
             {isNewFeature("ac-party") && <span className="new-badge">{t("새기능")}</span>}
           </button>
-          {/* 지금 열린 방 수 — 버튼 오른쪽 (사용자 요청 2026-09-21). 자리를 미리 잡아 두어 값이 와도 줄이 안 흔들린다 */}
-          <span className="ac-party-count" title={t("지금 열린 파티 공유 방")}>
-            {partyRooms === null ? "" : t("방 {n}개", { n: partyRooms })}
-          </span>
+          {/* 지금 열린 방 수 — 운영자에게만 보인다(usePartyRoomCount 주석). 눌러서 방 목록을 연다
+              (사용자 요청 2026-09-21). 값이 없을 때(= 운영자 아님)는 빈 칸이라 CSS 가 자리를 접는다. */}
+          {partyRooms === null ? (
+            <span className="ac-party-count" />
+          ) : (
+            <button type="button" className="ac-party-count ac-party-countbtn"
+              title={t("열린 방 목록 — 들어가지 않고 안을 봅니다")}
+              onClick={() => { setRoomsOpen(true); closeMenus(); }}>
+              {t("방 {n}개", { n: partyRooms })}
+            </button>
+          )}
         </div>
       </header>
       {/* 한 판 스트립 — 게임 연결이 켜져 있을 때만. **모달 밖**에 두는 게 핵심이다:
@@ -2855,6 +2863,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <Suspense fallback={null}>
           <AcBridgeHelpModal where="autochess" onClose={() => setAcHelp(false)} />
         </Suspense>
+      )}
+      {roomsOpen && (
+        <AcRoomsModal doc={doc} onClose={() => setRoomsOpen(false)}
+          onEnter={(id) => { setRoomsOpen(false); setParty(id); }} />
       )}
       {party !== null && (
         <AcPartyModal doc={doc} roomId={party} onJoin={setParty} onClose={() => setParty(null)}

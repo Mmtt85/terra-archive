@@ -32,6 +32,8 @@
 // 목록을 못 뽑으므로 장부 DO 하나(AcLobby, idFromName("lobby"))를 둔다. 방이 생기면 /up, 지워지면 /down,
 // 사람이 있는 동안 순찰마다 /up 으로 살아 있음을 알린다. 알림을 놓친 방은 30분 넘게 소식이 없으면 장부에서 뺀다.
 // 사이트는 GET /stats → {rooms:N} 만 읽는다.
+// **방 목록(운영자)**: `GET /admin/rooms` + `x-admin-key: <ADMIN_KEY 시크릿>` — 장부에 있는 방마다
+//   자리·전략·맹약·신호를 **자리를 먹지 않고** 돌려준다 (사이트의 '방 N개' 버튼이 부른다).
 // **전부 정리**: `POST /admin/purge` + `x-admin-key: <ADMIN_KEY 시크릿>` — 장부에 있는 방을 모두 닫고(`closed`, 4003)
 // 장부를 비운다 (사용자 요청 "세션 싹 다 삭제"). 시크릿은 업로드 워커와 같은 .upload-admin-key 값.
 //
@@ -71,8 +73,36 @@ export default {
     if (url.pathname === "/") {
       return json({ ok: true, service: "terra-archive-acroom", seats: MAX_SEATS, wipeAfterSec: WIPE_AFTER_MS / 1000 });
     }
+    // ⚠ `x-admin-key` 는 단순 헤더가 아니라 **프리플라이트를 부른다** — OPTIONS 를 안 받으면
+    //   브라우저가 요청 자체를 막는다 (curl 로는 되는데 화면에서만 안 되는 함정).
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "x-admin-key, content-type",
+        "Access-Control-Max-Age": "86400",
+      } });
+    }
     const lobby = () => env.LOBBY.get(env.LOBBY.idFromName("lobby"));
     if (url.pathname === "/stats") return lobby().fetch("https://lobby/stats");
+    // 운영자 방 목록 — 어느 방에 누가 무슨 전략·맹약으로 있는지 **들어가 보지 않고** 본다
+    // (사용자 요청 2026-09-21). 자리를 먹지 않으므로 4명이 찬 방도 그대로 볼 수 있다.
+    if (url.pathname === "/admin/rooms") {
+      if (!env.ADMIN_KEY) return json({ ok: false, error: "no-admin-key" }, 503);
+      if ((request.headers.get("x-admin-key") ?? "") !== env.ADMIN_KEY) return json({ ok: false, error: "forbidden" }, 403);
+      const { ids } = await (await lobby().fetch("https://lobby/list")).json();
+      const rooms = [];
+      for (const id of ids) {
+        try {
+          const r = await env.ROOM.get(env.ROOM.idFromName(id)).fetch("https://room/peek");
+          const d = await r.json();
+          if (!d?.ok || d.gone) continue;          // 장부에만 남은 유령은 안 싣는다
+          rooms.push({ id, at: d.room?.at ?? 0, invite: d.room?.invite ?? "", members: d.members ?? [] });
+        } catch { /* 한 방이 막혀도 나머지는 계속 */ }
+      }
+      rooms.sort((a, b) => b.at - a.at);
+      return json({ ok: true, rooms, seats: MAX_SEATS });
+    }
     if (url.pathname === "/admin/purge") {
       if (request.method !== "POST") return json({ ok: false, error: "method" }, 405);
       if (!env.ADMIN_KEY) return json({ ok: false, error: "no-admin-key" }, 503);
@@ -165,6 +195,13 @@ export class AcRoom {
     const url = new URL(request.url);
     // 내부 전용 — 공개 라우터는 /room/<id> 웹소켓만 넘기므로 밖에서는 못 부른다 (관리자 purge 가 부른다)
     if (url.pathname === "/purge") { await this.wipe("closed"); return json({ ok: true }); }
+    // 관리자 엿보기 — **자리를 먹지 않고** 방 안을 그대로 돌려준다 (운영자 방 목록, 2026-09-21).
+    // ⚠ 아무것도 쓰지 않는다: 장부에만 남고 실체가 없는 방을 여기서 되살리면 유령 방이 는다.
+    if (url.pathname === "/peek") {
+      const room = await this.storage.get("room");
+      if (!room || this.expired(room)) return json({ ok: true, gone: true });
+      return json({ ok: true, room, members: await this.members(null, true) });
+    }
     const roomId = decodeURIComponent(url.pathname.split("/").pop() ?? "").toLowerCase();
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);

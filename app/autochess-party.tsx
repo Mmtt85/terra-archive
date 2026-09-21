@@ -34,7 +34,7 @@
 // 창은 **📌 고정된 채로 열린다** (사용자 지시) — 게임을 하면서 옆에 띄워 두는 창이라 뒤 화면을
 // 가리지 않고, 바깥 클릭·Esc 로 닫히지 않는다. × 로 닫으면 방에서 나간 것이다 (연결이 끊긴다).
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
@@ -78,6 +78,9 @@ export function usePartyRoomCount(refreshKey: string | null): number | null {
 }
 
 /** 게임 초대 코드는 늘 **14자** 영숫자다 (kmk0im89g02bli). 길이가 다르면 잘못된 방으로 막는다 (사용자 지시 2026-09-21). */
+/** `GET /admin/rooms` 한 줄 — 방 하나의 겉모습과 안에 앉은 사람들 */
+type AdminRoom = { id: string; at: number; invite: string; members: PartyMember[] };
+
 export const ROOM_ID_LEN = 14;
 export const ROOM_ID_RE = /^[a-z0-9]{14}$/i;
 export const MAX_SEATS = 4;
@@ -277,6 +280,104 @@ function useClock(on: boolean) {
 }
 
 // ── 창 ──────────────────────────────────────────────────────────────────────
+/** 운영자 방 목록 — '방 N개' 버튼이 연다 (사용자 요청 2026-09-21: "생성돼있는 방 목록이랑,
+ *  그 방 클릭하면 안에 들어가보지 않아도 알 수 있도록"). 워커의 `GET /admin/rooms` 는
+ *  **자리를 먹지 않고** 방 안을 돌려주므로 4명이 찬 방도 그대로 들여다본다.
+ *  ⚠ 권한은 **워커가** 판정한다 (`x-admin-key` ↔ ADMIN_KEY 시크릿). 화면에서 숨기는 것만으로는
+ *  막은 게 아니다 — 여기 오는 값은 전부 서버가 통과시킨 뒤의 것이다. */
+export function AcRoomsModal({ doc, onClose, onEnter }: {
+  doc: AutochessDoc;
+  onClose: () => void;
+  onEnter: (roomId: string) => void;
+}) {
+  const { t } = useI18n();
+  const bandById = useMemo(() => new Map(doc.bands.map((b) => [b.id, b])), [doc.bands]);
+  const bondById = useMemo(() => new Map(doc.bonds.map((b) => [b.id, b])), [doc.bonds]);
+  const [rooms, setRooms] = useState<AdminRoom[] | null>(null);
+  const [err, setErr] = useState("");
+  const [open, setOpen] = useState("");
+  const [busy, setBusy] = useState(false);
+  const now = useClock(true);   // 렌더 중에 Date.now() 를 부르지 않는다 (react-compiler 순수성 규칙)
+  const load = useCallback(() => {
+    const key = getBoardAdminKey();
+    if (!key) { setErr("no-key"); setRooms([]); return; }
+    setBusy(true);
+    fetch(`${wsBase().replace(/^ws/, "http")}/admin/rooms`, { headers: { "x-admin-key": key }, cache: "no-store" })
+      .then(async (r) => {
+        if (r.status === 403) { setErr("forbidden"); setRooms([]); return; }
+        if (!r.ok) { setErr("net"); setRooms([]); return; }
+        const d = await r.json();
+        setErr(""); setRooms(Array.isArray(d?.rooms) ? d.rooms : []);
+      })
+      .catch(() => { setErr("net"); setRooms([]); })
+      .finally(() => setBusy(false));
+  }, []);
+  // 첫 조회는 타이머로 한 틱 미룬다 — 이펙트 안에서 곧바로 setState 하면 렌더가 한 번 더 돈다
+  // (set-state-in-effect 린트 관례, promoNow·lens 와 같은 처리)
+  useEffect(() => { const id = window.setTimeout(load, 0); return () => window.clearTimeout(id); }, [load]);
+
+  const age = (at: number) => {
+    const min = Math.max(0, Math.floor(((now || at) - at) / 60000));
+    return min < 60 ? t("{n}분 전", { n: min }) : t("{n}시간 전", { n: Math.floor(min / 60) });
+  };
+  const live = (r: AdminRoom) => r.members.filter((m) => !m.ghost).length;
+
+  return (
+    <ModalWindow label={t("파티 공유 방 목록")} className="operator-modal ac-modal ac-rooms" onClose={onClose}>
+      <div className="ac-partybody">
+        <div className="ac-party-bar">
+          <span className="sim-note">{rooms === null ? t("불러오는 중…") : t("열린 방 {n}개", { n: rooms.length })}</span>
+          <button type="button" className="ac-party-copy" style={{ marginLeft: "auto" }} disabled={busy}
+            onClick={load}>{t("새로고침")}</button>
+        </div>
+        {err && (
+          <p className="ac-party-err">{err === "no-key"
+            ? t("관리자 키가 이 브라우저에 없습니다 — 제안 게시판에서 관리자 모드로 들어가세요.")
+            : err === "forbidden"
+              ? t("워커가 이 키를 거부했습니다 — 방 워커의 ADMIN_KEY 시크릿과 값이 다릅니다.")
+              : t("방 목록을 불러오지 못했습니다.")}</p>
+        )}
+        {rooms !== null && !err && rooms.length === 0 && <p className="sim-note">{t("지금 열린 방이 없습니다.")}</p>}
+        {rooms?.map((r) => (
+          <section key={r.id} className={`ac-rooms-item${open === r.id ? " on" : ""}`}>
+            <button type="button" className="ac-rooms-head" aria-expanded={open === r.id}
+              onClick={() => setOpen((v) => (v === r.id ? "" : r.id))}>
+              <code>{r.id}</code>
+              <i className="sb-chip">{live(r)}/{MAX_SEATS}</i>
+              <span className="sb-dim">{age(r.at)}</span>
+              <span className="ac-rooms-caret" aria-hidden>{open === r.id ? "▴" : "▾"}</span>
+            </button>
+            {open === r.id && (
+              <div className="ac-rooms-body">
+                {r.invite && <p className="ac-party-fine sb-dim">{r.invite}</p>}
+                {r.members.length === 0 ? <p className="sim-note">{t("아무도 없습니다.")}</p> : (
+                  <ul className="ac-rooms-seats">
+                    {[...r.members].sort((a, b) => a.seat - b.seat).map((m, i) => (
+                      <li key={`${r.id}-${m.seat}-${i}`} className={m.ghost ? "ghost" : undefined}>
+                        <b>{t("박사 {n}", { n: m.seat + 1 })}</b>
+                        {m.ghost ? <i className="sb-dim">{t("빈 자리")}</i> : (<>
+                          <span className="ac-rooms-band">
+                            {m.band ? (bandById.get(m.band) ? bandLabel(bandById.get(m.band)!) : m.band) : <i className="sb-dim">{t("아직 안 골랐음")}</i>}
+                          </span>
+                          <span className="ac-party-bonds">
+                            {m.bonds.map((id) => <i key={id} className="sb-chip">{bondById.get(id)?.n ?? id}</i>)}
+                          </span>
+                        </>)}
+                        {m.sig && <span className={`ac-party-sig ${m.sig.k}`}>{SIGNAL_KO[m.sig.k as SignalId] ? t(SIGNAL_KO[m.sig.k as SignalId]) : m.sig.k}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <button type="button" className="ac-party-copy" onClick={() => onEnter(r.id)}>{t("이 방에 입장")}</button>
+              </div>
+            )}
+          </section>
+        ))}
+      </div>
+    </ModalWindow>
+  );
+}
+
 export function AcPartyModal({ doc, roomId, onJoin, onClose, onShowBand, onShowBond }: {
   doc: AutochessDoc;
   /** "" = 아직 입장 전(문구 붙여 넣는 화면) · 그 외 = 이 방에 연결 */
