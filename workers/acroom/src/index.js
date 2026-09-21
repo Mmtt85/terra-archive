@@ -51,6 +51,20 @@ const MAX_BONDS = 4;       // 클라이언트는 3개까지 고르게 한다 —
 const MSG_MAX = 2048;
 const WIPE_AFTER_MS = 60_000;          // 마지막 사람이 나간 뒤 방을 지우기까지
 const SWEEP_EVERY_MS = 10 * 60_000;    // 사람이 있는 동안 죽은 소켓·고아 행을 훑는 주기 (env.SWEEP_MS 로 시험용 단축)
+const STAT_KEEP_DAYS = 120;        // 방 생성 통계를 며칠치 남길지 (그보다 옛날 것은 /up 때 지운다)
+const KST_MS = 9 * 3600_000;       // 하루의 경계는 **한국시간 0시** (사용자 기준 "0시~23시59분")
+/** ms → `YYYY-MM-DD` (한국시간 기준). UTC 로 끊으면 한국 오전 9시에 날짜가 바뀐다. */
+const dayKey = (ms) => new Date(ms + KST_MS).toISOString().slice(0, 10);
+/** 게임 초대 문구에서 만든 사람 닉네임을 뽑는다.
+ *  `[kmk0im89g02bli]테라아카이브 박사님의 위수 협의: 맹약 초대 [초월 시뮬레이션]` → `테라아카이브`
+ *  ⚠ 한국어 클라 문구만 확실히 잡는다. 다른 언어 클라는 문장 구조가 달라 못 잡고 null 을 준다 —
+ *  **지어내지 않는다.** 못 잡은 건 통계에서 '알 수 없음'으로 따로 센다. */
+const nickOf = (invite) => {
+  const m = String(invite || "").match(/^\[[a-z0-9]{14}\]\s*(.+?)\s*박사님의/i);
+  const nick = m?.[1]?.trim();
+  return nick && nick.length <= 24 ? nick : null;
+};
+
 const ROOM_TTL_MS = 6 * 3600_000;      // 방 최대 수명 — 만든 지 이만큼 지나면 강제 삭제 (env.ROOM_TTL_MS 로 시험용 단축)
 
 // 사이트와 로컬 개발만 — 계정 워커와 같은 목록 (남의 페이지에서 방을 헤집지 못하게)
@@ -107,7 +121,10 @@ export default {
         } catch { /* 한 방이 막혀도 나머지는 계속 */ }
       }
       rooms.sort((a, b) => b.at - a.at);
-      return json({ ok: true, rooms, seats: MAX_SEATS });
+      // 일별 생성 수·닉네임 집계도 같이 실어 준다 — 창이 한 번만 부르면 되게 (사용자 요청 2026-09-21)
+      let days = [];
+      try { days = (await (await lobby().fetch("https://lobby/statdays")).json())?.days ?? []; } catch { /* 통계는 없어도 목록은 뜬다 */ }
+      return json({ ok: true, rooms, seats: MAX_SEATS, days, today: dayKey(Date.now()) });
     }
     if (url.pathname === "/admin/purge") {
       if (request.method !== "POST") return json({ ok: false, error: "method" }, 405);
@@ -175,14 +192,50 @@ export class AcLobby {
       await this.storage.deleteAll();
       return json({ ok: true });
     }
+    // 일별 방 생성 통계 (사용자 요청 2026-09-21). 하루치를 **객체 하나**(`d:<날짜>`)로 들고
+    // 있는다 — 날짜당 닉네임이 수십 개 수준이라 키를 쪼갤 이유가 없고, 읽을 때 prefix 한 번이면 끝난다.
+    if (url.pathname === "/statdays") {
+      const days = [];
+      for (const [key, v] of await this.storage.list({ prefix: "d:" })) {
+        days.push({ day: key.slice(2), n: v?.n ?? 0, nicks: v?.nicks ?? {}, unknown: v?.unknown ?? 0 });
+      }
+      days.sort((a, b) => (a.day < b.day ? 1 : -1));   // 최신 날짜가 앞
+      return json({ ok: true, days });
+    }
     if (request.method === "POST" && (url.pathname === "/up" || url.pathname === "/down")) {
       const { id } = await request.json().catch(() => ({}));
       if (typeof id !== "string" || !ROOM_ID.test(id)) return json({ ok: false }, 400);
-      if (url.pathname === "/up") await this.storage.put(`r:${id}`, Date.now());
-      else await this.storage.delete(`r:${id}`);
+      if (url.pathname === "/up") {
+        await this.storage.put(`r:${id}`, Date.now());
+        // 방이 **새로 생긴** 순간에만 온다 (AcRoom.fetch 의 생성 분기) — 그래서 여기가 곧 카운터다.
+        // 닉네임은 이때 아직 모른다(초대 문구는 hello 로 뒤늦게 온다) → 아래 /nick 이 채운다.
+        const day = dayKey(Date.now());
+        const cur = (await this.storage.get(`d:${day}`)) ?? { n: 0, nicks: {}, unknown: 0 };
+        cur.n += 1;
+        await this.storage.put(`d:${day}`, cur);
+        await this.prune();
+      } else await this.storage.delete(`r:${id}`);
+      return json({ ok: true });
+    }
+    // 만든 사람 닉네임 — 방에 초대 문구가 **처음** 들어올 때 한 번 온다
+    if (request.method === "POST" && url.pathname === "/nick") {
+      const { nick, at } = await request.json().catch(() => ({}));
+      const day = dayKey(Number(at) || Date.now());
+      const cur = (await this.storage.get(`d:${day}`)) ?? { n: 0, nicks: {}, unknown: 0 };
+      if (typeof nick === "string" && nick) cur.nicks[nick] = (cur.nicks[nick] ?? 0) + 1;
+      else cur.unknown = (cur.unknown ?? 0) + 1;
+      await this.storage.put(`d:${day}`, cur);
       return json({ ok: true });
     }
     return json({ ok: false, error: "not-found" }, 404);
+  }
+
+  /** STAT_KEEP_DAYS 보다 오래된 일별 통계를 버린다 — 방이 생길 때마다 한 번이라 비용이 없다 */
+  async prune() {
+    const cutoff = dayKey(Date.now() - STAT_KEEP_DAYS * 86400_000);
+    for (const key of (await this.storage.list({ prefix: "d:" })).keys()) {
+      if (key.slice(2) < cutoff) await this.storage.delete(key);
+    }
   }
 }
 
@@ -227,12 +280,12 @@ export class AcRoom {
 
   expired(room) { return !!room?.at && Date.now() - room.at >= this.ttl; }
   /** 장부에 알린다 — 실패해도 방 동작에는 영향이 없어야 하므로 삼킨다 */
-  async tell(path) {
+  async tell(path, extra) {
     if (!this.lobby) return;
     const room = await this.storage.get("room");
     if (!room?.id) return;
     try {
-      await this.lobby.fetch(`https://lobby${path}`, { method: "POST", body: JSON.stringify({ id: room.id }) });
+      await this.lobby.fetch(`https://lobby${path}`, { method: "POST", body: JSON.stringify({ id: room.id, ...extra }) });
     } catch { /* 장부는 통계일 뿐 */ }
   }
   /** 방을 통째로 지운다 — 붙어 있는 소켓에는 이유를 알리고 끊는다 (expired → 4002) */
@@ -341,7 +394,13 @@ export class AcRoom {
       const room = (await this.storage.get("room")) ?? {};
       if (!room.invite) {
         const invite = cleanInvite(msg.invite, room.id ?? "");
-        if (invite) await this.storage.put("room", { ...room, invite });
+        if (invite) {
+          await this.storage.put("room", { ...room, invite });
+          // 만든 사람 닉네임은 **이 순간에야** 알 수 있다 — 방은 초대 문구보다 먼저 생긴다.
+          // 통계의 날짜는 방이 생긴 시각(room.at)으로 맞춘다: 자정 직전에 만든 방의 문구가
+          // 자정을 넘겨 들어오면 하루가 밀린다 (사용자 기준은 "0시~23시59분").
+          await this.tell("/nick", { nick: nickOf(invite), at: room.at ?? Date.now() });
+        }
       }
       try { ws.send(JSON.stringify({ t: "welcome", uid })); } catch { /* noop */ }
       await this.broadcast();

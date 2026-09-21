@@ -82,6 +82,9 @@ const ROOMS_POLL_MS = 5_000;   // 운영자 방 목록 자동 갱신 주기 (창
 
 /** `GET /admin/rooms` 한 줄 — 방 하나의 겉모습과 안에 앉은 사람들 */
 type AdminRoom = { id: string; at: number; invite: string; members: PartyMember[] };
+/** 일별 방 생성 집계 — 하루치가 한 줄 (`nicks` 는 닉네임 → 그날 만든 수, `unknown` 은 못 읽은 문구) */
+type StatDay = { day: string; n: number; nicks: Record<string, number>; unknown: number };
+const CHART_DAYS = 14;   // 막대그래프에 보여 줄 날 수 (그보다 옛날 것도 집계에는 들어간다)
 
 export const ROOM_ID_LEN = 14;
 export const ROOM_ID_RE = /^[a-z0-9]{14}$/i;
@@ -298,6 +301,8 @@ export function AcRoomsModal({ doc, onClose }: {
   const bandById = useMemo(() => new Map(doc.bands.map((b) => [b.id, b])), [doc.bands]);
   const bondById = useMemo(() => new Map(doc.bonds.map((b) => [b.id, b])), [doc.bonds]);
   const [rooms, setRooms] = useState<AdminRoom[] | null>(null);
+  const [days, setDays] = useState<StatDay[]>([]);
+  const [today, setToday] = useState("");
   const [err, setErr] = useState("");
   const [open, setOpen] = useState("");
   const [busy, setBusy] = useState(false);
@@ -314,6 +319,8 @@ export function AcRoomsModal({ doc, onClose }: {
         if (!r.ok) { setErr("net"); if (!quiet) setRooms([]); return; }
         const d = await r.json();
         setErr(""); setRooms(Array.isArray(d?.rooms) ? d.rooms : []);
+        setDays(Array.isArray(d?.days) ? d.days : []);
+        setToday(typeof d?.today === "string" ? d.today : "");
       })
       .catch(() => { setErr("net"); if (!quiet) setRooms([]); })
       .finally(() => { if (!quiet) setBusy(false); });
@@ -341,6 +348,35 @@ export function AcRoomsModal({ doc, onClose }: {
   };
   const live = (r: AdminRoom) => r.members.filter((m) => !m.ghost).length;
 
+  /** 최근 CHART_DAYS 일 — 방이 하나도 안 만들어진 날도 0 으로 채워야 막대가 안 밀린다 */
+  const chart = useMemo(() => {
+    if (!today) return [];
+    const byDay = new Map(days.map((d) => [d.day, d]));
+    const base = Date.parse(`${today}T00:00:00Z`);
+    return Array.from({ length: CHART_DAYS }, (_, i) => {
+      const day = new Date(base - (CHART_DAYS - 1 - i) * 86400_000).toISOString().slice(0, 10);
+      return { day, n: byDay.get(day)?.n ?? 0 };
+    });
+  }, [days, today]);
+  /** 닉네임별 — 총 몇 번, 언제 처음, 언제 마지막. 남은 일수(기본 120일) 안의 집계다. */
+  const byNick = useMemo(() => {
+    const map = new Map<string, { n: number; first: string; last: string }>();
+    for (const d of days) {
+      for (const [nick, n] of Object.entries(d.nicks ?? {})) {
+        const cur = map.get(nick) ?? { n: 0, first: d.day, last: d.day };
+        cur.n += n;
+        if (d.day < cur.first) cur.first = d.day;
+        if (d.day > cur.last) cur.last = d.day;
+        map.set(nick, cur);
+      }
+    }
+    return [...map.entries()].map(([nick, v]) => ({ nick, ...v })).sort((a, b) => b.n - a.n || a.nick.localeCompare(b.nick));
+  }, [days]);
+  const todayN = days.find((d) => d.day === today)?.n ?? 0;
+  const unknownTotal = days.reduce((a, d) => a + (d.unknown ?? 0), 0);
+  const chartMax = Math.max(1, ...chart.map((c) => c.n));
+  const nickMax = Math.max(1, ...byNick.map((v) => v.n));
+
   return (
     <ModalWindow label={t("파티 공유 방 목록")} className="operator-modal ac-modal ac-rooms" onClose={onClose}>
       <div className="ac-partybody">
@@ -358,6 +394,41 @@ export function AcRoomsModal({ doc, onClose }: {
               : t("방 목록을 불러오지 못했습니다.")}</p>
         )}
         {rooms !== null && !err && rooms.length === 0 && <p className="sim-note">{t("지금 열린 방이 없습니다.")}</p>}
+
+        {/* ── 방 생성 통계 (사용자 요청 2026-09-21) ────────────────────────────────
+            하루 경계는 **한국시간 0시**이고, 날짜별 수와 닉네임별 횟수를 워커가 들고 있다.
+            닉네임은 게임 초대 문구에서 뽑는다 — 한국어 클라 문구만 확실히 잡히므로
+            못 읽은 건 지어내지 않고 '알 수 없음'으로 따로 센다. */}
+        {!err && days.length > 0 && (
+          <section className="ac-stat">
+            <h4>{t("오늘 만들어진 방 {n}개", { n: todayN })}<small>{today}</small></h4>
+            <div className="ac-stat-bars" role="img" aria-label={t("날짜별 방 생성 수")}>
+              {chart.map((c) => (
+                <div key={c.day} className={`ac-stat-bar${c.day === today ? " on" : ""}`}
+                  title={`${c.day} · ${t("{n}개", { n: c.n })}`}>
+                  <b>{c.n || ""}</b>
+                  <i style={{ height: `${Math.round((c.n / chartMax) * 100)}%` }} />
+                  <span>{c.day.slice(5).replace("-", "/")}</span>
+                </div>
+              ))}
+            </div>
+            {byNick.length > 0 ? (
+              <ul className="ac-stat-nicks">
+                {byNick.slice(0, 10).map((v) => (
+                  <li key={v.nick}>
+                    <b title={v.nick}>{v.nick}</b>
+                    <span className="ac-stat-track"><i style={{ width: `${Math.round((v.n / nickMax) * 100)}%` }} /></span>
+                    <em>{t("{n}회", { n: v.n })}</em>
+                    <small className="sb-dim">{v.first === v.last ? v.last : `${v.first} ~ ${v.last}`}</small>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="sim-note">{t("아직 닉네임을 읽은 방이 없습니다.")}</p>}
+            {unknownTotal > 0 && (
+              <p className="ac-party-fine sb-dim">{t("초대 문구를 못 읽어 만든 사람을 모르는 방 {n}개 — 한국어 클라 문구만 읽습니다.", { n: unknownTotal })}</p>
+            )}
+          </section>
+        )}
         {rooms?.map((r) => (
           <section key={r.id} className={`ac-rooms-item${open === r.id ? " on" : ""}`}>
             <button type="button" className="ac-rooms-head" aria-expanded={open === r.id}
