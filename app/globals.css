@@ -12877,19 +12877,24 @@ html.dark .pt-stage {
   color: color-mix(in srgb, var(--pt-accent) 72%, var(--pt-ink));
   font-size: 12px;
 }
-/* ⚠ 이름은 설명(.pt-desc)과 달리 **아직 한 줄 + …** 이다. 줄바꿈으로 바꿔 봤더니
-   (2026-09-20) 두 줄짜리 이름이 칸 높이를 넘겨 설명 아랫줄이 잘렸다 — 1440px 에선 딱
-   맞지만 1024px EN 에서 4px 넘친다(실측). 바꾸려면 칸 높이·글자 크기를 함께 손봐야 한다.
-   EN/JA 는 칸이 126px 뿐이라 긴 이름이 잘린다(1440px 기준 EN 9칸·JA 5칸). */
+/* 이름도 설명(.pt-desc)과 같은 규칙 — **잘라서 …를 붙이지 말고 줄을 바꾼다**
+   (사용자 지시 2026-09-17). 한국어는 한 줄에 들어가지만 EN/JA 는 칸이 좁아
+   "Public Recruitment Hel…" 처럼 절반이 날아가고 있었다 (1440px 기준 EN 9칸·JA 5칸).
+   ⚠ 줄바꿈은 **칸 높이 예산**과 맞물린다 (2026-09-21 실측, 1024px EN 기준):
+     칸 89px − 위아래 여백 10 = 79px · 이름 한 줄 25 + 틈 4 + 설명 두 줄 35 = 64 (여유 15)
+     이름이 두 줄이 되면 18px 글꼴로는 +25px 라 바로 넘친다 → 묶음 칸 글꼴을 한 급 낮춘다.
+   ⚠ 설명이 **세 줄**이 되면 그것만으로 81px 라 이름이 한 줄이어도 넘친다 — 실제로 그때
+     이미 EN 3칸이 1px 씩 잘리고 있었다. 그래서 문구를 두 줄에 맞춰 줄였다(아래 i18n). */
 .pt-ko {
   font-size: clamp(14.5px, 1.6vw, 18px);
   font-weight: 800;
   letter-spacing: -0.015em;
+  line-height: 1.25;
   color: var(--pt-ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
+/* 묶음 안의 작은 판은 칸이 좁아 이름이 두 줄로 흐른다 — 18px 그대로면 칸 높이를 넘긴다 */
+.pt-group-tiles .pt-ko { font-size: clamp(12.5px, 1.05vw, 14.5px); }
 /* 제일 큰 칸은 이름도 크게 — 게임의 위계 그대로 */
 .pt-t-terminal .pt-ko { font-size: clamp(20px, 2.4vw, 29px); }
 .pt-t-terminal .pt-ic { width: 32px; height: 32px; font-size: 16px; }
