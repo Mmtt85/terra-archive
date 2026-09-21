@@ -244,14 +244,6 @@ step "2단계 프로덕션 전환"
 node scripts/warm-assets.mjs --seconds 180 || true
 step "청크 예열 (warm-assets)"
 
-# 프로브는 전환 뒤 구간이 핵심이라 끝까지 기다렸다가 요약만 보여 준다
-if [ -n "$PROBE_PID" ]; then
-  echo "전환 완료 — 프로브가 끝날 때까지 대기 중(최대 4분, Ctrl+C로 건너뛰어도 배포엔 영향 없음)"
-  wait "$PROBE_PID" || true
-  sed -n '/── 요약/,$p' .ci/deploy-probe.log
-fi
-step "프로브 대기"
-
 # 색인 통보(IndexNow) — 직전 커밋 대비 **실제로 바뀐** 페이지만 Bing·네이버에 알린다.
 # 바뀐 게 없으면 아무것도 안 쏜다. 실패해도 배포는 성공이다(부가 작업이라 || true).
 node scripts/indexnow.mjs || true
@@ -265,3 +257,16 @@ echo "✓ 본사이트 배포 완료 — 관리자 사이트는 별도입니다:
 if [ -z "$ONE_PHASE$NO_PROBE" ]; then
   echo "  (코드만 조금 고친 배포라면 다음엔: bash scripts/deploy.sh --fast)"
 fi
+
+# ── 프로브 대기는 **맨 뒤** (사용자 지적 2026-09-21) ───────────────────────────
+# 전환은 이미 끝났고 뒤에 남은 건 이 기다림뿐이라, Ctrl+C 로 끊어도 잃는 게 프로브 요약
+# 하나다. 종전에는 이 블록이 IndexNow **앞**에 있어서 "Ctrl+C 해도 배포엔 영향 없다"고
+# 안내해 놓고 실제로는 색인 통보까지 같이 날아갔다 (Ctrl+C 는 포그라운드 프로세스 그룹
+# 전체에 SIGINT 를 보낸다 — 배경의 프로브도 같이 죽어 로그가 반쪽만 남는다).
+if [ -n "$PROBE_PID" ]; then
+  echo ""
+  echo "배포는 끝났습니다 — 무중단 프로브만 남았습니다(최대 4분). Ctrl+C 로 끊으면 이 요약만 못 봅니다."
+  wait "$PROBE_PID" || true
+  sed -n '/── 요약/,$p' .ci/deploy-probe.log
+fi
+step "프로브 대기"
