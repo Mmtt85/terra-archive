@@ -78,6 +78,8 @@ export function usePartyRoomCount(refreshKey: string | null): number | null {
 }
 
 /** 게임 초대 코드는 늘 **14자** 영숫자다 (kmk0im89g02bli). 길이가 다르면 잘못된 방으로 막는다 (사용자 지시 2026-09-21). */
+const ROOMS_POLL_MS = 5_000;   // 운영자 방 목록 자동 갱신 주기 (창이 열려 있고 탭이 보일 때만)
+
 /** `GET /admin/rooms` 한 줄 — 방 하나의 겉모습과 안에 앉은 사람들 */
 type AdminRoom = { id: string; at: number; invite: string; members: PartyMember[] };
 
@@ -300,23 +302,38 @@ export function AcRoomsModal({ doc, onClose }: {
   const [open, setOpen] = useState("");
   const [busy, setBusy] = useState(false);
   const now = useClock(true);   // 렌더 중에 Date.now() 를 부르지 않는다 (react-compiler 순수성 규칙)
-  const load = useCallback(() => {
+  /** quiet = 배경 갱신. '새로고침' 버튼을 회색으로 만들지 않고, 실패해도 **보던 목록을 지우지 않는다**
+   *  — 잠깐 끊겼다고 화면이 비면 방이 사라진 것처럼 보인다. */
+  const load = useCallback((quiet = false) => {
     const key = getBoardAdminKey();
     if (!key) { setErr("no-key"); setRooms([]); return; }
-    setBusy(true);
+    if (!quiet) setBusy(true);
     fetch(`${wsBase().replace(/^ws/, "http")}/admin/rooms`, { headers: { "x-admin-key": key }, cache: "no-store" })
       .then(async (r) => {
         if (r.status === 403) { setErr("forbidden"); setRooms([]); return; }
-        if (!r.ok) { setErr("net"); setRooms([]); return; }
+        if (!r.ok) { setErr("net"); if (!quiet) setRooms([]); return; }
         const d = await r.json();
         setErr(""); setRooms(Array.isArray(d?.rooms) ? d.rooms : []);
       })
-      .catch(() => { setErr("net"); setRooms([]); })
-      .finally(() => setBusy(false));
+      .catch(() => { setErr("net"); if (!quiet) setRooms([]); })
+      .finally(() => { if (!quiet) setBusy(false); });
   }, []);
-  // 첫 조회는 타이머로 한 틱 미룬다 — 이펙트 안에서 곧바로 setState 하면 렌더가 한 번 더 돈다
+  // 창이 열려 있는 동안 5초마다 스스로 갱신한다 (사용자 요청 2026-09-21 "강제 새로고침 말고 실시간").
+  // ⚠ **폴링이다.** 진짜 푸시로 하려면 방 안의 전략·맹약이 바뀔 때마다 방 DO 가 로비에 알리고
+  //   로비가 다시 구독자에게 밀어야 하는데, 운영자 한 명이 잠깐 보는 화면치고는 배보다 배꼽이 크다.
+  //   탭이 가려져 있으면 쉬고, 돌아오면 곧바로 한 번 당긴다 — 묵은 목록을 보여 주지 않으려고.
+  // 첫 조회도 타이머로 한 틱 미룬다 — 이펙트 안에서 곧바로 setState 하면 렌더가 한 번 더 돈다
   // (set-state-in-effect 린트 관례, promoNow·lens 와 같은 처리)
-  useEffect(() => { const id = window.setTimeout(load, 0); return () => window.clearTimeout(id); }, [load]);
+  useEffect(() => {
+    const first = window.setTimeout(() => load(), 0);
+    const id = window.setInterval(() => { if (!document.hidden) load(true); }, ROOMS_POLL_MS);
+    const onShow = () => { if (!document.hidden) load(true); };
+    document.addEventListener("visibilitychange", onShow);
+    return () => {
+      window.clearTimeout(first); window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onShow);
+    };
+  }, [load]);
 
   const age = (at: number) => {
     const min = Math.max(0, Math.floor(((now || at) - at) / 60000));
@@ -329,8 +346,9 @@ export function AcRoomsModal({ doc, onClose }: {
       <div className="ac-partybody">
         <div className="ac-party-bar">
           <span className="sim-note">{rooms === null ? t("불러오는 중…") : t("열린 방 {n}개", { n: rooms.length })}</span>
+          <span className="ac-party-fine sb-dim">{t("{n}초마다 자동 갱신", { n: ROOMS_POLL_MS / 1000 })}</span>
           <button type="button" className="ac-party-copy" style={{ marginLeft: "auto" }} disabled={busy}
-            onClick={load}>{t("새로고침")}</button>
+            onClick={() => load()}>{t("새로고침")}</button>
         </div>
         {err && (
           <p className="ac-party-err">{err === "no-key"
@@ -352,24 +370,28 @@ export function AcRoomsModal({ doc, onClose }: {
             {open === r.id && (
               <div className="ac-rooms-body">
                 {r.invite && <p className="ac-party-fine sb-dim">{r.invite}</p>}
-                {r.members.length === 0 ? <p className="sim-note">{t("아무도 없습니다.")}</p> : (
-                  <ul className="ac-rooms-seats">
-                    {[...r.members].sort((a, b) => a.seat - b.seat).map((m, i) => (
-                      <li key={`${r.id}-${m.seat}-${i}`} className={m.ghost ? "ghost" : undefined}>
-                        <b>{t("박사 {n}", { n: m.seat + 1 })}</b>
-                        {m.ghost ? <i className="sb-dim">{t("빈 자리")}</i> : (<>
-                          <span className="ac-rooms-band">
-                            {m.band ? (bandById.get(m.band) ? bandLabel(bandById.get(m.band)!) : m.band) : <i className="sb-dim">{t("아직 안 골랐음")}</i>}
-                          </span>
-                          <span className="ac-party-bonds">
-                            {m.bonds.map((id) => <i key={id} className="sb-chip">{bondById.get(id)?.n ?? id}</i>)}
-                          </span>
-                        </>)}
-                        {m.sig && <span className={`ac-party-sig ${m.sig.k}`}>{SIGNAL_KO[m.sig.k as SignalId] ? t(SIGNAL_KO[m.sig.k as SignalId]) : m.sig.k}</span>}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                {/* 자리 넷을 **가로로** 세운다 (사용자 지시 2026-09-21). 빈 자리도 그려야 박사 1~4 가
+                    늘 같은 칸에 온다 — 있는 사람만 늘어놓으면 방마다 자리가 밀려 대조가 안 된다. */}
+                <ul className="ac-rooms-seats">
+                  {Array.from({ length: MAX_SEATS }, (_, i) => r.members.find((m) => m.seat === i) ?? null).map((m, i) => (
+                    <li key={`${r.id}-${i}`} className={!m || m.ghost ? "ghost" : undefined}>
+                      {/* 신호는 자리 이름 줄 **오른쪽 끝**에 아주 작게 (사용자 지시 2026-09-21) —
+                          제 줄을 차지하면 칸 절반을 먹어 전략·맹약이 밀린다 */}
+                      <span className="ac-rooms-seathead">
+                        <b>{t("박사 {n}", { n: i + 1 })}</b>
+                        {m?.sig && <em className={`ac-rooms-sig ${m.sig.k}`}>{SIGNAL_KO[m.sig.k as SignalId] ? t(SIGNAL_KO[m.sig.k as SignalId]) : m.sig.k}</em>}
+                      </span>
+                      {!m || m.ghost ? <i className="sb-dim">{t("빈 자리")}</i> : (<>
+                        <span className="ac-rooms-band">
+                          {m.band ? (bandById.get(m.band) ? bandLabel(bandById.get(m.band)!) : m.band) : <i className="sb-dim">{t("아직 안 골랐음")}</i>}
+                        </span>
+                        <span className="ac-party-bonds">
+                          {m.bonds.map((id) => <i key={id} className="sb-chip">{bondById.get(id)?.n ?? id}</i>)}
+                        </span>
+                      </>)}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </section>

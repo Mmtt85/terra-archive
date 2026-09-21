@@ -3065,6 +3065,7 @@ const D: Record<string, Pair> = {
   "빈 자리": ["Empty seat", "空席"],
   "파티 공유 방 목록": ["Party share rooms", "パーティ共有の部屋一覧"],
   "열린 방 목록 — 들어가지 않고 안을 봅니다": ["Open rooms — look inside without joining", "開いている部屋 — 入らずに中を見ます"],
+  "{n}초마다 자동 갱신": ["Auto-refreshes every {n}s", "{n}秒ごとに自動更新"],
   "열린 방 {n}개": ["{n} open rooms", "開いている部屋 {n}件"],
   "지금 열린 방이 없습니다.": ["No rooms are open right now.", "今開いている部屋はありません。"],
   "아무도 없습니다.": ["Nobody is in here.", "誰もいません。"],
