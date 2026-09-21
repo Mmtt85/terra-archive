@@ -34,6 +34,7 @@
 // 사이트는 GET /stats → {rooms:N} 만 읽는다.
 // **방 목록(운영자)**: `GET /admin/rooms` + `x-admin-key: <VIEW_KEY 시크릿, 없으면 ADMIN_KEY>` — 장부에 있는 방마다
 //   자리·전략·맹약·신호를 **자리를 먹지 않고** 돌려준다 (사이트의 '방 N개' 버튼이 부른다).
+// **닉네임 기록 지우기**: `POST /admin/forget-nick` + `x-admin-key` + `{"nick":"..."}` — 통계에서만 뺀다.
 // **전부 정리**: `POST /admin/purge` + `x-admin-key: <ADMIN_KEY 시크릿>` — 장부에 있는 방을 모두 닫고(`closed`, 4003)
 // 장부를 비운다 (사용자 요청 "세션 싹 다 삭제"). 시크릿은 업로드 워커와 같은 .upload-admin-key 값.
 //
@@ -127,6 +128,16 @@ export default {
       try { days = (await (await lobby().fetch("https://lobby/statdays")).json())?.days ?? []; } catch { /* 통계는 없어도 목록은 뜬다 */ }
       return json({ ok: true, rooms, seats: MAX_SEATS, days, today: dayKey(Date.now()) });
     }
+    // 통계에서 닉네임 하나를 지운다 (시험용 방 정리). **방은 건드리지 않는다.**
+    // ⚠ 파괴적이긴 하지만 VIEW_KEY 로 연다 — 지우는 대상이 통계 몇 줄뿐이고, 살아 있는 방을
+    //   통째로 닫는 `/admin/purge` 와는 무게가 다르다. 그쪽은 계속 ADMIN_KEY 전용이다.
+    if (url.pathname === "/admin/forget-nick") {
+      if (request.method !== "POST") return json({ ok: false, error: "method" }, 405);
+      const viewKey = env.VIEW_KEY || env.ADMIN_KEY;
+      if (!viewKey) return json({ ok: false, error: "no-admin-key" }, 503);
+      if ((request.headers.get("x-admin-key") ?? "") !== viewKey) return json({ ok: false, error: "forbidden" }, 403);
+      return lobby().fetch("https://lobby/forget", { method: "POST", body: await request.text() });
+    }
     if (url.pathname === "/admin/purge") {
       if (request.method !== "POST") return json({ ok: false, error: "method" }, 405);
       if (!env.ADMIN_KEY) return json({ ok: false, error: "no-admin-key" }, 503);
@@ -188,6 +199,33 @@ export class AcLobby {
     }
     if (url.pathname === "/list") {
       return json({ ok: true, ids: [...(await this.storage.list({ prefix: "r:" })).keys()].map((k) => k.slice(2)) });
+    }
+    // 닉네임 하나의 기록만 지운다 — 시험용으로 만든 방이 통계에 섞였을 때 (사용자 요청 2026-09-21).
+    // ⚠ `/clear`(전부 삭제)와 다르다: 지목한 닉네임의 줄과 집계만 빼고 나머지 날·나머지 사람은 둔다.
+    if (request.method === "POST" && url.pathname === "/forget") {
+      const { nick } = await request.json().catch(() => ({}));
+      if (typeof nick !== "string" || !nick) return json({ ok: false, error: "no-nick" }, 400);
+      let removed = 0;
+      const days = [];
+      for (const [key, v] of await this.storage.list({ prefix: "d:" })) {
+        const counted = v?.nicks?.[nick] ?? 0;
+        const logged = (v?.log ?? []).filter((r) => r.nick === nick).length;
+        const hit = Math.max(counted, logged);      // 집계만 있고 줄이 없는 옛 기록도 잡는다
+        if (!hit) continue;
+        const nicks = { ...(v.nicks ?? {}) };
+        delete nicks[nick];
+        const next = {
+          n: Math.max(0, (v.n ?? 0) - hit),
+          nicks,
+          unknown: v.unknown ?? 0,
+          log: (v.log ?? []).filter((r) => r.nick !== nick),
+        };
+        if (next.n === 0 && Object.keys(next.nicks).length === 0 && !next.unknown) await this.storage.delete(key);
+        else await this.storage.put(key, next);
+        removed += hit;
+        days.push(key.slice(2));
+      }
+      return json({ ok: true, removed, days });
     }
     if (request.method === "POST" && url.pathname === "/clear") {
       await this.storage.deleteAll();
