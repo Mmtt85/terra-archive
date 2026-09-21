@@ -88,6 +88,8 @@ const TAB_ENTRIES: { tab: Tab; label: string; alt: string[] }[] = [
   // "인프라 딸깍" — 커뮤니티에서 기지 편성을 그렇게 부른다 (사용자 지정 2026-07-26)
   { tab: "enemy", label: "적 도감", alt: ["enemy", "적", "몹", "도감", "적도감", "enemies"] },
   { tab: "stage", label: "작전 도감", alt: ["stage", "작전", "스테이지", "맵", "지형", "stages"] },
+  { tab: "item", label: "아이템 도감", alt: ["item", "items", "아이템", "재료", "도감", "교환", "교환권", "상점"] },
+  { tab: "event", label: "이벤트 가이드", alt: ["event", "events", "이벤트", "복각", "사이드", "미니 이벤트", "이벤트 도감"] },
   // "시뮬레이터"는 인프라 편성기 별칭에도 있다 — 둘 다 결과에 뜨는 게 맞다 (호칭이 겹침)
   { tab: "sim", label: "작전 시뮬레이터", alt: ["sim", "simulator", "시뮬", "시뮬레이트", "시뮬레이터", "작전 시뮬", "스폰", "타임라인", "シミュレーター"] },
   { tab: "planner", label: "인프라 자동편성기", alt: ["riic", "base", "기지", "기반시설", "인프라", "편성", "자동편성", "딸깍", "인프라딸깍", "시뮬레이터"] },
@@ -97,6 +99,8 @@ const TAB_ENTRIES: { tab: Tab; label: string; alt: string[] }[] = [
   { tab: "story", label: "스토리", alt: ["story", "요약", "전문", "연대기"] },
   { tab: "rogue", label: "통합전략 가이드", alt: ["rogue", "integrated strategies", "로그라이크", "통합전략", "is"] },
   { tab: "ra", label: "생존연산 가이드", alt: ["ra", "reclamation", "reclamation algorithm", "생존연산", "생존 연산", "샌드박스", "sandbox", "요리", "레시피", "生息演算"] },
+  // "롤토"·"명토체스"는 커뮤니티 호칭 — 게임 안 이름(위수 협의)보다 이렇게 부르는 사람이 많다
+  { tab: "autochess", label: "위수 협의 가이드", alt: ["autochess", "stronghold", "stronghold protocol", "위수협의", "위수 협의", "맹약", "명토체스", "롤토", "롤토체스", "오토체스", "기물", "堅守協定"] },
   { tab: "about", label: "테라 아카이브 소개", alt: ["about", "소개", "문의", "제작", "어바웃"] },
 ];
 
