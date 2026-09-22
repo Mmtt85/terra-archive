@@ -5015,9 +5015,9 @@ html.dark .tags-track > span {
   .skill-levels button {
     min-width: 21px;
     padding: 3px 2px;
-  background: var(--btn-bg);
-  color: var(--btn-ink);
-}
+    background: var(--btn-bg);
+    color: var(--btn-ink);
+  }
   /* 모바일 푸터 = **바텀시트** (사용자 제보 2026-08-25: 문서 흐름 안에서 접었더니
      펼칠 때 아래로 자라 화면 밖으로 나가 버렸다 — "뭐가 어케되는지 판단도 안 된다").
      화면 아래에 고정해 두고 **위로 올라오게** 한다. 접히면 핸들 줄만 남는다. */
@@ -6460,10 +6460,20 @@ html.dark .tags-track > span {
 /* ⚠ 자식 결합자(>)여야 한다 — 가이드 안에 모드별 2단 플라이아웃이 **중첩**돼 있어서
    후손 선택자로 두면 '가이드'에 마우스를 올리는 순간 통합전략·생존연산·위수협의 패널이
    **한꺼번에 겹쳐 튀어나온다** (2026-09-05 중첩을 넣으며 바꾼 것). */
-.tab-flyout:hover > .tab-submenu,
-.tab-flyout:focus-within > .tab-submenu,
 .tab-flyout.open > .tab-submenu {
   display: flex;
+}
+/* 호버·포커스로 여는 건 **마우스가 있는 기기에서만**. 터치에선 :hover 가 짚은 자리에
+   눌어붙어 손가락을 따라다니며 부메뉴를 폈다 접는다 — 메뉴 높이가 337→515px 로 튀고
+   아래 항목이 180px 씩 밀려서(375×812 실측), 밀어 올리다 손을 떼면 엉뚱한 메뉴가 눌린다
+   (사용자 제보 2026-09-22 "터치 시작될 때 걍 메뉴 열려버린다").
+   :focus-within 도 같이 뺀다 — 터치로 묶음 버튼을 누르면 포커스가 남아 **다시 눌러도
+   안 닫히기** 때문이다. 터치에서 여닫는 건 .open 하나뿐 (app/home.tsx setOpenGroup). */
+@media (hover: hover) {
+  .tab-flyout:hover > .tab-submenu,
+  .tab-flyout:focus-within > .tab-submenu {
+    display: flex;
+  }
 }
 /* 모바일: 햄버거 패널이 헤더 전체 폭(left/right 16px)이라 왼쪽 플라이아웃(right:100%)이
    화면 밖으로 잘린다 — 부메뉴를 메뉴 안 인라인 들여쓴 목록으로 전개 (사용자 리포트 2026-07-19) */
@@ -7679,9 +7689,9 @@ html.dark .tags-track > span {
        '클리어'가 글자 단위로 짜부라지는 걸 막는 건 nowrap 쪽이다 */
     padding: 6px 16px;
     white-space: nowrap;
-  background: var(--btn-pri-bg);
-  color: var(--btn-pri-ink);
-}
+    background: var(--btn-pri-bg);
+    color: var(--btn-pri-ink);
+  }
   /* 겹쳐 그린 안내문도 입력 글자와 크기가 같아야 한다 — 모바일에선 전역 규칙이
      input 을 16px 로 올린다(iOS 포커스 확대 방지). 12.5px 로 두면 혼자 작아 보인다. */
   .quick-ph {
@@ -11060,9 +11070,9 @@ html.dark .story-card:hover .story-thumb img {
   .story-mode-bar button {
     padding: 6px 12px;
     font-size: 11px;
-  background: var(--btn-bg);
-  color: var(--btn-ink);
-}
+    background: var(--btn-bg);
+    color: var(--btn-ink);
+  }
   /* 읽기 설정: 글자 크기 / 삽화 크기를 각각 한 줄씩 두 줄로, 버튼도 축소 */
   .story-reader-prefs {
     gap: 6px;
@@ -11077,9 +11087,9 @@ html.dark .story-card:hover .story-thumb img {
   .story-reader-prefs-btns button {
     padding: 4px 9px;
     font-size: 11px;
-  background: var(--btn-bg);
-  color: var(--btn-ink);
-}
+    background: var(--btn-bg);
+    color: var(--btn-ink);
+  }
 }
 .story-script {
   margin-top: 20px;

@@ -1287,6 +1287,15 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     }, HOVER_HOLD_MS);
   };
   const flyoutOpen = (id: string) => hoverFlyout === id || hoverFlyout.startsWith(`${id}/`);
+  /* 호버로 플라이아웃을 여는 건 **마우스가 있는 기기에서만** 한다 — 터치에선 :hover 가
+     짚은 자리에 눌어붙어 손가락을 따라다니며 부메뉴를 폈다 접는다. 메뉴 높이가 337→515px 로
+     튀어(375×812 실측) 아래 항목이 180px 씩 밀리니, 밀어 올리다 손을 떼면 그 자리엔 이미
+     다른 메뉴가 와 있다 (사용자 제보 2026-09-22 "터치 시작될 때 걍 메뉴 열려버린다").
+     터치에서는 탭(onClick → setOpenGroup)으로만 연다. CSS 쪽 짝은 globals.css 의
+     `@media (hover: hover)` — 둘 중 하나만 고치면 다른 쪽이 그대로 연다. */
+  const canHover = () => window.matchMedia("(hover: hover)").matches;
+  const hoverHold = (id: string) => () => { if (canHover()) holdFlyout(id); };
+  const hoverRelease = (back = "") => () => { if (canHover()) releaseFlyout(back); };
   const tapOnly = useTapOnly();
   useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
   const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
@@ -2202,7 +2211,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 (크롤러용 내부 링크 — 통전 부메뉴와 같은 이유, 2026-08-06). 클릭은 SPA 전환. */}
             {TAB_GROUPS.map((g) => (
               <div key={g.id} className={`tab-flyout${openGroup === g.id || flyoutOpen(g.id) ? " open" : ""}`}
-                onMouseEnter={() => holdFlyout(g.id)} onMouseLeave={() => releaseFlyout()}>
+                onMouseEnter={hoverHold(g.id)} onMouseLeave={hoverRelease()}>
                 <button type="button"
                   className={`tab-group${g.items.some((it) => it.tab === tab) ? " selected" : ""}`}
                   aria-expanded={openGroup === g.id}
@@ -2236,7 +2245,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 들여쓴 인라인 목록으로 되돌리지 말 것. 호버가 없는 기기(터치)에서는 CSS가
                 알아서 인라인 목록으로 펼친다 (globals.css `@media (hover: none)`). */}
             <div className={`tab-flyout${openGroup === "guide" || flyoutOpen("guide") ? " open" : ""}`}
-              onMouseEnter={() => holdFlyout("guide")} onMouseLeave={() => releaseFlyout()}>
+              onMouseEnter={hoverHold("guide")} onMouseLeave={hoverRelease()}>
               <button type="button"
                 className={`tab-group${GUIDE_TABS.includes(tab) ? " selected" : ""}`}
                 aria-expanded={openGroup === "guide"}
@@ -2247,7 +2256,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
               </button>
               <div className="tab-submenu tab-submenu-guide" role="group" aria-label={t("가이드")}>
                 <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/rogue") ? " open" : ""}`}
-                  onMouseEnter={() => holdFlyout("guide/rogue")} onMouseLeave={() => releaseFlyout("guide")}>
+                  onMouseEnter={hoverHold("guide/rogue")} onMouseLeave={hoverRelease("guide")}>
                   <a href={`${localeBase}/rogue`} className={`tab-sub tab-rogue${tab === "rogue" ? " selected" : ""}`}
                     onClick={(event) => {
                       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
@@ -2272,7 +2281,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                   </div>
                 </div>
                 <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/ra") ? " open" : ""}`}
-                  onMouseEnter={() => holdFlyout("guide/ra")} onMouseLeave={() => releaseFlyout("guide")}>
+                  onMouseEnter={hoverHold("guide/ra")} onMouseLeave={hoverRelease("guide")}>
                   <a href={`${localeBase}/ra`} className={`tab-sub tab-ra${tab === "ra" ? " selected" : ""}`}
                     onClick={(event) => {
                       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
@@ -2297,7 +2306,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                   </div>
                 </div>
                 <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/autochess") ? " open" : ""}`}
-                  onMouseEnter={() => holdFlyout("guide/autochess")} onMouseLeave={() => releaseFlyout("guide")}>
+                  onMouseEnter={hoverHold("guide/autochess")} onMouseLeave={hoverRelease("guide")}>
                   <a href={`${localeBase}/autochess`} className={`tab-sub tab-autochess${tab === "autochess" ? " selected" : ""}`}
                     onClick={(event) => {
                       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
@@ -2330,7 +2339,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                   // ⚠ 부메뉴가 없는 줄이라 그냥 두면 **옆 모드(위수 협의 등)의 부메뉴가 열린
                   //   채로 남는다** (사용자 지적 2026-09-17). 여기에 올라오면 열림 경로를
                   //   'guide' 깊이로 되돌려 더 깊은 플라이아웃을 즉시 접는다.
-                  onMouseEnter={() => holdFlyout("guide")}
+                  onMouseEnter={hoverHold("guide")}
                   onClick={(event) => {
                     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                     event.preventDefault(); switchTab("event");
