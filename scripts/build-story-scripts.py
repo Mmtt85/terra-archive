@@ -157,6 +157,15 @@ RE_ANIM = re.compile(r'\[animtext\s*\([^\]]*\)\]\s*(.*)', re.I)
 RE_BG = re.compile(r'\[background\s*\(([^)]*)\)', re.I)
 RE_CHAR = re.compile(r'\[character\s*(?:\(([^)]*)\))?\s*\]', re.I)
 RE_CHARSLOT = re.compile(r'\[charslot\s*\(([^)]*)\)', re.I)
+# ⚠ 스탠딩 내리기도 **괄호 없는 `[charslot]`** 로 온다 (사용자 제보 2026-09-23, 천둥 속의 고요
+# "스탠딩이 사라져야 할 때 안 사라진다"). 위 정규식은 괄호 있는 형태만 봐서 이걸 통째로 흘렸고,
+# 앞 장면 인물이 다음 장면까지 무대에 남았다 — KR 원문 24,711회, 대사 줄의 30%(111,215줄).
+# 아래 `[Image]` 와 똑같은 함정이다.
+RE_CHARSLOT_BARE = re.compile(r'\[charslot\s*\]', re.I)
+# 이름 없이 자리만 짚는 charslot 중 **인물을 그대로 두는** 것 — 초점 바꾸기·이동·흔들기·확대.
+# 종전엔 이름이 없으면 무조건 그 자리를 비워서, 말하는 사람을 비추거나(focus="all") 살짝
+# 옮기기만 해도 인물이 사라졌다 (KR 11,426줄). 사라지는 건 투명도를 내리는(ato<0.5) 때뿐이다.
+RE_SLOT_KEEP = re.compile(r'\b(?:focus|posfrom|posto|action|poszoom|scale|ato)\s*=', re.I)
 RE_BLOCKER = re.compile(r'\[blocker\s*\(([^)]*)\)', re.I)
 RE_SHAKE = re.compile(r'\[camerashake\s*\(', re.I)
 # ⚠ 컷씬 내리기는 **괄호 없는 `[Image]` 로도 온다** (사용자 제보 2026-08-29, 10-9 작전 후).
@@ -201,6 +210,33 @@ def sprite_ref(raw):
     if base != "char_empty" and part.isdigit():
         base = f"{base}-p{part}"
     return [base, n]
+
+
+def charslot(ch, attrs):
+    """`[charslot(…)]` 하나를 무대 스탠딩 목록(ch)에 적용한 새 목록을 돌려준다.
+
+    · 자리(slot) 없이 시간만 준 형태(`[charslot(duration=1)]`)는 **전부 내리기**다 — 종전엔
+      기본 자리 m 하나만 비워 좌우 인물이 남았다. 괄호 없는 `[charslot]` 은 호출부가 받는다.
+    · 자리 이름은 **첫 글자로** 읽는다 — 대본이 l/m/r 말고 left/right/middle 도 쓴다
+      (KR 6,686회). 종전엔 이걸 못 알아봐 전부 가운데(m) 자리에 겹쳐 세웠다.
+    · 이름이 없으면: 투명도를 내리면(ato<0.5) 그 자리를 비우고, 초점·이동·흔들기·확대면
+      인물을 그대로 둔다. 그 밖(자리만 짚은 것)은 비운다.
+    · charslot 무대는 **늘 세 자리**(좌 25%·중 50%·우 75%)로 편다. 종전엔 짚은 자리까지만
+      늘여서, 첫 인물이 m 이면 목록이 [빈칸, 인물] 이 돼 화면 2/3 지점에 섰다. 전부 비면 [] 로
+      접어 스냅샷에서 빠지게 한다 ([Character] 형은 이름 수만큼 벌려 세우는 종전 규칙 그대로)."""
+    empty = ["char_empty", 1]
+    names = RE_CHARNAME.findall(attrs)
+    slot = (_ATTR_S("slot", attrs) or "").strip().lower()
+    ato = _attr_f("ato", attrs)
+    fade_out = ato is not None and ato < 0.5
+    if not names and (not slot or slot == "all"):
+        return ch if (slot and RE_SLOT_KEEP.search(attrs) and not fade_out) else []
+    idx = {"l": 0, "m": 1, "r": 2}.get(slot[:1], 1)
+    if not names and not fade_out and RE_SLOT_KEEP.search(attrs):
+        return ch
+    out = [list(c) for c in ch] + [list(empty)] * max(0, 3 - len(ch))
+    out[idx] = list(empty) if fade_out or not names else sprite_ref(names[0])
+    return out if any(c[0] != "char_empty" for c in out) else []
 
 
 
@@ -306,17 +342,15 @@ def parse_story(txt, vn=None):
             stage["ch"] = [sprite_ref(n) for n in names]
             stage["f"] = int(RE_FOCUS.search(attrs).group(1)) if RE_FOCUS.search(attrs) else 0
             continue
+        if RE_CHARSLOT_BARE.search(line):
+            stage["ch"] = []             # [charslot] = 스탠딩 전부 내리기
+            stage["f"] = 0
+            continue
         m = RE_CHARSLOT.search(line)
         if m:
             # 슬롯 지정형 — l/m/r 자리에 하나씩 올린다 (act6d5 엔 없고 후기 이벤트에서 쓴다)
-            attrs = m.group(1)
-            names = RE_CHARNAME.findall(attrs)
-            slot = (_ATTR_S("slot", attrs) or "m").lower()
-            idx = {"l": 0, "m": 1, "r": 2}.get(slot, 1)
-            ch = list(stage["ch"]) + [["char_empty", 1]] * max(0, idx + 1 - len(stage["ch"]))
-            ch[idx] = sprite_ref(names[0]) if names else ["char_empty", 1]
-            stage["ch"] = ch
-            stage["f"] = int(RE_FOCUS.search(attrs).group(1)) if RE_FOCUS.search(attrs) else 0
+            stage["ch"] = charslot(stage["ch"], m.group(1))
+            stage["f"] = int(RE_FOCUS.search(m.group(1)).group(1)) if RE_FOCUS.search(m.group(1)) else 0
             continue
         m = RE_BLOCKER.search(line)
         if m:
