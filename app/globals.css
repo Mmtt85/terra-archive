@@ -5031,18 +5031,30 @@ html.dark .tags-track > span {
      자리를 차지하지 않으니 접을 이유가 없다. */
   .site-scroll > footer {
     line-height: 1.6;
-    display: block;
+    /* ⚠ block 이 아니라 **세로 flex** 다 (2026-09-22). block 이면 order 가 안 먹어서
+       데스크탑과 줄 순서가 뒤바뀐다 — 데스크탑은 .footer-tabs(order:-1) 사이트맵이 맨 위,
+       .footer-lang(order:50) 언어·배포시각이 맨 아래인데, 모바일만 JSX 순서(고지·후원·
+       연락 → 사이트맵)로 나왔다 (사용자 지적: "데스크탑이랑 비교하면 줄이 뒤바뀐 거 아님?").
+       바텀시트 시절의 잔재다 — 붙박이를 걷어낸 김에 순서도 데스크탑에 맞춘다. */
+    display: flex;
+    flex-direction: column;
+    /* ⚠ 데스크탑 규칙의 align-items:center / justify-content:space-between 을 **되돌린다** —
+       가로 줄일 땐 맞는 값이지만 세로로 세우면 각 줄이 가운데로 몰리고(후원·연락 버튼이
+       그랬다) 줄 사이가 벌어진다. 줄은 전폭으로 깔고 글자는 왼쪽에서 시작해야 한다. */
+    align-items: stretch;
+    justify-content: flex-start;
     position: static;
     margin: 0;
     /* 홈 인디케이터에 글자가 가리지 않게 안전영역만큼 띄운다
        (layout.tsx 의 viewportFit:"cover" 가 있어야 0이 아닌 값이 온다) */
     /* ⚠ 아래 여백이 크다 — 일부러다 (2026-09-22). 아이폰에서 스크롤포트 바닥이 사파리
        하단 툴바 밑으로 **약 72px** 깔린다 (여유 28px 를 준 상태에서 마지막 줄이 딱 그만큼
-       잘린 것으로 역산). 그 띠를 **푸터 자신의 배경**으로 채워 두면, 끝까지 내렸을 때
+       잘린 것으로 역산했으나 84px 로도 여전히 모자랐다 — 2026-09-22 2차. 실기기 숫자를
+       받기 전까지는 **넉넉히** 준다). 그 띠를 **푸터 자신의 배경**으로 채워 두면, 끝까지 내렸을 때
        글자가 그 위로 올라와 전부 보인다. 스크롤러에 빈 여유를 주면 종이색 띠가 생기고
        (그건 그냥 빈칸으로 보인다) 예전처럼 sticky 한계를 건드리지도 않는다.
        가려지지 않는 기기에서는 그냥 아래가 넉넉한 푸터로 보인다. */
-    padding: 16px clamp(18px, 5vw, 28px) calc(84px + env(safe-area-inset-bottom, 0px));
+    padding: 16px clamp(18px, 5vw, 28px) calc(160px + env(safe-area-inset-bottom, 0px));
     max-height: none;
     overflow: visible;
   }
@@ -5052,7 +5064,7 @@ html.dark .tags-track > span {
   .site-scroll > footer.dragging {
     max-height: none;
     overflow: visible;
-    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
   }
   /* 핸들 = 시트 맨 위 가로 전체. 잡기 쉬워야 하고, 펴서 스크롤해도 붙어 있어야 한다. */
   .footer-collapse-toggle {
@@ -5080,12 +5092,18 @@ html.dark .tags-track > span {
   /* 붙박이를 걷어내며 접기도 없앴다 (2026-09-22) — 자리를 차지하지 않으니 접을 이유가
      없다. 규칙 순서상 위 정의보다 **뒤**에 와야 이긴다. */
   .footer-collapse-toggle { display: none; }
+  /* 데스크탑에선 margin-left:auto 로 오른쪽 끝에 붙는 줄인데, 세로로 세우면 그 auto 가
+     줄 전체를 오른쪽으로 밀어 다른 줄보다 들여써진다 (실측 left 69 vs 19). 전폭으로. */
+  .footer-tail {
+    margin-left: 0;
+    width: 100%;
+  }
   /* sticky 는 흐름 안에 남아 문서 끝에서는 제자리를 차지한다 — 그래서 fixed 때와 달리
      스크롤 영역에 따로 자리를 비워 둘 필요가 없다 (비워 두면 빈 띠가 하나 더 생긴다). */
   .site-scroll > footer p {
     margin-top: 7px;
   }
-  /* 모바일 푸터는 block이라 order가 안 먹는다 — JSX 순서대로 맨 위에 오므로 그대로 두고 간격만 */
+  /* 세로 flex 로 바꿨으므로 order 가 그대로 먹는다 (위 주석) — 여기서는 간격만 손본다 */
   .footer-tabs {
     margin-bottom: 10px;
     padding-bottom: 9px;
