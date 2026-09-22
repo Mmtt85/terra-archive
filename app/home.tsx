@@ -2503,10 +2503,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             래퍼를 풀어 기존 order 배치(3줄 제안·미래시·다크)가 그대로 동작한다.
             언어 전환은 2026-08-17에 1줄(만능검색 왼쪽)로 올라갔다. */}
         <div className="header-sub">
-          {/* 모바일 줄바꿈용 빈 조각 — 헤더가 4줄이라 ::before·::after 두 개로는 모자란다
-              (2026-09-23). 데스크탑에선 display:none 이라 아무 일도 하지 않는다. */}
-          <i className="hdr-break" aria-hidden />
-          {/* 제안 버튼 — 모바일 전용(4줄). 데스크탑에선 숨기고 우하단 FAB을 쓴다. */}
+          {/* 제안 버튼 — 모바일 전용(2줄 맨 왼쪽). 데스크탑에선 숨기고 우하단 FAB을 쓴다. */}
           {feedbackReady && (
             <button type="button" className="feedback-header-btn" onClick={() => setFeedbackOpen(true)} aria-label={t("제안 게시판")}>
               <span aria-hidden>💬</span> {t("제안")}
