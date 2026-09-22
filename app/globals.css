@@ -5036,7 +5036,13 @@ html.dark .tags-track > span {
     margin: 0;
     /* 홈 인디케이터에 글자가 가리지 않게 안전영역만큼 띄운다
        (layout.tsx 의 viewportFit:"cover" 가 있어야 0이 아닌 값이 온다) */
-    padding: 16px clamp(18px, 5vw, 28px) calc(16px + env(safe-area-inset-bottom, 0px));
+    /* ⚠ 아래 여백이 크다 — 일부러다 (2026-09-22). 아이폰에서 스크롤포트 바닥이 사파리
+       하단 툴바 밑으로 **약 72px** 깔린다 (여유 28px 를 준 상태에서 마지막 줄이 딱 그만큼
+       잘린 것으로 역산). 그 띠를 **푸터 자신의 배경**으로 채워 두면, 끝까지 내렸을 때
+       글자가 그 위로 올라와 전부 보인다. 스크롤러에 빈 여유를 주면 종이색 띠가 생기고
+       (그건 그냥 빈칸으로 보인다) 예전처럼 sticky 한계를 건드리지도 않는다.
+       가려지지 않는 기기에서는 그냥 아래가 넉넉한 푸터로 보인다. */
+    padding: 16px clamp(18px, 5vw, 28px) calc(84px + env(safe-area-inset-bottom, 0px));
     max-height: none;
     overflow: visible;
   }
@@ -5046,12 +5052,7 @@ html.dark .tags-track > span {
   .site-scroll > footer.dragging {
     max-height: none;
     overflow: visible;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  }
-  /* 스크롤 끝에 약간의 여유 — 스크롤포트 바닥이 브라우저 UI 밑으로 조금 깔리는 기기에서
-     푸터 마지막 줄이 잘리지 않게. 붙박이가 아니므로 sticky 한계를 건드리지 않는다. */
-  .site-scroll {
-    padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
   }
   /* 핸들 = 시트 맨 위 가로 전체. 잡기 쉬워야 하고, 펴서 스크롤해도 붙어 있어야 한다. */
   .footer-collapse-toggle {
