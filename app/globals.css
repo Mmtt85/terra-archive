@@ -457,7 +457,12 @@ button {
   align-items: center;
   gap: 14px;
   padding: 9px 12px;
-  font: 700 12.5px/1 sans-serif;
+  /* 서체는 본문(SUITE)을 그대로 받는다 — 종전 `font: 700 12.5px/1 sans-serif` 는 서체를
+     바꾼 뒤(2026-09-19)에도 여기만 시스템 글꼴로 남아 있었다 (사용자 지적 2026-09-23).
+     ⚠ 단축 표기에 inherit 을 섞을 수 없어서 낱개 속성으로 쓴다. */
+  font-weight: 700;
+  font-size: 12.5px;
+  line-height: 1;
   background: none;
   border: 0;
   border-bottom: 1px solid #1317191f;
@@ -479,40 +484,6 @@ button {
 .lang-menu button small {
   font: 700 10px var(--mono);
   opacity: 0.65;
-}
-
-/* 유튜브 아이콘 (빨간 재생 마크) */
-.yt-mark,
-.yt-icon {
-  display: grid;
-  place-items: center;
-  background: #f00;
-  border-radius: var(--r-sm);
-}
-.yt-mark {
-  position: absolute;
-  right: 6px;
-  bottom: 6px;
-  width: 26px;
-  height: 18px;
-  border-radius: var(--r-sm);
-}
-.yt-icon {
-  width: 20px;
-  height: 14px;
-  flex: none;
-}
-.yt-mark i,
-.yt-icon i {
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 4px 0 4px 7px;
-  border-color: transparent transparent transparent #fff;
-  margin-left: 1px;
-}
-.yt-mark i {
-  border-width: 5px 0 5px 8px;
 }
 
 /* 업데이트 내역 — 로고 바로 오른쪽(1줄 소속, 접어도 보임) 버튼 + 모달 (2026-07-27 이동) */
@@ -896,19 +867,6 @@ button {
   font-size: 11px;
   line-height: 1.45;
   color: var(--muted);
-}
-.bili-mark {
-  position: absolute;
-  right: 6px;
-  bottom: 6px;
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 18px;
-  border-radius: var(--r-sm);
-  background: #00a1d6;
-  color: #fff;
-  font: 800 11px/1 sans-serif;
 }
 
 /* 버튼 아이콘 (단색 글리프) */
@@ -6429,15 +6387,19 @@ html.dark .tags-track > span {
   background: var(--btn-ghost-hover);
   color: var(--btn-ink-hover);
 }
-/* ⚠ 선택된 부메뉴 항목의 글자색을 **여기서 다시 지정해야 한다** (사용자 제보 2026-08-25
+/* ⚠ 선택된 부메뉴 항목의 색을 **여기서 다시 지정해야 한다** (사용자 제보 2026-08-25
    "선택돼 있는 경우 글자도 배경도 검정이라 안 보임"). 위쪽 `.main-tabs
-   :where(button, a.tab-sub).selected`가 라임을 주지만, `:where()`는 특이도가 0이라
-   그 규칙은 `.main-tabs .selected`(0,2,0)이고 바로 위 `.main-tabs .tab-sub`(0,2,0)와
-   **특이도가 같다** — 그러면 뒤에 온 쪽이 이겨서 --ink2(어두운 회색)로 덮인다.
-   배경은 --chip(거의 검정)이라 명암비 1.74로 글자가 사실상 안 보였다. */
+   :where(button, a.tab-sub).selected`는 `:where()`가 특이도 0이라 `.main-tabs .selected`
+   (0,2,0)밖에 안 돼서, 바로 위 `.main-tabs .tab-sub`(0,2,0)의 --ink2 에 글자색을 뺏긴다.
+   글자는 **선택됨 토큰(--btn-on-ink)** 이다 — 선택됨이 명암 반전(다크에선 밝은 판)으로
+   바뀐 뒤에도 여기만 라임이 남아, 다크에서 밝은 판 위 연두 글씨(1.6:1)가 됐다
+   (사용자 지적 2026-09-23 "열려있는 페이지의 메뉴명이 연두색이라 잘 안 보임").
+   호버에서도 판을 지킨다 — `.main-tabs .tab-sub:hover`(0,3,0)가 배경을 옅은 칠로 바꾸면
+   반전 글자가 바탕에 묻힌다. */
 .main-tabs .tab-sub.selected,
-.main-tabs .tab-sub2.selected {
-  color: var(--lime);
+.main-tabs .tab-sub.selected:hover {
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
 }
 .main-tabs .tab-sub.selected .tab-sub-mark { opacity: 0.75; }
 .tab-sub-mark {
@@ -6469,6 +6431,11 @@ html.dark .tags-track > span {
   margin-left: 4px;
   color: var(--muted);
   background: color-mix(in srgb, var(--muted) 16%, transparent);
+}
+/* 지금 보고 있는 지난 시즌 — 반전된 판 위에선 회색 표식이 묻힌다. 줄 글자색을 따라간다 */
+.main-tabs .selected .tab-sub-past {
+  color: inherit;
+  background: color-mix(in srgb, currentColor 18%, transparent);
 }
 .planner-summary .strategy {
   font-size: 13px;
@@ -19088,8 +19055,19 @@ main.site-main > .site-header {
 }
 /* 자체 여백을 가진 본문 컨테이너를 **직접** 품은 창은 위 기본값을 물린다 — 겹치면 두 겹이 된다.
    (:has 미지원 브라우저에서는 여백이 두 겹이 될 뿐 내용이 잘리지는 않는다.)
-   새로 그런 컨테이너를 만들면 여기 목록에 더한다. */
-
+   새로 그런 컨테이너를 만들면 여기 목록에 더한다.
+   ⚠ 이 규칙은 2026-09-23 공식 방송을 걷어낼 때 목록의 .bcast-list 하나 때문에 통째로
+   지워졌었다 — 업데이트 내역·제안 창에 여백이 두 겹으로 붙었다 (사용자 지적 같은 날). */
+.mw-body:has(> :where(.modal-body, .modal-scroll, .en-file, .st-file, .chlog-list,
+  .invest-list, .fb-thread, .fb-thread-modal, .chibi-chat-clear, .room-modal-head, .item-modal-icon,
+  /* 제안 게시판·작성 폼 — 안쪽 줄(.feedback-kind 등)이 이미 14px 여백을 갖고 있어
+     기본 22px가 겹치면 36px가 된다 (사용자 지적 2026-08-23) */
+  .feedback-panel,
+  /* 2026-09-05 간이 모달 이관분 — 도움말 본문(.lens-body 16/18)과 스캐너 드롭 영역
+     (.scanner-body 14/18 + .scanner-foot 12/18)은 이미 자기 여백을 갖고 있다 */
+  .lens-body, .scanner-drop)) {
+  padding: 0;
+}
 .mw-chrome {
   flex: none;
   display: flex;
@@ -23201,6 +23179,13 @@ html.dark .ac-bring-dial {
   }
   /* 옆으로 열리지 않으니 방향 화살표도 지운다 */
   .tab-flyout2 > .tab-sub > .tab-group-arrow { display: none; }
+}
+/* 지금 보고 있는 2단 항목(테마·시즌) — 위 세 규칙(0,3,0 · 호버 0,4,0)이 글자를 --ink2·
+   --muted·--ink 로 덮는데, 판은 선택됨(반전)이라 라이트·다크 모두 글자가 판에 묻혔다
+   (2026-09-23 특이도 대조로 발견). 전부 뒤에서, 한 단계 높게 되돌린다. */
+.main-tabs .tab-submenu2 .tab-sub2.selected,
+.main-tabs .tab-submenu2 .tab-sub2.selected:hover {
+  color: var(--btn-on-ink);
 }
 
 /* 터치인데 화면은 넓은 기기(태블릿) — 바깥 메뉴는 여전히 옆으로 뜨는 패널이라, 안의 2단이
