@@ -514,6 +514,7 @@ button {
 .yt-mark i {
   border-width: 5px 0 5px 8px;
 }
+
 /* 업데이트 내역 — 로고 바로 오른쪽(1줄 소속, 접어도 보임) 버튼 + 모달 (2026-07-27 이동) */
 .chlog-trigger {
   display: inline-flex;
@@ -781,6 +782,23 @@ button {
    --tint-lime-ink(라이트 #5b6b00 · 다크 #c6d96e)를 쓴다 (2026-08-25) */
 .promo-trigger .promo-mark { color: var(--tint-lime-ink); }
 .promo-trigger .promo-hint { font-size: 11px; font-weight: 600; color: var(--muted); }
+/* 확장부의 작은 버튼. 종전엔 배너 섬네일을 통째로 품은 큰 버튼이 헤더 1줄에 누워 있었다
+   (사용자 요청 2026-07-30: "확장헤더에 넣자, 누르면 섬네일이랑 이벤트 보이도록").
+   치수는 옆에 붙던 '공식 방송' 버튼에 맞춘 것인데, 그 버튼은 2026-09-23에 걷어냈다. */
+.event-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  background: transparent;
+  padding: 6px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition: 0.15s;
+  white-space: nowrap;
+}
 .event-trigger:hover {
   border-color: var(--border-hover);
 }
@@ -909,6 +927,8 @@ button {
   opacity: 0.85;
 }
 @media (max-width: 760px) {
+  /* 모바일 헤더 버튼 전반 축소 — 데스크탑보다 한 단계 작게 (사용자 요청 2026-07) */
+  
   .site-header .future-toggle {
     font-size: 11px;
     padding: 5px 7px;
@@ -1119,6 +1139,14 @@ button {
     bottom: -18px;
     border-top: 1px solid var(--line);
     border-radius: 0 0 var(--r-md) var(--r-md);
+  }
+  /* 펼칠 때 2줄째가 툭 나타나지 않게 아주 짧게 내려오며 뜬다 */
+  .site-header:not(.tucked) .feedback-header-btn,
+  .site-header:not(.tucked) .event-group,
+  .site-header:not(.tucked) .future-toggle,
+  .site-header:not(.tucked) .theme-toggle,
+  .site-header:not(.tucked) .about-icon{
+    animation: hdr-row-in 0.22s ease-out;
   }
   @keyframes hdr-row-in {
     from { opacity: 0; transform: translateY(-6px); }
@@ -8145,9 +8173,12 @@ html.dark .tags-track > span {
      ⚠ display:none 이 아니라 **높이 0**이다 — 여닫기를 전환하려면 박스가 남아 있어야 한다.
      내용은 opacity 로 먼저 지우고(0.1s), 다 닫힌 뒤 visibility 로 끈다(0.32s = 0.08+0.24).
      visibility:hidden 이라야 접힌 확장부가 탭 순서·스크린리더에서도 빠진다. */
-  /* 상태가 둘로 줄면서(2026-09-23) 데스크탑의 '접힘'도 .tucked 가 맡는다 —
-     종전엔 클래스 이름만 달랐을 뿐 하는 일은 같다. */
-  .site-header.tucked .header-sub {
+  /* ⚠ 데스크탑은 **접힘이 기본값**이다 — 클래스가 없을 때(=서버가 그린 첫 HTML) 이미
+     접힌 모습이라야 새로고침 때 펼쳐졌다 접히는 깜빡임이 없다 (사용자 지적 2026-09-23).
+     서버는 화면 폭을 모르므로 JS 로 클래스를 붙이면 반드시 한 프레임 늦는다.
+     펼침은 .hdr-open 으로 **명시**한다. 모바일은 반대로 열림이 기본이고 .tucked 가 닫는다
+     — 그쪽도 클래스 없는 첫 HTML 이 곧 기본 상태다. */
+  .site-header:not(.hdr-open) .header-sub {
     height: 0;
     opacity: 0;
     visibility: hidden;
@@ -8161,7 +8192,7 @@ html.dark .tags-track > span {
      ⚠ row-gap 을 0으로 지우면 안 된다 — 900·1400·1440px 처럼 **1줄이 두 줄로 접히는 폭**
        에서는 그 줄 사이 간격이기도 해서, 접힘 헤더가 10px 납작해지고 여닫을 때 본문이
        10px 흔들렸다 (2026-09-19 실측). 패딩으로 빼면 1줄이 몇 줄이 되든 상쇄량이 같다. */
-  .site-header.tucked {
+  .site-header:not(.hdr-open) {
     padding-bottom: 4px;
   }
   /* 펼쳐도 **본문이 밀려 내려가지 않는다** (사용자 요청 2026-09-19).
@@ -8175,7 +8206,7 @@ html.dark .tags-track > span {
        여기서는 배치·배경·테두리·핸들이 전부 종전 그대로고 바깥 높이만 상쇄된다.
      ⚠ 끄는 중(.dragging)에는 상쇄하지 않는다 — 인라인 max-height 로 헤더가 줄어드는
        동안에도 상쇄가 걸리면 본문이 화면 위로 끌려 올라간다. */
-  .site-header:not(.tucked):not(.dragging) {
+  .site-header.hdr-open:not(.dragging) {
     margin-bottom: -43px;
   }
   /* 여닫기 애니메이션 (사용자 요청 2026-09-19) — **본문은 한 픽셀도 움직이지 않는다.**
@@ -8188,7 +8219,7 @@ html.dark .tags-track > span {
       padding-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1),
       margin-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .site-header.tucked:not(.dragging) {
+  .site-header:not(.hdr-open):not(.dragging) {
     transition:
       padding-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1) 0.08s,
       margin-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1) 0.08s;
@@ -13217,6 +13248,12 @@ html.dark .pt-stage {
 /* 모션을 줄이는 설정에서는 타일이 뛰지 않게 */
 @media (prefers-reduced-motion: reduce) {
   .pt-tile:hover:not(.dead) { transform: none; }
+}
+
+/* ── 공식방송·이벤트 배지 로딩 스켈레톤 — 헤더 슬롯 고정 예약 (CLS 방지, 사용자 요청 2026-07-17) ── */
+.event-trigger.is-skeleton{
+  pointer-events: none;
+  cursor: default;
 }
 .sk-box {
   display: block;
@@ -18284,6 +18321,18 @@ main.site-main > .site-header {
   .recruit-time-note, .recruit-tags, .recruit-picked, .recruit-combo, .low-time-note) {
   border-radius: var(--r-md);
 }
+/* 모달 패널 전부 — 컨테이너급만 (백드롭·내부 조각 제외)
+   ⚠ `.mw-window` 가 여기 있는 이유: 이건 **열거식 허용 목록**이라 공용 창(ModalWindow)으로
+   새 모달을 만들 때마다 자기 클래스를 여기 더하거나 자기 radius 를 적어야 했고, 그걸
+   빼먹으면 그 창만 각지게 떴다 (사용자 지적 2026-09-20: "공통컴포넌트는 둥그스름한데
+   얜 또 각져있다" — 저격 조합 사전 창). 창은 예외 없이 `.mw-window` 를 달고 나오므로
+   기본값을 여기서 깔아 준다. `:where()` 라 특이도가 0이고, 자기 값을 적은 창
+   (예: .chlog-detail 의 --r-md)은 그대로 이긴다. */
+:where(.operator-modal, .room-modal, .item-modal, .lens-modal, .scanner-modal,
+  .term-modal, .confirm-modal, .rg-emodal, .rg-rmodal, .rg-zmodal,
+  .rg-invmodal, .rg-modal, .omni-panel, .bridge-replay, .mw-window){
+  border-radius: var(--r-lg);
+}
 /* 세그먼트 컨트롤은 **컨테이너**를 굴리고 내부 버튼은 각지게 되돌린다 —
    내부 버튼까지 굴리면 이음매 모서리에 배경이 비쳐 보인다 */
 .story-mode-bar {
@@ -18489,6 +18538,15 @@ main.site-main > .site-header {
 }
 .story-reader-prefs-btns button,
 .sc-view-switch button {
+  border-radius: 0;
+}
+
+/* NOTE(안내문) 계열은 **각지게 유지** — 라운딩 전면 롤백 (사용자 확정 2026-07-26:
+   "NOTE 부분은 전부 사각으로"). 왼쪽 악센트 바 스타일과 각진 모양이 세트다. */
+.about-note, .about-notes, .chron-note, .data-note, .dorm-note,
+.event-menu-note, .future-note, .invest-note, .invest-note-sub, .low-time-note,
+.recruit-time-note, .rg-ctx-note, .rg-disclaimer, .rg-enc-note, .rule-note,
+.sc-future-note, .story-disclaimer{
   border-radius: 0;
 }
 
@@ -19009,6 +19067,11 @@ main.site-main > .site-header {
    (내부 스크롤 담당)만 남은 높이를 다 가져 종전 1fr 행을 재현한다. */
 .mw-body > * {
   flex-shrink: 0;
+}.mw-body > :where(.modal-body, .modal-scroll, .term-body, .chlog-list, .invest-list,
+  /* 2026-09-05 간이 모달 일괄 이관분 — 스샷/PRTS 도움말·오퍼 스캐너·리플레이·업데이트 상세 */
+  .lens-body, .scanner-drop, .chlog-detail-in, .bridge-replay-list){
+  flex: 1 1 auto;
+  min-height: 0;
 }
 /* ── 창 안쪽 기본 여백 ──────────────────────────────────────────────────────
    종전 관례는 "`.mw-body`는 패딩 0이 기본이고 **모달마다 자기 여백을 준다**"였는데,
@@ -19023,6 +19086,10 @@ main.site-main > .site-header {
 .mw-body {
   padding: 12px 20px 24px;
 }
+/* 자체 여백을 가진 본문 컨테이너를 **직접** 품은 창은 위 기본값을 물린다 — 겹치면 두 겹이 된다.
+   (:has 미지원 브라우저에서는 여백이 두 겹이 될 뿐 내용이 잘리지는 않는다.)
+   새로 그런 컨테이너를 만들면 여기 목록에 더한다. */
+
 .mw-chrome {
   flex: none;
   display: flex;

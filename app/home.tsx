@@ -1128,10 +1128,30 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
      "굳이 어정쩡하게 절반만 닫을 이유가 없어 보임"). 종전엔 그 사이에 '접힘'(1·2줄만
      남기고 3줄만 감추는 상태)이 하나 더 있었고 그게 기본값이었다.
      PC는 무관 — 관련 CSS 가 전부 모바일 블록에만 있다. */
-  // 헤더 완전히 치우기 — 핸들을 **위로 끌어올리면** 헤더가 통째로 사라지고 핸들만 남는다
-  // (사용자 요청 2026-08-25: 폰 가로모드에서 리더기를 볼 때 헤더가 화면을 너무 먹는다).
-  // 모바일 전용(CSS가 모바일 블록에만 있다). 다시 끌어내리거나 누르면 접힘 상태로 돌아온다.
-  const [headerTucked, setHeaderTucked] = useState(false);
+  /* 헤더 여닫기 — 상태는 **하나**다 (2026-09-23에 '접힘'이라는 중간 단계를 없앴다).
+     모바일에선 헤더가 통째로 사라지고 핸들만 남고, 데스크탑에선 확장부(미래시·다크모드·
+     제안) 줄만 접힌다 — CSS 가 폭에 따라 .tucked 를 다르게 해석한다.
+     ⚠ **기본값이 폭마다 다르다** — 데스크탑은 접힘(79px, 종전 그대로), 모바일은 열림.
+       사용자가 한 번이라도 여닫으면 그 선택(override)이 기본값을 이긴다.
+     ⚠ useState 초기값으로 matchMedia 를 읽으면 서버 렌더와 어긋나 하이드레이션이 깨진다.
+       useSyncExternalStore 는 서버 스냅샷(false)을 따로 받아 그 문제가 없다. */
+  const isDesktop = useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia("(min-width: 761px)");
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia("(min-width: 761px)").matches,
+    () => false,
+  );
+  const [tuckedChoice, setTuckedChoice] = useState<boolean | null>(null);
+  const headerTucked = tuckedChoice ?? isDesktop;
+  /* ⚠ 고르기 전에는 **클래스를 아예 안 붙인다** — 그래야 서버가 그린 첫 HTML 이 CSS 의
+     기본 모습(데스크탑 접힘 · 모바일 열림) 그대로라 새로고침 때 깜빡이지 않는다.
+     한 번이라도 여닫으면 그때부터 .tucked / .hdr-open 으로 못 박는다. */
+  const headerCls = tuckedChoice == null ? "" : (tuckedChoice ? " tucked" : " hdr-open");
+  const setHeaderTucked = (next: boolean | ((prev: boolean) => boolean)) =>
+    setTuckedChoice((prev) => (typeof next === "function" ? next(prev ?? isDesktop) : next));
   const handleFrom = useRef<number | null>(null);
   const handleDragged = useRef(false);
   // 끄는 **동안** 헤더가 손가락을 따라오게 한다 (사용자 정정 2026-08-25: "클릭하면
@@ -1589,11 +1609,26 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     return () => { cancelAnimationFrame(raf); clearTimeout(later); };
   }, [headerTucked]);
 
-  /* 헤더 바깥을 눌러도 **스스로 닫히지 않는다** (사용자 지시 2026-09-23:
-     "모바일에선 터치해도 헤더가 사라지지 않게 해 줘").
-     종전엔 바깥 클릭에 헤더가 접혔다(2026-09-20 요청). 상태가 둘로 줄면서 그 자동 닫힘이
-     '헤더가 통째로 사라짐'이 되어 버려, 본문을 한 번 누를 때마다 헤더가 없어졌다.
-     여닫기는 이제 손잡이(⌃⌄)로만 한다. */
+  /* 헤더 바깥을 누르면 스스로 닫힌다 — **데스크탑에서만** (사용자 지시 2026-09-20 도입,
+     2026-09-23 모바일만 해제: "모바일에선 터치해도 헤더가 사라지지 않게 해 줘").
+     모바일은 상태가 둘로 줄면서 이 자동 닫힘이 '헤더가 통째로 사라짐'이 되어, 본문을 한 번
+     누를 때마다 헤더가 없어졌다. 손잡이(⌃⌄)로만 여닫는다.
+     ⚠ click 으로 듣는다 — pointerdown 이면 손가락으로 **본문을 스크롤하려고 짚는 순간**
+       닫힌다 (스크롤은 click 을 만들지 않는다).
+     ⚠ 헤더 안의 드롭다운(언어·햄버거·이벤트)은 전부 헤더 DOM 안이라 contains 로 함께
+       걸러진다. 모달은 포털이라 밖으로 잡히지만, 모달을 여는 순간 닫히는 게 자연스럽다. */
+  useEffect(() => {
+    if (headerTucked) return;
+    const onClick = (event: MouseEvent) => {
+      if (!window.matchMedia("(min-width: 761px)").matches) return;
+      const el = event.target as Node | null;
+      if (el && headerRef.current?.contains(el)) return;
+      setHeaderTucked(true);
+    };
+    // 캡처 단계에서 듣는다 — 본문 쪽에서 stopPropagation 하는 핸들러가 있어도 놓치지 않는다
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [headerTucked]);
 
   // 모바일 sticky 요소(스토리 레일)가 가변 높이 헤더 아래에 붙도록 헤더 높이를 CSS 변수로 노출
   useEffect(() => {
@@ -2078,7 +2113,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   return (
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
       <header ref={headerRef} id="top"
-        className={`site-header${headerTucked ? " tucked" : ""}${drag ? " dragging" : ""}`}
+        className={`site-header${headerCls}${drag ? " dragging" : ""}`}
         style={drag ? { maxHeight: `${drag.h}px` } : undefined}>
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("portal"); scrollMainTop(); }}>
