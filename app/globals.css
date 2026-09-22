@@ -16432,6 +16432,12 @@ main.site-main > .site-header {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  /* ⚠ **가로는 명시적으로 막는다** (2026-09-22). `overflow-y: auto` 만 적으면 CSS 규칙상
+     다른 축의 `visible` 이 `auto` 로 승격돼 — 실측으로 계산값이 `auto` 였다 — 의도한 적
+     없는 **가로 스크롤 컨테이너**가 된다. 사용자 제보: "왼쪽 오른쪽에 분명히 컨텐츠가
+     없을텐데 드래그하면 갔다가 조금밖에 안 돌아온다"(바운스가 아니라 실제 이동).
+     데스크탑 Chromium 에선 넘치는 게 없어 티가 안 났다. */
+  overflow-x: hidden;
   /* ⚠ -webkit-overflow-scrolling: touch 는 뺐다 (2026-09-22) — iOS 13 부터 무시되는
      옛 속성인데, 예전 WebKit 에서 이 속성이 만든 별도 합성 레이어 안에서 position:sticky
      가 어긋나는 사례가 있었다. 이 스크롤러의 푸터가 딱 그 sticky 다. */
