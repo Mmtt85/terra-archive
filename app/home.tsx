@@ -574,12 +574,40 @@ const eventDday = (event: GameEvent, now: number): number => Math.max(0, Math.ce
 // slot — 헤더 두 곳에 나눠 그린다: 진행중 이벤트 배지는 1줄(접어도 보임), 공식 방송 버튼은
 // 확장부(header-sub)의 미래시 토글 왼쪽 (사용자 요청 2026-07-25). 워커 fetch는 모듈 공유
 // 프라미스라 인스턴스가 둘이어도 요청은 한 번이다.
+/* 터치: **짚은 자리에서 뗐을 때만** 누른 것으로 친다 (사용자 제보 2026-09-22 —
+   "터치하는 순간 선택돼서 터치 후 슬라이드 업 하면 계속 다른 메뉴가 터치됨").
+   메뉴가 길어 손가락으로 밀어 올리다 손을 떼면, 브라우저가 처음 짚은 자리를 탭으로 쳐서
+   엉뚱한 항목으로 넘어갔다. click 을 **캡처 단계**에서 가로채 10px 넘게 움직였으면 없던
+   일로 돌린다 — 항목마다 핸들러를 고치지 않아도 메뉴 한 그루(홈·묶음 버튼·부메뉴 링크)가
+   통째로 걸린다. 10px 은 iOS·안드로이드가 탭과 스크롤을 가르는 폭과 같은 값.
+   ⚠ 키보드 Enter/Space 로 온 click 은 detail 이 0 이고 앞선 pointerdown 도 없어 그냥 통과한다.
+   호버 칠이 손가락 자국처럼 눌어붙던 것은 CSS 쪽(globals.css `@media (hover: none)`)이 맡는다.
+   쓰는 곳: 햄버거 주메뉴(.main-tabs) · 이벤트 목록(.event-menu) · 언어 선택(.lang-menu). */
+const TAP_SLOP_PX = 10;
+function useTapOnly() {
+  const from = useRef<{ x: number; y: number } | null>(null);
+  return {
+    onPointerDown: (event: React.PointerEvent) => { from.current = { x: event.clientX, y: event.clientY }; },
+    onPointerCancel: () => { from.current = null; },
+    onClickCapture: (event: React.MouseEvent) => {
+      const start = from.current;
+      from.current = null;
+      if (!start || event.detail === 0) return;
+      if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > TAP_SLOP_PX) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+  };
+}
+
 function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
   includeFuture?: boolean; slot?: "broadcast" | "events";
   /** 이벤트 줄을 누르면 이벤트 도감 상세로 (사용자 지시 2026-09-17) */
   onOpenEvent?: (id: string, type?: string | null) => void;
 }) {
   const { locale, t } = useI18n();
+  const tapOnly = useTapOnly();
   const shortStatus = (b: Broadcast, now: number): string => {
     const state = bcastState(b, now);
     if (state === "live") return t("생방송 중");
@@ -704,7 +732,7 @@ function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
         <span className="event-caret" aria-hidden>▾</span>
       </button>
       {evOpen && (
-        <div className="event-menu" role="dialog" aria-label={t("진행중·예정 이벤트")}>
+        <div className="event-menu" role="dialog" aria-label={t("진행중·예정 이벤트")} {...tapOnly}>
           {running.length > 0 && <>
             <h3>{t("진행중 이벤트")}</h3>
             <ul>
@@ -861,6 +889,7 @@ function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
 // 언어는 경로(/ /en /ja)로 나뉘므로 전환은 전체 내비게이션 — 해시(탭·오퍼 모달)는 유지
 function LanguageSwitcher() {
   const { locale, t } = useI18n();
+  const tapOnly = useTapOnly();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -884,7 +913,7 @@ function LanguageSwitcher() {
         <span /> {current.chip} <i aria-hidden>▾</i>
       </button>
       {open && (
-        <div className="lang-menu" role="listbox" aria-label={t("언어 선택")}>
+        <div className="lang-menu" role="listbox" aria-label={t("언어 선택")} {...tapOnly}>
           {LOCALES.map((entry) => (
             <button key={entry.code} type="button" role="option" aria-selected={entry.code === locale}
               className={entry.code === locale ? "selected" : ""}
@@ -1258,6 +1287,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     }, HOVER_HOLD_MS);
   };
   const flyoutOpen = (id: string) => hoverFlyout === id || hoverFlyout.startsWith(`${id}/`);
+  const tapOnly = useTapOnly();
   useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
   const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
   // 제안 게시판 뱃지 숫자 — 위젯이 올려주고 헤더 버튼 뱃지에 쓴다. 방문자는 '새 답변',
@@ -2164,7 +2194,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
           {/* 순서 (사용자 확정 2026-08-10): 홈 · 인프라 · 도감▸ · 시뮬레이터▸ ·
               통합전략▸ · 스토리 · 소개. 인프라는 대표 기능이라 묶지 않고 톱레벨 유지(사용자 확정). */}
-          <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")}
+          <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")} {...tapOnly}
             onPointerOver={prefetchTabs} onTouchStart={prefetchTabs} onFocus={prefetchTabs}>
             <button className={`tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
             <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}{tabHasNewFeature("planner") && <span className="new-badge">{t("새기능")}</span>}</button>
