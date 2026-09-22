@@ -20,11 +20,56 @@
   --bg-soft2: #e6e5df; /* 노트 박스 */
   --bg-faint: #f7f6f1;
   --veil: #ffffffd9; /* 반투명 덮개 */
-  /* 마우스오버 보더 — 강조 보더(거의 검정)를 그대로 쓰면 라이트에서 너무 툭 튄다는
-     지적(2026-08-25). --line(#d2d0c9)과 --border-strong(#242b2f) 사이의 중간 회색이라
-     '누를 수 있다'는 신호는 남기고 검정은 피한다. */
-  --border-hover: #6f7a80;
-  --border-strong: #242b2f; /* 강조 보더 — 라이트에선 잉크, 다크에선 중간 회색(과한 흰 테두리 방지) */
+  /* 라이트 보더 3단 — 전부 종이(#f1f0eb) 계열의 따뜻한 회색이고, 아래로 갈수록 진하다.
+     종전엔 강조 보더가 잉크(#242b2f) 그 자체라 메뉴 드롭다운·패널 테두리가 새까만 선으로
+     둘러쳐졌다 ("보더가 너무 새까맣거나 색이 짙다 — 배경색이랑 맞춰서 톤을 낮춰라",
+     사용자 지적 2026-09-22). 밝기를 고르게 벌려 위계는 남기고 검정은 뺀다.
+       --line        기본 테두리      (상대휘도 0.63)
+       --border-hover 마우스오버       (0.37)
+       --border-strong 강조·포커스·패널 (0.22 — 종이 대비 3.7:1 로 포커스 링 기준 3:1 충족)
+     ⚠ 어두운 칩(--chip)을 깔고 그 위에 테두리를 두르는 버튼은 여기를 쓰면 안 된다 —
+     검은 알약에 회색 링이 생긴다. 그런 것은 --chip-line (바로 아래). */
+  --border-hover: #a8a49a;
+  --border-strong: #85827a;
+  /* 어두운 칩 버튼의 테두리 — 라이트에선 칩과 같은 색이라 안 보이고(채움이 일을 한다),
+     다크에선 한 톤 밝아 어두운 배경에서 알약 윤곽을 잡아 준다. 종전 --border-strong 의
+     값을 그대로 물려받았다 (2026-09-22 분리 — 강조 보더만 톤을 낮추기 위해). */
+  --chip-line: #242b2f;
+  /* ═══ 버튼 색 — 역할은 이 네 가지뿐이다 (2026-09-22 사용자 지시: "보더·버튼색·
+     마우스오버가 버튼에 따라 중구난방이다. 사이트 전체를 통일시켜라") ══════════════
+     전수 감사 결과 버튼 규칙 368개가 **평상 111종·호버 42종**의 조합을 쓰고 있었다.
+     낱개로는 그럴듯해도 모이면 무질서로 읽힌다 — 반경을 다섯 단계로 줄인 2026-09-19
+     정리와 같은 이유로, 색도 역할 네 개로 줄인다. 새 버튼을 만들 때 값을 직접 적지 말고
+     아래 토큰을 고를 것. 의미색(위험·확인·진홍·오퍼 고유 --accent)과 통합전략 스킨
+     (--rg*)은 별개 체계라 여기 들어오지 않는다.
+
+       기본   --btn-*          흰 판 + 옅은 테두리. 대부분의 버튼.
+       호버   --btn-*-hover    바탕이 한 단계 눌리고 테두리·글자가 진해진다.
+       선택됨 --btn-on-*       명암 반전. 라이트는 어두운 알약, 다크는 밝은 알약.
+       강조   --btn-pri-*      어두운 칩 + 라임. 화면당 한둘인 주요 행동 전용.
+       고스트 --btn-ghost-hover 메뉴·드롭다운 행처럼 평상시 테두리가 없는 것의 호버. */
+  --btn-bg: var(--white);
+  --btn-line: var(--line);
+  --btn-ink: var(--ink2);
+  --btn-bg-hover: var(--bg-soft);
+  --btn-line-hover: var(--border-hover);
+  --btn-ink-hover: var(--ink);
+  --btn-ghost-hover: var(--bg-soft);
+  /* 선택됨 — 라이트는 잉크 알약 + 종이 글자. 종전엔 같은 뜻에 ①잉크+흰글자 ②칩+라임
+     ③라임채움 ④칩+흰글자 네 가지가 섞여 있었다. 라임은 '강조' 전용으로 넘긴다. */
+  --btn-on-bg: #242b2f;
+  --btn-on-line: #242b2f;
+  --btn-on-ink: #f1f0eb;
+  --btn-on-dim: #c3d24b;   /* 선택된 버튼 안의 보조 숫자·단위 */
+  /* 강조 — 어두운 칩은 다크에서 배경과 1.2:1 이라 채움이 아니라 **테두리와 라임 글자**가
+     알약을 만든다 (라임 6.7:1). 그래서 --chip-line 이 반드시 함께 간다. */
+  --btn-pri-bg: var(--chip);
+  --btn-pri-line: var(--chip-line);
+  --btn-pri-ink: var(--lime);
+  /* 강조 버튼의 호버는 라임 채움 — 종전에도 클리어·새 제안·전체 자동편성 셋이 이미
+     이렇게 하고 있었다. 나머지 강조 버튼(햄버거·검색·공유…)을 여기에 맞춘다. */
+  --btn-pri-bg-hover: var(--lime);
+  --btn-pri-ink-hover: var(--on-lime);
   /* 파스텔 틴트 칩 (배경+전용 잉크 페어) — 다크에서 어두운 동계열 틴트로 뒤집힌다 */
   --tint-lime: #eef3d2;
   --tint-lime-ink: #5b6b00;
@@ -102,6 +147,15 @@ html.rg-theme {
   --veil: #171c1fd9;
   --border-hover: #63707a;  /* 다크에선 강조 보더보다 한 톤 밝게 — 밝아지는 게 호버 신호 */
   --border-strong: #47525a; /* 미래시 토글 보더 수준의 무난한 회색 (사용자 피드백 2026-07-18) */
+  --chip-line: #47525a;     /* 다크에선 칩(#262d31)이 배경에 묻혀 윤곽선이 필요하다 */
+  /* 선택됨만 뒤집는다 — 나머지 --btn-* 는 --white·--line·--ink2 를 타고 이미 뒤집힌다.
+     종전 다크 선택은 칩(#262d31)을 깔아 패널(#171c1f)과 1.21:1 이었다 (사용자 지적
+     2026-09-22 "색이 많이 안 바껴서 뭘 클릭했는지 구분이 잘 안 된다"). 지금은 11.3:1.
+     순백은 어두운 화면에서 눈이 아프다는 피드백(2026-07-18)이 있어 한 단계 눅였다. */
+  --btn-on-bg: #ccd3d3;
+  --btn-on-line: #ccd3d3;
+  --btn-on-ink: #12181a;
+  --btn-on-dim: #4f5d18;
   --amber-ink: #b9862f;  /* 다크 배경에선 종전 값이 5.3~7.2:1로 충분하다 */
   --blue-ink: #4d9dd6;
   --star-ink: #c89b25;
@@ -234,7 +288,7 @@ html[data-route="farm"] .main-tabs .tab-farm,
 html[data-route="story"] .main-tabs .tab-story {
   background: var(--chip);
   color: var(--lime);
-  border-color: var(--border-strong);
+  border-color: var(--chip-line);
 }
 button,
 input {
@@ -390,11 +444,12 @@ button {
   border-bottom: 0;
 }
 .lang-menu button:hover {
-  background: var(--lime);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 .lang-menu button.selected {
-  background: var(--chip);
-  color: var(--chip-ink);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
 }
 .lang-menu button small {
   font: 700 10px var(--mono);
@@ -672,18 +727,19 @@ button {
   flex: 1;
   min-width: 0;
   padding: 8px 12px;
-  border: 1px dashed var(--line);
+  border: 1px dashed var(--btn-line);
   border-radius: var(--r-sm);
-  background: transparent;
+  background: var(--btn-bg);
   font-size: 12px;
   font-weight: 700;
-  color: var(--muted);
+  color: var(--btn-ink);
   cursor: pointer;
   transition: 0.15s;
 }
 .chlog-more-btn:hover {
-  border-color: var(--border-hover);
-  color: var(--ink);
+  border-color: var(--btn-line-hover);
+  color: var(--btn-ink-hover);
+  background: var(--btn-bg-hover);
 }
 /* 후원 안내 — 목록 하단 상시 노트 */
 .chlog-donate {
@@ -1091,14 +1147,15 @@ button {
     gap: 4px;
     margin: 0;
     padding: 4px 8px;
-    border: 1px solid var(--border-strong);
-    background: var(--chip);
-    color: var(--lime);
+    border: 1px solid var(--btn-pri-line);
+    background: var(--btn-pri-bg);
+    color: var(--btn-pri-ink);
     font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
-  }
+  
+}
   .site-header .future-toggle {
     order: 8;
     margin-left: auto;
@@ -1462,7 +1519,8 @@ button {
   text-align: left;
 }
 .suggest-drop button:hover {
-  background: var(--bg-soft);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 .suggest-drop button img {
   flex: none;
@@ -1596,12 +1654,13 @@ legend {
   display: flex;
 }
 .filter-list button {
-  border: 1px solid var(--line);
+  border: 1px solid var(--btn-line);
   cursor: pointer;
-  background: 0 0;
+  background: var(--btn-bg);
   padding: 7px 8px;
   font-size: 12px;
   transition: all 0.15s;
+  color: var(--btn-ink);
 }
 .filter-list button span {
   color: var(--muted);   /* 종전 #8b9294 고정값 — 라이트에서 3.05:1이었다 (2026-08-25) */
@@ -1609,15 +1668,17 @@ legend {
   font: 10px var(--mono);
 }
 .filter-list button:hover {
-  border-color: #777;
+  border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
 }
 .filter-list button.selected {
-  background: var(--chip);
-  color: #fff;
-  border-color: var(--border-strong);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
+  border-color: var(--btn-on-line);
 }
 .filter-list button.selected span {
-  color: var(--lime);
+  color: var(--btn-on-dim);
 }
 /* 컨셉덱 검색 — 태그 벽 대신 입력창 + 검색 버튼 (2026-08-01, app/concepts.ts) */
 .concept-box {
@@ -1648,10 +1709,10 @@ legend {
   font-weight: 700;
 }
 .concept-box button {
-  color: #fff;
+  color: var(--btn-pri-ink);
   cursor: pointer;
-  background: var(--chip);
-  border: 1px solid var(--border-strong);
+  background: var(--btn-pri-bg);
+  border: 1px solid var(--btn-pri-line);
   flex: none;
   align-items: center;
   gap: 4px;
@@ -1664,7 +1725,8 @@ legend {
 /* ⚠ --accent는 오퍼 카드·모달에만 걸리는 변수라 필터 패널에선 비어 있다 —
    여기서 쓰면 배경이 통째로 날아간다. 강조는 사이트 공통 라임으로. */
 .concept-box button:hover {
-  color: var(--lime);
+  color: var(--btn-pri-ink-hover);
+  background: var(--btn-pri-bg-hover);
 }
 /* 해당되는 태그 드롭다운 — 누르면 그 자리에서 적용된다 (사용자 요청 2026-08-01).
    입력이 비어 있으면 전체 목록이라, 태그 벽을 없애고도 훑어볼 수 있다. */
@@ -1705,7 +1767,8 @@ legend {
 }
 .concept-drop button.active,
 .concept-drop button:hover {
-  background: var(--bg-soft);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 .concept-drop button span {
   color: #8b9294;
@@ -1753,7 +1816,7 @@ legend {
   color: var(--muted);
 }
 .attr-cat.open {
-  border-color: var(--border-strong);
+  border-color: var(--chip-line);
   background: var(--chip);
   color: #fff;
 }
@@ -1847,7 +1910,8 @@ legend {
   display: flex;
 }
 .attr-drop button:hover {
-  background: var(--bg-soft);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 /* ✓ 자리는 늘 잡아 둔다 — 고를 때마다 라벨이 좌우로 흔들리지 않게 */
 .attr-drop button i {
@@ -1858,8 +1922,9 @@ legend {
   font-style: normal;
 }
 .attr-drop button.selected {
-  background: var(--bg-soft);
+  background: var(--btn-on-bg);
   font-weight: 700;
+  color: var(--btn-on-ink);
 }
 .attr-drop button span {
   color: #8b9294;
@@ -2750,10 +2815,10 @@ html.dark .tags-track > span {
   padding: 9px 20px;
   font-size: 13px;
   font-weight: 600;
-  border: 1px solid var(--line);
+  border: 1px solid var(--btn-line);
   border-radius: var(--r-xs);
-  background: var(--white);
-  color: var(--ink);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   transition: 0.12s;
 }
 .confirm-cancel:hover {
@@ -2762,7 +2827,7 @@ html.dark .tags-track > span {
 }
 .confirm-ok {
   background: var(--chip);
-  border-color: var(--border-strong);
+  border-color: var(--chip-line);
   color: var(--chip-ink);
 }
 .confirm-ok:hover {
@@ -2925,13 +2990,14 @@ html.dark .tags-track > span {
   font-style: normal;
 }
 .modal-rail button:hover {
-  background: var(--bg-soft);
-  border-color: var(--line);
+  background: var(--btn-bg-hover);
+  border-color: var(--btn-line-hover);
+  color: var(--btn-ink-hover);
 }
 .modal-rail button.active {
-  color: var(--ink);
-  background: var(--bg-soft);
-  border-color: var(--border-strong);
+  color: var(--btn-on-ink);
+  background: var(--btn-on-bg);
+  border-color: var(--btn-on-line);
   font-weight: 700;
 }
 .modal-rail button.active em {
@@ -3161,10 +3227,10 @@ html.dark .tags-track > span {
   font: 700 10.5px var(--mono);
 }
 .skill-levels button {
-  color: var(--ink3);
+  color: var(--btn-ink);
   cursor: pointer;
-  background: var(--bg-soft);
-  border: 1px solid var(--line);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
   min-width: 25px;
   padding: 3px 5px;
   font: 700 11px var(--mono);
@@ -3247,7 +3313,7 @@ html.dark .tags-track > span {
   border-color: #869900;
 }
 .attack-range i.origin {
-  border-color: var(--border-strong);
+  border-color: var(--chip-line);
   background: var(--chip);
 }
 /* 스킬로 늘어나는 칸 / 빠지는 칸 (2026-08-01) — 색만으로 구분하지 않도록 늘어난 칸은
@@ -3512,9 +3578,9 @@ html.dark .tags-track > span {
   gap: 6px;
 }
 .skin-tabs button {
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink2);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   padding: 7px 12px;
   font-size: 12px;
   font-weight: 700;
@@ -3522,13 +3588,14 @@ html.dark .tags-track > span {
   transition: 0.15s;
 }
 .skin-tabs button:hover {
-  border-color: var(--border-hover);
-  color: var(--ink);
+  border-color: var(--btn-line-hover);
+  color: var(--btn-ink-hover);
+  background: var(--btn-bg-hover);
 }
 .skin-tabs button.selected {
-  background: var(--chip);
-  color: var(--lime);
-  border-color: var(--border-strong);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
+  border-color: var(--btn-on-line);
 }
 /* 기본 복장 표시 — 이름이 같은 항목이 여럿이라(정예화 전/후) 점으로 구분 */
 .skin-tabs button i {
@@ -3968,8 +4035,8 @@ html.dark .tags-track > span {
   font-size: 12px;
 }
 .empty button {
-  background: var(--chip);
-  color: #fff;
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   cursor: pointer;
   border: 0;
   margin-top: 15px;
@@ -4495,9 +4562,9 @@ html.dark .tags-track > span {
   gap: 7px;
 }
 .invest-temp-bar button {
-  border: 1px solid var(--line);
-  background: var(--bg-soft);
-  color: var(--ink);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   border-radius: var(--r-sm);
   padding: 4px 11px;
   cursor: pointer;
@@ -4509,7 +4576,9 @@ html.dark .tags-track > span {
   background: color-mix(in srgb, var(--gold) 16%, transparent);
 }
 .invest-temp-bar button:hover {
-  border-color: var(--lime);
+  border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
 }
 .invest-applyall {
   border: 1px solid var(--lime);
@@ -4931,7 +5000,9 @@ html.dark .tags-track > span {
   .skill-levels button {
     min-width: 21px;
     padding: 3px 2px;
-  }
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+}
   /* 모바일 푸터 = **바텀시트** (사용자 제보 2026-08-25: 문서 흐름 안에서 접었더니
      펼칠 때 아래로 자라 화면 밖으로 나가 버렸다 — "뭐가 어케되는지 판단도 안 된다").
      화면 아래에 고정해 두고 **위로 올라오게** 한다. 접히면 핸들 줄만 남는다. */
@@ -5292,9 +5363,9 @@ html.dark .tags-track > span {
 .room-level-sel button {
   min-width: 26px;
   padding: 4px 0;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink2);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   font: 700 12px/1 var(--mono);
   cursor: pointer;
   border-radius: var(--r-sm);
@@ -5337,9 +5408,9 @@ html.dark .tags-track > span {
 }
 /* 보조 버튼(빈 자리만·비우기·그 외) — 핵심 2버튼과 위계를 가르려 한 톤 낮춘다 (2026-07-27) */
 .planner-buttons button {
-  border: 1px solid var(--line);
-  background: var(--bg-panel);
-  color: var(--ink2);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   padding: 10px 13px;
   font-size: 12px;
   font-weight: 700;
@@ -5350,8 +5421,8 @@ html.dark .tags-track > span {
    다른 버튼들은 좀 덜 티나게"). 종전엔 라임으로 통째로 뒤집혀 핵심 2버튼보다 더 요란했다 —
    위계가 거꾸로였다. 라임 반전은 아래 .primary:hover로 옮겼다. */
 .planner-buttons button:hover {
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
   /* 보더만 또렷하게 — 라이트 모드는 --paper와 --bg-panel이 거의 같은 색이라 배경 변화만으론
      호버 신호가 아예 안 보인다 (실측 확인). 채움 대신 테두리로 조용히 알린다. */
   border-color: var(--border-hover);
@@ -5359,9 +5430,9 @@ html.dark .tags-track > span {
 /* 핵심 2버튼 — 보유 오퍼 설정 · 전체 자동편성. 색만이 아니라 **크기로도** 도드라지게
    (사용자 확정 2026-07-27: "눈에 띄는 크기의 커다란 버튼"). */
 .planner-buttons button.primary {
-  background: var(--chip);
-  color: var(--lime);
-  border-color: var(--border-strong);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
+  border-color: var(--btn-pri-line);
   padding: 16px 26px;
   font-size: 16px;
   border-radius: var(--r-md);
@@ -5371,9 +5442,9 @@ html.dark .tags-track > span {
    ⚠ var(--ink)로는 뒤집지 않는다 — 다크 모드에서 거의 흰색이라 "새하얗게" 터진다
    (사용자 지적 2026-07-27). 라임은 양 모드 고정색이고 --on-lime이 짝 텍스트색이라 안전. */
 .planner-buttons button.primary:hover {
-  background: var(--lime);
-  color: var(--on-lime);
-  border-color: var(--border-hover);
+  background: var(--btn-pri-bg-hover);
+  color: var(--btn-pri-ink-hover);
+  border-color: var(--btn-pri-bg-hover);
   transform: translateY(-1px);
   box-shadow: var(--sh-2);
 }
@@ -5431,17 +5502,18 @@ html.dark .tags-track > span {
   margin-top: 16px;
 }
 .shift-tabs button {
-  border: 1px solid var(--line);
-  background: transparent;
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  color: var(--btn-ink);
 }
 .shift-tabs button.selected {
-  background: var(--chip);
-  color: var(--lime);
-  border-color: var(--border-strong);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
+  border-color: var(--btn-on-line);
 }
 .shift-hint {
   color: var(--muted);
@@ -5810,9 +5882,9 @@ html.dark .tags-track > span {
   margin-left: auto;
 }
 .ship-raisebar .srb-btns button {
-  border: 1px solid var(--line);
-  background: var(--bg-soft);
-  color: var(--ink);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   border-radius: var(--r-sm);
   padding: 4px 10px;
   cursor: pointer;
@@ -5838,7 +5910,9 @@ html.dark .tags-track > span {
 }
 .ship-raisebar .srb-btns button:hover {
   filter: brightness(1.05);
-  border-color: var(--lime);
+  border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
 }
 .raise-delta {
   font-style: normal;
@@ -6239,9 +6313,9 @@ html.dark .tags-track > span {
   margin: 0 0 12px;
 }
 .planner-link {
-  border: 1px solid var(--border-strong);
-  background: var(--chip);
-  color: var(--lime);
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   padding: 8px 12px;
   font: 700 11px var(--mono);
   letter-spacing: 1px;
@@ -6290,9 +6364,9 @@ html.dark .tags-track > span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--border-strong);
-  background: var(--chip);
-  color: var(--lime);
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   padding: 9px 14px;
   font-size: 12px;
   font-weight: 700;
@@ -6337,11 +6411,12 @@ html.dark .tags-track > span {
   transition: 0.12s;
 }
 .main-tabs :where(button, a.tab-sub):hover {
-  background: var(--paper);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 .main-tabs :where(button, a.tab-sub).selected {
-  background: var(--chip);
-  color: var(--lime);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
 }
 /* 플라이아웃 묶음 — 통합전략 부메뉴(사용자 요청 2026-07-18)에 이어 도감·시뮬레이터
    (사용자 확정 2026-08-09 '메뉴 마토메')도 같은 규격을 쓴다. 호버·키보드 포커스로 열리고,
@@ -6394,8 +6469,8 @@ html.dark .tags-track > span {
   gap: 6px;
 }
 .main-tabs .tab-sub:hover {
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 /* ⚠ 선택된 부메뉴 항목의 글자색을 **여기서 다시 지정해야 한다** (사용자 제보 2026-08-25
    "선택돼 있는 경우 글자도 배경도 검정이라 안 보임"). 위쪽 `.main-tabs
@@ -6671,8 +6746,8 @@ html.dark .tags-track > span {
   background: #ffffff1a;
 }
 .roster-mode button.selected {
-  background: var(--lime);
-  color: var(--on-lime);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
 }
 /* 가져오기 패널 — MAA 파일·스크린샷을 반반씩 한 줄에 꽉 채우고, 게임 로그인은 아래 한 줄 전체.
    같은 줄 카드는 높이를 맞추고(그리드 기본 stretch) 버튼은 카드 아래쪽에 정렬한다. */
@@ -6838,15 +6913,18 @@ html.dark .tags-track > span {
   margin-right: 3px;
 }
 .bulk-group button {
-  border: 1px solid var(--line);
-  background: var(--white);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
   padding: 5px 8px;
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
+  color: var(--btn-ink);
 }
 .bulk-group button:hover {
-  border-color: var(--border-hover);
+  border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
 }
 /* 정렬 바 — 오퍼 리스트 바로 위 (어두운 모달 톤에 맞춰 흰 글씨) */
 .roster-sortbar {
@@ -6925,8 +7003,8 @@ html.dark .tags-track > span {
 }
 .elite-toggle button.selected {
   opacity: 1;
-  background: var(--lime);
-  color: var(--on-lime);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
 }
 /* 보유 오퍼 카드의 레벨 입력 — 정예화 줄 아래 (사용자 요청 2026-08-04).
    노정예 Lv.30 해금 스킬 판정에만 쓰이므로 1정 이상이면 흐리게(.dim) 표시한다 */
@@ -6968,10 +7046,10 @@ html.dark .tags-track > span {
 }
 .elite-pill button {
   border: 0;
-  background: var(--white);
+  background: var(--btn-bg);
   padding: 3px 10px;
   font: 800 10px var(--mono);
-  color: var(--muted);
+  color: var(--btn-ink);
   cursor: pointer;
   transition: 0.12s;
 }
@@ -6979,7 +7057,8 @@ html.dark .tags-track > span {
   border-left: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
 }
 .elite-pill button:hover {
-  color: var(--ink);
+  color: var(--btn-ink-hover);
+  background: var(--btn-bg-hover);
 }
 .elite-pill button.selected {
   background: var(--accent);
@@ -7129,10 +7208,10 @@ html.dark .tags-track > span {
 }
 .recruit-tags-sum > button {
   margin-left: auto;
-  border: 1px solid var(--line);
+  border: 1px solid var(--btn-line);
   border-radius: var(--r-sm);
-  background: var(--bg-soft);
-  color: var(--ink);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   font-size: 12px;
   font-weight: 600;
   padding: 4px 10px;
@@ -7250,10 +7329,10 @@ html.dark .tags-track > span {
   /* ⚠ inline-flex 금지 — rich() 가 돌려주는 조각(글 · <b>9시간</b> · 글)이 각자 flex
      아이템이 돼 gap 만큼 벌어지며 세 줄로 접힌다 (사용자 제보 2026-09-20). 글줄로 흐르게 둔다. */
   display: inline-block;
-  border: 1px solid var(--line);
+  border: 1px solid var(--btn-line);
   border-radius: var(--r-md);
-  background: var(--white);
-  color: var(--ink3);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   padding: 7px 13px;
   font-size: 12px;
   font-weight: 600;
@@ -7263,8 +7342,9 @@ html.dark .tags-track > span {
   transition: border-color 0.15s, color 0.15s;
 }
 .head-links > button:hover {
-  border-color: var(--border-hover);
-  color: var(--ink);
+  border-color: var(--btn-line-hover);
+  color: var(--btn-ink-hover);
+  background: var(--btn-bg-hover);
 }
 /* 조합 수는 제목이 아니라 부연 — 묶음 소제목(.recruit-group > h3 > em)과 같은 규격 */
 .head-links > button > em {
@@ -7556,17 +7636,17 @@ html.dark .tags-track > span {
   .quick-ph[data-run="1"] > .quick-ph-run { animation: none; }
 }
 .clear-btn {
-  border: 1px solid var(--border-strong);
-  background: var(--chip);
-  color: var(--lime);
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   cursor: pointer;
   padding: 0 18px;
   font-size: 12px;
   font-weight: 700;
 }
 .clear-btn:hover {
-  background: var(--lime);
-  color: var(--on-lime);
+  background: var(--btn-pri-bg-hover);
+  color: var(--btn-pri-ink-hover);
 }
 /* 모바일: 빠른 입력 줄이 좁아 '클리어'가 글자 하나씩 세로로 짜부라지고 스샷 버튼이 화면
    밖으로 밀렸다 (사용자 제보 2026-08-09) — 입력칸을 한 줄 통째로 쓰고 버튼들은 다음 줄로. */
@@ -7584,7 +7664,9 @@ html.dark .tags-track > span {
        '클리어'가 글자 단위로 짜부라지는 걸 막는 건 nowrap 쪽이다 */
     padding: 6px 16px;
     white-space: nowrap;
-  }
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
+}
   /* 겹쳐 그린 안내문도 입력 글자와 크기가 같아야 한다 — 모바일에선 전역 규칙이
      input 을 16px 로 올린다(iOS 포커스 확대 방지). 12.5px 로 두면 혼자 작아 보인다. */
   .quick-ph {
@@ -7761,8 +7843,8 @@ html.dark .tags-track > span {
    고쳤지만(보조 버튼 호버 톤 다운), 메뉴 항목은 라임을 안 쓰므로 본문색을 못 박아 둔다. */
 .more-menu button:hover,
 .more-menu .import-label:hover {
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 .planner-buttons {
   flex-wrap: wrap;
@@ -8162,9 +8244,9 @@ html.dark .tags-track > span {
   }
 }
 .feedback-fab {
-  border: 1px solid var(--border-strong);
-  background: var(--chip);
-  color: var(--lime);
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   cursor: pointer;
   padding: 12px 18px;
   font-size: 13px;
@@ -8203,17 +8285,18 @@ html.dark .tags-track > span {
 }
 .feedback-kind button {
   flex: 1;
-  border: 1px solid var(--line);
-  background: 0 0;
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
   padding: 8px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  color: var(--btn-ink);
 }
 .feedback-kind button.selected {
-  background: var(--chip);
-  color: var(--lime);
-  border-color: var(--border-strong);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
+  border-color: var(--btn-on-line);
 }
 .feedback-panel textarea {
   width: calc(100% - 28px);
@@ -8245,19 +8328,20 @@ html.dark .tags-track > span {
   color: var(--muted);
 }
 .fb-attach-btn {
-  border: 1px dashed var(--line);
+  border: 1px dashed var(--btn-line);
   border-radius: var(--r-sm);
-  background: transparent;
+  background: var(--btn-bg);
   padding: 6px 10px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--muted);
+  color: var(--btn-ink);
   cursor: pointer;
   transition: 0.15s;
 }
 .fb-attach-btn:hover {
-  border-color: var(--border-hover);
-  color: var(--ink);
+  border-color: var(--btn-line-hover);
+  color: var(--btn-ink-hover);
+  background: var(--btn-bg-hover);
 }
 .fb-thumb {
   position: relative;
@@ -8280,9 +8364,9 @@ html.dark .tags-track > span {
   width: 17px;
   height: 17px;
   border-radius: 50%;
-  border: 1px solid var(--border-strong);
-  background: var(--white);
-  color: var(--ink);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   font-size: 11px;
   line-height: 1;
   padding: 0;
@@ -8349,9 +8433,9 @@ html.dark .tags-track > span {
   white-space: nowrap;
 }
 .fb-admin-reply button {
-  border: 1px solid var(--line);
-  background: 0 0;
-  color: inherit;
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   font-size: 10px;
   padding: 1px 6px;
   cursor: pointer;
@@ -8371,9 +8455,9 @@ html.dark .tags-track > span {
   resize: vertical;
 }
 .fb-admin-reply-form button {
-  border: 1px solid var(--border-strong);
-  background: var(--chip);
-  color: var(--lime);
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   padding: 6px 10px;
   font-size: 11px;
   font-weight: 700;
@@ -8408,9 +8492,9 @@ html.dark .tags-track > span {
   font-size: 11px;
 }
 .feedback-send {
-  border: 1px solid var(--border-strong);
-  background: var(--chip);
-  color: var(--lime);
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   cursor: pointer;
   padding: 8px 16px;
   font-size: 12px;
@@ -8452,9 +8536,9 @@ html.dark .tags-track > span {
   padding: 12px 14px 8px;
 }
 .fb-new-btn {
-  border: 1px solid var(--border-strong);
-  background: var(--chip);
-  color: var(--lime);
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   cursor: pointer;
   padding: 7px 12px;
   font-size: 12px;
@@ -8462,8 +8546,8 @@ html.dark .tags-track > span {
   white-space: nowrap;
 }
 .fb-new-btn:hover {
-  background: var(--lime);
-  color: var(--on-lime);
+  background: var(--btn-pri-bg-hover);
+  color: var(--btn-pri-ink-hover);
 }
 .fb-privacy {
   color: var(--muted);
@@ -8698,18 +8782,19 @@ html.dark .tags-track > span {
   gap: 6px;
 }
 .fb-tool-btn {
-  border: 1px solid var(--line);
+  border: 1px solid var(--btn-line);
   border-radius: var(--r-sm);
-  background: 0 0;
-  color: var(--muted);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   padding: 3px 9px;
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
 }
 .fb-tool-btn:hover:not(:disabled) {
-  border-color: var(--border-hover);
-  color: var(--ink);
+  border-color: var(--btn-line-hover);
+  color: var(--btn-ink-hover);
+  background: var(--btn-bg-hover);
 }
 .fb-tool-btn:disabled {
   opacity: 0.45;
@@ -8751,9 +8836,9 @@ html.dark .tags-track > span {
   line-height: 1.75;
 }
 .fb-retry-btn {
-  border: 1px solid var(--line);
-  background: 0 0;
-  color: inherit;
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   padding: 2px 8px;
   font-size: 11px;
   cursor: pointer;
@@ -8786,10 +8871,10 @@ html.dark .tags-track > span {
 }
 .fb-code-row button,
 .fb-code-entry button {
-  border: 1px solid var(--line);
+  border: 1px solid var(--btn-line);
   border-radius: var(--r-sm);
-  background: 0 0;
-  color: inherit;
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   padding: 3px 8px;
   font-size: 10px;
   font-weight: 600;
@@ -8797,7 +8882,9 @@ html.dark .tags-track > span {
 }
 .fb-code-row button:hover,
 .fb-code-entry button:hover {
-  border-color: var(--border-hover);
+  border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
 }
 .fb-code-toggle {
   margin-left: auto;
@@ -8851,7 +8938,8 @@ html.dark .tags-track > span {
   padding: 0;
 }
 .fb-back-btn:hover {
-  color: var(--ink);
+  color: var(--btn-ink-hover);
+  background: var(--btn-bg-hover);
 }
 .propose-btn {
   border: 1px solid var(--lime) !important;
@@ -8887,9 +8975,9 @@ html.dark .tags-track > span {
   outline: 0;
 }
 .admin-gate button {
-  border: 1px solid var(--border-strong);
-  background: var(--chip);
-  color: var(--lime);
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   padding: 11px 18px;
   font-weight: 700;
   cursor: pointer;
@@ -8932,17 +9020,18 @@ html.dark .tags-track > span {
   gap: 6px;
 }
 .admin-tools button {
-  border: 1px solid var(--line);
-  background: var(--white);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  color: var(--btn-ink);
 }
 .admin-tools button.selected {
-  background: var(--chip);
-  color: var(--lime);
-  border-color: var(--border-strong);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
+  border-color: var(--btn-on-line);
 }
 /* 발행 메모 인라인 입력 — prompt() 미지원 웹뷰 대응 (2026-07-22) */
 .admin-tools .publish-note {
@@ -9252,13 +9341,14 @@ html.dark .tags-track > span {
   white-space: nowrap;
 }
 .rule-row button {
-  border: 1px solid var(--line);
-  background: var(--white);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
   padding: 3px 9px;
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  color: var(--btn-ink);
 }
 .rule-editor {
   border: 1px solid var(--border-strong);
@@ -9443,15 +9533,16 @@ html.dark .tags-track > span {
   gap: 8px;
 }
 .confirm-actions button {
-  border: 1px solid var(--line);
-  background: var(--white);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
   padding: 9px 16px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  color: var(--btn-ink);
 }
 .confirm-actions .confirm-yes {
-  border-color: var(--border-strong);
+  border-color: var(--chip-line);
   background: var(--chip);
   color: var(--lime);
 }
@@ -9601,13 +9692,14 @@ html.dark .tags-track > span {
   padding: 8px 11px;
 }
 .farm-tier-filter button {
-  border: 1px solid var(--line);
-  background: var(--white);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: 0.15s;
+  color: var(--btn-ink);
 }
 .farm-tier-filter button span {
   margin-left: 6px;
@@ -9616,12 +9708,14 @@ html.dark .tags-track > span {
   font-size: 12px;
 }
 .farm-tier-filter button:hover {
-  border-color: var(--border-hover);
+  border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
 }
 .farm-tier-filter button.selected {
-  background: var(--chip);
-  color: var(--lime);
-  border-color: var(--border-strong);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
+  border-color: var(--btn-on-line);
 }
 .farm-search {
   max-width: 260px;
@@ -9849,8 +9943,8 @@ html.dark .tags-track > span {
   align-items: center;
 }
 .story-viewtabs button {
-  border: 1px solid var(--line);
-  background: var(--white);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
   padding: 9px 18px;
   font-size: 13px;
   font-weight: 700;
@@ -9859,6 +9953,7 @@ html.dark .tags-track > span {
   /* 내용보다 좁아지지 않는다 — 위 세로 쪼개짐의 직접 원인 */
   white-space: nowrap;
   flex: 0 0 auto;
+  color: var(--btn-ink);
 }
 /* 좁은 화면: 글자를 조금 줄여 네 탭이 한 줄에 들어가게 하고, 스샷 레이더는
    자기 줄을 통째로 쓰게 한다 (오른쪽 끝에 매달려 어정쩡하게 남지 않도록) */
@@ -9880,12 +9975,14 @@ html.dark .tags-track > span {
   }
 }
 .story-viewtabs button.on {
-  background: var(--chip);
-  color: var(--chip-ink);
-  border-color: var(--border-strong);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
+  border-color: var(--btn-on-line);
 }
 .story-viewtabs button:not(.on):hover {
-  border-color: var(--border-hover);
+  border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
 }
 /* ── 테라 연대기 ── */
 .chron {
@@ -10172,21 +10269,24 @@ html.dark .tags-track > span {
   margin: 0 0 18px;
 }
 .chron-tabs button {
-  border: 1px solid var(--line);
-  background: var(--white);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
   padding: 7px 16px;
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   letter-spacing: 0.3px;
+  color: var(--btn-ink);
 }
 .chron-tabs button.on {
-  background: var(--chip);
-  color: var(--chip-ink);
-  border-color: var(--border-strong);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
+  border-color: var(--btn-on-line);
 }
 .chron-tabs button:not(.on):hover {
-  border-color: var(--border-hover);
+  border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
 }
 /* 그룹 목록 — 레일과 스크롤 동기화되는 세로 스크롤 패널 */
 .chron-groups {
@@ -10356,7 +10456,8 @@ html.dark .tags-track > span {
   cursor: pointer;
 }
 .story-search-menu button:hover:not(:disabled) {
-  background: var(--paper);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 .story-search-menu button:disabled {
   cursor: default;
@@ -10391,18 +10492,20 @@ html.dark .tags-track > span {
   display: block;
   width: 100%;
   padding: 0;
-  border: 1px solid var(--line);
-  background: var(--white);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
   text-align: left;
   cursor: pointer;
   transition: 0.15s;
-  color: inherit;
+  color: var(--btn-ink);
   text-decoration: none;
 }
 .story-card button:hover:not(:disabled),
 .story-card a:hover {
-  border-color: var(--border-hover);
+  border-color: var(--btn-line-hover);
   transform: translateY(-2px);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
 }
 .story-card button:disabled {
   cursor: default;
@@ -10793,19 +10896,19 @@ html.dark .story-card:hover .story-thumb img {
 .story-mode-bar button {
   position: relative;      /* '새기능' 배지가 바 전체가 아니라 **그 칸**에 걸리게 */
   border: 0;
-  background: var(--white);
+  background: var(--btn-bg);
   padding: 9px 18px;
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
-  color: var(--muted);
+  color: var(--btn-ink);
 }
 .story-mode-bar button + button {
   border-left: 1px solid var(--line);
 }
 .story-mode-bar button.on {
-  background: var(--ink);
-  color: var(--white);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
 }
 /* ⚠ 이 바는 아래(테마 라운드 구역)에서 `overflow: hidden`으로 모서리를 깎는다 —
    기본 .new-badge는 절대배치로 위(-13px)로 빠져나가려 하므로 **위쪽 절반이 잘린다**
@@ -10849,19 +10952,19 @@ html.dark .story-card:hover .story-thumb img {
 }
 .story-reader-prefs-btns button {
   border: 0;
-  background: var(--white);
+  background: var(--btn-bg);
   padding: 5px 11px;
   font-weight: 600;
   font-size: 11px;
   cursor: pointer;
-  color: var(--muted);
+  color: var(--btn-ink);
 }
 .story-reader-prefs-btns button + button {
   border-left: 1px solid var(--line);
 }
 .story-reader-prefs-btns button.on {
-  background: var(--ink);
-  color: var(--white);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
 }
 /* 리더가 직접 쥔 보기 방식(전문 ↔ 장면) — 오퍼 기록 모달처럼 헤더 탭이 없는 자리 전용
    (사용자 요청 2026-09-04). 스토리 상세는 .story-mode-bar 가 같은 일을 한다. */
@@ -10872,15 +10975,16 @@ html.dark .story-card:hover .story-thumb img {
 }
 .sc-view-switch button {
   border: 0;
-  background: var(--white);
+  background: var(--btn-bg);
   padding: 6px 16px;
   font-weight: 600;
   font-size: 12px;
   cursor: pointer;
-  color: var(--muted);
+  color: var(--btn-ink);
 }
 .sc-view-switch button + button { border-left: 1px solid var(--line); }
-.sc-view-switch button.on { background: var(--ink); color: var(--white); }
+.sc-view-switch button.on { background: var(--btn-on-bg); color: var(--btn-on-ink); 
+}
 /* 글자 크기 3단계 — 전문(.sc-*)·요약(.story-body) 본문 폰트에 함께 적용 */
 .reader-font-sm .sc-line,
 .reader-font-sm .sc-narr,
@@ -10941,7 +11045,9 @@ html.dark .story-card:hover .story-thumb img {
   .story-mode-bar button {
     padding: 6px 12px;
     font-size: 11px;
-  }
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+}
   /* 읽기 설정: 글자 크기 / 삽화 크기를 각각 한 줄씩 두 줄로, 버튼도 축소 */
   .story-reader-prefs {
     gap: 6px;
@@ -10956,7 +11062,9 @@ html.dark .story-card:hover .story-thumb img {
   .story-reader-prefs-btns button {
     padding: 4px 9px;
     font-size: 11px;
-  }
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+}
 }
 .story-script {
   margin-top: 20px;
@@ -11188,12 +11296,13 @@ html.dark .story-card:hover .story-thumb img {
   max-width: 860px;
 }
 .sc-ep-foot button {
-  border: 1px solid var(--line);
-  background: var(--white);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
   padding: 10px 16px;
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
+  color: var(--btn-ink);
 }
 .sc-ep-foot button:last-child {
   margin-left: auto;
@@ -11496,7 +11605,7 @@ html.dark .story-card:hover .story-thumb img {
 .about-icon.selected {
   background: var(--chip);
   color: var(--white);
-  border-color: var(--border-strong);
+  border-color: var(--chip-line);
 }
 
 /* ── 소개 페이지 ── */
@@ -11980,7 +12089,8 @@ html.dark .story-card:hover .story-thumb img {
   border-bottom: 0;
 }
 .cost-suggest button:hover {
-  background: var(--paper);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 .cost-suggest img {
   width: 28px;
@@ -12337,9 +12447,9 @@ html.dark .story-card:hover .story-thumb img {
   gap: 8px;
 }
 .cost-share {
-  border: 1px solid var(--border-strong);
-  background: var(--chip);
-  color: var(--lime);
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   padding: 6px 11px;
   font-size: 12px;
   font-weight: 600;
@@ -12522,9 +12632,9 @@ html.dark .story-card:hover .story-thumb img {
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid var(--border-strong);
-  background: var(--chip);
-  color: var(--lime);
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   padding: 10px 14px;
 }
 .cost-lmd img {
@@ -17253,7 +17363,8 @@ main.site-main > .site-header {
   text-align: left;
 }
 .scanner-add-list button:hover {
-  background: var(--bg-panel);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 .scanner-add-list img {
   border-radius: var(--r-sm);
@@ -17321,9 +17432,9 @@ main.site-main > .site-header {
 .scanner-foot button {
   padding: 8px 16px;
   border-radius: var(--r-md);
-  border: 1px solid var(--bg-panel2);
-  background: var(--bg-panel);
-  color: var(--ink);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   cursor: pointer;
 }
 .scanner-foot .scanner-primary {
@@ -17824,9 +17935,9 @@ main.site-main > .site-header {
 }
 .omni-go {
   flex: none;
-  border: 1px solid var(--border-strong);
-  background: var(--chip);
-  color: var(--lime);
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
   padding: 8px 14px;
   font-size: 12px;
   font-weight: 700;
@@ -17873,7 +17984,8 @@ main.site-main > .site-header {
 }
 .omni-list button.active,
 .omni-list button:hover {
-  background: var(--bg-soft);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 .omni-icon {
   flex: none;
@@ -18115,6 +18227,8 @@ main.site-main > .site-header {
 }
 .story-mode-bar button {
   border-radius: 0;
+  background: var(--btn-bg);
+  color: var(--btn-ink);
 }
 
 /* 드롭다운 패널들 — 이벤트 현황·햄버거(주요 탭)·언어·테마 선택 (2026-07-26 사용자 지적) */
@@ -18164,9 +18278,9 @@ main.site-main > .site-header {
   align-items: center;
   gap: 6px;
   padding: 7px 10px;
-  border: 1px solid var(--line);
-  background: var(--white);
-  color: var(--ink2);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
@@ -18177,7 +18291,9 @@ main.site-main > .site-header {
   color: var(--ink);
 }
 .drop-btn:hover:not(:disabled) {
-  border-color: var(--border-hover);
+  border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
 }
 .drop-btn:disabled {
   opacity: 0.5;
@@ -18244,14 +18360,15 @@ main.site-main > .site-header {
   color: var(--muted);
 }
 .drop-menu li > button:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 /* 고른 줄은 호버해도 반전을 유지한다 — 배경만 갈아타면 글자색이 남아 다크에서 검정 위
    검정이 된다 (.ac-garsel에서 겪은 회귀, 2026-08-23) */
 .drop-menu li > button.on,
 .drop-menu li > button.on:hover {
-  background: var(--ink);
-  color: var(--white);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
 }
 .drop-menu li > button.on em {
   color: inherit;
@@ -18773,15 +18890,16 @@ main.site-main > .site-header {
   font: inherit;
   font-size: 13px;
   padding: 8px 12px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--btn-line);
   border-radius: var(--r-md);
-  background: var(--bg-soft);
+  background: var(--btn-bg);
   cursor: pointer;
+  color: var(--btn-ink);
 }
 .chibi-chat-offer-actions button.primary {
-  background: var(--ink);
-  color: var(--bg-panel);
-  border-color: transparent;
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
+  border-color: var(--btn-pri-line);
   font-weight: 600;
 }
 .chibi-chat-progress {
@@ -19554,9 +19672,9 @@ main.site-main > .site-header {
   margin: 0 0 8px;
 }
 .st-maptabs button {
-  border: 1px solid var(--border-strong);
-  background: var(--white);
-  color: var(--ink2);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   padding: 5px 12px;
   font-weight: 600;
   font-size: 12px;
@@ -19564,9 +19682,9 @@ main.site-main > .site-header {
   cursor: pointer;
 }
 .st-maptabs button.on {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--white);
+  background: var(--btn-on-bg);
+  border-color: var(--btn-on-line);
+  color: var(--btn-on-ink);
 }
 /* 이동 경로 격자 지도 (app/stage-route-map.tsx) */
 .st-routewrap {
@@ -19580,9 +19698,9 @@ main.site-main > .site-header {
   margin: 0 0 6px;
 }
 .st-simbar button {
-  border: 1px solid var(--border-strong);
-  background: var(--white);
-  color: var(--ink2);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   padding: 5px 10px;
   font-weight: 600;
   font-size: 12px;
@@ -19590,9 +19708,9 @@ main.site-main > .site-header {
   cursor: pointer;
 }
 .st-simbar button.st-simstart {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--white);
+  background: var(--btn-pri-bg);
+  border-color: var(--btn-pri-line);
+  color: var(--btn-pri-ink);
 }
 .st-simbar input[type="range"] {
   flex: 1;
@@ -19824,9 +19942,9 @@ main.site-main > .site-header {
   margin: 0 0 12px;
 }
 .st-envs button {
-  border: 1px solid var(--border-strong);
-  background: var(--white);
-  color: var(--ink2);
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   padding: 7px 16px;
   font-weight: 600;
   font-size: 13px;
@@ -19834,9 +19952,9 @@ main.site-main > .site-header {
   cursor: pointer;
 }
 .st-envs button.on {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--white);
+  background: var(--btn-on-bg);
+  border-color: var(--btn-on-line);
+  color: var(--btn-on-ink);
 }
 /* 고난·긴급은 안 골라도 빨간 계열로 — 한눈에 알아보게 (사용자 요청 2026-08-10) */
 .st-envs button.hard {
@@ -20111,8 +20229,9 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   text-underline-offset: 3px;
 }
 .farm-code.as-btn:hover {
-  color: var(--ink);
+  color: var(--btn-ink-hover);
   text-decoration-style: solid;
+  background: var(--btn-bg-hover);
 }
 /* 재료 상세 모달의 효율 스테이지 헤더 — 행 격자(72px 1fr 58px 58px)와 같은 폭 */
 .item-stages .farm-cols.item-stages-cols {
@@ -20232,14 +20351,15 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 700;
-  color: var(--white);
-  background: var(--ink);
-  border: 1px solid var(--ink);
+  color: var(--btn-pri-ink);
+  background: var(--btn-pri-bg);
+  border: 1px solid var(--btn-pri-line);
   cursor: pointer;
 }
 .sim-search-btn:hover {
-  background: var(--crimson, var(--crimson));
-  border-color: var(--crimson, var(--crimson));
+  background: var(--btn-pri-bg-hover);
+  border-color: var(--btn-pri-bg-hover);
+  color: var(--btn-pri-ink-hover);
 }
 .sim-sec {
   margin-top: 24px;
@@ -20306,15 +20426,15 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   padding: 8px 12px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ink2);
-  background: var(--white);
-  border: 1px solid var(--line);
+  color: var(--btn-ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
   cursor: pointer;
 }
 .sb-views button.on {
-  color: var(--white);
-  background: var(--ink);
-  border-color: var(--ink);
+  color: var(--btn-on-ink);
+  background: var(--btn-on-bg);
+  border-color: var(--btn-on-line);
 }
 .sb-views .tab-sub-future { margin-left: 4px; }
 /* ⚠ 좌우 margin 을 0 으로 **못 박는다** — .heading-search 가 `margin: 0 20px` 를 갖고 있어서
@@ -20568,19 +20688,20 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   padding: 8px 16px;
   text-align: left;
   font: inherit;
-  color: var(--ink2);
-  background: var(--white);
-  border: 1px solid var(--line);
+  color: var(--btn-ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
   cursor: pointer;
 }
 .sb-seasons button b { font-size: 14px; }
 .sb-seasons button span { font-size: 11px; color: var(--muted); }
 .sb-seasons button.on {
-  color: var(--white);
-  background: var(--ink);
-  border-color: var(--ink);
+  color: var(--btn-on-ink);
+  background: var(--btn-on-bg);
+  border-color: var(--btn-on-line);
 }
-.sb-seasons button.on span { color: currentColor; opacity: .62; }
+.sb-seasons button.on span { color: var(--btn-on-dim) 
+}
 /* 분류 필터 칩 */
 .sb-filters {
   display: flex;
@@ -20595,17 +20716,19 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--ink2);
-  background: var(--white);
-  border: 1px solid var(--line);
+  color: var(--btn-ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
   cursor: pointer;
 }
 .sb-filters button img { width: 20px; height: 20px; object-fit: contain; }
 .sb-filters button em { font-style: normal; color: var(--muted); font-size: 11px; }
-.sb-filters button.on { color: var(--white); background: var(--ink); border-color: var(--ink); }
+.sb-filters button.on { color: var(--btn-on-ink); background: var(--btn-on-bg); border-color: var(--btn-on-line); 
+}
 /* ⚠ 다크 모드에선 .on의 배경(--ink)이 밝은 색이라 흰 글씨는 안 보인다 — 글자색을
    상속받아 투명도만 낮춘다 (사용자 제보 2026-08-12 "숫자가 하얗게 돼서 안 보임"). */
-.sb-filters button.on em { color: currentColor; opacity: .62; }
+.sb-filters button.on em { color: var(--btn-on-dim) 
+}
 /* 카드 그리드 — 큰 섬네일 + 요약 (사용자 지적 "섬네일이 너무 작음") */
 /* 카드 그리드 — **가로형**(섬네일 왼쪽·정보 오른쪽)에 auto-fit이라 오른쪽에 빈 공간을
    남기지 않고 트랙이 늘어난다 (사용자 지적 2026-08-12 "쓸데없이 가로로 남는 공간"). */
@@ -20694,9 +20817,9 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--ink2);
-  background: var(--white);
-  border: 1px solid var(--line);
+  color: var(--btn-ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
   cursor: pointer;
 }
 .sb-picks button.on { color: var(--white); background: var(--crimson, var(--crimson)); border-color: var(--crimson, var(--crimson)); }
@@ -20719,12 +20842,13 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   padding: 4px 8px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--ink2);
-  background: var(--white);
-  border: 1px solid var(--line);
+  color: var(--btn-ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
   cursor: pointer;
 }
-.sb-atlist button:hover { color: var(--white); background: var(--ink); border-color: var(--border-hover); }
+.sb-atlist button:hover { color: var(--btn-ink-hover); background: var(--btn-bg-hover); border-color: var(--btn-line-hover); 
+}
 .sb-atlist em { font-style: normal; margin-left: 4px; color: var(--muted); }
 .sb-atlist button:hover em { color: currentColor; opacity: .62; }
 /* 자원 목록 버튼 — 클릭 = 지도에서 그것만 강조.
@@ -21028,18 +21152,21 @@ p.sb-trline { margin-top: 2px; }
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--ink2);
-  background: var(--white);
-  border: 1px solid var(--line);
+  color: var(--btn-ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
   border-radius: var(--r-pill);
   cursor: pointer;
   transition: 0.12s;
 }
-.ac-subtabs button:hover { border-color: var(--border-hover); }
+.ac-subtabs button:hover { border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
+}
 .ac-subtabs button.on {
-  color: var(--on-lime);
-  background: var(--lime);
-  border-color: var(--lime);
+  color: var(--btn-on-ink);
+  background: var(--btn-on-bg);
+  border-color: var(--btn-on-line);
 }
 .ac-filters {
   display: flex;
@@ -21082,15 +21209,15 @@ p.sb-trline { margin-top: 2px; }
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--ink2);
-  background: var(--white);
-  border: 1px solid var(--line);
+  color: var(--btn-ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
   cursor: pointer;
 }
 .ac-modebar button.on {
-  color: var(--white);
-  background: var(--ink);
-  border-color: var(--ink);
+  color: var(--btn-on-ink);
+  background: var(--btn-on-bg);
+  border-color: var(--btn-on-line);
 }
 .ac-modebar button img { width: 16px; height: 16px; object-fit: contain; }
 .ac-modebar { margin: 8px 0 8px; }
@@ -21107,13 +21234,13 @@ p.sb-trline { margin-top: 2px; }
   font-size: 12px;
   font-weight: 600;
   font-family: inherit;
-  color: var(--ink2);
-  background: var(--white);
-  border: 1px solid var(--line);
+  color: var(--btn-ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
   cursor: pointer;
 }
 .ac-garsel-btn.on {
-  border-color: var(--ink);
+  border-color: var(--border-strong);   /* 종전 --ink — 라이트에서 새까만 테두리였다 (2026-09-22) */
   color: var(--ink);
 }
 .ac-garsel-btn i {
@@ -21305,14 +21432,15 @@ p.sb-trline { margin-top: 2px; }
 /* 호버는 잉크 12% 섞기 — 라이트·다크 어느 쪽에서도 보인다 (다크에서 --veil은 티가 안 났다,
    사용자 지적 2026-08-23) */
 .ac-garsel-menu li > button[role="menuitemradio"]:hover {
-  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
 }
 /* 선택 행은 호버해도 반전 유지 — :hover 규칙이 더 구체적이라 배경만 갈아타면서 글자색(--white)이
    남아 다크에서 검정 위 검정이 됐다 (사용자 지적 2026-08-23) */
 .ac-garsel-menu li > button.on,
 .ac-garsel-menu li > button.on:hover {
-  background: var(--ink);
-  color: var(--white);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
 }
 .ac-garsel-menu li > button span {
   flex: 1 1 auto;
@@ -21574,7 +21702,9 @@ html:not(.dark) .ac-star { color: #8f6512; }
   border: 1px solid var(--line);
 }
 button.ac-card { cursor: pointer; transition: 0.12s; }
-button.ac-card:hover { border-color: var(--border-hover); background: var(--paper); }
+button.ac-card:hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
+}
 .ac-card > header { display: flex; align-items: flex-start; gap: 8px; }
 .ac-card > header > div { min-width: 0; }
 .ac-thumb {
@@ -21837,9 +21967,9 @@ html.dark .ac-krfix { color: var(--gold); }
   font: inherit;
   font-size: 12px;
   font-weight: 600;
-  color: var(--ink2);
-  background: var(--white);
-  border: 1px solid var(--line);
+  color: var(--btn-ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
   border-radius: var(--r-pill);
   cursor: pointer;
   transition: 0.12s;
@@ -21854,8 +21984,12 @@ html.dark .ac-krfix { color: var(--gold); }
 }
 /* 고른 칩은 라임 배경이라 원판을 흰색으로 뒤집어야 실루엣이 보인다 */
 .ac-etypebar button.on img { background: var(--on-lime); }
-.ac-etypebar button:hover { border-color: var(--border-hover); }
-.ac-etypebar button.on { color: var(--on-lime); background: var(--lime); border-color: var(--lime); }
+.ac-etypebar button:hover { border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
+}
+.ac-etypebar button.on { color: var(--btn-on-ink); background: var(--btn-on-bg); border-color: var(--btn-on-line); 
+}
 /* 리더 적 — 유형 추첨과 별개라 맨 위에 따로 (히든 리더는 아래 묶음) */
 .ac-bossgrp { margin-top: 8px; }
 .ac-bosshead {
@@ -22235,7 +22369,9 @@ html.dark .ac-krfix { color: var(--gold); }
   flex: 1; border: 0; background: none; cursor: pointer; padding: 2px 0;
   font-size: 11px; color: var(--muted);
 }
-.ac-slot-act button:hover { background: color-mix(in srgb, var(--line) 40%, transparent); }
+.ac-slot-act button:hover { background: var(--btn-ghost-hover);
+  color: var(--btn-ink-hover);
+}
 .ac-slot-act button.on { color: var(--lime); font-weight: 700; }
 /* 정예화(골든) 토글 — 별표는 즐겨찾기로 읽혀서 게임 용어를 글자로 적는다 */
 /* ⚠ 켜짐/꺼짐 **둘 다** 여백을 0 으로 못 박고 가운데 정렬한다 — .on 에만 줬더니 꺼짐
@@ -22322,10 +22458,12 @@ html.dark .ac-krfix { color: var(--gold); }
 /* 단독/협동 — 리더 맵만 갈리므로 그 제목 줄에 붙인다 */
 .ac-mapmode { display: inline-flex; gap: 4px; margin-left: 8px; }
 .ac-mapmode button {
-  padding: 3px 8px; font: inherit; font-size: 11px; font-weight: 600; color: var(--muted);
-  background: none; border: 1px solid var(--line); border-radius: var(--r-pill); cursor: pointer;
+  padding: 3px 8px; font: inherit; font-size: 11px; font-weight: 600; color: var(--btn-ink);
+  background: var(--btn-bg); border: 1px solid var(--btn-line); border-radius: var(--r-pill); cursor: pointer;
 }
-.ac-mapmode button.on { color: var(--ink); border-color: var(--ink2); }
+.ac-mapmode button.on { color: var(--btn-on-ink); border-color: var(--btn-on-line);
+  background: var(--btn-on-bg);
+}
 .ac-mapbosses { margin-bottom: 8px; }
 /* 모달 — 지도가 가로로 넓어(17칸) 창을 넉넉히 준다 */
 /* 전투 맵만 특수 — 지도(21칸)와 적 카드 2열을 나란히 담아야 한다
@@ -22421,13 +22559,13 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-ctarow .ac-simcta { position: static; transform: none; }
 /* PRTS 두 개는 편성기 버튼과 무게를 다르게 — 라임 채움은 '주' 버튼 하나만 */
 .ac-prtscta {
-  background: var(--bg); color: inherit;
+  background: var(--btn-bg); color: inherit;
   border-color: color-mix(in srgb, var(--lime) 45%, var(--line));
   display: inline-flex; align-items: center; gap: 4px;
 }
-.ac-prtscta:hover:not(:disabled) { background: var(--bg-soft); }
+.ac-prtscta:hover:not(:disabled) { background: var(--btn-bg-hover); }
 .ac-prtscta.on {
-  background: color-mix(in srgb, var(--lime) 16%, var(--bg));
+  background: color-mix(in srgb, var(--lime) 16%, var(--btn-bg));
   border-color: var(--lime);
 }
 .ac-prtscta:disabled { opacity: 0.5; cursor: default; }
@@ -22441,10 +22579,10 @@ html.dark .ac-krfix { color: var(--gold); }
   border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
   border-left: none;
   border-radius: 0 var(--r-pill) var(--r-pill) 0;
-  background: var(--bg);
+  background: var(--btn-bg);
   font-size: 13px;
 }
-.ac-prtsgrp .lens-help-btn:hover { background: var(--bg-soft); color: var(--ink); }
+.ac-prtsgrp .lens-help-btn:hover { background: var(--btn-bg-hover); color: var(--btn-ink-hover); }
 /* 연결되면 왼쪽 반이 켜지므로 가운데 이음매도 같은 색으로 맞춘다 */
 .ac-prtsgrp:has(.ac-prtscta.on) .lens-help-btn { border-color: var(--lime); }
 
@@ -22473,11 +22611,11 @@ html.dark .ac-krfix { color: var(--gold); }
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 8px 3px 3px;
   border: 1px solid var(--line); border-radius: var(--r-pill);
-  background: var(--bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
+  background: var(--btn-bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
   /* 밴 = 못 쓰는 기물이라 죽은 색으로 (읽을 수는 있어야 하니 회색조 + 살짝 흐리게) */
   filter: grayscale(0.85); opacity: 0.85;
 }
-.ac-banchip:hover { filter: none; opacity: 1; background: var(--bg-soft); }
+.ac-banchip:hover { filter: none; opacity: 1; background: var(--btn-bg-hover); }
 .ac-banchip > b { font-weight: 600; }
 /* 후보 — 아직 확정 아님. 점선 테두리로 확정과 한눈에 구분한다 (거짓말 방지) */
 .ac-banchip.maybe { border-style: dashed; opacity: 0.6; }
@@ -22691,10 +22829,10 @@ html.dark .ac-krfix { color: var(--gold); }
   display: inline-flex; align-items: center; gap: 4px;
   padding: 2px 8px 2px 3px;
   border: 1px solid var(--line); border-radius: var(--r-pill);
-  background: var(--bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
+  background: var(--btn-bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
   transition: 0.12s;
 }
-.ac-runbar-bandbtn:hover { background: var(--white); border-color: var(--border-hover); }
+.ac-runbar-bandbtn:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); }
 .ac-runbar-bandbtn > img { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; flex: none; }
 .ac-runbar-bandbtn > i { font-style: normal; }
 .ac-runbar-band { flex-wrap: wrap; gap: 4px 8px; }
@@ -22706,7 +22844,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-runbar-off {
   margin-left: auto; padding: 4px 12px;
   border: 1px solid color-mix(in srgb, #e0323f 40%, var(--line)); border-radius: var(--r-pill);
-  background: var(--bg); color: #e0323f; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  background: var(--btn-bg); color: #e0323f; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
   transition: 0.12s;
 }
 .ac-runbar-off:hover { background: color-mix(in srgb, #e0323f 10%, var(--white)); border-color: #e0323f; }
@@ -22721,12 +22859,14 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-chesscard:has(.ac-banmark):hover { background: color-mix(in srgb, #e0323f 13%, var(--white)); }
 .ac-runbar-btn {
   margin-left: auto; padding: 4px 12px;
-  border: 1px solid var(--line); border-radius: var(--r-pill);
-  background: var(--bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
+  border: 1px solid var(--btn-line); border-radius: var(--r-pill);
+  background: var(--btn-bg); color: var(--btn-ink); font: inherit; font-size: 12px; cursor: pointer;
 }
 /* 두 번째 버튼부터는 auto 여백을 주지 않는다 — 첫 버튼만 오른쪽으로 밀린다 */
 .ac-runbar-btn + .ac-runbar-btn { margin-left: 0; }
-.ac-runbar-btn:hover:not(:disabled) { background: var(--bg-soft); }
+.ac-runbar-btn:hover:not(:disabled) { background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
+}
 .ac-runbar-btn:disabled { opacity: 0.45; cursor: default; }
 .ac-runbar-btn[aria-pressed="true"] { border-color: var(--lime); font-weight: 700; }
 /* 좁은 화면에서는 제목 위로 겹치므로 흐름 안으로 되돌린다 (버튼 줄 통째로) */
@@ -23374,10 +23514,10 @@ html.dark .ac-bring-dial {
   gap: 5px;
   align-items: center;
   padding: 6px 11px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--btn-line);
   border-radius: var(--r-pill);
-  background: transparent;
-  color: var(--ink);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -24464,10 +24604,10 @@ html[lang="ja"] .vn-box {
 }
 .ac-party-copy {
   padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer;
-  color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-pill);
+  color: inherit; background: var(--btn-bg); border: 1px solid var(--btn-line); border-radius: var(--r-pill);
   transition: 0.12s;
 }
-.ac-party-copy:hover { background: var(--white); border-color: var(--border-hover); }
+.ac-party-copy:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); }
 .ac-party-status { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; font-size: 12px; color: var(--ink3); }
 .ac-party-status > i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
 .ac-party-status.online > i { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 20%, transparent); }
@@ -24658,10 +24798,10 @@ html[lang="ja"] .vn-box {
 .ac-party-sigrow { margin-top: auto; padding-top: 6px; border-top: 1px dashed var(--line); min-height: 30px; }
 .ac-party-sigbtn {
   padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer;
-  color: var(--ink2); background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-pill);
+  color: var(--btn-ink); background: var(--btn-bg); border: 1px solid var(--btn-line); border-radius: var(--r-pill);
   transition: 0.12s;
 }
-.ac-party-sigbtn:hover { background: var(--white); border-color: var(--border-hover); }
+.ac-party-sigbtn:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); }
 .ac-party-sigbtn.on { border-color: var(--border-strong); box-shadow: inset 0 0 0 1px var(--border-strong); color: var(--ink); font-weight: 700; }
 .ac-party-sigbtn.dc.on { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); color: var(--bad); }
 .ac-party-sigbtn.ready.on { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); color: var(--ok); }
