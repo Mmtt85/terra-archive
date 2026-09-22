@@ -1620,6 +1620,36 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     };
   }, []);
 
+  /* 셸 높이를 **실제로 보이는 높이**로 못 박는다 (사용자 영상 2026-09-22).
+     증상: 모바일에서 끝까지 밀면 푸터가 잠깐 보였다가 손을 떼면 되돌아간다. 원인은 셸
+     바닥이 보이는 영역보다 **아래**에 있어서 — 고무줄로 당길 때만 그 띠가 드러난 것이다.
+     (Chromium 실측으로는 접힌 푸터가 스크롤 위치와 무관하게 늘 바닥에 붙어 있다. 영상에선
+     안 붙어 있으니 스크롤러 바닥이 화면 밖이라는 뜻.)
+     vh·dvh·svh 는 layout.tsx 의 viewportFit:"cover" 와 맞물리면 안전영역(홈 인디케이터)까지
+     포함한 값이 온다 — 2026-08-25 에 푸터 시트에 env(safe-area-inset-bottom) 여백을 넣어야
+     했던 것이 그 증거다. visualViewport 는 정의상 "지금 보이는 만큼"이라 그 틈이 없다.
+     ⚠ 키보드가 올라오면 visualViewport 가 확 줄어든다 — 그 땐 손대지 않는다 (입력 중에
+       셸이 접히면 더 이상하다). innerHeight 대비 120px 넘게 줄면 키보드로 본다.
+     ⚠ JS 가 안 돌면 CSS 의 100svh 가 그대로 남는다 (globals.css main.site-main). */
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const shell = document.querySelector<HTMLElement>("main.site-main");
+    if (!vv || !shell) return;
+    const apply = () => {
+      const keyboard = window.innerHeight - vv.height > 120;
+      if (keyboard) shell.style.removeProperty("height");
+      else shell.style.height = `${Math.round(vv.height)}px`;
+    };
+    apply();
+    vv.addEventListener("resize", apply);
+    window.addEventListener("orientationchange", apply);
+    return () => {
+      vv.removeEventListener("resize", apply);
+      window.removeEventListener("orientationchange", apply);
+      shell.style.removeProperty("height");
+    };
+  }, []);
+
   // 헤더를 접고 펼치면 본문 스크롤러(.site-scroll)의 높이가 그만큼 바뀐다. iOS 사파리는
   // `body{overflow:hidden}` + 안쪽 `overflow-y:auto` 조합에서 **스크롤 중에 그 높이가
   // 바뀌면** 스크롤 영역을 다시 잡지 못하고 위로 못 올라가는 일이 있다 (사용자 제보
@@ -1984,21 +2014,42 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 햄버거 드롭다운은 바깥 클릭·Esc로 닫는다 (데스크탑·모바일 공통 드롭다운)
   useEffect(() => {
     if (!navOpen) return;
-    const onPointer = (event: PointerEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".main-tabs") && !target.closest(".nav-toggle")) {
-        // 붙잡아 둔 플라이아웃도 같이 놓는다 — 안 그러면 메뉴를 다시 열 때
-        // 2초 지연이 남아 엉뚱한 패널이 펼쳐진 채로 뜬다
-        setNavOpen(false); holdFlyout("");
-      }
+    /* ⚠ 닫기는 **뗄 때** 판정한다 (사용자 지적 2026-09-22 "메뉴 바깥쪽 터치하면 터치하자마자
+       꺼짐 — 그 자리에서 뗄 때만 사라지게"). 종전엔 pointerdown 이라, 메뉴 뒤 본문을
+       스크롤하려고 손가락을 짚는 순간 메뉴가 사라졌다. 메뉴 항목과 같은 규칙(useTapOnly)을
+       바깥에도 적용한다 — 짚은 자리에서 10px 넘게 움직였으면 '닫기'로 안 친다. */
+    let from: { x: number; y: number; outside: boolean } | null = null;
+    const isOutside = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      return !target?.closest(".main-tabs") && !target?.closest(".nav-toggle");
     };
+    const onDown = (event: PointerEvent) => {
+      from = { x: event.clientX, y: event.clientY, outside: isOutside(event) };
+    };
+    const onUp = (event: PointerEvent) => {
+      const start = from;
+      from = null;
+      if (!start || !start.outside || !isOutside(event)) return;
+      if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > TAP_SLOP_PX) return;
+      // 붙잡아 둔 플라이아웃도 같이 놓는다 — 안 그러면 메뉴를 다시 열 때
+      // 2초 지연이 남아 엉뚱한 패널이 펼쳐진 채로 뜬다
+      setNavOpen(false); holdFlyout("");
+    };
+    const onCancel = () => { from = null; };
     const onKey = (event: KeyboardEvent) => {
       // Esc 는 붙잡아 둔 플라이아웃까지 같이 닫는다 (닫힘 지연이 남아 있으면 갇힌다)
       if (event.key === "Escape") { setNavOpen(false); setOpenGroup(""); holdFlyout(""); }
     };
-    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onCancel);
     document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("pointerdown", onPointer); document.removeEventListener("keydown", onKey); };
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onCancel);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [navOpen]);
 
   // 모바일: 햄버거 드롭다운이 열려 있는 동안 배경 페이지 스크롤을 잠근다

@@ -16426,7 +16426,9 @@ main.site-main > .site-header {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  /* ⚠ -webkit-overflow-scrolling: touch 는 뺐다 (2026-09-22) — iOS 13 부터 무시되는
+     옛 속성인데, 예전 WebKit 에서 이 속성이 만든 별도 합성 레이어 안에서 position:sticky
+     가 어긋나는 사례가 있었다. 이 스크롤러의 푸터가 딱 그 sticky 다. */
   /* 끝에 닿았을 때 **문서로 스크롤이 넘어가지 않게** — 넘어가면 페이지 전체가 고무줄처럼
      늘어났다 제자리로 튕겨 돌아온다 (2026-09-22, 위 main.site-main 주석과 같은 제보).
      contain 이라 이 영역 자체의 관성 스크롤은 그대로다. */
