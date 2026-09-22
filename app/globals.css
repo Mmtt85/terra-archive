@@ -1474,9 +1474,12 @@ button {
   font-weight: 700;
   display: block;
 }
+/* 입력란 테두리도 한 쌍뿐이다 — 평상시 --line, 포커스는 --border-strong (2026-09-22).
+   종전엔 #bbbcb7 하드코딩 4곳(다크에서 테마를 안 따라가 밝은 선이 남았다)·평상시부터
+   강조 보더를 쓰던 2곳·포커스에 라임/호버색을 쓰던 3곳이 섞여 있었다. */
 .search-wrap {
   background: var(--white);
-  border: 1px solid #bbbcb7;
+  border: 1px solid var(--line);
   align-items: center;
   display: flex;
   position: relative;   /* 제안 드롭다운(.suggest-drop) 앵커 (2026-08-10) */
@@ -1880,7 +1883,7 @@ legend {
 }
 .attr-drop .attr-search input {
   width: 100%;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--line);
   border-radius: var(--r-sm);
   background: var(--white);
   color: var(--ink);
@@ -1889,7 +1892,7 @@ legend {
   outline: 0;
 }
 .attr-drop .attr-search input:focus {
-  border-color: var(--lime);
+  border-color: var(--border-strong);
 }
 .attr-drop .attr-none {
   color: #8b9294;
@@ -7570,7 +7573,7 @@ html.dark .tags-track > span {
   /* ⚠ min-width:0 을 주지 말 것 — 입력란의 고유 최소폭(약 170px)이 좁은 칸에서
      스샷 버튼을 아랫줄로 밀어내는 장치다. 0으로 풀면 입력란이 24px 로 찌그러진다 (실측). */
   flex: 1;
-  border: 1px solid #bbbcb7;
+  border: 1px solid var(--line);
   background: var(--white);
   /* 44px 짜리 뚱뚱한 칸이었다 → 사이트 공통 32px (사용자 지시 2026-09-20).
      여백이 아니라 높이로 못 박는다 — 이유는 .search-wrap 주석 참조(모바일 16px 강제).
@@ -8301,7 +8304,7 @@ html.dark .tags-track > span {
 .feedback-panel textarea {
   width: calc(100% - 28px);
   margin: 12px 14px 0;
-  border: 1px solid #bbbcb7;
+  border: 1px solid var(--line);
   background: var(--white);
   padding: 10px;
   font-size: 12px;
@@ -8969,7 +8972,7 @@ html.dark .tags-track > span {
   gap: 8px;
 }
 .admin-gate input {
-  border: 1px solid #bbbcb7;
+  border: 1px solid var(--line);
   padding: 11px 12px;
   font-size: 13px;
   outline: 0;
@@ -12340,7 +12343,7 @@ html.dark .story-card:hover .story-thumb img {
   width: 3.6ch;
   margin-left: 4px;
   padding: 3px 4px;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--line);
   border-radius: var(--r-sm);
   background: var(--card);
   color: var(--fg);
@@ -17334,7 +17337,7 @@ main.site-main > .site-header {
   width: 100%;
   box-sizing: border-box;
   padding: 7px 10px;
-  border: 1px solid var(--bg-panel2);
+  border: 1px solid var(--line);
   border-radius: var(--r-sm);
   background: var(--bg-panel);
   color: var(--ink);
@@ -18831,7 +18834,7 @@ main.site-main > .site-header {
 }
 .chibi-chat-form input:focus {
   outline: none;
-  border-color: color-mix(in srgb, var(--ink) 40%, var(--line));
+  border-color: var(--border-strong);
 }
 .chibi-chat-form button {
   flex: none;
@@ -24588,7 +24591,7 @@ html[lang="ja"] .vn-box {
   border: 1px solid var(--line); border-radius: var(--r-sm);
 }
 .ac-party-field input::placeholder { color: var(--muted); opacity: 0.7; }
-.ac-party-field input:focus { outline: none; border-color: var(--border-hover); }
+.ac-party-field input:focus { outline: none; border-color: var(--border-strong); }
 .ac-party-err { margin: 0; color: var(--bad); font-size: 12px; }
 .ac-party-actions { display: flex; align-items: center; gap: 8px; }
 .ac-party-actions .ac-simcta { position: static; transform: none; }
