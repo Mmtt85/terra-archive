@@ -16460,17 +16460,6 @@ main.site-main > .site-header {
 .site-scroll > footer {
   margin-top: auto;
 }
-/* 모바일에서 스크롤 **끝에 여유**를 둔다 (2026-09-22). 아이폰에서 스크롤러 바닥이
-   브라우저 UI 밑으로 깔리는 일이 있는데, 그러면 마지막 내용이 아무리 밀어도 화면에
-   안 올라온다 — 홈의 '테라 아카이브 소개' 카드를 **보이지도 눌리지도 않는다**고 제보받았다
-   (2026-09-22). 셸 높이 실측(app/home.tsx)이 근본 수리이고, 이건 그게 어긋난 기기에서도
-   마지막 내용만큼은 반드시 닿게 하는 안전망이다. 여유는 화면 밖 띠보다 넉넉히 잡는다.
-   ⚠ 스크롤 컨테이너의 padding-bottom 은 scrollHeight 에 포함된다 — 그래서 실제로 더 밀린다. */
-@media (max-width: 760px) {
-  .site-scroll {
-    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
-  }
-}
 /* ── 당겨서 새로고침 (사용자 요청 2026-09-22) ─────────────────────────────────────
    이 사이트는 문서가 스크롤되지 않는 셸(body overflow:hidden + 안쪽 .site-scroll)이라
    브라우저 기본 '당겨서 새로고침'이 아예 안 걸린다. html/body 의 overscroll-behavior:none

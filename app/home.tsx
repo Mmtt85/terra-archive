@@ -1685,28 +1685,37 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     };
   }, []);
 
-  /* 셸 높이를 **실제로 보이는 높이**로 못 박고, **낡은 채로 남지 않게** 다시 잰다.
-     증상(사용자 제보 2026-09-22): 모바일에서 스크롤러 바닥이 화면 밖에 있어 마지막 카드
-     (홈의 '테라 아카이브 소개')를 **아예 못 누르고**, 푸터도 끝까지 민 순간에만 잠깐 드러난다.
-     ★ 결정적 단서: "오퍼육성에서 오퍼 하나 선택해서 화면에 뭐 나오고 나면 푸터가 살짝
-       보이게 된다" — 즉 값이 틀린 게 아니라 **재배치가 일어나야 제자리를 찾는다**.
-       아이폰 사파리는 툴바가 자리를 잡는 동안 뷰포트 값이 뒤늦게 바뀌는데, 그때
-       visualViewport 의 resize 가 항상 오지는 않는다. 그래서 한 번만 재면 낡은 값이 남는다.
-     그래서 ① 붙일 수 있는 신호에 전부 붙고 ② 로드 직후 몇 번 더 재고 ③ 본문 크기가
-     바뀔 때(ResizeObserver)도 다시 잰다 — 사용자가 본 그 순간이 ③이다.
+  /* 셸 높이 = **보이는 높이를 재는 모든 자의 최솟값**. 그리고 낡은 채로 남지 않게 다시 잰다.
+     증상(사용자 제보 2026-09-22): 모바일에서 스크롤러 바닥이 화면 밖이라 마지막 내용
+     (홈의 '테라 아카이브 소개')을 **보지도 누르지도** 못하고, 푸터도 안 보인다.
+     실측으로 좁힌 값: 스크롤포트 바닥이 보이는 영역보다 **대략 50~76px 아래**에 있다
+     (푸터를 76px 들어 올렸더니 오퍼 도감에서 비로소 보였다 — 사용자 스크린샷).
+     ⚠ 단위 하나를 고르는 접근은 세 번 실패했다 (svh · visualViewport · overscroll-behavior).
+       아이폰 사파리는 viewportFit:"cover" 와 맞물리면 innerHeight·visualViewport 가
+       **하단 툴바 자리까지 포함한 값**을 주는데, 어느 자가 맞는지는 기기·버전마다 다르다.
+       그래서 고르지 않고 **전부 재서 제일 작은 값**을 쓴다 — 작게 잡으면 최악이라도 바닥에
+       약간의 빈 띠가 생길 뿐이고, 크게 잡으면 내용이 화면 밖으로 나가 못 누른다.
+     ★ 다시 재는 이유(사용자): "오퍼육성에서 오퍼 하나 선택해서 화면에 뭐 나오고 나면 푸터가
+       살짝 보이게 된다" — 값이 아니라 **재배치 시점**의 문제이기도 하다. 툴바가 자리를 잡는
+       동안 visualViewport 의 resize 가 항상 오지는 않아, 한 번만 재면 낡은 값이 남는다.
      ⚠ 키보드가 올라오면 visualViewport 가 확 줄어든다 — 그 땐 손대지 않는다.
      ⚠ JS 가 안 돌면 CSS 의 100svh 가 그대로 남는다 (globals.css main.site-main). */
   useEffect(() => {
-    const vv = window.visualViewport;
     const shell = document.querySelector<HTMLElement>("main.site-main");
     if (!shell) return;
+    const vv = window.visualViewport;
+    // 단위를 px 로 읽기 위한 0폭 자 — fixed 라 흐름에 영향이 없다
+    const ruler = document.createElement("div");
+    ruler.style.cssText = "position:fixed;left:0;top:0;width:0;pointer-events:none;visibility:hidden;height:100svh";
+    document.body.appendChild(ruler);
     const timers: number[] = [];
     let last = -1;
     const apply = () => {
-      const seen = Math.round(vv ? vv.height : window.innerHeight);
-      const keyboard = window.innerHeight - seen > 120;
-      if (keyboard) { shell.style.removeProperty("height"); last = -1; return; }
-      if (seen === last) return;
+      const svh = Math.round(ruler.getBoundingClientRect().height);
+      const live = Math.round(vv ? vv.height : window.innerHeight);
+      if (window.innerHeight - live > 120) { shell.style.removeProperty("height"); last = -1; return; }  // 키보드
+      const seen = Math.min(window.innerHeight || Infinity, live || Infinity, svh || Infinity);
+      if (!Number.isFinite(seen) || seen <= 0 || seen === last) return;
       last = seen;
       shell.style.height = `${seen}px`;
       void shell.offsetHeight;   // 값만 바꾸고 재배치가 안 도는 경우가 있어 강제로 읽는다
@@ -1731,6 +1740,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       window.removeEventListener("orientationchange", apply);
       window.removeEventListener("pageshow", apply);
       observer?.disconnect();
+      ruler.remove();
       shell.style.removeProperty("height");
     };
   }, []);
