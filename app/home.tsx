@@ -1297,6 +1297,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const hoverHold = (id: string) => () => { if (canHover()) holdFlyout(id); };
   const hoverRelease = (back = "") => () => { if (canHover()) releaseFlyout(back); };
   const tapOnly = useTapOnly();
+  const ptrRef = useRef<HTMLDivElement>(null);
   useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
   const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
   // 제안 게시판 뱃지 숫자 — 위젯이 올려주고 헤더 버튼 뱃지에 쓴다. 방문자는 '새 답변',
@@ -1620,32 +1621,116 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     };
   }, []);
 
-  /* 셸 높이를 **실제로 보이는 높이**로 못 박는다 (사용자 영상 2026-09-22).
-     증상: 모바일에서 끝까지 밀면 푸터가 잠깐 보였다가 손을 떼면 되돌아간다. 원인은 셸
-     바닥이 보이는 영역보다 **아래**에 있어서 — 고무줄로 당길 때만 그 띠가 드러난 것이다.
-     (Chromium 실측으로는 접힌 푸터가 스크롤 위치와 무관하게 늘 바닥에 붙어 있다. 영상에선
-     안 붙어 있으니 스크롤러 바닥이 화면 밖이라는 뜻.)
-     vh·dvh·svh 는 layout.tsx 의 viewportFit:"cover" 와 맞물리면 안전영역(홈 인디케이터)까지
-     포함한 값이 온다 — 2026-08-25 에 푸터 시트에 env(safe-area-inset-bottom) 여백을 넣어야
-     했던 것이 그 증거다. visualViewport 는 정의상 "지금 보이는 만큼"이라 그 틈이 없다.
-     ⚠ 키보드가 올라오면 visualViewport 가 확 줄어든다 — 그 땐 손대지 않는다 (입력 중에
-       셸이 접히면 더 이상하다). innerHeight 대비 120px 넘게 줄면 키보드로 본다.
+  /* 당겨서 새로고침 (사용자 요청 2026-09-22). 문서가 스크롤되지 않는 셸이라 브라우저
+     기본 당겨서-새로고침이 안 걸리고, html/body 의 overscroll-behavior:none(가로 튕김
+     방지)이 그마저 막는다. 그래서 직접 만든다.
+     ⚠ touchmove 는 passive:false 로 듣고 **당기는 동안에만** preventDefault 한다 —
+       조건을 넓게 잡으면 평소 스크롤이 통째로 죽는다. 맨 위(scrollTop 0)에서 아래로
+       끄는 경우로만 한정하고, 방향이 위로 바뀌면 즉시 손을 뗀다.
+     ⚠ 손가락을 따라가야 하므로 상태가 아니라 DOM 을 직접 만진다 (매 프레임 리렌더 금지). */
+  useEffect(() => {
+    const sc = document.querySelector<HTMLElement>(".site-scroll");
+    const pill = ptrRef.current;
+    if (!sc || !pill) return;
+    const TRIGGER = 70;   // 이만큼 끌면 새로고침
+    const MAX = 130;
+    let pulling = false, startY = 0, dist = 0;
+    const park = () => {
+      pill.style.transition = "transform 0.2s, opacity 0.2s";
+      pill.style.transform = "translate(-50%, -44px)";
+      pill.style.opacity = "0";
+      pill.classList.remove("ready");
+    };
+    const onStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1 || sc.scrollTop > 0) return;
+      pulling = true; dist = 0;
+      startY = event.touches[0].clientY;
+      pill.style.transition = "none";
+    };
+    const onMove = (event: TouchEvent) => {
+      if (!pulling) return;
+      const dy = event.touches[0].clientY - startY;
+      if (dy <= 0 || sc.scrollTop > 0) { pulling = false; if (dist) park(); return; }
+      event.preventDefault();
+      dist = Math.min(dy, MAX);
+      // 끌수록 둔하게 — 손가락보다 덜 움직여야 '당기는 맛'이 난다
+      // -10 만큼만 올려 시작한다 — 종전 -44 는 알약이 사이트 이름 위에 겹쳐 앉았다
+      pill.style.transform = `translate(-50%, ${Math.round(dist * 0.55) - 10}px)`;
+      pill.style.opacity = String(Math.min(1, dist / 38));
+      pill.classList.toggle("ready", dist >= TRIGGER);
+    };
+    const onEnd = () => {
+      if (!pulling) return;
+      pulling = false;
+      if (dist < TRIGGER) { park(); return; }
+      pill.classList.remove("ready");
+      pill.classList.add("run");
+      pill.style.transition = "transform 0.2s, opacity 0.2s";
+      pill.style.transform = "translate(-50%, 44px)";
+      pill.style.opacity = "1";
+      window.setTimeout(() => window.location.reload(), 160);
+    };
+    /* ⚠ touchcancel 은 **취소**다 — 전화·알림·시스템 제스처가 끼어들어 손을 뗀 적이 없는데도
+       온다. 여기에 onEnd 를 걸면 그 순간 페이지가 새로고침된다 (실측으로 잡음). */
+    const onCancel = () => { pulling = false; park(); };
+    sc.addEventListener("touchstart", onStart, { passive: true });
+    sc.addEventListener("touchmove", onMove, { passive: false });
+    sc.addEventListener("touchend", onEnd);
+    sc.addEventListener("touchcancel", onCancel);
+    return () => {
+      sc.removeEventListener("touchstart", onStart);
+      sc.removeEventListener("touchmove", onMove);
+      sc.removeEventListener("touchend", onEnd);
+      sc.removeEventListener("touchcancel", onCancel);
+    };
+  }, []);
+
+  /* 셸 높이를 **실제로 보이는 높이**로 못 박고, **낡은 채로 남지 않게** 다시 잰다.
+     증상(사용자 제보 2026-09-22): 모바일에서 스크롤러 바닥이 화면 밖에 있어 마지막 카드
+     (홈의 '테라 아카이브 소개')를 **아예 못 누르고**, 푸터도 끝까지 민 순간에만 잠깐 드러난다.
+     ★ 결정적 단서: "오퍼육성에서 오퍼 하나 선택해서 화면에 뭐 나오고 나면 푸터가 살짝
+       보이게 된다" — 즉 값이 틀린 게 아니라 **재배치가 일어나야 제자리를 찾는다**.
+       아이폰 사파리는 툴바가 자리를 잡는 동안 뷰포트 값이 뒤늦게 바뀌는데, 그때
+       visualViewport 의 resize 가 항상 오지는 않는다. 그래서 한 번만 재면 낡은 값이 남는다.
+     그래서 ① 붙일 수 있는 신호에 전부 붙고 ② 로드 직후 몇 번 더 재고 ③ 본문 크기가
+     바뀔 때(ResizeObserver)도 다시 잰다 — 사용자가 본 그 순간이 ③이다.
+     ⚠ 키보드가 올라오면 visualViewport 가 확 줄어든다 — 그 땐 손대지 않는다.
      ⚠ JS 가 안 돌면 CSS 의 100svh 가 그대로 남는다 (globals.css main.site-main). */
   useEffect(() => {
     const vv = window.visualViewport;
     const shell = document.querySelector<HTMLElement>("main.site-main");
-    if (!vv || !shell) return;
+    if (!shell) return;
+    const timers: number[] = [];
+    let last = -1;
     const apply = () => {
-      const keyboard = window.innerHeight - vv.height > 120;
-      if (keyboard) shell.style.removeProperty("height");
-      else shell.style.height = `${Math.round(vv.height)}px`;
+      const seen = Math.round(vv ? vv.height : window.innerHeight);
+      const keyboard = window.innerHeight - seen > 120;
+      if (keyboard) { shell.style.removeProperty("height"); last = -1; return; }
+      if (seen === last) return;
+      last = seen;
+      shell.style.height = `${seen}px`;
+      void shell.offsetHeight;   // 값만 바꾸고 재배치가 안 도는 경우가 있어 강제로 읽는다
     };
     apply();
-    vv.addEventListener("resize", apply);
+    // 로드 직후 — 툴바가 자리를 잡는 동안 값이 두어 번 더 바뀐다
+    [80, 320, 900, 2000].forEach((ms) => timers.push(window.setTimeout(apply, ms)));
+    vv?.addEventListener("resize", apply);
+    vv?.addEventListener("scroll", apply);
+    window.addEventListener("resize", apply);
     window.addEventListener("orientationchange", apply);
+    window.addEventListener("pageshow", apply);
+    // 본문이 늘거나 줄면 다시 — 사용자가 "오퍼 고르니 푸터가 보이더라"고 한 그 경로
+    const scroller = document.querySelector<HTMLElement>(".site-scroll");
+    const observer = scroller ? new ResizeObserver(() => apply()) : null;
+    if (scroller && observer) observer.observe(scroller);
     return () => {
-      vv.removeEventListener("resize", apply);
+      timers.forEach(clearTimeout);
+      vv?.removeEventListener("resize", apply);
+      vv?.removeEventListener("scroll", apply);
+      window.removeEventListener("resize", apply);
       window.removeEventListener("orientationchange", apply);
+      window.removeEventListener("pageshow", apply);
+      observer?.disconnect();
       shell.style.removeProperty("height");
     };
   }, []);
@@ -2481,6 +2566,12 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
 
       {/* 본문 스크롤 영역 — 세로 스크롤은 여기서만 생긴다(헤더는 위에 고정, 스크롤바가 헤더까지
           올라오지 않도록 — 사용자 요청 2026-07-22, 모바일·PC 공통). 모달·제안 위젯은 fixed라 밖에 둔다. */}
+      <div className="ptr" ref={ptrRef} aria-hidden>
+        <i>↓</i>
+        <b className="ptr-pull">{t("당겨서 새로고침")}</b>
+        <b className="ptr-ready">{t("놓으면 새로고침")}</b>
+        <b className="ptr-run">{t("새로고침 중")}</b>
+      </div>
       <div className="site-scroll">
 
       {tab === "portal" && <Portal onOpenTab={switchTab} onOpenEvent={openEventById} />}

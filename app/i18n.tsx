@@ -2604,6 +2604,9 @@ const D: Record<string, Pair> = {
   "대응완료 가리기": ["Hide resolved", "対応済みを隠す"],
   "대응미완료 제안이 없습니다": ["No open suggestions", "未対応の提案はありません"],
   "새로고침": ["Refresh", "更新"],
+  "당겨서 새로고침": ["Pull to refresh", "引っ張って更新"],
+  "놓으면 새로고침": ["Release to refresh", "離すと更新"],
+  "새로고침 중": ["Refreshing", "更新中"],
   // ── 스샷 인식 (구 스샷 워프) — 페이지별 설치: /rogue 스샷으로 찾기 · 공채 스샷으로 태그 입력
   // (사용자 확정 2026-07-23). Phase 1은 KR 클라 전용(kor.traineddata만 호스팅)이라 진입 버튼이
   // ko에서만 보이지만, 키는 미리 등록해 둔다 (EN/JA 클라 지원 시 버튼 게이트만 풀면 됨).

@@ -16460,6 +16460,58 @@ main.site-main > .site-header {
 .site-scroll > footer {
   margin-top: auto;
 }
+/* 모바일에서 스크롤 **끝에 여유**를 둔다 (2026-09-22). 아이폰에서 스크롤러 바닥이
+   브라우저 UI 밑으로 깔리는 일이 있는데, 그러면 마지막 내용이 아무리 밀어도 화면에
+   안 올라온다 — 홈의 '테라 아카이브 소개' 카드를 **보이지도 눌리지도 않는다**고 제보받았다
+   (2026-09-22). 셸 높이 실측(app/home.tsx)이 근본 수리이고, 이건 그게 어긋난 기기에서도
+   마지막 내용만큼은 반드시 닿게 하는 안전망이다. 여유는 화면 밖 띠보다 넉넉히 잡는다.
+   ⚠ 스크롤 컨테이너의 padding-bottom 은 scrollHeight 에 포함된다 — 그래서 실제로 더 밀린다. */
+@media (max-width: 760px) {
+  .site-scroll {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+}
+/* ── 당겨서 새로고침 (사용자 요청 2026-09-22) ─────────────────────────────────────
+   이 사이트는 문서가 스크롤되지 않는 셸(body overflow:hidden + 안쪽 .site-scroll)이라
+   브라우저 기본 '당겨서 새로고침'이 아예 안 걸린다. html/body 의 overscroll-behavior:none
+   (가로 튕김 방지)이 그마저 막는다. 그래서 직접 만든다 — 맨 위에서 아래로 끌면 알약이
+   내려오고, 문턱을 넘겨 놓으면 새로 읽는다. 끌기 판정·이동은 JS(app/home.tsx)가 한다. */
+.ptr {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 25;                 /* 헤더(20)보다 위 — 끌어 내리면 헤더를 덮고 내려온다 */
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid var(--btn-line);
+  border-radius: var(--r-pill);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--sh-2);
+  opacity: 0;
+  transform: translate(-50%, -44px);
+  pointer-events: none;        /* 끌기는 스크롤러가 받는다 — 알약은 표시만 */
+}
+.ptr > i {
+  font-style: normal;
+  line-height: 1;
+  transition: transform 0.18s;
+}
+.ptr.ready > i { transform: rotate(180deg); }
+.ptr.run > i { animation: ptr-spin 0.8s linear infinite; }
+@keyframes ptr-spin { to { transform: rotate(360deg); } }
+/* 상태에 따라 한 줄만 보인다 — 글자를 바꾸느라 리렌더하지 않기 위해 셋을 넣고 감춘다 */
+.ptr > b { font-weight: 700; }
+.ptr > .ptr-ready, .ptr > .ptr-run { display: none; }
+.ptr.ready > .ptr-pull, .ptr.run > .ptr-pull { display: none; }
+.ptr.ready > .ptr-ready { display: inline; }
+.ptr.run > .ptr-ready { display: none; }
+.ptr.run > .ptr-run { display: inline; }
 
 /* 헤더·푸터: 배경은 100% 폭, 내부 콘텐츠만 좌우 15% 여백에 맞춰 정렬 (사용자 확정 2026-07-17) */
 @media (min-width: 1400px) {
