@@ -1114,6 +1114,12 @@ button {
     order: 1;
     margin-right: 0;
   }
+  /* 사이트 이름 글자는 지우고 **로고만** 남긴다 (사용자 지시 2026-09-23) — 1줄에 업데이트
+     내역·위수 협의·진행중 이벤트까지 들어가야 해서 이름이 자리를 너무 먹는다.
+     링크의 aria-label 이 "테라 아카이브 홈"이라 읽어 주는 데는 지장이 없다. */
+  .brand > span:not(.brand-mark) {
+    display: none;
+  }
   /* 업데이트 내역 — 로고 바로 오른쪽에 붙는다 (아이콘만) */
   .chlog-trigger {
     order: 2;
@@ -1133,10 +1139,16 @@ button {
     gap: 5px;
   }
   .promo-trigger .promo-hint { font-size: 10px; }
-  /* 진행중 이벤트 — 같은 1줄, 위수 협의 오른쪽 */
+  /* 진행중 이벤트 — 같은 1줄, 위수 협의 오른쪽. **이벤트 이름만** 남긴다
+     (사용자 지시 2026-09-23: "그냥 사람들, 우리들 하고 이벤트 이름만") —
+     '진행중 이벤트'라는 말머리와 남은 기간은 접는다. */
   .promo-trigger.ev-promo {
     order: 4;
     min-width: 0;
+  }
+  .ev-promo .ev-promo-kind,
+  .ev-promo .promo-hint {
+    display: none;
   }
   .site-header::before {
     content: "";
@@ -1148,7 +1160,6 @@ button {
   /* 언어·만능검색의 order 는 아래 '헤더 오른쪽 뭉치기' 블록에서 매긴다 (6·7) */
   .site-header .nav-group {
     order: 8;
-    margin-left: auto;          /* 메뉴는 줄 맨 오른쪽 */
   }
   .site-header::after {
     content: "";
@@ -18265,19 +18276,20 @@ main.site-main > .site-header {
   .site-header > .brand {
     margin-right: 0;
   }
-  /* 2줄 왼쪽 — 언어 · 만능검색 순서 (사용자 지시 2026-09-23) */
+  /* 2줄 — 언어 · 만능검색은 **메뉴 바로 왼쪽**에 붙는다 (사용자 지시 2026-09-23).
+     셋을 한 덩어리로 오른쪽에 뭉치려면 미는 일(margin-left:auto)을 **맨 앞의 언어 칩**이
+     맡아야 한다 — 메뉴에 걸어 두면 언어·검색만 왼쪽에 남고 메뉴만 떨어져 간다. */
   .site-header > .lang-wrap {
     order: 6;
-    margin-left: 0;
+    margin-left: auto;
   }
   .omni {
     order: 7;
     margin-left: 8px;
   }
-  /* 메뉴는 2줄 맨 오른쪽 — 위 4줄 블록의 margin-left:auto 를 여기서 8px 로 덮으면
-     줄 가운데에 어정쩡하게 선다 (2026-09-23 실측 138~197). auto 를 유지한다. */
+  /* 메뉴 — 미는 일은 언어 칩이 맡으므로(위) 여기는 그냥 붙는 간격만 */
   .site-header .nav-group {
-    margin-left: auto;
+    margin-left: 8px;
   }
 }
 /* 만능검색 '새기능' 배지 — 라벨이 보이는 넓은 화면에서만 (아이콘만 남는 폭에선 넘친다) */
