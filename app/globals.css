@@ -35,6 +35,10 @@
      다크에선 한 톤 밝아 어두운 배경에서 알약 윤곽을 잡아 준다. 종전 --border-strong 의
      값을 그대로 물려받았다 (2026-09-22 분리 — 강조 보더만 톤을 낮추기 위해). */
   --chip-line: #242b2f;
+  /* 본문 스크롤바 손잡이 — 기본값은 라이트에서 너무 희미해 어디까지 내려왔는지 안 보인다
+     (사용자 지적 2026-09-23). 종이 계열 따뜻한 회색으로, 테두리(--border-strong)보다
+     한 단계 진하게 잡아 눈에 걸리게 한다. */
+  --scroll-thumb: #8a8378;
   /* ═══ 버튼 색 — 역할은 이 네 가지뿐이다 (2026-09-22 사용자 지시: "보더·버튼색·
      마우스오버가 버튼에 따라 중구난방이다. 사이트 전체를 통일시켜라") ══════════════
      전수 감사 결과 버튼 규칙 368개가 **평상 111종·호버 42종**의 조합을 쓰고 있었다.
@@ -148,6 +152,7 @@ html.rg-theme {
   --border-hover: #63707a;  /* 다크에선 강조 보더보다 한 톤 밝게 — 밝아지는 게 호버 신호 */
   --border-strong: #47525a; /* 미래시 토글 보더 수준의 무난한 회색 (사용자 피드백 2026-07-18) */
   --chip-line: #47525a;     /* 다크에선 칩(#262d31)이 배경에 묻혀 윤곽선이 필요하다 */
+  --scroll-thumb: #5d686e;  /* 어두운 바탕에서도 같은 만큼 도드라지게 */
   /* 선택됨만 뒤집는다 — 나머지 --btn-* 는 --white·--line·--ink2 를 타고 이미 뒤집힌다.
      종전 다크 선택은 칩(#262d31)을 깔아 패널(#171c1f)과 1.21:1 이었다 (사용자 지적
      2026-09-22 "색이 많이 안 바껴서 뭘 클릭했는지 구분이 잘 안 된다"). 지금은 11.3:1.
@@ -1090,63 +1095,28 @@ button {
     font-size: 13px;
     margin-left: 8px;
   }
-  /* 모바일 줄 구성 (사용자 배치 지시 2026-07-20):
-     1줄 = 브랜드 · 공식방송 · 진행중이벤트 (왼쪽 정렬)
-     2줄 = 미래시 · 햄버거 · 다크모드 · 언어 (오른쪽 정렬).
-     ::after(폭 100%)가 두 줄 사이를 끊고, 2줄 첫 요소의 margin-left:auto가 우측 정렬. */
-  /* 모바일 헤더 3줄 구조 (사용자 확정 2026-07-22):
-     1줄 = 로고(왼쪽) · 햄버거(맨 오른쪽)
-     2줄 = 진행중 이벤트(왼쪽) · 공식방송(오른쪽)
-     3줄 = 제안 · 미래시 · 다크모드 · 언어
-     줄 나눔은 ::before(1↔2) / ::after(2↔3) 가상 요소의 flex-basis:100%로 만든다.
-     하단 중앙에 접기 핸들 — 접으면(.collapsed) 로고·공식방송·햄버거 한 줄만 남는다. */
+  /* 모바일 헤더 4줄 구조 (사용자 지시 2026-09-23 — 데스크탑 배치에 맞춘다):
+       1줄 = 테라 아카이브 · 업데이트 내역(로고 **바로 오른쪽**) · 위수 협의 · 진행중 이벤트
+       2줄 = 언어 · 만능검색 · 메뉴(오른쪽 끝)
+       3줄 = 이벤트 · 공식방송 · 미래시 · 다크모드(오른쪽)
+       4줄 = 제안 · 소개
+     줄 나눔은 flex-basis:100% 짜리 빈 조각 셋 — ::before(1↔2) · ::after(2↔3) ·
+     .hdr-break(3↔4, app/home.tsx 의 <i>). 가상 요소는 둘뿐이라 넷째 줄에는 진짜 요소가 필요하다.
+     order 를 1부터 연속으로 매겨 둔다 — 중간에 하나 끼울 때 뒤를 다 밀지 않아도 되게
+     띄엄띄엄 쓰고 싶겠지만, 동률(로고와 업뎃내역처럼)이 DOM 순서로 풀리는 규칙을 쓰는
+     자리가 있어 지금은 연속이 읽기 쉽다. */
   .site-header {
     justify-content: flex-start;
     position: sticky;
   }
+  /* ── 1줄 ───────────────────────────────────────────────────────────── */
   .brand {
     order: 1;
     margin-right: 0;
   }
-  .site-header .nav-group {
-    order: 2;
-    margin-left: auto;
-  }
-  .site-header::before {
-    content: "";
-    order: 3;
-    flex-basis: 100%;
-    height: 0;
-  }
-  /* 기간 한정 바로가기 — 1줄, 업데이트 내역 오른쪽 (order 동률은 DOM 순서) */
-  .promo-trigger {
-    order: 1;
-    margin-left: 8px;
-    padding: 4px 7px;
-    font-size: 11px;
-    gap: 5px;
-  }
-  /* '기간 한정'은 모바일에서도 남긴다 (사용자 지시 2026-08-22) — 폭이 빠듯해 한 급 줄인다 */
-  .promo-trigger .promo-hint { font-size: 10px; }
-  .event-group {
-    order: 4;
-    margin: 0;
-    min-width: 0;
-    flex: 1 1 auto; /* 2줄 왼쪽 — 남는 공간을 이벤트 칩이 채운다 */
-  }
-  .bcast-trigger {
-    order: 5;
-    margin-left: auto;
-  }
-  .site-header::after {
-    content: "";
-    order: 6;
-    flex-basis: 100%;
-    height: 0;
-  }
-  /* 업데이트 내역 — 1줄 로고 옆, 아이콘만 (order 동률은 DOM 순서로 로고 다음) */
+  /* 업데이트 내역 — 로고 바로 오른쪽에 붙는다 (아이콘만) */
   .chlog-trigger {
-    order: 1;
+    order: 2;
     margin-left: 8px;
     padding: 4px 7px;
     font-size: 13px;
@@ -1154,8 +1124,67 @@ button {
   .chlog-trigger .chlog-label {
     display: none;
   }
+  /* 위수 협의 등 기간 한정 바로가기 — 폭이 빠듯해 한 급 줄인다 (사용자 지시 2026-08-22) */
+  .promo-trigger {
+    order: 3;
+    margin-left: 8px;
+    padding: 4px 7px;
+    font-size: 11px;
+    gap: 5px;
+  }
+  .promo-trigger .promo-hint { font-size: 10px; }
+  /* 진행중 이벤트 — 같은 1줄, 위수 협의 오른쪽 */
+  .promo-trigger.ev-promo {
+    order: 4;
+    min-width: 0;
+  }
+  .site-header::before {
+    content: "";
+    order: 5;
+    flex-basis: 100%;
+    height: 0;
+  }
+  /* ── 2줄 ───────────────────────────────────────────────────────────── */
+  /* 언어·만능검색의 order 는 아래 '헤더 오른쪽 뭉치기' 블록에서 매긴다 (6·7) */
+  .site-header .nav-group {
+    order: 8;
+    margin-left: auto;          /* 메뉴는 줄 맨 오른쪽 */
+  }
+  .site-header::after {
+    content: "";
+    order: 9;
+    flex-basis: 100%;
+    height: 0;
+  }
+  /* ── 3줄 ───────────────────────────────────────────────────────────── */
+  .event-group {
+    order: 10;
+    margin: 0;
+    min-width: 0;
+    flex: 1 1 auto;             /* 남는 공간을 이벤트 칩이 채운다 */
+  }
+  .bcast-trigger {
+    order: 11;
+    margin-left: 0;
+  }
+  .site-header .future-toggle {
+    order: 12;
+    margin-left: auto;          /* 미래시·다크모드는 줄 오른쪽에 뭉친다 */
+  }
+  .site-header .theme-toggle {
+    order: 13;
+  }
+  /* 넷째 줄로 끊는 진짜 요소 (가상 요소는 ::before·::after 둘뿐이라 모자란다) */
+  .hdr-break {
+    order: 14;
+    flex-basis: 100%;
+    height: 0;
+    margin: 0;
+    display: block;
+  }
+  /* ── 4줄 ───────────────────────────────────────────────────────────── */
   .feedback-header-btn {
-    order: 7;
+    order: 15;
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -1168,18 +1197,9 @@ button {
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
-  
-}
-  .site-header .future-toggle {
-    order: 8;
-    margin-left: auto;
   }
-  .site-header .theme-toggle {
-    order: 9;
-  }
-  /* 언어 칩은 2026-08-17부터 1줄(만능검색 왼쪽) — 위 .omni 배치 블록에서 order 1 */
   .site-header .about-icon {
-    order: 11;
+    order: 16;
   }
   /* 우하단 FAB은 모바일에서 감추고, 헤더의 제안 버튼으로 대체 (패널은 그대로 fixed로 뜬다) */
   .feedback-fab {
@@ -5058,7 +5078,16 @@ html.dark .tags-track > span {
        크롬(iOS) 27 에서 innerHeight = visualViewport = 100svh = 684 로 전부 일치하고
        (100vh·100lvh 만 792 로 툴바 포함), 셸 바닥 684 = 화면 684 · 셸 넘침 0px.
        푸터가 안 보이던 진짜 원인은 높이가 아니라 **붙박이(position:sticky) 구조**였다. */
-    padding: 16px clamp(18px, 5vw, 28px) calc(24px + env(safe-area-inset-bottom, 0px));
+    padding: 16px clamp(18px, 5vw, 28px) calc(16px + env(safe-area-inset-bottom, 0px));
+    /* ★ 아래 여백 = **브라우저 하단 툴바 높이만큼** (2026-09-23). 모바일 브라우저는 내리는
+       동안 툴바를 숨겼다가 멈추면 다시 올려 보내는데, 그때 **스크롤은 그대로인 채 화면
+       아래쪽이 덮인다** — 그래서 마지막 줄이 잘렸다. 그 높이는 추측할 필요가 없다:
+         100lvh = 툴바가 숨었을 때의 높이 · 100svh = 툴바가 보일 때의 높이
+       둘의 차가 곧 툴바다 (실기기 실측 792 − 684 = 108px, 크롬 iOS 27).
+       툴바가 겹치지 않는 기기·데스크탑에서는 lvh = svh 라 **0** 이 되어 아무 일도 없다.
+       ⚠ 위 줄(단위 없는 폴백)을 지우지 말 것 — lvh/svh 를 모르는 브라우저에서 이 줄이
+         통째로 무효가 되면 여백이 사라진다. */
+    padding-bottom: calc(100lvh - 100svh + 16px + env(safe-area-inset-bottom, 0px));
     max-height: none;
     overflow: visible;
   }
@@ -5068,7 +5097,8 @@ html.dark .tags-track > span {
   .site-scroll > footer.dragging {
     max-height: none;
     overflow: visible;
-    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(100lvh - 100svh + 16px + env(safe-area-inset-bottom, 0px));
   }
   /* 핸들 = 시트 맨 위 가로 전체. 잡기 쉬워야 하고, 펴서 스크롤해도 붙어 있어야 한다. */
   .footer-collapse-toggle {
@@ -16373,6 +16403,11 @@ html.rg-theme .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
   }
 }
 
+/* 모바일 헤더 4줄을 끊는 빈 조각 — 모바일 블록에서만 켠다 */
+.hdr-break {
+  display: none;
+}
+
 /* ── 스크롤 구조 — 헤더 고정, 세로 스크롤은 본문(.site-scroll)에만 (사용자 요청 2026-07-22,
    모바일·PC 공통: 스크롤바가 헤더 옆까지 올라오지 않는다) ── */
 html,
@@ -16467,6 +16502,11 @@ main.site-main > .site-header {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  /* 스크롤 위치가 보이게 — 기본 손잡이가 라이트에서 거의 안 보였다 (사용자 지적 2026-09-23).
+     ⚠ ::-webkit-scrollbar 로 그리지 않는다 — 그 쪽은 **겹침(overlay) 스크롤바를 자리
+       차지하는 막대로 바꿔** 본문 폭이 줄고 레이아웃이 밀린다. 표준 두 속성만 쓴다. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) transparent;
   /* ⚠ **가로는 명시적으로 막는다** (2026-09-22). `overflow-y: auto` 만 적으면 CSS 규칙상
      다른 축의 `visible` 이 `auto` 로 승격돼 — 실측으로 계산값이 `auto` 였다 — 의도한 적
      없는 **가로 스크롤 컨테이너**가 된다. 사용자 제보: "왼쪽 오른쪽에 분명히 컨텐츠가
@@ -18214,22 +18254,30 @@ main.site-main > .site-header {
      2줄로 내려가는 폭(≈430px)이 생겼는데, 밀어내기를 언어 칩 하나가 맡고 있어 2줄 전체가
      왼쪽에 붙어 버렸다. 컨테이너를 flex-end로 두고 로고만 margin-right:auto로 왼쪽에
      못박으면, 어느 줄에 무엇이 떨어지든 로고는 왼쪽·나머지는 오른쪽으로 뭉친다. */
+  /* ⚠ 종전엔 flex-end + 로고 margin-right:auto 로 "로고만 왼쪽, 나머지는 오른쪽"을 만들었다.
+     줄을 가상 요소로 끊지 않던 시절의 처방인데, 지금은 줄을 명시적으로 끊으므로
+     그대로 두면 **1줄이 통째로 오른쪽에 뭉쳐** 업데이트 내역이 로고에서 떨어진다
+     (사용자 지시 2026-09-23: 업뎃내역은 로고 **바로 오른쪽**). 줄 안 정렬은 왼쪽이 기본이고,
+     오른쪽으로 보낼 것만 margin-left:auto 로 민다 (메뉴 · 미래시). */
   .site-header {
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
   .site-header > .brand {
-    margin-right: auto;
+    margin-right: 0;
   }
+  /* 2줄 왼쪽 — 언어 · 만능검색 순서 (사용자 지시 2026-09-23) */
   .site-header > .lang-wrap {
-    order: 1;
-    margin-left: 8px;
+    order: 6;
+    margin-left: 0;
   }
   .omni {
-    order: 1;
+    order: 7;
     margin-left: 8px;
   }
+  /* 메뉴는 2줄 맨 오른쪽 — 위 4줄 블록의 margin-left:auto 를 여기서 8px 로 덮으면
+     줄 가운데에 어정쩡하게 선다 (2026-09-23 실측 138~197). auto 를 유지한다. */
   .site-header .nav-group {
-    margin-left: 8px;
+    margin-left: auto;
   }
 }
 /* 만능검색 '새기능' 배지 — 라벨이 보이는 넓은 화면에서만 (아이콘만 남는 폭에선 넘친다) */
