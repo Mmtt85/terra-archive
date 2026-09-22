@@ -160,11 +160,6 @@ run "build-story"      python3 scripts/build-story.py
 # 인게임 스토리라인(테마 시계열) — stories.json을 참조하므로 build-story 뒤에
 run "build-storylines" python3 scripts/build-storylines.py "$G"
 
-# 3-1) 중섭(미래시) 공식 방송 일정 — 비리비리 라이브룸. 크론 워커(클라우드플레어)는 비리비리에
-# 412로 막혀서 여기(GitHub 러너)서 수집한다. 외부 서비스라 실패해도 파이프라인을 죽이지 않는다.
-run "broadcasts-cn"    python3 scripts/build-broadcasts-cn.py \
-  || echo "[broadcasts-cn] 비리비리 조회 실패 — 기존 broadcasts.json 유지, 다음 실행 때 재시도" | tee -a "$WARN" >&2
-
 # 7) 무거운 오퍼당 파일 — 보이스 대사·스킨 메타 (도감 첫 화면엔 안 보이는 것들)
 # ⚠ build-skins는 **--meta-only** — 스킨 이미지 296MB는 git에 없고(gitignore) R2가 서빙하므로
 #   CI가 매번 새로 받으면 러너 디스크·시간을 통째로 날린다. 이미지는 로컬에서 별도로 받는다.

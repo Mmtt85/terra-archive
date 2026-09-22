@@ -811,7 +811,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       history.replaceState(null, "", `${base}#bond?p=${roomFromUrl.toLowerCase()}`);
     }
     const apply = () => {
-      // 전역 모달(#changelog·#broadcast…)이 떠 있으면 내 상태로 해석하지 않는다 — 그대로
+      // 전역 모달(#changelog·#replay…)이 떠 있으면 내 상태로 해석하지 않는다 — 그대로
       // 두면 다른 모달을 여는 순간 이 페이지의 필터·모달이 통째로 초기화된다 (2026-08-24)
       if (GLOBAL_MODAL_HASH.test(window.location.hash)) return;
       // 빈 해시 = **기본 상태**(맹약 탭·필터 없음·모달 없음)다. 종전엔 여기서 그냥 빠져나가

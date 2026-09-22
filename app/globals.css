@@ -514,43 +514,6 @@ button {
 .yt-mark i {
   border-width: 5px 0 5px 8px;
 }
-
-/* 공식 방송 — 헤더 버튼 */
-.bcast-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-left: 16px;
-  border: 1px solid var(--line);
-  background: transparent;
-  padding: 6px 11px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink);
-  cursor: pointer;
-  transition: 0.15s;
-  white-space: nowrap;
-}
-.bcast-trigger:hover {
-  border-color: var(--border-hover);
-}
-.bcast-trigger .bcast-hint {
-  font: 700 11px var(--mono);
-  color: var(--muted);
-}
-.bcast-trigger.live {
-  border-color: var(--bad);
-}
-.bcast-trigger.live .bcast-hint {
-  color: var(--bad);
-  animation: bcast-blink 1.2s steps(1) infinite;
-}
-@keyframes bcast-blink {
-  50% {
-    opacity: 0.3;
-  }
-}
-
 /* 업데이트 내역 — 로고 바로 오른쪽(1줄 소속, 접어도 보임) 버튼 + 모달 (2026-07-27 이동) */
 .chlog-trigger {
   display: inline-flex;
@@ -818,23 +781,6 @@ button {
    --tint-lime-ink(라이트 #5b6b00 · 다크 #c6d96e)를 쓴다 (2026-08-25) */
 .promo-trigger .promo-mark { color: var(--tint-lime-ink); }
 .promo-trigger .promo-hint { font-size: 11px; font-weight: 600; color: var(--muted); }
-/* 확장부의 작은 버튼 — 옆에 붙는 '공식 방송'(.bcast-trigger)과 같은 치수로 맞춘다.
-   종전엔 배너 섬네일을 통째로 품은 큰 버튼이 헤더 1줄에 누워 있었다
-   (사용자 요청 2026-07-30: "확장헤더에 넣자, 누르면 섬네일이랑 이벤트 보이도록"). */
-.event-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid var(--line);
-  background: transparent;
-  padding: 6px 11px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink);
-  cursor: pointer;
-  transition: 0.15s;
-  white-space: nowrap;
-}
 .event-trigger:hover {
   border-color: var(--border-hover);
 }
@@ -933,97 +879,6 @@ button {
   line-height: 1.45;
   color: var(--muted);
 }
-
-/* 공식 방송 — 목록 모달 */
-.bcast-modal {
-  position: relative;
-  background: var(--white, #fff);
-  border: 1px solid var(--border-strong);
-  width: min(540px, 100%);
-  /* 상단 고정(워커 fetch 재중앙 CLS 방지) + 아래 여백 확보 — .chlog-modal과 같은 계산 */
-  --modal-gap: clamp(10px, 4dvh, 40px);
-  max-height: calc(100dvh - 48px - var(--modal-gap) * 2);
-  margin: var(--modal-gap) auto auto;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: var(--sh-3);
-}
-.bcast-list {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-}
-.bcast-card {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  border: 1px solid var(--line);
-  padding: 8px;
-  text-decoration: none;
-  color: var(--ink);
-  transition: 0.15s;
-}
-.bcast-card:hover {
-  border-color: var(--border-hover);
-  background: #0000000a;
-}
-.bcast-card.live {
-  border-color: var(--bad);
-  box-shadow: inset 0 0 0 1px #c6282833;
-}
-.bcast-thumb {
-  position: relative;
-  width: 132px;
-  aspect-ratio: 16/9;
-  background: #111;
-  flex: none;
-  overflow: hidden;
-}
-.bcast-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.bcast-thumb-empty {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  color: #ffffff55;
-  background: linear-gradient(135deg, #1c1c1c, #333);
-  font: 900 11px var(--mono);
-  letter-spacing: 2px;
-}
-.bcast-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-.bcast-top {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.bcast-server {
-  font: 800 12px/1 sans-serif;
-  border: 1px solid var(--line);
-  padding: 3px 7px;
-  border-radius: var(--r-xs);
-}
-/* 중국(비리비리) 방송 — 미래시 배지 + B站 마크 */
-.bcast-future {
-  font: 800 11px/1 sans-serif;
-  border: 1px solid var(--lime);
-  color: var(--ink);
-  padding: 3px 6px;
-  border-radius: var(--r-xs);
-}
 .bili-mark {
   position: absolute;
   right: 6px;
@@ -1036,35 +891,6 @@ button {
   background: #00a1d6;
   color: #fff;
   font: 800 11px/1 sans-serif;
-}
-.bcast-note {
-  grid-column: 1 / -1;
-  margin: 4px 2px 0;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.6;
-}
-.bcast-state {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--muted);
-}
-.bcast-state.live {
-  color: var(--bad);
-}
-.bcast-state.upcoming {
-  color: var(--ink);
-}
-.bcast-card strong {
-  font-size: 13px;
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.bcast-date {
-  color: var(--muted);
-  font-size: 12px;
 }
 
 /* 버튼 아이콘 (단색 글리프) */
@@ -1083,13 +909,6 @@ button {
   opacity: 0.85;
 }
 @media (max-width: 760px) {
-  /* 모바일 헤더 버튼 전반 축소 — 데스크탑보다 한 단계 작게 (사용자 요청 2026-07) */
-  .bcast-trigger {
-    margin-left: 8px;
-    padding: 4px 7px;
-    font-size: 11px;
-    gap: 4px;
-  }
   .site-header .future-toggle {
     font-size: 11px;
     padding: 5px 7px;
@@ -1220,10 +1039,6 @@ button {
     min-width: 0;
     flex: 1 1 auto;             /* 남는 공간을 이벤트 칩이 채운다 */
   }
-  .bcast-trigger {
-    order: 12;
-    margin-left: 0;
-  }
   .site-header .future-toggle {
     order: 13;
     margin-left: auto;          /* 미래시·다크모드는 줄 오른쪽에 뭉친다 */
@@ -1305,15 +1120,6 @@ button {
     border-top: 1px solid var(--line);
     border-radius: 0 0 var(--r-md) var(--r-md);
   }
-  /* 펼칠 때 2줄째가 툭 나타나지 않게 아주 짧게 내려오며 뜬다 */
-  .site-header:not(.tucked) .feedback-header-btn,
-  .site-header:not(.tucked) .event-group,
-  .site-header:not(.tucked) .bcast-trigger,
-  .site-header:not(.tucked) .future-toggle,
-  .site-header:not(.tucked) .theme-toggle,
-  .site-header:not(.tucked) .about-icon {
-    animation: hdr-row-in 0.22s ease-out;
-  }
   @keyframes hdr-row-in {
     from { opacity: 0; transform: translateY(-6px); }
     to { opacity: 1; transform: none; }
@@ -1343,9 +1149,6 @@ button {
     min-width: 0;
     max-width: none;
     transform: none;
-  }
-  .bcast-thumb {
-    width: 104px;
   }
   .tab-icon {
     margin-right: 4px;
@@ -8332,10 +8135,6 @@ html.dark .tags-track > span {
     margin-left: 0; /* base의 우측 밀어내기(auto)는 한 줄 헤더용 — 여기선 해제 */
     margin-right: 0;
   }
-  /* 공식 방송 버튼은 확장부(미래시 왼쪽)에 산다 — 컨테이너 gap이 있으므로 base의 좌측 여백 해제 */
-  .header-sub .bcast-trigger {
-    margin-left: 0;
-  }
   /* 햄버거 드롭다운은 왼쪽으로 연다 — 햄버거가 오른쪽 끝이라 left:0(기본)이면 화면 밖으로
      잘린다 (2026-07-22 사용자 리포트) */
   .site-header .nav-group .main-tabs {
@@ -13419,13 +13218,6 @@ html.dark .pt-stage {
 @media (prefers-reduced-motion: reduce) {
   .pt-tile:hover:not(.dead) { transform: none; }
 }
-
-/* ── 공식방송·이벤트 배지 로딩 스켈레톤 — 헤더 슬롯 고정 예약 (CLS 방지, 사용자 요청 2026-07-17) ── */
-.bcast-trigger.is-skeleton,
-.event-trigger.is-skeleton {
-  pointer-events: none;
-  cursor: default;
-}
 .sk-box {
   display: block;
   width: 100%;
@@ -18492,18 +18284,6 @@ main.site-main > .site-header {
   .recruit-time-note, .recruit-tags, .recruit-picked, .recruit-combo, .low-time-note) {
   border-radius: var(--r-md);
 }
-/* 모달 패널 전부 — 컨테이너급만 (백드롭·내부 조각 제외)
-   ⚠ `.mw-window` 가 여기 있는 이유: 이건 **열거식 허용 목록**이라 공용 창(ModalWindow)으로
-   새 모달을 만들 때마다 자기 클래스를 여기 더하거나 자기 radius 를 적어야 했고, 그걸
-   빼먹으면 그 창만 각지게 떴다 (사용자 지적 2026-09-20: "공통컴포넌트는 둥그스름한데
-   얜 또 각져있다" — 저격 조합 사전 창). 창은 예외 없이 `.mw-window` 를 달고 나오므로
-   기본값을 여기서 깔아 준다. `:where()` 라 특이도가 0이고, 자기 값을 적은 창
-   (예: .chlog-detail 의 --r-md)은 그대로 이긴다. */
-:where(.operator-modal, .room-modal, .item-modal, .lens-modal, .scanner-modal,
-  .term-modal, .confirm-modal, .bcast-modal, .rg-emodal, .rg-rmodal, .rg-zmodal,
-  .rg-invmodal, .rg-modal, .omni-panel, .bridge-replay, .mw-window) {
-  border-radius: var(--r-lg);
-}
 /* 세그먼트 컨트롤은 **컨테이너**를 굴리고 내부 버튼은 각지게 되돌린다 —
    내부 버튼까지 굴리면 이음매 모서리에 배경이 비쳐 보인다 */
 .story-mode-bar {
@@ -18709,15 +18489,6 @@ main.site-main > .site-header {
 }
 .story-reader-prefs-btns button,
 .sc-view-switch button {
-  border-radius: 0;
-}
-
-/* NOTE(안내문) 계열은 **각지게 유지** — 라운딩 전면 롤백 (사용자 확정 2026-07-26:
-   "NOTE 부분은 전부 사각으로"). 왼쪽 악센트 바 스타일과 각진 모양이 세트다. */
-.about-note, .about-notes, .bcast-note, .chron-note, .data-note, .dorm-note,
-.event-menu-note, .future-note, .invest-note, .invest-note-sub, .low-time-note,
-.recruit-time-note, .rg-ctx-note, .rg-disclaimer, .rg-enc-note, .rule-note,
-.sc-future-note, .story-disclaimer {
   border-radius: 0;
 }
 
@@ -19239,12 +19010,6 @@ main.site-main > .site-header {
 .mw-body > * {
   flex-shrink: 0;
 }
-.mw-body > :where(.modal-body, .modal-scroll, .term-body, .bcast-list, .chlog-list, .invest-list,
-  /* 2026-09-05 간이 모달 일괄 이관분 — 스샷/PRTS 도움말·오퍼 스캐너·리플레이·업데이트 상세 */
-  .lens-body, .scanner-drop, .chlog-detail-in, .bridge-replay-list) {
-  flex: 1 1 auto;
-  min-height: 0;
-}
 /* ── 창 안쪽 기본 여백 ──────────────────────────────────────────────────────
    종전 관례는 "`.mw-body`는 패딩 0이 기본이고 **모달마다 자기 여백을 준다**"였는데,
    새 모달을 만들 때마다 그걸 잊어 내용이 창 벽에 붙는 일이 반복됐다 (사용자 지적
@@ -19257,19 +19022,6 @@ main.site-main > .site-header {
    값은 가장 최근 관례(.ac-modal)와 같은 12px 22px 24px. */
 .mw-body {
   padding: 12px 20px 24px;
-}
-/* 자체 여백을 가진 본문 컨테이너를 **직접** 품은 창은 위 기본값을 물린다 — 겹치면 두 겹이 된다.
-   (:has 미지원 브라우저에서는 여백이 두 겹이 될 뿐 내용이 잘리지는 않는다.)
-   새로 그런 컨테이너를 만들면 여기 목록에 더한다. */
-.mw-body:has(> :where(.modal-body, .modal-scroll, .en-file, .st-file, .bcast-list, .chlog-list,
-  .invest-list, .fb-thread, .fb-thread-modal, .chibi-chat-clear, .room-modal-head, .item-modal-icon,
-  /* 제안 게시판·작성 폼 — 안쪽 줄(.feedback-kind 등)이 이미 14px 여백을 갖고 있어
-     기본 22px가 겹치면 36px가 된다 (사용자 지적 2026-08-23) */
-  .feedback-panel,
-  /* 2026-09-05 간이 모달 이관분 — 도움말 본문(.lens-body 16/18)과 스캐너 드롭 영역
-     (.scanner-body 14/18 + .scanner-foot 12/18)은 이미 자기 여백을 갖고 있다 */
-  .lens-body, .scanner-drop)) {
-  padding: 0;
 }
 .mw-chrome {
   flex: none;
@@ -22871,7 +22623,6 @@ html.dark .ac-krfix { color: var(--gold); }
 /* 연결되면 왼쪽 반이 켜지므로 가운데 이음매도 같은 색으로 맞춘다 */
 .ac-prtsgrp:has(.ac-prtscta.on) .lens-help-btn { border-color: var(--lime); }
 
-
 .ac-lockbar {
   display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
   margin: 0 0 12px; padding: 8px 12px;
@@ -22942,8 +22693,6 @@ html.dark .ac-krfix { color: var(--gold); }
   .ac-bangroups { grid-template-columns: minmax(0, 1fr); }
   .ac-bangroups > .ac-banrow { margin-top: 0; padding-top: 4px; border-top: 0; }
 }
-
-
 
 /* 밴 표식 — **금지 표지**를 CSS 로 그린다 (빨간 원 + 사선).
    사용자 지적 2026-09-07 "밴 됐다는 뱃지가 좀 뭔가 이상하지 않음? 보기 영 이상함. 좀 더 예쁘게
@@ -23042,7 +22791,6 @@ html.dark .ac-krfix { color: var(--gold); }
 /* PRTS 읽은 값 보기 버튼 — 제목 줄의 PRTS 버튼 오른쪽에 붙는다 */
 .ac-prtsview .sb-count { margin-left: 4px; font-style: normal; font-size: 10px; opacity: 0.85; }
 
-
 /* 시뮬레이션 종류 — 제목 줄 **오른쪽**에 (사용자 요청 2026-09-07 "난이도도 모달창 오른쪽 위에다가
    표시하게 해 줘"). 게임 로딩 화면의 큰 글씨와 좌상단 붉은 배지에서 읽은 값이다. */
 /* 창 제목 줄 뱃지 — **제목 바로 오른쪽**에 붙는다 (사용자 지적 2026-09-07 "맹약 상세모달 오른쪽위
@@ -23056,7 +22804,6 @@ html.dark .ac-krfix { color: var(--gold); }
   font-size: 11px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap;
   color: var(--white); background: #c8323c;
 }
-
 
 /* 한 판 스트립 — PRTS 연결 중에만 뜬다 (2026-09-06). 덱편성 모달 **밖**이라
    탭을 옮겨 다녀도 인식 상태가 보인다. */
@@ -23100,7 +22847,6 @@ html.dark .ac-krfix { color: var(--gold); }
   border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
   font-size: 11px; font-weight: 700;
 }
-
 
 /* 전략 칩 — 내 전략(확정/고르는 중)·다른 참가자(연합). 아이콘은 전략 아트를 작게 (2026-09-07) */
 .ac-runbar-band { display: inline-flex; align-items: center; gap: 4px; color: var(--ink2); }

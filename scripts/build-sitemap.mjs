@@ -35,7 +35,7 @@ function collectRoutes(dir, base = "") {
 // 꼴이라 Google이 lastmod 자체를 신뢰하지 않게 된다. 그래서 **그 페이지 내용을 좌우하는 데이터
 // 파일의 마지막 커밋 시각**(git)을 쓴다 — 데이터가 실제로 바뀐 날만 갱신된다.
 const SEG_SOURCES = {
-  "": ["app/data/operators.json", "app/data/broadcasts.json"], // 포탈 = 허브(진행 이벤트·오퍼)
+  "": ["app/data/operators.json"], // 포탈 = 허브(진행 이벤트·오퍼)
   operators: ["app/data/operators.json"],
   enemies: ["app/data/enemies.json", "app/data/enemy-stages.json"],
   // 목록 페이지는 통합전략 색인도 함께 그린다 (상세 페이지는 여전히 stages.json만 — 파일 수 한도)

@@ -4,8 +4,6 @@
 // home-ko/en/ja.tsx 래퍼로 해당 언어의 operators 데이터를 정적 import해 넘긴다 —
 // 런타임 언어 전환은 전체 내비게이션이라 이 컴포넌트 안에서 로케일은 불변이다.
 import { lazy, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { createPortal } from "react-dom";
-import broadcastsData from "./data/broadcasts.json";
 import storyEventsData from "./data/stories.json";
 // 탭 본문은 전부 지연 로드한다 (INP 조사 2026-08-09). 종전엔 정적 import라 **어느 탭을
 // 열든 모든 탭의 코드와 데이터를 받아서 파싱**했다 — /stories가 오퍼 DB 1.8MB를, /infra가
@@ -69,7 +67,7 @@ import FutureTip, { FUTURE_BLOCKED } from "./future-tip";
 import { ChibiChatPanel, chibiChatStatus, type ChibiActionRequest, type ChibiChatStatus } from "./chibi-chat";
 // 공용 창형 모달 — 이동·리사이즈·고정·z순서 (2026-08-03)
 import { ModalWindow } from "./modal-window";
-import { useHashSync } from "./hash-modal";
+import {} from "./hash-modal";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
 import { noteAction, noteArrival, noteMiss } from "./trail";
@@ -369,97 +367,28 @@ function tabFromLegacyHash(hash: string): Tab | null {
   return hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : hash === "#farm" ? "farm" : hash === "#upgrade" ? "upgrade" : hash.startsWith("#story") ? "story" : null;
 }
 
-// ── 공식 방송 ─────────────────────────────────────────────
-// 방송 목록은 크론 워커(workers/broadcast — 6시간마다 유튜브 공식 채널 3개를 수집)에서
-// 가져오고, 네트워크 실패 시 broadcasts.json 정적 데이터로 폴백한다. 현재 시각과 비교해
-// 예약/생방송/지난방송을 분류하며, 헤더엔 요약 버튼 하나만 두고 클릭하면 전체 목록
-// (유튜브 썸네일 포함) 모달을 연다. 지난 방송도 날짜와 함께 계속 남긴다.
-const BCAST_API = "https://terra-archive-broadcast.nzkonaru.workers.dev/";
-// cover = 중섭(비리비리) 라이브룸 커버 — 유튜브 썸네일이 없는 항목의 카드 이미지.
-// key = 워커가 붙인 중복 판정 키(중섭 항목엔 videoId가 없다).
-type Broadcast = { server: string; title: string; start: string; durationMin?: number; url?: string; videoId?: string; cover?: string; key?: string };
-type BState = "live" | "upcoming" | "past";
+// ── 진행중 게임 이벤트 ─────────────────────────────────────
+// ⚠ 2026-09-23 이전에는 여기에 **유튜브 공식 방송**이 함께 살았다 (헤더 버튼 + 목록 모달,
+//   정적 폴백 app/data/broadcasts.json, 중섭 수집 scripts/build-broadcasts-cn.py).
+//   "나도 안 보고 사람들도 안 보고 아무도 안 쓰는 죽은 기능"이라 통째로 걷어냈다.
+//   워커(terra-archive-broadcast)는 **이벤트도 같이 실어 주므로 그대로 둔다** — 이름만 옛것이다.
+const EVENT_API = "https://terra-archive-broadcast.nzkonaru.workers.dev/";
 // 진행중 게임 이벤트 — 워커가 KR activity_table에서 뽑아 같은 payload에 실어준다.
 // 진행중 판정은 클라이언트가 start/end와 Date.now()를 비교 (워커 데이터가 묵어도 정확).
 // url = 공식 네이버 카페 이벤트 공지 (워커가 제목 매칭으로 찾음, 없으면 링크 없음)
 type GameEvent = { id: string; name: string; type?: string | null; displayType?: string | null; start: string; end: string; url?: string };
 
-const SERVER_META: Record<string, { code: string; label: string }> = {
-  kr: { code: "KR", label: "한국" },
-  jp: { code: "JP", label: "일본" },
-  global: { code: "GL", label: "글로벌" },
-  cn: { code: "CN", label: "중국" },
-};
-// 중국 서버 방송은 **미래시 데이터 포함이 켜져 있을 때만** 노출한다 — 중섭 선행 정보라
-// 사이트 공통 규칙(미실장 오퍼·향후 이벤트와 동일, 사용자 확정 2026-07-25).
-const FUTURE_SERVERS = new Set(["cn"]);
-const HOUR = 3_600_000;
 const DAY = 86_400_000;
-const STATE_RANK: Record<BState, number> = { live: 0, upcoming: 1, past: 2 };
-const PAST_LIMIT = 10; // 목록에 남기는 지난 방송 수 (사용자 확정 2026-07-25)
 
-function YtIcon() {
-  return <span className="yt-icon" aria-label="YouTube"><i /></span>;
-}
 
-// 공식 방송은 전부 유튜브 — watch/live/youtu.be/embed URL 또는 명시적 videoId에서 11자 ID 추출
-function youTubeId(b: Broadcast): string | null {
-  if (b.videoId) return b.videoId;
-  const m = b.url?.match(/(?:v=|\/live\/|youtu\.be\/|\/embed\/)([\w-]{11})/);
-  return m ? m[1] : null;
-}
 
-function bcastState(b: Broadcast, now: number): BState {
-  const start = Date.parse(b.start);
-  const end = start + (b.durationMin ?? 120) * 60_000;
-  if (now < start) return "upcoming";
-  if (now <= end) return "live";
-  return "past";
-}
-
-// 한국 시각(KST) 기준으로 표기 — KR 팬사이트 기준 (표기 언어만 로케일 적용)
-function fmtDate(locale: Locale, iso: string, withTime: boolean) {
-  return new Intl.DateTimeFormat(DT_LOCALE[locale], {
-    timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric",
-    ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
-  }).format(new Date(iso));
-}
 
 // eta "2026-09" → 로케일별 "연월"(일 없음). 미실장 이벤트 추정월 표기용 — KST 기준.
 function fmtYm(locale: Locale, ym: string): string {
   return new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", year: "numeric", month: "long" }).format(new Date(`${ym}-01T00:00:00+09:00`));
 }
 
-function BroadcastThumb({ b }: { b: Broadcast }) {
-  const id = youTubeId(b);
-  // 중섭은 유튜브가 아니라 비리비리 — 워커가 실어 준 라이브룸 커버를 쓰고 마크도 B站으로
-  const src = id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : b.cover;
-  const [broken, setBroken] = useState(false);
-  return (
-    <div className="bcast-thumb">
-      {src && !broken ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        // 비리비리 CDN은 Referer가 붙으면 403(핫링크 차단) — 커버는 리퍼러 없이 요청한다
-        <img src={src} alt="" width={480} height={360} loading="lazy" referrerPolicy={id ? undefined : "no-referrer"} onError={() => setBroken(true)} />
-      ) : (
-        <div className="bcast-thumb-empty" aria-hidden>ARKNIGHTS</div>
-      )}
-      {b.server === "cn"
-        ? <span className="bili-mark" aria-label="bilibili">B</span>
-        : <span className="yt-mark" aria-label="YouTube"><i /></span>}
-    </div>
-  );
-}
 
-// 원격/정적 항목 중복 판정 키 — 유튜브 영상 ID가 있으면 그것, 없으면 워커 키
-function bcastKey(b: Broadcast): string {
-  return youTubeId(b) ?? b.key ?? dayKey(b);
-}
-// 같은 서버·같은 날 방송은 같은 것으로 본다 — 정적 폴백엔 채널 URL(영상 ID 없음)만 있는
-// 항목이 있어 id로는 원격과 못 겹친다. 이 보조 키가 없으면 6.5주년 JP·GL이 두 번 뜬다.
-function dayKey(b: Broadcast): string {
-  return `${b.server}:${new Date(b.start).toISOString().slice(0, 10)}`;
-}
 
 // AI 스토리 요약이 있는 이벤트 — 진행중 배지에서 이름 현지화 + 배너 썸네일 + 스토리 페이지 링크에 사용.
 // eta = 미실장(중섭 선행) 이벤트의 KR 추정 출시월("2026-11") — build-story.py가 중↔한 시차로 산출.
@@ -505,26 +434,25 @@ const MINOR_EVENT_TYPES = new Set([
   "GRID_GACHA", "GRID_GACHA_V2", "FLIP_ONLY",
 ]);
 
-// 워커 fetch는 모듈 공유 프라미스로 1회만 — 헤더 배지와 이벤트 스트립이 같이 쓴다
-let bcastFetch: Promise<{ broadcasts: Broadcast[]; events: GameEvent[] } | null> | null = null;
-function fetchBcastPayload() {
-  bcastFetch ??= fetch(BCAST_API)
+// 워커 fetch는 모듈 공유 프라미스로 1회만 — 헤더 배지와 이벤트 스트립이 같이 쓴다.
+// ⚠ 워커 이름(terra-archive-broadcast)과 경로는 방송 기능 때 만든 것이 그대로다 —
+//   2026-09-23에 방송을 걷어냈지만 **같은 워커가 진행중 이벤트도 실어 준다**.
+let eventFetch: Promise<{ events: GameEvent[] } | null> | null = null;
+function fetchEventPayload() {
+  eventFetch ??= fetch(EVENT_API)
     .then((res) => (res.ok ? res.json() : null))
-    .then((data) => (data ? {
-      broadcasts: Array.isArray(data.broadcasts) ? data.broadcasts : [],
-      events: Array.isArray(data.events) ? data.events : [],
-    } : null))
+    .then((data) => (data ? { events: Array.isArray(data.events) ? data.events : [] } : null))
     .catch(() => null);
-  return bcastFetch;
+  return eventFetch;
 }
 
 /** 지금 돌고 있는 대표 이벤트 하나 — 헤더 바로가기 칩이 쓴다 (사용자 요청 2026-09-17).
- *  워커 fetch 는 모듈 공유 프라미스(fetchBcastPayload)라 헤더 배지와 같은 요청을 나눠 쓴다. */
+ *  워커 fetch 는 모듈 공유 프라미스(fetchEventPayload)라 헤더 배지와 같은 요청을 나눠 쓴다. */
 function useRunningEvent(): GameEvent | null {
   const [evt, setEvt] = useState<GameEvent | null>(null);
   useEffect(() => {
     let live = true;
-    void fetchBcastPayload().then((data) => {
+    void fetchEventPayload().then((data) => {
       if (!live || !data) return;
       const top = sortRunning(data.events, Date.now())[0] ?? null;
       if (top) setEvt(top);
@@ -601,26 +529,16 @@ function useTapOnly() {
   };
 }
 
-function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
-  includeFuture?: boolean; slot?: "broadcast" | "events";
+/* 진행중·예정 게임 이벤트 배지. 2026-09-23 까지는 유튜브 공식 방송 버튼과 한 몸이었고
+   (slot 으로 갈라 썼다) 그래서 이름이 BroadcastBadges 였다 — 방송 기능을 걷어내며 갈랐다. */
+function EventBadges({ onOpenEvent }: {
   /** 이벤트 줄을 누르면 이벤트 도감 상세로 (사용자 지시 2026-09-17) */
   onOpenEvent?: (id: string, type?: string | null) => void;
 }) {
   const { locale, t } = useI18n();
   const tapOnly = useTapOnly();
-  const shortStatus = (b: Broadcast, now: number): string => {
-    const state = bcastState(b, now);
-    if (state === "live") return t("생방송 중");
-    if (state === "upcoming") {
-      const ms = Date.parse(b.start) - now;
-      return ms < HOUR ? t("곧 시작") : ms < DAY ? t("{n}시간 후", { n: Math.round(ms / HOUR) }) : `D-${Math.ceil(ms / DAY)}`;
-    }
-    return new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }).format(new Date(b.start));
-  };
   // 서버 렌더에는 시각을 알 수 없어 hydration이 어긋나므로, 마운트 후에만 그린다
   const [now, setNow] = useState<number | null>(null);
-  const [open, setOpen] = useState(false);
-  const [remote, setRemote] = useState<Broadcast[] | null>(null);
   const [gameEvents, setGameEvents] = useState<GameEvent[]>([]);
   const [settled, setSettled] = useState(false); // 워커 응답 여부 — 응답 전엔 스켈레톤으로 슬롯 예약
   const [evOpen, setEvOpen] = useState(false);
@@ -631,25 +549,12 @@ function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
     return () => clearInterval(id);
   }, []);
   useEffect(() => {
-    // 워커 불통이면 정적 broadcasts.json만 사용 (이벤트 배지는 생략)
-    fetchBcastPayload().then((data) => {
-      if (data) {
-        setRemote(data.broadcasts);
-        setGameEvents(data.events);
-      }
+    // 워커가 불통이면 이벤트 배지는 그냥 비워 둔다 (정적 폴백은 없다)
+    fetchEventPayload().then((data) => {
+      if (data) setGameEvents(data.events);
       setSettled(true); // 성공·실패(워커 불통) 모두 스켈레톤 해제
     });
   }, []);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-  // 딥링크: #broadcast — 모달을 소유한 슬롯(≠events)만 동기화 (events 슬롯은 배지 전용)
-  useHashSync(slot !== "events" && open ? "#broadcast" : null, (h) => {
-    if (slot !== "events") setOpen(h === "#broadcast");
-  });
   // 진행중 이벤트 팝오버 — 바깥 클릭/Esc로 닫기
   useEffect(() => {
     if (!evOpen) return;
@@ -664,13 +569,7 @@ function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
   if (now == null || !settled) {
     return (
       <>
-        {slot !== "events" && (
-          <span className="bcast-trigger is-skeleton" aria-hidden>
-            <YtIcon />
-            <span>{t("공식 방송")}</span>
-          </span>
-        )}
-        {slot !== "broadcast" && <div className="event-group" aria-hidden>
+        {<div className="event-group" aria-hidden>
           <div className="event-trigger is-skeleton">
             <span className="event-mark" aria-hidden>✦</span>
             <span>{t("이벤트")}</span>
@@ -680,13 +579,6 @@ function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
       </>
     );
   }
-  const statics = (broadcastsData.broadcasts as Broadcast[]).filter((b) => !Number.isNaN(Date.parse(b.start)));
-  const seen = new Set((remote ?? []).flatMap((b) => [bcastKey(b), dayKey(b)]));
-  const all = [
-    ...(remote ?? []).filter((b) => !Number.isNaN(Date.parse(b.start))),
-    ...statics.filter((b) => !seen.has(bcastKey(b)) && !seen.has(dayKey(b))),
-  ].filter((b) => includeFuture || !FUTURE_SERVERS.has(b.server)); // 중섭은 미래시 ON일 때만
-
   // ── 진행중 게임 이벤트 배지 (공식 방송 버튼 오른쪽) ──
   // 굵직한 이벤트(사이드스토리 등) 우선 + 최신 시작순으로 대표 하나를 버튼에,
   // 나머지는 팝오버 목록에. 로그인·출석·기원류 잔이벤트는 sortRunning에서 제외한다
@@ -712,8 +604,6 @@ function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
   // 드롭다운: "2026년 7월 16일" 연·월·일 / 배지: "7월 16일" 월·일 (사용자 요청 2026-07)
   const md = (iso: string): string =>
     new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric" }).format(new Date(iso));
-  const mdLong = (iso: string): string =>
-    new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "long", day: "numeric" }).format(new Date(iso));
   // 스토리 탭용으로 이미 받아둔 이벤트 배너를 재활용 (로케일 변형 → ko 폴백)
   const evThumb = (event: GameEvent): string | undefined => eventThumb(locale, event);
   const eventBadge = headline && (
@@ -813,76 +703,7 @@ function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
     </div>
   );
 
-  if (all.length === 0) return (slot === "broadcast" ? null : eventBadge) || null;
-  // 정렬: 생방송 > 가까운 예약 > 최근 지난 방송 (서버 전부 목록에 표시)
-  const sorted = [...all].sort((a, b) => {
-    const sa = bcastState(a, now), sb = bcastState(b, now);
-    if (STATE_RANK[sa] !== STATE_RANK[sb]) return STATE_RANK[sa] - STATE_RANK[sb];
-    return sa === "past" ? Date.parse(b.start) - Date.parse(a.start) : Date.parse(a.start) - Date.parse(b.start);
-  })
-    // 지난 방송 이력은 최근 10건까지만 (사용자 확정 2026-07-25 — 그 이상은 안 봄).
-    // 생방송·예약은 개수 제한 없이 전부 남긴다.
-    .filter((b, _i, list) => bcastState(b, now) !== "past"
-      || list.filter((x) => bcastState(x, now) === "past").indexOf(b) < PAST_LIMIT);
-  // 헤더 버튼 힌트: 생방송이 있으면 LIVE, 없으면 가장 가까운 예약을 표시
-  const liveOne = all.find((b) => bcastState(b, now) === "live");
-  const nextUp = all.filter((b) => bcastState(b, now) === "upcoming").sort((a, b) => Date.parse(a.start) - Date.parse(b.start))[0];
-  const hint = liveOne ? { cls: "live", text: t("생방송 중") } : nextUp ? { cls: "upcoming", text: t("예약 {s}", { s: shortStatus(nextUp, now) }) } : null;
-  return (
-    <>
-      {slot !== "events" && (
-        <button type="button" className={`bcast-trigger ${hint?.cls ?? ""}`} onClick={() => setOpen(true)}
-          title={includeFuture ? t("명일방주 한국·일본·글로벌·중국 공식 방송 일정 보기") : t("명일방주 한국·일본·글로벌 공식 방송 일정 보기")}>
-          <YtIcon />
-          <span>{t("공식 방송")}</span>
-          {hint && <span className="bcast-hint">· {hint.text}</span>}
-        </button>
-      )}
-      {/* 진행중 게임 이벤트 배지 — 1줄(접어도 보임) */}
-      {slot !== "broadcast" && eventBadge}
-      {/* 사이트 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로,
-          모달은 portal로 body에 직접 렌더링해야 화면 전체를 덮는다 */}
-      {open && slot !== "events" && createPortal(
-        <ModalWindow label={t("명일방주 공식 방송")} className="bcast-modal" onClose={() => setOpen(false)}>
-            {/* 제목은 창 크롬 바(label)가 담당 — 종전 내부 header는 제목이 이중으로 떠서 제거 (2026-08-03) */}
-            <div className="bcast-list">
-              {sorted.map((b) => {
-                const st = bcastState(b, now);
-                const meta = SERVER_META[b.server] ?? { code: b.server.toUpperCase(), label: b.server };
-                const stateLabel = st === "live" ? t("● 생방송 중") : st === "upcoming" ? t("예약됨 ({s})", { s: shortStatus(b, now) }) : t("지난 방송");
-                const dateLine =
-                  st === "live" ? t("지금 방송 중")
-                    : st === "upcoming" ? t("{date} 예정", { date: fmtDate(locale, b.start, true) })
-                      : t("{date} 방송", { date: fmtDate(locale, b.start, false) });
-                const body = (
-                  <>
-                    <BroadcastThumb b={b} />
-                    <div className="bcast-info">
-                      <div className="bcast-top">
-                        <span className={`bcast-server ${b.server}`}>{t("{label} 서버", { label: t(meta.label) })}</span>
-                        {FUTURE_SERVERS.has(b.server) && <span className="bcast-future">{t("미래시")}</span>}
-                        <span className={`bcast-state ${st}`}>{stateLabel}</span>
-                      </div>
-                      <strong>{b.title}</strong>
-                      <span className="bcast-date">{dateLine}</span>
-                    </div>
-                  </>
-                );
-                return b.url ? (
-                  <a key={`${b.server}-${b.start}`} className={`bcast-card ${st}`} href={b.url} target="_blank" rel="noopener noreferrer">{body}</a>
-                ) : (
-                  <div key={`${b.server}-${b.start}`} className={`bcast-card ${st}`}>{body}</div>
-                );
-              })}
-              {includeFuture && (
-                <p className="bcast-note">{t("중국 서버 방송은 비리비리 공식 라이브룸에서 가져옵니다 — 일정은 방송 소개문 기준이라 실제와 다를 수 있어요. 미래시 데이터 포함을 끄면 숨겨집니다.")}</p>
-              )}
-            </div>
-        </ModalWindow>,
-        document.body
-      )}
-    </>
-  );
+  return eventBadge;
 }
 
 // ── 언어 전환 (서버 칩 드롭다운) ─────────────────────────────────────────────
@@ -975,7 +796,7 @@ function Portal({ onOpenTab, onOpenEvent }: {
   useEffect(() => {
     setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 30_000);
-    void fetchBcastPayload().then((data) => { if (data) setEvents(data.events); });
+    void fetchEventPayload().then((data) => { if (data) setEvents(data.events); });
     return () => clearInterval(id);
   }, []);
   // 팔레트는 사이트 밝기를 그대로 따라간다 — 별도 테마 선택지를 두지 않는다
@@ -2508,8 +2329,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           <div className="header-sub-right">
             {/* 진행중 이벤트 · 공식 방송 — 둘 다 확장부로 (이벤트 배지는 사용자 요청 2026-07-30에
                 1줄 배너에서 여기 작은 버튼으로 내려왔다. 방송은 2026-07-25부터 여기). */}
-            <BroadcastBadges includeFuture={includeFuture} slot="events" onOpenEvent={openEventById} />
-            <BroadcastBadges includeFuture={includeFuture} slot="broadcast" />
+            <EventBadges onOpenEvent={openEventById} />
             {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}
             <label className={`future-toggle${futureFlash ? " flash" : ""}`} title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
               <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />

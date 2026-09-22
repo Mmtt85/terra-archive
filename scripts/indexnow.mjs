@@ -49,7 +49,6 @@ const TAB_OF = {
   "stages.json": ["stages"],
   "costs.json": ["upgrade"],
   "stories.json": ["stories"], "chronology.json": ["stories"], "story-summaries.json": ["stories"],
-  "broadcasts.json": [""],
 };
 const ROGUE_RE = /^rogue\d+(\.(cn|en|ja))?\.json$/;
 
