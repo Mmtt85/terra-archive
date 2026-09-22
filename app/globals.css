@@ -410,9 +410,15 @@ button {
   place-items: center;
   flex: none;
 }
-.theme-toggle:hover {
-  background: var(--chip);
-  color: var(--chip-ink);
+/* ⚠ 호버 칠은 **마우스가 있는 기기에서만** (2026-09-23). 터치에선 :hover 가 누른 자리에
+   눌어붙어, 테마를 한 번 바꾸면 버튼이 라이트모드인데도 검게 남는다 (사용자 지적:
+   "새로고침하면 투명인데 다크 갔다 라이트로 오면 검정색으로 유지돼 있음").
+   --chip 은 라이트에서 거의 검정이라 눌어붙으면 티가 크다. */
+@media (hover: hover) {
+  .theme-toggle:hover {
+    background: var(--chip);
+    color: var(--chip-ink);
+  }
 }
 .server-chip span {
   background: #59bb55;
@@ -564,8 +570,10 @@ button {
   transition: 0.15s;
   white-space: nowrap;
 }
-.chlog-trigger:hover {
-  border-color: var(--border-hover);
+@media (hover: hover) {
+  .chlog-trigger:hover {
+    border-color: var(--border-hover);
+  }
 }
 .chlog-modal {
   position: relative;
@@ -802,7 +810,9 @@ button {
   transition: 0.15s;
   white-space: nowrap;
 }
-.promo-trigger:hover { border-color: var(--lime); }
+@media (hover: hover) {
+  .promo-trigger:hover { border-color: var(--lime); }
+}
 .promo-trigger.selected { background: color-mix(in srgb, var(--lime) 14%, transparent); }
 /* 라임 원색은 밝은 종이 위에서 1.46:1이라 사실상 안 보인다 — 배경에 맞춰 도는
    --tint-lime-ink(라이트 #5b6b00 · 다크 #c6d96e)를 쓴다 (2026-08-25) */
@@ -1131,9 +1141,17 @@ button {
   /* 위수 협의 등 기간 한정 바로가기 — 폭이 빠듯해 한 급 줄인다 (사용자 지시 2026-08-22) */
   .promo-trigger {
     order: 3;
+    /* 이벤트 관련 칩(위수 협의 · 진행중 이벤트)은 1줄 **오른쪽에 뭉친다**
+       (사용자 지시 2026-09-23). 미는 일은 둘 중 **앞의 것**만 맡아야 한다 —
+       둘 다 auto 면 남는 폭을 나눠 가져 서로 떨어진다. 아래 형제 규칙이 뒤의 것을 0으로
+       되돌린다. 기간 한정 칩이 없는 시기에는 진행중 이벤트가 앞이 되어 그대로 동작한다. */
+    margin-left: auto;
     padding: 4px 7px;
     font-size: 11px;
     gap: 5px;
+  }
+  .promo-trigger ~ .promo-trigger {
+    margin-left: 0;
   }
   .promo-trigger .promo-hint { font-size: 10px; }
   /* 진행중 이벤트 — 같은 1줄, 위수 협의 오른쪽. **이벤트 이름만** 남긴다
@@ -1288,28 +1306,26 @@ button {
     border-radius: 0 0 var(--r-md) var(--r-md);
   }
   /* 펼칠 때 2줄째가 툭 나타나지 않게 아주 짧게 내려오며 뜬다 */
-  .site-header:not(.collapsed):not(.tucked) .feedback-header-btn,
-  .site-header:not(.collapsed):not(.tucked) .event-group,
-  .site-header:not(.collapsed):not(.tucked) .bcast-trigger,
-  .site-header:not(.collapsed):not(.tucked) .future-toggle,
-  .site-header:not(.collapsed):not(.tucked) .theme-toggle,
-  .site-header:not(.collapsed):not(.tucked) .about-icon {
+  .site-header:not(.tucked) .feedback-header-btn,
+  .site-header:not(.tucked) .event-group,
+  .site-header:not(.tucked) .bcast-trigger,
+  .site-header:not(.tucked) .future-toggle,
+  .site-header:not(.tucked) .theme-toggle,
+  .site-header:not(.tucked) .about-icon {
     animation: hdr-row-in 0.22s ease-out;
   }
   @keyframes hdr-row-in {
     from { opacity: 0; transform: translateY(-6px); }
     to { opacity: 1; transform: none; }
   }
-  .site-header.collapsed .feedback-header-btn,
-  .site-header.collapsed .event-group,
-  .site-header.collapsed .bcast-trigger,
-  .site-header.collapsed .future-toggle,
-  .site-header.collapsed .theme-toggle,
-  .site-header.collapsed .about-icon,
-  .site-header.collapsed::before,
-  .site-header.collapsed::after {
-    display: none;
-  }
+  /* 종전엔 '접힘'(3줄만 감추는 중간 상태)이 있어 여기서 그 줄을 감췄다. 상태가 둘로
+     줄면서(2026-09-23) 닫으면 헤더가 통째로 치워지므로 이 규칙은 필요 없어졌다. */
+  /* ⚠ ::before 는 **접혀도 남긴다** (2026-09-23). 접히면 3줄이 사라지므로 2↔3 을 끊던
+     ::after 는 필요 없지만, 1↔2 를 끊는 ::before 까지 지우면 남은 조각들이 한 줄로 줄줄이
+     붙어 버린다 — 언어 칩이 1줄 끝(진행중 이벤트 옆)으로 딸려 올라가고, 만능검색·메뉴만
+     2줄 왼쪽에 남았다 (사용자 지적: "사람들 우리들에 왜 다음 버튼을 이어서 표시하는 거야?
+     언어·검색·메뉴는 2줄 오른쪽 정렬을 해야 하는 거 아님?").
+     접힘에서 줄을 하나 줄이던 옛 규칙의 잔재다 — 그때는 접히면 로고·햄버거만 남았다. */
   /* 이벤트 칩도 방송 버튼과 같은 크기의 작은 버튼 (2026-07-30 — 배너형 폐기) */
   .event-trigger {
     padding: 4px 8px;
@@ -4886,7 +4902,10 @@ html.dark .tags-track > span {
     min-height: 56px;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    /* 줄 사이는 칩 사이보다 좁게 — 3줄이라 세로 간격이 곱절로 쌓인다 (사용자 지시 2026-09-23
+       "헤더 y갭을 살짝 줄여줘"). 가로는 칩이 붙어 보이지 않게 8px 그대로. */
+    column-gap: 8px;
+    row-gap: 4px;
     /* 오른쪽 여백을 왼쪽보다 넉넉히 — 각 줄 오른쪽 끝 버튼(햄버거·공식방송·언어)이
        화면 가장자리에 딱 붙어 보인다는 피드백 (2026-07-22) */
     padding: 9px 22px 9px 16px;
@@ -7953,8 +7972,39 @@ html.dark .tags-track > span {
   background: var(--btn-ghost-hover);
   color: var(--btn-ink-hover);
 }
+/* ⚠ 이 줄만 미디어쿼리 **밖**이면 데스크탑까지 샌다 (2026-09-23에 한 번 샜다 —
+   데스크탑 버튼이 두 줄로 쌓였다). 모바일 전용 규칙은 아래 @media 안에 둘 것. */
 .planner-buttons {
   flex-wrap: wrap;
+}
+/* 모바일에선 **두 줄로 못 박는다** (사용자 지시 2026-09-23):
+     1줄 = 보유 오퍼 설정 · 전체 자동편성 (핵심 2버튼, 반씩 나눠 줄을 꽉 채운다)
+     2줄 = 빈 자리만 자동편성 · 편성 전체 비우기 · 그 외 (오른쪽 정렬)
+   1줄이 꽉 차면 나머지는 저절로 다음 줄로 내려간다. 줄 정렬은 컨테이너의
+   justify-content:flex-end 가 그대로 맡는다 — 2줄이 오른쪽에 붙는 이유다.
+   ⚠ '자동편성 시점으로'는 손으로 고친 뒤에만 나타나는 버튼이라, 그때는 2줄이 셋으로
+     늘 수 있다 (폭이 모자라면 자연스럽게 내려간다). */
+@media (max-width: 760px) {
+  /* 줄마다 높이를 맞춘다 — 1줄의 핵심 2버튼이 라벨 길이 때문에 서로 다른 높이로 서던 것을
+     같게 한다 (사용자 지시 2026-09-23). 데스크탑이 align-items:center 인 건 버튼이 한 줄에
+     다 있어서 보조 버튼까지 커지기 때문인데(2026-07-27), 모바일은 줄이 나뉘어 있어
+     1줄은 핵심 둘, 2줄은 보조 셋끼리만 키가 맞는다. */
+  .planner-buttons {
+    align-items: stretch;
+  }
+  /* ⚠ `> .primary`(0,2,0) 로는 데스크탑의 `.planner-buttons button.primary`(0,2,1)를
+     못 이긴다 — button 을 넣어 특이도를 맞춘다 (2026-09-23 실측으로 잡음). */
+  .planner-buttons > button.primary {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    justify-content: center;
+    /* 데스크탑은 '크기로도 도드라지게' 16px/여백 26px 이지만(2026-07-27), 모바일에선 폭이
+       절반이라 라벨이 두 줄로 접히며 버튼이 82px 까지 길어졌다 (사용자 지적 2026-09-23).
+       한 줄에 들어갈 만큼만 줄인다 — 색과 폭으로 이미 핵심 버튼인 게 보인다. */
+    padding: 10px 10px;
+    font-size: 13px;
+    text-align: center;
+  }
 }
 .crew-card {
   position: relative;
@@ -8296,7 +8346,9 @@ html.dark .tags-track > span {
      ⚠ display:none 이 아니라 **높이 0**이다 — 여닫기를 전환하려면 박스가 남아 있어야 한다.
      내용은 opacity 로 먼저 지우고(0.1s), 다 닫힌 뒤 visibility 로 끈다(0.32s = 0.08+0.24).
      visibility:hidden 이라야 접힌 확장부가 탭 순서·스크린리더에서도 빠진다. */
-  .site-header.collapsed .header-sub {
+  /* 상태가 둘로 줄면서(2026-09-23) 데스크탑의 '접힘'도 .tucked 가 맡는다 —
+     종전엔 클래스 이름만 달랐을 뿐 하는 일은 같다. */
+  .site-header.tucked .header-sub {
     height: 0;
     opacity: 0;
     visibility: hidden;
@@ -8310,7 +8362,7 @@ html.dark .tags-track > span {
      ⚠ row-gap 을 0으로 지우면 안 된다 — 900·1400·1440px 처럼 **1줄이 두 줄로 접히는 폭**
        에서는 그 줄 사이 간격이기도 해서, 접힘 헤더가 10px 납작해지고 여닫을 때 본문이
        10px 흔들렸다 (2026-09-19 실측). 패딩으로 빼면 1줄이 몇 줄이 되든 상쇄량이 같다. */
-  .site-header.collapsed {
+  .site-header.tucked {
     padding-bottom: 4px;
   }
   /* 펼쳐도 **본문이 밀려 내려가지 않는다** (사용자 요청 2026-09-19).
@@ -8324,7 +8376,7 @@ html.dark .tags-track > span {
        여기서는 배치·배경·테두리·핸들이 전부 종전 그대로고 바깥 높이만 상쇄된다.
      ⚠ 끄는 중(.dragging)에는 상쇄하지 않는다 — 인라인 max-height 로 헤더가 줄어드는
        동안에도 상쇄가 걸리면 본문이 화면 위로 끌려 올라간다. */
-  .site-header:not(.collapsed):not(.dragging) {
+  .site-header:not(.tucked):not(.dragging) {
     margin-bottom: -43px;
   }
   /* 여닫기 애니메이션 (사용자 요청 2026-09-19) — **본문은 한 픽셀도 움직이지 않는다.**
@@ -8337,7 +8389,7 @@ html.dark .tags-track > span {
       padding-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1),
       margin-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .site-header.collapsed:not(.dragging) {
+  .site-header.tucked:not(.dragging) {
     transition:
       padding-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1) 0.08s,
       margin-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1) 0.08s;
@@ -16418,6 +16470,47 @@ html.rg-theme .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
   }
 }
 
+/* 아주 좁은 폰(≤380px) — 1줄에 네 조각이 안 들어가 이벤트 칩이 혼자 다음 줄로 내려간다
+   (360px 실측: 필요 343 · 쓸 수 있는 폭 322). 남은 기간을 접어 자리를 만든다 — 이름과
+   아이콘은 남으므로 무슨 이벤트인지는 그대로 읽힌다. 390px 이상은 손대지 않는다. */
+@media (max-width: 380px) {
+  .ev-promo .promo-hint {
+    display: none;
+  }
+}
+
+/* ── 넘칠 때만 흐르는 한 줄 (app/marquee.tsx) ─────────────────────────────────
+   넘침은 CSS 가 감지하지 못한다 — 폭을 재서 data-mq="run" 을 붙이는 건 JS 몫이고,
+   여기서는 움직임만 맡는다. 내용을 두 벌 그려 앞 벌이 빠져나가는 동안 뒤 벌이 이어 들어온다.
+   ⚠ .mq-run > i 의 padding-right 는 marquee.tsx 의 MQ_GAP 과 **같은 값**이어야 한다. */
+.mq {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.mq-run {
+  display: inline-block;
+  white-space: nowrap;
+}
+.mq-run > i {
+  padding-right: 48px;   /* = marquee.tsx MQ_GAP */
+  font-style: inherit;
+}
+/* 넘치지 않으면 뒤 벌은 없는 셈 친다 */
+.mq:not([data-mq="run"]) > .mq-run > i + i {
+  display: none;
+}
+.mq[data-mq="run"] > .mq-run {
+  animation: mq-run var(--mq-dur, 12s) linear infinite;
+}
+@keyframes mq-run {
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mq[data-mq="run"] > .mq-run { animation: none; }
+}
+
 /* ── 스크롤 구조 — 헤더 고정, 세로 스크롤은 본문(.site-scroll)에만 (사용자 요청 2026-07-22,
    모바일·PC 공통: 스크롤바가 헤더 옆까지 올라오지 않는다) ── */
 html,
@@ -17710,8 +17803,10 @@ main.site-main > .site-header {
   white-space: nowrap;
   text-align: left;
 }
-.omni-trigger:hover {
-  border-color: var(--accent, var(--gold));
+@media (hover: hover) {
+  .omni-trigger:hover {
+    border-color: var(--accent, var(--gold));
+  }
 }
 .omni-trigger > span[aria-hidden] {
   font-size: 16px;

@@ -1197,7 +1197,6 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       // 메뉴가 떠 있으면 헤더를 가려서 정작 깜빡이는 토글이 안 보인다 (사용자 요청
       // 2026-09-18). 메뉴가 닫혀 있으면 아무 일도 아니라 카드에서 눌렀을 때와 같다.
       setNavOpen(false); setOpenGroup(""); holdFlyout("");
-      setHeaderCollapsed(false);
       setHeaderTucked(false);
       // 연달아 눌러도 애니메이션이 다시 시작되도록 한 프레임 끊었다 켠다
       setFutureFlash(false);
@@ -1304,7 +1303,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 관리자 모드는 '새 제안'이라 무엇의 개수인지도 같이 받는다 (2026-09-06).
   const [feedbackNew, setFeedbackNew] = useState(0);
   const [feedbackNewAdmin, setFeedbackNewAdmin] = useState(false);
-  const [headerCollapsed, setHeaderCollapsed] = useState(true); // 모바일 헤더 접기 — 접힘이 기본(사용자 확정 2026-07-22). PC는 무관(관련 CSS가 모바일 블록에만 있음)
+  /* 모바일 헤더는 **두 상태뿐**이다 — 다 열림 / 다 닫힘 (사용자 확정 2026-09-23:
+     "굳이 어정쩡하게 절반만 닫을 이유가 없어 보임"). 종전엔 그 사이에 '접힘'(1·2줄만
+     남기고 3줄만 감추는 상태)이 하나 더 있었고 그게 기본값이었다.
+     PC는 무관 — 관련 CSS 가 전부 모바일 블록에만 있다. */
   // 헤더 완전히 치우기 — 핸들을 **위로 끌어올리면** 헤더가 통째로 사라지고 핸들만 남는다
   // (사용자 요청 2026-08-25: 폰 가로모드에서 리더기를 볼 때 헤더가 화면을 너무 먹는다).
   // 모바일 전용(CSS가 모바일 블록에만 있다). 다시 끌어내리거나 누르면 접힘 상태로 돌아온다.
@@ -1764,24 +1766,13 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     const raf = requestAnimationFrame(kick);
     const later = window.setTimeout(kick, 320);   // CSS 전환이 끝난 뒤 한 번 더
     return () => { cancelAnimationFrame(raf); clearTimeout(later); };
-  }, [headerCollapsed, headerTucked]);
+  }, [headerTucked]);
 
-  // 헤더 바깥을 누르면 펼친 헤더가 스스로 접힌다 (사용자 요청 2026-09-20).
-  // ⚠ click 으로 듣는다 — pointerdown 이면 손가락으로 **본문을 스크롤하려고 짚는 순간**
-  //   접혀 버린다 (스크롤은 click 을 만들지 않는다).
-  // ⚠ 헤더 안의 드롭다운(언어·햄버거·이벤트·방송)은 전부 헤더 DOM 안에 있어 contains 로
-  //   함께 걸러진다. 모달은 포털이라 밖으로 잡히지만, 모달을 여는 순간 접히는 게 자연스럽다.
-  useEffect(() => {
-    if (headerCollapsed || headerTucked) return;
-    const onClick = (e: MouseEvent) => {
-      const el = e.target as Node | null;
-      if (el && headerRef.current?.contains(el)) return;
-      setHeaderCollapsed(true);
-    };
-    // 캡처 단계에서 듣는다 — 본문 쪽에서 stopPropagation 하는 핸들러가 있어도 놓치지 않는다
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
-  }, [headerCollapsed, headerTucked]);
+  /* 헤더 바깥을 눌러도 **스스로 닫히지 않는다** (사용자 지시 2026-09-23:
+     "모바일에선 터치해도 헤더가 사라지지 않게 해 줘").
+     종전엔 바깥 클릭에 헤더가 접혔다(2026-09-20 요청). 상태가 둘로 줄면서 그 자동 닫힘이
+     '헤더가 통째로 사라짐'이 되어 버려, 본문을 한 번 누를 때마다 헤더가 없어졌다.
+     여닫기는 이제 손잡이(⌃⌄)로만 한다. */
 
   // 모바일 sticky 요소(스토리 레일)가 가변 높이 헤더 아래에 붙도록 헤더 높이를 CSS 변수로 노출
   useEffect(() => {
@@ -2266,7 +2257,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   return (
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
       <header ref={headerRef} id="top"
-        className={`site-header${headerCollapsed ? " collapsed" : ""}${headerTucked ? " tucked" : ""}${drag ? " dragging" : ""}`}
+        className={`site-header${headerTucked ? " tucked" : ""}${drag ? " dragging" : ""}`}
         style={drag ? { maxHeight: `${drag.h}px` } : undefined}>
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("portal"); scrollMainTop(); }}>
@@ -2534,8 +2525,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             끌기 판정은 pointerup 에서 하고, 그때 처리했으면 뒤따라오는 click 은 흘려보낸다
             (키보드 Enter·Space 는 pointer 이벤트가 없어 click 으로 들어온다). */}
         <button type="button" className="header-collapse-toggle"
-          aria-expanded={!headerCollapsed && !headerTucked}
-          aria-label={headerTucked || headerCollapsed ? t("헤더 펼치기") : t("헤더 접기")}
+          aria-expanded={!headerTucked}
+          aria-label={headerTucked ? t("헤더 펼치기") : t("헤더 접기")}
           onPointerDown={(e) => {
             handleFrom.current = e.clientY;
             handleDragged.current = false;
@@ -2562,15 +2553,14 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             if (from == null) return;
             const dy = e.clientY - from;
             if (dy <= -14) { handleDragged.current = true; setHeaderTucked(true); }
-            else if (dy >= 14) { handleDragged.current = true; setHeaderTucked(false); setHeaderCollapsed(false); }
+            else if (dy >= 14) { handleDragged.current = true; setHeaderTucked(false); }
           }}
           onPointerCancel={() => { handleFrom.current = null; setDrag(null); }}
           onClick={() => {
             if (handleDragged.current) { handleDragged.current = false; return; }
-            if (headerTucked) { setHeaderTucked(false); return; }
-            setHeaderCollapsed((collapsed) => !collapsed);
+            setHeaderTucked((tucked) => !tucked);
           }}>
-          <span aria-hidden>{headerTucked || headerCollapsed ? "⌄" : "⌃"}</span>
+          <span aria-hidden>{headerTucked ? "⌄" : "⌃"}</span>
         </button>
       </header>
 

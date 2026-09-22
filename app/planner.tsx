@@ -4,6 +4,7 @@ import { lazy, memo, startTransition, Suspense, useCallback, useEffect, useMemo,
 import { asset } from "./assets";
 import { Dropdown } from "./dropdown";
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
+import { Marquee } from "./marquee";
 import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
 import { normSearch, useSearchInput } from "./search";
@@ -1553,10 +1554,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             ⓘ 모달에 같이 넣는다. */}
         <div className="yield-cell" title={yieldDroneLines[0]}>
           <span>🛠 {t("하루 드론 회복")}</span>
-          <b>{yieldDay ? t("≈{n}개", { n: num(yieldDay.drones) }) : "—"}
+          {/* 좁은 화면에서 칸을 삐져나가던 줄 — 넘칠 때만 흘러간다 (사용자 제보 2026-09-23,
+              402px 실측 200px 내용 / 151px 칸). 넘치지 않으면 마퀴는 아무 일도 하지 않는다. */}
+          <b><Marquee>{yieldDay ? t("≈{n}개", { n: num(yieldDay.drones) }) : "—"}
             {yieldDay && <i className="yield-detail">{t("작전기록 +{r} or 순금 +{g}", {
               r: yieldRooms.exp > 0 ? num(yieldDay.droneRecords) : "0",
-              g: yieldRooms.gold > 0 ? num(yieldDay.droneGold) : "0" })}</i>}</b>
+              g: yieldRooms.gold > 0 ? num(yieldDay.droneGold) : "0" })}</i>}</Marquee></b>
           {yieldDay && <InfoDot onClick={() => setShiftNote("drone")} t={t} />}
         </div>
       </div>
