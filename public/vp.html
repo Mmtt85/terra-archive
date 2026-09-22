@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>뷰포트 진단 — 테라 아카이브</title>
+<!--
+  실기기(아이폰 사파리) 전용 진단 페이지. 에뮬레이터에는 브라우저 툴바가 없어
+  "셸 바닥이 화면 밖으로 밀리는" 조건 자체가 재현되지 않아서, 숫자를 눈으로 받기 위한 것.
+  사이트 셸(main.site-main)과 같은 구조를 최소한으로 흉내낸다:
+    body{overflow:hidden} · main{height:100svh; flex column} · 안쪽 스크롤러 · sticky 푸터.
+  띠 A(어두움) = 스크롤러 **안**의 sticky 푸터 (실제 사이트와 같은 방식)
+  띠 B(붉음)   = 스크롤러 **밖**의 형제 (셸 높이만 맞으면 무조건 보여야 한다)
+  → B 만 보이면 sticky 가 범인, 둘 다 안 보이면 셸 높이가 범인이다.
+-->
+<style>
+  html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+  body { font: 13px/1.5 -apple-system, system-ui, sans-serif; background: #f1f0eb; color: #242b2f; }
+  main { height: 100svh; display: flex; flex-direction: column; }
+  header { flex: 0 0 auto; height: 52px; background: #242b2f; color: #c3d24b;
+    display: flex; align-items: center; padding: 0 14px; font-weight: 700; }
+  .scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto;
+    display: flex; flex-direction: column; overscroll-behavior-y: contain; }
+  .filler { padding: 10px 14px 0; }
+  .filler p { margin: 0 0 46px; color: #646c71; }
+  footer.sticky { position: sticky; bottom: 0; flex-shrink: 0; height: 32px;
+    background: #171b1d; color: #9fe07f; display: flex; align-items: center;
+    justify-content: center; font-weight: 800; letter-spacing: .02em; }
+  .sibling { flex: 0 0 auto; height: 32px; background: #7a1b1b; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; }
+  #panel { position: fixed; left: 8px; right: 8px; top: 58px; z-index: 9;
+    background: #fffffff2; border: 1px solid #85827a; border-radius: 10px; padding: 8px 10px; }
+  #out { margin: 0; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; }
+  #btns { display: flex; gap: 6px; margin-bottom: 7px; flex-wrap: wrap; }
+  #btns button { flex: 1 1 auto; padding: 7px 4px; font: 700 12px system-ui; cursor: pointer;
+    border: 1px solid #85827a; border-radius: 6px; background: #fbfbf8; color: #242b2f; }
+  #btns button.on { background: #242b2f; color: #c3d24b; border-color: #242b2f; }
+</style>
+</head>
+<body>
+<main id="shell">
+  <header>진단 — 맨 아래 두 띠가 보이나요?</header>
+  <div class="scroll" id="sc">
+    <div class="filler" id="filler"></div>
+    <footer class="sticky">띠 A · 스크롤러 안 (sticky)</footer>
+  </div>
+  <div class="sibling">띠 B · 스크롤러 밖 (형제)</div>
+</main>
+
+<div id="panel">
+  <div id="btns">
+    <button data-m="svh">100svh</button>
+    <button data-m="dvh">100dvh</button>
+    <button data-m="vh">100vh</button>
+    <button data-m="vv">visualViewport</button>
+  </div>
+  <pre id="out">…</pre>
+</div>
+
+<script>
+(function () {
+  var shell = document.getElementById("shell");
+  var sc = document.getElementById("sc");
+  var out = document.getElementById("out");
+  var filler = document.getElementById("filler");
+  var sticky = document.querySelector("footer.sticky");
+  var sibling = document.querySelector(".sibling");
+  var probe = document.createElement("div");
+
+  for (var i = 0; i < 18; i++) {
+    var p = document.createElement("p");
+    p.textContent = "채움 " + (i + 1) + " — 아래로 끝까지 밀어 보세요.";
+    filler.appendChild(p);
+  }
+
+  // env(safe-area-inset-bottom) 실값을 재기 위한 0 크기 프로브
+  probe.style.cssText = "position:fixed;bottom:0;left:0;width:0;height:env(safe-area-inset-bottom,0px);";
+  document.body.appendChild(probe);
+
+  var mode = "svh";
+  function applyMode() {
+    if (mode === "vv" && window.visualViewport) shell.style.height = Math.round(window.visualViewport.height) + "px";
+    else if (mode === "dvh") shell.style.height = "100dvh";
+    else if (mode === "vh") shell.style.height = "100vh";
+    else shell.style.height = "100svh";
+    Array.prototype.forEach.call(document.querySelectorAll("#btns button"), function (b) {
+      b.className = b.dataset.m === mode ? "on" : "";
+    });
+    render();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("#btns button"), function (b) {
+    b.addEventListener("click", function () { mode = b.dataset.m; applyMode(); });
+  });
+
+  function r(el) { var x = el.getBoundingClientRect(); return { t: Math.round(x.top), b: Math.round(x.bottom), h: Math.round(x.height) }; }
+  function line(k, v) { return (k + "                ").slice(0, 16) + v + "\n"; }
+
+  function render() {
+    var vv = window.visualViewport;
+    var sh = r(shell), st = r(sticky), sb = r(sibling), scr = r(sc);
+    var vis = vv ? Math.round(vv.height) : window.innerHeight;
+    var s = "";
+    s += line("innerHeight", window.innerHeight);
+    s += line("visualViewport", vv ? Math.round(vv.height) + "  offTop " + Math.round(vv.offsetTop) : "(없음)");
+    s += line("screen.height", window.screen.height);
+    s += line("safe-bottom", Math.round(probe.getBoundingClientRect().height) + "px");
+    s += line("셸 높이", sh.h + "   바닥 " + sh.b);
+    s += line("스크롤러 바닥", scr.b);
+    s += line("스크롤", Math.round(sc.scrollTop) + " / " + (sc.scrollHeight - sc.clientHeight));
+    s += line("띠 A sticky", st.t + "~" + st.b + "  " + getComputedStyle(sticky).position);
+    s += line("띠 B 형제", sb.t + "~" + sb.b);
+    s += "\n";
+    s += "A 화면 안: " + (st.b <= vis + 1 && st.t < vis ? "예" : "아니오") + "\n";
+    s += "B 화면 안: " + (sb.b <= vis + 1 && sb.t < vis ? "예" : "아니오") + "\n";
+    s += "셸이 넘침: " + Math.max(0, sh.b - vis) + "px";
+    out.textContent = s;
+  }
+
+  sc.addEventListener("scroll", render, { passive: true });
+  window.addEventListener("resize", render);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", function () { if (mode === "vv") applyMode(); else render(); });
+    window.visualViewport.addEventListener("scroll", render);
+  }
+  applyMode();
+  setInterval(render, 400);
+})();
+</script>
+</body>
+</html>

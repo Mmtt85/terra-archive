@@ -16343,6 +16343,12 @@ html.rg-theme .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
 html,
 body {
   height: 100%;
+  /* 페이지 자체가 고무줄처럼 튀는 것을 막는다 (사용자 제보 2026-09-22: "왼쪽 오른쪽에
+     분명히 컨텐츠가 없는데 드래그하면 화면이 삐져나갔다 돌아온다"). iOS 사파리는
+     `body{overflow:hidden}` 으로도 **문서 자체의 바운스**는 막지 못한다 — 손가락을 끌면
+     웹뷰가 통째로 밀렸다 제자리로 돌아온다. 세로도 같은 뿌리로 의심된다: 끝까지 민 뒤
+     문서가 밀려 올라가는 동안에만 푸터가 드러났다가 되돌아간다. */
+  overscroll-behavior: none;
 }
 /* 세로 스크롤 잠금은 홈 셸(main.site-main + .site-scroll)이 있는 페이지에만 적용한다.
    /admin 같은 독립 라우트(main.admin)는 .site-scroll 컨테이너가 없어 전역으로 잠그면
