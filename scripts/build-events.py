@@ -165,6 +165,19 @@ def guide_of(aid, typ):
     return f"{seg}/s{m.group(1)}" if seg == "autochess" and m else seg
 
 
+def items_by_id(path):
+    """아이템 도감을 id 로 — **합쳐진 id(alt)도 대표 카드로 잇는다**. build-items.py 가 재개방 복제
+    (<원본>_rep_N)·내용이 같은 아이템을 한 장으로 합친 뒤로(2026-09-23) 그 id 들은 목록에 따로 없다.
+    안 이으면 이벤트 42개의 재화 목록이 통째로 빠졌다 (화면의 app/items.tsx findItem 과 같은 규약)."""
+    out = {}
+    for it in load(path)["items"]:
+        out[it["id"]] = it
+    for it in load(path)["items"]:
+        for a in it.get("alt") or []:
+            out.setdefault(a, it)
+    return out
+
+
 per_loc = {}
 for loc in LOCALES:
     sp = os.path.join(DATA, "stages.json" if loc == "ko" else f"stages.{loc}.json")
@@ -172,7 +185,7 @@ for loc in LOCALES:
     op = os.path.join(DATA, "operators.json" if loc == "ko" else f"operators.{loc}.json")
     per_loc[loc] = {
         "stages": load(sp) if os.path.exists(sp) else None,
-        "items": {i["id"]: i for i in load(ip)["items"]} if os.path.exists(ip) else {},
+        "items": items_by_id(ip) if os.path.exists(ip) else {},
         "ops": {o["id"]: o for o in load(op)} if os.path.exists(op) else {},
     }
 

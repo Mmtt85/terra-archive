@@ -136,13 +136,37 @@ if os.path.exists(_farm_path):
 ZONE_TO_ACT = acts["ko"]["zoneToActivity"]
 
 
+# 그 서버에 아직 없는 이벤트의 이름 — build-events.py 가 event-ids.json 에 싣는 로케일 이름 {id: [en, ja]}
+# (그 서버 활동표 > 임시 이름). 없으면 한국어로 떨어졌다 (듀얼 채널 3회차, 사용자 지시 2026-09-24).
+_EV_IDS = os.path.join(DATA, "event-ids.json")
+EV_LOC_NAMES = (load(_EV_IDS).get("names") or {}) if os.path.exists(_EV_IDS) else {}
+
+
 def event_name(loc, zid):
     """그 구역이 속한 이벤트 이름. 이벤트가 아니거나 매핑이 없으면 None."""
     aid = ZONE_TO_ACT.get(zid)
     if not aid:
         return None
-    info = (acts[loc].get("basicInfo") or {}).get(aid) or (acts["ko"].get("basicInfo") or {}).get(aid)
-    return clean((info or {}).get("name"))
+    info = (acts[loc].get("basicInfo") or {}).get(aid)
+    nm = clean((info or {}).get("name"))
+    if not nm and loc != "ko":
+        nm = clean((EV_LOC_NAMES.get(aid) or [None, None])[0 if loc == "en" else 1])
+    return nm or clean(((acts["ko"].get("basicInfo") or {}).get(aid) or {}).get("name"))
+
+
+# 그 서버 표에 없는 작전의 이름 — **한국어 이름이 같은 다른 작전**의 공식 번역을 빌린다 ('듀얼 대결!' =
+# 1·2회차 'Duel Showdown!'). 짝의 번역이 모두 같을 때만 쓴다 — 회차마다 번역이 갈리는 이름은 건드리지 않는다.
+def _name_siblings(loc):
+    cand = {}
+    for sid, kv in tables["ko"].items():
+        lv = tables[loc].get(sid)
+        k, n = clean(kv.get("name")), clean((lv or {}).get("name"))
+        if k and n:
+            cand.setdefault(k, set()).add(n)
+    return {k: next(iter(v)) for k, v in cand.items() if len(v) == 1}
+
+
+NAME_SIB = {loc: _name_siblings(loc) for loc, _, _ in LOCALES if loc != "ko"}
 
 # ── 메인 스토리 챕터 (2026-08-09 사용자 리포트로 발각) ──────────────────────
 # ⚠ zoneNameFirst를 무조건 챕터 라벨로 쓰면 안 된다. 15·16장(act2mainss/act3mainss)은
@@ -362,10 +386,13 @@ def build(loc):
             if m:   # 실측치가 있는 (작전, 재료)만 — 316쌍 (2026-08-09 실측)
                 row_d += [m[0], m[1], m[2]]
             drops.append(row_d)
+        nm = clean(v.get("name"))
+        if loc != "ko" and sid not in table:     # 그 서버 표에 없는 작전 — 같은 한국어 이름 작전의 공식 번역
+            nm = NAME_SIB[loc].get(clean(kv.get("name")), nm)
         e = {
             "id": sid,
             "code": code,
-            "name": clean(v.get("name")) or code,
+            "name": nm or code,
             "z": intern(zone, zone_list, zone_ix),
             "t": kv.get("stageType"),
         }
@@ -410,7 +437,8 @@ def build(loc):
     return {
         "zones": zone_list, "events": ev_list, "items": item_map, "occ": occ_list, "kinds": kind_list,
         "enemyIds": enemy_list,
-        "types": {k: TYPE_LABELS[loc].get(k, k) for k in {s.get("stageType") for s in stages}},
+        # 정렬 — 집합을 그대로 돌면 실행마다 순서가 바뀌어 내용 없는 diff 가 났다 (화면은 이름순으로 다시 정렬한다)
+        "types": {k: TYPE_LABELS[loc].get(k, k) for k in sorted({s.get("stageType") for s in stages}, key=str)},
         "enemyNames": {eid: enemy_names[loc].get(eid, eid) for eid in enemy_list},
         "stages": out,
     }

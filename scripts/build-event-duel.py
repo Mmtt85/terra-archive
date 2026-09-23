@@ -161,6 +161,53 @@ def apply_pairs(o, pairs):
     return pairs.get(o, o) if isinstance(o, str) else o
 
 
+def city(name):
+    """'듀얼 채널: 허니듀' → '허니듀' (회차 = 경기장 도시)."""
+    return name.rsplit(":", 1)[-1].strip() if name and ":" in name else None
+
+
+def borrow_prev(cur, ko_now, ko_prev, loc_prev, ko_tok, ko_prev_tok, loc_tok, loc_prev_tok):
+    """fb 회차의 남은 한국어 칸을 **앞 회차 같은 자리의 공식 번역**으로 채운다 — 한국어가 도시 이름만 빼고
+    같을 때만, 번역에서도 도시 이름만 바꿔 쓴다 (허니듀 협찬 훈장 = Honeydew Sponsor Medal → 아이비바인 협찬
+    훈장 = Ivyvine Sponsor Medal). stable_pairs 가 못 잡는 '회차 이름을 품은 문장'용 (2026-09-24)."""
+    def walk(c, k3, k2, l2):
+        if isinstance(c, dict):
+            g = lambda d, k: d.get(k) if isinstance(d, dict) else None
+            return {k: walk(v, g(k3, k), g(k2, k), g(l2, k)) for k, v in c.items()}
+        if isinstance(c, list):
+            g = lambda d, i: d[i] if isinstance(d, list) and i < len(d) else None
+            return [walk(v, g(k3, i), g(k2, i), g(l2, i)) for i, v in enumerate(c)]
+        if (isinstance(c, str) and HANGUL.search(c) and isinstance(k2, str) and isinstance(l2, str)
+                and not HANGUL.search(l2) and c == k3 and k3 == k2.replace(ko_prev_tok, ko_tok)):
+            if loc_prev_tok and loc_prev_tok in l2:
+                return l2.replace(loc_prev_tok, loc_tok) if loc_tok else c
+            return l2
+        return c
+    return walk(cur, ko_now, ko_prev, loc_prev)
+
+
+# 그 서버에 아직 없는 회차에서 앞 회차 공식 번역으로도 못 채운 문장 — 그 회차에만 있는 이름(프로필·트로피)이
+# 든 것들이다. 일섭 공식 표기(「全ベット！」·デュエル胆力トロフィー)를 참고한 임시 번역이고, 그 서버가 회차를
+# 열면 활동표가 대신한다 (사용자 지시 2026-09-24 "일본어 영어 관련 싹 고쳐").
+MANUAL = {
+    "en": {
+        "듀얼 패기 트로피": "Duel Daring Trophy",
+        "[프로필] '올인!' 및 [가구] 듀얼 패기 트로피": "[Icon] 'All In!' and [Furniture] Duel Daring Trophy",
+        "듀얼 채널: 아이비바인 이벤트 기간 동안, 프로필 '올인!' 획득":
+            "During the 'Duel Channel: Ivyvine' event, obtain the 'All In!' icon.",
+        "듀얼 채널에서 예측의 패기를 보여준 우승자를 위해 준비한 트로피.\n듀얼 경기장에는 위험과 기회가 공존한다. "
+        "그리고 그건 경기장 밖에서도 마찬가지다.":
+            "A trophy prepared for the victor who showed daring in Duel Channel's predictions.\n"
+            "In the duel arena, risk and opportunity go hand in hand. The same holds true outside the arena.",
+        # 2회차 문장과 단어 두 개만 다르다(날카로운→예리한 · 알려주실→알려줄) — 2회차 공식 영문에서 도시 이름만 바꿈
+        "당신은 듀얼 채널: 아이비바인에서 한 경기의 선물 리스트 상위권에 이름을 올렸습니다.\n당신의 예리한 안목은 "
+        "인정받았습니다. 혹시 괜찮다면 다음에 어느 쪽을 택해야 할지 몰래 알려줄 수 있을까요?":
+            "You ranked amongst the top gifters in a Duel Channel: Ivyvine competition.\nYou have earned recognition "
+            "for your discerning eye. Now, can you tell me, quietly, which side to pick next?",
+    },
+}
+
+
 def group_of(m):
     if not m.get("isMultiPlayer"):
         return "solo"
@@ -191,7 +238,13 @@ def main():
     order = sorted(kr_duel, key=lambda a: kr["basicInfo"].get(a, {}).get("startTime") or 0)
 
     for loc, srv in LOCS.items():
-        items = {i["id"]: i for i in load(os.path.join(DATA, f"items{SUF[loc]}.json"))["items"]}
+        # 합쳐진 id(alt — 1·2회차 '듀얼 폭죽'처럼 build-items.py 가 한 장으로 묶은 것)도 대표 카드로 잇는다.
+        # 안 이으면 2회차 보상 아이콘이 빠졌다 (build-events.py items_by_id 와 같은 규약)
+        _items = load(os.path.join(DATA, f"items{SUF[loc]}.json"))["items"]
+        items = {i["id"]: i for i in _items}
+        for i in _items:
+            for a in i.get("alt") or []:
+                items.setdefault(a, i)
         dex = {e["id"]: e for e in load(os.path.join(DATA, f"enemies{SUF[loc]}.json"))}
         kr_dex = {e["id"]: e for e in load(os.path.join(DATA, "enemies.json"))} if loc != "ko" else dex
         loc_duel = acts[srv]["activity"].get("ENEMY_DUEL") or {}
@@ -403,9 +456,21 @@ def main():
             # 같은 문장이 대부분이라, 앞 회차의 공식 번역을 빌려 온다 (영어판 3회차 한국어 87 → 17, 사용자 지적
             # 2026-09-23 "영어판은 듀얼채널이 한글"). 새 회차에만 있는 이름·훈장 문구는 그 서버가 열 때까지 한국어.
             pairs = stable_pairs(kr_out, out)
+            ev_names = (load(os.path.join(DATA, "event-ids.json")).get("names") or {}) \
+                if os.path.exists(os.path.join(DATA, "event-ids.json")) else {}
+            loc_ix = {"en": 0, "ja": 1}[loc]
             for aid, ev in out.items():
                 if ev.get("fb"):
-                    out[aid] = apply_pairs(ev, pairs)
+                    ev = apply_pairs(ev, pairs)
+                    # 앞 회차(그 서버에 열린 것 중 가장 최근) — 같은 자리 공식 번역에서 도시 이름만 바꿔 빌린다
+                    prev = next((p for p in reversed(order[:order.index(aid)]) if p in out and not out[p].get("fb")), None)
+                    if prev:
+                        kname = lambda a: (kr["basicInfo"].get(a) or {}).get("name")
+                        lname = lambda a: ((acts[srv].get("basicInfo") or {}).get(a) or {}).get("name") \
+                            or ((ev_names.get(a) or [None, None])[loc_ix])
+                        ev = borrow_prev(ev, kr_out.get(aid), kr_out.get(prev), out[prev],
+                                         city(kname(aid)), city(kname(prev)), city(lname(aid)), city(lname(prev)))
+                    out[aid] = apply_pairs(ev, MANUAL.get(loc) or {})
         path = os.path.join(DATA, f"event-duel{SUF[loc]}.json")
         json.dump(out, open(path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
         print(f"→ {os.path.relpath(path, REPO)} ({os.path.getsize(path) // 1024} KB)"

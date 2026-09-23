@@ -223,6 +223,31 @@ def fetch_icon(icon_id):
 
 # ── 조립 ────────────────────────────────────────────────────────────────────
 tier = lambda r: int(str(r).replace("TIER_", "") or 1)
+# 그 로케일 표에 아직 없는 아이템 — **한국어 원문(이름·설명·용도·획득처)이 글자까지 같은** 다른 아이템의 공식
+# 번역을 빌린다. 듀얼 채널 3회차 '듀얼 폭죽'이 영어 표에 없어 한국어로 나갔는데 1·2회차 것과 원문이 같다
+# (EN 'Grand Duel Fireworks'). 짝이 여럿이면 번역이 모두 같을 때만 쓴다 (사용자 지시 2026-09-24).
+TEXT_FIELDS = ("name", "description", "usage", "obtainApproach")
+
+
+def kr_text(it):
+    return tuple((it.get(f) or "").strip() for f in TEXT_FIELDS)
+
+
+sibling = {}
+for _loc, _tb in tables.items():
+    if _loc == "ko":
+        continue
+    _cand = {}
+    for _iid, _it in _tb.items():
+        if _iid in kr:
+            _cand.setdefault(kr_text(kr[_iid]), set()).add(
+                json.dumps({f: _it.get(f) for f in TEXT_FIELDS}, ensure_ascii=False, sort_keys=True))
+    sibling[_loc] = {k: json.loads(next(iter(v))) for k, v in _cand.items() if len(v) == 1}
+
+# 그 서버 활동표에 없는 이벤트의 이름 — build-events.py 가 event-ids.json 에 싣는 로케일 이름 {id: [en, ja]}
+_ev_ids = os.path.join(REPO, "app", "data", "event-ids.json")
+EV_LOC_NAMES = (load(_ev_ids).get("names") or {}) if os.path.exists(_ev_ids) else {}
+
 rows = {loc: [] for loc in LOCALES}
 order = sorted(kr.values(), key=lambda i: (i.get("sortId") if isinstance(i.get("sortId"), int) else 0, i["itemId"]))
 
@@ -256,12 +281,14 @@ for base in order:
         common["b"] = b.get("roomType")
         break
     for loc in LOCALES:
-        src = base if loc == "ko" else (tables.get(loc, {}).get(iid) or base)
+        src = base if loc == "ko" else (tables.get(loc, {}).get(iid) or sibling.get(loc, {}).get(kr_text(base)) or base)
         row = dict(common)
         row["n"] = src.get("name") or base.get("name") or iid
         if act:
-            # 이벤트 이름은 로케일별 activity_table 에서. 없으면 한국어로 폴백한다.
-            name = act_name.get(loc, {}).get(act) or act_name["ko"].get(act)
+            # 이벤트 이름은 로케일별 activity_table 에서 → 없으면 event-ids.json 로케일 이름 → 그래도 없으면 한국어.
+            name = (act_name.get(loc, {}).get(act)
+                    or (loc != "ko" and (EV_LOC_NAMES.get(act) or [None, None])[0 if loc == "en" else 1])
+                    or act_name["ko"].get(act))
             if name:
                 row["evName"] = name
         for key, field in (("d", "description"), ("u", "usage"), ("o", "obtainApproach")):
