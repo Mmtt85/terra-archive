@@ -30,6 +30,16 @@ import { useDropWatch } from "./lens/dropwatch";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
+import type { StageCam } from "./stage-cam";
+// 전투 노드의 등장 적 칸·적 상세 본문은 작전 도감 것을 그대로 쓴다 (사용자 요청 2026-09-23
+// "일반 작전맵처럼 … 적 도감도 똑같이"). 둘 다 home.tsx가 정적으로 무는 모듈이라 번들이 안 는다.
+import { EnemyChip } from "./stage-detail";
+import { EnemyFile, type Enemy as DexEnemy, type EnemyLevel, type EnemyStages, type StatOverride } from "./enemy-detail";
+import { loadEnemies } from "./dex-cross";
+// 전투 노드 도면의 전투 카메라 (scripts/stagecams.py → rogue-cams.json, ~20KB) — 있으면 모달이
+// 도면·이동 경로를 한 화면으로 합친다 (사용자 요청 2026-09-23 "통합전략도 마찬가지로", 작전 도감과 같은 형식).
+import rogueCamsJson from "./data/rogue-cams.json";
+const ROGUE_CAMS = rogueCamsJson as unknown as Record<string, StageCam>;
 
 // 전투 노드 적 이동 경로 (scripts/build-rogue-routes.py) — 작전 도감과 같은 렌더러를
 // 쓴다 (규칙: .claude/skills/route-map-rules). '이동 경로' 탭을 처음 눌렀을 때만
@@ -284,6 +294,7 @@ function applyDiff(e: Enemy, grade: number, ctx: StatCtx) {
   const boss = e.rank === "BOSS";
   let res = e.res;
   let burst14 = false, guard = 0; // guard = 피격 대미지 감소 뱃지(%) — 토픽별 규칙
+  let g10 = false;                // 험난한 길·긴급 g10 배율이 실제로 걸렸는지 (팬텀만의 규칙 — 안내문 게이트)
   if (data.id === "rogue_6") {
     if (grade >= 5) hp *= 1.3;
     if (grade >= 8 && elite) atk *= 1.15;
@@ -315,10 +326,10 @@ function applyDiff(e: Enemy, grade: number, ctx: StatCtx) {
     if (grade >= 14 && boss) guard = 20;
   } else {
     if (grade >= 5 && elite) hp *= 1.2;
-    if (grade >= 10 && ctx.emergencyOrBoss) { hp *= 1.15; atk *= 1.15; }
+    if (grade >= 10 && ctx.emergencyOrBoss) { hp *= 1.15; atk *= 1.15; g10 = true; }
     burst14 = grade >= 14 && elite;
   }
-  return { hp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), res, burst14, guard };
+  return { hp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), res, burst14, guard, g10 };
 }
 
 const fmt = (n: number) => n.toLocaleString("en-US");
@@ -346,12 +357,9 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
 }) {
   // 겹쳐 뜰 때의 앞뒤는 공용 창(ModalWindow)의 z 카운터가 맡는다 — 종전엔 stack 플래그로
   // 백드롭 z를 80↔90으로 올렸다 (2026-08-24 공통 모달 이관).
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [mode, setMode] = useState<"n" | "e">(pair.init === "e" && pair.e ? "e" : "n");
   const [mapZoom, setMapZoom] = useState(false); // 미리보기 클릭 → 2배 확대, 축소는 아무 곳이나 클릭
-  // 실사 도면 / 이동 경로 탭 — 작전 도감 상세와 같은 짜임 (사용자 지시 2026-08-10
-  // "모든 로그라이크 작전 노드에도 다 동일하게 적용"). 규칙: .claude/skills/route-map-rules.
-  const [mapView, setMapView] = useState<"map" | "route">("map");
   const [hover, setHover] = useState<string | null>(null);
   const [pinned, setPinned] = useState<Set<string>>(() => new Set());
   const [, bumpRoutes] = useState(0);   // 지연 로드 완료 시 리렌더용
@@ -367,6 +375,9 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
     document.addEventListener("click", onAnyClick, true);
     return () => document.removeEventListener("click", onAnyClick, true);
   }, [mapZoom]);
+  // 적 상세(EnemyModal)는 본 도감을 받은 뒤에 뜬다 — 노드를 열 때 미리 받아 두면 적을 눌렀을 때
+  // 기다림이 없다 (종전 통전 적 모달은 즉시 떴다). 세션당 한 번이고 실패는 적 모달이 다시 시도한다.
+  useEffect(() => { void loadEnemies(locale).catch(() => {}); }, [locale]);
   const stage = mode === "e" && pair.e ? pair.e : pair.n;
   const isEmg = stage.kind === "emergency";
   const isBoss = stage.kind === "boss";
@@ -375,7 +386,17 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
   // 경로 모드 공용 — 적 셀(고정 토글·선 색)과 지도 양쪽이 쓴다. 일반/긴급은 같은 레벨을
   // 공유하므로(별칭) 모드를 바꿔도 경로는 같다. 적↔경로 연결 키는 **교체 전 원본**
   // se.key다 (긴급 교체 룬은 표시만 변종으로 바꾸고 스폰 경로는 그대로).
-  const rd = mapView === "route" ? routesFor(stage.id) : undefined;
+  // 한 화면 규칙 — 탭은 없다 (작전 도감 StageFile 과 같다, 사용자 확정 2026-09-23 "모든 작전은 합쳐진 상태로
+  // 처음부터"): 카메라가 있으면 도면 위에 경로·시뮬(합친 도면), 없으면 경로 지도 하나, 경로도 없으면 도면 한 장.
+  // 카메라 없는 노드는 미리보기가 없어 레벨 격자로 그린 도면이라 경로 지도로 잃는 게 없다.
+  // 이 페이지엔 작전 색인의 경로 표식이 없어 열자마자 경로 파일을 받는다 (합친 도면과 같은 파일·세션당 한 번).
+  const cam = stage.map ? ROGUE_CAMS[stage.map] : undefined;
+  const fused = !!cam;
+  const rd = routesFor(stage.id);
+  useEffect(() => {
+    if (ROUTES_CACHE) return;
+    loadRogueRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
+  }, []);
   const sorted = [...stage.enemies].sort((a, b) => {
     const rankOrder = (k: string) => isSpecialLast(k)
       ? 3 : ({ BOSS: 0, ELITE: 1 }[data.enemies[k]?.rank ?? ""] ?? 2);
@@ -387,6 +408,19 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
+  // 등장 적 한 줄씩 — 긴급 모드면 교체 룬(level_enemy_replace)이 적용된 변종으로 **표시만** 바꾼다
+  // (경로·고정의 키는 교체 전 원본 se.key). 테마 사전에 없는 스폰 변종은 뺀다 — 작전 도감도 같다.
+  const rows = sorted.flatMap((se) => {
+    const key = isEmg ? (stage.emg?.replace?.[se.key] ?? se.key) : se.key;
+    const e = data.enemies[key];
+    if (!e) return [];
+    const s = applyDiff(e, grade, { ...ctx, enemyKey: key });
+    const up = [s.hp !== Math.round(e.hp), s.atk !== Math.round(e.atk), s.def !== Math.round(e.def), s.res !== e.res];
+    return [{ se, key, e, s, up }];
+  });
+  // 받는 대미지 감소(guard)는 수치에 못 넣는 효과라 칸 대신 제목 밑 한 줄로 — 같은 값끼리 묶는다
+  const guards = new Map<number, string[]>();
+  for (const r of rows) if (r.s.guard > 0) guards.set(r.s.guard, [...(guards.get(r.s.guard) ?? []), nmText(r.e.name, r.e.cn)]);
   return (
     <ModalWindow label={nmText(stage.name, stage.cn)} className="rg-modal" onClose={onClose}>
       <header className="rg-modal-head">
@@ -405,35 +439,39 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
       </header>
       <div className="rg-modal-cols">
         <div className="rg-modal-left">
-          {stage.map && (
-            <div className="rg-modal-modes rg-maptabs" role="tablist" aria-label={t("도면 보기")}>
-              <button type="button" role="tab" aria-selected={mapView === "map"}
-                className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
-              <button type="button" role="tab" aria-selected={mapView === "route"}
-                className={mapView === "route" ? "on" : ""}
-                onClick={() => {
-                  setMapView("route");
-                  if (!ROUTES_CACHE) loadRogueRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
-                }}>{t("이동 경로")}{isNewFeature("route-map") && <span className="new-badge">{t("새기능")}</span>}</button>
-            </div>
-          )}
-          {mapView === "route" ? (rd ? (
-            // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 — 고정 조작은 오른쪽
-            // 적 셀이 맡는다 (셀 클릭 = 고정, 셀 속 섬네일 클릭 = 적 상세 모달)
+          {fused ? (
+            // 합친 도면 (2026-09-23) — 경로가 오기 전에도 같은 자리·모양을 그려 두고(CLS 0), 오면 key 로
+            // 다시 마운트한다. 경로가 아예 없는 노드면 도면만 남긴다.
+            ROUTES_CACHE && !rd ? (
+              <button type="button" className={`rg-map-zoom${mapZoom ? " zoom" : ""}`}
+                onClick={() => setMapZoom((z) => !z)}
+                title={mapZoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 2배로 확대됩니다")}>
+                <img className="rg-modal-map" src={asset(`/rogue/map/${stage.map}.webp`)} alt={t("전장 미니맵")} loading="lazy" decoding="async" />
+              </button>
+            ) : (
+              <StageRouteMap key={rd ? "ready" : "pending"} data={rd} order={routeOrder}
+                highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
+                imgOf={(k2) => { const e2 = data.enemies[k2]; return e2?.img ? asset(`/rogue/enemy/${e2.img}.webp`) : undefined; }}
+                nameOf={(k2) => data.enemies[k2]?.name}
+                onPick={togglePin}
+                photo={{ src: asset(`/rogue/map/${stage.map}.webp`), cam, alt: t("전장 미니맵") }} />
+            )
+          ) : rd ? (
+            // 경로 지도 하나 — 호버 중이면 그 적만, 아니면 고정된 적들의 합집합. 고정 조작은 오른쪽 적 칸이
+            // 맡는다 (칸 클릭 = 고정, 칸 속 섬네일 클릭 = 적 상세 모달)
             <StageRouteMap data={rd} order={routeOrder}
               highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
               imgOf={(k2) => { const e2 = data.enemies[k2]; return e2?.img ? asset(`/rogue/enemy/${e2.img}.webp`) : undefined; }}
               nameOf={(k2) => data.enemies[k2]?.name}
               onPick={togglePin} />
-          ) : (
-            <p className="rg-modal-desc">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
-          )) : stage.map && (
+          ) : stage.map ? (
+            // 경로가 없거나 아직 오는 중 — 도면 한 장
             <button type="button" className={`rg-map-zoom${mapZoom ? " zoom" : ""}`}
               onClick={() => setMapZoom((z) => !z)}
               title={mapZoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 2배로 확대됩니다")}>
               <img className="rg-modal-map" src={asset(`/rogue/map/${stage.map}.webp`)} alt={t("전장 미니맵")} loading="lazy" decoding="async" />
             </button>
-          )}
+          ) : null}
           {stage.desc && <p className="rg-modal-desc">{stage.desc}</p>}
           {stage.eliteDesc && <p className="rg-modal-elite">⚠ {stage.eliteDesc}</p>}
           {isEmg && (mul.atk || mul.max_hp || mul.def) && (
@@ -454,40 +492,36 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
             </p>
           )}
         </div>
-        <div className="rg-modal-enemies">
-        {/* 리더 → 정예 → 일반 → 공통 특수몹 순으로 정렬 (사용자 확정 2026-07-18).
-            전 테마 공통 특수몹은 데이터에 판별 플래그가 없어 이름 하드코딩 */}
-        {sorted.map((se) => {
-          // 긴급 모드에선 교체 룬(level_enemy_replace)이 적용된 변종으로 표시
-          const key = isEmg ? (stage.emg?.replace?.[se.key] ?? se.key) : se.key;
-          const e = data.enemies[key];
-          if (!e) return null;
-          // 경로 모드 (작전 도감과 동일 조작): 셀 클릭 = 경로 고정 토글, 호버 = 그 적만
-          // 강조, **섬네일 클릭 = 항상 적 상세 모달** (stopPropagation으로 고정과 분리)
-          const pinColor = rd && rd.e[se.key]?.length ? enemyRouteColor(routeOrder, se.key) : undefined;
-          const routeMode = !!rd && !!pinColor;
-          return (
-            <button type="button" key={se.key}
-              className={`rg-enemy-cell${pinned.has(se.key) ? " pinned" : ""}${routeMode ? " has-route" : ""}`}
-              style={pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
-              onMouseEnter={rd ? () => setHover(se.key) : undefined}
-              onMouseLeave={rd ? () => setHover(null) : undefined}
-              onClick={() => { if (routeMode) togglePin(se.key); else onOpenEnemy(key, { ...ctx, enemyKey: key }); }}>
-              {e.img ? <img className="rg-enemy-face" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async"
-                onClick={(ev) => {
-                  if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
-                  ev.stopPropagation(); onOpenEnemy(key, { ...ctx, enemyKey: key });
-                }} />
-                : <span className="rg-enemy-face none" aria-hidden>?</span>}
-              <span className="rg-enemy-cell-head">
-                <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
-                {se.cnt > 0 && <span className="rg-enemy-cnt">×{se.cnt}</span>}
-              </span>
-              <span className="rg-enemy-name"><Nm name={e.name} cn={e.cn} /></span>
-              <StatRow e={e} grade={grade} ctx={{ ...ctx, enemyKey: key }} />
-            </button>
-          );
-        })}
+        {/* 등장 적 — 작전 도감 상세(StageFile)와 **같은 절·같은 칸** (사용자 요청 2026-09-23
+            "일반 작전맵처럼 등장 적 그룹을 만들고"). 칸은 EnemyChip 그대로이고 색만 통전 팔레트다
+            (globals.css `.rg-modal .st-block`). 드랍·이성은 통합전략에 없어 그 절은 없다.
+            정렬은 종전대로 리더 → 정예 → 일반 → 공통 특수몹 (사용자 확정 2026-07-18).
+            조작도 작전 도감과 같다: 칸 클릭 = 경로 고정, 호버 = 그 적만 강조, 섬네일 = 적 상세. */}
+        <div className="st-right">
+          {rows.length > 0 && (
+            <section className="st-block">
+              <h3>
+                <span className="section-no">ENEMY</span>{t("등장 적")} <em>{rows.length}</em>
+                {rows.some((r) => r.up.some(Boolean)) && <span className="st-envnote">{t("강조된 수치는 난이도·긴급 배율이 반영된 값입니다.")}</span>}
+              </h3>
+              {rows.some((r) => r.s.burst14) && <p className="st-note">{t("난이도 14 이상: 정예·리더가 등장 후 20초간 공격력 +30%, 받는 물리·마법 대미지 -50%")}</p>}
+              {[...guards].map(([g, names]) => <p key={g} className="st-note">{t("받는 대미지")} -{g}% — {names.join(", ")}</p>)}
+              <div className="st-enemies">
+                {rows.map(({ se, key, e, s, up }) => (
+                  <EnemyChip key={se.key}
+                    e={{ id: key, name: e.name, cnt: se.cnt, lv: 0, st: [s.hp, s.atk, s.def, s.res], ...(e.img ? { img: `/rogue/enemy/${e.img}.webp` } : {}) }}
+                    up={up}
+                    href={`${roguePath(LOCALE_BASE[locale] ?? "", data.id)}#rg-enemy~enemy~${encodeURIComponent(key)}`}
+                    nameNode={e.cn ? <Nm name={e.name} cn={e.cn} /> : undefined}
+                    onOpenEnemy={() => onOpenEnemy(key, { ...ctx, enemyKey: key })}
+                    onHover={rd ? (id) => setHover(id ? se.key : null) : undefined}
+                    pinColor={rd && rd.e[se.key]?.length ? enemyRouteColor(routeOrder, se.key) : undefined}
+                    pinned={pinned.has(se.key)}
+                    onTogglePin={rd ? () => togglePin(se.key) : undefined} />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </ModalWindow>
@@ -550,61 +584,86 @@ function StageCard({ pair, onOpen, boss }: { pair: StagePair; onOpen: (p: StageP
   );
 }
 
-// ── 적 상세 모달 — 도감 카드·스테이지 모달의 적 행에서 연다 (스테이지 모달 위에 스택) ──
-function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, appear }: {
+// ── 적 상세 모달 — 작전 도감의 적 모달(EnemyFile)과 **같은 본문** (사용자 요청 2026-09-23
+// "적 도감도 일반 작전맵 적 도감이랑 똑같이 생기게"). 도감 카드·노드 모달의 적 칸에서 연다.
+// 본 도감(enemies.json)의 종족·이동·피해 유형·사거리·능력·연계 소환을 그대로 싣고, 통합전략만의
+// 두 가지는 테마 데이터로 갈아 끼운다:
+//  · 스탯 — 테마 레벨 파일이 덮어쓴 수치 × 난이도·긴급 배율 한 줄. 본 도감 단계표를 그대로 두면
+//    통합전략 적 1,601종 중 313종이 틀린 값이다 (2026-09-23 실측, 산성 원석충 공격 180 ↔ 팬텀 100).
+//  · 등장 작전 — 이 테마의 전투 노드, 층별로 묶어서 (종전 '등장 노드'. 누르면 노드 모달)
+// 본 도감에 없는 적(블랙플로우·CN 선행 등)은 테마 데이터만으로 같은 모양을 채운다.
+// 색은 통전 팔레트다 (globals.css `.rg-modal .en-file`).
+function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, onOpenEnemy, appear }: {
   ekey: string; grade: number; ctx: StatCtx; onClose: () => void;
-  onOpenStage: (s: Stage) => void; appear: Stage[];
+  onOpenStage: (s: Stage) => void; onOpenEnemy: (key: string) => void; appear: Stage[];
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  // 본 도감은 로케일당 1MB라 창을 열 때 받는다 (dex-cross가 세션 캐시). **받은 뒤에 창을 띄운다** —
+  // 테마 데이터로 먼저 그렸다가 갈아 끼우면 종족·능력 줄이 뒤늦게 끼어들며 창이 출렁인다
+  // (작전 도감의 적 모달도 받은 뒤에 연다). 못 받으면 테마 데이터만으로 그린다.
+  const [dex, setDex] = useState<Map<string, DexEnemy> | null>(null);
+  const [dexFail, setDexFail] = useState(false);
+  useEffect(() => {
+    let live = true;
+    loadEnemies(locale).then((m) => { if (live) setDex(m); }, () => { if (live) setDexFail(true); });
+    return () => { live = false; };
+  }, [locale]);
+  if (!dex && !dexFail) return null;
   const e = data.enemies[ekey];
-  if (!e) return null;
+  const base = dex?.get(ekey);
+  // 연계 소환 이름 — 테마 적이면 테마 표기(CN 원문 병기 포함), 아니면 본 도감 이름
+  const nameOf = (id: string) => { const x = data.enemies[id]; return x ? nmText(x.name, x.cn) : dex?.get(id)?.name; };
+  // 연계 소환으로 건너온 **테마 밖** 적은 본 도감 그대로 (테마 수치·등장 노드가 없다)
+  if (!e) {
+    if (!base) return null;
+    return (
+      <ModalWindow label={base.name} className="rg-modal rg-emodal" onClose={onClose}>
+        <EnemyFile enemy={base} stagesDoc={null} onOpenEnemy={onOpenEnemy} nameOf={nameOf} />
+      </ModalWindow>
+    );
+  }
+  const s = applyDiff(e, grade, { ...ctx, enemyKey: ekey });
+  const lv: EnemyLevel = { l: 0, hp: s.hp, atk: s.atk, def: s.def, res: s.res,
+    aspd: e.aspd, ms: e.ms, w: e.weight, lp: e.lifePoint, imm: e.immune ?? [] };
+  const enemy: DexEnemy = base ? { ...base, name: e.name, lv: [lv] } : {
+    id: ekey, idx: e.index, name: e.name, rank: e.rank, sort: 0, desc: e.desc,
+    // 테마 데이터의 attack은 피해 유형("물리·마법")이고 능력은 줄바꿈으로 이어 붙여 있다 (build-rogue.py)
+    abil: e.ability ? e.ability.split("\n").filter(Boolean) : [], dmg: e.attack ? e.attack.split("·") : [],
+    race: [], way: null, motion: null, lv: [lv],
+  };
+  // 표의 단계 칸 = 지금 고른 난이도 (+ 긴급 노드에서 열었으면 긴급). 연 곳의 배율 컨텍스트를 그대로
+  // 물려받아 노드 모달의 칸과 같은 수치가 나온다 (사용자 리포트: 도감/노드 상세 불일치).
+  const diffLabel = grade < 0 ? t("쉬움") : t("난이도 {n}", { n: String(grade) });
+  const statCtx: StatOverride = {
+    label: ctx.emg ? `${t("긴급 작전")} · ${diffLabel}` : diffLabel,
+    up: ([["hp", s.hp !== Math.round(e.hp)], ["atk", s.atk !== Math.round(e.atk)], ["def", s.def !== Math.round(e.def)],
+      ["res", s.res !== e.res]] as const).filter(([, on]) => on).map(([k]) => k),
+    notes: [
+      ...(ctx.emg ? [t("긴급 작전 배율이 반영된 수치입니다.")] : []),
+      ...(!ctx.emg && s.g10 ? [t("난이도 10 이상 험난한 길·긴급 작전 배율(공격·HP ×1.15)이 반영된 수치입니다.")] : []),
+      ...(s.burst14 ? [t("난이도 14 이상: 정예·리더가 등장 후 20초간 공격력 +30%, 받는 물리·마법 대미지 -50%")] : []),
+      ...(s.guard > 0 ? [`${t("고난이도에서 이 적이 받는 물리·마법 대미지가 감소합니다")} (-${s.guard}%)`] : []),
+    ],
+  };
+  // 등장 작전 — 본 도감 '등장 작전' 절과 같은 모양(구역별 묶음)으로 이 테마의 노드를 싣는다.
+  // 층 → 층 없는 노드(조우·시련…)는 종류별. 같은 층 안에선 종전 순서(작전 → 험난한 길…)를 지킨다.
+  const zoneName = (n: number) => data.zones.find((z) => z.num === n)?.name;
+  const nodes = [...appear].sort((a, b) => (a.zone ?? 999) - (b.zone ?? 999));
+  const stagesDoc: EnemyStages = {
+    stages: nodes.map((st) => [st.code ?? "", nmText(st.name, st.cn),
+      st.zone != null ? [t("{n}층", { n: st.zone }), zoneName(st.zone)].filter(Boolean).join(" ") : t(KIND_LABEL[st.kind] ?? st.kind),
+      st.kind, st.id]),
+    byEnemy: { [ekey]: nodes.map((st, i) => [i, st.enemies.find((se) => se.key === ekey)?.cnt ?? 0]) },
+  };
+  // CN 데이터는 원문이 대표·번역이 아래 (사용자 확정 2026-07 — Nm). JSX 밖에서 만든다: 태그 안에 `/>`가
+  // 끼면 scripts/check-dexlinks.mjs의 태그 정규식이 거기서 끊겨 필수 콜백을 못 본다.
+  const title = e.cn ? <Nm name={e.name} cn={e.cn} /> : undefined;
   return (
     <ModalWindow label={nmText(e.name, e.cn)} className="rg-modal rg-emodal" onClose={onClose}>
-      <header className="rg-modal-head">
-        <div>
-          <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
-          <h3><Nm name={e.name} cn={e.cn} /></h3>
-          {e.index && <span className="rg-modal-zone">{e.index}</span>}
-        </div>
-      </header>
-      {/* 초상은 원본 해상도(158px) 그대로 크게 — 작은 헤더 아이콘 대신 (피드백 반영 2026-07-18) */}
-      <div className="rg-emodal-cols">
-        {e.img ? <img className="rg-emodal-portrait" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
-          : <span className="rg-emodal-portrait none" aria-hidden>?</span>}
-        <div className="rg-emodal-main">
-          {e.attack && <p className="rg-emodal-row"><strong>{t("공격 방식")}</strong> {e.attack}</p>}
-          {e.desc && <p className="rg-emodal-desc">{e.desc}</p>}
-          {e.ability && <p className="rg-emodal-ability">{e.ability}</p>}
-          {e.immune && e.immune.length > 0 && (
-            <p className="rg-emodal-immune"><strong>{t("상태이상 면역")}</strong>
-              {e.immune.map((im) => <span key={im} className="rg-immune-chip">{t(im)}</span>)}
-            </p>
-          )}
-        </div>
-      </div>
-      {/* 연 곳(노드 상세/도감)의 배율 컨텍스트를 그대로 물려받아 표시 — 수치 불일치 방지 */}
-      {ctx.emg && <p className="rg-ctx-note">{t("긴급 작전 배율이 반영된 수치입니다.")}</p>}
-      {!ctx.emg && ctx.emergencyOrBoss && grade >= 10 && <p className="rg-ctx-note">{t("난이도 10 이상 험난한 길·긴급 작전 배율(공격·HP ×1.15)이 반영된 수치입니다.")}</p>}
-      <StatRow e={e} grade={grade} ctx={{ ...ctx, enemyKey: ekey }} />
-      <div className="rg-stats sub">
-        <span className="rg-stat">{t("공속")} {e.aspd}</span>
-        <span className="rg-stat">{t("이속")} {e.ms}</span>
-        <span className="rg-stat">{t("무게")} {e.weight}</span>
-        <span className="rg-stat">{t("침투 피해")} {e.lifePoint}</span>
-      </div>
-      {appear.length > 0 && (
-        <div className="rg-appear">
-          <strong>{t("등장 노드")}</strong>
-          <div className="rg-chips">
-            {appear.map((s) => (
-              <button key={s.id} type="button" className={`rg-chip${s.kind === "boss" ? " boss" : ""}`}
-                onClick={() => onOpenStage(s)}>
-                {s.zone != null ? `${s.zone}F ` : ""}<Nm name={s.name} cn={s.cn} />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <EnemyFile enemy={enemy} stagesDoc={stagesDoc} statCtx={statCtx} title={title}
+        portrait={e.img ? asset(`/rogue/enemy/${e.img}.webp`) : undefined}
+        onOpenEnemy={onOpenEnemy} nameOf={nameOf}
+        onOpenStage={(sid) => { const st = nodes.find((x) => x.id === sid); if (st) onOpenStage(st); }} />
     </ModalWindow>
   );
 }
@@ -1458,6 +1517,8 @@ export default function RogueGuide({ initialTopic }: {
     const appear = enemyStages.get(key) ?? [];
     return { emergencyOrBoss: appear.length > 0 && appear.every((s) => s.kind === "boss") };
   };
+  // 적 도감 탭도 카드를 누르면 본 도감을 받은 뒤에 상세가 뜬다 — 탭을 열 때 미리 받아 둔다 (노드 모달과 같은 이유)
+  useEffect(() => { if (view === "enemy") void loadEnemies(locale).catch(() => {}); }, [view, locale]);
 
   const enemies = useMemo(() => {
     const q = normSearch(enemyTerm);
@@ -2775,7 +2836,8 @@ export default function RogueGuide({ initialTopic }: {
       {enemyOpen && (
         <EnemyModal ekey={enemyOpen.key} grade={grade} ctx={enemyOpen.ctx} onClose={() => setEnemyOpen(null)}
           appear={enemyStages.get(enemyOpen.key) ?? []}
-          onOpenStage={(s) => { setEnemyOpen(null); setStageOpen(pairOf(s)); }} />
+          onOpenStage={(s) => { setEnemyOpen(null); setStageOpen(pairOf(s)); }}
+          onOpenEnemy={(key) => setEnemyOpen({ key, ctx: dexCtx(key) })} />
       )}
       {relicOpen && (
         <RelicModal relic={relicOpen} onClose={() => setRelicOpen(null)}

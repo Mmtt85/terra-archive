@@ -9,14 +9,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { asset } from "./assets";
-import { enemyPath, enemyImg, enemyImgBase, itemDexPath, stageMap, stagePath, stageListPath } from "./dex-paths";
+import { enemyPath, enemyImg, enemyImgBase, itemDexPath, stageMap, stageMapOf, stagePath, stageListPath } from "./dex-paths";
 import { ModalWindow } from "./modal-window";
 import { loadEnemies, loadEnemyStages } from "./dex-cross";
 import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 
 import { viewOf, type EnvMul, type Stage, type StageDoc, type StageView } from "./stage-data";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
-import { isNewFeature } from "./whats-new";
+import { SANDBOX_GRID_SHARE } from "./stage-cam";
 
 // 이동 경로 데이터(수 MB) — '이동 경로' 탭을 처음 눌렀을 때 한 번만 지연 로드해 공유.
 // 같은 레벨을 공유하는 작전(#f# 등)의 값은 **별칭 문자열**이다 (rogue-routes와 같은 규약).
@@ -26,18 +26,25 @@ import { isNewFeature } from "./whats-new";
 // ems·cw·mm — 2026-08-16 키 비교) StageRouteMap은 그대로 쓴다. 캐시만 갈라 두면
 // 록라 작전만 보는 사람이 5.3MB를, 본 도감만 보는 사람이 1.3MB를 안 받는다.
 type RouteDoc = Record<string, StageRoutes | string>;
-const ROUTES_CACHE: Record<"base" | "rogue", RouteDoc | null> = { base: null, rogue: null };
-const ROUTES_LOADING: Record<"base" | "rogue", Promise<unknown> | null> = { base: null, rogue: null };
-const routeSrc = (rogue?: boolean) => (rogue ? "rogue" : "base") as "base" | "rogue";
-function loadRoutes(rogue?: boolean): Promise<unknown> {
-  const k = routeSrc(rogue);
+// 경로 파일은 셋 — 본 도감 · 통합전략(rg) · 생존연산 사막 이야기(sb, 2026-09-23 도감 편입).
+// 생존연산 파일은 /ra 모달(app/sandbox.tsx)과 **같은 파일**이라 청크 하나를 같이 쓴다.
+type RouteSrc = "base" | "rogue" | "sb1";
+const ROUTES_CACHE: Record<RouteSrc, RouteDoc | null> = { base: null, rogue: null, sb1: null };
+const ROUTES_LOADING: Record<RouteSrc, Promise<unknown> | null> = { base: null, rogue: null, sb1: null };
+const ROUTE_IMPORTS: Record<RouteSrc, () => Promise<{ default?: unknown }>> = {
+  base: () => import("./data/stage-routes.json"),
+  rogue: () => import("./data/rogue-routes.json"),
+  sb1: () => import("./data/sandbox-routes.json"),
+};
+const routeSrc = (s: { rg?: number; sb?: number }): RouteSrc => (s.sb ? "sb1" : s.rg ? "rogue" : "base");
+function loadRoutes(k: RouteSrc): Promise<unknown> {
   if (ROUTES_CACHE[k]) return Promise.resolve(ROUTES_CACHE[k]);
-  ROUTES_LOADING[k] ??= (rogue ? import("./data/rogue-routes.json") : import("./data/stage-routes.json"))
+  ROUTES_LOADING[k] ??= ROUTE_IMPORTS[k]()
     .then((m) => { ROUTES_CACHE[k] = (m.default ?? m) as unknown as RouteDoc; });
   return ROUTES_LOADING[k]!;
 }
-function routeDocFor(id: string, rogue?: boolean): StageRoutes | undefined {
-  const src = ROUTES_CACHE[routeSrc(rogue)];
+function routeDocFor(id: string, k: RouteSrc): StageRoutes | undefined {
+  const src = ROUTES_CACHE[k];
   let d = src?.[id];
   if (typeof d === "string") d = src?.[d];   // 별칭 한 단계 해석
   return d && typeof d === "object" ? d : undefined;
@@ -60,10 +67,18 @@ function mulFor(id: string, rows?: EnvMul[]): [number, number, number, number] {
 }
 
 /** 등장 적 한 칸 — 통합전략 작전 노드의 적 셀과 같은 짜임(초상 위·이름 아래·코어 스탯).
- *  누르면 **모달로 겹쳐** 적 상세가 뜬다 (페이지 이동 없음). */
-function EnemyChip({ e, mul, onOpenEnemy, onHover, pinColor, pinned, onTogglePin }: {
-  e: { id: string; name: string; cnt: number; lv: number; st?: [number, number, number, number] };
+ *  누르면 **모달로 겹쳐** 적 상세가 뜬다 (페이지 이동 없음).
+ *  /rogue 전투 노드 모달도 이 칸을 그대로 쓴다 (사용자 요청 2026-09-23 "일반 작전맵처럼") —
+ *  거기선 난이도·긴급 배율을 곱해 둔 수치를 st로 넘기고, 달라진 칸만 up으로 짚는다. */
+export function EnemyChip({ e, mul, up, href, nameNode, onOpenEnemy, onHover, pinColor, pinned, onTogglePin }: {
+  e: { id: string; name: string; cnt: number; lv: number; st?: [number, number, number, number]; img?: string };
   mul?: EnvMul[];
+  /** 배율로 달라진 칸 [hp,atk,def,res] — 수치를 이미 계산해 넘기는 자리(통합전략)가 mul 대신 쓴다 */
+  up?: readonly boolean[];
+  /** 링크 덮어쓰기 — 적 도감 페이지가 없을 수 있는 자리(통합전략 테마 전용 적)는 그 화면의 딥링크로 */
+  href?: string;
+  /** 이름 자리 덮어쓰기 — 통합전략 CN 데이터의 원문·번역 두 줄 표기 */
+  nameNode?: React.ReactNode;
   onOpenEnemy?: (id: string) => void;
   /** 이동 경로 탭이 열려 있을 때 — 호버로 그 적의 경로 강조 */
   onHover?: (id: string | null) => void;
@@ -82,10 +97,11 @@ function EnemyChip({ e, mul, onOpenEnemy, onHover, pinColor, pinned, onTogglePin
     Math.round(e.st[0] * m[0]), Math.round(e.st[1] * m[1]),
     Math.round(e.st[2] * m[2]), Math.round(e.st[3] * m[3]),
   ] as const);
+  const upAt = (i: number) => (up ? !!up[i] : m[i] !== 1) ? "up" : undefined;
   const routeMode = !!onTogglePin && !!pinColor;
   return (
     <a className={`st-enemy${e.lv > 0 ? " reinforced" : ""}${pinned ? " pinned" : ""}${routeMode ? " has-route" : ""}`}
-      href={enemyPath(locale, e.id)}
+      href={href ?? enemyPath(locale, e.id)}
       style={pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
       onMouseEnter={onHover ? () => onHover(e.id) : undefined}
       onMouseLeave={onHover ? () => onHover(null) : undefined}
@@ -98,7 +114,7 @@ function EnemyChip({ e, mul, onOpenEnemy, onHover, pinColor, pinned, onTogglePin
       {/* 가로형 배치 (사용자 확정 2026-08-10): "적이름 ×N" 한 줄 · 그 밑에 썸네일 왼쪽 ·
           스탯 2×2 오른쪽 — 세로도 줄어든다. */}
       <span className="st-enemy-name">
-        <span className="nm">{e.name}</span>
+        <span className="nm">{nameNode ?? e.name}</span>
         {/* 별만 찍지 않고 몇 단계 강화인지 숫자로 (사용자 지적 2026-08-10) */}
         {e.lv > 0 && <i title={t("강화 {n}단계", { n: String(e.lv) })}>★{e.lv}</i>}
         {e.cnt > 0 && <em className="st-enemy-cnt">×{e.cnt}</em>}
@@ -106,7 +122,7 @@ function EnemyChip({ e, mul, onOpenEnemy, onHover, pinColor, pinned, onTogglePin
       <span className="st-enemy-body">
         {/* 섬네일 클릭 = **항상** 적 상세 모달 (사용자 확정 2026-08-10). 경로 모드의
             카드 클릭(고정)과 분리하려고 stopPropagation으로 끊는다. */}
-        <img src={enemyImg(e.id)} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
+        <img src={e.img ? asset(e.img) : enemyImg(e.id)} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
           className={onOpenEnemy ? "st-enemy-face-btn" : undefined}
           onClick={onOpenEnemy ? (ev) => {
             if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
@@ -121,10 +137,10 @@ function EnemyChip({ e, mul, onOpenEnemy, onHover, pinColor, pinned, onTogglePin
             환경 배수가 곱해진 값은 빨간 톤으로 표시한다. */}
         {st && (
           <span className="st-enemy-stats">
-            <b className={m[0] !== 1 ? "up" : undefined} title={t("최대 HP")}>HP {nf(st[0])}</b>
-            <b className={m[1] !== 1 ? "up" : undefined} title={t("공격력")}>{t("공격")} {nf(st[1])}</b>
-            <b className={m[2] !== 1 ? "up" : undefined} title={t("방어력")}>{t("방어")} {nf(st[2])}</b>
-            <b className={m[3] !== 1 ? "up" : undefined} title={t("마법 저항")}>{t("마저")} {nf(st[3])}</b>
+            <b className={upAt(0)} title={t("최대 HP")}>HP {nf(st[0])}</b>
+            <b className={upAt(1)} title={t("공격력")}>{t("공격")} {nf(st[1])}</b>
+            <b className={upAt(2)} title={t("방어력")}>{t("방어")} {nf(st[2])}</b>
+            <b className={upAt(3)} title={t("마법 저항")}>{t("마저")} {nf(st[3])}</b>
           </span>
         )}
       </span>
@@ -140,8 +156,6 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
   const { locale, t } = useI18n();
   const [zoom, setZoom] = useState(false);
   const zoomRef = useRef<HTMLButtonElement | null>(null);
-  // 실사 도면 / 이동 경로 탭 (사용자 확정 2026-08-10 "탭 두개로 구분")
-  const [mapView, setMapView] = useState<"map" | "route">(autoSim ? "route" : "map");
   // 경로 강조 (사용자 확정): 호버 = 그 적만 잠깐 표시 · 클릭 = 고정(여러 적 중첩 가능)
   const [hover, setHover] = useState<string | null>(null);
   const [pinned, setPinned] = useState<Set<string>>(() => new Set());
@@ -179,25 +193,34 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
     // 통합전략 작전은 이성·보상·권장 편성이 없다 — 그 자리를 작전 종류가 대신한다
     // (작전/긴급 작전/험난한 길/시련…, /rogue의 KIND_LABEL과 같은 문구·이미 로케일별로 구워져 있다)
     ...(s.kind ? [[t("작전 종류"), s.kind] as [string, string]] : []),
+    // 생존연산 지역 — 이성 대신 행동력 (평소 / 적습 시, /ra 모달과 같은 표기)
+    ...(s.act ? [[t("행동력"), String(s.act[0])] as [string, string]] : []),
+    ...(s.act && s.act[1] !== s.act[0] ? [[t("적습 시 행동력"), String(s.act[1])] as [string, string]] : []),
   ];
   // 활성 환경의 적 스탯 배수 — 고난(alt) 뷰는 자기 em, 긴급은 일반판의 chgEm.
   // 일반판이 없는 고난 전용 작전(H10-1 등)은 em이 상시 걸린다 (게임도 항상 고난이다).
   const envMul = cur.stage.em ?? (env === 1 && !view.alt ? view.stage.chgEm : undefined);
-  // 합친 도면 (사용자 요청 2026-09-23 "실사 도면이랑 이동 경로 탭을 하나로") — 카메라가 있는 작전은
-  // 실사 도면 위에 경로·시뮬을 바로 얹고 탭을 없앤다. 카메라가 없는 작전(위키 스크린샷·격자 렌더
-  // 도면)은 투영이 맞지 않으므로 종전 두 탭 그대로다.
+  // **한 화면 규칙 — 탭은 없다** (사용자 확정 2026-09-23 "실사 도면이랑 이동 경로 탭을 하나로" → 같은 날
+  // "앞으로 모든 작전은 합쳐진 상태로 처음부터"):
+  //  · 실사 미리보기 + 전투 카메라 → 합친 도면 (실사 위에 경로·시뮬)
+  //  · 그 밖에 경로가 있으면 → 경로 지도 하나 (격자·경로·시뮬). 카메라 없는 도면은 게임이 미리보기를 주지
+  //    않아 레벨 격자로 그린 그림뿐이라(2026-09-23 전수 248/248) 같은 격자를 그리는 경로 지도로 잃는 게 없다
+  //  · 경로도 없으면 → 도면 한 장 (위키 실사 스크린샷 156장이 전부 이쪽이다)
+  // 경로 유무는 레코드의 sim 표식으로 **연 순간** 안다 (build-stages 가 sim-stages 로 단다) — 경로 파일(5MB)을
+  // 받아 봐야 알면 그림이 먼저 떴다가 지도로 바뀌며 출렁인다.
   // 보안 파견 긴급 판은 일반판과 **같은 실사 도면·카메라**를 쓰고, 경로만 자기(_ex) 레벨 것이다.
   const photoStage = env === 1 && view.alt && view.stage.ae ? view.stage : s;
-  const fused = !!(photoStage.cam && photoStage.map);
+  const fused = !!((photoStage.cam || photoStage.ortho) && photoStage.map);
+  const gridOnly = !fused && !!s.sim;
   // 경로 모드 공용 — 적 카드(고정 토글·선 색)와 지도 양쪽이 쓴다
-  const showRoutes = fused || mapView === "route";
-  const rd = showRoutes ? routeDocFor(s.id, !!s.rg) : undefined;
+  const showRoutes = fused || gridOnly;
+  const rd = showRoutes ? routeDocFor(s.id, routeSrc(s)) : undefined;
   // 이 작전이 쓰는 경로 파일(본 도감/통합전략)만 받아 온다 — 실패하면 다시 시도할 수 있게 비운다
-  const routesReady = !!ROUTES_CACHE[routeSrc(!!s.rg)];
+  const routesReady = !!ROUTES_CACHE[routeSrc(s)];
   const ensureRoutes = () => {
     if (routesReady) return;
-    loadRoutes(!!s.rg).then(() => bumpRoutes((k) => k + 1))
-      .catch(() => { ROUTES_LOADING[routeSrc(!!s.rg)] = null; bumpRoutes((k) => k + 1); });
+    loadRoutes(routeSrc(s)).then(() => bumpRoutes((k) => k + 1))
+      .catch(() => { ROUTES_LOADING[routeSrc(s)] = null; bumpRoutes((k) => k + 1); });
   };
   const routeOrder = rd ? cur.enemies.filter((en) => rd.e[en.id]?.length).map((en) => en.id) : [];
   const togglePin = (id: string) => setPinned((curSet) => {
@@ -214,16 +237,20 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
     const want = autoSim || new URLSearchParams(window.location.search).get("sim") === "1";
     if (!want) return;
     setAutoSimOn(true);
-    setMapView("route");
     ensureRoutes();
     // autoSim prop은 모달 마운트 시점(key=stage.id 재마운트)에 확정돼 있어 마운트 1회면 된다
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
-  // 합친 도면은 경로가 곧 본문이라 상세를 열면 바로 받는다 — 도면은 서버가 그린 그대로 먼저 보이고
+  // 경로가 곧 본문이라 상세를 열면 바로 받는다 — 도면은 서버가 그린 그대로 먼저 보이고
   // 경로·시뮬이 뒤따라 얹힌다. 데이터는 세션당 한 번(모듈 캐시), gzip 약 0.8MB.
   useEffect(() => {
-    if (fused) ensureRoutes();
-  }, [fused]);  // eslint-disable-line react-hooks/exhaustive-deps
-  // 실사 도면 단독 — 카메라 없는 작전의 '실사 도면' 탭, 또는 경로 데이터가 없는 작전.
+    if (showRoutes) ensureRoutes();
+  }, [showRoutes]);  // eslint-disable-line react-hooks/exhaustive-deps
+  // 적 초상 — 생존연산 전용 적은 자기 폴더 그림(view.enemies[].img)을 쓴다. 카드·시뮬 말·툴팁 공용
+  const enemyFace = (id: string) => {
+    const own = cur.enemies.find((en) => en.id === id)?.img;
+    return own ? asset(own) : enemyImg(id);
+  };
+  // 도면 단독 — 경로 데이터가 없는 작전, 또는 경로 지도가 오기 전의 자리(격자 렌더라 모양이 같다).
   // ⚠ 16:9 로 편다(.st-map) — 인게임 도면은 16:9 화면을 정사각에 눌러 담은 그림이라 펴야 게임
   //   비율이다 (app/stage-cam.ts). 클릭 확대는 통전과 같다.
   // 보안 파견 긴급 판(ae)은 일반판과 **같은 실사 도면**을 쓴다 — _ex 자체엔 인게임 도면이 없어
@@ -233,7 +260,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
     <button type="button" ref={zoomRef} className={`st-map-zoom${zoom ? " zoom" : ""}`}
       onClick={() => setZoom((z) => !z)}
       title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
-      <img className="st-map" src={stageMap(photoStage.id, !!photoStage.rg)} alt={mapAlt}
+      <img className={`st-map${photoStage.sb ? " sb-origmap" : ""}`} src={stageMapOf(photoStage)} alt={mapAlt}
         loading="lazy" decoding="async" />
     </button>
   );
@@ -273,37 +300,27 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
             routesReady && !rd ? photoOnly : (
               <StageRouteMap key={rd ? "ready" : "pending"} data={rd} order={routeOrder}
                 highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
-                imgOf={(id) => enemyImg(id)}
+                imgOf={enemyFace}
                 nameOf={(id) => cur.enemies.find((en) => en.id === id)?.name}
                 onPick={togglePin} autoSim={autoSimOn}
-                photo={{ src: stageMap(photoStage.id, !!photoStage.rg), cam: photoStage.cam!, alt: mapAlt }} />
+                photo={{ src: stageMapOf(photoStage), cam: photoStage.cam, alt: mapAlt,
+                  ...(photoStage.sb ? { share: SANDBOX_GRID_SHARE } : {}) }} />
             )
-          ) : (
-            <>
-              {/* 실사 도면 ↔ 격자+이동 경로 탭 (사용자 확정 2026-08-10) — 카메라가 없는 작전만 남는다 */}
-              <div className="st-maptabs" role="tablist" aria-label={t("도면 보기")}>
-                <button type="button" role="tab" aria-selected={mapView === "map"}
-                  className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
-                <button type="button" role="tab" aria-selected={mapView === "route"}
-                  className={mapView === "route" ? "on" : ""}
-                  onClick={() => { setMapView("route"); ensureRoutes(); }}
-                  >{t("이동 경로")}{isNewFeature("route-map") && <span className="new-badge">{t("새기능")}</span>}</button>
-              </div>
-              {mapView === "map" ? (s.map ? photoOnly : (
-                <p className="st-note">{t("이 작전은 지형 도면이 제공되지 않습니다.")}</p>
-              )) : rd ? (
-                // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 (사용자 확정 2026-08-10).
-                // 고정 조작은 오른쪽 등장 적 **카드**가 맡는다 — 지도 밑 섬네일은 없앴다
-                // (사용자 확정: 카드 클릭 = 고정, 카드 속 섬네일 클릭 = 적 상세 모달).
-                <StageRouteMap data={rd} order={routeOrder}
-                  highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
-                  imgOf={(id) => enemyImg(id)}
-                  nameOf={(id) => cur.enemies.find((en) => en.id === id)?.name}
-                  onPick={togglePin} autoSim={autoSimOn} />
-              ) : (
-                <p className="st-note">{routesReady ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
-              )}
-            </>
+          ) : gridOnly ? (
+            // 경로 지도 하나 — 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 (사용자 확정 2026-08-10).
+            // 고정 조작은 오른쪽 등장 적 **카드**가 맡는다 (카드 클릭 = 고정, 카드 속 섬네일 = 적 상세 모달).
+            // 경로가 오기 전엔 같은 격자를 그린 도면 그림을 그 자리에 둔다.
+            rd ? (
+              <StageRouteMap data={rd} order={routeOrder}
+                highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
+                imgOf={enemyFace}
+                nameOf={(id) => cur.enemies.find((en) => en.id === id)?.name}
+                onPick={togglePin} autoSim={autoSimOn} />
+            ) : s.map ? photoOnly : (
+              <p className="st-note">{routesReady ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
+            )
+          ) : s.map ? photoOnly : (
+            <p className="st-note">{t("이 작전은 지형 도면이 제공되지 않습니다.")}</p>
           )}
           {s.desc && <p className="st-desc">{s.desc}</p>}
           {/* 긴급 환경 제한 조건 — 설명을 지우지 않고 이어서 덧붙인다 (사용자 요청 2026-08-10).
@@ -329,7 +346,8 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
               <div className="st-enemies">
                 {cur.enemies.map((e, i) => (
                   <EnemyChip key={`${e.id}-${i}`} e={e} mul={envMul} onOpenEnemy={onOpenEnemy}
-                    onHover={mapView === "route" ? setHover : undefined}
+                    // 경로가 보이는 동안이면 호버 강조 (합친 도면·경로 지도 모두)
+                    onHover={showRoutes ? setHover : undefined}
                     pinColor={rd && rd.e[e.id]?.length ? enemyRouteColor(routeOrder, e.id) : undefined}
                     pinned={pinned.has(e.id)}
                     onTogglePin={rd ? togglePin : undefined} />

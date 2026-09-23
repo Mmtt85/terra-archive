@@ -729,12 +729,14 @@ button {
 .promo-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  /* 높이·글자는 업데이트 내역 버튼(.chlog-trigger)과 같게 — 28.5px · 11px (사용자 지시 2026-09-23 "이벤트
+     버튼들을 업데이트 내역 버튼이랑 같은 높이의 크기랑 폰트로, 좀 크네". 종전 32px · 12px) */
+  gap: 5px;
   /* 헤더는 flex에 gap이 없고 각자 margin으로 띄운다 — 업데이트 내역 칩에 딱 붙어 보여서
      한 칸 더 벌린다 (사용자 지적 2026-08-22). 모서리도 옆 칩과 같은 6px. */
   margin-left: 12px;
-  padding: 6px 11px;
-  font-size: 12px;
+  padding: 5px 8px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink);
   text-decoration: none;
@@ -752,7 +754,52 @@ button {
 /* 라임 원색은 밝은 종이 위에서 1.46:1이라 사실상 안 보인다 — 배경에 맞춰 도는
    --tint-lime-ink(라이트 #5b6b00 · 다크 #c6d96e)를 쓴다 (2026-08-25) */
 .promo-trigger .promo-mark { color: var(--tint-lime-ink); }
-.promo-trigger .promo-hint { font-size: 11px; font-weight: 600; color: var(--muted); }
+.promo-trigger .promo-hint { font-size: 10px; font-weight: 600; color: var(--muted); }
+/* 진행중 이벤트 그룹 (사용자 요청 2026-09-23 "진행중 이벤트 그룹을 만들어서 세 개 다 헤더에") — 칩만 나란히.
+   칩은 종전 모양(.promo-trigger) 그대로다. 말머리('진행중 이벤트')는 같은 날 뺐다 (사용자 지시).
+   칩 줄은 Marquee(.mq.ev-run, app/marquee.tsx) 안에 있다 — 1줄에 다 안 들어가면 흐르고, 들어가면 가만히 있다. */
+.ev-group {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 12px;
+  min-width: 0;
+}
+/* 칩 줄 — .mq 의 블록·인라인블록을 flex 로 바꾼다: 줄 상자(strut)가 칩 높이를 흔들지 않고, 안 흐를 때 오른쪽
+   정렬(폰)을 justify-content 로 할 수 있다. ⚠ 칩은 **줄지 않는다**(flex:none) — 줄면 넘침을 못 재서 흐르지 않고
+   이름만 깎인다. 안 흐를 때는 두 벌 사이 간격(48px)도 접는다 — 그대로 두면 칩 뒤에 빈칸이 붙는다. */
+/* ⚠ `.mq.ev-run` 두 겹으로 쓴다 — 공용 `.mq{display:block}` 이 이 파일 **뒤쪽**에 있어 한 겹이면 진다. 지면
+   .mq-run 이 블록 flex 가 되어 칸 폭(268px)으로 줄고, translateX(-50%) 가 그 절반만 움직여 느리게 흐른다
+   (2026-09-23 실측 8px/s — 제 속도 27px/s). */
+.mq.ev-run {
+  display: flex;
+  align-items: center;
+}
+.ev-run > .mq-run {
+  display: flex;
+  flex: none;
+}
+.ev-run > .mq-run > i {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ev-run:not([data-mq="run"]) > .mq-run > i {
+  padding-right: 0;
+}
+.ev-group .promo-trigger,
+.ev-group .promo-trigger.ev-promo {
+  margin-left: 0;
+  flex: none;
+}
+/* 흐르는 칩을 누르려고 마우스를 올리면 멈춘다 */
+@media (hover: hover) {
+  .ev-run[data-mq="run"]:hover > .mq-run { animation-play-state: paused; }
+}
+/* 움직임 줄이기 — 흐르지 않으니 종전처럼 옆으로 밀어 본다 (뒤 벌은 감춘다: 밀면 같은 칩이 또 나온다) */
+@media (prefers-reduced-motion: reduce) {
+  .mq.ev-run[data-mq="run"] { overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .ev-run[data-mq="run"] > .mq-run > i + i { display: none; }
+}
 /* 확장부의 작은 버튼. 종전엔 배너 섬네일을 통째로 품은 큰 버튼이 헤더 1줄에 누워 있었다
    (사용자 요청 2026-07-30: "확장헤더에 넣자, 누르면 섬네일이랑 이벤트 보이도록").
    치수는 옆에 붙던 '공식 방송' 버튼에 맞춘 것인데, 그 버튼은 2026-09-23에 걷어냈다. */
@@ -945,6 +992,8 @@ button {
     margin-left: auto;
     padding: 4px 7px;
     font-size: 11px;
+    /* 업데이트 내역 버튼(29.5px — 아이콘 13px·줄높이 19.5px)과 같은 높이 (사용자 지시 2026-09-23) */
+    line-height: 19.5px;
     gap: 5px;
   }
   .promo-trigger ~ .promo-trigger {
@@ -966,16 +1015,28 @@ button {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  /* '진행중 이벤트'라는 말머리만 지운다 (사용자 확정 2026-09-23) — 1줄에 네 조각을 넣으려면
-     어딘가를 줄여야 하는데, 아이콘(✦)과 남은 기간이 있으면 무슨 칩인지는 알 수 있다.
-     이름과 남은 기간은 그대로 둔다. */
-  .ev-promo .ev-promo-kind {
-    display: none;
-  }
   /* 남은 기간은 줄어들지 않는다 — 잘리면 뜻이 없어진다 */
   .ev-promo .promo-hint {
     flex: none;
   }
+  /* 진행중 이벤트 그룹 (2026-09-23) — 위 칩 규칙을 **그룹이 통째로** 이어받는다: 1줄 오른쪽에 뭉친다.
+     칩이 셋이라 폭이 모자라면 칩을 깎는 대신 **흘려 보낸다**(Marquee) — 이름이 한두 글자로 깎이면 무슨
+     이벤트인지 모른다. 종전엔 그룹 안에서 옆으로 밀어야 셋째가 보였다 (같은 날 사용자 지시로 마퀴). */
+  .ev-group {
+    order: 3;
+    /* 기준 폭 0 에서 1줄의 남는 자리를 채운다 — 기준 폭이 칩 합(≈420px)이면 줄바꿈 판정에서 1줄을 넘쳐
+       그룹째 다음 줄로 내려갔다 (2026-09-23 390px 실측). */
+    flex: 1 1 0;
+    margin-left: 0;
+    min-width: 0;
+  }
+  .ev-run {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  /* 다 들어가면 오른쪽에 붙인다. ⚠ 흐를 때는 풀어야 한다 — flex-end 로 넘치면 앞쪽이 잘린 채 흐른다. */
+  .ev-run:not([data-mq="run"]) { justify-content: flex-end; }
+  .ev-run > .mq-run > i { gap: 5px; }
   .site-header::before {
     content: "";
     order: 5;
@@ -13500,29 +13561,6 @@ html.rg-theme.rg6 .site-header {
   border-bottom-color: #1f3a34;
 }
 
-/* 적 상태이상 면역 칩 */
-.rg-emodal-immune {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-  margin: 8px 0 4px;
-  font-size: 13px;
-  color: var(--rgtext2);
-}
-.rg-emodal-immune strong {
-  color: var(--rgink);
-  margin-right: 2px;
-}
-.rg-immune-chip {
-  border: 1px solid var(--rgmodalline);
-  background: var(--rgsel);
-  color: var(--rgink);
-  padding: 2px 8px;
-  border-radius: var(--r-md);
-  font-size: 12px;
-  font-weight: 600;
-}
 /* 중국어 원문 병기 (CN 선행 토픽) — 인라인 표기용 */
 .rg-cn {
   font-size: 12px;
@@ -14724,14 +14762,6 @@ html.rg-theme {
 .rg-modal-modes.in-head {
   margin: 0 0 0 auto;
 }
-/* 실사 도면/이동 경로 탭 — 도면 바로 위, 작전 도감 .st-maptabs와 같은 크기감 (2026-08-10) */
-.rg-modal-modes.rg-maptabs {
-  margin: 0 0 8px;
-}
-.rg-modal-modes.rg-maptabs button {
-  padding: 4px 12px;
-  font-size: 12px;
-}
 .rg-zone-wide {
   grid-column: 1 / -1;
 }
@@ -15324,9 +15354,6 @@ html.rg-theme {
   flex-wrap: wrap;
   gap: 4px;
 }
-.rg-stats.sub {
-  margin-top: 4px;
-}
 .rg-stat {
   font: 700 12px/1 var(--mono);
   border: 1px solid var(--rgline);
@@ -15363,42 +15390,6 @@ html.rg-theme {
 .rg-enemy-desc {
   color: var(--rgmut) !important;
   font-style: italic;
-}
-.rg-appear {
-  margin-top: 8px;
-}
-.rg-appear strong {
-  display: block;
-  font-size: 12px;
-  margin-bottom: 4px;
-  color: var(--rggold);
-}
-.rg-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.rg-chip {
-  border: 1px solid var(--rgline);
-  background: var(--rgdeep);
-  color: var(--rgink);
-  padding: 4px 8px;
-  font-weight: 600;
-  font-size: 12px;
-  line-height: 1.25;
-  cursor: pointer;
-  border-radius: var(--r-xs);
-  transition: 0.12s;
-  text-align: left;
-}
-.rg-chip:hover {
-  border-color: var(--rggold);
-  color: var(--rggold);
-}
-.rg-chip.boss {
-  border-color: var(--rggold);
-  color: var(--rggold);
-  font-weight: 700;
 }
 
 /* 전시관 */
@@ -15809,76 +15800,6 @@ html.rg-theme .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
   width: 64px;
   height: 64px;
 }
-/* 적 상세 모달 — 원본 해상도(158px) 초상을 왼쪽에 크게 (피드백 반영 2026-07-18) */
-.rg-emodal-cols {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  margin-bottom: 8px;
-}
-.rg-emodal-portrait {
-  width: 158px;
-  height: 158px;
-  object-fit: contain;
-  flex: none;
-  border: 1px solid var(--rgmodalline);
-  border-radius: var(--r-sm);
-  background: radial-gradient(circle at 50% 42%, var(--rgsel), var(--rgdeep));
-}
-.rg-emodal-portrait.none {
-  display: grid;
-  place-items: center;
-  color: var(--rgmut);
-  font: 800 42px var(--mono);
-}
-.rg-emodal-main {
-  flex: 1;
-  min-width: 0;
-}
-@media (max-width: 640px) {
-  .rg-emodal-cols {
-    flex-direction: column;
-  }
-  .rg-emodal-portrait {
-    width: 120px;
-    height: 120px;
-  }
-}
-.rg-emodal-row {
-  margin: 0 0 4px;
-  font-size: 13px;
-  color: var(--rgtext2);
-}
-.rg-emodal-row strong {
-  color: var(--rggold);
-  margin-right: 4px;
-}
-.rg-emodal-desc {
-  margin: 0 0 4px;
-  font-size: 12px;
-  font-style: italic;
-  color: var(--rgmut);
-}
-.rg-emodal-ability {
-  margin: 0 0 8px;
-  font-size: 13px;
-  line-height: 1.75;
-  color: var(--rgtext2);
-  white-space: pre-line;
-}
-/* 스탯 컨텍스트 안내 — 어떤 배율이 반영된 수치인지 명시 (도감/노드 상세 불일치 방지) */
-.rg-ctx-note {
-  margin: 0 0 4px;
-  font-size: 12px;
-  color: var(--rggold);
-  opacity: 0.85;
-}
-.rg-emodal .rg-stats.sub {
-  margin-top: 8px;
-}
-.rg-emodal .rg-appear {
-  margin-top: 12px;
-}
 .rg-relic-icon {
   width: 40px;
   height: 40px;
@@ -16073,12 +15994,6 @@ html.rg-theme .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
   font-weight: 600;
   color: #f0b9c0;
 }
-.rg-modal-enemies {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 8px;
-  margin-top: 0;
-}
 .rg-enemy-cell {
   position: relative;
   display: flex;
@@ -16112,11 +16027,6 @@ html.rg-theme .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
 }
 .rg-enemy-cell .rg-stats {
   justify-content: center;
-}
-@media (max-width: 720px) {
-  .rg-modal-enemies {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 /* 경로 지도가 통전 다크 모달 안에서도 읽히게 — 범례·툴팁을 rg 팔레트로 (사이트 잉크
    토큰은 라이트 테마에서 어두운 색이라 다크 모달 위에선 대비가 없다, 2026-08-10) */
@@ -16155,38 +16065,34 @@ html.rg-theme .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
   background: var(--rgdeep);
   border-color: var(--rgline);
 }
-/* 경로 고정된 적 셀 — 그 적의 선 색(--rc) 테두리 + ✓ 배지. 작전 도감과 동일 조작
-   (셀 클릭 = 고정 토글 · 셀 속 섬네일 클릭 = 적 상세 모달 · 호버 = 색 보더 미리보기) */
-/* 통전 전투 노드도 같은 규칙 — 기본 테두리가 곧 경로선 색 (사용자 요청 2026-08-12) */
-.rg-enemy-cell.has-route {
-  border-color: var(--rc, var(--rgline));
+/* 전투 노드 모달의 등장 적 절(.st-block)·적 상세(.en-file) — 작전 도감의 칸·본문을 **그대로**
+   쓰고 색만 통전 팔레트로 돌린다 (사용자 요청 2026-09-23 "일반 작전맵처럼 … 똑같이 생기게").
+   두 컴포넌트는 사이트 토큰으로만 칠하므로 토큰을 이 안에서만 바꿔 끼우면 모양은 한 벌로 남는다.
+   ⚠ .rg-modal 전체에 걸지 않는다 — 경로 지도·창 크롬·조우/유물 본문까지 번진다.
+   경로 고정 칸(--rc 테두리·✓ 배지)도 작전 도감 규칙(.st-enemy.has-route) 그대로 탄다 —
+   종전 .rg-enemy-cell.has-route 사본은 칸을 바꾸며 지웠다. */
+.rg-modal .st-block,
+.rg-modal .en-file {
+  --white: var(--rgdeep);
+  --line: var(--rgline);
+  --muted: var(--rgmut);
+  --ink: var(--rgink);
+  --ink2: var(--rgtext2);
+  --border-hover: var(--rggold);
+  --border-strong: var(--rgmodalline);
+  --crimson: var(--rgup);   /* 배율 반영 수치(.up)·고정 테두리 기본값 — 통전 .rg-stat.up과 같은 색 */
+  --danger: var(--rgup);    /* 보스 등급 배지 */
+  --amber-ink: #eac36e;     /* 정예 등급 배지 — 통전 .rg-rank.r-ELITE와 같은 금빛 */
 }
-.rg-enemy-cell.has-route:hover,
-.rg-enemy-cell.pinned {
-  border-color: var(--rc, var(--rgcrim));
-  box-shadow: 0 0 0 1px var(--rc, var(--rgcrim));
+/* 적 상세는 본문(.en-file)이 제 여백을 가진다 — 작전 도감 창은 .mw-body:has(> .en-file)가 창 여백을
+   0으로 물리는데, 통전 창 여백 규칙(.mw-window.rg-modal .mw-body, 0,3,0)이 그걸 이겨 두 겹이 된다 */
+.mw-window.rg-modal .mw-body:has(> .en-file) {
+  padding: 0;
 }
-.rg-enemy-cell.pinned::after {
-  content: "✓";
-  position: absolute;
-  right: -6px;
-  top: -7px;
-  width: 15px;
-  height: 15px;
-  line-height: 15px;
-  font-size: 11px;
-  font-weight: 800;
-  text-align: center;
-  color: #16130d;
-  background: var(--rc, var(--rgcrim));
-  border-radius: 50%;
-}
-.rg-enemy-cell.has-route .rg-enemy-face {
-  cursor: pointer;
-}
-.rg-enemy-cell.has-route .rg-enemy-face:hover {
-  outline: 2px solid var(--rc, var(--rgcrim));
-  outline-offset: 1px;
+/* CN 데이터의 두 줄 이름(원문 위·번역 아래 .rg-sub 블록) — 번역 줄도 칸 폭에서 말줄임 */
+.st-enemy-name .nm .rg-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .rg-enemy-row {
   display: flex;
@@ -18512,7 +18418,7 @@ main.site-main > .site-header {
    "NOTE 부분은 전부 사각으로"). 왼쪽 악센트 바 스타일과 각진 모양이 세트다. */
 .about-note, .about-notes, .chron-note, .data-note, .dorm-note,
 .event-menu-note, .future-note, .invest-note, .invest-note-sub, .low-time-note,
-.recruit-time-note, .rg-ctx-note, .rg-disclaimer, .rg-enc-note, .rule-note,
+.recruit-time-note, .rg-disclaimer, .rg-enc-note, .rule-note,
 .sc-future-note, .story-disclaimer{
   border-radius: 0;
 }
@@ -19486,6 +19392,11 @@ main.site-main > .site-header {
 .en-stats td {
   font-family: var(--mono);
 }
+/* 배율이 반영된 칸 — /rogue 적 상세의 '그 자리 수치' 줄 (작전 도감 칩 .st-enemy-stats b.up과 같은 톤) */
+.en-stats td.up {
+  color: var(--crimson);
+  font-weight: 700;
+}
 .en-links {
   display: flex;
   flex-wrap: wrap;
@@ -19630,6 +19541,11 @@ main.site-main > .site-header {
   height: 100%;
   object-fit: fill;
 }
+/* 생존연산 지역 — 도면이 눌러 담은 16:9 가 아니라 **격자 비율 그대로의 평면도**다(비율 제각각).
+   펴면 찌그러지므로 통째로 담는다 (/ra 의 .sb-origmap 과 같은 원칙, 2026-09-23 도감 편입). */
+.st-card-map img.sb {
+  object-fit: contain;
+}
 .st-card-nomap {
   color: #47525a;
   font-size: 20px;
@@ -19747,27 +19663,7 @@ main.site-main > .site-header {
   background: 0 0;
   cursor: zoom-in;
 }
-/* 실사 도면 / 이동 경로 탭 — st-envs보다 옅은 톤 (도면 영역 로컬 전환이라) */
-.st-maptabs {
-  display: flex;
-  gap: 6px;
-  margin: 0 0 8px;
-}
-.st-maptabs button {
-  border: 1px solid var(--btn-line);
-  background: var(--btn-bg);
-  color: var(--btn-ink);
-  padding: 5px 12px;
-  font-weight: 600;
-  font-size: 12px;
-  line-height: 1;
-  cursor: pointer;
-}
-.st-maptabs button.on {
-  background: var(--btn-on-bg);
-  border-color: var(--btn-on-line);
-  color: var(--btn-on-ink);
-}
+/* 실사 도면 ↔ 이동 경로 탭은 없다 — 2026-09-23 한 화면 규칙(route-map-rules)으로 탭 CSS 를 지웠다 */
 /* 이동 경로 격자 지도 (app/stage-route-map.tsx) */
 .st-routewrap {
   position: relative;
@@ -19814,12 +19710,17 @@ main.site-main > .site-header {
 }
 /* 지상/비행 선 스타일 범례 — 지도 **바깥** 오른쪽 위 (사용자 정정 2026-08-10) */
 /* 지도 확대 토글 — 경로 지도(시뮬 포함)를 모달의 절반 폭까지 (사용자 요청 2026-08-12).
-   .big을 칼럼 그리드가 :has()로 받아 360px → 절반으로 넓힌다 (작전 도감·생존연산·통전 공통). */
-.st-cols:has(.st-routewrap.big) {
-  grid-template-columns: minmax(0, 52%) minmax(0, 1fr);
-}
-.rg-modal-cols:has(.st-routewrap.big) {
-  grid-template-columns: minmax(0, 52%) 1fr;
+   .big을 칼럼 그리드가 :has()로 받아 360px → 절반으로 넓힌다 (작전 도감·생존연산·통전 공통).
+   ⚠ **넓은 화면에서만** — :has(.big)은 특이도(0,3,0)가 폰 1단 규칙(0,1,0)보다 높아, 그대로 두면 폰에서도
+   2단이 되어 오른쪽 칸(160px 남짓)에 적 칸(최소 190px)이 옆으로 넘쳤다. 경로 지도는 .big을 늘 달고
+   나오므로 경로가 있는 모든 작전이 그랬다 (2026-09-23 실측 390px). 구간 경계는 두 칼럼의 1단 접힘(860px)과 짝. */
+@media (min-width: 861px) {
+  .st-cols:has(.st-routewrap.big) {
+    grid-template-columns: minmax(0, 52%) minmax(0, 1fr);
+  }
+  .rg-modal-cols:has(.st-routewrap.big) {
+    grid-template-columns: minmax(0, 52%) 1fr;
+  }
 }
 /* 전폭(3단째) — 1칼럼으로 접어 지도가 모달 전체 폭, 오른쪽 내용은 아래로 */
 .st-cols:has(.st-routewrap.full),
@@ -20141,7 +20042,9 @@ main.site-main > .site-header {
 }
 /* 등장 적이 많은 작전(섬멸 등)은 목록 안에서만 스크롤 — 모달 상세가 최대 높이를 넘겨
    통짜 스크롤이 되지 않게 (사용자 요청 2026-08-10). 보통 작전(몇 종)은 캡에 안 닿는다. */
-.st-modal .st-enemies {
+/* 통전 전투 노드 모달도 같다 — 외나무다리는 71종까지 나온다 (2026-09-23 칸을 작전 도감 것으로 바꾸며) */
+.st-modal .st-enemies,
+.rg-modal .st-enemies {
   max-height: min(46vh, 500px);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -22601,7 +22504,8 @@ html.dark .ac-krfix { color: var(--gold); }
 /* 지도 | 등장 적 2단 — 통합전략 모달(.rg-modal-cols)과 같은 규격.
    지도 확대(⤢)는 .st-routewrap.big 을 :has() 로 받아 넓힌다 (route-map-rules). */
 .ac-mapcols { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; align-items: start; }
-.ac-mapcols:has(.st-routewrap.big) { grid-template-columns: minmax(0, 62%) minmax(0, 1fr); }
+/* ⚠ 확대(.big)는 넓은 화면에서만 — 폰 1단 규칙보다 특이도가 높아 폰에서도 2단이 됐다 (작전 도감 .st-cols와 같은 처방, 2026-09-23) */
+@media (min-width: 761px) { .ac-mapcols:has(.st-routewrap.big) { grid-template-columns: minmax(0, 62%) minmax(0, 1fr); } }
 .ac-mapcols:has(.st-routewrap.full) { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 760px) { .ac-mapcols { grid-template-columns: minmax(0, 1fr); } }
 /* ⚠ 카드를 한 줄씩 쌓으면 지도(6행)보다 훨씬 길어져 오른쪽이 세로로 늘어진다
@@ -24608,6 +24512,257 @@ html[lang="ja"] .vn-box {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* ── 듀얼 채널 상세 (app/event-duel.tsx, 사용자 요청 2026-09-23) ─────────────────────────
+   이벤트 모달 안의 탭 여섯 개. 버튼 색은 역할 토큰(--btn-*)만 — 선택됨은 명암 반전, 라임은 강조(NEW·특별 보상)만. */
+.ed-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 2px 0 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ed-tabs::-webkit-scrollbar { display: none; }
+.ed-tabs button,
+.ed-filter button {
+  flex: none;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--btn-ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  white-space: nowrap;
+}
+@media (hover: hover) {
+  .ed-tabs button:hover,
+  .ed-filter button:hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover); color: var(--btn-ink-hover); }
+}
+.ed-tabs button.on,
+.ed-filter button.on { color: var(--btn-on-ink); background: var(--btn-on-bg); border-color: var(--btn-on-line); }
+.ed-filter button em { margin-left: 2px; font-style: normal; opacity: 0.6; }
+.ed-panel > :first-child { margin-top: 0; }
+.ed-h {
+  margin: 18px 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.ed-h small { margin-left: 8px; font-size: 11px; font-weight: 500; color: var(--muted); }
+.ed-note { margin: 6px 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.ed-badge {
+  display: inline-block;
+  padding: 0 5px;
+  border: 1px solid var(--lime);
+  color: var(--tint-lime-ink);
+  font: 700 10px/1.6 var(--mono);
+  font-style: normal;
+  white-space: nowrap;
+}
+.ed-badge.soft { border-color: var(--line); color: var(--muted); }
+.ed-badge.now { background: color-mix(in srgb, var(--lime) 18%, transparent); }
+.ed-noimg {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+/* 개요 — 진행 단계 */
+.ed-phases { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.ed-phases li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  background: var(--bg-faint);
+  font-size: 12.5px;
+}
+.ed-phases li.on { border-color: var(--lime); background: color-mix(in srgb, var(--lime) 8%, var(--white)); }
+.ed-phases li.past { opacity: 0.55; }
+.ed-when { min-width: 170px; font: 600 11.5px var(--mono); color: var(--muted); }
+.ed-what { white-space: pre-line; }
+/* 개요 — 모드 카드 */
+.ed-modes { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.ed-mode { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); background: var(--white); }
+.ed-mode-pic { display: block; width: 100%; aspect-ratio: 1020 / 416; object-fit: cover; border-bottom: 1px solid var(--line); background: #111; }
+.ed-mode-body { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 12px; }
+.ed-mode h5 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 0; font-size: 14px; }
+.ed-mode h5 small { font: 700 10.5px var(--mono); letter-spacing: 0.5px; color: var(--muted); }
+.ed-mode-target { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--ink2); }
+.ed-mode-desc { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); white-space: pre-line; }
+.ed-facts { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 0; padding: 0; list-style: none; }
+.ed-facts li { padding: 2px 7px; border: 1px solid var(--line); background: var(--bg-faint); font-size: 11.5px; }
+.ed-facts li.lock { border-style: dashed; color: var(--muted); }
+.ed-ch { margin: 2px 0 0; font: 600 10.5px var(--mono); letter-spacing: 0.3px; color: var(--muted); }
+.ed-info { display: grid; gap: 4px; margin: 16px 0 0; font-size: 12px; }
+.ed-info div { display: flex; gap: 10px; }
+.ed-info dt { min-width: 56px; font-weight: 600; color: var(--muted); }
+.ed-info dd { margin: 0; }
+/* 보상 */
+.ed-hl { margin: 0 0 10px; padding: 8px 10px; border-left: 3px solid var(--lime); background: var(--bg-faint); font-size: 12.5px; }
+.ed-totals { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+.ed-totals-h { margin-right: 2px; font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.ed-total { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 3px; border: 1px solid var(--line); background: var(--white); font-size: 12px; }
+.ed-total img { width: 26px; height: 26px; object-fit: contain; }
+.ed-total b { font: 700 11.5px var(--mono); }
+.ed-total.sp { border-color: var(--lime); }
+.ed-mile { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.ed-mile li { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 4px 4px; border: 1px solid var(--line); background: var(--white); }
+.ed-mile li.sp { border-color: var(--lime); background: color-mix(in srgb, var(--lime) 8%, var(--white)); }
+.ed-mile li.late { border-style: dashed; }
+/* 보상 아이콘만 — `.ed-mile img` 로 쓰면 칸 아래 폭죽 아이콘(.ed-pt)까지 36px 로 커진다 */
+.ed-mile li > img { width: 36px; height: 36px; object-fit: contain; }
+.ed-lv { font: 700 10px var(--mono); color: var(--muted); }
+.ed-cnt { font: 700 11px var(--mono); }
+.ed-tok { display: inline-flex; align-items: center; gap: 2px; font: 600 10px var(--mono); color: var(--muted); }
+.ed-pt { width: 14px; height: 14px; object-fit: contain; vertical-align: -2px; }
+.ed-ranks { display: flex; flex-wrap: wrap; gap: 12px; }
+.ed-rank { min-width: 160px; border-collapse: collapse; font-size: 12px; }
+.ed-rank caption { margin-bottom: 4px; text-align: left; font-size: 12px; font-weight: 700; }
+.ed-rank th,
+.ed-rank td { padding: 3px 10px; border: 1px solid var(--line); text-align: left; }
+.ed-rank th { font-weight: 600; background: var(--bg-faint); }
+.ed-rank td { font-family: var(--mono); }
+.ed-daily { margin: 0; font-size: 12.5px; }
+.ed-medals { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.ed-medal { display: flex; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); background: var(--white); }
+.ed-medal img { flex: none; width: 56px; height: 56px; object-fit: contain; }
+.ed-medal b { font-size: 13px; }
+.ed-rar { margin-left: 6px; font: 700 10px var(--mono); font-style: normal; color: var(--muted); }
+.ed-medal-how { margin: 3px 0 0; font-size: 12px; font-weight: 600; color: var(--ink2); }
+.ed-medal-desc { margin: 3px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); white-space: pre-line; }
+/* 선수 */
+.ed-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 8px 0 10px; }
+.ed-sort { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; color: var(--muted); }
+.ed-sort select { padding: 3px 6px; border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); font: inherit; font-size: 12px; }
+.ed-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
+.ed-fighter {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 6px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .ed-fighter:hover { border-color: var(--border-strong); }
+}
+.ed-fighter.idle { opacity: 0.6; }
+.ed-fighter img { width: 48px; height: 48px; object-fit: contain; }
+.ed-f-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ed-f-main b,
+.ed-f-main small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-f-main b { font-size: 13px; }
+.ed-f-main small { font-size: 11px; color: var(--muted); }
+.ed-f-stat { display: flex; flex-wrap: wrap; gap: 0 8px; margin-top: 2px; font: 600 10.5px var(--mono); color: var(--ink2); }
+.ed-f-stat .up { color: var(--tint-lime-ink); font-weight: 800; }
+.ed-f-tags { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+/* 라운드 */
+.ed-table-wrap { overflow-x: auto; }
+.ed-rtable { min-width: 100%; border-collapse: collapse; font-size: 12px; }
+.ed-rtable th,
+.ed-rtable td { padding: 4px 10px; border: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.ed-rtable thead th { font-weight: 700; background: var(--bg-faint); }
+.ed-rtable tbody th { font-family: var(--mono); text-align: center; }
+.ed-rtable tr.sp td { background: color-mix(in srgb, var(--lime) 8%, transparent); }
+.ed-rtable b { font-family: var(--mono); }
+/* 게임 안내 */
+/* 안내 그림은 16:9 (build-event-art.py 가 정사각형 텍스처를 되돌려 저장한다) — 누르면 .ed-zoom 으로 크게 */
+.ed-guide { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.ed-guide button { display: block; padding: 0; border: 1px solid var(--line); background: var(--paper); cursor: zoom-in; }
+@media (hover: hover) {
+  .ed-guide button:hover { border-color: var(--border-strong); }
+}
+/* 칸 자체가 16:9 다 — 그림 비율과 상관없이 aspect-ratio 로 못박고 fill 로 채운다 (사용자 지적 2026-09-23 "이미지만
+   줄이지 말고 칸 자체를 16:9"). 텍스처가 원래 16:9 를 눌러 담은 것이라 fill 이 곧 게임 속 모습이다. */
+.ed-guide img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: fill; }
+/* 안내 그림 확대 — 이벤트 모달(창 z 200~) 위. 오퍼 스킨 확대(.skin-lightbox)처럼 어디를 눌러도 닫힌다.
+   닫기 버튼은 전용 클래스다 — .modal-close 는 이 파일에 정의가 둘이라 뒤엣것(배경 없음)이 이긴다. */
+.ed-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 1150;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  place-items: center;
+  gap: 12px;
+  padding: 48px 24px 20px;
+  background: #0d1113f2;
+  cursor: zoom-out;
+  animation: 0.16s both fadeIn;
+}
+.ed-zoom > img {
+  /* 확대도 16:9 칸 — 폭을 화면 폭·높이 둘 다에 맞춰 정하고 높이는 비율로 따라오게 한다.
+     140px = 위아래 여백(48+20) + 넘김 버튼 줄(36) + 간격(12) + 여유. */
+  width: min(1600px, 100%, calc((100dvh - 140px) * 16 / 9));
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+  object-fit: fill;
+  box-shadow: 0 10px 40px #0008;
+}
+.ed-zoom-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ffffff66;
+  border-radius: 50%;
+  background: #111719aa;
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ed-zoom-nav { display: flex; align-items: center; gap: 14px; color: #ffffffd0; font: 700 12px var(--mono); cursor: default; }
+.ed-zoom-nav button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ffffff55;
+  border-radius: 50%;
+  background: #ffffff14;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .ed-zoom-close:hover,
+  .ed-zoom-nav button:hover { background: #ffffff2e; }
+}
+.ed-tips { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.ed-tips li { padding: 5px 8px; border-bottom: 1px dashed var(--line); font-size: 12.5px; line-height: 1.5; }
+.ed-tip-tags { display: inline-flex; gap: 3px; margin-right: 8px; vertical-align: 1px; }
+.ed-tip-tags em { padding: 0 5px; border: 1px solid var(--line); font-size: 10.5px; font-style: normal; color: var(--muted); white-space: nowrap; }
+.ed-tip-tags em.all { border-style: dashed; }
+/* 관객·기타 */
+.ed-npcs { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; }
+.ed-npc { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 8px 4px 4px; border: 1px solid var(--line); background: var(--white); }
+.ed-npc img { flex: none; width: 44px; height: 44px; object-fit: cover; }
+.ed-npc span { display: flex; flex-direction: column; min-width: 0; }
+.ed-npc b { overflow: hidden; font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+.ed-npc small { font-size: 11px; color: var(--muted); }
+.ed-comments { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0; font-size: 12px; }
+.ed-comments span { margin-right: 4px; font-weight: 700; color: var(--muted); }
+.ed-comments em { padding: 1px 8px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--bg-faint); font-style: normal; }
+/* 선수로 연 적 모달 — 제목 둘째 줄의 원본 이름 */
+.en-head h2 .ed-sub { display: block; margin-top: 2px; font-size: 13px; font-weight: 500; color: var(--muted); }
+@media (max-width: 720px) {
+  .ed-when { min-width: 0; }
+  .ed-sort { margin-left: 0; }
+}
 /* 미실장 이벤트의 개방 예정월 */
 .ev-eta {
   color: var(--lime);
@@ -24629,11 +24784,6 @@ html[lang="ja"] .vn-box {
 }
 /* 진행중 이벤트 칩 — 이름이 크고 종류가 작다 (사용자 지시 2026-09-17).
    ⚠ 이름 길이로 헤더 폭이 흔들리지 않게 최대 폭을 못박고 넘치면 말줄임한다. */
-.ev-promo-kind {
-  font-size: 10px;
-  letter-spacing: 0.3px;
-  color: var(--muted);
-}
 .ev-promo-name {
   max-width: 13ch;
   overflow: hidden;

@@ -152,6 +152,7 @@ python3 scripts/build-stages-rogue.py                # 작전 도감의 록라 �
 **생존연산 신시즌** (`sandbox_perm_table` 변경 시):
 ```bash
 python3 scripts/build-sandbox.py
+python3 scripts/build-stages-sandbox.py             # 작전 도감·시뮬레이터의 생존연산 색인도 따라가야 한다
 ```
 
 ## 7. 마무리

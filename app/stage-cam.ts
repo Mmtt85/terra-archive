@@ -38,3 +38,9 @@ export function stageProjector(cam: StageCam, w: number, h: number) {
     return [(1 + (ASPECT / TAN_HALF_FOV) * (X / depth)) / 2, (1 - up2 / TAN_HALF_FOV / depth) / 2];
   };
 }
+
+/** 생존연산 사막 이야기 도면(ui/sandboxv2/mappreview)은 격자를 바로 위에서 그린 **평면도**인데, 격자가 그림
+ *  전체가 아니라 **가운데 5/6** 만 차지한다 (가장자리마다 1/12 여백 — 그래서 그림 비율 = 격자 비율이다).
+ *  도착 상자 x 좌표로 12장 실측: 0.822~0.846, 평균 0.832. 이 값을 1로 두었을 때 가장자리 출현 칸이
+ *  1~2칸씩 어긋났다 (사용자 제보 2026-09-23 "생존연산 경로가 나오는 데·들어가는 데가 안 맞는다"). */
+export const SANDBOX_GRID_SHARE = 5 / 6;

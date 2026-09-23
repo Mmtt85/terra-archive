@@ -42,10 +42,10 @@ export const RANK_KEY: Record<string, string> = { NORMAL: "일반", ELITE: "정�
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100));
 
 /** 초상 — 변종 id에 파일이 없으면 원본 id로 한 번 폴백한다 */
-function Portrait({ enemy, size }: { enemy: Enemy; size: number }) {
+function Portrait({ enemy, size, src }: { enemy: Enemy; size: number; src?: string }) {
   const base = enemy.id.replace(/_\d+$/, "");
   return (
-    <img className="en-portrait" src={enemyImg(enemy.id)} alt="" aria-hidden
+    <img className="en-portrait" src={src ?? enemyImg(enemy.id)} alt="" aria-hidden
       width={size} height={size} loading="lazy" decoding="async"
       onError={(e) => {
         const el = e.currentTarget;
@@ -55,20 +55,26 @@ function Portrait({ enemy, size }: { enemy: Enemy; size: number }) {
   );
 }
 
+/** 스탯표를 그 자리의 수치로 바꿔 달 때 — 단계 대신 붙일 라벨 · 배율로 달라진 칸 · 표 위 안내.
+ *  /rogue 적 모달이 쓴다: 테마 레벨 파일이 덮어쓴 수치에 난이도·긴급 배율을 곱한 한 줄이다
+ *  (본 도감 단계표 그대로면 통합전략 적 1,601종 중 313종이 틀린 값이다 — 2026-09-23 실측). */
+export type StatOverride = { label: string; up?: readonly ("hp" | "atk" | "def" | "res")[]; notes?: string[] };
+
 /** 스탯표 — **스탯이 열, 강화 단계가 행**이다 (사용자 요청 2026-08-09).
  *  단계가 대부분 1~2개뿐이라, 단계를 열로 두면 표가 세로로 길쭉해지고 값 비교가 어렵다. */
-function StatTable({ levels }: { levels: EnemyLevel[] }) {
+function StatTable({ levels, ctx }: { levels: EnemyLevel[]; ctx?: StatOverride }) {
   const { t } = useI18n();
-  const cols: [string, (l: EnemyLevel) => string][] = [
-    ["최대 HP", (l) => fmt(l.hp)],
-    ["공격력", (l) => fmt(l.atk)],
-    ["방어력", (l) => fmt(l.def)],
-    ["마법 저항", (l) => `${fmt(l.res)}%`],
+  const cols: [string, (l: EnemyLevel) => string, string?][] = [
+    ["최대 HP", (l) => fmt(l.hp), "hp"],
+    ["공격력", (l) => fmt(l.atk), "atk"],
+    ["방어력", (l) => fmt(l.def), "def"],
+    ["마법 저항", (l) => `${fmt(l.res)}%`, "res"],
     ["공격 속도", (l) => fmt(l.aspd)],
     ["이동 속도", (l) => fmt(l.ms)],
     ["무게", (l) => fmt(l.w)],
     ["라이프 감소", (l) => fmt(l.lp)],
   ];
+  const upOf = (k?: string) => (k && ctx?.up?.includes(k as "hp") ? "up" : undefined);
   return (
     <div className="en-stats-wrap">
       <table className="en-stats">
@@ -82,8 +88,8 @@ function StatTable({ levels }: { levels: EnemyLevel[] }) {
           {/* 레벨 0은 강화 이전 = 기본형이다. "강화 0단계"로 쓰면 말이 안 된다. */}
           {levels.map((l) => (
             <tr key={l.l}>
-              <th scope="row">{l.l === 0 ? t("기본형") : t("강화 {n}단계", { n: String(l.l) })}</th>
-              {cols.map(([label, get]) => <td key={label}>{get(l)}</td>)}
+              <th scope="row">{ctx ? ctx.label : l.l === 0 ? t("기본형") : t("강화 {n}단계", { n: String(l.l) })}</th>
+              {cols.map(([label, get, k]) => <td key={label} className={upOf(k)}>{get(l)}</td>)}
             </tr>
           ))}
         </tbody>
@@ -153,12 +159,17 @@ function Appearances({ enemy, doc, onOpenStage }: { enemy: Enemy; doc: EnemyStag
  *    (사용자 제보 2026-08-13 생존연산 · 2026-09-17 이벤트 도감 "파블로비치, 추밀관").
  *    모달로 띄우는 자리는 어차피 dex-cross의 적 맵을 받아 두었으니 그 맵을 그대로 넘긴다.
  *    ⚠ 빠뜨리면 scripts/check-dexlinks.mjs가 빌드를 멈춘다.
+ *  · title · portrait · statCtx — /rogue 적 모달만 쓴다 (CN 원문·번역 두 줄 이름, 테마 초상,
+ *    그 자리의 스탯 한 줄). 안 넘기면 본 도감 그대로다.
  */
-export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy, onOpenStage }: {
+export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy, onOpenStage, title, portrait, statCtx }: {
   enemy: Enemy; stagesDoc: EnemyStages | null;
   nameOf?: (id: string) => string | undefined;
   onOpenEnemy?: (id: string) => void;
   onOpenStage?: (sid: string) => void;
+  title?: React.ReactNode;
+  portrait?: string;
+  statCtx?: StatOverride;
 }) {
   const { locale, t } = useI18n();
   const imm = enemy.lv.find((l) => l.imm.length)?.imm ?? [];
@@ -172,10 +183,10 @@ export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy, onOpenStage }
   return (
     <div className="en-file">
       <header className="en-head">
-        <Portrait enemy={enemy} size={132} />
+        <Portrait enemy={enemy} size={132} src={portrait} />
         <div className="en-head-main">
           <span className="en-code">{enemy.idx ?? "—"}</span>
-          <h2>{enemy.name}</h2>
+          <h2>{title ?? enemy.name}</h2>
           <div className="en-badges">
             {enemy.rank && <span className={`en-rank r-${enemy.rank.toLowerCase()}`}>{t(RANK_KEY[enemy.rank] ?? enemy.rank)}</span>}
             {enemy.race.map((r) => <span className="en-tag" key={r}>{r}</span>)}
@@ -202,10 +213,10 @@ export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy, onOpenStage }
 
       <section className="en-block">
         <h3><span className="section-no">STAT</span>{t("스탯")}</h3>
-        {enemy.lv.length > 1 && (
+        {statCtx ? statCtx.notes?.map((n) => <p className="en-note" key={n}>{n}</p>) : enemy.lv.length > 1 && (
           <p className="en-note">{t("같은 적이라도 작전에 따라 더 강한 스탯으로 나옵니다 — 아래는 그 단계별 수치입니다.")}</p>
         )}
-        <StatTable levels={enemy.lv} />
+        <StatTable levels={enemy.lv} ctx={statCtx} />
       </section>
 
       {imm.length > 0 && (

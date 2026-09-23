@@ -88,10 +88,18 @@ KR을 재생성하면 EN/JA도 같이 나온다(`build-i18n.py`가 레인 안에
 ```bash
 python3 scripts/build-enemies.py            # CI는 --meta-only --no-images (levels 179MB·신규 적 초상)
 python3 scripts/build-stages.py             # CI는 --no-images (신규 도면). ⚠ 반드시 build-enemies 뒤
+#   └ 새 작전도 **처음부터 한 화면**이어야 한다 (route-map-rules ★ 한 화면 규칙) — 카메라는 이 단계가 붙이고,
+#     미리보기에 값이 없으면 원본을 새로 받아 다시 찾는다. 출력의 `카메라(ko)` 수가 줄었으면 원인을 볼 것
 python3 scripts/build-skins.py              # CI는 --meta-only (신규 스킨 아트)
 python3 scripts/build-story.py --kr-thumbs  # 기본 모드는 글로벌판 썸네일을 임시로 넣는다
+python3 scripts/build-event-art.py          # 이벤트 도감 그림 — 스토리 없는 이벤트 썸네일·듀얼 채널 그림 (CI에 없음)
+python3 scripts/build-events.py .gamedata   #   └ 썸네일을 붙이려면 그림 뒤에 한 번 더 (ci-refresh 가 먼저 돌렸어도)
+python3 scripts/build-event-duel.py         # 듀얼 채널 상세 (ENEMY_DUEL 회차가 있을 때만 의미 — CI에 없음)
 node scripts/r2-sync.mjs                    # ⚠ 이걸 안 돌리면 커밋·배포해도 이미지가 404
 ```
+> **홈 테마 그림은 그 이벤트가 걸려 있는 동안만 CDN에 있다** (2026-09-23 도입) — 큰 점검마다
+> `build-event-art.py`를 돌려야 스토리 없는 새 이벤트(듀얼 채널·위수 협의·벡터 돌파 …)에 썸네일이 붙는다.
+> 지나면 다시 못 받는다.
 
 **통합전략(록라)은 `ci-refresh.sh`에 아예 없다** (2026-08-13 발견 — 캐시가 7/17자로 멈춰
 IS5 3차 확장팩이 통째로 누락돼 있었다). 캐시를 지워야 새 표를 받는다:
@@ -116,7 +124,8 @@ python3 scripts/build-rogue.py cn            # 중섭 변형 일괄 (미래시)
 python3 scripts/build-stages-rogue.py        # → app/data/stages-rogue{,.en,.ja}.json
 ```
 
-생존연산 신시즌이 왔으면 `python3 scripts/build-sandbox.py`도 같은 취급.
+생존연산 신시즌이 왔으면 `python3 scripts/build-sandbox.py`도 같은 취급 — 그 뒤에 **작전 도감의 생존연산 색인**
+`python3 scripts/build-stages-sandbox.py`(→ stages-sandbox{,.en,.ja}.json · sandbox-ortho.json, 네트워크 불필요)도.
 
 위수 협의(오토체스) 시즌이 열렸거나 갱신됐으면:
 

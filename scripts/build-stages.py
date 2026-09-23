@@ -589,6 +589,19 @@ for loc, _, suf in LOCALES:
     _keep = {e["id"]: e["cam"] for e in load(_prev)["stages"] if "cam" in e} if os.path.exists(_prev) else {}
     print(f"카메라({loc}): {stagecams.attach(by_loc[loc], dest_dir, _level_of, _keep)}개")
 
+# 이동 경로 보유 표식(sim) — 상세가 **탭 없이 한 화면**을 고르는 근거다 (사용자 확정 2026-09-23 "앞으로 모든
+# 작전은 합쳐진 상태로 처음부터"): 카메라가 있으면 합친 도면 · 없고 경로가 있으면 경로 지도 하나 · 경로도
+# 없으면 도면 한 장 (app/stage-detail.tsx). 통합전략·생존연산 색인의 sim 과 같은 뜻(경로에 스폰·웨이브가
+# 있다)이라 작전 시뮬레이터 판정(sim-stages.json ∪ sim)도 그대로다. sim-stages.json 은 build-enemies 산출물.
+_sim_path = os.path.join(DATA, "sim-stages.json")
+_sims = set(load(_sim_path)) if os.path.exists(_sim_path) else set()
+for loc, _, suf in LOCALES:
+    for e in by_loc[loc]["stages"]:
+        if e["id"] in _sims:
+            e["sim"] = 1
+        else:
+            e.pop("sim", None)
+
 for loc, _, suf in LOCALES:
     p = os.path.join(DATA, f"stages{suf}.json")
     json.dump(by_loc[loc], open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))

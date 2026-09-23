@@ -491,6 +491,10 @@ else:
     p = os.path.join(DATA, "stage-routes.json")
     json.dump(routes_doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"  stage-routes.json: 경로 보유 작전 {len(routes_doc)} — {os.path.getsize(p)//1024}KB")
+    # 경로 주인 이름·초상 보충(nm) — 등장 적 목록 밖의 변종·도감 밖 적. 빠지면 시뮬 말풍선에 id 가
+    # 찍히고 말이 까맣게 빈다 (사용자 제보 2026-09-23 — scripts/routenames.py 머리주석)
+    import routenames  # noqa: E402
+    routenames.fix(["stage"])
 
     # 작전 시뮬레이터 런처(/sim)의 검색 색인 — 경로 데이터가 있는 작전 id 목록(별칭 포함).
     # 런처가 5.4MB 본문 없이 "이 작전은 시뮬 가능"을 판정하기 위한 작은 파일 (2026-08-10).

@@ -28,8 +28,13 @@ export function Marquee({ children, className }: { children: ReactNode; classNam
     const el = host.current;
     const copy = el?.querySelector<HTMLElement>(":scope > .mq-run > i");
     if (!el || !copy) return;
+    // 뒤 벌 안의 링크·버튼은 탭 순서에서 뺀다 — 같은 링크가 두 번씩 잡히지 않게. 누르는 건 그대로 된다
+    //   (흘러가는 동안 화면에 보이는 건 뒤 벌일 때도 있다 — 헤더 이벤트 칩, 2026-09-23).
+    el.querySelectorAll<HTMLElement>(":scope > .mq-run > i + i :is(a, button)").forEach((n) => { n.tabIndex = -1; });
     const measure = () => {
-      const width = copy.offsetWidth - MQ_GAP;
+      // 간격(padding-right)은 **실제 값**을 뺀다 — 안 흐를 때 간격을 접는 자리(헤더 이벤트 칩 .ev-run)가 있어서
+      //   상수(MQ_GAP)를 빼면 넘침을 그만큼 덜 잰다.
+      const width = copy.offsetWidth - (parseFloat(getComputedStyle(copy).paddingRight) || 0);
       const over = width > el.clientWidth + 1;
       el.dataset.mq = over ? "run" : "";
       if (over) el.style.setProperty("--mq-dur", `${Math.max(8, Math.round((width + MQ_GAP) / MQ_SPEED))}s`);

@@ -37,12 +37,12 @@
 | 파일 | 내용 | 항목 | 크기 |
 |---|---|---:|---:|
 | [`manifest.json`](https://files.terra-archive.net/assets/tl/manifest.json) | 아래 목록 + 파일별 해시·주소 | — | 2 KB |
-| [`op.json`](https://files.terra-archive.net/assets/tl/op.json) | 오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록 — 공식 한국어 24,320 + 비공식 번역 2,116 | 26,125 | 8.8 MB |
+| [`op.json`](https://files.terra-archive.net/assets/tl/op.json) | 오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록 — 공식 한국어 24,320 + 비공식 번역 2,116 | 26,436 | 8.9 MB |
 | [`item.json`](https://files.terra-archive.net/assets/tl/item.json) | 아이템·재료 — 이름·설명·용도 — 공식 한국어 3,024 + 비공식 번역 213 | 3,237 | 545 KB |
 | [`enemy.json`](https://files.terra-archive.net/assets/tl/enemy.json) | 적 — 이름·설명·능력 — 공식 한국어 3,141 + 비공식 번역 246 | 3,387 | 812 KB |
 | [`stage.json`](https://files.terra-archive.net/assets/tl/stage.json) | 작전 — 이름·설명 — 공식 한국어 5,248 + 비공식 번역 302 | 5,550 | 1.3 MB |
-| [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (비공식 번역) | 1,120 | 170 KB |
-| [`is.json`](https://files.terra-archive.net/assets/tl/is.json) | 통합전략 1~6 — 소장품·노드·조우·엔딩·전투 (테마 구분 없이 한 벌) | 3,671 | 300 KB |
+| [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (비공식 번역) | 1,117 | 170 KB |
+| [`is.json`](https://files.terra-archive.net/assets/tl/is.json) | 통합전략 1~6 — 소장품·노드·조우·엔딩·전투 (테마 구분 없이 한 벌) | 5,700 | 970 KB |
 
 전량 약 12.7 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
 

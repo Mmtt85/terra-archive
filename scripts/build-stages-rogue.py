@@ -70,6 +70,37 @@ def load_topic(n, suffix):
         return json.load(f)
 
 
+# 시뮬레이트 가능 여부 — 작전 시뮬레이터(/sim)가 통합전략 작전도 찾게 (사용자 요청 2026-09-23).
+# 본 도감의 sim-stages.json 과 같은 판정: 경로 데이터에 스폰(sp)·웨이브(wv)가 있으면 된다.
+_ROUTES = json.load(open(os.path.join(DATA, "rogue-routes.json"), encoding="utf-8"))
+
+
+def _can_sim(sid):
+    r = _ROUTES.get(sid)
+    if isinstance(r, str):
+        r = _ROUTES.get(r)
+    return bool(r and r.get("sp") and r.get("wv"))
+
+
+# 적 코어 스탯 — 작전 도감 칸은 적 도감 스탯 색인(enemy-stats.json)의 기본형 수치를 쓰는데, 통합전략
+# 레벨 파일은 적 수치를 자주 덮어쓴다(overwrittenData) — 1,601종 중 313종이 색인과 다르다 (2026-09-23
+# 실측: 산성 원석충 공격 색인 180 ↔ 팬텀 100). 색인과 다른 적만 레코드가 직접 들고 간다 — 생존연산과
+# 같은 `es` 규약(e와 같은 순서, 0 = 색인 값 그대로). /rogue 전투 노드 모달의 칸과 같은 수치가 나온다.
+_STATS = json.load(open(os.path.join(DATA, "enemy-stats.json"), encoding="utf-8"))
+
+
+def _own_stats(key, info):
+    """테마 수치 [hp, atk, def, res] — 색인 기본형과 같으면 0 (색인에 없는 적은 늘 싣는다)."""
+    mine = [info.get("hp"), info.get("atk"), info.get("def"), info.get("res")]
+    if any(v is None for v in mine):
+        return 0
+    rows = _STATS.get(key) or []
+    row = next((r for r in rows if r[0] == 0), rows[0] if rows else None)
+    if row and all(abs(a - b) < 1e-9 for a, b in zip(row[1:5], mine)):
+        return 0
+    return mine
+
+
 mismatched = []  # 도면 파일명 ≠ 작전 id (있으면 화면이 404를 문다 — 아래에서 경고)
 skipped = set()  # 테마 적 사전에 없는 스폰 변종 키 (정상 — /rogue도 같은 것을 거른다)
 
@@ -79,6 +110,7 @@ def build(loc, suffix):
     ev_list, ev_ix = [], {}
     enemy_list, enemy_ix = [], {}
     enemy_names = {}
+    theme_img = {}   # 적 키 → 테마 초상 파일 이름 (rogueN.json 의 img — build-rogue.py 가 받은 것)
     stages = []
 
     def intern(v, lst, ix):
@@ -123,14 +155,17 @@ def build(loc, suffix):
                 rec["map"] = 1
                 if s["map"] != s["id"]:
                     mismatched.append(f'{s["id"]} → {s["map"]}')
+            if _can_sim(s["id"]):
+                rec["sim"] = 1
             kind = KIND_LABEL[loc].get(s.get("kind")) or s.get("kind")
             if kind:
                 rec["kind"] = kind
             # 등장 적 — 록라 데이터엔 스탯 강화단계가 없어 lv는 0으로 둔다 (본 도감과 같은 3열 형식).
             # ⚠ 테마 적 사전에 없는 키는 **버린다** — `enemy_2041_syjely_c`·`enemy_1056_ganwar#1`
-            #   같은 내부 스폰 변종이라 이름도 초상도 없다(전체 1,031개 중 102개). /rogue도
+            #   같은 그 판 전용 변종이라 테마 사전에 이름·초상이 없다(전체 1,031개 중 102개). /rogue도
             #   `if (!e) return null`로 같은 것을 걸러내므로(app/rogue.tsx) 두 화면이 일치한다.
-            e = []
+            #   경로·시뮬 말풍선의 이름·초상은 경로 문서의 nm 이 채운다 (scripts/routenames.py, 2026-09-23).
+            e, es = [], []
             for en in s.get("enemies") or []:
                 key = en.get("key")
                 info = enemy_db.get(key) if key else None
@@ -140,16 +175,33 @@ def build(loc, suffix):
                     continue
                 ix = intern(key, enemy_list, enemy_ix)
                 enemy_names.setdefault(key, info["name"])
+                if info.get("img"):
+                    theme_img.setdefault(key, info["img"])
                 e.append([ix, en.get("cnt") or 0, 0])
+                es.append(_own_stats(key, info))
             if e:
                 rec["e"] = e
+                if any(es):
+                    rec["es"] = es
             stages.append(rec)
 
+    # 초상 — 작전 도감 칸·시뮬 말은 적 도감 초상(public/enemy/<id>.webp)을 무는데, 통합전략 전용 적
+    # 41종은 거기 없고 테마 초상(public/rogue/enemy/<img>.webp)만 있어 까맣게 비었다 (2026-09-23 실측 —
+    # 쉐이 한 종이 178작전). 적 도감 초상이 없는 적만 테마 초상 경로를 덮어쓴다 (생존연산 enemyImg 와 같은 규약).
+    enemy_img = {}
+    for eid in enemy_list:
+        base = re.sub(r"_\d+$", "", eid)
+        if any(os.path.exists(os.path.join(REPO, "public", "enemy", f"{c}.webp")) for c in (eid, base)):
+            continue
+        img = theme_img.get(eid)
+        if img and os.path.exists(os.path.join(REPO, "public", "rogue", "enemy", f"{img}.webp")):
+            enemy_img[eid] = f"/rogue/enemy/{img}.webp"
     return {
         "zones": zone_list, "events": ev_list, "items": {}, "occ": [], "kinds": [],
         "enemyIds": enemy_list,
         "types": {"ROGUE": TYPE_LABEL[loc]},
         "enemyNames": {eid: enemy_names.get(eid, eid) for eid in enemy_list},
+        **({"enemyImg": enemy_img} if enemy_img else {}),
         "stages": stages,
     }
 
@@ -165,6 +217,7 @@ for loc, suffix in LOCALES:
     _keep = {e["id"]: e["cam"] for e in json.load(open(_prev, encoding="utf-8"))["stages"] if "cam" in e} \
         if os.path.exists(_prev) else {}
     stagecams.attach(by_loc[loc], os.path.join(REPO, "public", "rogue", "map"), keep=_keep)
+stagecams.write_rogue_cams(by_loc["ko"])   # /rogue 모달용 (카메라는 로케일 무관)
 
 for loc, suffix in LOCALES:
     p = os.path.join(DATA, f"stages-rogue{suffix}.json")

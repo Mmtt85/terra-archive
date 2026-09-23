@@ -15,6 +15,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useI18n } from "./i18n";
+import { asset } from "./assets";
 import { PHOTO_ASPECT, stageProjector, type StageCam } from "./stage-cam";
 
 /** scripts/routeutil.py 산출 — g는 행 문자열(row 0 = 위), r은 [col,row] 꼭짓점.
@@ -38,7 +39,11 @@ export type StageRoutes = {
    *  (build-sandbox.py predefines 추출, 사용자 요청 2026-08-12). 좌표는 경로와 같은
    *  규약(row 0 = 아래)이라 렌더러가 뒤집는다. */
   ob?: [string, number, number][];
+  /** 화면 이름표 밖의 경로 주인 — 그 판 전용 변종·도감 밖 원본 적. p 모델 키 · n 그 판 이름(레벨 파일 언어
+   *  그대로) · i 초상(public 경로) · ko/en/ja 모델 적의 현지 이름. scripts/routenames.py 가 싣는다 (2026-09-23) */
+  nm?: Record<string, { p: string; n?: string; i?: string; ko?: string; en?: string; ja?: string }>;
 };
+const HANGUL = /[가-힣]/;
 /** 경로가 아직 안 온 동안의 빈 지도 — 모든 계산이 빈 배열로 돈다 */
 const EMPTY_ROUTES: StageRoutes = { h: 0, w: 0, g: [], r: [], f: [], e: {} };
 
@@ -199,17 +204,53 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
   /** ob의 종류 → 아이템 아이콘 URL. 주면 마커 자리에 **섬네일**을 그린다 (사용자 요청 2026-08-12) */
   obIconOf?: (kind: string) => string | undefined;
   /** 실사 모드 — 실사 도면(src)을 바탕에 깔고 전투 카메라(cam)로 투영해 그린다 (2026-09-23) */
-  photo?: { src: string; cam: StageCam; alt?: string };
+  /** 실사 모드 — 도면(src) 위에 겹친다. cam 이 있으면 전투 카메라 원근 투영(16:9), 없으면 **평면도**
+   *  (생존연산 도면처럼 격자를 바로 위에서 그린 그림 — 격자를 그림 크기에 그대로 맞춘다, 2026-09-23). */
+  photo?: { src: string; cam?: StageCam; alt?: string;
+    /** (평면도) 격자가 그림 폭·높이에서 차지하는 몫 — 가운데 기준. 생존연산 사막 이야기는 5/6 (SANDBOX_GRID_SHARE) */
+    share?: number };
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   // 경로가 아직 없으면(pending) 빈 지도로 돌린다 — 버튼 줄과 도면 자리는 그대로 그려 CLS 가 없다
   const pending = !dataProp;
   const data = dataProp ?? EMPTY_ROUTES;
+  // 경로 주인의 이름·초상 — 화면 이름표(nameOf/imgOf)에 없는 적은 경로 문서의 nm(레벨 파일에 적힌 이름·모델)으로
+  // 채운다. 종전엔 말풍선에 id 가 찍히고 시뮬 말이 까맣게 비었다 (사용자 제보 2026-09-23 흑류수해 시뮬레이터,
+  // 전수 조사 248종 — scripts/routenames.py 머리주석). 모든 화면(작전 도감·시뮬·/rogue·/ra·위수 협의)이 여기를 지난다.
+  const ownerName = (k: string) => {
+    const own = nameOf?.(k);
+    if (own && own !== k) return own;            // 폴백으로 id 를 돌려주는 화면(/ra 등)도 '없음'으로 친다
+    const o = data.nm?.[k];
+    if (!o) return own || k;
+    const local = o[locale as "ko" | "en" | "ja"] ?? (o.p !== k ? nameOf?.(o.p) : undefined);
+    if (!o.n) return local || k;
+    // 한섭 레벨 이름은 한국어 화면에서 그대로 — '사냥개 (약)'처럼 그 판의 표기가 모델 이름보다 정확하다
+    if (HANGUL.test(o.n)) return locale === "ko" ? o.n : local || o.n;
+    // 중섭 선행 레벨 이름(중국어)은 원문이 대표·번역이 뒤 — 통합전략 CN 표기 규칙(Nm)과 같다
+    return locale === "ko" ? (local && local !== o.n ? `${o.n} ${local}` : o.n) : local || o.n;
+  };
+  // 초상 — nm 의 초상(i)은 빌더가 파일이 실제로 있는 것만 싣는다. i 가 없으면 게임에도 초상이 없는 적이다
+  // (장치·소환물 등 25종, 2026-09-23 CDN 전수 확인) → 말을 경로 색으로 채운다. 불러오다 깨진 그림도 한 번
+  // 기억해 두고 같은 처리 — 종전엔 어두운 원만 남아 '까맣게 빈 아이콘'이었다 (같은 제보).
+  const [badImg, setBadImg] = useState<Set<string>>(() => new Set());
+  const markBad = (u?: string) => { if (u) setBadImg((cur) => (cur.has(u) ? cur : new Set(cur).add(u))); };
+  const ownerImg = (k: string) => {
+    const o = data.nm?.[k];
+    const u = o ? (o.i ? asset(o.i) : undefined) : imgOf?.(k);
+    return u && !badImg.has(u) ? u : undefined;
+  };
   const { w, h, g, r, f } = data;
   // 실사 모드 좌표 — toXY(gx, gy)는 격자 좌표(한 칸 = 1, 왼쪽 위 원점)를 그리는 좌표로 옮긴다.
   // 격자 모드는 그대로. 실사 모드는 도면을 **16:9로 펴서**(PHOTO_ASPECT — 실사 도면을 보여 주던
   // .st-map 과 같은 비율) 그 위 위치를 '가운데 한 칸 폭 = 1' 단위로 준다.
-  const proj = useMemo(() => (photo ? stageProjector(photo.cam, w, h) : null), [photo, w, h]);
+  const proj = useMemo(() => (photo?.cam ? stageProjector(photo.cam, w, h) : null), [photo, w, h]);
+  // 평면도 겹치기 — 좌표는 격자 그대로, 상자 비율은 격자 비율(w:h). 도면이 격자와 같은 비율로
+  // 잘려 있어야 맞는다 (scripts/build-stages-sandbox.py 가 그런 도면에만 ortho 를 붙인다).
+  const ortho = !!photo && !photo.cam;
+  // 평면도는 격자가 그림 한가운데 share 만큼만 차지한다 — 그림(=SVG 좌표 범위)은 격자보다 1/share 배 넓다.
+  // 좌표는 격자 그대로 두고 viewBox 만 넓혀 그림 전체와 맞춘다 (2026-09-23 사용자 제보 "나오는 데·들어가는 데가
+  // 안 맞는다" — 종전엔 격자가 그림 전체를 덮는다고 보아 가장자리 출현 칸이 1~2칸씩 어긋났다).
+  const share = ortho ? photo?.share ?? 1 : 1;
   const unit = useMemo(() => {
     if (!proj) return 1;
     return (proj(w / 2 + 0.5, h / 2)[0] - proj(w / 2 - 0.5, h / 2)[0]) * PHOTO_ASPECT;
@@ -499,7 +540,9 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
   const cell = 1;
   const svgEl = (
       <svg className={`st-routemap${photo ? " st-routeoverlay" : ""}`}
-        viewBox={photo ? `0 0 ${PHOTO_ASPECT / unit} ${1 / unit}` : `0 0 ${w * cell} ${h * cell}`} role="img"
+        viewBox={photo && !ortho ? `0 0 ${PHOTO_ASPECT / unit} ${1 / unit}`
+          : ortho ? `${(w - w / share) / 2} ${(h - h / share) / 2} ${w / share} ${h / share}`
+          : `0 0 ${w * cell} ${h * cell}`} role="img"
         aria-label={t("적 이동 경로 지도")}>
         {/* 고지형(x) 금지 표식 — 각 타일 중앙의 은은한 ⊘(원+사선) (사용자 요청 2026-08-10
             "금지당한듯한 표시, 너무 심하게 눈에 안 띄게" — 단순 세로줄은 무성의하다고 반려).
@@ -608,13 +651,13 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
                   fill="none" stroke="#000" strokeOpacity={0} strokeWidth={0.3}
                   style={{ pointerEvents: "stroke", animation: "none", cursor: onPick ? "pointer" : undefined }}
                   onClick={onPick ? () => onPick(owner) : undefined}
-                  onMouseMove={(ev) => showTip(ev, nameOf?.(owner) ?? owner, imgOf?.(owner))}
+                  onMouseMove={(ev) => showTip(ev, ownerName(owner), ownerImg(owner))}
                   onMouseLeave={() => setTip(null)} />
               ))}
               {/* 시작점 ●·도착 화살촉 — 제자리 적(한 칸 경로)은 선이 없어 이 표식이 전부라,
                   여기에도 선과 같은 호버 툴팁·클릭 고정을 단다 (사용자 요청 2026-08-12). */}
               <g style={owner && onPick ? { cursor: "pointer" } : undefined}
-                onMouseMove={owner ? (ev) => showTip(ev, nameOf?.(owner) ?? owner, imgOf?.(owner)) : undefined}
+                onMouseMove={owner ? (ev) => showTip(ev, ownerName(owner), ownerImg(owner)) : undefined}
                 onMouseLeave={owner ? () => setTip(null) : undefined}
                 onClick={owner && onPick ? () => onPick(owner) : undefined}>
                 {P.dense.length < 2 && (
@@ -669,12 +712,12 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
               const [ax2, ay2] = toXY(x * cell + cell / 2 + rn.off + vx * 0.05, y * cell + cell / 2 + rn.off + vy * 0.05);
               const deg = vx || vy ? (Math.atan2(ay2 - sy, ax2 - sx) * 180) / Math.PI : 0;
               const dim = hl ? !(rn.key && hl.has(rn.key)) : false;
-              const img = imgOf?.(rn.key);
+              const img = ownerImg(rn.key);
               return (
                 <g key={i} className="st-simunit"
                   transform={`translate(${sx},${sy})`}
                   opacity={dim ? 0.12 : 1}
-                  onMouseMove={(ev) => showTip(ev, nameOf?.(rn.key) ?? rn.key, imgOf?.(rn.key))}
+                  onMouseMove={(ev) => showTip(ev, ownerName(rn.key), img)}
                   onMouseLeave={() => setTip(null)}>
                   {/* 진행 방향 화살촉 — 정지 상태에서도 어디로 가는지 보인다.
                       제자리 개체(이동 없음)는 방향이 없으니 그리지 않는다. */}
@@ -683,10 +726,11 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
                       <polygon points="0.53,0 0.27,0.16 0.27,-0.16" fill={rn.color} stroke="#10141c" strokeWidth={0.03} />
                     </g>
                   )}
-                  <circle r={0.3} fill="#10141c" stroke={rn.color} strokeWidth={0.055} />
+                  <circle r={0.3} fill={img ? "#10141c" : rn.color} stroke={rn.color} strokeWidth={0.055} />
                   {img && (
                     <image href={img} x={-0.27} y={-0.27} width={0.54} height={0.54}
-                      clipPath={`url(#${clipId}c)`} preserveAspectRatio="xMidYMid slice" />
+                      clipPath={`url(#${clipId}c)`} preserveAspectRatio="xMidYMid slice"
+                      onError={() => markBad(img)} />
                   )}
                 </g>
               );
@@ -757,7 +801,7 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
     {/* 실사 모드: 도면은 진짜 <img>(서버 렌더·검색에 그대로 박힌다)이고, 경로 SVG 는 같은 상자
         위에 투명하게 겹친다 — 경로가 늦게 와도 도면은 바뀌지도 밀리지도 않는다. */}
     {photo ? (
-      <div className="st-photomap">
+      <div className="st-photomap" style={ortho && w && h ? { aspectRatio: `${w} / ${h}` } : undefined}>
         <img src={photo.src} alt={photo.alt ?? ""} decoding="async" />
         {!pending && svgEl}
       </div>
@@ -794,7 +838,7 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
     {/* 선·말 호버 즉시 툴팁 — 커서를 따라다니는 이름표 (+작은 섬네일) */}
     {tip && (
       <div className="st-maptip" style={{ left: tip.x, top: tip.y }}>
-        {tip.img && <img src={tip.img} alt="" aria-hidden />}
+        {tip.img && <img src={tip.img} alt="" aria-hidden onError={(ev) => { markBad(tip.img); ev.currentTarget.style.display = "none"; }} />}
         {tip.text}
       </div>
     )}

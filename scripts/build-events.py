@@ -301,6 +301,19 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
             thumb = src.get(THUMB[loc]) or src.get("thumb")
             if thumb:
                 row["thumb"] = thumb
+        # 스토리가 없는 이벤트(듀얼 채널·위수 협의·벡터 돌파 …)는 **게임 홈 화면의 테마 그림**으로 메운다
+        # (사용자 요청 2026-09-23 "듀얼채널 섬네일 없어? 있을거 같은데"). scripts/build-event-art.py 가 CDN 에서
+        # 받아 둔 것 — 그 서버 언어판이 있으면 그걸, 없으면 한국어판. ⚠ 지금 걸린 이벤트 것만 CDN 에 있어서
+        # 지난 이벤트는 그 스크립트를 돌렸던 때 받아 둔 파일에 기댄다(지우지 않는다).
+        if "thumb" not in row:
+            for rel in ([f"/event/{loc}/{aid}.webp"] if loc != "ko" else []) + [f"/event/{aid}.webp"]:
+                if os.path.exists(os.path.join(REPO, "public", rel.lstrip("/"))):
+                    row["thumb"] = rel
+                    break
+        # 듀얼 채널 — 모달이 상세(모드·보상 프로그램·선수 명단 …)를 따로 받는다: app/data/event-duel*.json
+        # (scripts/build-event-duel.py). 공통 틀만으로는 작전 하나·재화 하나뿐인 빈 모달이었다 (사용자 요청 2026-09-23).
+        if info.get("type") == "ENEMY_DUEL":
+            row["duel"] = 1
         # 원본 ↔ 복각을 서로 이어 준다 (사용자 지시 2026-09-17)
         if origin != aid and origin in kr_basic:
             row["origin"] = origin

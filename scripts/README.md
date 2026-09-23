@@ -141,7 +141,18 @@ python3 scripts/build-events.py .gamedata     # → app/data/events{,.en,.ja}.js
 #   ⚠ **build-stages·build-items·build-story·build-operator-debut 뒤에** 돌린다 — 그 산출물을
 #     이벤트 단위로 접는다. 작전↔이벤트는 zoneToActivity, 재화↔이벤트는 activityItems,
 #     보상 오퍼는 missionData 의 missionGroup 이 정본이다 (이름 매칭 금지).
-python3 scripts/build-stages-rogue.py          # → app/data/stages-rogue{,.en,.ja}.json (작전 도감의 통합전략 693건)
+#   · 스토리가 없는 이벤트의 썸네일은 public/event/<id>.webp(아래 build-event-art.py)가 있으면 쓴다.
+python3 scripts/build-event-art.py             # → public/event/ (UnityPy — **로컬 전용**, kr·jp·en CDN)
+#   스토리 없는 이벤트 썸네일(홈 테마 그림) + 듀얼 채널 모드 배너·NPC·게임 안내 5장·메달·가구·아바타.
+#   ⚠ 홈 테마·활동 번들은 **지금 걸린 이벤트 것만** CDN에 있다 — 점검 때마다 돌려 모아 둔다(지우지 않는다).
+#   build-events.py 보다 **먼저** 돌린다(썸네일은 파일 유무로 붙는다). 끝나면 r2-sync.
+python3 scripts/build-event-duel.py            # → app/data/event-duel{,.en,.ja}.json (듀얼 채널 상세, 로컬 전용)
+#   모드·보상 프로그램 50단계·선수 명단(듀얼 전용 이름·수치 — CDN enemy_database)·라운드·순위 보상·
+#   팁·관객 NPC·메달. 이벤트 모달이 열릴 때만 받는다(로케일당 ~80KB). ⚠ build-event-art.py 뒤에
+#   (그림 경로를 파일 유무로 싣는다). medal_table 은 fetch-gamedata-cdn.py 기본 세트에 있다.
+python3 scripts/build-stages-rogue.py          # → app/data/stages-rogue{,.en,.ja}.json (작전 도감의 통합전략 693건) + rogue-cams.json
+python3 scripts/build-stages-sandbox.py        # → app/data/stages-sandbox{,.en,.ja}.json (생존연산 사막 이야기 106건) + sandbox-ortho.json
+#   ⚠ build-sandbox.py 뒤에 — 입력이 sandbox*.json·sandbox-routes.json 이다 (네트워크 불필요)
 #   ⚠ 입력이 app/data/rogue{1..6}.json 뿐이라 **build-rogue.py 뒤에** 돌린다 (네트워크 불필요).
 #     stages.json에 섞지 않는 이유 = 상세 페이지 파일 수 한도. 스크립트 머리주석 참조.
 #     CI는 --no-images로 돌아 초상만 건너뛰므로, **신규 적 초상**은 로컬 전체 실행으로만
@@ -190,6 +201,10 @@ python3 scripts/build-autochess-routes.py --all # → autochess{,-s<N>}-routes.j
 python3 scripts/build-rogue-routes.py          # → app/data/rogue-routes.json (통전 전투 노드 적 이동 경로,
 #     로케일 무관 1벌 · .gamedata/rogue 레벨 캐시 재사용. 추출 정본은 routeutil.py —
 #     stage-routes.json과 공유하므로 경로 규칙 수정 시 이 파일도 재생성한다)
+python3 scripts/routenames.py                  # 경로 파일 4개(stage·rogue·sandbox·sandbox2-routes)에 nm 을 제자리로 —
+#     등장 적 목록·테마 사전 밖의 경로 주인(그 판 전용 변종·도감 밖 적)의 이름·모델·초상. 빠지면 시뮬 말풍선에
+#     id 가 찍히고 말이 까맣게 빈다 (2026-09-23 제보). 세 경로 빌더가 저장 뒤 스스로 부르므로 보통은 따로 안 돌린다 —
+#     빌더 전체를 다시 돌리기 싫을 때(로컬 원본이 CI 보다 오래됨)만 이걸로 nm 만 다시 붙인다.
 python3 scripts/build-rogue-enc-scenes.py      # → scripts/rogue-enc-scenes.json (조우 씬 트리 —
 #     게임 excel엔 씬↔선택지 소속·랜덤 롤 테이블이 없어(클라 프리팹 소관) PRTS 위키
 #     事件一览의 ISEvent 구조를 CN excel 텍스트로 id 매칭한다. --refresh = PRTS 재다운로드.

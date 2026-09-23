@@ -17,9 +17,9 @@ import { useI18n, rich } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
 import { AttributeFilter } from "./attr-filter";
-import { stageMap, stagePath } from "./dex-paths";
+import { rogueHrefOf, sandboxHrefOf, stageMapOf, stagePath } from "./dex-paths";
 import { StageFile } from "./stage-detail";
-import { stageFilterTree, viewOf, type EnemyStatsIndex, type Stage, type StageDoc } from "./stage-data";
+import { mergeRogueDoc, stageFilterTree, viewOf, type EnemyStatsIndex, type Stage, type StageDoc } from "./stage-data";
 import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { loadEnemies, loadEnemyStages } from "./dex-cross";
@@ -42,14 +42,17 @@ function SimCard({ stage, zone, canSim, onSelect }: {
   const { locale, t } = useI18n();
   return (
     <a className={`st-card sim-card${canSim ? "" : " nosim"}`}
-      href={stagePath(locale, stage.id) + (canSim ? "?sim=1" : "")}
+      // 통합전략·생존연산은 개별 상세 페이지가 없다 — 보조 클릭은 그 가이드로 (도감 카드와 같은 규칙)
+      href={stage.rg ? rogueHrefOf(locale, stage.id) : stage.sb ? sandboxHrefOf(locale)
+        : stagePath(locale, stage.id) + (canSim ? "?sim=1" : "")}
       onClick={(event) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
         event.preventDefault(); onSelect(stage);
       }}>
       <div className="st-card-map">
         {stage.map ? (
-          <img src={stageMap(stage.id)} alt="" aria-hidden loading="lazy" decoding="async" />
+          <img src={stageMapOf(stage)} alt="" aria-hidden loading="lazy" decoding="async"
+            className={stage.sb ? "sb" : undefined} />
         ) : <span className="st-card-nomap" aria-hidden>—</span>}
         {canSim && <span className="sim-card-play" aria-hidden>▶</span>}
       </div>
@@ -72,10 +75,15 @@ export default function SimLauncher() {
     const jobs: Promise<unknown>[] = [];
     if (!DOCS[locale]) {
       // 동적 import는 경로가 정적이어야 코드 스플릿된다 — 로케일별로 분기해 자기 것만 받는다
-      const load = locale === "en" ? import("./data/stages.en.json")
-        : locale === "ja" ? import("./data/stages.ja.json")
-        : import("./data/stages.json");
-      jobs.push(load.then((m) => { DOCS[locale] = (m as { default?: unknown }).default as StageDoc ?? (m as unknown as StageDoc); }));
+      // 통합전략·생존연산 작전도 찾게 **색인 셋을 이어 붙인다** (사용자 요청 2026-09-23 "생존연산·통합전략도
+      // 작전 시뮬레이터에 편입") — 작전 도감 목록(app/stages-*.tsx)과 같은 합치기다.
+      const load = locale === "en"
+        ? Promise.all([import("./data/stages.en.json"), import("./data/stages-rogue.en.json"), import("./data/stages-sandbox.en.json")])
+        : locale === "ja"
+          ? Promise.all([import("./data/stages.ja.json"), import("./data/stages-rogue.ja.json"), import("./data/stages-sandbox.ja.json")])
+          : Promise.all([import("./data/stages.json"), import("./data/stages-rogue.json"), import("./data/stages-sandbox.json")]);
+      const un = (m: unknown) => ((m as { default?: unknown }).default ?? m) as StageDoc;
+      jobs.push(load.then(([a, b, c]) => { DOCS[locale] = mergeRogueDoc(mergeRogueDoc(un(a), un(b)), un(c)); }));
     }
     if (!SIM_SET) {
       jobs.push(import("./data/sim-stages.json").then((m) => {
@@ -219,7 +227,8 @@ export default function SimLauncher() {
   // 반대로 다양성이 사라지므로 **보이는 짝**으로 접는다.
   const recs = useMemo(() => {
     if (!doc || !sims) return null;
-    const vis = doc.stages.filter((s) => s.sub === undefined && sims.has(s.id));
+    // 추천은 본 도감 작전만 — 뒤에 이어 붙인 통합전략·생존연산이 '마지막 = 최신'을 가로채면 안 된다
+    const vis = doc.stages.filter((s) => s.sub === undefined && !s.rg && !s.sb && sims.has(s.id));
     const byCode = (list: Stage[]) => {
       const m = new Map<string, Stage>();
       for (const s of list) m.set(`${s.code}|${s.name}`, s);
@@ -235,7 +244,8 @@ export default function SimLauncher() {
   }, [doc, sims]);
 
   const zoneOf = (s: Stage) => doc?.zones[s.z] || doc?.types[s.t] || "";
-  const canSim = (s: Stage) => !!sims?.has(s.id);
+  // 본 도감은 sim-stages.json, 통합전략·생존연산은 색인의 sim 표시 (둘 다 경로에 스폰·웨이브가 있다는 뜻)
+  const canSim = (s: Stage) => !!sims?.has(s.id) || !!s.sim;
   const grid = (list: Stage[]) => (
     <div className="sim-grid">
       {list.map((s) => <SimCard key={s.id} stage={s} zone={zoneOf(s)} canSim={canSim(s)} onSelect={setOpen} />)}
@@ -302,7 +312,7 @@ export default function SimLauncher() {
             onClick={() => { clear(); setCommitted(""); }} aria-label={t("검색어 지우기")}>×</button>
           {/* 검색란 제안 — 다른 검색란과 같은 드롭다운, 고르면 상세 모달 (사용자 지시 2026-08-10) */}
           <SearchSuggest query={term}
-            items={live.map((s) => ({ key: s.id, label: `${s.code} ${s.name}`.trim(), sub: zoneOf(s) || undefined, img: s.map ? stageMap(s.id) : undefined }))}
+            items={live.map((s) => ({ key: s.id, label: `${s.code} ${s.name}`.trim(), sub: zoneOf(s) || undefined, img: s.map ? stageMapOf(s) : undefined }))}
             onPick={(id) => { const st = byId.get(id); if (st) setOpen(st); }} />
         </div>
         {/* 결과는 입력 즉시가 아니라 이 버튼(또는 Enter)으로 확정 (사용자 지시 2026-08-10) */}

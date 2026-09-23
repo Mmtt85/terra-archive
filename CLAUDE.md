@@ -5,11 +5,16 @@
 데이터 갱신 명령은 [scripts/README.md](scripts/README.md),
 무인 유지보수 자동화(GitHub Actions)는 [docs/AUTOMATION.md](docs/AUTOMATION.md).
 
+## 세션 규칙 — 매 세션 시작·compact 뒤에도 항상 적용 (이 수칙과 부딪히면 세션 규칙이 이긴다)
+
+@SESSION.md
+
 ## 필수 수칙
 
-- 수정 후 **빌드 확인 → 커밋 → git push 까지만** 진행하고 멈춘다.
+- 수정은 **dev 서버(핫리로드)로 확인만** 한다. **커밋·푸시·빌드·배포는 배포 직전에 한꺼번에** (SESSION.md §1 —
+  종전의 "수정마다 빌드 → 커밋 → push" 는 2026-09-23 사용자 지시로 바뀌었다).
   **`bash scripts/deploy.sh`는 자동 실행 금지** (2026-07 규칙) — 세션마다 자동 배포하면 토큰이 낭비되므로,
-  배포는 사용자가 변경분을 모아 직접 돌린다. 배포 URL: https://terra-archive.pages.dev (Cloudflare Pages, wrangler 로그인됨).
+  배포는 사용자가 변경분을 모아 직접 돌린다(또는 하라고 할 때만). 배포 URL: https://terra-archive.pages.dev (Cloudflare Pages, wrangler 로그인됨).
   단, `docs/AUTOMATION.md`의 GitHub Actions 무인 파이프라인은 **진짜 데이터가 바뀔 때만** 배포하는
   승인된 별개 경로다 (이 규칙은 대화형 세션에만 적용).
 - 데이터는 API가 아니라 `app/data/*.json` 정적 파일. 손으로 고치지 말고

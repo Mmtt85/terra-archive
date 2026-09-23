@@ -59,9 +59,11 @@ import SimLauncher from "./sim-launcher";
 const OmniSearch = lazy(() => import("./omni-search"));
 import BridgeButton from "./lens/bridge-button";
 import { asset } from "./assets";
+import { CAFE_EVENT_BOARD, fetchEventPayload, type GameEvent } from "./event-feed";
 import { CONTACT_EMAIL } from "./contact";
 import { descLines } from "./desc-lines";
 import ChangelogButton from "./changelog";
+import { Marquee } from "./marquee";
 import FutureTip, { FUTURE_BLOCKED } from "./future-tip";
 // 헤더 치비 대화 — 크롬 내장 Gemini Nano (베타, 2026-08-03)
 import { ChibiChatPanel, chibiChatStatus, type ChibiActionRequest, type ChibiChatStatus } from "./chibi-chat";
@@ -372,11 +374,7 @@ function tabFromLegacyHash(hash: string): Tab | null {
 //   정적 폴백 app/data/broadcasts.json, 중섭 수집 scripts/build-broadcasts-cn.py).
 //   "나도 안 보고 사람들도 안 보고 아무도 안 쓰는 죽은 기능"이라 통째로 걷어냈다.
 //   워커(terra-archive-broadcast)는 **이벤트도 같이 실어 주므로 그대로 둔다** — 이름만 옛것이다.
-const EVENT_API = "https://terra-archive-broadcast.nzkonaru.workers.dev/";
-// 진행중 게임 이벤트 — 워커가 KR activity_table에서 뽑아 같은 payload에 실어준다.
-// 진행중 판정은 클라이언트가 start/end와 Date.now()를 비교 (워커 데이터가 묵어도 정확).
-// url = 공식 네이버 카페 이벤트 공지 (워커가 제목 매칭으로 찾음, 없으면 링크 없음)
-type GameEvent = { id: string; name: string; type?: string | null; displayType?: string | null; start: string; end: string; url?: string };
+// 워커 주소·이벤트 형식·공유 요청은 app/event-feed.ts (이벤트 도감 상세의 공식 카페 버튼과 같이 쓴다)
 
 const DAY = 86_400_000;
 
@@ -395,8 +393,6 @@ function fmtYm(locale: Locale, ym: string): string {
 type StoryEventLite = { id: string; name: { ko: string; en?: string; ja?: string }; thumb?: string; thumbEn?: string; thumbJa?: string; unreleased?: boolean; eta?: string };
 const storyEventsList = (storyEventsData as { events: StoryEventLite[] }).events;
 const storyEventById = new Map(storyEventsList.map((event) => [event.id, event]));
-// 공식 카페 이벤트 게시판 — 개별 공지를 못 찾은 이벤트의 착지점 (2026-07-31 실확인: 로그인 없이 열린다)
-const CAFE_EVENT_BOARD = "https://cafe.naver.com/f-e/cafes/29703924/menus/3";
 // 미실장(중섭 선행) 이벤트 — 헤더 이벤트 드롭다운 '향후 다가올'에 추정월과 함께 노출 (미래시 ON일 때만).
 // 정렬은 추정월 이른(= 먼저 KR에 올) 순 — 다음에 올 이벤트가 위로.
 const futureEvents = storyEventsList
@@ -434,32 +430,21 @@ const MINOR_EVENT_TYPES = new Set([
   "GRID_GACHA", "GRID_GACHA_V2", "FLIP_ONLY",
 ]);
 
-// 워커 fetch는 모듈 공유 프라미스로 1회만 — 헤더 배지와 이벤트 스트립이 같이 쓴다.
-// ⚠ 워커 이름(terra-archive-broadcast)과 경로는 방송 기능 때 만든 것이 그대로다 —
-//   2026-09-23에 방송을 걷어냈지만 **같은 워커가 진행중 이벤트도 실어 준다**.
-let eventFetch: Promise<{ events: GameEvent[] } | null> | null = null;
-function fetchEventPayload() {
-  eventFetch ??= fetch(EVENT_API)
-    .then((res) => (res.ok ? res.json() : null))
-    .then((data) => (data ? { events: Array.isArray(data.events) ? data.events : [] } : null))
-    .catch(() => null);
-  return eventFetch;
-}
 
-/** 지금 돌고 있는 대표 이벤트 하나 — 헤더 바로가기 칩이 쓴다 (사용자 요청 2026-09-17).
- *  워커 fetch 는 모듈 공유 프라미스(fetchEventPayload)라 헤더 배지와 같은 요청을 나눠 쓴다. */
-function useRunningEvent(): GameEvent | null {
-  const [evt, setEvt] = useState<GameEvent | null>(null);
+/** 지금 돌고 있는 이벤트 **전부**(대표 순) — 헤더 '진행중 이벤트' 그룹이 쓴다. 종전엔 대표 하나만 칩으로 냈다
+ *  (사용자 요청 2026-09-17) → 2026-09-23 "세 개 다 헤더에". 워커 fetch 는 모듈 공유 프라미스
+ *  (fetchEventPayload)라 헤더 배지와 같은 요청을 나눠 쓴다. */
+function useRunningEvents(): GameEvent[] {
+  const [evts, setEvts] = useState<GameEvent[]>([]);
   useEffect(() => {
     let live = true;
     void fetchEventPayload().then((data) => {
       if (!live || !data) return;
-      const top = sortRunning(data.events, Date.now())[0] ?? null;
-      if (top) setEvt(top);
+      setEvts(sortRunning(data.events, Date.now()));
     });
     return () => { live = false; };
   }, []);
-  return evt;
+  return evts;
 }
 
 // 진행중 이벤트 공용 헬퍼 — 배지·스트립이 같은 규칙으로 정렬·표기한다
@@ -639,14 +624,13 @@ function EventBadges({ onOpenEvent }: {
                 // 링크는 공식 카페 이벤트 공지로 (사용자 요청 2026-07 — 스토리 요약 아님)
                 return (
                   <li key={event.id}>
-                    {/* ⚠ **이벤트 도감이 우선** (사용자 지시 2026-09-17). 도감이 모르는
-                        이벤트만 종전대로 공식 카페 공지로 나간다. */}
-                    {onOpenEvent && knownEventIds.has(event.id)
+                    {/* **전부 사이트 안의 이벤트 가이드로** (사용자 지시 2026-09-23 "확장헤더 이벤트 목록의
+                        공식카페 링크는 사이트 내 이벤트 가이드로"). 도감이 아직 모르는 이벤트는 가이드 목록으로
+                        (openEventById). 공식 카페 공지는 이벤트 상세 모달의 버튼이 맡는다. */}
+                    {onOpenEvent
                       ? <button type="button" className="event-row-btn"
                           onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 가이드에서 보기")}>{body}</button>
-                      : event.url
-                        ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
-                        : <span className="event-row-plain">{body}</span>}
+                      : <span className="event-row-plain">{body}</span>}
                   </li>
                 );
               })}
@@ -666,14 +650,13 @@ function EventBadges({ onOpenEvent }: {
                 );
                 return (
                   <li key={event.id}>
-                    {/* ⚠ **이벤트 도감이 우선** (사용자 지시 2026-09-17). 도감이 모르는
-                        이벤트만 종전대로 공식 카페 공지로 나간다. */}
-                    {onOpenEvent && knownEventIds.has(event.id)
+                    {/* **전부 사이트 안의 이벤트 가이드로** (사용자 지시 2026-09-23 "확장헤더 이벤트 목록의
+                        공식카페 링크는 사이트 내 이벤트 가이드로"). 도감이 아직 모르는 이벤트는 가이드 목록으로
+                        (openEventById). 공식 카페 공지는 이벤트 상세 모달의 버튼이 맡는다. */}
+                    {onOpenEvent
                       ? <button type="button" className="event-row-btn"
                           onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 가이드에서 보기")}>{body}</button>
-                      : event.url
-                        ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
-                        : <span className="event-row-plain">{body}</span>}
+                      : <span className="event-row-plain">{body}</span>}
                   </li>
                 );
               })}
@@ -1191,7 +1174,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const StageDexForLocale = STAGE_DEX[locale as keyof typeof STAGE_DEX] ?? STAGE_DEX.ko;
   const ItemDexForLocale = ITEM_DEX[locale as keyof typeof ITEM_DEX] ?? ITEM_DEX.ko;
   const EventDexForLocale = EVENT_DEX[locale as keyof typeof EVENT_DEX] ?? EVENT_DEX.ko;
-  const runningEvent = useRunningEvent();
+  const runningEvents = useRunningEvents();
   /** 헤더·배너에서 연 이벤트 — **페이지를 안 넘기고** 그 자리에 모달만 띄운다
    *  (사용자 지시 2026-09-17: "이벤트 가이드로 페이지가 넘어가지 말고 그냥 모달창만").
    *  이미 이벤트 가이드 화면에 있으면 그쪽 목록이 해시로 열게 두고 여기선 띄우지 않는다 —
@@ -1208,6 +1191,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       return;
     }
     if (guide) { switchTab(guide); scrollMainTop(); return; }
+    // 이벤트 도감이 아직 모르는 이벤트(점검 직후 배포 전 등)는 **이벤트 가이드 목록**으로 — 모르는 id 로 상세를
+    // 열면 빈 창이 된다. 종전엔 부르는 쪽이 공식 카페로 새 창을 띄웠다 (2026-09-23 사이트 안으로 통일)
+    if (!knownEventIds.has(id)) { switchTab("event"); scrollMainTop(); return; }
     // 이벤트 가이드 화면에서는 종전대로 해시로 연다 (그 화면의 목록·필터가 주인이다)
     if (tab === "event") {
       history.pushState(null, "", `${tabPath("event")}#ev-${id}`);
@@ -1227,12 +1213,21 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 탭 → 로케일 포함 경로 (예: planner + en → "/en/infra", archive + ko → "/").
   // 전역 파라미터(future)는 탭을 옮겨도 URL에 유지한다 (공유·일관성). ops 같은 탭 전용
   // 파라미터는 해당 탭이 직접 관리하므로 여기서 실어 나르지 않는다.
+  // 헤더 진행중 이벤트 그룹의 칩 — 위수 협의 칩과 겹치는 시즌 행은 뺀다 (위 JSX 주석)
+  const groupEvents = runningEvents.filter((ev) => !(PROMO_ON && EVENT_GUIDE_TAB[ev.type ?? ""] === PROMO.tab));
   const tabPath = useCallback((tb: Tab) => {
     const seg = TAB_SEG[tb];
     const base = (localeBase + (seg ? `/${seg}` : "")) || "/";
     const fut = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("future") === "1";
     return fut ? `${base}?future=1` : base;
   }, [localeBase]);
+  // 진행중 이벤트 칩의 링크(새 탭·크롤러용) — 전용 가이드 → 이벤트 도감 상세 → 이벤트 가이드 목록 순.
+  // 클릭은 onClick 이 SPA 로 같은 곳을 연다 (openEventById 와 같은 우선순위)
+  const eventHref = (ev: GameEvent): string => {
+    const guide = EVENT_GUIDE_TAB[ev.type ?? ""];
+    if (guide) return tabPath(guide);
+    return knownEventIds.has(ev.id) ? `${localeBase}/events#ev-${ev.id}` : tabPath("event");
+  };
 
   // 필터 항목은 전부 현재 로케일 데이터에서 유도한다 — 값과 표시가 항상 일치
   const factions = useMemo(() =>
@@ -2123,47 +2118,53 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {/* 업데이트 내역 — 로고 바로 오른쪽 1줄 소속: 헤더를 접어도 보인다
             (사용자 요청 2026-07-27: "헤더를 열어보지 않으면 알 수가 없으니") */}
         <ChangelogButton />
-        {/* 기간 한정 바로가기 — 그 모드가 게임에서 도는 동안에만 (사용자 요청 2026-08-22).
-            업데이트 내역과 같은 **1줄 소속**이라 헤더를 접어도 남는다 — 확장부에 두면
-            헤더가 접힌 기본 상태에서 아예 안 보인다. 링크라 크롤러도 따라가고, 클릭은 SPA 전환. */}
-        {PROMO_ON && (
-          <a className={`promo-trigger${tab === PROMO.tab ? " selected" : ""}`}
-            href={`${localeBase}/${TAB_SEG[PROMO.tab]}`}
-            onClick={(event) => {
-              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-              event.preventDefault(); switchTab(PROMO.tab);
-            }}>
-            <span className="promo-mark" aria-hidden>{PROMO.icon}</span>
-            {t(PROMO.label)}
-            {/* 남은 기간 — '기간 한정'보다 쓸모 있는 정보라 그 자리를 대신한다
-                (사용자 요청 2026-08-24). 못 구하면 종전 문구로 되돌아간다. */}
-            <span className="promo-hint">{promoLeftLabel(promoNow, t) ?? t("기간 한정")}</span>
-            {tabHasNewFeature(PROMO.tab) && <span className="new-badge">{t("새기능")}</span>}
-          </a>
-        )}
-        {/* 진행중 이벤트 바로가기 — 누르면 이벤트 도감의 그 이벤트 상세가 열린다
-            (사용자 요청 2026-09-17 "위수협의 버튼이랑 마찬가지로"). 위수 협의 칩과 같은
-            1줄 소속이라 헤더를 접어도 남는다. 라벨은 이름이 아니라 "이벤트"로 고정 —
-            이름을 넣으면 길이에 따라 헤더 폭이 흔들린다(옆 event-trigger 와 같은 이유).
-            ⚠ 이벤트 도감이 아는 이벤트일 때만 띄운다 — 모르는 id 로 보내면 빈 화면이 된다. */}
-        {runningEvent && knownEventIds.has(runningEvent.id) && (
-          <a className={`promo-trigger ev-promo${tab === "event" ? " selected" : ""}`}
-            href={`${localeBase}/events#ev-${runningEvent.id}`}
-            title={eventName(locale, runningEvent)}
-            onClick={(event) => {
-              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-              event.preventDefault(); openEventById(runningEvent.id, runningEvent.type);
-            }}>
-            <span className="promo-mark" aria-hidden>✦</span>
-            {/* 이름이 크고 '진행중 이벤트'가 작다 (사용자 지시 2026-09-17). 이름 길이로 헤더
-                폭이 흔들리지 않게 CSS 가 최대 폭을 잡고 넘치면 말줄임한다. */}
-            <span className="ev-promo-kind">{t("진행중 이벤트")}</span>
-            <b className="ev-promo-name">{eventName(locale, runningEvent)}</b>
-            {/* 남은 기간 표기는 위수 협의 칩과 같은 문구로 (사용자 지시) */}
-            <span className="promo-hint">
-              {promoLeftLabel(Date.now(), t, Date.parse(runningEvent.end)) ?? t("진행중")}
-            </span>
-          </a>
+        {/* 진행중 이벤트 그룹 — 위수 협의(기간 한정 바로가기)와 지금 도는 이벤트 **전부**를 한 묶음으로
+            (사용자 요청 2026-09-23 "진행중 이벤트 그룹을 만들어서 위수협의·사람들, 우리들·듀얼채널 세 개 다
+            헤더에"). 종전엔 위수 협의 칩 + 대표 이벤트 칩 하나뿐이라 나머지는 확장부 목록에서만 보였다.
+            업데이트 내역과 같은 **1줄 소속**이라 헤더를 접어도 남는다. 위수 협의는 빌드 시각으로 프리렌더에
+            박히고(검색·첫 페인트, 2026-08-22), 나머지는 워커를 받은 뒤 붙는다 — 워커의 위수 협의 시즌 행은
+            앞 칩과 겹치므로 뺀다. 칩은 **전부 사이트 안으로** 간다: 전용 가이드가 있는 모드는 그 가이드,
+            이벤트 도감이 아는 이벤트는 그 상세, 아직 모르는 이벤트는 이벤트 가이드 목록 (공식 카페 공지는
+            이벤트 상세 모달의 버튼으로 옮겼다 — 같은 날 사용자 지시). */}
+        {(PROMO_ON || groupEvents.length > 0) && (
+          <div className="ev-group" role="group" aria-label={t("진행중 이벤트")}>
+            {/* 말머리('진행중 이벤트')는 뺐다 — 칩 모양만으로 읽힌다 (사용자 지시 2026-09-23). 스크린리더용 이름은
+                그룹의 aria-label 로 남긴다. 칩이 1줄에 다 안 들어가면(폰 390px: 셋 중 둘) **흘러간다** — 옆으로
+                밀어야 세 번째가 보이던 것을 마퀴로 바꿨다 (같은 날 사용자 지시 "마퀴 형식으로 흘러가게").
+                넘치지 않으면(데스크톱) Marquee 는 아무 일도 하지 않는다. */}
+            <Marquee className="ev-run">
+            {PROMO_ON && (
+              <a className={`promo-trigger${tab === PROMO.tab ? " selected" : ""}`}
+                href={`${localeBase}/${TAB_SEG[PROMO.tab]}`}
+                onClick={(event) => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                  event.preventDefault(); switchTab(PROMO.tab);
+                }}>
+                <span className="promo-mark" aria-hidden>{PROMO.icon}</span>
+                {t(PROMO.label)}
+                {/* 남은 기간 — '기간 한정'보다 쓸모 있는 정보라 그 자리를 대신한다
+                    (사용자 요청 2026-08-24). 못 구하면 종전 문구로 되돌아간다. */}
+                <span className="promo-hint">{promoLeftLabel(promoNow, t) ?? t("기간 한정")}</span>
+                {tabHasNewFeature(PROMO.tab) && <span className="new-badge">{t("새기능")}</span>}
+              </a>
+            )}
+            {groupEvents.map((ev) => (
+              <a key={ev.id} className="promo-trigger ev-promo" href={eventHref(ev)} title={eventName(locale, ev)}
+                onClick={(event) => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                  event.preventDefault();
+                  if (EVENT_GUIDE_TAB[ev.type ?? ""] || knownEventIds.has(ev.id)) openEventById(ev.id, ev.type);
+                  else { switchTab("event"); scrollMainTop(); }
+                }}>
+                <span className="promo-mark" aria-hidden>{modeGlyph(ev)}</span>
+                {/* 이름 길이로 헤더 폭이 흔들리지 않게 CSS 가 최대 폭을 잡고 넘치면 말줄임한다 */}
+                <b className="ev-promo-name">{eventName(locale, ev)}</b>
+                {/* 남은 기간 표기는 위수 협의 칩과 같은 문구로 (사용자 지시 2026-09-17) */}
+                <span className="promo-hint">{promoLeftLabel(Date.now(), t, Date.parse(ev.end)) ?? t("진행중")}</span>
+              </a>
+            ))}
+            </Marquee>
+          </div>
         )}
         {/* 헤더 치비 (베타) — 1줄 가운데 빈 공간의 산책 장식, 데스크탑 전용 (사용자 요청 2026-08-03) */}
         <HeaderChibi operators={operators} onNavigate={switchTab} onShowOperator={(op) => setSelected(op)} />
@@ -3775,6 +3776,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   const suppressClickRef = useRef(false); // 드래그 후 이어지는 click을 무시
   const fallRafRef = useRef(0);
   const lastSpecialRef = useRef(0);
+  const placedRef = useRef(false); // 기본 자리(제안 버튼 위)에 한 번 세웠나
 
   const star = useMemo(() => operators.find((candidate) => candidate.id === CHIBI_STAR) ?? null, [operators]);
 
@@ -4079,6 +4081,25 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   }, [alpha]); // eslint-disable-line react-hooks/exhaustive-deps -- 틱은 ref로만 상태를 읽는다
 
   if (!isClient || !star || alpha === false) return null;
+  // 기본 자리 = 제안 버튼 위 (사용자 지시 2026-09-23 "치비스카디 기본 위치는 제안버튼 위로"). 오른쪽 아래에 떠 있는
+  // 제안 버튼(.feedback-fab)을 착지면으로 잡고 free 모드로 선다 — 그 뒤 탑승·산책·낙하는 기존 free 규칙 그대로
+  // (버튼 폭 안에서만 걷는다). 버튼이 안 보이는 화면(폰은 숨긴다)이면 종전대로 헤더 슬롯. 헤더 위에 끌어다 놓으면
+  // 헤더 슬롯으로 돌아가는 것도 그대로다.
+  const placeOnFab = () => {
+    const fab = document.querySelector(".feedback-fab");
+    const el0 = btnRef.current;
+    if (!fab || !el0) return;
+    const r = fab.getBoundingClientRect();
+    if (r.width < 30 || r.height < 4) return;
+    const w = el0.offsetWidth;
+    const h = el0.offsetHeight;
+    const nx = Math.max(-w * 0.4, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w * 0.6));
+    surfRef.current = { top: r.top, left: r.left, right: r.right, el: fab, relX: nx - r.left };
+    setMoveSec(0);
+    setFreePos(nx, r.top - h);
+    modeRef.current = "free";
+    setMode("free");
+  };
   const probe = (video: HTMLVideoElement) => {
     try {
       const canvas = document.createElement("canvas");
@@ -4087,7 +4108,10 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       if (!g) return;
       g.drawImage(video, 0, 0, 8, 8);
       // 프레임 왼쪽 위는 렌더 여백 — 알파가 살아 있으면 투명(0), 무시됐으면 불투명(255)
-      setAlpha(g.getImageData(0, 0, 1, 1).data[3] < 250);
+      const ok = g.getImageData(0, 0, 1, 1).data[3] < 250;
+      // 보이기 **직전에** 기본 자리로 옮긴다 — 같은 렌더에 묶여야 헤더 슬롯에 한 프레임 비쳤다 튀지 않는다
+      if (ok && !placedRef.current) { placedRef.current = true; placeOnFab(); }
+      setAlpha(ok);
     } catch {
       setAlpha(false); // 캔버스 이상 계열 — 표시하지 않는 쪽이 안전
     }

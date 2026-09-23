@@ -384,6 +384,14 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
 - `app/data/sandbox.json` / `.en` / `.ja` — 생존연산 가이드 (build-sandbox.py, 로케일당 ~330KB).
   v2=사막 이야기(공식 3로케일) + v3=CN 선행 신시즌(비공식 번역 `scripts/sandbox-cn-ko.json`,
   미번역 문자열은 빌드 로그에 未 경고 — cn-translation-fill 흐름으로 보완).
+- `app/data/event-duel.json` / `.en` / `.ja` — 이벤트 도감의 **듀얼 채널 상세** (build-event-duel.py,
+  로케일당 ~80KB, 모달을 열 때만 받는다 — 화면은 app/event-duel.tsx 의 탭 여섯 개). 듀얼 채널은 작전이
+  VS-1 하나뿐이고 적이 라운드마다 풀에서 뽑혀 공통 틀로는 빈 모달이었다 (사용자 요청 2026-09-23).
+  선수는 전용 id(`enemy_5028_dqlime_2`)라 **적 도감에 없다** — 원본 적 도감 항목에 듀얼 수치 한 줄을 얹어
+  연다(/rogue 적 모달과 같은 방식). 명단은 `poolData` 가 정본이다(`enemyData` 는 지난 회차 선수까지 든다).
+  그림(모드 배너·NPC·게임 안내·메달)과 **스토리 없는 이벤트의 썸네일**(홈 테마 그림 → `public/event/<id>.webp`,
+  build-events.py 가 스토리 썸네일이 없을 때만 붙인다)은 build-event-art.py — 둘 다 로컬 전용이고, 홈 테마·
+  활동 번들은 **그 이벤트가 걸린 동안만** CDN에 있어 점검 때 받아 둬야 한다(kr-big-patch §3).
 - `app/data/eventlore-index.json` (색인, ~1KB) + `public/lore/data/<스토리id>.json` (본문,
   3로케일 합계 ~1MB) — 이벤트 기록 (build-eventlore.py). 한정 이벤트의 미니게임·수집 요소로
   풀리던 읽을거리 14개 이벤트 · 글 997편 — 의뢰서·신문 기사·편지·오페라 평론·조우문.
@@ -490,6 +498,12 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
 - `app/data/stages.json` / `.en` / `.ja` — 작전 도감 (작전 **2,224개**의 지형 도면 보유 여부·
   이성·보상·권장 편성·기믹 설명·드랍·등장 적). **사전 인코딩**이다 — 구역·아이템·적 id 같은
   반복 값은 문서 위쪽 사전에 한 번만 두고 본문은 번호로 가리킨다 (그냥 늘어놓으면 3MB)
+- `app/data/stages-sandbox.json` / `.en` / `.ja` — **작전 도감·작전 시뮬레이터에 얹는 생존연산 지역**
+  (사용자 요청 2026-09-23 "생존연산 맵들도 다 작전도감 및 작전시뮬레이터에 편입, 형식도 맞춰").
+  `scripts/build-stages-sandbox.py`가 통합전략 색인과 같은 방식으로 낸다 — 사막 이야기 106개(`sb:1`),
+  행동력(`act`)·전용 적 수치(`es`)·초상(`enemyImg`)을 레코드가 들고 간다. 도면이 격자 평면도인 86개엔
+  `ortho:1` → 상세가 원근 없이 격자를 겹쳐 합친 도면을 만든다. 재기동 앵커(v3)는 이름 없는 지형 조각이라
+  아직 넣지 않았다. 통합전략·생존연산 작전은 **작전 시뮬레이터 검색에도** 잡힌다(색인의 `sim:1`).
 - `app/data/stages-rogue.json` / `.en` / `.ja` — **작전 도감에 얹는 통합전략 작전 693개**
   (사용자 요청 2026-08-16 "맵 도감에서 각 로그라이크 맵도 찾을 수 있도록"). `scripts/build-stages-rogue.py`가
   `rogue{1..6}.json`에서 뽑아 같은 `StageDoc` 모양으로 낸다(로케일당 ~390KB). 화면에서
@@ -505,7 +519,13 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
     `StageRouteMap`은 공용이고, 캐시만 갈라 각자 쓰는 쪽만 내려받는다.
     **이미지를 `public/stage/`로 복사·이동하지 않는다** (2026-08-08 록라 폴더 사고).
   - 이름 없는 스폰 변종(`enemy_*_c`·`#1` 등 102종)은 등장 적에서 뺀다 — `/rogue`도 같은 것을
-    거르므로(app/rogue.tsx `if (!e) return null`) 두 화면이 일치한다.
+    거르므로(app/rogue.tsx `if (!e) return null`) 두 화면이 일치한다. 경로·시뮬 말풍선에서는 경로 문서의
+    `nm`(scripts/routenames.py — 레벨 파일의 이름·모델 키)이 이름·초상을 채운다 (2026-09-23, 본 도감·생존연산 공통).
+  - 초상: 적 도감 초상(public/enemy)이 없는 통합전략 전용 적은 색인이 테마 초상 경로를 `enemyImg`로 들고 간다
+    (30종 — 종전엔 작전 도감 칸·시뮬 말이 까맣게 비었다).
+  - 적 칸 수치는 **테마 수치**다 — 레벨 파일이 적 수치를 덮어써서(overwrittenData) 스탯 색인(enemy-stats.json)
+    기본형과 다른 적이 1,601종 중 313종이다. 다른 것만 레코드가 `es`로 들고 간다(생존연산과 같은 규약,
+    0 = 색인 그대로) — `/rogue` 전투 노드 모달의 칸과 같은 수치 (2026-09-23).
 - **작전 환경 규칙 (사용자 확정 2026-08-10)**: 고난 판(`tough_*`)·긴급 작전(`#f#`)은 목록에
   별도 행을 만들지 않는다 — 일반판 상세의 환경 탭(일반/고난·일반/긴급)이 도면·적·설명을
   갈아끼운다 (`alt`/`base`/`sub`/`chg` 필드, `viewOf`가 고난 id도 일반판 뷰로 돌려준다).
@@ -513,12 +533,20 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
   명칭은 게임 공식: **고난**/Adverse/厄難 · **긴급**/Challenge/強襲 ('어려움' 아님 — 사용자 교정).
   고난 접미는 두 빌드 스크립트의 `TOUGH_SUFFIX`가 **글자까지 같아야** 등장 적 조인이 산다.
   고난 판 도면은 자체 미리보기가 없으면 일반판을 복사한다 (지형 동일 — build-stages.py 폴백 0)
+- **한 화면 규칙 — 어느 작전도 '실사 도면 | 이동 경로' 탭으로 나누지 않는다 (사용자 확정 2026-09-23 "앞으로 모든
+  작전은 합쳐진 상태로 처음부터")**: 카메라가 있으면 합친 도면 · 없고 경로가 있으면 경로 지도 하나 · 경로도 없으면
+  도면 한 장. 경로 유무는 레코드의 `sim`(build-stages 가 sim-stages.json 으로 단다)으로 연 순간 안다. 카메라는
+  `stagecams.attach` 가 미리보기에 값이 없으면 원본을 새로 받아 다시 찾는다 — 새 작전도 첫 빌드에 합쳐진다.
+  세부·예외는 route-map-rules 스킬 ★절.
 - **실사 도면 위 경로·시뮬 (2026-09-23)**: 인게임 미리보기(512²) 도면을 가진 작전은 레코드에
   전투 카메라 위치 `cam` 이 붙고, 상세가 도면·이동 경로를 한 화면으로 합친다. 붙이는 건
   `scripts/stagecams.py` — build-stages·build-stages-rogue 가 저장 직전에 부른다(단독 실행도 제자리).
   카메라 출처는 yuanyan3060/ArknightsGameResource 의 levels.json(MAA 와 같은 출처, 매일 갱신,
   작성자 출처 표기 요청). 도면이 16:9 화면을 정사각에 눌러 담은 그림이라는 근거·검증은
   `app/stage-cam.ts`, 화면 규칙은 route-map-rules 스킬.
+  - ⚠ 로컬 `.gamedata` 는 CI 보다 오래됐을 수 있다 — 카메라만 다시 붙일 땐 build-stages 전체 재생성(데이터가
+    뒤로 간다) 대신 `python3 scripts/stagecams.py`(제자리). CI 의 데이터 자동 갱신 커밋과 `stages*.json` 이
+    부딪히면 원격 것을 받고 이 스크립트로 cam 을 다시 붙인다.
 - ⚠ **자산 폴더와 라우트 이름이 일부러 다르다**: `public/enemy/`·`public/stage/`(단수) ↔
   `/enemies`·`/stages`(복수). `deploy.sh`가 자산만 떼어내 R2로 넘기기 때문 —
   2026-08-08에 통합전략이 에셋과 페이지를 같은 폴더에 둬서 테마 6장을 매 배포마다 잃었다

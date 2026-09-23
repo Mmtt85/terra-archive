@@ -18,17 +18,19 @@
 // ⚠ 개별 라우트(/events/<id>)를 만들지 않는다 — 항목 1개당 6파일(html+rsc × 3언어)이고
 //   Pages 파일 수 한도가 있다 (아이템 도감과 같은 판단). 상세는 모달 + `#ev-<id>` 딥링크.
 
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { asset } from "./assets";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { useLazyVisible } from "./lazy-img";
 import { ModalWindow } from "./modal-window";
+import { CAFE_EVENT_BOARD, fetchEventPayload } from "./event-feed";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
 import { SearchSuggest } from "./search-suggest";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadItems, loadStages } from "./dex-cross";
-import { EnemyFile, enemyImg, type Enemy, type EnemyStages } from "./enemy-detail";
+import { EnemyFile, enemyImg, type Enemy, type EnemyLevel, type EnemyStages, type StatOverride } from "./enemy-detail";
+import { DuelDetail, type DuelFighter } from "./event-duel";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 import { ItemFile, itemIcon, type DexItem, type ItemDoc } from "./items";
@@ -64,6 +66,8 @@ export type EventRow = {
   rerun?: string;
   /** 한섭 개방 추정월 ("2026-11") — 미실장에만 */
   eta?: string;
+  /** 듀얼 채널 — 상세(모드·보상 프로그램·선수 명단 …)를 app/event-duel.tsx 가 따로 받는다 */
+  duel?: 1;
 };
 export type EventDoc = { updated: string; events: EventRow[] };
 
@@ -152,17 +156,61 @@ function EventCard({ row, onSelect, onGuide }: {
   );
 }
 
+/** 공식 카페 공지 주소 — 워커가 진행중·예정 이벤트에 제목 매칭으로 붙여 준다 (헤더와 같은 요청 하나).
+ *  못 찾으면(지난 이벤트 등) 카페 이벤트 게시판으로 — exact 로 둘을 가른다. */
+function useCafeUrl(id: string): { url: string; exact: boolean } {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void fetchEventPayload().then((d) => { if (live) setUrl(d?.events.find((e) => e.id === id)?.url ?? null); });
+    return () => { live = false; };
+  }, [id]);
+  return url ? { url, exact: true } : { url: CAFE_EVENT_BOARD, exact: false };
+}
+
 /** 이벤트 상세 — 작전·등장 적·교환 재화·보상 오퍼를 한 화면에. 누르면 각 도감이 겹쳐 뜬다. */
-function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, onOpenStory, onOpenOrigin }: {
+function EventFile({ row, onOpenStage, onOpenEnemy, onOpenFighter, onOpenItem, onShowOperator, onOpenStory, onOpenOrigin }: {
   row: EventRow;
   onOpenStage: (id: string) => void;
   onOpenEnemy: (id: string) => void;
+  /** 듀얼 채널 선수 — 원본 적 도감에 듀얼 수치를 얹어 연다 */
+  onOpenFighter: (f: DuelFighter) => void;
   onOpenItem: (id: string) => void;
   onShowOperator: (id: string) => void;
   onOpenStory: (id: string) => void;
   onOpenOrigin: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
+  const cafe = useCafeUrl(row.id);
+  // 썸네일 + 그 밑 교환 재화 — 공통 윗칸의 왼쪽 칸이자, 듀얼 채널에서는 개요 탭의 왼쪽 칸
+  const side = (
+    <div className="ev-top-side">
+      {/* 상세도 카드와 같다 — 그림이 없으면 자리만 남기고 글자를 띄운다
+          (사용자 지시 2026-09-17). 빼 버리면 두 칸 배치가 한 칸으로 무너진다. */}
+      <div className="ev-hero" data-noimg={t("이미지 없음")}>
+        {row.thumb && (
+          <img src={asset(row.thumb)} alt="" aria-hidden loading="lazy" decoding="async"
+            onError={(e) => { e.currentTarget.remove(); }} />
+        )}
+      </div>
+      {/* 교환 재화는 썸네일 바로 밑 (사용자 지시 2026-09-17) — 이벤트당 한두 개뿐이라
+          오른쪽 칸을 비집고 들어갈 이유가 없다. */}
+      {row.items && row.items.length > 0 && (
+        <section className="ev-sec ev-sec-side">
+          <b>{t("교환 재화")}</b>
+          <div className="ev-items">
+            {row.items.map((it) => (
+              <button key={it[0]} type="button" className="ev-item" onClick={() => onOpenItem(it[0])}>
+                {it[2] && <img src={itemIcon(it[2])} alt="" aria-hidden width={40} height={40}
+                  loading="lazy" decoding="async" />}
+                <span>{it[1]}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
   return (
     <>
       <header>
@@ -179,6 +227,13 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, 
                   e.preventDefault(); onOpenStory(row.sid ?? row.id);
                 }}>{t(row.sid ? "원본 이벤트 스토리 읽기" : "이 이벤트 스토리 읽기")}</a>
             ) : null}
+            {/* 공식 카페 — 스토리 읽기 오른쪽 (사용자 지시 2026-09-23). 헤더 이벤트 목록·칩이 전부 사이트 안
+                (이벤트 가이드)으로 바뀌면서 공식 공지로 가는 길은 여기 하나다. 중섭 선행(미실장) 이벤트는
+                한섭 공지가 없어 달지 않는다. */}
+            {!row.fut && (
+              <a className="it-link ev-story-link" href={cafe.url} target="_blank" rel="noopener noreferrer"
+                title={cafe.exact ? t("공식 카페 공지 보기") : t("공식 카페 이벤트 게시판 보기")}>{t("공식 카페")} ↗</a>
+            )}
             {/* 원본 ↔ 복각을 서로 이어 준다 (사용자 지시 2026-09-17) */}
             {row.origin ? (
               <button type="button" className="it-link ev-story-link"
@@ -199,33 +254,12 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, 
           (사용자 요청 2026-09-17). 좁은 화면에서는 CSS가 한 줄로 되돌린다. */}
       {/* ⚠ 썸네일이 없다고 한 칸으로 바꾸지 않는다 — 자리표시가 모달 폭을 다 먹어
           다른 이벤트와 모양이 달라진다 (사용자 지적 2026-09-17). 칸 수는 늘 둘이다. */}
+      {/* 듀얼 채널은 상세 탭이 **맨 위**다 — 공통 윗칸(썸네일 | 오퍼·작전)은 그리지 않고, 썸네일+교환 재화는
+          개요 탭 왼쪽 칸으로 옮긴다(오른쪽은 진행 단계). 작전(VS-1)은 뺀다 — 맵이 대결 무대 하나뿐이라 볼 게 없다
+          (사용자 지시 2026-09-23 "듀얼 채널 상세를 맨위로 … 섬네일(밑에 교환재화) | 진행단계", "작전맵은 없애도됨"). */}
+      {row.duel ? <DuelDetail id={row.id} onOpenFighter={onOpenFighter} side={side} /> : (
       <div className="ev-top">
-        <div className="ev-top-side">
-          {/* 상세도 카드와 같다 — 그림이 없으면 자리만 남기고 글자를 띄운다
-              (사용자 지시 2026-09-17). 빼 버리면 두 칸 배치가 한 칸으로 무너진다. */}
-          <div className="ev-hero" data-noimg={t("이미지 없음")}>
-            {row.thumb && (
-              <img src={asset(row.thumb)} alt="" aria-hidden loading="lazy" decoding="async"
-                onError={(e) => { e.currentTarget.remove(); }} />
-            )}
-          </div>
-          {/* 교환 재화는 썸네일 바로 밑 (사용자 지시 2026-09-17) — 이벤트당 한두 개뿐이라
-              오른쪽 칸을 비집고 들어갈 이유가 없다. */}
-          {row.items && row.items.length > 0 && (
-            <section className="ev-sec ev-sec-side">
-              <b>{t("교환 재화")}</b>
-              <div className="ev-items">
-                {row.items.map((it) => (
-                  <button key={it[0]} type="button" className="ev-item" onClick={() => onOpenItem(it[0])}>
-                    {it[2] && <img src={itemIcon(it[2])} alt="" aria-hidden width={40} height={40}
-                      loading="lazy" decoding="async" />}
-                    <span>{it[1]}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
+        {side}
         <div className="ev-top-main">
       {/* 이벤트 오퍼레이터 ↔ 맵에서 나오는 상위 재료를 나란히 (사용자 요청 2026-09-17).
           한쪽만 있으면 그쪽이 폭을 다 쓴다. */}
@@ -284,6 +318,7 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, 
       )}
         </div>
       </div>
+      )}
 
       {row.enemies && row.enemies.length > 0 && (
         <section className="ev-sec">
@@ -335,6 +370,9 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
   // 등장 작전 역색인 — 적 모달의 '등장 작전' 절. 없으면 그 절이 통째로 안 그려진다
   // (사용자 지시 2026-09-17 "등장 작전도 다른 모달에서 다 보이게 해줘").
   const [enStages, setEnStages] = useState<EnemyStages | null>(null);
+  // 듀얼 채널 선수로 열었을 때만 — 듀얼 이름(큰)·원본 이름(작은), 듀얼 수치 한 줄, 등장 작전(VS-1).
+  // 일반 적을 열면 비운다 (연계 소환으로 건너갈 때도).
+  const [subCtx, setSubCtx] = useState<{ title: string; sub?: string; statCtx: StatOverride; stages: EnemyStages | null } | null>(null);
   const [subItem, setSubItem] = useState<DexItem | null>(null);
   const [itemDoc, setItemDoc] = useState<ItemDoc | null>(null);
   const [subStory, setSubStory] = useState<string | null>(null);
@@ -352,8 +390,39 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
   };
   const openEnemy = (eid: string) => {
     setRaise((k) => k + 1);
-    void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(eid) ?? null); });
+    void loadEnemies(locale).then((m) => { setEnMap(m); setSubCtx(null); setSubEnemy(m.get(eid) ?? null); });
     void loadEnemyStages(locale).then(setEnStages);
+  };
+  // 듀얼 채널 선수 — 전용 개체(enemy_5028_dqlime_2 …)는 적 도감에 없다. 원본 적의 도감 항목에 **듀얼 수치
+  // 한 줄**을 얹는다 (/rogue 적 모달과 같은 방식 — app/rogue.tsx EnemyModal). 원본도 도감에 없으면 수치만으로.
+  const openFighter = (f: DuelFighter, row: EventRow) => {
+    setRaise((k) => k + 1);
+    void loadEnemies(locale).then((m) => {
+      setEnMap(m);
+      const orig = f.o ? m.get(f.o) : undefined;
+      const lv: EnemyLevel = { l: 0, hp: f.hp, atk: f.atk, def: f.def, res: f.res, aspd: f.aspd, ms: f.ms,
+        w: f.w, lp: f.lp, imm: orig?.lv[0]?.imm ?? [] };
+      const enemy: Enemy = orig ? { ...orig, name: f.n, lv: [lv] } : {
+        id: f.o ?? f.id, idx: null, name: f.n, rank: null, sort: 0, desc: null,
+        abil: [], dmg: [], race: [], way: null, motion: null, lv: [lv],
+      };
+      setSubCtx({
+        title: f.n, sub: orig && orig.name !== f.n ? orig.name : undefined,
+        statCtx: {
+          label: t("듀얼 채널"), up: f.d,
+          notes: [
+            ...(orig ? [t("듀얼 채널 전용 개체의 수치입니다 (원본: {name}).", { name: orig.name })]
+              : [t("원본 적이 도감에 없어 듀얼 채널 수치만 보여 줍니다.")]),
+            ...(f.d?.length ? [t("강조된 수치는 원본 적과 다른 값입니다.")] : []),
+            ...(orig ? [t("능력·면역·설명은 원본 적 기준입니다.")] : []),
+          ],
+        },
+        // 등장 작전(VS-1)은 싣지 않는다 — 이벤트 모달에서도 작전을 뺐다 (사용자 지시 2026-09-23 "작전맵은 없애도됨").
+        // null 이면 EnemyFile 이 그 절을 통째로 안 그린다(원본 적의 등장 작전이 대신 뜨지도 않는다).
+        stages: null,
+      });
+      setSubEnemy(enemy);
+    });
   };
   // 재화는 **모달로 겹쳐** 띄운다 (사용자 지시 2026-09-16: "페이지 이동이 아니라 모달창").
   // 아이템 도감 문서(로케일당 ~650KB)는 여기서 처음 필요해지므로 그때 받는다.
@@ -409,12 +478,16 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
   const reset = () => { setTypes([]); setHas([]); clear(false); };
   const active = types.length + has.length > 0 || !!term;
 
+  // 듀얼 선수 이름 두 줄 — JSX 밖에서 만든다: EnemyFile 태그 안에 `/>` 가 끼면 scripts/check-dexlinks.mjs 의
+  // 태그 정규식이 거기서 끊겨 필수 콜백을 못 본다 (app/rogue.tsx 와 같은 이유).
+  const fighterTitle = subCtx ? <>{subCtx.title}{subCtx.sub ? <span className="ed-sub">{subCtx.sub}</span> : null}</> : undefined;
   const modals = (
     <>
       {open && (
         <ModalWindow label={open.n} className="operator-modal ev-modal"
           onClose={() => { setOpen(null); onCloseModal?.(); }}>
           <EventFile row={open} onOpenStage={openStage} onOpenEnemy={openEnemy}
+            onOpenFighter={(f) => openFighter(f, open)}
             onOpenItem={openItem} onShowOperator={onShowOperator}
             onOpenStory={(id) => { setRaise((k) => k + 1); setSubStory(id); }}
             onOpenOrigin={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
@@ -434,9 +507,10 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
           {/* ⚠ nameOf·onOpenEnemy 를 빠뜨리면 '연계 소환'이 id를 날것으로 찍고, 눌렀을 때
               모달이 아니라 적 상세 **페이지로 튕겨 나간다** (사용자 제보 2026-09-17).
               */}
-          <EnemyFile enemy={subEnemy} stagesDoc={enStages}
+          <EnemyFile enemy={subEnemy} stagesDoc={subCtx ? subCtx.stages : enStages}
             nameOf={(id) => enMap?.get(id)?.name}
-            onOpenEnemy={openEnemy} onOpenStage={openStage} />
+            onOpenEnemy={openEnemy} onOpenStage={openStage}
+            title={fighterTitle} statCtx={subCtx?.statCtx} />
         </ModalWindow>
       )}
       {subStory && (

@@ -95,6 +95,9 @@ def main():
     for tid, (n, ok) in sorted(stats.items()):
         print(f"  {tid}: 스테이지 {n} · 경로 {ok}")
     print(f"완료 — rogue-routes.json {os.path.getsize(p)//1024}KB (항목 {len(out)})")
+    # 경로 주인 이름·초상 보충(nm) — 테마 적 사전 밖의 스폰 변종 (scripts/routenames.py 머리주석, 2026-09-23)
+    import routenames  # noqa: E402
+    routenames.fix(["rogue"])
 
 
 if __name__ == "__main__":

@@ -191,6 +191,11 @@ const MANUAL_EVENTS = [
   // until = 이벤트 종료일 — 레포가 끝내 안 올라와도 이벤트와 함께 저절로 사라진다.
   { id: "act51side", name: "사람들, 우리들", type: "TYPE_ACT9D0", displayType: "SIDESTORY",
     start: "2026-09-16T07:00:00.000Z", end: "2026-09-29T18:59:59.000Z", until: "2026-09-30" },
+  // 2026-09-23 '듀얼 채널: 아이비바인' — 점검(16:00~17:00) 시작과 함께 16:00 개방인데 레포 activity_table이
+  // 못 따라왔다. 값은 게임 CDN activity_table 그대로(type ENEMY_DUEL · displayType NONE)이고
+  // zone_table zoneValidInfo(act3enemyduel_zone1)와도 같다. until = 종료일.
+  { id: "act3enemyduel", name: "듀얼 채널: 아이비바인", type: "ENEMY_DUEL", displayType: "NONE",
+    start: "2026-09-23T07:00:00.000Z", end: "2026-10-06T18:59:59.000Z", until: "2026-10-07" },
 ];
 
 // 실데이터를 **덮어쓰는** 자리 (2026-08-25). MANUAL_EVENTS는 activity_table에 아직 없는

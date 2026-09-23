@@ -24,9 +24,9 @@ import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 // 이미 다 들어 있다. 드랍을 누를 때만 그 청크를 받는다.
 const ItemModal = lazy(() => import("./farm").then((m) => ({ default: m.ItemModal })));
 import {
-  StageFile, stageMap, stagePath, viewOf, type Stage, type StageDoc,
+  StageFile, stagePath, viewOf, type Stage, type StageDoc,
 } from "./stage-detail";
-import { rogueHrefOf } from "./dex-paths";
+import { rogueHrefOf, sandboxHrefOf, stageMapOf } from "./dex-paths";
 import { stageFilterTree } from "./stage-data";
 // 적 칩 코어 스탯 (~67KB) — 이 파일은 lazy 청크라 메인 번들엔 안 실린다
 import enemyStats from "./data/enemy-stats.json";
@@ -41,7 +41,7 @@ function StageCard({ stage, zone, typeName, onSelect }: {
   // 통합전략 작전은 파일 수 한도 때문에 /stages/<id> 개별 페이지가 없다
   // (scripts/build-stages-rogue.py 머리주석). 보조 클릭이 404로 가지 않도록 그 테마의
   // 정본 주소로 보낸다 — 왼쪽 클릭은 아래 preventDefault로 도감 모달을 연다.
-  const href = stage.rg ? rogueHrefOf(locale, stage.id) : stagePath(locale, stage.id);
+  const href = stage.rg ? rogueHrefOf(locale, stage.id) : stage.sb ? sandboxHrefOf(locale) : stagePath(locale, stage.id);
   return (
     <a className="st-card" href={href}
       onClick={(event) => {
@@ -50,7 +50,8 @@ function StageCard({ stage, zone, typeName, onSelect }: {
       }}>
       <div className="st-card-map" ref={ref}>
         {visible && stage.map ? (
-          <img src={stageMap(stage.id, !!stage.rg)} alt="" aria-hidden loading="lazy" decoding="async" />
+          <img src={stageMapOf(stage)} alt="" aria-hidden loading="lazy" decoding="async"
+            className={stage.sb ? "sb" : undefined} />
         ) : visible ? <span className="st-card-nomap" aria-hidden>—</span> : null}
       </div>
       <div className="st-card-body">
@@ -59,6 +60,7 @@ function StageCard({ stage, zone, typeName, onSelect }: {
         <span className="st-card-meta">
           <span>{zone || typeName}</span>
           {stage.ap ? <em>{t("이성 {n}", { n: String(stage.ap) })}</em> : null}
+          {stage.act ? <em>{t("행동력")} {stage.act[0]}</em> : null}
         </span>
       </div>
     </a>
@@ -247,7 +249,7 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
             <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
             {/* 검색란 제안 — 고르면 그 작전 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
             <SearchSuggest query={term}
-              items={shown.map((s) => ({ key: s.id, label: `${s.code} ${s.name}`.trim(), sub: doc.zones[s.z] ?? undefined, img: s.map ? stageMap(s.id, !!s.rg) : undefined }))}
+              items={shown.map((s) => ({ key: s.id, label: `${s.code} ${s.name}`.trim(), sub: doc.zones[s.z] ?? undefined, img: s.map ? stageMapOf(s) : undefined }))}
               onPick={(id) => { const st = byId.get(id); if (st) setOpen(st); }} />
           </div>
           <div className="results-tools"><span className="count"><b>{shown.length}</b> STAGES</span></div>

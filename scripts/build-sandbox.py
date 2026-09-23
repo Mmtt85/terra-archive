@@ -824,6 +824,10 @@ def main():
         for s in sorted(_missing)[:20]:
             print(f"   未: {s[:60]}")
 
+    # 경로 주인 이름·초상 보충(nm) — 등장 적 행 밖의 적 (scripts/routenames.py 머리주석, 2026-09-23).
+    # 이름표(stageEnemies·foes)가 위 sandbox*.json 에 확정된 뒤라야 하므로 여기서 부른다.
+    import routenames  # noqa: E402
+    routenames.fix(["sandbox", "sandbox2"])
     if NO_IMAGES:
         return
     ko = docs[""]
@@ -883,6 +887,8 @@ def main():
         print(f"  전용 적 초상: {len(jobs) - len(fails4)}/{len(jobs)}")
     for u, e in (fails + fails2 + fails3 + fails4 + fails5)[:10]:
         print(f"   실패: {u.rsplit('/', 1)[-1]} — {e}")
+    # 초상을 새로 받았으면 nm 의 초상 경로(i)를 다시 잡는다 — 있는 파일만 싣는 규칙이라서
+    routenames.fix(["sandbox", "sandbox2"])
 
 
 if __name__ == "__main__":

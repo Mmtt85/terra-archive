@@ -25,6 +25,11 @@ import { loadEnemies, loadEnemyStages } from "./dex-cross";
 import { enemyImg, enemyPath } from "./dex-paths";
 import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
+// 격자 평면도인 사막 이야기 도면 (scripts/build-stages-sandbox.py → sandbox-ortho.json, 86/106) — 이 지역은
+// 모달이 도면·이동 경로를 한 화면으로 합친다 (사용자 요청 2026-09-23 "형식도 맞춰줘", 작전 도감과 같은 형식).
+import sandboxOrthoJson from "./data/sandbox-ortho.json";
+import { SANDBOX_GRID_SHARE } from "./stage-cam";
+const SB_ORTHO = new Set(sandboxOrthoJson as string[]);
 
 // 이미지 — build-sandbox.py가 public/sandbox/{item,map,misc}/에 받아 R2로 서빙한다.
 // ⚠ 폴더는 sandbox, 라우트는 /ra — 이름이 달라야 deploy.sh가 자산만 떼어낸다.
@@ -294,18 +299,16 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   // ── 지역 상세 모달 ───────────────────────────────────────────────────────
   type V2Stage = SandboxDoc["v2"]["stages"][number];
   const [openSt, setOpenSt] = useState<V2Stage | null>(null);
-  const [mapView, setMapView] = useState<"map" | "route">("map");
   const [hover, setHover] = useState<string | null>(null);
   const [pinned, setPinned] = useState<Set<string>>(() => new Set());
   const [obPick, setObPick] = useState<string | null>(null);   // 자원 클릭 = 그것만 강조
   const [, bumpRoutes] = useState(0);
   const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
   const [zoom, setZoom] = useState(false);
-  // 경로 색 테두리는 **이동 경로 탭에서만** — 실사 도면일 땐 원래의 어두운 테두리
-  // (사용자 지시 2026-08-12). 작전 도감(stage-detail.tsx)도 같은 규약이다.
-  const routeMode = mapView === "route";
+  // 경로 모드 = 지도에 경로가 그려져 있을 때 (칸 클릭 = 고정 · 호버 = 강조 · 경로 색 테두리). 탭이 없어진 뒤
+  // (2026-09-23 한 화면 규칙)엔 경로 데이터가 있으면 늘 경로가 보이므로 모달마다 그 유무로 정한다.
   const byStId = useMemo(() => new Map(v2.stages.map((st) => [st[0], st])), [v2]);
-  const resetStage = () => { setMapView("map"); setPinned(new Set()); setHover(null); setZoom(false); setObPick(null); };
+  const resetStage = () => { setPinned(new Set()); setHover(null); setZoom(false); setObPick(null); };
   // ── URL 해시 — 탭과 지역 모달을 한 기계가 관리한다 (사용자 요청 2026-08-12 "각 탭에도 딥링크").
   //   #ra-<탭키>      예: /ra/sand#ra-craft · /ra/anchor#ra-v3map
   //   #ra-<지역 id>   예: /ra/sand#ra-sandbox_1_16  ← 기존 딥링크도 그대로 산다
@@ -1704,32 +1707,41 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
             </header>
             <div className="st-cols">
               <div className="st-left">
-                <div className="st-maptabs" role="tablist" aria-label={t("도면 보기")}>
-                  <button type="button" role="tab" aria-selected={mapView === "map"}
-                    className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
-                  <button type="button" role="tab" aria-selected={mapView === "route"}
-                    className={mapView === "route" ? "on" : ""}
-                    onClick={() => {
-                      setMapView("route");
-                      if (!SB_ROUTES) loadSandboxRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { SB_ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
-                    }}>{t("이동 경로")}</button>
-                </div>
-                {mapView === "map" ? (
-                  <button type="button" className={`st-map-zoom${zoom ? " zoom" : ""}`}
-                    onClick={() => setZoom((z) => !z)}
-                    title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
-                    {/* 생존연산 도면은 원본 비율 그대로 (사용자 확정 2026-08-12) */}
-                    <img className="st-map sb-origmap" src={stageMapImg(openSt[0])} alt={t("{code} 지형 도면", { code: openSt[1] })}
-                      loading="lazy" decoding="async" onError={hideErr} />
-                  </button>
+                {SB_ORTHO.has(openSt[0]) ? (
+                  // 합친 도면 — 격자 평면도라 원근 없이 격자를 그대로 겹친다. 경로가 오기 전에도 같은 자리를
+                  // 잡아 두고(CLS 0) 오면 key 로 다시 마운트, 경로가 없는 지역이면 도면만 남긴다.
+                  SB_ROUTES && !rd ? (
+                    <button type="button" className={`st-map-zoom${zoom ? " zoom" : ""}`}
+                      onClick={() => setZoom((z) => !z)}
+                      title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
+                      {/* 생존연산 도면은 원본 비율 그대로 (사용자 확정 2026-08-12) */}
+                      <img className="st-map sb-origmap" src={stageMapImg(openSt[0])} alt={t("{code} 지형 도면", { code: openSt[1] })}
+                        loading="lazy" decoding="async" onError={hideErr} />
+                    </button>
+                  ) : (
+                    <StageRouteMap key={rd ? "ready" : "pending"} data={rd} order={routeOrder}
+                      highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
+                      imgOf={(id) => { const row = enemyRows.find((r) => r[0] === id); return row ? enImgOf(row[0], row[1], row[2]) : undefined; }}
+                      nameOf={enName} onPick={togglePin} obPick={obPick}
+                      obIconOf={(k) => { const iid = OB_KINDS.find((x) => x[0] === k)?.[1]; return iid ? itemIcon(iid) : undefined; }}
+                      photo={{ src: stageMapImg(openSt[0]), alt: t("{code} 지형 도면", { code: openSt[1] }), share: SANDBOX_GRID_SHARE }} />
+                  )
                 ) : rd ? (
+                  // 한 화면 규칙 (작전 도감 StageFile 과 같다 — 사용자 확정 2026-09-23 "모든 작전은 합쳐진 상태로") —
+                  // 탭은 없다. 격자가 그림과 안 맞는 20곳(여백이 달라 평면도 정합에서 빠진 것)은 경로 지도 하나로.
                   <StageRouteMap data={rd} order={routeOrder}
                     highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
                     imgOf={(id) => { const row = enemyRows.find((r) => r[0] === id); return row ? enImgOf(row[0], row[1], row[2]) : undefined; }}
                     nameOf={enName} onPick={togglePin} obPick={obPick}
                     obIconOf={(k) => { const iid = OB_KINDS.find((x) => x[0] === k)?.[1]; return iid ? itemIcon(iid) : undefined; }} />
                 ) : (
-                  <p className="st-note">{SB_ROUTES ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
+                  // 경로가 없거나 아직 오는 중 — 도면 한 장 (생존연산 도면은 원본 비율 그대로, 사용자 확정 2026-08-12)
+                  <button type="button" className={`st-map-zoom${zoom ? " zoom" : ""}`}
+                    onClick={() => setZoom((z) => !z)}
+                    title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
+                    <img className="st-map sb-origmap" src={stageMapImg(openSt[0])} alt={t("{code} 지형 도면", { code: openSt[1] })}
+                      loading="lazy" decoding="async" onError={hideErr} />
+                  </button>
                 )}
                 {openSt[3] && <p className="st-desc">{openSt[3]}</p>}
                 <dl className="st-facts">
@@ -1747,7 +1759,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                         <button key={k} type="button"
                           className={`sb-ob${obPick === k ? " on" : ""}`}
                           title={t("누르면 지도에서 이 자원만 남깁니다")}
-                          onClick={() => { setObPick((cur) => (cur === k ? null : k)); setMapView("route"); }}>
+                          onClick={() => setObPick((cur) => (cur === k ? null : k))}>
                           {iid && <img className="sb-ico" src={itemIcon(iid)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />}
                           <i className="dot" style={{ background: color }} aria-hidden />
                           {t(label)} <em>×{obCounts[k]}</em>
@@ -1765,17 +1777,17 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                         const pinColor = hasRoute ? enemyRouteColor(routeOrder, r[0]) : undefined;
                         return (
                           <a key={r[0]}
-                            className={`st-enemy${r[4] > 0 ? " reinforced" : ""}${pinned.has(r[0]) ? " pinned" : ""}${routeMode ? " has-route" : ""}`}
+                            className={`st-enemy${r[4] > 0 ? " reinforced" : ""}${pinned.has(r[0]) ? " pinned" : ""}${rd ? " has-route" : ""}`}
                             href={enemyPath(locale, r[1])}
-                            style={routeMode && pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
-                            onMouseEnter={mapView === "route" ? () => setHover(r[0]) : undefined}
-                            onMouseLeave={mapView === "route" ? () => setHover(null) : undefined}
+                            style={rd && pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
+                            onMouseEnter={rd ? () => setHover(r[0]) : undefined}
+                            onMouseLeave={rd ? () => setHover(null) : undefined}
                             onClick={(ev) => {
                               if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
                               ev.preventDefault();
                               // 실사 도면 탭에선 카드 클릭 = 적 상세 모달, 경로 탭에서만 고정 토글
                               // (사용자 지시 2026-08-12)
-                              if (routeMode && hasRoute) togglePin(r[0]);
+                              if (rd && hasRoute) togglePin(r[0]);
                               else openDexEnemy(r[0], r[1]);
                             }}>
                             <span className="st-enemy-name">
@@ -1835,27 +1847,20 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                 </header>
                 <div className="st-cols">
                   <div className="st-left">
-                    <div className="st-maptabs" role="tablist" aria-label={t("도면 보기")}>
-                      <button type="button" role="tab" aria-selected={mapView === "map"}
-                        className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
-                      <button type="button" role="tab" aria-selected={mapView === "route"}
-                        className={mapView === "route" ? "on" : ""} onClick={() => setMapView("route")}>{t("이동 경로")}</button>
-                    </div>
-                    {mapView === "map" ? (
-                      sv?.prev ? (
-                        <button type="button" className={`st-map-zoom${zoom ? " zoom" : ""}`} onClick={() => setZoom((z) => !z)}
-                          title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
-                          <img className="st-map sb-origmap" src={v3MapImg(sv.prev)} alt={t("{code} 지형 도면", { code: openSub })}
-                            loading="lazy" decoding="async" onError={hideErr} />
-                        </button>
-                      ) : <p className="st-note">{t("이 지형은 프리뷰 이미지가 없습니다.")}</p>
-                    ) : rd3 ? (
+                    {/* 한 화면 규칙 (2026-09-23) — 탭 없이: 경로가 있으면 경로 지도 하나, 없거나 오는 중이면 도면 한 장 */}
+                    {rd3 ? (
                       <StageRouteMap data={rd3} order={order3}
                         highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
                         imgOf={(id) => v3EnImg(id)} nameOf={v3EnName} onPick={togglePin}
                         obPick={obPick} obStyleOf={obStyle3}
                         obIconOf={(k) => { const iid = v3.objKinds[k]?.[3]; return iid ? itemIcon(iid) : undefined; }} />
-                    ) : <p className="st-note">{SB2_ROUTES ? t("이 지형은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>}
+                    ) : sv?.prev ? (
+                      <button type="button" className={`st-map-zoom${zoom ? " zoom" : ""}`} onClick={() => setZoom((z) => !z)}
+                        title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
+                        <img className="st-map sb-origmap" src={v3MapImg(sv.prev)} alt={t("{code} 지형 도면", { code: openSub })}
+                          loading="lazy" decoding="async" onError={hideErr} />
+                      </button>
+                    ) : <p className="st-note">{SB2_ROUTES ? t("이 지형은 프리뷰 이미지가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>}
                   </div>
                   <div className="st-right">
                     {rd3?.ob && rd3.ob.length > 0 && (
@@ -1870,7 +1875,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                             return (
                               <button key={k} type="button" className={`sb-ob${obPick === k ? " on" : ""}`}
                                 title={locale === "ko" && ok?.[5] ? ok[5] : ok?.[1]}
-                                onClick={() => { setObPick((cur) => (cur === k ? null : k)); setMapView("route"); }}>
+                                onClick={() => setObPick((cur) => (cur === k ? null : k))}>
                                 {ok?.[3] && <img className="sb-ico" src={itemIcon(ok[3])} alt="" aria-hidden loading="lazy" onError={hideErr} />}
                                 <i className="dot" style={{ background: color }} aria-hidden />
                                 {ok?.[0] ?? k}{locale === "ko" && ok?.[4] && ok[4] !== ok[0] ? `(${ok[4]})` : ""} <em>×{n}</em>
@@ -1894,12 +1899,12 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                             const pinColor = hasRoute ? enemyRouteColor(order3, r[0]) : undefined;
                             return (
                               <button key={r[0]} type="button"
-                                className={`st-enemy${r[2] > 0 ? " reinforced" : ""}${pinned.has(r[0]) ? " pinned" : ""}${routeMode ? " has-route" : ""}`}
-                                style={routeMode && pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
-                                onMouseEnter={mapView === "route" ? () => setHover(r[0]) : undefined}
-                                onMouseLeave={mapView === "route" ? () => setHover(null) : undefined}
+                                className={`st-enemy${r[2] > 0 ? " reinforced" : ""}${pinned.has(r[0]) ? " pinned" : ""}${rd3 ? " has-route" : ""}`}
+                                style={rd3 && pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
+                                onMouseEnter={rd3 ? () => setHover(r[0]) : undefined}
+                                onMouseLeave={rd3 ? () => setHover(null) : undefined}
                                 onClick={() => {
-                                  if (routeMode && hasRoute) { togglePin(r[0]); return; }
+                                  if (rd3 && hasRoute) { togglePin(r[0]); return; }
                                   openV3Enemy(r[0]);   // CN 전용 적도 우리 도감 상세로 (사용자 제보 2026-08-13)
                                 }}>
                                 <span className="st-enemy-name">

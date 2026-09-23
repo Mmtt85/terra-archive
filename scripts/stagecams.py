@@ -21,6 +21,8 @@
 
 도면이 **512×512 인게임 미리보기**인 작전만 (public/stage 2,241장 중 1,725장). 위키 스크린샷
 (640×360 등)과 레벨 격자 렌더는 같은 카메라로 찍힌 그림이 아니라 투영이 맞지 않는다.
+미리보기인데 캐시에 값이 없으면 원본을 한 번 새로 받아 다시 찾는다(attach) — 새 작전도 첫 빌드에 합친
+도면으로 나오게 (사용자 확정 2026-09-23 한 화면 규칙, route-map-rules 스킬 ★절).
 고난판(tough_*)은 일반판 도면을 복사해 쓰므로(build-stages.py 폴백 0) 일반판 카메라를 쓴다.
 
 사용:
@@ -41,6 +43,7 @@ CACHE = os.path.join(REPO, ".gamedata", "stage-views.json")
 MAX_AGE = 12 * 3600          # 매일 갱신되는 원본이라 반나절이면 충분히 새롭다
 
 _views = None
+_refreshed = False   # 이번 프로세스에서 원본을 새로 받았나 (attach 의 '미리보기인데 카메라 없음' 재시도용)
 
 
 def views(refresh=False):
@@ -110,6 +113,7 @@ def attach(doc, img_dir, level_of=None, keep=None):
                 e["cam"] = keep[e["id"]]
         return sum(1 for e in doc["stages"] if "cam" in e)
     n = 0
+    lack = []   # 인게임 미리보기인데 카메라를 못 찾은 작전
     for e in doc["stages"]:
         cam = cam_for(e["id"], img_dir, level_of)
         if cam:
@@ -117,7 +121,30 @@ def attach(doc, img_dir, level_of=None, keep=None):
             n += 1
         else:
             e.pop("cam", None)
+            if is_preview(os.path.join(img_dir, e["id"] + ".webp")):
+                lack.append(e)
+    # 미리보기가 있는데 카메라가 없으면 **캐시가 낡은 것**일 수 있다 — 점검 직후 새 작전이 그랬다(2026-09-23
+    # VS-1: 12:42 캐시를 '12시간 안'이라 그대로 써서 16시 점검의 새 작전이 빠졌다). 원본을 한 번 새로 받아
+    # 다시 찾는다 (프로세스당 한 번 — 로케일·문서마다 72MB 를 다시 받지 않게).
+    global _refreshed
+    if lack and not _refreshed:
+        _refreshed = True
+        if views(refresh=True):
+            for e in lack:
+                cam = cam_for(e["id"], img_dir, level_of)
+                if cam:
+                    e["cam"] = cam
+                    n += 1
     return n
+
+
+def write_rogue_cams(doc):
+    """/rogue 페이지 전투 노드 모달용 — 작전 id(= 도면 이름) → 카메라. 그 페이지는 도감 색인
+    (stages-rogue.json, 400KB)을 안 읽으므로 카메라만 따로 뽑아 둔다 (~20KB)."""
+    cams = {e["id"]: e["cam"] for e in doc["stages"] if "cam" in e}
+    p = os.path.join(DATA, "rogue-cams.json")
+    json.dump(dict(sorted(cams.items())), open(p, "w", encoding="utf-8"), separators=(",", ":"))
+    return len(cams)
 
 
 def _level_index():
@@ -142,6 +169,8 @@ def main():
             n = attach(doc, img_dir, level_of, keep)
             json.dump(doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
             print(f"  {base}{suf}.json: 카메라 {n}/{len(doc['stages'])}")
+            if base == "stages-rogue" and suf == "":
+                print(f"  rogue-cams.json: {write_rogue_cams(doc)}개")
 
 
 if __name__ == "__main__":

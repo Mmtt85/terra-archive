@@ -29,11 +29,21 @@ export type Stage = {
   /** 통합전략 작전 — 도면·이동 경로의 **출처가 다르다** (public/rogue/map · rogue-routes.json).
    *  scripts/build-stages-rogue.py 산출물에만 붙는다 */ rg?: 1;
   /** (통합전략만) 작전 종류 라벨 — 이성·보상이 없는 자리를 대신한다 (작전/긴급 작전/시련…) */ kind?: string;
+  /** 생존연산 지역 — 도면·이동 경로의 출처가 다르다 (1 = 사막 이야기: public/sandbox/map · sandbox-routes.json).
+   *  scripts/build-stages-sandbox.py 산출물에만 붙는다 (2026-09-23) */ sb?: 1;
+  /** 도면이 격자를 바로 위에서 그린 **평면도**다 — 원근 없이 격자를 그대로 겹쳐 합친 도면을 만든다 (생존연산) */ ortho?: 1;
+  /** 시뮬레이트 가능 (통합전략·생존연산 색인) — 본 도감은 sim-stages.json 이 같은 일을 한다 */ sim?: 1;
+  /** (생존연산) 행동력 [평소, 적습 시] — 이성 자리에 들어간다 */ act?: [number, number];
+  /** e 와 같은 순서의 코어 스탯 [hp,atk,def,res] — 색인과 다른 값을 레코드가 직접 들고 간다: 적 도감 색인에 없는
+   *  적(생존연산 전용)·통합전략 테마 수치(레벨 파일 덮어쓰기, build-stages-rogue.py). 0 이면 색인에서 */
+  es?: ([number, number, number, number] | 0)[];
 };
 export type EnvMul = [number, number, number, number, string | 0];
 export type StageDoc = {
   zones: string[]; events: string[]; items: Record<string, string>; occ: string[]; kinds: string[];
   enemyIds: string[]; types: Record<string, string>; enemyNames: Record<string, string>;
+  /** 적 초상 경로 덮어쓰기 (적 id → public 기준 경로) — 적 도감 초상이 없는 적(생존연산)용 */
+  enemyImg?: Record<string, string>;
   stages: Stage[];
 };
 
@@ -46,7 +56,7 @@ export type StageView = {
   zone: string;
   typeName: string;
   drops: { id: string; name: string; occ: string; kind: string; rate?: number; rank?: number; rankOf?: number }[];
-  enemies: { id: string; name: string; cnt: number; lv: number; st?: [number, number, number, number] }[];
+  enemies: { id: string; name: string; cnt: number; lv: number; st?: [number, number, number, number]; img?: string }[];
   /** 고난 판 전체 뷰 — 환경 탭이 도면·적·드랍을 통째로 이걸로 바꾼다 */ alt?: StageView;
   /** 1이면 고난 탭을 켠 채로 연다 (고난 id 딥링크로 들어온 경우) */ initEnv?: 1;
 };
@@ -146,6 +156,7 @@ export function mergeRogueDoc(base: StageDoc, rogue: StageDoc): StageDoc {
     types: { ...base.types, ...rogue.types },
     // 같은 적이 양쪽에 있으면 **본 도감 이름을 정본으로** 둔다 (록라 데이터는 뒤에 깔린다)
     enemyNames: { ...rogue.enemyNames, ...base.enemyNames },
+    ...(base.enemyImg || rogue.enemyImg ? { enemyImg: { ...rogue.enemyImg, ...base.enemyImg } } : {}),
     stages: [...base.stages, ...rogue.stages.map((s) => ({
       ...s,
       z: s.z + zOff,
@@ -179,14 +190,17 @@ function coreView(doc: StageDoc, stage: Stage, stats?: EnemyStatsIndex): StageVi
         ...(rate !== undefined ? { rate, rank, rankOf } : {}),
       };
     }),
-    enemies: (stage.e ?? []).map(([i, cnt, lv]) => {
+    enemies: (stage.e ?? []).map(([i, cnt, lv], k) => {
       const id = doc.enemyIds[i];
-      // 그 작전이 쓰는 강화 단계의 코어 스탯 — 단계가 색인에 없으면 기본형(첫 행)으로
+      // 그 작전이 쓰는 강화 단계의 코어 스탯 — 단계가 색인에 없으면 기본형(첫 행)으로.
+      // 레코드가 직접 들고 온 값(es — 생존연산 전용 적)이 있으면 그게 우선이다.
+      const own = stage.es?.[k];
       const rows = stats?.[id];
       const row = rows?.find((r) => r[0] === lv) ?? rows?.[0];
       return {
         id, name: doc.enemyNames[id] ?? id, cnt, lv,
-        ...(row ? { st: [row[1], row[2], row[3], row[4]] as [number, number, number, number] } : {}),
+        ...(own ? { st: own } : row ? { st: [row[1], row[2], row[3], row[4]] as [number, number, number, number] } : {}),
+        ...(doc.enemyImg?.[id] ? { img: doc.enemyImg[id] } : {}),
       };
     }),
   };

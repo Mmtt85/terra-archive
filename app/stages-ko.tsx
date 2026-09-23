@@ -9,9 +9,14 @@
 import StageDex from "./stages";
 import doc from "./data/stages.json";
 import rogueDoc from "./data/stages-rogue.json";
+import sandboxDoc from "./data/stages-sandbox.json";
 import { mergeRogueDoc, type StageDoc } from "./stage-data";
 
-const merged = mergeRogueDoc(doc as unknown as StageDoc, rogueDoc as unknown as StageDoc);
+// 생존연산 지역(사막 이야기 106) — 통합전략과 같은 방식의 별도 색인 (scripts/build-stages-sandbox.py, 2026-09-23)
+const merged = mergeRogueDoc(
+  mergeRogueDoc(doc as unknown as StageDoc, rogueDoc as unknown as StageDoc),
+  sandboxDoc as unknown as StageDoc,
+);
 
 export default function StageDexKo({ onOpenEnemy }: { onOpenEnemy?: (id: string) => void }) {
   return <StageDex doc={merged} onOpenEnemy={onOpenEnemy} />;
