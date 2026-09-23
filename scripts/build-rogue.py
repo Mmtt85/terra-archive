@@ -121,6 +121,32 @@ def mv(field, default=None):
         return field["m_value"] if field["m_defined"] else default
     return field if field is not None else default
 
+# 큐레이션 한국어 문장(rogueN-curated.json) 속 「이름」 중 공식 표로 못 잇는 것의 현지 공식 표기.
+# 전부 그 서버 표에서 확인한 값이다 (지어낸 이름 아님) — 괄호 안이 출처.
+CURATED_NAME_ALIAS = {
+    # 소장품 '파도의 기운' 설명의 [파도 사냥의 기사] (rogue_2 items usage)
+    "파도를 사냥하는 기사": {"en": "Tide-Hunt Knight", "ja": "猟潮の騎士"},
+    # 엔드북 해금 조건 문구 (rogue_4 archiveComp endbook_rogue_4_2_3)
+    "테레시아, 검은 왕관의 성현": {"en": "Theresa, Black-crowned Sage", "ja": "「黒き王冠の聖賢」テレジア"},
+    # KR 공식 '역사의 재구성' (rogue_4 items unlockCondDesc)
+    "역사 재구축": {"en": "Historical Reconstruction", "ja": "歴史再編"},
+    # KR 공식 '현실교체' (rogue_4 commonDevelopment rogue_4_outbuff_9)
+    "현실 치환": {"en": "Reality Swap", "ja": "現実との置換"},
+    # 작전 ro4_duel_b, KR 공식 '나룻배를 타고'
+    "가벼운 배로 함께 건너다": {"en": "The Boat Home", "ja": "軽舟ともに渡る"},
+}
+
+def db_name(db, key, level=0):
+    """원본 적 DB(enemy_database)의 그 적 이름 — 그 레벨에 없으면 레벨 0, 그래도 없으면 이름이 적힌 첫 레벨.
+    도감(enemy_handbook)에 없는 숨은 적의 EN·JA 이름은 그 서버 DB 에만 있다 (정화의 불덩이 = Purifying Flames)."""
+    rows = (db or {}).get(key) or []
+    by = {r["level"]: r["enemyData"] for r in rows}
+    for d in [by.get(level), by.get(0)] + [r["enemyData"] for r in rows]:
+        n = mv((d or {}).get("name"))
+        if n:
+            return n
+    return None
+
 # 적 상태 면역 필드 → 표기 (도감 상세 표시용, 사용자 요청 2026-07-18). 로케일별.
 IMMUNE_FIELDS = ["stunImmune", "silenceImmune", "sleepImmune", "frozenImmune", "levitateImmune",
                  "fearedImmune", "palsyImmune", "attractImmune"]
@@ -892,6 +918,10 @@ def build_topic(tid="rogue_1", loc=None):
     r = table["details"][tid]
     handbook = fetch_json("excel/enemy_handbook_table.json", branch)["enemyData"]
     enemy_db = fetch_json("levels/enemydata/enemy_database.json")
+    # 도감에 없는 숨은 적의 현지 이름은 그 서버 원본 DB 에만 있다 — EN·JA 빌드는 **이름만** 거기서 찾는다
+    # (수치는 위 KR 캐시 그대로). 종전엔 KR 이름으로 폴백해 정화의 불덩이·시대의 흔적 등 11종이 EN·JA 에
+    # 한국어로 샜다 (2026-09-24).
+    enemy_db_loc = fetch_json("levels/enemydata/enemy_database.json", branch) if loc in ("en", "ja") else {}
     # 큐레이션(한국어 집필) 문자열 번역 오버레이 — 없는 문장은 KR 폴백 + 리포트.
     # cn 빌드는 큐레이션 한국어를 그대로 쓰므로 통째로 건너뛴다 (tr 통과).
     tr_map = {}
@@ -1107,8 +1137,10 @@ def build_topic(tid="rogue_1", loc=None):
             ov = mv(ow) if ow else None
             return ov if ov is not None else v
         hb = handbook.get(key) or handbook.get(key.rsplit("_", 1)[0]) or {}
-        # enemy_database는 KR 캐시 공유 — 로케일 빌드에선 핸드북(현지어) 이름을 우선한다
-        name = (hb.get("name") or mv(pick.get("name")) or mv(base.get("name")) or key) if loc \
+        # enemy_database는 KR 캐시 공유 — 로케일 빌드에선 핸드북(현지어) 이름을 우선하고, 핸드북에 없는
+        # 적은 그 서버 원본 DB 이름(enemy_db_loc — EN·JA 만)으로 채운다
+        name = (hb.get("name") or db_name(enemy_db_loc, key, ref["level"]) or mv(pick.get("name"))
+                or mv(base.get("name")) or key) if loc \
             else (mv(pick.get("name")) or mv(base.get("name")) or hb.get("name") or key)
         name = ENEMY_NAME_FIX.get(name, name)  # 적 이름 교정 (캔모씨→캔낫 등, 사용자 확정)
         enemies[key] = {
@@ -1553,6 +1585,10 @@ def build_topic(tid="rogue_1", loc=None):
             lv2 = handbook.get(kid)
             if kv.get("name") and lv2 and lv2.get("name"):
                 loc_name[kv["name"].strip()] = lv2["name"].strip()
+        # 위 표들로 못 잇는 이름 — 큐레이션 문장이 공식 표에 없는 표현으로 적었거나(현실 치환 ↔ KR 공식 '현실교체')
+        # 표 밖(토큰·전개·엔드북 문구)에만 있는 것. 안 이으면 EN·JA 엔딩 조건에 한국어가 그대로 샜다 (2026-09-24)
+        for ko, names in CURATED_NAME_ALIAS.items():
+            loc_name.setdefault(ko, names[loc])
     def tr_quoted(s):
         if loc not in ("en", "ja") or not s:
             return s
@@ -2043,6 +2079,7 @@ def build_rogue6():
     handbook_cn = fetch_json("excel/enemy_handbook_table.json", "cn")["enemyData"]
     handbook_kr = fetch_json("excel/enemy_handbook_table.json")["enemyData"]
     enemy_db = fetch_json("levels/enemydata/enemy_database.json", "cn")
+    enemy_db_kr = fetch_json("levels/enemydata/enemy_database.json")   # 이름만 — 한섭에 먼저 나온 적의 공식명
     items = r["items"]
 
     # ── 존 (portal_*=미맹생의 요람 중복 제외, zone_4_1은 4존 변형) ────────────
@@ -2198,7 +2235,10 @@ def build_rogue6():
         hb_key = key if key in handbook_cn else key.rsplit("_", 1)[0]
         hb = handbook_cn.get(hb_key) or {}
         hbk = handbook_kr.get(hb_key) or {}  # KR 공식 번역이 있으면 우선
-        name = hbk.get("name") or mv(pick.get("name")) or mv(base.get("name")) or hb.get("name") or key
+        # 도감에 없어도 한섭에 먼저 나온 적은 KR 원본 DB 에 공식 이름이 있다 — CN 원문을 사전으로 옮기기 전에
+        # 그것부터 쓴다 (净浊之焰 = 정화의 불덩이 — 앞 테마들과 같은 적, 사용자 지시 2026-09-24. EN·JA 는 아래 오버레이)
+        name = (hbk.get("name") or db_name(enemy_db_kr, key, ref["level"]) or mv(pick.get("name"))
+                or mv(base.get("name")) or hb.get("name") or key)
         # 중국어 원명은 KR 번역 유무와 무관하게 항상 병기 (사용자 확정 2026-07)
         cn_name = hb.get("name") or mv(pick.get("name")) or mv(base.get("name")) or key
         enemies[key] = {
@@ -2572,11 +2612,14 @@ def build_rogue6():
             # 적 글은 한섭 공식 도감을 먼저 쓴다 — EN·JA 판은 **그 서버 공식 도감**으로 다시 채우고, 없는 적(CN 선행)은
             # CN 원문으로 되돌려 아래 사전이 옮기게 한다. 안 그러면 한섭 문장(821건)이 EN·JA 에 그대로 샌다.
             hb_loc = fetch_json("excel/enemy_handbook_table.json", {"en": "en", "ja": "jp"}[loc])["enemyData"]
+            # 도감에 없어도 예전부터 있던 적은 그 서버 원본 DB 에 공식 이름이 있다 — CN 원문을 사전으로 옮기기 전에
+            # 그것부터 쓴다 (净浊之焰 = Purifying Flames/浄化の炎 — 앞 테마들과 같은 적, 2026-09-24)
+            db_loc = fetch_json("levels/enemydata/enemy_database.json", {"en": "en", "ja": "jp"}[loc])
             imm = dict(zip(IMMUNE_LABELS[None], IMMUNE_LABELS[loc]))
-            for e in out["enemies"].values():
+            for key, e in out["enemies"].items():
                 hl = hb_loc.get(e.get("_hb")) or {}
                 hc = handbook_cn.get(e.get("_hb")) or {}
-                e["name"] = hl.get("name") or e.get("cn") or e["name"]
+                e["name"] = hl.get("name") or db_name(db_loc, key) or e.get("cn") or e["name"]
                 e["attack"] = attack_of(hl, loc) or attack_of(hc, loc)
                 e["desc"] = hl.get("description") or hc.get("description")
                 e["ability"] = ability_of(hl) or ability_of(hc)

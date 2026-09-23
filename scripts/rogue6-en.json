@@ -680,7 +680,7 @@
  "攻击造成法术溅射伤害\n拥有可以抵挡物理和法术伤害的护盾，护盾在受到单次超过一定值的伤害时破碎；护盾生效时，自身防御力大幅提升，法术抗性降低；受到<泄漏源>的影响时，生成该护盾\n会锁定我方单位持续造成法术伤害，期间偷取目标一定攻击力": "Attacks deal splash Arts damage\nHas a shield that blocks Physical and Arts damage; the shield breaks upon taking a single hit above a certain amount. While the shield is active, DEF is greatly increased and RES is reduced. Generates this shield when affected by <Leak Source>\nLocks onto an allied unit to deal continuous Arts damage, stealing a portion of the target's ATK in the meantime",
  "战争术师，帝国杰出的特殊兵种。乌萨斯人通过药剂与训练，迫使在“磨砺”中幸存的非感染者使用威力强大的施术单元——如同对待其他事情一样，他们从不在乎会有多少人因此死去。": "War Casters, an outstanding special troop type of the Empire. Through drugs and training, the Ursus force non-infected survivors of the 'Tempering' to wield powerful casting units—and as with everything else, they never care how many die because of it.",
  "乌萨斯战争术师": "Ursus War Caster",
- "净浊之焰": "Cleansing Flame",
+ "净浊之焰": "Purifying Flames",
  "初始伪装成一个单位，受到伤害后现身": "Initially disguised as another unit; reveals itself after taking damage",
  "它们还没有准备好成为“居民”。它们渴望拥抱一种特定的生命形态，这似乎是因为它们曾经被赋予某种缺陷。矛盾的是，它们越是渴望就越会意识到，那些形态本不属于它们，而缺陷才真正属于它们。": "They are not yet ready to become 'Residents.' They yearn to embrace a particular form of life, seemingly because they were once given some kind of flaw. Paradoxically, the more they yearn, the more they realize that those forms were never theirs—only the flaw truly belongs to them.",
  "空值体": "Null Entity",
