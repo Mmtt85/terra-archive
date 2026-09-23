@@ -33,7 +33,7 @@ import { EnemyFile, enemyImg, type Enemy, type EnemyLevel, type EnemyStages, typ
 import { DuelDetail, type DuelFighter } from "./event-duel";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
-import { ItemFile, itemIcon, type DexItem, type ItemDoc } from "./items";
+import { findItem, ItemFile, itemIcon, type DexItem, type ItemDoc } from "./items";
 // 스토리 상세를 **모달로** 겹쳐 띄운다 (사용자 요청 2026-09-17). 스토리 모듈과 요약 본문
 // (1.8MB)은 누를 때 처음 받는다 — 정적 임포트면 이벤트 도감 청크에 통째로 딸려 온다.
 const StoryModal = lazy(() => import("./story").then((m) => ({ default: m.StoryDetailById })));
@@ -430,7 +430,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
     setRaise((k) => k + 1);
     void loadItems<ItemDoc>(locale).then((d) => {
       setItemDoc(d);
-      setSubItem(d.items.find((x) => x.id === iid) ?? null);
+      setSubItem(findItem(d.items, iid) ?? null);   // 재개방 재화는 합쳐진 대표 카드로 (alt)
     });
   };
 

@@ -32,7 +32,7 @@
 
 사용: python3 scripts/build-items.py [gamedata-dir]
 """
-import io, json, os, re, shutil, sys
+import collections, io, json, os, re, shutil, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cdnassets
@@ -151,6 +151,7 @@ for loc in LOCALES:
     p = os.path.join(REPO, "app", "data", "stages.json" if loc == "ko" else f"stages.{loc}.json")
     if os.path.exists(p):
         stage_docs[loc] = load(p)
+stage_code = {loc: {st["id"]: st["code"] for st in doc.get("stages") or []} for loc, doc in stage_docs.items()}
 drops = {}          # itemId -> [[stageId, code, occIdx, kindIdx], …]
 if "ko" in stage_docs:
     for st in stage_docs["ko"]["stages"]:
@@ -267,8 +268,76 @@ for base in order:
             v = (src.get(field) or "").strip()
             if v:
                 row[key] = v
-        # 로케일별 작전 코드는 같다 (코드는 번역 대상이 아니다) — drop 은 공용 그대로 둔다
+        # 작전 코드는 대개 로케일마다 같지만 **고난 판은 접미사가 번역된다**('10-2 (고난)' → '10-2 (Adverse)' ·
+        # '10-2 (厄難)'). 공용 목록을 그대로 두면 EN·JA 드랍처에 한글이 떴다 (사용자 지적 2026-09-23) —
+        # 그 로케일 작전 데이터의 코드로 바꿔 끼운다.
+        if row.get("drop") and loc != "ko":
+            row["drop"] = [[sid, stage_code.get(loc, {}).get(sid, code), occ, kind] for sid, code, occ, kind in row["drop"]]
         rows[loc].append(row)
+
+# ── 같은 아이템 합치기 (사용자 지시 2026-09-23 "낡은 귀족령 주화·기계 부품처럼 중복이 꽤 있다" → "합쳐줘") ──
+# ① 재개방 복제 — 복각 때 같은 재화를 새 id(<원본>_rep_N)로 다시 낸다. 이름·그림·설명이 같다 (60묶음).
+# ② 내용이 같은 다른 id — 이름·설명·용도·그림·분류가 모두 같다 (인도자의 시련 1~6회 '시련 경험치',
+#    ID 정보 갱신 카드 21종 … 12묶음).
+# 대표 카드 하나만 싣고, 나머지 id 는 alt 로 달아 딥링크(#it-)·이벤트 도감 교차 링크가 그대로 찾아온다
+# (app/items.tsx findItem). 이벤트 이름·획득처가 다르면 버리지 않고 evs·os 로 대표 카드에 모은다.
+# 이름만 같고 내용이 다른 것(바운티 코인 교환권 vs 이벤트 재화 등 20묶음)은 다른 물건이라 두 장 그대로 둔다.
+_ko = {r["id"]: r for r in rows["ko"]}
+_key = {}
+for r in rows["ko"]:
+    base = REP.sub("", r["id"])
+    _key[r["id"]] = ("rep", base) if base != r["id"] and base in _ko else \
+        ("same", r["n"], r.get("d"), r.get("i"), r.get("u"), r["g"])
+for iid, k in list(_key.items()):
+    if k[0] == "rep":
+        _key[iid] = _key[k[1]]          # 재개방 복제는 원본이 든 묶음을 따라간다
+_groups = collections.defaultdict(list)
+for r in rows["ko"]:
+    _groups[_key[r["id"]]].append(r["id"])
+_lead = {}
+for ids in _groups.values():
+    if len(ids) > 1:
+        lead = min(ids, key=lambda i: (bool(REP.search(i)), _ko[i]["s"], len(i), i))   # 원본 · 창고 앞 순서
+        for i in ids:
+            _lead[i] = lead
+
+
+def _merge(lead_row, members):
+    row = dict(lead_row)
+    row["alt"] = [m["id"] for m in members]
+    for key, many in (("evName", "evs"), ("o", "os")):
+        extra = []
+        for m in members:
+            v = m.get(key)
+            if v and v != row.get(key) and v not in extra:
+                extra.append(v)
+        if extra:
+            row[many] = extra
+    drops = list(row.get("drop") or [])
+    more = row.get("dropMore", 0)
+    for m in members:
+        more += m.get("dropMore", 0)
+        for d in m.get("drop") or []:
+            if not any(x[0] == d[0] for x in drops):
+                drops.append(d)
+    if drops:
+        row["drop"], more = drops[:DROP_CAP], more + max(0, len(drops) - DROP_CAP)
+    if more:
+        row["dropMore"] = more
+    return row
+
+
+for loc in LOCALES:
+    by = {r["id"]: r for r in rows[loc]}
+    merged = []
+    for r in rows[loc]:
+        lead = _lead.get(r["id"])
+        if lead is None:
+            merged.append(r)
+        elif lead == r["id"]:
+            merged.append(_merge(r, [by[i] for i in _groups[_key[r["id"]]] if i != lead and i in by]))
+    rows[loc] = merged
+print(f"같은 아이템 합침: {sum(1 for g in _groups.values() if len(g) > 1)}묶음 · {len(_lead) - sum(1 for g in _groups.values() if len(g) > 1)}장을 대표 카드로")
 
 updated = __import__("datetime").date.today().isoformat()
 for loc in LOCALES:

@@ -51,8 +51,17 @@ export type DexItem = {
   b?: "MANUFACTURE" | "WORKSHOP";
   drop?: [string, string, number, number][];  // 작전id, 코드, occ, kind
   dropMore?: number;          // 잘라낸 나머지 작전 수
+  // 같은 아이템을 합친 대표 카드 (build-items.py — 재개방 복제·내용이 같은 다른 id, 2026-09-23)
+  alt?: string[];             // 합쳐진 다른 id — 딥링크·교차 링크가 이것으로도 찾아온다 (findItem)
+  evs?: string[];             // 다른 이벤트 이름 (재개방 등)
+  os?: string[];              // 다른 획득처
 };
 export type ItemDoc = { updated: string; occ: string[]; kinds: string[]; items: DexItem[] };
+
+/** id 로 아이템 찾기 — 합쳐진 id(alt)도 대표 카드로 잇는다. 이벤트 도감 교차 링크가 같이 쓴다. */
+export function findItem(items: DexItem[], id: string): DexItem | undefined {
+  return items.find((i) => i.id === id) ?? items.find((i) => i.alt?.includes(id));
+}
 export type ItemGroup = "material" | "event" | "resource" | "voucher" | "etc";
 
 // 분류 표시 순서 — 사람이 찾는 빈도 순 (재료 → 이벤트 재화 → 자원 → 교환권 → 기타)
@@ -125,10 +134,13 @@ export function ItemFile({ item, doc, onOpenStage }: {
           <b>{t("획득 방법")}</b>
           {/* 어느 이벤트 재화인지 — 스토리 페이지가 없는 이벤트(미니게임·보스러시)도 많아서
               이름은 항상 글로 보여주고, 링크는 아래 it-links 에서 있을 때만 건다. */}
-          {item.evName && (
-            <p className="it-obtain it-event">{t("이벤트")} <b>「{item.evName}」</b></p>
+          {(item.evName || item.evs) && (
+            <p className="it-obtain it-event">{t("이벤트")} {[item.evName, ...(item.evs ?? [])].filter(Boolean).map((n, k) => (
+              <span key={k}>{k > 0 && " · "}<b>「{n}」</b></span>
+            ))}</p>
           )}
           {item.o && <p className="it-obtain">{item.o}</p>}
+          {item.os?.map((o) => <p key={o} className="it-obtain">{o}</p>)}
           {item.b && <p className="it-obtain">{t(ROOM_LABEL[item.b])}</p>}
           <div className="it-links">
             {item.ev && (
@@ -185,7 +197,8 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
   const [enemyRaise, setEnemyRaise] = useState(0);
 
   const items = doc.items;
-  const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
+  // 합쳐진 id(alt)도 대표 카드로 — 옛 딥링크 #it-<재개방 id> 가 그대로 열린다
+  const byId = useMemo(() => new Map(items.flatMap((i) => [[i.id, i] as const, ...(i.alt ?? []).map((a) => [a, i] as const)])), [items]);
   const openStage = (sid: string) => {
     setStageRaise((k) => k + 1);
     void Promise.all([loadStages(locale), loadEnemyStats()]).then(([d, stats]) => {
@@ -217,7 +230,7 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
       if (sources.length && !sources.every((s) => hasSource(i, s))) return false;
       if (!q) return true;
       // 이벤트 이름으로도 걸린다 — "공상의 정원" 을 치면 그 이벤트 재화가 나온다
-      return normSearch(`${i.n} ${i.evName ?? ""} ${i.d ?? ""} ${i.u ?? ""} ${i.o ?? ""}`).includes(q);
+      return normSearch(`${i.n} ${i.evName ?? ""} ${(i.evs ?? []).join(" ")} ${i.d ?? ""} ${i.u ?? ""} ${i.o ?? ""} ${(i.os ?? []).join(" ")}`).includes(q);
     });
   }, [items, term, groups, tiers, sources]);
 
