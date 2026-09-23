@@ -519,6 +519,9 @@ CN_PROVISIONAL_NAMES = {
 # 콜라보 등 배너 에셋이 클뜯 레포에 없는(라이선스상 제외) 이벤트용 공용 플레이스홀더 썸네일.
 # 없으면 스킵하던 걸(과거 act50side 泡影苍霆 누락 원인) 폐지하고, 목록엔 반드시 넣는다.
 CN_PLACEHOLDER_THUMB = "/story/_placeholder.webp"
+# 그 그림엔 '미출시 이벤트 / 배너 준비중'이 **그림으로** 박혀 있어 EN·JA 는 그 언어 판을 쓴다
+# (scripts/make-story-placeholder.py — 사용자 지적 2026-09-23 "영어·일본어판도 한글로 미출시 이벤트")
+CN_PLACEHOLDER_THUMB_LOC = {"thumbEn": "/story/_placeholder.en.webp", "thumbJa": "/story/_placeholder.ja.webp"}
 # 한섭에 **이미 열렸는데** 레포 story_review_table이 아직 못 따라온 이벤트 — 게임 CDN에서
 # 받아 둔 KR activity_table이 있으면 그게 정답이다 (레포는 사람이 돌려야 올라와 몇 시간~며칠
 # 밀린다 — PROJECT-GUIDE §2-1). 이게 없으면 개방 당일의 신규 이벤트가 '미실장(중섭 선행)'으로
@@ -578,6 +581,8 @@ for act in cn_acts:
         "thumb": thumb_path,
         "unreleased": True,
     }
+    if thumb_path == CN_PLACEHOLDER_THUMB:
+        ev_obj.update(CN_PLACEHOLDER_THUMB_LOC)
     if eid in kr_live:
         # 이미 한섭에 열린 이벤트 — 제목은 activity_table의 공식 한국어명이 정답이고,
         # EN/JA는 로케일 표가 따라올 때까지 임시 번역을 쓴다(빼면 한국어로 폴백한다 —

@@ -19,6 +19,7 @@ import { cloneElement, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useR
 import { createPortal } from "react-dom";
 import { useI18n, rich, DT_LOCALE, type T } from "./i18n";
 import { isNewFeature } from "./whats-new";
+import { Marquee } from "./marquee";
 import { computeBoard, MAX_BOARD, MAX_BOARD_ITEM, MAX_DECK, BOARD9_ITEM, type BoardSlot } from "./autochess-board";
 import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
@@ -2669,7 +2670,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                             onClick={() => setAcMap(sid)}>
                             <span className="ac-mapcard-body">
                               <b>{t("전장 {n}", { n: i + 1 })}</b>
-                              <em>{[...new Set(AC_ROUTES!.maps.find((m) => m.stage === sid)?.modes ?? [])].join(" · ")}</em>
+                              <em>{[...new Set(AC_ROUTES!.maps.find((m) => m.stage === sid)?.modes ?? [])].map((m) => t(m)).join(" · ")}</em>
                             </span>
                           </button>
                         ))}
@@ -2760,7 +2761,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               <span className="ac-mapcard-body">
                 {/* ⚠ 라운드·단독/협동을 이름과 **같은 줄**에 두면 긴 보스 이름에서 삐져나간다
                     (사용자 지적 2026-08-30) — 이름은 한 줄 말줄임, 나머지는 아랫줄로 내린다 */}
-                <b>{waveName(w)}</b>
+                {/* 긴 보스 이름(EN·JA)은 말줄임 대신 넘칠 때만 흐른다 — 끝까지 읽혀야 한다 (사용자 지적 2026-09-23) */}
+                <b><Marquee>{waveName(w)}</Marquee></b>
                 {w.boss ? <i className="ac-wavemode">
                   {t("{n}R", { n: w.rs.join("·") })} · {w.solo ? t("단독") : t("협동")}</i> : null}
                 <em>{w.skel === 1 ? t("오는 길 {n}갈래", { n: w.r.filter(Boolean).length })
@@ -2773,7 +2775,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           <ModalWindow key={acMap} label={t("전장 {n}", { n: idx + 1 })}
             className="operator-modal ac-modal ac-mapmodal" onClose={() => { setAcMap(""); setAcWave(""); }}>
             <div className="ac-mapbody">
-              <p className="ac-mapcap"><em>{[...new Set(boards[0].modes)].join(" · ")}</em></p>
+              <p className="ac-mapcap"><em>{[...new Set(boards[0].modes)].map((m) => t(m)).join(" · ")}</em></p>
               {boards.map((bd) => {
                 const ws = R.rounds.filter((w) => w.band === bd.band);
                 const sel = ws.find((w) => w.k === acWave);

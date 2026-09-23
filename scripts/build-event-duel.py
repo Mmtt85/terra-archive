@@ -127,6 +127,40 @@ def visible_twins():
     return out
 
 
+HANGUL = re.compile(r"[가-힣]")
+
+
+def stable_pairs(kr_doc, loc_doc):
+    """열린 회차들에서 한국어 → 그 언어 짝을 모은다. **두 회차 이상에서 번역이 똑같은** 짝만 쓴다 —
+    '예선전 경기장'처럼 한국어는 같아도 영어가 'Grassville/Honeydew Prelim Venue'로 회차 이름을 품는
+    문장이 있어서, 한 회차 것을 빌리면 3회차에 남의 경기장 이름이 붙는다 (2026-09-23 실측)."""
+    seen = {}
+
+    def walk(a, b, aid):
+        if isinstance(a, dict) and isinstance(b, dict):
+            for k in a:
+                if k in b:
+                    walk(a[k], b[k], aid)
+        elif isinstance(a, list) and isinstance(b, list) and len(a) == len(b):
+            for x, y in zip(a, b):
+                walk(x, y, aid)
+        elif isinstance(a, str) and isinstance(b, str) and HANGUL.search(a) and not HANGUL.search(b):
+            seen.setdefault(a, {}).setdefault(b, set()).add(aid)
+
+    for aid, ev in loc_doc.items():
+        if not ev.get("fb") and aid in kr_doc:
+            walk(kr_doc[aid], ev, aid)
+    return {k: next(iter(v)) for k, v in seen.items() if len(v) == 1 and len(next(iter(v.values()))) >= 2}
+
+
+def apply_pairs(o, pairs):
+    if isinstance(o, dict):
+        return {k: apply_pairs(v, pairs) for k, v in o.items()}
+    if isinstance(o, list):
+        return [apply_pairs(v, pairs) for v in o]
+    return pairs.get(o, o) if isinstance(o, str) else o
+
+
 def group_of(m):
     if not m.get("isMultiPlayer"):
         return "solo"
@@ -362,6 +396,16 @@ def main():
                 print(f"  {aid}: 모드 {len(mode_out)} · 보상 {len(mile_rows)}단계 · 선수 {len(roster)}"
                       f"(신규 {sum(1 for e in roster if e.get('new'))}, 미수록 {unk}) · NPC {len(npc)} · 팁 {len(tips)}"
                       f" · 메달 {len(med)} · 안내 {len(guide)}장")
+        if loc == "ko":
+            kr_out = out
+        else:
+            # 그 서버에 아직 없는 회차(fb)는 한국어 블록으로 채워진다 — 팁·코멘트·NPC 이름·모드 설명은 회차마다
+            # 같은 문장이 대부분이라, 앞 회차의 공식 번역을 빌려 온다 (영어판 3회차 한국어 87 → 17, 사용자 지적
+            # 2026-09-23 "영어판은 듀얼채널이 한글"). 새 회차에만 있는 이름·훈장 문구는 그 서버가 열 때까지 한국어.
+            pairs = stable_pairs(kr_out, out)
+            for aid, ev in out.items():
+                if ev.get("fb"):
+                    out[aid] = apply_pairs(ev, pairs)
         path = os.path.join(DATA, f"event-duel{SUF[loc]}.json")
         json.dump(out, open(path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
         print(f"→ {os.path.relpath(path, REPO)} ({os.path.getsize(path) // 1024} KB)"

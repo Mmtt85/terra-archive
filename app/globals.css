@@ -3367,6 +3367,9 @@ html.dark .tags-track > span {
   line-height: 1.45;
   word-break: keep-all;
 }
+/* 일본어는 띄어쓰기가 없어 keep-all 이면 문장이 통째로 한 덩어리가 된다 — 잠재 칸(134px)을 뚫고 나갔다
+   (타락사쿰 215px, 사용자 지적 2026-09-23). 일본어는 글자 사이에서 끊는 게 정상 줄바꿈이다 */
+html[lang="ja"] .potential-detail { word-break: normal; }
 /* 증가폭 한 줄 = 오르는 값 하나. 앞에 작은 표식을 두어 목록으로 읽히게 한다. */
 .potential-detail b {
   display: block;
@@ -22445,7 +22448,10 @@ html.dark .ac-krfix { color: var(--gold); }
   cursor: pointer; padding: 8px 8px; min-width: 0; overflow: hidden;
 }
 .ac-mapcardface { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex: none; }
-.ac-mapcard-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+/* max-width: 100% — 카드는 .ac-card 의 세로 배치 + 가운데 정렬이라 본문이 **내용 폭**으로 잡힌다. 긴 보스
+   이름(EN 233px)이면 카드(143px) 양쪽으로 넘쳐 말줄임 없이 잘렸다 (사용자 지적 2026-09-23). 카드 폭에 묶어 두면
+   짧은 이름은 그대로고, 긴 이름만 안쪽 Marquee 가 흐르게 한다 */
+.ac-mapcard-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 100%; }
 .ac-mapcard-body { min-width: 0; }
 .ac-mapcard-body > b {
   font-size: 12px; font-weight: 700; max-width: 100%;

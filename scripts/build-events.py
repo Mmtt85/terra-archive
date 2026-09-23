@@ -176,13 +176,22 @@ for loc in LOCALES:
         "ops": {o["id"]: o for o in load(op)} if os.path.exists(op) else {},
     }
 
+# 그 서버에 아직 안 열렸고 **스토리도 없는** 이벤트의 임시 이름 (AI 번역 — 그 서버가 열면 활동표가
+# 대체하므로 자연 소멸). 스토리가 있는 이벤트는 build-story.py CN_PROVISIONAL_NAMES 가 맡는다.
+# 없으면 한국어가 그대로 나간다 (사용자 지적 2026-09-23 "영어판은 듀얼채널 이벤트 이름이 한글").
+# 듀얼 채널 경기장 이름은 한국어가 영문판을 따른다 (그린 그래스빌 = Green Grassville, 허니듀 = Honeydew).
+PROVISIONAL_NAMES = {
+    "act3enemyduel": {"en": "Duel Channel: Ivyvine"},     # 듀얼 채널: 아이비바인 (일섭: アイビーヴァインシティ)
+}
+
+
 def _loc_name(loc, info_loc, sname, aid):
-    """그 로케일 이름 — 활동표 > 스토리 목록 > 한국어 순. 활동표에 있더라도 **한국어와
-    같으면** 아직 번역이 안 들어온 것이므로 스토리 목록 쪽을 본다 (실측)."""
+    """그 로케일 이름 — 활동표 > 스토리 목록 > 임시 이름 > 한국어 순. 활동표에 있더라도
+    **한국어와 같으면** 아직 번역이 안 들어온 것이므로 스토리 목록 쪽을 본다 (실측)."""
     kr_nm = ((kr_basic_all.get(aid) or {}).get("name") or "").strip()
     nm = ((info_loc or {}).get("name") or "").strip()
     if loc != "ko" and (not nm or nm == kr_nm):
-        nm = (sname.get(loc) or "").strip() or nm
+        nm = (sname.get(loc) or "").strip() or (PROVISIONAL_NAMES.get(aid) or {}).get(loc) or nm
     return (nm or kr_nm or aid).strip()
 
 
@@ -502,7 +511,12 @@ for loc in LOCALES:
 # 헤더가 "진행중 이벤트" 칩을 띄울지 판단하려면 **id 목록만** 있으면 된다. 본문(로케일당
 # 350KB)은 지연 청크라 헤더에서 못 보므로, 가벼운 색인을 따로 낸다 (2026-09-17).
 ids_path = os.path.join(DATA, "event-ids.json")
-json.dump({"updated": updated, "ids": sorted(r["id"] for r in rows["ko"])},
+# 칩 이름도 같이 싣는다 — 워커가 주는 이름은 한국어뿐이라, 스토리 목록에 없는 이벤트(듀얼 채널 등)는
+# EN·JA 헤더에 한국어로 떴다 (사용자 지적 2026-09-23). 스토리 있는 이벤트는 셸이 스토리 목록에서 찾는다.
+loc_names = {loc: {r["id"]: r["n"] for r in rows[loc]} for loc in ("en", "ja")}
+names = {aid: [loc_names["en"].get(aid), loc_names["ja"].get(aid)]
+         for aid in sorted(r["id"] for r in rows["ko"]) if aid not in stories}
+json.dump({"updated": updated, "ids": sorted(r["id"] for r in rows["ko"]), "names": names},
           open(ids_path, "w", encoding="utf-8"), ensure_ascii=False)
 print(f"  event-ids.json  {os.path.getsize(ids_path) // 1024}KB")
 print(f"이벤트 {len(rows['ko'])}개(미래시 {n_fut}) — 작전 {n_stage} · 등장 적 {n_enemy} · "

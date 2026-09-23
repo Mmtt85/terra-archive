@@ -44,6 +44,10 @@ _kr_chars = _kr_chars.get("chars", _kr_chars)
 CN_MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
 CN_MANUAL = cntr.load(CN_MANUAL_PATH)   # 말줄임표 표기 흔들림 흡수 (cntr.py)
 HANGUL = re.compile(r"[가-힣]")
+# 미실장 오퍼의 잠재 증가폭(detail)은 **그 언어로 다시 계산**한다 — 한국어판은 CN 재능 후보를 한국어로 옮겨
+# 견준 결과라 통문장 사전에 없고, 통째로 옮기려 하면 한국어가 남았다 (사용자 지적 2026-09-23 메카니스트).
+_cn_chars = load(f"{S}/cn_character_table.json") if os.path.exists(f"{S}/cn_character_table.json") else {}
+_cn_chars = _cn_chars.get("chars", _cn_chars)
 
 # ─── shared text helpers (same rules as regen-operators.py) ───────────────────
 
@@ -404,9 +408,33 @@ def build_locale(prefix):
     #   고치자(regen-operators.py 2026-09-17) EN·JA 에까지 한국어가 실렸다.
     #   manual2(ko→로케일)에 이름이 있으면 그걸 쓰고, 없으면 한국어로 남는다.
     _skip_top = {"id", "code", "aliases", "image", "accent", "concepts"}
+
+    def _cn2loc(cn):
+        """잠재 증가폭 계산용 CN→로케일 — 번역표(cn-translations.json)에 그 언어가 없으면 None
+        (potutil 이 한쪽이라도 비면 계산을 접으므로 중국어·한국어가 섞여 나오지 않는다)."""
+        return (CN_MANUAL.get(strip_tags(cn)) or {}).get(C["out"]) if cn else None
+
     for i, uop in enumerate(ops_out):
-        if not uop.get("unreleased"): continue
+        if not uop.get("unreleased"):
+            # 출시 오퍼의 **미실장 모듈**(중섭 선행)도 로케일 표에 없어 한국어로 실린다 — 같은 번역을 태운다
+            # (사용자 지적 2026-09-23 "오퍼의 미실장 모듈은 영어·일본어판에도 한글")
+            if any(m.get("unreleased") for m in uop.get("modules") or []):
+                ops_out[i] = {**uop, "modules": [(_tr(m) if m.get("unreleased") else m) for m in uop["modules"]]}
+            continue
         ops_out[i] = {k: (v if k in _skip_top else _tr(v)) for k, v in uop.items()}
+        cn_c = _cn_chars.get(uop["id"])
+        kr_detail = {q["rank"]: q.get("detail") for q in uop.get("potentials") or []}
+        for p in (ops_out[i].get("potentials") or []) if cn_c else []:
+            if p.get("detail") and HANGUL.search(p["detail"]):
+                d = potutil.potential_detail(cn_c, p["rank"], _cn2loc)
+                if d and not HANGUL.search(d):
+                    _misses.discard(kr_detail.get(p["rank"]))   # 통문장 번역 실패로 잡혔던 것
+                    p["detail"] = d
+    # 이름표(extra-i18n names)는 위에서 **번역 전에** 채웠다 — 번역된 이름으로 갈아 끼운다. 안 그러면
+    # 미실장 오퍼 이름이 EN·JA 이름표에 한국어로 남는다 (아이기스·코로마루 등 17명, 2026-09-23 전수 점검)
+    for o in ops_out:
+        if HANGUL.search(names.get(o["id"]) or "") and not HANGUL.search(o.get("name") or ""):
+            names[o["id"]] = o["name"]
     if _misses:
         print(f"[{C['out']}] unreleased text left in Korean: {len(_misses)}", file=sys.stderr)
         for m in sorted(_misses): print(" ", m[:80], file=sys.stderr)

@@ -471,9 +471,12 @@ const RERUN_SUFFIX = /\s*\(재개방\)\s*$/;
 const storyEventByKoName = new Map(storyEventsList.map((event) => [event.name.ko, event]));
 const storyOf = (event: GameEvent): StoryEventLite | undefined =>
   storyEventById.get(event.id) ?? storyEventByKoName.get(event.name.replace(RERUN_SUFFIX, ""));
+// 스토리가 없는 이벤트(듀얼 채널 등)의 EN·JA 이름 — 이벤트 도감 색인이 [en, ja]로 싣는다
+// (build-events.py). 없으면 워커의 한국어 이름이 EN·JA 헤더에 떴다 (사용자 지적 2026-09-23).
+const eventLocNames = (eventIdsData as unknown as { names?: Record<string, [string | null, string | null]> }).names ?? {};
 function eventName(locale: Locale, event: GameEvent): string {
   const story = storyOf(event);
-  if (!story) return event.name;
+  if (!story) return (locale === "en" ? eventLocNames[event.id]?.[0] : locale === "ja" ? eventLocNames[event.id]?.[1] : null) ?? event.name;
   const base = (locale === "ko" ? story.name.ko : story.name[locale]) ?? story.name.ko;
   // 복각 표시는 살린다 — 원본과 이름이 같아 구분이 안 되면 "이미 본 이벤트"인지 알 수 없다
   return RERUN_SUFFIX.test(event.name) ? `${base} (${makeT(locale)("재개방")})` : base;
