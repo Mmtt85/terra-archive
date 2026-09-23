@@ -1728,7 +1728,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                   )
                 ) : rd ? (
                   // 한 화면 규칙 (작전 도감 StageFile 과 같다 — 사용자 확정 2026-09-23 "모든 작전은 합쳐진 상태로") —
-                  // 탭은 없다. 격자가 그림과 안 맞는 20곳(여백이 달라 평면도 정합에서 빠진 것)은 경로 지도 하나로.
+                  // 탭은 없다. 안개 방 창(vb)을 알고부터 106곳 전부 위 합친 도면이라, 여기는 도면이 없는 지역의 대비책이다.
                   <StageRouteMap data={rd} order={routeOrder}
                     highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
                     imgOf={(id) => { const row = enemyRows.find((r) => r[0] === id); return row ? enImgOf(row[0], row[1], row[2]) : undefined; }}

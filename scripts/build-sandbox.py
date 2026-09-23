@@ -405,6 +405,36 @@ OBJ_KINDS = {
 }
 
 
+RECT_RE = re.compile(r"\((\d+),(\d+)\)")
+
+
+def visible_box(rt, lv):
+    """지역 도면이 담은 격자 창 [x, y, w, h] (row 0 = 위) — 사용자 지적 2026-09-23 "용사의 땅처럼 실사도면이
+    있는데 타일로만 나오는 맵"으로 찾았다.
+
+    안개가 걸린 지역(20곳)은 레벨 options.configBlackBoard 의 rect_N 이 '안개 방'이고
+    ('(행,열),(행,열)' — 행은 **아래가 0**), 미리보기 도면은 **어느 방에도 들지 않은 칸 중 빈 칸('f')이 아닌
+    것의 외곽 사각형**을 가운데 5/6 로 그린다. 106곳 전부 그림 비율과 0.3% 안으로 맞는다 — 방이 없는
+    86곳은 그 사각형이 격자 전체라 종전 평면도 규칙(격자 전체 = 가운데 5/6)과 같다."""
+    g = rt.get("g") or []
+    if not g:
+        return None
+    rects = []
+    for x in (lv.get("options") or {}).get("configBlackBoard") or []:
+        m = RECT_RE.findall(x.get("valueStr") or "")
+        if str(x.get("key", "")).startswith("rect_") and len(m) == 2:
+            (a, b), (c, d) = [tuple(map(int, p)) for p in m]
+            rects.append((min(a, c), max(a, c), min(b, d), max(b, d)))
+    H, W = len(g), len(g[0])
+    cells = [(c, r) for r in range(H) for c in range(W)
+             if g[r][c] != "f" and not any(r0 <= H - 1 - r <= r1 and c0 <= c <= c1 for r0, r1, c0, c1 in rects)]
+    if not cells:
+        return None
+    xs = [c for c, _ in cells]
+    ys = [r for _, r in cells]
+    return [min(xs), min(ys), max(xs) - min(xs) + 1, max(ys) - min(ys) + 1]
+
+
 def build_stage_details(kr_tbl):
     """v2 지역별 타일 격자·경로·스폰(시뮬)·등장 적 — 작전 도감 상세와 같은 재료.
 
@@ -441,6 +471,9 @@ def build_stage_details(kr_tbl):
                 for o in ob:
                     cnt[o[0]] = cnt.get(o[0], 0) + 1
                 stage_objs[sid] = cnt
+            vb = visible_box(rt, lv)
+            if vb and vb != [0, 0, rt["w"], rt["h"]]:
+                rt["vb"] = vb
             if lid in first_by_level:
                 routes_doc[sid] = first_by_level[lid]
             else:

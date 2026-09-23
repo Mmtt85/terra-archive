@@ -42,6 +42,9 @@ export type StageRoutes = {
   /** 화면 이름표 밖의 경로 주인 — 그 판 전용 변종·도감 밖 원본 적. p 모델 키 · n 그 판 이름(레벨 파일 언어
    *  그대로) · i 초상(public 경로) · ko/en/ja 모델 적의 현지 이름. scripts/routenames.py 가 싣는다 (2026-09-23) */
   nm?: Record<string, { p: string; n?: string; i?: string; ko?: string; en?: string; ja?: string }>;
+  /** 생존연산 도면이 담은 격자 창 [x, y, w, h] (row 0 = 위) — 안개 방(레벨 rect_N) 밖의 보이는 영역.
+   *  도면은 이 창을 가운데 share(5/6)로 그린다. 없으면 격자 전체 (build-sandbox.py, 2026-09-23) */
+  vb?: [number, number, number, number];
 };
 const HANGUL = /[가-힣]/;
 /** 경로가 아직 안 온 동안의 빈 지도 — 모든 계산이 빈 배열로 돈다 */
@@ -251,6 +254,9 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
   // 좌표는 격자 그대로 두고 viewBox 만 넓혀 그림 전체와 맞춘다 (2026-09-23 사용자 제보 "나오는 데·들어가는 데가
   // 안 맞는다" — 종전엔 격자가 그림 전체를 덮는다고 보아 가장자리 출현 칸이 1~2칸씩 어긋났다).
   const share = ortho ? photo?.share ?? 1 : 1;
+  // 도면이 담은 격자 창 — 안개 방이 있는 생존연산 지역(20곳)은 처음 보이는 영역만 그린다 (StageRoutes.vb).
+  // 종전엔 격자 전체로 보아 비율이 안 맞는 이 20곳을 겹치기에서 빼고 타일 지도만 남겼다 (사용자 지적 2026-09-23)
+  const [bx, by, bw, bh] = data.vb ?? [0, 0, w, h];
   const unit = useMemo(() => {
     if (!proj) return 1;
     return (proj(w / 2 + 0.5, h / 2)[0] - proj(w / 2 - 0.5, h / 2)[0]) * PHOTO_ASPECT;
@@ -541,7 +547,7 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
   const svgEl = (
       <svg className={`st-routemap${photo ? " st-routeoverlay" : ""}`}
         viewBox={photo && !ortho ? `0 0 ${PHOTO_ASPECT / unit} ${1 / unit}`
-          : ortho ? `${(w - w / share) / 2} ${(h - h / share) / 2} ${w / share} ${h / share}`
+          : ortho ? `${bx - (bw / share - bw) / 2} ${by - (bh / share - bh) / 2} ${bw / share} ${bh / share}`
           : `0 0 ${w * cell} ${h * cell}`} role="img"
         aria-label={t("적 이동 경로 지도")}>
         {/* 고지형(x) 금지 표식 — 각 타일 중앙의 은은한 ⊘(원+사선) (사용자 요청 2026-08-10
@@ -801,7 +807,7 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
     {/* 실사 모드: 도면은 진짜 <img>(서버 렌더·검색에 그대로 박힌다)이고, 경로 SVG 는 같은 상자
         위에 투명하게 겹친다 — 경로가 늦게 와도 도면은 바뀌지도 밀리지도 않는다. */}
     {photo ? (
-      <div className="st-photomap" style={ortho && w && h ? { aspectRatio: `${w} / ${h}` } : undefined}>
+      <div className="st-photomap" style={ortho && bw && bh ? { aspectRatio: `${bw} / ${bh}` } : undefined}>
         <img src={photo.src} alt={photo.alt ?? ""} decoding="async" />
         {!pending && svgEl}
       </div>

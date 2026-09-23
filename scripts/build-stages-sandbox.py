@@ -21,11 +21,12 @@
 ## 평면도(ortho) — 합친 도면
 
 사막 이야기 도면은 통상 작전(16:9 전투 화면을 정사각에 눌러 담은 그림)과 달리 **격자를 바로 위에서
-그린 평면도**다. 단 격자가 그림 전체가 아니라 **가운데 5/6** 만 차지한다(가장자리마다 1/12 여백 —
-app/stage-cam.ts SANDBOX_GRID_SHARE). 그래서 그림 비율 = 격자 비율인 86/106장이 이 규칙을 따른다
-(2026-09-23 출현·도착 칸 40곳을 잘라 대조 — 전부 표식 한가운데). 그런 도면에만 `ortho: 1` 을 붙인다 — 상세가 원근 없이 격자를
-그대로 겹쳐 도면·이동 경로를 한 화면으로 합친다. 나머지 20장은 테두리를 잘라 낸 규칙이 따로 있어
-(빈 테두리 제거로도 설명되지 않음) 종전 두 탭(도면 / 격자 경로)으로 남는다.
+그린 평면도**다. 도면은 **보이는 창**을 가운데 5/6 에 그린다(가장자리마다 1/12 여백 — app/stage-cam.ts
+SANDBOX_GRID_SHARE, 2026-09-23 출현·도착 칸 40곳 대조). 창은 대개 격자 전체지만, 안개가 걸린 20곳은
+**안개 방(rect_N) 밖의 처음 보이는 영역**이다 (build-sandbox.py visible_box → sandbox-routes.json vb).
+그 창을 알고부터 106곳 전부 그림 비율과 맞아 모두 `ortho: 1` — 상세가 원근 없이 격자를 그대로 겹쳐
+도면·이동 경로를 한 화면으로 합친다. (종전엔 창을 격자 전체로 보아 20곳이 빠지고, 탭을 없앤 뒤로는 그
+20곳에 타일 지도만 남아 실사 도면이 사라졌다 — 사용자 지적 2026-09-23 "용사의 땅처럼 타일로만 나오는 맵")
 """
 import json
 import os
@@ -46,13 +47,15 @@ def load(p):
 
 
 def ortho_ok(sid, route):
-    """도면 비율 = 격자 비율(±2%) 이면 평면도로 겹칠 수 있다."""
+    """도면 비율 = 도면이 담은 격자 창 비율(±2%) 이면 평면도로 겹칠 수 있다. 창은 안개 방 밖의 보이는 영역
+    (route.vb — build-sandbox.py visible_box), 없으면 격자 전체. 창을 알게 된 뒤로 106곳 전부 맞는다."""
     p = os.path.join(MAP_DIR, sid + ".webp")
     if not route or not os.path.exists(p):
         return False
     with Image.open(p) as im:
         w, h = im.size
-    return abs((w / h) / (route["w"] / route["h"]) - 1) < 0.02
+    _, _, bw, bh = route.get("vb") or [0, 0, route["w"], route["h"]]
+    return abs((w / h) / (bw / bh) - 1) < 0.02
 
 
 def build(loc, suffix, routes):
