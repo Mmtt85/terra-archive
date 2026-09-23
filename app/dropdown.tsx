@@ -21,6 +21,22 @@ export type DropItem = {
 /** 오른쪽 공간이 이만큼도 없으면 왼쪽으로 펼친다 (.ac-garsel과 같은 규약) */
 const MENU_MIN_SPACE = 240;
 
+/** 목록이 펼쳐질 수 있는 가로 범위 [왼쪽, 오른쪽] — 창, 그리고 그 안에서 가로를 자르는 조상
+ *  (모달 본문 등)의 안쪽. 창 폭만 재면 가운데 뜬 모달의 오른끝 버튼이 오른쪽으로 펴다 모달 밖으로
+ *  잘렸다 (듀얼 채널 정렬, 1440px에서 99px — 사용자 지시 2026-09-23 "모달 경계 재게"). */
+function room(el: HTMLElement): [number, number] {
+  let left = 0;
+  let right = window.innerWidth;
+  for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+    // overflow-y만 auto여도 x는 visible이 아니라 auto로 계산된다 — 모달 본문(.mw-body)이 그렇다
+    if (getComputedStyle(p).overflowX === "visible") continue;
+    const box = p.getBoundingClientRect();
+    left = Math.max(left, box.left + p.clientLeft);
+    right = Math.min(right, box.left + p.clientLeft + p.clientWidth);
+  }
+  return [left, right];
+}
+
 export function Dropdown({
   label, items, selected, onPick, multi, ariaLabel,
   className, buttonClassName, scroll, disabled,
@@ -56,9 +72,11 @@ export function Dropdown({
   }, [open]);
 
   const toggle = (event: React.MouseEvent<HTMLButtonElement>) => {
-    // 열기 직전에 오른쪽 여유를 재서 펼칠 방향을 정한다 — 화면 오른끝 버튼이 잘리던 문제
+    // 열기 직전에 여유를 재서 펼칠 방향을 정한다 — 화면·모달 오른끝 버튼이 잘리던 문제.
+    // 오른쪽이 모자라도 왼쪽이 더 좁으면 그대로 둔다 (좁은 창 왼끝 버튼이 반대로 잘리지 않게)
     const rect = event.currentTarget.getBoundingClientRect();
-    setAlignRight(rect.left + MENU_MIN_SPACE > window.innerWidth);
+    const [left, right] = room(event.currentTarget);
+    setAlignRight(right - rect.left < MENU_MIN_SPACE && rect.right - left > right - rect.left);
     setOpen((value) => !value);
   };
 

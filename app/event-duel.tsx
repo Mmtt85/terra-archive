@@ -20,6 +20,7 @@ import { createPortal } from "react-dom";
 import { asset } from "./assets";
 import { useI18n } from "./i18n";
 import { enemyImg } from "./dex-paths";
+import { Dropdown } from "./dropdown";
 
 type StatKey = "hp" | "atk" | "def" | "res";
 /** 선수 한 명 — o = 원본 적 id(적 도감), on = 원본 이름(듀얼 이름과 다를 때만), d = 원본과 다른 스탯 */
@@ -302,6 +303,9 @@ function Rewards({ data }: { data: DuelData }) {
 }
 
 type RosterSort = "base" | StatKey;
+const ROSTER_SORT: [RosterSort, string][] = [
+  ["base", "게임 순서"], ["hp", "최대 HP"], ["atk", "공격력"], ["def", "방어력"], ["res", "마법 저항"],
+];
 
 /** 선수 명단 — 필터(신규·풀) · 정렬 · 카드. 누르면 원본 적 도감 + 듀얼 수치 한 줄이 겹쳐 뜬다. */
 function Roster({ data, onOpen }: { data: DuelData; onOpen: (f: DuelFighter) => void }) {
@@ -342,16 +346,13 @@ function Roster({ data, onOpen }: { data: DuelData; onOpen: (f: DuelFighter) => 
         {newCount > 0 && chip("new", t("신규"), newCount, t("앞 회차에 없던 선수"))}
         {pools.map(([k, c]) => chip(`pool:${k}`, t("{pool} 풀", { pool: t(POOL_LABEL[k]) }), c,
           (usedAt.get(k) ?? []).join("\n") || undefined))}
-        <label className="ed-sort">
+        <div className="ed-sort">
           <span>{t("정렬")}</span>
-          <select value={sort} onChange={(e) => setSort(e.target.value as RosterSort)}>
-            <option value="base">{t("게임 순서")}</option>
-            <option value="hp">{t("최대 HP")}</option>
-            <option value="atk">{t("공격력")}</option>
-            <option value="def">{t("방어력")}</option>
-            <option value="res">{t("마법 저항")}</option>
-          </select>
-        </label>
+          <Dropdown ariaLabel={t("정렬")} selected={[sort]}
+            label={t(ROSTER_SORT.find(([k]) => k === sort)?.[1] ?? "게임 순서")}
+            items={ROSTER_SORT.map(([value, label]) => ({ value, label: t(label) }))}
+            onPick={(value) => setSort(value as RosterSort)} />
+        </div>
       </div>
       <div className="ed-roster">
         {shown.map((f) => {

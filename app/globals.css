@@ -18310,7 +18310,7 @@ main.site-main > .site-header {
   border-radius: var(--r-md);
   box-shadow: var(--sh-2);
 }
-/* 화면 오른끝 버튼만 — 열 때 실측해서 왼쪽으로 펼친다 */
+/* 화면·모달 오른끝 버튼만 — 열 때 목록을 자르는 경계(창·모달 본문)까지 실측해서 왼쪽으로 펼친다 */
 .drop-menu.align-right {
   left: auto;
   right: 0;
@@ -24523,7 +24523,7 @@ html[lang="ja"] .vn-box {
 }
 .ed-tabs::-webkit-scrollbar { display: none; }
 .ed-tabs button,
-.ed-filter button {
+.ed-filter > button {
   flex: none;
   padding: 4px 12px;
   font: inherit;
@@ -24538,11 +24538,11 @@ html[lang="ja"] .vn-box {
 }
 @media (hover: hover) {
   .ed-tabs button:hover,
-  .ed-filter button:hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover); color: var(--btn-ink-hover); }
+  .ed-filter > button:hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover); color: var(--btn-ink-hover); }
 }
 .ed-tabs button.on,
-.ed-filter button.on { color: var(--btn-on-ink); background: var(--btn-on-bg); border-color: var(--btn-on-line); }
-.ed-filter button em { margin-left: 2px; font-style: normal; opacity: 0.6; }
+.ed-filter > button.on { color: var(--btn-on-ink); background: var(--btn-on-bg); border-color: var(--btn-on-line); }
+.ed-filter > button em { margin-left: 2px; font-style: normal; opacity: 0.6; }
 .ed-panel > :first-child { margin-top: 0; }
 .ed-h {
   margin: 18px 0 8px;
@@ -24638,9 +24638,9 @@ html[lang="ja"] .vn-box {
 .ed-medal-how { margin: 3px 0 0; font-size: 12px; font-weight: 600; color: var(--ink2); }
 .ed-medal-desc { margin: 3px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); white-space: pre-line; }
 /* 선수 */
+/* 칩 규칙(.ed-filter > button)은 직계만 — 정렬은 공용 드롭다운(.drop)이라 그 안의 버튼까지 칩으로 칠하면 안 된다 */
 .ed-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 8px 0 10px; }
 .ed-sort { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; color: var(--muted); }
-.ed-sort select { padding: 3px 6px; border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); font: inherit; font-size: 12px; }
 .ed-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
 .ed-fighter {
   display: grid;
