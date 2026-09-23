@@ -20,6 +20,11 @@
   대신한다(한국어 별명을 영어 화면에 내보내지 않는다). 수치는 서버 공통이라 한섭 것을 쓴다.
 - 풀에는 있는데 DB 에 없는 선수가 있다(3회차 2종 — 공지 "9/29 새로운 선수가 듀얼에 합류!"). 지어내지 않고
   수만 센다(unk). 모든 풀 가중치가 0 인 선수는 idle 로 표시한다(지금은 대진에 안 뽑힌다).
+- 원본이 도감의 **숨은 쌍둥이**(hideInHandbook)일 때가 있다 — 3회차 콜람의 원본 enemy_2099_skzfkl 은 통합전략
+  「살카즈의 영겁 기담」 최종전(ISW-DF)에 다시 불려 나오는 숨은 항목이라 적 도감에도 초상에도 없어, 명단 아이콘이
+  비고 모달이 '원본 적이 도감에 없다'로 떴다
+  (사용자 지적 2026-09-23). 같은 도감 번호·같은 이름의 공개 항목(enemy_2089_skzjkl — 초상 픽셀까지 같다)으로
+  잇는다(o). 수치 강조(d)만은 게임이 정한 원본과 비교한다 — 숨은 콜람은 공개 콜람과 수치가 다르다.
 
 ## 입력
 
@@ -102,6 +107,26 @@ def enemy_db(server):
     return raw if isinstance(raw, dict) else {}
 
 
+def visible_twins():
+    """도감의 숨은 항목 → 같은 도감 번호(enemyIndex)·같은 이름의 공개 항목 (머리주석 '숨은 쌍둥이').
+    번호만 같고 이름이 다른 둘(성녀의 설의·'쉐이의 몸')은 다른 적이라 잇지 않는다."""
+    p = os.path.join(G, "kr_enemy_handbook_table.json")
+    if not os.path.exists(p):
+        return {}
+    book = load(p)["enemyData"]
+    by_ix = {}
+    for k, v in book.items():
+        if not v.get("hideInHandbook"):
+            by_ix.setdefault(v.get("enemyIndex"), []).append(k)
+    out = {}
+    for k, v in book.items():
+        if v.get("hideInHandbook"):
+            same = [c for c in by_ix.get(v.get("enemyIndex")) or [] if book[c].get("name") == v.get("name")]
+            if len(same) == 1:
+                out[k] = same[0]
+    return out
+
+
 def group_of(m):
     if not m.get("isMultiPlayer"):
         return "solo"
@@ -126,6 +151,7 @@ def main():
     if not dbs["kr"]:
         sys.exit("CDN enemy_database(kr)를 못 받았다 — UnityPy·flatc 확인")
     print("enemy_database: " + " · ".join(f"{s} {len(d)}종" for s, d in dbs.items()))
+    twins = visible_twins()
 
     # 회차 순서(시작 시각) — '신규 선수'는 앞 회차들의 풀에 없던 선수다
     order = sorted(kr_duel, key=lambda a: kr["basicInfo"].get(a, {}).get("startTime") or 0)
@@ -254,15 +280,17 @@ def main():
                 ed = recs[0].get("enemyData") or {}
                 a = ed.get("attributes") or {}
                 orig = ((kd.get("enemyData") or {}).get(eid) or {}).get("originalEnemyId")
+                # 초상·이름·모달은 도감에 있는 항목으로 — 숨은 원본이면 공개 쌍둥이 (머리주석)
+                shown = twins.get(orig, orig) if orig not in kr_dex else orig
                 tag = ((kd.get("enemyData") or {}).get(eid) or {}).get("tagType")
                 lrec = (ldb.get(eid) or [{}])[0].get("enemyData") or {}
                 name = clean(mv(lrec.get("name"))) if loc != "ko" else clean(mv(ed.get("name")))
-                oname = (dex.get(orig) or {}).get("name") if orig else None
+                oname = (dex.get(shown) or {}).get("name") if shown else None
                 if not name:
                     name = oname or clean(mv(ed.get("name"))) or eid
                 e = {"id": eid, "n": name}
-                if orig:
-                    e["o"] = orig
+                if shown:
+                    e["o"] = shown
                     if oname and oname != name:
                         e["on"] = oname
                 e.update({
@@ -271,7 +299,12 @@ def main():
                     "aspd": num(mv(a.get("attackSpeed"), 100)), "ms": num(mv(a.get("moveSpeed"), 1)),
                     "w": num(mv(a.get("massLevel"), 1)), "lp": num(mv(ed.get("lifePointReduce"), 1)),
                 })
+                # 비교 기준은 게임이 정한 원본 — 숨은 원본은 도감에 수치가 없어 enemy_database 에서 읽는다
                 base = ((kr_dex.get(orig) or {}).get("lv") or [None])[0] if orig else None
+                if not base and orig and kdb.get(orig):
+                    ba = (kdb[orig][0].get("enemyData") or {}).get("attributes") or {}
+                    base = {"hp": mv(ba.get("maxHp"), 0), "atk": mv(ba.get("atk"), 0), "def": mv(ba.get("def"), 0),
+                            "res": mv(ba.get("magicResistance"), 0)}
                 if base:
                     diff = [k for k in STAT_KEYS if float(base.get(k) or 0) != float(e[k] or 0)]
                     if diff:
