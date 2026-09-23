@@ -3008,6 +3008,7 @@ const D: Record<string, Pair> = {
   "이 중에 무엇인가요?": ["Which one did you mean?", "この中のどれですか？"],
   "검색 결과": ["Search results", "検索結果"],
   "‘{q}’와(과) 관련된 항목을 찾지 못했어요.": ["Nothing on the site matches “{q}”.", "「{q}」に関連する項目は見つかりませんでした。"],
+  "검색 데이터를 불러오지 못했어요 — 잠시 후 다시 시도해 주세요.": ["Couldn't load the search data — please try again in a moment.", "検索データを読み込めませんでした — しばらくしてからもう一度お試しください。"],
   "통합전략 데이터를 불러오지 못했어요 — 잠시 후 다시 시도해 주세요.": ["Couldn't load the Integrated Strategies data — please try again in a moment.", "ローグライクのデータを読み込めませんでした — しばらくしてからもう一度お試しください。"],
   "통합전략 데이터를 불러오는 중…": ["Loading Integrated Strategies data…", "ローグライクのデータを読み込み中…"],
   "↑↓ 이동 · ⏎ 바로가기 · Esc 닫기": ["↑↓ move · ⏎ go · Esc close", "↑↓ 移動 · ⏎ 移動 · Esc 閉じる"],

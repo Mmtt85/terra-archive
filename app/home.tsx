@@ -54,9 +54,10 @@ const AUTOCHESS_GUIDE = {
 import { normSearch, useSearchInput } from "./search";
 // 작전 시뮬레이터 런처 — SEO 본문이 프리렌더돼야 해서 정적 임포트 (데이터는 자체 지연 로드)
 import SimLauncher from "./sim-launcher";
-// 만능검색(⌘K)은 첫 화면에 필요 없다 — 정적 import면 omni.ts가 끌고 오는
-// farm·story·rogue·recruit 색인까지 하이드레이션 경로에서 함께 파싱된다 (INP 조사 2026-08-09).
-const OmniSearch = lazy(() => import("./omni-search"));
+// 만능검색(⌘K) — 패널은 가벼워 정적으로 싣고, 무거운 색인 엔진(omni.ts → farm·story·rogue·recruit
+// 색인)만 omni-search 가 따로 받는다 (INP 조사 2026-08-09 의 목적은 그대로). 종전엔 이 모듈째 첫
+// 클릭에 받아 패널이 한 박자 늦게 떴다 (사용자 지적 2026-09-23, 라이브 380ms).
+import OmniSearch from "./omni-search";
 import BridgeButton from "./lens/bridge-button";
 import { asset } from "./assets";
 import { CAFE_EVENT_BOARD, fetchEventPayload, type GameEvent } from "./event-feed";
@@ -1770,20 +1771,6 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     return () => { alive = false; };
   }, [tab, summaries, summariesLoader]);
 
-  // 만능검색 — 첫 열기 전까지 모듈을 받지 않는다 (위 OmniSearch 주석 참조).
-  const [omniOpen, setOmniOpen] = useState(false);
-  useEffect(() => {
-    if (omniOpen) return;   // 로드된 뒤엔 omni-search가 자기 ⌘K 바인딩을 갖는다
-    const onKey = (e: KeyboardEvent) => {
-      const el = document.activeElement as HTMLElement | null;
-      const typing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
-      if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setOmniOpen(true); }
-      else if (e.key === "/" && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setOmniOpen(true); }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [omniOpen]);
-
   // ⌘F/Ctrl+F — 브라우저 찾기 대신 **그 화면의 검색란**으로 (사용자 요청 2026-08-09).
   // 모달이 떠 있으면 최상단 모달 안의 검색란만 후보다 — 모달에 검색란이 없으면
   // 뒤 화면 검색란에 초점을 주는 게 더 이상하다.
@@ -1806,18 +1793,6 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  const omniTrigger = (
-    <div className="omni">
-      <button type="button" className="omni-trigger" onClick={() => setOmniOpen(true)}
-        aria-label={t("유니버셜 서치 — 사이트 전체 검색")}
-        title={t("유니버셜 서치 — 오퍼·재료·스토리·통합전략·기능을 한 번에 찾아 이동합니다 (⌘K)")}>
-        <span aria-hidden>⌕</span>
-        <span className="omni-trigger-label">{t("유니버셜 서치")}{isNewFeature("omni") && <span className="new-badge">{t("새기능")}</span>}</span>
-        <kbd className="omni-trigger-kbd" aria-hidden>⌘K</kbd>
-      </button>
-    </div>
-  );
-
   const prefetched = useRef(false);
   const prefetchTabs = useCallback(() => {
     if (prefetched.current) return;
@@ -2173,16 +2148,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             layout.tsx 인라인 스크립트(ta-locale)가 담당. */}
         <LanguageSwitcher />
         {/* 만능검색 = 1줄 오른쪽(햄버거 왼쪽) — 헤더를 접어도 남는다 (사용자 요청 2026-07-25) */}
-        {/* 만능검색은 **처음 열 때까지 로드하지 않는다** (2026-08-09 INP 작업).
-            omni-search → omni.ts → farm.tsx → costs.json(573KB) 사슬이라 그냥 마운트만 해도
-            초기 파싱에 그대로 얹혔다. 트리거는 셸이 직접 그리고(가볍다), 누르거나 ⌘K를
-            치면 그때 모듈을 받아 패널을 연다. 로드된 뒤에는 omni-search가 트리거까지
-            자기 것으로 다시 그리므로 화면은 종전과 같다. */}
-        {omniOpen ? (
-          <Suspense fallback={omniTrigger}>
-            <OmniSearch roster={roster} extra={extra} onGo={runOmni} autoOpen />
-          </Suspense>
-        ) : omniTrigger}
+        {/* 트리거·패널·⌘K는 omni-search 가 직접 — 무거운 색인 엔진만 거기서 따로 받는다 (위 import 주석) */}
+        <OmniSearch roster={roster} extra={extra} onGo={runOmni} />
         {/* 게임 연결 — 크롬 확장(extension/)이 깔린 사람에게만 나타난다. 누르면 게임 창
             프레임이 흐르고, 인식·이동은 각 탭의 스샷 레이더 경로가 그대로 처리한다. */}
         <BridgeButton t={t} />

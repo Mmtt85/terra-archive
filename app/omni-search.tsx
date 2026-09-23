@@ -11,10 +11,10 @@
 //    2표부터 반영돼 같은 검색어가 점점 정확해진다.
 //  · 통합전략 세부 항목(유물·조우·작전…)은 스샷 레이더 인덱스(2.9MB)라 기본 색인에서 빠져
 //    있고, 가벼운 색인으로 답이 안 나올 때만 지연 로드해 합친다.
+//  · **패널은 셸과 함께 와서 누르는 즉시 뜬다. 색인 엔진(omni.ts)만 따로 받는다** (loadEngine 주석).
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { getRogueIndex } from "./lens/run";
-import { buildOmniIndex, currentRogueTopic, decideOmni, FUZZY_GATE, rogueOmniItems, searchSmart, splitHint, type OmniHit, type OmniItem, type OmniKind, type OmniTarget } from "./omni";
+import type { OmniHit, OmniItem, OmniKind, OmniTarget } from "./omni";
 import { crowdPicks, fetchCrowdPicks, learnedHints, picksFor, recordHint, recordPick, type PickIndex } from "./omni-picks";
 import { normSearch, SEARCH_DEBOUNCE_MS } from "./search";
 import { consumeMiss, noteAction, noteMiss, recentMissQ } from "./trail";
@@ -26,17 +26,25 @@ import type { Operator } from "./home";
 const KIND_GLYPH: Record<string, string> = { story: "✦", tag: "◎", rogue: "❖", topic: "❖", tab: "◇" };
 const LEARNED_MIN = 3;   // 이 표수 이상이면 '자주 선택' 표시 (내 선택 1회 = 3표)
 
-export default function OmniSearch({ roster, extra, onGo, autoOpen }: {
+// 색인·검색 엔진(omni.ts)은 무겁다 — farm.tsx → costs.json(573KB)·story.tsx·recruit까지 끌고 온다. 그래서
+// 첫 화면엔 싣지 않고(2026-08-09 INP 작업), 트리거에 손이 가면(호버·포커스·터치) 미리, 늦어도 패널을
+// 열 때 받는다. 종전엔 **이 파일째** 첫 클릭에 받아서 청크 8개가 오는 동안 패널이 안 떴다 — 라이브
+// 실측 380ms (사용자 지적 2026-09-23 "한박자 늦게 뜨는데 빠르게"). 패널 자체는 가벼워 셸이 정적으로 싣는다.
+type Engine = typeof import("./omni");
+let enginePromise: Promise<Engine> | null = null;
+let engineMod: Engine | null = null;      // 받은 뒤엔 콜백에서 바로 쓴다 (상태 반영을 기다리지 않게)
+const loadEngine = (): Promise<Engine> =>
+  (enginePromise ??= import("./omni").then((m) => (engineMod = m)).catch((err) => { enginePromise = null; throw err; }));
+
+export default function OmniSearch({ roster, extra, onGo }: {
   roster: Operator[];
   extra?: ExtraI18n | null;
   onGo: (target: OmniTarget) => void;
-  /** 셸이 "열어 달라"는 뜻으로 마운트했을 때 true — 이 모듈은 첫 열기 전까지 아예 로드되지
-   *  않으므로(2026-08-09 INP 작업), 마운트 즉시 패널이 떠야 클릭 한 번으로 열린 것처럼 된다.
-   *  이 모듈이 omni.ts → farm.tsx → costs.json(573KB)까지 끌고 오기 때문에 지연이 필요했다. */
-  autoOpen?: boolean;
 }) {
   const { locale, t } = useI18n();
-  const [open, setOpen] = useState(Boolean(autoOpen));
+  const [open, setOpen] = useState(false);
+  const [engine, setEngine] = useState<Engine | null>(engineMod);
+  const warm = () => { if (!engine) void loadEngine().then(setEngine, () => { /* 열 때·⏎ 때 다시 받는다 */ }); };
   // ⚠ 입력란은 **비제어(uncontrolled)** — 타이핑 한 글자마다 React 렌더를 돌리면 그 렌더가
   // 끝난 뒤에야 글자가 보인다(특히 한글 IME 조합 중). 입력값은 ref에만 담고, 화면 갱신은
   // 0.5초 디바운스가 끝난 뒤 term 한 번으로 처리한다 (사용자 리포트 2026-07-25).
@@ -55,17 +63,20 @@ export default function OmniSearch({ roster, extra, onGo, autoOpen }: {
   const listRef = useRef<HTMLUListElement>(null);   // 'stale'(대기 중) 표시는 클래스만 직접 토글
   const timerRef = useRef<number | undefined>(undefined);
 
-  // 색인은 패널을 처음 열 때 만든다 (헤더만 있는 상태에선 아무 비용도 들이지 않는다)
+  // 색인은 패널을 열고 엔진이 온 뒤에 만든다 (헤더만 있는 상태에선 아무 비용도 들이지 않는다)
   const base = useMemo(
-    () => (open ? buildOmniIndex({ roster, locale, t, extra }) : []),
-    [open, roster, locale, t, extra]);
+    () => (open && engine ? engine.buildOmniIndex({ roster, locale, t, extra }) : []),
+    [open, engine, roster, locale, t, extra]);
   const items = useMemo(() => (rogueItems ? base.concat(rogueItems) : base), [base, rogueItems]);
   const picks = useMemo(() => picksFor(normSearch(term), crowd), [term, crowd]);
   // 선택 학습으로 익힌 은어 사전 ("록라" → 통합전략) — 내장 사전 위에 얹힌다
   const hints = useMemo(() => learnedHints(crowd) as Record<string, OmniKind[]>, [crowd]);
-  const hits = useMemo(() => searchSmart(items, term, { picks, hints }), [items, term, picks, hints]);
+  const hits = useMemo(
+    () => (engine ? engine.searchSmart(items, term, { picks, hints }) : []),
+    [engine, items, term, picks, hints]);
 
   const openPanel = () => {
+    warm();
     setOpen(true);
     setCrowd({ ...crowdPicks() });                          // 이미 받아 둔 집계 즉시 반영
     void fetchCrowdPicks().then((index) => setCrowd({ ...index })).catch(() => { /* 테이블 미설치 */ });
@@ -121,8 +132,8 @@ export default function OmniSearch({ roster, extra, onGo, autoOpen }: {
 
   /** 검색어에서 고른 항목 이름과 겹치는 앞부분을 뺀 조각 (은어 후보). 예: 쉐이록라 → 록라 */
   const leftoverToken = (q: string, hit: OmniHit): string | null => {
-    // 이미 아는 분류어면 다시 배울 필요 없다
-    if (splitHint(q, hints)) return null;
+    // 이미 아는 분류어면 다시 배울 필요 없다 (고른 항목이 있다 = 엔진은 이미 왔다)
+    if (engineMod?.splitHint(q, hints)) return null;
     let best = 0;
     for (const key of hit.keys) {
       let i = 0;
@@ -172,8 +183,10 @@ export default function OmniSearch({ roster, extra, onGo, autoOpen }: {
     if (rogueItems) return rogueItems;
     setBusy(true);
     try {
+      // 스샷 레이더(lens/run)도 OCR까지 딸린 무거운 모듈이라 이때 받는다
+      const [{ getRogueIndex }, eng] = await Promise.all([import("./lens/run"), loadEngine()]);
       const index = await getRogueIndex(locale);
-      const extraItems = rogueOmniItems(index, t);
+      const extraItems = eng.rogueOmniItems(index, t);
       setRogueItems(extraItems);
       return extraItems;
     } catch {
@@ -188,12 +201,12 @@ export default function OmniSearch({ roster, extra, onGo, autoOpen }: {
   // 조건: 가벼운 색인이 빈손이거나, 검색어가 통합전략을 가리킬 때. 한 세션에 한 번뿐이고
   // 통합전략을 안 찾는 사람은 영영 안 받는다. (setTimeout = 이펙트 안 동기 setState 회피)
   useEffect(() => {
-    if (!open || rogueItems || busy || !term.trim()) return;
-    const hint = splitHint(normSearch(term), hints);
+    if (!open || !engine || rogueItems || busy || !term.trim()) return;
+    const hint = engine.splitHint(normSearch(term), hints);
     // 학습된 별명이 통합전략 항목(rg:)을 가리키면 색인을 불러와야 주입이 된다 —
     // 잡음 결과가 몇 개 떠 있어도(hits.length>0) 학습 항목이 빠지면 안 되므로 함께 본다.
     // 퍼지 잡음뿐인 검색(확신 매칭 없음)도 확장 색인에서 진짜 답을 찾아본다.
-    const solid = hits.some((h) => h.learned || h.hinted || h.score >= FUZZY_GATE);
+    const solid = hits.some((h) => h.learned || h.hinted || h.score >= engine.FUZZY_GATE);
     const wantsRogue = !solid
       || hint?.kinds.some((kind) => kind === "rogue" || kind === "topic")
       || (picks && Object.keys(picks).some((uid) => uid.startsWith("rg:")));
@@ -202,18 +215,18 @@ export default function OmniSearch({ roster, extra, onGo, autoOpen }: {
     return () => window.clearTimeout(timer);
     // loadRogue·hints는 렌더마다 새로 만들어지지만 하는 일이 같다 (term 기준으로만 재시도)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, term, hits.length, rogueItems, busy]);
+  }, [open, engine, term, hits.length, rogueItems, busy]);
 
   // 확신 매칭이 하나도 없으면 "실패한 검색"으로 남긴다 — 이후 도착한 목적지를 이 검색어에
   // 이어 붙이기 위해서다 (app/trail.ts). ⚠ 0건일 때만 세면 안 된다: "보텀" 같은 검색은
   // 퍼지 잡음(토터)이 몇 개 떠서 미스로 안 잡혔고, 그래서 실패→도착 학습이 영영 시작되지
   // 않았다 (사용자 제보 2026-07-26). 통합전략 자동 로드가 끝난 뒤에만 센다.
   useEffect(() => {
-    if (!open || busy || !term.trim()) return;
-    if (hits.some((h) => h.learned || h.hinted || h.score >= FUZZY_GATE)) return;
+    if (!open || !engine || busy || !term.trim()) return;
+    if (hits.some((h) => h.learned || h.hinted || h.score >= engine.FUZZY_GATE)) return;
     if (!rogueItems) return;                 // 아직 확장 검색 전 — 진짜 미스인지 모른다
     noteMiss(normSearch(term), locale);
-  }, [open, busy, term, hits, rogueItems, locale]);
+  }, [open, engine, busy, term, hits, rogueItems, locale]);
 
   // 되묻기로 전환 — 포커스를 입력란으로 되돌려 ↑↓·⏎로 바로 고를 수 있게 한다
   const askUser = () => { setAsk(true); setActive(0); inputRef.current?.focus(); };
@@ -226,16 +239,25 @@ export default function OmniSearch({ roster, extra, onGo, autoOpen }: {
     window.clearTimeout(timerRef.current);
     listRef.current?.classList.remove("stale");
     setTerm(query);                                   // 화면 목록도 이 검색어에 맞춘다
-    const here = currentRogueTopic();                 // 통합전략 가이드를 보는 중이면 그 테마를 사전확률로
+    // 엔진이 오기 전에 ⏎를 쳤으면 받고 나서 찾는다 — 그땐 화면 색인(base)이 아직 비어 있어 여기서 만든다
+    let eng = engine;
+    if (!eng) {
+      try { eng = await loadEngine(); } catch {
+        setMsg(t("검색 데이터를 불러오지 못했어요 — 잠시 후 다시 시도해 주세요."));
+        return;
+      }
+    }
+    const light = engine ? base : eng.buildOmniIndex({ roster, locale, t, extra });
+    const here = eng.currentRogueTopic();             // 통합전략 가이드를 보는 중이면 그 테마를 사전확률로
     const now = picksFor(normSearch(query), crowd);
-    const list = searchSmart(items, query, { picks: now, hints });
-    const direct = decideOmni(list, here);
+    const list = eng.searchSmart(rogueItems ? light.concat(rogueItems) : light, query, { picks: now, hints });
+    const direct = eng.decideOmni(list, here);
     if (direct) { go(direct, false, list.length, query); return; }
     // 가벼운 색인이 아무것도 못 찾았으면 통합전략 항목까지 뒤진다
     if (!list.length && !rogueItems) {
       const extraItems = await loadRogue();
-      const merged = searchSmart(base.concat(extraItems), query, { picks: now, hints });
-      const second = decideOmni(merged, here);
+      const merged = eng.searchSmart(light.concat(extraItems), query, { picks: now, hints });
+      const second = eng.decideOmni(merged, here);
       if (second) { go(second, false, merged.length, query); return; }
       if (!merged.length) { setMsg(t("‘{q}’와(과) 관련된 항목을 찾지 못했어요.", { q: raw })); return; }
       askUser();
@@ -305,7 +327,9 @@ export default function OmniSearch({ roster, extra, onGo, autoOpen }: {
     <div className="omni">
       {/* 입력창처럼 생긴 트리거 (사용자 확정 2026-07-26) — 실제 입력은 클릭 시 열리는
           패널에서 한다. 검색창으로 보이도록 placeholder풍 문구 + ⌘K 힌트. */}
+      {/* 손이 가면(호버·터치·포커스) 엔진을 미리 받는다 — 셸의 탭 미리 받기(prefetchTabs)와 같은 신호 */}
       <button type="button" className="omni-trigger" onClick={openPanel} aria-label={t("유니버셜 서치 — 사이트 전체 검색")}
+        onPointerOver={warm} onTouchStart={warm} onFocus={warm}
         title={t("유니버셜 서치 — 오퍼·재료·스토리·통합전략·기능을 한 번에 찾아 이동합니다 (⌘K)")}>
         <span aria-hidden>⌕</span>
         <span className="omni-trigger-label">{t("유니버셜 서치")}{isNewFeature("omni") && <span className="new-badge">{t("새기능")}</span>}</span>
