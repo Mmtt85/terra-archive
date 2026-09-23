@@ -58,11 +58,13 @@ ALIAS_KO = {1: "팬텀", 2: "미즈키", 3: "사미", 4: "살카즈", 5: "쉐이
 # IS5의 시비경·금석경처럼 num이 90/91인 특수 구역은 층이 아니므로 이름만 둔다.
 FLOOR_MAX = 20
 FLOOR_FMT = {"ko": "{n}층 {name}", "en": "F{n} {name}", "ja": "{n}層 {name}"}
+HANGUL = re.compile(r"[가-힣]")
 
 
 def load_topic(n, suffix):
-    """로케일 파일이 없으면 KR로 폴백 — IS6(블랙플로우)는 CN 선행이라 공식 EN/JA 텍스트가
-    아예 없다. /rogue도 전 로케일이 rogue6.json을 공유하므로 같은 규칙을 쓴다."""
+    """로케일 파일이 없으면 KR로 폴백. IS6(블랙플로우)는 CN 선행이라 공식 EN/JA 텍스트가 없지만,
+    build-rogue.py가 자체 번역 사전(scripts/rogue6-en/ja.json)으로 rogue6.en/.ja.json을 낸다
+    (2026-09-24 — 종전엔 이 폴백으로 EN/JA 도감에 한국어 작전명이 나갔다)."""
     path = os.path.join(DATA, f"rogue{n}{suffix}.json")
     if not os.path.exists(path):
         path = os.path.join(DATA, f"rogue{n}.json")
@@ -174,7 +176,11 @@ def build(loc, suffix):
                         skipped.add(key)
                     continue
                 ix = intern(key, enemy_list, enemy_ix)
-                enemy_names.setdefault(key, info["name"])
+                # 이름은 먼저 나온 테마 것을 쓰되, EN/JA에서 그게 KR 폴백(한글)이고 뒤 테마에 번역명이
+                # 있으면 그쪽으로 — 净浊之焰은 IS1~5에선 도감 밖 적이라 한글, IS6(자체 번역)에선 영문이다.
+                prev = enemy_names.get(key)
+                if prev is None or (loc != "ko" and HANGUL.search(prev) and not HANGUL.search(info["name"])):
+                    enemy_names[key] = info["name"]
                 if info.get("img"):
                     theme_img.setdefault(key, info["img"])
                 e.append([ix, en.get("cnt") or 0, 0])
@@ -239,11 +245,9 @@ if mismatched:
     print(f"  ⚠ 도면 파일명이 작전 id와 다른 것 {len(set(mismatched))}개 — 도감이 404를 문다. "
           f"stageMap()에 파일명을 실어야 한다: {sorted(set(mismatched))[:5]}", file=sys.stderr)
 
-# 미번역 감시 — EN/JA에 한글이 남아 있으면 KR 폴백이다.
-# **IS6(블랙플로우)는 예외** — CN 선행이라 공식 EN/JA 텍스트가 없다 (위 load_topic 주석).
-HANGUL = re.compile(r"[가-힣]")
+# 미번역 감시 — EN/JA에 한글이 남아 있으면 KR 폴백이다 (IS6 포함 — 위 load_topic 주석).
 for loc in ("en", "ja"):
     left = [s["code"] for s in by_loc[loc]["stages"]
-            if not s["id"].startswith("ro6_") and HANGUL.search(s["name"] or "")]
+            if HANGUL.search((s["name"] or "") + (s.get("desc") or ""))]
     if left:
         print(f"  ⚠ {loc}: 이름 미번역 {len(left)}개 (KR 폴백) 예: {left[:5]}", file=sys.stderr)

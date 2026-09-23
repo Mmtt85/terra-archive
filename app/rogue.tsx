@@ -2,7 +2,7 @@
 
 // 통합전략 탭 — 토픽: 팬텀 & 크림슨 솔리테어(rogue_1) ~ 침몰자의 블랙플로우(rogue_6, CN 선행·미래시).
 // 데이터는 scripts/build-rogue.py가 생성하는 app/data/rogueN[.loc].json (클뜯 레포 원본).
-// rogue_6은 CN 데이터를 한국어화(rogue6-ko.json)한 것으로, 이름류는 중국어 원문(cn)을 병기한다.
+// rogue_6은 CN 데이터를 로케일마다 자체 번역(rogue6-ko/en/ja.json 사전)한 것으로, 이름류는 중국어 원문(cn)을 병기한다.
 // 서버 탭(한국섭/중국섭, 2026-08-04): 중국섭은 rogueN.cn.json — CN 서버 텍스트에 KR 공식
 // 번역을 오버레이한 것으로 rogue_6과 같은 병기 표기. 블랙플로우는 KR 미출시라 KR 탭 비활성.
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
@@ -1052,7 +1052,8 @@ export { TOPICS, slugOf, roguePath } from "./rogue-topics";
 
 // 토픽 데이터 동적 로더 — KR은 rogue_1만 기본 번들, 나머지는 선택 시 로드 (각 300~600KB).
 // EN/JA는 글로벌/일본 서버 공식 텍스트로 빌드한 rogueN.<loc>.json (build-rogue.py i18n).
-// rogue_6은 CN 선행이라 공식 현지화가 없어 전 로케일이 KR/CN 병기 파일을 공유한다.
+// rogue_6은 CN 선행이라 공식 현지화가 없다 — 로케일마다 자체 번역(rogue6-<loc>.json 사전)으로
+// 빌드한 rogue6[.en|.ja].json 을 쓴다 (2026-09-24, 종전엔 전 로케일이 한국어 파일을 공유했다).
 const TOPIC_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_2: () => import("./data/rogue2.json"),
   rogue_3: () => import("./data/rogue3.json"),
@@ -1062,14 +1063,14 @@ const TOPIC_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
 };
 // 중국섭 탭(서버 탭 '중국 서버') — CN 텍스트 테이블 + KR 공식 한국어 오버레이 빌드
 // (build-rogue.py cn — 블랙플로우처럼 중국어 원문 병기). 공식 현지화가 없는 데이터라
-// EN/JA 로케일도 이 파일을 그대로 쓴다 (rogue_6과 같은 정책). rogue_6은 원래 CN 빌드.
+// EN/JA 로케일도 이 파일을 그대로 쓴다. rogue_6은 원래 CN 빌드라 여기 없다 — 중섭 탭이
+// 강제돼도 로케일 로더(loadersFor)를 탄다 (아래 로드 effect).
 const TOPIC_LOADERS_CN: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_1: () => import("./data/rogue1.cn.json"),
   rogue_2: () => import("./data/rogue2.cn.json"),
   rogue_3: () => import("./data/rogue3.cn.json"),
   rogue_4: () => import("./data/rogue4.cn.json"),
   rogue_5: () => import("./data/rogue5.cn.json"),
-  rogue_6: () => import("./data/rogue6.json"),
 };
 const TOPIC_LOADERS_EN: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_1: () => import("./data/rogue1.en.json"),
@@ -1077,7 +1078,7 @@ const TOPIC_LOADERS_EN: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_3: () => import("./data/rogue3.en.json"),
   rogue_4: () => import("./data/rogue4.en.json"),
   rogue_5: () => import("./data/rogue5.en.json"),
-  rogue_6: () => import("./data/rogue6.json"),
+  rogue_6: () => import("./data/rogue6.en.json"),
 };
 const TOPIC_LOADERS_JA: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_1: () => import("./data/rogue1.ja.json"),
@@ -1085,7 +1086,7 @@ const TOPIC_LOADERS_JA: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_3: () => import("./data/rogue3.ja.json"),
   rogue_4: () => import("./data/rogue4.ja.json"),
   rogue_5: () => import("./data/rogue5.ja.json"),
-  rogue_6: () => import("./data/rogue6.json"),
+  rogue_6: () => import("./data/rogue6.ja.json"),
 };
 const loadersFor = (locale: string) =>
   locale === "en" ? TOPIC_LOADERS_EN : locale === "ja" ? TOPIC_LOADERS_JA : TOPIC_LOADERS;
@@ -1151,7 +1152,7 @@ export default function RogueGuide({ initialTopic }: {
   const dataKey = `${topic}:${server}:${locale}`;
   useEffect(() => {
     const key = `${topic}:${server}:${locale}`;
-    const loader = server === "cn" ? TOPIC_LOADERS_CN[topic] : loadersFor(locale)[topic];
+    const loader = (server === "cn" && TOPIC_LOADERS_CN[topic]) || loadersFor(locale)[topic];
     if (!(topic === "rogue_1" && locale === "ko" && server === "kr") && !loaded[key] && loader) {
       loader().then((m) =>
         setLoaded((cur) => ({ ...cur, [key]: m.default as RogueData })));
@@ -1254,7 +1255,7 @@ export default function RogueGuide({ initialTopic }: {
   // 중섭 탭을 켜 놓고 보는 테마 = 화면이 중국어인 테마. 스샷 레이더·PRTS 링크가 이 값을
   // lens에 넘겨 그 테마의 CN 이름을 인식 인덱스에 얹는다 (2026-08-13 사용자 지적:
   // "흑류수해 말고 다른 록라 중섭으로 바꾸면 중국어 인식 못하지?" — 맞았다).
-  // rogue_6은 rogue6.json 자체가 KR/CN 병기라 여기서 걸려도 run.ts가 알아서 무시한다.
+  // rogue_6은 rogue6[.en|.ja].json 자체가 CN 병기라 여기서 걸려도 run.ts가 알아서 무시한다.
   const cnTopicNow = () => (serverRef.current === "cn" ? topicRef.current : undefined);
   useEffect(() => {
     // popstate=브라우저 뒤로/앞으로, ta:rogue-topic=햄버거 부메뉴에서 온 커스텀 이벤트.
@@ -2180,9 +2181,8 @@ export default function RogueGuide({ initialTopic }: {
                   스타일이 늦게 붙는 순간 중국섭 문구가 그대로 노출된다 (실측 2026-08-04) */}
               {server !== "cn" ? " "
                 : topic === "rogue_6"
-                  ? (locale === "ko"
-                    ? t("CN 선행 데이터 기반 · 명칭은 비공식 번역이며 중국어 원문을 병기합니다.")
-                    : t("이 테마는 CN 선행 데이터라 아직 한국어·중국어로만 제공됩니다."))
+                  // EN/JA도 자체 번역판(rogue6.en/.ja.json)이 생겨 전 로케일 같은 문구 (2026-09-24)
+                  ? t("CN 선행 데이터 기반 · 명칭은 비공식 번역이며 중국어 원문을 병기합니다.")
                   : (locale === "ko"
                     ? t("중국 서버 데이터 기반 · 한국 서버 공식 번역으로 표기하고 중국어 원문을 병기합니다.")
                     : t("중국 서버 데이터는 아직 한국어·중국어로만 제공됩니다."))}

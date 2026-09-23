@@ -1973,11 +1973,13 @@ def load_auto_tr_details():
 #   ③ 미번역 잔여분은 scripts/rogue6-untranslated.json 으로 리포트 (재실행 시 갱신)
 # KR 정식 출시 후에는 branch="kr"로 바꾸고 오버레이를 제거하면 된다.
 
-def load_auto_tr():
+def load_auto_tr(loc="ko"):
     """KR/CN 테이블 교차로 CN→KR 공식 번역 사전 자동 생성 (이전 테마 rogue_1~5 공통 항목).
     번역 대상 문자열은 sanitize를 거친 뒤라 사전 키·값도 같은 규칙으로 마크업을 벗긴다
-    (안 벗기면 <@ba.vup> 등이 낀 원문이 매칭에서 빠진다 — 2026-08 중국섭 빌드에서 확인)."""
-    kr = fetch_json("excel/roguelike_topic_table.json")
+    (안 벗기면 <@ba.vup> 등이 낀 원문이 매칭에서 빠진다 — 2026-08 중국섭 빌드에서 확인).
+    loc = en·ja 면 글로벌·일섭 표와 교차해 CN→영어·일본어 공식 번역을 만든다 (2026-09-23 EN·JA 판)."""
+    branch = {"ko": "kr", "en": "en", "ja": "jp"}[loc]
+    kr = fetch_json("excel/roguelike_topic_table.json", branch)
     cn = fetch_json("excel/roguelike_topic_table.json", "cn")
     tr = {}
     def clean(s):
@@ -2005,7 +2007,7 @@ def load_auto_tr():
                 put(nt.get("name"), nk.get("name"))
                 put(nt.get("description"), nk.get("description"))
     # 적 핸드북 교차 (기존 적 이름·공격방식·급)
-    hb_kr = fetch_json("excel/enemy_handbook_table.json")
+    hb_kr = fetch_json("excel/enemy_handbook_table.json", branch)
     hb_cn = fetch_json("excel/enemy_handbook_table.json", "cn")
     for k, ec in hb_cn["enemyData"].items():
         ek = hb_kr["enemyData"].get(k)
@@ -2015,6 +2017,22 @@ def load_auto_tr():
     for rc, rk in zip(hb_cn.get("raceData", {}).values(), hb_kr.get("raceData", {}).values()):
         put(rc.get("raceName"), rk.get("raceName"))
     return tr
+
+
+# 테마 이름 — 비공식 번역명 (CN 선행). EN·JA 는 사이트 사전(app/i18n.tsx "침몰자의 블랙플로우")과 같은 표기
+ROGUE6_NAME = {"ko": "침몰자의 블랙플로우", "en": "Blackflow Forest of the Sunken", "ja": "沈淪者の黒流樹海"}
+KANA_RE = re.compile(r"[\u3040-\u30ff]")
+
+
+def needs_loc(s, loc):
+    """EN·JA 판 미번역 판정 — 한글이 남았으면(큐레이션 메모 등) 미번역. EN 은 한자가 남아도 미번역,
+    JA 는 한자만 있고 가나가 없으면 CN 원문이 그대로 남은 것으로 본다 (한자만의 일본어 이름은 오탐 — 리포트용)."""
+    if not isinstance(s, str) or not s.strip():
+        return False
+    if any("가" <= ch <= "힣" for ch in s):
+        return True
+    han = any("\u4e00" <= ch <= "\u9fff" for ch in s)
+    return han if loc == "en" else (han and not KANA_RE.search(s))
 
 
 def build_rogue6():
@@ -2197,6 +2215,7 @@ def build_rogue6():
             "weight": num(attr("massLevel", 1)),
             "lifePoint": mv(pick.get("lifePointReduce"), mv(base.get("lifePointReduce"), 1)),
             "immune": [ko for k, ko in IMMUNE_KO if attr(k, False)],
+            "_hb": hb_key,          # EN·JA 판이 그 서버 도감으로 다시 채울 때 쓴다 (출력 전에 뗀다)
         }
 
     enemy_dir = os.path.join(REPO, "public", "rogue", "enemy")
@@ -2465,7 +2484,7 @@ def build_rogue6():
 
     out = {
         "id": "rogue_6",
-        "name": "침몰자의 블랙플로우",  # 비공식 번역명 (KR 미출시)
+        "name": ROGUE6_NAME["ko"],  # 비공식 번역명 (KR 미출시) — 로케일별로 아래 오버레이에서 갈아 끼운다
         "cnName": topic["name"],
         "future": True,
         "line": topic.get("lineText"),
@@ -2540,65 +2559,91 @@ def build_rogue6():
                 if ch.get("title"):
                     keep_cn(ch, "title")
 
-    # ── 번역 오버레이: ① KR 교차 자동 사전 → ② rogue6-ko.json 수동 사전 ──────
-    tr = load_auto_tr()
-    ko_path = os.path.join(REPO, "scripts", "rogue6-ko.json")
-    if os.path.exists(ko_path):
-        tr.update(json.load(open(ko_path, encoding="utf-8")))
-    untranslated = {}
-    def translate(v, path=""):
-        if isinstance(v, str):
-            s = v.strip()
-            if s in tr:
-                return v.replace(s, tr[s])
-            if needs_ko(v):          # 한글이 섞여 있으면 이미 공식 KR — needs_ko 주석 참조
-                untranslated.setdefault(s, path)
+    # ── 번역 오버레이 — 로케일마다: ① 앞 테마 공식 번역 교차 사전 → ② rogue6-<로케일>.json 수동 사전 ──
+    # EN·JA 판을 따로 낸다 (사용자 지시 2026-09-23 "흑류수해 번역이 영어·일본어판에도 한글" → "전체 다").
+    # 종전엔 전 로케일이 한국어 파일(rogue6.json)을 같이 읽었다. 수동 사전 키는 CN 원문이고, 큐레이션
+    # (rogue6-curated.json)에서 온 한국어 메모는 EN·JA 사전에 **한국어 문장을 키로** 둔다.
+    import copy
+    base = out
+    for loc in ("ko", "en", "ja"):
+        out = copy.deepcopy(base)
+        out["name"] = ROGUE6_NAME[loc]
+        if loc != "ko":
+            # 적 글은 한섭 공식 도감을 먼저 쓴다 — EN·JA 판은 **그 서버 공식 도감**으로 다시 채우고, 없는 적(CN 선행)은
+            # CN 원문으로 되돌려 아래 사전이 옮기게 한다. 안 그러면 한섭 문장(821건)이 EN·JA 에 그대로 샌다.
+            hb_loc = fetch_json("excel/enemy_handbook_table.json", {"en": "en", "ja": "jp"}[loc])["enemyData"]
+            imm = dict(zip(IMMUNE_LABELS[None], IMMUNE_LABELS[loc]))
+            for e in out["enemies"].values():
+                hl = hb_loc.get(e.get("_hb")) or {}
+                hc = handbook_cn.get(e.get("_hb")) or {}
+                e["name"] = hl.get("name") or e.get("cn") or e["name"]
+                e["attack"] = attack_of(hl, loc) or attack_of(hc, loc)
+                e["desc"] = hl.get("description") or hc.get("description")
+                e["ability"] = ability_of(hl) or ability_of(hc)
+                e["immune"] = [imm.get(x, x) for x in e.get("immune") or []]
+        for e in out["enemies"].values():
+            e.pop("_hb", None)
+        tr = load_auto_tr(loc)
+        man_path = os.path.join(REPO, "scripts", f"rogue6-{loc}.json")
+        if os.path.exists(man_path):
+            tr.update(json.load(open(man_path, encoding="utf-8")))
+        untranslated = {}
+        pending = needs_ko if loc == "ko" else (lambda v, _loc=loc: needs_loc(v, _loc))
+
+        def translate(v, path=""):
+            if isinstance(v, str):
+                s = v.strip()
+                if s in tr:
+                    return v.replace(s, tr[s])
+                if pending(v):
+                    untranslated.setdefault(s, path)
+                return v
+            if isinstance(v, list):
+                return [translate(x, path) for x in v]
+            if isinstance(v, dict):
+                return {k: (x if k == "cn" else translate(x, f"{path}.{k}" if path else k))
+                        for k, x in v.items()}
             return v
-        if isinstance(v, list):
-            return [translate(x, path) for x in v]
-        if isinstance(v, dict):
-            return {k: (x if k == "cn" else translate(x, f"{path}.{k}" if path else k))
-                    for k, x in v.items()}
-        return v
-    out = translate(out)
+        out = translate(out)
 
-    # 번역 후에도 이름이 원문과 같으면(=한국어 안 됨/원래 비CJK) cn 병기 제거
-    def drop_same_cn(ent, field="name"):
-        if ent.get("cn") is not None and ent["cn"] == ent.get(field):
-            del ent["cn"]
-    for z in out["zones"]:
-        drop_same_cn(z)
-    for s in out["stages"]:
-        drop_same_cn(s)
-    for e in out["enemies"].values():
-        drop_same_cn(e)
-    for coll in ("relics", "scraps", "tools", "bands", "legacies", "buoys",
-                 "weathers", "subweathers", "variations", "endings", "nodeTypes"):
-        for x in out[coll]:
-            drop_same_cn(x)
-    def drop_same_cn_tree(chs):
-        for ch in chs:
-            drop_same_cn(ch, "title")
-            if ch.get("next"):
-                drop_same_cn_tree(ch["next"]["choices"])
-    for v in out.get("visitors") or []:
-        drop_same_cn(v)
-    for enc in out["encounters"]:
-        drop_same_cn(enc, "title")
-        drop_same_cn_tree(enc["choices"])
-        for sc in enc.get("scenes") or []:
-            for ch in sc["choices"]:
+        # 번역 후에도 이름이 원문과 같으면(=번역 안 됨/원래 비CJK) cn 병기 제거
+        def drop_same_cn(ent, field="name"):
+            if ent.get("cn") is not None and ent["cn"] == ent.get(field):
+                del ent["cn"]
+        for z in out["zones"]:
+            drop_same_cn(z)
+        for st in out["stages"]:
+            drop_same_cn(st)
+        for e in out["enemies"].values():
+            drop_same_cn(e)
+        for coll in ("relics", "scraps", "tools", "bands", "legacies", "buoys",
+                     "weathers", "subweathers", "variations", "endings", "nodeTypes"):
+            for x in out[coll]:
+                drop_same_cn(x)
+
+        def drop_same_cn_tree(chs):
+            for ch in chs:
                 drop_same_cn(ch, "title")
+                if ch.get("next"):
+                    drop_same_cn_tree(ch["next"]["choices"])
+        for v in out.get("visitors") or []:
+            drop_same_cn(v)
+        for enc in out["encounters"]:
+            drop_same_cn(enc, "title")
+            drop_same_cn_tree(enc["choices"])
+            for sc in enc.get("scenes") or []:
+                for ch in sc["choices"]:
+                    drop_same_cn(ch, "title")
 
-    report = os.path.join(REPO, "scripts", "rogue6-untranslated.json")
-    json.dump(untranslated, open(report, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-
-    dest = os.path.join(REPO, "app", "data", "rogue6.json")
-    json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-    kb = os.path.getsize(dest) // 1024
-    print(f"rogue6.json: zones={len(zones)} stages={len(stages)} enemies={len(enemies)} "
-          f"relics={len(relics)} scraps={len(scraps)} weathers={len(weathers)} "
-          f"encounters={len(encounters)} → {kb}KB / 미번역 {len(untranslated)}건 → rogue6-untranslated.json")
+        suf = "" if loc == "ko" else f".{loc}"
+        report = os.path.join(REPO, "scripts", f"rogue6-untranslated{suf}.json")
+        json.dump(untranslated, open(report, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        dest = os.path.join(REPO, "app", "data", f"rogue6{suf}.json")
+        json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+        kb = os.path.getsize(dest) // 1024
+        print(f"rogue6{suf}.json: zones={len(zones)} stages={len(stages)} enemies={len(enemies)} "
+              f"relics={len(relics)} scraps={len(scraps)} weathers={len(weathers)} "
+              f"encounters={len(encounters)} → {kb}KB / 미번역 {len(untranslated)}건 → {os.path.basename(report)}")
 
 
 def unpack_icons(topic="rogue_1"):
