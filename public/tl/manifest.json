@@ -3,9 +3,9 @@
  "files": [
   {
    "file": "op.json",
-   "url": "https://files.terra-archive.net/assets/tl/op.json?v=cf2ce6f66329a2bf",
-   "label": "오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록 — 공식 한국어 24,320 + 비공식 번역 2,116",
-   "hash": "cf2ce6f66329a2bf"
+   "url": "https://files.terra-archive.net/assets/tl/op.json?v=ab323b746bbf7020",
+   "label": "오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록 — 공식 한국어 24,320 + 비공식 번역 1,805",
+   "hash": "ab323b746bbf7020"
   },
   {
    "file": "item.json",
@@ -27,15 +27,15 @@
   },
   {
    "file": "ra.json",
-   "url": "https://files.terra-archive.net/assets/tl/ra.json?v=17b99053655fd21d",
+   "url": "https://files.terra-archive.net/assets/tl/ra.json?v=68a6d675d2c33a74",
    "label": "생존연산 (비공식 번역)",
-   "hash": "17b99053655fd21d"
+   "hash": "68a6d675d2c33a74"
   },
   {
    "file": "is.json",
-   "url": "https://files.terra-archive.net/assets/tl/is.json?v=98a880d5218aae21",
+   "url": "https://files.terra-archive.net/assets/tl/is.json?v=f7a85aded55ba210",
    "label": "통합전략 1~6 — 소장품·노드·조우·엔딩·전투 (테마 구분 없이 한 벌)",
-   "hash": "98a880d5218aae21"
+   "hash": "f7a85aded55ba210"
   }
  ]
 }
