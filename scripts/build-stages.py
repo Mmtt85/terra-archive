@@ -580,6 +580,15 @@ for doc in by_loc.values():
         if e["id"] in have:
             e["map"] = 1     # 도면 없는 작전이 더 적다 — 있는 쪽만 표시해 용량을 아낀다
 
+# 실사 도면 위 경로 투영용 전투 카메라 (2026-09-23) — 출처·근거는 scripts/stagecams.py 머리주석.
+# 인게임 미리보기(512²) 도면에만 붙는다. 원본을 못 받는 날은 종전 산출물의 값을 지킨다.
+import stagecams  # noqa: E402
+_level_of = {kv["stageId"]: kv.get("levelId") for kv in stages}
+for loc, _, suf in LOCALES:
+    _prev = os.path.join(DATA, f"stages{suf}.json")
+    _keep = {e["id"]: e["cam"] for e in load(_prev)["stages"] if "cam" in e} if os.path.exists(_prev) else {}
+    print(f"카메라({loc}): {stagecams.attach(by_loc[loc], dest_dir, _level_of, _keep)}개")
+
 for loc, _, suf in LOCALES:
     p = os.path.join(DATA, f"stages{suf}.json")
     json.dump(by_loc[loc], open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))

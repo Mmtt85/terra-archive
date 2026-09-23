@@ -513,6 +513,12 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
   명칭은 게임 공식: **고난**/Adverse/厄難 · **긴급**/Challenge/強襲 ('어려움' 아님 — 사용자 교정).
   고난 접미는 두 빌드 스크립트의 `TOUGH_SUFFIX`가 **글자까지 같아야** 등장 적 조인이 산다.
   고난 판 도면은 자체 미리보기가 없으면 일반판을 복사한다 (지형 동일 — build-stages.py 폴백 0)
+- **실사 도면 위 경로·시뮬 (2026-09-23)**: 인게임 미리보기(512²) 도면을 가진 작전은 레코드에
+  전투 카메라 위치 `cam` 이 붙고, 상세가 도면·이동 경로를 한 화면으로 합친다. 붙이는 건
+  `scripts/stagecams.py` — build-stages·build-stages-rogue 가 저장 직전에 부른다(단독 실행도 제자리).
+  카메라 출처는 yuanyan3060/ArknightsGameResource 의 levels.json(MAA 와 같은 출처, 매일 갱신,
+  작성자 출처 표기 요청). 도면이 16:9 화면을 정사각에 눌러 담은 그림이라는 근거·검증은
+  `app/stage-cam.ts`, 화면 규칙은 route-map-rules 스킬.
 - ⚠ **자산 폴더와 라우트 이름이 일부러 다르다**: `public/enemy/`·`public/stage/`(단수) ↔
   `/enemies`·`/stages`(복수). `deploy.sh`가 자산만 떼어내 R2로 넘기기 때문 —
   2026-08-08에 통합전략이 에셋과 페이지를 같은 폴더에 둬서 테마 6장을 매 배포마다 잃었다

@@ -15,6 +15,9 @@ export type Stage = {
   /** 등장 적 [enemyIds번호, 스폰수, 스탯레벨] */ e?: [number, number, number][];
   /** events 배열 번호 — 이벤트 작전만 있다 */ ev?: number;
   /** 도면 보유 (없으면 키 자체가 없다) */ map?: number;
+  /** 전투 카메라 위치 — 도면이 인게임 미리보기라 경로를 그 위에 투영할 수 있는 작전만
+   *  (scripts/stagecams.py · app/stage-cam.ts). 있으면 상세가 도면·이동 경로를 한 화면으로 합친다 */
+  cam?: [number, number, number];
   /** 고난(·보안 파견 긴급) 판 배열 번호 — 상세의 환경 탭이 이 레코드로 통째로 갈아끼운다 */ alt?: number;
   /** (숨은 판만) 일반판 배열 번호 — 딥링크가 오면 일반판 상세를 해당 환경 탭으로 연다 */ base?: number;
   /** (숨은 판만) 목록·사이트맵에서 숨김 */ sub?: number;

@@ -183,8 +183,15 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
   // 활성 환경의 적 스탯 배수 — 고난(alt) 뷰는 자기 em, 긴급은 일반판의 chgEm.
   // 일반판이 없는 고난 전용 작전(H10-1 등)은 em이 상시 걸린다 (게임도 항상 고난이다).
   const envMul = cur.stage.em ?? (env === 1 && !view.alt ? view.stage.chgEm : undefined);
+  // 합친 도면 (사용자 요청 2026-09-23 "실사 도면이랑 이동 경로 탭을 하나로") — 카메라가 있는 작전은
+  // 실사 도면 위에 경로·시뮬을 바로 얹고 탭을 없앤다. 카메라가 없는 작전(위키 스크린샷·격자 렌더
+  // 도면)은 투영이 맞지 않으므로 종전 두 탭 그대로다.
+  // 보안 파견 긴급 판은 일반판과 **같은 실사 도면·카메라**를 쓰고, 경로만 자기(_ex) 레벨 것이다.
+  const photoStage = env === 1 && view.alt && view.stage.ae ? view.stage : s;
+  const fused = !!(photoStage.cam && photoStage.map);
   // 경로 모드 공용 — 적 카드(고정 토글·선 색)와 지도 양쪽이 쓴다
-  const rd = mapView === "route" ? routeDocFor(s.id, !!s.rg) : undefined;
+  const showRoutes = fused || mapView === "route";
+  const rd = showRoutes ? routeDocFor(s.id, !!s.rg) : undefined;
   // 이 작전이 쓰는 경로 파일(본 도감/통합전략)만 받아 온다 — 실패하면 다시 시도할 수 있게 비운다
   const routesReady = !!ROUTES_CACHE[routeSrc(!!s.rg)];
   const ensureRoutes = () => {
@@ -211,6 +218,25 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
     ensureRoutes();
     // autoSim prop은 모달 마운트 시점(key=stage.id 재마운트)에 확정돼 있어 마운트 1회면 된다
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+  // 합친 도면은 경로가 곧 본문이라 상세를 열면 바로 받는다 — 도면은 서버가 그린 그대로 먼저 보이고
+  // 경로·시뮬이 뒤따라 얹힌다. 데이터는 세션당 한 번(모듈 캐시), gzip 약 0.8MB.
+  useEffect(() => {
+    if (fused) ensureRoutes();
+  }, [fused]);  // eslint-disable-line react-hooks/exhaustive-deps
+  // 실사 도면 단독 — 카메라 없는 작전의 '실사 도면' 탭, 또는 경로 데이터가 없는 작전.
+  // ⚠ 16:9 로 편다(.st-map) — 인게임 도면은 16:9 화면을 정사각에 눌러 담은 그림이라 펴야 게임
+  //   비율이다 (app/stage-cam.ts). 클릭 확대는 통전과 같다.
+  // 보안 파견 긴급 판(ae)은 일반판과 **같은 실사 도면**을 쓴다 — _ex 자체엔 인게임 도면이 없어
+  // 격자 렌더가 잡혀 있었다 (사용자 지적 2026-08-10). 경로는 _ex 레벨 것 그대로다.
+  const mapAlt = t("{code} 지형 도면", { code: s.code });
+  const photoOnly = (
+    <button type="button" ref={zoomRef} className={`st-map-zoom${zoom ? " zoom" : ""}`}
+      onClick={() => setZoom((z) => !z)}
+      title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
+      <img className="st-map" src={stageMap(photoStage.id, !!photoStage.rg)} alt={mapAlt}
+        loading="lazy" decoding="async" />
+    </button>
+  );
   return (
     <div className="st-file">
       {/* 헤더 한 줄 배치 — 계열·구역 배지는 이름 오른쪽으로, 환경 탭은 오른쪽 끝
@@ -239,41 +265,45 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
           왼쪽에 지형 도면·설명·수치, 오른쪽에 등장 적·드랍. */}
       <div className="st-cols">
         <div className="st-left">
-          {/* 실사 도면 ↔ 격자+이동 경로 탭 (사용자 확정 2026-08-10) */}
-          <div className="st-maptabs" role="tablist" aria-label={t("도면 보기")}>
-            <button type="button" role="tab" aria-selected={mapView === "map"}
-              className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
-            <button type="button" role="tab" aria-selected={mapView === "route"}
-              className={mapView === "route" ? "on" : ""}
-              onClick={() => { setMapView("route"); ensureRoutes(); }}
-              >{t("이동 경로")}{isNewFeature("route-map") && <span className="new-badge">{t("새기능")}</span>}</button>
-          </div>
-          {/* ⚠ 도면은 **원본 비율 그대로** 둔다. 인게임 도면은 거의 다 정사각이라
-              통합전략처럼 16:9로 늘리면 찌그러진다 (사용자 지적). 클릭 확대는 통전과 같다. */}
-          {mapView === "map" ? (s.map ? (
-            <button type="button" ref={zoomRef} className={`st-map-zoom${zoom ? " zoom" : ""}`}
-              onClick={() => setZoom((z) => !z)}
-              title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
-              {/* 보안 파견 긴급 판(ae)은 일반판과 **같은 실사 도면**을 쓴다 — _ex 자체엔
-                  인게임 도면이 없어 격자 렌더가 잡혀 있었다 (사용자 지적 2026-08-10).
-                  이동 경로 탭은 _ex 레벨 것 그대로다 (경로·배치는 판마다 다를 수 있다). */}
-              <img className="st-map" src={stageMap(env === 1 && view.alt && view.stage.ae ? view.stage.id : s.id, !!s.rg)}
-                alt={t("{code} 지형 도면", { code: s.code })}
-                loading="lazy" decoding="async" />
-            </button>
+          {fused ? (
+            // 합친 도면 — 실사 도면 위에 경로·시뮬 (사용자 요청 2026-09-23). 경로가 오기 전(서버 렌더
+            // 포함)에도 같은 자리·같은 모양(버튼 줄 + 16:9 도면)을 그리고, 오면 key 가 바뀌어 다시
+            // 마운트된다 — autoSim 같은 초기값을 데이터와 함께 소화하려고. 경로가 아예 없는
+            // 작전이면 도면만(확대 가능) 남긴다.
+            routesReady && !rd ? photoOnly : (
+              <StageRouteMap key={rd ? "ready" : "pending"} data={rd} order={routeOrder}
+                highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
+                imgOf={(id) => enemyImg(id)}
+                nameOf={(id) => cur.enemies.find((en) => en.id === id)?.name}
+                onPick={togglePin} autoSim={autoSimOn}
+                photo={{ src: stageMap(photoStage.id, !!photoStage.rg), cam: photoStage.cam!, alt: mapAlt }} />
+            )
           ) : (
-            <p className="st-note">{t("이 작전은 지형 도면이 제공되지 않습니다.")}</p>
-          )) : rd ? (
-            // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 (사용자 확정 2026-08-10).
-            // 고정 조작은 오른쪽 등장 적 **카드**가 맡는다 — 지도 밑 섬네일은 없앴다
-            // (사용자 확정: 카드 클릭 = 고정, 카드 속 섬네일 클릭 = 적 상세 모달).
-            <StageRouteMap data={rd} order={routeOrder}
-              highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
-              imgOf={(id) => enemyImg(id)}
-              nameOf={(id) => cur.enemies.find((en) => en.id === id)?.name}
-              onPick={togglePin} autoSim={autoSimOn} />
-          ) : (
-            <p className="st-note">{routesReady ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
+            <>
+              {/* 실사 도면 ↔ 격자+이동 경로 탭 (사용자 확정 2026-08-10) — 카메라가 없는 작전만 남는다 */}
+              <div className="st-maptabs" role="tablist" aria-label={t("도면 보기")}>
+                <button type="button" role="tab" aria-selected={mapView === "map"}
+                  className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
+                <button type="button" role="tab" aria-selected={mapView === "route"}
+                  className={mapView === "route" ? "on" : ""}
+                  onClick={() => { setMapView("route"); ensureRoutes(); }}
+                  >{t("이동 경로")}{isNewFeature("route-map") && <span className="new-badge">{t("새기능")}</span>}</button>
+              </div>
+              {mapView === "map" ? (s.map ? photoOnly : (
+                <p className="st-note">{t("이 작전은 지형 도면이 제공되지 않습니다.")}</p>
+              )) : rd ? (
+                // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 (사용자 확정 2026-08-10).
+                // 고정 조작은 오른쪽 등장 적 **카드**가 맡는다 — 지도 밑 섬네일은 없앴다
+                // (사용자 확정: 카드 클릭 = 고정, 카드 속 섬네일 클릭 = 적 상세 모달).
+                <StageRouteMap data={rd} order={routeOrder}
+                  highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
+                  imgOf={(id) => enemyImg(id)}
+                  nameOf={(id) => cur.enemies.find((en) => en.id === id)?.name}
+                  onPick={togglePin} autoSim={autoSimOn} />
+              ) : (
+                <p className="st-note">{routesReady ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
+              )}
+            </>
           )}
           {s.desc && <p className="st-desc">{s.desc}</p>}
           {/* 긴급 환경 제한 조건 — 설명을 지우지 않고 이어서 덧붙인다 (사용자 요청 2026-08-10).

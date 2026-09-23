@@ -120,6 +120,8 @@ python3 scripts/build-storylines.py .gamedata # → app/data/storylines.json (�
 python3 scripts/build-recruit.py .gamedata    # → app/data/recruit.json (공채 태그 31종 + 모집 풀)
 python3 scripts/build-enemies.py .gamedata     # → app/data/enemies{,.en,.ja}.json + enemy-stages* + stage-routes.json + sim-stages.json + public/enemy/ (3개 언어 동시)
 python3 scripts/build-stages.py .gamedata      # → app/data/stages{,.en,.ja}.json + public/stage/ (3개 언어 동시)
+#   저장 직전에 scripts/stagecams.py 로 전투 카메라(cam)를 붙인다 — 원본 levels.json(72MB)을 받아
+#   .gamedata/stage-views.json 에 12시간 캐시. 카메라만 다시 붙이려면: python3 scripts/stagecams.py
 #   ⚠ **build-enemies.py를 먼저** 돌려야 한다 — 등장 적은 그 산출물(enemy-stages.json)을
 #     뒤집어 쓴다(같은 levels/ 파일을 두 번 훑지 않으려고). 인자 없이 돌리면 지형 도면
 #     2,224장을 받고(약 5~10분), 인게임 도면이 없는 작전은 레벨 타일 격자로 렌더한다.

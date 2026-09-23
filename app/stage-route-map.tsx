@@ -2,16 +2,20 @@
 
 // 적 이동 경로 격자 지도 — 작전 상세의 '이동 경로' 탭 (사용자 요청 2026-08-10).
 //
-// 3D 실사 도면 위에는 경로를 못 얹는다(원근 렌더·카메라값 없음) — 레벨 파일의 타일
-// 격자를 SVG로 그리고 그 위에 경로 폴리라인을 겹친다. 격자 방향은 scripts/build-rogue.py
-// render_minimap과 같은 row 0 = 위 (실사 미리보기와 육안 대조로 확인된 규약).
-// 데이터는 app/data/stage-routes.json — 3MB가 넘으므로 **탭을 눌렀을 때만** 지연 로드
-// 한다 (stage-detail.tsx가 import()로 가져와 여기 props로 준다).
+// 레벨 파일의 타일 격자를 SVG로 그리고 그 위에 경로 폴리라인을 겹친다. 격자 방향은
+// scripts/build-rogue.py render_minimap과 같은 row 0 = 위 (실사 미리보기와 육안 대조로 확인된 규약).
+// **실사 모드**(photo prop, 2026-09-23): 카메라값이 있는 작전은 실사 도면을 바탕에 깔고
+// 모든 좌표를 전투 카메라로 투영해 그 위에 그린다 (app/stage-cam.ts — 원근 정합의 근거).
+// 좌표만 투영하고 선 굵기·점선·말 크기는 화면에서 일정하게 둔다 — 단위(unit)를 도면
+// 가운데 한 칸 폭으로 잡아서, 격자 모드와 같은 숫자(0.042·0.5 0.14 …)를 그대로 쓴다.
+// 데이터는 app/data/stage-routes.json — 5MB가 넘으므로 지연 로드한다 (stage-detail.tsx가 import()로
+// 가져와 여기 props로 준다). 합친 도면 작전은 상세를 열 때, 그 밖은 '이동 경로' 탭을 누를 때.
 //
 // 상호작용: 적 칩/범례에 호버(데스크탑)·탭(모바일)하면 그 적의 경로만 강조.
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useI18n } from "./i18n";
+import { PHOTO_ASPECT, stageProjector, type StageCam } from "./stage-cam";
 
 /** scripts/routeutil.py 산출 — g는 행 문자열(row 0 = 위), r은 [col,row] 꼭짓점.
  *  sp 이하는 시뮬레이션 확장 (필드 의미는 routeutil.py docstring이 정본). */
@@ -35,6 +39,8 @@ export type StageRoutes = {
    *  규약(row 0 = 아래)이라 렌더러가 뒤집는다. */
   ob?: [string, number, number][];
 };
+/** 경로가 아직 안 온 동안의 빈 지도 — 모든 계산이 빈 배열로 돈다 */
+const EMPTY_ROUTES: StageRoutes = { h: 0, w: 0, g: [], r: [], f: [], e: {} };
 
 // 지도 오브젝트 표기 — **전 종류를 기본으로 그린다** (사용자 지시 2026-08-12
 // "자원 오브젝트들도 기본적으로 보이게, 눌러야만 나오면 어떡해"). 자원 목록에서 한
@@ -172,8 +178,9 @@ function simplify(pts: [number, number][]): [number, number][] {
   return out;
 }
 
-export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, autoSim, obPick, obStyleOf, obIconOf }: {
-  data: StageRoutes;
+export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf, onPick, autoSim, obPick, obStyleOf, obIconOf, photo }: {
+  /** 없으면 '불러오는 중' — 실사 모드에서 경로가 오기 전에도 같은 자리·모양을 그려 둔다 (합친 도면) */
+  data?: StageRoutes;
   /** 범례에 보이는 적 id 순서 — 선 색 배정 기준 (stage-detail이 넘겨준다) */
   order: string[];
   highlights?: string[] | null;
@@ -191,9 +198,32 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
   obStyleOf?: (kind: string) => string;
   /** ob의 종류 → 아이템 아이콘 URL. 주면 마커 자리에 **섬네일**을 그린다 (사용자 요청 2026-08-12) */
   obIconOf?: (kind: string) => string | undefined;
+  /** 실사 모드 — 실사 도면(src)을 바탕에 깔고 전투 카메라(cam)로 투영해 그린다 (2026-09-23) */
+  photo?: { src: string; cam: StageCam; alt?: string };
 }) {
   const { t } = useI18n();
+  // 경로가 아직 없으면(pending) 빈 지도로 돌린다 — 버튼 줄과 도면 자리는 그대로 그려 CLS 가 없다
+  const pending = !dataProp;
+  const data = dataProp ?? EMPTY_ROUTES;
   const { w, h, g, r, f } = data;
+  // 실사 모드 좌표 — toXY(gx, gy)는 격자 좌표(한 칸 = 1, 왼쪽 위 원점)를 그리는 좌표로 옮긴다.
+  // 격자 모드는 그대로. 실사 모드는 도면을 **16:9로 펴서**(PHOTO_ASPECT — 실사 도면을 보여 주던
+  // .st-map 과 같은 비율) 그 위 위치를 '가운데 한 칸 폭 = 1' 단위로 준다.
+  const proj = useMemo(() => (photo ? stageProjector(photo.cam, w, h) : null), [photo, w, h]);
+  const unit = useMemo(() => {
+    if (!proj) return 1;
+    return (proj(w / 2 + 0.5, h / 2)[0] - proj(w / 2 - 0.5, h / 2)[0]) * PHOTO_ASPECT;
+  }, [proj, w, h]);
+  const toXY = (x: number, y: number): [number, number] => {
+    if (!proj) return [x, y];
+    const [u, v] = proj(x, y);
+    return [(u * PHOTO_ASPECT) / unit, v / unit];
+  };
+  // 실사 위에 타일 종류를 반투명으로 겹칠지 — 격자 모드의 색 구분을 실사에서도 본다
+  const [showTiles, setShowTiles] = useState(false);
+  // 실사 위 경로 선 표시 — 기본은 켠다 (사용자 요청 2026-09-23 "기본적으로는 지금처럼 표시").
+  // 끄면 선과 출발·도착 표식만 숨긴다. 시뮬레이션 말은 경로가 아니라 그대로 달린다.
+  const [showRoutes, setShowRoutes] = useState(true);
   // ── 시뮬레이션 상태 (사용자 요청 2026-08-10 "시뮬레이트 버튼 하나 만들어보자") ──
   // 시각(simT)은 초 단위 스테이지 시계. rAF 루프가 tRef를 굴리고 상태로 비춘다.
   // 이 컴포넌트는 경로 데이터가 준비된 뒤에만 마운트되므로 autoSim은 초기값으로 소화한다.
@@ -325,8 +355,16 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
     }
     for (const rep of reps) { lines.push({ rep, owner: id, best: rep, off: 0 }); usedClasses.add(rep); }
   }
-  // 등장 적 목록 밖(숨은 증원 등)만 쓰는 경로 — 회색 한 벌로 남긴다
-  for (const rep of group.keys()) if (!usedClasses.has(rep)) lines.push({ rep, owner: null, best: rep, off: 0 });
+  // 등장 적 목록 밖(숨은 증원 등)만 쓰는 경로 — 회색 한 벌로 남긴다.
+  // ⚠ **어느 적도 스폰하지 않는 경로는 그리지 않는다** (사용자 제보 2026-09-23 TR-5 "정체를 알 수
+  //   없는 회색 경로"). 레벨의 routes 에는 적 말고도 PREVIEW_CURSOR(웨이브 예고 화살표)·
+  //   PLAY_OPERA(경고 연출)·DISPLAY_ENEMY_INFO 가 가리키는 경로가 섞여 있다 — 작전 도감만
+  //   401곳 1,163개가 회색 선으로 나가고 있었다. e 는 웨이브·브랜치의 SPAWN 전부(숨은 증원
+  //   포함)로 만들어지므로(routeutil.py), 거기 한 번도 안 나오는 경로는 적의 길이 아니다.
+  const spawned = new Set(Object.values(data.e).flat());
+  for (const [rep, members] of group) {
+    if (!usedClasses.has(rep) && members.some((i) => spawned.has(i))) lines.push({ rep, owner: null, best: rep, off: 0 });
+  }
   // 묶음 중 **경유점이 가장 많은** 변형을 그 선의 모양으로 (게임이 의도한 궤적에 가장
   // 가깝다). 오프셋도 여기서 확정 — 시뮬레이션 말이 **자기 선 위**를 정확히 타야 하므로
   // (사용자 지적 2026-08-10 "경로를 벗어나버리는 경우가 있음") 렌더와 시뮬이 공유한다.
@@ -454,18 +492,216 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
 
   const fmtT = (v: number) => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, "0")}`;
   const curWave = plan ? plan.waveSpans.reduce((n, from, i) => (simT >= from ? i + 1 : n), 1) : 1;
-  const hasSim = !!(data.sp?.length && data.wv);
+  const hasSim = pending || !!(data.sp?.length && data.wv);
   // 지도 크기 2단 — **기본이 이미 넓은 칼럼(52%)**이고 토글은 전폭 하나뿐
   // (사용자 확정 2026-08-12 "한번 확대한 크기를 기본으로, 지도 크기는 두 가지만")
   const [big, setBig] = useState(false);
   const cell = 1;
+  const svgEl = (
+      <svg className={`st-routemap${photo ? " st-routeoverlay" : ""}`}
+        viewBox={photo ? `0 0 ${PHOTO_ASPECT / unit} ${1 / unit}` : `0 0 ${w * cell} ${h * cell}`} role="img"
+        aria-label={t("적 이동 경로 지도")}>
+        {/* 고지형(x) 금지 표식 — 각 타일 중앙의 은은한 ⊘(원+사선) (사용자 요청 2026-08-10
+            "금지당한듯한 표시, 너무 심하게 눈에 안 띄게" — 단순 세로줄은 무성의하다고 반려).
+            색이 아니라 표식이라 색약에도 구분된다. */}
+        <defs>
+          {/* 새까만 배경 위라 표식은 은은한 밝은 잉크 (배경이 새까만색 — 사용자 지시 2026-08-10) */}
+          <g id={`${clipId}x`}>
+            <circle r={0.19} fill="none" stroke="#4f4964" strokeWidth={0.055} />
+            <line x1={-0.134} y1={-0.134} x2={0.134} y2={0.134} stroke="#4f4964" strokeWidth={0.055} />
+          </g>
+        </defs>
+        {photo ? (
+          <>
+            {/* 타일 종류 겹치기 — 각 칸의 바닥 네 모서리를 투영한 사각형 (원근 그대로) */}
+            {showTiles && g.map((row, ri) =>
+              Array.from(row).map((ch, ci) => {
+                const q = [toXY(ci, ri), toXY(ci + 1, ri), toXY(ci + 1, ri + 1), toXY(ci, ri + 1)];
+                return (
+                  <polygon key={`${ri}-${ci}`} points={q.map((p) => p.join(",")).join(" ")}
+                    fill={TILE_FILL[ch] ?? TILE_FILL.r} fillOpacity={0.55}
+                    stroke="#fff" strokeOpacity={0.35} strokeWidth={0.02} />
+                );
+              }))}
+          </>
+        ) : (
+          <>
+            {g.map((row, ri) =>
+              Array.from(row).map((ch, ci) => (
+                <rect key={`${ri}-${ci}`} x={ci * cell + 0.02} y={ri * cell + 0.02}
+                  width={cell - 0.04} height={cell - 0.04} fill={TILE_FILL[ch] ?? TILE_FILL.r} />
+              )))}
+            {g.map((row, ri) =>
+              Array.from(row).map((ch, ci) => ch === "x" && (
+                <use key={`x${ri}-${ci}`} href={`#${clipId}x`}
+                  x={ci * cell + cell / 2} y={ri * cell + cell / 2} />
+              )))}
+          </>
+        )}
+        {/* 지도 오브젝트 — 전 종류를 그리고, 고른 종류(obPick)만 선명하게 남긴다 */}
+        {data.ob?.map(([kind, c, r], i) => {
+          const st = OB_STYLE[obStyleOf ? obStyleOf(kind) : kind];
+          if (!st) return null;
+          const dim = obPick ? obPick !== kind : false;
+          const [x, y] = toXY(c + 0.5, h - 1 - r + 0.5);
+          const icon = obIconOf?.(kind);
+          return (
+            <g key={i} opacity={dim ? 0.14 : 1}>
+              {icon ? (
+                // 섬네일 마커 — 종류 색 테두리 원 위에 아이템 아이콘 (사용자 요청 2026-08-12)
+                <>
+                  <circle cx={x} cy={y} r={0.3} fill="#10141c" fillOpacity={0.82} stroke={st.fill} strokeWidth={0.06} />
+                  <image href={icon} x={x - 0.24} y={y - 0.24} width={0.48} height={0.48}
+                    preserveAspectRatio="xMidYMid meet" />
+                </>
+              ) : obShape(st.shape, x, y, st.fill, i)}
+            </g>
+          );
+        })}
+        {showRoutes && lines.map((ln) => {
+          // 선의 모양(best)·오프셋(off)은 접기 메모에서 확정 — 시뮬레이션 말과 공유한다
+          const { rep, owner, best, off } = ln;
+          const P = polys[best];
+          if (!P) return null;
+          const mapPt = ([x, y]: [number, number]) => toXY(x * cell + cell / 2 + off, y * cell + cell / 2 + off);
+          // 강조 시: 고른 적의 선은 굵게, 나머지는 **아주 흐리게** (사용자 확정 2026-08-10 —
+          // '굵기만' 안을 써 보고 겹침이 심해 흐림 방식으로 되돌림). 평소엔 전부 보통.
+          // 선이 적 단위라 색은 언제나 그 선 주인의 색이다.
+          const em = hl ? owner !== null && hl.has(owner) : false;
+          const color = owner ? enemyRouteColor(order, owner) : "#9aa0a6";
+          const first = mapPt(P.segs[0].pts[0]);
+          const lastPts = P.segs[P.segs.length - 1].pts;
+          const last = mapPt(lastPts[lastPts.length - 1]);
+          const prev = mapPt(lastPts[lastPts.length - 2] ?? lastPts[0]);
+          const ang = Math.atan2(last[1] - prev[1], last[0] - prev[0]);
+          const a = 0.28; // 화살촉 크기 (타일 단위)
+          const tipPts: [number, number][] = [
+            [last[0] + Math.cos(ang) * a, last[1] + Math.sin(ang) * a],
+            [last[0] + Math.cos(ang + 2.5) * a, last[1] + Math.sin(ang + 2.5) * a],
+            [last[0] + Math.cos(ang - 2.5) * a, last[1] + Math.sin(ang - 2.5) * a],
+          ];
+          return (
+            <g key={`${rep}-${owner ?? "•"}`} opacity={obPick ? 0.12 : hl && !em ? 0.07 : 0.92}>
+              {/* 대시가 진행 방향으로 흐른다(CSS 애니메이션) — 방향 표시 겸 움직임 (사용자 요청).
+                  지상은 긴 대시, 비행은 점선, **통로 순간이동(hop)은 가늘고 성긴 점선**.
+                  패턴 길이는 keyframe 오프셋(-0.64)의 약수라 끊김 없이 순환한다. */}
+              {/* 실사 모드 밑선 — 흰 고지대·밝은 바닥 위에서 노랑·연두 선이 묻히지 않게
+                  어두운 테두리를 한 겹 깐다 (격자 모드는 바탕이 어두워 필요 없다) */}
+              {photo && P.segs.map((sgm, si) => !sgm.hop && (
+                <polyline key={`c${si}`} points={sgm.pts.map(mapPt).map((p) => p.join(",")).join(" ")}
+                  fill="none" stroke="#0b0e12" strokeOpacity={0.6}
+                  strokeWidth={(em ? 0.12 : 0.042) + 0.05}
+                  strokeLinejoin="round" strokeLinecap="round" style={{ animation: "none" }} />
+              ))}
+              {P.segs.map((sgm, si) => (
+                <polyline key={si} points={sgm.pts.map(mapPt).map((p) => p.join(",")).join(" ")}
+                  fill="none" stroke={color}
+                  strokeWidth={sgm.hop ? (em ? 0.07 : 0.03) : em ? 0.12 : 0.042}
+                  strokeLinejoin="round" strokeLinecap="round" opacity={sgm.hop ? 0.55 : 1}
+                  strokeDasharray={sgm.hop ? "0.04 0.12" : f[best] ? "0.12 0.2" : "0.5 0.14"} />
+              ))}
+              {/* 호버용 투명 굵은 선 — 어떤 적의 경로인지 즉시 툴팁 (사용자 요청 2026-08-10).
+                  본선(0.042)은 얇아 마우스로 짚기 어려워 폭 0.3의 히트 영역을 겹친다.
+                  클릭 = 그 적 고정 토글 — 적 카드 클릭과 같은 동작 (사용자 요청 2026-08-10). */}
+              {owner && P.segs.map((sgm, si) => (
+                <polyline key={`h${si}`} points={sgm.pts.map(mapPt).map((p) => p.join(",")).join(" ")}
+                  fill="none" stroke="#000" strokeOpacity={0} strokeWidth={0.3}
+                  style={{ pointerEvents: "stroke", animation: "none", cursor: onPick ? "pointer" : undefined }}
+                  onClick={onPick ? () => onPick(owner) : undefined}
+                  onMouseMove={(ev) => showTip(ev, nameOf?.(owner) ?? owner, imgOf?.(owner))}
+                  onMouseLeave={() => setTip(null)} />
+              ))}
+              {/* 시작점 ●·도착 화살촉 — 제자리 적(한 칸 경로)은 선이 없어 이 표식이 전부라,
+                  여기에도 선과 같은 호버 툴팁·클릭 고정을 단다 (사용자 요청 2026-08-12). */}
+              <g style={owner && onPick ? { cursor: "pointer" } : undefined}
+                onMouseMove={owner ? (ev) => showTip(ev, nameOf?.(owner) ?? owner, imgOf?.(owner)) : undefined}
+                onMouseLeave={owner ? () => setTip(null) : undefined}
+                onClick={owner && onPick ? () => onPick(owner) : undefined}>
+                {P.dense.length < 2 && (
+                  <circle cx={first[0]} cy={first[1]} r={0.34} fill="#000" fillOpacity={0}
+                    style={{ pointerEvents: "all" }} />
+                )}
+                <circle cx={first[0]} cy={first[1]} r={0.16} fill={color} />
+                <polygon points={tipPts.map((p) => p.join(",")).join(" ")} fill={color} />
+              </g>
+            </g>
+          );
+        })}
+        {/* 시뮬레이션 말 — 스폰~도착 사이에만 있고, 경유 대기 중엔 제자리에 선다.
+            적 섬네일 + 진행 방향 화살촉 (사용자 요청 2026-08-10 "원 말고 진행방향을 알 수
+            있는 무언가로"). 강조 중엔 선과 똑같이 흐려진다 — 안 흐리면 숨은 경로 위를
+            달리는 것처럼 보였다 (사용자 제보 "경로를 벗어나버리는 경우"). */}
+        {simOn && plan && (
+          <g className="st-simdots">
+            <defs>
+              <clipPath id={`${clipId}c`}><circle cx={0} cy={0} r={0.27} /></clipPath>
+            </defs>
+            {plan.runners.map((rn, i) => {
+              if (!rn.pts.length || simT < rn.t0 || simT > rn.end) return null;
+              const rel = simT - rn.t0;
+              let x: number, y: number, vx = 0, vy = 0;
+              if (rn.pts.length < 2) {
+                // 한 칸짜리 경로 — 제자리 개체(생존연산 채집물·장치 등). k-1이 음수가 되어
+                // 터지던 케이스 (사용자 제보 2026-08-12 그물망 갱도). 방향 없이 그 자리에 선다.
+                [x, y] = rn.pts[0];
+              } else {
+              let k = 1;
+              while (k < rn.arr.length && rn.arr[k] < rel) k++;
+              if (k >= rn.arr.length) k = rn.arr.length - 1;
+              const [ax, ay] = rn.pts[k - 1], [bx, by] = rn.pts[k];
+              vx = bx - ax; vy = by - ay;
+              if (rel <= rn.dep[k - 1]) {
+                [x, y] = rn.pts[k - 1];             // 대기 중 — 다음 구간 방향을 미리 가리킨다
+              } else if (Math.max(Math.abs(ax - bx), Math.abs(ay - by)) > 1) {
+                [x, y] = rn.pts[k];                 // 순간이동(hop)은 즉시 도착점
+                const [nx2, ny2] = rn.pts[Math.min(k + 1, rn.pts.length - 1)];
+                vx = nx2 - bx; vy = ny2 - by;
+              } else {
+                const span = rn.arr[k] - rn.dep[k - 1];
+                const f01 = span > 0 ? Math.min(1, (rel - rn.dep[k - 1]) / span) : 1;
+                x = ax + (bx - ax) * f01;
+                y = ay + (by - ay) * f01;
+              }
+              }
+              // 그리는 자리와 진행 방향 — 실사 모드에선 원근 때문에 격자 방향과 화면 방향이
+              // 달라지므로, 앞으로 조금 간 자리도 함께 투영해 화면 위 각도를 잰다.
+              const [sx, sy] = toXY(x * cell + cell / 2 + rn.off, y * cell + cell / 2 + rn.off);
+              const [ax2, ay2] = toXY(x * cell + cell / 2 + rn.off + vx * 0.05, y * cell + cell / 2 + rn.off + vy * 0.05);
+              const deg = vx || vy ? (Math.atan2(ay2 - sy, ax2 - sx) * 180) / Math.PI : 0;
+              const dim = hl ? !(rn.key && hl.has(rn.key)) : false;
+              const img = imgOf?.(rn.key);
+              return (
+                <g key={i} className="st-simunit"
+                  transform={`translate(${sx},${sy})`}
+                  opacity={dim ? 0.12 : 1}
+                  onMouseMove={(ev) => showTip(ev, nameOf?.(rn.key) ?? rn.key, imgOf?.(rn.key))}
+                  onMouseLeave={() => setTip(null)}>
+                  {/* 진행 방향 화살촉 — 정지 상태에서도 어디로 가는지 보인다.
+                      제자리 개체(이동 없음)는 방향이 없으니 그리지 않는다. */}
+                  {(vx !== 0 || vy !== 0) && (
+                    <g transform={`rotate(${deg})`}>
+                      <polygon points="0.53,0 0.27,0.16 0.27,-0.16" fill={rn.color} stroke="#10141c" strokeWidth={0.03} />
+                    </g>
+                  )}
+                  <circle r={0.3} fill="#10141c" stroke={rn.color} strokeWidth={0.055} />
+                  {img && (
+                    <image href={img} x={-0.27} y={-0.27} width={0.54} height={0.54}
+                      clipPath={`url(#${clipId}c)`} preserveAspectRatio="xMidYMid slice" />
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        )}
+      </svg>
+  );
   return (
     <div className={`st-routewrap big${big ? " full" : ""}`} ref={wrapRef}>
     {/* 시뮬레이트 — 스폰 타임라인 재생 (사용자 요청 2026-08-10). 데이터가 있는 작전만. */}
     {hasSim && (
       <div className="st-simbar">
         {!simOn ? (
-          <button type="button" className="st-simstart"
+          <button type="button" className="st-simstart" disabled={pending}
             onClick={() => { tRef.current = 0; setSimT(0); setSimOn(true); setPlaying(true); }}>
             ▶ {t("시뮬레이트")}
           </button>
@@ -500,179 +736,35 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
     <div className="st-routekey">
       <span aria-hidden><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" strokeWidth="2.4" strokeDasharray="9 3.5" /></svg>{t("지상")}</span>
       <span aria-hidden><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" strokeWidth="2.4" strokeDasharray="2.5 4" /></svg>{t("비행")}</span>
-      <button type="button" className="st-mapscale" aria-pressed={big}
+      {/* 실사 모드 — 경로 선 켜고 끄기(기본 켬) · 타일 종류 반투명 겹치기(기본 끔) */}
+      {photo && (
+        <button type="button" className="st-mapscale" aria-pressed={showRoutes} disabled={pending}
+          onClick={() => setShowRoutes((v) => !v)}>
+          ⇢ {showRoutes ? t("경로 숨기기") : t("경로 표시")}
+        </button>
+      )}
+      {photo && (
+        <button type="button" className="st-mapscale" aria-pressed={showTiles} disabled={pending}
+          onClick={() => setShowTiles((v) => !v)}>
+          ▦ {showTiles ? t("타일 숨기기") : t("타일 표시")}
+        </button>
+      )}
+      <button type="button" className="st-mapscale" aria-pressed={big} disabled={pending}
         onClick={() => setBig((v) => !v)}>
         {big ? "⤡ " + t("원래 크기") : "⤢ " + t("지도 확대")}
       </button>
     </div>
-    <svg className="st-routemap" viewBox={`0 0 ${w * cell} ${h * cell}`} role="img"
-      aria-label={t("적 이동 경로 지도")}>
-      {/* 고지형(x) 금지 표식 — 각 타일 중앙의 은은한 ⊘(원+사선) (사용자 요청 2026-08-10
-          "금지당한듯한 표시, 너무 심하게 눈에 안 띄게" — 단순 세로줄은 무성의하다고 반려).
-          색이 아니라 표식이라 색약에도 구분된다. */}
-      <defs>
-        {/* 새까만 배경 위라 표식은 은은한 밝은 잉크 (배경이 새까만색 — 사용자 지시 2026-08-10) */}
-        <g id={`${clipId}x`}>
-          <circle r={0.19} fill="none" stroke="#4f4964" strokeWidth={0.055} />
-          <line x1={-0.134} y1={-0.134} x2={0.134} y2={0.134} stroke="#4f4964" strokeWidth={0.055} />
-        </g>
-      </defs>
-      {g.map((row, ri) =>
-        Array.from(row).map((ch, ci) => (
-          <rect key={`${ri}-${ci}`} x={ci * cell + 0.02} y={ri * cell + 0.02}
-            width={cell - 0.04} height={cell - 0.04} fill={TILE_FILL[ch] ?? TILE_FILL.r} />
-        )))}
-      {g.map((row, ri) =>
-        Array.from(row).map((ch, ci) => ch === "x" && (
-          <use key={`x${ri}-${ci}`} href={`#${clipId}x`}
-            x={ci * cell + cell / 2} y={ri * cell + cell / 2} />
-        )))}
-      {/* 지도 오브젝트 — 전 종류를 그리고, 고른 종류(obPick)만 선명하게 남긴다 */}
-      {data.ob?.map(([kind, c, r], i) => {
-        const st = OB_STYLE[obStyleOf ? obStyleOf(kind) : kind];
-        if (!st) return null;
-        const dim = obPick ? obPick !== kind : false;
-        const x = c * cell + cell / 2, y = (h - 1 - r) * cell + cell / 2;
-        const icon = obIconOf?.(kind);
-        return (
-          <g key={i} opacity={dim ? 0.14 : 1}>
-            {icon ? (
-              // 섬네일 마커 — 종류 색 테두리 원 위에 아이템 아이콘 (사용자 요청 2026-08-12)
-              <>
-                <circle cx={x} cy={y} r={0.3} fill="#10141c" fillOpacity={0.82} stroke={st.fill} strokeWidth={0.06} />
-                <image href={icon} x={x - 0.24} y={y - 0.24} width={0.48} height={0.48}
-                  preserveAspectRatio="xMidYMid meet" />
-              </>
-            ) : obShape(st.shape, x, y, st.fill, i)}
-          </g>
-        );
-      })}
-      {lines.map((ln) => {
-        // 선의 모양(best)·오프셋(off)은 접기 메모에서 확정 — 시뮬레이션 말과 공유한다
-        const { rep, owner, best, off } = ln;
-        const P = polys[best];
-        if (!P) return null;
-        const mapPt = ([x, y]: [number, number]) => [x * cell + cell / 2 + off, y * cell + cell / 2 + off] as const;
-        // 강조 시: 고른 적의 선은 굵게, 나머지는 **아주 흐리게** (사용자 확정 2026-08-10 —
-        // '굵기만' 안을 써 보고 겹침이 심해 흐림 방식으로 되돌림). 평소엔 전부 보통.
-        // 선이 적 단위라 색은 언제나 그 선 주인의 색이다.
-        const em = hl ? owner !== null && hl.has(owner) : false;
-        const color = owner ? enemyRouteColor(order, owner) : "#9aa0a6";
-        const first = mapPt(P.segs[0].pts[0]);
-        const lastPts = P.segs[P.segs.length - 1].pts;
-        const last = mapPt(lastPts[lastPts.length - 1]);
-        const prev = mapPt(lastPts[lastPts.length - 2] ?? lastPts[0]);
-        const ang = Math.atan2(last[1] - prev[1], last[0] - prev[0]);
-        const a = 0.28; // 화살촉 크기 (타일 단위)
-        const tipPts: [number, number][] = [
-          [last[0] + Math.cos(ang) * a, last[1] + Math.sin(ang) * a],
-          [last[0] + Math.cos(ang + 2.5) * a, last[1] + Math.sin(ang + 2.5) * a],
-          [last[0] + Math.cos(ang - 2.5) * a, last[1] + Math.sin(ang - 2.5) * a],
-        ];
-        return (
-          <g key={`${rep}-${owner ?? "•"}`} opacity={obPick ? 0.12 : hl && !em ? 0.07 : 0.92}>
-            {/* 대시가 진행 방향으로 흐른다(CSS 애니메이션) — 방향 표시 겸 움직임 (사용자 요청).
-                지상은 긴 대시, 비행은 점선, **통로 순간이동(hop)은 가늘고 성긴 점선**.
-                패턴 길이는 keyframe 오프셋(-0.64)의 약수라 끊김 없이 순환한다. */}
-            {P.segs.map((sgm, si) => (
-              <polyline key={si} points={sgm.pts.map(mapPt).map((p) => p.join(",")).join(" ")}
-                fill="none" stroke={color}
-                strokeWidth={sgm.hop ? (em ? 0.07 : 0.03) : em ? 0.12 : 0.042}
-                strokeLinejoin="round" strokeLinecap="round" opacity={sgm.hop ? 0.55 : 1}
-                strokeDasharray={sgm.hop ? "0.04 0.12" : f[best] ? "0.12 0.2" : "0.5 0.14"} />
-            ))}
-            {/* 호버용 투명 굵은 선 — 어떤 적의 경로인지 즉시 툴팁 (사용자 요청 2026-08-10).
-                본선(0.042)은 얇아 마우스로 짚기 어려워 폭 0.3의 히트 영역을 겹친다.
-                클릭 = 그 적 고정 토글 — 적 카드 클릭과 같은 동작 (사용자 요청 2026-08-10). */}
-            {owner && P.segs.map((sgm, si) => (
-              <polyline key={`h${si}`} points={sgm.pts.map(mapPt).map((p) => p.join(",")).join(" ")}
-                fill="none" stroke="#000" strokeOpacity={0} strokeWidth={0.3}
-                style={{ pointerEvents: "stroke", animation: "none", cursor: onPick ? "pointer" : undefined }}
-                onClick={onPick ? () => onPick(owner) : undefined}
-                onMouseMove={(ev) => showTip(ev, nameOf?.(owner) ?? owner, imgOf?.(owner))}
-                onMouseLeave={() => setTip(null)} />
-            ))}
-            {/* 시작점 ●·도착 화살촉 — 제자리 적(한 칸 경로)은 선이 없어 이 표식이 전부라,
-                여기에도 선과 같은 호버 툴팁·클릭 고정을 단다 (사용자 요청 2026-08-12). */}
-            <g style={owner && onPick ? { cursor: "pointer" } : undefined}
-              onMouseMove={owner ? (ev) => showTip(ev, nameOf?.(owner) ?? owner, imgOf?.(owner)) : undefined}
-              onMouseLeave={owner ? () => setTip(null) : undefined}
-              onClick={owner && onPick ? () => onPick(owner) : undefined}>
-              {P.dense.length < 2 && (
-                <circle cx={first[0]} cy={first[1]} r={0.34} fill="#000" fillOpacity={0}
-                  style={{ pointerEvents: "all" }} />
-              )}
-              <circle cx={first[0]} cy={first[1]} r={0.16} fill={color} />
-              <polygon points={tipPts.map((p) => p.join(",")).join(" ")} fill={color} />
-            </g>
-          </g>
-        );
-      })}
-      {/* 시뮬레이션 말 — 스폰~도착 사이에만 있고, 경유 대기 중엔 제자리에 선다.
-          적 섬네일 + 진행 방향 화살촉 (사용자 요청 2026-08-10 "원 말고 진행방향을 알 수
-          있는 무언가로"). 강조 중엔 선과 똑같이 흐려진다 — 안 흐리면 숨은 경로 위를
-          달리는 것처럼 보였다 (사용자 제보 "경로를 벗어나버리는 경우"). */}
-      {simOn && plan && (
-        <g className="st-simdots">
-          <defs>
-            <clipPath id={`${clipId}c`}><circle cx={0} cy={0} r={0.27} /></clipPath>
-          </defs>
-          {plan.runners.map((rn, i) => {
-            if (!rn.pts.length || simT < rn.t0 || simT > rn.end) return null;
-            const rel = simT - rn.t0;
-            let x: number, y: number, vx = 0, vy = 0;
-            if (rn.pts.length < 2) {
-              // 한 칸짜리 경로 — 제자리 개체(생존연산 채집물·장치 등). k-1이 음수가 되어
-              // 터지던 케이스 (사용자 제보 2026-08-12 그물망 갱도). 방향 없이 그 자리에 선다.
-              [x, y] = rn.pts[0];
-            } else {
-            let k = 1;
-            while (k < rn.arr.length && rn.arr[k] < rel) k++;
-            if (k >= rn.arr.length) k = rn.arr.length - 1;
-            const [ax, ay] = rn.pts[k - 1], [bx, by] = rn.pts[k];
-            vx = bx - ax; vy = by - ay;
-            if (rel <= rn.dep[k - 1]) {
-              [x, y] = rn.pts[k - 1];             // 대기 중 — 다음 구간 방향을 미리 가리킨다
-            } else if (Math.max(Math.abs(ax - bx), Math.abs(ay - by)) > 1) {
-              [x, y] = rn.pts[k];                 // 순간이동(hop)은 즉시 도착점
-              const [nx2, ny2] = rn.pts[Math.min(k + 1, rn.pts.length - 1)];
-              vx = nx2 - bx; vy = ny2 - by;
-            } else {
-              const span = rn.arr[k] - rn.dep[k - 1];
-              const f01 = span > 0 ? Math.min(1, (rel - rn.dep[k - 1]) / span) : 1;
-              x = ax + (bx - ax) * f01;
-              y = ay + (by - ay) * f01;
-            }
-            }
-            const deg = vx || vy ? (Math.atan2(vy, vx) * 180) / Math.PI : 0;
-            const dim = hl ? !(rn.key && hl.has(rn.key)) : false;
-            const img = imgOf?.(rn.key);
-            return (
-              <g key={i} className="st-simunit"
-                transform={`translate(${x * cell + cell / 2 + rn.off},${y * cell + cell / 2 + rn.off})`}
-                opacity={dim ? 0.12 : 1}
-                onMouseMove={(ev) => showTip(ev, nameOf?.(rn.key) ?? rn.key, imgOf?.(rn.key))}
-                onMouseLeave={() => setTip(null)}>
-                {/* 진행 방향 화살촉 — 정지 상태에서도 어디로 가는지 보인다.
-                    제자리 개체(이동 없음)는 방향이 없으니 그리지 않는다. */}
-                {(vx !== 0 || vy !== 0) && (
-                  <g transform={`rotate(${deg})`}>
-                    <polygon points="0.53,0 0.27,0.16 0.27,-0.16" fill={rn.color} stroke="#10141c" strokeWidth={0.03} />
-                  </g>
-                )}
-                <circle r={0.3} fill="#10141c" stroke={rn.color} strokeWidth={0.055} />
-                {img && (
-                  <image href={img} x={-0.27} y={-0.27} width={0.54} height={0.54}
-                    clipPath={`url(#${clipId}c)`} preserveAspectRatio="xMidYMid slice" />
-                )}
-              </g>
-            );
-          })}
-        </g>
-      )}
-    </svg>
-    {/* 타일 범례 — 이 지도에 있는 타일 종류만 (사용자 요청 2026-08-10 "다 구분 가능하게") */}
-    <div className="st-tilekey">
+    {/* 실사 모드: 도면은 진짜 <img>(서버 렌더·검색에 그대로 박힌다)이고, 경로 SVG 는 같은 상자
+        위에 투명하게 겹친다 — 경로가 늦게 와도 도면은 바뀌지도 밀리지도 않는다. */}
+    {photo ? (
+      <div className="st-photomap">
+        <img src={photo.src} alt={photo.alt ?? ""} decoding="async" />
+        {!pending && svgEl}
+      </div>
+    ) : svgEl}
+    {/* 타일 범례 — 이 지도에 있는 타일 종류만 (사용자 요청 2026-08-10 "다 구분 가능하게").
+        실사 모드에선 타일을 겹쳐 볼 때만 — 안 겹쳤는데 색 범례가 있으면 뜻이 없다 */}
+    {(!photo || showTiles) && <div className="st-tilekey">
       {(() => {
         const present = new Set<string>();
         for (const row of g) for (const ch of row) present.add(ch);
@@ -698,7 +790,7 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
           </>
         );
       })()}
-    </div>
+    </div>}
     {/* 선·말 호버 즉시 툴팁 — 커서를 따라다니는 이름표 (+작은 섬네일) */}
     {tip && (
       <div className="st-maptip" style={{ left: tip.x, top: tip.y }}>

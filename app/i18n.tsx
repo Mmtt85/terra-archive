@@ -1838,6 +1838,10 @@ const D: Record<string, Pair> = {
   "지상": ["Ground", "地上"],
   "비행": ["Flying", "飛行"],
   "지도 확대": ["Enlarge map", "マップ拡大"],
+  "경로 표시": ["Show routes", "経路表示"],
+  "경로 숨기기": ["Hide routes", "経路非表示"],
+  "타일 표시": ["Show tiles", "タイル表示"],
+  "타일 숨기기": ["Hide tiles", "タイル非表示"],
   "적 도감": ["Enemy Handbook", "敵図鑑"],
   "요리·음료에 쓰이는 모든 재료입니다. 누르면 효과와 쓰이는 요리, 얻는 곳이 나옵니다.": [
     "Every ingredient used in food and drinks — click for its effect, the dishes it goes into, and where to get it.",

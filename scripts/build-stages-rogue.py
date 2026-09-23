@@ -156,6 +156,16 @@ def build(loc, suffix):
 
 by_loc = {loc: build(loc, suffix) for loc, suffix in LOCALES}
 
+# 실사 도면 위 경로 투영용 전투 카메라 (2026-09-23) — 출처·근거는 scripts/stagecams.py 머리주석.
+# 록라 도면(public/rogue/map)도 같은 인게임 미리보기라 같은 규칙으로 붙는다.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import stagecams  # noqa: E402
+for loc, suffix in LOCALES:
+    _prev = os.path.join(DATA, f"stages-rogue{suffix}.json")
+    _keep = {e["id"]: e["cam"] for e in json.load(open(_prev, encoding="utf-8"))["stages"] if "cam" in e} \
+        if os.path.exists(_prev) else {}
+    stagecams.attach(by_loc[loc], os.path.join(REPO, "public", "rogue", "map"), keep=_keep)
+
 for loc, suffix in LOCALES:
     p = os.path.join(DATA, f"stages-rogue{suffix}.json")
     with open(p, "w", encoding="utf-8") as f:
