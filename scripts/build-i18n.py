@@ -193,9 +193,13 @@ def build_locale(prefix):
     def build_skills(c, kr_skills):
         out = []
         kr_by_id = {s["id"]: s for s in kr_skills}
+        seen = set()
         for s in c.get("skills") or []:
             sid = s.get("skillId")
-            if not sid or sid not in kr_by_id: continue
+            # 소환물(토큰)은 표에 같은 스킬이 정예화 단계마다 겹쳐 적혀 있다(sktok_robrta ×2) — 한 번만 센다.
+            # 안 거르면 개수가 KR 과 달라져 아래 폴백이 통째로 한국어를 돌려줬다 (소환물 스킬 20개, 2026-09-24)
+            if not sid or sid not in kr_by_id or sid in seen: continue
+            seen.add(sid)
             base = dict(kr_by_id[sid])
             lv = (skill_table.get(sid) or {}).get("levels") or []
             if lv:
