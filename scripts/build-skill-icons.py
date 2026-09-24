@@ -10,8 +10,10 @@ Usage: python3 scripts/build-skill-icons.py [gamedata-dir]   # default: .gamedat
 ⚠ **이미 있는 파일은 건너뛴다.** 888장을 매번 다시 받으면 CI가 몇 분씩 길어진다 —
    신규 오퍼가 들어왔을 때 새 아이콘만 붙는 증분 방식이다. 다시 받고 싶으면 폴더를 지운다.
 
-⚠ 대상은 **도감 오퍼가 실제로 참조하는 스킬**뿐이다 (operators.json 기준, 소환물 포함).
-   skill_table 전체(1,630개)를 받으면 화면에 안 쓰는 적·소환 전용 아이콘까지 딸려 온다.
+⚠ 대상은 **도감 오퍼 본체의 스킬**뿐이다 (operators.json 기준). 아이콘을 그리는 곳이
+   본체 스킬 카드 하나다 — 소환물 스킬은 글로만 나온다. 종전엔 소환물까지 받다가 22장이
+   원본에 없어(패시브라 아이콘이 없거나 파일명이 스킬 id와 다르다) CI마다 같은 404 경고가
+   났다 (2026-09-24). skill_table 전체(1,630개)도 받지 않는다 — 화면에 안 쓰는 적 아이콘까지 딸려 온다.
 
 ⚠ 서빙은 R2다 — r2-sync.mjs의 DIRS에 "skills"가 이미 있고 하위 폴더까지 훑으므로
    여기 새로 만드는 icon/ 도 자동으로 올라간다. 화면에서는 asset()으로 감싸 쓴다.
@@ -47,16 +49,12 @@ def main():
     with open(os.path.join(REPO, "app", "data", "operators.json"), encoding="utf-8") as f:
         operators = json.load(f)
 
-    # 도감이 참조하는 스킬 id — 본체 + 소환물
+    # 도감 스킬 카드가 그리는 스킬 id — 본체만 (소환물 스킬은 글로만 나온다)
     sids = set()
     for op in operators:
         for sk in op.get("skills") or []:
             if sk.get("id"):
                 sids.add(sk["id"])
-        for su in op.get("summons") or []:
-            for sk in su.get("skills") or []:
-                if sk.get("id"):
-                    sids.add(sk["id"])
 
     icons = {(skill_table.get(sid) or {}).get("iconId") or sid for sid in sids}
     os.makedirs(OUT, exist_ok=True)
