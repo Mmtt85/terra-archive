@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-23",
+ "updated": "2026-09-24",
  "files": [
   {
    "file": "op.json",
@@ -33,9 +33,9 @@
   },
   {
    "file": "is.json",
-   "url": "https://files.terra-archive.net/assets/tl/is.json?v=f7a85aded55ba210",
+   "url": "https://files.terra-archive.net/assets/tl/is.json?v=3f342193e782242d",
    "label": "통합전략 1~6 — 소장품·노드·조우·엔딩·전투 (테마 구분 없이 한 벌)",
-   "hash": "f7a85aded55ba210"
+   "hash": "3f342193e782242d"
   }
  ]
 }
