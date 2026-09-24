@@ -122,18 +122,17 @@ def mv(field, default=None):
     return field if field is not None else default
 
 # 큐레이션 한국어 문장(rogueN-curated.json) 속 「이름」 중 공식 표로 못 잇는 것의 현지 공식 표기.
-# 전부 그 서버 표에서 확인한 값이다 (지어낸 이름 아님) — 괄호 안이 출처.
+# 키도 KR 공식 표기다 — 이름 칸이 있는 표가 없어 문구에만 나올 뿐이다. 전부 그 서버의 같은 자리에서
+# 확인한 값이다 (지어낸 이름 아님) — 괄호 안이 출처.
 CURATED_NAME_ALIAS = {
     # 소장품 '파도의 기운' 설명의 [파도 사냥의 기사] (rogue_2 items usage)
-    "파도를 사냥하는 기사": {"en": "Tide-Hunt Knight", "ja": "猟潮の騎士"},
+    "파도 사냥의 기사": {"en": "Tide-Hunt Knight", "ja": "猟潮の騎士"},
     # 엔드북 해금 조건 문구 (rogue_4 archiveComp endbook_rogue_4_2_3)
     "테레시아, 검은 왕관의 성현": {"en": "Theresa, Black-crowned Sage", "ja": "「黒き王冠の聖賢」テレジア"},
-    # KR 공식 '역사의 재구성' (rogue_4 items unlockCondDesc)
-    "역사 재구축": {"en": "Historical Reconstruction", "ja": "歴史再編"},
-    # KR 공식 '현실교체' (rogue_4 commonDevelopment rogue_4_outbuff_9)
-    "현실 치환": {"en": "Reality Swap", "ja": "現実との置換"},
-    # 작전 ro4_duel_b, KR 공식 '나룻배를 타고'
-    "가벼운 배로 함께 건너다": {"en": "The Boat Home", "ja": "軽舟ともに渡る"},
+    # 소장품 해금 조건 문구 (rogue_4 items unlockCondDesc)
+    "역사의 재구성": {"en": "Historical Reconstruction", "ja": "歴史再編"},
+    # 전개 버프 이름 (rogue_4 customizeData commonDevelopment rogue_4_outbuff_9)
+    "현실교체": {"en": "Reality Swap", "ja": "現実との置換"},
 }
 
 def db_name(db, key, level=0):
@@ -1585,8 +1584,8 @@ def build_topic(tid="rogue_1", loc=None):
             lv2 = handbook.get(kid)
             if kv.get("name") and lv2 and lv2.get("name"):
                 loc_name[kv["name"].strip()] = lv2["name"].strip()
-        # 위 표들로 못 잇는 이름 — 큐레이션 문장이 공식 표에 없는 표현으로 적었거나(현실 치환 ↔ KR 공식 '현실교체')
-        # 표 밖(토큰·전개·엔드북 문구)에만 있는 것. 안 이으면 EN·JA 엔딩 조건에 한국어가 그대로 샜다 (2026-09-24)
+        # 위 표들로 못 잇는 이름 — 이름 칸 없이 문구(소장품 설명·전개·엔드북)에만 나오는 것.
+        # 안 이으면 EN·JA 엔딩 조건에 한국어가 그대로 샜다 (2026-09-24)
         for ko, names in CURATED_NAME_ALIAS.items():
             loc_name.setdefault(ko, names[loc])
     def tr_quoted(s):
