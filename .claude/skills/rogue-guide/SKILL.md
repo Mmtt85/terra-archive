@@ -61,7 +61,8 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
   가벼운 배로 함께 건너다→나룻배를 타고). 이름 칸으로 못 잇는 이름은 build-rogue.py
   `CURATED_NAME_ALIAS`에 그 서버의 같은 자리에서 찾은 EN/JA 공식 표기를 단다.
 - UI는 로케일별 동적 로더(TOPIC_LOADERS_EN/JA/CN, 캐시 키 `토픽:서버:로케일`) — KR
-  rogue_1만 정적 번들. rogue_6은 공식 현지화가 없어 전 로케일이 KR/CN 파일 공유(비ko엔 안내문).
+  rogue_1만 정적 번들. rogue_6은 공식 현지화가 없어 자체 번역판(rogue6.en/.ja.json — rogue6-<로케일>.json
+  사전)을 싣고 비ko엔 비공식 번역 안내문. 색인(build-rogue-index.mjs)도 같은 로케일 파일을 읽는다.
 - **노드 기능 설명**: nodeTypes에 `func`(NODE_FUNC 큐레이션, 빌더 내 표) — 플레이버 desc
   위에 표시. **분노(쉐이)는 items(WRATH)가 아니라 modules.wrath.wrathData**에서 단계별
   실효과(몽롱/명확/심각 + 각성·진정)를 병합한다 (items usage는 '기믹 아이템'뿐).

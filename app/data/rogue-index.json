@@ -123,15 +123,15 @@
    "relics": 272
   },
   "en": {
-   "name": "침몰자의 블랙플로우",
-   "line": "흑류 아래, 수해 한가운데에는 하나가 아닌 비밀들이 묻혀 있다. 음모가와 탐험가가 제멋대로 드나들며 이 땅을 어지럽히고, 그 속으로 가라앉는다. 정신을 똑바로 차려라. 그러지 않으면 너 역시 영원히 그중 하나가 될 테니.",
+   "name": "Blackflow Forest of the Sunken",
+   "line": "Beneath the Blackflow, within the forest, lies buried more than one secret. Schemers and explorers come and go as they please, intruding upon this land and sinking into it. Stay lucid, or you too will forever become one of them.",
    "zones": 6,
    "enemies": 307,
    "relics": 272
   },
   "ja": {
-   "name": "침몰자의 블랙플로우",
-   "line": "흑류 아래, 수해 한가운데에는 하나가 아닌 비밀들이 묻혀 있다. 음모가와 탐험가가 제멋대로 드나들며 이 땅을 어지럽히고, 그 속으로 가라앉는다. 정신을 똑바로 차려라. 그러지 않으면 너 역시 영원히 그중 하나가 될 테니.",
+   "name": "沈淪者の黒流樹海",
+   "line": "黒流の下、樹海の中には、ひとつならぬ秘密が埋もれている。 陰謀家と探検家がほしいままに出入りし、この地を侵し、その中へと沈んでいく。 正気を保て。さもなくば、お前もまた永遠にその一員となるだろう。",
    "zones": 6,
    "enemies": 307,
    "relics": 272

@@ -15,9 +15,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LOCALES = ["ko", "en", "ja"];
 const TOPICS = [1, 2, 3, 4, 5, 6];
 
-// rogue_6(블랙플로우)은 CN 선행이라 공식 현지화가 없다 — 전 로케일이 KR/CN 병기 파일을 공유
+// 로케일마다 그 언어 파일 — rogue_6(블랙플로우)도 CN 선행이지만 자체 번역 EN·JA 판(rogue6.en/.ja.json)이 있다.
+// 종전엔 rogue_6만 KR 파일을 같이 읽어 EN·JA 페이지 제목·도입문이 한국어로 나갔다 (2026-09-24).
 const fileFor = (n, locale) =>
-  join(ROOT, "app/data", locale === "ko" || n === 6 ? `rogue${n}.json` : `rogue${n}.${locale}.json`);
+  join(ROOT, "app/data", locale === "ko" ? `rogue${n}.json` : `rogue${n}.${locale}.json`);
 
 const index = {};
 for (const n of TOPICS) {
