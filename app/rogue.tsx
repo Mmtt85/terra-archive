@@ -1126,6 +1126,13 @@ const HOME_SERVER: Record<string, { short: string; label: string }> = {
 const serverFromUrl = (): Server =>
   new URLSearchParams(window.location.search).get("sv") === "cn" || topicFromUrl() === "rogue_6" ? "cn" : "kr";
 
+// 「」에서 꺼낸 이름으로 항목 찾기. JA 공식 이름엔 「」가 붙은 것이 많아(「決心」·ヴィクトリア「鉄屑」勲章)
+// 빌더가 문장에 넣을 때 괄호를 겹치지 않게 그대로 두거나(「決心」) 안쪽을 『』로 바꾼다
+// (「ヴィクトリア『鉄屑』勲章」 — build-rogue.py quote_name). 그 두 모양을 되돌려 본다 (2026-09-24).
+function byName<T>(m: Map<string, T>, name: string): T | undefined {
+  return m.get(name) ?? m.get(`「${name}」`) ?? m.get(name.replace(/『/g, "「").replace(/』/g, "」"));
+}
+
 // ── 메인 ───────────────────────────────────────────────────────────────────
 export default function RogueGuide({ initialTopic }: {
   /** 테마 라우트(/rogue/<slug>)가 넘겨주는 토픽 id — 프리렌더 HTML의 히어로가 이걸 쓴다 */
@@ -2032,10 +2039,10 @@ export default function RogueGuide({ initialTopic }: {
   // 그 외(획득·소지·나열)는 아이템 (사용자 확인 2026-08-17). 아무것도 아니면 원문 그대로
   // — '캠프 수색' 같은 선택지 텍스트는 링크 대상이 없어 평문으로 남는다.
   const condRef = (name: string, disp: string, after: string, key: string): React.ReactNode => {
-    const s = stageByName.get(name);
+    const s = byName(stageByName, name);
     if (s) return <button key={key} type="button" className="rg-cond-node" onClick={() => setStageOpen(pairOf(s))}>{disp}</button>;
-    const rl = relicByName.get(name);
-    const enc = encByTitle.get(name);
+    const rl = byName(relicByName, name);
+    const enc = byName(encByTitle, name);
     if (rl && enc) {
       const labelish = /^\s*[:：]/.test(after);
       return labelish
@@ -2044,10 +2051,10 @@ export default function RogueGuide({ initialTopic }: {
     }
     if (rl) return <button key={key} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(rl)}>{disp}</button>;
     if (enc) return <button key={key} type="button" className="rg-cond-node" onClick={() => setEncOpen(enc)}>{disp}</button>;
-    const en = enemyByName.get(name);
+    const en = byName(enemyByName, name);
     if (en) return <button key={key} type="button" className="rg-cond-node" onClick={() => setEnemyOpen({ key: en, ctx: dexCtx(en) })}>{disp}</button>;
     // 암호판·사고·주화 등 테마 고유 항목 (「공허」·「상흔」 — 사용자 지시 2026-08-17)
-    const mech = mechByName.get(name);
+    const mech = byName(mechByName, name);
     if (mech) return <button key={key} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(mech)}>{disp}</button>;
     return disp;
   };
@@ -2103,9 +2110,9 @@ export default function RogueGuide({ initialTopic }: {
     const parts = text.split(/「([^」]+)」/g);
     return parts.map((part, i) => {
       if (i % 2 === 0) return part ? <Fragment key={i}>{linkFreeRelics(part, `s${i}`)}</Fragment> : part;
-      const rl = relicByName.get(part);
+      const rl = byName(relicByName, part);
       return rl
-        ? <button key={i} type="button" className="rg-choice-relic" onClick={() => setRelicOpen(rl)}>{part}</button>
+        ? <button key={i} type="button" className="rg-choice-relic" onClick={() => setRelicOpen(rl)}>{rl.name}</button>
         : `「${part}」`;
     });
   };

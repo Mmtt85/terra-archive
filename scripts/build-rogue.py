@@ -314,7 +314,7 @@ def attach_enc_scenes(encounters, trees, r_scenes, r_choices, branch_tr, cn_prim
                     if c.get("relicCn") and relic_tr and "「" not in (d2 or ""):
                         nm2 = relic_tr(c["relicCn"])
                         if nm2 and nm2 not in (d2 or ""):
-                            d2 = f"{d2} 「{nm2}」" if (d2 or "").strip() else f"「{nm2}」"
+                            d2 = f"{d2} {quote_name(nm2)}" if (d2 or "").strip() else quote_name(nm2)
                     if c.get("noteCn"):
                         # desc2 보충 설명 — 동명 병렬 선택지의 구분 정보 (예: 반드시 희귀
                         # 소장품 — 사라진 풍습 린수 제보, 2026-08-16)
@@ -380,6 +380,18 @@ def dedupe_choices(chs):
     return out
 
 
+def quote_name(nm):
+    """이름을 「」로 감싼다. JA 공식 이름엔 「」가 붙은 것이 많아(「決心」·ヴィクトリア「鉄屑」勲章)
+    그대로 감싸면 「「決心」」처럼 괄호가 겹쳤다 (사용자 지적 2026-09-24). 이름 전체가 「…」 한 덩어리면
+    그대로 두고, 안에 「」가 섞였으면 겹낫표 『』로 바꿔 넣는다 — 일본어 인용 안 인용 규약.
+    프론트(rogue.tsx byName)는 찾을 때 이 두 모양을 되돌려 본다."""
+    if "「" not in nm and "」" not in nm:
+        return f"「{nm}」"
+    if nm.startswith("「") and nm.endswith("」") and "「" not in nm[1:-1] and "」" not in nm[1:-1]:
+        return nm
+    return "「" + nm.replace("「", "『").replace("」", "』") + "」"
+
+
 def name_relic_reward(c, desc, relic_items):
     # 선택지가 특정 소장품을 주면(displayData.itemId=RELIC) 이름을 병기한다.
     # 게임 텍스트가 "소장품 획득"으로 뭉뚱그린 확정 보상을 구체화 (사용자 요청 2026-07-20).
@@ -401,7 +413,7 @@ def name_relic_reward(c, desc, relic_items):
     # 감싼다 — 예전엔 건너뛰어서 "추억기 획득"류가 링크가 안 됐고(화룡점정, 2026-07-24),
     # '연구한다→불사'처럼 type=NORMAL인 확정 보상도 놓쳤다.
     bare = lambda s: re.sub(r"""[\s'"‘’“”「」『』()（）《》]""", "", s or "")
-    if f"「{nm}」" in (desc or ""):
+    if quote_name(nm) in (desc or ""):
         return desc
     if desc and nm in desc:
         # 이미 따옴표류로 장식된 표기(“翱翼”·'꾸물이' 등)는 건드리지 않는다 —
@@ -411,12 +423,12 @@ def name_relic_reward(c, desc, relic_items):
         deco = set("'\"‘’“”「」『』《》")
         if (i > 0 and desc[i - 1] in deco) or (i + len(nm) < len(desc) and desc[i + len(nm)] in deco):
             return desc
-        return desc.replace(nm, f"「{nm}」", 1)
+        return desc.replace(nm, quote_name(nm), 1)
     # 이름이 설명에 없을 때의 끝 병기는 확정 보상 표기(type=ITEM)에만 — NORMAL 등에
     # 무턱대고 붙이면 보상이 아닌 항목까지 보상처럼 읽힌다.
     if dd.get("type") != "ITEM" or bare(nm) in bare(desc):
         return desc
-    return f"{desc} 「{nm}」" if desc and desc.strip() else f"「{nm}」"
+    return f"{desc} {quote_name(nm)}" if desc and desc.strip() else quote_name(nm)
 
 
 def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
@@ -1591,7 +1603,7 @@ def build_topic(tid="rogue_1", loc=None):
     def tr_quoted(s):
         if loc not in ("en", "ja") or not s:
             return s
-        return re.sub(r"「([^」]+)」", lambda m: f"「{loc_name.get(m.group(1), m.group(1))}」", s)
+        return re.sub(r"「([^」]+)」", lambda m: quote_name(loc_name.get(m.group(1), m.group(1))), s)
     curated_path = os.path.join(REPO, "scripts", f"rogue{ronum}-curated.json")
     if os.path.exists(curated_path):
         curated = json.load(open(curated_path, encoding="utf-8"))
