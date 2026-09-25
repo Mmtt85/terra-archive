@@ -764,6 +764,16 @@ button {
   margin-left: 12px;
   min-width: 0;
 }
+/* 데스크탑 1줄이 모자라면 **칩 줄이 먼저 줄어든다** — 넘치면 흐른다(폰과 같은 Marquee). 줄바꿈은 기준 폭 200px 로
+   판정하고, 남는 자리는 칩 합(max-content)까지만 채운다: 넓은 화면은 종전 폭 그대로, 좁으면 오른쪽 덩어리
+   (.hdr-tail — 언어·검색·메뉴)를 1줄에 남긴 채 칩이 흐른다. 200px 도 안 남는 폭(세로 태블릿)에서는 오른쪽 덩어리가
+   통째로 다음 줄 오른쪽으로 간다 (사용자 제보 2026-09-25 — 아이패드 가로에서 메뉴가 왼쪽 밑으로 떨어졌다). */
+@media (min-width: 761px) {
+  .ev-group {
+    flex: 1 1 200px;
+    max-width: max-content;
+  }
+}
 /* 칩 줄 — .mq 의 블록·인라인블록을 flex 로 바꾼다: 줄 상자(strut)가 칩 높이를 흔들지 않고, 안 흐를 때 오른쪽
    정렬(폰)을 justify-content 로 할 수 있다. ⚠ 칩은 **줄지 않는다**(flex:none) — 줄면 넘침을 못 재서 흐르지 않고
    이름만 깎인다. 안 흐를 때는 두 벌 사이 간격(48px)도 접는다 — 그대로 두면 칩 뒤에 빈칸이 붙는다. */
@@ -1112,7 +1122,7 @@ button {
        position:absolute 라 통째로 잘린다 (2026-07-26 회귀와 같은 함정). 그래서 자르는 대신
        내용을 흐려서 없앤다.
      ⚠ 헤더 자체에 opacity 를 주면 **핸들까지 같이 투명해진다** (자식은 부모 opacity 를
-       거스를 수 없다) — 그래서 자식들에게만 건다. .header-sub 는 display:contents 라
+       거스를 수 없다) — 그래서 자식들에게만 건다. .header-sub·.hdr-tail 은 display:contents 라
        박스가 없어 opacity 가 안 먹으므로 그 자식까지 따로 짚는다. */
   .site-header {
     max-height: 60vh;
@@ -1131,12 +1141,14 @@ button {
         줄이면 버튼이 상자 밖으로 삐져나온 채 남아 이상했다. */
   .site-header.dragging > *:not(.header-collapse-toggle),
   .site-header.dragging .header-sub > *,
+  .site-header.dragging .hdr-tail > *,
   .site-header.dragging .header-sub-right > * {
     transition: none;
     opacity: 0;
   }
   .site-header > *:not(.header-collapse-toggle),
   .site-header .header-sub > *,
+  .site-header .hdr-tail > *,
   .site-header .header-sub-right > * {
     transition: opacity 0.18s ease;
   }
@@ -1150,6 +1162,7 @@ button {
   }
   .site-header.tucked > *:not(.header-collapse-toggle),
   .site-header.tucked .header-sub > *,
+  .site-header.tucked .hdr-tail > *,
   .site-header.tucked .header-sub-right > * {
     opacity: 0;
   }
@@ -8147,6 +8160,10 @@ html[lang="ja"] .potential-detail { word-break: normal; }
     flex-wrap: wrap;
     height: auto;
     min-height: 78px;
+    /* 줄 안은 왼쪽부터 채운다 — 오른쪽으로 보낼 것은 덩어리(.hdr-tail)의 margin-left:auto 가 민다.
+       기본값 space-between 이면 오른쪽 덩어리가 다음 줄로 간 폭에서 남는 자리가 로고·업데이트 내역·
+       칩 사이로 벌어져 업데이트 내역이 로고에서 떨어졌다 (2026-09-25 768px 실측: 1줄 오른쪽 끝). */
+    justify-content: flex-start;
     /* 1줄을 항상 같은 y에 고정 — align-content:center면 접힘(내용<min-height)일 땐 중앙,
        펼침일 땐 위쪽에 붙어 로고·햄버거가 오르내린다 (2026-07-22 사용자 리포트) */
     align-content: flex-start;
@@ -18045,11 +18062,21 @@ main.site-main > .site-header {
 
 /* 만능검색 트리거 위치 — 헤더 1줄 오른쪽, 햄버거 바로 왼쪽 (데스크탑·모바일 공통).
    nav-group의 margin-left:auto(위 배치 블록)를 고정 간격으로 바꿔 두 auto가 남는
-   공간을 반씩 나눠 갖는 상황을 막는다 — 밀어내기는 언어 칩 하나만 담당
-   (2026-08-17: 언어 전환이 만능검색 왼쪽으로 올라오면서 auto를 넘겨받았다). */
+   공간을 반씩 나눠 갖는 상황을 막는다 (2026-08-17: 언어 전환이 만능검색 왼쪽으로 올라왔다).
+   데스크탑의 밀어내기는 **오른쪽 덩어리(.hdr-tail = 언어·만능검색·게임 연결·메뉴)가 통째로** 맡는다
+   (2026-09-25). 종전엔 언어 칩이 auto 를 맡고 넷이 헤더 줄에 따로 끼어 있어, 폭이 모자라면 메뉴만
+   (또는 검색·메뉴가) 다음 줄 **왼쪽**으로 떨어졌다 — 사용자 제보: 아이패드 가로(1180px)에서 진행중
+   이벤트 칩이 셋이 되자 메뉴 버튼이 왼쪽 밑으로 밀려 내려갔다 (실측 1024·950px 에서도 같은 꼴).
+   덩어리는 줄지 않고(flex:none), 1줄에 안 들어가면 덩어리째 다음 줄 오른쪽으로 간다. */
 @media (min-width: 761px) {
-  .site-header > .lang-wrap {
+  .site-header > .hdr-tail {
+    display: flex;
+    align-items: center;
+    flex: none;
     margin-left: auto;
+  }
+  .hdr-tail > .lang-wrap {
+    margin-left: 0;
   }
   .omni {
     margin-left: 10px;
@@ -18077,8 +18104,12 @@ main.site-main > .site-header {
   }
   /* 2줄 — 언어 · 만능검색은 **메뉴 바로 왼쪽**에 붙는다 (사용자 지시 2026-09-23).
      셋을 한 덩어리로 오른쪽에 뭉치려면 미는 일(margin-left:auto)을 **맨 앞의 언어 칩**이
-     맡아야 한다 — 메뉴에 걸어 두면 언어·검색만 왼쪽에 남고 메뉴만 떨어져 간다. */
-  .site-header > .lang-wrap {
+     맡아야 한다 — 메뉴에 걸어 두면 언어·검색만 왼쪽에 남고 메뉴만 떨어져 간다.
+     데스크탑의 오른쪽 덩어리 래퍼(.hdr-tail)는 여기선 풀어 두고(contents) 종전 order 배치를 그대로 쓴다. */
+  .hdr-tail {
+    display: contents;
+  }
+  .hdr-tail > .lang-wrap {
     order: 7;
     margin-left: auto;
   }
@@ -23944,7 +23975,7 @@ html[lang="ja"] .vn-box {
 @media (prefers-reduced-motion: reduce) {
   .vn-bg, .vn-cut, .vn-char, .vn-blocker, .vn-box, .vn-root.full,
   .vn-stage.shake, .story-body, .story-script { animation: none !important; }
-  .site-header, .site-header > *, .site-header .header-sub > * {
+  .site-header, .site-header > *, .site-header .header-sub > *, .site-header .hdr-tail > * {
     transition: none !important;
     animation: none !important;
   }

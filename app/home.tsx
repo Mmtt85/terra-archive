@@ -2146,6 +2146,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         )}
         {/* 헤더 치비 (베타) — 1줄 가운데 빈 공간의 산책 장식, 데스크탑 전용 (사용자 요청 2026-08-03) */}
         <HeaderChibi operators={operators} onNavigate={switchTab} onShowOperator={(op) => setSelected(op)} />
+        {/* 헤더 오른쪽 덩어리 — 언어·만능검색·게임 연결·메뉴. 데스크탑은 한 덩어리로 오른쪽에 붙고, 1줄에 다
+            안 들어가면 **덩어리째** 다음 줄로 간다. 종전엔 넷이 헤더 줄에 따로 끼어 있어 폭이 모자라면 메뉴만
+            (또는 검색·메뉴가) 다음 줄 왼쪽으로 떨어졌다 (사용자 제보 2026-09-25 아이패드 가로). 모바일은
+            display:contents 로 풀어 종전 order 배치(2줄 오른쪽)가 그대로 동작한다 (globals.css .hdr-tail). */}
+        <div className="hdr-tail">
         {/* 언어 전환 = 1줄 만능검색 왼쪽 — 헤더를 접어도 남는다 (사용자 요청 2026-08-17:
             확장부에 있으면 외국어 방문자가 못 찾고 이탈한다). 첫 방문 자동 언어 맞춤은
             layout.tsx 인라인 스크립트(ta-locale)가 담당. */}
@@ -2157,7 +2162,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             프레임이 흐르고, 인식·이동은 각 탭의 스샷 레이더 경로가 그대로 처리한다. */}
         <BridgeButton t={t} />
         {/* 햄버거(메뉴) = 1줄 오른쪽 끝 — 데스크탑·모바일 공통 (사용자 확정 2026-07-22).
-            모바일은 order로, 데스크탑은 margin-left:auto로 배치되므로 JSX 위치는 자유. */}
+            데스크탑은 .hdr-tail 덩어리의 끝이라 늘 언어·검색과 함께 다니고, 모바일은 order로 배치된다. */}
         <div className="nav-group">
           <button type="button" className="nav-toggle" aria-expanded={navOpen} aria-label={t("메뉴 열기")} onClick={() => { setOpenGroup(""); setNavOpen((open) => !open); }}>
             {/* 라벨은 "메뉴"로 **고정** — 현재 탭 이름을 넣으면 페이지를 옮길 때마다 버튼 폭이
@@ -2316,6 +2321,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}{tabHasNewFeature("story") && <span className="new-badge">{t("새기능")}</span>}</button>
             <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("테라 아카이브 소개")}</button>
           </nav>
+        </div>
         </div>
         {/* 2줄(확장부) — 데스크탑: 미래시·다크모드(오른쪽 끝). 모바일: display:contents로
             래퍼를 풀어 기존 order 배치(3줄 제안·미래시·다크)가 그대로 동작한다.
