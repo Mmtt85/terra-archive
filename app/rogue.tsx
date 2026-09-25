@@ -1130,7 +1130,10 @@ const serverFromUrl = (): Server =>
 // 빌더가 문장에 넣을 때 괄호를 겹치지 않게 그대로 두거나(「決心」) 안쪽을 『』로 바꾼다
 // (「ヴィクトリア『鉄屑』勲章」 — build-rogue.py quote_name). 그 두 모양을 되돌려 본다 (2026-09-24).
 function byName<T>(m: Map<string, T>, name: string): T | undefined {
-  return m.get(name) ?? m.get(`「${name}」`) ?? m.get(name.replace(/『/g, "「").replace(/』/g, "」"));
+  return m.get(name) ?? m.get(`「${name}」`) ?? m.get(name.replace(/『/g, "「").replace(/』/g, "」"))
+    // 따옴표까지가 이름인 것 — '극작가'·'쉐이의 몸' 같은 적은 공식 이름에 홑따옴표가 붙어 있어, '이름' 참조에서
+    // 따옴표를 떼고 나면 못 찾았다 (2026-09-25)
+    ?? m.get(`'${name}'`);
 }
 
 // ── 메인 ───────────────────────────────────────────────────────────────────
@@ -1236,7 +1239,9 @@ export default function RogueGuide({ initialTopic }: {
   const [navTick, setNavTick] = useState(0);
   // 토픽 전환 + 뷰/난이도/검색/모달 리셋 (옛 switchTopic이 하던 일). 같은 토픽이면 무시.
   const applyTopic = (next: string) => {
-    if (next === "rogue_6") applyServer("cn"); // 블랙플로우는 KR 미출시 — 중국섭 강제
+    // 블랙플로우는 KR 미출시 — 중국섭 강제. 다른 테마로 돌아오면 **사용자가 고른** 서버로 되돌린다
+    // (사용자 지시 2026-09-25: 한국섭으로 보다 흑류수해를 거쳐 오면 중국섭으로 굳어 있었다).
+    applyServer(next === "rogue_6" ? "cn" : prefServerRef.current);
     if (topicRef.current === next) return;
     topicRef.current = next;
     setTopic(next);
@@ -1251,6 +1256,22 @@ export default function RogueGuide({ initialTopic }: {
   // 서버 전환 — 같은 토픽의 다른 서버 데이터 인스턴스로 갈아끼운다. 열려 있던 상세 모달은
   // 옛 데이터 객체를 물고 있으므로 닫는다 (뷰·난이도·검색은 유지 — 같은 토픽이라 유효).
   const serverRef = useRef(server);
+  // 사용자가 **고른** 서버 — 흑류수해의 중국섭 강제는 선택이 아니므로 여기 남기지 않는다. 흑류수해에서
+  // 새로고침하면 주소(?sv=cn 강제)로는 알 수 없어 sessionStorage 에도 둔다 (없거나 막히면 한국섭).
+  const PREF_SV_KEY = "ta:rogue-sv";
+  const prefServerRef = useRef<Server>("kr");
+  const setPrefServer = (s: Server) => {
+    prefServerRef.current = s;
+    try { sessionStorage.setItem(PREF_SV_KEY, s); } catch { /* 저장 불가 — 이 화면 안에서만 기억 */ }
+  };
+  useEffect(() => {
+    // 첫 진입 — 흑류수해가 아니면 주소의 서버가 곧 선택이고, 흑류수해면 앞서 고른 값(없으면 한국섭)
+    if (topicRef.current !== "rogue_6") { setPrefServer(serverRef.current); return; }
+    try {
+      const v = sessionStorage.getItem(PREF_SV_KEY);
+      if (v === "kr" || v === "cn") prefServerRef.current = v;
+    } catch { /* 읽기 불가 — 한국섭 */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const applyServer = (next: Server) => {
     if (serverRef.current === next) return;
     serverRef.current = next;
@@ -1271,7 +1292,23 @@ export default function RogueGuide({ initialTopic }: {
     // 핸드오프 재적용 신호도 함께 올린다 — 헤더 만능검색이 **같은 테마**의 항목을 지목하면
     // 토픽이 안 바뀌어 아래 데이터 로드 effect가 다시 안 돌기 때문. 테마가 바뀐 경우엔
     // 그 effect가 데이터 로드 후 처리한다(applyLensHandoff는 토픽이 맞을 때만 소비).
-    const onNav = () => { applyTopicFromUrl(); applyServerFromUrl(); setNavTick((n) => n + 1); };
+    const onNav = (ev: Event) => {
+      applyTopicFromUrl();
+      if (ev.type === "popstate") {
+        // 뒤로/앞으로 — 그 기록의 주소가 정본. 흑류수해가 아닌 곳이면 그 서버가 곧 사용자의 선택이다
+        applyServerFromUrl();
+        if (topicRef.current !== "rogue_6") setPrefServer(serverRef.current);
+      } else {
+        // 부메뉴·만능검색 이동 — 새 주소엔 sv 가 없다. 고른 서버를 잇고 주소도 거기에 맞춘다
+        const eff: Server = topicRef.current === "rogue_6" ? "cn" : prefServerRef.current;
+        applyServer(eff);
+        const url = new URL(window.location.href);
+        if (eff === "cn") url.searchParams.set("sv", "cn");
+        else url.searchParams.delete("sv");
+        history.replaceState(null, "", url.pathname + url.search + url.hash);
+      }
+      setNavTick((n) => n + 1);
+    };
     window.addEventListener("popstate", onNav);
     window.addEventListener("ta:rogue-topic", onNav);
     return () => { window.removeEventListener("popstate", onNav); window.removeEventListener("ta:rogue-topic", onNav); };
@@ -1286,7 +1323,8 @@ export default function RogueGuide({ initialTopic }: {
     // 옛 ?topic= 파라미터는 경로로 대체되므로 지운다(둘이 어긋나면 경로가 이긴다).
     url.pathname = roguePath(LOCALE_BASE[locale] ?? "", id);
     url.searchParams.delete("topic");
-    if (id === "rogue_6" || serverRef.current === "cn") url.searchParams.set("sv", "cn");
+    // 서버는 흑류수해면 중국섭 강제, 아니면 **사용자가 고른** 것 — 지금 서버(흑류수해의 강제 cn)를 넘기면 안 된다
+    if (id === "rogue_6" || prefServerRef.current === "cn") url.searchParams.set("sv", "cn");
     else url.searchParams.delete("sv");
     history.pushState(null, "", url.pathname + url.search + url.hash);
     applyTopic(id);
@@ -1299,6 +1337,7 @@ export default function RogueGuide({ initialTopic }: {
     if (next === "cn") url.searchParams.set("sv", "cn");
     else url.searchParams.delete("sv");
     history.pushState(null, "", url.pathname + url.search + url.hash);
+    setPrefServer(next);
     applyServer(next);
   };
 
@@ -1352,17 +1391,25 @@ export default function RogueGuide({ initialTopic }: {
   const chaseStages = useMemo(() => data.stages.filter((s) => s.kind === "chase"), [active]);
   const savageStages = useMemo(() => data.stages.filter((s) => s.kind === "savage"), [active]);
   const incidentStages = useMemo(() => data.stages.filter((s) => s.kind === "incident"), [active]);
+  // 외나무다리(DUEL) — 결투 작전이 있는 테마는 기타 노드에서 따로 빼 **자기 카드**로 둔다. 누르면 결투
+  // 작전 지도들이 모달로 뜬다 (사용자 요청 2026-09-25). 종전엔 기타 노드 모달 속 한 칸이었다.
+  const duelNode = useMemo(() => data.nodeTypes.find((nt) => nt.id === "DUEL") ?? null, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 엔딩 조건의 「이름」 링크가 짚는 대상 — 기타 노드 모달 속 그 노드(ntFocus), 엔딩 목록 속 그 카드(endFlash).
+  // ⚠ 아래 mapSections 본문이 렌더 중에 ntFocus 를 읽으므로 그보다 **앞에서** 선언해야 한다.
+  const [ntFocus, setNtFocus] = useState("");
+  const [endFlash, setEndFlash] = useState("");
   // 기타 노드 — 전투(작전·긴급·험난한 길)와 우연한 만남을 제외한 노드 타입 설명.
   // 같은 이름의 중복 타입(운명의 암시 등)은 하나만 남긴다 (사용자 요청 2026-07-18)
   const otherNodes = useMemo(() => {
     const skip = new Set(["BATTLE_NORMAL", "BATTLE_ELITE", "BATTLE_BOSS", "INCIDENT"]);
+    if (duelStages.length > 0) skip.add("DUEL");
     const seen = new Set<string>();
     return data.nodeTypes.filter((nt) => {
       if (skip.has(nt.id) || seen.has(nt.name)) return false;
       seen.add(nt.name);
       return true;
     });
-  }, [active]);
+  }, [active, duelStages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* 지도 탭 묶음(험난한 길·조우 전투·시련·추격전·거점전·기타 노드·우연한 만남) —
      종전엔 아래로 열리는 아코디언이었다. 카드로 바꾸고 누르면 모달에서 펼친다
@@ -1403,7 +1450,8 @@ export default function RogueGuide({ initialTopic }: {
           <p className="rg-zone-desc">{t("지도에서 마주치는 전투 외 특수 노드들입니다.")}</p>
           <div className="rg-nodetype-list">
             {otherNodes.map((nt) => (
-              <article key={nt.id} className={`rg-nodetype${nt.id === "DUEL" && duelStages.length > 0 ? " wide" : ""}`}>
+              // 엔딩 조건의 「노드 이름」 링크로 열리면 그 항목을 짚어 준다 (ntFocus — 2026-09-25)
+              <article key={nt.id} id={`rg-nt-${nt.id}`} className={`rg-nodetype${ntFocus === nt.id ? " focus" : ""}`}>
                 <h4>
                   {/* 게임 지도에 그려지는 그 글리프를 그대로 병기 — 종류가 많은 테마일수록
                       글자보다 그림이 빠르다 (제보 2026-07-29). 아이콘이 없는 타입은 글자만. */}
@@ -1413,13 +1461,6 @@ export default function RogueGuide({ initialTopic }: {
                 </h4>
                 {nt.func && <p className="rg-nodetype-func">{nt.func}</p>}
                 {nt.desc && <p>{nt.desc}</p>}
-                {nt.id === "DUEL" && duelStages.length > 0 && (
-                  <>
-                    <div className="rg-stage-cards">
-                      {duelStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
-                    </div>
-                  </>
-                )}
               </article>
             ))}
           </div>
@@ -1501,6 +1542,23 @@ export default function RogueGuide({ initialTopic }: {
           <p className="rg-zone-desc">{t("난이도(보밀등급) 4 이상에서만 나타나는 '주민' 거점 노드의 전투입니다. 거점을 격파해 '주민'을 옮겨내면 '주민'의 악의를 완전히 없앨 수 있습니다.")}</p>
           <div className="rg-stage-cards">
             {savageStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+          </div>
+      </>),
+    },
+    // 외나무다리 — 기타 노드에서 따로 뺀 자기 카드 (사용자 요청 2026-09-25). 이름·설명은 노드 타입 데이터 그대로
+    // (로케일마다 그 서버 공식 이름). **맨 끝**에 둔다 — 지도판(≥1101px)은 카드 순번으로 칸을 정하므로
+    // 앞에 끼우면 기존 카드들이 한 칸씩 밀린다.
+    {
+      id: "duel",
+      show: duelStages.length > 0 && !!duelNode,
+      label: duelNode?.name ?? "",
+      name: <>{duelNode && <Nm name={duelNode.name} cn={duelNode.cn} />}</>,
+      count: <>{t("작전 {n}개", { n: duelStages.length })}</>,
+      body: (<>
+          {duelNode?.func && <p className="rg-zone-desc">{duelNode.func}</p>}
+          {duelNode?.desc && <p className="rg-zone-desc">{duelNode.desc}</p>}
+          <div className="rg-stage-cards">
+            {duelStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
           </div>
       </>),
     },
@@ -1657,6 +1715,12 @@ export default function RogueGuide({ initialTopic }: {
   const [invPos, setInvPos] = useState<{ x: number; y: number } | null>(null);
   const [effOpen, setEffOpen] = useState(false);          // 효과 총합 모달
   const [secOpen, setSecOpen] = useState("");             // 지도 탭 묶음 카드 → 모달
+  // 엔딩 조건의 「노드 이름」으로 기타 노드 모달을 열었으면 그 항목까지 스크롤 (항목은 ntFocus 로 테두리가 선다)
+  useEffect(() => {
+    if (secOpen !== "nodes" || !ntFocus) return;
+    const raf = requestAnimationFrame(() => document.getElementById(`rg-nt-${ntFocus}`)?.scrollIntoView({ block: "nearest" }));
+    return () => cancelAnimationFrame(raf);
+  }, [secOpen, ntFocus]);
   // 사용자가 CSS resize 손잡이로 바꾼 크기를 기억한다 (사용자 지시 2026-07-29)
   const INV_SIZE_KEY = "ta:rogue-inv-size";
   const [invSize, setInvSize] = useState<{ w: number; h: number } | null>(null);
@@ -2034,11 +2098,35 @@ export default function RogueGuide({ initialTopic }: {
     prevHash.current = want;
   }, [view, zoneOpen, stageOpen, enemyOpen, encOpen, relicOpen, activeArc, mounted]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 「이름」·'이름' 참조 하나를 해석 — 스테이지/소장품/조우/적/테마 항목(암호판 등) 순.
+  // 엔딩·층·노드·난이도 이름 → 엔딩 조건 링크 대상 (사용자 요청 2026-09-25 "「득과 실」「거짓과 진실」 등 「」로
+  // 묶인 것도 다 매핑, 다른 록라도"). 종전엔 작전·소장품·조우·적·테마 항목만 이어서, 엔딩 이름(「디 엔드?」)·
+  // 층(「예견의 구상」)·노드(「득과 실」)·난이도(「일렁이는 파도」)는 글자로만 남았다.
+  const endByName = useMemo(() => new Map(data.endings.map((e) => [e.name, e])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  const zoneByName = useMemo(() => {
+    const m = new Map<string, Zone>();
+    for (const z of data.zones) if (!m.has(z.name)) m.set(z.name, z);   // 숨겨진 비경처럼 겹치는 이름은 첫 층
+    return m;
+  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  const ntByName = useMemo(() => new Map([...otherNodes, ...(duelNode ? [duelNode] : [])].map((nt) => [nt.name, nt])), [otherNodes, duelNode]);
+  const diffByName = useMemo(() => new Map(data.difficulties.map((d) => [d.name, true])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 엔딩 → 그 카드로 스크롤하고 잠깐 테두리로 짚는다 (같은 엔딩 탭 안이라 모달 대신 제자리 이동)
+  const goEnding = (id: string) => {
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(`rg-end-${id}`)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    setEndFlash(id);
+    window.setTimeout(() => setEndFlash((cur) => (cur === id ? "" : cur)), 1600);
+  };
+  // 난이도 → 난이도 탭. 엔딩 목록 한참 아래에서 눌러도 탭 첫머리부터 보이게 탭 줄로 올린다
+  const goDiff = () => {
+    goView("diff");
+    requestAnimationFrame(() => document.querySelector(".rg-tabs")?.scrollIntoView({ block: "start" }));
+  };
+  // 「이름」·'이름' 참조 하나를 해석 — 스테이지/소장품/조우/적/테마 항목(암호판 등)/엔딩/층/노드/난이도 순.
   // 동명 조우·소장품(IS2 하트 오브 카이룰라)은 문맥 판별: 바로 뒤 콜론이면 단계 라벨=조우,
   // 그 외(획득·소지·나열)는 아이템 (사용자 확인 2026-08-17). 아무것도 아니면 원문 그대로
   // — '캠프 수색' 같은 선택지 텍스트는 링크 대상이 없어 평문으로 남는다.
-  const condRef = (name: string, disp: string, after: string, key: string): React.ReactNode => {
+  // selfId = 이 문장이 속한 엔딩 — 자기 카드를 가리키는 「이름」(기본 엔딩 「디 엔드?」)은 링크하지 않는다.
+  const condRef = (name: string, disp: string, after: string, key: string, selfId?: string): React.ReactNode => {
     const s = byName(stageByName, name);
     if (s) return <button key={key} type="button" className="rg-cond-node" onClick={() => setStageOpen(pairOf(s))}>{disp}</button>;
     const rl = byName(relicByName, name);
@@ -2056,11 +2144,25 @@ export default function RogueGuide({ initialTopic }: {
     // 암호판·사고·주화 등 테마 고유 항목 (「공허」·「상흔」 — 사용자 지시 2026-08-17)
     const mech = byName(mechByName, name);
     if (mech) return <button key={key} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(mech)}>{disp}</button>;
+    const end = byName(endByName, name);
+    if (end) return end.id === selfId ? disp
+      : <button key={key} type="button" className="rg-cond-node" onClick={() => goEnding(end.id)}>{disp}</button>;
+    const zone = byName(zoneByName, name);
+    if (zone) return <button key={key} type="button" className="rg-cond-node" onClick={() => setZoneOpen(zone)}>{disp}</button>;
+    // 노드 — 외나무다리는 자기 카드(결투 작전 지도), 나머지는 기타 노드 모달의 그 항목
+    const nt = byName(ntByName, name);
+    if (nt) return (
+      <button key={key} type="button" className="rg-cond-node"
+        onClick={() => { if (nt.id === "DUEL" && duelStages.length > 0) { setNtFocus(""); setSecOpen("duel"); } else { setNtFocus(nt.id); setSecOpen("nodes"); } }}>
+        {disp}
+      </button>
+    );
+    if (byName(diffByName, name)) return <button key={key} type="button" className="rg-cond-node" onClick={goDiff}>{disp}</button>;
     return disp;
   };
   // 조건 문장 — 「」에 더해 '이름'(홑따옴표)도 참조로 해석한다 (사용자 지적 2026-08-17:
   // '변화' 같은 조우 참조가 홑따옴표라 매핑이 안 됐다)
-  const renderCond = (text: string) => {
+  const renderCond = (text: string, selfId?: string) => {
     const out: React.ReactNode[] = [];
     const re = /「([^」]+)」|'([^']+)'/g;
     let last = 0;
@@ -2070,7 +2172,7 @@ export default function RogueGuide({ initialTopic }: {
       if (m.index > last) out.push(text.slice(last, m.index));
       const name = m[1] ?? m[2]!;
       const disp = m[1] !== undefined ? `「${name}」` : `'${name}'`;
-      out.push(condRef(name, disp, text.slice(re.lastIndex, re.lastIndex + 4), `c${k++}`));
+      out.push(condRef(name, disp, text.slice(re.lastIndex, re.lastIndex + 4), `c${k++}`, selfId));
       last = re.lastIndex;
     }
     if (last < text.length) out.push(text.slice(last));
@@ -2375,10 +2477,10 @@ export default function RogueGuide({ initialTopic }: {
           {/* 묶음은 아코디언이 아니라 **카드** — 누르면 모달에서 펼친다 (사용자 요청 2026-09-20) */}
           <div className="rg-sec-cards">
             {mapSections.filter((sec) => sec.show).map((sec) => (
-              <button key={sec.id} type="button" className="rg-sec-card" onClick={() => setSecOpen(sec.id)}>
+              // '▸' 표시는 뺐다 — 지도판 카드에서 오른쪽 아래 개수와 겹쳐 보였다 (사용자 지시 2026-09-25 "필요 없을듯")
+              <button key={sec.id} type="button" className="rg-sec-card" onClick={() => { setNtFocus(""); setSecOpen(sec.id); }}>
                 <h3 className={sec.cls}>{sec.name}</h3>
                 <span className="rg-zone-counts">{sec.count}</span>
-                <span className="rg-sec-go" aria-hidden>▸</span>
               </button>
             ))}
           </div>
@@ -2785,7 +2887,7 @@ export default function RogueGuide({ initialTopic }: {
               (사용자 지시 2026-08-17 "중구난방이니 나눠서 하나씩 볼 수 있게").
               기록 조각은 원문이 있으면(txt) 클릭해 전문을 읽는다. */}
           {data.endings.map((e) => (
-            <article key={e.id} className="rg-ending">
+            <article key={e.id} id={`rg-end-${e.id}`} className={`rg-ending${endFlash === e.id ? " flash" : ""}`}>
               <header><h3><Nm name={e.name} cn={e.cn} /></h3></header>
               {e.desc && <p className="rg-ending-desc">{e.desc}</p>}
               {/* 엔딩 달성 시의 인용구 — 스토리 설명 바로 밑 (사용자 지시 2026-08-17, 예전엔 카드 맨 아래) */}
@@ -2794,7 +2896,7 @@ export default function RogueGuide({ initialTopic }: {
                 <div className="rg-ending-sec">
                   <h4>{t("진입 조건")}</h4>
                   <ol className="rg-ending-cond">
-                    {e.cond.map((c, i) => <li key={i}>{renderCond(c)}</li>)}
+                    {e.cond.map((c, i) => <li key={i}>{renderCond(c, e.id)}</li>)}
                   </ol>
                 </div>
               )}
@@ -2925,7 +3027,7 @@ export default function RogueGuide({ initialTopic }: {
       {secOpen && (() => {
         const sec = mapSections.find((x) => x.id === secOpen);
         return sec ? (
-          <ModalWindow key={sec.id} label={sec.label} className="rg-modal rg-secmodal" onClose={() => setSecOpen("")}>
+          <ModalWindow key={sec.id} label={sec.label} className="rg-modal rg-secmodal" onClose={() => { setSecOpen(""); setNtFocus(""); }}>
             <header className="rg-modal-head">
               <div>
                 <h3 className={sec.cls}>{sec.name}</h3>

@@ -13694,6 +13694,9 @@ html.rg-theme.rg6 .site-header {
     --arch-deep: 236px;
     min-height: calc(var(--arch-deep) + 130px);
     padding-bottom: 10px;
+    /* 판 폭을 재는 기준 — 쉐이의 외나무다리 자동 내림(아래 @container rg-mapfield)이 쓴다 (2026-09-25).
+       판은 부모 격자의 전체 칸(1 / -1)을 받아 폭이 내용과 무관하므로 크기 격리를 걸어도 폭이 변하지 않는다. */
+    container: rg-mapfield / inline-size;
   }
   .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(4)) { --sec-col: 236px; --arch-r2: 0px; --arch-2nd: 213px; }
   .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(5)) { --sec-col: 186px; --arch-r2: 0px; --arch-2nd: 177px; }
@@ -13725,7 +13728,9 @@ html.rg-theme.rg6 .site-header {
        2층이 시작하는 99.9px 보다 좁으므로 겹치지 않고, 간격도 종전 그대로다. */
   html.rg-theme.rg5 .rg-mapfield:has(> .rg-zone-cards) { --sec-col: 99px; --arch-r2: 0px; --arch-2nd: 95px; }
   html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(4) { grid-area: 3 / 5; }
-  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(5) { grid-area: 4 / 1; }
+  /* 5번째 = 외나무다리(2026-09-25 기타 노드에서 분리, mapSections 맨 끝) — 조우 전투 **오른쪽** (사용자 지시 같은 날).
+     판이 좁으면 그 자리가 아치의 3층 카드와 겹쳐 **밑으로** 내린다 (아래 @container — "겹치면 자동으로 밑으로"). */
+  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(5) { grid-area: 3 / 2; }
   html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(6) { grid-area: 4 / 5; }
   /* 팬텀 & 크림슨 솔리테어는 6층이라 묶음 카드가 152px 로 가장 컸다 — 10% 줄인다.
      ⚠ 팬텀은 **테마 클래스가 붙지 않는 기본값**이다 (html 에 rg-theme 만; rg1 은 없다) —
@@ -13769,6 +13774,16 @@ html.rg-theme.rg6 .site-header {
   html.rg-theme.rg3 .rg-mapfield > .rg-sec-cards > *:nth-child(4) { grid-area: 4 / 1; }
   html.rg-theme.rg3 .rg-mapfield > .rg-sec-cards > *:nth-child(5) { grid-area: 4 / 2; }
   html.rg-theme.rg3 .rg-mapfield > .rg-sec-cards > *:nth-child(6) { grid-area: 5 / 1; }
+  /* 살카즈(8층)의 4번째 = 외나무다리(2026-09-25 분리) — 기본 자리(3 / 2)는 아치의 3층 카드와 16px 겹친다
+     (1440px 실측). 오른쪽 주머니 기타 노드 밑(3 / 5)으로 — 좌우 두 장씩 균형도 맞는다. */
+  html.rg-theme.rg4 .rg-mapfield > .rg-sec-cards > *:nth-child(4) { grid-area: 3 / 5; }
+  /* 쉐이(10층)의 외나무다리 — 판 폭이 1040px 보다 좁으면 조우 전투 바로 **밑**(4 / 1)으로. 오른쪽 자리(3 / 2)는
+     층 카드 폭이 판 폭에 비례해 좁아지면 3층 카드와 겹친다 — 실측 판 1016px 3px · 980px 10px · 856px 35px 겹침,
+     1051px 부터 0 (계산상 경계 1032px, 여유 8px). 화면 폭이 아니라 판 폭으로 가른다: 1400px 부터 옆 칸이 생겨
+     판이 오히려 좁아지므로(1440px 화면 = 판 856px) 화면 폭 구간으로는 못 가른다. */
+  @container rg-mapfield (max-width: 1039px) {
+    html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(5) { grid-area: 4 / 1; }
+  }
   /* 정사각형에 가깝게, 한 번 더 10% 작게 (사용자 지시 2026-09-20) */
   .rg-mapfield > .rg-sec-cards > * {
     flex-direction: column;
@@ -13779,11 +13794,6 @@ html.rg-theme.rg6 .site-header {
     padding: 10px;
     font-size: 11.5px;
     position: relative;
-  }
-  .rg-mapfield > .rg-sec-cards > * > .rg-sec-go {
-    position: absolute;
-    right: 10px;
-    bottom: 9px;
   }
 
   /* ── 역아치 곡선 ── */
@@ -14011,9 +14021,6 @@ html.rg-theme.rg6 .site-header {
 .rg-sec-card .rg-zone-counts {
   flex: 0 0 auto;
 }
-.rg-sec-card .rg-sec-go {
-  color: var(--rgmut);
-}
 .rg-zone-cards {
   grid-column: 1 / -1;
   display: grid;
@@ -14172,6 +14179,16 @@ html.rg-theme {
   pointer-events: none;
   -webkit-mask-image: linear-gradient(180deg, #000 0, #000 32%, transparent 82%);
   mask-image: linear-gradient(180deg, #000 0, #000 32%, transparent 82%);
+}
+/* 미즈키·흑류수해는 키비주얼을 10% 아래로 (사용자 지시 2026-09-25 — 5%, 이어서 "5%씩만 더"). 그림(1.62:1)이
+   대개 화면보다 가로로 넓어 cover 가 세로를 딱 맞추므로 object-position 의 세로 값으로는 움직이지 않는다 —
+   상자째 내린다. 내린 만큼 위에 빈 띠가 생겨 그림 윗변이 헤더 밑으로 선처럼 드러나므로(900px 높이에서 90px)
+   윗변 6% 를 부드럽게 들인다 — 나머지 마스크(32%까지 또렷, 82%에서 사라짐)는 종전 그대로. */
+html.rg-theme.rg2 .rg-kv-page,
+html.rg-theme.rg6 .rg-kv-page {
+  transform: translateY(10%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 6%, #000 32%, transparent 82%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 6%, #000 32%, transparent 82%);
 }
 /* ⚠ 본문에 z-index 를 일괄로 걸면 안 된다 — .rg-head(z 5)·.rg-headtools(z 30) 처럼
    원래 층이 있던 요소까지 1로 눌려, 테마 변경 드롭다운이 탭 줄 **뒤로** 들어가 눌리지
@@ -14653,8 +14670,9 @@ html.rg-theme {
   gap: 4px;
   flex-wrap: wrap;
   margin: 16px 0 20px;
-  /* 밑줄이 너무 진해 30% 덜어낸다 (사용자 지적 2026-09-20) */
-  border-bottom: 2px solid color-mix(in srgb, var(--rgcrim) 70%, transparent);
+  /* 밑줄은 최대한 옅게 (사용자 지시 2026-09-25 "최대한 투명하게") — 종전 70%(2026-09-20 에 30% 덜어낸 값).
+     자리(2px)는 남겨 탭 줄 아래 간격이 흔들리지 않게 한다. */
+  border-bottom: 2px solid color-mix(in srgb, var(--rgcrim) 10%, transparent);
   padding-bottom: 8px;
 }
 .rg-tabs button {
@@ -14920,12 +14938,6 @@ html.rg-theme {
   color: var(--rgmut, var(--rgtext2));
   font-size: 12px;
   font-style: italic;
-}
-.rg-nodetype.wide {
-  grid-column: 1 / -1;
-}
-.rg-nodetype .rg-stage-cards {
-  margin-top: 8px;
 }
 .rg-stagecard {
   border: 1px solid var(--rgline);
@@ -15545,6 +15557,24 @@ html.rg-theme {
   border: 1px solid var(--rgline);
   background: var(--rgcard);
   padding: 16px 16px;
+}
+/* 엔딩 조건의 「엔딩 이름」 링크로 그 카드에 왔을 때 — 어느 카드인지 잠깐 짚어 준다 (2026-09-25).
+   기타 노드 모달에서 「노드 이름」으로 온 항목은 모달을 닫을 때까지 테두리를 둔다. */
+.rg-ending {
+  scroll-margin-top: 12px;
+}
+.rg-ending.flash {
+  animation: rg-end-flash 1.6s ease-out;
+}
+@keyframes rg-end-flash {
+  from { box-shadow: 0 0 0 2px var(--rggold); }
+  to { box-shadow: 0 0 0 2px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rg-ending.flash { animation: none; box-shadow: 0 0 0 2px var(--rggold); }
+}
+.rg-nodetype.focus {
+  box-shadow: 0 0 0 2px var(--rggold);
 }
 .rg-ending h3 {
   margin: 0 0 8px;
