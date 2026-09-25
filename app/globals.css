@@ -6371,8 +6371,10 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   left: 0; /* 햄버거 왼쪽 정렬 (.nav-group 기준) */
   z-index: 30;
   flex-direction: column;
-  gap: 3px;
-  min-width: 220px;
+  /* 패널 폭·항목 간격은 부메뉴(.tab-submenu)와 같게 (사용자 지시 2026-09-25 "주메뉴 크기를 부메뉴에 맞춰줘").
+     종전 220px·3px. */
+  gap: 2px;
+  min-width: 210px;
   padding: 6px;
   background: var(--white);
   border: 1px solid var(--border-strong);
@@ -6387,14 +6389,16 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   color: inherit;
   text-decoration: none;
   background: transparent;
-  padding: 11px 13px;
-  font-size: 13px;
+  /* 크기는 부메뉴 항목(.main-tabs .tab-sub)과 같다 — 높이 38px·12px (2026-09-25, 종전 11px 13px·13px·43.5px).
+     굵기(700)만 부메뉴(600)보다 굵게 남겨 위계를 가른다. */
+  padding: 9px 12px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   text-align: left;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   transition: 0.12s;
 }
 .main-tabs :where(button, a.tab-sub):hover {
