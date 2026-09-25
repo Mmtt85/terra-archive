@@ -4802,7 +4802,7 @@ html[lang="ja"] .potential-detail { word-break: normal; }
     flex: 0 1 auto;
   }
   .site-header .nav-toggle {
-    padding: 7px 9px;
+    padding: 5px 9px;           /* 높이 30px = 옆 만능검색 칸 (2026-09-25, 종전 7px·34px) */
     margin-right: 0;
     font-size: 12px;
     gap: 6px;
@@ -6352,7 +6352,9 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   border: 1px solid var(--btn-pri-line);
   background: var(--btn-pri-bg);
   color: var(--btn-pri-ink);
-  padding: 9px 14px;
+  /* 세로 7px → 높이 34px — 바로 옆 만능검색 칸과 같게 (사용자 지시 2026-09-25 "다른 버튼들이랑 동일한
+     세로폭으로"). 종전 9px(38px)는 헤더에서 혼자 컸다. */
+  padding: 7px 14px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -18292,15 +18294,11 @@ main.site-main > .site-header {
 }
 /* ⚠ 햄버거 메뉴는 overflow를 자르면 안 된다 — '통합전략 가이드' 호버 서브메뉴가
    패널 밖으로 펼쳐지는데 hidden이 그걸 잘라 안 보였다 (2026-07-26 회귀).
-   대신 첫/끝 항목에 맞춤 radius를 줘 모서리 덮임을 막는다. */
+   종전엔 대신 첫/끝 항목에 '위만·아래만' 둥근 모서리를 줘 패널 모서리 덮임을 막았는데, 지금은 패널에
+   안쪽 여백(6px)이 있어 항목이 모서리에 닿지 않는다 — 그 규칙이 남아 있어 선택된 '홈'은 아래가,
+   '소개'는 위가 각져 보였다 (사용자 지적 2026-09-25). 항목은 모두 같은 반경을 쓴다. */
 .main-tabs.open {
   border-radius: var(--r-md);
-}
-.main-tabs.open > button:first-child {
-  border-radius: var(--r-md) var(--r-md) 0 0;
-}
-.main-tabs.open > button:last-child {
-  border-radius: 0 0 var(--r-md) var(--r-md);
 }
 /* '통합전략 가이드' 부메뉴 패널도 같은 반경으로 — 여기만 각져 있었다 (사용자 지적 2026-07-29).
    본체와 달리 overflow:hidden을 써도 되지만(더 펼쳐지는 게 없다) 굳이 맞출 필요는 없다:
