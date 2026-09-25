@@ -772,6 +772,9 @@ button {
   .ev-group {
     flex: 1 1 200px;
     max-width: max-content;
+    /* 칩 줄이 줄어 흐를 때 오른쪽 끝이 언어 칩에 딱 붙지 않게 — 왼쪽 여백(12px)과 같게 (사용자 지시 2026-09-25).
+       넓은 화면은 오른쪽 덩어리의 margin-left:auto 가 이보다 넓어 겉보기가 그대로다. */
+    margin-right: 12px;
   }
 }
 /* 칩 줄 — .mq 의 블록·인라인블록을 flex 로 바꾼다: 줄 상자(strut)가 칩 높이를 흔들지 않고, 안 흐를 때 오른쪽
