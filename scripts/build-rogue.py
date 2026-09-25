@@ -23,6 +23,10 @@ from concurrent.futures import ThreadPoolExecutor
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # 적 이름 교정 — 클뜯 표기가 통칭과 다른 보스 등 (사용자 확정). 재생성해도 유지된다.
 ENEMY_NAME_FIX = {"캔모씨": "캔낫"}
+# 초상이 없는 적의 대체 그림 — 게임에 그림이 없어 '?'로 나오던 것 (사용자 지시). 키 적 → 그림을 빌릴 적.
+# 부착된 부적(IS5)은 도감 항목이 없는 '붙은 상태'의 부적이다 — 스탯은 부적과 같고 면역 8종·목숨 1만 다르다
+# (2026-09-25 대조). 따로 두되 그림은 부적 것을 쓴다.
+ENEMY_IMG_ALIAS = {"enemy_2121_dyspl2": "enemy_2101_dyspll"}
 GAMEDATA = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master"
 ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"
 CACHE = os.path.join(REPO, ".gamedata", "rogue")
@@ -1177,6 +1181,8 @@ def build_topic(tid="rogue_1", loc=None):
         b = re.sub(r"_\d+$", "", key)
         if b != key:
             cands.append(b)
+        if key in ENEMY_IMG_ALIAS:
+            cands.append(ENEMY_IMG_ALIAS[key])
         for cand in cands:
             dest = os.path.join(enemy_dir, f"{cand}.webp")
             if os.path.exists(dest):
@@ -1187,8 +1193,8 @@ def build_topic(tid="rogue_1", loc=None):
     for key in enemies:
         if key in img_of:
             continue
-        for cand in [key, re.sub(r"_\d+$", "", key)]:
-            if cand not in fails and os.path.exists(os.path.join(enemy_dir, f"{cand}.webp")):
+        for cand in [key, re.sub(r"_\d+$", "", key), ENEMY_IMG_ALIAS.get(key)]:
+            if cand and cand not in fails and os.path.exists(os.path.join(enemy_dir, f"{cand}.webp")):
                 img_of[key] = cand
                 break
     for key, e in enemies.items():
@@ -2276,6 +2282,8 @@ def build_rogue6():
         b = re.sub(r"_\d+$", "", key)
         if b != key:
             cands.append(b)
+        if key in ENEMY_IMG_ALIAS:
+            cands.append(ENEMY_IMG_ALIAS[key])
         for cand in cands:
             dest = os.path.join(enemy_dir, f"{cand}.webp")
             if os.path.exists(dest):
@@ -2286,8 +2294,8 @@ def build_rogue6():
     for key in enemies:
         if key in img_of:
             continue
-        for cand in [key, re.sub(r"_\d+$", "", key)]:
-            if cand not in fails and os.path.exists(os.path.join(enemy_dir, f"{cand}.webp")):
+        for cand in [key, re.sub(r"_\d+$", "", key), ENEMY_IMG_ALIAS.get(key)]:
+            if cand and cand not in fails and os.path.exists(os.path.join(enemy_dir, f"{cand}.webp")):
                 img_of[key] = cand
                 break
     for key, e in enemies.items():

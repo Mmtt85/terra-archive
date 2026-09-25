@@ -64,6 +64,13 @@ def grid_of_level(lv):
     return {"h": len(g), "w": len(g[0]), "g": g, "r": [], "f": [], "e": {}}
 
 
+# 경로를 그리지 않는 적 — 레벨 파일엔 SPAWN 경로가 붙어 있지만 실제로는 걷지 않고 **조건을 맞춘 오퍼레이터
+# 머리 위로 떨어지는** 기믹 적이다 (사용자 지시 2026-09-25: 쉐이의 기이한 계원 '쉐이의 몸' — 거의 전 작전 —
+# 과 6층 보스 작전의 '쉐이'). 여기서 빼면 e 에서 빠지므로 경로선(렌더러는 e 가 스폰하는 경로만 그린다)과
+# 시뮬레이션 말(sp 는 e 의 적만 싣는다)이 함께 사라진다. 등장 적 카드는 '경로 없음'으로 남는다.
+DROP_IN_ENEMIES = {"enemy_2119_dyshhj_2", "enemy_2119_dyshhj"}
+
+
 def routes_of_level(lv, enemy_db=None):
     """레벨 JSON → {h, w, g, r, f, e[, sp, wv, cw, mm]} 또는 None (격자·경로가 없으면).
 
@@ -150,7 +157,8 @@ def routes_of_level(lv, enemy_db=None):
         """off — 이 액션들의 routeIndex 가 가리키는 배열의 시작 번호.
         웨이브는 routes(0), 브랜치는 extraRoutes(xoff). 위 주석 참조."""
         for a in actions or []:
-            if a.get("actionType") in (0, "SPAWN") and a.get("key") and a.get("routeIndex") is not None:
+            if a.get("actionType") in (0, "SPAWN") and a.get("key") and a.get("routeIndex") is not None \
+                    and a["key"] not in DROP_IN_ENEMIES:
                 eroutes.setdefault(a["key"], set()).add(off + a["routeIndex"])
     for w in lv.get("waves") or []:
         for fg in w.get("fragments") or []:
