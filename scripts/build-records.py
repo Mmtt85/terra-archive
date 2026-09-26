@@ -61,25 +61,34 @@ HB = {sv: load(f"{S}/{sv}_handbook_info_table.json")["handbookDict"] for sv in (
 #   ① 이 스크립트가 원문 골격을 scripts/records-cn/_src/<cid>.json 으로 떨어뜨린다
 #   ② AI가 같은 구조로 scripts/records-cn/<cid>.json 에 한국어를 채운다
 #   ③ 다음 실행에서 **문자열만** 갈아 끼운다 — 줄 수·키가 어긋나면 그 기록은 손대지 않는다
-# EN/JA는 원문 유지 (스토리 전문 선례 — 번역본은 한국어만, UI가 비공식 번역임을 알린다).
+# EN/JA 번역은 scripts/records-cn/<loc>/<cid>.json (2026-09-26 — 종전엔 EN/JA 화면에 중국어 원문이
+# 그대로 나갔다). 원문→번역은 scripts/story-cn/story_*_set_N/ 에서 하고 export-records-cn.py 로 옮긴다.
 CN_TR = f"{REPO}/scripts/records-cn"
 
 
-def cn_translate(cid, recs):
-    """CN 원문 기록(f:1)에 번역을 덮어쓰고, 없으면 번역용 원문 골격을 떨어뜨린다."""
+def cn_translate(cid, recs, loc="ko"):
+    """CN 원문 기록(f:1)에 번역을 덮어쓰고, 없으면 번역용 원문 골격을 떨어뜨린다(골격은 ko 때만).
+    바뀐 화자 이름 {원문: 번역} 을 돌려준다 — 화자 얼굴(faces)은 원문 대본의 화자명으로 모이므로
+    번역 이름으로도 옮겨 달아야 한다."""
+    renamed = {}
     fut = [r for r in recs if r.get("f")]
     if not fut:
-        return
-    p = f"{CN_TR}/{cid}.json"
+        return renamed
+    p = f"{CN_TR}/{cid}.json" if loc == "ko" else f"{CN_TR}/{loc}/{cid}.json"
     tr = load(p) if os.path.exists(p) else None
     src = (tr or {}).get("recs") or []
-    if tr and len(src) != len(fut):
+    # cn_name(원문 세트명)이 달린 번역은 이름으로 짝짓는다 — 로케일마다 선행 기록 수가 달라져도
+    # 어긋나지 않는다. 없으면(옛 KO 파일) 순서로 짝짓는다.
+    by_name = {t["cn_name"]: t for t in src if t.get("cn_name")}
+    if tr and not by_name and len(src) != len(fut):
         print(f"  ✗ {cid}: 번역 기록 {len(src)}편 ≠ 원문 {len(fut)}편 — 통째로 건너뜀", file=sys.stderr)
         src = []
     for i, rec in enumerate(fut):
-        t = src[i] if i < len(src) else None
+        t = by_name.get(rec["name"]) if by_name else (src[i] if i < len(src) else None)
         if t and len(t.get("lines") or []) == len(rec["lines"]):
             for ln, tl in zip(rec["lines"], t["lines"]):
+                if "n" in ln and tl.get("n") and tl["n"] != ln["n"]:
+                    renamed.setdefault(ln["n"], tl["n"])
                 for k in ("n", "x", "st", "loc"):
                     if k in ln and tl.get(k):
                         ln[k] = tl[k]
@@ -90,12 +99,15 @@ def cn_translate(cid, recs):
             rec["tr"] = "cn"      # UI 안내를 '원문 그대로'에서 '비공식 AI 번역'으로 바꾼다
             continue
         if t:
-            print(f"  ✗ {cid}[{i}]: 줄 수 {len(t.get('lines') or [])} ≠ {len(rec['lines'])} — 건너뜀", file=sys.stderr)
+            print(f"  ✗ {cid}[{i}] ({loc}): 줄 수 {len(t.get('lines') or [])} ≠ {len(rec['lines'])} — 건너뜀", file=sys.stderr)
+        if loc != "ko":
+            continue
         os.makedirs(f"{CN_TR}/_src", exist_ok=True)
         skel = {"id": cid, "recs": [{"name": r["name"], "tag": r["tag"],
                                      "lines": [{k: v for k, v in ln.items() if k in ("n", "x", "st", "loc", "opts")}
                                                for ln in r["lines"]]} for r in fut]}
         json.dump(skel, open(f"{CN_TR}/_src/{cid}.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    return renamed
 
 
 def txt_path(server, path):
@@ -221,9 +233,11 @@ for loc, (server, nickname) in LOCALES.items():
                         cut_needed.setdefault(ln["img"], cut_needed.get(ln["img"]))
         if not recs:
             continue
-        if loc == "ko":
-            cn_translate(cid, recs)
+        renamed = cn_translate(cid, recs, loc)
         faces = bss.resolve_faces(votes)
+        for orig, new in renamed.items():
+            if orig in faces and new not in faces:
+                faces[new] = faces[orig]
         sprites.update(faces.values())
         payload = {"id": cid, "recs": recs, "faces": faces}
         with open(f"{out_dir}/{cid}.json", "w", encoding="utf-8") as f:

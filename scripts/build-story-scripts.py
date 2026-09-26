@@ -698,6 +698,8 @@ def download_cuts(names, cg_layers=None):
 # python3 scripts/build-story-scripts.py --cn act51side       # CN 파싱 → scripts/story-cn/<id>/
 # (AI가 scripts/story-cn/<id>/ko/ep_NN.json 에 번역을 채운다 — 구조 보존)
 # python3 scripts/build-story-scripts.py --cn-merge act51side # 검증·병합 → public/story/script/
+# python3 scripts/build-story-scripts.py --cn-merge act51side --lang en   # EN·JA 번역본 → public/story/script/<lang>/
+#   (번역 규칙·검사기: scripts/story-cn/_TRANSLATE.md · _check.py — 병합 뒤 build-story-vn.py <eid> 로 스탠딩 보정)
 
 def cn_prepare(eid):
     review = fetch(f"{GAMEDATA}/cn/gamedata/excel/story_review_table.json")
@@ -745,13 +747,14 @@ def cn_prepare(eid):
 CN_NO_PUBLISH: set[str] = set()
 
 
-def cn_stage(eid, base):
+def cn_stage(eid, base, spk):
     """CN 원문을 다시 파싱해 편마다 무대 연출 트랙(vn)과 화자 얼굴(faces)을 얻는다
     (사용자 지시 2026-09-26 "리더기도 다 붙여줘" — 종전 병합본은 lines 만 실어 장면 모드가 없었다).
 
     연출 태그(배경·스탠딩·가림막)는 언어와 무관하고, 번역본은 원문과 줄이 1:1 이라(병합 검증이
     보장) 원문 줄 번호로 찍힌 스냅샷을 그대로 쓴다. 화자 얼굴 투표는 CN 화자명으로 모이므로
-    speakers.json 으로 한국어 화자명에 옮겨 담아 resolve_faces 의 규칙(서술형 화자 제외 등)을 탄다.
+    화자표(spk — speakers.json / speakers.<lang>.json)로 그 언어 화자명에 옮겨 담아
+    resolve_faces 의 규칙(서술형 화자 제외 등)을 탄다.
     ⚠ 다시 파싱한 줄이 저장해 둔 원문(ep_NN.json)과 다르면(그새 파서나 원문이 바뀐 경우) 번호가
       어긋나므로 그 편은 연출 없이 싣는다."""
     review = fetch(f"{GAMEDATA}/cn/gamedata/excel/story_review_table.json")
@@ -759,7 +762,6 @@ def cn_stage(eid, base):
     if not entry:
         print(f"  ! {eid}: CN 리뷰 테이블에 없어 연출 트랙을 못 붙인다")
         return {}, {}
-    spk = json.load(open(os.path.join(base, "speakers.json"), encoding="utf-8"))
     infos = sorted(entry["infoUnlockDatas"], key=lambda i: i["storySort"])
     vns, votes, skipped = {}, defaultdict(Counter), []
     for idx, info in enumerate(infos):
@@ -791,7 +793,18 @@ def cn_stage(eid, base):
     return vns, {w: s for w, s in faces.items() if s not in failed}
 
 
-def cn_merge(eid):
+# 번역문에 남으면 안 되는 문자 — KO 는 한자·가나, EN 은 CJK 전부, JA 는 한글
+# (JA 는 한자를 쓰니 한자로는 못 거른다 — 간체자·원문 복사는 scripts/story-cn/_check.py 가 잡는다)
+CN_RESIDUE = {"ko": r"[\u3400-\u9fff\u3040-\u30ff]",
+              "en": r"[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7a3]",
+              "ja": r"[\uac00-\ud7a3]"}
+
+
+def cn_merge(eid, lang="ko"):
+    """번역본(scripts/story-cn/<eid>/<lang>/ep_NN.json)을 검증해 public/story/script/[<lang>/]<eid>.json 으로 낸다.
+    EN·JA 는 2026-09-26 추가 (사용자 요청 "일본어랑 영어로도 번역해볼래?") — 종전엔 KO 만 있어
+    EN·JA 화면이 한국어 번역본으로 폴백했다. 화자(n)는 화자표 값으로 **덮어쓴다** — 편을 나눠
+    옮겨도 같은 인물이 같은 이름으로 나오고, 화자 얼굴(faces)도 그 이름으로 붙는다."""
     import re as _re
     if eid in CN_NO_PUBLISH:
         sys.exit(f"{eid}: 전문 발행 보류 대상이라 병합하지 않는다 "
@@ -799,48 +812,57 @@ def cn_merge(eid):
                  f"번역 원본은 scripts/story-cn/{eid}/ko/ 에 그대로 있다.")
     base = os.path.join(REPO, "scripts", "story-cn", eid)
     meta = json.load(open(os.path.join(base, "meta.json"), encoding="utf-8"))
-    hanzi = _re.compile(r"[一-鿿]")
+    spk = json.load(open(os.path.join(base, "speakers.json" if lang == "ko" else f"speakers.{lang}.json"),
+                         encoding="utf-8"))
+    residue = _re.compile(CN_RESIDUE[lang])
     eps, bad = [], []
     for m in meta["eps"]:
         src = json.load(open(os.path.join(base, f"ep_{m['idx']:02d}.json"), encoding="utf-8"))
-        ko_path = os.path.join(base, "ko", f"ep_{m['idx']:02d}.json")
-        if not os.path.exists(ko_path):
+        tr_path = os.path.join(base, lang, f"ep_{m['idx']:02d}.json")
+        if not os.path.exists(tr_path):
             bad.append((m["idx"], "번역 파일 없음")); continue
-        ko = json.load(open(ko_path, encoding="utf-8"))
+        tr = json.load(open(tr_path, encoding="utf-8"))
         errs = []
-        if len(ko.get("lines", [])) != len(src["lines"]):
-            errs.append(f"라인 수 {len(src['lines'])}→{len(ko.get('lines', []))}")
+        if len(tr.get("lines", [])) != len(src["lines"]):
+            errs.append(f"라인 수 {len(src['lines'])}→{len(tr.get('lines', []))}")
         else:
-            for i, (a, b) in enumerate(zip(src["lines"], ko["lines"])):
+            for i, (a, b) in enumerate(zip(src["lines"], tr["lines"])):
                 if set(a.keys()) - {"vals"} != set(b.keys()) - {"vals"}:
                     errs.append(f"L{i} 키 불일치 {sorted(a)}→{sorted(b)}"); break
                 if a.get("img") != b.get("img") or a.get("br") != b.get("br"):
                     errs.append(f"L{i} img/br 변조"); break
-            nhan = sum(1 for b in ko["lines"] for v in (b.get("n"), b.get("x"), b.get("st"), b.get("loc"))
-                       if isinstance(v, str) and hanzi.search(v))
-            if nhan > 0:
-                errs.append(f"중국어 잔존 {nhan}줄")
+                if "n" in a:
+                    if a["n"] not in spk:
+                        errs.append(f"L{i} 화자표에 없는 화자 {a['n']}"); break
+                    b["n"] = spk[a["n"]]
+            nres = sum(1 for b in tr["lines"] for v in (b.get("n"), b.get("x"), b.get("st"), b.get("loc"), *(b.get("opts") or []))
+                       if isinstance(v, str) and residue.search(v))
+            if nres > 0:
+                errs.append(f"원문 문자 잔존 {nres}줄")
         if errs:
             bad.append((m["idx"], "; ".join(errs))); continue
-        eps.append({"idx": m["idx"], "code": ko.get("code") or m["code"], "name": ko.get("name") or m["name"],
-                    "tag": ko.get("tag") or m["tag"], "lines": ko["lines"]})
+        eps.append({"idx": m["idx"], "code": tr.get("code") or m["code"], "name": tr.get("name") or m["name"],
+                    "tag": tr.get("tag") or m["tag"], "lines": tr["lines"]})
     if bad:
         for idx, msg in bad:
             print(f"  ✗ ep_{idx:02d}: {msg}")
-        sys.exit(f"{eid}: {len(bad)}편 불량 — 병합 중단")
-    vns, faces = cn_stage(eid, base)
+        sys.exit(f"{eid} ({lang}): {len(bad)}편 불량 — 병합 중단")
+    vns, faces = cn_stage(eid, base, spk)
     for ep in eps:
         vn = vns.get(ep.pop("idx"))
         if vn:
             ep["vn"] = vn
     out = {"id": eid, "tr": "cn", "eps": eps, **({"faces": faces} if faces else {})}
-    dest = os.path.join(OUT_DIR, f"{eid}.json")
+    out_dir = OUT_DIR if lang == "ko" else os.path.join(OUT_DIR, lang)
+    os.makedirs(out_dir, exist_ok=True)
+    dest = os.path.join(out_dir, f"{eid}.json")
     json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-    ids_path = os.path.join(REPO, "app", "data", "story-script-ids.json")
+    ids_path = os.path.join(REPO, "app", "data",
+                            "story-script-ids.json" if lang == "ko" else f"story-script-ids.{lang}.json")
     ids = set(json.load(open(ids_path, encoding="utf-8")))
     ids.add(eid)
     json.dump(sorted(ids), open(ids_path, "w", encoding="utf-8"), ensure_ascii=False)
-    print(f"{eid}: {len(eps)}편 병합 → {dest} ({os.path.getsize(dest)//1024}KB) · ids 갱신")
+    print(f"{eid} ({lang}): {len(eps)}편 병합 → {dest} ({os.path.getsize(dest)//1024}KB) · ids 갱신")
 
 
 def main():
@@ -849,7 +871,9 @@ def main():
     if args and args[0] == "--cn":
         cn_prepare(args[1]); return
     if args and args[0] == "--cn-merge":
-        cn_merge(args[1]); return
+        # --cn-merge <eid> [--lang en|ja] — 기본 ko
+        lang = args[args.index("--lang") + 1] if "--lang" in args else "ko"
+        cn_merge(args[1], lang); return
     # --lang en|ja (또는 kr) — story txt 언어. 기본 kr. EN/JA는 KR 요약이 있는 이벤트 중
     # 해당 서버에 이미 풀린 것만 생성(리뷰 테이블에 없으면 스킵 — UI가 KR로 폴백).
     if args and args[0] == "--lang":
