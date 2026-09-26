@@ -525,6 +525,12 @@ CN_PLACEHOLDER_THUMB = "/story/_placeholder.webp"
 # 그 그림엔 '미출시 이벤트 / 배너 준비중'이 **그림으로** 박혀 있어 EN·JA 는 그 언어 판을 쓴다
 # (scripts/make-story-placeholder.py — 사용자 지적 2026-09-23 "영어·일본어판도 한글로 미출시 이벤트")
 CN_PLACEHOLDER_THUMB_LOC = {"thumbEn": "/story/_placeholder.en.webp", "thumbJa": "/story/_placeholder.ja.webp"}
+# 공식 배너가 미러에도 게임 CDN에도 없는 이벤트 — 플레이스홀더 대신 **그 스토리의 컷씬**을 섬네일로
+# 쓴다. 공식 배너가 나중에 생기면(위 fetch 가 성공하면) 그게 우선이다. 컷씬엔 글자가 없어 로케일별
+# 판이 필요 없고, 목록 카드는 세로(404:491) 상자에 가운데를 잘라 넣는다(object-fit: cover).
+# act50side 泡影苍霆(몬스터 헌터 콜라보 — 라이선스로 배너가 빠진 듯) → 도입부 CG, 스포일러 없음
+# (사용자 선택 2026-09-26 — 후보 11장 중 1번).
+CN_THUMB_CUT = {"act50side": "71_i01"}
 # 한섭에 **이미 열렸는데** 레포 story_review_table이 아직 못 따라온 이벤트 — 게임 CDN에서
 # 받아 둔 KR activity_table이 있으면 그게 정답이다 (레포는 사람이 돌려야 올라와 몇 시간~며칠
 # 밀린다 — PROJECT-GUIDE §2-1). 이게 없으면 개방 당일의 신규 이벤트가 '미실장(중섭 선행)'으로
@@ -569,10 +575,15 @@ for act in cn_acts:
             to_jpeg(png, dest)
             print("thumb(cn·미실장):", eid, file=sys.stderr)
         except Exception as err:  # noqa: BLE001
-            # 콜라보 등 배너가 클뜯 레포에 없는(라이선스 제외) 이벤트 — 스킵하지 말고
-            # 플레이스홀더로 목록에 넣는다. 무인 리포트가 이 WARNING을 잡아 알려준다.
-            print(f"WARNING: cn event 썸네일 없음 — 플레이스홀더 사용: {eid} ({act['name']}) {err}", file=sys.stderr)
-            thumb_path = CN_PLACEHOLDER_THUMB
+            cut = CN_THUMB_CUT.get(eid)
+            if cut and os.path.exists(f"{REPO}/public/story/cut/{cut}.webp"):
+                thumb_path = f"/story/cut/{cut}.webp"
+                print(f"thumb(cn·미실장): {eid} — 공식 배너 없음, 컷씬 {cut} 로 대신", file=sys.stderr)
+            else:
+                # 콜라보 등 배너가 클뜯 레포에 없는(라이선스 제외) 이벤트 — 스킵하지 말고
+                # 플레이스홀더로 목록에 넣는다. 무인 리포트가 이 WARNING을 잡아 알려준다.
+                print(f"WARNING: cn event 썸네일 없음 — 플레이스홀더 사용: {eid} ({act['name']}) {err}", file=sys.stderr)
+                thumb_path = CN_PLACEHOLDER_THUMB
     trans = CN_PROVISIONAL_NAMES.get(eid)
     if not trans:
         print("untranslated cn event (원문 노출):", eid, act["name"], file=sys.stderr)
