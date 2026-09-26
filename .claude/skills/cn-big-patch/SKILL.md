@@ -64,7 +64,6 @@ PY
 한섭 절차에 있는 `network_config` → `an` → `announceList` 방식이 중섭에도 있지만,
 **2026-09-04에 조회하니 2025년 5월 공지(announceId 2069)가 그대로 나왔다.** 1년 넘게
 멈춘 피드다. 중섭에서 무엇이 들어왔는지는 **공지가 아니라 §3의 표 비교로 판단한다.**
-(공식 방송 일정은 비리비리 라이브룸 — `scripts/build-broadcasts-cn.py`가 이미 수집한다.)
 
 ## 2. 받는다
 
@@ -159,15 +158,15 @@ python3 scripts/build-stages-sandbox.py             # 작전 도감·시뮬레�
 
 ```bash
 Skill: terra-maintain      # 밀린 수작업(연대기·시너지·CN 번역·록라) 재감지
-npm run build
 ```
 
-빌드 통과 → 커밋 → `git push`. **배포는 사용자가 직접** (`bash scripts/deploy.sh` 금지).
+dev 에서 확인하고 멈춘다. **커밋·빌드·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에** (SESSION.md §1).
 
-푸시 전:
+배포할 때 푸시 전:
 - `public/sitemap.xml`은 건드리지 않는다 —
   `git stash push -q public/sitemap.xml` → `git pull --rebase -q` → `git push -q` → `git stash pop -q`
-- 무인 파이프라인이 그새 커밋했을 수 있다 (`git pull --rebase`)
+- 무인 파이프라인이 그새 커밋했을 수 있다 (`git fetch` 후 rebase) — 진행 중인 data-refresh 가 있으면
+  끝난 뒤에 배포한다 (옛 코드로 배포해 덮는다)
 
 ## 보고
 
@@ -178,8 +177,9 @@ npm run build
 
 ## 알아 둘 것
 
-- **중섭 이벤트가 열려도 사이트는 그대로다** — 정상이다. 미래시는 오퍼·재료·모듈 축이지
-  이벤트 축이 아니다. "중섭 이벤트 왔는데 왜 안 보이냐"는 질문에는 이걸 설명한다.
+- **중섭 이벤트는 이벤트 도감(`/events`)의 미래시에만 잡힌다** (2026-09-17~ — `activity`·`stage`·`zone`
+  표를 받아 작전·등장 적·교환 재화를 미리 뽑는다). 헤더 진행중 이벤트·한섭 화면에는 안 싣는다.
+  스토리는 AI 요약·번역 전문(`scripts/story-cn/` → `build-story-scripts.py --cn-merge`)으로 따로 들어간다.
 - **미실장 오퍼는 인프라 플래너·공채에서 자동 제외된다** (KR 데이터 기반 — INFRA-RULES §9).
   번역은 표시용일 뿐 계산에 영향이 없다.
 - **미출시 이벤트는 테라 연대기에 넣지 않는다** (`chronicle-register` 스킬 주의사항).

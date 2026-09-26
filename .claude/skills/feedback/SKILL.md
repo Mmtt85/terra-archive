@@ -80,7 +80,7 @@ curl -s "$U/rest/v1/feedback?id=eq.<UUID>&select=id,created_at,kind,message,payl
 - 데이터 JSON 을 손으로 고치지 말고 `scripts/` 파이프라인으로 재생성한다.
 - KR 데이터를 고치면 `build-i18n.py` 로 EN/JA 도 함께.
 - UI 한국어 문구를 고치면 `app/i18n.tsx` 의 같은 키도 함께.
-- 빌드 확인 → 커밋 → `git push` **까지만**. `bash scripts/deploy.sh` 는 금지 — 배포는 사용자가 직접.
+- dev 에서 확인하고 멈춘다 — **커밋·빌드·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에** (SESSION.md §1).
 - 커밋은 **내가 고친 파일만 경로로 집어서** 스테이징한다 (`git add -A` 금지 — 다른 세션 작업이 트리에 남아 있을 수 있다).
 
 같은 원인이 여러 곳에 퍼져 있으면 제보된 한 곳만 때우지 말고 뿌리를 고친다

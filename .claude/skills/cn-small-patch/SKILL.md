@@ -83,7 +83,7 @@ SKIP_FETCH=1 bash scripts/ci-refresh.sh fast 2>&1 | grep -Ei "미번역|未|译"
 npm run build
 ```
 
-빌드 통과 → 커밋 → `git push`. **배포는 사용자가 직접.**
+dev 에서 확인하고 멈춘다. **커밋·빌드·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에** (SESSION.md §1). 배포할 때:
 `public/sitemap.xml`은 건드리지 않는다 —
 `git stash push -q public/sitemap.xml` → `git pull --rebase -q` → `git push -q` → `git stash pop -q`.
 

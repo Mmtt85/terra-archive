@@ -39,7 +39,7 @@ description: 새 메뉴·탭·화면을 사이트에 붙일 때 빠뜨리면 안
 `app/**/*.tsx`인데 셋을 안 갖추면 빌드가 멈춘다. 해당 없는 화면은 그 스크립트의 `EXEMPT`에
 **이유를 적어** 넣는다 (예: 록라는 프리렌더가 '불러오는 중' 자리표시자뿐이라 플래시가 없다).
 
-⚠ 전역 모달 해시(`#changelog`·`#broadcast` 등)는 페이지 화면을 바꾸지 않으므로 가리개
+⚠ 전역 모달 해시(`#changelog` 등 — `GLOBAL_MODAL_HASH`)는 페이지 화면을 바꾸지 않으므로 가리개
 대상이 아니다 — pre-paint 스크립트의 제외 정규식에 이미 들어 있다.
 
 ## 2. 딥링크 자체
@@ -141,8 +141,9 @@ R2에서 서빙). 상세 절차는 **about-shots** 스킬.
 
 ## 8. 마무리
 
-- `npm run build` 통과(check-css·check-hashboot 포함) + 변경 파일 eslint 신규 에러 0.
+- 개별 가드 통과 — `node scripts/check-css.mjs` · `node scripts/check-hashboot.mjs` · `npx tsc --noEmit -p .`
+  + 변경 파일 eslint 신규 에러 0. (`npm run build` 는 배포할 때만 — SESSION.md §1)
 - **딥링크로 직접 진입 / 뒤로가기 / 새로고침 / 모바일 폭**을 실제로 눌러 본다.
 - 3개 언어 페이지를 열어 콘솔 에러 0인지 본다.
 - 업데이트 내역(`/changelog`) 등록은 사용자와 문구를 맞춘 뒤. 같은 날짜 안에서는 **나중 작업이 위**.
-- 빌드 확인 → 커밋 → push 까지만. **`bash scripts/deploy.sh`는 돌리지 않는다** (CLAUDE.md).
+- 여기서 멈춘다 — **커밋·빌드·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에** (SESSION.md §1).

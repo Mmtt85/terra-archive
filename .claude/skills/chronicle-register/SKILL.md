@@ -36,7 +36,7 @@ description: 테라 연대기(chronology.json)에 아직 등록 안 된 이벤�
    - **UI 문구 변경은 없다** (이름은 stories.json에서 옴) — i18n 사전 손댈 것 없음.
    - `arc` id가 arcs 목록에 실제로 있는지 확인. 새 아크가 필요하면 `arcs`에도 추가하고
      ko/en/ja 이름을 채운다.
-   - 커밋 → push. (배포는 사용자가 직접, CLAUDE.md 규칙)
+   - 여기서 멈춘다 — **커밋·빌드·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에** (SESSION.md §1).
 
 ## 주의
 

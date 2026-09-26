@@ -42,7 +42,7 @@ description: 신규 오퍼레이터의 인프라(RIIC) 파싱 결과를 점검�
 - 확정된 새 규칙은 INFRA-RULES.md와 도움말 모달(`planner.tsx` HelpModal)에 함께 갱신.
 - 사용자가 교정해준 도메인 규칙(A조 풀파워·쉐이 세트·니엔 고정 등, [[terra-archive-riic-domain-rules]])
   을 어기지 말 것.
-- 커밋 → push. 배포는 사용자가 직접.
+- 여기서 멈춘다 — **커밋·빌드·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에** (SESSION.md §1).
 
 ## 언제 무시해도 되나
 

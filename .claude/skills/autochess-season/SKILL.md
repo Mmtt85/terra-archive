@@ -131,7 +131,7 @@ npm run build          # 0 에러
 ## 5. 마무리
 
 - `node scripts/r2-sync.mjs` — **새 아이콘이 생겼으면 필수** (안 하면 404).
-- 빌드 확인 → 커밋 → `git push` 까지만. `bash scripts/deploy.sh` 자동 실행 금지 (CLAUDE.md).
+- dev 에서 확인하고 멈춘다 — **커밋·빌드·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에** (SESSION.md §1).
   `public/sitemap.xml` 은 건드리지 않는다.
 - 업데이트 내역은 **하루치를 최대한 하나로 묶어** 올린다 (커밋 1개 = 항목 1개 금지).
   area 는 `autochess`.

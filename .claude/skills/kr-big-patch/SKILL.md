@@ -72,11 +72,11 @@ SKIP_FETCH=1 bash scripts/ci-refresh.sh rest   # 인프라·회귀검증·공채
 
 (한 번에 통째로 돌릴 때는 `bash scripts/ci-refresh.sh` — phase 생략 = `all`.)
 
-> ⚠ **`SKIP_FETCH=1` 을 빼먹으면 §0에서 CDN으로 받은 것이 통째로 날아간다.**
-> `ci-refresh.sh`는 맨 앞에서 `fetch-gamedata.py`(클뜯 레포)를 돌리는데, 레포는 사람이
-> 돌려야 올라와서 며칠씩 밀린다(실측 11일) — 덮이면 **조용히** 옛 데이터로 사이트가
-> 만들어져서, 점검 당일에 이걸 당하면 신규 콘텐츠가 통째로 빠진 채 배포된다.
-> 무인 CI는 CDN 단계가 없으므로 기본값 그대로 둔다(이 플래그는 **로컬 전용**).
+> ⚠ **`SKIP_FETCH=1` 을 빼먹으면 §0에서 받은 것을 네 서버 다 CDN에서 다시 받는다** — 하나라도
+> 실패하면 `fetch-gamedata.py`(클뜯 레포)로 물러나 **통째로 덮는다.** 레포는 사람이 돌려야
+> 올라와서 며칠씩 밀린다(실측 11일) — 덮이면 **조용히** 옛 데이터로 사이트가 만들어져서,
+> 점검 당일에 이걸 당하면 신규 콘텐츠가 통째로 빠진 채 배포된다.
+> 무인 CI는 기본값(CDN 우선 수신) 그대로 둔다(이 플래그는 **로컬 전용**).
 
 KR을 재생성하면 EN/JA도 같이 나온다(`build-i18n.py`가 레인 안에 있다 — CLAUDE.md 규칙 충족).
 
@@ -199,13 +199,13 @@ node scripts/ci-report.mjs kr        # "신규 오퍼 인프라 시너지 검토
 
 ```bash
 Skill: terra-maintain      # 밀린 수작업(연대기·시너지·CN 번역·록라) 재감지
-npm run build
 ```
-빌드 통과 → 커밋 → `git push`. **배포는 사용자가 직접** (`bash scripts/deploy.sh` 금지).
+dev 에서 확인하고 멈춘다. **커밋·빌드·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에** (SESSION.md §1).
 
-푸시 전 확인:
-- 무인 파이프라인이 그새 커밋했을 수 있다 → `git pull --rebase` 후 사이트맵 재생성
-  (`node scripts/build-sitemap.mjs`, lastmod가 커밋 시각에서 나오므로 커밋 **뒤에** 돌린다)
+배포할 때 푸시 전 확인:
+- 무인 파이프라인이 그새 커밋했을 수 있다 → `git fetch` 후 rebase. 진행 중인 data-refresh 가
+  있으면 끝난 뒤에 배포한다 (옛 코드로 배포해 방금 배포를 덮은 전례).
+- `public/sitemap.xml` 은 빌드 부산물이다 → `git checkout -- public/sitemap.xml` (배포 빌드가 다시 만든다)
 - `/about` 스샷을 다시 찍었다면 **`r2-sync` 다음에** `SHOT_VER`를 올린다 (`about-shots` 스킬)
 - 이미 발행된 요약을 고쳤다면 `story-i18n-backport.py`를 먼저 (안 그러면 옛 번역이 덮는다)
 

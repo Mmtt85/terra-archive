@@ -405,5 +405,5 @@ KR 매핑 attack_of)과 `abilityList[].text`(개행 join, ability_of)에서 뽑�
 ## 마무리 (CLAUDE.md 수칙)
 
 - 한국어 UI 문구 추가 시 `app/i18n.tsx` 사전에 EN/JA 병기.
-- `npm run build` + `npx eslint app/rogue.tsx` 통과 확인 → **커밋 → push까지만**.
-  `scripts/deploy.sh` 자동 실행 금지 (배포는 사용자가 직접).
+- dev 에서 확인 + `npx eslint app/rogue.tsx` 신규 에러 0 → 멈춘다.
+  **커밋·빌드·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에** (SESSION.md §1).

@@ -1,6 +1,7 @@
 # 데이터 파이프라인
 
-명일방주 새 버전이 나오면 클뜯 레포에서 데이터를 받아 `app/data/operators.json`을 갱신한다.
+명일방주 새 버전이 나오면 **게임 CDN에서 직접** 데이터를 받아(§2 ①) `app/data/*.json`을 재생성한다.
+클뜯 레포는 폴백이다. 한 번에 다 돌리는 길은 `SKIP_FETCH=1 bash scripts/ci-refresh.sh`.
 
 ## 0. 한국서버 점검일 — 먼저 이 두 개
 
@@ -13,7 +14,9 @@
 | 스킬 | `kr-big-patch` | `kr-small-patch` |
 
 ```bash
-# 클뜯 레포에 KR 데이터가 올라올 때까지 대기 (점검 종료보다 2~2.5시간 늦는다)
+# 게임 CDN에 새 데이터가 올라왔는지 (1초) — 점검이 끝나면 곧바로 바뀐다
+python3 scripts/fetch-gamedata-cdn.py --check
+# (예비) CDN이 막혔을 때만: 클뜯 레포 커밋 감시 — 점검 종료보다 2~2.5시간 늦는다
 bash scripts/watch-gamedata.sh activity_table zone_table character_table
 
 # 직전 커밋 대비 "실제로 뭐가 들어왔나" + 미래 일정 전수 + 돌려야 할 파이프라인 안내
@@ -48,8 +51,9 @@ python3 scripts/fetch-gamedata-cdn.py --server jp # 일섭 / --server cn 중섭 
 `brew install flatbuffers`(flatc), pip `UnityPy` `lz4inv`. 서버당 46MB를 받고
 `.gamedata/.cdn/`에 resVersion별로 캐시한다.
 
-받는 표 목록은 서버마다 다르다 (`TABLES` 상수 — kr 20 · jp/en 18 · **cn 14**).
-중섭은 **미래시 전용**이라 이벤트·구역·스테이지 표를 아예 받지 않는다.
+받는 표 목록은 서버마다 다르다 (`TABLES` 상수가 정본 — 2026-09-26 기준 kr 22 · jp/en 19 · **cn 17**).
+중섭은 **미래시 전용**이다. 2026-09-17부터 `activity`·`stage`·`zone`도 받아 이벤트 도감이
+미래시 이벤트의 작전·등장 적을 미리 뽑지만, 중섭 콘텐츠를 한섭 화면에 그대로 싣지는 않는다.
 
 ②는 사람이 돌려야 올라오는 레포라 몇 시간~며칠 밀린다 (2026-09-02 실측 **11일**).
 자세한 원리·검증·스키마 고치는 법은 [docs/PROJECT-GUIDE.md](../docs/PROJECT-GUIDE.md) §2-1.
@@ -58,15 +62,16 @@ python3 scripts/fetch-gamedata-cdn.py --server jp # 일섭 / --server cn 중섭 
 > 돌린다. 클뜯 레포 JSON을 정답지로 삼아 서버별 스키마를 자동으로 고쳐 준다.
 > **중섭은 예외 — 공개 스키마가 곧 중섭 현행판이라 고칠 일이 거의 없다.**
 
-#### ⚠ 받은 직후에 `ci-refresh.sh`를 그냥 돌리지 말 것
+#### ⚠ 받은 직후의 `ci-refresh.sh`는 `SKIP_FETCH=1`로
 
-그 스크립트는 맨 앞에서 ②(`fetch-gamedata.py`)를 돌려 **방금 받은 것을 통째로 덮어쓴다.**
+그 스크립트는 맨 앞에서 네 서버를 CDN에서 **다시** 받는데, 하나라도 실패하면 ②
+(`fetch-gamedata.py`)로 물러나 **방금 받은 것을 통째로 덮어쓴다.**
 
 ```bash
 SKIP_FETCH=1 bash scripts/ci-refresh.sh    # .gamedata 의 기존(=CDN) 데이터를 쓴다
 ```
 
-무인 CI는 CDN 단계가 없으므로 기본값 그대로 둔다 — 이 플래그는 **로컬 전용**이다.
+무인 CI는 기본값(CDN 우선 수신) 그대로 둔다 — 이 플래그는 **로컬 전용**이다.
 
 ### ② 클뜯 레포에서 (`fetch-gamedata.py`)
 
@@ -98,9 +103,12 @@ SKIP_FETCH=1 bash scripts/ci-refresh.sh    # .gamedata 의 기존(=CDN) 데이�
   `en_<name>.json`·`jp_<name>.json`으로 저장 (character/skill/uniequip/battle_equip/
   building/handbook_team/handbook_info/gacha — range는 불필요)
 
-이미지는 로컬 `public/avatars/<char_id>.png`에서 서빙한다 (데이터의 `image`는 `/avatars/…` 경로).
+아바타는 `public/avatars/<char_id>.webp`로 받아 R2(`files.terra-archive.net`)에서 서빙한다
+(데이터의 `image`는 `/avatars/…` 경로 — `asset()`이 R2 주소로 바꾼다).
 신규 오퍼레이터가 생기면 `python3 scripts/download-avatars.py`로 빠진 아바타를
-`yuanyan3060/ArknightsGameResource`에서 내려받는다 (이미 있는 파일은 건너뜀, 실패 시 종료코드 1).
+**게임 CDN**(`cdnassets.py`)에서 내려받는다 — 없으면 `yuanyan3060/ArknightsGameResource` 미러로
+물러난다 (이미 있는 파일은 건너뜀, 실패 시 종료코드 1). 받은 뒤 `node scripts/r2-sync.mjs`
+(`deploy.sh`가 같이 돈다).
 
 ## 3. 재생성 + 태그
 
@@ -575,10 +583,11 @@ node scripts/check-staged.mjs <스테이지경로>   # deploy.sh가 자동 실�
 ## 9. 번역 사전 공개본 (외부 앱용, 2026-09-17~)
 
 중섭 화면을 OCR로 읽어 한국어를 덧씌우는 개인 앱의 문의로 만든 **밖에 내주는 유일한
-데이터 창구**다. 사이트가 들고 있는 중섭 선행 번역 중 **중국어 원문이 키인 것만** 낸다.
+데이터 창구**다. **중국어 원문이 키인 것만** 낸다 — 한섭에 나온 것은 공식 한국어 대조,
+아직 안 온 것은 사이트의 비공식 번역.
 
 ```bash
-python3 scripts/build-tldict.py   # → public/tl/ (manifest.json + 사전 10개, 3.2MB)
+python3 scripts/build-tldict.py   # → public/tl/ (manifest.json + 내용 갈래별 사전)
 ```
 
 `ci-refresh.sh`의 데이터 단계 맨 뒤에서 자동으로 돈다. 입력이 `scripts/`의 번역 파일과
@@ -586,11 +595,18 @@ python3 scripts/build-tldict.py   # → public/tl/ (manifest.json + 사전 10개
 
 | 파일 | 내용 |
 |---|---|
-| `op-fut.json` | 미실장 오퍼·재료 — **중섭 패치마다 늘어난다** |
-| `op-past.json` | 한섭 출시로 공식 번역이 덮인 옛 장부 — 거의 안 바뀐다 |
+| `op.json` | 오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록 |
+| `item.json` | 아이템·재료 |
+| `enemy.json` | 적 |
+| `stage.json` | 작전 |
 | `ra.json` | 생존연산 |
-| `is1`~`is6.json` | 통합전략 1~6 (안에서 `collectibles`·`nodes`·`encounters`·`endings`·`battles` 로 갈라 둔다 — **키는 영어**) |
-| `is-common.json` | 통합전략 공통 조우 안내·판정 문구 |
+| `is.json` | 통합전략 전 테마 (안에서 `collectibles`·`nodes`·`encounters`·`endings`·`battles` 로 갈라 둔다 — **키는 영어**) |
+
+파일은 **내용 갈래로만** 가른다. 한 파일 안에 **공식 한국어**(한섭에 나온 것의 CN 원문↔공식 KO를
+id로 짝지은 대조)와 **비공식 번역**(항목에 `"x": 1`)이 섞이고, 같은 원문에 둘 다 있으면 공식이
+이긴다. 형식 정본은 받는 쪽이 읽는 `public/tl/README.md`.
+(2026-09-17 첫판의 `op-fut`/`op-past`·`kr-*`·`is1`~`is6`·`is-common` 갈래는 같은 날 이 6개로
+합쳤다 — `op-past`는 성립하지 않는 갈래라 폐지.)
 
 ⚠ **200개씩 끊는 조각(chunk) 방식은 만들었다가 접었다** (2026-09-17). 전량이 3MB인데
 받는 쪽은 2~3주에 한 번 받는다 — 아끼는 건 한 달에 3MB인데 대가로 47개짜리 조각이 생겨

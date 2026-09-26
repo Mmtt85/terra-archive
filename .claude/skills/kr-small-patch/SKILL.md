@@ -1,6 +1,6 @@
 ---
 name: kr-small-patch
-description: 한국서버 작은 점검(오후 4시경 10분, 큰 점검 때 미리 들어온 데이터를 하나씩 해금) 뒤 개방 확인 절차. 이벤트 배너·공지 링크·부 이벤트 숨김·방송 배지 점검. "작은 점검 끝났어", "16시 점검", "이벤트 열렸는데 사이트에 안 떠" 같은 요청에 사용.
+description: 한국서버 작은 점검(오후 4시경 10분, 큰 점검 때 미리 들어온 데이터를 하나씩 해금) 뒤 개방 확인 절차. 이벤트 배너·공지 링크·부 이벤트 숨김 점검. "작은 점검 끝났어", "16시 점검", "이벤트 열렸는데 사이트에 안 떠" 같은 요청에 사용.
 ---
 
 # 한국서버 작은 점검 대응 — 열린 게 제대로 뜨는지만 본다
@@ -64,7 +64,9 @@ python3 scripts/whatsnew-gamedata.py --future-only
 ```
 신규 이벤트 행이 뜨면 그건 작은 점검이 아니라 **추가 배포**다 → `kr-big-patch`로 넘어간다.
 
-### 2. 방송 워커가 새 이벤트를 물었는지 — **여기가 제일 흔한 원인**
+### 2. 이벤트 워커가 새 이벤트를 물었는지 — **여기가 제일 흔한 원인**
+워커 이름(`terra-archive-broadcast`)과 KV 키(`broadcasts`)는 옛 방송 기능 시절 것 그대로다 —
+방송은 2026-09-23에 걷어냈고, 지금 `/` 는 진행중 이벤트 피드다 (`/datacheck` 는 관리자 데이터 점검).
 ```bash
 curl -s https://terra-archive-broadcast.nzkonaru.workers.dev/ | python3 -m json.tool | head -40
 ```
@@ -76,7 +78,7 @@ curl -s https://terra-archive-broadcast.nzkonaru.workers.dev/ >/dev/null   # 재
 ```
 
 ### 3. 화면 확인 (3언어)
-로컬 프로덕션(`npm run start`)이나 라이브에서 헤더 **진행중 이벤트** 배지·드롭다운을 본다.
+dev 서버나 라이브에서 헤더 **진행중 이벤트** 배지·드롭다운을 본다 (`npm run start` 는 쓰지 않는다 — SESSION.md §2).
 - 새 이벤트가 **대표 배지**로 잡히는가 (사이드스토리·복각이 로그인·출석류보다 우선)
 - **공지 링크**가 메인 이벤트에 붙었는가 — `app/home.tsx`가 아니라 워커의 `noticeUrlFor()`가
   붙인다. 게임명과 공지 제목의 문장부호가 다르면 안 붙는다(`normTitle`이 한글·영숫자만 남겨
@@ -102,9 +104,9 @@ node scripts/r2-sync.mjs                                              # 이미�
 (캐시가 영구 보존이라 지우지 않으면 옛 표를 계속 쓴다 — `kr-big-patch` §3 참조).
 
 ### 6. 마무리
-코드를 고쳤으면 `npm run build` → 커밋 → push. **`scripts/deploy.sh`는 실행 금지.**
-워커만 고쳤으면 `bash workers/broadcast/deploy.sh` (사이트 배포 금지 규칙과 별개지만
-사용자에게 한 줄 보고할 것).
+코드를 고쳤으면 dev 에서 확인하고 멈춘다 — **커밋·빌드·푸시·배포는 사용자가 배포하라고 할 때
+한꺼번에** (SESSION.md §1). 워커(`MANUAL_EVENTS` 등)만 고쳤으면 `bash workers/broadcast/deploy.sh`
+(사이트 배포와 별개지만 사용자에게 한 줄 보고할 것).
 
 ## 아무 문제 없으면
 

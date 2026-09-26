@@ -14,33 +14,42 @@
 
 | 항목 | 내용 |
 |---|---|
-| 위치 | `~/Documents/명일방주` |
+| 위치 | `~/Documents/workspace/terra-archive` |
 | Git | `github.com:Mmtt85/terra-archive.git` (main 브랜치) |
-| 배포 (주) | **https://terra-archive.pages.dev** — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드→스테이징→pages deploy). wrangler는 이 기기에 OAuth 로그인됨(운영자 클라우드플레어 계정), 프로젝트에 nodejs_compat 플래그 설정됨. **⚠️ 자동 실행 금지 — 배포는 사용자가 변경분을 모아서 직접 돌린다** (2026-07 규칙 변경). |
-| 방송 워커 | `terra-archive-broadcast` (workers/broadcast) — 6시간마다 유튜브 공식 채널 3개(KR·JP·GL)에서 방송 일정 자동 수집 → KV → https://terra-archive-broadcast.nzkonaru.workers.dev (프론트 폴백: app/data/broadcasts.json). 배포는 `bash workers/broadcast/deploy.sh`, 상세는 `.claude/skills/broadcast-check`. **중국 서버(미래시)는 비리비리 라이브룸**이라 워커가 아니라 GitHub Actions(`scripts/build-broadcasts-cn.py`)가 수집한다 — 비리비리가 클라우드플레어 이그레스를 412로 밴하기 때문 |
+| 배포 (주) | **https://terra-archive.net** (Pages 프로젝트 `terra-archive.pages.dev`) — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드→R2 동기화→Pages 업로드). wrangler는 이 기기에 OAuth 로그인됨(운영자 클라우드플레어 계정), 프로젝트에 nodejs_compat 플래그 설정됨. **⚠️ 자동 실행 금지 — 배포는 사용자가 하라고 할 때만** (2026-07 규칙, SESSION.md §1). |
+| 이벤트 워커 | `terra-archive-broadcast` (workers/broadcast) — **이름만 옛 방송 기능 것이다** (유튜브 공식 방송은 2026-09-23 기능째 삭제: 헤더 버튼·모달·`broadcasts.json`·중섭 수집 `build-broadcasts-cn.py`). 지금 하는 일은 둘: ① `GET /` — 진행중·3주 내 시작 KR 이벤트. 클뜯 레포 `activity_table` + 공식 카페 공지 링크(제목 매칭) + `MANUAL_EVENTS`(레포가 못 따라온 개방 당일 손 등록), 6시간 크론(`23 */6 * * *`) → KV(키 이름은 옛것 그대로 `broadcasts`). 프론트는 `app/event-feed.ts`(헤더 이벤트·이벤트 도감의 공식 카페 버튼). ② `GET /datacheck` — 매일 11:41 KST 오퍼 목록·공채 풀·펭귄 파밍 요약 → `/admin` 데이터 점검. 배포 `bash workers/broadcast/deploy.sh`. ⚠ 유튜브 수집 코드는 워커에 남아 아직 6시간마다 돈다 (결과를 읽는 곳은 없다) |
 | 계정 워커 | `terra-archive-account` (workers/account) — **요스타(KR/JP/EN) 이메일 인증코드 로그인 → 게임서버 syncData → 보유 오퍼 목록**. 보유 오퍼 설정 → 가져오기 → 게임 로그인이 호출한다 (`app/account.ts`). 무상태(KV·시크릿 없음, 이메일/코드/토큰 저장·로깅 안 함), Origin은 사이트+localhost만 허용. 배포 `bash workers/account/deploy.sh` · 점검 `curl ".../probe?server=kr"`. 브라우저에서 직접 못 부르는 이유: Yostar API가 CORS를 안 주고 MD5/HMAC 서명 + 안드로이드 UA 위장이 필요(Workers에 MD5가 없어 `src/md5.js` 자체 구현). **동기화하면 게임 세션이 끊긴다**(계정당 접속 1개) — UI에 반드시 경고를 남겨둘 것 |
 | 파티 방 워커 | `terra-archive-acroom` (workers/acroom) — **위수 협의 파티 공유**의 방. 게임의 '맹약 초대' 문구 속 방 ID 하나 = Durable Object 하나(SQLite 클래스, WebSocket 하이버네이션). 최대 4명, 마지막 사람이 나간 60초 뒤 알람이 방을 통째로 지운다. 저장은 전략 id·맹약 id·신호 id·처음 붙여 넣은 초대 문구 한 줄뿐, 계정·IP 없음. Origin은 사이트+localhost만. 배포 `bash workers/acroom/deploy.sh` · 점검 `curl https://terra-archive-acroom.nzkonaru.workers.dev/`. 상세는 아래 「위수 협의 파티 공유」 절 (2026-09-21) |
+| 파일 저장소 워커 | `terra-archive-upload` (workers/upload) — R2 버킷 `terra-archive-files` 입출력. 에셋 동기화(`r2-sync.mjs`)·번역 사전 공개본(`publish-tl.mjs`)·제안 첨부(`/fb`)가 쓴다. 상세는 아래 「파일 저장소 — Cloudflare R2」 절 |
+| 관리자 API 워커 | `terra-archive-admin-api` (workers/admin-api) — admin.terra-archive.net 의 `/api/*`. Cloudflare Access JWT 를 검증한 뒤에야 관리자 키를 붙여 Supabase·업로드 워커에 중계한다 (브라우저에는 관리자 비밀번호가 없다). 상세는 아래 「관리자 페이지 분리」 절 |
 | 스택 | vinext(Cloudflare용 Next 호환 런타임) + Next.js 16 / React 19 / Tailwind 4 |
 | 명령 | `npm run dev`(localhost:3000) / `npm run build` / `npm run lint`. ⚠ dev 서버가 모든 페이지에 **500 "Network connection lost."** 를 내면 vinext 의 렌더 러너 워커가 죽은 것이다 (2026-09-21 실측 — HMR 연타·동시 빌드 뒤). 코드 문제가 아니니 `npm run dev` 를 다시 띄운다 |
-| 운영 수칙 | 수정하면 **빌드 확인 → 커밋 → git push 까지만** 진행하고 **멈춘다**. `scripts/deploy.sh`는 절대 자동 실행하지 않음 — 세션마다 자동 배포하면 토큰이 낭비되므로, 배포는 사용자가 여러 변경을 모아서 직접 실행한다 (2026-07 규칙). 모든 허가 요청은 기본 YES |
+| 운영 수칙 | **정본은 SESSION.md.** 작업 중엔 dev(핫리로드) + 브라우저 실측으로만 확인하고, **커밋·푸시·빌드·배포는 배포 직전에 한꺼번에** 한다 (2026-09-23 사용자 지시 — 종전 '수정마다 빌드 → 커밋 → push'는 폐기). `scripts/deploy.sh`는 사용자가 하라고 할 때만 — 세션마다 자동 배포하면 토큰이 낭비된다 (2026-07 규칙). 모든 허가 요청은 기본 YES |
 | 알려진 무시 항목 | git author가 로컬 기본값(`<계정명>@local`). 스타터 템플릿 잔재(ChatGPT 인증·D1/drizzle·스켈레톤 테스트 등)는 2026-07 전부 제거됨 — `npm test` 스크립트 없음 |
 
-### 화면 구성 — 단일 페이지 + 탭 4개 × 언어 3종
+### 화면 구성 — 한 앱(`app/home.tsx`) + 경로별 탭 16개 × 언어 3종
 
 | 탭 | 해시 딥링크 | 소스 |
 |---|---|---|
-| 오퍼 백과사전 | (기본) · 오퍼 모달 열면 `#op-<char_id>` | `app/home.tsx` (공용 루트) |
+| 홈 | `/` — 기능 타일·진행중 이벤트 | `app/home.tsx` (공용 루트 — 모든 탭이 이 안에서 갈린다) |
+| 오퍼 백과사전 | `/operators` · 상세 `/operators/<char_id>` (미실장은 상세 라우트가 없어 `#op-<char_id>`) | `app/home.tsx` |
 | 적 도감 | `/enemies` · 적 모달 열면 `#en-<enemy_id>` | `app/enemies.tsx` + `app/enemy-detail.tsx` |
 | 작전 도감 | `/stages` · 작전 모달 열면 `#st-<stage_id>` | `app/stages.tsx` + `app/stage-detail.tsx` |
 | 작전 시뮬레이터 | `/sim` — 리스트 없는 런처(검색+추천), `/stages/<id>?sim=1` 딥링크로 상세의 이동 경로 탭+시뮬 자동 재생 (2026-08-10 B안) | `app/sim-launcher.tsx` (home 정적 임포트 — SEO 본문 프리렌더) |
 | 생존연산 가이드 | `/ra` — 요리·제작·지역·조우·균열 + CN 선행 신시즌(미래시 토글). **CN 선행분은 중국어 원문이 메인, 한국어 비공식 번역(`scripts/sandbox-cn-ko.json`)이 서브 병기** (사용자 확정 2026-08-12 — 뒤집지 말 것). 이미지는 `public/sandbox/`(폴더명은 라우트와 다르게 — deploy.sh 함정) (2026-08-12) | `app/sandbox.tsx` + 로케일 래퍼 (lazy) |
 | 위수 협의 가이드 | `/autochess` — 맹약(진영 8·특성 15)별 오퍼레이터, 기물 125종(보급센터 미진열 9종 포함 — 아래 §데이터)의 위수 협의 전용 능력(일반/골든), 물자관리소 티어·레벨 수치, 장비·밴드·전략·특수 적·마일스톤. EN도 시즌2가 글로벌에 열리며 정식 영문 텍스트로 전환(2026-08-23 — krOnly는 EN 클뜯에 시즌 블록이 없을 때만 켜지는 안전장치로 남음). 이미지는 `public/ac/`(라우트 `/autochess`와 폴더명이 달라야 한다 — deploy.sh 함정) (2026-08-22). 오퍼레이터 목록에 필터 6종(티어·진영 맹약·특성 맹약·직군·세부직군·특질 — 특질은 build-autochess.py `classify_gar`가 KR 원문에서 태깅, '맹약을 계속 중첩'은 필라에처럼 반복해서 쌓는 류만·1회짜리 제외가 사용자 확정). 맹약을 고르면 티어 섹션 대신 소속 그룹(두 맹약 모두/진영/특성) + 중첩 기여 배지로 갈린다 — 별도 '시뮬레이터' 뷰로 만들었다가 반나절 만에 필터로 편입 (사용자 확정 "물자관리소 필터링이랑 똑같네"). 최상위 탭도 재편: **맹약 / 전략 / 오퍼레이터 / 아이템 / 게임 정보** — 나머지(적·모드·보급센터·전략 전술)는 게임 정보로, '보상' 탭은 제거. 기물 상세 모달은 도감 링크 대신 **보유 스킬 전부·모듈 전부의 설명**(기물의 스킬 레벨·모듈 단계 기준 보간, 기본 구성엔 '디폴트' 배지, 아이콘은 `public/ac/skill`·`modtype`)을 싣고, **일반↔정예화(골든) 토글**이 능력·스킬·모듈·표 강조를 한 번에 바꾼다. 최상위 탭은 아이템 포함 5개, 필터·뷰 상태는 해시 딥링크(`#op?bn=…&g=…`). 오퍼레이터 탭 맨 아래 **자유 선택 칸**(명단 밖 보유 ★6 — 게임 안내대로 특질 없이 출전) + **대체 기물 17종**(`backupCharId` — 본체 미보유 기물이 그 얼굴로 대신 출전, 맹약·특질·스킬은 기물 것 그대로. 게임의 자체 편성 판에 항상 뜨는 나머지 절반이다 — 사용자 스크린샷 검증 2026-08-23). 기물 모달 머리글 오른쪽에 '본체 미보유 시 대체' 칩(누르면 그 대체 기물 상세) (2026-08-23). **지난 시즌 보기** — 메뉴(가이드 → 위수협의)의 부메뉴에서 시즌을 고르면 `/autochess/s<N>` 으로 그 시절 수치 그대로 열린다 (2026-09-05, 사용자 요청). 통합전략 테마·생존연산 시즌과 같은 자리다 — **화면 안에는 전환 버튼을 두지 않는다**(넣었다가 사용자 지시로 걷어냄). 시즌을 갈아타면 `key`로 통째로 새로 마운트한다 | `app/autochess.tsx` + 로케일 래퍼 (lazy) |
-| 인프라 플래너 | `#infra` | `app/planner.tsx` |
-| 공개채용 도우미 | `#recruit` | `app/recruit.tsx` |
-| 재료 파밍 효율표 | `#farm` | `app/farm.tsx` |
+| 아이템 도감 | `/items` | `app/items.tsx` + 로케일 래퍼 (lazy) |
+| 이벤트 가이드 | `/events` (듀얼 채널 등 모드별 상세 포함) | `app/events.tsx` + `app/event-duel.tsx` + 로케일 래퍼 (lazy) |
+| 통합전략 가이드 | `/rogue` · 테마 `/rogue/is1`~`is6` | `app/rogue.tsx` (lazy) |
+| 스토리 | `/stories` — AI 요약·테라 연대기·리더기 | `app/story.tsx` + `app/story-vn.tsx` (lazy) |
+| 인프라 플래너 | `/infra` (구 `#infra`) | `app/planner.tsx` |
+| 공개채용 도우미 | `/recruit` (구 `#recruit`) | `app/recruit.tsx` |
+| 재료 파밍 효율표 | `/farm` (구 `#farm`) | `app/farm.tsx` |
+| 육성 비용 계산기 | `/upgrade` (구 `#upgrade`) | `app/farm.tsx`의 `UpgradeSim` |
+| 소개 | `/about` | `app/about.tsx` (lazy) |
 
 URL 복붙으로 해당 탭/오퍼 모달이 바로 열려야 한다 (hashchange + 초기 로드 처리).
-(위 `#infra` 류는 구 해시 — 지금 탭은 경로(`/infra` 등)가 정본이고 구 해시는 하위호환 치환만 된다.)
+(`#infra` 류 구 해시는 하위호환 치환만 된다 — `tabFromLegacyHash()`. 경로가 정본이다.)
 
 **모달 딥링크 (2026-07-27, "링크 만들 수 있는 모든 곳에 URL")** — 공용 훅
 `app/hash-modal.ts`의 `useHashSync(value, apply)`가 모달 상태 ↔ 해시를 양방향 동기화한다
@@ -57,8 +66,7 @@ vinext의 pushState 패치(스크롤 리셋)를 피하려 네이티브 `History.
 
 | 해시 | 어디서나/경로 | 여는 것 |
 |---|---|---|
-| `#changelog` / `#changelog-all` | 어디서나 | 업데이트 내역 (신기능만 / 상세) |
-| `#broadcast` | 어디서나 | 공식 방송 일정 모달 |
+| `#changelog` | 어디서나 | 업데이트 내역 (옛 `#changelog-all`도 같은 창으로 받는다 — '신기능만' 토글은 2026-08-19 삭제) |
 | `#roster` / `#roster-import` | `/infra` | 보유 오퍼 설정 (직접 입력 / 가져오기 탭) |
 | `#help` · `#flows` · `#room-<방키>` | `/infra` | 플래너 도움말 · 자원 흐름 · 방 상세 (방키 = `TRADING-0` 등 LAYOUT key) |
 | `#replay` · `#prts-help` | `/rogue` | 리플레이 프리뷰 · PRTS 링크 도움말 |
@@ -233,10 +241,10 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 
 | 데이터 | 출처 | 비고 |
 |---|---|---|
-| KR 게임 테이블 | `ArknightsAssets/ArknightsGamedata` 레포 `kr/gamedata/excel/*.json` | character / skill / uniequip / battle_equip / building / range / handbook_team / handbook_info / **gacha**(공채) |
-| 별명(다국어 이름) | 같은 레포 `jp/`, `cn/`의 character_table | |
-| EN/JA 사이트 텍스트 | 같은 레포 `en/`, `jp/`의 위 테이블 세트 (range 제외) | `build-i18n.py`가 operators.{en,ja}.json + extra-i18n.{en,ja}.json 생성 |
-| 오퍼 아바타 | `yuanyan3060/ArknightsGameResource` 레포 `avatar/<char_id>.png` | **로컬 `public/avatars/`에 다운로드해 서빙** (핫링크 아님) |
+| 게임 테이블 (kr·jp·en·cn) | **게임 CDN** — `scripts/fetch-gamedata-cdn.py` → `.gamedata/<서버>_<표>.json` (§2-1, 2026-09-02~ · 무인 CI도 2026-09-16~) | character / skill / uniequip / battle_equip / building / handbook / **gacha**(공채) / activity·zone·stage 등. 받는 표는 서버마다 다르다 — `TABLES` 상수가 정본 |
+| 폴백 | `ArknightsAssets/ArknightsGamedata` 레포 (`<서버>/gamedata/excel/*.json`, `fetch-gamedata.py`) | `range_table`(CDN에서 못 뜯는 옛 암호화 표)과 CDN 실패 시 비상용. 사람이 돌려야 올라와서 며칠씩 밀린다 (실측 11일) |
+| 별명(다국어 이름) · EN/JA 사이트 텍스트 | 위와 같은 길의 `jp`·`cn`·`en` 표 | `build-i18n.py`가 operators.{en,ja}.json + extra-i18n.{en,ja}.json 생성 |
+| 그림 (아바타·스킬 아이콘·초상·도면·스탠딩 등) | **게임 CDN** — `scripts/cdnassets.py` (2026-09-16~) | CDN에 없으면 옛 미러(`yuanyan3060/ArknightsGameResource`·`ArknightsAssets2` 등)로 물러난다. 재료 아이콘(`build-farm.py`·`build-costs.py`)은 아직 미러 직행. 받은 그림은 R2(`files.terra-archive.net`)에서 서빙 (핫링크 아님) |
 | ❌ 사용 금지 | `Kengxxiao/ArknightsGameData_YoStar` | 2025-11 업데이트 중단 — 쓰지 말 것 |
 
 ### 2-1. 게임 CDN 직접 받기 — 클뜯 레포를 안 기다리는 길 (2026-09-02 구축)
@@ -253,7 +261,7 @@ python3 scripts/fetch-gamedata-cdn.py --tables activity_table --server kr
 ```
 
 출력이 `fetch-gamedata.py`와 **완전히 같아서** 뒤 파이프라인은 손댈 것이 없다.
-받는 표 목록도 서버별로 같다 (`TABLES` 상수 — kr 20 · jp/en 18 · **cn 14**).
+받는 표 목록은 서버마다 다르다 (`TABLES` 상수가 정본 — 2026-09-26 기준 kr 22 · jp/en 19 · **cn 17**).
 필요한 것: `brew install flatbuffers`(flatc), pip `UnityPy` `lz4inv`.
 
 네 서버 모두 같은 구조로 뜯긴다 (2026-09-04 실측):
@@ -273,17 +281,19 @@ OpenArknightsFBS `main`)가 곧 중섭 현행판이라 그대로 맞는다 — �
 ⚠ **중섭 공지 엔드포인트(`network_config` → `an`)는 죽어 있다** — 2026-09-04에 조회하니
 2025년 5월 공지(announceId 2069)가 그대로 나왔다. 중섭은 표 비교로만 판단한다.
 
-### ⚠ 받은 뒤 `ci-refresh.sh`를 그냥 돌리면 다 날아간다
+### ⚠ 받은 뒤 `ci-refresh.sh`는 `SKIP_FETCH=1`로
 
-`ci-refresh.sh`는 맨 앞에서 `fetch-gamedata.py`(클뜯 레포)를 돌려 **방금 CDN에서 받은
-것을 통째로 덮어쓴다.** 레포는 며칠씩 밀리므로 조용히 옛 데이터로 사이트가 만들어진다.
+`ci-refresh.sh`는 맨 앞에서 네 서버를 **CDN에서 다시** 받는다 (2026-09-16~ — 그 전엔
+클뜯 레포만 봤다). 하나라도 실패하면(flatc·UnityPy 미설치, 스키마 변경 등) 클뜯 레포판
+(`fetch-gamedata.py`)으로 물러나 **방금 받은 최신 데이터를 통째로 덮어쓴다** — 레포는 며칠씩
+밀리므로 조용히 옛 데이터로 사이트가 만들어진다. 이미 받았으면 다시 받을 이유도 없다.
 
 ```bash
 SKIP_FETCH=1 bash scripts/ci-refresh.sh    # .gamedata 의 기존(=CDN) 데이터를 쓴다
 ```
 
-무인 CI(GitHub Actions)는 CDN 단계가 없으므로 **기본값 그대로** 둔다 — 이 플래그는
-로컬 전용이다. `.gamedata`가 비어 있으면 가드가 종료 코드 2로 막는다.
+무인 CI(GitHub Actions)는 기본값(CDN 우선 수신) 그대로 둔다 — 이 플래그는 로컬 전용이다.
+`.gamedata`가 비어 있으면 가드가 종료 코드 2로 막는다.
 
 흐르는 길 (`scripts/fbsutil.py` docstring이 정본):
 
@@ -563,7 +573,7 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
 
 ```bash
 node scripts/check-new-operators.mjs      # 1. 미수록 오퍼 확인
-# 2. KR/JP/CN + EN 테이블 다운로드 (gacha_table 포함, EN/JP는 다국어용 풀 세트) → 작업 폴더
+python3 scripts/fetch-gamedata-cdn.py --server kr   # 2. 게임 CDN에서 표 받기 (jp·en·cn도 — §2-1, gamedata-pull 스킬)
 python3 scripts/regen-operators.py <dir>  # 3. 기계 필드 전체 재생성 → operators-regen.json
 python3 scripts/retag-concepts.py <dir>   # 4. 컨셉덱 태그 재부착 → operators-tagged.json → app/data/operators.json 으로 복사
 python3 scripts/build-infra.py <dir>      # 5. 인프라 데이터 재생성 → app/data/infra.json (rules.json의 파서 상수·교정 반영)
@@ -571,8 +581,10 @@ node scripts/verify-plan.mjs              # 5-1. 플래너 회귀 검증 (정배
 python3 scripts/build-recruit.py <dir>    # 6. 공채 데이터 재생성 → app/data/recruit.json
 python3 scripts/build-i18n.py <dir>       # 7. EN/JA 데이터 재생성 → operators.{en,ja}.json + extra-i18n.{en,ja}.json
 python3 scripts/download-avatars.py       # 8. 신규 아바타 다운로드 (기존 파일 스킵)
-npm run build                             # 9. 빌드 확인 → 커밋 → 푸시 → 재배포 리마인드
+# 9. dev 에서 확인 → 빌드·커밋·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에 (SESSION.md §1)
 ```
+
+위 3~8은 `SKIP_FETCH=1 bash scripts/ci-refresh.sh` 한 번에 들어 있다 (적·작전·스토리 등 나머지 포함).
 
 ### 확정된 데이터 규칙 (사용자가 직접 교정한 것 — 어기면 안 됨)
 
@@ -1795,7 +1807,7 @@ Pages가 아니라 **R2 버킷 커스텀 도메인 `files.terra-archive.net`**
 | **R2** | `public/` 밑 14개 폴더 | `asset()`으로 URL 만들어 `fetch` | **r2-sync만 하면 반영** | 767MB · 15,300파일 |
 
 - 번들: `operators.json`(+`.en`/`.ja`), `costs`·`infra`·`farm`·`recruit`·`rogue1~6`·`stories`·
-  `broadcasts`·`story-summaries` — 목록·검색·플래너 계산처럼 **화면을 그리는 순간 필요한 것**.
+  `story-summaries` — 목록·검색·플래너 계산처럼 **화면을 그리는 순간 필요한 것**.
 - R2: `avatars`·`skills`·`profiles`·`voice`·`skins`·`skin`·`modules`·`records` (오퍼당 파일 1개씩) +
   `story`·`rogue` 이미지/스크립트·`lens`/`tesseract` OCR·`items`·`scan`·`about`·`og` —
   전부 **상세 모달이나 스토리 화면을 열 때만** 받아온다.
@@ -1826,9 +1838,12 @@ recruit, R2 쪽은 `avatars/<id>.webp` 1개와 `{skills,profiles,voice,skins}/{k
 중섭 화면을 OCR로 읽어 한국어를 덧씌우는 **개인 앱의 문의**("공개 API·오프라인 사전·증분
 동기화가 되냐")로 열었다. 사이트에 공개 API는 이것뿐이고, 여기 없는 것은 안 내준다.
 
-내주는 것은 **중국어 원문이 키인 번역만**이다. 한섭에 이미 나온 것은 게임 데이터에 공식
-한국어가 있고 그쪽이 더 정확하므로 내줄 이유가 없다. 한국어를 키로 삼는 것(큐레이션 문장·
+내주는 것은 **중국어 원문이 키인 것만**이다. 한섭에 나온 것은 CN 원문↔공식 한국어를 id로 짝지은
+**대조**(번역이 아니다), 아직 안 온 것은 **비공식 번역**(항목에 `"x": 1`)이다. 처음엔 "한섭에 나온
+건 공식 한국어가 있으니 내줄 이유가 없다"고 뺐는데, 받는 쪽이 보는 건 **중섭 화면**이라 한섭 출시
+여부와 무관하게 둘 다 필요하다 (사용자 지적 2026-09-17). 한국어를 키로 삼는 것(큐레이션 문장·
 스토리 번역)은 **중국어 화면에서 찾을 수가 없어** 받아 봐야 쓸 데가 없다 — 용량만 는다.
+파일은 내용 갈래별로 가른다(`op`·`item`·`enemy`·`stage`·`ra`·`is` …).
 
 만드는 것은 `scripts/build-tldict.py`, 형식 정본은 `public/tl/README.md`(받는 쪽이 읽는
 공개 문서), 절차는 scripts/README.md §9.
@@ -2030,7 +2045,7 @@ Cloudflare가 봇으로 분류해 이미 걸러낸 뒤다. 건별 확인은 Secu
    retag-concepts.py의 POTS에 추가하고 home.tsx `SYNERGY_POTS`와 순서 동기화,
    `app/i18n.tsx` CONCEPT_I18N에 EN/JA 표시명 추가.
 4. 공채 풀 변동 확인 (recruitDetail 파싱 경고 로그 확인).
-5. 빌드 → 커밋 → 푸시 (배포는 사용자가 직접 — §1 운영 수칙).
+5. dev 에서 확인하고 멈춘다 — 빌드·커밋·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에 (SESSION.md §1).
 
 
 ## 로컬에서 새 에셋 확인하기 (TA_LOCAL_ASSETS=1)

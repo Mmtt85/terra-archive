@@ -1,13 +1,14 @@
 # 무인 유지보수 자동화
 
-클뜯 데이터 갱신·신규 오퍼·이벤트 시작을 **하루 두세 번 자동 감지**해, 사람 없이도
-사이트가 최신으로 유지되게 하는 GitHub Actions 파이프라인. 세션을 안 열어놔도 돌아간다.
+게임 데이터 갱신·신규 오퍼를 **자동 감지**해, 사람 없이도 사이트가 최신으로 유지되게 하는
+GitHub Actions 파이프라인. 점검 시간대에는 10분마다 게임 CDN 버전을 보고, 움직이면 바로 돈다
+(2026-09-16~ — 그 전엔 하루 세 번 클뜯 레포를 봤다). 세션을 안 열어놔도 돌아간다.
 
 ## 무인 레인은 하나뿐이다
 
 | 레인 | 워크플로 | 하는 일 | 발행 |
 |---|---|---|---|
-| 🟢 결정론 | `data-refresh.yml` | 오퍼/공채/파밍/인프라/육성비용/스토리목록/EN·JA 재생성 + 중섭 방송 일정 | 진짜 변동 시 자동 커밋·배포 |
+| 🟢 결정론 | `data-refresh.yml` | 오퍼/공채/파밍/인프라/육성비용/적·작전·아이템·이벤트/스토리목록/EN·JA 재생성 | 진짜 변동 시 자동 커밋·배포 |
 
 > **🟡 LLM 레인(`content-auto.yml`)은 삭제했다 (사용자 확정 2026-09-16).** 매일 밤 23시에
 > "요약 없는 신규 이벤트"를 찾아 AI 요약을 집필·배포하던 워크플로다. 정작 새 이벤트는
@@ -20,11 +21,9 @@
 
 - **결정론 레인**은 LLM이 필요 없다. `git diff`가 곧 변경 감지기다 — 파이프라인을 돌려
   진짜 데이터가 바뀐 게 있을 때만(=`updated` 날짜만 바뀐 건 무시) 커밋·배포한다.
-  방송·이벤트 시작 배지는 이미 크론 워커+런타임 계산이라 리빌드가 필요 없다. 예외는
-  **중국 서버 방송**(미래시) — 비리비리가 클라우드플레어 이그레스를 412로 밴해서 워커가 못 받는다.
-  GitHub 러너는 통과하므로 `scripts/build-broadcasts-cn.py`를 이 레인에 넣어 정적 파일로 커밋한다.
-- **LLM 레인**은 "시작됐는데 요약이 없는 이벤트"만 감지해 Claude가 집필한다. 배포 전
-  `npm run build` 통과와 Claude 자체 환각검증을 게이트로 둔다.
+  헤더의 진행중 이벤트는 이벤트 워커(`workers/broadcast` — 이름만 옛 방송 기능 것) + 런타임
+  계산이라 리빌드가 필요 없다. (중섭 방송 일정을 이 레인에서 받던 `build-broadcasts-cn.py`는
+  방송 기능과 함께 2026-09-23 삭제.)
 - 인프라 시너지/컨셉 태그 같은 **사람이 교정해온 도메인 규칙**은 자동 집필하지 않는다 —
   신규 오퍼가 잡히면 결정론 레인이 이메일 경고로 알려주고, 판단은 사람이 한다.
 
@@ -32,7 +31,7 @@
 
 | 단계 | 스크립트 | 하는 일 | 시간 |
 |---|---|---|---|
-| **fast** | `ci-refresh.sh fast` | 클뜯 수신 → 오퍼 데이터 → EN/JA → 아바타·스킬레벨·프로필 | **~57초** |
+| **fast** | `ci-refresh.sh fast` | CDN 수신(실패 시 클뜯 레포) → 오퍼 데이터 → EN/JA → 아바타·스킬레벨·프로필 | **~57초** |
 | **rest** | `ci-refresh.sh rest` | 인프라 → 회귀검증 → 공채·파밍·비용·스토리 → 보이스·스킨 | ~7분 |
 
 각 단계가 **끝나자마자 따로 커밋·배포**한다. 신규 오퍼가 인프라(234초)·회귀검증(108초)·
@@ -133,18 +132,18 @@
 
 ## 스케줄 (UTC)
 
-- `08:00`(17:00 KST) · `13:00`(22:00 KST) — KR 데이터 리프레시 2회
-- `04:00`(12:00 CST) — CN(미래시) 데이터 리프레시 1회
-- `14:00`(23:00 KST) — LLM 요약 집필 1회
+- `*/10 0-9 * * *` (09:00~18:50 KST, 10분마다) — **점검 감시** (2026-09-16~). `probe` 잡이
+  `scripts/ci-probe-version.mjs`로 네 서버(kr·cn·en·jp)의 CDN `resVersion`만 보고(몇 초),
+  움직였을 때만 `refresh` 잡을 깨운다. 기준 버전은 `.ci/resversion.json`에 커밋해 둔다.
+- `08:00`(17:00 KST) · `13:00`(22:00 KST) — KR 안전망 2회 (버전과 무관하게 한 바퀴)
+- `04:00`(12:00 CST) — CN(미래시) 안전망 1회
 
-수동 실행: 각 워크플로 Actions 탭 → **Run workflow** → `dry_run` 체크하면 커밋·배포 없이
-리포트/집필만 하고 이메일만 보낸다. **처음엔 반드시 dry_run으로 한 번 돌려볼 것.**
+수동 실행: Actions 탭 → data-refresh → **Run workflow** → `dry_run` 체크하면 커밋·배포 없이
+리포트만 만들고 이메일만 보낸다.
 
 ## 비용
 
 레포가 public이라 **GitHub Actions는 무제한 무료**. Cloudflare Pages 배포도 무료.
-LLM 레인은 `CLAUDE_CODE_OAUTH_TOKEN`(구독 토큰)을 써서 API 종량 과금이 아니라 기존
-Claude 구독 쿼터를 소모한다 → **추가 요금 0**.
 
 ## 필요한 저장소 시크릿
 
@@ -155,12 +154,13 @@ Claude 구독 쿼터를 소모한다 → **추가 요금 0**.
 | `CLOUDFLARE_API_TOKEN` | Pages 배포 | My Profile → API Tokens → **Create Custom Token**(Pages 전용 템플릿은 없음) → Permissions에 `Account · Cloudflare Pages · Edit` 추가 → Account Resources는 본인 계정 Include → Create |
 | `CLOUDFLARE_ACCOUNT_ID` | Pages 배포 | Cloudflare 대시보드 우측 사이드바 Account ID |
 | `R2_SYNC_KEY` | **에셋 R2 동기화(필수)** | 레포 루트 `.r2-sync-key`의 값 — `gh secret set R2_SYNC_KEY < .r2-sync-key`. 없으면 신규 오퍼 섬네일·스킬 레벨 파일이 사이트에서 404 |
-| `CLAUDE_CODE_OAUTH_TOKEN` | 헤드리스 Claude(무과금) | 로컬에서 `claude setup-token` 실행 → 출력 토큰 |
 | `MAIL_USERNAME` | 이메일 발신 | Gmail 주소 |
 | `MAIL_PASSWORD` | 이메일 발신 | Gmail 2단계인증 후 [앱 비밀번호](https://myaccount.google.com/apppasswords) 발급 |
 | `MAIL_TO` | 이메일 수신 | 리포트 받을 주소 (발신과 같아도 됨) |
 
 시크릿을 다 넣기 전엔 워크플로가 해당 단계에서 조용히 실패한다 — 배포/메일 시크릿부터 넣을 것.
+`CLAUDE_CODE_OAUTH_TOKEN`은 LLM 레인과 함께 필요 없어졌다(2026-09-16) — `selftest.yml`에 그
+점검 단계가 남아 있지만 미등록이면 경고만 하고 넘어간다.
 
 ## deploy.sh 자동 실행 규칙과의 관계
 

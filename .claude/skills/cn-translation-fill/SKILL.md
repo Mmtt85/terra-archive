@@ -45,7 +45,7 @@ description: 미실장(중국 선행) 신규 오퍼레이터·재료의 중국�
    (regen-operators / build-costs / build-i18n가 이 파일을 읽어 operators.json·costs.json·
    EN/JA 데이터에 반영한다. build-i18n는 ko→en/ja 대응도 이 파일에서 수확.)
 
-4. 빌드 확인 → 커밋 → push. 배포는 사용자가 직접.
+4. dev 에서 확인하고 멈춘다 — **커밋·빌드·푸시·배포는 사용자가 배포하라고 할 때 한꺼번에** (SESSION.md §1).
 
 ## 주의
 
