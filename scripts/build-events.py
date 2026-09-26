@@ -29,7 +29,8 @@
 사용: python3 scripts/build-events.py [gamedata-dir]
 ⚠ **build-stages · build-items · build-story 뒤에** 돌린다 (그 산출물을 읽는다).
 """
-import json, os, re, sys, time
+import json, os, re, sys
+from datetime import datetime, timedelta, timezone
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 G = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GAMEDATA_DIR", os.path.join(REPO, ".gamedata"))
@@ -39,7 +40,12 @@ OUT = {"ko": "events.json", "en": "events.en.json", "ja": "events.ja.json"}
 
 load = lambda p: json.load(open(p, encoding="utf-8"))
 MAT_TIER = 3        # '파밍 가능한 상위 재료' 기준 등급 (사용자 지정 2026-09-17: T4 → T3)
-day = lambda ts: time.strftime("%Y-%m-%d", time.localtime(ts)) if ts else None
+# 날짜는 **KST 달력 날짜로 고정**한다 (사용자 확정 2026-09-26). 종전엔 time.localtime 이라 돌린 머신의
+# 시간대를 탔다 — KR 이벤트는 전부 03:59:59 KST(= 전날 18:59:59Z)에 끝나서, CI(UTC)가 낸 종료일 135개와
+# 04:00 KST 에 여는 6개의 시작일이 로컬(KST) 실행보다 하루씩 일렀다. KST 라야 게임 안 표시·공식 공지
+# ("~ 9월 30일 03:59")·헤더 이벤트 목록(app/home.tsx 가 워커의 시각을 Asia/Seoul 로 찍는다)과 같은 날이 된다.
+KST = timezone(timedelta(hours=9))
+day = lambda ts: datetime.fromtimestamp(ts, KST).strftime("%Y-%m-%d") if ts else None
 
 acts, stage_tables = {}, {}
 for loc, pre in LOCALES.items():
@@ -234,7 +240,8 @@ debut_of_act = {}
 for cid, d in DEBUT.items():
     same = [k for st, en, k in _windows if st == d]
     if not same:
-        same = [k for st, en, k in _windows if st and st <= d and (not en or d <= en)]
+        # 종료일은 03:59 에 이미 끝난 **점검일**이다 — 그날 데뷔한 오퍼는 그 이벤트 몫이 아니다 (그래서 d < en)
+        same = [k for st, en, k in _windows if st and st <= d and (not en or d < en)]
     if same:
         debut_of_act.setdefault(_best(same), []).append(cid)
 n_stage = n_enemy = n_item = n_op = 0
@@ -515,7 +522,7 @@ for eid, st in stories.items():
         rows[loc].insert(0, row)      # 아직 안 나온 것이라 맨 위
 n_fut = sum(1 for r in rows["ko"] if r.get("fut"))
 
-updated = time.strftime("%Y-%m-%d")
+updated = datetime.now(KST).strftime("%Y-%m-%d")
 for loc in LOCALES:
     dest = os.path.join(DATA, OUT[loc])
     json.dump({"updated": updated, "events": rows[loc]}, open(dest, "w", encoding="utf-8"),
