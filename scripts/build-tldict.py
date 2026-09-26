@@ -11,23 +11,20 @@
   없어졌다** (사용자 지적 2026-09-17: "청크 안에 내용이 그냥 중구난방이라 읽을 수가 없음").
   조각 배정 상태를 물려받는 코드에서 고아 파일 버그도 났다. 아낀 것보다 치른 게 컸다.
 
-  그래서 **의미 있는 경계로만** 가른다:
-    · 콘텐츠 단위 (통합전략은 테마별, 생존연산, 오퍼)
-    · 자주 바뀌는 것 ↔ 거의 안 바뀌는 것 (op-fut ↔ op-past)
-  파일마다 해시를 manifest에 실으므로 증분은 **파일 단위로** 그대로 된다.
+  그래서 **내용 갈래로만** 가른다 (아래 '갈래별로 합친다' 주석). 파일마다 해시를
+  manifest에 실으므로 증분은 **파일 단위로** 그대로 된다.
 
-내는 것 (14개):
+내는 것 (사전 7개 + manifest):
   manifest.json      파일 목록·해시·항목 수 + **바로 요청할 수 있는 URL**
-  op-fut.json        미실장 오퍼·재료 — 중섭 패치마다 늘어난다
-  op-past.json       한섭 출시로 공식 번역이 덮은 옛 장부 — 거의 안 바뀐다
-  kr-{op,item,enemy,stage}.json
-                     **공식 CN↔KO 대조본** — 한섭에 나온 것의 중국어 원문과 공식 한국어를
-                     id 로 짝지은 것. 번역이 아니라 대조라 AI 번역이 안 섞인다.
-                     받는 쪽이 보는 건 중섭 화면이라 한섭 출시 여부와 무관하게 필요하다
-                     (사용자 지적 2026-09-17).
+  op.json            오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록
+  item.json · enemy.json · stage.json   아이템·재료 / 적 / 작전
   ra.json            생존연산
-  is1.json … is6.json  통합전략 1~6 — 안에서 collectibles·nodes·encounters·endings·battles 로 갈라 둔다
-  is-common.json     통합전략 공통 조우 편집자 텍스트 (테마 구분이 없는 안내·판정 문구)
+  is.json            통합전략 전 테마 — 안에서 collectibles·nodes·encounters·endings·battles 로 갈라 둔다
+  story.json         한섭에 아직 없는 스토리 전문 번역 — 대사·화자·선택지·편 제목 (2026-09-26~)
+  한 파일 안에 **공식 CN↔KO 대조**(한섭에 나온 것의 중국어 원문과 공식 한국어를 id 로 짝지은
+  것 — 받는 쪽이 보는 건 중섭 화면이라 한섭 출시 여부와 무관하게 필요하다, 사용자 지적
+  2026-09-17)와 **비공식 번역**(`"x": 1`)이 섞인다. 같은 원문에 둘 다 있으면 공식이 이긴다.
+  (첫판의 op-fut·kr-*·is1~is6·is-common 은 중간 갈래로만 남아 여기로 합쳐진다. op-past 는 폐지.)
 
 통합전략 파일 모양 (사용자 지시 2026-09-17 "is3 : {아이템: 뭐시기, 적: 뭐시기} 이런 식"):
   {"collectibles": {"热水壶": {"ko": "전기주전자"}, …}, "nodes": {…}, "encounters": {…}, …}
@@ -55,7 +52,9 @@
       ② 정작 필요한 데가 빈다 — CN 2,009편 vs KR 1,909편, 차이 100편이 미래시인데
          거기엔 짝지을 KR 원문이 아예 없다. 짝이 맞는 건 한섭에 이미 나온 것뿐이다.
       ③ OCR 정합 — 명칭은 짧아 정확히 일치하지만 대사는 길고 줄바꿈·변수 치환이 섞인다.
-    ①②는 옆 세션의 스토리 전문 번역 데이터가 나오면 다시 볼 일이다 (사용자 2026-09-17).
+    ②는 2026-09-26 에 풀렸다 — 한섭에 없는 24건(100편)의 번역이 생겨 story.json 으로 낸다
+    (아래 ④). ①은 그대로라 **한섭에 이미 나온 스토리의 공식 대조본은 아직 없다** —
+    실으면 28만 줄 남짓, 어림 50MB (2026-09-26 실측: 항목당 197B).
 
 manifest 에 URL 을 미리 박아 둔다 (사용자 지시 2026-09-17) — 받는 쪽이 주소를 조합하지
 않게 하려는 것이고, 거기에 **해시를 `?v=` 로 같이 박는다.** 조각 JSON 의 캐시 정책이
@@ -75,6 +74,7 @@ import json
 import os
 import re
 import time
+from collections import Counter
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(REPO, "public", "tl")
@@ -191,11 +191,14 @@ def md_to_html(md):
     cells = lambda r: [c.strip() for c in r.strip().strip("|").split("|")]
     while i < len(lines):
         ln = lines[i]
-        if ln.startswith("```"):
+        # 목록 항목 밑에 들여 쓴 코드블록(이용 조건의 출처 문구)도 코드블록이다 — 종전엔
+        # 문단으로 떨어져 페이지에 ``` 가 글자로 찍혔다 (2026-09-26)
+        if ln.lstrip().startswith("```"):
+            ind = len(ln) - len(ln.lstrip())
             i += 1
             buf = []
-            while i < len(lines) and not lines[i].startswith("```"):
-                buf.append(html.escape(lines[i]))
+            while i < len(lines) and not lines[i].lstrip().startswith("```"):
+                buf.append(html.escape(lines[i][ind:] if lines[i][:ind].isspace() else lines[i]))
                 i += 1
             i += 1
             out.append("<pre><code>" + "\n".join(buf) + "</code></pre>")
@@ -228,7 +231,7 @@ def md_to_html(md):
             i += 1
         else:
             buf = []
-            while i < len(lines) and lines[i].strip() and not re.match(r"^(#|\||```|- |\d+\. )", lines[i]):
+            while i < len(lines) and lines[i].strip() and not re.match(r"^(#|\||\s*```|- |\d+\. )", lines[i]):
                 buf.append(lines[i].strip())
                 i += 1
             out.append("<p>" + inline(" ".join(buf)) + "</p>")
@@ -270,7 +273,7 @@ def human(n):
     return f"{n / 1048576:.1f} MB" if n >= 1024 * 1024 else f"{round(n / 1024):,} KB"
 
 
-def update_readme_table(md_path, counts, order):
+def update_readme_table(md_path, counts, order, mix=None):
     """규격서 「파일」 표의 **숫자 칸만** 다시 쓴다 — 파일·내용 칸의 문구는 손댄 그대로 둔다.
 
     항목 수도 크기도 빌드마다 바뀌는데 손으로 적어 두면 중섭 패치 한 번에 거짓말이 된다.
@@ -312,8 +315,17 @@ def update_readme_table(md_path, counts, order):
             lo, hi = human(min(sizes)), human(max(sizes))
             # 단위가 같으면 "43~86 KB" — "43 KB~86 KB" 는 눈에 걸린다
             z = f"{lo.split()[0]}~{hi}" if lo.split()[1] == hi.split()[1] else f"{lo}~{hi}"
+        # 내용 칸의 「공식 한국어 N + 비공식 번역 M」도 숫자만 갈아 끼운다 — 손으로 적어 둔 채
+        # 두었더니 한섭 패치 한 번에 항목 칸(26,125)과 합이 안 맞는 표가 됐다 (2026-09-26)
+        if len(span) == 1 and mix and span[0] in mix:
+            o, x = mix[span[0]]
+            cells[1] = re.sub(r"공식 한국어 [\d,]+ \+ 비공식 번역 [\d,]+",
+                              f"공식 한국어 {o:,} + 비공식 번역 {x:,}", cells[1])
         out.append("| " + " | ".join(cells[:2] + [n, z]) + " |")
     fixed = text.replace(rows[0], "\n".join(out), 1)
+    # 표 아래 「전량 약 N MB」도 같이 맞춘다 — 손으로 적어 두면 파일 하나 늘 때마다 틀린다
+    total = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT) if f.endswith(".json"))
+    fixed = re.sub(r"전량 약 [\d.,]+ [KM]B", f"전량 약 {human(total)}", fixed)
     if fixed != text:
         with open(md_path, "w", encoding="utf-8") as fp:
             fp.write(fixed)
@@ -782,6 +794,94 @@ if is_body:
 if _pruned:
     print(f"  공식이 있어 뺀 비공식 번역 {_pruned:,}건")
 
+# ④ 스토리 — 한섭에 아직 없는 이벤트·메인·오퍼 스토리의 전문 번역 (사용자 지시 2026-09-26
+#    "번역데이터가 다 준비됐다. 공개 API에다가 번역 데이터도 넣어줄 수 있어?").
+#    원문 scripts/story-cn/<id>/ep_NN.json 과 번역 ko/ep_NN.json 은 **줄이 1:1** 이라
+#    (build-story-scripts.py --cn-merge 가 같은 검증으로 병합한다) 줄 번호로 짝짓는다.
+#    담는 것: 대사(x)·화자(n)·자막(st)·장소(loc)·선택지(opts)·편 제목·편 구분(tag).
+#    키는 다른 파일처럼 **대사 한 줄 전체**다 — 게임에서 줄바꿈되는 대사는 키에도 \n 이 있다.
+#
+#    ⚠ 사이트에 **발행 중인 것만** 싣는다 — public/story/script/<id>.json 이 `"tr": "cn"`
+#      (중섭 번역본)인 것. 한섭에 나와 공식 전문으로 바뀌었거나 발행을 막은(CN_NO_PUBLISH)
+#      이벤트는 빠진다. 사이트 '전문 보기'와 이 파일이 늘 같은 범위를 가리킨다.
+#    ⚠ scripts/story-cn/ 은 gitignore 라 **CI 에는 원문이 없다** — 그때는 지난번에 만든
+#      story.json 을 그대로 물려 쓴다. 안 그러면 매일 도는 자동 갱신이 파일을 지워 버린다.
+#    ⚠ 같은 원문이 자리마다 다르게 옮겨진 것(是。→ 네./예. 같은 짧은 대답)은 **가장 많이
+#      쓰인 번역**을 남긴다. 화자 이름처럼 공식 한국어가 따로 있는 원문은 공식이 이긴다.
+def story_pairs():
+    base = os.path.join(REPO, "scripts", "story-cn")
+    if not os.path.isdir(base):
+        return None
+    votes, skipped, eids = {}, [], []
+
+    def put(cn, ko):
+        if not (isinstance(cn, str) and isinstance(ko, str)):
+            return
+        cn, ko = cn.strip(), ko.strip()
+        if cn and ko and cn != ko and CJK.search(cn) and not CJK.search(ko):
+            votes.setdefault(cn, Counter())[ko] += 1
+
+    for eid in sorted(os.listdir(base)):
+        pub = os.path.join(REPO, "public", "story", "script", f"{eid}.json")
+        kodir = os.path.join(base, eid, "ko")
+        if not (os.path.isdir(kodir) and os.path.exists(pub)):
+            continue
+        with open(pub, encoding="utf-8") as fp:
+            if json.load(fp).get("tr") != "cn":
+                continue
+        eids.append(eid)
+        for fn in sorted(os.listdir(kodir)):
+            src_p = os.path.join(base, eid, fn)
+            if not (fn.startswith("ep_") and os.path.exists(src_p)):
+                continue
+            src = load(os.path.relpath(src_p, REPO))
+            ko = load(os.path.relpath(os.path.join(kodir, fn), REPO))
+            a, b = src.get("lines") or [], ko.get("lines") or []
+            if len(a) != len(b) or any(set(x) - {"vals"} != set(y) - {"vals"} for x, y in zip(a, b)):
+                skipped.append(f"{eid}/{fn}")
+                continue
+            put(src.get("name"), ko.get("name"))
+            put(src.get("tag"), ko.get("tag"))
+            for x, y in zip(a, b):
+                for k in ("n", "x", "st", "loc"):
+                    put(x.get(k), y.get(k))
+                oa, ob = x.get("opts") or [], y.get("opts") or []
+                if len(oa) == len(ob):
+                    for p, q in zip(oa, ob):
+                        put(p, q)
+    if skipped:
+        print(f"  ! 스토리 — 원문과 줄이 안 맞아 뺀 편 {len(skipped)}: {', '.join(skipped[:5])}")
+    split = sum(1 for c in votes.values() if len(c) > 1)
+    print(f"  스토리 {len(eids)}건 · 번역이 갈린 원문 {split:,}건은 최다 번역을 남김")
+    return {cn: {"ko": c.most_common(1)[0][0]} for cn, c in votes.items()}
+
+
+_story = story_pairs()
+if _story is None:
+    _old = os.path.join(OUT, "story.json")
+    if os.path.exists(_old):
+        merged["story"] = load(os.path.relpath(_old, REPO))
+        print("  스토리 — 원문(scripts/story-cn)이 없어 지난 story.json 을 그대로 쓴다")
+elif _story:
+    # 공식 덮어쓰기는 대부분 득이다 — 짧은 감탄사를 오퍼 보이스의 공식 한국어가 잡아 준다
+    # (哼！ 기계 번역 "흡입!" → 공식 "흥!", 收到！ "받다!" → "알겠습니다!", 2026-09-26 실측 112건).
+    # ⚠ 다만 공식 쪽이 **오퍼 이름·스킬 이름**인 흔한 낱말은 뺀다 — 医生 은 공식에서 오퍼 'Doc' 이라
+    #   스토리의 "의사"를 덮으면 틀린다. 守卫·裁判 도 같은 경우다.
+    _off_val = {cn: e for body in OFFICIAL.values() for cn, e in body.items()
+                if cn not in ("医生", "守卫", "裁判")}
+    merged["story"] = {cn: (_off_val[cn] if cn in _off_val else {**e, "x": 1})
+                       for cn, e in _story.items()}
+if merged.get("story"):
+    # ⚠ **기계 번역 초벌이라고 라벨에 박는다** (사용자 결정 2026-09-26). 번역 24건이 전부
+    #   2026-09-17 14:18~14:24 여섯 분 사이에 쓰였다. 오퍼 이름 사전을 낱말 경계 없이 먼저
+    #   들이부은 흔적(医生 → "Doc", 年轻 → "니엔라이트", 绝望 → "절대 왕")과 로마자 인명
+    #   (main_17 에만 808줄)·"은(는)" 조사 틀·폭 없는 공백이 있었다.
+    #   같은 날 **용어 층만** 걷어냈다 — 인명·지명·호칭을 공식 CN↔KO 대조로 맞추고 조사·기호를
+    #   바로잡았다 (로마자 줄 1,011 → 2, 화자표 198항목). 문장은 손대지 않아 직역투가 그대로라
+    #   이 꼬리표는 남긴다. 문장까지 다듬으면 README 의 같은 문단과 함께 뺀다.
+    KIND_LABEL["story"] = "스토리 — 한국 서버에 아직 없는 이벤트·메인·오퍼 스토리의 대사·화자·선택지·편 제목 · 기계 번역 초벌"
+    if "story" not in KIND_ORDER: KIND_ORDER.append("story")
+
 # 공개본에는 **한국어만** 싣는다 (사용자 지시 2026-09-17 "일본어랑 영어는 싹 지우자").
 # 받는 쪽이 중섭 화면에 한국어를 덧씌우는 앱이라 en/ja 를 쓸 데가 없고, 용량만 는다.
 # ⚠ scripts/cn-translations.json(장부)에는 그대로 둔다 — build-i18n.py 가 사이트의
@@ -802,7 +902,7 @@ def _ko_only(body):
 for _k in list(merged):
     merged[_k] = _ko_only(merged[_k])
 
-files, labels = {}, {}
+files, labels, mix = {}, {}, {}
 for kind in KIND_ORDER:
     body = merged.get(kind)
     if not body: continue
@@ -812,6 +912,7 @@ for kind in KIND_ORDER:
     nx = sum(1 for v in body.values() if isinstance(v, dict) and v.get("x"))
     if nx and not kind.startswith("is"):
         lab += f" — 공식 한국어 {len(body)-nx:,} + 비공식 번역 {nx:,}" if nx < len(body) else " (비공식 번역)"
+        if nx < len(body): mix[name] = (len(body) - nx, nx)
     labels[name] = lab
 
 # ── 내보내기 ─────────────────────────────────────────────────────────────────
@@ -862,7 +963,7 @@ with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as fp:
 # 누르면 읽을 수 있는 문서"를 주려면 HTML 을 같이 내는 수밖에 없다. README.md 가 정본이고
 # 이건 그걸 그대로 옮긴 것이라, 손으로 고칠 일이 없다.
 # 표의 숫자를 먼저 맞춘 뒤 HTML 을 굽는다 — 순서가 바뀌면 페이지만 옛 숫자로 남는다
-update_readme_table(os.path.join(OUT, "README.md"), counts, ORDER)
+update_readme_table(os.path.join(OUT, "README.md"), counts, ORDER, mix)
 write_html(os.path.join(OUT, "README.md"), os.path.join(OUT, "readme.html"))
 
 size = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT) if f.endswith(".json"))

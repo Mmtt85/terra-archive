@@ -194,11 +194,20 @@ run "build-op-debut"     python3 scripts/build-operator-debut.py
 run "build-events"       python3 scripts/build-events.py "$G"
 
 # 중국어→한국어 번역 사전 공개본 — 외부 앱이 **바뀐 파일만** 받아가는 증분 배포본
-# (2026-09-17, 개인 번역 앱 문의). 입력이 scripts/ 의 번역 파일 넷뿐이라 게임데이터를
-# 안 읽는다 — 순서는 상관없지만 데이터 단계 끝에 둔다. 형식은 public/tl/README.md.
+# (2026-09-17, 개인 번역 앱 문의). 데이터 단계 끝에 둔다. 형식은 public/tl/README.md.
 # ⚠ 여기서는 **만들기만 한다.** 올리는 건 scripts/publish-tl.mjs 가 따로 한다 — r2-sync 와
 #   집합을 나눠 뒀다 (2026-09-17). 즉 이 단계만 돌아서는 공개본이 밖에 안 나간다.
-run "build-tldict"       python3 scripts/build-tldict.py
+# ⚠ **GitHub Actions 에서는 건너뛴다** (2026-09-26). 입력 일부가 로컬에만 있다 —
+#   `roguelike_topic_table`(cn·kr)은 fetch-gamedata-cdn.py 목록에 없고, 스토리 원문
+#   scripts/story-cn/ 은 gitignore 다. CI 가 그걸 모른 채 다시 구워 **모자란 사전을 커밋해
+#   왔다** (실측 2026-09-25 커밋: is.json 5,700→3,671, 공식 한국어 1,276건이 비공식으로
+#   잘못 표시, op.json 311건 누락). 라이브(R2)는 로컬에서 구워 올린 것이라 멀쩡했지만,
+#   그 트리에서 publish-tl.mjs 를 돌렸다면 그대로 나갔다. 로컬(점검일 SKIP_FETCH=1)에선 돈다.
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
+  echo "▶ build-tldict — CI 에서는 건너뜀 (입력 일부가 로컬 전용)"
+else
+  run "build-tldict"       python3 scripts/build-tldict.py
+fi
 
 # 8) 오퍼 지연 에셋 전수 검사 (사용자 요청 2026-08-02) — 데이터가 번들(배포)과 R2(동기화)
 # 두 경로로 나가는데 한쪽만 돌면 반쪽이 된다. 2026-08-01에 R2 키가 없어 아바타가 안 올라갔고
