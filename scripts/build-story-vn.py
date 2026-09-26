@@ -273,6 +273,64 @@ def resolve_sprite(base, expr):
     return f"{ASSETS}/avg/characters/{urllib.parse.quote(entry)}/{urllib.parse.quote(want)}.png"
 
 
+# ── 미러에 없는 그림은 게임 CDN에서 (2026-09-26) ─────────────────────────────
+# 중섭 선행 스토리에 리더기를 붙이며 스탠딩 115종이 미러에 없었다 (콜라보 인물·신규 NPC —
+# 미러는 사람이 돌려야 올라온다). **미러를 먼저 보고, 못 찾은 것만** CDN(한섭 → 중섭)에서 꺼낸다.
+# 목록 해석 자체를 CDN 으로 옮기지 않는 이유는 cdnassets 도입 커밋(74a16584) 참고 — 해석이
+# 한 번 빗나가면 스탠딩 전체가 빈 자리로 돌아간다.
+# CDN 번들 안의 이름: 표정 변형은 `<표정>$<몸>`('12$1'), 기본 표정은 `<이름>$<몸>` —
+# 미러의 `<이름>#<표정>$<몸>.png` 와 같은 그림이다 (avg_4133_logos_1 실측: '1$1'…'17$1' +
+# 'avg_4133_logos_1$1', 전부 779×1024 온전한 전신).
+def cdn_png(im):
+    buf = BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def cdn_bg(name):
+    import cdnassets
+    for server in ("kr", "cn"):
+        png = cdnassets.png_bytes(f"avg/backgrounds/{name}", server)
+        if png:
+            return png
+    return None
+
+
+def cdn_sprite(base, expr):
+    """(base, 표정) → PNG 바이트 | None. 없는 표정 번호는 가장 가까운 번호로 (미러 쪽 규칙과 같다)."""
+    import cdnassets
+    if not cdnassets.available():
+        return None
+    m = re.fullmatch(r"(.+)-p(\d+)", base)
+    name, part = (m.group(1), int(m.group(2))) if m else (base, 1)
+    for server in ("kr", "cn"):
+        try:
+            tbl, _ = cdnassets._locate(f"avg/characters/{name}", server)
+        except Exception:
+            tbl = None
+        if not tbl:
+            continue
+        low = {k.lower(): k for k in tbl if not k.endswith("[alpha]")}
+        default = low.get(f"{name}${part}".lower())
+        by_expr = {}
+        for k, orig in low.items():
+            mm = re.fullmatch(r"(\d+)\$(\d+)", k)
+            if mm and int(mm.group(2)) == part:
+                by_expr[int(mm.group(1))] = orig
+        if expr in by_expr:
+            key = by_expr[expr]
+        elif expr == 1 and default:
+            key = default
+        elif by_expr:
+            key = by_expr[min(by_expr, key=lambda n: (abs(n - expr), n))]
+        else:
+            key = default
+        im = cdnassets._compose(tbl, key) if key else None
+        if im is not None:
+            return cdn_png(im)
+    return None
+
+
 # ── 저장 ────────────────────────────────────────────────────────────────────
 def save_bg(png, dest):
     from PIL import Image
@@ -360,6 +418,10 @@ def fetch_all(label, bgs, sprites):
                 return
             except urllib.error.HTTPError:
                 continue
+        png = cdn_bg(name)
+        if png:
+            save_bg(png, dest)
+            return
         missing_bg.append(name)
 
     def dl_spr(item):
@@ -368,13 +430,18 @@ def fetch_all(label, bgs, sprites):
         if os.path.exists(dest):
             return
         url = resolve_sprite(base, expr)
-        if not url:
+        png = None
+        if url:
+            try:
+                png = _get(url)
+            except urllib.error.HTTPError:
+                png = None
+        if png is None:
+            png = cdn_sprite(base, expr)       # 미러에 없는 것만 CDN 에서
+        if png is None:
             missing_spr.append(f"{base}#{expr}")
             return
-        try:
-            save_sprite(_get(url), dest)
-        except urllib.error.HTTPError:
-            missing_spr.append(f"{base}#{expr}")
+        save_sprite(png, dest)
 
     with ThreadPoolExecutor(8) as ex:
         list(ex.map(dl_bg, sorted(bgs)))
@@ -390,9 +457,9 @@ def fetch_all(label, bgs, sprites):
     print(f"{label}: 배경 {len(bgs) - len(missing_bg)}/{len(bgs)}장 {bg_kb}KB · "
           f"스탠딩 {len(sprites) - len(missing_spr)}/{len(sprites)}장 {spr_kb}KB")
     if missing_bg:
-        print("  미러에 없는 배경:", ", ".join(sorted(missing_bg)))
+        print("  미러·CDN 에 없는 배경:", ", ".join(sorted(missing_bg)))
     if missing_spr:
-        print("  미러에 없는 스탠딩:", ", ".join(sorted(missing_spr)[:20]),
+        print("  미러·CDN 에 없는 스탠딩:", ", ".join(sorted(missing_spr)[:20]),
               f"… 외 {len(missing_spr) - 20}종" if len(missing_spr) > 20 else "")
 
 

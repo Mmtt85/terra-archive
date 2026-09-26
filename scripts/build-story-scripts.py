@@ -548,6 +548,16 @@ def download_sprites(names):
                 continue
             save_webp(png, os.path.join(char_dir, f"{base}.webp"), max_px=640)
             return
+        # 미러에 없으면 게임 CDN(한섭 → 중섭) — 중섭 선행 스토리의 새 인물 (2026-09-26,
+        # build-story-vn.py 의 cdn_sprite 와 같은 이유). 기본 표정 `<이름>$1`.
+        import cdnassets
+        for server in ("kr", "cn"):
+            im = cdnassets.sprite(f"avg/characters/{base}", 1, server)
+            if im is not None:
+                buf = io.BytesIO()
+                im.save(buf, "PNG")
+                save_webp(buf.getvalue(), os.path.join(char_dir, f"{base}.webp"), max_px=640)
+                return
         failed.append(base)
 
     with ThreadPoolExecutor(8) as ex:
@@ -726,12 +736,59 @@ def cn_prepare(eid):
           + (f" (누락 {failed})" if failed else ""))
 
 
-# 중섭 선행 전문을 **발행하지 않기로 한 이벤트** (사용자 지시 2026-09-17:
-# "일단 AI번역만 올리고, 전문은 올리지 말자"). 번역 원본(scripts/story-cn/<id>/ko/)은
+# 중섭 선행 전문을 **발행하지 않기로 한 이벤트**. 번역 원본(scripts/story-cn/<id>/ko/)은
 # 지우지 않고 남겨 두되, 병합·발행만 막는다 — 그 파일이 남아 있으면 --cn-merge 를 다시
 # 돌리는 것만으로 조용히 되살아나기 때문이다 (실제로 한 번 올라갔다가 내렸다).
-# 발행을 재개하려면 여기서 id 를 빼면 된다. AI 요약은 이 목록과 무관하게 그대로 나간다.
-CN_NO_PUBLISH = {"act50side", "act53side", "act54side"}
+# 2026-09-17 "일단 AI번역만 올리고, 전문은 올리지 말자"로 act50side·act53side·act54side 를
+# 막았다가, 2026-09-26 사용자 지시("그 룰은 그냥 무시해도 돼")로 셋 다 다시 발행한다 — 지금은 비어 있다.
+# AI 요약은 이 목록과 무관하게 그대로 나간다.
+CN_NO_PUBLISH: set[str] = set()
+
+
+def cn_stage(eid, base):
+    """CN 원문을 다시 파싱해 편마다 무대 연출 트랙(vn)과 화자 얼굴(faces)을 얻는다
+    (사용자 지시 2026-09-26 "리더기도 다 붙여줘" — 종전 병합본은 lines 만 실어 장면 모드가 없었다).
+
+    연출 태그(배경·스탠딩·가림막)는 언어와 무관하고, 번역본은 원문과 줄이 1:1 이라(병합 검증이
+    보장) 원문 줄 번호로 찍힌 스냅샷을 그대로 쓴다. 화자 얼굴 투표는 CN 화자명으로 모이므로
+    speakers.json 으로 한국어 화자명에 옮겨 담아 resolve_faces 의 규칙(서술형 화자 제외 등)을 탄다.
+    ⚠ 다시 파싱한 줄이 저장해 둔 원문(ep_NN.json)과 다르면(그새 파서나 원문이 바뀐 경우) 번호가
+      어긋나므로 그 편은 연출 없이 싣는다."""
+    review = fetch(f"{GAMEDATA}/cn/gamedata/excel/story_review_table.json")
+    entry = review.get(eid)
+    if not entry:
+        print(f"  ! {eid}: CN 리뷰 테이블에 없어 연출 트랙을 못 붙인다")
+        return {}, {}
+    spk = json.load(open(os.path.join(base, "speakers.json"), encoding="utf-8"))
+    infos = sorted(entry["infoUnlockDatas"], key=lambda i: i["storySort"])
+    vns, votes, skipped = {}, defaultdict(Counter), []
+    for idx, info in enumerate(infos):
+        src_path = os.path.join(base, f"ep_{idx:02d}.json")
+        if not os.path.exists(src_path):
+            continue
+        dest = os.path.join(CACHE, "cn__" + info["storyTxt"].replace("/", "__") + ".txt")
+        if os.path.exists(dest):
+            txt = open(dest, encoding="utf-8").read()
+        else:
+            txt = fetch(f"{GAMEDATA}/cn/gamedata/story/{info['storyTxt']}.txt", binary=True).decode("utf-8")
+            os.makedirs(CACHE, exist_ok=True)
+            open(dest, "w", encoding="utf-8").write(txt)
+        vn = []
+        lines = json.loads(json.dumps(parse_story(txt, vn), ensure_ascii=False))
+        if lines != json.load(open(src_path, encoding="utf-8"))["lines"]:
+            skipped.append(idx)
+            continue
+        if any(v.get("bg") or v.get("ch") for v in vn):
+            vns[idx] = vn
+        cn_votes = defaultdict(Counter)
+        scan_faces(txt, cn_votes)
+        for who, cnt in cn_votes.items():
+            votes[spk.get(who, who)].update(cnt)
+    if skipped:
+        print(f"  ! {eid}: 원문 재파싱이 저장본과 달라 연출을 뺀 편 {skipped}")
+    faces = resolve_faces(votes)
+    failed = set(download_sprites(sorted(set(faces.values()))))
+    return vns, {w: s for w, s in faces.items() if s not in failed}
 
 
 def cn_merge(eid):
@@ -765,13 +822,18 @@ def cn_merge(eid):
                 errs.append(f"중국어 잔존 {nhan}줄")
         if errs:
             bad.append((m["idx"], "; ".join(errs))); continue
-        eps.append({"code": ko.get("code") or m["code"], "name": ko.get("name") or m["name"],
+        eps.append({"idx": m["idx"], "code": ko.get("code") or m["code"], "name": ko.get("name") or m["name"],
                     "tag": ko.get("tag") or m["tag"], "lines": ko["lines"]})
     if bad:
         for idx, msg in bad:
             print(f"  ✗ ep_{idx:02d}: {msg}")
         sys.exit(f"{eid}: {len(bad)}편 불량 — 병합 중단")
-    out = {"id": eid, "tr": "cn", "eps": eps}
+    vns, faces = cn_stage(eid, base)
+    for ep in eps:
+        vn = vns.get(ep.pop("idx"))
+        if vn:
+            ep["vn"] = vn
+    out = {"id": eid, "tr": "cn", "eps": eps, **({"faces": faces} if faces else {})}
     dest = os.path.join(OUT_DIR, f"{eid}.json")
     json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     ids_path = os.path.join(REPO, "app", "data", "story-script-ids.json")
