@@ -29,6 +29,7 @@ import { useLazyVisible } from "./lazy-img";
 import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
+import { familyIndex, materialFamily } from "./material-family";
 import { SearchSuggest } from "./search-suggest";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadStages } from "./dex-cross";
 import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
@@ -183,6 +184,9 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
   const [groups, setGroups] = useState<string[]>([]);
   const [tiers, setTiers] = useState<string[]>([]);
   const [sources, setSources] = useState<string[]>([]);
+  // 재료 종류(작전기록·칩·스킬개론·모듈·열합금·젤 …) — 재료 파밍과 같은 칸 (사용자 지시 2026-09-29, app/material-family.ts).
+  // 분류(재료·이벤트 재화 …)와 따로 논다 — 작전기록은 분류상 '기초 자원'이라도 종류로는 잡힌다.
+  const [fams, setFams] = useState<string[]>([]);
   const [open, setOpen] = useState<DexItem | null>(null);
   // 작전 상세 — 아이템 모달을 그대로 둔 채 위에 하나 더 띄운다 (적 도감과 같은 규약).
   // ⚠ 해시 동기화는 하지 않는다 (주 모달 #it-<id>와 서로 덮어써 창이 닫힌다).
@@ -197,6 +201,7 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
   const [enemyRaise, setEnemyRaise] = useState(0);
 
   const items = doc.items;
+  const famIdx = useMemo(() => familyIndex(items.map((i) => ({ id: i.id, tier: i.r, name: i.n }))), [items]);
   // 합쳐진 id(alt)도 대표 카드로 — 옛 딥링크 #it-<재개방 id> 가 그대로 열린다
   const byId = useMemo(() => new Map(items.flatMap((i) => [[i.id, i] as const, ...(i.alt ?? []).map((a) => [a, i] as const)])), [items]);
   const openStage = (sid: string) => {
@@ -228,11 +233,12 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
       if (groups.length && !groups.includes(i.g)) return false;
       if (tiers.length && !tiers.includes(String(i.r))) return false;
       if (sources.length && !sources.every((s) => hasSource(i, s))) return false;
+      if (fams.length && !fams.includes(materialFamily(i.id) ?? "")) return false;
       if (!q) return true;
       // 이벤트 이름으로도 걸린다 — "공상의 정원" 을 치면 그 이벤트 재화가 나온다
       return normSearch(`${i.n} ${i.evName ?? ""} ${(i.evs ?? []).join(" ")} ${i.d ?? ""} ${i.u ?? ""} ${i.o ?? ""} ${(i.os ?? []).join(" ")}`).includes(q);
     });
-  }, [items, term, groups, tiers, sources]);
+  }, [items, term, groups, tiers, sources, fams]);
 
   const countBy = useMemo(() => {
     const g = new Map<string, number>(), r = new Map<string, number>(), s = new Map<string, number>();
@@ -246,8 +252,8 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
 
   const toggle = (set: (fn: (cur: string[]) => string[]) => void) => (v: string) =>
     set((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
-  const reset = () => { setGroups([]); setTiers([]); setSources([]); clear(false); };
-  const active = groups.length + tiers.length + sources.length > 0 || !!term;
+  const reset = () => { setGroups([]); setTiers([]); setSources([]); setFams([]); clear(false); };
+  const active = groups.length + tiers.length + sources.length + fams.length > 0 || !!term;
 
   return (
     <section className="explorer it-explorer" aria-labelledby="item-title">
@@ -268,6 +274,8 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
         <AttributeFilter groups={[
           { title: t("분류"), items: GROUPS, selected: groups, onToggle: toggle(setGroups),
             labelFor: (v) => t(GROUP_LABEL[v as ItemGroup] ?? v), countForItem: (v) => countBy.g.get(v) ?? 0 },
+          { title: t("재료 종류"), items: famIdx.keys, selected: fams, onToggle: toggle(setFams),
+            labelFor: (v) => famIdx.label(v, t), countForItem: famIdx.count },
           { title: t("등급"), items: tierOpts, selected: tiers, onToggle: toggle(setTiers),
             labelFor: (v) => `T${v}`, countForItem: (v) => countBy.r.get(v) ?? 0 },
           { title: t("획득 방법"), items: [...SOURCES], selected: sources, onToggle: toggle(setSources),
@@ -282,6 +290,7 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
         </div>
         <div className="active-filters">
           {groups.map((v) => <button key={`g-${v}`} onClick={() => toggle(setGroups)(v)}>{t(GROUP_LABEL[v as ItemGroup] ?? v)} ×</button>)}
+          {fams.map((v) => <button key={`m-${v}`} onClick={() => toggle(setFams)(v)}>{famIdx.label(v, t)} ×</button>)}
           {tiers.map((v) => <button key={`t-${v}`} onClick={() => toggle(setTiers)(v)}>T{v} ×</button>)}
           {sources.map((v) => <button key={`s-${v}`} onClick={() => toggle(setSources)(v)}>{t(SOURCE_LABEL[v] ?? v)} ×</button>)}
           {term && <button onClick={() => clear()}>“{term}” ×</button>}

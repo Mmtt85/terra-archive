@@ -18,6 +18,7 @@ import { useI18n, type Locale } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
 import { AttributeFilter } from "./attr-filter";
+import { familyIndex, materialFamily } from "./material-family";
 import { openEvent } from "./event-open";
 import { useHashSync } from "./hash-modal";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
@@ -210,6 +211,8 @@ function useStageSubModal(onShowItem: (id: string) => void) {
 export default function FarmGuide() {
   const { locale, t } = useI18n();
   const [tiers, setTiers] = useState<number[]>([]);
+  // 재료 종류(작전기록·칩·스킬개론·모듈·열합금·젤 …) — 아이템 도감과 같은 칸 (사용자 지시 2026-09-29, app/material-family.ts)
+  const [fams, setFams] = useState<string[]>([]);
   // 표 읽는 법·출처는 한 번 읽으면 끝인데 머리글에 세 문단이 늘 깔려 있었다 —
   // 창으로 빼고 여는 버튼만 남긴다 (사용자 지시 2026-09-20, 공개채용 도우미와 같은 규약)
   const [showGuide, setShowGuide] = useState(false);
@@ -241,6 +244,10 @@ export default function FarmGuide() {
 
   const toggleTier = (tier: number) =>
     setTiers((current) => (current.includes(tier) ? current.filter((value) => value !== tier) : [...current, tier]));
+  const toggleFam = (key: string) =>
+    setFams((current) => (current.includes(key) ? current.filter((value) => value !== key) : [...current, key]));
+  const famIdx = useMemo(
+    () => familyIndex(ALL_MATERIALS.map((m) => ({ id: m.id, tier: m.rarity, name: locText(locale, m.name) }))), [locale]);
 
   // 헤더 만능검색이 재료를 지목하면 상세 모달을 연다 — 탭 전환이면 마운트 시, 이미 파밍 탭이면
   // 이벤트로 (app/handoff.ts). 필터가 걸려 있으면 카드가 안 보일 수 있어 등급 필터도 푼다.
@@ -248,8 +255,8 @@ export default function FarmGuide() {
     const apply = () => {
       const h = takeHandoff("farm");
       if (!h) return;
-      if (h.item) { setShownItem(h.item); setTiers([]); setSearchTerm(""); }
-      else if (h.query) { setSearchTerm(h.query); setTiers([]); }
+      if (h.item) { setShownItem(h.item); setTiers([]); setFams([]); setSearchTerm(""); }
+      else if (h.query) { setSearchTerm(h.query); setTiers([]); setFams([]); }
     };
     apply();
     window.addEventListener(HANDOFF_EVENT, apply);
@@ -266,10 +273,11 @@ export default function FarmGuide() {
       // (2026-09-04 규칙 변경. 종전엔 미래시가 꺼지면 통째로 숨겼다.)
       .filter((item) =>
         (tiers.length === 0 || tiers.includes(item.rarity)) &&
+        (fams.length === 0 || fams.includes(materialFamily(item.id) ?? "")) &&
         (!keyword ||
           normSearch([item.name.ko, item.name.en, item.name.ja].filter(Boolean).join(" ")).includes(keyword) ||
           (MATERIAL_ALIASES[item.id] ?? []).some((alias) => normSearch(alias).includes(keyword))));
-  }, [tiers, searchTerm]);
+  }, [tiers, fams, searchTerm]);
 
   // 재료 검색이 0건이면 "실패한 검색"으로 남긴다 (app/trail.ts — 이후 도착지에 이어 붙는다)
   useEffect(() => {
@@ -284,7 +292,7 @@ export default function FarmGuide() {
       <div className="filter-panel">
         <div className="panel-heading">
           <div><span className="section-no">FILTER / 01</span><h2>{t("탐색 조건")}</h2></div>
-          <button type="button" className="reset" onClick={() => { setTiers([]); setSearchTerm(""); }}>↻ {t("초기화")}</button>
+          <button type="button" className="reset" onClick={() => { setTiers([]); setFams([]); setSearchTerm(""); }}>↻ {t("초기화")}</button>
         </div>
         {/* 검색란은 탐색 조건 맨 위 — 결과 머리글에는 제목과 안내 버튼만 (사용자 지시 2026-09-28) */}
         <div className="search-wrap panel-search"><span>⌕</span><input {...searchProps} placeholder={t("재료 이름·별명 검색")} aria-label={t("재료 이름·별명 검색")} />
@@ -294,6 +302,8 @@ export default function FarmGuide() {
             onPick={openItem} />
         </div>
         <AttributeFilter groups={[
+          { title: t("재료 종류"), items: famIdx.keys, selected: fams, onToggle: toggleFam,
+            labelFor: (value) => famIdx.label(value, t), countForItem: famIdx.count },
           { title: t("등급"), items: TIERS.map(String), selected: tiers.map(String),
             onToggle: (value) => toggleTier(Number(value)), labelFor: (value) => `T${value}`,
             countForItem: (value) => ALL_MATERIALS.filter((item) => item.rarity === Number(value)).length },
@@ -414,7 +424,7 @@ export default function FarmGuide() {
           id={shownItem}
           onClose={() => setShownItem(null)}
           onShowItem={openItem}
-          onSearchItem={(name) => { setSearchTerm(name); setTiers([]); setShownItem(null); }}
+          onSearchItem={(name) => { setSearchTerm(name); setTiers([]); setFams([]); setShownItem(null); }}
           onShowStage={sub.openStage}
         />
       )}
