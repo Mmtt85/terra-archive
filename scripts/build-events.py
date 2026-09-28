@@ -72,16 +72,21 @@ _ko_name = {}          # 한국어 이름 → 활동 id (복각이 아닌 것만
 def _index_names(basic):
     for aid, info in basic.items():
         nm = (info.get("name") or "").strip()
-        if nm and not RERUN_SUFFIX.search(nm):
+        if nm and not RERUN_SUFFIX.search(nm) and not aid.endswith("sre"):
             _ko_name.setdefault(nm, aid)
 
 
 def origin_of(aid):
     """복각 활동 id → 원본 활동 id. 복각이 아니거나 원본을 못 찾으면 자기 자신."""
     nm = ((kr_basic_all.get(aid) or {}).get("name") or "").strip()
-    if not RERUN_SUFFIX.search(nm):
-        return aid
-    return _ko_name.get(RERUN_SUFFIX.sub("", nm), aid)
+    if RERUN_SUFFIX.search(nm):
+        return _ko_name.get(RERUN_SUFFIX.sub("", nm), aid)
+    # ⚠ 복각인데 이름에 "(재개방)"이 안 붙은 것도 있다 — act12sre 「도솔레스 홀리데이」(2023, 유일).
+    #   그대로 두면 원본 스토리 썸네일을 못 이어받아 '이미지 없음'이었다 (2026-09-28). 복각 활동 id(…sre)면
+    #   **같은 이름**의 원본으로 잇는다 — 여전히 id 가 아니라 이름으로 잇는다(위 주석). 그래서 이름 색인은 sre 를 뺀다.
+    if aid.endswith("sre"):
+        return _ko_name.get(nm, aid)
+    return aid
 
 
 # ── 작전 → 이벤트 ───────────────────────────────────────────────────────────
@@ -159,7 +164,9 @@ THUMB = {"ko": "thumb", "en": "thumbEn", "ja": "thumbJa"}
 # ⚠ 위수 협의는 **시즌마다 페이지가 따로** 있다 (/autochess/s1, /autochess/s2). 활동 id
 #   `act<N>autochess` 의 N 이 곧 시즌이므로 그대로 잇는다 — 전부 /autochess 로 보내면
 #   시즌 1 이벤트를 눌러도 최신 시즌이 열린다 (사용자 지적 2026-09-17).
-GUIDE_OF = {"AUTOCHESS_SEASON": "autochess"}
+# 위수 협의 1회차(act1vautochess, 2025-05)는 종류가 AUTOCHESS_VERIFY1(시즌 전 검증판)이라 시즌 페이지가 없다 —
+# 가이드 첫 화면(/autochess)으로 보낸다 (사용자 지시 2026-09-28 "위수협의 첫번째 거는 가이드-위수협의로").
+GUIDE_OF = {"AUTOCHESS_SEASON": "autochess", "AUTOCHESS_VERIFY1": "autochess"}
 AC_SEASON = re.compile(r"^act(\d+)autochess$")
 
 
@@ -354,6 +361,15 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
             row["enemies"] = [[k, v] for k, v in seen_enemy.items()]
         if items:
             row["items"] = items
+        # 그래도 썸네일이 없으면 **대표 작전 도면**(작전 도감의 지형 도면, public/stage/ — R2). 홈 테마 그림이
+        # CDN 에도 에셋 미러에도 없는 지난 이벤트(인도자의 시련 1~4·벡터 돌파 1회차·위수 협의 1회차 …)용
+        # (사용자 요청 2026-09-28 "섬네일 없는 거 다 만들어줘"). 목록의 첫 작전 — 도면이 있는 것 중에서.
+        # 도면도 없는 이벤트는 build-event-art.py ③ⓑ가 교환 재화 아이콘으로 /event/<id>.webp 를 만들어 둔다.
+        if "thumb" not in row:
+            for st in stages or []:
+                if os.path.exists(os.path.join(REPO, "public", "stage", f"{st[0]}.webp")):
+                    row["thumb"] = f"/stage/{st[0]}.webp"
+                    break
         if mats:
             # 등급 높은 것 먼저, 같으면 이름순. 작전 코드는 사람이 읽는 순서로.
             row["mats"] = [[i, loc_items[i]["n"], loc_items[i].get("i") or "",
@@ -521,6 +537,40 @@ for eid, st in stories.items():
         row.update(body_loc)
         rows[loc].insert(0, row)      # 아직 안 나온 것이라 맨 위
 n_fut = sum(1 for r in rows["ko"] if r.get("fut"))
+
+# 같은 이름으로 여러 번 온 이벤트에 **회차 번호** (사용자 지시 2026-09-28 "인도자의 시련처럼 같은 이름의 이벤트가
+# 여러 번 오는 경우 #으로 구분해줘") — 인도자의 시련 ×6 · 위수 협의: 맹약 ×2. 한국어 이름으로 묶고 시작일 순으로
+# 매겨 세 언어에 같은 번호를 단다. 복각(origin 있음)은 같은 이벤트를 다시 연 것이라 번호를 달지 않는다
+# (도솔레스 홀리데이 복각). 이미 '#' 이 든 이름(협동 경기#1 · 벡터 돌파#2 …)은 게임이 매긴 것이라 건드리지 않는다.
+_same = {}
+for r in rows["ko"]:
+    if not r.get("origin") and not r.get("fut") and "#" not in r["n"]:
+        _same.setdefault(r["n"], []).append(r)
+ordinal = {r["id"]: i for grp in _same.values() if len(grp) > 1
+           for i, r in enumerate(sorted(grp, key=lambda x: (x.get("start") or "", x["id"])), 1)}
+for loc in LOCALES:
+    for r in rows[loc]:
+        if r["id"] in ordinal and "#" not in r["n"]:
+            r["n"] = f"{r['n']} #{ordinal[r['id']]}"
+
+# 회차 묶음 키 `ser` — 이벤트 모달 위쪽 드롭다운이 같은 묶음끼리 오간다 (사용자 지시 2026-09-28 "#으로 된 애들은
+# 드랍다운으로 같은 이름의 이벤트들로 이동"). 이름이 회차마다 조금씩 달라서(벡터 돌파 / 벡터 돌파: 무기물 /
+# 벡터 돌파#2 주술의 밤) 이름이 아니라 **게임의 활동 종류**로 묶는다 — 버전·검증판 꼬리(_V2·_VERIFY1·_SEASON)는
+# 떼어 1회차 검증판까지 한 식구로 (로도스 아일랜드 협동 경기 → 협동 경기#1·#2). 묶음 안에 '#' 이 붙은 이름이
+# 하나라도 있는 것만 — 듀얼 채널(부제만 다름)·복각은 대상이 아니다.
+_fam = {}
+for r in rows["ko"]:
+    if r.get("fut") or r.get("origin"):
+        continue
+    t = (kr_basic_all.get(r["id"]) or {}).get("type") or ""
+    if t:
+        _fam.setdefault(re.sub(r"_(V\d+|VERIFY\d+|SEASON)$", "", t), []).append(r)
+series = {r["id"]: key for key, grp in _fam.items()
+          if len(grp) > 1 and any("#" in x["n"] for x in grp) for r in grp}
+for loc in LOCALES:
+    for r in rows[loc]:
+        if r["id"] in series:
+            r["ser"] = series[r["id"]]
 
 updated = datetime.now(KST).strftime("%Y-%m-%d")
 for loc in LOCALES:
