@@ -2255,8 +2255,9 @@ export default function RogueGuide({ initialTopic }: {
     );
   }
 
-  // 보유 리스트 진입 버튼 — 각 뷰의 검색·필터 줄 **맨 오른쪽**에 붙인다 (사용자 지정 2026-07-26,
-  // 종전 위치는 탭 줄). 뷰마다 필터 줄이 따로라 같은 엘리먼트를 재사용한다(동시에 그려지지 않음).
+  // 보유 리스트 진입 버튼 — 섹션 탭 줄(맵·노드·적 도감 …) **맨 오른쪽** (사용자 지시 2026-09-28
+  // "공통 버튼이니까"). 2026-07-26~09-28 에는 각 뷰의 검색·필터 줄 끝에 따로 붙어 있어 난이도·엔딩
+  // 뷰엔 없었다. 이제 한 곳이라 모든 뷰에서 같은 자리에 보인다.
   // 자국 서버 표기 — 화면 언어에 따라 한국/글로벌/일본 (사용자 지적 2026-08-04)
   const homeServer = HOME_SERVER[locale] ?? HOME_SERVER.ko;
   const homeServerFull = t("{label} 서버", { label: t(homeServer.label) });
@@ -2390,6 +2391,7 @@ export default function RogueGuide({ initialTopic }: {
         {VIEWS.map((v) => (
           <button key={v.id} type="button" className={view === v.id ? "on" : ""} onClick={() => goView(v.id)}>{t(v.label)}</button>
         ))}
+        {invButton}
       </nav>
       {/* 자동인식 상태 필 — fixed 오버레이(레이아웃 안 밀음) + 인식 이미지 미니 썸네일.
           드롭은 창 전체가 받고(useDropWatch), 드래그 중이면 필이 드롭 가능 상태로 강조된다 */}
@@ -2409,7 +2411,6 @@ export default function RogueGuide({ initialTopic }: {
             <input type="search" {...mapProps}
               placeholder={t("노드 이름 검색 (작전·조우·우연한 만남)")} aria-label={t("노드 이름 검색 (작전·조우·우연한 만남)")} />
             {mapHits && <span className="rg-count">{mapHits.stages.length + mapHits.encs.length}</span>}
-            {invButton}
           </div>
 
           {mapHits && (<>
@@ -2511,7 +2512,6 @@ export default function RogueGuide({ initialTopic }: {
                 onClick={() => setEnemyRank(rk)}>{rk ? t(RANK_KO[rk]) : t("전체")}</button>
             ))}
             <span className="rg-count">{enemies.length}</span>
-            {invButton}
           </div>
           {/* 도감은 사진 왼쪽·정보 오른쪽 가로형 카드 (피드백 반영 2026-07-18) */}
           <div className="rg-enemy-grid">
@@ -2545,7 +2545,6 @@ export default function RogueGuide({ initialTopic }: {
               items={relics.map((r) => ({ key: r.id, label: r.name || r.cn || r.id, img: asset(`/rogue/relic/${r.iconId ?? r.id}.webp`) }))}
               onPick={(id) => { const r = relics.find((x) => x.id === id); if (r) setRelicOpen(r); }} />
             <span className="rg-count">{relics.length}</span>
-            {invButton}
           </div>
           {/* 목록 카드는 섬네일·이름·효과만 — 번호·설명은 클릭 시 상세 모달에서 (사용자 요청 2026-07-23) */}
           <div className="rg-relic-grid">
@@ -2583,7 +2582,6 @@ export default function RogueGuide({ initialTopic }: {
                 : activeArc === "band" ? data.bands.length
                 : (data.mechanics ?? []).find((m) => m.label === activeArc)?.items.length ?? 0}
             </span>
-            {invButton}
           </div>
           {activeArc === "scrap" && (
             <div className="rg-scrap-view">
