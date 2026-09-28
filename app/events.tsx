@@ -27,6 +27,7 @@ import { ModalWindow } from "./modal-window";
 import { CAFE_EVENT_BOARD, fetchEventPayload } from "./event-feed";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
+import { Dropdown } from "./dropdown";
 import { SearchSuggest } from "./search-suggest";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadItems, loadStages } from "./dex-cross";
 import { EnemyFile, enemyImg, type Enemy, type EnemyLevel, type EnemyStages, type StatOverride } from "./enemy-detail";
@@ -58,6 +59,8 @@ export type EventRow = {
   guide?: string;
   /** 중섭 선행(미실장) — 흑백 처리되고 미래시 토글이 꺼져 있으면 눌리지 않는다 */
   fut?: number;
+  /** 회차 묶음 키 — 같은 종류로 여러 번 온 이벤트(인도자의 시련·벡터 돌파·협동 경기 …). 모달 위쪽 드롭다운이 이걸로 오간다 */
+  ser?: string;
   /** 스토리 페이지 id — 복각판은 원본 이벤트의 것이다 (없으면 자기 id) */
   sid?: string;
   /** 복각판이면 원본 이벤트 id */
@@ -81,6 +84,36 @@ const TYPE_LABEL: Record<string, string> = {
 const typeOf = (row: EventRow) => (row.type && TYPE_LABEL[row.type] ? row.type : "NONE");
 
 // '수록 내용' 필터 — 이벤트에 무엇이 들었는지로 거른다
+/** 작전을 **같은 이름(코드 앞머리)끼리** 묶는다 (사용자 지시 2026-09-28 "사람들, 우리들이면 PA 와 PA-EX 를 따로").
+ *  코드 끝의 번호 토막(과 맨 끝의 한 글자 알파벳)을 떼고 남은 앞머리가 묶음 이름이다 — PA-1 → PA ·
+ *  PA-EX-1 → PA-EX · TD-P-1 → TD-P · CW-S-1-A → CW-S · VEC-SP01 → VEC-SP. 글자만 뗀 코드는 따로 묶어
+ *  벡터 돌파의 VEC-1…(공격)과 VEC-A…(방어)가 섞이지 않게 하고, 'VEC-A~D' 로 적는다. '14-2 (고난)' 같은 괄호 꼬리는 떼었다 붙인다(→ '14 (고난)').
+ *  순서는 원래 목록에서 처음 나온 순. */
+function groupStages(stages: [string, string, string][]): { key: string; label: string; items: [string, string, string][] }[] {
+  const groups = new Map<string, { key: string; label: string; items: [string, string, string][]; letters: string[] }>();
+  for (const st of stages) {
+    const tail = /\s*(\([^)]*\))$/.exec(st[1]);
+    const parts = (tail ? st[1].slice(0, tail.index) : st[1]).split("-");
+    let num = false;
+    let letter = "";
+    // 한 글자 알파벳은 **코드 맨 끝일 때만** 뗀다 — TD-P-1·TD-S-1 의 P·S 는 묶음 이름이다(떼면 TD 로 뭉친다)
+    if (parts.length > 1 && /^[A-Z]$/.test(parts[parts.length - 1])) letter = parts.pop() as string;
+    while (parts.length > 1 && /^\d+$/.test(parts[parts.length - 1])) { num = true; parts.pop(); }
+    // 번호가 하이픈 없이 붙은 마지막 토막 — VEC-SP01 → VEC-SP (한 토막짜리 코드 H14 는 그대로)
+    const glued = parts.length > 1 ? /^([A-Z]+)\d+$/.exec(parts[parts.length - 1]) : null;
+    if (glued) { num = true; parts[parts.length - 1] = glued[1]; }
+    const head = parts.join("-") + (tail ? ` ${tail[1]}` : "");
+    // 글자만 뗀 코드(VEC-A·LK-DP-A)만 따로 묶는다 — 번호가 섞인 CW-S-1-A 는 CW-S-4 와 같은 식구다
+    const key = letter && !num ? `${head}|l` : head;
+    const g = groups.get(key) ?? { key, label: head, items: [], letters: [] };
+    g.items.push(st);
+    if (letter) g.letters.push(letter);
+    groups.set(key, g);
+  }
+  return [...groups.values()].map(({ letters, ...g }) =>
+    (g.key.endsWith("|l") && letters.length > 1 ? { ...g, label: `${g.label}-${letters[0]}~${letters[letters.length - 1]}` } : g));
+}
+
 const HAS = ["stages", "enemies", "items", "mats", "ops", "story", "fut"] as const;
 const HAS_LABEL: Record<string, string> = {
   stages: "작전", enemies: "등장 적", items: "교환 재화", mats: "상위 재료",
@@ -169,8 +202,10 @@ function useCafeUrl(id: string): { url: string; exact: boolean } {
 }
 
 /** 이벤트 상세 — 작전·등장 적·교환 재화·보상 오퍼를 한 화면에. 누르면 각 도감이 겹쳐 뜬다. */
-function EventFile({ row, onOpenStage, onOpenEnemy, onOpenFighter, onOpenItem, onShowOperator, onOpenStory, onOpenOrigin }: {
+function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpenItem, onShowOperator, onOpenStory, onOpenOrigin }: {
   row: EventRow;
+  /** 같은 회차 묶음(ser)의 이벤트들 — 시작일 순. 둘 이상이면 위쪽에 회차 드롭다운을 단다 */
+  series?: EventRow[];
   onOpenStage: (id: string) => void;
   onOpenEnemy: (id: string) => void;
   /** 듀얼 채널 선수 — 원본 적 도감에 듀얼 수치를 얹어 연다 */
@@ -215,7 +250,18 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenFighter, onOpenItem, o
     <>
       <header>
         <div>
-          <h3>
+          <h3 className={series && series.length > 1 ? "has-series" : undefined}>
+            {/* 회차 드롭다운 — 같은 종류로 여러 번 온 이벤트끼리 오간다 (사용자 지시 2026-09-28 "#으로 된 애들은
+                드랍다운으로 같은 이름의 이벤트들로 이동가능하게"). 자리는 **이름 줄 맨 오른쪽**, 버튼 글자는 **지금 이벤트
+                이름**(같은 날 지시 — 종전 '회차 3/6'). 오른쪽으로 띄우므로(float) 이름·링크 자리와 줄 높이가 그대로다 — **그래서 h3 맨 앞에 둔다**(globals.css .has-series). 창은 그대로 두고
+                내용만 바꾼다 (원본↔복각 이동과 같은 onOpenOrigin 배선). */}
+            {series && series.length > 1 && (
+              <Dropdown className="ev-series-drop" ariaLabel={t("회차")}
+                label={row.n}
+                selected={[row.id]}
+                items={series.map((e) => ({ value: e.id, label: e.n, count: e.start ? e.start.slice(0, 7).replace("-", ".") : undefined }))}
+                onPick={(id) => { if (id !== row.id) onOpenOrigin(id); }} />
+            )}
             {row.n}
             {/* 스토리 읽기는 이름 바로 옆에 (사용자 지시 2026-09-17).
                 정본 주소는 앵커에 그대로 둬서 새 탭·주소 복사·크롤러가 살아 있고,
@@ -307,13 +353,26 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenFighter, onOpenItem, o
       {row.stages && row.stages.length > 0 && (
         <section className="ev-sec">
           <b>{t("작전 {n}", { n: row.stages.length })}</b>
-          <div className="ev-stages">
-            {row.stages.map(([id, code, name]) => (
-              <button key={id} type="button" className="ev-stage" onClick={() => onOpenStage(id)}>
-                <b>{code}</b><span>{name}</span>
-              </button>
-            ))}
-          </div>
+          {(() => {
+            const groups = groupStages(row.stages);
+            const list = (items: [string, string, string][]) => (
+              <div className="ev-stages">
+                {items.map(([id, code, name]) => (
+                  <button key={id} type="button" className="ev-stage" onClick={() => onOpenStage(id)}>
+                    <b>{code}</b><span>{name}</span>
+                  </button>
+                ))}
+              </div>
+            );
+            // 묶음이 하나뿐이면 머리말 없이 종전대로
+            if (groups.length < 2) return list(row.stages);
+            return groups.map((g) => (
+              <div key={g.key} className="ev-stage-group">
+                <span className="ev-stage-gh">{g.label}<em>{g.items.length}</em></span>
+                {list(g.items)}
+              </div>
+            ));
+          })()}
         </section>
       )}
         </div>
@@ -380,6 +439,13 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
 
   const events = doc.events;
   const byId = useMemo(() => new Map(events.map((e) => [e.id, e])), [events]);
+  // 회차 묶음 — ser 가 같은 이벤트들을 시작일 순으로 (모달 위쪽 회차 드롭다운)
+  const seriesOf = useMemo(() => {
+    const m = new Map<string, EventRow[]>();
+    for (const e of events) if (e.ser) m.set(e.ser, [...(m.get(e.ser) ?? []), e]);
+    for (const list of m.values()) list.sort((a, b) => (a.start ?? "").localeCompare(b.start ?? ""));
+    return m;
+  }, [events]);
 
   const openStage = (sid: string) => {
     setRaise((k) => k + 1);
@@ -486,7 +552,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
       {open && (
         <ModalWindow label={open.n} className="operator-modal ev-modal"
           onClose={() => { setOpen(null); onCloseModal?.(); }}>
-          <EventFile row={open} onOpenStage={openStage} onOpenEnemy={openEnemy}
+          <EventFile row={open} series={open.ser ? seriesOf.get(open.ser) : undefined} onOpenStage={openStage} onOpenEnemy={openEnemy}
             onOpenFighter={(f) => openFighter(f, open)}
             onOpenItem={openItem} onShowOperator={onShowOperator}
             onOpenStory={(id) => { setRaise((k) => k + 1); setSubStory(id); }}

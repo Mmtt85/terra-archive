@@ -1433,6 +1433,8 @@ const D: Record<string, Pair> = {
   "원본 이벤트 스토리 읽기": ["Read the original event's story", "オリジナルイベントのストーリーを読む"],
   "원본 이벤트 보기": ["View the original event", "オリジナルイベントを見る"],
   "재개방 이벤트 보기": ["View the rerun", "復刻イベントを見る"],
+  // 이벤트 모달의 회차 드롭다운 — 인도자의 시련 #1~#6 처럼 같은 종류로 여러 번 온 이벤트 (2026-09-28)
+  "회차": ["Edition", "開催回"],
   "작전 {n}": ["{n} operations", "作戦{n}件"],
   "등장 적 {n}": ["{n} enemies", "出現する敵{n}種"],
   "적 {n}": ["{n} enemies", "敵{n}種"],
