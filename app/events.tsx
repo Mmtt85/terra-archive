@@ -250,17 +250,32 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
     <>
       <header>
         <div>
-          <h3 className={series && series.length > 1 ? "has-series" : undefined}>
-            {/* 회차 드롭다운 — 같은 종류로 여러 번 온 이벤트끼리 오간다 (사용자 지시 2026-09-28 "#으로 된 애들은
-                드랍다운으로 같은 이름의 이벤트들로 이동가능하게"). 자리는 **이름 줄 맨 오른쪽**, 버튼 글자는 **지금 이벤트
-                이름**(같은 날 지시 — 종전 '회차 3/6'). 오른쪽으로 띄우므로(float) 이름·링크 자리와 줄 높이가 그대로다 — **그래서 h3 맨 앞에 둔다**(globals.css .has-series). 창은 그대로 두고
-                내용만 바꾼다 (원본↔복각 이동과 같은 onOpenOrigin 배선). */}
-            {series && series.length > 1 && (
-              <Dropdown className="ev-series-drop" ariaLabel={t("회차")}
-                label={row.n}
-                selected={[row.id]}
-                items={series.map((e) => ({ value: e.id, label: e.n, count: e.start ? e.start.slice(0, 7).replace("-", ".") : undefined }))}
-                onPick={(id) => { if (id !== row.id) onOpenOrigin(id); }} />
+          {/* 이름 줄 오른쪽 끝 — 원본↔복각 이동과 회차 드롭다운. 둘 다 '다른 이벤트로 가는' 버튼이라 한자리에 모은다
+              (사용자 지시 2026-09-28: 드롭다운을 오른쪽에 두니 "재개방 이벤트의 원본 이벤트 보기 버튼도 오른쪽에 붙여야
+              통일감"). 오른쪽으로 띄우므로(float) 이름·스토리·카페 링크 자리와 줄 높이가 그대로다 — **그래서 h3 맨 앞에**
+              둔다(globals.css .ev-h3-right). 창은 그대로 두고 내용만 바꾼다(onOpenOrigin). */}
+          <h3>
+            {(row.origin || row.rerun || (series && series.length > 1)) && (
+              <span className="ev-h3-right">
+                {/* 원본 ↔ 복각을 서로 이어 준다 (사용자 지시 2026-09-17) */}
+                {row.origin ? (
+                  <button type="button" className="it-link ev-story-link"
+                    onClick={() => onOpenOrigin(row.origin as string)}>{t("원본 이벤트 보기")}</button>
+                ) : null}
+                {row.rerun ? (
+                  <button type="button" className="it-link ev-story-link"
+                    onClick={() => onOpenOrigin(row.rerun as string)}>{t("재개방 이벤트 보기")}</button>
+                ) : null}
+                {/* 회차 드롭다운 — 같은 종류로 여러 번 온 이벤트끼리 오간다 (사용자 지시 2026-09-28 "#으로 된 애들은
+                    드랍다운으로 같은 이름의 이벤트들로 이동가능하게"). 버튼 글자는 지금 이벤트 이름(종전 '회차 3/6'). */}
+                {series && series.length > 1 && (
+                  <Dropdown className="ev-series-drop" ariaLabel={t("회차")}
+                    label={row.n}
+                    selected={[row.id]}
+                    items={series.map((e) => ({ value: e.id, label: e.n, count: e.start ? e.start.slice(0, 7).replace("-", ".") : undefined }))}
+                    onPick={(id) => { if (id !== row.id) onOpenOrigin(id); }} />
+                )}
+              </span>
             )}
             {row.n}
             {/* 스토리 읽기는 이름 바로 옆에 (사용자 지시 2026-09-17).
@@ -280,15 +295,6 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
               <a className="it-link ev-story-link" href={cafe.url} target="_blank" rel="noopener noreferrer"
                 title={cafe.exact ? t("공식 카페 공지 보기") : t("공식 카페 이벤트 게시판 보기")}>{t("공식 카페")} ↗</a>
             )}
-            {/* 원본 ↔ 복각을 서로 이어 준다 (사용자 지시 2026-09-17) */}
-            {row.origin ? (
-              <button type="button" className="it-link ev-story-link"
-                onClick={() => onOpenOrigin(row.origin as string)}>{t("원본 이벤트 보기")}</button>
-            ) : null}
-            {row.rerun ? (
-              <button type="button" className="it-link ev-story-link"
-                onClick={() => onOpenOrigin(row.rerun as string)}>{t("재개방 이벤트 보기")}</button>
-            ) : null}
           </h3>
           <em className={`ev-type t-${typeOf(row).toLowerCase()}`}>{t(TYPE_LABEL[typeOf(row)])}</em>
           {row.fut

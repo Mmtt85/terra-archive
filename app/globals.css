@@ -24442,13 +24442,22 @@ html[lang="ja"] .vn-box {
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 6px;
 }
-/* 이벤트 모달 회차 드롭다운 — 이름 줄 맨 오른쪽 (사용자 지시 2026-09-28). 버튼 글자가 이벤트 이름이라 폭이
-   제각각이어서 **오른쪽으로 띄운다**(float — 그래서 JSX 에서 h3 맨 앞). 이름·링크는 종전 글줄 흐름 그대로라
-   자리가 1px 도 안 움직이고(가로 배치로 바꿨더니 이름이 2.3px 내려갔다), 길면 버튼을 피해 감긴다.
-   버튼(34px)이 이름 줄(29px)보다 커서 위아래 음수 여백으로 첫 줄 가운데에 맞춘다. */
-.ev-modal h3.has-series > .ev-series-drop {
+/* 이벤트 모달 이름 줄 오른쪽 끝 — 원본↔복각 보기 + 회차 드롭다운 (사용자 지시 2026-09-28). 버튼 글자(이벤트 이름)
+   폭이 제각각이어서 **오른쪽으로 띄운다**(float — 그래서 JSX 에서 h3 맨 앞). 이름·링크는 종전 글줄 흐름 그대로라
+   자리가 1px 도 안 움직이고(가로 배치로 바꿨더니 이름이 2.3px 내려갔다), 길면 오른쪽 묶음을 피해 감긴다.
+   드롭다운(34px)이 이름 줄(29px)보다 커서 위아래 음수 여백으로 첫 줄 가운데에 맞춘다. */
+.ev-modal h3 > .ev-h3-right {
   float: right;
-  margin: -3px 0 -2px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 10px;
+}
+.ev-h3-right > .ev-story-link {
+  margin-left: 0;
+}
+.ev-h3-right > .ev-series-drop {
+  margin: -3px 0 -2px;
 }
 /* 같은 이름(코드 앞머리)끼리 묶은 작전 — PA · PA-EX · PA-TR … (사용자 지시 2026-09-28) */
 .ev-stage-group + .ev-stage-group {
