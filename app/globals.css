@@ -277,10 +277,12 @@ main {
 /* 서버 HTML은 항상 백과사전 — #infra·#recruit로 새로고침 시 첫 페인트에서 백과사전을
    숨기고 헤더 탭 하이라이트도 올바른 탭으로 옮겨 플래시를 막는다
    (인라인 스크립트가 <html data-route>를 설정, 하이드레이션 후 page.tsx가 해제) */
-html[data-route="infra"] .explorer,
-html[data-route="recruit"] .explorer,
-html[data-route="farm"] .explorer,
-html[data-route="story"] .explorer {
+/* ⚠ .tool-explorer(재료 파밍·육성 계산기·작전 시뮬 — 2026-09-28 도감 뼈대로 전환)는 빼야 한다: 이 규칙은 서버 HTML의
+   백과사전을 가리는 것이지, 그 탭 자신의 좌우 배치를 가리려는 게 아니다. */
+html[data-route="infra"] .explorer:not(.tool-explorer),
+html[data-route="recruit"] .explorer:not(.tool-explorer),
+html[data-route="farm"] .explorer:not(.tool-explorer),
+html[data-route="story"] .explorer:not(.tool-explorer) {
   display: none;
 }
 html[data-route="infra"] main,
@@ -9729,14 +9731,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   gap: 14px;
   margin: 20px 0 24px;
 }
-/* 종전 버튼 나열(.farm-tier-filter)은 공용 드롭다운으로 바뀌었다 (2026-08-25).
-   검색란 바로 오른쪽 자리라 줄어들지 않게 flex를 고정한다. */
-.farm-tier-drop {
-  flex: 0 0 auto;
-}
-.farm-tier-drop .drop-btn {
-  padding: 8px 11px;
-}
 .farm-tier-filter button {
   border: 1px solid var(--btn-line);
   background: var(--btn-bg);
@@ -9763,10 +9757,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   color: var(--btn-on-ink);
   border-color: var(--btn-on-line);
 }
-.farm-search {
-  max-width: 260px;
-  flex: 1 1 200px;
-}
 .farm-perm-toggle {
   display: inline-flex;
   align-items: center;
@@ -9777,6 +9767,77 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 }
 .farm-perm-toggle input {
   accent-color: var(--ink);
+}
+/* 좌우 배치 화면(도감 5종·재료 파밍·육성 계산기·작전 시뮬) 공통 — 사용자 지시 2026-09-28
+   "검색란들은 전부 탐색 조건의 제일 윗쪽에, 읽는 법·주의는 짧은 버튼으로 제목 오른쪽에".
+   ① 검색란은 왼쪽 패널 머리글 바로 밑, 패널 폭 그대로. 패널은 스크롤 상자라(overflow) 제안 드롭다운이
+      패널 폭을 넘으면 잘리며 가로 스크롤이 생긴다 — 드롭다운 폭을 검색란 폭으로 묶는다(라벨은 말줄임). */
+.filter-panel > .panel-search {
+  margin-top: 16px;
+}
+.filter-panel > .sim-search-row.panel-search {
+  max-width: none;
+}
+.panel-search .suggest-drop {
+  width: 100%;
+  max-width: 100%;
+}
+/* ② 결과 머리글 제목 오른쪽의 안내 버튼 — 제목 줄의 세로 여백(h2 margin-top 6)은 줄이 가진다 */
+.rh-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 6px;
+  margin-top: 6px;
+}
+.results-heading .rh-title > h2 {
+  margin: 0;
+}
+.rh-title > .head-links {
+  margin-top: 0;
+}
+/* 육성 비용 계산기 — 왼쪽(도감과 같은 300px)은 재료 합계, 오른쪽은 오퍼별 단계 카드 (사용자 지시 2026-09-28).
+   합계 블록은 패널 머리글 바로 밑에서 시작하고(종전 위 점선은 뺀다) 좁은 칸이라 한 줄에 하나씩 쌓는다 —
+   공유·비우기 줄 → 용문폐 → 재료 2열. 오퍼 카드는 스크롤 칸 맨 위에서 바로 시작한다. */
+.cost-panel > .cost-result {
+  margin-top: 16px;
+  padding-top: 0;
+  border-top: 0;
+  gap: 12px;
+}
+.cost-panel .cost-lmd,
+.cost-panel .cost-items {
+  flex: 1 1 100%;
+}
+.cost-panel .cost-items {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.cost-panel > .cost-empty {
+  margin-top: 16px;
+}
+.cost-explorer .results-scroll > .cost-ops,
+.cost-explorer .results-scroll > .cost-empty {
+  margin-top: 0;
+}
+/* 여러 명을 담으면 한 줄에 두 명씩 — 두 번째 카드가 다음 줄로 넘어가지 않게 (사용자 지시 2026-09-28).
+   한 명뿐일 땐 종전처럼 줄 전체. 카드가 좁아지는 만큼 안쪽은 아래 @container 규칙이 접는다. 폰은 한 줄에 하나. */
+.cost-explorer .cost-ops {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.cost-explorer .cost-op:only-child {
+  grid-column: 1 / -1;
+}
+@media (max-width: 520px) {
+  .cost-explorer .cost-ops {
+    grid-template-columns: 1fr;
+  }
+}
+/* 좌우 배치에선 결과 칸이 좁아(1440px 에서 561px) 3열 고정이면 카드가 165px 로 찌그러진다 — 폭에 맞춰 열 수를 정한다
+   (카드 최소 250px: 결과 칸 안쪽 533px → 2열 · 넓으면 3열 이상 · 폰 1열 — 260 이면 1px 모자라 1열이 됐다).
+   종전 3열 고정은 전체 폭 시절 규칙(2026-07-22). */
+.farm-explorer .farm-grid {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 }
 .farm-grid {
   display: grid;
@@ -9842,12 +9903,25 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   background: var(--chip);
   color: #d5d5d0;
 }
+/* 3열 — 코드 · 배지 · 드랍률 (기대 이성 칸은 뺐다, 사용자 지시 2026-09-28). 배지 칸은 **minmax(0, 1fr)** —
+   그냥 1fr 이면 긴 이벤트 이름 배지만큼 칸이 늘어나 드랍률을 카드 밖으로 밀었다.
+   코드 칸은 **카드 안에서 가장 긴 코드 폭**(ul 격자 + li subgrid) — 종전 최소 58px 은 "1-7" 같은 짧은 코드 뒤에
+   빈 자리를 남겼다(사용자 지적 "스테이지 이름 오른쪽에 이상하게 패딩"). 행마다 auto 면 배지 시작이 들쭉날쭉해진다. */
 .farm-cols,
 .farm-card li {
   display: grid;
-  grid-template-columns: minmax(58px, auto) 1fr 62px 58px;
+  grid-template-columns: auto minmax(0, 1fr) 62px;
   align-items: center;
   gap: 8px;
+}
+.farm-card ul {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 62px;
+  column-gap: 8px;
+}
+.farm-card ul > li {
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
 }
 .farm-cols {
   padding: 0 8px 5px;
@@ -9859,7 +9933,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   font-style: normal;
 }
 .farm-cols i:nth-child(3),
-.farm-cols i:nth-child(4),
 .farm-rate,
 .farm-sanity {
   text-align: right;
@@ -9885,17 +9958,31 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 .farm-code {
   font: 800 13px var(--mono);
 }
+/* 배지는 **한 줄** — 좁아지면 이벤트 이름만 말줄임으로 줄고, '어려움' 같은 짧은 배지는 글자 단위로 꺾이지
+   않는다 (사용자 지적 2026-09-28 "어려움 뱃지가 세로로 나온다"). */
 .farm-badges {
   display: flex;
   gap: 5px;
-  flex-wrap: wrap;
+  min-width: 0;
+  overflow: hidden;
 }
-.best-badge {
-  background: var(--chip);
-  color: var(--lime);
-  font: 800 10.5px var(--mono);
-  padding: 2px 6px;
-  font-style: normal;
+.farm-badges > * {
+  flex: none;
+  white-space: nowrap;
+}
+.farm-badges > .has-event {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+/* 이벤트 배지 → 이벤트 도감 상세 (2026-09-28) — 모양은 배지 그대로, 누를 수 있다는 것만 밑줄로 */
+.kind-badge.as-link {
+  background: none;
+  cursor: pointer;
+  line-height: inherit;
+}
+.kind-badge.as-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .kind-badge {
   border: 1px solid var(--line);
@@ -12093,19 +12180,6 @@ html.dark .story-card:hover .story-thumb img {
   line-height: 1.75;
   color: var(--ink2);
 }
-.cost-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin: 12px 0 0;
-}
-.cost-search {
-  position: relative;
-  width: 100%;
-  max-width: 480px;
-  flex: 1 1 360px;
-}
 .cost-suggest {
   position: absolute;
   top: calc(100% + 4px);
@@ -12186,6 +12260,8 @@ html.dark .story-card:hover .story-thumb img {
   border: 1px solid var(--line);
   border-top: 3px solid var(--accent, var(--chip));
   background: var(--paper);
+  /* 카드 폭 기준 — 두 명씩 놓여 좁아지면 아래 @container 가 행을 접는다 (2026-09-28) */
+  container-type: inline-size;
 }
 .cost-op > header {
   display: flex;
@@ -12477,6 +12553,74 @@ html.dark .story-card:hover .story-thumb img {
     font-size: 10px;
   }
 }
+/* 좁은 카드(두 명씩 놓인 계산기 — 1440px 에서 카드 260px 안팎)의 단계 행 (2026-09-28).
+   네 칸(레일·그룹·단계·재료)을 한 줄에 두면 재료 칸이 14px 로 짜부라진다 — 그룹 이름을 단계 줄 **위 한 줄**로
+   올리고(그룹 첫 행에만 있다) 레일·단계·재료 세 칸만 남긴다. 레일 노드는 단계 줄에 맞춘다(그룹 첫 행은
+   이름 줄을 비우고 둘째 줄부터). 글자·칩은 폰 규격(위 520px 규칙)과 같게. */
+@container (max-width: 380px) {
+  .cost-rows {
+    padding: 6px 9px 10px;
+  }
+  .cost-row {
+    grid-template-columns: 16px 74px minmax(0, 1fr);
+    grid-template-areas: "dot grp grp" "dot stp items";
+    column-gap: 6px;
+    row-gap: 0;
+  }
+  .cost-row.group-start {
+    grid-template-areas: ". grp grp" "dot stp items";
+  }
+  .cost-step-dot { grid-area: dot; }
+  .cost-row-group { grid-area: grp; }
+  .cost-row-step { grid-area: stp; }
+  .cost-row-items { grid-area: items; }
+  .cost-row-group:empty {
+    display: none;
+  }
+  .cost-row.group-start .cost-row-group {
+    padding-bottom: 0;
+  }
+  .cost-row.group-start .cost-row-step,
+  .cost-row.group-start .cost-row-items,
+  .cost-row.group-start:first-child .cost-row-step,
+  .cost-row.group-start:first-child .cost-row-items {
+    padding-top: 2px;
+  }
+  /* 이름 줄이 한 줄 전체라 "S1 · 스킬명"을 나란히 */
+  .cost-grp-a,
+  .cost-grp-b {
+    display: inline;
+  }
+  .cost-grp-b {
+    margin-left: 6px;
+  }
+  .cost-row.group-start::before {
+    left: 22px;
+  }
+  .cost-row-step {
+    font-size: 10px;
+  }
+  .cost-lv-pick {
+    font-size: 11px;
+  }
+  .cost-lv-input {
+    width: 3.2ch;
+    margin-left: 2px;
+    padding: 2px 3px;
+    font-size: 13px;
+  }
+  .cost-mini {
+    padding: 2px 4px 2px 2px;
+    gap: 2px;
+  }
+  .cost-mini img {
+    width: 19px;
+    height: 19px;
+  }
+  .cost-mini i {
+    font-size: 10px;
+  }
+}
 .cost-total-head {
   flex: 1 0 100%;
   display: flex;
@@ -12620,7 +12764,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .item-stages li {
   display: grid;
-  grid-template-columns: 72px 1fr 58px 58px;
+  grid-template-columns: 72px minmax(0, 1fr) 58px;
   align-items: center;
   gap: 8px;
   padding: 5px 0;
@@ -20054,6 +20198,22 @@ main.site-main > .site-header {
   line-height: 1.6;
   color: var(--muted);
 }
+/* 팬 위키에서 받은 도면의 출처 줄 — 도면 바로 밑에 작게 (사용자 지시 2026-09-28). 칸 사이 간격(12px)을
+   절반으로 당겨 도면에 붙인다 — 설명 문단과 같은 거리면 어느 쪽 출처인지 흐려진다. */
+.st-map-credit {
+  margin: -6px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.st-map-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.st-map-credit a:hover {
+  color: var(--ink);
+}
 .st-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -20305,9 +20465,9 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   text-decoration-style: solid;
   background: var(--btn-bg-hover);
 }
-/* 재료 상세 모달의 효율 스테이지 헤더 — 행 격자(72px 1fr 58px 58px)와 같은 폭 */
+/* 재료 상세 모달의 효율 스테이지 헤더 — 행 격자(72px 1fr 58px, 기대 이성 칸은 2026-09-28에 뺐다)와 같은 폭 */
 .item-stages .farm-cols.item-stages-cols {
-  grid-template-columns: 72px 1fr 58px 58px;
+  grid-template-columns: 72px minmax(0, 1fr) 58px;
   padding: 0 0 5px;
   margin-bottom: 6px;
 }
@@ -20435,6 +20595,11 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 }
 .sim-sec {
   margin-top: 24px;
+}
+/* 좌우 배치(2026-09-28)에선 결과가 스크롤 칸 안에서 시작한다 — 첫 묶음의 위 여백은 머리글과 겹쳐 벌어지므로 뺀다 */
+.sim-explorer .results-scroll > .sim-sec:first-child,
+.sim-explorer .results-scroll > .sim-note:first-child {
+  margin-top: 0;
 }
 .sim-sec h3 {
   margin: 0;

@@ -346,12 +346,12 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
             찾아야 했다 (사용자 지적 2026-09-20). 저격 조합 사전도 같은 줄에서 연다 —
             둘 다 "지금 고른 태그와 무관한 참고표"라 본문에 깔 이유가 없다.
             손잡이는 **제목 오른쪽**에 — 네 화면(공채·파밍·육성·작전 시뮬) 공통 규격
-            (.head-row, 사용자 지시 2026-09-20). */}
+            (.head-row, 사용자 지시 2026-09-20). 안내 버튼 문구는 "읽는 법" 같은 짧은 이름만 (2026-09-28). */}
         <div className="head-row">
         <h2>{t("공개채용 도우미")}</h2>
         <div className="head-links">
           <button type="button" onClick={() => setShowGuide(true)}>
-            {rich(t("성급 배지는 모집 시간 **9시간** 기준입니다 — 읽는 법과 시간별 출현 성급"))}
+            {t("읽는 법")}
           </button>
           <button type="button" onClick={() => setShowDict(true)}>
             {t("4·5성 저격 조합 사전")}<em>{t("{n}개 조합", { n: SNIPE_DICT.length })}</em>

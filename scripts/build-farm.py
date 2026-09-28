@@ -65,7 +65,9 @@ def retro_of(prefix):
     out = {}
     for sid, st in stages.items():
         act = acts.get(z2r.get(st.get("zoneId")))
-        out[sid] = {"event": (act or {}).get("name"), "name": st.get("name")}
+        # linkedActId[0] = 원본 활동 id (["act17side", "act17sre"]) — 이벤트 배지를 누르면 이벤트 도감 상세를 연다
+        linked = (act or {}).get("linkedActId") or []
+        out[sid] = {"event": (act or {}).get("name"), "name": st.get("name"), "eid": linked[0] if linked else None}
     return out
 
 def acts_of(prefix):
@@ -81,19 +83,20 @@ acts = {loc: acts_of(loc) for loc in ("kr", "en", "jp")}
 kr_zones = zones_of("kr")
 
 def stage_extra(sid, kind):
-    """스테이지의 {event?, name 보강} — 로케일 3종 dict 또는 None."""
+    """스테이지의 {event?, name 보강, 이벤트 id} — 이름은 로케일 3종 dict 또는 None.
+    이벤트 id(eid)는 이벤트 배지를 눌러 이벤트 도감 상세를 여는 데 쓴다 (사용자 지시 2026-09-28)."""
     if kind == "perm":
         base = re.sub(r"_(perm|rep)$", "", sid)
         ev = {L: (retro[loc].get(base) or {}).get("event") for L, loc in (("ko", "kr"), ("en", "en"), ("ja", "jp"))}
         nm = {L: (retro[loc].get(base) or {}).get("name") for L, loc in (("ko", "kr"), ("en", "en"), ("ja", "jp"))}
-        return (ev if ev["ko"] else None), (nm if nm["ko"] else None)
+        return (ev if ev["ko"] else None), (nm if nm["ko"] else None), (retro["kr"].get(base) or {}).get("eid")
     if kind == "event":
         zone = kr_zones.get(sid) or ""
         aid = zone.split("_zone")[0] if "_zone" in zone else None
         if aid:
             ev = {L: acts[loc].get(aid) for L, loc in (("ko", "kr"), ("en", "en"), ("ja", "jp"))}
-            return (ev if ev["ko"] else None), None
-    return None, None
+            return (ev if ev["ko"] else None), None, (aid if ev["ko"] else None)
+    return None, None, None
 
 print("fetching penguin-stats …", file=sys.stderr)
 pg_stages = {s["stageId"]: s for s in fetch(f"{PENGUIN}/stages?server=KR")}
@@ -124,7 +127,7 @@ for entry in matrix:
     if times < MIN_TIMES or quantity <= 0 or ap <= 0: continue
     rate = quantity / times
     kind = stage_kind(stage)
-    event, name_fill = stage_extra(stage["stageId"], kind)
+    event, name_fill, eid = stage_extra(stage["stageId"], kind)
     rows_by_item.setdefault(iid, []).append({
         "id": stage["stageId"],
         "code": (stage.get("code_i18n") or {}).get("ko") or stage.get("code"),
@@ -135,6 +138,7 @@ for entry in matrix:
         },
         # 이벤트명(사이드 스토리·한정 이벤트만) — EN/JA 미출시분은 ko 폴백
         **({"event": {"ko": event["ko"], "en": event.get("en") or event["ko"], "ja": event.get("ja") or event["ko"]}} if event else {}),
+        **({"eid": eid} if event and eid else {}),
         "ap": ap,
         "kind": kind,
         # 어려움(高難) 판 — 정규판과 코드가 같아 "10-12"가 두 줄로 보였다 (사용자 지적

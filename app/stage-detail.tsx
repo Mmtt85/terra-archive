@@ -148,6 +148,30 @@ export function EnemyChip({ e, mul, up, href, nameNode, onOpenEnemy, onHover, pi
   );
 }
 
+// 팬 위키에서 받은 도면의 출처 — 게임에 미리보기가 없는 작전은 위키 그림을 쓰고, 위키 라이선스가 출처·라이선스·
+// 손댄 사실을 밝히라고 요구한다 (사용자 지시 2026-09-28 "출처표기해줘"). 기록은 scripts/mapcredits.py → 레코드 mc.
+// 경로 지도를 그리는 작전(위수 협의 등)은 사진이 목록 카드에만 보여도 그 작전의 도면이라 같은 자리에 적는다.
+// name 이 i18n 키면 번역하고(PRTS 위키), 고유 이름(Arknights Terra Wiki)은 그대로 쓴다
+const MAP_CREDIT: Record<string, { name: string; tr?: boolean; page: string; lic: string; licUrl: string }> = {
+  p: { name: "PRTS 위키", tr: true, page: "https://prts.wiki/w/File:", lic: "CC BY-NC-SA 4.0", licUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/" },
+  w: { name: "Arknights Terra Wiki", page: "https://arknights.wiki.gg/wiki/File:", lic: "CC BY-SA 4.0", licUrl: "https://creativecommons.org/licenses/by-sa/4.0/" },
+};
+
+function MapCredit({ mc }: { mc: NonNullable<Stage["mc"]> }) {
+  const { t } = useI18n();
+  const src = MAP_CREDIT[mc[0]];
+  if (!src) return null;
+  return (
+    <p className="st-map-credit">
+      {t("도면 출처")}{" "}
+      <a href={src.page + encodeURIComponent(mc[1])} target="_blank" rel="noopener noreferrer">{src.tr ? t(src.name) : src.name}</a>
+      {" · "}
+      <a href={src.licUrl} target="_blank" rel="license noopener noreferrer">{src.lic}</a>
+      {mc[2] ? <>{" · "}{t("일부 잘라냄")}</> : null}
+    </p>
+  );
+}
+
 export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
   view: StageView; onOpenEnemy?: (id: string) => void; onOpenItem?: (id: string) => void;
   /** 이동 경로 탭 + 시뮬 자동 재생으로 연다 — 작전 시뮬레이터 런처의 모달 (2026-08-10) */
@@ -322,6 +346,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
           ) : s.map ? photoOnly : (
             <p className="st-note">{t("이 작전은 지형 도면이 제공되지 않습니다.")}</p>
           )}
+          {photoStage.map && photoStage.mc && <MapCredit mc={photoStage.mc} />}
           {s.desc && <p className="st-desc">{s.desc}</p>}
           {/* 긴급 환경 제한 조건 — 설명을 지우지 않고 이어서 덧붙인다 (사용자 요청 2026-08-10).
               #f#는 일반판 행(chg), 보안 파견은 긴급 판 행 자체의 chg(긴급 보급 조건·위험 등급

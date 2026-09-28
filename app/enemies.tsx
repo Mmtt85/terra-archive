@@ -187,6 +187,16 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
           <div><span className="section-no">FILTER / 01</span><h2 id="enemy-title">{t("탐색 조건")}</h2></div>
           <button className="reset" onClick={reset}>↻ {t("초기화")}</button>
         </div>
+        {/* 검색란은 탐색 조건 맨 위 — 결과 머리글에는 제목·개수만 (사용자 지시 2026-09-28) */}
+        <div className="search-wrap panel-search">
+          <span>⌕</span>
+          <input id="enemy-search" {...inputProps} placeholder={t("이름, 도감번호, 능력 검색")} />
+          <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
+          {/* 검색란 제안 — 고르면 그 적 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
+          <SearchSuggest query={term}
+            items={shown.map((e) => ({ key: e.id, label: e.name, sub: e.idx ?? undefined, img: enemyImg(e.id) }))}
+            onPick={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
+        </div>
         <AttributeFilter groups={[
           { title: t("적 등급"), items: RANKS, selected: ranks, onToggle: toggle(setRanks),
             labelFor: (v) => t(RANK_KEY[v] ?? v), countForItem: (v) => countBy.rank.get(v) ?? 0 },
@@ -206,15 +216,6 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
       <div className="results">
         <div className="results-heading">
           <div><span className="section-no">RESULT / 02</span><h2>{active ? t("탐색 결과") : t("전체 적")}</h2></div>
-          <div className="search-wrap heading-search">
-            <span>⌕</span>
-            <input id="enemy-search" {...inputProps} placeholder={t("이름, 도감번호, 능력 검색")} />
-            <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
-            {/* 검색란 제안 — 고르면 그 적 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
-            <SearchSuggest query={term}
-              items={shown.map((e) => ({ key: e.id, label: e.name, sub: e.idx ?? undefined, img: enemyImg(e.id) }))}
-              onPick={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
-          </div>
           <div className="results-tools"><span className="count"><b>{shown.length}</b> ENEMIES</span></div>
         </div>
         <div className="active-filters">

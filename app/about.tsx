@@ -186,7 +186,7 @@ const CONTENT: Record<Locale, Content> = {
         tab: "farm", icon: "◈", name: "재료파밍 도우미",
         summary: "정예화 재료마다 어느 스테이지가 가장 효율적인지 실측 드랍 통계로 확인합니다.",
         bullets: [
-          "재료마다 개당 기대 이성(이성 소모 ÷ 드랍률)을 계산해 이성 효율이 가장 좋은 스테이지에 최고 효율 배지",
+          "재료마다 개당 기대 이성(이성 소모 ÷ 드랍률)이 낮은 순 — 이성 효율이 좋은 스테이지부터 드랍률과 함께",
           "펭귄 물류(Penguin Statistics) 실측 드랍률 + 클뜯 게임 데이터 기반, 정식 개방 스테이지만 수록",
           "등급 필터·이름/별명 검색·상시 파밍 전용 토글, 재료 아이콘을 누르면 조합식·용도 상세",
         ],
@@ -356,7 +356,7 @@ const CONTENT: Record<Locale, Content> = {
         tab: "farm", icon: "◈", name: "Material Farming Helper",
         summary: "Shows which stage is most efficient for each Elite material, from measured drop statistics.",
         bullets: [
-          "Expected sanity-per-item (sanity ÷ drop rate) per material, with a best-efficiency badge on the top stage",
+          "Stages per material sorted by expected sanity per item (sanity ÷ drop rate) — most efficient first, with drop rates",
           "Based on Penguin Statistics real drop rates + extracted game data; only currently released stages",
           "Rarity filter, name/nickname search, permanent-only toggle; click a material for its recipe and uses",
         ],
@@ -526,7 +526,7 @@ const CONTENT: Record<Locale, Content> = {
         tab: "farm", icon: "◈", name: "素材周回ヘルパー",
         summary: "昇進素材ごとにどのステージが最も効率的かを、実測ドロップ統計で確認します。",
         bullets: [
-          "素材ごとの1個あたり期待理性（理性消費 ÷ ドロップ率）を計算し、最も効率の良いステージに最効率バッジ",
+          "素材ごとに1個あたり期待理性（理性消費 ÷ ドロップ率）の低い順＝効率の良いステージから、ドロップ率つきで",
           "ペンギン急便（Penguin Statistics）の実測ドロップ率＋ゲームデータ抽出に基づき、正式実装ステージのみ収録",
           "レア度フィルター・名前/愛称検索・常設のみトグル、素材アイコンを押すと合成式・用途の詳細",
         ],

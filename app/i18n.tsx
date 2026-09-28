@@ -1435,6 +1435,11 @@ const D: Record<string, Pair> = {
   "재개방 이벤트 보기": ["View the rerun", "復刻イベントを見る"],
   // 이벤트 모달의 회차 드롭다운 — 인도자의 시련 #1~#6 처럼 같은 종류로 여러 번 온 이벤트 (2026-09-28)
   "회차": ["Edition", "開催回"],
+  // 재료 파밍 표의 이벤트 이름 배지 — 누르면 이벤트 도감 상세 (2026-09-28)
+  "{name} 이벤트 상세 열기": ["Open {name} event details", "{name}のイベント詳細を開く"],
+  // 육성 비용 계산기 좌우 배치 (2026-09-28) — 왼쪽 재료 합계 칸의 제목 · 빈 상태
+  "재료 합계": ["Material totals", "素材合計"],
+  "오퍼레이터를 추가하면 필요한 재료 합계가 여기에 모입니다.": ["Add operators and the total materials needed will gather here.", "オペレーターを追加すると、必要な素材の合計がここに表示されます。"],
   "작전 {n}": ["{n} operations", "作戦{n}件"],
   "등장 적 {n}": ["{n} enemies", "出現する敵{n}種"],
   "적 {n}": ["{n} enemies", "敵{n}種"],
@@ -1731,10 +1736,8 @@ const D: Record<string, Pair> = {
     "Stage Simulator - Arknights Enemy Spawn Timeline | Terra Archive",
     "作戦シミュレーター - アークナイツ敵出現タイムライン | テラアーカイブ"],
   "작전 시뮬레이터 읽는 법": ["How to read this simulator", "作戦シミュレーターの読み方"],
-  "작전을 고르면 적이 **몇 초에 어디서 나와 어디로 가는지** 스폰 타임라인으로 재생합니다 — 읽는 법과 주의": [
-    "Pick a stage and watch **when and where each enemy spawns, and where it heads** on a spawn timeline — how to read it, and caveats",
-    "作戦を選ぶと、敵が**何秒後にどこから現れどこへ向かうか**をスポーンタイムラインで再生します — 読み方と注意",
-  ],
+  // 화면 안내 창을 여는 버튼 — 제목 오른쪽 짧은 이름 (사용자 지시 2026-09-28 "길게 만들지 말고 짧은 버튼으로")
+  "읽는 법과 주의": ["How to read & caveats", "読み方と注意"],
   "작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지, 스폰 타임라인을 재생해 보여줍니다. 배속·구간 이동으로 흐름을 훑고, 선이나 말을 누르면 적별 경로를 확인할 수 있습니다.": [
     "Pick an operation to replay its spawn timeline — when each enemy appears, which route it takes, and where it goes. Skim with playback speed and seeking, and click a line or unit to inspect that enemy's route.",
     "作戦を選ぶと、敵が何秒にどこから現れどの経路でどこへ向かうか、出現タイムラインを再生します。倍速・シークで流れを掴み、線や駒をクリックすると敵ごとの経路を確認できます。"],
@@ -2083,10 +2086,7 @@ const D: Record<string, Pair> = {
   "{n}개 조합": ["{n} combos", "{n}件の組み合わせ"],
   "태그 고치기": ["Change tags", "タグを変更"],
   "공개채용 도우미 읽는 법": ["How to read this helper", "求人ヘルパーの読み方"],
-  "성급 배지는 모집 시간 **9시간** 기준입니다 — 읽는 법과 시간별 출현 성급": [
-    "Rarity badges assume a **9-hour** timer — how to read them, and what appears at each duration",
-    "レア度バッジは募集時間**9時間**基準です — 読み方と時間ごとの出現レア度",
-  ],
+  "읽는 법": ["How to read", "読み方"],
   "{n}★ 이상": ["{n}★ or higher", "{n}★以上"],
   "추가 예정": ["Coming soon", "追加予定"],
   "3:50 이하": ["≤ 3:50", "3:50以下"],
@@ -2123,13 +2123,19 @@ const D: Record<string, Pair> = {
   ],
   "재료 파밍 효율표": ["Material Farming Efficiency", "素材周回効率表"],
   "재료 파밍 & 오퍼 육성 시뮬레이션 - 명일방주 파밍·육성 계산기 | 테라 아카이브": ["Material Farming & Operator Upgrade Simulator - Arknights Farming/Upgrade Calculator | Terra Archive", "素材周回＆オペレーター育成シミュレーター - アークナイツ周回・育成計算機 | テラアーカイブ"],
-  "정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 개당 기대 이성(이성 소모 ÷ 드랍률)을 표시하고, 이성 대비 획득 확률이 가장 높은 스테이지에 최고 효율 배지를 붙입니다.": [
-    "Measured drop statistics for {count} elite materials. Each material lists the stages it drops from with the expected sanity per drop (sanity cost ÷ drop rate), and the stage with the best drop odds per sanity gets the Best badge.",
-    "昇進素材{count}種の実測ドロップ統計です。素材ごとにドロップするステージと1個あたりの期待理性（理性消費 ÷ ドロップ率）を表示し、理性あたりの入手確率が最も高いステージに最高効率バッジを付けます。",
+  "정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 드랍률을 표시하고, 개당 기대 이성(이성 소모 ÷ 드랍률)이 낮은 순서 — 이성 효율이 좋은 순서로 늘어놓습니다. 맨 위 스테이지가 가장 효율이 좋습니다.": [
+    "Measured drop statistics for {count} elite materials. Each material lists the stages it drops from with their drop rates, ordered by expected sanity per drop (sanity cost ÷ drop rate) — most sanity-efficient first. The top stage is the most efficient.",
+    "昇進素材{count}種の実測ドロップ統計です。素材ごとにドロップするステージとドロップ率を表示し、1個あたりの期待理性（理性消費 ÷ ドロップ率）が低い順＝理性効率の良い順に並べます。一番上のステージが最も効率的です。",
   ],
-  "출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 정식 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.": [
-    "Source: Penguin Statistics measured data (min. {min} samples) + datamined game data · only stages currently open as of {date} · lower expected sanity is better.",
-    "出典：ペンギン急便の実測統計（標本{min}回以上）+ データマインのゲームデータ · {date}時点で開放中のステージのみ収録 · 期待理性は低いほど良いです。",
+  "읽는 법과 출처": ["How to read & sources", "読み方と出典"],
+  // 작전 상세 — 팬 위키에서 받은 도면의 출처 줄 (2026-09-28). 라이선스 이름은 번역하지 않는다
+  "도면 출처": ["Map source", "マップ出典"],
+  "PRTS 위키": ["PRTS Wiki", "PRTS Wiki"],
+  "일부 잘라냄": ["cropped", "一部トリミング"],
+  "쓰는 법": ["How to use", "使い方"],
+  "출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 정식 개방된 스테이지만 수록.": [
+    "Source: Penguin Statistics measured data (min. {min} samples) + datamined game data · only stages currently open as of {date}.",
+    "出典：ペンギン急便の実測統計（標本{min}回以上）+ データマインのゲームデータ · {date}時点で開放中のステージのみ収録。",
   ],
   "등급 필터": ["Tier filter", "レア度フィルター"],
   "재료 이름 검색": ["Search material names", "素材名で検索"],
@@ -2228,13 +2234,14 @@ const D: Record<string, Pair> = {
   "{label} {step}까지 육성": ["Level up {label} to {step}", "{label}を{step}まで育成"],
   "{label} {step}까지 육성 (클릭 시 제외)": ["Level up {label} to {step} (click to remove)", "{label}を{step}まで育成（クリックで除外）"],
   "오퍼레이터 이름·별명 검색 후 추가": ["Search operators by name or alias to add", "オペレーター名・愛称で検索して追加"],
-  "클릭하면 전체 오퍼레이터 · 이름·별명 입력 시 필터": ["Click to see all operators · type a name or alias to filter", "クリックで全オペレーター表示 · 名前・愛称を入力で絞り込み"],
+  // 왼쪽 300px 칸에 들어가며 짧게 (2026-09-28) — 누르면 전체 목록이 펼쳐지는 건 그대로
+  "오퍼레이터 이름·별명으로 추가": ["Add operators by name or alias", "名前・愛称でオペレーターを追加"],
   "파밍 불가": ["Not farmable", "周回不可"],
   "가공소 조합": ["Workshop craft", "加工所で作成"],
   "상세 보기 →": ["View details →", "詳細を見る →"],
-  "아직 선택한 오퍼레이터가 없어요 — 위 검색창에서 추가해 보세요.": [
-    "No operators selected yet — add some from the search box above.",
-    "まだオペレーターが選択されていません — 上の検索欄から追加してみてください。",
+  "아직 선택한 오퍼레이터가 없어요 — 검색창에서 추가해 보세요.": [
+    "No operators selected yet — add some from the search box.",
+    "まだオペレーターが選択されていません — 検索欄から追加してみてください。",
   ],
   "{name} 제외": ["Remove {name}", "{name}を除外"],
   "전체 비우기": ["Clear all", "すべてクリア"],
@@ -2244,7 +2251,6 @@ const D: Record<string, Pair> = {
   "모두 해제": ["Deselect all", "すべて解除"],
   "정예화": ["Elite", "昇進"],
   "특화 {n}": ["Mastery {n}", "特化{n}"],
-  "합계": ["Total", "合計"],
   "용문폐": ["LMD", "龍門幣"],
   "효율표에서 {name} 검색": ["Search {name} in the table", "効率表で{name}を検索"],
   // ── 재료 상세 모달 ──
@@ -2257,14 +2263,12 @@ const D: Record<string, Pair> = {
   ],
   "스테이지": ["Stage", "ステージ"],
   "드랍률": ["Drop rate", "ドロップ率"],
-  "기대 이성": ["Exp. sanity", "期待理性"],
   "이성 {n} 소모": ["Costs {n} sanity", "理性{n}消費"],
   "이성 {n}": ["{n} sanity", "理性{n}"],
   "주간 물자": ["Weekly supply", "曜日物資"],
   "주간 물자 스테이지": ["Weekly supply stage", "曜日物資ステージ"],
   "요일별 주간 물자 스테이지 — 이성 {n} 소모": ["Weekly rotating supply stage — costs {n} sanity", "曜日ローテーションの物資ステージ — 理性{n}消費"],
   "표본 {n}회": ["{n} samples", "標本{n}回"],
-  "최고 효율": ["Best", "最高効率"],
   "상설": ["Permanent", "常設"],
   "이벤트 한정": ["Limited event", "期間限定"],
   "물자": ["Supply", "物資"],
@@ -2321,10 +2325,7 @@ const D: Record<string, Pair> = {
     "公開されたストーリー{count}件のアーカイブです。AIがストーリースクリプト全文を読み込み、カットシーン付きの10分ダイジェストにまとめます。現在{done}件収録 — 順次追加されます。",
   ],
   "스토리 요약 안내": ["About these digests", "あらすじについて"],
-  "현재 {done}개 수록 · 요약에는 **결말 포함 스포일러**가 있습니다 — 안내": [
-    "{done} digests so far · they contain **full spoilers, including endings** — details",
-    "現在{done}本収録 · あらすじには**結末を含むネタバレ**があります — 案内",
-  ],
+  "안내": ["About", "案内"],
   "요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.": [
     "Digests contain full spoilers including endings. Event titles & thumbnails from datamined game data · as of {date}.",
     "要約には結末を含むネタバレがあります。イベント名・サムネイルの出典：ゲームデータ · {date}時点。",

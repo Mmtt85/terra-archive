@@ -18,6 +18,9 @@ export type Stage = {
   /** 전투 카메라 위치 — 도면이 인게임 미리보기라 경로를 그 위에 투영할 수 있는 작전만
    *  (scripts/stagecams.py · app/stage-cam.ts). 있으면 상세가 도면·이동 경로를 한 화면으로 합친다 */
   cam?: [number, number, number];
+  /** 도면 출처 — 팬 위키에서 받은 그림만 [원천("p" PRTS · "w" wiki.gg), 위키 파일 이름, 1 = 잘라내는 등 손댐].
+   *  위키 라이선스가 출처 표시를 요구해 상세가 도면 밑에 적는다 (scripts/mapcredits.py, 2026-09-28) */
+  mc?: [string, string] | [string, string, number];
   /** 고난(·보안 파견 긴급) 판 배열 번호 — 상세의 환경 탭이 이 레코드로 통째로 갈아끼운다 */ alt?: number;
   /** (숨은 판만) 일반판 배열 번호 — 딥링크가 오면 일반판 상세를 해당 환경 탭으로 연다 */ base?: number;
   /** (숨은 판만) 목록·사이트맵에서 숨김 */ sub?: number;

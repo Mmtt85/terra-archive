@@ -14,10 +14,11 @@ import { ModalWindow } from "./modal-window";
 import farmData from "./data/farm.json";
 import costsData from "./data/costs.json";
 import { accentOf, type Operator } from "./home";
-import { useI18n, rich, type Locale } from "./i18n";
+import { useI18n, type Locale } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
-import { Dropdown } from "./dropdown";
+import { AttributeFilter } from "./attr-filter";
+import { openEvent } from "./event-open";
 import { useHashSync } from "./hash-modal";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 import { noteArrival, noteMiss } from "./trail";
@@ -34,12 +35,25 @@ type FarmStage = {
   ap: number;
   kind: "main" | "perm" | "event" | "daily";
   event?: LocText; // 소속 이벤트명(사이드 스토리·한정 이벤트만) — 배지에 병기 (제안 2026-08-19)
+  eid?: string;    // 그 이벤트 id — 배지를 누르면 이벤트 도감 상세 (build-farm.py, 2026-09-28)
   rate: number;    // 드랍률 %
   sanity: number;  // 개당 기대 이성
   tough?: number;  // 1 = 어려움(高難) 판 — 정규판과 코드가 같아 배지로 구분 (2026-08-09)
   times: number;   // 펭귄 물류 표본 수
 };
 type FarmItem = { id: string; name: LocText; rarity: number; sortId: number; image: string; stages: FarmStage[] };
+
+/** 작전의 소속 이벤트 배지 — 이벤트 id 가 있으면 누르면 이벤트 도감 상세가 뜬다 (사용자 지시 2026-09-28).
+ *  모달은 셸(home.tsx)이 띄운다(app/event-open.ts) — 헤더 이벤트 칩과 같은 창이다. */
+function EventBadge({ stage, title }: { stage: FarmStage; title?: string }) {
+  const { locale, t } = useI18n();
+  const name = locText(locale, stage.event as LocText);
+  const cls = `kind-badge ${stage.kind} has-event`;
+  return stage.eid
+    ? <button type="button" className={`${cls} as-link`} title={t("{name} 이벤트 상세 열기", { name })}
+        onClick={() => openEvent(stage.eid as string)}>{name}</button>
+    : <em className={cls} title={title}>{name}</em>;
+}
 
 type CostList = [string, number][];
 type CostEntry = {
@@ -263,47 +277,39 @@ export default function FarmGuide() {
   }, [searchTerm, visible.length, locale]);
 
   return (
-    <section className="farm" aria-label={t("재료 파밍 효율표")}>
-      <div className="farm-head">
-        <span className="section-no">FARMING EFFICIENCY</span>
-        <div className="head-row">
-        <h2>{t("재료 파밍 효율표")}</h2>
-        <div className="head-links">
-          <button type="button" onClick={() => setShowGuide(true)}>
-            {rich(t("개당 기대 이성은 **낮을수록** 좋습니다 — 표 읽는 법과 출처"))}
-          </button>
+    // 도감과 같은 좌우 배치 — 왼쪽 조건 · 오른쪽 결과 (사용자 지시 2026-09-28 "작전 시뮬레이터, 육성비용 계산기,
+    // 재료파밍 전부 다 도감처럼 왼쪽에 조건 설정하는 부분"). 뼈대(.explorer/.filter-panel/.results/.results-scroll)는
+    // 도감 것을 그대로 쓰고, 등급은 종전 드롭다운 대신 도감과 같은 체크 목록(AttributeFilter)으로 뒀다.
+    <section className="explorer tool-explorer farm-explorer" aria-label={t("재료 파밍 효율표")}>
+      <div className="filter-panel">
+        <div className="panel-heading">
+          <div><span className="section-no">FILTER / 01</span><h2>{t("탐색 조건")}</h2></div>
+          <button type="button" className="reset" onClick={() => { setTiers([]); setSearchTerm(""); }}>↻ {t("초기화")}</button>
         </div>
-        </div>
-      </div>
-
-      <div className="farm-tools">
-        <div className="search-wrap farm-search"><span>⌕</span><input {...searchProps} placeholder={t("재료 이름·별명 검색")} aria-label={t("재료 이름·별명 검색")} />
+        {/* 검색란은 탐색 조건 맨 위 — 결과 머리글에는 제목과 안내 버튼만 (사용자 지시 2026-09-28) */}
+        <div className="search-wrap panel-search"><span>⌕</span><input {...searchProps} placeholder={t("재료 이름·별명 검색")} aria-label={t("재료 이름·별명 검색")} />
           {/* 검색란 제안 — 고르면 그 재료 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
           <SearchSuggest query={searchTerm}
             items={visible.map((m) => ({ key: m.id, label: locText(locale, m.name), sub: `T${m.rarity}`, img: asset(`/items/${m.id}.webp`) }))}
             onPick={openItem} />
         </div>
-        {/* 등급(T1~T6) — 버튼 6개를 늘어놓던 걸 드롭다운으로 바꾸고 검색란 오른쪽에 뒀다
-            (사용자 지시 2026-08-25). 여러 등급을 함께 볼 수 있어야 하므로 multi다. */}
-        <Dropdown className="farm-tier-drop" multi ariaLabel={t("등급 필터")}
-          label={tiers.length > 0 ? tiers.slice().sort((a, b) => b - a).map((tier) => `T${tier}`).join(" · ") : t("등급 전체")}
-          selected={tiers.map(String)}
-          items={TIERS.map((tier) => ({
-            value: String(tier),
-            label: `T${tier}`,
-            count: ALL_MATERIALS.filter((item) => item.rarity === tier).length,
-          }))}
-          onPick={(value) => toggleTier(Number(value))} />
+        <AttributeFilter groups={[
+          { title: t("등급"), items: TIERS.map(String), selected: tiers.map(String),
+            onToggle: (value) => toggleTier(Number(value)), labelFor: (value) => `T${value}`,
+            countForItem: (value) => ALL_MATERIALS.filter((item) => item.rarity === Number(value)).length },
+        ]} />
       </div>
 
-      {showGuide && (
-        <ModalWindow label={t("재료 파밍 효율표 읽는 법")} className="farm-guide-modal" onClose={() => setShowGuide(false)}>
-          <p>{t("정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 개당 기대 이성(이성 소모 ÷ 드랍률)을 표시하고, 이성 대비 획득 확률이 가장 높은 스테이지에 최고 효율 배지를 붙입니다.", { count: data.items.length })}</p>
-          <p className="farm-source">{t("출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 정식 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.", { min: data.minTimes, date: data.updated })}</p>
-          {/* 미실장 재료가 늘 목록에 있으므로 안내도 항상 (2026-09-04 규칙 변경) */}
-          <p className="farm-source">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
-        </ModalWindow>
-      )}
+      <div className="results">
+        <div className="results-heading">
+          {/* 안내는 제목 오른쪽 짧은 버튼 하나 (사용자 지시 2026-09-28 "길게 만들지 말고 짧은 버튼으로") */}
+          <div><span className="section-no">RESULT / 02</span>
+            <div className="rh-title"><h2>{t("재료 파밍 효율표")}</h2>
+              <div className="head-links"><button type="button" onClick={() => setShowGuide(true)}>{t("읽는 법과 출처")}</button></div>
+            </div>
+          </div>
+        </div>
+        <div className="results-scroll">
 
       {visible.length === 0 ? (
         <p className="recruit-empty">{t("조건에 맞는 재료가 없어요.")}</p>
@@ -326,10 +332,11 @@ export default function FarmGuide() {
                 </header>
                 {item.farmable ? (
                   <>
-                    {/* ⚠ 행은 4열(코드·배지·드랍률·기대이성)이다 — 배지 자리에 빈 칸을
-                        두지 않으면 헤더가 한 칸씩 밀려 보인다 (사용자 지적 2026-08-09) */}
+                    {/* ⚠ 행은 3열(코드·배지·드랍률)이다 — 배지 자리에 빈 칸을 두지 않으면 헤더가 한 칸씩 밀려 보인다
+                        (사용자 지적 2026-08-09). 기대 이성 칸과 '최고 효율' 배지는 뺐다 (사용자 지시 2026-09-28 — 목록이
+                        이미 기대 이성 오름차순이라 맨 위가 최고 효율이다. 이벤트 이름 배지가 숫자 칸을 밀기도 했다). */}
                     <div className="farm-cols" aria-hidden>
-                      <i>{t("스테이지")}</i><i /><i>{t("드랍률")}</i><i>{t("기대 이성")}</i>
+                      <i>{t("스테이지")}</i><i /><i>{t("드랍률")}</i>
                     </div>
                     <ul>
                       {item.stages.slice(0, expandedStages.has(item.id) ? item.stages.length : 1).map((stage, index) => (
@@ -338,15 +345,13 @@ export default function FarmGuide() {
                           {/* 스테이지를 누르면 작전 도감 상세가 모달로 뜬다 (사용자 요청 2026-08-09) */}
                           <button type="button" className="farm-code as-btn" onClick={() => sub.openStage(stage.id)}>{stage.code}</button>
                           <span className="farm-badges">
-                            {index === 0 && <em className="best-badge">{t("최고 효율")}</em>}
                             {stage.tough ? <em className="kind-badge tough">{t("어려움")}</em> : null}
                             {/* 이벤트 소속 맵은 배지에 이벤트명을 병기 — "SN-9만으로는 어느 이벤트인지 모른다" (제안 2026-08-19) */}
                             {stage.event
-                              ? <em className={`kind-badge ${stage.kind} has-event`} title={KIND_LABEL[stage.kind] ? t(KIND_LABEL[stage.kind]) : undefined}>{locText(locale, stage.event)}</em>
+                              ? <EventBadge stage={stage} title={KIND_LABEL[stage.kind] ? t(KIND_LABEL[stage.kind]) : undefined} />
                               : KIND_LABEL[stage.kind] && <em className={`kind-badge ${stage.kind}`}>{t(KIND_LABEL[stage.kind])}</em>}
                           </span>
                           <span className="farm-rate">{stage.rate}%</span>
-                          <span className="farm-sanity">{stage.sanity}</span>
                         </li>
                       ))}
                     </ul>
@@ -391,6 +396,18 @@ export default function FarmGuide() {
         </div>
       )}
 
+        </div>
+      </div>
+
+      {showGuide && (
+        <ModalWindow label={t("재료 파밍 효율표 읽는 법")} className="farm-guide-modal" onClose={() => setShowGuide(false)}>
+          <p>{t("정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 드랍률을 표시하고, 개당 기대 이성(이성 소모 ÷ 드랍률)이 낮은 순서 — 이성 효율이 좋은 순서로 늘어놓습니다. 맨 위 스테이지가 가장 효율이 좋습니다.", { count: data.items.length })}</p>
+          <p className="farm-source">{t("출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 정식 개방된 스테이지만 수록.", { min: data.minTimes, date: data.updated })}</p>
+          {/* 미실장 재료가 늘 목록에 있으므로 안내도 항상 (2026-09-04 규칙 변경) */}
+          <p className="farm-source">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
+        </ModalWindow>
+      )}
+
       {shownItem && (
         <ItemModal
           key={itemRaise}
@@ -420,7 +437,7 @@ export function UpgradeSim({ operators, includeFuture, onShowOperator }: { opera
     setShownItem(id && costs.items[id] ? id : null);
   });
   return (
-    <section className="farm" aria-label={t("육성 비용 계산기")}>
+    <section className="explorer tool-explorer cost-explorer" aria-label={t("육성 비용 계산기")}>
       <CostCalculator operators={operators} includeFuture={includeFuture} onShowOperator={onShowOperator} onShowItem={setShownItem} />
       {shownItem && (
         <ItemModal key={`it-${itemRaise}`} id={shownItem} onClose={() => setShownItem(null)} onShowItem={setShownItem} onShowStage={sub.openStage} />
@@ -497,7 +514,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   const { locale, t } = useI18n();
   const [picked, setPicked] = useState<string[]>([]);
   // 비제어 입력 — 후보 목록은 타이핑 멈춘 뒤 0.5초에만 (search.ts)
-  const { term: draftTerm, set: setDraftTerm, inputProps: draftProps } = useSearchInput();
+  const { term: draftTerm, set: setDraftTerm, inputRef: draftRef, inputProps: draftProps } = useSearchInput();
   const [showGuide, setShowGuide] = useState(false);
   // 검색창 포커스 여부 — 입력이 없어도 포커스만 하면 전체 오퍼 목록을 펼쳐 보여준다.
   const [focused, setFocused] = useState(false);
@@ -633,41 +650,30 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       return next;
     });
 
-  const searchRef = useRef<HTMLInputElement>(null);
-  // 오퍼를 담으면 드롭다운을 닫는다 (선택 후에도 목록이 안 사라지던 문제). 다시 추가하려면
-  // 검색창을 클릭(포커스)하면 목록이 다시 열린다.
+  // 오퍼를 담으면 드롭다운을 닫고 검색란 포커스도 뺀다 — 포커스가 남아 있으면 다시 눌러도 onFocus 가 안 떠서
+  // 목록이 안 열렸다 (사용자 지적 2026-09-28). ⚠ 입력란의 ref 는 useSearchInput 이 물고 있다(inputProps.ref) —
+  // 따로 만든 useRef 는 입력란에 안 붙어 blur 가 헛돌았다.
   const addOp = (id: string) => {
     setPicked((current) => [...current, id]);
     setDraftTerm("");
     setFocused(false);
-    searchRef.current?.blur();
+    draftRef.current?.blur();
   };
   const removeOp = (id: string) =>
     setPicked((current) => current.filter((value) => value !== id));
 
   return (
-    <div className="cost-calc">
-      <div className="cost-calc-head">
-        <span className="section-no">COST CALCULATOR</span>
-        {/* 한 번 읽으면 끝인 사용법이 머리글에 길게 깔려 있었다 — 창으로 뺐다
-            (사용자 지시 2026-09-20, 공개채용 도우미·재료 파밍 효율표와 같은 규약) */}
-        <div className="head-row">
-        <h2>{t("육성 비용 계산기")}</h2>
-        <div className="head-links">
-          <button type="button" onClick={() => setShowGuide(true)}>
-            {rich(t("목표 단계를 클릭하면 **앞 단계가 자동으로 포함**됩니다 — 쓰는 법"))}
-          </button>
+    // 도감과 같은 좌우 배치 — 왼쪽 300px 에 재료 합계 · 오른쪽에 오퍼 검색과 오퍼별 육성 단계 카드 (사용자 지시
+    // 2026-09-28: 처음엔 단계 카드를 왼쪽 460px 칸에 뒀다가 "왼쪽에 총 드는 재료, 오른쪽에는 오퍼들 · 왼쪽 너비도
+    // 다른 페이지랑 동일하게"로 바꿨다). 뼈대는 도감 것(.explorer/.filter-panel/.results/.results-scroll).
+    <>
+      <div className="filter-panel cost-panel">
+        <div className="panel-heading">
+          <div><span className="section-no">TOTAL / 01</span><h2>{t("재료 합계")}</h2></div>
         </div>
-        </div>
-      </div>
-      {showGuide && (
-        <ModalWindow label={t("육성 비용 계산기 쓰는 법")} className="farm-guide-modal" onClose={() => setShowGuide(false)}>
-          <p>{t("오퍼레이터를 추가하면 레벨·정예화(게임 순서대로 E0 만렙 → 정예화1 → E1 만렙 → 정예화2 → E2 만렙), 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 레벨업 단계는 올릴 목표 레벨을 직접 입력할 수 있고, 그 레벨을 만렙보다 낮게 두면 다음 정예화는 잠깁니다(왼쪽 레일을 아래로 끌면 만렙까지 한 번에 채워집니다). 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.")}</p>
-          <p className="farm-source">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
-        </ModalWindow>
-      )}
-      <div className="cost-tools">
-        <div className="search-wrap cost-search">
+        {/* 오퍼 검색도 다른 화면처럼 왼쪽 맨 위 (사용자 지시 2026-09-28). 고를 때마다 오른쪽 카드에 **한 명씩 더해진다**
+            — 필터가 아니라 추가다(여러 명 동시 계산, 사용자 확인 같은 날). */}
+        <div className="search-wrap panel-search">
           <span>⌕</span>
           <input
             {...draftProps}
@@ -675,7 +681,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
             onFocus={() => setFocused(true)}
             // 목록 항목 클릭이 먼저 처리되도록 blur는 살짝 지연
             onBlur={() => window.setTimeout(() => setFocused(false), 150)}
-            placeholder={t("클릭하면 전체 오퍼레이터 · 이름·별명 입력 시 필터")}
+            placeholder={t("오퍼레이터 이름·별명으로 추가")}
             aria-label={t("오퍼레이터 이름·별명 검색 후 추가")}
           />
           {matches.length > 0 && (
@@ -694,98 +700,11 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
             </div>
           )}
         </div>
-      </div>
-
-      {picked.length === 0 ? (
-        <p className="cost-empty">{t("아직 선택한 오퍼레이터가 없어요 — 위 검색창에서 추가해 보세요.")}</p>
-      ) : (
-        <>
-          <div className="cost-ops">
-            {picked.map((id) => {
-              const operator = byId.get(id);
-              const entry = costs.ops[id];
-              if (!operator || !entry) return null;
-              const groups = buildGroups(operator, entry, t);
-              const allFull = groups.every((group) => targetOf(id, group) === group.steps.length);
-              return (
-                <article key={id} className="cost-op" style={{ "--accent": accentOf(operator) } as React.CSSProperties}>
-                  <header>
-                    <img src={asset(operator.image)} alt="" width={180} height={180} />
-                    <button type="button" className="cost-chip-name" onClick={() => onShowOperator(id)} title={t("{name} 상세 정보 열기", { name: operator.name })}>{operator.name}</button>
-                    {operator.unreleased && <em className="future-badge">{t("미실장")}</em>}
-                    <button type="button" className="cost-op-all" onClick={() => setAllGroups(id, groups, !allFull)}>
-                      {allFull ? t("모두 해제") : t("모두 선택")}
-                    </button>
-                    <button type="button" className="cost-chip-remove" onClick={() => removeOp(id)} aria-label={t("{name} 제외", { name: operator.name })}>×</button>
-                  </header>
-                  <div className="cost-rows" onPointerMove={dragOver(id)}>
-                    {groups.map((group) => {
-                      const target = targetOf(id, group);
-                      // 최상위 선택 단계가 만렙 미만 레벨업이면 그 뒤 단계는 잠근다 — E0 Lv.50을
-                      // 못 채우면 정예화1 이후를, E1 Lv.80을 못 채우면 정예화2 이후를 올릴 수 없다
-                      // (게임 승급 조건, 사용자 확정 2026-07-22). 뒤 dot을 비활성화한다.
-                      const growLocked = group.key === "grow" && target > 0 && (() => {
-                        const top = group.steps[target - 1];
-                        if (top.kind !== "lv" || top.maxLv == null) return false;
-                        return (levelLv[`${id}/p${top.phase}`] ?? top.maxLv) < top.maxLv;
-                      })();
-                      return group.steps.map((row, pos) => {
-                        const on = pos < target;
-                        const first = pos === 0;
-                        const blocked = growLocked && pos >= target;
-                        // 레일 모양: 켜진 구간은 이어지고, 목표 지점이 마지막 채워진 노드
-                        const railClass = !on ? "rail-off" : pos + 1 === target ? "rail-head" : "rail-on";
-                        // '레벨·정예화' 통합 그룹의 최상위 선택 단계가 레벨업이면 목표 레벨을 직접
-                        // 지정할 수 있고(하위 단계는 승급 강제라 만렙 고정), 그만큼만 부분 비용으로 표시.
-                        const isTopLevel = row.kind === "lv" && pos === target - 1 && row.phase != null && row.maxLv != null;
-                        const lvl = isTopLevel ? (levelLv[`${id}/p${row.phase}`] ?? row.maxLv!) : row.maxLv;
-                        const part = isTopLevel && lvl! < row.maxLv! ? levelCostTo(row.phase!, lvl!) : null;
-                        const showLmd = part ? part.lmd : row.lmd;
-                        const showItems: CostList = part ? (part.records > 0 ? [[EXP_CARD_ID, part.records]] : []) : row.items;
-                        const stepLabel = isTopLevel ? t("E{p}·Lv.{n}", { p: row.phase!, n: lvl! }) : row.step;
-                        return (
-                          <div key={group.key + pos} className={`cost-row${first ? " group-start" : ""}${on ? "" : " off"}`}>
-                            <button
-                              type="button"
-                              className={`cost-step-dot ${railClass}${first ? " first" : ""}${pos === group.steps.length - 1 ? " last" : ""}${blocked ? " locked" : ""}`}
-                              data-op={id}
-                              data-gkey={group.key}
-                              data-pos={pos}
-                              disabled={blocked}
-                              onPointerDown={() => { dragRef.current = { opId: id, groupKey: group.key }; draggedRef.current = false; }}
-                              onClick={() => { if (draggedRef.current) { draggedRef.current = false; return; } clickStep(id, group, pos); }}
-                              aria-pressed={on}
-                              title={blocked ? t("먼저 앞 레벨업을 만렙까지 채워야 올릴 수 있어요") : on ? t("{label} {step}까지 육성 (클릭 시 제외)", { label: group.label, step: stepLabel }) : t("{label} {step}까지 육성", { label: group.label, step: stepLabel })}
-                            />
-                            <span className="cost-row-group">{first ? (group.label2 ? <><b className="cost-grp-a">{group.label}</b><span className="cost-grp-b">{group.label2}</span></> : group.label) : ""}</span>
-                            <span className="cost-row-step">
-                              {isTopLevel ? (
-                                <span className="cost-lv-pick">E{row.phase}·Lv.
-                                  <input type="number" className="cost-lv-input" min={1} max={row.maxLv}
-                                    value={lvl} aria-label={t("올릴 레벨")}
-                                    onClick={(e) => e.stopPropagation()}
-                                    onChange={(e) => setLevel(id, row.phase!, row.maxLv!, Number(e.target.value))} />
-                                </span>
-                              ) : row.step}
-                            </span>
-                            <span className="cost-row-items">
-                              {showLmd > 0 && <ItemChip id="4001" count={showLmd} onShowItem={onShowItem} locale={locale} />}
-                              {showItems.map(([itemId, count]) => (
-                                <ItemChip key={itemId} id={itemId} count={count} onShowItem={onShowItem} locale={locale} />
-                              ))}
-                            </span>
-                          </div>
-                        );
-                      });
-                    })}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+        {picked.length === 0 ? (
+          <p className="cost-empty">{t("오퍼레이터를 추가하면 필요한 재료 합계가 여기에 모입니다.")}</p>
+        ) : (
           <div className="cost-result">
             <div className="cost-total-head">
-              <b>{t("합계")}</b>
               <div className="cost-total-actions">
                 <ShareLinkButton />
                 <button type="button" className="cost-clear" onClick={() => { setPicked([]); setTargets({}); }}>{t("전체 비우기")}</button>
@@ -807,9 +726,116 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
               })}
             </div>
           </div>
-        </>
+        )}
+      </div>
+
+      <div className="results">
+        <div className="results-heading">
+          {/* 한 번 읽으면 끝인 사용법은 창으로 (2026-09-20) — 여는 버튼은 제목 오른쪽 짧은 버튼 (2026-09-28) */}
+          <div><span className="section-no">OPERATOR / 02</span>
+            <div className="rh-title"><h2>{t("육성 비용 계산기")}</h2>
+              <div className="head-links"><button type="button" onClick={() => setShowGuide(true)}>{t("쓰는 법")}</button></div>
+            </div>
+          </div>
+        </div>
+        <div className="results-scroll">
+          {picked.length === 0 ? (
+            <p className="cost-empty">{t("아직 선택한 오퍼레이터가 없어요 — 검색창에서 추가해 보세요.")}</p>
+          ) : (
+            <div className="cost-ops">
+              {picked.map((id) => {
+                const operator = byId.get(id);
+                const entry = costs.ops[id];
+                if (!operator || !entry) return null;
+                const groups = buildGroups(operator, entry, t);
+                const allFull = groups.every((group) => targetOf(id, group) === group.steps.length);
+                return (
+                  <article key={id} className="cost-op" style={{ "--accent": accentOf(operator) } as React.CSSProperties}>
+                    <header>
+                      <img src={asset(operator.image)} alt="" width={180} height={180} />
+                      <button type="button" className="cost-chip-name" onClick={() => onShowOperator(id)} title={t("{name} 상세 정보 열기", { name: operator.name })}>{operator.name}</button>
+                      {operator.unreleased && <em className="future-badge">{t("미실장")}</em>}
+                      <button type="button" className="cost-op-all" onClick={() => setAllGroups(id, groups, !allFull)}>
+                        {allFull ? t("모두 해제") : t("모두 선택")}
+                      </button>
+                      <button type="button" className="cost-chip-remove" onClick={() => removeOp(id)} aria-label={t("{name} 제외", { name: operator.name })}>×</button>
+                    </header>
+                    <div className="cost-rows" onPointerMove={dragOver(id)}>
+                      {groups.map((group) => {
+                        const target = targetOf(id, group);
+                        // 최상위 선택 단계가 만렙 미만 레벨업이면 그 뒤 단계는 잠근다 — E0 Lv.50을
+                        // 못 채우면 정예화1 이후를, E1 Lv.80을 못 채우면 정예화2 이후를 올릴 수 없다
+                        // (게임 승급 조건, 사용자 확정 2026-07-22). 뒤 dot을 비활성화한다.
+                        const growLocked = group.key === "grow" && target > 0 && (() => {
+                          const top = group.steps[target - 1];
+                          if (top.kind !== "lv" || top.maxLv == null) return false;
+                          return (levelLv[`${id}/p${top.phase}`] ?? top.maxLv) < top.maxLv;
+                        })();
+                        return group.steps.map((row, pos) => {
+                          const on = pos < target;
+                          const first = pos === 0;
+                          const blocked = growLocked && pos >= target;
+                          // 레일 모양: 켜진 구간은 이어지고, 목표 지점이 마지막 채워진 노드
+                          const railClass = !on ? "rail-off" : pos + 1 === target ? "rail-head" : "rail-on";
+                          // '레벨·정예화' 통합 그룹의 최상위 선택 단계가 레벨업이면 목표 레벨을 직접
+                          // 지정할 수 있고(하위 단계는 승급 강제라 만렙 고정), 그만큼만 부분 비용으로 표시.
+                          const isTopLevel = row.kind === "lv" && pos === target - 1 && row.phase != null && row.maxLv != null;
+                          const lvl = isTopLevel ? (levelLv[`${id}/p${row.phase}`] ?? row.maxLv!) : row.maxLv;
+                          const part = isTopLevel && lvl! < row.maxLv! ? levelCostTo(row.phase!, lvl!) : null;
+                          const showLmd = part ? part.lmd : row.lmd;
+                          const showItems: CostList = part ? (part.records > 0 ? [[EXP_CARD_ID, part.records]] : []) : row.items;
+                          const stepLabel = isTopLevel ? t("E{p}·Lv.{n}", { p: row.phase!, n: lvl! }) : row.step;
+                          return (
+                            <div key={group.key + pos} className={`cost-row${first ? " group-start" : ""}${on ? "" : " off"}`}>
+                              <button
+                                type="button"
+                                className={`cost-step-dot ${railClass}${first ? " first" : ""}${pos === group.steps.length - 1 ? " last" : ""}${blocked ? " locked" : ""}`}
+                                data-op={id}
+                                data-gkey={group.key}
+                                data-pos={pos}
+                                disabled={blocked}
+                                onPointerDown={() => { dragRef.current = { opId: id, groupKey: group.key }; draggedRef.current = false; }}
+                                onClick={() => { if (draggedRef.current) { draggedRef.current = false; return; } clickStep(id, group, pos); }}
+                                aria-pressed={on}
+                                title={blocked ? t("먼저 앞 레벨업을 만렙까지 채워야 올릴 수 있어요") : on ? t("{label} {step}까지 육성 (클릭 시 제외)", { label: group.label, step: stepLabel }) : t("{label} {step}까지 육성", { label: group.label, step: stepLabel })}
+                              />
+                              <span className="cost-row-group">{first ? (group.label2 ? <><b className="cost-grp-a">{group.label}</b><span className="cost-grp-b">{group.label2}</span></> : group.label) : ""}</span>
+                              <span className="cost-row-step">
+                                {isTopLevel ? (
+                                  <span className="cost-lv-pick">E{row.phase}·Lv.
+                                    <input type="number" className="cost-lv-input" min={1} max={row.maxLv}
+                                      value={lvl} aria-label={t("올릴 레벨")}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onChange={(e) => setLevel(id, row.phase!, row.maxLv!, Number(e.target.value))} />
+                                  </span>
+                                ) : row.step}
+                              </span>
+                              <span className="cost-row-items">
+                                {showLmd > 0 && <ItemChip id="4001" count={showLmd} onShowItem={onShowItem} locale={locale} />}
+                                {showItems.map(([itemId, count]) => (
+                                  <ItemChip key={itemId} id={itemId} count={count} onShowItem={onShowItem} locale={locale} />
+                                ))}
+                              </span>
+                            </div>
+                          );
+                        });
+                      })}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {showGuide && (
+        <ModalWindow label={t("육성 비용 계산기 쓰는 법")} className="farm-guide-modal" onClose={() => setShowGuide(false)}>
+          <p>{t("오퍼레이터를 추가하면 레벨·정예화(게임 순서대로 E0 만렙 → 정예화1 → E1 만렙 → 정예화2 → E2 만렙), 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 레벨업 단계는 올릴 목표 레벨을 직접 입력할 수 있고, 그 레벨을 만렙보다 낮게 두면 다음 정예화는 잠깁니다(왼쪽 레일을 아래로 끌면 만렙까지 한 번에 채워집니다). 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.")}</p>
+          <p className="farm-source">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
+        </ModalWindow>
       )}
-    </div>
+    </>
   );
 }
 
@@ -907,10 +933,11 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
         {farmItem && (
           <div className="item-stages">
             <b>{t("효율 스테이지")}</b>
-            {/* ⚠ 행은 4열 격자다 — 배지 <em>이 조건부라 첫 행이 아니면 값이 왼쪽으로
-                밀렸다 (사용자 지적 2026-08-09). 배지 자리를 항상 렌더하고 헤더도 단다. */}
+            {/* ⚠ 행은 3열 격자다(코드·배지·드랍률) — 배지 <em>이 조건부라 첫 행이 아니면 값이 왼쪽으로
+                밀렸다 (사용자 지적 2026-08-09). 배지 자리를 항상 렌더하고 헤더도 단다. 기대 이성 칸은 효율표와
+                같이 뺐다 (2026-09-28). */}
             <div className="farm-cols item-stages-cols" aria-hidden>
-              <i>{t("스테이지")}</i><i /><i>{t("드랍률")}</i><i>{t("기대 이성")}</i>
+              <i>{t("스테이지")}</i><i /><i>{t("드랍률")}</i>
             </div>
             <ul>
               {farmItem.stages.map((stage, index) => (
@@ -919,12 +946,10 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
                     ? <button type="button" className="farm-code as-btn" onClick={() => onShowStage(stage.id)}>{stage.code}</button>
                     : <b className="farm-code">{stage.code}</b>}
                   <span className="farm-badges">
-                    {index === 0 && <em className="best-badge">{t("최고 효율")}</em>}
                     {stage.tough ? <em className="kind-badge tough">{t("어려움")}</em> : null}
-                    {stage.event && <em className={`kind-badge ${stage.kind} has-event`}>{locText(locale, stage.event)}</em>}
+                    {stage.event && <EventBadge stage={stage} />}
                   </span>
                   <span className="farm-rate">{stage.rate}%</span>
-                  <span className="farm-sanity">{stage.sanity}</span>
                 </li>
               ))}
             </ul>

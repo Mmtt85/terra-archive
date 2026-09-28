@@ -1882,12 +1882,12 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
       <div className="story-head">
         <span className="section-no">AI STORY DIGEST</span>
         {/* 안내는 창으로 빼고 제목 오른쪽 손잡이만 남긴다 (사용자 지시 2026-09-20).
-            수록 개수와 스포일러 경고는 한눈에 볼 값이라 버튼 문구가 들고 있는다. */}
+            버튼은 "안내" 짧은 이름만 (사용자 지시 2026-09-28 "길게 만들지 말고") — 수록 개수·스포일러 경고는 창 안에 있다. */}
         <div className="head-row">
           <h2>{t("스토리")}</h2>
           <div className="head-links">
             <button type="button" onClick={() => setShowGuide(true)}>
-              {rich(t("현재 {done}개 수록 · 요약에는 **결말 포함 스포일러**가 있습니다 — 안내", { done: summarized }))}
+              {t("안내")}
             </button>
           </div>
         </div>

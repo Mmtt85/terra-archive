@@ -612,6 +612,15 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
           <div><span className="section-no">FILTER / 01</span><h2 id="event-title">{t("탐색 조건")}</h2></div>
           <button className="reset" onClick={reset}>↻ {t("초기화")}</button>
         </div>
+        {/* 검색란은 탐색 조건 맨 위 — 결과 머리글에는 제목·개수만 (사용자 지시 2026-09-28) */}
+        <div className="search-wrap panel-search">
+          <span>⌕</span>
+          <input id="event-search" {...inputProps} placeholder={t("이벤트, 재화, 오퍼 검색")} />
+          <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
+          <SearchSuggest query={term}
+            items={shown.map((e) => ({ key: e.id, label: e.n, sub: e.start ?? undefined, img: e.thumb ? asset(e.thumb) : undefined }))}
+            onPick={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
+        </div>
         <AttributeFilter groups={[
           { title: t("종류"), items: typeOpts, selected: types, onToggle: toggle(setTypes),
             labelFor: (v) => t(TYPE_LABEL[v] ?? v), countForItem: (v) => countBy.ty.get(v) ?? 0 },
@@ -623,14 +632,6 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
       <div className="results">
         <div className="results-heading">
           <div><span className="section-no">RESULT / 02</span><h2>{active ? t("탐색 결과") : t("전체 이벤트")}</h2></div>
-          <div className="search-wrap heading-search">
-            <span>⌕</span>
-            <input id="event-search" {...inputProps} placeholder={t("이벤트, 재화, 오퍼 검색")} />
-            <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
-            <SearchSuggest query={term}
-              items={shown.map((e) => ({ key: e.id, label: e.n, sub: e.start ?? undefined, img: e.thumb ? asset(e.thumb) : undefined }))}
-              onPick={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
-          </div>
           <div className="results-tools"><span className="count"><b>{shown.length}</b> EVENTS</span></div>
         </div>
         <div className="active-filters">

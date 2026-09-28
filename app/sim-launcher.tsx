@@ -13,7 +13,7 @@
 // 크롤러·새 탭·보조클릭용 딥링크로 남긴다.
 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { useI18n, rich } from "./i18n";
+import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
 import { AttributeFilter } from "./attr-filter";
@@ -243,6 +243,16 @@ export default function SimLauncher() {
     };
   }, [doc, sims]);
 
+  // 검색란을 눌렀는데 아직 입력이 없으면 미리보기 몇 개 (사용자 지시 2026-09-28 "검색란 클릭하면 미리보기용
+  // 작전리스트 몇개"). 계층 필터를 골라 뒀으면 그 목록 앞쪽, 아니면 아래 추천 띠와 같은 묶음(최신 이벤트 ·
+  // 메인 최신 챕터 · 섬멸작전)에서 고루 — 입력하면 종전대로 검색 제안(live)으로 바뀐다.
+  const preview = useMemo(() => {
+    if (filtered) return filtered.list.slice(0, 8);
+    if (!recs) return [];
+    return [...(recs.event?.list.slice(0, 3) ?? []), ...(recs.main?.list.slice(0, 3) ?? []), ...recs.camp.slice(0, 2)];
+  }, [filtered, recs]);
+  const suggestList = term.trim() ? live : preview;
+
   const zoneOf = (s: Stage) => doc?.zones[s.z] || doc?.types[s.t] || "";
   // 본 도감은 sim-stages.json, 통합전략·생존연산은 색인의 sim 표시 (둘 다 경로에 스폰·웨이브가 있다는 뜻)
   const canSim = (s: Stage) => !!sims?.has(s.id) || !!s.sim;
@@ -253,38 +263,42 @@ export default function SimLauncher() {
   );
 
   return (
-    <section className="sim-launch" aria-labelledby="sim-title">
-      <header className="sim-head">
-        <span className="section-no">STAGE SIMULATOR</span>
-        <div className="head-row">
-        <h2 id="sim-title">{t("작전 시뮬레이터")}</h2>
-        {/* 안내 두 문단을 창으로 뺐다 (사용자 지시 2026-09-20, 다른 화면과 같은 규약).
-            ⚠ 이 화면은 "명일방주 시뮬레이터" 검색 유입을 노리는 SEO 표적 페이지고(맨 위
-            주석), 그 두 문단이 **프리렌더 HTML의 유일한 고유 본문**이었다 — 창 안은
-            프리렌더에 안 들어간다. 그래서 이 버튼 문구가 한 문장을 대신 들고 있다.
-            문구를 줄일 때 이 사정을 같이 볼 것. */}
-        <div className="head-links">
-          <button type="button" onClick={() => setShowGuide(true)}>
-            {rich(t("작전을 고르면 적이 **몇 초에 어디서 나와 어디로 가는지** 스폰 타임라인으로 재생합니다 — 읽는 법과 주의"))}
-          </button>
+    // 도감과 같은 좌우 배치 — 왼쪽 조건(계층 필터) · 오른쪽 결과 (사용자 지시 2026-09-28 "작전 시뮬레이터, 육성비용
+    // 계산기, 재료파밍 전부 다 도감처럼 왼쪽에 조건 설정하는 부분"). 뼈대는 도감 것(.explorer/.filter-panel/.results).
+    // ⚠ SEO 표적 페이지다(맨 위 주석) — 제목(h2#sim-title)은 프리렌더 본문이니 남긴다. 안내 버튼은 2026-09-28부터
+    //   짧은 이름뿐이라(사용자 지시) 소개 문장은 창 안과 메타 설명에만 있다.
+    <section className="explorer tool-explorer sim-explorer" aria-labelledby="sim-title">
+      <div className="filter-panel">
+        <div className="panel-heading">
+          <div><span className="section-no">FILTER / 01</span><h2>{t("탐색 조건")}</h2></div>
+          <button type="button" className="reset"
+            onClick={() => { setTypes([]); setEvSel([]); setZonesSel([]); clear(); setCommitted(""); }}>↻ {t("초기화")}</button>
         </div>
+        {/* 검색란 · 검색 버튼 — 탐색 조건 맨 위 (사용자 지시 2026-09-28). 결과는 입력 즉시가 아니라 버튼(또는 Enter)으로
+            확정 (사용자 지시 2026-08-10) */}
+        <div className="sim-search-row panel-search">
+        <div className="search-wrap sim-search">
+          <span>⌕</span>
+          <input id="sim-search" {...inputProps} placeholder={t("작전 코드, 이름, 구역 검색")}
+            autoComplete="off" spellCheck={false}
+            onKeyDown={(event) => {
+              // 한글 IME 조합 중 Enter(조합 확정)는 검색으로 치지 않는다
+              if (event.key === "Enter" && !event.nativeEvent.isComposing) doSearch();
+            }} />
+          <button type="button" className="search-clear"
+            onClick={() => { clear(); setCommitted(""); }} aria-label={t("검색어 지우기")}>×</button>
+          {/* 검색란 제안 — 다른 검색란과 같은 드롭다운, 고르면 상세 모달 (사용자 지시 2026-08-10) */}
+          <SearchSuggest query={term}
+            items={suggestList.map((s) => ({ key: s.id, label: `${s.code} ${s.name}`.trim(), sub: zoneOf(s) || undefined, img: s.map ? stageMapOf(s) : undefined }))}
+            onPick={(id) => { const st = byId.get(id); if (st) setOpen(st); }} />
         </div>
-      </header>
-      {showGuide && (
-        <ModalWindow label={t("작전 시뮬레이터 읽는 법")} className="sim-guide-modal" onClose={() => setShowGuide(false)}>
-          <p className="sim-intro">{t("작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지, 스폰 타임라인을 재생해 보여줍니다. 배속·구간 이동으로 흐름을 훑고, 선이나 말을 누르면 적별 경로를 확인할 수 있습니다.")}</p>
-          <p className="sim-note">{t("저지 없이 두었을 때의 기준 타임라인입니다.")} {t("처치 수 등 조건 분기 증원은 재생에 포함되지 않습니다.")} {t("통합전략 가이드의 전투 노드에서도 '이동 경로' 탭으로 같은 시뮬레이션을 재생할 수 있습니다.")}</p>
-        </ModalWindow>
-      )}
-
-      {/* 세부 조건 · 검색란 · 검색 버튼을 한 줄에 (사용자 지시 2026-09-20) — 좁으면 접힌다 */}
-      <div className="sim-toolbar">
-      {/* 계층 필터 — 작전 도감과 같은 부품·같은 조작 (사용자 요청 2026-08-16)
-          ⚠ 상자는 **작전 데이터가 오기 전에도 그린다**. 종전처럼 통째로 빼 두면 데이터가
-             도착하는 순간 62px이 검색창 **위쪽에** 끼어들어 검색창부터 아래 화면 전체가
-             밀렸다 — 실측 CLS 0.326(1280×900, POOR) · 0.010(390×844), 2026-08-25.
-             높이는 어느 화면에서나 62px로 같아 min-height 하나로 자리가 맞는다. */}
-      <div className="sim-filter">
+        {/* 결과는 입력 즉시가 아니라 이 버튼(또는 Enter)으로 확정 (사용자 지시 2026-08-10) */}
+        <button type="button" className="sim-search-btn" onClick={doSearch}>{t("검색")}</button>
+        </div>
+        {/* 계층 필터 — 작전 도감과 같은 부품·같은 조작 (사용자 요청 2026-08-16)
+            ⚠ 상자는 **작전 데이터가 오기 전에도 그린다** — 데이터가 도착하는 순간 끼어들며 아래를 밀었다
+               (실측 CLS 0.326, 2026-08-25). 높이는 min-height 하나로 자리를 잡아 둔다. */}
+        <div className="sim-filter">
         {filterGroups.length > 0 && (
           <>
             <AttributeFilter groups={filterGroups} />
@@ -297,64 +311,64 @@ export default function SimLauncher() {
             )}
           </>
         )}
-      </div>
-
-      <div className="sim-search-row">
-        <div className="search-wrap heading-search sim-search">
-          <span>⌕</span>
-          <input id="sim-search" {...inputProps} placeholder={t("작전 코드, 이름, 구역 검색")}
-            autoComplete="off" spellCheck={false}
-            onKeyDown={(event) => {
-              // 한글 IME 조합 중 Enter(조합 확정)는 검색으로 치지 않는다
-              if (event.key === "Enter" && !event.nativeEvent.isComposing) doSearch();
-            }} />
-          <button type="button" className="search-clear"
-            onClick={() => { clear(); setCommitted(""); }} aria-label={t("검색어 지우기")}>×</button>
-          {/* 검색란 제안 — 다른 검색란과 같은 드롭다운, 고르면 상세 모달 (사용자 지시 2026-08-10) */}
-          <SearchSuggest query={term}
-            items={live.map((s) => ({ key: s.id, label: `${s.code} ${s.name}`.trim(), sub: zoneOf(s) || undefined, img: s.map ? stageMapOf(s) : undefined }))}
-            onPick={(id) => { const st = byId.get(id); if (st) setOpen(st); }} />
         </div>
-        {/* 결과는 입력 즉시가 아니라 이 버튼(또는 Enter)으로 확정 (사용자 지시 2026-08-10) */}
-        <button type="button" className="sim-search-btn" onClick={doSearch}>{t("검색")}</button>
-      </div>
       </div>
 
-      {!doc || !sims ? (
-        <p className="sim-note">{t("불러오는 중…")}</p>
-      ) : q ? (
-        results.length ? grid(results) : <p className="sim-note">{t("검색 결과가 없습니다.")}</p>
-      ) : filtered ? (
-        filtered.total ? (
-          <section className="sim-sec">
-            <h3>{filterLabel} <em>{filtered.total}</em></h3>
-            {grid(filtered.list)}
-            {filtered.total > filtered.list.length && (
-              <p className="sim-note">{t("{shown}건만 표시했습니다 · 전체 {total}건 — 조건을 더 좁히거나 검색해 보세요", { shown: String(filtered.list.length), total: String(filtered.total) })}</p>
-            )}
-          </section>
-        ) : <p className="sim-note">{t("검색 결과가 없습니다.")}</p>
-      ) : recs && (
-        <>
-          {recs.event && recs.event.list.length > 0 && (
-            <section className="sim-sec">
-              <h3>{t("최신 이벤트")} <em>{recs.event.name}</em></h3>
-              {grid(recs.event.list)}
-            </section>
+      <div className="results">
+        <div className="results-heading">
+          {/* 안내 두 문단은 창으로 (2026-09-20), 여는 버튼은 제목 오른쪽 짧은 버튼 (사용자 지시 2026-09-28 "읽는 법과 주의
+              같이 짧은 버튼으로"). ⚠ 창 안은 프리렌더에 안 들어간다 — 종전엔 버튼 문구가 소개 한 문장을 대신 들고 있었다. */}
+          <div><span className="section-no">RESULT / 02</span>
+            <div className="rh-title"><h2 id="sim-title">{t("작전 시뮬레이터")}</h2>
+              <div className="head-links"><button type="button" onClick={() => setShowGuide(true)}>{t("읽는 법과 주의")}</button></div>
+            </div>
+          </div>
+        </div>
+        <div className="results-scroll">
+          {!doc || !sims ? (
+            <p className="sim-note">{t("불러오는 중…")}</p>
+          ) : q ? (
+            results.length ? grid(results) : <p className="sim-note">{t("검색 결과가 없습니다.")}</p>
+          ) : filtered ? (
+            filtered.total ? (
+              <section className="sim-sec">
+                <h3>{filterLabel} <em>{filtered.total}</em></h3>
+                {grid(filtered.list)}
+                {filtered.total > filtered.list.length && (
+                  <p className="sim-note">{t("{shown}건만 표시했습니다 · 전체 {total}건 — 조건을 더 좁히거나 검색해 보세요", { shown: String(filtered.list.length), total: String(filtered.total) })}</p>
+                )}
+              </section>
+            ) : <p className="sim-note">{t("검색 결과가 없습니다.")}</p>
+          ) : recs && (
+            <>
+              {recs.event && recs.event.list.length > 0 && (
+                <section className="sim-sec">
+                  <h3>{t("최신 이벤트")} <em>{recs.event.name}</em></h3>
+                  {grid(recs.event.list)}
+                </section>
+              )}
+              {recs.main && recs.main.list.length > 0 && (
+                <section className="sim-sec">
+                  <h3>{t("메인 스토리")} <em>{recs.main.name}</em></h3>
+                  {grid(recs.main.list)}
+                </section>
+              )}
+              {recs.camp.length > 0 && (
+                <section className="sim-sec">
+                  <h3>{t("섬멸작전")}</h3>
+                  {grid(recs.camp)}
+                </section>
+              )}
+            </>
           )}
-          {recs.main && recs.main.list.length > 0 && (
-            <section className="sim-sec">
-              <h3>{t("메인 스토리")} <em>{recs.main.name}</em></h3>
-              {grid(recs.main.list)}
-            </section>
-          )}
-          {recs.camp.length > 0 && (
-            <section className="sim-sec">
-              <h3>{t("섬멸작전")}</h3>
-              {grid(recs.camp)}
-            </section>
-          )}
-        </>
+        </div>
+      </div>
+
+      {showGuide && (
+        <ModalWindow label={t("작전 시뮬레이터 읽는 법")} className="sim-guide-modal" onClose={() => setShowGuide(false)}>
+          <p className="sim-intro">{t("작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지, 스폰 타임라인을 재생해 보여줍니다. 배속·구간 이동으로 흐름을 훑고, 선이나 말을 누르면 적별 경로를 확인할 수 있습니다.")}</p>
+          <p className="sim-note">{t("저지 없이 두었을 때의 기준 타임라인입니다.")} {t("처치 수 등 조건 분기 증원은 재생에 포함되지 않습니다.")} {t("통합전략 가이드의 전투 노드에서도 '이동 경로' 탭으로 같은 시뮬레이션을 재생할 수 있습니다.")}</p>
+        </ModalWindow>
       )}
 
       {/* 상세 모달 — 페이지 이동 없이 이 자리에서 (사용자 지시 2026-08-10). 시뮬 가능

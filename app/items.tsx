@@ -256,6 +256,15 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
           <div><span className="section-no">FILTER / 01</span><h2 id="item-title">{t("탐색 조건")}</h2></div>
           <button className="reset" onClick={reset}>↻ {t("초기화")}</button>
         </div>
+        {/* 검색란은 탐색 조건 맨 위 — 결과 머리글에는 제목·개수만 (사용자 지시 2026-09-28) */}
+        <div className="search-wrap panel-search">
+          <span>⌕</span>
+          <input id="item-search" {...inputProps} placeholder={t("이름, 이벤트, 설명, 용도 검색")} />
+          <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
+          <SearchSuggest query={term}
+            items={shown.map((i) => ({ key: i.id, label: i.n, sub: i.evName ?? t(GROUP_LABEL[i.g]), img: i.i ? itemIcon(i.i) : undefined }))}
+            onPick={(id) => { const i = byId.get(id); if (i) setOpen(i); }} />
+        </div>
         <AttributeFilter groups={[
           { title: t("분류"), items: GROUPS, selected: groups, onToggle: toggle(setGroups),
             labelFor: (v) => t(GROUP_LABEL[v as ItemGroup] ?? v), countForItem: (v) => countBy.g.get(v) ?? 0 },
@@ -269,14 +278,6 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
       <div className="results">
         <div className="results-heading">
           <div><span className="section-no">RESULT / 02</span><h2>{active ? t("탐색 결과") : t("전체 아이템")}</h2></div>
-          <div className="search-wrap heading-search">
-            <span>⌕</span>
-            <input id="item-search" {...inputProps} placeholder={t("이름, 이벤트, 설명, 용도 검색")} />
-            <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
-            <SearchSuggest query={term}
-              items={shown.map((i) => ({ key: i.id, label: i.n, sub: i.evName ?? t(GROUP_LABEL[i.g]), img: i.i ? itemIcon(i.i) : undefined }))}
-              onPick={(id) => { const i = byId.get(id); if (i) setOpen(i); }} />
-          </div>
           <div className="results-tools"><span className="count"><b>{shown.length}</b> ITEMS</span></div>
         </div>
         <div className="active-filters">

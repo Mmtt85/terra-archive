@@ -560,6 +560,19 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
   - ⚠ 로컬 `.gamedata` 는 CI 보다 오래됐을 수 있다 — 카메라만 다시 붙일 땐 build-stages 전체 재생성(데이터가
     뒤로 간다) 대신 `python3 scripts/stagecams.py`(제자리). CI 의 데이터 자동 갱신 커밋과 `stages*.json` 이
     부딪히면 원격 것을 받고 이 스크립트로 cam 을 다시 붙인다.
+- **팬 위키 도면은 출처를 적는다 (사용자 지시 2026-09-28 "넣고 출처표기해줘")**: 게임에 미리보기가 없는 작전은
+  위키 그림을 쓴다 — PRTS(prts.wiki, 중국 팬 위키, **CC BY-NC-SA 4.0**) · Arknights Terra Wiki(arknights.wiki.gg,
+  **CC BY-SA 4.0**). 라이선스가 출처·라이선스·손댄 사실 표시를 요구하므로 작전 상세가 도면 밑에 한 줄로 적는다
+  (`MapCredit`, app/stage-detail.tsx). 그림 파일에는 출처가 남지 않아 **`scripts/stage-map-credits.json` 이 유일한
+  기록**이다 — build-stages 위키 폴백이 받을 때 적고, 저장 직전 `mapcredits.attach` 가 레코드에 `mc` 로 붙인다
+  (카메라와 같은 짜임 · CI --no-images 에서도). 기록 없이 들어온 위키 그림은 `python3 scripts/mapcredits.py --scan`
+  (위키 원본과 그림 대조), 레코드에만 다시 붙일 땐 `--attach`(제자리).
+  - 이름으로 못 잇는 판은 짝을 확인해 `mapcredits.MANUAL` 에 손수 적는다 — 위수 협의 첫 시즌 전장 5판
+    (act1vautochess_m01~m05 ↔ PRTS 卫戍协议_战场00~04)은 모드가 작전 선택 화면을 안 써서 게임에 미리보기가 아예
+    없다(PRTS 도 "게임에 원본 지도 없음"이라 적었다). 짝은 레벨 격자의 판마다 하나뿐인 표식으로 맞췄고, 아래
+    안내문을 잘라 쓴다(그래서 `mc` 셋째 칸 1 = "일부 잘라냄").
+  - 도면 그림을 바꾸면 `MAP_VER`(app/dex-paths.ts)를 올린다 — 그리고 **배포(R2 동기화) 전엔 dev 에서 새 키로
+    도면을 열지 않는다**(dev 도 R2 에서 받는다 → 옛 그림이 새 키로 브라우저에 30일 박힌다).
 - ⚠ **자산 폴더와 라우트 이름이 일부러 다르다**: `public/enemy/`·`public/stage/`(단수) ↔
   `/enemies`·`/stages`(복수). `deploy.sh`가 자산만 떼어내 R2로 넘기기 때문 —
   2026-08-08에 통합전략이 에셋과 페이지를 같은 폴더에 둬서 테마 6장을 매 배포마다 잃었다

@@ -75,6 +75,7 @@ import BridgeButton from "./lens/bridge-button";
 import { asset } from "./assets";
 import { CAFE_EVENT_BOARD, fetchEventPayload, type GameEvent } from "./event-feed";
 import { CONTACT_EMAIL } from "./contact";
+import { OPEN_EVENT } from "./event-open";
 import { descLines } from "./desc-lines";
 import ChangelogButton from "./changelog";
 import { Marquee } from "./marquee";
@@ -1169,6 +1170,29 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 본문을 가린다). 헤더 핸들과 같은 규약: 눌러서 여닫고, 끌면 손가락을 따라온다.
   // PC 는 무관 — 관련 CSS 가 모바일 블록에만 있다.
   const [footerFolded, setFooterFolded] = useState(true);
+  // 왼쪽 조건 패널(.filter-panel — 도감·재료 파밍·육성 계산기·작전 시뮬) 위에서 굴린 휠을 **패널 끝에 닿으면 페이지로**
+  // 넘긴다 (사용자 지시 2026-09-28 "왼쪽 조건 설정하는 부분에서도 마우스 휠 위아래 움직이면 푸터까지 내려갔다
+  // 올라왔다"). 패널은 overscroll-behavior: contain 이라 끝에 닿아도 스크롤이 이어지지 않고, 내용이 짧으면 휠이
+  // 아예 먹지 않았다. 패널(또는 그 안 스크롤러)이 그 방향으로 더 갈 수 있으면 브라우저에 맡기고, 아니면
+  // 페이지 스크롤러(.site-scroll)를 그만큼 민다 — 푸터가 거기 들어 있다. 폰은 패널이 흐름에 풀려(overflow
+  // visible) 페이지가 알아서 굴러가므로 해당 없다.
+  useEffect(() => {
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || !event.deltaY) return;          // 핀치 확대·가로 휠은 건드리지 않는다
+      const target = event.target as Element | null;
+      const panel = target?.closest?.(".filter-panel") as HTMLElement | null;
+      if (!panel) return;
+      const dy = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaMode === 2 ? event.deltaY * panel.clientHeight : event.deltaY;
+      for (let el: HTMLElement | null = target as HTMLElement; el; el = el.parentElement) {
+        const scrollable = el.scrollHeight > el.clientHeight + 1 && /(auto|scroll)/.test(getComputedStyle(el).overflowY);
+        if (scrollable && (dy > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0)) return;
+        if (el === panel) break;
+      }
+      (panel.closest(".site-scroll") as HTMLElement | null)?.scrollBy({ top: dy });
+    };
+    document.addEventListener("wheel", onWheel, { passive: true });
+    return () => document.removeEventListener("wheel", onWheel);
+  }, []);
   const footerRef = useRef<HTMLElement>(null);
   const footerFrom = useRef<number | null>(null);
   const footerDragged = useRef(false);
@@ -1223,6 +1247,13 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     }
     setEventModalId(id);
   };
+  // 다른 화면이 이벤트 상세를 열어 달라고 보낸 신호 (app/event-open.ts — 재료 파밍 표의 이벤트 배지 등).
+  // openEventById 가 탭·전용 가이드 여부를 보고 가르므로 렌더마다 최신 것으로 다시 건다(의존성 없음).
+  useEffect(() => {
+    const on = (event: Event) => { const id = (event as CustomEvent<string>).detail; if (id) openEventById(id); };
+    window.addEventListener(OPEN_EVENT, on);
+    return () => window.removeEventListener(OPEN_EVENT, on);
+  });
   // 작전 도감 → 적 도감: 적 칩을 누르면 적 상세로 넘어간다 (두 도감이 서로를 가리킨다)
   const openEnemyFromStage = (id: string) => {
     history.pushState(null, "", `${tabPath("enemy")}#en-${id}`);
@@ -2460,6 +2491,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             <div><span className="section-no">FILTER / 01</span><h2 id="explorer-title">{t("탐색 조건")}</h2></div>
             <button className="reset" onClick={reset}>↻ {t("초기화")}</button>
           </div>
+          {/* 검색란은 탐색 조건 맨 위 — 결과 머리글에는 제목·개수만 (사용자 지시 2026-09-28) */}
+          <div className="search-wrap panel-search">
+            <span>⌕</span>
+            {/* 비제어 입력 — 지우기(×) 표시는 CSS(:placeholder-shown)가 담당한다 */}
+            <input id="operator-search" {...searchProps} placeholder={t("이름, 별명, 직군, 효과 검색")} />
+            <button type="button" className="search-clear" onClick={() => clearSearch()} aria-label={t("검색어 지우기")}>×</button>
+            {/* 검색란 제안 — 고르면 그 오퍼 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
+            <SearchSuggest query={searchTerm}
+              items={filtered.map((o) => ({ key: o.id, label: o.name, sub: `★${o.rarity} · ${o.job}`, img: asset(`/avatars/${o.id}.webp`) }))}
+              onPick={(id) => { const op = filtered.find((o) => o.id === id); if (op) openOperator(op); }} />
+          </div>
           {/* 컨셉덱은 시그니처 기능이라 맨 위에 항상 펼쳐 둔다 (사용자 요청 2026-07-22).
               태그 벽 대신 검색으로 (사용자 요청 2026-08-01) — 별칭 사전은 app/concepts.ts. */}
           <ConceptSearch keys={concepts} selected={selectedConcepts} onSet={setSelectedConcepts}
@@ -2498,16 +2540,6 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         <div className="results">
           <div className="results-heading">
             <div><span className="section-no">RESULT / 02</span><h2>{selectedConcepts.length === 1 ? t("{concept} 컨셉덱", { concept: conceptTitle(locale, selectedConcepts[0]) }) : selectedFactions.length === 1 ? selectedFactions[0] : hasActiveFilter ? t("탐색 결과") : t("전체 오퍼레이터")}</h2></div>
-            <div className="search-wrap heading-search">
-              <span>⌕</span>
-              {/* 비제어 입력 — 지우기(×) 표시는 CSS(:placeholder-shown)가 담당한다 */}
-              <input id="operator-search" {...searchProps} placeholder={t("이름, 별명, 직군, 효과 검색")} />
-              <button type="button" className="search-clear" onClick={() => clearSearch()} aria-label={t("검색어 지우기")}>×</button>
-              {/* 검색란 제안 — 고르면 그 오퍼 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
-              <SearchSuggest query={searchTerm}
-                items={filtered.map((o) => ({ key: o.id, label: o.name, sub: `★${o.rarity} · ${o.job}`, img: asset(`/avatars/${o.id}.webp`) }))}
-                onPick={(id) => { const op = filtered.find((o) => o.id === id); if (op) openOperator(op); }} />
-            </div>
             <div className="results-tools">
               {/* 공용 드롭다운으로 통일 (사용자 지시 2026-08-25). 종전엔 네이티브 <select>라
                   운영체제마다 생김새가 달랐고, <label>이 버튼까지 감싸고 있어 정렬 방향

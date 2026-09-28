@@ -498,6 +498,19 @@ else:
         have = {f[:-5] for f in os.listdir(dest_dir) if f.endswith(".webp")}
         print(f"도면: 어려움 판 ← 일반판 복사 {copied}장")
 
+    # ── 폴백 0.5: 손수 이은 위키 스크린샷 — 격자보다 먼저 (사용자 지시 2026-09-28) ──
+    # 게임에 미리보기가 없는 판 중 위키 파일 이름이 코드로 안 이어지는 것(위수 협의 첫 시즌 전장 5판 등)은
+    # 아래 위키 폴백이 못 찾는다 — 짝을 확인해 둔 목록(scripts/mapcredits.py MANUAL)으로 받는다.
+    # 그림이 이미 있으면 건드리지 않는다.
+    import mapcredits  # noqa: E402
+    try:
+        _man = mapcredits.fetch_manual(dest_dir)
+        if _man:
+            have = {f[:-5] for f in os.listdir(dest_dir) if f.endswith(".webp")}
+            print(f"도면: 위키 스크린샷(손수 이음) {len(_man)}장")
+    except Exception as err:  # noqa: BLE001
+        print(f"  ⚠ 위키 스크린샷(손수 이음) 실패 — 격자로 채운다: {err}")
+
     # ── 폴백: 레벨 파일의 타일 격자를 직접 그린다 ─────────────────────────────
     # 보안 파견(lt_*)·다인 모드(멀티·보스러시·아케이드 등)는 인게임 미리보기 이미지가
     # 아예 없다. 지형이 이 도감의 본체이므로 빈 칸으로 두지 않고 격자로 렌더한다
@@ -582,21 +595,28 @@ else:
                 except Exception:
                     pass
             if not got:
-                return (0, 0)
+                return (0, 0, None)
             try:
                 save_webp(got, os.path.join(dest_dir, sid + ".webp"), photo=True, max_px=640, method=4)
             except Exception:
-                return (0, 0)
+                return (0, 0, None)
             time.sleep(0.1)   # 팬위키에 예의 — 4갈래면 이 정도가 적정 부하다
-            return (1, 0) if src == 1 else (0, 1)
+            # 출처 — 위키 라이선스가 요구한다 (scripts/mapcredits.py). 받은 파일 이름 그대로 적는다
+            credit = (sid, "w", cand) if src == 1 else (sid, "p", best["name"])
+            return (1, 0, credit) if src == 1 else (0, 1, credit)
 
         # 4갈래 병렬 — prts 미디어가 장당 15~30초라 순차로는 181장에 수십 분이 걸렸다
         print(f"도면: 위키 폴백 {len(pend)}장 시도 중…")
         with ThreadPoolExecutor(4) as ex:
             results = list(ex.map(one_wiki, pend))
-        wiki_n = sum(a for a, _ in results)
-        prts_n = sum(b for _, b in results)
+        wiki_n = sum(a for a, _, _ in results)
+        prts_n = sum(b for _, b, _ in results)
         print(f"도면: 위키 폴백 wiki.gg {wiki_n} · prts {prts_n}")
+        _cred = mapcredits.load()
+        for _, _, c in results:
+            if c:
+                _cred[c[0]] = [c[1], c[2]]
+        mapcredits.save(_cred)
 
     have = {f[:-5] for f in os.listdir(dest_dir) if f.endswith(".webp")}
     still = [kv["stageId"] for kv in stages if kv["stageId"] not in have]
@@ -629,6 +649,13 @@ for loc, _, suf in LOCALES:
             e["sim"] = 1
         else:
             e.pop("sim", None)
+
+# 팬 위키 도면의 출처(mc) — 작전 상세가 도면 밑에 적는다 (사용자 지시 2026-09-28, scripts/mapcredits.py).
+# 기록은 scripts/stage-map-credits.json 하나뿐이라 --no-images(CI)에서도 그대로 붙는다.
+import mapcredits  # noqa: E402,F811
+_credits = mapcredits.load()
+for loc, _, suf in LOCALES:
+    print(f"도면 출처({loc}): {mapcredits.attach(by_loc[loc], _credits)}개")
 
 for loc, _, suf in LOCALES:
     p = os.path.join(DATA, f"stages{suf}.json")
