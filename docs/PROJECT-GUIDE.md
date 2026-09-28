@@ -16,7 +16,7 @@
 |---|---|
 | 위치 | `~/Documents/workspace/terra-archive` |
 | Git | `github.com:Mmtt85/terra-archive.git` (main 브랜치) |
-| 배포 (주) | **https://terra-archive.net** (Pages 프로젝트 `terra-archive.pages.dev`) — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드→R2 동기화→Pages 업로드). wrangler는 이 기기에 OAuth 로그인됨(운영자 클라우드플레어 계정), 프로젝트에 nodejs_compat 플래그 설정됨. **⚠️ 자동 실행 금지 — 배포는 사용자가 하라고 할 때만** (2026-07 규칙, SESSION.md §1). |
+| 배포 (주) | **https://terra-archive.net** (Pages 프로젝트 `terra-archive.pages.dev`) — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드‖R2 동기화 동시 → Pages 선행 업로드 → R2 완료 확인 → 전환 → 청크 예열). 커밋·푸시된 깨끗한 트리에서만 돈다(SESSION.md §1). wrangler는 이 기기에 OAuth 로그인됨(운영자 클라우드플레어 계정), 프로젝트에 nodejs_compat 플래그 설정됨. **⚠️ 자동 실행 금지 — 배포는 사용자가 하라고 할 때만** (2026-07 규칙, SESSION.md §1). |
 | 이벤트 워커 | `terra-archive-broadcast` (workers/broadcast) — **이름만 옛 방송 기능 것이다** (유튜브 공식 방송은 2026-09-23 기능째 삭제: 헤더 버튼·모달·`broadcasts.json`·중섭 수집 `build-broadcasts-cn.py`). 지금 하는 일은 둘: ① `GET /` — 진행중·3주 내 시작 KR 이벤트. 클뜯 레포 `activity_table` + 공식 카페 공지 링크(제목 매칭) + `MANUAL_EVENTS`(레포가 못 따라온 개방 당일 손 등록), 6시간 크론(`23 */6 * * *`) → KV(키 이름은 옛것 그대로 `broadcasts`). 프론트는 `app/event-feed.ts`(헤더 이벤트·이벤트 도감의 공식 카페 버튼). ② `GET /datacheck` — 매일 11:41 KST 오퍼 목록·공채 풀·펭귄 파밍 요약 → `/admin` 데이터 점검. 배포 `bash workers/broadcast/deploy.sh`. ⚠ 유튜브 수집 코드는 워커에 남아 아직 6시간마다 돈다 (결과를 읽는 곳은 없다) |
 | 계정 워커 | `terra-archive-account` (workers/account) — **요스타(KR/JP/EN) 이메일 인증코드 로그인 → 게임서버 syncData → 보유 오퍼 목록**. 보유 오퍼 설정 → 가져오기 → 게임 로그인이 호출한다 (`app/account.ts`). 무상태(KV·시크릿 없음, 이메일/코드/토큰 저장·로깅 안 함), Origin은 사이트+localhost만 허용. 배포 `bash workers/account/deploy.sh` · 점검 `curl ".../probe?server=kr"`. 브라우저에서 직접 못 부르는 이유: Yostar API가 CORS를 안 주고 MD5/HMAC 서명 + 안드로이드 UA 위장이 필요(Workers에 MD5가 없어 `src/md5.js` 자체 구현). **동기화하면 게임 세션이 끊긴다**(계정당 접속 1개) — UI에 반드시 경고를 남겨둘 것 |
 | 파티 방 워커 | `terra-archive-acroom` (workers/acroom) — **위수 협의 파티 공유**의 방. 게임의 '맹약 초대' 문구 속 방 ID 하나 = Durable Object 하나(SQLite 클래스, WebSocket 하이버네이션). 최대 4명, 마지막 사람이 나간 60초 뒤 알람이 방을 통째로 지운다. 저장은 전략 id·맹약 id·신호 id·처음 붙여 넣은 초대 문구 한 줄뿐, 계정·IP 없음. Origin은 사이트+localhost만. 배포 `bash workers/acroom/deploy.sh` · 점검 `curl https://terra-archive-acroom.nzkonaru.workers.dev/`. 상세는 아래 「위수 협의 파티 공유」 절 (2026-09-21) |
@@ -1847,7 +1847,7 @@ recruit, R2 쪽은 `avatars/<id>.webp` 1개와 `{skills,profiles,voice,skins}/{k
 12개. 한쪽만 돌면 반쪽이 된다 — 배포만 하고 동기화를 빼먹으면 **오퍼는 뜨는데 섬네일·스킬
 레벨·프로필·보이스가 전부 404**다 (2026-08-01 실제 발생: CI에 `R2_SYNC_KEY`가 없었다).
 
-실무상 고를 일은 없다 — **`bash scripts/deploy.sh` 하나가 빌드→r2-sync→Pages 업로드를 다 한다.**
+실무상 고를 일은 없다 — **`bash scripts/deploy.sh` 하나가 빌드·r2-sync(동시)·Pages 업로드를 다 한다.**
 무인 파이프라인도 같은 스크립트를 쓴다. 어긋남을 막는 장치는 둘:
 
 - `scripts/audit-assets.mjs` (ci-refresh rest 단계) — 아바타 누락, 스킬이 있는데 레벨 파일이

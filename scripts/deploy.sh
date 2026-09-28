@@ -119,20 +119,45 @@ if [ ! -f .r2-sync-key ] && [ -z "${R2_SYNC_KEY:-}" ] && [ -z "$SKIP_R2" ]; then
   exit 1
 fi
 
-npm run build
-step "빌드 (npm run build)"
-
+# ── R2 동기화는 빌드와 **동시에** 돈다 (2026-09-28, 배포 시간 줄이기) ──────────────────────
+# r2-sync 는 public/ 만 읽는다(빌드 산출물 dist 를 안 본다). 빌드 앞머리 스크립트가 public/ 에 쓰는 건
+# sitemap.xml·feed.xml(루트 파일 — R2 대상 폴더 밖)뿐이라 겹치지 않는다. 종전엔 빌드 뒤에 차례로 돌아
+# 22~50초를 그대로 더했다 (그중 17초는 R2 목록 조회).
+# ⚠ **무중단 조건: 프로덕션 전환(2단계) 전에 반드시 끝나 있어야 한다** — 새 페이지가 새 R2 에셋을
+#   가리키므로. 아래 2단계 직전에 wait 로 기다리고, 실패했으면 전환하지 않고 멈춘다.
+R2_PID=""; R2_LOG=""; R2_T0=$(date +%s)
+STAGE=""
+cleanup() {
+  # 빌드가 죽어도 R2 업로드를 반쯤 끊지 않게 끝까지 기다린다 (다음 배포가 나머지를 맞추긴 하지만
+  # 도중에 끊긴 파일이 없는 편이 낫다)
+  [ -n "$R2_PID" ] && wait "$R2_PID" 2>/dev/null || true
+  [ -n "$STAGE" ] && rm -rf "$STAGE"
+  [ -n "$R2_LOG" ] && rm -f "$R2_LOG"
+  deploy_summary
+}
+trap cleanup EXIT
 if [ -f .r2-sync-key ] || [ -n "${R2_SYNC_KEY:-}" ]; then
-  node scripts/r2-sync.mjs
+  R2_LOG=$(mktemp)
+  node scripts/r2-sync.mjs > "$R2_LOG" 2>&1 &
+  R2_PID=$!
+  echo "R2 동기화 시작 (빌드와 동시 — 전환 전에 기다린다)"
 else
   echo "⚠ R2 동기화 건너뜀 (--skip-r2) — 에셋이 바뀌었다면 사이트에서 404가 난다" >&2
 fi
-step "R2 동기화"
+
+npm run build
+step "빌드 (npm run build)"
 
 # dist/client가 정적 사이트 전체 (HTML + assets). 워커(_worker.js)는 올리지 않는다.
+# 스테이지는 **복제(copy-on-write)로** 만든다 (2026-09-28) — APFS(macOS)는 cp -c, 리눅스(CI)는
+# --reflink=auto(안 되는 파일시스템이면 보통 복사). 내용은 같은 파일이고, 스테이지를 고쳐도(트림·_headers
+# 덧붙이기·keep-assets) dist 는 그대로다.
 STAGE=$(mktemp -d)
-trap 'rm -rf "$STAGE"; deploy_summary' EXIT
-cp -r dist/client/. "$STAGE/"
+if [ "$(uname)" = "Darwin" ]; then
+  cp -c -R dist/client/. "$STAGE/"
+else
+  cp -r --reflink=auto dist/client/. "$STAGE/"
+fi
 
 # R2로 옮긴 에셋 폴더는 Pages에 올리지 않는다 — 이게 배포가 빨라진 이유의 전부.
 # (public/에는 그대로 남아 있고 scripts/r2-sync.mjs가 R2와 동기화한다)
@@ -141,6 +166,8 @@ cp -r dist/client/. "$STAGE/"
 #   빠져 테마 페이지 6개가 매 배포마다 사라졌다. 적 도감은 처음부터 폴더를 갈라 뒀다.
 # ⚠ 여기 빠지면 그 폴더는 R2와 Pages **양쪽에** 올라간다 — 배포 파일 수(2만 개 한도)를
 #   그대로 갉아먹고 업로드도 그만큼 길어진다. r2-sync.mjs의 DIRS와 **같은 집합 + tl**이다.
+#   (2026-09-28~ 빌드가 애초에 이 폴더들을 dist 로 복사하지 않는다 — scripts/copy-public.mjs 의 R2_ONLY.
+#    그래서 이 트림은 이제 안전망이다. 목록을 바꾸면 세 곳을 같이 바꾼다.)
 #   (2026-08-23 점검: records 996개·32MB와 lore 99개가 빠져 있었다.)
 # ⚠ `tl`만은 예외다 — r2-sync.mjs의 DIRS에는 **없고** 여기에만 있다. 번역 사전 공개본이라
 #   올리는 건 scripts/publish-tl.mjs 관할이지만(2026-09-17 분리), Pages가 같은 파일을 또
@@ -266,6 +293,19 @@ step "1단계 선행 업로드"
 #   처방이 들어간 뒤로는 계측이 할 일이 없는데 배포 시간의 절반(4분 대기)을 먹었다.
 #   배포 직후 404가 다시 보이면 warm-assets 로그(2회차 이상 걸린 파일)부터 본다.
 #   계측이 또 필요하면 git 기록에서 되살린다 (`git log -- scripts/deploy-probe.mjs`).
+
+# R2 동기화가 끝났는지 — 새 페이지가 가리킬 에셋이 R2 에 다 있어야 전환한다 (위 '동시에' 주석)
+if [ -n "$R2_PID" ]; then
+  R2_RC=0; wait "$R2_PID" || R2_RC=$?
+  R2_PID=""
+  echo "── R2 동기화 ($(( $(date +%s) - R2_T0 ))초, 빌드와 동시) ──"
+  cat "$R2_LOG"
+  if [ "$R2_RC" -ne 0 ]; then
+    echo "✗ R2 동기화 실패(종료 코드 $R2_RC) — 프로덕션 전환을 하지 않는다. 라이브는 그대로다." >&2
+    exit 1
+  fi
+fi
+step "R2 동기화 대기"
 
 echo "2단계: 프로덕션 전환"
 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true

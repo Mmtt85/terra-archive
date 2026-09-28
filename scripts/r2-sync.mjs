@@ -25,6 +25,8 @@ const PUBLIC = join(ROOT, "public");
 const API = "https://terra-archive-upload.nzkonaru.workers.dev";
 
 // 옮기는 폴더 — 여기 없는 루트 파일(파비콘·구글 인증 HTML)은 Pages에 남는다
+// ⚠ 폴더를 더하면 deploy.sh 의 트림 목록과 copy-public.mjs 의 R2_ONLY 에도 넣는다 (2026-09-28~ 빌드가
+//   public/ 을 dist 로 복사할 때 R2_ONLY 를 건너뛴다 — 빠뜨리면 복사됐다 트림될 뿐 깨지진 않는다).
 const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "items", "scan",
   // 오퍼 상세 모달이 열릴 때만 받아가는 지연 로딩 데이터·이미지 (2026-07-28)
   "profiles", "skins", "skin",
@@ -119,29 +121,38 @@ async function walk(dir) {
 }
 
 // ── 1. 현재 R2 상태 (etag = md5) ──
-const listRes = await fetch(`${API}/files`, { headers: { "x-admin-key": KEY } });
-if (!listRes.ok) {
-  console.error(`R2 목록 조회 실패 (${listRes.status}) — 워커·시크릿을 확인하세요`);
-  process.exit(1);
-}
-const remote = new Map((await listRes.json()).files.map((f) => [f.key, f.etag]));
+// 목록 조회(10MB·약 17초 — 워커가 R2 를 1,000개씩 넘긴다)와 아래 로컬 md5 계산(약 10초)은 서로
+// 무관하므로 **겹쳐 돈다** (2026-09-28). 조회를 먼저 걸어 두고 md5 를 다 센 뒤에 받는다.
+const listing = fetch(`${API}/files`, { headers: { "x-admin-key": KEY } })
+  .then(async (res) => ({ ok: res.ok, status: res.status, body: res.ok ? await res.json() : null }));
 
-// ── 2. 로컬 파일 수집 + md5 비교 ──
+// ── 2. 로컬 파일 수집 + md5 ──
 const files = [];
 for (const dir of DIRS) {
   const abs = join(PUBLIC, dir);
   if (!existsSync(abs)) continue;
   for (const p of await walk(abs)) files.push(p);
 }
+const local = [];
+for (const p of files) {
+  const key = PREFIX + relative(PUBLIC, p).split("\\").join("/"); // R2 키 = assets/<public 상대경로>
+  const body = await readFile(p);
+  local.push({ p, key, md5: createHash("md5").update(body).digest("hex") });
+}
 
+const listRes = await listing;
+if (!listRes.ok) {
+  console.error(`R2 목록 조회 실패 (${listRes.status}) — 워커·시크릿을 확인하세요`);
+  process.exit(1);
+}
+const remote = new Map(listRes.body.files.map((f) => [f.key, f.etag]));
+
+// ── 2'. 비교 ──
 const todo = [];
 const localKeys = new Set();
 let same = 0;
-for (const p of files) {
-  const key = PREFIX + relative(PUBLIC, p).split("\\").join("/"); // R2 키 = assets/<public 상대경로>
+for (const { p, key, md5 } of local) {
   localKeys.add(key);
-  const body = await readFile(p);
-  const md5 = createHash("md5").update(body).digest("hex");
   const recache = RECACHE && [".json", ".txt", ".bin", ".md"].includes(extname(key).toLowerCase());
   if (remote.get(key) === md5 && !recache) { same += 1; continue; }
   todo.push({ key, p, size: statSync(p).size });

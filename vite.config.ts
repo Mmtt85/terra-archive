@@ -22,7 +22,7 @@ export default defineConfig(async () => {
     //   그래도 **그대로 둔다**: 배지·기간 한정 배너 판정을 빌드 시각으로 고정하는 게 이 값의
     //   존재 이유고(whats-new.ts 주석), 반올림하면 배너가 뜨고 지는 시점이 바뀐다. 게다가 CSS 가
     //   전 페이지가 참조하는 해시 자산 하나라 globals.css 한 줄만 고쳐도 어차피 전량 재업로드다.
-    //   자세한 실측은 scripts/deploy.sh 의 --fast 주석.
+    //   자세한 실측은 scripts/deploy.sh 첫머리 주석.
     define: {
       __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
       // 에셋 출처 — 기본은 R2(files.terra-archive.net). TA_LOCAL_ASSETS=1 로 빌드하면
@@ -30,6 +30,10 @@ export default defineConfig(async () => {
       // (2026-08-25). 컴파일 타임 상수라 프리렌더와 클라이언트 값이 같아 하이드레이션이 갈라지지 않는다.
       __ASSET_BASE__: JSON.stringify(process.env.TA_LOCAL_ASSETS ? "" : "https://files.terra-archive.net"),
     },
+    // public/ 통째 복사를 끈다 (2026-09-28) — 2.4GB 중 대부분이 R2 에셋이라 복사해 봐야 deploy.sh 가
+    // 스테이지에서 지운다. Pages 가 서빙할 것만 scripts/copy-public.mjs 가 빌드 뒤에 골라 복사한다.
+    // dev 서버는 이 설정과 무관하게 public/ 을 그대로 서빙한다.
+    build: { copyPublicDir: false },
     plugins: [
       // dev 전용: localhost /api/* → 키 파일로 Supabase·업로드 워커 중계 (관리자 로컬 개발용)
       adminDevProxy(),
