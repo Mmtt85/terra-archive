@@ -11,11 +11,13 @@ description: 소개(/about) 페이지 스크린샷 전면 재촬영·교체 절�
 ## 표준 절차 (4단계)
 
 ```bash
-# 0) 최신 코드가 반영된 프로덕션 빌드가 전제 — 안 돼 있으면 npm run build 먼저
-npm run start &                       # 로컬 프로덕션 서버 :3000 (반드시 프로덕션 — dev 아님)
+# 0) 최신 코드가 반영된 프로덕션 빌드(dist/client)가 전제 — 방금 배포했다면 그 빌드 그대로 쓰면 된다.
+#    빌드 산출물을 Pages 처럼 서빙하는 정적 서버를 :3100 에 띄운다 (브라우저 패널 preview_start
+#    "terra-archive-dist" = node scripts/serve-dist.mjs 3100). dev(:3000)는 그대로 켜 둔다.
+#    ⚠ `npm run start`(vinext start)는 쓰지 않는다 — SESSION.md §2 금지 (2026-09-28 전환).
 
-# 1) 촬영 — ko/en/ja × light/dark × 데스크탑(1200×760)/모바일(440×952) × 14화면 = 168장 PNG (~7분)
-node scripts/capture-about.mjs <임시출력폴더>
+# 1) 촬영 — ko/en/ja × light/dark × 데스크탑(1200×760)/모바일(440×952) × 16화면 = 192장 PNG (~8분)
+node scripts/capture-about.mjs <임시출력폴더>     # 기본 대상 http://127.0.0.1:3100 (--base= 로 바꿈)
 
 # 2) webp 변환·배치 — ko는 public/about/ 루트(기존 URL 유지), en/ja는 public/about/{en,ja}/
 python3 scripts/convert-about.py <임시출력폴더>
@@ -37,7 +39,7 @@ node scripts/r2-sync.mjs
 > 확인법: `md5 -q public/about/portal-dark.webp` 와
 > `curl -s "https://files.terra-archive.net/assets/about/portal-dark.webp?v=<SHOT_VER>" | md5 -q` 비교.
 
-끝나면 서버 종료(`pkill -f "vinext start"`) → `git status public/about`으로 168개 변경 확인 →
+끝나면 정적 서버 종료(preview_stop) → `git status public/about`으로 변경 확인 →
 몇 장 열어 품질 확인(아래 체크리스트) → 커밋·push. **deploy.sh는 돌리지 않는다** (CLAUDE.md 규칙).
 
 ## 스크립트가 자동으로 처리하는 것 (다시 구현하지 말 것)
@@ -50,7 +52,7 @@ node scripts/r2-sync.mjs
 
 ## 촬영 대상 (capture-about.mjs SHOTS)
 
-portal(홈) · planner(/infra) · archive(/operators) · enemy · stage · sim · recruit · farm ·
+portal(홈) · planner(/infra) · archive(/operators) · enemy · stage · item · event · sim · recruit · farm ·
 upgrade(예시 오퍼 2명 쿼리) · story · rogue · ra · autochess · chronicle(스토리→연대기 탭).
 **새 기능 페이지가 생기면 SHOTS 배열에 추가**하고 about.tsx의 SHOTS 맵도 함께 갱신.
 
@@ -63,7 +65,8 @@ upgrade(예시 오퍼 2명 쿼리) · story · rogue · ra · autochess · chron
 
 ## 함정
 
-- **dev 서버(:3000 IPv6)가 떠 있으면** 프로덕션은 127.0.0.1(IPv4)로 접속된다 — capture 스크립트는
-  localhost라 충돌 시 dev 화면을 찍을 수 있음. dev를 끄거나 프로덕션만 띄우고 실행할 것.
+- 촬영 대상은 **127.0.0.1:3100(serve-dist)** 이다 — 종전(localhost:3000 + vinext start)엔 dev 서버와
+  포트가 겹쳐 dev 화면을 찍을 위험이 있었다. serve-dist 가 내보내는 HTML 은 Pages 배포본과 바이트 단위로
+  같다 (2026-09-28 실측: pages.dev == dist). 에셋은 빌드가 박은 R2 주소로 간다 — 새 에셋은 R2 동기화 뒤에 찍을 것.
 - 진행중 이벤트 배지는 fetch 타이밍에 따라 다르게 찍힐 수 있다 (1.8초 대기가 이미 들어 있음).
 - upgrade 화면은 쿼리로 예시 오퍼(첸·애쉬)를 미리 채운다 — 쿼리 파라미터를 지우지 말 것.

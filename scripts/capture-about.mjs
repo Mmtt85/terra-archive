@@ -3,14 +3,17 @@
 // EN/JA 소개 페이지는 그 언어 UI 캡처를 보여준다 (언어별 세트, 사용자 요청 2026-07-22).
 // PNG로 받아 <outDir>/{locale}/에 저장하고, convert-about.py가 webp로 변환해
 // public/about/(ko는 루트, en·ja는 하위 폴더)에 넣는다.
-//   1) npm run start (별도)  2) node scripts/capture-about.mjs <outDir>  3) python3 scripts/convert-about.py <outDir>
+//   1) node scripts/serve-dist.mjs (별도, :3100)  2) node scripts/capture-about.mjs <outDir>  3) python3 scripts/convert-about.py <outDir>
 import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 
 const OUT = process.argv[2];
 fs.mkdirSync(OUT, { recursive: true });
-const BASE = "http://localhost:3000";
+// 촬영 대상 서버 — 기본은 scripts/serve-dist.mjs(:3100, 빌드 산출물을 Pages 처럼 서빙). dev(:3000)는
+// 늘 켜 두는 서버라 건드리지 않고, vinext start 는 SESSION.md §2 가 금지한다 (2026-09-28).
+// 다른 서버를 찍으려면 --base=http://…
+const BASE = (process.argv.find((a) => a.startsWith("--base=")) || "").slice(7) || "http://127.0.0.1:3100";
 // 한 화면만 다시 찍을 때: --only=item[,farm]  (쉼표로 여러 개).
 // 전면 재촬영은 7분이 걸리는데, 새 메뉴 하나를 붙였거나 한 화면만 틀어졌을 때 그걸 다
 // 돌릴 이유가 없다 (2026-09-16: 아이템 도감 아이콘이 R2 동기화 전이라 빈 칸으로 찍혔다).
