@@ -574,6 +574,26 @@ for loc in LOCALES:
         if r["id"] in series:
             r["ser"] = series[r["id"]]
 
+# 시리즈의 **#1 앞 회차는 #0** (사용자 지시 2026-09-28 "시리즈물 이벤트의 경우 #1 위에 한 개가 더 있는 경우가 있음,
+# 그건 #0 으로") — 검증판·원조가 번호 없이 먼저 나온 경우다: 벡터 돌파 → 무기물(#1) → #2 · 로도스 아일랜드 협동 경기 →
+# 협동 경기#1 · 위수 협의 → 맹약 #1. 묶음을 시작일 순으로 세우고, 이름에 '#k' 가 박힌 첫 회차에서 거꾸로 세어
+# 0 이 되는 회차에만 붙인다(번호 없는 #1 — 벡터 돌파: 무기물 — 은 공식 이름 그대로 둔다). 번호가 하나도 없는
+# 시리즈(듀얼 채널)는 셀 기준이 없어 건드리지 않는다.
+zero = set()
+_ko_by_id = {r["id"]: r for r in rows["ko"]}
+for key in set(series.values()):
+    grp = sorted((_ko_by_id[i] for i, k in series.items() if k == key and i in _ko_by_id),
+                 key=lambda x: (x.get("start") or "", x["id"]))
+    anchor = next(((j, int(m.group(1))) for j, r in enumerate(grp) for m in [re.search(r"#(\d+)", r["n"])] if m), None)
+    if anchor:
+        for j, r in enumerate(grp):
+            if anchor[1] - (anchor[0] - j) == 0 and "#" not in r["n"]:
+                zero.add(r["id"])
+for loc in LOCALES:
+    for r in rows[loc]:
+        if r["id"] in zero and "#" not in r["n"]:
+            r["n"] = f"{r['n']} #0"
+
 updated = datetime.now(KST).strftime("%Y-%m-%d")
 for loc in LOCALES:
     dest = os.path.join(DATA, OUT[loc])
