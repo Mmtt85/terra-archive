@@ -1780,8 +1780,12 @@ export default function RogueGuide({ initialTopic }: {
   const hashFor = (v: string, m: { type: string; id: string } | null) =>
     `#rg-${v}${m ? `~${m.type}~${encodeURIComponent(m.id)}`
       : v === "archive" ? `~arc~${encodeURIComponent(activeArc)}` : ""}`;
-  const applyHash = () => {
-    const mt = window.location.hash.match(/^#rg-([a-z]+)(?:~([a-z]+)~(.+))?$/);
+  // fromNav: 뒤로/앞으로로 해시가 **비었으면** 기본 화면(#rg-map, 모달 없음)으로 본다 — 기본 화면은 주소에 해시를
+  // 안 쓰므로(아래 동기화) 해시 없는 주소로 돌아온 것이 곧 "맵 탭, 모달 닫힘"이다. 종전엔 빈 해시를 그냥 넘겨,
+  // 해시 없이 들어와 층 모달을 연 뒤 뒤로가기를 누르면 주소만 돌아가고 모달은 떠 있었다 (2026-09-29 실측).
+  // 첫 진입(마운트)은 빈 해시를 건드리지 않는다 — 다른 경로로 정해진 화면을 덮지 않게.
+  const applyHash = (fromNav = false) => {
+    const mt = (window.location.hash || (fromNav ? "#rg-map" : "")).match(/^#rg-([a-z]+)(?:~([a-z]+)~(.+))?$/);
     if (!mt) return;
     const [, v, type, rawId] = mt;
     if (viewsFor().some((x) => x.id === v)) setView(v as View);
@@ -2074,7 +2078,7 @@ export default function RogueGuide({ initialTopic }: {
   // 같은 페이지에서 해시가 바뀌면(뒤로/앞으로·수동 편집) 재적용
   useEffect(() => {
     if (!mounted) return;
-    const onHash = () => { if (inited.current) applyHashRef.current(); };
+    const onHash = () => { if (inited.current) applyHashRef.current(true); };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, [mounted]);
@@ -2093,8 +2097,11 @@ export default function RogueGuide({ initialTopic }: {
     // 맨 위로 리셋한다 (사용자 리포트 2026-07-24: 모달 열면 스크롤이 튐). 모달 해시 기록은
     // 스크롤을 건드리면 안 되므로 네이티브 프로토타입을 직접 불러 라우터를 우회한다
     // (replaceState는 패치돼 있어도 스크롤 리셋 없음 — 실측).
-    if (opening) History.prototype.pushState.call(history, null, "", want);
-    else history.replaceState(null, "", want);
+    // 기본 화면(맵 탭 · 모달 없음)은 **해시 없이** — 처음 들어온 주소(/rogue)와 같게 둔다. 종전엔 층 모달을 열었다
+    // 닫으면 '#rg-map' 이 주소에 남았다 (사용자 지적 2026-09-29). 모달을 여는 쪽(opening)은 늘 해시가 있다.
+    const url = want === "#rg-map" ? window.location.pathname + window.location.search : want;
+    if (opening) History.prototype.pushState.call(history, null, "", url);
+    else history.replaceState(null, "", url);
     prevHash.current = want;
   }, [view, zoneOpen, stageOpen, enemyOpen, encOpen, relicOpen, activeArc, mounted]); // eslint-disable-line react-hooks/exhaustive-deps
 
