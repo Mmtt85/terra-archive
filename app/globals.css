@@ -20198,22 +20198,6 @@ main.site-main > .site-header {
   line-height: 1.6;
   color: var(--muted);
 }
-/* 팬 위키에서 받은 도면의 출처 줄 — 도면 바로 밑에 작게 (사용자 지시 2026-09-28). 칸 사이 간격(12px)을
-   절반으로 당겨 도면에 붙인다 — 설명 문단과 같은 거리면 어느 쪽 출처인지 흐려진다. */
-.st-map-credit {
-  margin: -6px 0 0;
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-.st-map-credit a {
-  color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.st-map-credit a:hover {
-  color: var(--ink);
-}
 .st-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));

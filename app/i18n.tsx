@@ -2128,10 +2128,6 @@ const D: Record<string, Pair> = {
     "昇進素材{count}種の実測ドロップ統計です。素材ごとにドロップするステージとドロップ率を表示し、1個あたりの期待理性（理性消費 ÷ ドロップ率）が低い順＝理性効率の良い順に並べます。一番上のステージが最も効率的です。",
   ],
   "읽는 법과 출처": ["How to read & sources", "読み方と出典"],
-  // 작전 상세 — 팬 위키에서 받은 도면의 출처 줄 (2026-09-28). 라이선스 이름은 번역하지 않는다
-  "도면 출처": ["Map source", "マップ出典"],
-  "PRTS 위키": ["PRTS Wiki", "PRTS Wiki"],
-  "일부 잘라냄": ["cropped", "一部トリミング"],
   "쓰는 법": ["How to use", "使い方"],
   "출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 정식 개방된 스테이지만 수록.": [
     "Source: Penguin Statistics measured data (min. {min} samples) + datamined game data · only stages currently open as of {date}.",

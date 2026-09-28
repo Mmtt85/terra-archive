@@ -130,10 +130,6 @@ python3 scripts/build-enemies.py .gamedata     # → app/data/enemies{,.en,.ja}.
 python3 scripts/build-stages.py .gamedata      # → app/data/stages{,.en,.ja}.json + public/stage/ (3개 언어 동시)
 #   저장 직전에 scripts/stagecams.py 로 전투 카메라(cam)를 붙인다 — 원본 levels.json(72MB)을 받아
 #   .gamedata/stage-views.json 에 12시간 캐시. 카메라만 다시 붙이려면: python3 scripts/stagecams.py
-#   팬 위키 도면의 출처(mc)도 저장 직전에 붙인다 — 기록은 scripts/stage-map-credits.json 하나뿐(지우지 말 것).
-#   python3 scripts/mapcredits.py --scan    # 기록 없는 위키 그림을 위키 원본과 대조해 출처를 찾는다
-#   python3 scripts/mapcredits.py --attach  # 커밋된 stages*.json 에 mc 만 제자리로 다시 붙인다
-#   python3 scripts/mapcredits.py --manual  # 손수 이은 위키 스크린샷(위수 협의 전장 등)을 다시 받는다
 #   ⚠ **build-enemies.py를 먼저** 돌려야 한다 — 등장 적은 그 산출물(enemy-stages.json)을
 #     뒤집어 쓴다(같은 levels/ 파일을 두 번 훑지 않으려고). 인자 없이 돌리면 지형 도면
 #     2,224장을 받고(약 5~10분), 인게임 도면이 없는 작전은 레벨 타일 격자로 렌더한다.
