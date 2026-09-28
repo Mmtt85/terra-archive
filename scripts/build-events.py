@@ -557,7 +557,8 @@ for loc in LOCALES:
 # 드랍다운으로 같은 이름의 이벤트들로 이동"). 이름이 회차마다 조금씩 달라서(벡터 돌파 / 벡터 돌파: 무기물 /
 # 벡터 돌파#2 주술의 밤) 이름이 아니라 **게임의 활동 종류**로 묶는다 — 버전·검증판 꼬리(_V2·_VERIFY1·_SEASON)는
 # 떼어 1회차 검증판까지 한 식구로 (로도스 아일랜드 협동 경기 → 협동 경기#1·#2). 묶음 안에 '#' 이 붙은 이름이
-# 하나라도 있는 것만 — 듀얼 채널(부제만 다름)·복각은 대상이 아니다.
+# 하나라도 있는 것 + SERIES_EXTRA(이름엔 '#' 이 없지만 시리즈물 — 듀얼 채널, 사용자 지시 2026-09-28 "듀얼채널도
+# 시리즈물임"). 복각은 대상이 아니다.
 _fam = {}
 for r in rows["ko"]:
     if r.get("fut") or r.get("origin"):
@@ -565,8 +566,9 @@ for r in rows["ko"]:
     t = (kr_basic_all.get(r["id"]) or {}).get("type") or ""
     if t:
         _fam.setdefault(re.sub(r"_(V\d+|VERIFY\d+|SEASON)$", "", t), []).append(r)
+SERIES_EXTRA = {"ENEMY_DUEL"}
 series = {r["id"]: key for key, grp in _fam.items()
-          if len(grp) > 1 and any("#" in x["n"] for x in grp) for r in grp}
+          if len(grp) > 1 and (key in SERIES_EXTRA or any("#" in x["n"] for x in grp)) for r in grp}
 for loc in LOCALES:
     for r in rows[loc]:
         if r["id"] in series:
