@@ -2093,12 +2093,13 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 카드 그리드를 **요소로 메모**한다 — 정렬 결과가 그대로면 리액트가 이 서브트리 재조정을
   // 통째로 건너뛰므로, 필터 칩·검색 결과 갱신 렌더에서 420장을 다시 만들지 않는다 (2026-07-25)
   const operatorGrid = useMemo(() => {
-    // '미래시 포함'이 꺼져 있으면 미실장(중섭 선행)을 **위쪽 작은 칸으로 따로** 뺀다
-    // (사용자 요청 2026-09-16). 기본 정렬이 발매순 내림차순인데 미실장 seq 가 100420~
-    // 이라 19명이 통째로 앞자리를 먹어서, 한섭 유저가 그걸 다 훑고 내려가야 최신 한섭
-    // 오퍼가 나왔다. 토글을 켜면 종전대로 한 그리드에 섞는다 — 그때는 미래시를 보러 온 것이다.
-    const future = includeFuture ? [] : sorted.filter((operator) => operator.unreleased);
-    const main = includeFuture ? sorted : sorted.filter((operator) => !operator.unreleased);
+    // 미실장(중섭 선행)은 **위쪽 작은 칸으로 따로** 뺀다 (사용자 요청 2026-09-16). 기본 정렬이 발매순
+    // 내림차순인데 미실장 seq 가 100420~ 이라 19명이 통째로 앞자리를 먹어서, 한섭 유저가 그걸 다 훑고
+    // 내려가야 최신 한섭 오퍼가 나왔다.
+    // ⚠ '미래시 포함'을 켜도 **작은 칸 그대로** 둔다 (사용자 지시 2026-09-28 "미래시 체크해도 카드가 커지지 않고
+    //   그 크기 그대로"). 종전엔 켜면 큰 그리드에 섞여 카드가 커졌다. 켜고 끄는 차이는 흑백(.fut-dim, <html data-fut>)뿐.
+    const future = sorted.filter((operator) => operator.unreleased);
+    const main = sorted.filter((operator) => !operator.unreleased);
     const cards = (list: Operator[]) => list.map((operator, index) => (
       <OperatorCard key={operator.id ?? `${operator.name}-${index}`} operator={operator} index={index} onSelect={openOperator} />
     ));
@@ -2116,7 +2117,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         <div className="operator-grid">{cards(main)}</div>
       </>
     );
-  }, [sorted, openOperator, includeFuture, t]);
+  }, [sorted, openOperator, t]);
 
   return (
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
