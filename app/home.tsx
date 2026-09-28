@@ -28,10 +28,23 @@ const STAGE_DEX = {
   ja: lazy(() => import("./stages-ja")),
 } as const;
 // 이벤트 도감도 같은 이유로 로케일별 청크 (데이터 ~240KB, 2026-09-16)
+// 불러오는 함수를 따로 둔다 — 헤더 이벤트 칩이 떠 있으면 **미리 받아 두려고** (아래 prefetchEventDex).
+// 같은 함수를 lazy 에도 넘겨야 청크·모듈 캐시를 함께 쓴다.
+// ⚠ 받아 둔 컴포넌트는 EVENT_DEX_READY 에 적어 두고 **lazy 를 거치지 않고** 바로 그린다. lazy 는 모듈이 이미
+//   받아져 있어도 첫 렌더에서 한 번 멈추고(fallback), React 가 멈췄던 자리를 다시 보여 줄 때 깜빡임을 막으려고
+//   ~300ms 를 일부러 기다린다 — 미리 받아 둬도 첫 클릭만 326ms 가 걸린 이유다 (실측 2026-09-28, 두 번째부터 24ms).
+type EventDexComp = (typeof import("./events-ko"))["default"];
+type DexLocale = "ko" | "en" | "ja";
+const EVENT_DEX_READY: Partial<Record<DexLocale, EventDexComp>> = {};
+const EVENT_DEX_IMPORT: Record<DexLocale, () => Promise<{ default: EventDexComp }>> = {
+  ko: () => import("./events-ko").then((m) => { EVENT_DEX_READY.ko = m.default; return m; }),
+  en: () => import("./events-en").then((m) => { EVENT_DEX_READY.en = m.default; return m; }),
+  ja: () => import("./events-ja").then((m) => { EVENT_DEX_READY.ja = m.default; return m; }),
+};
 const EVENT_DEX = {
-  ko: lazy(() => import("./events-ko")),
-  en: lazy(() => import("./events-en")),
-  ja: lazy(() => import("./events-ja")),
+  ko: lazy(EVENT_DEX_IMPORT.ko),
+  en: lazy(EVENT_DEX_IMPORT.en),
+  ja: lazy(EVENT_DEX_IMPORT.ja),
 } as const;
 // 아이템 도감도 같은 이유로 로케일별 청크 (데이터 ~650KB, 2026-09-16)
 const ITEM_DEX = {
@@ -1184,6 +1197,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
    *  이미 이벤트 가이드 화면에 있으면 그쪽 목록이 해시로 열게 두고 여기선 띄우지 않는다 —
    *  같은 모달이 두 겹으로 뜬다. */
   const [eventModalId, setEventModalId] = useState<string | null>(null);
+  // 미리 받아 둔 이벤트 도감 컴포넌트 — **여는 순간 한 번만** 정한다. 열어 둔 사이에 받기가 끝났다고
+  // 다음 렌더에서 lazy → 받은 컴포넌트로 갈아 끼우면 창이 새로 마운트돼 안에서 연 하위 창이 날아간다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- eventModalId 가 바뀔 때(= 새로 열 때)만 다시 읽는다
+  const eventDexReady = useMemo(() => EVENT_DEX_READY[locale as DexLocale], [eventModalId, locale]);
   const openEventById = (id: string, type?: string | null) => {
     // ⚠ **전용 가이드가 있는 모드는 그쪽이 우선이다** (사용자 지시 2026-09-17: "위수협의
     //   맹약 이벤트는 위수협의 페이지로 넘어가 줘야지"). 이벤트 상세보다 그 가이드에
@@ -1219,6 +1236,24 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 파라미터는 해당 탭이 직접 관리하므로 여기서 실어 나르지 않는다.
   // 헤더 진행중 이벤트 그룹의 칩 — 위수 협의 칩과 겹치는 시즌 행은 뺀다 (위 JSX 주석)
   const groupEvents = runningEvents.filter((ev) => !(PROMO_ON && EVENT_GUIDE_TAB[ev.type ?? ""] === PROMO.tab));
+  // 이벤트 칩을 누르면 **그때** 이벤트 도감 청크(ko 압축 약 77KB)를 받기 시작해 모달이 한 박자 늦게 떴다
+  // (사용자 지적 2026-09-28). 칩이 떠 있으면 ① 페이지가 한가해질 때 미리 받고 ② 그 전에 칩에 손이 가면
+  // (호버·포커스·터치) 그 순간 받는다. 데이터 절약 모드면 ①은 건너뛴다. 받아 둔 모듈은 lazy 가 그대로 쓴다.
+  const prefetchEventDex = useCallback(() => {
+    void (EVENT_DEX_IMPORT[locale as DexLocale] ?? EVENT_DEX_IMPORT.ko)().catch(() => { /* 누를 때 다시 받는다 */ });
+  }, [locale]);
+  const hasEventChips = groupEvents.length > 0;
+  useEffect(() => {
+    if (!hasEventChips) return;
+    if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    // 사파리는 requestIdleCallback 이 없다 — 첫 화면 일이 끝났을 즈음으로 미룬다
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(prefetchEventDex, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(prefetchEventDex, 2000);
+    return () => window.clearTimeout(id);
+  }, [hasEventChips, prefetchEventDex]);
   const tabPath = useCallback((tb: Tab) => {
     const seg = TAB_SEG[tb];
     const base = (localeBase + (seg ? `/${seg}` : "")) || "/";
@@ -2128,6 +2163,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             )}
             {groupEvents.map((ev) => (
               <a key={ev.id} className="promo-trigger ev-promo" href={eventHref(ev)} title={eventName(locale, ev)}
+                onPointerEnter={prefetchEventDex} onFocus={prefetchEventDex}
                 onClick={(event) => {
                   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                   event.preventDefault();
@@ -2562,18 +2598,25 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       {/* 헤더·배너에서 연 이벤트 상세 — 어느 화면에서든 **그 자리에 모달로** 겹친다
           (사용자 지시 2026-09-17). 이벤트 가이드 컴포넌트를 modalOnly 로 붙여 작전·적·
           아이템·스토리 겹침 모달 배선을 그대로 쓴다 — 청크는 누를 때 처음 받는다. */}
-      {eventModalId && (
-        <Suspense fallback={null}>
-          <EventDexForLocale key={eventModalId} modalOnly initialId={eventModalId} onCloseModal={() => setEventModalId(null)}
-            onShowOperator={showOperatorById}
-            onOpenGuide={(seg) => {
-              setEventModalId(null);
-              const [head, slug] = seg.split("/");
-              if (head === "autochess" && slug) { switchAutochess(autochessSeasonOf(slug)); return; }
-              switchTab((SEG_TAB[head] ?? "event") as Tab);
-            }} />
-        </Suspense>
-      )}
+      {eventModalId && (() => {
+        const onOpenGuide = (seg: string) => {
+          setEventModalId(null);
+          const [head, slug] = seg.split("/");
+          if (head === "autochess" && slug) { switchAutochess(autochessSeasonOf(slug)); return; }
+          switchTab((SEG_TAB[head] ?? "event") as Tab);
+        };
+        // 미리 받아 뒀으면 바로 그린다 (위 EVENT_DEX_READY 주석) — 아직이면 종전대로 lazy + Suspense
+        const Ready = eventDexReady;
+        return Ready
+          ? <Ready key={eventModalId} modalOnly initialId={eventModalId} onCloseModal={() => setEventModalId(null)}
+              onShowOperator={showOperatorById} onOpenGuide={onOpenGuide} />
+          : (
+            <Suspense fallback={null}>
+              <EventDexForLocale key={eventModalId} modalOnly initialId={eventModalId} onCloseModal={() => setEventModalId(null)}
+                onShowOperator={showOperatorById} onOpenGuide={onOpenGuide} />
+            </Suspense>
+          );
+      })()}
 
       <footer ref={footerRef}
         className={`${footerFolded ? "folded" : ""}${footDragH != null ? " dragging" : ""}`}
