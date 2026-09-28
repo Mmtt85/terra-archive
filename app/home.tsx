@@ -1549,8 +1549,25 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       pill.style.opacity = "0";
       pill.classList.remove("ready");
     };
+    /* 손가락 아래가 **안쪽 스크롤**이면 당기기가 아니다 (사용자 제보 2026-09-29: 모바일·태블릿에서 드롭다운 목록을
+       끝까지 내렸다가 다시 올리면 새로고침됐다 — 페이지(.site-scroll)가 맨 위라 목록을 올리려고 아래로 끈 손가락을
+       당기기로 가로챘고, 가로채는 동안 preventDefault 로 목록 스크롤까지 막았다).
+       ① 드롭다운 목록(role listbox·menu — 사이트의 목록은 전부 이 역할이다) 안에서는 아예 당기지 않는다. 떠 있는
+          목록에서 새로고침을 바랄 일이 없다 — 목록 맨 위에서 한 번 더 쓸어도 목록만 그대로 둔다.
+       ② 그 밖의 안쪽 스크롤 칸(태블릿 도감의 필터 패널·결과 칸 등)은 **위로 더 올라갈 수 있을 때만** 그 칸 몫으로
+          둔다 — 맨 위에 있으면 종전대로 당겨서 새로고침이 된다. */
+    const innerScroll = (target: EventTarget | null) => {
+      const el = target instanceof Element ? target : null;
+      if (!el) return false;
+      if (el.closest('[role="listbox"], [role="menu"]')) return true;
+      for (let node: Element | null = el; node && node !== sc; node = node.parentElement) {
+        if (node.scrollTop > 0 && node.scrollHeight > node.clientHeight + 1
+          && /(auto|scroll)/.test(getComputedStyle(node).overflowY)) return true;
+      }
+      return false;
+    };
     const onStart = (event: TouchEvent) => {
-      if (event.touches.length !== 1 || sc.scrollTop > 0) return;
+      if (event.touches.length !== 1 || sc.scrollTop > 0 || innerScroll(event.target)) return;
       pulling = true; dist = 0;
       startY = event.touches[0].clientY;
       pill.style.transition = "none";
