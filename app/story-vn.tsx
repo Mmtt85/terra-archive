@@ -17,11 +17,16 @@
 //   · 기본은 **페이지 안 인라인** — 처음부터 화면을 덮지 않는다.
 //   · [전체 모드]를 눌러야 화면을 덮고, 그때 오른쪽 위 ✕ 나 Esc 로 인라인으로 돌아온다.
 //   · 리더기를 아예 벗어나는 건 위쪽 보기 방식 탭(전문 보기·AI 요약)이 맡는다.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+//
+// 소리 (2026-09-27): 스크립트 JSON 의 `au` 트랙 → story-audio.ts 가 Web Audio 로 튼다.
+//   무대(vn)와 같은 규약 — 줄마다 직전 소리 스냅샷을 펴 두고 지금 줄의 것을 건다. 효과음은 줄을
+//   **넘어온 순간**에만 울린다. 브라우저 자동재생 정책 때문에 리더기를 처음 누를 때 소리가 켜진다.
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { asset } from "./assets";
 import { useI18n } from "./i18n";
 import type { ScriptEp, VnSnap } from "./story";
+import { getSound, setSound, SOUND_DEFAULT, storyAudio, subscribeSound, type AuSnap } from "./story-audio";
 
 const hideErr = (e: { currentTarget: { style: { visibility: string } } }) => {
   e.currentTarget.style.visibility = "hidden";
@@ -58,6 +63,38 @@ const autoDelay = (chars: number) => Math.min(7500, Math.max(1600, 1200 + chars 
 /** 슬롯 n개를 무대에 고르게 세울 때 k번째의 가로 위치(%) */
 const slotAt = (k: number, n: number) => (100 / (n + 1)) * (k + 1);
 
+/** 소리 켜기/끄기 아이콘 — 다른 버튼(⏮ ⏭ ⛶)처럼 단색이어야 해서 이모지(🔊) 대신 선 그림 */
+function SpeakerIcon({ on }: { on: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none" />
+      {on
+        ? <><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 5.5a9 9 0 0 1 0 13" /></>
+        : <><path d="m16 9.5 5 5" /><path d="m21 9.5-5 5" /></>}
+    </svg>
+  );
+}
+
+/** 지금 줄 뒤 몇 줄에서 울릴 소리 — 미리 받아 둔다 (곡은 받는 데 1~2초 걸린다) */
+const AHEAD = 12;
+function upcoming(au: AuSnap[], idx: number, cur: AuSnap | null): string[] {
+  const ids = new Set<string>();
+  const take = (a: AuSnap | null) => {
+    if (!a) return;
+    if (a.m) ids.add(a.m);
+    if (a.mi) ids.add(a.mi);
+    for (const [id] of Object.values(a.lp ?? {})) ids.add(id);
+    for (const [id] of a.se ?? []) ids.add(id);
+  };
+  take(cur);
+  for (const a of au) {
+    if (a.i > idx + AHEAD) break;
+    if (a.i > idx) take(a);
+  }
+  return [...ids];
+}
+
 export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
   ep: ScriptEp;
   title: string;
@@ -85,6 +122,23 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
     }
     return out;
   }, [ep]);
+
+  // 줄마다의 소리 — au 트랙도 같은 방식으로 편다 (소리가 한 번도 안 바뀐 앞부분은 null = 무음)
+  const au = ep.au;
+  const hasAudio = !!au && au.length > 0;
+  const sounds = useMemo(() => {
+    const out: (AuSnap | null)[] = [];
+    const track = au ?? [];
+    let cur: AuSnap | null = null;
+    let k = 0;
+    for (let i = 0; i < ep.lines.length; i += 1) {
+      while (k < track.length && track[k].i <= i) { cur = track[k]; k += 1; }
+      out.push(cur);
+    }
+    return out;
+  }, [ep, au]);
+  const snd = useSyncExternalStore(subscribeSound, getSound, () => SOUND_DEFAULT);
+  const soundOn = hasAudio && snd.on;
 
   const line = ep.lines[idx];
   const stage = stages[idx] ?? {};
@@ -121,14 +175,24 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
     if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(-1); }
   }, [go, full, exitFull]);
 
+  // 소리는 사용자 조작 안에서만 켤 수 있다 (자동재생 정책) — 리더기 안의 클릭·키를 **캡처 단계**에서
+  // 받아 깨운다. 버튼들이 전파를 끊어도(stopPropagation) 캡처는 먼저 온다.
+  const wake = useCallback(() => { if (soundOn) storyAudio.unlock(); }, [soundOn]);
+
   // 전체 모드에서만 창 전체의 키를 가져온다 — 인라인에서 가로채면 페이지 스크롤(Space)이
   // 막힌다. 인라인일 땐 무대에 포커스가 있을 때만 먹는다 (무대의 onKeyDown).
   useEffect(() => {
     if (!full) return;
-    const handler = (e: KeyboardEvent) => { if (!e.isComposing) onKey(e); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.isComposing) return;
+      wake();
+      // 음량 막대에 포커스가 있으면 방향키는 막대 몫이다 (줄을 넘기지 않는다)
+      if (e.key !== "Escape" && (e.target as HTMLElement | null)?.tagName === "INPUT") return;
+      onKey(e);
+    };
     window.addEventListener("keydown", handler, true);
     return () => window.removeEventListener("keydown", handler, true);
-  }, [full, onKey]);
+  }, [full, onKey, wake]);
 
   // 브라우저 쪽에서 전체화면이 풀리면(Esc·제스처) 오버레이도 같이 내린다 — 상태가 갈리면
   // 화면은 덮여 있는데 나가는 길이 안 보인다.
@@ -154,6 +218,22 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
   // 대사창 글꼴은 리더기가 실제로 열렸을 때만 받아 온다
   useEffect(() => { ensureReaderFont(); }, []);
 
+  // 소리 — 줄이 바뀔 때마다 그 줄의 상태(곡·반복음)를 건다. 효과음은 줄을 **넘어온 순간**에만
+  // 울린다 — 첫 화면이나 소리를 막 켰을 때 같은 줄을 다시 걸면서 효과음이 또 나면 안 된다.
+  const lastIdx = useRef<number | null>(null);
+  useEffect(() => {
+    const moved = lastIdx.current !== null && lastIdx.current !== idx;
+    lastIdx.current = idx;
+    if (!soundOn || !au) return;
+    const snap = sounds[idx] ?? null;
+    storyAudio.apply(snap, moved && snap?.i === idx);
+    storyAudio.prefetch(upcoming(au, idx, snap));
+  }, [idx, soundOn, sounds, au]);
+  useEffect(() => { if (!soundOn) storyAudio.silence(); }, [soundOn]);
+  useEffect(() => { storyAudio.setVolume(snd.vol); }, [snd.vol]);
+  // 리더기를 벗어나면(화 이동·보기 전환·창 닫기) 멈춘다 — 다음 화는 새로 마운트되며 제 곡을 건다
+  useEffect(() => () => storyAudio.silence(), []);
+
   const cutSrc = stage.cut ? asset(`/story/cut/${stage.cut}.webp`) : null;
   const bgSrc = stage.bg ? asset(`/story/bg/${stage.bg}.webp`) : null;
   const atEnd = idx >= last;
@@ -168,7 +248,7 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
   }, [auto, atEnd, idx, line, go]);
 
   const body = (
-    <div className={`vn-root${full ? " full" : ""}`}
+    <div className={`vn-root${full ? " full" : ""}`} onClickCapture={wake} onKeyDownCapture={wake}
       {...(full ? { role: "dialog", "aria-modal": true, "aria-label": `${title} — ${t("리더기")}` } : {})}>
       {/* 무대: 배경 → 스탠딩 → 컷 CG → 가림막 순으로 겹친다.
           ⚠ 각 층의 key 에 **그림 이름**을 넣는다 — 그래야 등장 애니메이션이 매 줄이 아니라
@@ -198,6 +278,24 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
           )}
           <span className="vn-top-mid">{idx + 1} / {ep.lines.length}</span>
           {full && <span className="vn-top-title">{title}</span>}
+          {/* 소리 — 소리 트랙이 있는 화에만. 음량 막대는 마우스를 올리면 왼쪽으로 펼쳐진다
+              (폰은 기기 음량 버튼이 있어 막대를 안 띄운다). */}
+          {hasAudio && (
+            <div className={`vn-snd${snd.on ? "" : " off"}`}>
+              <input type="range" className="vn-vol" min={0} max={1} step={0.05} value={snd.vol}
+                aria-label={t("음량")} disabled={!snd.on}
+                onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}
+                onChange={(e) => setSound({ ...snd, vol: Number(e.target.value) })} />
+              <button type="button" className={`vn-obtn${snd.on ? "" : " mute"}`} aria-pressed={snd.on}
+                title={snd.on ? t("소리 끄기") : t("소리 켜기")} aria-label={snd.on ? t("소리 끄기") : t("소리 켜기")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // 켜는 클릭은 캡처 단계에선 아직 꺼진 상태라 wake 가 안 돈다 — 여기서 직접 깨운다
+                  if (!snd.on) storyAudio.unlock();
+                  setSound({ ...snd, on: !snd.on });
+                }}><SpeakerIcon on={snd.on} /></button>
+            </div>
+          )}
           {/* 자동 진행 — 아이콘(▶)은 무슨 뜻인지 헷갈린다는 지적으로 글자로 바꿨다 (2026-08-25) */}
           <button type="button" className={`vn-obtn vn-auto${auto ? " on" : ""}`} disabled={atEnd}
             title={auto ? t("자동 넘김 끄기") : t("자동 넘김")} aria-label={auto ? t("자동 넘김 끄기") : t("자동 넘김")}

@@ -169,6 +169,7 @@ python3 scripts/build-story-scripts.py --lang ja
 python3 scripts/build-story-vn.py            # 리더기 무대 — 배경·스탠딩 + story-scene-ids.json
 python3 scripts/build-records.py             # 오퍼레이터 기록(밀록) — ci 미포함, 여기서만 돈다
 python3 scripts/build-story-vn.py --records  #   └ 기록 리더기 무대 (기록 JSON 의 vn 트랙 → 배경·스탠딩)
+python3 scripts/build-story-audio.py         # 리더기 소리 — 전문·기록 JSON 의 au 트랙 → BGM·효과음 mp3 (없는 것만)
 ```
 > ⚠ `build-story-scripts.py <id>`처럼 **단일 id로 돌리면 `story-script-ids.json`을 갱신하지
 > 않는다**(목록이 잘리는 걸 막으려는 의도적 동작). 새 이벤트가 목록에 안 뜨면 이게 원인이다.
@@ -178,6 +179,9 @@ python3 scripts/build-story-vn.py --records  #   └ 기록 리더기 무대 (�
 > 배경·스탠딩을 받는다. 빼먹으면 기록 리더기 무대가 검게 빈다 (목록 파일은 없다 —
 > 화면이 기록 JSON 의 vn 유무를 직접 본다).
 > 스탠딩이 대량으로 "미러에 없음"으로 나오면 GitHub API 한도를 의심할 것 (gh 로그인 필요).
+> ⚠ `build-story-audio.py`는 **전문·기록을 다 구운 맨 뒤에** 돌린다 — 두 JSON 의 `au` 트랙을 모아
+> 게임 CDN 에서 새 곡·효과음만 뽑는다. 빼먹으면 새 이벤트만 **소리 없이** 재생된다(화면은 색인에
+> 없는 소리를 조용히 건너뛴다). mp3 는 git 에 안 올라가고 배포 때 R2 로만 나간다 (`.gitignore`).
 
 그다음 `story-summary` 스킬 → 집필 → 번역 파이프라인 → `chronicle-register` 스킬(연대기 등록).
 **요약 집필과 번역은 하위 에이전트에 위임하지 않는다** (`scripts/story-i18n/TRANSLATE.md`).

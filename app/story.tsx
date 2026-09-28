@@ -45,6 +45,7 @@ import { ModalWindow } from "./modal-window";
 const SceneMode = lazy(() => import("./story-vn"));
 import type { LoreEvent } from "./eventlore";
 import { normSearch, useSearchInput } from "./search";
+import type { AuSnap } from "./story-audio";
 
 // CG·삽화의 실측 크기 (scripts/measure-story-images.py) — width/height를 박아 로딩 중
 // 레이아웃 밀림(CLS)을 없앤다. 브라우저가 렌더 폭에 맞춰 높이를 미리 예약한다.
@@ -102,7 +103,8 @@ export type ScriptLine = { n?: string; x?: string; st?: string; img?: string; lo
  *  i = 이 무대가 처음 그려지는 줄 번호. 화면은 "현재 줄 이하의 마지막 스냅샷"만 보면 된다.
  *  ch = [스프라이트 base, 표정번호] 목록(무대 왼→오른쪽) · f = 포커스 슬롯(1-base) */
 export type VnSnap = { i: number; bg?: string; cut?: string; ch?: [string, number][]; f?: number; bk?: string; sh?: number };
-export type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[]; vn?: VnSnap[] };
+/** au = 소리 트랙 (BGM·효과음, 2026-09-27) — 리더기(story-vn.tsx → story-audio.ts)가 쓴다 */
+export type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[]; vn?: VnSnap[]; au?: AuSnap[] };
 // tr: "cn" = 미출시 이벤트 — CN 원문 AI 번역본 (비공식 번역 안내 표시)
 export type ScriptData = { id: string; eps: ScriptEp[]; tr?: string; faces?: Record<string, string> };
 const translatedByLocale: Record<string, Set<string>> = {
@@ -620,17 +622,25 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   //    16:9 무대)이 통째로 344px 생기며 아래 '같은 테마의 다른 이야기'를 밀어낸다 —
   //    실측 CLS 0.068 (390×844, 2026-08-25). 리더기일 때는 도착할 것과 **같은 구조**의 빈
   //    껍데기를 미리 깔아 둔다. 진짜 클래스를 그대로 써야 나중에 CSS가 바뀌어도 높이가 따라간다.
+  //    '불러오는 중'도 무대 안에 띄운다 — 도착한 화면엔 무대 위에 그런 줄이 없어서, 줄로 두면
+  //    도착하는 순간 그 높이(84px)만큼 무대가 올라간다 (2026-09-27).
   if (!script || !ep) return (
     <div className="story-script" aria-busy>
-      <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>
+      {!scene && <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>}
       {scene && (
-        <div aria-hidden>
-          <div className="sc-ep-nav">
-            <div className="sc-ep-pick"><span>&nbsp;</span><span className="drop-btn">&nbsp;</span></div>
+        <>
+          <div className="sc-ep-nav" aria-hidden>
+            {/* .drop 으로 감싸야 버튼 안쪽 여백까지 줄 높이에 잡힌다 (없으면 4px 낮다) */}
+            <div className="sc-ep-pick"><span>&nbsp;</span><div className="drop"><span className="drop-btn">&nbsp;</span></div></div>
           </div>
-          <h3 className="sc-ep-title">&nbsp;</h3>
-          <div className="vn-root"><div className="vn-stage" /><p className="vn-hint">&nbsp;</p></div>
-        </div>
+          <h3 className="sc-ep-title" aria-hidden>&nbsp;</h3>
+          <div className="vn-root">
+            <div className="vn-stage"><p className="vn-loading">{t("스크립트 불러오는 중…")}</p></div>
+            <p className="vn-hint" aria-hidden>&nbsp;</p>
+          </div>
+          {/* 도착한 화면의 전문 칸(리더기에선 비어 있다)이 위 여백만 남긴다 — 그 몫 */}
+          <div className="story-detail-grid" aria-hidden />
+        </>
       )}
     </div>
   );
@@ -649,9 +659,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
     )}
     {withPrefs && !scene && <ReaderPrefsBar prefs={ownPrefs} setPrefs={setOwnPrefs} />}
     <div className="story-script" ref={topRef}>
-      <p className="story-disclaimer">{scene
-        ? t("게임 내 스토리 원문을 배경·인물 일러스트와 함께 재생합니다. 음악·효과음은 빠져 있습니다.")
-        : t("게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.")}</p>
+      {!scene && <p className="story-disclaimer">{t("게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.")}</p>}
       {script.tr === "cn" && <p className="story-disclaimer">{t("아직 정식 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 텍스트입니다.")}</p>}
       {/* 에피소드 고르기 — 종전엔 칩을 전부 늘어놓았는데(메인 스토리는 39개까지 간다)
           화면 위쪽을 통째로 먹어서 드롭다운으로 바꿨다 (사용자 지시 2026-08-25). */}

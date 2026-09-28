@@ -88,6 +88,8 @@ const MIME = {
   ".md": "text/markdown; charset=utf-8",
   ".js": "text/javascript", ".wasm": "application/wasm",
   ".bin": "application/octet-stream", ".traineddata": "application/octet-stream",
+  // 리더기 소리 — scripts/build-story-audio.py (2026-09-27)
+  ".mp3": "audio/mpeg",
 };
 
 // 캐시 정책: 게임 에셋 이미지·OCR 엔진은 id당 내용이 사실상 불변 → 30일.

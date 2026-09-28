@@ -211,8 +211,8 @@ for loc, (server, nickname) in LOCALES.items():
                 txt = read_txt(src, st["storyTxt"])
                 if not txt:
                     continue
-                vn = []
-                lines = bss.parse_story(txt, vn)
+                vn, au = [], []
+                lines = bss.parse_story(txt, vn, au)
                 if not lines:
                     continue
                 bss.scan_faces(txt, votes)
@@ -224,6 +224,9 @@ for loc, (server, nickname) in LOCALES.items():
                 # 배경·스탠딩 이미지는 build-story-vn.py --records 가 받는다.
                 if any(v.get("bg") or v.get("ch") for v in vn):
                     rec["vn"] = vn
+                # 소리 트랙 — 리더기 BGM·효과음 (파일은 build-story-audio.py 가 굽는다)
+                if bss.has_audio(au):
+                    rec["au"] = au
                 if src == "cn":
                     rec["f"] = 1
                     future_sets += 1
@@ -263,35 +266,16 @@ for loc in LOCALES:
         doc = load(p)
         changed = False
         for rec in doc["recs"]:
-            kept = []
-            remap = {}          # 원래 줄 번호 → 살아남은 줄 번호 (vn 스냅샷이 줄 번호로 건다)
-            for i, ln in enumerate(rec["lines"]):
-                if "img" in ln:
-                    if ln["img"] in bad_cuts:
-                        changed = True
-                        continue
+            for ln in rec["lines"]:
+                if "img" in ln and ln["img"] not in bad_cuts:
                     fixed = cut_case.get(ln["img"].lower(), ln["img"])
                     if fixed != ln["img"]:
                         ln["img"] = fixed
                         changed = True
-                remap[i] = len(kept)
-                kept.append(ln)
-            # ⚠ 줄이 빠지면 vn 의 i 가 밀린다 — parse_story 와 같은 규칙으로 다시 매긴다.
-            #   빠진 줄에 걸린 무대는 그 다음 살아있는 줄로 옮긴다 (무대를 잃지 않게).
-            if rec.get("vn") and len(kept) != len(rec["lines"]):
-                alive = sorted(remap)
-                merged = {}
-                for snap in rec["vn"]:
-                    j = remap.get(snap["i"])
-                    if j is None:
-                        nxt = next((k for k in alive if k > snap["i"]), None)
-                        if nxt is None:
-                            continue
-                        j = remap[nxt]
-                    merged[j] = {**snap, "i": j}
-                rec["vn"] = [merged[k] for k in sorted(merged)]
+            # ⚠ 줄이 빠지면 vn·au 의 i 가 밀린다 — bss.drop_lines 가 parse_story 와 같은 규칙으로
+            #   다시 매긴다 (빠진 줄에 걸린 무대·소리는 그 다음 살아있는 줄로 옮긴다).
+            if bss.drop_lines(rec, lambda ln: ln.get("img") in bad_cuts):
                 changed = True
-            rec["lines"] = kept
         fixed_faces = {w: char_case.get(s.lower(), s) for w, s in doc["faces"].items() if s not in bad_sprites}
         if fixed_faces != doc["faces"]:
             doc["faces"] = fixed_faces

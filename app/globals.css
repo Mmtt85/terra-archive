@@ -23909,6 +23909,24 @@ html.dark .ac-bring-dial {
   font-weight: 700;
   letter-spacing: 0.06em;
 }
+/* 소리 켜기/끄기 + 음량 막대 (2026-09-27) — 막대는 마우스를 올리거나 포커스가 오면 버튼 왼쪽으로
+   펼쳐진다. 폰(hover 없음)은 기기 음량 버튼이 있어 막대를 띄우지 않는다. */
+.vn-snd { display: flex; align-items: center; gap: 6px; }
+.vn-obtn svg { display: block; margin: auto; }
+.vn-vol {
+  width: 0;
+  margin: 0;
+  opacity: 0;
+  accent-color: var(--lime, #b8e04a);
+  cursor: pointer;
+  transition: width 0.15s ease, opacity 0.15s ease;
+}
+@media (hover: hover) {
+  .vn-snd:hover .vn-vol { width: 76px; opacity: 0.9; }
+}
+.vn-snd:focus-within .vn-vol { width: 76px; opacity: 0.9; }
+.vn-snd.off .vn-vol { display: none; }
+
 /* 전체 모드에서만 위쪽 줄에 화 제목 — 인라인이면 바로 위에 같은 제목이 있다 */
 .vn-top-title {
   max-width: 42%;
@@ -23999,6 +24017,16 @@ html[lang="ja"] .vn-box {
 
 /* 조작 막대 */
 .vn-hint { margin: 0; align-self: flex-start; font-size: 11px; color: var(--muted); }
+/* 스크립트가 오기 전 빈 무대 한가운데의 '불러오는 중' (story.tsx 로딩 껍데기) */
+.vn-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-size: 13px;
+  color: #8a93a3;
+}
 .vn-root.full .vn-hint { align-self: center; color: #5f6878; }
 
 /* 리더기를 보는 동안엔 글 목록을 감춘다 — 같은 화면에 둘 다 있으면 무대가 묻힌다 */

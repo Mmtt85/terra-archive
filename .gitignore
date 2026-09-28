@@ -101,3 +101,7 @@ scripts/records-cn/_src/
 
 # 위수 협의 인식 실험 스크립트 (측정용 — 정본은 scripts/verify-ac/*)
 /scripts/ac-lab/
+
+# 리더기 소리(BGM·효과음) — 수백 MB 이고 scripts/build-story-audio.py 가 게임 CDN 에서 언제든 다시 뽑는다.
+# R2 로는 deploy.sh(r2-sync)가 이 체크아웃에 있는 것을 올린다. 색인(index.json)은 추적한다.
+public/story/audio/*.mp3

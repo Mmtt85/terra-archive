@@ -180,6 +180,115 @@ def _attr_f(k, a, default=None):
     m = re.search(k + r"\s*=\s*(-?\d+(?:\.\d+)?)", a, re.I)
     return float(m.group(1)) if m else default
 
+# ── 소리 트랙 (2026-09-27, 사용자 요청 "리더기에 BGM이랑 효과음 다 넣어줘") ─────────
+# 종전엔 소리 태그를 전부 버렸다. 무대(vn)와 **따로** `au` 트랙으로 뽑는다 — 무대 스냅샷에
+# 섞으면 인물이 바뀔 때마다 곡 이름이, 곡이 바뀔 때마다 인물 목록이 같이 복제된다.
+# 대본이 부르는 건 `$별칭`이고 실제 파일은 story_variables.json 이 푼다
+# (`$darkalley_intro` → Sound_Beta_2/Music/act5d0/m_avg_longmendarkalley_intro).
+# 트랙에는 **파일 이름(경로 마지막 조각, 소문자)** 만 싣는다 — 전수 2,285개가 겹치지 않는다.
+# 파일은 build-story-audio.py 가 게임 CDN에서 뽑아 public/story/audio/<이름>.mp3 로 굽는다.
+RE_PLAYMUSIC = re.compile(r'\[\s*playmusic\s*\(([^)]*)\)', re.I)
+RE_STOPMUSIC = re.compile(r'\[\s*stopmusic\b', re.I)
+RE_MUSICVOL = re.compile(r'\[\s*musicvolu\w*\s*\(([^)]*)\)', re.I)      # 대본에 musicvolune 오타 1회
+RE_PLAYSOUND = re.compile(r'\[\s*playsound\s*\(([^)]*)\)', re.I)
+RE_STOPSOUND = re.compile(r'\[\s*stopsound\b\s*(?:\(([^)]*)\))?', re.I)
+RE_SOUNDVOL = re.compile(r'\[\s*soundvolume\s*\(([^)]*)\)', re.I)
+RE_DELAY = re.compile(r'\[\s*delay\s*\(([^)]*)\)', re.I)
+SE_DELAY_MAX = 6.0      # 줄 사이 [Delay] 를 합친 효과음 지연의 상한 — 넘으면 다음 줄이 먼저 온다
+
+
+def _q(k, a):
+    """따옴표 값 — 단어 경계를 둔다 (key= 가 monkey= 안에서 걸리지 않게)."""
+    m = re.search(r'\b' + k + r'\s*=\s*"([^"]*)"', a, re.I)
+    return m.group(1) if m else None
+
+
+def _num(k, a, default=None):
+    m = re.search(r'\b' + k + r'\s*=\s*(-?\d+(?:\.\d+)?)', a, re.I)
+    return float(m.group(1)) if m else default
+
+
+def _n(x, nd=3):
+    """JSON 에 싣는 수 — 정수면 정수로 (1.0 → 1). 트랙이 수천 줄이라 몇 바이트씩이 쌓인다."""
+    x = round(float(x), nd)
+    return int(x) if x == int(x) else x
+
+
+_audio_vars = None
+
+
+def audio_vars(refresh=False):
+    """story_variables 의 소리 별칭 → 파일 이름. 한섭·중섭 표를 합친다 (중섭 선행 번역본도 푼다).
+
+    `.gamedata/<서버>_story_variables.json` 을 쓰고, 없거나 refresh 면 **게임 CDN** 판을 받는다 —
+    새 이벤트는 새 별칭(CustomSE 등)을 달고 오는데 클뜯 레포는 며칠씩 밀린다. CDN 이 안 되면 레포.
+    ⚠ 서버마다 경로가 다른 별칭이 84개 있지만(act24side ↔ act24side#retro) 파일 이름은 같다."""
+    global _audio_vars
+    if _audio_vars is not None and not refresh:
+        return _audio_vars
+    out = {}
+    for sv in ("jp", "en", "kr", "cn"):          # 뒤가 이긴다 — 중섭 표가 가장 넓다
+        dest = os.path.join(REPO, ".gamedata", f"{sv}_story_variables.json")
+        if (refresh or not os.path.exists(dest)) and sv in ("kr", "cn"):
+            raw = None
+            try:
+                sys.path.insert(0, os.path.join(REPO, "scripts"))
+                from fbsutil import Cdn, unity_lzham
+                import UnityPy
+                unity_lzham()
+                cdn = Cdn(sv, cache_dir=os.path.join(REPO, ".gamedata", ".cdn"))
+                _, bundle = cdn.find("gamedata/story/story_variables")
+                for obj in UnityPy.load(io.BytesIO(cdn.bundle(bundle))).objects:
+                    if obj.type.name == "TextAsset":
+                        d = obj.read()
+                        if d.m_Name == "story_variables":
+                            s = d.m_Script
+                            raw = s.encode("utf-8", "surrogateescape") if isinstance(s, str) else bytes(s)
+                            break
+            except Exception as e:
+                print("⚠ story_variables CDN 수신 실패(%s): %s" % (sv, str(e)[:60]))
+            if raw is None:
+                try:
+                    raw = fetch(f"{GAMEDATA}/{sv}/gamedata/story/story_variables.json", binary=True)
+                except Exception:
+                    raw = None
+            if raw:
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                open(dest, "wb").write(raw)
+        if not os.path.exists(dest):
+            continue
+        for k, v in json.load(open(dest, encoding="utf-8")).items():
+            if isinstance(v, str) and v.lower().startswith("sound_beta_2/"):
+                out[k] = out[k.lower()] = v.rsplit("/", 1)[-1].lower()
+    _audio_vars = out
+    return out
+
+
+_audio_refreshed = False
+
+
+def audio_id(ref):
+    """`$별칭` 또는 `Sound_Beta_2/…` 직접 경로 → 파일 이름(소문자). 못 풀면 None.
+    처음 보는 별칭이면 CDN 표를 새로 받아 다시 본다 (새 이벤트의 새 효과음) — **한 실행에 한 번만**.
+    대본에는 원래 어느 표에도 없는 별칭이 있어서(`$p_atk_smg_n`·`$sys_friend_intro` 등, 게임도 못 튼다)
+    별칭마다 받으면 실행마다 CDN 을 몇 번씩 다시 부른다."""
+    global _audio_refreshed
+    ref = (ref or "").strip()
+    if not ref:
+        return None
+    if ref.startswith("$"):
+        key = ref[1:]
+        table = audio_vars()
+        hit = table.get(key) or table.get(key.lower())
+        if hit is None and not _audio_refreshed:
+            _audio_refreshed = True
+            table = audio_vars(refresh=True)
+            hit = table.get(key) or table.get(key.lower())
+        return hit
+    if ref.lower().startswith("sound_beta_2/"):
+        return ref.rsplit("/", 1)[-1].lower()
+    return None
+
 def sprite_ref(raw):
     """'char_002_amiya_1#6$1 ' → ['char_002_amiya_1-p1', 6]. 표정 없으면 1.
 
@@ -240,7 +349,7 @@ def charslot(ch, attrs):
 
 
 
-def parse_story(txt, vn=None):
+def parse_story(txt, vn=None, au=None):
     """스크립트 원문 → 라인 배열. vn 리스트를 주면 **무대 상태 스냅샷**도 함께 채운다.
 
     스냅샷은 무대가 바뀐 채로 처음 그려지는 줄에만 찍힌다 (i = 그 줄의 인덱스):
@@ -248,21 +357,49 @@ def parse_story(txt, vn=None):
       · ch = [스프라이트 base, 표정번호] 목록 (무대 왼→오른쪽 순, char_empty = 빈 슬롯)
       · f  = 포커스된 슬롯 (1-base, 0이면 없음)   · bk = 가림막 색   · sh = 화면 흔들림
     UI 는 "현재 줄 이하의 마지막 스냅샷"만 찾으면 되므로 상태 기계가 필요 없다.
+
+    au 리스트를 주면 **소리 스냅샷**을 같은 규약으로 채운다 (소리가 바뀐 줄에만):
+      {"i": 12, "m": 루프 곡, "mi": 인트로 곡, "mv": 곡 음량, "lp": {채널: [반복음, 음량]},
+       "se": [[효과음, 음량?, 지연초?], …]}
+      · m/mi/mv/lp 는 **상태** — 빈 스냅샷({"i": k})은 "전부 멈춤"이다.
+      · se 는 **그 줄에서 한 번** 울리는 효과음 (흔들림 sh 처럼 찍고 나면 비운다).
+        대본은 대사 줄을 넘긴 순간 명령을 차례로 실행하므로, 직전 대사 뒤에 쌓인 [Delay] 를
+        지연으로 합쳐 둔다 (걸음 소리 → 1초 → 문 여는 소리 같은 순서가 산다).
     """
     last_img = None
     stage = {"bg": None, "cut": None, "ch": [], "f": 0, "bk": None, "sh": 0}
     snaps, last_key = {}, None
+    snd = {"m": None, "mi": None, "mv": 1, "lp": {}}
+    se, dt = [], 0.0
+    asnaps, last_akey = {}, json.dumps(snd, sort_keys=True)
 
     class Lines(list):
         """append 를 가로채 '이 줄이 그려질 때의 무대'를 찍는다 — 호출부를 안 건드리려고
         리스트를 상속했다 (append 지점이 10곳 가까이 흩어져 있다)."""
         def append(self, item):
-            nonlocal last_key
+            nonlocal last_key, last_akey, dt
             key = json.dumps(stage, sort_keys=True, ensure_ascii=False)
             if key != last_key:
                 snaps[len(self)] = {k: v for k, v in stage.items() if v}
                 last_key = key
                 stage["sh"] = 0          # 흔들림은 1회성 — 찍고 나면 끈다
+            akey = json.dumps(snd, sort_keys=True)
+            if akey != last_akey or se:
+                a = {}
+                if snd["m"]:
+                    a["m"] = snd["m"]
+                    if snd["mi"]:
+                        a["mi"] = snd["mi"]
+                    if snd["mv"] != 1:
+                        a["mv"] = snd["mv"]
+                if snd["lp"]:
+                    a["lp"] = {c: list(v) for c, v in snd["lp"].items()}
+                if se:
+                    a["se"] = [list(s) for s in se]
+                asnaps[len(self)] = a
+                last_akey = akey
+                se.clear()
+            dt = 0.0                     # 지연은 '직전 대사 뒤'부터 센다
             super().append(item)
 
     lines = Lines()
@@ -328,6 +465,63 @@ def parse_story(txt, vn=None):
             if x:
                 lines.append({"loc": x})
             continue
+        # ── 소리 (au 트랙) — au 를 안 받아도 태그는 여기서 먹는다 (아래 무대 규칙에 안 걸리게).
+        #    au 가 없으면 별칭 풀이(표 읽기·CDN 수신)까지 가지 않는다 ──
+        if au is None and (RE_PLAYMUSIC.match(line) or RE_STOPMUSIC.match(line) or RE_MUSICVOL.match(line)
+                           or RE_PLAYSOUND.match(line) or RE_STOPSOUND.match(line)
+                           or RE_SOUNDVOL.match(line) or RE_DELAY.match(line)):
+            continue
+        m = RE_DELAY.match(line)
+        if m:
+            dt += _num("time", m.group(1), 0.0) or 0.0
+            continue
+        m = RE_PLAYMUSIC.match(line)
+        if m:
+            a = m.group(1)
+            loop_id, intro_id = audio_id(_q("key", a)), audio_id(_q("intro", a))
+            if loop_id:
+                snd["m"] = loop_id
+                # intro 와 key 가 같은 곡(`intro="$mist_loop", key="$mist_loop"`)은 인트로가 없는 것
+                snd["mi"] = intro_id if intro_id and intro_id != loop_id else None
+                snd["mv"] = _n(_num("volume", a, 1.0))
+            continue
+        if RE_STOPMUSIC.match(line):
+            snd["m"] = snd["mi"] = None
+            continue
+        m = RE_MUSICVOL.match(line)
+        if m:
+            v = _num("volume", m.group(1))
+            if v is not None:
+                snd["mv"] = _n(v)
+            continue
+        m = RE_PLAYSOUND.match(line)
+        if m:
+            a = m.group(1)
+            sid = audio_id(_q("key", a))
+            chm = re.search(r'\bchannel\s*=\s*"?(\w+)', a, re.I)
+            ch = chm.group(1) if chm else None
+            vol = _n(_num("volume", a, 1.0))
+            if sid and re.search(r'\bloop\s*=\s*"?true', a, re.I):
+                snd["lp"] = {**snd["lp"], ch or "_": [sid, vol]}
+            elif sid:
+                # 같은 채널에 새 소리를 틀면 그 채널의 반복음은 끊긴다 (채널 = 소리 한 줄기)
+                if ch and ch in snd["lp"]:
+                    snd["lp"] = {c: v for c, v in snd["lp"].items() if c != ch}
+                wait = _n(min(SE_DELAY_MAX, dt + (_num("delay", a, 0.0) or 0.0)), 2)
+                se.append([sid, vol, wait] if wait else [sid, vol] if vol != 1 else [sid])
+            continue
+        m = RE_STOPSOUND.match(line)
+        if m:
+            ch = _q("channel", m.group(1) or "")
+            snd["lp"] = {c: v for c, v in snd["lp"].items() if c != ch} if ch else {}
+            continue
+        m = RE_SOUNDVOL.match(line)
+        if m:
+            a = m.group(1)
+            ch, v = _q("channel", a), _num("volume", a)
+            if v is not None:
+                snd["lp"] = {c: ([s[0], _n(v)] if not ch or c == ch else s) for c, s in snd["lp"].items()}
+            continue
         # ── 무대 상태 (버리지 않고 vn 트랙으로) ──
         m = RE_BG.search(line)
         if m:
@@ -379,21 +573,77 @@ def parse_story(txt, vn=None):
             continue
         remap[i] = len(out)
         out.append(ln)
+    alive = sorted(remap)
+
+    def moved(i):
+        """빠진 줄에 걸린 스냅샷은 그 다음 살아있는 줄로 — 없으면 None."""
+        j = remap.get(i)
+        if j is None:
+            nxt = next((k for k in alive if k > i), None)
+            j = remap[nxt] if nxt is not None else None
+        return j
+
     if vn is not None:
         # ⚠ 위에서 줄이 빠지면 인덱스가 밀린다 — 스냅샷을 살아남은 줄 기준으로 다시 매긴다.
         #   빠진 줄에 걸린 스냅샷은 그 다음 살아있는 줄로 옮긴다 (무대를 잃지 않게).
-        alive = sorted(remap)
         merged = {}
         for i in sorted(snaps):
-            j = remap.get(i)
+            j = moved(i)
+            if j is not None:
+                merged[j] = {"i": j, **snaps[i]}   # 같은 줄에 겹치면 마지막 무대가 이긴다
+        vn.extend(merged[k] for k in sorted(merged))
+    if au is not None:
+        # 소리도 같은 규칙 — 단 겹치면 상태는 마지막 것이 이기되 **효과음은 합친다** (한 번씩 다 울린다)
+        merged = {}
+        for i in sorted(asnaps):
+            j = moved(i)
             if j is None:
-                nxt = next((k for k in alive if k > i), None)
+                continue
+            se_prev = merged.get(j, {}).get("se", [])
+            merged[j] = {"i": j, **asnaps[i]}
+            if se_prev:
+                merged[j]["se"] = se_prev + merged[j].get("se", [])
+        au.extend(merged[k] for k in sorted(merged))
+    return out
+
+
+def has_audio(au):
+    """소리 트랙에 실제로 울릴 것이 있나 — 없으면 싣지 않는다 (vn 과 같은 규약)."""
+    return any(a.get("m") or a.get("lp") or a.get("se") for a in au or [])
+
+
+def drop_lines(ep, gone):
+    """ep(또는 기록 rec)의 lines 에서 gone(줄) 이 참인 줄을 빼고 vn·au 의 줄 번호를 다시 매긴다.
+    빠진 줄에 걸린 스냅샷은 다음 살아있는 줄로 옮긴다 (parse_story 와 같은 규칙 — 효과음은 합친다).
+    돌려주는 값: 뺀 줄이 있었나.
+    ⚠ 종전 main() 은 컷씬 누락 줄을 빼면서 vn 을 안 옮겨, 그 뒤 무대가 줄마다 밀렸다."""
+    remap, kept = {}, []
+    for i, ln in enumerate(ep["lines"]):
+        if gone(ln):
+            continue
+        remap[i] = len(kept)
+        kept.append(ln)
+    if len(kept) == len(ep["lines"]):
+        return False
+    alive = sorted(remap)
+    for key in ("vn", "au"):
+        if not ep.get(key):
+            continue
+        merged = {}
+        for snap in ep[key]:
+            j = remap.get(snap["i"])
+            if j is None:
+                nxt = next((k for k in alive if k > snap["i"]), None)
                 if nxt is None:
                     continue
                 j = remap[nxt]
-            merged[j] = {"i": j, **snaps[i]}   # 같은 줄에 겹치면 마지막 무대가 이긴다
-        vn.extend(merged[k] for k in sorted(merged))
-    return out
+            se_prev = merged.get(j, {}).get("se", []) if key == "au" else []
+            merged[j] = {**snap, "i": j}
+            if se_prev:
+                merged[j]["se"] = se_prev + merged[j].get("se", [])
+        ep[key] = [merged[k] for k in sorted(merged)]
+    ep["lines"] = kept
+    return True
 
 
 # CG 레이어 (`[cgitem(...)]`) — 컷씬 `[Image(image="X")]` 위에 얹히는 인물 파츠.
@@ -578,8 +828,8 @@ def build_event(eid, entry):
         txt = txts.get(info["storyId"])
         if not txt:
             continue
-        vn = []
-        lines = parse_story(txt, vn)
+        vn, au = [], []
+        lines = parse_story(txt, vn, au)
         if not lines:
             continue
         scan_faces(txt, votes)
@@ -595,6 +845,8 @@ def build_event(eid, entry):
             # 무대 연출 트랙 — '장면 모드'가 쓴다. 배경·스탠딩이 하나도 없으면 싣지 않는다
             # (옛 이벤트엔 연출 태그가 거의 없어 빈 배열이 파일만 키운다).
             **({"vn": vn} if any(v.get("bg") or v.get("ch") for v in vn) else {}),
+            # 소리 트랙 — 리더기의 BGM·효과음 (파일은 build-story-audio.py 가 굽는다)
+            **({"au": au} if has_audio(au) else {}),
         })
     # 화자 → 스탠딩 스프라이트 얼굴 (오퍼가 아닌 인물도 썸네일 연결, 사용자 요청 2026-07-18)
     faces = resolve_faces(votes)
@@ -699,7 +951,8 @@ def download_cuts(names, cg_layers=None):
 # (AI가 scripts/story-cn/<id>/ko/ep_NN.json 에 번역을 채운다 — 구조 보존)
 # python3 scripts/build-story-scripts.py --cn-merge act51side # 검증·병합 → public/story/script/
 # python3 scripts/build-story-scripts.py --cn-merge act51side --lang en   # EN·JA 번역본 → public/story/script/<lang>/
-#   (번역 규칙·검사기: scripts/story-cn/_TRANSLATE.md · _check.py — 병합 뒤 build-story-vn.py <eid> 로 스탠딩 보정)
+#   (번역 규칙·검사기: scripts/story-cn/_TRANSLATE.md · _check.py — 병합 뒤 build-story-vn.py <eid> 로 스탠딩 보정,
+#    build-story-audio.py 로 새 곡·효과음 — 중섭 선행 곡은 중섭 CDN 에서 뽑는다)
 
 def cn_prepare(eid):
     review = fetch(f"{GAMEDATA}/cn/gamedata/excel/story_review_table.json")
@@ -763,7 +1016,7 @@ def cn_stage(eid, base, spk):
         print(f"  ! {eid}: CN 리뷰 테이블에 없어 연출 트랙을 못 붙인다")
         return {}, {}
     infos = sorted(entry["infoUnlockDatas"], key=lambda i: i["storySort"])
-    vns, votes, skipped = {}, defaultdict(Counter), []
+    vns, aus, votes, skipped = {}, {}, defaultdict(Counter), []
     for idx, info in enumerate(infos):
         src_path = os.path.join(base, f"ep_{idx:02d}.json")
         if not os.path.exists(src_path):
@@ -775,13 +1028,15 @@ def cn_stage(eid, base, spk):
             txt = fetch(f"{GAMEDATA}/cn/gamedata/story/{info['storyTxt']}.txt", binary=True).decode("utf-8")
             os.makedirs(CACHE, exist_ok=True)
             open(dest, "w", encoding="utf-8").write(txt)
-        vn = []
-        lines = json.loads(json.dumps(parse_story(txt, vn), ensure_ascii=False))
+        vn, au = [], []
+        lines = json.loads(json.dumps(parse_story(txt, vn, au), ensure_ascii=False))
         if lines != json.load(open(src_path, encoding="utf-8"))["lines"]:
             skipped.append(idx)
             continue
         if any(v.get("bg") or v.get("ch") for v in vn):
             vns[idx] = vn
+        if has_audio(au):
+            aus[idx] = au           # 소리도 언어와 무관 — 원문 줄 번호 그대로
         cn_votes = defaultdict(Counter)
         scan_faces(txt, cn_votes)
         for who, cnt in cn_votes.items():
@@ -790,7 +1045,7 @@ def cn_stage(eid, base, spk):
         print(f"  ! {eid}: 원문 재파싱이 저장본과 달라 연출을 뺀 편 {skipped}")
     faces = resolve_faces(votes)
     failed = set(download_sprites(sorted(set(faces.values()))))
-    return vns, {w: s for w, s in faces.items() if s not in failed}
+    return vns, aus, {w: s for w, s in faces.items() if s not in failed}
 
 
 # 번역문에 남으면 안 되는 문자 — KO 는 한자·가나, EN 은 CJK 전부, JA 는 한글
@@ -847,11 +1102,13 @@ def cn_merge(eid, lang="ko"):
         for idx, msg in bad:
             print(f"  ✗ ep_{idx:02d}: {msg}")
         sys.exit(f"{eid} ({lang}): {len(bad)}편 불량 — 병합 중단")
-    vns, faces = cn_stage(eid, base, spk)
+    vns, aus, faces = cn_stage(eid, base, spk)
     for ep in eps:
-        vn = vns.get(ep.pop("idx"))
-        if vn:
-            ep["vn"] = vn
+        idx = ep.pop("idx")
+        if vns.get(idx):
+            ep["vn"] = vns[idx]
+        if aus.get(idx):
+            ep["au"] = aus[idx]
     out = {"id": eid, "tr": "cn", "eps": eps, **({"faces": faces} if faces else {})}
     out_dir = OUT_DIR if lang == "ko" else os.path.join(OUT_DIR, lang)
     os.makedirs(out_dir, exist_ok=True)
@@ -908,7 +1165,7 @@ def main():
         if failed:
             bad = set(failed)
             for ep in eps:
-                ep["lines"] = [ln for ln in ep["lines"] if ln.get("img") not in bad]
+                drop_lines(ep, lambda ln: ln.get("img") in bad)
         faces = normalize_case(eps, faces)
         out = {"id": eid, "eps": eps, "faces": faces}
         dest = os.path.join(out_dir, f"{eid}.json")

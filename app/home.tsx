@@ -4352,7 +4352,7 @@ function ProfileSection({ operator }: { operator: Operator }) {
 // CN 선행 기록(f:1)은 '미래시 포함'일 때만 노출한다. 번역이 채워진 것은 tr:"cn"으로
 // 표시돼 안내 문구가 바뀐다 (원문 그대로 → 비공식 AI 번역, scripts/records-cn/).
 type RecordEntry = { name: string; tag: string; unlock: { t: string; p: string[] }[]; f?: 1; tr?: "cn";
-  lines: ScriptData["eps"][number]["lines"]; vn?: ScriptData["eps"][number]["vn"] };
+  lines: ScriptData["eps"][number]["lines"]; vn?: ScriptData["eps"][number]["vn"]; au?: ScriptData["eps"][number]["au"] };
 type RecordDoc = { id: string; recs: RecordEntry[]; faces?: Record<string, string> };
 const recordIds = new Set(recordIdsData as string[]);
 const recordCache = new Map<string, RecordDoc | null>();
@@ -4394,7 +4394,9 @@ function RecordSection({ operator, operators, onRelated }: {
   const script = useMemo<ScriptData | null>(() => (open && doc
     ? { id: `${operator.id}-rec`,
         // vn — 무대 연출 트랙이 있으면 '장면' 보기 버튼이 뜬다 (build-records.py + build-story-vn.py --records)
-        eps: [{ code: "", name: open.name, tag: open.tag, lines: open.lines, ...(open.vn ? { vn: open.vn } : {}) }],
+        // au — 소리 트랙(BGM·효과음)이 있으면 리더기가 튼다 (build-records.py + build-story-audio.py)
+        eps: [{ code: "", name: open.name, tag: open.tag, lines: open.lines, ...(open.vn ? { vn: open.vn } : {}),
+          ...(open.au ? { au: open.au } : {}) }],
         faces: doc.faces }
     : null), [open, doc, operator.id]);
   const showOp = onRelated && operators
