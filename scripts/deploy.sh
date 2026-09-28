@@ -20,11 +20,10 @@ cd "$(dirname "$0")/.."
 # ── 플래그 ─────────────────────────────────────────────────────────────────────
 #   --skip-r2    R2 에셋 동기화를 건너뛴다 (코드만 고쳤고 에셋은 확실히 그대로일 때만)
 #   --one-phase  프리뷰 선행 업로드를 건너뛴다 (업로드·해싱이 2회 → 1회)
-#   --no-probe   무중단 프로브(최대 4분 대기)를 끈다
-#   --fast       = --no-probe  (사용자 요청 2026-09-21: "디플로이가 너무 오래 걸린다")
+#   (--no-probe·--fast 는 없어졌다 — 무중단 프로브를 통째로 뺐다(2026-09-27, 아래 '프로브' 주석).
+#    예전 명령에 붙어 와도 아무 일도 안 한다.)
 #
-# ⚠ 한때 --fast 에 --one-phase 를 함께 묶었다가 **뺐다** (2026-09-21 실측). 배포 419초를
-#   단계별로 재 보니 프로브 대기가 220초(52%)로 압도적이었고, 1단계 선행 업로드 64초는
+# ⚠ --one-phase 로 아끼는 건 없다 (2026-09-21 실측). 1단계 선행 업로드 64초는
 #   **아끼는 게 아니라 옮기는 것**이었다 — 로그: 1단계 `Uploaded 17254 files (50.73 sec)`,
 #   2단계 `Uploaded 0 files (17663 already uploaded) (0.64 sec)`. --one-phase 로 끄면 그
 #   64초가 전환 쪽으로 옮겨갈 뿐이고, 2026-08-06 사고 때문에 넣은 블롭 선행 업로드 보호만
@@ -44,11 +43,9 @@ cd "$(dirname "$0")/.."
 #   ② 고쳐도 이득이 작다 — CSS 가 전 페이지가 참조하는 해시 자산 하나(`/assets/index-*.css`)라
 #      `globals.css` 를 한 줄만 고쳐도 17,213개가 어차피 전부 달라진다.
 ARGS=" $* "
-case "$ARGS" in *" --fast "*) ARGS="$ARGS --no-probe " ;; esac
-SKIP_R2=""; ONE_PHASE=""; NO_PROBE=""
+SKIP_R2=""; ONE_PHASE=""
 case "$ARGS" in *" --skip-r2 "*) SKIP_R2=1 ;; esac
 case "$ARGS" in *" --one-phase "*) ONE_PHASE=1 ;; esac
-case "$ARGS" in *" --no-probe "*) NO_PROBE=1 ;; esac
 
 # ── 단계별 소요 시간 ───────────────────────────────────────────────────────────
 # 어느 단계가 몇 초인지 아무 데도 안 남아서 "배포가 오래 걸린다"를 짐작으로만 말했다
@@ -74,6 +71,47 @@ deploy_summary() {
       printf "  %5d초        합계\n", t
     }'
 }
+# ── 배포는 origin/main 에 있는 것만 (2026-09-28, 사용자 지시 "앞으로 이런 일 없도록") ─────
+# 9/27 08:45 리더기 BGM·효과음을 **커밋하지 않은 채** 이 체크아웃에서 배포했다. 같은 날 CI 데이터
+# 자동 갱신이 origin/main(소리 없는 코드)으로 두 번 다시 배포하면서 사이트 코드도, R2 의 스크립트·
+# 기록 JSON 도 소리 이전 판으로 덮였다 — 라이브가 하루 전으로 돌아갔다.
+# CI 는 origin/main 을 빌드하므로 **origin/main 에 없는 것을 배포하면 다음 CI 배포가 반드시 되돌린다.**
+# 거꾸로 origin/main 보다 뒤처진 트리로 배포하면 CI 가 올린 데이터를 우리가 되돌린다. 그래서 막는다:
+#   ① 커밋 안 된 변경(추적 파일 수정·무시 안 된 새 파일) ② HEAD ≠ origin/main ③ CI 데이터 갱신이 도는 중
+#      (③ — 우리 푸시 전 커밋을 받아 간 CI 가 우리 뒤에 배포해 덮는다, 2026-09 deploy-ci-race 전례)
+# 예외는 public/sitemap.xml(빌드 부산물) 하나. **우회 옵션은 일부러 두지 않는다** — 급하면 커밋하면 된다.
+# CI 는 직전에 커밋·푸시(ci-push.sh)하고 부르므로 여기서 검사하지 않는다.
+if [ -z "${GITHUB_ACTIONS:-}" ]; then
+  git fetch -q origin main
+  DIRTY=$(git status --porcelain --untracked-files=normal | grep -v ' public/sitemap\.xml$' || true)
+  if [ -n "$DIRTY" ]; then
+    echo "✗ 커밋 안 된 변경이 있어 배포하지 않습니다 — origin/main 에 없는 것은 다음 CI 배포가 되돌립니다." >&2
+    echo "$DIRTY" | head -15 >&2
+    [ "$(printf '%s\n' "$DIRTY" | wc -l)" -gt 15 ] && echo "  … 외 $(( $(printf '%s\n' "$DIRTY" | wc -l) - 15 ))개" >&2
+    echo "  → 커밋·푸시한 뒤 다시 돌리거나, 다른 세션 작업이 섞여 있으면 깨끗한 워크트리에서 배포하세요." >&2
+    exit 1
+  fi
+  HEAD_SHA=$(git rev-parse HEAD); MAIN_SHA=$(git rev-parse origin/main)
+  if [ "$HEAD_SHA" != "$MAIN_SHA" ]; then
+    AHEAD=$(git rev-list --count origin/main..HEAD); BEHIND=$(git rev-list --count HEAD..origin/main)
+    echo "✗ HEAD 가 origin/main 과 다릅니다 (앞선 커밋 $AHEAD · 뒤처진 커밋 $BEHIND) — 배포하지 않습니다." >&2
+    [ "$AHEAD" -gt 0 ] && echo "  → 푸시 안 된 커밋이 있습니다: git fetch · rebase 후 push 하고 다시 돌리세요." >&2
+    [ "$BEHIND" -gt 0 ] && echo "  → CI 가 올린 커밋을 안 받았습니다: git pull --rebase 후 다시 돌리세요 (안 그러면 그 데이터를 되돌립니다)." >&2
+    exit 1
+  fi
+  if command -v gh >/dev/null 2>&1; then
+    RUNNING=$(gh run list --workflow data-refresh.yml -L 5 --json status \
+      -q '[.[] | select(.status != "completed")] | length' 2>/dev/null || echo "?")
+    if [ "$RUNNING" = "?" ]; then
+      echo "⚠ CI 상태를 못 읽었습니다(gh) — data-refresh 가 도는 중이면 끝난 뒤에 배포해야 합니다." >&2
+    elif [ "$RUNNING" -gt 0 ]; then
+      echo "✗ CI 데이터 갱신(data-refresh)이 도는 중입니다 — 끝나면 그 커밋을 pull 한 뒤 배포하세요." >&2
+      echo "  (지금 배포하면 그 CI 가 옛 코드로 뒤이어 배포해 덮을 수 있습니다: gh run list -w data-refresh.yml)" >&2
+      exit 1
+    fi
+  fi
+fi
+
 if [ ! -f .r2-sync-key ] && [ -z "${R2_SYNC_KEY:-}" ] && [ -z "$SKIP_R2" ]; then
   echo "R2 동기화 키가 없다 (.r2-sync-key 또는 R2_SYNC_KEY) — 배포를 중단한다." >&2
   echo "에셋을 안 올리고 배포하면 신규 오퍼의 섬네일·스킬·프로필·보이스가 404가 된다." >&2
@@ -222,17 +260,12 @@ else
 fi
 step "1단계 선행 업로드"
 
-# 무중단 실측 (2026-08-06 사용자 제보: "배포 끝나고 30~60초 접속이 안 되는 시간이 늘어난다").
-# 전환 전후를 1초 간격으로 찔러 **언제 몇 초 동안 무엇이** 안 됐는지 남긴다 — 원인이
-# 업로드 창인지·엣지 전파인지·브라우저에 남은 옛 청크인지에 따라 처방이 다르기 때문.
-# 끄려면: bash scripts/deploy.sh --no-probe
-PROBE_PID=""
-if [ -z "$NO_PROBE" ]; then
-  mkdir -p .ci
-  node scripts/deploy-probe.mjs --seconds 240 > .ci/deploy-probe.log 2>&1 &
-  PROBE_PID=$!
-  echo "무중단 프로브 시작 (배포 후 요약 출력 — .ci/deploy-probe.log)"
-fi
+# ⚠ 무중단 프로브(deploy-probe.mjs)는 **뺐다** (사용자 지시 2026-09-27). 8/6 제보("배포 끝나고
+#   30~60초 접속이 안 된다")의 원인을 가리려고 넣은 **계측**이었고, 원인(새 청크 블롭 전파)을
+#   찾은 뒤 처방은 따로 들어갔다 — 2단계 배포(위)·warm-assets(아래)·keep-assets(스테이지 준비).
+#   처방이 들어간 뒤로는 계측이 할 일이 없는데 배포 시간의 절반(4분 대기)을 먹었다.
+#   배포 직후 404가 다시 보이면 warm-assets 로그(2회차 이상 걸린 파일)부터 본다.
+#   계측이 또 필요하면 git 기록에서 되살린다 (`git log -- scripts/deploy-probe.mjs`).
 
 echo "2단계: 프로덕션 전환"
 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true
@@ -254,19 +287,3 @@ step "색인 통보 (IndexNow)"
 # 관리자 UI를 고쳤을 때만: bash scripts/deploy-admin.sh
 echo ""
 echo "✓ 본사이트 배포 완료 — 관리자 사이트는 별도입니다: bash scripts/deploy-admin.sh"
-if [ -z "$ONE_PHASE$NO_PROBE" ]; then
-  echo "  (코드만 조금 고친 배포라면 다음엔: bash scripts/deploy.sh --fast)"
-fi
-
-# ── 프로브 대기는 **맨 뒤** (사용자 지적 2026-09-21) ───────────────────────────
-# 전환은 이미 끝났고 뒤에 남은 건 이 기다림뿐이라, Ctrl+C 로 끊어도 잃는 게 프로브 요약
-# 하나다. 종전에는 이 블록이 IndexNow **앞**에 있어서 "Ctrl+C 해도 배포엔 영향 없다"고
-# 안내해 놓고 실제로는 색인 통보까지 같이 날아갔다 (Ctrl+C 는 포그라운드 프로세스 그룹
-# 전체에 SIGINT 를 보낸다 — 배경의 프로브도 같이 죽어 로그가 반쪽만 남는다).
-if [ -n "$PROBE_PID" ]; then
-  echo ""
-  echo "배포는 끝났습니다 — 무중단 프로브만 남았습니다(최대 4분). Ctrl+C 로 끊으면 이 요약만 못 봅니다."
-  wait "$PROBE_PID" || true
-  sed -n '/── 요약/,$p' .ci/deploy-probe.log
-fi
-step "프로브 대기"

@@ -332,7 +332,26 @@ python3 scripts/build-story-vn.py          # vn 트랙이 있는 전 이벤트
 python3 scripts/build-story-search.py          # 스샷 레이더 전문 검색 인덱스 → public/story/search.bin (KR 전문 갱신 시 같이 실행)
 python3 scripts/build-records.py               # 오퍼레이터 기록(밀록) 전문 → public/records/{ko,en,ja}/<charId>.json + app/data/record-ids.json
 python3 scripts/build-story-vn.py --records    #   └ 기록 리더기 무대 — 배경·스탠딩 (build-records.py 바로 뒤에)
+
+# ── 리더기 소리(BGM·효과음) — 전문·기록을 다 구운 **맨 뒤에** (2026-09-27) ──
+#    전문·기록 JSON 의 au 트랙(곡·반복음·효과음 파일 이름)을 모아 게임 CDN 에서 없는 것만 뽑는다.
+#    산출: public/story/audio/<이름>.mp3 (git 제외 — R2 로만 나간다) + public/story/audio/index.json
+#    ⚠ pip: UnityPy · lz4inv · fmod_toolkit(번들 안 FSB5 → WAV, libfmod 동봉) · lameenc(MP3). ffmpeg 불필요.
+python3 scripts/build-story-audio.py           # 없는 것만 (처음엔 1,968개·666MB, 번들 ~1GB 수신 — 몇 분)
+python3 scripts/build-story-audio.py --dry     # 뽑을 목록·수신량만
+python3 scripts/build-story-audio.py --backfill  # 이미 구운 JSON 에 au 트랙만 덧붙인다 (아래)
 ```
+
+**소리 트랙(`au`)** 은 `parse_story` 가 무대(`vn`)와 같은 규약으로 뽑는다 — 소리가 바뀐 줄에만
+스냅샷, 곡·반복 환경음은 상태, 효과음은 그 줄에서 한 번. 대본의 `$별칭`은 `story_variables.json`
+(게임 CDN 판 우선 — 새 이벤트는 새 별칭을 달고 온다)으로 파일 이름을 푼다. 그래서 전문·기록을
+정상 경로로 다시 구우면 트랙은 저절로 실린다. `--backfill` 은 **다시 굽지 않고** 트랙만 붙이는 길이다 —
+캐시 원문(.gamedata/story-cache)을 전부 파싱해 줄 목록이 똑같은 편을 **내용으로** 찾아 붙인다(번역본은
+줄 모양으로). 스크립트 재생성의 부작용(목록 덮어쓰기·스탠딩 보정 소실, PROJECT-GUIDE §리더기)이 없다.
+파서의 소리 규칙을 고쳤을 때 이걸 돌린다. 2026-09-27 첫 실행: 5,870편 전부 짝찾음, 1,285파일.
+
+루프 이음매를 위해 mp3 앞뒤에 0.05초씩 **곡의 반대쪽 끝**을 덧대 굽는다 — MP3 앞 지연을 브라우저마다
+다르게 먹어서다(크로미움 1,105샘플·웹킷 576샘플). 원리는 build-story-audio.py 머리말.
 
 기록도 같은 AVG 파서를 쓰므로 **연출(vn) 트랙이 기록 JSON 안에 함께 실린다** (2026-09-04) —
 기록 모달의 '리더기 / 전문' 전환이 그걸 쓴다. `--records` 를 빼먹으면 무대가 검게 비므로
@@ -674,16 +693,13 @@ check-jsonld: 8,517개 페이지 · 블록 8,517개 · 오류 0 — BreadcrumbLi
 `ListItem.item`과 `publisher.url`의 상대 경로를 놓쳤다 — 일부러 망가뜨린 HTML로 찔러 보고서야
 드러났다(2026-08-26). 지금은 재귀로 훑는다. 검사기를 고치면 같은 방식으로 다시 찔러 볼 것.
 
-## 배포 무중단 확인 (`deploy-probe.mjs`, 2026-08-06)
+## 배포 직후 청크 404 (2026-08-06)
 
 사용자 제보: *"배포 끝나고 30초~1분간 사이트 접속이 안 되는 시간이 늘어난다."* 원인이
 ① 업로드 창 ② 전환 후 엣지 전파 ③ 브라우저에 남은 옛 청크 중 어느 것이냐에 따라 처방이
-완전히 다른데, 지금까지 상태 코드도 지속 시간도 잰 적이 없었다. 그래서 **먼저 잰다.**
-
-`deploy.sh`가 wrangler 전환 직전에 자동으로 띄우고(끄려면 `--no-probe`), 4분간
-`/`·`/infra`·`/infra.rsc` 셋을 1초 간격으로 찔러 상태 코드·응답 시간·처리 콜로를 기록한 뒤
-**끊긴 구간을 요약**한다 (`.ci/deploy-probe.log`, 원본 표본은 `.ci/deploy-probe.json`).
-단독 실행: `node scripts/deploy-probe.mjs --seconds 240`.
+완전히 달라서, 그때는 배포마다 4분간 프로덕션을 1초 간격으로 찌르는 **계측**(`deploy-probe.mjs`)을
+붙여 먼저 쟀다. 원인을 찾고 아래 처방이 들어간 뒤로는 할 일이 없는데 배포 시간의 절반을 먹어
+**2026-09-27에 뺐다** (사용자 지시). 다시 필요하면 `git log -- scripts/deploy-probe.mjs`로 되살린다.
 
 ### 확정된 원인 (2026-08-06 밤, 제보 스크린샷 2장)
 
@@ -698,11 +714,7 @@ index-nVVUPfoT.js  ← dist/client/assets에 있음
 즉 **전환은 끝났는데 그 콜로가 블롭을 아직 못 읽는 상태**였다(②). 큰 파일일수록 늦었다.
 `keep-assets`(③ 처방)는 이 방향엔 듣지 않는다 — 사라진 옛 파일이 아니라 **새 파일**이 404였다.
 
-같은 배포의 프로브는 "끊김 없음"을 찍었다. 프로브가 HTML에서 찾은 **첫 번째** `/assets/*.js`
-하나만 확인했고 그게 하필 작은 `layout-segment-context`였기 때문이다. 지금은 HTML이 참조하는
-**모든** 청크를 매 틱 확인한다(앞 2KB만 Range로 — 2.3MB를 1초마다 통째로 받으면 4분에 550MB).
-
-읽는 법 — 요약에 찍힌 실패 코드로 원인이 갈린다:
+다시 404가 보이면 — 콘솔에 찍힌 파일로 원인이 갈린다:
 
 | 증상 | 원인 | 처방 |
 |---|---|---|
@@ -710,8 +722,8 @@ index-nVVUPfoT.js  ← dist/client/assets에 있음
 | 404인데 **이번 빌드에 있는** 파일 | 블롭 전파 ← **실제 사고** | 2단계 배포 + `warm-assets` |
 | 404인데 **이번 빌드에 없는** 파일 | 옛 탭이 물던 청크 | `keep-assets` |
 
-요약의 "죽은 청크 (파일별 실패 횟수)" 줄에 파일명이 그대로 찍히니 `ls dist/client/assets`와
-대조하면 위 둘 중 어느 쪽인지 바로 갈린다.
+그 파일명을 `ls dist/client/assets`와 대조하면 위 둘 중 어느 쪽인지 바로 갈린다.
+`warm-assets` 로그에 2회차 이상 걸린 파일이 있으면 그게 곧 사용자가 콘솔에서 볼 파일이다.
 
 **2단계 배포 — 이제 기본값 (끄려면 `--one-phase`)** — Pages는 **파일 내용 해시로 프로젝트
 전체에서 업로드를 중복 제거**한다("N files already uploaded"). 같은 폴더를 프리뷰
