@@ -507,6 +507,47 @@ def cn_event_body(aid):
     return out
 
 
+
+# 미래시 행의 이름을 현지화한다 (사용자 지시 2026-09-29 "한국어 번역이라든지 … 다 해 줘야지") — 중섭 표에서 뽑은
+# 작전·등장 적·재화 이름이 전부 중국어 원문이었다. 적은 그 로케일 서버 도감에 같은 id 가 있으면 공식 이름을,
+# 없으면(중섭 신규 적) 작전·재화 이름과 함께 scripts/cn-translations.json(비공식 번역, {원문: {ko,en,ja}})으로.
+# 번역이 없는 칸은 원문 그대로 둔다 — 빌드 끝에 몇 개가 남았는지 알린다.
+CN_TR = {}
+try:
+    CN_TR = {k.strip(): v for k, v in load(os.path.join(REPO, "scripts", "cn-translations.json")).items()}
+except (OSError, json.JSONDecodeError):
+    pass
+_hb = {}
+for _loc, _srv in LOCALES.items():
+    try:
+        _hb[_loc] = load(os.path.join(G, f"{_srv}_enemy_handbook_table.json")).get("enemyData") or {}
+    except OSError:
+        _hb[_loc] = {}
+fut_untranslated = {loc: set() for loc in LOCALES}
+
+
+def fut_name(cn, loc):
+    cn = (cn or "").strip()
+    got = (CN_TR.get(cn) or {}).get(loc)
+    if got:
+        return got
+    if re.search(r"[\u4e00-\u9fff]", cn):
+        fut_untranslated[loc].add(cn)
+    return cn
+
+
+def fut_localize(body, loc):
+    out = dict(body)
+    if body.get("stages"):
+        out["stages"] = [[s[0], s[1], fut_name(s[2], loc)] for s in body["stages"]]
+    if body.get("enemies"):
+        out["enemies"] = [[e[0], ((_hb[loc].get(e[0]) or {}).get("name") or "").strip() or fut_name(e[1], loc)]
+                          for e in body["enemies"]]
+    if body.get("items"):
+        out["items"] = [[i[0], fut_name(i[1], loc)] + i[2:] for i in body["items"]]
+    return out
+
+
 for eid, st in stories.items():
     if not st.get("unreleased"):
         continue
@@ -529,7 +570,7 @@ for eid, st in stories.items():
             row["thumb"] = thumb
         # 보상 오퍼 이름은 사이트 오퍼 목록(미실장 포함)에서 — 없으면 id 그대로
         loc_ops = per_loc[loc]["ops"]
-        body_loc = dict(body)
+        body_loc = fut_localize(body, loc)
         if body.get("ops"):
             body_loc["ops"] = [[o[0], (loc_ops.get(o[0]) or {}).get("name", o[0]),
                                 (loc_ops.get(o[0]) or {}).get("rarity", 0), o[3]]
@@ -572,13 +613,17 @@ if cn_act and cn_stage:
                    "start": None, "end": None, "fut": 1,
                    "eta": _time.strftime("%Y-%m", _time.gmtime(info["startTime"] + _gap))}
             loc_ops = per_loc[loc]["ops"]
-            body_loc = dict(body)
+            body_loc = fut_localize(body, loc)
             if body.get("ops"):
                 body_loc["ops"] = [[o[0], (loc_ops.get(o[0]) or {}).get("name", o[0]),
                                     (loc_ops.get(o[0]) or {}).get("rarity", 0), o[3]] for o in body["ops"]]
             row.update(body_loc)
             rows[loc].insert(0, row)
 n_fut = sum(1 for r in rows["ko"] if r.get("fut"))
+for loc in LOCALES:
+    if fut_untranslated[loc]:
+        print(f"  ⚠ 미래시 이벤트 미번역 {loc} {len(fut_untranslated[loc])}건 — scripts/cn-translations.json 에 채울 것: "
+              + " · ".join(sorted(fut_untranslated[loc])[:8]))
 
 # 같은 이름으로 여러 번 온 이벤트에 **회차 번호** (사용자 지시 2026-09-28 "인도자의 시련처럼 같은 이름의 이벤트가
 # 여러 번 오는 경우 #으로 구분해줘") — 인도자의 시련 ×6 · 위수 협의: 맹약 ×2. 한국어 이름으로 묶고 시작일 순으로
