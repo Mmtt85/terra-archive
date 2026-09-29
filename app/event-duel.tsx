@@ -479,7 +479,7 @@ function Guide({ data }: { data: DuelData }) {
  *  ←/→ 와 아래 버튼으로 장을 넘긴다(인게임 안내가 한 벌 5장이다).
  *  ⚠ body 포털 + z 1150 — 이벤트 모달은 창(z 200~)이라 그 안에 그리면 창 틀에 갇히고 아래로 깔린다.
  *  ⚠ 키는 **window 캡처 단계**에서 먼저 받아 전파를 끊는다 — 창의 Esc(document)까지 가면 이벤트 모달도 같이 닫힌다. */
-function GuideZoom({ srcs, index, onIndex, onClose }: {
+export function GuideZoom({ srcs, index, onIndex, onClose }: {
   srcs: string[]; index: number; onIndex: (i: number) => void; onClose: () => void;
 }) {
   const { t } = useI18n();

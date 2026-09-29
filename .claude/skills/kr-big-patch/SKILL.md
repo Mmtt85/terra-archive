@@ -95,6 +95,7 @@ python3 scripts/build-story.py --kr-thumbs  # 기본 모드는 글로벌판 썸�
 python3 scripts/build-event-art.py          # 이벤트 도감 그림 — 스토리 없는 이벤트 썸네일·듀얼 채널 그림 (CI에 없음)
 python3 scripts/build-events.py .gamedata   #   └ 썸네일을 붙이려면 그림 뒤에 한 번 더 (ci-refresh 가 먼저 돌렸어도)
 python3 scripts/build-event-duel.py         # 듀얼 채널 상세 (ENEMY_DUEL 회차가 있을 때만 의미 — CI에 없음)
+python3 scripts/build-event-vecbreak.py     # 벡터 돌파 상세 (VEC_BREAK_V2 — 커널 돌파·총력전·특별 전선·보급·마일스톤, CI에 없음)
 node scripts/r2-sync.mjs                    # ⚠ 이걸 안 돌리면 커밋·배포해도 이미지가 404
 ```
 > **홈 테마 그림은 그 이벤트가 걸려 있는 동안만 CDN에 있다** (2026-09-23 도입) — 큰 점검마다

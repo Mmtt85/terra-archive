@@ -134,6 +134,53 @@ def run(server):
                         os.path.join(PUB, "duel", "guide", GUIDE_LOC[server], f"entry_{i}.webp"), (1600, 900)):
                 break
 
+    # ③ 벡터 돌파 (activity.VEC_BREAK_V2, 2026-09-29 사용자 요청 "벡터돌파 말인데, 표시할 수 있는 데이터는 다 표시") —
+    #    scripts/build-event-vecbreak.py 가 파일 유무로 경로를 싣는다. 그림은 회차 공용 폴더(arts/ui/[uc]vecbreakv2/)에
+    #    **지난 회차 것까지** 남아 있다(한섭 CDN: 2회차 보급·교관·특별 전선 아이콘). 중섭은 한섭에 없는 회차(미래시)만.
+    #    · 전투 보급 아이콘 squadbuff/<iconId> · 교관 offensebossicon/<iconId> · 특별 전선 적 bossicon/<bossIconId>
+    #    · 메달 medalicon/**/<medalId> (duel 과 같은 public/event/medal/) · 게임 안내 guidebookpages/[pack]vecbreakv2/*
+    vec = (act.get("activity") or {}).get("VEC_BREAK_V2") or {}
+    _sk_path = os.path.join(G, f"{server}_skin_table.json")
+    skins = (json.load(open(_sk_path, encoding="utf-8")).get("charSkins") or {}) if vec and os.path.exists(_sk_path) else {}
+    for aid, d in vec.items():
+        if server == "cn" and aid in kr_basic:
+            continue
+        ui = "arts/ui/[uc]vecbreakv2/"
+        for b in (d.get("battleBuffDict") or {}).values():
+            if b.get("iconId"):
+                want(ui + "squadbuff/" + b["iconId"], os.path.join(PUB, "vec", "buff", b["iconId"].lower() + ".webp"))
+        for st in list((d.get("offenseStageDict") or {}).values()) + list((d.get("hardStageDict") or {}).values()):
+            ic = (st.get("bossData") or {}).get("iconId")
+            if ic:
+                want(ui + "offensebossicon/" + ic, os.path.join(PUB, "vec", "boss", ic.lower() + ".webp"))
+        for st in (d.get("defenseDetailDict") or {}).values():
+            if st.get("bossIconId"):
+                want(ui + "bossicon/" + st["bossIconId"], os.path.join(PUB, "vec", "def", st["bossIconId"].lower() + ".webp"))
+        # 벡터 돌파는 basicInfo 에 메달 목록(ungroupedMedalIds)이 없다 — 메달 id 접두로 찾는다
+        for p in man:
+            name = p.rsplit("/", 1)[1].lower()
+            if p.lower().startswith("arts/ui/medalicon/") and name.startswith(f"medal_activity_{aid}_"):
+                want(p, os.path.join(PUB, "medal", name + ".webp"))
+        for ms in d.get("milestoneList") or []:
+            r = ms.get("reward") or {}
+            if r.get("type") == "PLAYER_AVATAR":
+                want("arts/ui/playeravatar/" + r["id"], os.path.join(PUB, "avatar", r["id"] + ".webp"))
+            elif r.get("type") == "FURN":
+                want("arts/ui/furnitureicons/drop/" + r["id"], os.path.join(PUB, "furni", r["id"] + ".webp"))
+            elif r.get("type") == "CHAR_SKIN":
+                # 사이트 복장 초상(public/skin/portrait — build-skins)에 없는 새 복장만 (미래시 회차)
+                sk = (skins.get(r["id"]) or {}).get("portraitId")
+                if sk and not os.path.exists(os.path.join(REPO, "public", "skin", "portrait", sk + ".webp")):
+                    want("arts/charportraits/skins/" + sk, os.path.join(PUB, "skin", sk + ".webp"))   # 복장은 skins/ 아래
+    # 게임 안내는 모드 공용이라 서버(언어)마다 한 벌 — 중섭판은 한국어 자리가 빌 때만 (미래시 회차만 있는 동안)
+    guide_loc = GUIDE_LOC.get(server) or ("ko" if server == "cn" else None)
+    if vec and guide_loc and not (server == "cn" and os.path.exists(os.path.join(PUB, "vec", "guide", "ko", "offense_1.webp"))):
+        for part in ("offense", "defense"):
+            for i in range(1, 10):
+                if not want(f"arts/guidebookpages/[pack]vecbreakv2/{part}_{i}",
+                            os.path.join(PUB, "vec", "guide", guide_loc, f"{part}_{i}.webp"), (1600, 900)):
+                    break
+
     wrote = kept = miss = 0
     for bundle, items in sorted(jobs.items()):
         env = UnityPy.load(io.BytesIO(cdn.bundle(bundle)))

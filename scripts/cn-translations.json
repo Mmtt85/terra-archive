@@ -19064,5 +19064,415 @@
   "ko": "<손수레 광차>를 운전하는 동안 공격력과 방어력 대폭 증가",
   "en": "ATK and DEF greatly increased while driving a <Hand-Pushed Mine Cart>",
   "ja": "<手押しトロッコ>を運転している間、攻撃力と防御力が大幅に上昇する"
+ },
+ "“Touch”，再生之流每受到1种异常状态，所有<“过灌注”>免疫该状态": {
+  "ko": "'Touch', 재생의 흐름이 상태 이상을 1종 받을 때마다 모든 <'과관류'>가 그 상태 이상에 면역",
+  "en": "Each time 'Touch', Flow of Regeneration is afflicted by 1 type of negative status, all <'Hyperperfusion'> become immune to it",
+  "ja": "「Touch」、再生の流れが状態異常を1種類受けるたびに、全ての<「過灌流」>がその状態異常を無効化する"
+ },
+ "“你已经度过了最艰难的阶段，情况正在逐渐好转，以后也请不要放弃留存于心的希望……”": {
+  "ko": "“가장 힘든 고비는 이미 넘겼어요. 상황은 조금씩 나아지고 있으니, 앞으로도 마음속에 품은 희망을 놓지 마세요……”",
+  "en": "\"You've already made it through the hardest part. Things are slowly getting better, so please don't let go of the hope you hold in your heart...\"",
+  "ja": "「一番つらい時期はもう乗り越えました。状況は少しずつ良くなっています。これからも、心に抱いた希望を手放さないでくださいね……」"
+ },
+ "“再度绽放”的再部署时间减少15%；部署后使场上所有精英敌人移动速度-25%，持续20秒（不叠加）": {
+  "ko": "「재개화」의 재배치 시간 15% 감소. 배치 후 전장의 모든 정예 적의 이동 속도 -25% (20초, 중첩 불가)",
+  "en": "'Rebloom' has -15% Redeployment Time; upon deployment, all Elite enemies on the field have -25% Movement Speed for 20 seconds (does not stack)",
+  "ja": "「再開花」の再配置時間-15%。配置後、戦場の全ての精鋭の敵の移動速度-25%（20秒、重複不可）"
+ },
+ "“再度绽放”的再部署时间减少35%；部署后使场上所有精英敌人移动速度-50%，持续20秒（不叠加）": {
+  "ko": "「재개화」의 재배치 시간 35% 감소. 배치 후 전장의 모든 정예 적의 이동 속도 -50% (20초, 중첩 불가)",
+  "en": "'Rebloom' has -35% Redeployment Time; upon deployment, all Elite enemies on the field have -50% Movement Speed for 20 seconds (does not stack)",
+  "ja": "「再開花」の再配置時間-35%。配置後、戦場の全ての精鋭の敵の移動速度-50%（20秒、重複不可）"
+ },
+ "“再度绽放”的部署费用-10": {
+  "ko": "「재개화」의 배치 코스트 -10",
+  "en": "'Rebloom' -10 DP Cost",
+  "ja": "「再開花」の配置コスト-10"
+ },
+ "“再度绽放”部署后会持续引导10秒，持续对其中的敌人停顿并每秒造成3500点真实伤害": {
+  "ko": "「재개화」 배치 후 10초간 지속 유도하며, 범위 안의 적에게 지속적으로 정지를 부여하고 초당 3500의 트루 대미지를 입힘",
+  "en": "After deployment, 'Rebloom' channels for 10 seconds, continuously Slowing enemies within and dealing 3500 True damage per second",
+  "ja": "「再開花」配置後、10秒間誘導を続け、範囲内の敵を足止めし続けて毎秒3500の確定ダメージを与える"
+ },
+ "“再度绽放”部署后，场上所有干员获得12点技力": {
+  "ko": "「재개화」 배치 후 전장의 모든 오퍼레이터가 SP 12 획득",
+  "en": "After 'Rebloom' is deployed, all Operators on the field gain 12 SP",
+  "ja": "「再開花」配置後、戦場の全てのオペレーターがSPを12獲得"
+ },
+ "“再灌注”和“过灌注”最大生命值-25%，每当“再灌注”和“过灌注”死亡时，场上的领袖敌人在10秒内受到的伤害提升20%（不叠加）": {
+  "ko": "'재관류'와 '과관류'의 최대 HP -25%. '재관류'나 '과관류'가 사망할 때마다 전장의 리더 적이 10초간 받는 대미지 20% 증가 (중첩 불가)",
+  "en": "'Reperfusion' and 'Hyperperfusion' have -25% Max HP; whenever one dies, Leader enemies on the field take 20% more damage for 10 seconds (does not stack)",
+  "ja": "「再灌流」と「過灌流」の最大HP-25%。「再灌流」または「過灌流」が死亡するたびに、戦場の敵【ボス】が受けるダメージが10秒間20%上昇（重複不可）"
+ },
+ "“再灌注”和“过灌注”最大生命值-50%，每当“再灌注”和“过灌注”死亡时，场上的领袖敌人在10秒内受到的伤害提升40%（不叠加）": {
+  "ko": "'재관류'와 '과관류'의 최대 HP -50%. '재관류'나 '과관류'가 사망할 때마다 전장의 리더 적이 10초간 받는 대미지 40% 증가 (중첩 불가)",
+  "en": "'Reperfusion' and 'Hyperperfusion' have -50% Max HP; whenever one dies, Leader enemies on the field take 40% more damage for 10 seconds (does not stack)",
+  "ja": "「再灌流」と「過灌流」の最大HP-50%。「再灌流」または「過灌流」が死亡するたびに、戦場の敵【ボス】が受けるダメージが10秒間40%上昇（重複不可）"
+ },
+ "“哪怕是微小的生理构造，在被攻击时也可能造成致命伤害，切勿掉以轻心。”": {
+  "ko": "“아무리 작은 생리 구조라도 공격받으면 치명상을 입힐 수 있다. 절대 방심하지 마라.”",
+  "en": "\"Even the tiniest physiological structure can deal a fatal wound when attacked. Never let your guard down.\"",
+  "ja": "「どれほど小さな生理構造であっても、攻撃を受ければ致命傷となりうる。決して油断するな」"
+ },
+ "“由内而生的凋亡，与从外部而来的刀剑一样，需要你提高警惕予以应对。”": {
+  "ko": "“안에서 생겨나는 괴사도 밖에서 날아드는 칼날과 마찬가지다. 경계를 늦추지 말고 대응해야 한다.”",
+  "en": "\"Necrosis born from within is just like a blade from without. You must stay alert and respond accordingly.\"",
+  "ja": "「内から生じる壊死も、外から迫る刃と同じだ。警戒を怠らず対処せよ」"
+ },
+ "“突然失去力量的肌肉，无法传导信号的神经，还有随之而来的绝望感，不要让它们战胜你。”": {
+  "ko": "“갑자기 힘이 빠지는 근육, 신호를 전하지 못하는 신경, 그리고 뒤따르는 절망감. 그것들에 지지 마라.”",
+  "en": "\"Muscles that suddenly lose their strength, nerves that can no longer carry a signal, and the despair that follows. Do not let them defeat you.\"",
+  "ja": "「突然力を失う筋肉、信号を伝えられない神経、そしてその後に訪れる絶望感。それらに負けるな」"
+ },
+ "不要挡在跑道中央，这条规则不仅是为了保证比赛顺利进行，更是为你的人身安全着想。": {
+  "ko": "트랙 한가운데를 막지 말 것. 이 규칙은 경기를 순조롭게 진행하기 위해서만이 아니라, 당신의 신변 안전을 위한 것이기도 하다.",
+  "en": "Do not block the middle of the track. This rule isn't only to keep the race running smoothly; it's also for your own safety.",
+  "ja": "トラックの真ん中を塞がないこと。このルールは競技を円滑に進めるためだけでなく、あなたの身の安全を守るためでもある。"
+ },
+ "你可能会好奇眼前的情况是否是一种特殊安排，但不要想太多，这就是忘记关水龙头导致的。": {
+  "ko": "눈앞의 상황이 무슨 특별한 연출인가 싶겠지만, 너무 깊이 생각하지 마라. 그냥 수도꼭지를 안 잠가서 생긴 일이다.",
+  "en": "You might wonder whether this is some kind of special arrangement, but don't overthink it. Someone just forgot to turn off the tap.",
+  "ja": "目の前の状況は何か特別な演出なのかと思うかもしれないが、深く考えすぎないこと。ただ蛇口を閉め忘れただけだ。"
+ },
+ "关卡初始费用+20，所有干员初始技力+10": {
+  "ko": "작전 시작 코스트 +20, 모든 오퍼레이터의 초기 SP +10",
+  "en": "+20 initial DP; all Operators have +10 initial SP",
+  "ja": "作戦開始時のコスト+20、全てのオペレーターの初期SP+10"
+ },
+ "冷结程序": {
+  "ko": "냉각 프로그램",
+  "en": "Chill Program",
+  "ja": "冷却プログラム"
+ },
+ "冻结程序": {
+  "ko": "빙결 프로그램",
+  "en": "Freeze Program",
+  "ja": "凍結プログラム"
+ },
+ "净血装备": {
+  "ko": "정혈 장비",
+  "en": "Blood Purification Equipment",
+  "ja": "浄血装備"
+ },
+ "凝神程序": {
+  "ko": "집중 프로그램",
+  "en": "Focus Program",
+  "ja": "集中プログラム"
+ },
+ "医疗、重装干员部署费用-35%": {
+  "ko": "메딕·디펜더 오퍼레이터의 배치 코스트 -35%",
+  "en": "Medic and Defender Operators have -35% DP Cost",
+  "ja": "医療・重装オペレーターの配置コスト-35%"
+ },
+ "即便是看起来坚不可摧的介质，能量波依然会在其中不断扩散。": {
+  "ko": "아무리 단단해 보이는 매질이라도 에너지 파동은 그 안에서 끊임없이 퍼져 나간다.",
+  "en": "Even through a medium that seems indestructible, energy waves keep spreading.",
+  "ja": "どれほど堅固に見える媒質であっても、エネルギーの波はその中を絶えず広がっていく。"
+ },
+ "可同时部署人数+1，所有敌人受到的晕眩、寒冷、冻结、恐惧、诱导的持续时间+50%": {
+  "ko": "배치 가능 인원수 +1, 모든 적이 받는 기절·냉기·빙결·공포·유도의 지속 시간 +50%",
+  "en": "+1 Deployment Limit; all enemies suffer +50% duration from Stun, Cold, Freeze, Fear, and Lure",
+  "ja": "同時配置可能数+1、全ての敵が受けるスタン・寒冷・凍結・恐怖・誘導の持続時間+50%"
+ },
+ "周期性选择一名我方干员及其周围4格生成<活性躁乱>；首次被击倒后重生，随后在所有干员及其周围4格生成<活性躁乱>": {
+  "ko": "주기적으로 아군 오퍼레이터 1명을 골라 그 위치와 주변 4칸에 <활성 교란> 생성. 처음 쓰러지면 부활한 뒤 모든 오퍼레이터와 그 주변 4칸에 <활성 교란> 생성",
+  "en": "Periodically selects 1 allied Operator and creates <Active Agitation> on its tile and the 4 surrounding tiles; revives upon first defeat, then creates <Active Agitation> on all Operators and their 4 surrounding tiles",
+  "ja": "周期的に味方オペレーター1人を選び、その位置と周囲4マスに<活性擾乱>を生成する。初めて撃破されると復活し、その後全てのオペレーターとその周囲4マスに<活性擾乱>を生成する"
+ },
+ "【急性髓鞘溶解】召唤1个特殊<“过灌注”>向自身移动，与其接触时将其吸收并爆炸，对全部我方单位造成高额法术伤害": {
+  "ko": "[급성 수초 용해] 특수한 <'과관류'>를 1마리 소환해 자신에게 다가오게 하고, 닿으면 흡수하고 폭발하여 모든 아군 유닛에게 높은 마법 대미지를 입힘",
+  "en": "[Acute Myelinolysis] Summons 1 special <'Hyperperfusion'> that moves toward itself; on contact, absorbs it and explodes, dealing heavy Arts damage to all allied units",
+  "ja": "【急性髄鞘融解】特殊な<「過灌流」>を1体召喚して自身へ向かわせ、接触すると吸収して爆発し、全ての味方ユニットに高い術ダメージを与える"
+ },
+ "城市规则里早就写好了，占用专用通道者会受到严厉惩罚，可惜有的人就是守法意识淡薄。": {
+  "ko": "도시 규칙에 전용 통로를 차지하면 엄벌에 처한다고 진작 적혀 있건만, 안타깝게도 준법 의식이 희박한 사람은 꼭 있다.",
+  "en": "City rules have long stated that anyone occupying a dedicated lane will be severely punished. Sadly, some people just have little regard for the law.",
+  "ja": "専用通路を占拠した者は厳罰に処すと都市の規則にははっきり書いてあるのに、残念ながら遵法意識の薄い人はどこにでもいる。"
+ },
+ "外面的灯光越是炫目，就映衬得没有光源的地方越是昏暗，就算幕后放置着的可爱吉祥物，都能把人吓得魂飞魄散。": {
+  "ko": "바깥의 조명이 눈부실수록 빛이 없는 곳은 더 어두워 보인다. 무대 뒤에 놓인 귀여운 마스코트조차 사람 혼을 쏙 빼놓을 수 있다.",
+  "en": "The more dazzling the lights outside, the darker the unlit places seem. Even a cute mascot placed backstage can scare the living daylights out of you.",
+  "ja": "外の照明がまぶしいほど、光のない場所はいっそう暗く見える。舞台裏に置かれたかわいいマスコットでさえ、人を震え上がらせることがある。"
+ },
+ "对一些人而言，用铁锈和润滑油就能谱写出一部华丽的音乐剧。": {
+  "ko": "누군가에게는 녹과 윤활유만으로도 화려한 뮤지컬 한 편을 써낼 수 있다.",
+  "en": "For some, rust and lubricant are enough to compose a spectacular musical.",
+  "ja": "人によっては、錆と潤滑油だけで華やかなミュージカルを一本書き上げられる。"
+ },
+ "导演的要求有些模糊，编剧的安排非常奇妙，现在还说要追求临场发挥，这样的话出事了可别后悔。": {
+  "ko": "감독의 요구는 애매하고 각본은 참 기묘한데, 이제 와서 애드리브까지 하자고 한다. 이러다 사고가 나도 후회하지 마라.",
+  "en": "The director's demands are vague, the script is truly bizarre, and now they want improvisation too. If something goes wrong, don't come crying.",
+  "ja": "監督の要求は曖昧で、脚本はなんとも奇妙。そのうえ今になってアドリブまで求めてくる。これで事故が起きても後悔しないように。"
+ },
+ "急救程序": {
+  "ko": "응급 처치 프로그램",
+  "en": "First Aid Program",
+  "ja": "救急プログラム"
+ },
+ "您在“矢量突破#3拟生态”考核测试中达到了全部考核要求。": {
+  "ko": "당신은 '벡터 돌파#3 유사 생태'의 평가 시스템에서 모든 평가 기준을 달성했습니다.",
+  "en": "You have passed all assessment requirements in 'Vector Breakthrough #3: Pseudo-Ecology'.",
+  "ja": "貴殿は「鋒矢突破#3：擬似生態」の審査テストにおいて全ての課題を達成した。"
+ },
+ "根据您的综合表现，负责本次考核测试的Touch训练官给出了“超卓”评价。": {
+  "ko": "종합적인 성과를 바탕으로, 훈련교관 Touch는 당신에게 '탁월함' 평가를 내렸습니다.",
+  "en": "Based on your overall performance, Training Officer Touch, who oversaw this assessment, rated you 'Excellent'.",
+  "ja": "貴殿の総合的なパフォーマンスに基づき、今回審査テストを担当したTouch訓練官は「卓越」の評価を与えた。"
+ },
+ "慵怠哼唱": {
+  "ko": "나른한 콧노래",
+  "en": "Languid Humming",
+  "ja": "けだるいハミング"
+ },
+ "我方单位受到的元素损伤-25%，每秒回复1%生命": {
+  "ko": "아군 유닛이 받는 원소 손상 -25%, 초당 HP 1% 회복",
+  "en": "Allies take -25% Elemental Injury and recover 1% HP per second",
+  "ja": "味方ユニットが受ける元素損傷-25%、毎秒HPが1%回復"
+ },
+ "我方单位受到的元素损伤-40%，每秒回复2%生命": {
+  "ko": "아군 유닛이 받는 원소 손상 -40%, 초당 HP 2% 회복",
+  "en": "Allies take -40% Elemental Injury and recover 2% HP per second",
+  "ja": "味方ユニットが受ける元素損傷-40%、毎秒HPが2%回復"
+ },
+ "我方单位攻击力+80%，攻击速度+80，最大生命值+120%，但可同时部署人数-1": {
+  "ko": "아군 유닛의 공격력 +80%, 공격 속도 +80, 최대 HP +120%, 단 배치 가능 인원수 -1",
+  "en": "Allies gain +80% ATK, +80 ASPD, and +120% Max HP, but -1 Deployment Limit",
+  "ja": "味方ユニットの攻撃力+80%、攻撃速度+80、最大HP+120%。ただし同時配置可能数-1"
+ },
+ "我方单位攻击力+80%，最大生命值+80%，但可同时部署人数-1": {
+  "ko": "아군 유닛의 공격력 +80%, 최대 HP +80%, 단 배치 가능 인원수 -1",
+  "en": "Allies gain +80% ATK and +80% Max HP, but -1 Deployment Limit",
+  "ja": "味方ユニットの攻撃力+80%、最大HP+80%。ただし同時配置可能数-1"
+ },
+ "所有敌人重量-1，攻击力-20%": {
+  "ko": "모든 적의 무게 등급 -1, 공격력 -20%",
+  "en": "All enemies have -1 Weight and -20% ATK",
+  "ja": "全ての敵の重量-1、攻撃力-20%"
+ },
+ "抵抗装备": {
+  "ko": "저항 장비",
+  "en": "Resistance Equipment",
+  "ja": "抵抗装備"
+ },
+ "拟生态": {
+  "ko": "유사 생태",
+  "en": "Pseudo-Ecology",
+  "ja": "擬似生態"
+ },
+ "拟生态凝神奖章": {
+  "ko": "유사 생태 집중 훈장",
+  "en": "Pseudo-Ecology: Focus Medal",
+  "ja": "擬似生態集中勲章"
+ },
+ "拟生态制胜奖章": {
+  "ko": "유사 생태 승리 훈장",
+  "en": "Pseudo-Ecology: Medal of Triumph",
+  "ja": "擬似生態制圧勲章"
+ },
+ "拟生态制衡奖章": {
+  "ko": "유사 생태 견제 훈장",
+  "en": "Pseudo-Ecology: Counterbalance Medal",
+  "ja": "擬似生態牽制勲章"
+ },
+ "拟生态坚守奖章": {
+  "ko": "유사 생태 고수 훈장",
+  "en": "Pseudo-Ecology: Fortification Medal",
+  "ja": "擬似生態堅守勲章"
+ },
+ "拟生态战服奖章": {
+  "ko": "유사 생태 전투복 훈장",
+  "en": "Pseudo-Ecology: Combat Attire Medal",
+  "ja": "擬似生態武装勲章"
+ },
+ "拟生态攻坚奖章": {
+  "ko": "유사 생태 공략 훈장",
+  "en": "Pseudo-Ecology: Strategist Medal",
+  "ja": "擬似生態攻略勲章"
+ },
+ "拟生态纯净奖章": {
+  "ko": "유사 생태 정화 훈장",
+  "en": "Pseudo-Ecology: Purity Medal",
+  "ja": "擬似生態浄化勲章"
+ },
+ "拟生态装饰奖章": {
+  "ko": "유사 생태 장식 훈장",
+  "en": "Pseudo-Ecology: Decorator Medal",
+  "ja": "擬似生態装飾勲章"
+ },
+ "拟生态超卓奖章": {
+  "ko": "유사 생태 탁월함 훈장",
+  "en": "Pseudo-Ecology: Medal of Excellence",
+  "ja": "擬似生態超凡勲章"
+ },
+ "拟生态陷阵奖章": {
+  "ko": "유사 생태 돌진 훈장",
+  "en": "Pseudo-Ecology: Breacher Medal",
+  "ja": "擬似生態陥落勲章"
+ },
+ "拮抗装备": {
+  "ko": "길항 장비",
+  "en": "Antagonist Equipment",
+  "ja": "拮抗装備"
+ },
+ "攻击附带狂躁损伤": {
+  "ko": "공격 시 광란 손상 부여",
+  "en": "Attacks inflict Frenzy",
+  "ja": "攻撃時、狂躁損傷を付与する"
+ },
+ "【受体过度应答】持续引导使所有其他敌人移动速度提升且每数秒回复一次生命值；引导成功后使所有其他敌人在数秒内所需阻挡数+1；引导可被打断": {
+  "ko": "[수용체 과잉 응답] 지속 유도하여 다른 모든 적의 이동 속도를 올리고 몇 초마다 HP를 회복시킴. 유도에 성공하면 몇 초간 다른 모든 적의 저지에 필요한 수 +1. 유도는 중단될 수 있음",
+  "en": "[Receptor Overreaction] Channels continuously, increasing all other enemies' Movement Speed and restoring their HP every few seconds; when the channel succeeds, all other enemies require +1 Block for several seconds. The channel can be interrupted",
+  "ja": "【受容体過剰応答】継続的に誘導し、他の全ての敵の移動速度を上昇させ、数秒ごとにHPを回復させる。誘導に成功すると、数秒間、他の全ての敵の必要ブロック数+1。誘導は中断できる"
+ },
+ "【内源代偿反应】移动速度不会低于初始值；受到可抵抗的异常状态的时间减少，数秒内受到相同异常状态的时间进一步减少": {
+  "ko": "[내인성 보상 반응] 이동 속도가 초기값 아래로 떨어지지 않음. 저항 가능한 상태 이상의 지속 시간 감소, 수 초 내에 같은 상태 이상을 다시 받으면 지속 시간이 더 감소",
+  "en": "[Endogenous Compensation] Movement Speed cannot drop below its initial value; reduced duration of resistible negative statuses, reduced further if afflicted by the same status again within a few seconds",
+  "ja": "【内因性代償反応】移動速度が初期値を下回らない。レジスト可能な状態異常の持続時間が短縮され、数秒以内に同じ状態異常を受けると持続時間がさらに短縮される"
+ },
+ "来者都坚信螺旋回廊的下一层就是出口，然而真相往往并不如他们所想。": {
+  "ko": "찾아온 이들은 모두 나선 회랑의 다음 층이 출구라고 굳게 믿는다. 하지만 진실은 대개 그들의 생각과 다르다.",
+  "en": "Everyone who comes here is convinced that the next floor of the spiral corridor is the exit. But the truth is rarely what they think.",
+  "ja": "訪れた者は皆、螺旋回廊の次の階が出口だと固く信じている。しかし真実はたいてい、彼らの思い通りにはならない。"
+ },
+ "极化装备": {
+  "ko": "극화 장비",
+  "en": "Polarization Equipment",
+  "ja": "極化装備"
+ },
+ "活血装备": {
+  "ko": "활혈 장비",
+  "en": "Circulation Equipment",
+  "ja": "活血装備"
+ },
+ "消杀程序": {
+  "ko": "살균 프로그램",
+  "en": "Sterilization Program",
+  "ja": "殺菌プログラム"
+ },
+ "灵便装备": {
+  "ko": "민첩 장비",
+  "en": "Nimble Equipment",
+  "ja": "機敏装備"
+ },
+ "特种、辅助干员技力自然回复速度+0.5/秒": {
+  "ko": "스페셜리스트·서포터 오퍼레이터의 SP 자연 회복 속도 +0.5/초",
+  "en": "Specialist and Supporter Operators have +0.5/s natural SP recovery",
+  "ja": "特殊・補助オペレーターのSP自然回復速度+0.5/秒"
+ },
+ "痛苦化为促人前进的力量，等到时机成熟，那些花儿就会在废墟上再次绽放。": {
+  "ko": "고통은 앞으로 나아가게 하는 힘이 된다. 때가 무르익으면 그 꽃들은 폐허 위에서 다시 피어날 것이다.",
+  "en": "Pain becomes the strength that drives one forward. When the time is right, those flowers will bloom again upon the ruins.",
+  "ja": "苦痛は前へ進む力へと変わる。機が熟せば、あの花々は廃墟の上で再び咲き誇るだろう。"
+ },
+ "矢量突破#3：拟生态活动期间，完成[全力以赴]内的全部关卡": {
+  "ko": "벡터 돌파#3: 유사 생태 이벤트 기간 동안, [총력전] 내 모든 스테이지 클리어",
+  "en": "During the event Vector Breakthrough #3: Pseudo-Ecology, complete all stages in [All-Out Effort]",
+  "ja": "「鋒矢突破#3：擬似生態」開催期間中に、「総力戦」の全ステージをクリア。"
+ },
+ "矢量突破#3：拟生态活动期间，完成[核心突破]内的全部关卡": {
+  "ko": "벡터 돌파#3: 유사 생태 이벤트 기간 동안, [커널 돌파] 내 모든 스테이지 클리어",
+  "en": "During the event Vector Breakthrough #3: Pseudo-Ecology, complete all stages in [Kernel Breakthrough]",
+  "ja": "「鋒矢突破#3：擬似生態」開催期間中に、「中枢突破」の全ステージをクリア。"
+ },
+ "矢量突破#3：拟生态活动期间，完成[核心突破]内的全部关卡，且通关时仅携带2026.10.06 16:00:00前开放的战备补给": {
+  "ko": "벡터 돌파#3: 유사 생태 이벤트 기간 동안, [커널 돌파] 내 모든 스테이지를 2026.10.06 16:00:00 이전에 개방된 전투 보급만 장착한 채 클리어",
+  "en": "During the event Vector Breakthrough #3: Pseudo-Ecology, complete all stages in [Kernel Breakthrough] while equipping only Supplies unlocked before 2026.10.06 16:00:00",
+  "ja": "「鋒矢突破#3：擬似生態」開催期間中に、2026.10.06 16:00:00より前に解放された補給のみを装備して「中枢突破」の全ステージをクリア。"
+ },
+ "矢量突破#3：拟生态活动期间，完成[特别战线]内的任意8关关卡": {
+  "ko": "벡터 돌파#3: 유사 생태 이벤트 기간 동안, [특별 전선] 내 임의의 스테이지 8개 클리어",
+  "en": "During the event Vector Breakthrough #3: Pseudo-Ecology, complete any 8 stages in [Special Front]",
+  "ja": "「鋒矢突破#3：擬似生態」開催期間中に、「特別戦線」の任意のステージを8個クリア。"
+ },
+ "矢量突破#3：拟生态活动期间，完成[特别战线]内的全部关卡": {
+  "ko": "벡터 돌파#3: 유사 생태 이벤트 기간 동안, [특별 전선] 내 모든 스테이지 클리어",
+  "en": "During the event Vector Breakthrough #3: Pseudo-Ecology, complete all stages in [Special Front]",
+  "ja": "「鋒矢突破#3：擬似生態」開催期間中に、「特別戦線」の全ステージをクリア。"
+ },
+ "矢量突破#3：拟生态活动期间，对“Touch”，再生之流施加以下任一状态：寒冷、冻结、浮空、沉睡、晕眩、束缚、战栗、恐惧、麻痹或诱导，累计5次": {
+  "ko": "벡터 돌파#3: 유사 생태 이벤트 기간 동안, <'Touch', 재생의 흐름>에게 냉기·빙결·공중 부양·수면·기절·속박·전율·공포·마비·유도 중 하나를 누적 5회 부여",
+  "en": "During the event Vector Breakthrough #3: Pseudo-Ecology, inflict any of Cold, Freeze, Levitate, Sleep, Stun, Bind, Frighten, Fear, Paralysis, or Lure on 'Touch', Flow of Regeneration 5 times in total",
+  "ja": "「鋒矢突破#3：擬似生態」開催期間中に、<「Touch」、再生の流れ>に寒冷・凍結・浮遊・睡眠・スタン・バインド・戦慄・恐怖・麻痺・誘導のいずれかを累計5回付与する。"
+ },
+ "矢量突破#3：拟生态活动期间，获得家具饰牌《拟生》": {
+  "ko": "벡터 돌파#3: 유사 생태 이벤트 기간 동안, 플레이트 《유사 생명》 획득",
+  "en": "During the event Vector Breakthrough #3: Pseudo-Ecology, obtain the furniture Plaque - 'Touch'",
+  "ja": "「鋒矢突破#3：擬似生態」開催期間中に、家具「パネル『擬生』」を獲得。"
+ },
+ "矢量突破#3：拟生态活动期间，获得时装慵怠哼唱": {
+  "ko": "벡터 돌파#3: 유사 생태 이벤트 기간 동안, 컬렉션 '나른한 콧노래' 획득",
+  "en": "During the event Vector Breakthrough #3: Pseudo-Ecology, obtain the outfit Languid Humming",
+  "ja": "「鋒矢突破#3：擬似生態」開催期間中に、コーデ「けだるいハミング」を獲得。"
+ },
+ "矢量突破#3：拟生态活动期间，通关VEC-03且部署至少1名地面干员": {
+  "ko": "벡터 돌파#3: 유사 생태 이벤트 기간 동안, VEC-03 클리어 및 지상 오퍼레이터 1명 이상 배치",
+  "en": "During the event Vector Breakthrough #3: Pseudo-Ecology, complete VEC-03 and deploy at least 1 Ground Operator",
+  "ja": "「鋒矢突破#3：擬似生態」開催期間中に、地面マスにオペレーターを1回以上配置した上でVEC-03をクリア。"
+ },
+ "矢量突破#3：拟生态活动期间，通关VEC-07且至少使用一次“再度绽放”": {
+  "ko": "벡터 돌파#3: 유사 생태 이벤트 기간 동안, VEC-07 클리어 및 「재개화」 1회 이상 사용",
+  "en": "During the event Vector Breakthrough #3: Pseudo-Ecology, complete VEC-07 and use 'Rebloom' at least once",
+  "ja": "「鋒矢突破#3：擬似生態」開催期間中に、「再開花」を1回以上使用した上でVEC-07をクリア。"
+ },
+ "您的队伍成功突破了训练官“‘Touch’，再生之流”的领域。": {
+  "ko": "당신의 팀은 훈련교관 <'Touch', 재생의 흐름>의 영역을 돌파했습니다.",
+  "en": "Your squad successfully broke through the domain of the training officer, 'Touch', Flow of Regeneration.",
+  "ja": "貴殿の部隊は、訓練官<「Touch」、再生の流れ>の領域を突破した。"
+ },
+ "您的队伍成功通过了核心突破训练场的考验，并在战斗中克服了对狂躁的恐惧。": {
+  "ko": "당신의 팀은 커널 돌파 훈련장의 평가를 통과했으며, 전투에서 광란에 대한 두려움을 극복했습니다.",
+  "en": "Your squad successfully passed a Vector Breakthrough assessment, and overcame the fear of frenzy in battle.",
+  "ja": "貴殿の部隊は、中枢突破訓練場での試練を突破し、戦いの中で狂躁への恐怖を克服した。"
+ },
+ "您的队伍成功通过了核心突破训练场的考验，并在战斗中抑制了已被活化的痛苦。": {
+  "ko": "당신의 팀은 커널 돌파 훈련장의 평가를 통과했으며, 전투에서 활성화된 고통을 억눌렀습니다.",
+  "en": "Your squad successfully passed a Vector Breakthrough assessment, and suppressed the activated pain in battle.",
+  "ja": "貴殿の部隊は、中枢突破訓練場での試練を突破し、戦いの中で活性化した苦痛を抑え込んだ。"
+ },
+ "在闲适的空间里，她哼唱出悠然而宁静的曲调。": {
+  "ko": "한가로운 공간에서, 그녀는 느긋하고 고요한 가락을 흥얼거립니다.",
+  "en": "In a leisurely space, she hums a relaxed and tranquil tune.",
+  "ja": "のどかな空間で、彼女はゆったりとした穏やかな旋律を口ずさむ。"
+ },
+ "空气里弥漫着一股刺激性的气味，而常识和经验告诉你，这种味道预示着的一般不是什么好事。": {
+  "ko": "공기 중에 자극적인 냄새가 퍼져 있다. 상식과 경험에 비추어 보면, 이런 냄새는 대개 좋은 징조가 아니다.",
+  "en": "A pungent smell fills the air, and common sense and experience tell you that such a smell is rarely a good sign.",
+  "ja": "空気中に刺激臭が漂っている。常識と経験からすれば、この匂いはたいてい良い兆しではない。"
+ },
+ "纯化装备": {
+  "ko": "정화 장비",
+  "en": "Purification Equipment",
+  "ja": "純化装備"
+ },
+ "缴械装备": {
+  "ko": "무장 해제 장비",
+  "en": "Disarming Equipment",
+  "ja": "武装解除装備"
+ },
+ "能带来希望的地方，同样也能制造最深的恐慌，世间事物无不如此。": {
+  "ko": "희망을 가져다주는 곳은 가장 깊은 공포를 만들어 내기도 한다. 세상 모든 일이 그렇다.",
+  "en": "A place that brings hope can also create the deepest panic. So it is with everything in this world.",
+  "ja": "希望をもたらす場所は、最も深い恐慌を生み出すこともある。世の中のことはすべてそうだ。"
+ },
+ "蓄能装备": {
+  "ko": "충전 장비",
+  "en": "Charging Equipment",
+  "ja": "蓄能装備"
+ },
+ "身为探险家最担心的事情之一，就是好不容易发现一处秘境，却看到地上已经有前人的足迹了。": {
+  "ko": "탐험가가 가장 걱정하는 일 중 하나는, 어렵게 비경을 찾아냈는데 바닥에 이미 앞사람의 발자국이 찍혀 있는 것이다.",
+  "en": "One of an explorer's greatest worries is finally discovering a hidden realm, only to find footprints already on the ground.",
+  "ja": "探検家が最も恐れることのひとつは、苦労して秘境を見つけたのに、地面にすでに先人の足跡があることだ。"
+ },
+ "迟滞装备": {
+  "ko": "지체 장비",
+  "en": "Stalling Equipment",
+  "ja": "遅滞装備"
+ },
+ "饰牌《拟生》": {
+  "ko": "플레이트 《유사 생명》",
+  "en": "Plaque - 'Touch'",
+  "ja": "パネル『擬生』"
  }
 }

@@ -25049,6 +25049,88 @@ html[lang="ja"] .vn-box {
   .ed-when { min-width: 0; }
   .ed-sort { margin-left: 0; }
 }
+
+/* ── 벡터 돌파 상세 (app/event-vecbreak.tsx, 2026-09-29) — 탭·표·안내 그림은 듀얼 상세(.ed-*)를 그대로 쓴다 ── */
+.vb-period { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 10px; font: 600 12px var(--mono); }
+.vb-period > span { font-family: inherit; color: var(--muted); }
+.vb-period em { font-style: normal; font-weight: 500; color: var(--muted); }
+.vb-period small { font-weight: 500; color: var(--muted); }
+.vb-zones { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.vb-zones li { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); background: var(--white); }
+.vb-zones b { font-size: 13px; }
+.vb-zones span { font: 600 11px var(--mono); color: var(--muted); }
+.vb-zones em { font-size: 11.5px; font-style: normal; color: var(--muted); }
+.vb-rules { display: grid; gap: 3px; margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.5; }
+.vb-sched .ed-what { display: flex; flex-wrap: wrap; gap: 4px; }
+.vb-stage {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-faint);
+  color: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.vb-stage:hover { border-color: var(--ink2); }
+.vb-stage b { font: 700 11.5px var(--mono); white-space: nowrap; }
+.vb-stage span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vb-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.vb-list > li { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); background: var(--white); }
+.vb-list > li.boss { border-left: 3px solid var(--lime); }
+.vb-row-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.vb-floor { min-width: 34px; font: 700 12px var(--mono); color: var(--muted); }
+.vb-tag { padding: 1px 7px; border: 1px solid var(--line); font-size: 11px; font-style: normal; font-weight: 600; }
+.vb-tag.g { border-style: dashed; }
+.vb-open { font: 600 11px var(--mono); color: var(--muted); }
+.vb-pts { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; font: 600 11px var(--mono); color: var(--muted); }
+.vb-pts em { padding: 0 5px; border: 1px solid var(--line); font-style: normal; }
+.vb-story { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--ink2); white-space: pre-line; }
+.vb-boss { display: flex; gap: 10px; padding: 8px; border: 1px solid var(--line); background: var(--bg-faint); }
+.vb-boss-face {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 92px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.vb-boss-face img { width: 56px; height: 56px; object-fit: contain; }
+.vb-boss-face b { font-size: 11.5px; line-height: 1.3; text-align: center; }
+.vb-boss-face:hover b { text-decoration: underline; }
+.vb-boss-desc { min-width: 0; }
+.vb-boss-desc i { display: block; margin-bottom: 2px; font-size: 11px; font-style: normal; font-weight: 700; color: var(--muted); }
+.vb-boss-desc p { margin: 0; font-size: 12px; line-height: 1.55; white-space: pre-line; }
+.vb-def-face { width: 40px; height: 40px; object-fit: contain; }
+.vb-buff { display: flex; align-items: flex-start; gap: 8px; }
+.vb-buff img { flex: 0 0 auto; width: 32px; height: 32px; object-fit: contain; }
+.vb-buff > span { display: flex; flex-direction: column; min-width: 0; font-size: 12px; }
+.vb-buff i { font-style: normal; color: var(--ink2); white-space: pre-line; }
+.vb-supplies { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.vb-supplies li { display: flex; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); background: var(--white); }
+.vb-supplies li > img { flex: 0 0 auto; width: 48px; height: 48px; object-fit: contain; }
+.vb-supplies li > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 12px; }
+.vb-supplies b { font-size: 13px; }
+.vb-supplies i { font-style: normal; line-height: 1.5; color: var(--ink2); white-space: pre-line; }
+.vb-from { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+.vb-medals { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.vb-medals li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); background: var(--white); }
+.vb-medals img { flex: 0 0 auto; width: 48px; height: 48px; object-fit: contain; }
+.vb-medals span { display: flex; flex-direction: column; min-width: 0; font-size: 12px; }
+.vb-medals i { font-size: 11px; font-style: normal; color: var(--muted); }
+@media (max-width: 720px) {
+  .vb-pts { margin-left: 0; }
+  .vb-boss { flex-direction: column; }
+  .vb-boss-face { flex-direction: row; width: auto; }
+}
 /* 미실장 이벤트의 개방 예정월 */
 .ev-eta {
   color: var(--lime);

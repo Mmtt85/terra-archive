@@ -353,6 +353,10 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
         # (scripts/build-event-duel.py). 공통 틀만으로는 작전 하나·재화 하나뿐인 빈 모달이었다 (사용자 요청 2026-09-23).
         if info.get("type") == "ENEMY_DUEL":
             row["duel"] = 1
+        # 벡터 돌파 — 모달이 상세(커널 돌파·총력전·특별 전선·전투 보급·마일스톤 …)를 따로 받는다:
+        # app/data/event-vecbreak*.json (scripts/build-event-vecbreak.py, 사용자 요청 2026-09-29)
+        if info.get("type") == "VEC_BREAK_V2":
+            row["vb"] = 1
         # 원본 ↔ 복각을 서로 이어 준다 (사용자 지시 2026-09-17)
         if origin != aid and origin in kr_basic:
             row["origin"] = origin
@@ -618,6 +622,7 @@ if cn_act and cn_stage:
         for loc in LOCALES:
             row = {"id": aid, "n": names.get(loc) or names["ko"], "type": "NONE",
                    "start": None, "end": None, "fut": 1,
+                   **({"vb": 1} if info.get("type") == "VEC_BREAK_V2" else {}),
                    "eta": _time.strftime("%Y-%m", _time.gmtime(info["startTime"] + _gap))}
             # 섬네일 — build-event-art.py --server cn 이 받아 둔 중섭 홈 테마 그림
             for rel in ([f"/event/{loc}/{aid}.webp"] if loc != "ko" else []) + [f"/event/{aid}.webp"]:

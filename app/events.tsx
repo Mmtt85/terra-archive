@@ -32,6 +32,7 @@ import { SearchSuggest } from "./search-suggest";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages, type FutureDex } from "./dex-cross";
 import { EnemyFile, enemyImg, type Enemy, type EnemyLevel, type EnemyStages, type StatOverride } from "./enemy-detail";
 import { DuelDetail, type DuelFighter } from "./event-duel";
+import { VecDetail } from "./event-vecbreak";
 import { StageFile } from "./stage-detail";
 import { mergeRogueDoc, viewOf, type StageView } from "./stage-data";
 import { findItem, ItemFile, itemIcon, type DexItem, type ItemDoc } from "./items";
@@ -71,6 +72,8 @@ export type EventRow = {
   eta?: string;
   /** 듀얼 채널 — 상세(모드·보상 프로그램·선수 명단 …)를 app/event-duel.tsx 가 따로 받는다 */
   duel?: 1;
+  /** 벡터 돌파 — 상세(커널 돌파·총력전·특별 전선·전투 보급·마일스톤 …)를 app/event-vecbreak.tsx 가 따로 받는다 */
+  vb?: 1;
 };
 export type EventDoc = { updated: string; events: EventRow[] };
 
@@ -356,31 +359,37 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
       )}
       </div>
 
-      {row.stages && row.stages.length > 0 && (
-        <section className="ev-sec">
-          <b>{t("작전 {n}", { n: row.stages.length })}</b>
-          {(() => {
-            const groups = groupStages(row.stages);
-            const list = (items: [string, string, string][]) => (
-              <div className="ev-stages">
-                {items.map(([id, code, name]) => (
-                  <button key={id} type="button" className="ev-stage" onClick={() => onOpenStage(id)}>
-                    <b>{code}</b><span>{name}</span>
-                  </button>
-                ))}
-              </div>
-            );
-            // 묶음이 하나뿐이면 머리말 없이 종전대로
-            if (groups.length < 2) return list(row.stages);
-            return groups.map((g) => (
-              <div key={g.key} className="ev-stage-group">
-                <span className="ev-stage-gh">{g.label}<em>{g.items.length}</em></span>
-                {list(g.items)}
-              </div>
-            ));
-          })()}
-        </section>
-      )}
+      {row.stages && row.stages.length > 0 && (() => {
+        const groups = groupStages(row.stages);
+        const list = (items: [string, string, string][]) => (
+          <div className="ev-stages">
+            {items.map(([id, code, name]) => (
+              <button key={id} type="button" className="ev-stage" onClick={() => onOpenStage(id)}>
+                <b>{code}</b><span>{name}</span>
+              </button>
+            ))}
+          </div>
+        );
+        // 묶음이 하나뿐이면 머리말 없이 종전대로
+        const stageList = groups.length < 2 ? list(row.stages) : groups.map((g) => (
+          <div key={g.key} className="ev-stage-group">
+            <span className="ev-stage-gh">{g.label}<em>{g.items.length}</em></span>
+            {list(g.items)}
+          </div>
+        ));
+        // 벡터 돌파 — 작전 자리가 **탭**이 된다: 개요 · 작전(이 목록) · 커널 돌파 · 총력전 · 특별 전선 · 전투 보급 ·
+        // 돌파 마일스톤 · 게임 안내 (사용자 지시 2026-09-29 "지금 작전 있는부분에다가 개요 작전 커널돌파 총력전 …").
+        if (row.vb) return (
+          <VecDetail id={row.id} stages={row.stages} stagesTab={stageList}
+            onOpenStage={onOpenStage} onOpenEnemy={onOpenEnemy} />
+        );
+        return (
+          <section className="ev-sec">
+            <b>{t("작전 {n}", { n: row.stages.length })}</b>
+            {stageList}
+          </section>
+        );
+      })()}
         </div>
       </div>
       )}

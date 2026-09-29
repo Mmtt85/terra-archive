@@ -148,6 +148,15 @@ python3 scripts/build-rogue.py cn                    # 중섭 변형 일괄 (미
 python3 scripts/build-stages-rogue.py                # 작전 도감의 록라 색인도 따라가야 한다
 ```
 
+**벡터 돌파 새 회차** (`activity.VEC_BREAK_V2` 에 새 id — 미래시 이벤트 창의 벡터 돌파 탭):
+```bash
+python3 scripts/build-event-art.py --server kr,jp,en,cn   # 보급·교관·특별 전선 아이콘·메달·복장 초상 (cn 은 미래시 회차만)
+python3 scripts/build-events.py .gamedata                 # 이벤트 행의 vb 표식·섬네일
+python3 scripts/build-event-vecbreak.py                   # → 미번역 원문은 scripts/vecbreak-untranslated.json
+```
+미번역이 나오면 cn-translation-fill 흐름으로 cn-translations.json 에 **줄 단위**로 채운다. 지난 회차와 글자까지 같은
+문구(메달 설명·구역 이름·규칙)는 빌더가 그 회차의 한·영·일 공식 문구로 알아서 옮긴다(공식 짝).
+
 **생존연산 신시즌** (`sandbox_perm_table` 변경 시):
 ```bash
 python3 scripts/build-sandbox.py
