@@ -151,11 +151,16 @@ python3 scripts/build-events.py .gamedata     # → app/data/events{,.en,.ja}.js
 #     보상 오퍼는 missionData 의 missionGroup 이 정본이다 (이름 매칭 금지).
 #   · 스토리가 없는 이벤트의 썸네일은 public/event/<id>.webp(아래 build-event-art.py)가 있으면 쓴다.
 python3 scripts/build-future-dex.py            # → app/data/future-dex{,.en,.ja}.json (미래시 이벤트의 작전·적·재화 상세)
+#                                                  + app/data/future-routes.json (이동 경로·작전 시뮬레이터, 로케일 무관 1벌)
 #   ⚠ **build-events.py 바로 뒤에** — 그 미래시 행(fut)을 읽는다. 이벤트 창이 본 도감(stages/enemies/items)에서
 #     못 찾은 id 만 여기서 찾는다 (본 도감 목록엔 안 섞는다). 그림(중섭 도면·신규 적 초상)은 중섭 CDN → 에셋 미러
 #     순 — 중섭 CDN 은 **끝난 이벤트 것을 내린다**(act50side·act53side 도면 49장이 미러에만 있었다). CI 는 --no-images.
 #   · 도감에 안 보이는 변형(작전마다 수치만 다른 숨김 보스·레벨 전용 개체)은 **보이는 본체로 접는다** —
 #     scripts/enemyvariant.py. 끝 조각만 떼면 틀리므로 레벨 데이터 이름으로 확인한다. 작전별 수치는 그 작전 칸(es)에.
+#   · 경로·시뮬은 본 도감과 같은 추출기(routeutil)·같은 형식 — 작전 레코드에 sim(경로에 스폰 있음)·cam(실사 도면
+#     투영, stagecams)을 붙인다. 경로 주인 키도 위 본체로 접고 sp·ems 의 **키 순서 번호**를 다시 매긴다.
+#     카메라 원본(yuanyan3060 levels.json)이 아직 모르는 새 이벤트(벡터 돌파 #3)는 격자 경로 지도로 나오다가,
+#     원본이 따라오면 CI 의 매일 실행이 붙인다.
 #   · 미번역 원문은 scripts/future-dex-untranslated.json — cn-translations.json 에 **줄 단위**로 채운다
 #     (작전 설명은 여러 줄이 섞여 줄마다 찾는다). 기믹 표식 `<…>` 은 원문대로 두고 옮긴다.
 python3 scripts/build-event-art.py             # → public/event/ (UnityPy — **로컬 전용**, kr·jp·en CDN)

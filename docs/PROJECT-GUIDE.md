@@ -408,7 +408,10 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
 - `app/data/future-dex.json` / `.en` / `.ja` — 이벤트 도감 **미래시(중섭 선행) 이벤트의 작전·적·재화 상세**
   (build-future-dex.py, 2026-09-29 사용자 제보 "스테이지 데이터같은것도 다 없고 증표도 클릭해도 모달 안뜨네").
   본 도감은 한섭 표로만 만들어 미래시 id 를 누르면 창이 안 떴다. 이벤트 창이 본 도감에서 못 찾은 id 만 여기서
-  찾는다(`app/dex-cross.ts` loadFutureDex) — 본 도감 목록엔 섞지 않는다. 문구는 로케일 서버 공식 → 공식 정형 문구
+  찾는다(`app/dex-cross.ts` loadFutureDex) — 본 도감 목록엔 섞지 않는다. **작전 시뮬레이터도 붙는다**(사용자 지시
+  2026-09-29): `app/data/future-routes.json`(본 도감 stage-routes.json 과 같은 형식) — 작전 상세가 `Stage.fut` 이면
+  이 파일을 읽는다(`app/stage-detail.tsx` routeSrc). 레코드의 `sim`·`cam` 규칙도 본 도감과 같다(한 화면 규칙).
+  `/sim` 런처 검색에는 넣지 않았다 (미래시는 이벤트 창 안에서만 연다). 문구는 로케일 서버 공식 → 공식 정형 문구
   짝(같은 원문) → `scripts/cn-translations.json` 순. ⚠ 벡터 돌파 #3 보스처럼 **작전마다 수치만 다른 숨김 변형**
   (`enemy_8018_etouch_1/2/3`)으로만 나오는 적은 보이는 본체로 접고 작전별 수치를 작전 칸에 싣는다
   (`scripts/enemyvariant.py` — 끝 조각을 떼되 레벨 데이터 이름으로 확인한다: `enemy_8019_pollut_3` 은 이름이 과관류라

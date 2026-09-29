@@ -37,6 +37,8 @@ export type Stage = {
   /** e 와 같은 순서의 코어 스탯 [hp,atk,def,res] — 색인과 다른 값을 레코드가 직접 들고 간다: 적 도감 색인에 없는
    *  적(생존연산 전용)·통합전략 테마 수치(레벨 파일 덮어쓰기, build-stages-rogue.py). 0 이면 색인에서 */
   es?: ([number, number, number, number] | 0)[];
+  /** 이벤트 도감의 미래시(중섭 선행) 작전 — 경로·시뮬 출처가 future-routes.json 이다 (scripts/build-future-dex.py) */
+  fut?: 1;
 };
 export type EnvMul = [number, number, number, number, string | 0];
 export type StageDoc = {

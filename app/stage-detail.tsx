@@ -26,17 +26,20 @@ import { SANDBOX_GRID_SHARE } from "./stage-cam";
 // ems·cw·mm — 2026-08-16 키 비교) StageRouteMap은 그대로 쓴다. 캐시만 갈라 두면
 // 록라 작전만 보는 사람이 5.3MB를, 본 도감만 보는 사람이 1.3MB를 안 받는다.
 type RouteDoc = Record<string, StageRoutes | string>;
-// 경로 파일은 셋 — 본 도감 · 통합전략(rg) · 생존연산 사막 이야기(sb, 2026-09-23 도감 편입).
+// 경로 파일은 넷 — 본 도감 · 통합전략(rg) · 생존연산 사막 이야기(sb, 2026-09-23 도감 편입) ·
+// 이벤트 도감의 미래시 작전(fut, 2026-09-29 — scripts/build-future-dex.py, 이벤트 창에서만 연다).
 // 생존연산 파일은 /ra 모달(app/sandbox.tsx)과 **같은 파일**이라 청크 하나를 같이 쓴다.
-type RouteSrc = "base" | "rogue" | "sb1";
-const ROUTES_CACHE: Record<RouteSrc, RouteDoc | null> = { base: null, rogue: null, sb1: null };
-const ROUTES_LOADING: Record<RouteSrc, Promise<unknown> | null> = { base: null, rogue: null, sb1: null };
+type RouteSrc = "base" | "rogue" | "sb1" | "fut";
+const ROUTES_CACHE: Record<RouteSrc, RouteDoc | null> = { base: null, rogue: null, sb1: null, fut: null };
+const ROUTES_LOADING: Record<RouteSrc, Promise<unknown> | null> = { base: null, rogue: null, sb1: null, fut: null };
 const ROUTE_IMPORTS: Record<RouteSrc, () => Promise<{ default?: unknown }>> = {
   base: () => import("./data/stage-routes.json"),
   rogue: () => import("./data/rogue-routes.json"),
   sb1: () => import("./data/sandbox-routes.json"),
+  fut: () => import("./data/future-routes.json"),
 };
-const routeSrc = (s: { rg?: number; sb?: number }): RouteSrc => (s.sb ? "sb1" : s.rg ? "rogue" : "base");
+const routeSrc = (s: { rg?: number; sb?: number; fut?: number }): RouteSrc =>
+  (s.sb ? "sb1" : s.rg ? "rogue" : s.fut ? "fut" : "base");
 function loadRoutes(k: RouteSrc): Promise<unknown> {
   if (ROUTES_CACHE[k]) return Promise.resolve(ROUTES_CACHE[k]);
   ROUTES_LOADING[k] ??= ROUTE_IMPORTS[k]()

@@ -270,11 +270,12 @@ def first_defined(eid, key):
 stage_ids = {}           # 이벤트 id → [작전 id]
 for r in ev_rows["ko"]:
     stage_ids[r["id"]] = [s[0] for s in r.get("stages") or []]
-lv_of = {}
+lv_of, lv_json = {}, {}   # 작전 → [(적, 수, 단계)] / 레벨 JSON (이동 경로·시뮬레이터가 다시 쓴다)
 for aid, sids in stage_ids.items():
     for sid in sids:
         lid = (cn_stage.get(sid) or {}).get("levelId")
-        lv_of[sid] = level_enemies(cn_level(lid)) if lid else []
+        lv_json[sid] = cn_level(lid) if lid else None
+        lv_of[sid] = level_enemies(lv_json[sid]) if lv_json[sid] else []
 print(f"작전 {len(lv_of)}개 · 레벨 못 받음 {sum(1 for v in lv_of.values() if not v)}개")
 
 # 도감에 안 보이는 변형(작전마다 수치만 다른 숨김 보스·레벨 전용 개체)은 보이는 본체로 접는다 — 본체가 없으면 뺀다.
@@ -409,6 +410,8 @@ def build(loc, suf):
                     rec["es"] = es
             if os.path.exists(os.path.join(REPO, "public", "stage", f"{sid}.webp")):
                 rec["map"] = 1
+            if sid in sim_ids:
+                rec["sim"] = 1              # 이동 경로·시뮬레이터 (future-routes.json)
             stages.append(rec)
             rev_rows.append([rec["code"], name, ev_names[e_i], TYPE_LABEL[loc], sid])
 
@@ -460,6 +463,13 @@ def build(loc, suf):
                 rec["drop"] = drops
             items.append(rec)
 
+    # 실사 도면 위 경로 투영용 전투 카메라 — 본 도감과 같은 출처·규칙 (scripts/stagecams.py).
+    # 원본(72MB)을 못 받는 날은 종전 산출물의 값을 지킨다.
+    prev = os.path.join(DATA, f"future-dex{suf}.json")
+    keep = {e["id"]: e["cam"] for e in load(prev)["stages"]["stages"] if "cam" in e} if os.path.exists(prev) else {}
+    stagecams.attach({"stages": stages}, os.path.join(REPO, "public", "stage"),
+                     {sid: (cn_stage.get(sid) or {}).get("levelId") for sid in lv_of}, keep)
+
     doc = {
         "stages": {"zones": ev_names, "events": ev_names, "items": drop_items, "occ": [], "kinds": [],
                    "enemyIds": enemy_ids, "types": {"ACTIVITY": TYPE_LABEL[loc]}, "enemyNames": enemy_names,
@@ -470,7 +480,9 @@ def build(loc, suf):
     }
     p = os.path.join(DATA, f"future-dex{suf}.json")
     json.dump(doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-    print(f"  {os.path.basename(p)}: 작전 {len(stages)} · 적 {len(enemies)} · 재화 {len(items)} — {os.path.getsize(p)//1024}KB")
+    print(f"  {os.path.basename(p)}: 작전 {len(stages)} · 적 {len(enemies)} · 재화 {len(items)} · "
+          f"카메라 {sum(1 for x in stages if 'cam' in x)} — {os.path.getsize(p)//1024}KB")
+    return enemy_names
 
 
 # ── 그림 (중섭 CDN) — 빌드보다 먼저 받아야 map 플래그가 선다 ───────────────────────
@@ -517,8 +529,76 @@ if not NO_IMAGES:
                 break
     print(f"초상: 새로 받음 {got}")
 
+# ── 이동 경로·작전 시뮬레이터 — app/data/future-routes.json (사용자 지시 2026-09-29 "작전 시뮬레이터는
+#    왜 없어? 그것도 적용해줘야지") ─────────────────────────────────────────────
+# 본 도감 stage-routes.json 과 같은 추출기·같은 문서 형식이라 화면(app/stage-route-map.tsx)을 그대로 쓴다.
+# 같은 레벨을 쓰는 두 번째 작전부터는 별칭 문자열 (본 도감 규약).
+# ⚠ 경로 주인 키는 레벨의 **원래 적 키**다 — 작전 창의 적 카드는 숨김 변형을 본체로 접었으므로(위 canon)
+#   경로 문서도 같이 접어야 카드 고정·선 색·시뮬 말이 한 적으로 이어진다. 스폰(sp)과 이동속도(ems)는
+#   e 의 **키 순서 번호**로 가리키므로 번호까지 다시 매긴다 (VEC-08 의 과관류 `_2`·`_3` 이 한 키로 합쳐진다).
+import stagecams  # noqa: E402
+from routeutil import routes_of_level  # noqa: E402
+
+
+def fold_routes(d):
+    keys = list(d.get("e") or {})
+    order, first_at, merged = [], {}, {}
+    for i, k in enumerate(keys):
+        c = canon(k) or k                  # 본체가 없는 개체는 원래 키 그대로 (이름은 아래 nm 이 붙인다)
+        if c not in merged:
+            merged[c], first_at[c] = set(), i
+            order.append(c)
+        merged[c] |= set(d["e"][k])
+    if order == keys:
+        return d
+    remap = {i: order.index(canon(k) or k) for i, k in enumerate(keys)}
+    d["e"] = {c: sorted(merged[c]) for c in order}
+    for sp in d.get("sp") or []:
+        sp[5] = remap[sp[5]]
+    if d.get("ems"):
+        d["ems"] = [d["ems"][first_at[c]] for c in order]
+    return d
+
+
+routes, first_sid = {}, {}
+for sid, lv in lv_json.items():
+    if not lv:
+        continue
+    lid = ((cn_stage.get(sid) or {}).get("levelId") or "").lower()
+    if lid in first_sid:
+        routes[sid] = first_sid[lid]
+        continue
+    d = routes_of_level(lv, enemy_db)
+    if d:
+        routes[sid] = fold_routes(d)
+        first_sid[lid] = sid
+_body = lambda v: routes.get(v) if isinstance(v, str) else v
+sim_ids = {sid for sid, v in routes.items() if (_body(v) or {}).get("sp")}   # 본 도감 sim 과 같은 판정
+
+names_of = {}
 for loc, _, suf in LOCALES:
-    build(loc, suf)
+    names_of[loc] = build(loc, suf)
+
+# 경로 주인 이름·초상(nm) — 작전의 적 카드 밖에 있는 주인(본체가 없어 뺀 개체·기믹 소환)만. 빠지면 시뮬 말풍선에
+# id 가 찍히고 말이 까맣게 빈다 (scripts/routenames.py 머리주석). 이름표 = 본 적 도감 + 미래시 도감 이름.
+import routenames  # noqa: E402
+_names = {loc: {**{e["id"]: e["name"] for e in load(os.path.join(DATA, f"enemies{suf}.json"))}, **names_of[loc]}
+          for loc, _, suf in LOCALES}
+n_nm = 0
+for sid, d in routes.items():
+    if not isinstance(d, dict):
+        continue
+    known = {canon(e) for e, _, _ in lv_of.get(sid) or [] if canon(e)}
+    nm = routenames.owner_names(lv_json[sid], list(d.get("e") or {}), known, enemy_db,
+                                lambda pf, k: routenames.portrait([pf, k], ["enemy"]), _names)
+    if nm:
+        d["nm"] = nm
+        n_nm += len(nm)
+rp = os.path.join(DATA, "future-routes.json")
+json.dump(routes, open(rp, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+print(f"  future-routes.json: 경로 {sum(1 for v in routes.values() if isinstance(v, dict))} · 별칭 "
+      f"{sum(1 for v in routes.values() if isinstance(v, str))} · 시뮬 {len(sim_ids)} · 경로 주인 이름 보충 {n_nm} — "
+      f"{os.path.getsize(rp)//1024}KB")
 
 rep = {loc: dict(sorted(v.items())) for loc, v in missing.items() if v}
 json.dump(rep, open(os.path.join(REPO, "scripts", "future-dex-untranslated.json"), "w", encoding="utf-8"),
