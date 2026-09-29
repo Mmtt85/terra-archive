@@ -447,6 +447,8 @@ const D: Record<string, Pair> = {
     "For paired Special Front stages, withdrawing the garrison from the first also disables the second stage's Advanced Supply.",
     "セットになった特別戦線は、前のステージの防衛を解除すると後のステージの上位補給も無効になります。"],
   "게임 안내 그림이 없습니다.": ["No in-game guide images.", "ゲーム内ガイドの画像はありません。"],
+  "훈장 {n}": ["Medals {n}", "勲章 {n}"],
+  "훈장이 없습니다.": ["No medals.", "勲章はありません。"],
   "이전": ["Previous", "前へ"],
   "다음": ["Next", "次へ"],
   "안내 {n}": ["Guide {n}", "案内 {n}"],

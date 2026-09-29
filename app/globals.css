@@ -25122,10 +25122,11 @@ html[lang="ja"] .vn-box {
 .vb-supplies i { font-style: normal; line-height: 1.5; color: var(--ink2); white-space: pre-line; }
 .vb-from { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
 .vb-medals { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
-.vb-medals li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); background: var(--white); }
+.vb-medals li { display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); background: var(--white); }
 .vb-medals img { flex: 0 0 auto; width: 48px; height: 48px; object-fit: contain; }
 .vb-medals span { display: flex; flex-direction: column; min-width: 0; font-size: 12px; }
 .vb-medals i { font-size: 11px; font-style: normal; color: var(--muted); }
+.vb-medals em { margin-top: 2px; font-size: 11.5px; font-style: normal; line-height: 1.5; color: var(--ink2); white-space: pre-line; }
 @media (max-width: 720px) {
   .vb-pts { margin-left: 0; }
   .vb-boss { flex-direction: column; }

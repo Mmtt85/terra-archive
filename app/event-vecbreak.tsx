@@ -54,8 +54,9 @@ function loadVec(locale: string) {
 
 const md = (s: string | null) => (s ? s.slice(5).replace("-", ".") : "");   // "2026-09-23 16:00" → "09.23 16:00"
 const n0 = (v: number | null | undefined) => (v ?? 0).toLocaleString("en-US");
-type Tab = "overview" | "stages" | "kernel" | "allout" | "front" | "supply" | "mile" | "guide";
-const TABS: Tab[] = ["overview", "stages", "kernel", "allout", "front", "supply", "mile", "guide"];
+// 훈장은 게임 안내 바로 왼쪽 탭 (사용자 지시 2026-09-29 "메달은 훈장으로 변경하고, 게임안내 왼쪽에다 넣어줘")
+type Tab = "overview" | "stages" | "kernel" | "allout" | "front" | "supply" | "mile" | "medal" | "guide";
+const TABS: Tab[] = ["overview", "stages", "kernel", "allout", "front", "supply", "mile", "medal", "guide"];
 
 export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
   id: string;
@@ -88,7 +89,7 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
     overview: t("개요"), stages: t("작전 {n}", { n: stages.length }),
     kernel: zone(0, t("커널 돌파")), allout: zone(1, t("총력전")), front: zone(2, t("특별 전선")),
     supply: t("전투 보급 {n}", { n: Object.keys(data.buffs).length }), mile: data.mile.name ?? t("돌파 마일스톤"),
-    guide: t("게임 안내"),
+    medal: t("훈장 {n}", { n: data.medals.length }), guide: t("게임 안내"),
   };
   const ctx = { data, stageOf, onOpenStage, onOpenEnemy };
   return (
@@ -107,6 +108,7 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
         {tab === "front" && <Front {...ctx} />}
         {tab === "supply" && <Supplies {...ctx} />}
         {tab === "mile" && <Milestones data={data} />}
+        {tab === "medal" && <Medals data={data} />}
         {tab === "guide" && <Guide data={data} />}
       </div>
     </section>
@@ -208,21 +210,28 @@ function Overview({ data, stageOf, onOpenStage }: Ctx) {
           </ol>
         </>
       )}
-      {data.medals.length > 0 && (
-        <>
-          <h4 className="ed-h">{t("메달 {n}", { n: data.medals.length })}</h4>
-          <ul className="vb-medals">
-            {data.medals.map(([mid, name, , how, desc, icon]) => (
-              <li key={mid} title={desc ?? undefined}>
-                {icon ? <img src={asset(icon)} alt="" aria-hidden width={48} height={48} loading="lazy" decoding="async" />
-                  : <span className="ed-noimg" aria-hidden>?</span>}
-                <span><b>{name}</b>{how && <i>{how}</i>}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
     </>
+  );
+}
+
+/** 훈장 — 이름·획득 조건·설명 (게임 표기가 '훈장'이다: '주술의 밤 탁월함 훈장') */
+function Medals({ data }: { data: VecData }) {
+  const { t } = useI18n();
+  if (!data.medals.length) return <p className="no-detail">{t("훈장이 없습니다.")}</p>;
+  return (
+    <ul className="vb-medals">
+      {data.medals.map(([mid, name, , how, desc, icon]) => (
+        <li key={mid}>
+          {icon ? <img src={asset(icon)} alt="" aria-hidden width={48} height={48} loading="lazy" decoding="async" />
+            : <span className="ed-noimg" aria-hidden>?</span>}
+          <span>
+            <b>{name}</b>
+            {how && <i>{how}</i>}
+            {desc && <em>{desc}</em>}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
