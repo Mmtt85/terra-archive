@@ -449,6 +449,7 @@ const D: Record<string, Pair> = {
   "게임 안내 그림이 없습니다.": ["No in-game guide images.", "ゲーム内ガイドの画像はありません。"],
   "훈장 {n}": ["Medals {n}", "勲章 {n}"],
   "훈장이 없습니다.": ["No medals.", "勲章はありません。"],
+  "나오는 작전 {n}": ["Appears in {n} stages", "登場作戦 {n}"],
   "이전": ["Previous", "前へ"],
   "다음": ["Next", "次へ"],
   "안내 {n}": ["Guide {n}", "案内 {n}"],

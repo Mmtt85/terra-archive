@@ -132,6 +132,35 @@ def tr(cn, loc, ctx):
     return cn
 
 
+# 기믹 사전 — 작전 설명의 `<이름> 설명…` 줄 (사용자 지시 2026-09-29 "「재개화」가 뭐야? … 클릭하면 모달 떠서 뭐하는앤지
+# 설명좀 띄워줘"). 게임 작전 설명은 기믹을 줄머리 표식으로 소개한다: `<「재개화」> 배치 후 9칸 범위 내의 …`.
+# 이름은 감싼 표식(<> 「」 '' “” 『』)을 벗겨 맞춘다 — 화면(app/event-vecbreak.tsx normName)과 같은 규칙.
+_WRAP = "<>「」『』'\"“”‘’"
+
+
+def norm_name(x):
+    x = (x or "").strip()
+    while len(x) > 1 and x[0] in _WRAP and x[-1] in _WRAP:
+        x = x[1:-1].strip()
+    return x
+
+
+def glossary(stage_ids, descs):
+    gl = {}
+    for sid in stage_ids:
+        for line in (descs.get(sid) or "").split("\n"):
+            m = re.match(r"^\s*(<[^<>]+>)\s*(.+)$", line)
+            if not m:
+                continue
+            name = norm_name(m.group(1))
+            g = gl.setdefault(name, {"d": [], "s": []})
+            if line.strip() not in g["d"] and len(g["d"]) < 3:
+                g["d"].append(line.strip())
+            if sid not in g["s"]:
+                g["s"].append(sid)
+    return gl
+
+
 def main():
     tables = {s: {n: opt(os.path.join(G, f"{s}_{n}.json")) for n in
                   ("activity_table", "zone_table", "medal_table", "skin_table", "building_data")}
@@ -159,7 +188,12 @@ def main():
         for i in list(items.values()):
             for a in i.get("alt") or []:
                 items.setdefault(a, i)
-        fut_items = {i["id"]: i for i in (opt(os.path.join(DATA, f"future-dex{SUF[loc]}.json")).get("items") or [])}
+        fut_doc = opt(os.path.join(DATA, f"future-dex{SUF[loc]}.json"))
+        fut_items = {i["id"]: i for i in (fut_doc.get("items") or [])}
+        # 작전 설명 (본 도감 + 미래시 도감) — 기믹 사전의 출처
+        descs = {st["id"]: st.get("desc") or "" for st in load(os.path.join(DATA, f"stages{SUF[loc]}.json"))["stages"]}
+        descs.update({st["id"]: st.get("desc") or "" for st in ((fut_doc.get("stages") or {}).get("stages") or [])})
+        ev_rows = {r["id"]: r for r in load(os.path.join(DATA, f"events{SUF[loc]}.json"))["events"]}
         own = ((tables[srv]["activity_table"].get("activity") or {}).get("VEC_BREAK_V2") or {})
         cn_vec = ((tables["cn"]["activity_table"].get("activity") or {}).get("VEC_BREAK_V2") or {})
         # 회차 → (자료, 출처 서버). 한섭에 없는 회차(미래시)만 중섭에서.
@@ -292,6 +326,10 @@ def main():
                 "off": off, "hard": hard, "def": dfn, "groups": groups, "buffs": buffs,
                 "mile": mile, "medals": medals, "guide": guide,
             }
+            ids = [x["s"] for x in off + hard + dfn]
+            rec["gl"] = glossary(ids, descs)
+            # 본문에 나오는 적 이름('재관류' 등) → 적 창 — 이벤트 행의 등장 적 이름표
+            rec["en"] = {norm_name(n): e for e, n in (ev_rows.get(aid) or {}).get("enemies") or [] if n}
             if fut:
                 rec["tr"] = 1
             out[aid] = rec

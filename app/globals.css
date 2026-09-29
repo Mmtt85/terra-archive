@@ -25126,6 +25126,23 @@ html[lang="ja"] .vn-box {
 .vb-medals img { flex: 0 0 auto; width: 48px; height: 48px; object-fit: contain; }
 .vb-medals span { display: flex; flex-direction: column; min-width: 0; font-size: 12px; }
 .vb-medals i { font-size: 11px; font-style: normal; color: var(--muted); }
+/* 글 속 기믹·적 이름 — 누르면 설명 창(기믹) · 적 창(적) */
+.vb-term {
+  display: inline;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px dashed currentColor;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.vb-term:hover { color: var(--ink); border-bottom-style: solid; }
+.vb-term-body { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 16px; }
+.vb-term-body h3 { margin: 0; font-size: 16px; }
+.vb-term-defs { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.vb-term-defs li { padding: 8px 10px; border: 1px solid var(--line); background: var(--bg-faint); font-size: 12.5px; line-height: 1.6; }
+.vb-term-stages { display: flex; flex-wrap: wrap; gap: 4px; }
 .vb-medals em { margin-top: 2px; font-size: 11.5px; font-style: normal; line-height: 1.5; color: var(--ink2); white-space: pre-line; }
 @media (max-width: 720px) {
   .vb-pts { margin-left: 0; }

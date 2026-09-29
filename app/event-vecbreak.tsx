@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { asset } from "./assets";
 import { useI18n } from "./i18n";
 import { GuideZoom } from "./event-duel";
+import { ModalWindow } from "./modal-window";
 
 type Boss = { e: string; n: string | null; d: string | null; lv?: number; i: string | null };
 /** [완벽 클리어, 일반 클리어, [기간 한정 시작, 끝, 추가 포인트]?] */
@@ -35,7 +36,21 @@ export type VecData = {
   mile: { name: string | null; item: [string, string | null, string | null]; rows: MileRow[] };
   medals: [string, string | null, string | null, string | null, string | null, string | null][];
   guide: string[]; tr?: 1;
+  /** 기믹 사전 — 이름(감싼 표식을 벗긴 것) → 작전 설명의 소개 줄·나오는 작전 */
+  gl?: Record<string, { d: string[]; s: string[] }>;
+  /** 본문에 나오는 적 이름 → 적 id (적 창) */
+  en?: Record<string, string>;
 };
+
+// 본문의 기믹·적 이름을 눌러 설명을 연다 (사용자 지시 2026-09-29 "「재개화」가 뭐야? … 클릭하면 모달 떠서 뭐하는앤지
+// 설명좀 띄워줘"). 이름은 감싼 표식을 벗겨 맞춘다 — scripts/build-event-vecbreak.py norm_name 과 같은 규칙.
+const TOKEN = /(<[^<>]+>|「[^」]+」|'[^'\n]+')/g;
+const WRAP = "<>「」『』'\"“”‘’";
+function normName(x: string) {
+  let v = x.trim();
+  while (v.length > 1 && WRAP.includes(v[0]) && WRAP.includes(v[v.length - 1])) v = v.slice(1, -1).trim();
+  return v;
+}
 
 const LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
   ko: () => import("./data/event-vecbreak.json"),
@@ -70,6 +85,7 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
   const { locale, t } = useI18n();
   const [data, setData] = useState<VecData | null | undefined>(undefined);
   const [tab, setTab] = useState<Tab>("overview");
+  const [term, setTerm] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
     loadVec(locale).then((all) => { if (live) setData(all[id] ?? null); }, () => { if (live) setData(null); });
@@ -91,7 +107,7 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
     supply: t("전투 보급 {n}", { n: Object.keys(data.buffs).length }), mile: data.mile.name ?? t("돌파 마일스톤"),
     medal: t("훈장 {n}", { n: data.medals.length }), guide: t("게임 안내"),
   };
-  const ctx = { data, stageOf, onOpenStage, onOpenEnemy };
+  const ctx: Ctx = { data, stageOf, onOpenStage, onOpenEnemy, onOpenTerm: setTerm };
   return (
     <section className="ev-sec ed-wrap vb-wrap">
       <div className="ed-tabs" role="tablist" aria-label={data.sub ?? undefined}>
@@ -108,9 +124,10 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
         {tab === "front" && <Front {...ctx} />}
         {tab === "supply" && <Supplies {...ctx} />}
         {tab === "mile" && <Milestones data={data} />}
-        {tab === "medal" && <Medals data={data} />}
+        {tab === "medal" && <Medals {...ctx} />}
         {tab === "guide" && <Guide data={data} />}
       </div>
+      {term && <TermModal name={term} ctx={ctx} onClose={() => setTerm(null)} />}
     </section>
   );
 }
@@ -118,7 +135,55 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
 type Ctx = {
   data: VecData; stageOf: Map<string, { code: string; name: string }>;
   onOpenStage: (id: string) => void; onOpenEnemy: (id: string) => void;
+  onOpenTerm: (name: string) => void;
 };
+
+/** 글 속 기믹·적 이름을 누를 수 있게 — 사전에 없는 이름은 그냥 글자 */
+function Rich({ text, ctx }: { text: string | null | undefined; ctx: Pick<Ctx, "data" | "onOpenEnemy" | "onOpenTerm"> }) {
+  if (!text) return null;
+  const parts = text.split(TOKEN);
+  return (
+    <>
+      {parts.map((p, i) => {
+        if (i % 2 === 0) return p;
+        const n = normName(p);
+        if (ctx.data.gl?.[n]) return (
+          <button key={i} type="button" className="vb-term" onClick={(e) => { e.stopPropagation(); ctx.onOpenTerm(n); }}>{p}</button>
+        );
+        const eid = ctx.data.en?.[n];
+        if (eid) return (
+          <button key={i} type="button" className="vb-term en" onClick={(e) => { e.stopPropagation(); ctx.onOpenEnemy(eid); }}>{p}</button>
+        );
+        return p;
+      })}
+    </>
+  );
+}
+
+/** 기믹 설명 창 — 작전 설명의 소개 줄(원문 그대로) + 나오는 작전 */
+function TermModal({ name, ctx, onClose }: { name: string; ctx: Ctx; onClose: () => void }) {
+  const { t } = useI18n();
+  const g = ctx.data.gl?.[name];
+  if (!g) return null;
+  return (
+    <ModalWindow label={name} className="operator-modal vb-term-modal" style={{ width: "min(560px, 100%)" }} onClose={onClose}>
+      <div className="vb-term-body">
+        <h3>{name}</h3>
+        <ul className="vb-term-defs">
+          {g.d.map((line, i) => <li key={i}><Rich text={line} ctx={ctx} /></li>)}
+        </ul>
+        {g.s.length > 0 && (
+          <>
+            <h4 className="ed-h">{t("나오는 작전 {n}", { n: g.s.length })}</h4>
+            <div className="vb-term-stages">
+              {g.s.map((sid) => <StageBtn key={sid} sid={sid} stageOf={ctx.stageOf} onOpenStage={ctx.onOpenStage} />)}
+            </div>
+          </>
+        )}
+      </div>
+    </ModalWindow>
+  );
+}
 
 function StageBtn({ sid, stageOf, onOpenStage }: { sid: string } & Pick<Ctx, "stageOf" | "onOpenStage">) {
   const st = stageOf.get(sid);
@@ -143,10 +208,10 @@ function PtsLine({ p, data }: { p: Pts; data: VecData }) {
   );
 }
 
-function BossCard({ boss, title, onOpenEnemy }: { boss: Boss; title?: string | null; onOpenEnemy: (id: string) => void }) {
+function BossCard({ boss, title, ctx }: { boss: Boss; title?: string | null; ctx: Ctx }) {
   return (
     <div className="vb-boss">
-      <button type="button" className="vb-boss-face" onClick={() => onOpenEnemy(boss.e)} title={boss.n ?? boss.e}>
+      <button type="button" className="vb-boss-face" onClick={() => ctx.onOpenEnemy(boss.e)} title={boss.n ?? boss.e}>
         {boss.i ? <img src={asset(boss.i)} alt="" aria-hidden width={56} height={56} loading="lazy" decoding="async" />
           : <span className="ed-noimg" aria-hidden>?</span>}
         <b>{boss.n ?? boss.e}</b>
@@ -154,7 +219,7 @@ function BossCard({ boss, title, onOpenEnemy }: { boss: Boss; title?: string | n
       {boss.d && (
         <div className="vb-boss-desc">
           {title && <i>{title}</i>}
-          <p>{boss.d}</p>
+          <p><Rich text={boss.d} ctx={ctx} /></p>
         </div>
       )}
     </div>
@@ -215,7 +280,8 @@ function Overview({ data, stageOf, onOpenStage }: Ctx) {
 }
 
 /** 훈장 — 이름·획득 조건·설명 (게임 표기가 '훈장'이다: '주술의 밤 탁월함 훈장') */
-function Medals({ data }: { data: VecData }) {
+function Medals(ctx: Ctx) {
+  const { data } = ctx;
   const { t } = useI18n();
   if (!data.medals.length) return <p className="no-detail">{t("훈장이 없습니다.")}</p>;
   return (
@@ -226,8 +292,8 @@ function Medals({ data }: { data: VecData }) {
             : <span className="ed-noimg" aria-hidden>?</span>}
           <span>
             <b>{name}</b>
-            {how && <i>{how}</i>}
-            {desc && <em>{desc}</em>}
+            {how && <i><Rich text={how} ctx={ctx} /></i>}
+            {desc && <em><Rich text={desc} ctx={ctx} /></em>}
           </span>
         </li>
       ))}
@@ -235,7 +301,8 @@ function Medals({ data }: { data: VecData }) {
   );
 }
 
-function Floors({ data, stageOf, onOpenStage, onOpenEnemy }: Ctx) {
+function Floors(ctx: Ctx) {
+  const { data, stageOf, onOpenStage } = ctx;
   const { t } = useI18n();
   return (
     <ol className="vb-list">
@@ -247,15 +314,16 @@ function Floors({ data, stageOf, onOpenStage, onOpenEnemy }: Ctx) {
             {f.b ? <em className="vb-tag">{t("교관")}</em> : null}
             <PtsLine p={f.p} data={data} />
           </div>
-          {f.t && <p className="vb-story">{f.t}</p>}
-          {f.boss && <BossCard boss={f.boss} title={data.rule.boss} onOpenEnemy={onOpenEnemy} />}
+          {f.t && <p className="vb-story"><Rich text={f.t} ctx={ctx} /></p>}
+          {f.boss && <BossCard boss={f.boss} title={data.rule.boss} ctx={ctx} />}
         </li>
       ))}
     </ol>
   );
 }
 
-function AllOut({ data, stageOf, onOpenStage, onOpenEnemy }: Ctx) {
+function AllOut(ctx: Ctx) {
+  const { data, stageOf, onOpenStage } = ctx;
   return (
     <ol className="vb-list">
       {data.hard.map((h) => (
@@ -265,26 +333,27 @@ function AllOut({ data, stageOf, onOpenStage, onOpenEnemy }: Ctx) {
             <StageBtn sid={h.s} stageOf={stageOf} onOpenStage={onOpenStage} />
             <PtsLine p={h.p} data={data} />
           </div>
-          {h.t && <p className="vb-story">{h.t}</p>}
-          {h.boss && <BossCard boss={h.boss} title={data.rule.boss} onOpenEnemy={onOpenEnemy} />}
+          {h.t && <p className="vb-story"><Rich text={h.t} ctx={ctx} /></p>}
+          {h.boss && <BossCard boss={h.boss} title={data.rule.boss} ctx={ctx} />}
         </li>
       ))}
     </ol>
   );
 }
 
-function BuffChip({ id, data }: { id: string | null; data: VecData }) {
-  const b = id ? data.buffs[id] : undefined;
+function BuffChip({ id, ctx }: { id: string | null; ctx: Ctx }) {
+  const b = id ? ctx.data.buffs[id] : undefined;
   if (!b) return null;
   return (
     <span className="vb-buff">
       {b[2] ? <img src={asset(b[2])} alt="" aria-hidden width={32} height={32} loading="lazy" decoding="async" /> : null}
-      <span><b>{b[0]}</b>{b[1] && <i>{b[1]}</i>}</span>
+      <span><b>{b[0]}</b>{b[1] && <i><Rich text={b[1]} ctx={ctx} /></i>}</span>
     </span>
   );
 }
 
-function Front({ data, stageOf, onOpenStage }: Ctx) {
+function Front(ctx: Ctx) {
+  const { data, stageOf, onOpenStage } = ctx;
   const { t } = useI18n();
   const groupNo = new Map(data.groups.map(([g], i) => [g, i + 1]));
   const upper = new Set(data.groups.flatMap(([, list]) => list.slice(1)));
@@ -300,14 +369,15 @@ function Front({ data, stageOf, onOpenStage }: Ctx) {
             {d.open && <span className="vb-open">{t("{at}부터", { at: md(d.open) })}</span>}
             <PtsLine p={d.p} data={data} />
           </div>
-          <BuffChip id={d.buff} data={data} />
+          <BuffChip id={d.buff} ctx={ctx} />
         </li>
       ))}
     </ol>
   );
 }
 
-function Supplies({ data, stageOf, onOpenStage }: Ctx) {
+function Supplies(ctx: Ctx) {
+  const { data, stageOf, onOpenStage } = ctx;
   const { t } = useI18n();
   const from = new Map<string, string[]>();
   for (const d of data.def) if (d.buff) from.set(d.buff, [...(from.get(d.buff) ?? []), d.s]);
@@ -321,7 +391,7 @@ function Supplies({ data, stageOf, onOpenStage }: Ctx) {
               : <span className="ed-noimg" aria-hidden>?</span>}
             <span>
               <b>{name}</b>
-              {desc && <i>{desc}</i>}
+              {desc && <i><Rich text={desc} ctx={ctx} /></i>}
               {(from.get(bid) ?? []).length > 0 && (
                 <span className="vb-from">{t("얻는 곳")}
                   {(from.get(bid) ?? []).map((sid) => <StageBtn key={sid} sid={sid} stageOf={stageOf} onOpenStage={onOpenStage} />)}
