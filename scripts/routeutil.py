@@ -213,3 +213,68 @@ def routes_of_level(lv, enemy_db=None):
         if isinstance(mmul, (int, float)) and mmul not in (0, 1):
             doc["mm"] = round(mmul, 3)
     return doc
+
+
+def devices_of_level(lv):
+    """레벨 JSON → {pd?, nt?} — 미리 깔린 장치와 밤(어둠) 표시 (사용자 요청 2026-09-29
+    "어둠이랑 네온사인은 어디에 있는거야? 보이질 않네").
+
+    pd: [[장치 키, col, row(, 웨이브, 웨이브 내 시각)], …] — predefines.tokenInsts.
+        처음부터 보이는 것은 세 칸. 숨겨 뒀다가 전투 중 켜지는 것(hidden + ACTIVATE_PREDEFINED)은
+        켜지는 때를 덧붙인다 — 웨이브 액션이면 [웨이브 번호, 조각 preDelay + 액션 preDelay](스폰 sp 와 같은
+        시계), 조건 분기(branches)에서만 켜지면 [-1, 0]. 어디서도 켜지지 않는 숨김 장치는 뺀다
+        (VEC-C 네온사인 셋 중 둘이 웨이브 도중 켜지는 것이었다).
+        좌표는 경로와 같은 규약(row 0 = 아래)이라 렌더러가 뒤집는다. 이름·설명·아이콘은
+        app/data/devices.json (scripts/build-devices.py).
+    nt: 1 — mapData.tags 에 'night'. 시야 밖 칸엔 배치할 수 없고 적이 은신한다
+        (act13side·act2break·lt04 … 작전 설명의 <어둠> 줄과 같은 규칙).
+    생존연산은 따로 ob(자원·바위)를 싣는다 — 여기를 부르지 않는다.
+    """
+    lv = lv or {}
+    on_wave, on_branch = {}, set()
+    for wi, w in enumerate(lv.get("waves") or []):
+        for fg in w.get("fragments") or []:
+            fpre = fg.get("preDelay") or 0
+            for a in fg.get("actions") or []:
+                if a.get("actionType") in (6, "ACTIVATE_PREDEFINED") and a.get("key"):
+                    at = (wi, round(fpre + (a.get("preDelay") or 0), 2))
+                    if a["key"] not in on_wave or at < on_wave[a["key"]]:
+                        on_wave[a["key"]] = at
+    for b in (lv.get("branches") or {}).values():
+        for ph in (b or {}).get("phases") or []:
+            for a in ph.get("actions") or []:
+                if a.get("actionType") in (6, "ACTIVATE_PREDEFINED") and a.get("key"):
+                    on_branch.add(a["key"])
+    out = {}
+    pd = []
+    for tk in ((lv.get("predefines") or {}).get("tokenInsts") or []):
+        key = (tk.get("inst") or {}).get("characterKey")
+        pos = tk.get("position") or {}
+        if not key or not isinstance(pos.get("row"), int):
+            continue
+        row = [key, pos.get("col", 0), pos["row"]]
+        if tk.get("hidden"):
+            al = tk.get("alias")
+            if al in on_wave:
+                row += list(on_wave[al])
+            elif al in on_branch:
+                row += [-1, 0]
+            else:
+                continue
+        pd.append(row)
+    if pd:
+        out["pd"] = pd
+    if "night" in ((lv.get("mapData") or {}).get("tags") or []):
+        out["nt"] = 1
+    return out
+
+
+def set_devices(rec, lv):
+    """경로 레코드에 pd·nt 를 제자리로 — 레벨이 없으면 건드리지 않는다. 바뀌었으면 True."""
+    if not isinstance(rec, dict) or not lv:
+        return False
+    before = (rec.get("pd"), rec.get("nt"))
+    rec.pop("pd", None)
+    rec.pop("nt", None)
+    rec.update(devices_of_level(lv))
+    return (rec.get("pd"), rec.get("nt")) != before

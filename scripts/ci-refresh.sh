@@ -195,6 +195,9 @@ run "build-events"       python3 scripts/build-events.py "$G"
 # 미래시 이벤트의 작전·적·재화 상세 (이벤트 창 전용) — build-events 산출물을 읽으므로 바로 뒤. 그림(중섭 도면·초상)은
 # 로컬에서만 받는다 (scripts/build-future-dex.py 머리주석).
 run "build-future-dex"   python3 scripts/build-future-dex.py "$G" --no-images
+# 경로 지도의 미리 깔린 장치 사전(이름·설명) — 경로 문서들(작전·통합전략·미래시)의 pd 를 모아 만든다.
+# 아이콘은 CDN 번들을 여는 일이라 로컬에서만 (scripts/build-devices.py 머리주석).
+run "build-devices"      python3 scripts/build-devices.py --no-icons
 
 # 중국어→한국어 번역 사전 공개본 — 외부 앱이 **바뀐 파일만** 받아가는 증분 배포본
 # (2026-09-17, 개인 번역 앱 문의). 데이터 단계 끝에 둔다. 형식은 public/tl/README.md.

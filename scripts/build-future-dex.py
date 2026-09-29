@@ -540,7 +540,7 @@ if not NO_IMAGES:
 #   경로 문서도 같이 접어야 카드 고정·선 색·시뮬 말이 한 적으로 이어진다. 스폰(sp)과 이동속도(ems)는
 #   e 의 **키 순서 번호**로 가리키므로 번호까지 다시 매긴다 (VEC-08 의 과관류 `_2`·`_3` 이 한 키로 합쳐진다).
 import stagecams  # noqa: E402
-from routeutil import routes_of_level  # noqa: E402
+from routeutil import routes_of_level, devices_of_level  # noqa: E402
 
 
 def fold_routes(d):
@@ -573,6 +573,7 @@ for sid, lv in lv_json.items():
         continue
     d = routes_of_level(lv, enemy_db)
     if d:
+        d.update(devices_of_level(lv))    # 미리 깔린 장치·밤 표시 (routeutil 주석, 2026-09-29)
         routes[sid] = fold_routes(d)
         first_sid[lid] = sid
 _body = lambda v: routes.get(v) if isinstance(v, str) else v

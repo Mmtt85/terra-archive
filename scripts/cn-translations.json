@@ -19474,5 +19474,45 @@
   "ko": "플레이트 《유사 생명》",
   "en": "Plaque - 'Touch'",
   "ja": "パネル『擬生』"
+ },
+ "坎诺特保险柜": {
+  "ko": "칸노트 금고",
+  "en": "Kannot's Safe",
+  "ja": "カノートの金庫"
+ },
+ "丰饶树冢": {
+  "ko": "풍요의 나무무덤",
+  "en": "Barrow-Tree of Plenty",
+  "ja": "豊穣の樹塚"
+ },
+ "“危朽”": {
+  "ko": "“위태로운 고목”",
+  "en": "'Decrepit Hulk'",
+  "ja": "「朽ちかけた古木」"
+ },
+ "畸变恶笼草": {
+  "ko": "변이된 악의 새장풀",
+  "en": "Mutated Wicked Cagewort",
+  "ja": "変異した悪籠草"
+ },
+ "全场总攻击": {
+  "ko": "전원 총공격",
+  "en": "All-Out Assault",
+  "ja": "全体総攻撃"
+ },
+ "恶笼草": {
+  "ko": "악의 새장풀",
+  "en": "Wicked Cagewort",
+  "ja": "悪籠草"
+ },
+ "箱型恶笼草": {
+  "ko": "상자형 악의 새장풀",
+  "en": "Boxed Wicked Cagewort",
+  "ja": "箱型悪籠草"
+ },
+ "源阶方模块": {
+  "ko": "원계방 모듈",
+  "en": "Source Cube Module",
+  "ja": "源階方モジュール"
  }
 }

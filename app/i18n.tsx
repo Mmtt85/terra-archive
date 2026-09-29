@@ -1958,6 +1958,14 @@ const D: Record<string, Pair> = {
   "경로 표시": ["Show routes", "経路表示"],
   "경로 숨기기": ["Hide routes", "経路非表示"],
   "타일 표시": ["Show tiles", "タイル表示"],
+  "장치 표시": ["Show devices", "装置表示"],
+  "장치 숨기기": ["Hide devices", "装置非表示"],
+  "어둠": ["Darkness", "暗闇"],
+  "전투 중 등장": ["appears mid-battle", "戦闘中に出現"],
+  "조건부 등장": ["appears on a condition", "条件付きで出現"],
+  "시야가 확보되지 않은 곳에 오퍼레이터 배치 불가, 적은 은신 효과 획득": [
+    "Operators cannot be deployed on tiles without vision; enemies gain Camouflage",
+    "視界が確保されていないマスにはオペレーターを配置できず、敵は潜伏状態になる"],
   "타일 숨기기": ["Hide tiles", "タイル非表示"],
   "적 도감": ["Enemy Handbook", "敵図鑑"],
   "요리·음료에 쓰이는 모든 재료입니다. 누르면 효과와 쓰이는 요리, 얻는 곳이 나옵니다.": [

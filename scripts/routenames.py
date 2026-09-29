@@ -33,6 +33,9 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import routeutil  # noqa: E402
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(REPO, "app", "data")
 PUB = os.path.join(REPO, "public")
@@ -109,8 +112,10 @@ def owner_names(lv, keys, known, enemy_db=None, img_of=None, names=None):
     return out
 
 
-def attach(doc, ctx_of, enemy_db, img_of, names):
+def attach(doc, ctx_of, enemy_db, img_of, names, devices=False):
     """경로 문서 전체 — ctx_of(sid) → (레벨 JSON, 화면이 아는 적 집합). 별칭(문자열)은 건너뛴다.
+    devices=True 면 같은 레벨에서 미리 깔린 장치·밤 표시(pd·nt, routeutil.devices_of_level)도 붙인다
+    — 레벨을 찾는 규칙이 문서마다 여기 있어서 한곳에서 한다 (2026-09-29). 생존연산은 ob 가 따로 있어 끈다.
     반환: (nm 을 단 레코드 수, 항목 수)."""
     n_rec = n_key = 0
     for sid, rec in doc.items():
@@ -118,6 +123,8 @@ def attach(doc, ctx_of, enemy_db, img_of, names):
             continue
         keys = list((rec.get("e") or {}).keys())
         lv, known = ctx_of(sid)
+        if devices:
+            routeutil.set_devices(rec, lv)
         nm = owner_names(lv, keys, known, enemy_db, img_of, names) if keys and lv else {}
         if nm:
             rec["nm"] = nm
@@ -170,7 +177,7 @@ def _fix_stage():
         refs = {r.get("id") for r in (lv or {}).get("enemyDbRefs") or []}
         return lv, refs & visible
     db = _flat_db(_load(f"{GD}/levels__enemydata__enemy_database.json"))
-    res = attach(doc, ctx, db, lambda pf, k: portrait([pf, k], ["enemy"]), _names(*_dex_names()))
+    res = attach(doc, ctx, db, lambda pf, k: portrait([pf, k], ["enemy"]), _names(*_dex_names()), devices=True)
     return p, doc, res
 
 
@@ -223,7 +230,7 @@ def _fix_rogue():
         return portrait([pf, k], ["rogue/enemy", "enemy"])
     db = _flat_db(_load(f"{GD}/cn__levels__enemydata__enemy_database.json"))
     db.update(_flat_db(_load(f"{GD}/levels__enemydata__enemy_database.json")))   # KR 이 정본, CN 은 보충
-    res = attach(doc, ctx, db, img_of, _names(*tables, *_dex_names()))
+    res = attach(doc, ctx, db, img_of, _names(*tables, *_dex_names()), devices=True)
     return p, doc, res
 
 
@@ -274,7 +281,26 @@ def _fix_sandbox2():
     return p, doc, res
 
 
-FIXERS = {"stage": _fix_stage, "rogue": _fix_rogue, "sandbox": _fix_sandbox, "sandbox2": _fix_sandbox2}
+def _fix_future():
+    """미래시 future-routes.json — nm 은 build-future-dex.py 가 이미 붙인다. 여기선 장치·밤 표시(pd·nt)만
+    다시 단다 (빌더를 통째로 다시 돌리지 않고 채울 때). 레벨 = 중섭 CDN 번들(cdnlevels)."""
+    p = f"{DATA}/future-routes.json"
+    doc = _load(p)
+    if doc is None:
+        return p, None, (0, 0)
+    import cdnlevels  # noqa: E402
+    tbl = _load(f"{GD}/cn_stage_table.json") or {}
+    stages = tbl.get("stages", tbl)
+    for sid, rec in doc.items():
+        lid = ((stages.get(sid) or {}).get("levelId") or "").lower()
+        if isinstance(rec, dict) and lid:
+            routeutil.set_devices(rec, cdnlevels.level(lid, server="cn"))
+    return p, doc, (sum(1 for r in doc.values() if isinstance(r, dict) and r.get("nm")),
+                    sum(len(r["nm"]) for r in doc.values() if isinstance(r, dict) and r.get("nm")))
+
+
+FIXERS = {"stage": _fix_stage, "rogue": _fix_rogue, "sandbox": _fix_sandbox, "sandbox2": _fix_sandbox2,
+          "future": _fix_future}
 
 
 def fix(which=None):
@@ -285,7 +311,10 @@ def fix(which=None):
             print(f"  ⚠ {os.path.basename(p)} 없음 — 건너뜀")
             continue
         json.dump(doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-        print(f"  {os.path.basename(p)}: 이름표 밖 경로 주인 {n_key}건 · 레코드 {n_rec}개 (nm)")
+        recs = [r for r in doc.values() if isinstance(r, dict)]
+        n_pd, n_nt = sum(1 for r in recs if r.get("pd")), sum(1 for r in recs if r.get("nt"))
+        print(f"  {os.path.basename(p)}: 이름표 밖 경로 주인 {n_key}건 · 레코드 {n_rec}개 (nm)"
+              + (f" · 장치 있는 판 {n_pd} · 밤 {n_nt}" if n_pd or n_nt else ""))
 
 
 if __name__ == "__main__":

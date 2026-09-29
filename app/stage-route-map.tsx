@@ -45,7 +45,29 @@ export type StageRoutes = {
   /** 생존연산 도면이 담은 격자 창 [x, y, w, h] (row 0 = 위) — 안개 방(레벨 rect_N) 밖의 보이는 영역.
    *  도면은 이 창을 가운데 share(5/6)로 그린다. 없으면 격자 전체 (build-sandbox.py, 2026-09-23) */
   vb?: [number, number, number, number];
+  /** 미리 깔린 장치 [장치 키, col, row] — 레벨 predefines.tokenInsts 중 처음부터 보이는 것 (routeutil.devices_of_level,
+   *  사용자 요청 2026-09-29 "어둠이랑 네온사인은 어디에 있는거야? 보이질 않네"). 좌표는 경로와 같은 규약(row 0 = 아래).
+   *  이름·설명·아이콘은 app/data/devices.json (scripts/build-devices.py) — 장치 종류당 한 번만 적는다.
+   *  다섯 칸이면 전투 중에 켜지는 장치 — [.., 웨이브, 웨이브 내 시각](sp 와 같은 시계), 웨이브 -1 = 조건 분기로 켜짐 */
+  pd?: ([string, number, number] | [string, number, number, number, number])[];
+  /** 밤 — 시야 밖 칸엔 배치할 수 없고 적이 은신한다 (mapData.tags 'night') */
+  nt?: 1;
 };
+/** app/data/devices.json 한 줄 — n 이름 · d 설명 · i 아이콘(public 경로) · h 게임 화면에 안 보이는 전역 제어 장치 */
+type Device = { n: Record<string, string>; d?: Record<string, string>; i?: string; h?: 1 };
+let devicesP: Promise<Record<string, Device>> | null = null;
+/** 장치 사전 — 장치가 있는 지도를 처음 그릴 때 한 번 받는다 (30KB) */
+function useDevices(on: boolean) {
+  const [devs, setDevs] = useState<Record<string, Device> | null>(null);
+  useEffect(() => {
+    if (!on) return;
+    let live = true;
+    devicesP ??= import("./data/devices.json").then((m) => m.default as unknown as Record<string, Device>);
+    devicesP.then((d) => { if (live) setDevs(d); }, () => {});
+    return () => { live = false; };
+  }, [on]);
+  return devs;
+}
 const HANGUL = /[가-힣]/;
 /** 경로가 아직 안 온 동안의 빈 지도 — 모든 계산이 빈 배열로 돈다 */
 const EMPTY_ROUTES: StageRoutes = { h: 0, w: 0, g: [], r: [], f: [], e: {} };
@@ -284,10 +306,24 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
   // 선·말 호버 즉시 툴팁 — 브라우저 기본 title은 1초쯤 지연된다 (사용자 정책).
   // 이름 옆에 작은 섬네일도 함께 (사용자 요청 2026-08-10 "섬네일 이미지도 작게 같이").
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const [tip, setTip] = useState<{ x: number; y: number; text: string; img?: string } | null>(null);
-  const showTip = (ev: { clientX: number; clientY: number }, text: string, img?: string) => {
+  const [tip, setTip] = useState<{ x: number; y: number; text: string; img?: string; sub?: string } | null>(null);
+  const showTip = (ev: { clientX: number; clientY: number }, text: string, img?: string, sub?: string) => {
     const rect = wrapRef.current?.getBoundingClientRect();
-    if (rect) setTip({ x: ev.clientX - rect.left, y: ev.clientY - rect.top, text, img });
+    if (rect) setTip({ x: ev.clientX - rect.left, y: ev.clientY - rect.top, text, img, sub });
+  };
+  // 미리 깔린 장치 — 기본으로 그린다. 게임 화면에 안 보이는 제어 장치(h)는 뺀다
+  const devs = useDevices(!!data.pd?.length);
+  const [showDevs, setShowDevs] = useState(true);
+  const devList = useMemo(() => {
+    if (!devs || !data.pd) return [];
+    return data.pd.filter(([k]) => devs[k] && !devs[k].h);
+  }, [devs, data.pd]);
+  const devName = (k: string) => devs?.[k]?.n[locale] ?? devs?.[k]?.n.ko ?? k;
+  const devDesc = (k: string) => devs?.[k]?.d?.[locale] ?? devs?.[k]?.d?.ko;
+  const devIcon = (k: string) => {
+    const i = devs?.[k]?.i;
+    const u = i ? asset(i) : undefined;
+    return u && !badImg.has(u) ? u : undefined;
   };
   // 강조 대상 적 — 호버는 한 적, 클릭 고정은 여러 적의 합집합이 온다.
   // 이 지도에 없는 적뿐이면(환경 전환 등) 강조 없음으로 본다.
@@ -607,6 +643,36 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
             </g>
           );
         })}
+        {/* 미리 깔린 장치 — 아이콘(게임 아바타)이 있으면 네모 틀 속 그림, 없으면 마름모.
+            누르거나 올리면 이름·설명 (모바일은 탭) */}
+        {showDevs && devList.map(([k, c, r, wi, tw], i) => {
+          // 전투 중에 켜지는 장치 — 재생 중엔 켜지는 시각부터 그린다(조건 분기는 흐리게 남김), 평소엔 흐리게
+          const late = wi !== undefined;
+          const at = late && wi >= 0 && plan ? (plan.waveSpans[wi] ?? Infinity) + (tw ?? 0) : null;
+          if (simOn && at !== null && simT < at) return null;
+          const dim = late && !(simOn && at !== null);
+          const [x, y] = toXY(c + 0.5, h - 1 - r + 0.5);
+          const ic = devIcon(k);
+          const note = late ? (wi >= 0 ? t("전투 중 등장") : t("조건부 등장")) : "";
+          const desc = [devDesc(k), note && `(${note})`].filter(Boolean).join(" ");
+          const tipOf = (ev: { clientX: number; clientY: number }) => showTip(ev, devName(k), ic, desc || undefined);
+          return (
+            <g key={`pd${i}`} className="st-dev" opacity={dim ? 0.55 : 1}
+              onMouseMove={tipOf} onMouseLeave={() => setTip(null)} onClick={tipOf}>
+              {ic ? (
+                <>
+                  <rect x={x - 0.3} y={y - 0.3} width={0.6} height={0.6} fill="#10141c" fillOpacity={0.85}
+                    stroke="#e6d6a6" strokeWidth={0.05} strokeDasharray={dim ? "0.1 0.07" : undefined} />
+                  <image href={ic} x={x - 0.26} y={y - 0.26} width={0.52} height={0.52}
+                    preserveAspectRatio="xMidYMid meet" onError={() => markBad(ic)} />
+                </>
+              ) : (
+                <rect x={x - 0.17} y={y - 0.17} width={0.34} height={0.34} fill={dim ? "#10141c" : "#e6d6a6"}
+                  stroke={dim ? "#e6d6a6" : "#10141c"} strokeWidth={0.05} transform={`rotate(45 ${x} ${y})`} />
+              )}
+            </g>
+          );
+        })}
         {showRoutes && lines.map((ln) => {
           // 선의 모양(best)·오프셋(off)은 접기 메모에서 확정 — 시뮬레이션 말과 공유한다
           const { rep, owner, best, off } = ln;
@@ -793,6 +859,12 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
           ⇢ {showRoutes ? t("경로 숨기기") : t("경로 표시")}
         </button>
       )}
+      {devList.length > 0 && (
+        <button type="button" className="st-mapscale" aria-pressed={showDevs} disabled={pending}
+          onClick={() => setShowDevs((v) => !v)}>
+          ◆ {showDevs ? t("장치 숨기기") : t("장치 표시")}
+        </button>
+      )}
       {photo && (
         <button type="button" className="st-mapscale" aria-pressed={showTiles} disabled={pending}
           onClick={() => setShowTiles((v) => !v)}>
@@ -841,11 +913,36 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
         );
       })()}
     </div>}
+    {/* 장치 범례 — 이 지도에 깔린 장치 종류(개수)와 밤(어둠). 설명은 즉시 툴팁(data-tip) */}
+    {(data.nt || devList.length > 0) && (
+      <div className="st-tilekey st-devkey">
+        {data.nt && (
+          <span data-tip={t("시야가 확보되지 않은 곳에 오퍼레이터 배치 불가, 적은 은신 효과 획득")}>
+            <i className="st-devkey-night" aria-hidden />{t("어둠")}
+          </span>
+        )}
+        {(() => {
+          const cnt = new Map<string, number>();
+          for (const [k] of devList) cnt.set(k, (cnt.get(k) ?? 0) + 1);
+          return [...cnt].map(([k, n]) => {
+            const ic = devIcon(k);
+            return (
+              <span key={k} data-tip={devDesc(k) ?? devName(k)}>
+                <i className={ic ? "st-devkey-ic" : "st-devkey-dia"} aria-hidden>
+                  {ic && <img src={ic} alt="" onError={() => markBad(ic)} />}
+                </i>
+                {devName(k)}{n > 1 ? ` ×${n}` : ""}
+              </span>
+            );
+          });
+        })()}
+      </div>
+    )}
     {/* 선·말 호버 즉시 툴팁 — 커서를 따라다니는 이름표 (+작은 섬네일) */}
     {tip && (
-      <div className="st-maptip" style={{ left: tip.x, top: tip.y }}>
+      <div className={`st-maptip${tip.sub ? " sub" : ""}`} style={{ left: tip.x, top: tip.y }}>
         {tip.img && <img src={tip.img} alt="" aria-hidden onError={(ev) => { markBad(tip.img); ev.currentTarget.style.display = "none"; }} />}
-        {tip.text}
+        {tip.sub ? <span><b>{tip.text}</b>{tip.sub}</span> : tip.text}
       </div>
     )}
     </div>

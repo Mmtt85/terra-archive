@@ -231,6 +231,11 @@ python3 scripts/routenames.py                  # 경로 파일 4개(stage·rogue
 #     등장 적 목록·테마 사전 밖의 경로 주인(그 판 전용 변종·도감 밖 적)의 이름·모델·초상. 빠지면 시뮬 말풍선에
 #     id 가 찍히고 말이 까맣게 빈다 (2026-09-23 제보). 세 경로 빌더가 저장 뒤 스스로 부르므로 보통은 따로 안 돌린다 —
 #     빌더 전체를 다시 돌리기 싫을 때(로컬 원본이 CI 보다 오래됨)만 이걸로 nm 만 다시 붙인다.
+#     stage·rogue·future 는 같은 레벨에서 **미리 깔린 장치·밤 표시(pd·nt, routeutil.devices_of_level)**도 붙인다
+#     (2026-09-29). `python3 scripts/routenames.py stage rogue future` 로 pd 만 채울 수 있다.
+python3 scripts/build-devices.py               # → app/data/devices.json (장치 이름·설명 사전, 종류당 한 번) +
+#     public/stage/dev/<키>.webp (게임 CDN 아바타가 있는 장치만). 안 보이는 전역 제어 장치(밀물 제어·중력·눈보라 …)는
+#     h 로 숨긴다. CI 는 --no-icons. 한섭에 없는 미래시 장치 이름은 cn-translations.json 에 채운다 (경고가 뜬다).
 python3 scripts/build-rogue-enc-scenes.py      # → scripts/rogue-enc-scenes.json (조우 씬 트리 —
 #     게임 excel엔 씬↔선택지 소속·랜덤 롤 테이블이 없어(클라 프리팹 소관) PRTS 위키
 #     事件一览의 ISEvent 구조를 CN excel 텍스트로 id 매칭한다. --refresh = PRTS 재다운로드.
