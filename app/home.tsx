@@ -439,10 +439,11 @@ const MAJOR_EVENT_TYPES = new Set(["SIDESTORY", "BRANCHLINE", "MINISTORY"]);
 //   CHECKIN_VS('햇빛이여 비추소서' 출석) · CHECKIN_ACCESS(추천 먼슬리카드)
 //   CHECKIN_ALL_PLAYER(미래서곡 출석) · GRID_GACHA(_V2)(밸리 광산 로그인·채굴 허가증)
 //   FLIP_ONLY(와르르 소원패)
+// 2026-09-29 — CHECKIN_VIDEO(테라 회고록 한정 로그인 이벤트 act3video, 10/08~ · 중섭 留影烁今/回望泰拉 登录活动)
 const MINOR_EVENT_TYPES = new Set([
   "LOGIN_ONLY", "CHECKIN_ONLY", "PRAY_ONLY", "BLESS_ONLY",
   "UNIQUE_ONLY", "CHECKIN_VS", "CHECKIN_ACCESS", "CHECKIN_ALL_PLAYER",
-  "GRID_GACHA", "GRID_GACHA_V2", "FLIP_ONLY",
+  "GRID_GACHA", "GRID_GACHA_V2", "FLIP_ONLY", "CHECKIN_VIDEO",
 ]);
 
 

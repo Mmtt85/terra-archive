@@ -1,17 +1,17 @@
 {
- "updated": "2026-09-27",
+ "updated": "2026-09-29",
  "files": [
   {
    "file": "op.json",
-   "url": "https://files.terra-archive.net/assets/tl/op.json?v=cf2ce6f66329a2bf",
+   "url": "https://files.terra-archive.net/assets/tl/op.json?v=336b121855f24a90",
    "label": "오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록 — 공식 한국어 24,320 + 비공식 번역 2,116",
-   "hash": "cf2ce6f66329a2bf"
+   "hash": "336b121855f24a90"
   },
   {
    "file": "item.json",
-   "url": "https://files.terra-archive.net/assets/tl/item.json?v=cc454255bbb7e330",
-   "label": "아이템·재료 — 이름·설명·용도 — 공식 한국어 3,024 + 비공식 번역 213",
-   "hash": "cc454255bbb7e330"
+   "url": "https://files.terra-archive.net/assets/tl/item.json?v=65a622239af9772d",
+   "label": "아이템·재료 — 이름·설명·용도 — 공식 한국어 3,026 + 비공식 번역 211",
+   "hash": "65a622239af9772d"
   },
   {
    "file": "enemy.json",
