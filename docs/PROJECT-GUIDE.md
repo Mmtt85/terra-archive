@@ -405,6 +405,15 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
   그림(모드 배너·NPC·게임 안내·메달)과 **스토리 없는 이벤트의 썸네일**(홈 테마 그림 → `public/event/<id>.webp`,
   build-events.py 가 스토리 썸네일이 없을 때만 붙인다)은 build-event-art.py — 둘 다 로컬 전용이고, 홈 테마·
   활동 번들은 **그 이벤트가 걸린 동안만** CDN에 있어 점검 때 받아 둬야 한다(kr-big-patch §3).
+- `app/data/future-dex.json` / `.en` / `.ja` — 이벤트 도감 **미래시(중섭 선행) 이벤트의 작전·적·재화 상세**
+  (build-future-dex.py, 2026-09-29 사용자 제보 "스테이지 데이터같은것도 다 없고 증표도 클릭해도 모달 안뜨네").
+  본 도감은 한섭 표로만 만들어 미래시 id 를 누르면 창이 안 떴다. 이벤트 창이 본 도감에서 못 찾은 id 만 여기서
+  찾는다(`app/dex-cross.ts` loadFutureDex) — 본 도감 목록엔 섞지 않는다. 문구는 로케일 서버 공식 → 공식 정형 문구
+  짝(같은 원문) → `scripts/cn-translations.json` 순. ⚠ 벡터 돌파 #3 보스처럼 **작전마다 수치만 다른 숨김 변형**
+  (`enemy_8018_etouch_1/2/3`)으로만 나오는 적은 보이는 본체로 접고 작전별 수치를 작전 칸에 싣는다
+  (`scripts/enemyvariant.py` — 끝 조각을 떼되 레벨 데이터 이름으로 확인한다: `enemy_8019_pollut_3` 은 이름이 과관류라
+  `_2` 로 가야 한다). 본체가 없는 개체는 본 도감처럼 뺀다. 새 원소 손상 `狂躁损伤`(ba.dt.rampage)은 공식 명칭이
+  아직 없어 '광란 손상 / Frenzy / 狂躁損傷'으로 옮겼다 (한섭에 오면 공식 표기로 바꿀 것).
 - `app/data/eventlore-index.json` (색인, ~1KB) + `public/lore/data/<스토리id>.json` (본문,
   3로케일 합계 ~1MB) — 이벤트 기록 (build-eventlore.py). 한정 이벤트의 미니게임·수집 요소로
   풀리던 읽을거리 14개 이벤트 · 글 997편 — 의뢰서·신문 기사·편지·오페라 평론·조우문.

@@ -32,6 +32,9 @@
 import json, os, re, sys
 from datetime import datetime, timedelta, timezone
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import enemyvariant  # noqa: E402
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 G = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GAMEDATA_DIR", os.path.join(REPO, ".gamedata"))
 DATA = os.path.join(REPO, "app", "data")
@@ -472,7 +475,11 @@ def cn_event_body(aid):
             continue
         d = cdnlevels.level(str(lid).lower(), server="cn") or cn_repo_level(lid)
         for ref in ((d or {}).get("enemyDbRefs") or []):
-            rid = ref.get("id")
+            # 도감에 안 보이는 변형(작전마다 수치만 다른 숨김 보스 `enemy_8018_etouch_1` 등)은 보이는 본체로
+            # 접고, 본체가 없으면 뺀다 — 본 도감과 같은 규칙 (scripts/enemyvariant.py, 2026-09-29 벡터 돌파 #3)
+            raw = ref.get("id") or ""
+            rid = enemyvariant.visible(raw, cn_enemy or {},
+                                       None if raw in (cn_enemy or {}) else enemyvariant.db_names("cn").get(raw))
             if rid and rid not in seen:
                 seen[rid] = ((cn_enemy or {}).get(rid) or {}).get("name") or rid
     items = []
@@ -612,6 +619,11 @@ if cn_act and cn_stage:
             row = {"id": aid, "n": names.get(loc) or names["ko"], "type": "NONE",
                    "start": None, "end": None, "fut": 1,
                    "eta": _time.strftime("%Y-%m", _time.gmtime(info["startTime"] + _gap))}
+            # 섬네일 — build-event-art.py --server cn 이 받아 둔 중섭 홈 테마 그림
+            for rel in ([f"/event/{loc}/{aid}.webp"] if loc != "ko" else []) + [f"/event/{aid}.webp"]:
+                if os.path.exists(os.path.join(REPO, "public", rel.lstrip("/"))):
+                    row["thumb"] = rel
+                    break
             loc_ops = per_loc[loc]["ops"]
             body_loc = fut_localize(body, loc)
             if body.get("ops"):

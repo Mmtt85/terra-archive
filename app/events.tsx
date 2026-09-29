@@ -29,11 +29,11 @@ import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
 import { Dropdown } from "./dropdown";
 import { SearchSuggest } from "./search-suggest";
-import { loadEnemies, loadEnemyStages, loadEnemyStats, loadItems, loadStages } from "./dex-cross";
+import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages, type FutureDex } from "./dex-cross";
 import { EnemyFile, enemyImg, type Enemy, type EnemyLevel, type EnemyStages, type StatOverride } from "./enemy-detail";
 import { DuelDetail, type DuelFighter } from "./event-duel";
 import { StageFile } from "./stage-detail";
-import { viewOf, type StageView } from "./stage-data";
+import { mergeRogueDoc, viewOf, type StageView } from "./stage-data";
 import { findItem, ItemFile, itemIcon, type DexItem, type ItemDoc } from "./items";
 // 스토리 상세를 **모달로** 겹쳐 띄운다 (사용자 요청 2026-09-17). 스토리 모듈과 요약 본문
 // (1.8MB)은 누를 때 처음 받는다 — 정적 임포트면 이벤트 도감 청크에 통째로 딸려 온다.
@@ -437,7 +437,9 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
   const [enStages, setEnStages] = useState<EnemyStages | null>(null);
   // 듀얼 채널 선수로 열었을 때만 — 듀얼 이름(큰)·원본 이름(작은), 듀얼 수치 한 줄, 등장 작전(VS-1).
   // 일반 적을 열면 비운다 (연계 소환으로 건너갈 때도).
-  const [subCtx, setSubCtx] = useState<{ title: string; sub?: string; statCtx: StatOverride; stages: EnemyStages | null } | null>(null);
+  const [subCtx, setSubCtx] = useState<{ title: string; sub?: string; statCtx?: StatOverride; stages: EnemyStages | null } | null>(null);
+  // 미래시(중섭 선행) 작전·적·재화 — 본 도감에 없는 id 를 눌렀을 때만 받는다 (app/dex-cross.ts loadFutureDex)
+  const [fut, setFut] = useState<FutureDex | null>(null);
   const [subItem, setSubItem] = useState<DexItem | null>(null);
   const [itemDoc, setItemDoc] = useState<ItemDoc | null>(null);
   const [subStory, setSubStory] = useState<string | null>(null);
@@ -455,14 +457,31 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
 
   const openStage = (sid: string) => {
     setRaise((k) => k + 1);
-    void Promise.all([loadStages(locale), loadEnemyStats()]).then(([d, stats]) => {
-      const st = d.stages.find((x) => x.id === sid);
-      setSubStage(st ? viewOf(d, st, stats) : null);
+    void Promise.all([loadStages(locale), loadEnemyStats()]).then(async ([d, stats]) => {
+      let doc = d;
+      let st = d.stages.find((x) => x.id === sid);
+      if (!st) {
+        const f = await loadFutureDex(locale);
+        setFut(f);
+        doc = mergeRogueDoc(d, f.stages);
+        st = doc.stages.find((x) => x.id === sid);
+      }
+      setSubStage(st ? viewOf(doc, st, stats) : null);
     });
   };
   const openEnemy = (eid: string) => {
     setRaise((k) => k + 1);
-    void loadEnemies(locale).then((m) => { setEnMap(m); setSubCtx(null); setSubEnemy(m.get(eid) ?? null); });
+    void loadEnemies(locale).then(async (m) => {
+      setEnMap(m);
+      setSubCtx(null);
+      const hit = m.get(eid);
+      if (hit) { setSubEnemy(hit); return; }
+      const f = await loadFutureDex(locale);
+      setFut(f);
+      const fe = f.enemies.find((e) => e.id === eid);
+      if (fe) setSubCtx({ title: fe.name, stages: f.enemyStages });
+      setSubEnemy(fe ?? null);
+    });
     void loadEnemyStages(locale).then(setEnStages);
   };
   // 듀얼 채널 선수 — 전용 개체(enemy_5028_dqlime_2 …)는 적 도감에 없다. 원본 적의 도감 항목에 **듀얼 수치
@@ -500,9 +519,13 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
   // 아이템 도감 문서(로케일당 ~650KB)는 여기서 처음 필요해지므로 그때 받는다.
   const openItem = (iid: string) => {
     setRaise((k) => k + 1);
-    void loadItems<ItemDoc>(locale).then((d) => {
+    void loadItems<ItemDoc>(locale).then(async (d) => {
       setItemDoc(d);
-      setSubItem(findItem(d.items, iid) ?? null);   // 재개방 재화는 합쳐진 대표 카드로 (alt)
+      const hit = findItem(d.items, iid);   // 재개방 재화는 합쳐진 대표 카드로 (alt)
+      if (hit) { setSubItem(hit); return; }
+      const f = await loadFutureDex(locale);
+      setFut(f);
+      setSubItem(f.items.find((i) => i.id === iid) ?? null);
     });
   };
 
@@ -580,7 +603,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
               모달이 아니라 적 상세 **페이지로 튕겨 나간다** (사용자 제보 2026-09-17).
               */}
           <EnemyFile enemy={subEnemy} stagesDoc={subCtx ? subCtx.stages : enStages}
-            nameOf={(id) => enMap?.get(id)?.name}
+            nameOf={(id) => enMap?.get(id)?.name ?? fut?.stages.enemyNames[id]}
             onOpenEnemy={openEnemy} onOpenStage={openStage}
             title={fighterTitle} statCtx={subCtx?.statCtx} />
         </ModalWindow>

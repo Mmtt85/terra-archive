@@ -14980,226 +14980,374 @@
   "ja": "タマミツネ（紫）オーキッド"
  },
  "冠鸣龙": {
-  "ko": "관명룡"
+  "ko": "관명룡",
+  "en": "Crowncall Wyvern",
+  "ja": "冠鳴竜"
  },
  "泡影国周边最常见的野兽。群居生物，以竹子为食。虽然十分弱小，但繁殖力十分强，在泡影国最古老的典籍上都能见到它们的画像。": {
-  "ko": "포영국 주변에서 가장 흔한 야수. 무리를 지어 살며 대나무를 먹는다. 무척 약하지만 번식력이 아주 강해, 포영국의 가장 오래된 전적에서도 그 그림을 볼 수 있다."
+  "ko": "포영국 주변에서 가장 흔한 야수. 무리를 지어 살며 대나무를 먹는다. 무척 약하지만 번식력이 아주 강해, 포영국의 가장 오래된 전적에서도 그 그림을 볼 수 있다.",
+  "en": "The most common beast around the Mirage Nation. A herd animal that feeds on bamboo. Though very weak, it breeds prolifically, and its image can be found even in the Mirage Nation's oldest texts.",
+  "ja": "泡影国周辺で最もよく見られる獣。群れで暮らし、竹を食べる。とても弱いが繁殖力が非常に強く、泡影国の最古の典籍にもその絵が見られる。"
  },
  "冠鸣龙王": {
-  "ko": "관명룡왕"
+  "ko": "관명룡왕",
+  "en": "Crowncall Wyvern King",
+  "ja": "冠鳴竜王"
  },
  "冠鸣龙的头领。会用鼻子发出响亮的声音，来提醒群落的同伴们逃跑。不过一般也是群落中跑得最快的那一只。": {
-  "ko": "관명룡 무리의 우두머리. 코로 우렁찬 소리를 내어 무리에게 도망치라고 알린다. 다만 대개 무리에서 가장 빨리 달아나는 것도 이 녀석이다."
+  "ko": "관명룡 무리의 우두머리. 코로 우렁찬 소리를 내어 무리에게 도망치라고 알린다. 다만 대개 무리에서 가장 빨리 달아나는 것도 이 녀석이다.",
+  "en": "The leader of a Crowncall Wyvern herd. It makes loud noises through its nose to warn its herd to flee—though it's usually also the fastest runner in the herd.",
+  "ja": "冠鳴竜の群れのリーダー。鼻から大きな音を出して、群れの仲間に逃げるよう知らせる。もっとも、たいてい群れの中で一番足が速いのもこの個体だ。"
  },
  "碎壳螈": {
-  "ko": "쇄각원"
+  "ko": "쇄각원",
+  "en": "Shellcrusher Newt",
+  "ja": "砕殻イモリ"
  },
  "栖息在竹林深处的蝾螈。生性胆小，出生后也会带着孕育自己的蛋壳到处跑，方便随时缩入其中。": {
-  "ko": "대숲 깊은 곳에 사는 도롱뇽. 천성이 겁이 많아, 태어난 뒤에도 자신을 품었던 알 껍데기를 지고 다니며 언제든 그 안으로 몸을 숨긴다."
+  "ko": "대숲 깊은 곳에 사는 도롱뇽. 천성이 겁이 많아, 태어난 뒤에도 자신을 품었던 알 껍데기를 지고 다니며 언제든 그 안으로 몸을 숨긴다.",
+  "en": "A newt that lives deep in the bamboo forests. Timid by nature, it carries around the eggshell it hatched from so it can hide inside at any moment.",
+  "ja": "竹林の奥深くに棲むイモリ。生まれつき臆病で、孵化した後も自分を育んだ卵の殻を背負って歩き回り、いつでも中に隠れられるようにしている。"
  },
  "大名碎壳螈": {
-  "ko": "다이묘 쇄각원"
+  "ko": "다이묘 쇄각원",
+  "en": "Daimyo Shellcrusher Newt",
+  "ja": "大名砕殻イモリ"
  },
  "碎壳螈之中的长者。经过漫长的时光，用各种方式把身上的壳变得十分坚硬，现在的壳就算是大喰怪也无法轻易击碎——代价是再也脱不下来了。": {
-  "ko": "쇄각원 중의 연장자. 오랜 세월에 걸쳐 온갖 방법으로 껍데기를 단단하게 만들어, 이제는 대식괴조차 쉽게 부수지 못한다 — 대가로 두 번 다시 벗을 수 없게 되었지만."
+  "ko": "쇄각원 중의 연장자. 오랜 세월에 걸쳐 온갖 방법으로 껍데기를 단단하게 만들어, 이제는 대식괴조차 쉽게 부수지 못한다 — 대가로 두 번 다시 벗을 수 없게 되었지만.",
+  "en": "An elder among Shellcrusher Newts. Over long years it has hardened its shell in every way possible, so that now even a Great Glutton can't easily crack it—at the cost of never being able to take it off again.",
+  "ja": "砕殻イモリの長老。長い年月をかけてあらゆる方法で殻を硬くし、今では大喰怪でさえ簡単には砕けない——その代わり、二度と脱げなくなった。"
  },
  "盗壳虫": {
-  "ko": "도각충"
+  "ko": "도각충",
+  "en": "Shellthief Bug",
+  "ja": "盗殻虫"
  },
  "栖息在竹林中的软体生物。本体十分瘦小，喜欢寻找一个巨大的容器当作自己的避风港。一遇到危险就会缩入容器中。": {
-  "ko": "대숲에 사는 연체생물. 본체는 아주 왜소해서, 커다란 그릇을 찾아 제 피난처로 삼기를 좋아한다. 위험이 닥치면 곧바로 그 안으로 움츠러든다."
+  "ko": "대숲에 사는 연체생물. 본체는 아주 왜소해서, 커다란 그릇을 찾아 제 피난처로 삼기를 좋아한다. 위험이 닥치면 곧바로 그 안으로 움츠러든다.",
+  "en": "A mollusk that lives in bamboo forests. Its body is tiny and frail, so it likes to find large containers to use as a shelter, retreating into them at the first sign of danger.",
+  "ja": "竹林に棲む軟体生物。本体はとても小さく、大きな容れ物を探して避難所にするのを好む。危険が迫るとすぐにその中へ引っ込む。"
  },
  "横纲盗壳虫": {
-  "ko": "요코즈나 도각충"
+  "ko": "요코즈나 도각충",
+  "en": "Yokozuna Shellthief Bug",
+  "ja": "横綱盗殻虫"
  },
  "盗壳虫中的大力士。不仅局限于寻找可以保护自己的容器，更是热衷于能够证明自己的容器。从梓兰和空爆那里听说了一些泰拉的风土人情后，斑弥罗开始期望它们有朝一日能驮起一整座房子。": {
-  "ko": "도각충 중의 장사. 제 몸을 지킬 그릇을 찾는 데 그치지 않고, 자신을 과시할 만한 그릇에 열을 올린다. 오키드와 캐터펄트에게서 테라의 풍물을 전해 들은 반미라는, 언젠가 이 녀석들이 집 한 채를 통째로 짊어지기를 기대하게 되었다."
+  "ko": "도각충 중의 장사. 제 몸을 지킬 그릇을 찾는 데 그치지 않고, 자신을 과시할 만한 그릇에 열을 올린다. 오키드와 캐터펄트에게서 테라의 풍물을 전해 들은 반미라는, 언젠가 이 녀석들이 집 한 채를 통째로 짊어지기를 기대하게 되었다.",
+  "en": "A strongman among Shellthief Bugs. Not content with finding containers to protect itself, it's eager for containers that let it prove itself. After hearing about the customs of Terra from Orchid and Catapult, Banmira began hoping that one day they could carry an entire house.",
+  "ja": "盗殻虫の中の力持ち。身を守る容れ物を探すだけでは飽き足らず、自分を誇示できる容れ物に熱を上げる。オーキッドとカタパルトからテラの風土や人情を聞いた斑弥羅は、いつかこの虫たちが家を丸ごと背負えるようになることを期待し始めた。"
  },
  "大喰怪": {
-  "ko": "대식괴"
+  "ko": "대식괴",
+  "en": "Great Glutton",
+  "ja": "大喰怪"
  },
  "栖息在雪山上的大型野兽。身形庞大，前肢的力量也很强，能够轻松抓起小型野兽乃至成年人并吞入巨口中。泡影国有诸多和它有关的吓唬小孩子的传说。": {
-  "ko": "설산에 사는 대형 야수. 몸집이 거대하고 앞다리 힘도 세어, 작은 야수는 물론 다 큰 사람까지 가볍게 붙잡아 커다란 입에 삼킨다. 포영국에는 이 녀석으로 아이를 겁주는 이야기가 숱하게 전해진다."
+  "ko": "설산에 사는 대형 야수. 몸집이 거대하고 앞다리 힘도 세어, 작은 야수는 물론 다 큰 사람까지 가볍게 붙잡아 커다란 입에 삼킨다. 포영국에는 이 녀석으로 아이를 겁주는 이야기가 숱하게 전해진다.",
+  "en": "A large beast that lives in the snowy mountains. It is massive with powerful forelimbs, easily grabbing small beasts and even grown adults to swallow them whole. The Mirage Nation has many legends about it used to scare children.",
+  "ja": "雪山に棲む大型の獣。巨体で前肢の力も強く、小型の獣はもちろん大人までも軽々とつかんで大きな口に呑み込む。泡影国には、この獣にまつわる子ども脅しの伝説がたくさんある。"
  },
  "荒神大喰怪": {
-  "ko": "황신 대식괴"
+  "ko": "황신 대식괴",
+  "en": "Wrathful Great Glutton",
+  "ja": "荒神大喰怪"
  },
  "大喰怪中的美食家。性格比普通的大喰怪温顺许多，有关这种大喰怪的传说也从吓唬人的怪谈变成了与守护有关的温暖故事。但实际上是因为它吃过许多东西，口味逐渐变得挑剔。": {
-  "ko": "대식괴 중의 미식가. 보통 대식괴보다 성격이 훨씬 온순해, 이 녀석에 얽힌 이야기는 겁주는 괴담에서 수호에 관한 따뜻한 이야기로 바뀌었다. 다만 실상은 워낙 많은 것을 먹어 보아 입맛이 점점 까다로워진 탓이다."
+  "ko": "대식괴 중의 미식가. 보통 대식괴보다 성격이 훨씬 온순해, 이 녀석에 얽힌 이야기는 겁주는 괴담에서 수호에 관한 따뜻한 이야기로 바뀌었다. 다만 실상은 워낙 많은 것을 먹어 보아 입맛이 점점 까다로워진 탓이다.",
+  "en": "A gourmet among Great Gluttons. Far more docile than an ordinary Great Glutton, so the legends about it have turned from scary tales into warm stories of protection. In truth, it has simply eaten so many things that its palate has grown picky.",
+  "ja": "大喰怪の中の美食家。普通の大喰怪よりずっと温厚で、この大喰怪にまつわる伝説も子どもを脅かす怪談から守護にまつわる温かい話へと変わった。だが実際は、たくさんの物を食べてきたせいで舌が肥えただけだ。"
  },
  "反壳龟": {
-  "ko": "반각귀"
+  "ko": "반각귀",
+  "en": "Flipshell Turtle",
+  "ja": "反殻亀"
  },
  "普通的陆龟。在地下河道附近被发现。攻击性极强，一见到活物就会缩入壳中撞过去，速度极快，第一次见到的人往往会反应不过来。": {
-  "ko": "평범한 육지거북. 지하 수로 근처에서 발견된다. 공격성이 매우 강해, 살아 있는 것을 보면 껍데기 속으로 움츠러든 채 들이받는다. 속도가 몹시 빨라 처음 보는 사람은 대개 반응하지 못한다."
+  "ko": "평범한 육지거북. 지하 수로 근처에서 발견된다. 공격성이 매우 강해, 살아 있는 것을 보면 껍데기 속으로 움츠러든 채 들이받는다. 속도가 몹시 빨라 처음 보는 사람은 대개 반응하지 못한다.",
+  "en": "An ordinary tortoise, found near underground waterways. Extremely aggressive—the moment it sees a living thing, it withdraws into its shell and rams it at great speed. Those who see it for the first time often can't react in time.",
+  "ja": "ありふれたリクガメ。地下水路の近くで見つかる。攻撃性が極めて強く、生き物を見るや甲羅に引っ込んで体当たりしてくる。速度が非常に速く、初めて見た者はたいてい反応できない。"
  },
  "反壳龟·缚": {
-  "ko": "반각귀·박"
+  "ko": "반각귀·박",
+  "en": "Flipshell Turtle - Bound",
+  "ja": "反殻亀・縛"
  },
  "被“诅咒”侵蚀的反壳龟。在“诅咒”的作用下，壳变得沉重无比，而且它移动的速度也出现了诡异的变化，有时候感觉很慢，但一眨眼，已经来到眼前，令人猝不及防。": {
-  "ko": "「저주」에 잠식된 반각귀. 「저주」의 작용으로 껍데기가 한없이 무거워졌고, 움직이는 속도마저 기괴하게 변했다. 느린가 싶다가도 눈 깜짝할 사이에 코앞까지 다가와 손쓸 틈을 주지 않는다."
+  "ko": "「저주」에 잠식된 반각귀. 「저주」의 작용으로 껍데기가 한없이 무거워졌고, 움직이는 속도마저 기괴하게 변했다. 느린가 싶다가도 눈 깜짝할 사이에 코앞까지 다가와 손쓸 틈을 주지 않는다.",
+  "en": "A Flipshell Turtle eroded by the 'Curse'. Under its effect, its shell has become immensely heavy, and its movement speed has changed eerily—sometimes it seems slow, but in the blink of an eye it's right in front of you, catching you off guard.",
+  "ja": "「呪い」に侵された反殻亀。「呪い」の作用で甲羅は途方もなく重くなり、移動速度まで奇妙に変化した。遅いと思えば、瞬きする間に目の前に迫り、不意を突かれる。"
  },
  "影丝蛛": {
-  "ko": "영사주"
+  "ko": "영사주",
+  "en": "Shadowsilk Spider",
+  "ja": "影糸蜘蛛"
  },
  "广泛存在于地下竹林中的蜘蛛。在竹子之间编织出一张张黏性极强的网，一不小心，就会被缠入其中，成为它们的食物。": {
-  "ko": "지하 대숲에 널리 사는 거미. 대나무 사이에 점성이 매우 강한 그물을 쳐 두어, 방심하면 그 안에 얽혀 먹이가 되고 만다."
+  "ko": "지하 대숲에 널리 사는 거미. 대나무 사이에 점성이 매우 강한 그물을 쳐 두어, 방심하면 그 안에 얽혀 먹이가 되고 만다.",
+  "en": "A spider widespread in the underground bamboo forests. It weaves extremely sticky webs between the bamboo; one careless step and you'll be caught and become its meal.",
+  "ja": "地下の竹林に広く生息する蜘蛛。竹の間に粘着力の極めて強い巣を張り、油断すると絡め取られて餌食になってしまう。"
  },
  "影丝蛛·怨": {
-  "ko": "영사주·원"
+  "ko": "영사주·원",
+  "en": "Shadowsilk Spider - Grudge",
+  "ja": "影糸蜘蛛・怨"
  },
  "被“诅咒”侵蚀的影丝蛛，十分棘手的存在。吐出的丝线上也会附着一些“诅咒”的力量，一旦被缠住，要么成为它们的食物，要么成为“诅咒”的俘虏。": {
-  "ko": "「저주」에 잠식된 영사주. 몹시 까다로운 상대다. 뱉어내는 실에도 「저주」의 힘이 깃들어, 한번 얽히면 그들의 먹이가 되거나 「저주」의 포로가 된다."
+  "ko": "「저주」에 잠식된 영사주. 몹시 까다로운 상대다. 뱉어내는 실에도 「저주」의 힘이 깃들어, 한번 얽히면 그들의 먹이가 되거나 「저주」의 포로가 된다.",
+  "en": "A Shadowsilk Spider eroded by the 'Curse'—a very troublesome foe. The threads it spits carry some of the 'Curse's' power; once entangled, you either become its meal or a prisoner of the 'Curse'.",
+  "ja": "「呪い」に侵された影糸蜘蛛。非常に厄介な存在だ。吐き出す糸にも「呪い」の力が宿り、一度絡まれば餌食になるか、「呪い」の虜になるかだ。"
  },
  "咒鬼": {
-  "ko": "주귀"
+  "ko": "주귀",
+  "en": "Cursed Oni",
+  "ja": "呪鬼"
  },
  "已经在泡影国灭绝的狼，伴随着灾厄再次出现。拥有狼应有的一切特质——集体行动，凶狠，狡诈。且其中的每一项，都因“诅咒”而变得更为棘手。": {
-  "ko": "포영국에서 이미 멸종했던 늑대가 재앙과 함께 다시 나타났다. 늑대가 갖출 모든 특질 — 무리 사냥, 사나움, 교활함 — 을 지녔고, 그 하나하나가 「저주」로 한층 까다로워졌다."
+  "ko": "포영국에서 이미 멸종했던 늑대가 재앙과 함께 다시 나타났다. 늑대가 갖출 모든 특질 — 무리 사냥, 사나움, 교활함 — 을 지녔고, 그 하나하나가 「저주」로 한층 까다로워졌다.",
+  "en": "Wolves long extinct in the Mirage Nation have reappeared alongside the calamity. They possess every trait a wolf should—pack tactics, ferocity, cunning—and each has become all the more troublesome because of the 'Curse'.",
+  "ja": "泡影国ですでに絶滅していた狼が、災厄とともに再び現れた。群れでの行動、凶暴さ、狡猾さ——狼が持つべき特質をすべて備え、そのどれもが「呪い」によっていっそう厄介になっている。"
  },
  "咒鬼·真": {
-  "ko": "주귀·진"
+  "ko": "주귀·진",
+  "en": "Cursed Oni - True",
+  "ja": "呪鬼・真"
  },
  "真正的“咒鬼”。出现在泡影国各种古老文献中，被视作招来毁灭的元凶。保留了狼的习性，但无论是奔跑还是撕咬都带有“诅咒”的属性，使泡影国面临巨大的灾难。": {
-  "ko": "진짜 「주귀」. 포영국의 온갖 옛 문헌에 등장하며 멸망을 불러오는 원흉으로 여겨진다. 늑대의 습성은 그대로지만 달리는 것도 물어뜯는 것도 「저주」의 속성을 띠어, 포영국에 크나큰 재앙을 안겼다."
+  "ko": "진짜 「주귀」. 포영국의 온갖 옛 문헌에 등장하며 멸망을 불러오는 원흉으로 여겨진다. 늑대의 습성은 그대로지만 달리는 것도 물어뜯는 것도 「저주」의 속성을 띠어, 포영국에 크나큰 재앙을 안겼다.",
+  "en": "The true 'Cursed Oni'. It appears in all manner of ancient texts of the Mirage Nation, regarded as the harbinger of ruin. It retains a wolf's habits, but both its running and biting carry the property of the 'Curse', bringing great calamity upon the Mirage Nation.",
+  "ja": "真の「呪鬼」。泡影国のさまざまな古文献に登場し、滅びを招く元凶とみなされている。狼の習性はそのままだが、走るのも噛みつくのも「呪い」の性質を帯び、泡影国に大きな災厄をもたらした。"
  },
  "岩甲兽": {
-  "ko": "암갑수"
+  "ko": "암갑수",
+  "en": "Rockshell Beast",
+  "ja": "岩甲獣"
  },
  "从未在泡影国出现过的野兽。任何靠近它的敌人，都会被它用无比强壮的前肢撕碎。而想要逃离它的猎物，则会被它掀起的岩壁封锁逃亡的道路。": {
-  "ko": "포영국에 한 번도 나타난 적 없던 야수. 가까이 다가온 적은 무엇이든 더없이 강인한 앞다리에 찢긴다. 달아나려는 먹잇감은 이 녀석이 솟구쳐 올린 암벽에 길이 막힌다."
+  "ko": "포영국에 한 번도 나타난 적 없던 야수. 가까이 다가온 적은 무엇이든 더없이 강인한 앞다리에 찢긴다. 달아나려는 먹잇감은 이 녀석이 솟구쳐 올린 암벽에 길이 막힌다.",
+  "en": "A beast never before seen in the Mirage Nation. Any foe who comes near is torn apart by its immensely powerful forelimbs, while prey that tries to flee finds its escape sealed off by the rock walls it raises.",
+  "ja": "泡影国に一度も現れたことのない獣。近づく敵は、その極めて強靭な前肢に引き裂かれる。逃げようとする獲物は、この獣が隆起させた岩壁に退路を塞がれる。"
  },
  "岩甲兽·咒": {
-  "ko": "암갑수·주"
+  "ko": "암갑수·주",
+  "en": "Rockshell Beast - Curse",
+  "ja": "岩甲獣・呪"
  },
  "被“诅咒”侵蚀的岩甲兽，“诅咒”强化了它的前肢，让它拥有了轻易改变地貌的力量，它是唯一有可能威胁到“雷之主”的存在，也因此成了“雷之主”的主要猎杀对象。": {
-  "ko": "「저주」에 잠식된 암갑수. 「저주」가 앞다리를 강화해 지형을 손쉽게 바꾸는 힘을 얻었다. 「번개의 주인」을 위협할 수 있는 유일한 존재이며, 그래서 「번개의 주인」의 주된 사냥감이 되었다."
+  "ko": "「저주」에 잠식된 암갑수. 「저주」가 앞다리를 강화해 지형을 손쉽게 바꾸는 힘을 얻었다. 「번개의 주인」을 위협할 수 있는 유일한 존재이며, 그래서 「번개의 주인」의 주된 사냥감이 되었다.",
+  "en": "A Rockshell Beast eroded by the 'Curse'. The 'Curse' has strengthened its forelimbs, granting it the power to reshape terrain with ease. It is the only creature that could threaten the 'Lord of Thunder', and so it became the 'Lord of Thunder's' main quarry.",
+  "ja": "「呪い」に侵された岩甲獣。「呪い」が前肢を強化し、地形を容易に変える力を得た。「雷の主」を脅かしうる唯一の存在であり、それゆえ「雷の主」の主な獲物となった。"
  },
  "“异兽”熔火蜗": {
-  "ko": "「이수」 용화와"
+  "ko": "「이수」 용화와",
+  "en": "'Aberrant' Magma Snail",
+  "ja": "「異獣」熔火カタツムリ"
  },
  "本代“异兽”，统治熔岩地带的王者。拥有“诅咒”的力量，想要将雪山改造成自己的巢穴。": {
-  "ko": "이번 대의 「이수」이자 용암 지대를 다스리는 왕자. 「저주」의 힘을 지녔으며, 설산을 제 둥지로 개조하려 한다."
+  "ko": "이번 대의 「이수」이자 용암 지대를 다스리는 왕자. 「저주」의 힘을 지녔으며, 설산을 제 둥지로 개조하려 한다.",
+  "en": "The current 'Aberrant', ruler of the lava lands. It wields the power of the 'Curse' and seeks to turn the snowy mountains into its nest.",
+  "ja": "当代の「異獣」、溶岩地帯を統べる王者。「呪い」の力を持ち、雪山を自らの巣に作り変えようとしている。"
  },
  "滴答冰淇淋": {
-  "ko": "뚝뚝 아이스크림"
+  "ko": "뚝뚝 아이스크림",
+  "en": "Dripping Ice Cream",
+  "ja": "ポタポタアイスクリーム"
  },
  "正在融化的冰淇淋。再怎么努力也阻止不了它滴在手上。\n可能出现在街道的任何地方，也许和拉特兰真正的冰淇淋一样多。毕竟是冰淇淋总要融化的。\n很脆弱，什么都能伤害它，滴落的奶油不知是不是眼泪。你绝对没尝过这么甜的眼泪。": {
-  "ko": "녹아내리는 아이스크림. 아무리 애써도 손에 뚝뚝 떨어지는 것을 막을 수 없다.\n거리 어디에나 나타날 수 있고, 어쩌면 라테라노의 진짜 아이스크림만큼 많을지도 모른다. 아이스크림이란 결국 녹게 마련이니까.\n아주 약해서 무엇에든 다치고, 흘러내리는 크림이 눈물인지는 알 수 없다. 이렇게 단 눈물은 맛본 적이 없을 것이다."
+  "ko": "녹아내리는 아이스크림. 아무리 애써도 손에 뚝뚝 떨어지는 것을 막을 수 없다.\n거리 어디에나 나타날 수 있고, 어쩌면 라테라노의 진짜 아이스크림만큼 많을지도 모른다. 아이스크림이란 결국 녹게 마련이니까.\n아주 약해서 무엇에든 다치고, 흘러내리는 크림이 눈물인지는 알 수 없다. 이렇게 단 눈물은 맛본 적이 없을 것이다.",
+  "en": "A melting ice cream. No matter how hard you try, you can't stop it dripping onto your hand.\nIt can appear anywhere on the streets—perhaps as often as real ice cream in Laterano. After all, ice cream always melts.\nIt's very fragile; anything can hurt it. Whether the dripping cream is tears, no one knows. You've surely never tasted tears this sweet.",
+  "ja": "溶けかけのアイスクリーム。どんなに頑張っても手に垂れるのを止められない。\n街のどこにでも現れ、もしかするとラテラーノの本物のアイスクリームと同じくらい多いかもしれない。アイスクリームはいずれ溶けるものだから。\nとても脆く、何にでも傷つく。垂れるクリームが涙なのかはわからない。こんなに甘い涙はきっと味わったことがないだろう。"
  },
  "刺溜冰淇淋": {
-  "ko": "주르륵 아이스크림"
+  "ko": "주르륵 아이스크림",
+  "en": "Slurping Ice Cream",
+  "ja": "ツルッとアイスクリーム"
  },
  "流淌一地的冰淇淋。你努力过，但冰淇淋还是掉了。\n可能出现在街道的任何地方，也许和拉特兰真正的冰淇淋一样多。毕竟是冰淇淋总要融化的。\n很脆弱，什么都能伤害它，流淌的奶油不知是不是眼泪。你绝对不会去尝地上的奶油。": {
-  "ko": "바닥에 흥건히 퍼진 아이스크림. 애는 썼지만 결국 떨어뜨리고 말았다.\n거리 어디에나 나타날 수 있고, 어쩌면 라테라노의 진짜 아이스크림만큼 많을지도 모른다. 아이스크림이란 결국 녹게 마련이니까.\n아주 약해서 무엇에든 다치고, 흘러내리는 크림이 눈물인지는 알 수 없다. 바닥의 크림을 맛볼 일은 결코 없겠지만."
+  "ko": "바닥에 흥건히 퍼진 아이스크림. 애는 썼지만 결국 떨어뜨리고 말았다.\n거리 어디에나 나타날 수 있고, 어쩌면 라테라노의 진짜 아이스크림만큼 많을지도 모른다. 아이스크림이란 결국 녹게 마련이니까.\n아주 약해서 무엇에든 다치고, 흘러내리는 크림이 눈물인지는 알 수 없다. 바닥의 크림을 맛볼 일은 결코 없겠지만.",
+  "en": "Ice cream spilled all over the ground. You tried, but it fell anyway.\nIt can appear anywhere on the streets—perhaps as often as real ice cream in Laterano. After all, ice cream always melts.\nIt's very fragile; anything can hurt it. Whether the flowing cream is tears, no one knows. You would never taste cream off the ground.",
+  "ja": "地面に広がったアイスクリーム。頑張ったけれど、結局落としてしまった。\n街のどこにでも現れ、もしかするとラテラーノの本物のアイスクリームと同じくらい多いかもしれない。アイスクリームはいずれ溶けるものだから。\nとても脆く、何にでも傷つく。流れるクリームが涙なのかはわからない。地面のクリームを味わうことは決してないだろう。"
  },
  "吵闹收音机": {
-  "ko": "시끄러운 라디오"
+  "ko": "시끄러운 라디오",
+  "en": "Noisy Radio",
+  "ja": "うるさいラジオ"
  },
  "损坏的收音机。非常希望有人能听见它。\n音圈还在振动，但发出的声音毫无意义。很吵，好在拉特兰人听不见。\n内部结构很容易被源石技艺扰乱，它因而学会了用唱盘揍人，这个好使。": {
-  "ko": "고장 난 라디오. 누군가 제 소리를 들어 주기를 몹시 바란다.\n보이스코일은 아직 떨리지만 나오는 소리에는 아무 의미가 없다. 시끄럽지만 다행히 라테라노 사람들에게는 들리지 않는다.\n내부 구조가 오리지늄 아츠에 쉽게 교란되는 탓에, 대신 턴테이블로 때리는 법을 익혔다. 이쪽이 잘 듣는다."
+  "ko": "고장 난 라디오. 누군가 제 소리를 들어 주기를 몹시 바란다.\n보이스코일은 아직 떨리지만 나오는 소리에는 아무 의미가 없다. 시끄럽지만 다행히 라테라노 사람들에게는 들리지 않는다.\n내부 구조가 오리지늄 아츠에 쉽게 교란되는 탓에, 대신 턴테이블로 때리는 법을 익혔다. 이쪽이 잘 듣는다.",
+  "en": "A broken radio. It desperately wants someone to hear it.\nIts voice coil still vibrates, but the sounds it makes mean nothing. Very noisy—luckily, Lateranos can't hear it.\nIts internals are easily disrupted by Originium Arts, so it learned to hit people with its turntable instead. That works.",
+  "ja": "壊れたラジオ。誰かに聞いてほしくてたまらない。\nボイスコイルはまだ振動しているが、出る音に意味はない。うるさいが、幸いラテラーノ人には聞こえない。\n内部構造がアーツで乱されやすいので、代わりにターンテーブルで殴ることを覚えた。これはよく効く。"
  },
  "沉默收音机": {
-  "ko": "침묵하는 라디오"
+  "ko": "침묵하는 라디오",
+  "en": "Silent Radio",
+  "ja": "沈黙のラジオ"
  },
  "报废的收音机。已经放弃了用声音来吸引注意。\n音圈还在振动，但完全发不出声音。很安静，有时它自己都注意不到自己。\n内部结构很容易被源石技艺扰乱，它因而学会了用唱盘揍人，这个好使。": {
-  "ko": "폐기된 라디오. 소리로 주의를 끄는 일은 이미 포기했다.\n보이스코일은 아직 떨리지만 소리는 전혀 나오지 않는다. 고요해서, 때로는 자기 자신조차 스스로를 알아채지 못한다.\n내부 구조가 오리지늄 아츠에 쉽게 교란되는 탓에, 대신 턴테이블로 때리는 법을 익혔다. 이쪽이 잘 듣는다."
+  "ko": "폐기된 라디오. 소리로 주의를 끄는 일은 이미 포기했다.\n보이스코일은 아직 떨리지만 소리는 전혀 나오지 않는다. 고요해서, 때로는 자기 자신조차 스스로를 알아채지 못한다.\n내부 구조가 오리지늄 아츠에 쉽게 교란되는 탓에, 대신 턴테이블로 때리는 법을 익혔다. 이쪽이 잘 듣는다.",
+  "en": "A scrapped radio. It has given up on using sound to get attention.\nIts voice coil still vibrates, but no sound comes out at all. It's so quiet that sometimes it doesn't even notice itself.\nIts internals are easily disrupted by Originium Arts, so it learned to hit people with its turntable instead. That works.",
+  "ja": "廃棄されたラジオ。音で注意を引くことはもう諦めた。\nボイスコイルはまだ振動しているが、まったく音が出ない。静かすぎて、時々自分でも自分に気づかない。\n内部構造がアーツで乱されやすいので、代わりにターンテーブルで殴ることを覚えた。これはよく効く。"
  },
  "蹦跶羽兽": {
-  "ko": "팔딱이는 파울비스트"
+  "ko": "팔딱이는 파울비스트",
+  "en": "Hopping Fowlbeast",
+  "ja": "ぴょんぴょん羽獣"
  },
  "被网缠住的羽兽。网就披在自己头顶，无论向哪里飞都逃不出去。\n好消息，还能飞。坏消息，实在飞得不高，很容易撞到路灯、告解车、花坛或其他任何东西。\n不建议殴打羽兽，它们很怕痛。": {
-  "ko": "그물에 얽힌 파울비스트. 그물을 머리에 뒤집어쓴 채라 어디로 날아도 빠져나오지 못한다.\n좋은 소식은 아직 날 수 있다는 것. 나쁜 소식은 높이 날지 못해 가로등이며 고해차며 화단이며 아무 데나 부딪힌다는 것.\n파울비스트를 때리는 것은 권하지 않는다. 아픔을 몹시 탄다."
+  "ko": "그물에 얽힌 파울비스트. 그물을 머리에 뒤집어쓴 채라 어디로 날아도 빠져나오지 못한다.\n좋은 소식은 아직 날 수 있다는 것. 나쁜 소식은 높이 날지 못해 가로등이며 고해차며 화단이며 아무 데나 부딪힌다는 것.\n파울비스트를 때리는 것은 권하지 않는다. 아픔을 몹시 탄다.",
+  "en": "A Fowlbeast tangled in a net. With the net draped over its head, it can't escape no matter which way it flies.\nThe good news: it can still fly. The bad news: it can't fly very high, so it easily bumps into streetlamps, confessional cars, flowerbeds, or anything else.\nHitting Fowlbeasts is not recommended. They're very sensitive to pain.",
+  "ja": "網に絡まった羽獣。網を頭からかぶっているので、どこへ飛んでも抜け出せない。\n良い知らせ、まだ飛べる。悪い知らせ、あまり高く飛べないので、街灯や告解車、花壇など何にでもぶつかる。\n羽獣を殴るのはおすすめしない。とても痛がりだ。"
  },
  "蹒跚羽兽": {
-  "ko": "비틀대는 파울비스트"
+  "ko": "비틀대는 파울비스트",
+  "en": "Tottering Fowlbeast",
+  "ja": "よろよろ羽獣"
  },
  "深陷罗网的羽兽。网已经缠住了翅膀，它不明白身体为什么这么重。\n好消息，还能飞。坏消息，实在飞得不高，很容易撞到圣像的膝盖、告解车车轮、路边台阶或其他任何东西。\n不建议殴打羽兽，它们很怕痛。": {
-  "ko": "그물에 깊이 빠진 파울비스트. 그물이 날개까지 감아, 왜 몸이 이렇게 무거운지 알지 못한다.\n좋은 소식은 아직 날 수 있다는 것. 나쁜 소식은 높이 날지 못해 성상의 무릎이며 고해차 바퀴며 길가 계단이며 아무 데나 부딪힌다는 것.\n파울비스트를 때리는 것은 권하지 않는다. 아픔을 몹시 탄다."
+  "ko": "그물에 깊이 빠진 파울비스트. 그물이 날개까지 감아, 왜 몸이 이렇게 무거운지 알지 못한다.\n좋은 소식은 아직 날 수 있다는 것. 나쁜 소식은 높이 날지 못해 성상의 무릎이며 고해차 바퀴며 길가 계단이며 아무 데나 부딪힌다는 것.\n파울비스트를 때리는 것은 권하지 않는다. 아픔을 몹시 탄다.",
+  "en": "A Fowlbeast deeply tangled in a net. The net has wrapped around its wings, and it doesn't understand why its body feels so heavy.\nThe good news: it can still fly. The bad news: it can't fly very high, so it easily bumps into saint statues' knees, confessional car wheels, roadside steps, or anything else.\nHitting Fowlbeasts is not recommended. They're very sensitive to pain.",
+  "ja": "網に深く絡まった羽獣。網が翼まで巻きつき、どうして体がこんなに重いのかわからない。\n良い知らせ、まだ飛べる。悪い知らせ、あまり高く飛べないので、聖像の膝や告解車の車輪、道端の階段など何にでもぶつかる。\n羽獣を殴るのはおすすめしない。とても痛がりだ。"
  },
  "失恋花束": {
-  "ko": "실연 꽃다발"
+  "ko": "실연 꽃다발",
+  "en": "Heartbreak Bouquet",
+  "ja": "失恋の花束"
  },
  "失水萎蔫的玫瑰。它开始明白自己并不能传达心意。\n其实可以，比如当一束玫瑰出现在垃圾桶，大多数人都能知道发生了什么。\n失水的花瓣很柔软，但不推荐撕下来做恋爱占卜。太不吉利了。": {
-  "ko": "물기를 잃고 시든 장미. 제가 마음을 전하지 못한다는 것을 깨닫기 시작했다.\n사실은 전할 수 있다. 이를테면 장미 한 다발이 쓰레기통에 들어 있으면, 대부분은 무슨 일이 있었는지 알아챈다.\n시든 꽃잎은 아주 부드럽지만 뜯어서 사랑점을 치는 것은 권하지 않는다. 너무 불길하다."
+  "ko": "물기를 잃고 시든 장미. 제가 마음을 전하지 못한다는 것을 깨닫기 시작했다.\n사실은 전할 수 있다. 이를테면 장미 한 다발이 쓰레기통에 들어 있으면, 대부분은 무슨 일이 있었는지 알아챈다.\n시든 꽃잎은 아주 부드럽지만 뜯어서 사랑점을 치는 것은 권하지 않는다. 너무 불길하다.",
+  "en": "A rose wilted from lack of water. It is beginning to understand that it cannot convey its feelings.\nActually, it can. When a bouquet of roses shows up in a trash can, most people know what happened.\nDried petals are very soft, but pulling them off for a love fortune is not recommended. Far too unlucky.",
+  "ja": "水気を失ってしおれたバラ。自分では想いを伝えられないと気づき始めた。\n実は伝えられる。たとえばバラの花束がゴミ箱に入っていれば、たいていの人は何があったか察する。\n乾いた花びらはとても柔らかいが、ちぎって恋占いをするのはおすすめしない。縁起が悪すぎる。"
  },
  "离婚花束": {
-  "ko": "이혼 꽃다발"
+  "ko": "이혼 꽃다발",
+  "en": "Divorce Bouquet",
+  "ja": "離婚の花束"
  },
  "焦枯凋零的玫瑰。它已经明白“传达心意”从来就不可能。\n其实可以，比如当一束玫瑰出现在法庭的垃圾桶，就算你不明就里，也能知道不是好事。\n枯萎的花瓣很轻软，但不推荐撕下来做恋爱占卜。太不吉利了。": {
-  "ko": "바싹 타들어 말라 버린 장미. 「마음을 전하는 일」이 애초에 불가능했음을 이미 깨달았다.\n사실은 전할 수 있다. 이를테면 장미 한 다발이 법정의 쓰레기통에 들어 있으면, 사정을 모르는 사람도 좋은 일은 아니라는 것쯤은 안다.\n마른 꽃잎은 가볍고 보드랍지만 뜯어서 사랑점을 치는 것은 권하지 않는다. 너무 불길하다."
+  "ko": "바싹 타들어 말라 버린 장미. 「마음을 전하는 일」이 애초에 불가능했음을 이미 깨달았다.\n사실은 전할 수 있다. 이를테면 장미 한 다발이 법정의 쓰레기통에 들어 있으면, 사정을 모르는 사람도 좋은 일은 아니라는 것쯤은 안다.\n마른 꽃잎은 가볍고 보드랍지만 뜯어서 사랑점을 치는 것은 권하지 않는다. 너무 불길하다.",
+  "en": "A scorched, withered rose. It has already understood that 'conveying one's feelings' was never possible.\nActually, it can. When a bouquet of roses shows up in a courthouse trash can, even if you don't know the details, you know it's not good news.\nWithered petals are light and soft, but pulling them off for a love fortune is not recommended. Far too unlucky.",
+  "ja": "焦げて枯れ落ちたバラ。「想いを伝える」ことなど最初から不可能だったと、もう理解している。\n実は伝えられる。たとえばバラの花束が法廷のゴミ箱に入っていれば、事情を知らなくても良いことではないとわかる。\n枯れた花びらは軽くて柔らかいが、ちぎって恋占いをするのはおすすめしない。縁起が悪すぎる。"
  },
  "结巴铳": {
-  "ko": "더듬는 총"
+  "ko": "더듬는 총",
+  "en": "Stuttering Gun",
+  "ja": "どもる銃"
  },
  "打结的铳。它终于决定开火，然后发现子弹朝自己过来了。\n意志、智慧和畅通的铳膛，都是顺利击发所不可或缺的。它意识到自己一样也没有。\n可以试试用属性特化的源石技艺干扰它的回路，反正它也不可能更糟了。": {
-  "ko": "매듭이 진 총. 마침내 쏘기로 마음먹었더니, 총알이 제게로 날아오는 것을 발견했다.\n의지와 지혜와 막히지 않은 총열은 제대로 격발하는 데 빠질 수 없는 것들이다. 그리고 자신에게는 그중 하나도 없다는 것을 깨달았다.\n속성 특화 오리지늄 아츠로 회로를 교란해 봐도 좋다. 어차피 이보다 더 나빠질 수도 없다."
+  "ko": "매듭이 진 총. 마침내 쏘기로 마음먹었더니, 총알이 제게로 날아오는 것을 발견했다.\n의지와 지혜와 막히지 않은 총열은 제대로 격발하는 데 빠질 수 없는 것들이다. 그리고 자신에게는 그중 하나도 없다는 것을 깨달았다.\n속성 특화 오리지늄 아츠로 회로를 교란해 봐도 좋다. 어차피 이보다 더 나빠질 수도 없다.",
+  "en": "A knotted gun. It finally decided to fire, only to find the bullet coming back at it.\nWill, wisdom, and a clear barrel are all indispensable to a clean shot. It realized it has none of them.\nTry disrupting its circuits with specialized Originium Arts. It can't get any worse anyway.",
+  "ja": "銃身が結ばれた銃。ついに撃つと決めたが、弾が自分のほうへ飛んでくるのに気づいた。\n意志、知恵、そして詰まりのない銃身は、うまく撃つために欠かせないものだ。自分にはそのどれもないと気づいた。\n属性特化のアーツで回路を乱してみるといい。どうせこれ以上悪くはならない。"
  },
  "咆哮铳": {
-  "ko": "포효하는 총"
+  "ko": "포효하는 총",
+  "en": "Roaring Gun",
+  "ja": "咆哮の銃"
  },
  "炸膛的铳。它终于决定开火，炸膛怎么不算打中了呢，就因为打的是自己吗？\n意志、智慧和畅通的铳膛，都是顺利击发所不可或缺的。它意识到自己一样也没有，但随便吧。\n可以试试用属性特化的源石技艺干扰它的回路，反正它也不可能更糟了。": {
-  "ko": "총열이 터진 총. 마침내 쏘기로 마음먹었는데, 총열이 터진 것도 맞힌 셈 아닌가? 맞힌 게 자기 자신이라서 안 되는 건가?\n의지와 지혜와 막히지 않은 총열은 제대로 격발하는 데 빠질 수 없는 것들이다. 자신에게는 하나도 없다는 것을 깨달았지만, 아무려면 어떤가.\n속성 특화 오리지늄 아츠로 회로를 교란해 봐도 좋다. 어차피 이보다 더 나빠질 수도 없다."
+  "ko": "총열이 터진 총. 마침내 쏘기로 마음먹었는데, 총열이 터진 것도 맞힌 셈 아닌가? 맞힌 게 자기 자신이라서 안 되는 건가?\n의지와 지혜와 막히지 않은 총열은 제대로 격발하는 데 빠질 수 없는 것들이다. 자신에게는 하나도 없다는 것을 깨달았지만, 아무려면 어떤가.\n속성 특화 오리지늄 아츠로 회로를 교란해 봐도 좋다. 어차피 이보다 더 나빠질 수도 없다.",
+  "en": "A gun with a burst barrel. It finally decided to fire—doesn't a burst barrel count as a hit? Just because the target was itself?\nWill, wisdom, and a clear barrel are all indispensable to a clean shot. It realized it has none of them, but whatever.\nTry disrupting its circuits with specialized Originium Arts. It can't get any worse anyway.",
+  "ja": "銃身が破裂した銃。ついに撃つと決めた。破裂したのも命中のうちでは？ 撃ったのが自分だからダメなの？\n意志、知恵、そして詰まりのない銃身は、うまく撃つために欠かせないものだ。自分にはそのどれもないと気づいたが、まあいいか。\n属性特化のアーツで回路を乱してみるといい。どうせこれ以上悪くはならない。"
  },
  "伤眼路灯": {
-  "ko": "눈 아픈 가로등"
+  "ko": "눈 아픈 가로등",
+  "en": "Blinding Streetlamp",
+  "ja": "目に痛い街灯"
  },
  "闪烁不定的路灯。照亮拉特兰夜晚的生命之光，有点接触不良。\n美好而神圣的光明庇佑我们，将夜色驱离。不过只能持续五秒，三秒，或者一秒。说不好。\n用了好材料，很坚固。想破坏它的话，要么去钻研特化的源石技艺，要么多使点劲。": {
-  "ko": "깜빡거리는 가로등. 라테라노의 밤을 밝히는 생명의 빛인데, 접촉이 좀 시원찮다.\n아름답고 성스러운 빛이 우리를 굽어살피며 밤빛을 몰아낸다. 다만 5초, 3초, 혹은 1초쯤 가고 만다. 알 수 없다.\n좋은 재료를 써서 아주 튼튼하다. 부수고 싶다면 특화 오리지늄 아츠를 파고들든지, 아니면 힘을 더 쓰든지 해야 한다."
+  "ko": "깜빡거리는 가로등. 라테라노의 밤을 밝히는 생명의 빛인데, 접촉이 좀 시원찮다.\n아름답고 성스러운 빛이 우리를 굽어살피며 밤빛을 몰아낸다. 다만 5초, 3초, 혹은 1초쯤 가고 만다. 알 수 없다.\n좋은 재료를 써서 아주 튼튼하다. 부수고 싶다면 특화 오리지늄 아츠를 파고들든지, 아니면 힘을 더 쓰든지 해야 한다.",
+  "en": "A flickering streetlamp. The light of life that illuminates Laterano's nights—with a bit of a loose connection.\nA beautiful, holy light protects us and drives back the night. But only for five seconds, three seconds, or one. Hard to say.\nIt's made of good materials and is very sturdy. To break it, either study specialized Originium Arts or put in more muscle.",
+  "ja": "明滅する街灯。ラテラーノの夜を照らす命の光だが、少し接触が悪い。\n美しく神聖な光が私たちを守り、夜の闇を追い払う。ただし五秒、三秒、あるいは一秒しか続かない。何とも言えない。\n良い素材を使っていてとても頑丈だ。壊したければ、特化したアーツを研究するか、もっと力を込めるかだ。"
  },
  "吓人路灯": {
-  "ko": "섬뜩한 가로등"
+  "ko": "섬뜩한 가로등",
+  "en": "Scary Streetlamp",
+  "ja": "怖い街灯"
  },
  "碎裂昏暗的路灯。照亮拉特兰夜晚的生命之光，坏成这样了都没人来修吗？\n美好而神圣的光明庇佑我们，将夜色驱离。就是离得不太远。\n用了好材料，很坚固。想破坏它的话，要么去钻研特化的源石技艺，要么多使点劲。": {
-  "ko": "깨져서 어둑해진 가로등. 라테라노의 밤을 밝히는 생명의 빛인데, 이 지경이 되도록 고치러 오는 사람이 없는 걸까?\n아름답고 성스러운 빛이 우리를 굽어살피며 밤빛을 몰아낸다. 그리 멀리까지는 못 몰아내지만.\n좋은 재료를 써서 아주 튼튼하다. 부수고 싶다면 특화 오리지늄 아츠를 파고들든지, 아니면 힘을 더 쓰든지 해야 한다."
+  "ko": "깨져서 어둑해진 가로등. 라테라노의 밤을 밝히는 생명의 빛인데, 이 지경이 되도록 고치러 오는 사람이 없는 걸까?\n아름답고 성스러운 빛이 우리를 굽어살피며 밤빛을 몰아낸다. 그리 멀리까지는 못 몰아내지만.\n좋은 재료를 써서 아주 튼튼하다. 부수고 싶다면 특화 오리지늄 아츠를 파고들든지, 아니면 힘을 더 쓰든지 해야 한다.",
+  "en": "A cracked, dim streetlamp. The light of life that illuminates Laterano's nights—broken this badly and no one has come to fix it?\nA beautiful, holy light protects us and drives back the night. Just not very far.\nIt's made of good materials and is very sturdy. To break it, either study specialized Originium Arts or put in more muscle.",
+  "ja": "割れて薄暗くなった街灯。ラテラーノの夜を照らす命の光なのに、こんなに壊れても誰も直しに来ないの？\n美しく神聖な光が私たちを守り、夜の闇を追い払う。ただし、あまり遠くまでは追い払えない。\n良い素材を使っていてとても頑丈だ。壊したければ、特化したアーツを研究するか、もっと力を込めるかだ。"
  },
  "几点了钟": {
-  "ko": "몇 시냐 시계"
+  "ko": "몇 시냐 시계",
+  "en": "What-Time-Is-It Clock",
+  "ja": "何時だ時計"
  },
  "走时不准的钟。一直在问现在几点了，它真的很着急。\n当你告诉它现在才八点，它惊骇地大叫：十二个小时之前不是就八点了吗？！\n要是不懂源石技艺，你很难为钟表校准时间。": {
-  "ko": "시간이 맞지 않는 시계. 지금 몇 시냐고 계속 묻는다. 정말로 다급하다.\n이제 겨우 여덟 시라고 일러 주면 기겁하며 외친다. 열두 시간 전에도 여덟 시였잖아?!\n오리지늄 아츠를 모르면 시계의 시간을 맞추기란 쉽지 않다."
+  "ko": "시간이 맞지 않는 시계. 지금 몇 시냐고 계속 묻는다. 정말로 다급하다.\n이제 겨우 여덟 시라고 일러 주면 기겁하며 외친다. 열두 시간 전에도 여덟 시였잖아?!\n오리지늄 아츠를 모르면 시계의 시간을 맞추기란 쉽지 않다.",
+  "en": "A clock that doesn't keep time. It keeps asking what time it is—it's really in a hurry.\nWhen you tell it it's only eight, it cries out in shock: Wasn't it already eight twelve hours ago?!\nWithout knowledge of Originium Arts, it's hard to set a clock right.",
+  "ja": "時間の狂った時計。今何時かとずっと聞いてくる。本当に焦っている。\nまだ八時だと教えると、驚いて叫ぶ。十二時間前も八時じゃなかったか！？\nアーツを知らなければ、時計の時間を合わせるのは難しい。"
  },
  "不知道钟": {
-  "ko": "모르겠다 시계"
+  "ko": "모르겠다 시계",
+  "en": "Don't-Know Clock",
+  "ja": "知らない時計"
  },
  "彻底混乱的钟。根本不知道现在几点了，它完全不着急。\n当你告诉它现在是八点钟，它无所谓地嘟囔：有什么区别？关我什么事？\n要是不懂源石技艺，你很难为钟表校准时间。": {
-  "ko": "완전히 뒤엉킨 시계. 지금이 몇 시인지 도무지 모르고, 조금도 다급해하지 않는다.\n지금 여덟 시라고 일러 주면 심드렁하게 중얼거린다. 그게 무슨 차이가 있지? 나랑 무슨 상관인데?\n오리지늄 아츠를 모르면 시계의 시간을 맞추기란 쉽지 않다."
+  "ko": "완전히 뒤엉킨 시계. 지금이 몇 시인지 도무지 모르고, 조금도 다급해하지 않는다.\n지금 여덟 시라고 일러 주면 심드렁하게 중얼거린다. 그게 무슨 차이가 있지? 나랑 무슨 상관인데?\n오리지늄 아츠를 모르면 시계의 시간을 맞추기란 쉽지 않다.",
+  "en": "A completely muddled clock. It has no idea what time it is, and it's in no hurry at all.\nWhen you tell it it's eight o'clock, it mutters indifferently: What's the difference? What's it to me?\nWithout knowledge of Originium Arts, it's hard to set a clock right.",
+  "ja": "完全に混乱した時計。今が何時なのかまったくわからず、少しも焦っていない。\n今は八時だと教えると、どうでもよさそうにつぶやく。何が違うんだ？ 俺に何の関係が？\nアーツを知らなければ、時計の時間を合わせるのは難しい。"
  },
  "没办法车": {
-  "ko": "어쩔 수 없어 차"
+  "ko": "어쩔 수 없어 차",
+  "en": "Can't-Be-Helped Car",
+  "ja": "しょうがない車"
  },
  "抛锚的告解车。它很想为谁服务，但做不到。\n如果在这里一直等待，会不会有人来向它告解呢？它如此期待着，但这样的事并没有发生。\n若你是源石技艺大师，也许能修好它，或者让它坏得更厉害。": {
-  "ko": "멈춰 선 고해차. 누군가를 섬기고 싶지만 그러지 못한다.\n여기서 계속 기다리면 누군가 고해하러 와 줄까? 그렇게 바라고 있지만 그런 일은 일어나지 않았다.\n오리지늄 아츠의 달인이라면 고쳐 줄 수도, 더 망가뜨릴 수도 있을 것이다."
+  "ko": "멈춰 선 고해차. 누군가를 섬기고 싶지만 그러지 못한다.\n여기서 계속 기다리면 누군가 고해하러 와 줄까? 그렇게 바라고 있지만 그런 일은 일어나지 않았다.\n오리지늄 아츠의 달인이라면 고쳐 줄 수도, 더 망가뜨릴 수도 있을 것이다.",
+  "en": "A broken-down confessional car. It wants to serve someone, but can't.\nIf it keeps waiting here, will someone come to confess? It hopes so, but it hasn't happened.\nA master of Originium Arts might be able to fix it—or break it even worse.",
+  "ja": "故障した告解車。誰かに奉仕したいのに、それができない。\nここでずっと待っていれば、誰かが告解に来てくれるだろうか？ そう願っているが、そんなことは起きていない。\nアーツの達人なら直せるかもしれない。あるいは、もっとひどく壊すかも。"
  },
  "生气车": {
-  "ko": "화난 차"
+  "ko": "화난 차",
+  "en": "Angry Car",
+  "ja": "怒った車"
  },
  "抛锚的告解车，很生气。\n如果在这里一直等待，会不会有人来向它告解呢？它如此期待着，但这样的事并没有发生。\n若你是源石技艺大师，也许能修好它，或者让它坏得更厉害。": {
-  "ko": "멈춰 선 고해차. 몹시 화가 나 있다.\n여기서 계속 기다리면 누군가 고해하러 와 줄까? 그렇게 바라고 있지만 그런 일은 일어나지 않았다.\n오리지늄 아츠의 달인이라면 고쳐 줄 수도, 더 망가뜨릴 수도 있을 것이다."
+  "ko": "멈춰 선 고해차. 몹시 화가 나 있다.\n여기서 계속 기다리면 누군가 고해하러 와 줄까? 그렇게 바라고 있지만 그런 일은 일어나지 않았다.\n오리지늄 아츠의 달인이라면 고쳐 줄 수도, 더 망가뜨릴 수도 있을 것이다.",
+  "en": "A broken-down confessional car. Very angry.\nIf it keeps waiting here, will someone come to confess? It hopes so, but it hasn't happened.\nA master of Originium Arts might be able to fix it—or break it even worse.",
+  "ja": "故障した告解車。とても怒っている。\nここでずっと待っていれば、誰かが告解に来てくれるだろうか？ そう願っているが、そんなことは起きていない。\nアーツの達人なら直せるかもしれない。あるいは、もっとひどく壊すかも。"
  },
  "困惑车": {
-  "ko": "당황한 차"
+  "ko": "당황한 차",
+  "en": "Puzzled Car",
+  "ja": "困った車"
  },
  "抛锚的告解车，很困惑。\n如果在这里一直等待，会不会有人来向它告解呢？它如此期待着，但这样的事并没有发生。\n若你是源石技艺大师，也许能修好它，或者让它坏得更厉害。": {
-  "ko": "멈춰 선 고해차. 몹시 당황해 있다.\n여기서 계속 기다리면 누군가 고해하러 와 줄까? 그렇게 바라고 있지만 그런 일은 일어나지 않았다.\n오리지늄 아츠의 달인이라면 고쳐 줄 수도, 더 망가뜨릴 수도 있을 것이다."
+  "ko": "멈춰 선 고해차. 몹시 당황해 있다.\n여기서 계속 기다리면 누군가 고해하러 와 줄까? 그렇게 바라고 있지만 그런 일은 일어나지 않았다.\n오리지늄 아츠의 달인이라면 고쳐 줄 수도, 더 망가뜨릴 수도 있을 것이다.",
+  "en": "A broken-down confessional car. Very confused.\nIf it keeps waiting here, will someone come to confess? It hopes so, but it hasn't happened.\nA master of Originium Arts might be able to fix it—or break it even worse.",
+  "ja": "故障した告解車。とても困惑している。\nここでずっと待っていれば、誰かが告解に来てくれるだろうか？ そう願っているが、そんなことは起きていない。\nアーツの達人なら直せるかもしれない。あるいは、もっとひどく壊すかも。"
  },
  "难过车": {
-  "ko": "슬픈 차"
+  "ko": "슬픈 차",
+  "en": "Sad Car",
+  "ja": "悲しい車"
  },
  "抛锚的告解车，很难过。\n如果在这里一直等待，会不会有人来向它告解呢？它如此期待着，但这样的事并没有发生。\n若你是源石技艺大师，也许能修好它，或者让它坏得更厉害。": {
-  "ko": "멈춰 선 고해차. 몹시 슬퍼하고 있다.\n여기서 계속 기다리면 누군가 고해하러 와 줄까? 그렇게 바라고 있지만 그런 일은 일어나지 않았다.\n오리지늄 아츠의 달인이라면 고쳐 줄 수도, 더 망가뜨릴 수도 있을 것이다."
+  "ko": "멈춰 선 고해차. 몹시 슬퍼하고 있다.\n여기서 계속 기다리면 누군가 고해하러 와 줄까? 그렇게 바라고 있지만 그런 일은 일어나지 않았다.\n오리지늄 아츠의 달인이라면 고쳐 줄 수도, 더 망가뜨릴 수도 있을 것이다.",
+  "en": "A broken-down confessional car. Very sad.\nIf it keeps waiting here, will someone come to confess? It hopes so, but it hasn't happened.\nA master of Originium Arts might be able to fix it—or break it even worse.",
+  "ja": "故障した告解車。とても悲しんでいる。\nここでずっと待っていれば、誰かが告解に来てくれるだろうか？ そう願っているが、そんなことは起きていない。\nアーツの達人なら直せるかもしれない。あるいは、もっとひどく壊すかも。"
  },
  "无聊车": {
-  "ko": "심심한 차"
+  "ko": "심심한 차",
+  "en": "Bored Car",
+  "ja": "退屈な車"
  },
  "抛锚的告解车，很无聊。\n如果在这里一直等待，会不会有人来向它告解呢？它如此期待着，但这样的事并没有发生。\n若你是源石技艺大师，也许能修好它，或者让它坏得更厉害。": {
-  "ko": "멈춰 선 고해차. 몹시 심심해하고 있다.\n여기서 계속 기다리면 누군가 고해하러 와 줄까? 그렇게 바라고 있지만 그런 일은 일어나지 않았다.\n오리지늄 아츠의 달인이라면 고쳐 줄 수도, 더 망가뜨릴 수도 있을 것이다."
+  "ko": "멈춰 선 고해차. 몹시 심심해하고 있다.\n여기서 계속 기다리면 누군가 고해하러 와 줄까? 그렇게 바라고 있지만 그런 일은 일어나지 않았다.\n오리지늄 아츠의 달인이라면 고쳐 줄 수도, 더 망가뜨릴 수도 있을 것이다.",
+  "en": "A broken-down confessional car. Very bored.\nIf it keeps waiting here, will someone come to confess? It hopes so, but it hasn't happened.\nA master of Originium Arts might be able to fix it—or break it even worse.",
+  "ja": "故障した告解車。とても退屈している。\nここでずっと待っていれば、誰かが告解に来てくれるだろうか？ そう願っているが、そんなことは起きていない。\nアーツの達人なら直せるかもしれない。あるいは、もっとひどく壊すかも。"
  },
  "挥铳圣像": {
-  "ko": "총을 휘두르는 성상"
+  "ko": "총을 휘두르는 성상",
+  "en": "Gun-Waving Icon",
+  "ja": "銃を振るう聖像"
  },
  "缺损的圣像。圣徒和圣贤将引导拉特兰走向和平与幸福，只要到不了，就可以一直朝那儿走。\n前贤先哲正道直行，心定志坚如子弹出膛。唯一的问题是没有子弹。\n无法射击就不用担心铳坏掉，它已经没有弱点了。": {
-  "ko": "일부가 떨어져 나간 성상. 성인과 현인이 라테라노를 평화와 행복으로 이끌 것이다 — 닿지만 않는다면 언제까지고 그쪽으로 걸어갈 수 있다.\n앞선 현자들은 바른길을 곧게 걸었고, 그 뜻은 총구를 떠난 탄환처럼 굳었다. 유일한 문제는 탄환이 없다는 것.\n쏠 수 없으니 총이 망가질 걱정도 없다. 이제 약점이랄 것이 없다."
+  "ko": "일부가 떨어져 나간 성상. 성인과 현인이 라테라노를 평화와 행복으로 이끌 것이다 — 닿지만 않는다면 언제까지고 그쪽으로 걸어갈 수 있다.\n앞선 현자들은 바른길을 곧게 걸었고, 그 뜻은 총구를 떠난 탄환처럼 굳었다. 유일한 문제는 탄환이 없다는 것.\n쏠 수 없으니 총이 망가질 걱정도 없다. 이제 약점이랄 것이 없다.",
+  "en": "A damaged saint statue. The saints and sages will lead Laterano toward peace and happiness—as long as it never arrives, you can keep walking toward it forever.\nThe sages of old walked the righteous path straight, their resolve firm as a bullet leaving the barrel. The only problem is there are no bullets.\nIf it can't shoot, it needn't worry about the gun breaking. It no longer has any weaknesses.",
+  "ja": "欠けた聖像。聖人と賢人がラテラーノを平和と幸福へ導くだろう——たどり着かない限り、いつまでもそちらへ歩き続けられる。\n先賢は正道をまっすぐ歩み、その志は銃口を離れた弾丸のように固い。唯一の問題は弾丸がないことだ。\n撃てないなら銃が壊れる心配もない。もはや弱点はない。"
  },
  "实验样本F-009": {
   "ko": "실험체 F-009"
@@ -15268,16 +15416,24 @@
   "ko": "일부 우르수스 사람들은 저 괴질 환자들의 저주받은 피로 물을 주어야만 이토록 더럽고 끔찍한 꽃이 핀다고 짐작한다."
  },
  "血色三生花": {
-  "ko": "핏빛 삼생화"
+  "ko": "핏빛 삼생화",
+  "en": "Blood-Red Trifold Flower",
+  "ja": "血色の三生花"
  },
  "一些乌萨斯人猜测，只有用怪病患者们受诅的鲜血，才能浇灌出如此肮脏可怖的鲜花。然而他们只猜对了一半——投喂给它们的，不止是鲜血。": {
-  "ko": "일부 우르수스 사람들은 저 괴질 환자들의 저주받은 피로 물을 주어야만 이토록 더럽고 끔찍한 꽃이 핀다고 짐작한다. 그러나 절반만 맞혔다 — 이것들에게 먹인 것은 피만이 아니었다."
+  "ko": "일부 우르수스 사람들은 저 괴질 환자들의 저주받은 피로 물을 주어야만 이토록 더럽고 끔찍한 꽃이 핀다고 짐작한다. 그러나 절반만 맞혔다 — 이것들에게 먹인 것은 피만이 아니었다.",
+  "en": "Some Ursines guess that only the cursed blood of those plague-stricken patients could nourish such foul and hideous flowers. They were only half right—blood is not the only thing they are fed.",
+  "ja": "一部のウルサス人は、奇病患者の呪われた血を注がなければ、これほど汚らわしく恐ろしい花は咲かないと推測している。だが当たっていたのは半分だけだ——与えられているのは血だけではない。"
  },
  "“希希加”": {
-  "ko": "「시시가」"
+  "ko": "「시시가」",
+  "en": "'Shishiga'",
+  "ja": "「シシガ」"
  },
  "当这些怪物第一次走上街道，用畸形的前肢拍打着市民们的家园时，人们才真正意识到，那些骇人听闻的“地下实验室”都干了什么。": {
-  "ko": "이 괴물들이 처음 거리로 나와 기형의 앞다리로 시민들의 집을 두드렸을 때, 사람들은 비로소 그 소문 자자하던 「지하 실험실」이 무슨 짓을 했는지 깨달았다."
+  "ko": "이 괴물들이 처음 거리로 나와 기형의 앞다리로 시민들의 집을 두드렸을 때, 사람들은 비로소 그 소문 자자하던 「지하 실험실」이 무슨 짓을 했는지 깨달았다.",
+  "en": "When these monsters first walked the streets, pounding on citizens' homes with their malformed forelimbs, people finally realized what those notorious 'underground laboratories' had done.",
+  "ja": "この怪物たちが初めて街路に現れ、奇形の前肢で市民の家々を叩いたとき、人々はようやく、あの悪名高い「地下実験室」が何をしていたのかを悟った。"
  },
  "愤怒的“希希加”": {
   "ko": "성난 「시시가」"
@@ -15310,7 +15466,9 @@
   "ko": "우르수스 전설에서 루살카는 일찍 죽은 여인이 변한 원혼이다. 아내와 딸을 잃은 한 남자가 이 변이 괴물을 보며 「루살카」라고 중얼거린 뒤로, 사람들도 그렇게 부르기 시작했다. 이제 이 말은 널리 퍼졌다. 가장 가까운 이를 잃은 사람이 점점 늘고 있기 때문이다."
  },
  "战争术师，帝国杰出的特殊兵种。乌萨斯人通过药剂与训练，迫使在“磨砺”中幸存的非感染者使用威力强大的施术单元——如同对待其他事情一样，他们从不在乎会有多少人因此死去。": {
-  "ko": "전쟁 캐스터. 제국이 자랑하는 특수 병종이다. 우르수스 사람들은 약물과 훈련으로, 「연마」에서 살아남은 비감염자에게 위력이 강대한 시술 장치를 쓰도록 강요한다 — 다른 모든 일이 그렇듯, 그 때문에 몇이나 죽든 그들은 개의치 않는다."
+  "ko": "전쟁 캐스터. 제국이 자랑하는 특수 병종이다. 우르수스 사람들은 약물과 훈련으로, 「연마」에서 살아남은 비감염자에게 위력이 강대한 시술 장치를 쓰도록 강요한다 — 다른 모든 일이 그렇듯, 그 때문에 몇이나 죽든 그들은 개의치 않는다.",
+  "en": "War Casters, an outstanding special unit of the Empire. Through drugs and training, the Ursines force non-infected who survived the 'Whetting' to wield powerful casting units—and, as with everything else, they never care how many die for it.",
+  "ja": "戦争術師、帝国が誇る特殊兵科。ウルサス人は薬剤と訓練によって、「研磨」を生き延びた非感染者に強力な術式ユニットを使わせる——ほかのあらゆることと同じく、そのために何人死のうと彼らは気にも留めない。"
  },
  "泄漏源": {
   "ko": "누출원"
@@ -15319,142 +15477,234 @@
   "ko": "처음에 사람들이 열이 내리지 않자, 곁의 가족과 친구들은 팽비스트를 끌고 와 환자를 향해 짖게 했다 — 짐승의 울음소리가 환자에게 들러붙은 귀신을 쫓아낸다고 믿었기 때문이다. 팽비스트마저 열이 나기 시작하기 전까지는."
  },
  "戴面具的孩童": {
-  "ko": "가면을 쓴 아이"
+  "ko": "가면을 쓴 아이",
+  "en": "Masked Child",
+  "ja": "仮面の子ども"
  },
  "爱看叙拉古的电影，戴上自制的狂欢节面具，热衷于模仿电影角色的孩子，听闻有胡萝卜冰淇淋免费派送，兴冲冲跑了出来。 “哈！我是黑帮老大，我要吃十个冰淇淋！”“嘿！我是正义大法官！该吃十个的人是我！”“看刀！”“看棍！”": {
-  "ko": "시라쿠사 영화를 즐겨 보고, 손수 만든 카니발 가면을 쓴 채 영화 속 인물 흉내에 푹 빠진 아이. 당근 아이스크림을 공짜로 나눠 준다는 말에 신이 나서 뛰쳐나왔다. “하! 나는 마피아 보스다, 아이스크림 열 개 먹을 테다!” “헤이! 나는 정의의 대법관이다! 열 개 먹을 사람은 나야!” “칼 받아라!” “몽둥이 받아라!”"
+  "ko": "시라쿠사 영화를 즐겨 보고, 손수 만든 카니발 가면을 쓴 채 영화 속 인물 흉내에 푹 빠진 아이. 당근 아이스크림을 공짜로 나눠 준다는 말에 신이 나서 뛰쳐나왔다. “하! 나는 마피아 보스다, 아이스크림 열 개 먹을 테다!” “헤이! 나는 정의의 대법관이다! 열 개 먹을 사람은 나야!” “칼 받아라!” “몽둥이 받아라!”",
+  "en": "A child who loves Siracusan movies and enjoys imitating movie characters in a homemade carnival mask. Hearing that carrot ice cream was being given out for free, they excitedly ran out. \"Ha! I'm the mafia boss, I'm gonna eat ten ice creams!\" \"Hey! I'm the Grand Justice! I'm the one who should eat ten!\" \"Take my blade!\" \"Take my club!\"",
+  "ja": "シラクーザ映画が大好きで、手作りのカーニバルマスクをかぶって映画のキャラクターの真似に夢中な子ども。ニンジンアイスが無料配布されると聞いて、大喜びで飛び出してきた。「はっ！ 俺はマフィアのボスだ、アイスを十個食べるぞ！」「へい！ 私は正義の大法官だ！ 十個食べるべきは私だ！」「刀を食らえ！」「棍棒を食らえ！」"
  },
  "入戏太深的孩童": {
-  "ko": "역할에 푹 빠진 아이"
+  "ko": "역할에 푹 빠진 아이",
+  "en": "Overly Immersed Child",
+  "ja": "役に入り込みすぎた子ども"
  },
  "戴着自制的狂欢节面具，已经和叙拉古电影角色融为一体的孩子，把胡萝卜冰淇淋免费派送这事抛到脑后，正在大玩特玩。\n“面具掉啦！哎，你们不是隔壁家的吗？黑帮老大小胡萝卜丁？正义大法官小胡萝卜芽？？”": {
-  "ko": "손수 만든 카니발 가면을 쓴 채 시라쿠사 영화 속 인물과 하나가 되어 버린 아이. 당근 아이스크림을 공짜로 나눠 준다는 일은 까맣게 잊고 신나게 놀고 있다.\n“가면 떨어졌다! 어, 너희 옆집 애들 아니야? 마피아 보스 꼬마 당근이? 정의의 대법관 꼬마 당근싹??”"
+  "ko": "손수 만든 카니발 가면을 쓴 채 시라쿠사 영화 속 인물과 하나가 되어 버린 아이. 당근 아이스크림을 공짜로 나눠 준다는 일은 까맣게 잊고 신나게 놀고 있다.\n“가면 떨어졌다! 어, 너희 옆집 애들 아니야? 마피아 보스 꼬마 당근이? 정의의 대법관 꼬마 당근싹??”",
+  "en": "A child in a homemade carnival mask who has become one with a Siracusan movie character. Forgetting all about the free carrot ice cream, they're having the time of their life.\n\"My mask fell off! Hey, aren't you from next door? Mafia boss Little Carrot? Grand Justice Little Carrot Sprout??\"",
+  "ja": "手作りのカーニバルマスクをかぶり、シラクーザ映画のキャラクターになりきった子ども。ニンジンアイスの無料配布のことなどすっかり忘れて、夢中で遊んでいる。\n「仮面が落ちた！ あれ、お隣さんじゃない？ マフィアのボスのニンジンちゃん？ 正義の大法官のニンジンの芽ちゃん？？」"
  },
  "凑热闹的矿工": {
-  "ko": "구경 나온 광부"
+  "ko": "구경 나온 광부",
+  "en": "Onlooking Miner",
+  "ja": "野次馬の鉱夫"
  },
  "刚从矿井里上来，还没弄清楚情况，就为了凑热闹而跑过来的矿工。\n“冰淇淋争夺大赛？我和我的矿车当年可是拿下了矿区运矿比赛第一名的，区区胡萝卜冰淇淋，看我大显身手！”": {
-  "ko": "막 갱도에서 올라와 상황도 모른 채 구경거리를 찾아 달려온 광부.\n“아이스크림 쟁탈전? 나와 내 광차로 말할 것 같으면 그 시절 광구 운반 경기 1등이었다고. 당근 아이스크림쯤이야, 내 솜씨를 보라지!”"
+  "ko": "막 갱도에서 올라와 상황도 모른 채 구경거리를 찾아 달려온 광부.\n“아이스크림 쟁탈전? 나와 내 광차로 말할 것 같으면 그 시절 광구 운반 경기 1등이었다고. 당근 아이스크림쯤이야, 내 솜씨를 보라지!”",
+  "en": "A miner fresh out of the pit who rushed over to join the fun without knowing what was going on.\n\"An ice cream scramble? Back in the day, me and my cart took first place in the mining district's ore-hauling race. Carrot ice cream? Watch and learn!\"",
+  "ja": "坑道から上がってきたばかりで、状況もわからないまま野次馬に駆けつけた鉱夫。\n「アイスクリーム争奪戦？ 俺とこのトロッコはな、昔鉱区の運搬レースで一等を取ったんだぞ。ニンジンアイスごとき、俺の腕前を見せてやる！」"
  },
  "勇争第一的矿工": {
-  "ko": "일등을 노리는 광부"
+  "ko": "일등을 노리는 광부",
+  "en": "First-Place Miner",
+  "ja": "一番を狙う鉱夫"
  },
  "已经弄清楚了情况，推着矿车准备运走一整车胡萝卜冰淇淋的矿工。\n赌上十年老矿工的尊严，他势必要在这场比赛中勇夺第一。": {
-  "ko": "상황을 다 파악하고, 광차를 밀며 당근 아이스크림을 한 차 가득 싣고 갈 준비를 마친 광부.\n십 년 경력 광부의 자존심을 걸고, 이 경기에서 기어이 1등을 차지할 작정이다."
+  "ko": "상황을 다 파악하고, 광차를 밀며 당근 아이스크림을 한 차 가득 싣고 갈 준비를 마친 광부.\n십 년 경력 광부의 자존심을 걸고, 이 경기에서 기어이 1등을 차지할 작정이다.",
+  "en": "A miner who has figured out what's going on and is pushing his cart, ready to haul off a whole load of carrot ice cream.\nStaking his pride as a miner of ten years, he is determined to take first place in this contest.",
+  "ja": "状況を把握し、トロッコを押してニンジンアイスを丸ごと一台分運び出そうとしている鉱夫。\n十年選手の鉱夫の誇りにかけて、この勝負で必ず一等を勝ち取るつもりだ。"
  },
  "手推小矿车": {
-  "ko": "손수레 광차"
+  "ko": "손수레 광차",
+  "en": "Hand-Pushed Mine Cart",
+  "ja": "手押しトロッコ"
  },
  "身经百战的矿车，等待一个懂它的推车人。": {
-  "ko": "숱한 싸움을 겪은 광차. 자신을 알아줄 밀어 줄 사람을 기다린다."
+  "ko": "숱한 싸움을 겪은 광차. 자신을 알아줄 밀어 줄 사람을 기다린다.",
+  "en": "A battle-hardened mine cart, waiting for a pusher who understands it.",
+  "ja": "百戦錬磨のトロッコ。自分をわかってくれる押し手を待っている。"
  },
  "传奇矿车": {
-  "ko": "전설의 광차"
+  "ko": "전설의 광차",
+  "en": "Legendary Mine Cart",
+  "ja": "伝説のトロッコ"
  },
  "与大涌泉镇同龄的传奇矿车，等待一个配得上它身份的人。": {
-  "ko": "대용천진과 나이가 같은 전설의 광차. 제 격에 어울리는 사람을 기다린다."
+  "ko": "대용천진과 나이가 같은 전설의 광차. 제 격에 어울리는 사람을 기다린다.",
+  "en": "A legendary mine cart as old as Great Springs Town itself, waiting for someone worthy of it.",
+  "ja": "大湧泉町と同い年の伝説のトロッコ。自分にふさわしい者を待っている。"
  },
  "“小帽子”": {
-  "ko": "「작은 모자」"
+  "ko": "「작은 모자」",
+  "en": "'Little Hat'",
+  "ja": "「小さな帽子」"
  },
  "闻着冰淇淋的味道就来了的小有袋鼷兽。第一次离开南境的家来到大涌泉镇，它什么都想要！\n“叽叽叽叽，嘎嘎！”有人推测着翻译，它这是在说：“这些好东西全都是我的！”": {
-  "ko": "아이스크림 냄새를 맡고 찾아온 새끼 유대생쥐. 남쪽 고향을 처음 떠나 대용천진에 왔는데, 뭐든 다 갖고 싶다!\n“찍찍찍찍, 꽥꽥!” 누군가 어림으로 옮겨 보길, 이런 뜻이란다. “이 좋은 것들 전부 내 거야!”"
+  "ko": "아이스크림 냄새를 맡고 찾아온 새끼 유대생쥐. 남쪽 고향을 처음 떠나 대용천진에 왔는데, 뭐든 다 갖고 싶다!\n“찍찍찍찍, 꽥꽥!” 누군가 어림으로 옮겨 보길, 이런 뜻이란다. “이 좋은 것들 전부 내 거야!”",
+  "en": "A baby Marsupial Musbeast drawn by the smell of ice cream. It's left its southern home for the first time and come to Great Springs Town—and it wants everything!\n\"Squeak squeak squeak squeak, quack quack!\" Someone guessed at a translation: \"All these good things are mine!\"",
+  "ja": "アイスクリームの匂いにつられてやって来た小さな有袋鼷獣。初めて南の故郷を離れて大湧泉町に来た。何でも欲しい！\n「キキキキ、ガーガー！」誰かが推測して訳したところによると、「このいい物は全部ボクのもの！」と言っているらしい。"
  },
  "“大披风”": {
-  "ko": "「큰 망토」"
+  "ko": "「큰 망토」",
+  "en": "'Big Cape'",
+  "ja": "「大きなマント」"
  },
  "闻着冰淇淋的味道就来了的有袋鼷兽。虽然眼睛闭着，但周围人仍能感受到它对冰淇淋渴望的目光。\n“叽叽叽——嘶咔嘶咔！”这次推测的翻译结果是：“我闭着眼睛也能把你们的东西都偷走！”": {
-  "ko": "아이스크림 냄새를 맡고 찾아온 유대생쥐. 눈은 감고 있지만 주위 사람들은 아이스크림을 향한 갈망의 눈길을 여전히 느낄 수 있다.\n“찍찍찍——쓱싹쓱싹!” 이번 어림 번역은 이렇다. “눈 감고도 너희 것 다 훔칠 수 있어!”"
+  "ko": "아이스크림 냄새를 맡고 찾아온 유대생쥐. 눈은 감고 있지만 주위 사람들은 아이스크림을 향한 갈망의 눈길을 여전히 느낄 수 있다.\n“찍찍찍——쓱싹쓱싹!” 이번 어림 번역은 이렇다. “눈 감고도 너희 것 다 훔칠 수 있어!”",
+  "en": "A Marsupial Musbeast drawn by the smell of ice cream. Its eyes are closed, but those around it can still feel its longing gaze toward the ice cream.\n\"Squeak squeak squeak—swish swish!\" This time the guessed translation is: \"I can steal all your stuff with my eyes closed!\"",
+  "ja": "アイスクリームの匂いにつられてやって来た有袋鼷獣。目は閉じているが、周りの人はアイスへの渇望の眼差しを感じ取れる。\n「キキキ——シャカシャカ！」今回の推測翻訳はこうだ。「目をつぶってても、お前らのものは全部盗めるぞ！」"
  },
  "欢乐校车": {
-  "ko": "신나는 스쿨버스"
+  "ko": "신나는 스쿨버스",
+  "en": "Joyful School Bus",
+  "ja": "楽しいスクールバス"
  },
  "听闻这里在举办活动，于是将早早放学的学生都送来参加的校车。\n但好像不只是学生，其他的人也趁乱挤上来了！": {
-  "ko": "여기서 행사를 한다는 말에, 일찍 하교한 학생들을 실어다 준 스쿨버스.\n그런데 학생만이 아닌 듯하다. 다른 사람들도 틈을 타 올라탔다!"
+  "ko": "여기서 행사를 한다는 말에, 일찍 하교한 학생들을 실어다 준 스쿨버스.\n그런데 학생만이 아닌 듯하다. 다른 사람들도 틈을 타 올라탔다!",
+  "en": "A school bus that heard an event was being held here and brought over all the students let out early.\nBut it seems it's not just students—others squeezed aboard in the confusion too!",
+  "ja": "ここでイベントがあると聞いて、早めに下校した生徒たちを送ってきたスクールバス。\nでも生徒だけじゃないようだ。ほかの人たちもどさくさに紛れて乗り込んできた！"
  },
  "庆典校车": {
-  "ko": "축제 스쿨버스"
+  "ko": "축제 스쿨버스",
+  "en": "Festival School Bus",
+  "ja": "お祭りスクールバス"
  },
  "听闻这里在举办活动，于是将早早放学的学生都送来参加的校车。为了配合气氛，还挂上了几条小彩旗。\n司机似乎已经不在意乘客有谁了，只要是能让气氛热闹起来的人，他全都愿意拉来。": {
-  "ko": "여기서 행사를 한다는 말에, 일찍 하교한 학생들을 실어다 준 스쿨버스. 분위기를 맞추려고 작은 깃발도 몇 줄 달았다.\n기사는 이미 승객이 누구인지는 개의치 않는 모양이다. 분위기를 띄울 사람이라면 누구든 기꺼이 태워 온다."
+  "ko": "여기서 행사를 한다는 말에, 일찍 하교한 학생들을 실어다 준 스쿨버스. 분위기를 맞추려고 작은 깃발도 몇 줄 달았다.\n기사는 이미 승객이 누구인지는 개의치 않는 모양이다. 분위기를 띄울 사람이라면 누구든 기꺼이 태워 온다.",
+  "en": "A school bus that heard an event was being held here and brought over all the students let out early. It even hung up a few strings of little flags to match the mood.\nThe driver no longer seems to care who the passengers are—anyone who can liven things up is welcome aboard.",
+  "ja": "ここでイベントがあると聞いて、早めに下校した生徒たちを送ってきたスクールバス。雰囲気に合わせて小さな旗も何本か飾った。\n運転手はもう乗客が誰かなど気にしていないらしい。場を盛り上げられる人なら誰でも喜んで乗せてくる。"
  },
  "好外号热衷者": {
-  "ko": "별명 욕심쟁이"
+  "ko": "별명 욕심쟁이",
+  "en": "Nickname Enthusiast",
+  "ja": "あだ名好き"
  },
  "正处在精力旺盛阶段的年轻人，想在这里做点什么事，给自己博得一个听起来更酷的新外号。\n“捣乱邮差”听起来很不错，比自己现在的“飞毛腿”要好多了！": {
-  "ko": "혈기 왕성한 시기의 젊은이. 여기서 뭔가를 벌여 더 근사하게 들리는 새 별명을 얻고 싶어 한다.\n“말썽꾸러기 우편배달부”는 꽤 괜찮게 들린다. 지금의 “날쌘돌이”보다야 훨씬 낫지!"
+  "ko": "혈기 왕성한 시기의 젊은이. 여기서 뭔가를 벌여 더 근사하게 들리는 새 별명을 얻고 싶어 한다.\n“말썽꾸러기 우편배달부”는 꽤 괜찮게 들린다. 지금의 “날쌘돌이”보다야 훨씬 낫지!",
+  "en": "A young person at the peak of their energy who wants to do something here to earn a cooler-sounding nickname.\n\"Mischief Mailman\" sounds pretty good—way better than their current \"Speedy Legs\"!",
+  "ja": "血気盛んな年頃の若者。ここで何かやらかして、もっとかっこいい響きの新しいあだ名を手に入れたい。\n「いたずら郵便屋」はなかなかいい響きだ。今の「韋駄天」よりずっといい！"
  },
  "惊艳事热衷者": {
-  "ko": "한탕 노리는 젊은이"
+  "ko": "한탕 노리는 젊은이",
+  "en": "Big-Score Chaser",
+  "ja": "一攫千金狙いの若者"
  },
  "正处在精力旺盛阶段的年轻人，已经把换个新外号的想法抛诸脑后，只想着要做点什么惊艳众人的大事。\n让比赛的热闹程度更上一层楼吧，嘿嘿，“惊喜信件”派送中！": {
-  "ko": "혈기 왕성한 시기의 젊은이. 새 별명을 얻겠다는 생각은 이미 접어 두고, 사람들을 깜짝 놀라게 할 큰일을 벌일 생각뿐이다.\n경기 분위기를 한 단계 더 끌어올려 보자고, 헤헤, 「깜짝 편지」 배달 중!"
+  "ko": "혈기 왕성한 시기의 젊은이. 새 별명을 얻겠다는 생각은 이미 접어 두고, 사람들을 깜짝 놀라게 할 큰일을 벌일 생각뿐이다.\n경기 분위기를 한 단계 더 끌어올려 보자고, 헤헤, 「깜짝 편지」 배달 중!",
+  "en": "A young person at the peak of their energy who has given up on getting a new nickname and only thinks about pulling off something big to wow everyone.\nLet's take the excitement up a notch—hehe, 'Surprise Letter' delivery in progress!",
+  "ja": "血気盛んな年頃の若者。新しいあだ名をもらう考えはとうに捨て、みんなをあっと言わせる大仕事のことしか頭にない。\n勝負の盛り上がりをもう一段上げちゃおう、へへ、「サプライズレター」配達中！"
  },
  "“惊喜信件”": {
-  "ko": "「깜짝 편지」"
+  "ko": "「깜짝 편지」",
+  "en": "'Surprise Letter'",
+  "ja": "「サプライズレター」"
  },
  "装着“惊喜”的小信封，打开的时候最好注意一下。\n是什么飞出来了？咻——啪！": {
-  "ko": "「깜짝」이 든 작은 봉투. 열 때는 조심하는 편이 좋다.\n뭐가 튀어나왔지? 휙——펑!"
+  "ko": "「깜짝」이 든 작은 봉투. 열 때는 조심하는 편이 좋다.\n뭐가 튀어나왔지? 휙——펑!",
+  "en": "A little envelope holding a 'surprise'. Best be careful when opening it.\nWhat flew out? Whoosh—pop!",
+  "ja": "「サプライズ」が入った小さな封筒。開けるときは気をつけたほうがいい。\n何が飛び出した？ ヒュッ——パン！"
  },
  "“美食的诱惑”": {
-  "ko": "「미식의 유혹」"
+  "ko": "「미식의 유혹」",
+  "en": "'Temptation of Gourmet'",
+  "ja": "「美食の誘惑」"
  },
  "靠胡萝卜吸引上方小兽奔跑获取动力的单轮车，驾驶员一般只需要在下面假模假样地蹬蹬就好了。\n再坚持一下，再坚持一下，清香甜美的胡萝卜，马上就能吃到了，马上就能吃到了！": {
-  "ko": "위쪽 작은 짐승을 당근으로 꾀어 달리게 해 동력을 얻는 외바퀴차. 운전자는 대개 아래에서 시늉만 하며 페달을 밟으면 된다.\n조금만 더, 조금만 더, 향긋하고 달콤한 당근을 곧 먹을 수 있어, 곧 먹을 수 있다고!"
+  "ko": "위쪽 작은 짐승을 당근으로 꾀어 달리게 해 동력을 얻는 외바퀴차. 운전자는 대개 아래에서 시늉만 하며 페달을 밟으면 된다.\n조금만 더, 조금만 더, 향긋하고 달콤한 당근을 곧 먹을 수 있어, 곧 먹을 수 있다고!",
+  "en": "A unicycle powered by a small beast on top that runs after a carrot. The driver usually just needs to pretend to pedal underneath.\nJust a little more, just a little more—the fragrant, sweet carrot is almost mine, almost mine!",
+  "ja": "上に乗った小さな獣をニンジンで釣って走らせ、動力を得る一輪車。運転手はたいてい下でペダルをこぐふりをしていればいい。\nもう少し、もう少しだけ、香り高くて甘いニンジンがもうすぐ食べられる、もうすぐ食べられる！"
  },
  "“美食的奴隶”": {
-  "ko": "「미식의 노예」"
+  "ko": "「미식의 노예」",
+  "en": "'Slave to Gourmet'",
+  "ja": "「美食の奴隷」"
  },
  "靠胡萝卜吸引上方小兽奔跑获取动力的单轮车，驾驶员戴的护目镜什么的只是用来耍帅的。\n在小兽成功吃到胡萝卜跑得无影无踪后竟然蹬不动车的驾驶员将会获得外号——“豆芽菜”。": {
-  "ko": "위쪽 작은 짐승을 당근으로 꾀어 달리게 해 동력을 얻는 외바퀴차. 운전자가 쓴 고글 같은 것은 그저 폼일 뿐이다.\n짐승이 끝내 당근을 먹고 흔적도 없이 달아난 뒤 차를 못 굴리는 운전자에게는 「콩나물」이라는 별명이 붙는다."
+  "ko": "위쪽 작은 짐승을 당근으로 꾀어 달리게 해 동력을 얻는 외바퀴차. 운전자가 쓴 고글 같은 것은 그저 폼일 뿐이다.\n짐승이 끝내 당근을 먹고 흔적도 없이 달아난 뒤 차를 못 굴리는 운전자에게는 「콩나물」이라는 별명이 붙는다.",
+  "en": "A unicycle powered by a small beast on top that runs after a carrot. The goggles the driver wears are just for show.\nA driver who can't pedal after the beast finally eats the carrot and runs off without a trace earns the nickname 'Beansprout'.",
+  "ja": "上に乗った小さな獣をニンジンで釣って走らせ、動力を得る一輪車。運転手がかけているゴーグルなどはただの格好つけだ。\n小さな獣がついにニンジンを食べて跡形もなく逃げ去った後、車をこげなくなった運転手には「もやし」というあだ名がつく。"
  },
  "优雅刀技厨师": {
-  "ko": "우아한 칼솜씨 요리사"
+  "ko": "우아한 칼솜씨 요리사",
+  "en": "Graceful Knife Chef",
+  "ja": "優雅な包丁さばきの料理人"
  },
  "优雅美丽的女士，带着自家的新鲜食材前来，想为这次的庆典再增添一些美味。\n将胡萝卜切片的动作非常具有观赏性，令人心旷神怡，忍不住想多分一个冰淇淋给她。": {
-  "ko": "우아하고 아름다운 부인. 집에서 기른 신선한 식재료를 들고 와 이번 축제에 맛을 더하려 한다.\n당근을 저미는 손놀림이 볼거리라 마음이 탁 트이고, 아이스크림을 하나 더 얹어 주고 싶어진다."
+  "ko": "우아하고 아름다운 부인. 집에서 기른 신선한 식재료를 들고 와 이번 축제에 맛을 더하려 한다.\n당근을 저미는 손놀림이 볼거리라 마음이 탁 트이고, 아이스크림을 하나 더 얹어 주고 싶어진다.",
+  "en": "An elegant and beautiful lady who brought fresh ingredients from home to add a little more flavor to the festival.\nThe way she slices carrots is a treat to watch—so pleasant that you can't help but give her an extra ice cream.",
+  "ja": "優雅で美しい婦人。自家製の新鮮な食材を持って来て、今回の祭りに美味しさを添えようとしている。\nニンジンを切る手さばきは見応えがあり、心が晴れやかになって、ついアイスクリームをもう一つあげたくなる。"
  },
  "炫目刀技厨师": {
-  "ko": "현란한 칼솜씨 요리사"
+  "ko": "현란한 칼솜씨 요리사",
+  "en": "Dazzling Knife Chef",
+  "ja": "華麗な包丁さばきの料理人"
  },
  "和蔼可亲的女士，带着妈妈的妈妈传给她的装备而来，想为这次的庆典再增添一些温情。\n曾经的切胡萝卜大赛全国冠军。看着她炫目的刀法，大家不敢不多分一个冰淇淋给她。": {
-  "ko": "인자하고 다정한 부인. 어머니의 어머니에게 물려받은 장비를 들고 와 이번 축제에 온기를 더하려 한다.\n한때 당근 썰기 대회 전국 우승자였다. 현란한 칼솜씨를 보고 있으면 아이스크림을 하나 더 얹어 주지 않을 수 없다."
+  "ko": "인자하고 다정한 부인. 어머니의 어머니에게 물려받은 장비를 들고 와 이번 축제에 온기를 더하려 한다.\n한때 당근 썰기 대회 전국 우승자였다. 현란한 칼솜씨를 보고 있으면 아이스크림을 하나 더 얹어 주지 않을 수 없다.",
+  "en": "A kind and gentle lady who brought the equipment passed down from her mother's mother to add a little warmth to the festival.\nOnce the national carrot-slicing champion. Watching her dazzling knifework, no one dares not give her an extra ice cream.",
+  "ja": "温和で親しみやすい婦人。祖母から受け継いだ道具を持って来て、今回の祭りにぬくもりを添えようとしている。\nかつてのニンジン切り大会全国チャンピオン。華麗な包丁さばきを見ると、誰もがアイスクリームをもう一つあげずにはいられない。"
  },
  "好心肠老板": {
-  "ko": "마음씨 좋은 사장"
+  "ko": "마음씨 좋은 사장",
+  "en": "Kindhearted Boss",
+  "ja": "気のいい店主"
  },
  "隔壁镇子披萨店的老板，据说是从叙拉古学成归来的，想为这次活动免费提供披萨来打响招牌。\n老人家笑得挺和煦的，但做出来的披萨味道实在是……": {
-  "ko": "옆 마을 피자집 사장. 시라쿠사에서 배워 왔다는 소문이다. 이번 행사에 피자를 공짜로 내어 가게 이름을 알리려 한다.\n노인의 웃음은 참 푸근한데, 만들어 낸 피자 맛이 영……"
+  "ko": "옆 마을 피자집 사장. 시라쿠사에서 배워 왔다는 소문이다. 이번 행사에 피자를 공짜로 내어 가게 이름을 알리려 한다.\n노인의 웃음은 참 푸근한데, 만들어 낸 피자 맛이 영……",
+  "en": "The owner of a pizzeria in the next town. Rumor has it he trained in Siracusa, and he wants to offer free pizza at this event to build his name.\nThe old man's smile is warm, but the pizza he makes tastes...",
+  "ja": "隣町のピザ屋の店主。シラクーザで修業して帰ってきたと噂され、今回のイベントでピザを無料で振る舞って店の名を広めようとしている。\n老人の笑顔はとても穏やかだが、作ったピザの味はどうにも……"
  },
  "热心肠老板": {
-  "ko": "열정적인 사장"
+  "ko": "열정적인 사장",
+  "en": "Passionate Boss",
+  "ja": "情熱的な店主"
  },
  "隔壁镇子披萨店的老板，据说他在叙拉古披萨制作技术的基础上还加入了自己的巧思，想在这次的活动中大展风采。\n“快把那老头弄下来！今天真有叙拉古人来！！！”": {
-  "ko": "옆 마을 피자집 사장. 시라쿠사 피자 기술에 제 나름의 궁리를 더했다는 소문이다. 이번 행사에서 솜씨를 마음껏 뽐낼 작정이다.\n“얼른 저 영감님 좀 내려오시게 해! 오늘 진짜 시라쿠사 사람이 왔다고!!!”"
+  "ko": "옆 마을 피자집 사장. 시라쿠사 피자 기술에 제 나름의 궁리를 더했다는 소문이다. 이번 행사에서 솜씨를 마음껏 뽐낼 작정이다.\n“얼른 저 영감님 좀 내려오시게 해! 오늘 진짜 시라쿠사 사람이 왔다고!!!”",
+  "en": "The owner of a pizzeria in the next town. Rumor has it he added his own twist to Siracusan pizza-making, and he plans to show off his skills at this event.\n\"Get that old man down from there! A real Siracusan actually came today!!!\"",
+  "ja": "隣町のピザ屋の店主。シラクーザのピザ作りの技術に独自の工夫を加えたと噂され、今回のイベントで腕を振るおうとしている。\n「早くあのじいさんを下ろせ！ 今日は本物のシラクーザ人が来てるんだ！！！」"
  },
  "浮空信件": {
-  "ko": "떠다니는 편지"
+  "ko": "떠다니는 편지",
+  "en": "Floating Letter",
+  "ja": "浮遊する手紙"
  },
  "还没有投进邮箱的信件。\n小心点，不要被有袋鼷兽偷走啦。": {
-  "ko": "아직 우체통에 넣지 않은 편지.\n조심하자. 유대생쥐에게 도둑맞지 않도록."
+  "ko": "아직 우체통에 넣지 않은 편지.\n조심하자. 유대생쥐에게 도둑맞지 않도록.",
+  "en": "A letter not yet dropped into the mailbox.\nCareful—don't let the Marsupial Musbeasts steal it.",
+  "ja": "まだポストに入れていない手紙。\n気をつけて、有袋鼷獣に盗まれないように。"
  },
  "信使安洁莉娜": {
-  "ko": "메신저 안젤리나"
+  "ko": "메신저 안젤리나",
+  "en": "Messenger Angelina",
+  "ja": "メッセンジャー・アンジェリーナ"
  },
  "罗德岛的信使安洁莉娜。\n这场比赛的热闹程度超乎想象，但她相信自己能够处理好这一切，因为她已经是一个成熟的信使啦！": {
-  "ko": "로도스 아일랜드의 메신저 안젤리나.\n이 경기의 열기는 상상을 넘어서지만, 그녀는 이 모든 걸 잘 해낼 수 있다고 믿는다. 이제 어엿한 메신저니까!"
+  "ko": "로도스 아일랜드의 메신저 안젤리나.\n이 경기의 열기는 상상을 넘어서지만, 그녀는 이 모든 걸 잘 해낼 수 있다고 믿는다. 이제 어엿한 메신저니까!",
+  "en": "Rhodes Island's messenger, Angelina.\nThe excitement of this contest is beyond imagination, but she believes she can handle it all—after all, she's a seasoned messenger now!",
+  "ja": "ロドスのメッセンジャー、アンジェリーナ。\nこの勝負の盛り上がりは想像以上だが、彼女はすべてうまくこなせると信じている。もう一人前のメッセンジャーなのだから！"
  },
  "“雷之主”": {
-  "ko": "「번개의 주인」"
+  "ko": "「번개의 주인」",
+  "en": "'Lord of Thunder'",
+  "ja": "「雷の主」"
  },
  "前代“异兽”，缠绕雷电的身姿令其得名“雷之主”。据称其狩猎时通过聚集无数雷光虫，可令身缠电力获得飞跃性提升，并变化为“超带电状态”。": {
-  "ko": "지난 대의 「이수」. 번개를 두른 모습에서 「번개의 주인」이라는 이름을 얻었다. 사냥할 때 무수한 뇌광충을 모아 몸에 두른 전력을 비약적으로 끌어올려 「초대전 상태」로 변한다고 한다."
+  "ko": "지난 대의 「이수」. 번개를 두른 모습에서 「번개의 주인」이라는 이름을 얻었다. 사냥할 때 무수한 뇌광충을 모아 몸에 두른 전력을 비약적으로 끌어올려 「초대전 상태」로 변한다고 한다.",
+  "en": "The previous 'Aberrant', named 'Lord of Thunder' for the lightning coiling around its body. It is said that when hunting, it gathers countless thunderbugs to dramatically amplify the electricity around it, entering a 'supercharged state'.",
+  "ja": "先代の「異獣」。雷電をまとう姿から「雷の主」と名付けられた。狩りの際には無数の雷光虫を集め、身にまとう電力を飛躍的に高めて「超帯電状態」に変化するという。"
  },
  "“死志的凝结”": {
-  "ko": "「죽음의 뜻이 엉긴 것」"
+  "ko": "「죽음의 뜻이 엉긴 것」",
+  "en": "'Congealed Will to Die'",
+  "ja": "「死志の凝結」"
  },
  "只是很简单的愿望。和想要活着一样简单，也一样难以摆脱。": {
-  "ko": "그저 아주 단순한 소원이다. 살고 싶다는 마음만큼 단순하고, 또 그만큼 떨쳐 내기 어렵다."
+  "ko": "그저 아주 단순한 소원이다. 살고 싶다는 마음만큼 단순하고, 또 그만큼 떨쳐 내기 어렵다.",
+  "en": "It's a very simple wish. As simple as wanting to live, and just as hard to shake off.",
+  "ja": "ごく単純な願いだ。生きたいと思うのと同じくらい単純で、同じくらい振り払いがたい。"
  },
  "“保护你自己，AMa-10，生存才是生命诞生时便拥有的本能。”彼时，她还不明白，究竟是什么，会值得用永恒的生命做交换。": {
   "ko": "“너 자신을 지켜라, AMa-10. 생존이야말로 생명이 태어날 때부터 지닌 본능이다.” 그때의 그녀는 아직 알지 못했다. 영원한 생명과 맞바꿀 만한 것이 대체 무엇인지를."
@@ -15472,16 +15722,24 @@
   "ko": "절대적인 시작도, 절대적인 끝도 없다. 스스로를 삼키는 가운데 스스로를 품어, 그렇게 오랜 닫힘으로 나아간다. 그러다 오늘, 이 고리에 아물기를 거부하는 틈이 생겼고, 그녀는 그 틈 위의 시작이 될 것이다."
  },
  "“酣睡飞行员”": {
-  "ko": "「곤히 자는 조종사」"
+  "ko": "「곤히 자는 조종사」",
+  "en": "'Sound-Asleep Pilot'",
+  "ja": "「熟睡パイロット」"
  },
  "有史以来人们见过的最大的一只有袋鼷兽！它盘踞在收集到的宝物之中，睡得格外舒心。\n吵醒它会怎么样？或者说……它真的能被吵醒吗？它怎么边睡边飞啊！": {
-  "ko": "사람들이 본 것 중 역사상 가장 큰 유대생쥐! 긁어모은 보물 더미에 틀어박혀 유난히 편안하게 자고 있다.\n깨우면 어떻게 될까? 아니, 애초에…… 정말 깨울 수는 있을까? 아니 어떻게 자면서 날지?!"
+  "ko": "사람들이 본 것 중 역사상 가장 큰 유대생쥐! 긁어모은 보물 더미에 틀어박혀 유난히 편안하게 자고 있다.\n깨우면 어떻게 될까? 아니, 애초에…… 정말 깨울 수는 있을까? 아니 어떻게 자면서 날지?!",
+  "en": "The biggest Marsupial Musbeast anyone has ever seen! It's curled up among its hoard of treasures, sleeping remarkably soundly.\nWhat happens if you wake it? Or rather... can it even be woken? How is it flying while asleep?!",
+  "ja": "有史以来人々が目にした中で最大の有袋鼷獣！ 集めた宝物の山に陣取って、格別に心地よさそうに眠っている。\n起こしたらどうなる？ というか……本当に起こせるの？ 寝ながらどうやって飛んでるの！"
  },
  "“超惊喜信件”": {
-  "ko": "「초대형 깜짝 편지」"
+  "ko": "「초대형 깜짝 편지」",
+  "en": "'Super Surprise Letter'",
+  "ja": "「超サプライズレター」"
  },
  "看起来金光闪闪的信封，让人好奇里面放的究竟是什么。\n悄悄打开看一下……嗖——嘣！": {
-  "ko": "금빛으로 번쩍이는 봉투. 안에 대체 뭐가 들었는지 궁금해진다.\n살며시 열어 볼까…… 휙——펑!"
+  "ko": "금빛으로 번쩍이는 봉투. 안에 대체 뭐가 들었는지 궁금해진다.\n살며시 열어 볼까…… 휙——펑!",
+  "en": "A glittering golden envelope that makes you wonder what on earth is inside.\nLet's take a peek... Whoosh—bang!",
+  "ja": "金色にきらめく封筒。中にいったい何が入っているのか気になってしまう。\nこっそり開けてみると……ヒュッ——ドン！"
  },
  "它们还没有准备好成为“居民”。它们渴望拥抱一种特定的生命形态，这似乎是因为它们曾经被赋予某种缺陷。矛盾的是，它们越是渴望就越会意识到，那些形态本不属于它们，而缺陷才真正属于它们。": {
   "ko": "그들은 아직 「주민」이 될 준비가 되지 않았다. 어떤 특정한 생명의 형태를 끌어안기를 갈망하는데, 한때 어떤 결함을 부여받았기 때문인 듯하다. 모순되게도, 갈망할수록 그들은 깨닫는다. 그 형태들은 본디 자신의 것이 아니었고, 결함이야말로 진정 자신의 것이라는 사실을."
@@ -15898,55 +16156,73 @@
   "ko": "금발의 펠린이 단추를 누르자, 빽빽하던 시험장이 순식간에 끔찍한 정적에 잠겼다. 사람들이 다시 들어갔을 때 보인 것은 텅 빈 공간뿐이었다 — 여기엔 애초부터 아무것도 없었다.\\n적의 시야를 가려 「직격」하지 못하게 한다"
  },
  "硬壳下的胆小鬼": {
-  "ko": "단단한 껍데기 속 겁쟁이"
+  "ko": "단단한 껍데기 속 겁쟁이",
+  "en": "Coward Under the Shell",
+  "ja": "硬い殻の下の臆病者"
  },
  "村里的药师：哎呀，药圃里的药草又被祸害了！这次不是虫子，是一群背着蛋壳的滑溜家伙——碎壳螈！猎人大人，请帮我把这些“长脚的石头”扔出去吧，我的腰都要弯断了！\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "마을 약사: 아이고, 약초밭이 또 결딴났어요! 이번엔 벌레가 아니라 알 껍데기를 지고 다니는 미끌미끌한 녀석들 — 쇄각원입니다! 헌터님, 이 「다리 달린 돌」들 좀 내다 버려 주세요. 허리가 끊어질 지경이에요!\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "还我锅来！": {
-  "ko": "내 냄비 돌려줘!"
+  "ko": "내 냄비 돌려줘!",
+  "en": "Give Me Back My Pot!",
+  "ja": "鍋を返して！"
  },
  "暴躁的厨师长：气死我了！又是那些盗壳虫干的好事！它们最喜欢半夜钻进锅碗瓢盆然后顶着器具跑走。猎人阁下，请狠狠敲打它们，把被偷走的厨具夺回来！\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "성마른 주방장: 속 터져 죽겠네! 또 그 도각충들 짓이야! 한밤중에 냄비며 그릇에 기어들어 가 그걸 뒤집어쓰고 달아나는 걸 제일 좋아하지. 헌터 나리, 저것들을 호되게 두들겨서 빼앗긴 조리 도구를 되찾아 주십시오!\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "不能掉以轻心": {
-  "ko": "방심은 금물"
+  "ko": "방심은 금물",
+  "en": "Never Let Your Guard Down",
+  "ja": "油断は禁物"
  },
  "“异兽猎人”梓兰：在挑战“异兽”之前，必须先学会自保，再通过狩猎野兽磨练战斗技巧。空爆，我知道你会看到这个任务，要是你没完成，今晚就没饭吃了。\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "「이수 헌터」 오키드: 「이수」에 도전하기 전에 먼저 제 몸을 지킬 줄 알아야 하고, 야수를 사냥하며 전투 기술을 갈고닦아야 해. 캐터펄트, 네가 이 임무를 볼 줄 알아. 못 끝내면 오늘 밤은 밥 없다.\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "赤雪之兆": {
-  "ko": "붉은 눈의 조짐"
+  "ko": "붉은 눈의 조짐",
+  "en": "Omen of Red Snow",
+  "ja": "赤雪の兆し"
  },
  "泡影国将军月见夜：斥候发来急报，“御轮”方向的雪山正在流出岩浆。为了泡影国的安全，也为了各位能够返回家园，我请求你们前去调查。请务必小心那股不祥的热浪。\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "포영국 장군 미드나이트: 척후가 급보를 보내왔다. 「어륜」 쪽 설산에서 용암이 흘러나오고 있다. 포영국의 안전을 위해, 또 여러분이 고향으로 돌아가기 위해, 부디 가서 살펴 주기를 청한다. 그 불길한 열기를 반드시 조심하라.\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "只能成功，不能失败": {
-  "ko": "성공만 있을 뿐, 실패는 없다"
+  "ko": "성공만 있을 뿐, 실패는 없다",
+  "en": "Failure Is Not an Option",
+  "ja": "成功のみ、失敗は許されない"
  },
  "泡影国将军月见夜：这将是一场豪赌。如果我......如果陷阱失效，陛下就拜托各位了。无论如何，一定要守住这里。这是我唯一的请求。\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "포영국 장군 미드나이트: 이건 큰 도박이 될 것이다. 만약 내가…… 만약 덫이 듣지 않으면, 폐하를 여러분께 부탁한다. 무슨 일이 있어도 이곳만은 지켜 다오. 이것이 나의 유일한 청이다.\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "来自过去的亡魂": {
-  "ko": "과거에서 온 망령"
+  "ko": "과거에서 온 망령",
+  "en": "Ghosts from the Past",
+  "ja": "過去からの亡霊"
  },
  "泡影国武士队长：难以置信......那些早已灭绝的咒鬼竟然复活了！猎人阁下，请务必挡住它们！如果让狼群突破这里，都城就危险了！\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "포영국 무사 대장: 믿을 수가 없군…… 이미 멸종했던 주귀가 되살아나다니! 헌터 나리, 부디 저것들을 막아 주십시오! 늑대 무리가 여기를 뚫으면 도성이 위험합니다!\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "为什么全是死脑筋？": {
-  "ko": "어째서 다들 꽉 막혔지?"
+  "ko": "어째서 다들 꽉 막혔지?",
+  "en": "Why Is Everyone So Stubborn?",
+  "ja": "どうしてみんな頭が固いの？"
  },
  "泡影国铁匠斑弥罗：月见夜这家伙真会使唤人，算了，走吧，狩猎团的家伙们也都跟上。我还真挺好奇“御轮”底下究竟是什么样子的呢。\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "포영국 대장장이 반미라: 미드나이트 저 녀석, 사람 부려먹는 재주 하나는 알아줘야 해. 됐고, 가자고. 사냥단 친구들도 다 따라와. 나도 「어륜」 밑이 대체 어떻게 생겼는지 꽤 궁금하거든.\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "宿命流转，苍霆激荡": {
-  "ko": "숙명은 돌고, 창정은 요동친다"
+  "ko": "숙명은 돌고, 창정은 요동친다",
+  "en": "Fate Turns, Azure Thunder Surges",
+  "ja": "宿命巡り、蒼霆逆巻く"
  },
  "泡影国国主宝巫迦：为了抑制“御轮”的暴走，我们必须利用“雷之主”的力量。梓兰小姐，空爆小姐，斑弥罗，还有......月见夜，请助吾一臂之力吧！\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "포영국 국주 바오우가: 「어륜」의 폭주를 억누르려면 「번개의 주인」의 힘을 빌려야 한다. 오키드 양, 캐터펄트 양, 반미라, 그리고…… 미드나이트, 부디 나에게 힘을 보태 다오!\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "为了泡影国的未来？": {
-  "ko": "포영국의 미래를 위하여?"
+  "ko": "포영국의 미래를 위하여?",
+  "en": "For the Future of the Mirage Nation?",
+  "ja": "泡影国の未来のために？"
  },
  "泡影国铁匠斑弥罗：“移动城市”这个想法也太有趣了，要是能实现的话......总之，我需要有人帮我捕获大量的盗壳虫。报酬去找月见夜要，就说这是为了国家未来进行的研究。\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "포영국 대장장이 반미라: 「움직이는 도시」라는 발상, 너무 재미있잖아. 실현만 된다면…… 아무튼 도각충을 잔뜩 잡아다 줄 사람이 필요해. 보수는 미드나이트한테 받아. 나라의 미래를 위한 연구라고 말하면 돼.\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
@@ -15955,7 +16231,9 @@
   "ko": "부가 조건:\\n적이 추가로 나타나며, 요코즈나 도각충의 보호막이 더 깨기 어려워진다"
  },
  "迁徙季": {
-  "ko": "이동철"
+  "ko": "이동철",
+  "en": "Migration Season",
+  "ja": "渡りの季節"
  },
  "认真的生态学者：一个冠鸣龙群落正在迁徙，而在它们迁徙的路径上，生活着一群大喰怪。要是它们激发了大喰怪的食欲，可能会对周围的生态系统造成极大打击，请有志之士想想办法吧！\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "진지한 생태학자: 관명룡 무리가 이동 중인데, 그 경로 위에 대식괴 무리가 살고 있습니다. 대식괴의 식욕을 자극하면 주변 생태계에 큰 타격이 갈 수 있어요. 뜻있는 분들께서 방법을 좀 궁리해 주십시오!\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
@@ -15964,7 +16242,9 @@
   "ko": "부가 조건:\\n황신 대식괴의 공격력·HP·이동 속도가 오른다"
  },
  "完美的训练场": {
-  "ko": "완벽한 훈련장"
+  "ko": "완벽한 훈련장",
+  "en": "The Perfect Training Ground",
+  "ja": "完璧な訓練場"
  },
  "泡影国国主宝巫迦：除了正面战斗，吾也要熟悉其他的狩猎技巧，免得月见夜又要担心。为此，吾找到了一个绝佳的训练场，想要磨练技巧的家伙就跟吾一起来吧。\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "포영국 국주 바오우가: 정면 싸움 말고 다른 사냥 기술에도 익숙해져야겠다. 미드나이트가 또 걱정하지 않도록 말이다. 그래서 더없이 좋은 훈련장을 찾아 두었다. 기술을 갈고닦고 싶은 자는 나와 함께 오라.\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
@@ -15973,7 +16253,9 @@
   "ko": "부가 조건:\\n반각귀·박의 수가 줄어든다"
  },
  "保护“御轮”": {
-  "ko": "「어륜」을 지켜라"
+  "ko": "「어륜」을 지켜라",
+  "en": "Protect the 'Royal Wheel'",
+  "ja": "「御輪」を守れ"
  },
  "泡影国将军月见夜：有一群野兽正在靠近“御轮”，看起来想要破坏它。即使如今我们已经知晓了它的一部分真相，“御轮”也始终是我国重要的象征，所以必须阻止它们。\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "포영국 장군 미드나이트: 야수 무리가 「어륜」에 접근하고 있다. 그것을 부수려는 듯하다. 이제 그 진실의 일부를 알게 되었다 해도 「어륜」은 여전히 우리나라의 중요한 상징이다. 그러니 반드시 막아야 한다.\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
@@ -15982,7 +16264,9 @@
   "ko": "부가 조건:\\n영사주·원의 행동이 빨라진다"
  },
  "新的岗哨": {
-  "ko": "새로운 초소"
+  "ko": "새로운 초소",
+  "en": "A New Outpost",
+  "ja": "新たな哨所"
  },
  "乐观的士兵：我们找了个好位置建立新岗哨，唯一的问题就是周围没有适合建立哨塔的高地。现在我们需要有人引诱一些岩甲兽过来，它们似乎很擅长制造高地。至于它们来了之后——总会有办法的！\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "낙천적인 병사: 새 초소를 세울 좋은 자리를 찾았는데, 문제는 주변에 망루를 올릴 만한 고지가 없다는 겁니다. 지금 필요한 건 암갑수를 이쪽으로 꾀어 올 사람이에요. 저것들이 고지 만드는 데는 아주 능하거든요. 오고 나서 어쩌냐고요? 어떻게든 되겠죠!\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
@@ -15991,13 +16275,17 @@
   "ko": "부가 조건:\\n「어룡: 암갑수」의 배치 비용이 오르고, 자리 잡은 암봉은 직접 철수시킬 수 없다"
  },
  "新的兽潮？": {
-  "ko": "새로운 야수의 물결?"
+  "ko": "새로운 야수의 물결?",
+  "en": "A New Beast Tide?",
+  "ja": "新たな獣潮？"
  },
  "泡影国将军月见夜：新一轮的兽潮正在形成。但我们已经掌握了影丝蛛的习性，只要能引导它们的行动，就能把这轮兽潮扼杀在摇篮中。走吧，猎人们，狩猎的时候到了。\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "포영국 장군 미드나이트: 새로운 야수의 물결이 형성되고 있다. 허나 우리는 이미 영사주의 습성을 파악했다. 그 움직임을 유도하기만 하면 이번 물결은 싹부터 잘라 낼 수 있다. 가자, 헌터들이여. 사냥할 때가 왔다.\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "最后的“诅咒”": {
-  "ko": "마지막 「저주」"
+  "ko": "마지막 「저주」",
+  "en": "The Final 'Curse'",
+  "ja": "最後の「呪い」"
  },
  "泡影国国主宝巫迦：这应该是受“御轮”泄漏的“诅咒”影响的最后一群野兽了。消灭它们后，泡影国将迎来彻底的和平。月见夜，斑弥罗，猎人们，辛苦你们了。\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "포영국 국주 바오우가: 「어륜」에서 새어 나온 「저주」의 영향을 받은 마지막 야수 무리일 것이다. 저들을 없애면 포영국에는 온전한 평화가 찾아온다. 미드나이트, 반미라, 헌터들이여, 모두 수고가 많았다.\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
@@ -16006,7 +16294,9 @@
   "ko": "부가 조건:\\n일부 적이 더 빨리 움직이기 시작한다"
  },
  "山河一闪，雷鸣响彻": {
-  "ko": "산하가 번쩍이고 뇌명이 울려 퍼진다"
+  "ko": "산하가 번쩍이고 뇌명이 울려 퍼진다",
+  "en": "A Flash Across the Land, Thunder Resounds",
+  "ja": "山河一閃、雷鳴轟く"
  },
  "我在寂静的森林中散步，突然降下了轰雷喵！放出落雷的是雷狼龙喵......！我都快吓死了，胡须一直在颤抖喵——！不能放着那家伙不管喵。请你想办法打倒它喵。\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "고요한 숲을 거닐고 있었는데 갑자기 우렛소리가 떨어졌다냥! 벼락을 내린 건 진오우거였다냥……! 무서워 죽는 줄 알았다냥, 수염이 계속 떨린다냥——! 저 녀석을 그냥 둘 수는 없다냥. 어떻게든 쓰러뜨려 달라냥.\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
@@ -16015,91 +16305,123 @@
   "ko": "부가 조건:\\n「번개의 주인」의 공격력과 HP가 오른다"
  },
  "“百兽奔行”": {
-  "ko": "「백수가 내달린다」"
+  "ko": "「백수가 내달린다」",
+  "en": "'Stampede of a Hundred Beasts'",
+  "ja": "「百獣奔行」"
  },
  "泡影国铁匠斑弥罗：我强化了抵御兽潮的防御工事，普通的野兽绝对别想再靠近我们的城市。现在，我需要有人来帮我测试一下，有没有不怕死的——我是说，勇敢的家伙？\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "포영국 대장장이 반미라: 야수의 물결을 막을 방어 시설을 강화했어. 평범한 야수는 두 번 다시 우리 도시 근처에 얼씬도 못 해. 이제 시험해 줄 사람이 필요한데, 죽음을 두려워하지 않는 — 아니, 용감한 친구 없나?\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "群山震颤，百龙夜行": {
-  "ko": "뭇 산이 떨리고 백룡이 밤을 간다"
+  "ko": "뭇 산이 떨리고 백룡이 밤을 간다",
+  "en": "Mountains Tremble, a Hundred Dragons Roam the Night",
+  "ja": "群山震え、百竜夜行"
  },
  "你不知道你为什么在这里，你也不知道这里究竟是哪里，但你知道你要做什么——击败它们，生存下去，就这么简单。\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "네가 왜 여기 있는지도, 여기가 대체 어디인지도 너는 모른다. 다만 무엇을 해야 하는지는 안다 — 저들을 쓰러뜨리고 살아남는 것. 그뿐이다.\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "风沙渐起": {
-  "ko": "모래바람이 일기 시작한다"
+  "ko": "모래바람이 일기 시작한다",
+  "en": "The Sandstorm Rises",
+  "ja": "風砂立つ"
  },
  "悠哉的人事干员：这次外勤任务的内容是对付一群驻扎在沙漠中的沙盗，他们很狡猾，但是，以A6现在的能力来说一定没问题的。加油，我准备了点心等你们回来！": {
-  "ko": "느긋한 인사부 오퍼레이터: 이번 외근 임무는 사막에 자리 잡은 사막 도적 무리를 상대하는 겁니다. 교활한 자들이지만 지금 A6의 실력이라면 문제없을 거예요. 힘내세요, 간식 준비해 두고 기다릴게요!"
+  "ko": "느긋한 인사부 오퍼레이터: 이번 외근 임무는 사막에 자리 잡은 사막 도적 무리를 상대하는 겁니다. 교활한 자들이지만 지금 A6의 실력이라면 문제없을 거예요. 힘내세요, 간식 준비해 두고 기다릴게요!",
+  "en": "Laid-back Personnel Operator: This field mission is about dealing with a band of sand bandits holed up in the desert. They're crafty, but with A6's current skills, you'll be fine. Good luck—I'll have snacks ready when you get back!",
+  "ja": "のんびりした人事部オペレーター：今回の外勤任務は、砂漠に陣取る砂賊の一団を相手にすることです。狡猾な連中ですが、今のA6の実力なら問題ないはず。頑張ってください、おやつを用意して待ってますね！"
  },
  "幻梦终醒，猎魂不息": {
-  "ko": "헛된 꿈은 끝내 깨어나고, 사냥의 혼은 그치지 않는다"
+  "ko": "헛된 꿈은 끝내 깨어나고, 사냥의 혼은 그치지 않는다",
+  "en": "The Dream Ends, the Hunter's Soul Endures",
+  "ja": "幻夢は醒め、狩魂は絶えず"
  },
  "行动预备组A6队长梓兰：即使这只是一场梦，我也会记住在这里发生的一切。再会。\\n行动预备组A6成员空爆：只要我狩猎下去，说不定就会有重逢的一天呢。再见！": {
   "ko": "작전 예비조 A6 대장 오키드: 이것이 한낱 꿈일지라도, 나는 여기서 있었던 모든 일을 기억할 거야. 또 보자.\\n작전 예비조 A6 대원 캐터펄트: 사냥을 계속하다 보면 언젠가 다시 만날 날이 올지도 몰라요. 안녕히!"
  },
  "狩猎太棒啦！": {
-  "ko": "사냥은 최고야!"
+  "ko": "사냥은 최고야!",
+  "en": "Hunting Is the Best!",
+  "ja": "狩りって最高！"
  },
  "“异兽猎人”空爆：天啊，能在天上飞来飞去也太好玩了，我不管了，我要带上翔虫出去玩了！梓兰姐，我知道你会看到这个任务，别担心，我会回来吃饭的！\\n由干员使用，命中可御龙的敌人会增加御龙进度": {
   "ko": "「이수 헌터」 캐터펄트: 세상에, 하늘을 날아다니는 게 이렇게 재미있다니. 몰라요, 저 취충 챙겨서 놀러 나갈래요! 오키드 언니, 이 임무 볼 거 알아요. 걱정 마요, 밥 먹으러 돌아올 테니까!\\n오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 오른다"
  },
  "收信地：终点": {
-  "ko": "수신지: 종점"
+  "ko": "수신지: 종점",
+  "en": "Destination: The Last Stop",
+  "ja": "宛先：終点"
  },
  "一趟送信旅途的终点，一趟收信旅途的起点。\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "편지를 보내는 여정의 끝, 편지를 받는 여정의 시작.\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "记新友的混乱": {
-  "ko": "새 친구를 적는 혼란"
+  "ko": "새 친구를 적는 혼란",
+  "en": "The Chaos of Noting New Friends",
+  "ja": "新しい友達を記す混乱"
  },
  "车后座的物资箱里放的可能不只是货物，洋蓟村的通讯塔上晾的也不只是胡萝卜干。\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "차 뒷좌석 물자 상자에 실린 것이 짐만은 아닐지도 모르고, 양계촌 통신탑에 널린 것도 말린 당근만은 아니다.\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "露营奇“叽”": {
-  "ko": "캠핑의 「찍」한 사건"
+  "ko": "캠핑의 「찍」한 사건",
+  "en": "A 'Squeaky' Camping Mishap",
+  "ja": "キャンプの「キッ」な出来事"
  },
  "窸窸窣窣，是风沙吹打在车窗上的声音，也是什么东西正偷翻你背包的声音。\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "사각사각. 모래바람이 차창을 때리는 소리이기도 하고, 무언가가 네 배낭을 몰래 뒤지는 소리이기도 하다.\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "谷里升起太阳": {
-  "ko": "골짜기에 해가 뜬다"
+  "ko": "골짜기에 해가 뜬다",
+  "en": "Sunrise in the Valley",
+  "ja": "谷に昇る太陽"
  },
  "是什么遮住了雷姆必拓强烈的阳光？是什么为无遮挡的矿场带来阴凉？是太阳谷工业强壮的卡特斯矿工！\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "무엇이 림 빌리턴의 따가운 햇빛을 가렸는가? 무엇이 가릴 것 없는 광산에 그늘을 드리웠는가? 바로 태양 계곡 공업의 억센 카트스 광부들이다!\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "勇敢的短耳朵": {
-  "ko": "용감한 짧은 귀"
+  "ko": "용감한 짧은 귀",
+  "en": "Brave Short-Ears",
+  "ja": "勇敢な短い耳"
  },
  "回忆中那个惊艳了黑暗地下的人，在十数年以后再度出现。\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "기억 속에서 어두운 지하를 놀라게 했던 그 사람이, 십여 년이 지나 다시 나타났다.\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "最难坦诚": {
-  "ko": "솔직해지기가 가장 어렵다"
+  "ko": "솔직해지기가 가장 어렵다",
+  "en": "Honesty Is Hardest",
+  "ja": "素直になるのが一番難しい"
  },
  "无人鬼城广播中传来的异响，带领感染者追寻幸福的“引领者”，竟是——？\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "무인 유령 도시의 방송에서 들려온 이상한 소리, 감염자들을 이끌고 행복을 좇던 「인도자」는 다름 아닌——?\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "谎言的重量": {
-  "ko": "거짓말의 무게"
+  "ko": "거짓말의 무게",
+  "en": "The Weight of Lies",
+  "ja": "嘘の重さ"
  },
  "友情是由什么组成的？是诺言，是决心，是敢于说不的胆量，是永远都向对方奔跑过去的脚步。\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "우정은 무엇으로 이루어지는가? 약속이고, 결심이고, 아니라고 말할 용기이며, 언제나 서로를 향해 달려가는 발걸음이다.\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "以决心做邮戳": {
-  "ko": "결심을 소인으로 삼아"
+  "ko": "결심을 소인으로 삼아",
+  "en": "Resolve as the Postmark",
+  "ja": "決意を消印に"
  },
  "转换遗憾的重量，重塑失望下沉的速度，让事情的结局在落地之前得以改变。\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "아쉬움의 무게를 바꾸고, 실망이 가라앉는 속도를 다시 빚어, 일의 끝이 땅에 닿기 전에 달라지게 한다.\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "绘我们的黎明": {
-  "ko": "우리의 새벽을 그리다"
+  "ko": "우리의 새벽을 그리다",
+  "en": "Drawing Our Dawn",
+  "ja": "私たちの夜明けを描く"
  },
  "这里是旅途的终点，这里是大地的尽头，这里是她们四个人给自己的答案。\\n协助我方进行战斗。场上存在会收集并投递进\\n本次行动中远程干员可部署于近战位": {
   "ko": "여기는 여정의 끝이고, 여기는 대지의 끝이며, 여기는 그녀들 넷이 스스로에게 내놓은 답이다.\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는\\n이번 작전에서는 원거리 오퍼레이터를 근접 배치 칸에 배치할 수 있다"
  },
  "电影防沉迷": {
-  "ko": "영화 중독 방지"
+  "ko": "영화 중독 방지",
+  "en": "Movie Addiction Prevention",
+  "ja": "映画依存防止"
  },
  "几个看上去已经相当心力交瘁的居民拜托你好好教训教训他们的孩子，自从沉迷在叙拉古黑帮电影里以后，孩子们已经无法无天了！\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "몹시 지쳐 보이는 주민 몇이 제 아이들을 좀 혼내 달라고 부탁해 왔다. 시라쿠사 갱 영화에 빠진 뒤로 아이들이 통 말을 듣지 않는단다!\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
@@ -16108,13 +16430,17 @@
   "ko": "부가 조건:\\n아군 유닛의 공격력이 낮아진다"
  },
  "邮包流水线": {
-  "ko": "우편 소포 라인"
+  "ko": "우편 소포 라인",
+  "en": "Parcel Assembly Line",
+  "ja": "郵便小包ライン"
  },
  "来体验一下信使分拣各种货物的一天吧？\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "메신저가 온갖 화물을 분류하는 하루를 겪어 볼까?\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "地下捉迷藏": {
-  "ko": "지하 숨바꼭질"
+  "ko": "지하 숨바꼭질",
+  "en": "Underground Hide-and-Seek",
+  "ja": "地下のかくれんぼ"
  },
  "几乎每个卡特斯小时候都玩过的捉迷藏：躲进地下错综复杂的兔子洞里，再把显眼的出口用什么东西堵上，嘿嘿......不是，怎么出不去了？\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "카트스라면 어릴 적 거의 다 해 본 숨바꼭질. 얽히고설킨 지하 토끼굴에 숨은 다음, 눈에 띄는 출구를 뭔가로 막아 두고, 헤헤…… 아니, 어째서 못 나가지?\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
@@ -16123,13 +16449,17 @@
   "ko": "부가 조건:\\n적의 이동 속도와 HP가 오른다"
  },
  "处处是一撮毛": {
-  "ko": "가는 곳마다 한줌털"
+  "ko": "가는 곳마다 한줌털",
+  "en": "Tufts Everywhere",
+  "ja": "どこもかしこも一房毛"
  },
  "不论是信件或是包裹，还是普通的日用品，哪怕只是刚拿在手上还没来得及放进嘴里的零食胡萝卜干，有袋鼷兽们全都要！\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "편지든 소포든 평범한 생필품이든, 심지어 막 손에 쥐고 아직 입에 넣지도 못한 간식용 말린 당근까지, 유대생쥐들은 죄다 탐낸다!\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "“勒柄嘘混”": {
-  "ko": "「르뱡쉬훈」"
+  "ko": "「르뱡쉬훈」",
+  "en": "'Lebyang Shuhun'",
+  "ja": "「ルビャンシュフン」"
  },
  "一口下去——其实什么都不会发生，只是会被呛得打喷嚏！\\n本次行动中远程干员可部署于近战位\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "한입 베어 물면 —— 사실 아무 일도 일어나지 않는다. 그저 사레들려 재채기가 날 뿐!\\n이번 작전에서는 원거리 오퍼레이터를 근접 배치 칸에 배치할 수 있다\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
@@ -16138,7 +16468,9 @@
   "ko": "부가 조건:\\n동시에 배치할 수 있는 인원이 줄어든다"
  },
  "信使？术师！": {
-  "ko": "메신저? 캐스터!"
+  "ko": "메신저? 캐스터!",
+  "en": "Messenger? Caster!",
+  "ja": "メッセンジャー？術師！"
  },
  "刚刚还笑容阳光地把信件递给你的女孩，下一秒可能就会成为动用源石技艺让偷件的小偷飞上半空的强力术师。\\n协助我方进行战斗。场上存在会收集并投递进\\n本次行动投满邮箱后信使安洁莉娜会更大幅度强化": {
   "ko": "방금까지 환한 웃음으로 편지를 건네주던 소녀가, 다음 순간에는 오리지늄 아츠로 편지 도둑을 공중에 띄워 버리는 강력한 캐스터가 될지도 모른다.\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는\\n이번 작전에서 우체통을 가득 채우면 메신저 안젤리나가 더 크게 강화된다"
@@ -16147,13 +16479,17 @@
   "ko": "부가 조건:\\n떠다니는 편지는 더 여러 번 대미지를 받아야 자리를 옮긴다"
  },
  "卡特斯三个窝": {
-  "ko": "카트스 세 둥지"
+  "ko": "카트스 세 둥지",
+  "en": "Three Cautus Burrows",
+  "ja": "コータスの三つの巣"
  },
  "从兔子洞的洞口里能钻出一百个皮塔，一百个巴尼特，一百个梅拉！\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "토끼굴 입구에서 피타가 백 명, 바넷이 백 명, 메라가 백 명 튀어나올 수 있다!\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "有袋鼷兽奇遇": {
-  "ko": "유대생쥐와의 기이한 만남"
+  "ko": "유대생쥐와의 기이한 만남",
+  "en": "An Encounter with Marsupial Musbeasts",
+  "ja": "有袋鼷獣との奇遇"
  },
  "叽叽叽，嘎嘎嘎，叽叽叽嘎！（今天阳光明媚，微风和煦，我带着满满一口袋的好宝贝，准备再去拿点新的来！）\\n本次行动中远程干员可部署于近战位\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "찍찍찍, 꽥꽥꽥, 찍찍찍꽥! (오늘은 햇살도 좋고 바람도 부드럽지. 주머니 가득 좋은 보물을 챙겼으니, 이제 새것을 좀 더 가지러 가야겠어!)\\n이번 작전에서는 원거리 오퍼레이터를 근접 배치 칸에 배치할 수 있다\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
@@ -16162,13 +16498,17 @@
   "ko": "부가 조건:\\n「곤히 자는 조종사」의 비행 상태 지속 시간이 늘고, 폭격 간격이 짧아진다"
  },
  "大涌泉镇盛宴": {
-  "ko": "대용천진의 잔치"
+  "ko": "대용천진의 잔치",
+  "en": "The Great Springs Town Feast",
+  "ja": "大湧泉町の宴"
  },
  "不论是长耳朵卡特斯，还是短耳朵卡特斯，哪怕是长羽毛的长角的长鳞片的，只要你来到这里，只要你也喜欢冰淇淋、胡萝卜以及温泉，你就是大涌泉镇的客人！\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "귀가 긴 카트스든 귀가 짧은 카트스든, 깃털이 났든 뿔이 났든 비늘이 났든, 이곳에 왔고 아이스크림과 당근과 온천을 좋아하기만 하면 당신은 대용천진의 손님이다!\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "邮箱保卫战": {
-  "ko": "우체통 방어전"
+  "ko": "우체통 방어전",
+  "en": "Mailbox Defense",
+  "ja": "ポスト防衛戦"
  },
  "既然通讯塔可以用来晾晒胡萝卜干，那邮箱是不是可以当小型粮仓用用？——喂，不要往里面乱放东西呀！\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "통신탑을 말린 당근 너는 데 쓸 수 있다면, 우체통은 작은 곳간으로 써도 되지 않을까? —— 야, 아무거나 넣지 마!\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
@@ -16177,184 +16517,290 @@
   "ko": "부가 조건:\\n현란한 칼솜씨 요리사의 무게가 늘고, 주위 적 유닛의 방어력을 추가로 올린다"
  },
  "通行新选择": {
-  "ko": "통행의 새로운 선택"
+  "ko": "통행의 새로운 선택",
+  "en": "A New Way Through",
+  "ja": "通行の新たな選択"
  },
  "遇到无法跨越的峡谷该怎么办？聪明的雷姆必拓人自会找到办法：乘着间歇泉喷发的水流，从天空中飞过去吧！\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "건널 수 없는 협곡을 만나면 어떻게 할까? 영리한 림 빌리턴 사람들은 알아서 방법을 찾는다. 간헐천이 뿜는 물줄기를 타고 하늘로 날아 건너면 된다!\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "交通管理员": {
-  "ko": "교통 관리원"
+  "ko": "교통 관리원",
+  "en": "Traffic Warden",
+  "ja": "交通管理員"
  },
  "今天最累的除了做冰淇淋的店员，就属负责疏散人流的交通管理员了。帮帮他吧，他愿意用一年份的胡萝卜蛋糕作为答谢。\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "오늘 가장 고된 사람은 아이스크림을 만드는 점원 다음으로 인파를 정리하는 교통 관리원이다. 좀 도와주자. 답례로 일 년 치 당근 케이크를 내놓겠단다.\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "“家族聚会”": {
-  "ko": "「가족 모임」"
+  "ko": "「가족 모임」",
+  "en": "'Family Reunion'",
+  "ja": "「家族の集い」"
  },
  "叽叽叽叽，嘶咔嘶咔嘶咔，嘎嘎！（孩子们快跟我来，我发现了个又好吃又好玩的好去处！）\\n协助我方进行战斗。场上存在会收集并投递进": {
   "ko": "찍찍찍찍, 쓱싹쓱싹쓱싹, 꽥꽥! (얘들아 어서 따라와, 맛있고 재미있는 좋은 데를 찾았어!)\\n아군의 전투를 돕는다. 전장에는 수집해 배달해 넣는"
  },
  "冒昧的请求": {
-  "ko": "당돌한 부탁"
+  "ko": "당돌한 부탁",
+  "en": "A Bold Request",
+  "ja": "唐突なお願い"
  },
  "贫乏的语言不足以复现那些毛茸茸的小口袋、漫天划拉的小爪子和富有弹性的小尾巴带给人的感受。所以......能不能......就一下......！": {
-  "ko": "빈약한 말로는 그 복슬복슬한 작은 주머니와, 사방으로 휘젓는 작은 발톱과, 탄력 넘치는 작은 꼬리가 주는 느낌을 되살릴 수 없다. 그러니까…… 한 번만…… 딱 한 번만……!"
+  "ko": "빈약한 말로는 그 복슬복슬한 작은 주머니와, 사방으로 휘젓는 작은 발톱과, 탄력 넘치는 작은 꼬리가 주는 느낌을 되살릴 수 없다. 그러니까…… 한 번만…… 딱 한 번만……!",
+  "en": "Words are too poor to recreate the feeling of those fluffy little pouches, those tiny claws flailing everywhere, and those springy little tails. So... could I... just once...!",
+  "ja": "乏しい言葉では、あのふわふわの小さな袋、あちこち引っかく小さな爪、弾力のある小さなしっぽがくれる感触を再現できない。だから……ちょっとだけ……一回だけ……！"
  },
  "信使的素养": {
-  "ko": "메신저의 소양"
+  "ko": "메신저의 소양",
+  "en": "A Messenger's Qualities",
+  "ja": "メッセンジャーの心得"
  },
  "越是热闹繁忙的地方，越是需要信使的耐心与严谨。玩忽职守是万万不可的，在每封信的背后，可都是人们的心意和思念哦。": {
-  "ko": "북적이고 바쁜 곳일수록 메신저의 끈기와 꼼꼼함이 더 필요하다. 직무를 소홀히 해서는 결코 안 된다. 편지 한 통 한 통 뒤에는 사람들의 마음과 그리움이 담겨 있으니까."
+  "ko": "북적이고 바쁜 곳일수록 메신저의 끈기와 꼼꼼함이 더 필요하다. 직무를 소홀히 해서는 결코 안 된다. 편지 한 통 한 통 뒤에는 사람들의 마음과 그리움이 담겨 있으니까.",
+  "en": "The livelier and busier the place, the more a messenger needs patience and care. Neglecting one's duties is out of the question—behind every letter are people's feelings and longing.",
+  "ja": "賑やかで忙しい場所ほど、メッセンジャーには忍耐と几帳面さが求められる。職務怠慢は決して許されない。手紙の一通一通には、人々の想いと恋しさが込められているのだから。"
  },
  "一封想写的信": {
-  "ko": "쓰고 싶은 편지 한 통"
+  "ko": "쓰고 싶은 편지 한 통",
+  "en": "A Letter I Want to Write",
+  "ja": "書きたい一通の手紙"
  },
  "雷姆必拓地广人更多，不论做好了多少准备，总会遇到意料之外的人和事。": {
-  "ko": "림 빌리턴은 땅도 넓고 사람은 더 많다. 아무리 준비해도 늘 예상 밖의 사람과 일을 만나게 된다."
+  "ko": "림 빌리턴은 땅도 넓고 사람은 더 많다. 아무리 준비해도 늘 예상 밖의 사람과 일을 만나게 된다.",
+  "en": "Rim Billiton is vast and even more crowded. No matter how well you prepare, you'll always run into unexpected people and things.",
+  "ja": "リム・ビリトンは土地が広く、人はさらに多い。どれだけ準備しても、予想外の人や出来事に出くわすものだ。"
  },
  "糖纸星星": {
-  "ko": "사탕 껍질 별"
+  "ko": "사탕 껍질 별",
+  "en": "Candy-Wrapper Stars",
+  "ja": "包み紙の星"
  },
  "沉重的大地在下，轻飘飘飞起来的，是少女的复杂心绪。": {
-  "ko": "묵직한 대지는 아래에 있고, 가볍게 떠오르는 것은 소녀의 복잡한 마음이다."
+  "ko": "묵직한 대지는 아래에 있고, 가볍게 떠오르는 것은 소녀의 복잡한 마음이다.",
+  "en": "The heavy earth lies below; what floats lightly upward is a girl's complicated feelings.",
+  "ja": "重い大地は下にあり、ふわりと舞い上がるのは少女の複雑な心だ。"
  },
  "祝好 终途的我": {
-  "ko": "안녕히, 종착지의 나에게"
+  "ko": "안녕히, 종착지의 나에게",
+  "en": "Best Wishes, Me at Journey's End",
+  "ja": "お元気で、旅の終わりの私へ"
  },
  "如果再次相逢，我们会说什么话呢？": {
-  "ko": "다시 만난다면 우리는 무슨 말을 하게 될까?"
+  "ko": "다시 만난다면 우리는 무슨 말을 하게 될까?",
+  "en": "If we meet again, what will we say?",
+  "ja": "もしまた会えたら、私たちは何を話すのだろう？"
  },
  "写临行的迷惘": {
-  "ko": "떠나기 전의 망설임을 적다"
+  "ko": "떠나기 전의 망설임을 적다",
+  "en": "Writing Down My Doubts Before Leaving",
+  "ja": "旅立ち前の迷いを記す"
  },
  "不论是什么样的工作环境，安洁莉娜都能很好地完成她的送信任务，即使身在庆典中也不例外。": {
-  "ko": "어떤 환경에서 일하든 안젤리나는 편지 배달 임무를 훌륭히 해낸다. 축제 한복판이라도 예외는 아니다."
+  "ko": "어떤 환경에서 일하든 안젤리나는 편지 배달 임무를 훌륭히 해낸다. 축제 한복판이라도 예외는 아니다.",
+  "en": "Whatever the working conditions, Angelina always completes her delivery duties—even in the middle of a festival.",
+  "ja": "どんな環境であっても、アンジェリーナは手紙を届ける任務をしっかりこなす。祭りの真っ只中でも例外ではない。"
  },
  "月出": {
-  "ko": "월출"
+  "ko": "월출",
+  "en": "Moonrise",
+  "ja": "月出"
  },
  "转学生难免需要一些时间适应环境，第一个朋友不妨就从老师交起。": {
-  "ko": "전학생은 아무래도 환경에 적응할 시간이 필요하다. 첫 친구는 선생님부터 사귀어도 좋겠다."
+  "ko": "전학생은 아무래도 환경에 적응할 시간이 필요하다. 첫 친구는 선생님부터 사귀어도 좋겠다.",
+  "en": "A transfer student inevitably needs some time to adjust. Why not make your first friend a teacher?",
+  "ja": "転校生は環境に慣れるのにどうしても時間がかかる。最初の友達は先生から作ってみるのもいい。"
  },
  "月涌": {
-  "ko": "월용"
+  "ko": "월용",
+  "en": "Moonsurge",
+  "ja": "月涌"
  },
  "它只是存在，就牵引大地上的一切，那力量微弱遥远，却也无可置疑。": {
-  "ko": "그것은 그저 존재하는 것만으로 대지 위의 모든 것을 끌어당긴다. 그 힘은 희미하고 아득하지만 의심할 여지가 없다."
+  "ko": "그것은 그저 존재하는 것만으로 대지 위의 모든 것을 끌어당긴다. 그 힘은 희미하고 아득하지만 의심할 여지가 없다.",
+  "en": "Simply by existing, it pulls on everything on the earth. That force is faint and distant, yet beyond doubt.",
+  "ja": "それはただ存在するだけで、大地の上のすべてを引き寄せる。その力はかすかで遠いが、疑いようがない。"
  },
  "月晕": {
-  "ko": "달무리"
+  "ko": "달무리",
+  "en": "Lunar Halo",
+  "ja": "月暈"
  },
  "来拉特兰不能不试试铳械，不是为了学会，而是为了明白学不会。拉特兰就是这种地方。": {
-  "ko": "라테라노에 왔으면 총기를 다뤄 봐야 한다. 익히기 위해서가 아니라 익힐 수 없음을 알기 위해서다. 라테라노란 그런 곳이다."
+  "ko": "라테라노에 왔으면 총기를 다뤄 봐야 한다. 익히기 위해서가 아니라 익힐 수 없음을 알기 위해서다. 라테라노란 그런 곳이다.",
+  "en": "You can't come to Laterano without trying out firearms—not to learn them, but to understand that you can't. That's the kind of place Laterano is.",
+  "ja": "ラテラーノに来たなら銃を試さずにはいられない。習得するためではなく、習得できないと知るためだ。ラテラーノとはそういう場所だ。"
  },
  "月移": {
-  "ko": "월이"
+  "ko": "월이",
+  "en": "Moonshift",
+  "ja": "月移"
  },
  "许多无法察觉的因素都在改变它的轨迹，也有一些原因就摆在眼前。": {
-  "ko": "알아채지 못할 수많은 요인이 그 궤적을 바꾸고 있고, 더러는 그 까닭이 눈앞에 놓여 있기도 하다."
+  "ko": "알아채지 못할 수많은 요인이 그 궤적을 바꾸고 있고, 더러는 그 까닭이 눈앞에 놓여 있기도 하다.",
+  "en": "Countless imperceptible factors are changing its trajectory, and some of the reasons lie right before your eyes.",
+  "ja": "気づかない数多くの要因がその軌道を変えており、その理由が目の前にあることもある。"
  },
  "月斜": {
-  "ko": "월사"
+  "ko": "월사",
+  "en": "Moonslant",
+  "ja": "月斜"
  },
  "它并不夜升日落，西斜也不代表黎明将临。": {
-  "ko": "그것은 밤에 떠서 낮에 지지 않으며, 서쪽으로 기운다고 새벽이 온다는 뜻도 아니다."
+  "ko": "그것은 밤에 떠서 낮에 지지 않으며, 서쪽으로 기운다고 새벽이 온다는 뜻도 아니다.",
+  "en": "It does not rise at night and set by day, and its westward slant does not mean dawn is near.",
+  "ja": "それは夜に昇り昼に沈むわけではなく、西に傾いても夜明けが近いとは限らない。"
  },
  "月蚀": {
-  "ko": "월식"
+  "ko": "월식",
+  "en": "Lunar Eclipse",
+  "ja": "月蝕"
  },
  "遮挡它的是你自己的影子。": {
-  "ko": "그것을 가린 것은 다름 아닌 네 그림자다."
+  "ko": "그것을 가린 것은 다름 아닌 네 그림자다.",
+  "en": "What obscures it is your own shadow.",
+  "ja": "それを遮っているのは、君自身の影だ。"
  },
  "月悬": {
-  "ko": "월현"
+  "ko": "월현",
+  "en": "Moonhang",
+  "ja": "月懸"
  },
  "它常在你以为它不在时出现，反之亦然。": {
-  "ko": "그것은 없으리라 여길 때 나타나곤 하고, 그 반대도 마찬가지다."
+  "ko": "그것은 없으리라 여길 때 나타나곤 하고, 그 반대도 마찬가지다.",
+  "en": "It often appears when you think it isn't there, and vice versa.",
+  "ja": "それはいないと思った時によく現れ、逆もまたしかり。"
  },
  "月满": {
-  "ko": "만월"
+  "ko": "만월",
+  "en": "Full Moon",
+  "ja": "満月"
  },
  "拉特兰，请抬起头。映在你眼中的，那是什么？": {
-  "ko": "라테라노여, 고개를 들라. 그대의 눈에 비친 저것은 무엇인가?"
+  "ko": "라테라노여, 고개를 들라. 그대의 눈에 비친 저것은 무엇인가?",
+  "en": "Laterano, lift your head. What is that reflected in your eyes?",
+  "ja": "ラテラーノよ、顔を上げよ。その目に映るものは何だ？"
  },
  "欲求之础": {
-  "ko": "욕구의 주춧돌"
+  "ko": "욕구의 주춧돌",
+  "en": "Foundation of Desire",
+  "ja": "欲求の礎"
  },
  "我想要休息，想要平静，不想忧心忡忡，也不想这么痛苦。我们就不配得到安宁吗？": {
-  "ko": "나는 쉬고 싶고, 평온하고 싶다. 노심초사하고 싶지도, 이렇게 괴롭고 싶지도 않다. 우리는 평안을 누릴 자격조차 없는 걸까?"
+  "ko": "나는 쉬고 싶고, 평온하고 싶다. 노심초사하고 싶지도, 이렇게 괴롭고 싶지도 않다. 우리는 평안을 누릴 자격조차 없는 걸까?",
+  "en": "I want rest. I want peace. I don't want to worry, and I don't want to suffer like this. Don't we deserve tranquility?",
+  "ja": "休みたい、穏やかでいたい。思い悩みたくもないし、こんなに苦しみたくもない。私たちは安らぎを得る資格すらないの？"
  },
  "封闭之柱": {
-  "ko": "폐쇄의 기둥"
+  "ko": "폐쇄의 기둥",
+  "en": "Pillar of Seclusion",
+  "ja": "閉鎖の柱"
  },
  "只是想一想而已，我不会伤害任何人，也不会被别人伤害，这很安全。": {
-  "ko": "그저 생각해 볼 뿐이야. 누구도 다치게 하지 않고, 누구에게도 다치지 않아. 이건 안전해."
+  "ko": "그저 생각해 볼 뿐이야. 누구도 다치게 하지 않고, 누구에게도 다치지 않아. 이건 안전해.",
+  "en": "I'm only thinking about it. I won't hurt anyone, and no one will hurt me. It's safe.",
+  "ja": "考えてみるだけだよ。誰も傷つけないし、誰にも傷つけられない。これは安全なんだ。"
  },
  "附加条件：\\n无法自然回复部署费用，初始部署费用提升": {
   "ko": "부가 조건:\\n배치 비용이 자연 회복되지 않고, 초기 배치 비용이 오른다"
  },
  "否定之壁": {
-  "ko": "부정의 벽"
+  "ko": "부정의 벽",
+  "en": "Wall of Denial",
+  "ja": "否定の壁"
  },
  "离开还是留下，肯定都不对。可你能告诉我什么是对的吗？你不能，教宗都不能。": {
-  "ko": "떠나든 남든 어느 쪽도 옳지 않겠지. 그런데 무엇이 옳은지 말해 줄 수 있어? 못 하잖아. 교황조차 못 해."
+  "ko": "떠나든 남든 어느 쪽도 옳지 않겠지. 그런데 무엇이 옳은지 말해 줄 수 있어? 못 하잖아. 교황조차 못 해.",
+  "en": "Leaving or staying—neither is right. But can you tell me what is right? You can't. Not even the Pope can.",
+  "ja": "去るのも残るのも、どちらも正しくないだろう。でも何が正しいのか教えてくれる？ 君にはできない。教皇にだってできない。"
  },
  "附加条件：\\n挥铳圣像的攻击范围大幅提升": {
   "ko": "부가 조건:\\n총을 휘두르는 성상의 공격 범위가 크게 늘어난다"
  },
  "反刍之堂": {
-  "ko": "되새김의 전당"
+  "ko": "되새김의 전당",
+  "en": "Hall of Rumination",
+  "ja": "反芻の堂"
  },
  "不，我已经好好考虑过了。": {
-  "ko": "아니, 나는 이미 충분히 생각해 봤어."
+  "ko": "아니, 나는 이미 충분히 생각해 봤어.",
+  "en": "No, I've already thought it through.",
+  "ja": "いや、もう十分考えたんだ。"
  },
  "刻板之廊": {
-  "ko": "고정관념의 회랑"
+  "ko": "고정관념의 회랑",
+  "en": "Corridor of Rigidity",
+  "ja": "固定観念の回廊"
  },
  "只是稍微走动一下，我让你心烦了吗？": {
-  "ko": "조금 움직였을 뿐인데, 내가 널 성가시게 했니?"
+  "ko": "조금 움직였을 뿐인데, 내가 널 성가시게 했니?",
+  "en": "I only moved a little. Did I bother you?",
+  "ja": "ちょっと動いただけなのに、気に障った？"
  },
  "附加条件：\\n不知道钟的生命值大幅提升": {
   "ko": "부가 조건:\\n모르겠다 시계의 HP가 크게 오른다"
  },
  "解离之梁": {
-  "ko": "해리의 들보"
+  "ko": "해리의 들보",
+  "en": "Beam of Dissociation",
+  "ja": "解離の梁"
  },
  "真的吗，我还做过那样的事？哈哈，要不是你提起来，我都不记得了。": {
-  "ko": "정말? 내가 그런 일도 했었나? 하하, 네가 꺼내지 않았으면 기억도 못 했을 거야."
+  "ko": "정말? 내가 그런 일도 했었나? 하하, 네가 꺼내지 않았으면 기억도 못 했을 거야.",
+  "en": "Really? I did something like that? Haha, if you hadn't brought it up, I wouldn't have even remembered.",
+  "ja": "本当？ 私、そんなこともしたっけ？ はは、君が言わなかったら覚えてもいなかったよ。"
  },
  "激越之拱": {
-  "ko": "격앙의 아치"
+  "ko": "격앙의 아치",
+  "en": "Arch of Agitation",
+  "ja": "激昂の迫持"
  },
  "明天的流程，每一分钟我都想过一百遍了，感觉有一万种出错的方式……我是不是想得太多了？": {
-  "ko": "내일 순서를 일 분 일 분 백 번은 되짚어 봤어. 잘못될 방법이 만 가지는 되는 것 같아…… 내가 너무 많이 생각하는 걸까?"
+  "ko": "내일 순서를 일 분 일 분 백 번은 되짚어 봤어. 잘못될 방법이 만 가지는 되는 것 같아…… 내가 너무 많이 생각하는 걸까?",
+  "en": "I've gone over tomorrow's schedule a hundred times, minute by minute. It feels like there are ten thousand ways it could go wrong... Am I overthinking this?",
+  "ja": "明日の段取りを一分ごとに百回は考えた。失敗する方法が一万通りもある気がする……考えすぎかな？"
  },
  "虚无之顶": {
-  "ko": "허무의 꼭대기"
+  "ko": "허무의 꼭대기",
+  "en": "Summit of Nihility",
+  "ja": "虚無の頂"
  },
  "好在，这一切都要结束了。": {
-  "ko": "다행히도, 이 모든 것이 곧 끝난다."
+  "ko": "다행히도, 이 모든 것이 곧 끝난다.",
+  "en": "Thankfully, all of this is about to end.",
+  "ja": "幸い、これもすべて終わろうとしている。"
  },
  "附加条件：\\n重装与术师干员部署费用提升至3倍": {
   "ko": "부가 조건:\\n디펜더와 캐스터 오퍼레이터의 배치 비용이 3배로 오른다"
  },
  "月落": {
-  "ko": "월락"
+  "ko": "월락",
+  "en": "Moonset",
+  "ja": "月落"
  },
  "穿过十层云又十层雨，十层晴天和一千条闪电，月亮落入了水中，涟漪微微波动。": {
-  "ko": "열 겹의 구름과 또 열 겹의 비, 열 겹의 맑은 하늘과 천 줄기 번개를 지나, 달이 물속으로 떨어지자 잔물결이 희미하게 일렁였다."
+  "ko": "열 겹의 구름과 또 열 겹의 비, 열 겹의 맑은 하늘과 천 줄기 번개를 지나, 달이 물속으로 떨어지자 잔물결이 희미하게 일렁였다.",
+  "en": "Through ten layers of cloud and ten layers of rain, ten layers of clear sky and a thousand bolts of lightning, the moon fell into the water, and ripples stirred faintly.",
+  "ja": "十層の雲と十層の雨、十層の晴天と千の稲妻を抜けて、月が水の中に落ちると、さざ波がかすかに揺れた。"
  },
  "满月一生": {
-  "ko": "만월의 일생"
+  "ko": "만월의 일생",
+  "en": "A Full-Moon Life",
+  "ja": "満月の一生"
  },
  "万事有始，万物有终，在那之间，我们以自己的方式而活。": {
-  "ko": "모든 일에는 시작이 있고 모든 것에는 끝이 있다. 그 사이에서 우리는 저마다의 방식으로 살아간다."
+  "ko": "모든 일에는 시작이 있고 모든 것에는 끝이 있다. 그 사이에서 우리는 저마다의 방식으로 살아간다.",
+  "en": "All things have a beginning and an end. In between, we live in our own way.",
+  "ja": "万事に始まりがあり、万物に終わりがある。その間を、私たちは自分なりのやり方で生きていく。"
  },
  "月影": {
-  "ko": "달그림자"
+  "ko": "달그림자",
+  "en": "Moonshadow",
+  "ja": "月影"
  },
  "喃喃自语的深夜中，月光投下万物的影子。": {
-  "ko": "혼잣말을 되뇌는 깊은 밤, 달빛이 만물의 그림자를 드리운다."
+  "ko": "혼잣말을 되뇌는 깊은 밤, 달빛이 만물의 그림자를 드리운다.",
+  "en": "In the murmuring depths of night, moonlight casts the shadows of all things.",
+  "ja": "独り言が漏れる深夜、月光が万物の影を落とす。"
  },
  "朱墙食府": {
   "ko": "붉은 담장 식당"
@@ -17560,123 +18006,1063 @@
   "ko": "컬럼비아에서 이 가게를 본 적이 있고, 이 집 원석충 맥주도 마셔 봤다. 그런데 어째서 방폭 갑주 한 벌이 가게 한복판에 덩그러니 서 있는 걸까? 마치 그 안에 사람이 들어 있는 것처럼. 바닥에서 쪽지 한 장을 주웠다 —— “친구, 창고의 나무통을 가게로 옮겨 주게. 끝나면 보수를 주겠네. 주의: 하나, 나무통 안에 든 것은 액체다. 둘, 옮기다 통이 상해도 내용물은 새지 않는다. 셋, 개 짖는 소리가 들리면 당장 달아나라.”"
  },
  "寂静螺旋": {
-  "ko": "고요한 나선"
+  "ko": "고요한 나선",
+  "en": "Silent Spiral",
+  "ja": "静寂の螺旋"
  },
  "波形扭曲": {
-  "ko": "파형 왜곡"
+  "ko": "파형 왜곡",
+  "en": "Waveform Distortion",
+  "ja": "波形歪曲"
  },
  "极速赛道": {
-  "ko": "초고속 트랙"
+  "ko": "초고속 트랙",
+  "en": "Speedway",
+  "ja": "超高速トラック"
  },
  "离子通道扰乱": {
-  "ko": "이온 채널 교란"
+  "ko": "이온 채널 교란",
+  "en": "Ion Channel Disruption",
+  "ja": "イオンチャネル攪乱"
  },
  "液压颂歌": {
-  "ko": "유압 찬가"
+  "ko": "유압 찬가",
+  "en": "Hydraulic Ode",
+  "ja": "油圧の賛歌"
  },
  "医源性感染": {
-  "ko": "의인성 감염"
+  "ko": "의인성 감염",
+  "en": "Iatrogenic Infection",
+  "ja": "医原性感染"
  },
  "萌芽之时": {
-  "ko": "싹트는 시간"
+  "ko": "싹트는 시간",
+  "en": "Time to Sprout",
+  "ja": "芽吹きの時"
  },
  "磷脂层破坏": {
-  "ko": "인지질층 파괴"
+  "ko": "인지질층 파괴",
+  "en": "Phospholipid Breach",
+  "ja": "リン脂質層破壊"
  },
  "浸漫花圃": {
-  "ko": "물에 잠긴 화원"
+  "ko": "물에 잠긴 화원",
+  "en": "Flooded Flowerbed",
+  "ja": "水浸しの花園"
  },
  "动捕影棚": {
-  "ko": "모션 캡처 스튜디오"
+  "ko": "모션 캡처 스튜디오",
+  "en": "Motion Capture Studio",
+  "ja": "モーキャプスタジオ"
  },
  "漂白剂": {
-  "ko": "표백제"
+  "ko": "표백제",
+  "en": "Bleach",
+  "ja": "漂白剤"
  },
  "实质组织萎缩": {
-  "ko": "실질 조직 위축"
+  "ko": "실질 조직 위축",
+  "en": "Parenchymal Atrophy",
+  "ja": "実質組織萎縮"
  },
  "卓绝之巅": {
-  "ko": "탁월함의 정점"
+  "ko": "탁월함의 정점",
+  "en": "Peak of Excellence",
+  "ja": "卓越の頂"
  },
  "高优先通道": {
-  "ko": "최우선 통로"
+  "ko": "최우선 통로",
+  "en": "Priority Lane",
+  "ja": "最優先通路"
  },
  "惊吓幕后": {
-  "ko": "공포의 무대 뒤"
+  "ko": "공포의 무대 뒤",
+  "en": "Behind the Scare",
+  "ja": "恐怖の舞台裏"
  },
  "挽救治疗": {
-  "ko": "구제 치료"
+  "ko": "구제 치료",
+  "en": "Salvage Therapy",
+  "ja": "救済治療"
  },
  "重力危机": {
-  "ko": "중력 위기"
+  "ko": "중력 위기",
+  "en": "Gravity Crisis",
+  "ja": "重力危機"
  },
  "心中热火": {
-  "ko": "가슴속 불꽃"
+  "ko": "가슴속 불꽃",
+  "en": "Fire Within",
+  "ja": "胸の中の炎"
  },
  "馆藏珍品": {
-  "ko": "소장 진품"
+  "ko": "소장 진품",
+  "en": "Prized Collection",
+  "ja": "所蔵の逸品"
  },
  "人气巡演": {
-  "ko": "인기 순회공연"
+  "ko": "인기 순회공연",
+  "en": "Hit Tour",
+  "ja": "人気ツアー公演"
  },
  "后院死局": {
-  "ko": "뒷마당의 외통수"
+  "ko": "뒷마당의 외통수",
+  "en": "Backyard Deadlock",
+  "ja": "裏庭の詰み"
  },
  "明星靶场": {
-  "ko": "스타 사격장"
+  "ko": "스타 사격장",
+  "en": "Star Shooting Range",
+  "ja": "スター射撃場"
  },
  "影院出口": {
-  "ko": "영화관 출구"
+  "ko": "영화관 출구",
+  "en": "Cinema Exit",
+  "ja": "映画館出口"
  },
  "四号站台": {
-  "ko": "4번 승강장"
+  "ko": "4번 승강장",
+  "en": "Platform 4",
+  "ja": "4番ホーム"
  },
  "难以相交": {
-  "ko": "만나지 않는 선"
+  "ko": "만나지 않는 선",
+  "en": "Lines That Never Meet",
+  "ja": "交わらない線"
  },
  "林间小憩": {
-  "ko": "숲속의 휴식"
+  "ko": "숲속의 휴식",
+  "en": "Rest in the Woods",
+  "ja": "林間のひと休み"
  },
  "荒废矿道": {
-  "ko": "버려진 갱도"
+  "ko": "버려진 갱도",
+  "en": "Abandoned Mineshaft",
+  "ja": "廃坑道"
  },
  "紧急夺还": {
-  "ko": "긴급 탈환"
+  "ko": "긴급 탈환",
+  "en": "Emergency Recapture",
+  "ja": "緊急奪還"
  },
  "乙醇暴动": {
-  "ko": "에탄올 폭동"
+  "ko": "에탄올 폭동",
+  "en": "Ethanol Riot",
+  "ja": "エタノール暴動"
  },
  "一意孤行": {
-  "ko": "독단전행"
+  "ko": "독단전행",
+  "en": "Headstrong",
+  "ja": "独断専行"
  },
  "刺耳机床": {
-  "ko": "귀를 찢는 공작기계"
+  "ko": "귀를 찢는 공작기계",
+  "en": "Screeching Lathe",
+  "ja": "耳障りな工作機械"
  },
  "最终愿望": {
-  "ko": "마지막 소원"
+  "ko": "마지막 소원",
+  "en": "Final Wish",
+  "ja": "最後の願い"
  },
  "“再灌注”": {
-  "ko": "'재관류'"
+  "ko": "'재관류'",
+  "en": "'Reperfusion'",
+  "ja": "「再灌流」"
  },
  "“Touch”，再生之流": {
-  "ko": "'Touch', 재생의 흐름"
+  "ko": "'Touch', 재생의 흐름",
+  "en": "'Touch', Flow of Regeneration",
+  "ja": "「Touch」、再生の流れ"
  },
  "管钳": {
-  "ko": "파이프 렌치"
+  "ko": "파이프 렌치",
+  "en": "Pipe Wrench",
+  "ja": "パイプレンチ"
  },
  "“过灌注”": {
-  "ko": "'과관류'"
+  "ko": "'과관류'",
+  "en": "'Hyperperfusion'",
+  "ja": "「過灌流」"
  },
  "“新绿”": {
-  "ko": "'신록'"
+  "ko": "'신록'",
+  "en": "'Fresh Green'",
+  "ja": "「新緑」"
  },
  "乌萨斯战争术师": {
-  "ko": "우르수스 전쟁 캐스터"
+  "ko": "우르수스 전쟁 캐스터",
+  "en": "Ursus War Caster",
+  "ja": "ウルサス戦争術師"
  },
  "“小心地滑”": {
-  "ko": "'미끄럼 주의'"
+  "ko": "'미끄럼 주의'",
+  "en": "'Caution: Wet Floor'",
+  "ja": "「足元注意」"
  },
  "破碎的骨片": {
-  "ko": "부서진 뼛조각"
+  "ko": "부서진 뼛조각",
+  "en": "Broken Bone Shard",
+  "ja": "砕けた骨片"
+ },
+ "<“雷之主”>在场时会长时间战栗": {
+  "ko": "<「번개의 주인」>이 전장에 있으면 오랫동안 전율 상태가 됨",
+  "en": "Is Frightened for a long time while <'Lord of Thunder'> is on the field",
+  "ja": "<「雷の主」>が戦場にいる間、長時間戦慄状態になる"
+ },
+ "<活性躁乱>部署在其上的我方单位每秒受到狂躁损伤和逐渐提升的法术伤害，且撤退时再部署时间大幅提升": {
+  "ko": "<활성 교란> 위에 배치된 아군 유닛은 매초 광란 손상과 점점 증가하는 마법 대미지를 받으며, 철수 시 재배치 시간이 대폭 증가",
+  "en": "<Active Agitation> Allied units deployed on it take Frenzy and gradually increasing Arts damage every second, and have greatly increased Redeployment Time when retreated",
+  "ja": "<活性擾乱>上に配置された味方ユニットは毎秒狂躁損傷と徐々に増加する術ダメージを受け、撤退時の再配置時間が大幅に増加する"
+ },
+ "<“再度绽放”>部署后消除9格范围内的<活性躁乱>，治疗其中我方干员生命值并使其获得技力；随后每个被消除的<活性躁乱>附近各生成1只“再灌注”向目标点移动": {
+  "ko": "<「재개화」> 배치 후 9칸 범위 내의 <활성 교란>을 제거하고, 그 안의 아군 오퍼레이터의 HP를 치유하고 SP를 부여함. 이후 제거된 <활성 교란>마다 근처에 '재관류' 1마리가 생성되어 방어 포인트로 이동",
+  "en": "<'Rebloom'> After deployment, removes <Active Agitation> within a 9-tile range, restoring HP to and granting SP to allied Operators within; afterwards, 1 'Reperfusion' spawns near each removed <Active Agitation> and moves toward the Objective Point",
+  "ja": "<「再開花」>配置後、範囲9マス内の<活性擾乱>を除去し、範囲内の味方オペレーターのHPを回復してSPを付与する。その後、除去された<活性擾乱>ごとに近くに「再灌流」が1体出現し、目標地点へ向かう"
+ },
+ "敌人的基础属性提升": {
+  "ko": "적의 기본 스탯 증가",
+  "en": "Increases enemies' base stats.",
+  "ja": "敵の基本ステータスが上昇"
+ },
+ "“异兽猎人”梓兰：在挑战“异兽”之前，必须先学会自保，再通过狩猎野兽磨练战斗技巧。空爆，我知道你会看到这个任务，要是你没完成，今晚就没饭吃了。": {
+  "ko": "「이수 헌터」 오키드: 「이수」에 도전하기 전에 먼저 제 몸을 지킬 줄 알아야 하고, 야수를 사냥하며 전투 기술을 갈고닦아야 해. 캐터펄트, 네가 이 임무를 볼 줄 알아. 못 끝내면 오늘 밤은 밥 없다.",
+  "en": "'Aberrant Hunter' Orchid: Before challenging an 'Aberrant', you must first learn to protect yourself, then hone your combat skills by hunting beasts. Catapult, I know you'll see this mission. If you don't finish it, there's no dinner for you tonight.",
+  "ja": "「異獣ハンター」オーキッド：「異獣」に挑む前に、まずは自分の身を守ることを覚え、それから獣を狩って戦闘技術を磨くこと。カタパルト、あなたがこの任務を見るのはわかってるわ。やり遂げなかったら今夜はご飯抜きよ。"
+ },
+ "<翔虫>由干员使用，命中可御龙的敌人会增加御龙进度": {
+  "ko": "<밧줄벌레> 오퍼레이터가 사용하며, 어룡 가능한 적에게 적중하면 어룡 진행도가 증가",
+  "en": "<Wirebug> Used by Operators; hitting an enemy that can be Wyvern Ridden increases Wyvern Riding progress",
+  "ja": "<翔蟲>オペレーターが使用し、操竜可能な敵に命中すると操竜ゲージが増加する"
+ },
+ "“异兽猎人”空爆：天啊，能在天上飞来飞去也太好玩了，我不管了，我要带上翔虫出去玩了！梓兰姐，我知道你会看到这个任务，别担心，我会回来吃饭的！": {
+  "ko": "「이수 헌터」 캐터펄트: 세상에, 하늘을 날아다니는 게 이렇게 재미있다니. 몰라요, 저 밧줄벌레 챙겨서 놀러 나갈래요! 오키드 언니, 이 임무 볼 거 알아요. 걱정 마요, 밥 먹으러 돌아올 테니까!",
+  "en": "'Aberrant Hunter' Catapult: Oh my gosh, flying around in the sky is way too much fun! I don't care anymore, I'm taking the Wirebug out to play! Orchid, I know you'll see this mission. Don't worry, I'll be back for dinner!",
+  "ja": "「異獣ハンター」カタパルト：うわぁ、空を飛び回れるなんて楽しすぎる！もう知らない、翔蟲を連れて遊びに行っちゃいます！オーキッドさん、この任務を見るのはわかってますよ。心配しないで、ご飯までには帰りますから！"
+ },
+ "【内源代偿反应】受到可抵抗的异常状态时间减少，数秒内受到相同异常状态的时间进一步减少（至多减至0）": {
+  "ko": "[내인성 보상 반응] 저항 가능한 상태 이상의 지속 시간 감소, 수 초 내에 같은 상태 이상을 다시 받으면 지속 시간이 더 감소 (최대 0까지)",
+  "en": "[Endogenous Compensation] Reduced duration of resistible negative statuses; if afflicted by the same status again within a few seconds, its duration is reduced further (down to 0)",
+  "ja": "【内因性代償反応】レジスト可能な状態異常の持続時間が短縮され、数秒以内に同じ状態異常を受けると持続時間がさらに短縮される（最大0まで）"
+ },
+ "【内源代偿反应】移动速度不会低于初始值；受到可抵抗的异常状态时间减少，数秒内受到相同异常状态的时间进一步减少（至多减至0）": {
+  "ko": "[내인성 보상 반응] 이동 속도가 초기값 아래로 떨어지지 않음. 저항 가능한 상태 이상의 지속 시간 감소, 수 초 내에 같은 상태 이상을 다시 받으면 지속 시간이 더 감소 (최대 0까지)",
+  "en": "[Endogenous Compensation] Movement Speed cannot drop below its initial value; reduced duration of resistible negative statuses; if afflicted by the same status again within a few seconds, its duration is reduced further (down to 0)",
+  "ja": "【内因性代償反応】移動速度が初期値を下回らない。レジスト可能な状態異常の持続時間が短縮され、数秒以内に同じ状態異常を受けると持続時間がさらに短縮される（最大0まで）"
+ },
+ "【受体过度应答】持续引导，期间所有其他敌人移动速度提升且每数秒回复生命值；引导成功后使所有其他敌人在数秒内所需阻挡数+1；引导可被部分异常状态打断": {
+  "ko": "[수용체 과잉 응답] 지속 유도하며, 그동안 다른 모든 적의 이동 속도가 증가하고 몇 초마다 HP 회복. 유도에 성공하면 몇 초간 다른 모든 적의 저지에 필요한 수 +1. 유도는 일부 상태 이상으로 중단될 수 있음",
+  "en": "[Receptor Overreaction] Channels continuously; during this time, all other enemies gain Movement Speed and restore HP every few seconds. When the channel succeeds, all other enemies require +1 Block for several seconds. The channel can be interrupted by certain negative statuses",
+  "ja": "【受容体過剰応答】継続的に誘導を行い、その間、他の全ての敵の移動速度が上昇し、数秒ごとにHPを回復する。誘導に成功すると、数秒間、他の全ての敵の必要ブロック数+1。誘導は一部の状態異常で中断される"
+ },
+ "【叽，大意了！】降落时会瘫痪一段时间，瘫痪期间每受到一定次数伤害会掉落一封<浮空信件>": {
+  "ko": "[찍, 방심했다!] 착륙하면 일정 시간 행동 불능이 되며, 그동안 일정 횟수의 대미지를 받을 때마다 <떠다니는 편지>를 1통 떨어뜨림",
+  "en": "[Eek, Got Careless!] Is incapacitated for a while upon landing; while incapacitated, drops 1 <Floating Letter> each time it takes a certain number of hits",
+  "ja": "【キッ、油断した！】着陸すると一定時間行動不能になり、その間一定回数ダメージを受けるたびに<浮遊する手紙>を1通落とす"
+ },
+ "【巡回偷袭】变为飞行状态一段时间。飞行状态下会持续轰炸自身所在位置的地面和高台，造成范围物理伤害。受到阻挡数秒后会立即降落。": {
+  "ko": "[순회 기습] 일정 시간 비행 상태가 됨. 비행 상태에서는 자신이 있는 위치의 지상 및 고지대를 계속 폭격해 범위 물리 대미지를 입힘. 저지당한 지 몇 초 후 즉시 착륙",
+  "en": "[Patrol Raid] Enters a flying state for a while. While flying, continuously bombs the ground and high ground at its position, dealing AoE Physical damage. Lands immediately after being blocked for a few seconds.",
+  "ja": "【巡回奇襲】一定時間飛行状態になる。飛行状態では自身の位置の地上マスと高台マスを爆撃し続け、範囲物理ダメージを与える。ブロックされて数秒後、即座に着陸する。"
+ },
+ "【御龙·苍雷猛进】放置“御龙：雷狼龙”后，“雷之主”会朝目标方向冲刺。冲刺期间若撞到高台会对自身造成大量伤害。若御龙期间撞击了2次高台，则“雷之主”会倒地一段时间，期间防御力和法术抗性下降，且受到一定伤害后尾巴会被切断": {
+  "ko": "[어룡·창뢰맹진] 「어룡: 진오우거」를 놓으면 「번개의 주인」이 목표 방향으로 돌진. 돌진 중 고지대에 부딪히면 자신이 큰 대미지를 받음. 어룡 중 고지대에 2번 부딪히면 「번개의 주인」이 일정 시간 쓰러지며, 그동안 방어력과 마법 저항이 감소하고 일정 대미지를 받으면 꼬리가 절단됨",
+  "en": "[Wyvern Riding - Azure Thunder Charge] After 'Wyvern Riding: Zinogre' is placed, the 'Lord of Thunder' charges in the target direction. Colliding with high ground while charging deals heavy damage to itself. If it collides with high ground twice while ridden, the 'Lord of Thunder' is knocked down for a while, during which its DEF and RES are reduced, and its tail is severed after it takes a certain amount of damage",
+  "ja": "【操竜・蒼雷猛進】「操竜：ジンオウガ」を配置すると、「雷の主」が目標方向へ突進する。突進中に高台へ衝突すると自身が大ダメージを受ける。操竜中に高台へ2回衝突すると「雷の主」は一定時間ダウンし、その間防御力と術耐性が低下し、一定ダメージを受けると尻尾が切断される"
+ },
+ "【怎么不见了……】可以携带多封<浮空信件>，每携带一封<浮空信件>，防御力和法术抗性提升": {
+  "ko": "[어디 갔지……] <떠다니는 편지>를 여러 통 지닐 수 있으며, <떠다니는 편지>를 1통 지닐 때마다 방어력과 마법 저항 증가",
+  "en": "[Where'd It Go...] Can carry several copies of <Floating Letter>; each one carried increases DEF and RES",
+  "ja": "【あれ、どこいった……】<浮遊する手紙>を複数通所持でき、<浮遊する手紙>を1通所持するごとに防御力と術耐性が上昇する"
+ },
+ "【急性髓鞘溶解】从自身行进路径上一定距离内召唤1个受到物理和法术伤害大幅降低但持续流失生命值的<“过灌注”>向自身移动，接触时将其吸收并爆炸，对全部我方单位造成高额法术伤害": {
+  "ko": "[급성 수초 용해] 자신의 이동 경로상 일정 거리 내에, 받는 물리·마법 대미지가 대폭 감소하지만 HP가 지속적으로 줄어드는 <'과관류'>를 1마리 소환해 자신에게 다가오게 함. 닿으면 흡수하고 폭발하여 모든 아군 유닛에게 높은 마법 대미지를 입힘",
+  "en": "[Acute Myelinolysis] Summons 1 <'Hyperperfusion'> within a certain distance along its path, which takes greatly reduced Physical and Arts damage but continuously loses HP, and has it move toward itself; on contact, absorbs it and explodes, dealing heavy Arts damage to all allied units",
+  "ja": "【急性髄鞘融解】自身の進行ルート上の一定距離内に、受ける物理・術ダメージが大幅に減少するがHPが継続的に減少する<「過灌流」>を1体召喚し、自身へ向かわせる。接触すると吸収して爆発し、全ての味方ユニットに高い術ダメージを与える"
+ },
+ "【扩散雷光弹】蓄力后，跳跃到一定范围内我方单位攻击范围覆盖较少的区域，发射六个造成法术伤害的雷光弹": {
+  "ko": "[확산 뇌광탄] 차지 후 일정 범위 내에서 아군 유닛의 공격 범위가 적게 닿는 구역으로 도약하여, 마법 대미지를 입히는 뇌광탄 6발 발사",
+  "en": "[Scattering Lightning Orbs] After charging, leaps to an area within a certain range that allied units' attack ranges barely cover, and fires 6 lightning orbs that deal Arts damage",
+  "ja": "【拡散雷光弾】チャージ後、一定範囲内で味方ユニットの攻撃範囲があまり及ばない区域へ跳躍し、術ダメージを与える雷光弾を6発放つ"
+ },
+ "【搜罗宝物】持续施法，吸收场上的<浮空信件>及<“超惊喜信件”>": {
+  "ko": "[보물 긁어모으기] 지속 시전하여 전장의 <떠다니는 편지>와 <「초대형 깜짝 편지」>를 흡수",
+  "en": "[Treasure Hunt] Casts continuously, absorbing <Floating Letter> and <'Super Surprise Letter'> on the field",
+  "ja": "【お宝かき集め】継続的に詠唱し、戦場の<浮遊する手紙>と<「超サプライズレター」>を吸収する"
+ },
+ "【最后的奖赏】蓄力一段时间后，所有我方单位受到高额真实伤害，蓄力可以被倒地打断": {
+  "ko": "[마지막 보상] 일정 시간 차지한 뒤 모든 아군 유닛에게 높은 트루 대미지. 차지는 쓰러지면 중단됨",
+  "en": "[Final Reward] After charging for a while, all allied units take heavy True damage; the charge is interrupted if it is knocked down",
+  "ja": "【最後の報酬】一定時間チャージした後、全ての味方ユニットに高い確定ダメージを与える。チャージはダウンすると中断される"
+ },
+ "【未来的期盼】攻击2次后，下一次攻击造成高额物理伤害": {
+  "ko": "[미래의 기대] 2회 공격 후 다음 공격이 높은 물리 대미지를 입힘",
+  "en": "[Hope for the Future] After attacking 2 times, the next attack deals heavy Physical damage",
+  "ja": "【未来への期待】2回攻撃した後、次の攻撃で高い物理ダメージを与える"
+ },
+ "【真·雷鸣咆哮】使以自身为中心一定半径范围内的所有单位晕眩一段时间，获得持续一段时间的攻击力提升": {
+  "ko": "[진·뇌명 포효] 자신을 중심으로 일정 반경 내 모든 유닛을 일정 시간 기절시키고, 일정 시간 공격력 증가",
+  "en": "[True Thunderous Roar] Stuns all units within a certain radius centered on itself for a while and gains increased ATK for a duration",
+  "ja": "【真・雷鳴咆哮】自身を中心とした一定半径内の全ユニットを一定時間スタンさせ、一定時間攻撃力が上昇する"
+ },
+ "【缠雷突进】蓄力锁定一定范围内的一名我方单位，以其为目标冲刺，若撞上高台会停止冲刺。对经过的我方单位造成伤害": {
+  "ko": "[전뢰돌진] 차지하며 일정 범위 내 아군 유닛 1명을 조준해 그쪽으로 돌진, 고지대에 부딪히면 돌진이 멈춤. 지나가는 경로의 아군 유닛에게 대미지를 입힘",
+  "en": "[Thunder-Wreathed Charge] Charges up and locks onto 1 allied unit within a certain range, then charges at it; the charge stops upon hitting high ground. Deals damage to allied units it passes through",
+  "ja": "【纏雷突進】チャージして一定範囲内の味方ユニット1体に狙いを定め、そのユニットに向かって突進する。高台に衝突すると突進が止まる。通過した味方ユニットにダメージを与える"
+ },
+ "【苍雷之铠】免疫麻痹，获得抵抗": {
+  "ko": "[창뢰의 갑옷] 마비 면역, 저항 획득",
+  "en": "[Azure Thunder Armor] Immune to Paralysis; gains Status Resistance",
+  "ja": "【蒼雷の鎧】麻痺無効、レジストを獲得"
+ },
+ "【苍雷猛进】蓄力锁定一定范围内的一名我方单位，以其为目标冲刺，若撞上高台会停止冲刺。对经过的我方单位造成伤害。随后进行2次【蓄电】": {
+  "ko": "[창뢰맹진] 차지하며 일정 범위 내 아군 유닛 1명을 조준해 그쪽으로 돌진, 고지대에 부딪히면 돌진이 멈춤. 지나가는 경로의 아군 유닛에게 대미지를 입힘. 이후 [축전]을 2회 실행",
+  "en": "[Azure Thunder Charge] Charges up and locks onto 1 allied unit within a certain range, then charges at it; the charge stops upon hitting high ground. Deals damage to allied units it passes through. Then performs [Charge Up] 2 times",
+  "ja": "【蒼雷猛進】チャージして一定範囲内の味方ユニット1体に狙いを定め、そのユニットに向かって突進する。高台に衝突すると突進が止まる。通過した味方ユニットにダメージを与える。その後【蓄電】を2回行う"
+ },
+ "【蓄电】原地进行蓄电，每次蓄电成功后会增加1层蓄电层数。达到一定层数后，进入超带电状态": {
+  "ko": "[축전] 제자리에서 축전하며, 축전에 성공할 때마다 축전 중첩 1 증가. 일정 중첩에 도달하면 초대전 상태에 돌입",
+  "en": "[Charge Up] Charges up in place; each successful charge adds 1 Charge stack. Upon reaching a certain number of stacks, enters the Supercharged State",
+  "ja": "【蓄電】その場で蓄電を行い、蓄電に成功するたびに蓄電スタックが1増加する。一定スタックに達すると超帯電状態になる"
+ },
+ "【超惊喜派送】选择多名我方单位，在其所在位置投放<“超惊喜信件”>": {
+  "ko": "[초대형 깜짝 배달] 아군 유닛 여러 명을 골라 그 위치에 <「초대형 깜짝 편지」>를 투하",
+  "en": "[Super Surprise Delivery] Selects multiple allied units and drops a <'Super Surprise Letter'> at their positions",
+  "ja": "【超サプライズ配達】複数の味方ユニットを選び、その位置に<「超サプライズレター」>を投下する"
+ },
+ "【过去的悔恨】攻击2次后，下一次攻击对范围内所有我方单位造成6次相当于攻击力一定比例的物理伤害": {
+  "ko": "[과거의 회한] 2회 공격 후 다음 공격이 범위 내 모든 아군 유닛에게 공격력의 일정 비율만큼의 물리 대미지를 6회 입힘",
+  "en": "[Regrets of the Past] After attacking 2 times, the next attack deals Physical damage equal to a percentage of ATK 6 times to all allied units within range",
+  "ja": "【過去の悔恨】2回攻撃した後、次の攻撃で範囲内の全ての味方ユニットに攻撃力の一定割合の物理ダメージを6回与える"
+ },
+ "【连环重雷叩击】蓄力后，跳跃到一定范围内我方单位较多的区域，对一定范围内的我方单位造成3次伤害": {
+  "ko": "[연환 중뢰 강타] 차지 후 일정 범위 내에서 아군 유닛이 많은 구역으로 도약하여, 일정 범위 내 아군 유닛에게 대미지를 3회 입힘",
+  "en": "[Chain Heavy Thunder Slam] After charging, leaps to an area within a certain range with many allied units, dealing damage 3 times to allied units within a certain range",
+  "ja": "【連環重雷叩撃】チャージ後、一定範囲内で味方ユニットが多い区域へ跳躍し、一定範囲内の味方ユニットに3回ダメージを与える"
+ },
+ "【追踪雷光弹】蓄力后，跳跃到一定范围内我方单位攻击范围覆盖较少的区域，发射三个造成法术伤害的雷光弹。随后进行2次【蓄电】": {
+  "ko": "[추적 뇌광탄] 차지 후 일정 범위 내에서 아군 유닛의 공격 범위가 적게 닿는 구역으로 도약하여, 마법 대미지를 입히는 뇌광탄 3발 발사. 이후 [축전]을 2회 실행",
+  "en": "[Homing Lightning Orbs] After charging, leaps to an area within a certain range that allied units' attack ranges barely cover, and fires 3 lightning orbs that deal Arts damage. Then performs [Charge Up] 2 times",
+  "ja": "【追尾雷光弾】チャージ後、一定範囲内で味方ユニットの攻撃範囲があまり及ばない区域へ跳躍し、術ダメージを与える雷光弾を3発放つ。その後【蓄電】を2回行う"
+ },
+ "【雷光逸散】受到一定伤害或进入御龙后，回到蓄电状态": {
+  "ko": "[뇌광 산일] 일정 대미지를 받거나 어룡 상태가 되면 축전 상태로 돌아감",
+  "en": "[Thunder Dispersal] After taking a certain amount of damage or being Wyvern Ridden, returns to the Charging State",
+  "ja": "【雷光散逸】一定ダメージを受けるか操竜されると、蓄電状態に戻る"
+ },
+ "【雷光飞扑】蓄力后，跳跃到一定范围内我方单位较多的区域，对一定范围内的我方单位造成伤害。随后蓄力并跳跃到一定范围内我方单位攻击范围覆盖较少的区域，进行2次【蓄电】": {
+  "ko": "[뇌광 도약] 차지 후 일정 범위 내에서 아군 유닛이 많은 구역으로 도약하여, 일정 범위 내 아군 유닛에게 대미지를 입힘. 이후 차지하여 일정 범위 내에서 아군 유닛의 공격 범위가 적게 닿는 구역으로 도약해 [축전]을 2회 실행",
+  "en": "[Thunder Pounce] After charging, leaps to an area within a certain range with many allied units, dealing damage to allied units within a certain range. Then charges again and leaps to an area within a certain range that allied units' attack ranges barely cover, performing [Charge Up] 2 times",
+  "ja": "【雷光飛撲】チャージ後、一定範囲内で味方ユニットが多い区域へ跳躍し、一定範囲内の味方ユニットにダメージを与える。その後チャージして一定範囲内で味方ユニットの攻撃範囲があまり及ばない区域へ跳躍し、【蓄電】を2回行う"
+ },
+ "【雷鸣咆哮】使以自身为中心一定半径范围内的所有单位晕眩一段时间": {
+  "ko": "[뇌명 포효] 자신을 중심으로 일정 반경 내 모든 유닛을 일정 시간 기절시킴",
+  "en": "[Thunderous Roar] Stuns all units within a certain radius centered on itself for a while",
+  "ja": "【雷鳴咆哮】自身を中心とした一定半径内の全ユニットを一定時間スタンさせる"
+ },
+ "【领地宣示！】选择数名我方非起飞单位，对其所在行进行地毯式轰炸": {
+  "ko": "[영역 선포!] 이륙하지 않은 아군 유닛 몇 명을 골라, 그 유닛이 있는 가로줄을 융단 폭격",
+  "en": "[Territory Declared!] Selects several allied units that have not taken off and carpet-bombs the rows they are in",
+  "ja": "【縄張り宣言！】離陸していない味方ユニットを数体選び、その横列を絨毯爆撃する"
+ },
+ "一口下去——其实什么都不会发生，只是会被呛得打喷嚏！": {
+  "ko": "한입 베어 물면 —— 사실 아무 일도 일어나지 않는다. 그저 사레들려 재채기가 날 뿐!",
+  "en": "Take a bite—actually, nothing happens. You'll just choke on it and sneeze!",
+  "ja": "一口かじると――実は何も起こらない。ただむせてくしゃみが出るだけ！"
+ },
+ "<信使安洁莉娜>协助我方进行战斗。场上存在<浮空信件>会收集<浮空信件>并投递进<邮箱>": {
+  "ko": "<메신저 안젤리나> 아군의 전투를 도움. 전장에 <떠다니는 편지>가 있으면 <떠다니는 편지>를 모아 <우체통>에 넣음",
+  "en": "<Messenger Angelina> Assists your side in battle. When there are <Floating Letter> on the field, collects them and delivers them into the <Mailbox>",
+  "ja": "<メッセンジャー・アンジェリーナ>味方の戦闘を支援する。戦場に<浮遊する手紙>があると、<浮遊する手紙>を集めて<ポスト>に投函する"
+ },
+ "一趟送信旅途的终点，一趟收信旅途的起点。": {
+  "ko": "편지를 보내는 여정의 끝, 편지를 받는 여정의 시작.",
+  "en": "The end of one journey delivering letters, and the start of one receiving them.",
+  "ja": "手紙を届ける旅の終点、手紙を受け取る旅の起点。"
+ },
+ "下一次他们要是追加跳火圈表演就更好了。": {
+  "ko": "다음번엔 불 고리 통과 묘기까지 추가하면 더 좋겠다.",
+  "en": "It'd be even better if they added a flaming hoop act next time.",
+  "ja": "次は火の輪くぐりの演目も追加してくれたら、もっといいのに。"
+ },
+ "不论是信件或是包裹，还是普通的日用品，哪怕只是刚拿在手上还没来得及放进嘴里的零食胡萝卜干，有袋鼷兽们全都要！": {
+  "ko": "편지든 소포든 평범한 생필품이든, 심지어 막 손에 쥐고 아직 입에 넣지도 못한 간식용 말린 당근까지, 유대생쥐들은 죄다 탐낸다!",
+  "en": "Letters, parcels, ordinary daily goods—even the dried carrot snack you just picked up and haven't gotten into your mouth yet—the Marsupial Musbeasts want it all!",
+  "ja": "手紙でも小包でも、普通の日用品でも、たとえ手に取ったばかりでまだ口に入れていないおやつの干しニンジンでも、有袋鼷獣たちは何でも欲しがる！"
+ },
+ "不论是长耳朵卡特斯，还是短耳朵卡特斯，哪怕是长羽毛的长角的长鳞片的，只要你来到这里，只要你也喜欢冰淇淋、胡萝卜以及温泉，你就是大涌泉镇的客人！": {
+  "ko": "귀가 긴 카우투스든 귀가 짧은 카우투스든, 깃털이 났든 뿔이 났든 비늘이 났든, 이곳에 왔고 아이스크림과 당근과 온천을 좋아하기만 하면 당신은 대용천진의 손님이다!",
+  "en": "Long-eared Cautus or short-eared Cautus, feathered, horned, or scaled—so long as you come here and love ice cream, carrots, and hot springs, you're a guest of the Great Springs Town!",
+  "ja": "耳の長いコータスでも、耳の短いコータスでも、羽が生えていても角が生えていても鱗が生えていても、ここに来てアイスクリームとニンジンと温泉が好きなら、あなたは大湧泉町のお客さん！"
+ },
+ "乐观的士兵：我们找了个好位置建立新岗哨，唯一的问题就是周围没有适合建立哨塔的高地。现在我们需要有人引诱一些岩甲兽过来，它们似乎很擅长制造高地。至于它们来了之后——总会有办法的！": {
+  "ko": "낙천적인 병사: 새 초소를 세울 좋은 자리를 찾았는데, 문제는 주변에 망루를 올릴 만한 고지가 없다는 겁니다. 지금 필요한 건 암갑수를 이쪽으로 꾀어 올 사람이에요. 저것들이 고지 만드는 데는 아주 능하거든요. 오고 나서 어쩌냐고요? 어떻게든 되겠죠!",
+  "en": "Optimistic Soldier: We found a great spot for a new outpost. The only problem is there's no high ground around to build a watchtower on. Now we need someone to lure some Rockshell Beasts over here—they seem really good at making high ground. As for what happens once they arrive—we'll figure something out!",
+  "ja": "楽観的な兵士：新しい哨所を建てるいい場所を見つけたんですが、唯一の問題は、周りに見張り塔を建てられる高台がないことなんです。今は岩甲獣をこっちへおびき寄せてくれる人が必要です。あいつら、高台を作るのが得意みたいなんで。来てからどうするかって？ なんとかなりますよ！"
+ },
+ "事先声明，这群暴动分子可不是因为喝了酒才拿起武器的，他们天性就好斗。": {
+  "ko": "미리 말해 두지만, 이 폭도들은 술을 마셔서 무기를 든 게 아니다. 천성이 호전적일 뿐이다.",
+  "en": "For the record, these rioters didn't take up arms because they'd been drinking. They're just belligerent by nature.",
+  "ja": "先に言っておくが、この暴徒たちは酒を飲んだから武器を取ったわけではない。生まれつき好戦的なのだ。"
+ },
+ "互相平行的路途中，我们能否找到彼此之间的共通点？": {
+  "ko": "서로 나란히 뻗은 길 위에서, 우리는 서로의 공통점을 찾을 수 있을까?",
+  "en": "On paths that run parallel, can we find what we have in common?",
+  "ja": "互いに平行する道の途中で、私たちは共通点を見つけられるだろうか？"
+ },
+ "今天怎么大家都这么着急离场，难道是因为上映的片子不合口味吗？": {
+  "ko": "오늘은 왜 다들 이렇게 서둘러 나가지? 상영작이 입맛에 안 맞았나?",
+  "en": "Why is everyone in such a hurry to leave today? Was the movie not to their taste?",
+  "ja": "今日はどうしてみんなこんなに急いで出ていくんだ？ 上映作品が口に合わなかったのか？"
+ },
+ "今天最累的除了做冰淇淋的店员，就属负责疏散人流的交通管理员了。帮帮他吧，他愿意用一年份的胡萝卜蛋糕作为答谢。": {
+  "ko": "오늘 가장 고된 사람은 아이스크림을 만드는 점원 다음으로 인파를 정리하는 교통 관리원이다. 좀 도와주자. 답례로 일 년 치 당근 케이크를 내놓겠단다.",
+  "en": "Apart from the clerks making ice cream, the most exhausted person today is the traffic warden directing the crowds. Give him a hand—he's willing to offer a year's supply of carrot cake as thanks.",
+  "ja": "今日一番疲れているのは、アイスクリームを作る店員を除けば、人の流れを整理する交通整理員だ。手伝ってあげよう。お礼に一年分のキャロットケーキをくれるそうだ。"
+ },
+ "从兔子洞的洞口里能钻出一百个皮塔，一百个巴尼特，一百个梅拉！": {
+  "ko": "토끼굴 입구에서 피타가 백 명, 바넷이 백 명, 메라가 백 명 튀어나올 수 있다!",
+  "en": "A hundred Pitas, a hundred Barnetts, and a hundred Melas can pop out of the rabbit hole!",
+  "ja": "ウサギ穴の入口から、ピタが百人、バーネットが百人、メラが百人も飛び出してくる！"
+ },
+ "以Touch的战力极限为模本构拟的突破训练官。无论是躯体上的伤口与痛苦，还是精神上的不安与恐惧，都将在她的源石技艺之下消湮。对参与训练的你来说，也许这并不是一个好消息。": {
+  "ko": "Touch의 전력 한계를 모델로 재구성한 돌파 훈련교관. 몸의 상처와 고통이든 마음의 불안과 두려움이든, 모두 그녀의 오리지늄 아츠 아래 사라진다. 훈련에 참여하는 당신에게는 그다지 좋은 소식이 아닐지도 모른다.",
+  "en": "A Breakthrough Trainer simulating Touch at the peak of her combat prowess. Whether the wounds and pain of the body or the unease and fear of the mind, all will vanish under her Originium Arts. For you, a participant in the training, this may not be good news.",
+  "ja": "Touchの戦闘力の限界をベースモデルに設計された突破訓練官。体の傷や痛みも、心の不安や恐怖も、全て彼女のアーツの下で消え去る。訓練に参加するあなたにとっては、あまり良い知らせではないかもしれない。"
+ },
+ "优先拾取场上<浮空信件>并投进<邮箱>": {
+  "ko": "전장의 <떠다니는 편지>를 우선 주워 <우체통>에 넣음",
+  "en": "Prioritizes picking up <Floating Letter> on the field and posting them into the <Mailbox>",
+  "ja": "戦場の<浮遊する手紙>を優先して拾い、<ポスト>に投函する"
+ },
+ "会持续轰炸自身所在位置的地面和高台，造成范围物理伤害": {
+  "ko": "자신이 있는 위치의 지상 및 고지대를 계속 폭격해 범위 물리 대미지를 입힘",
+  "en": "Continuously bombs the ground and high ground at its position, dealing AoE Physical damage",
+  "ja": "自身の位置の地上マスと高台マスを爆撃し続け、範囲物理ダメージを与える"
+ },
+ "会攻击自身周围数名敌人，使其浮空及停顿一段时间": {
+  "ko": "자신 주변의 적 여러 명을 공격해 일정 시간 공중 부양 및 정지시킴",
+  "en": "Attacks several enemies around herself, inflicting Levitate and Slow for a while",
+  "ja": "自身の周囲にいる敵数体を攻撃し、一定時間浮遊および足止め状態にする"
+ },
+ "会锁定我方单位持续造成法术伤害，期间偷取目标一定攻击力": {
+  "ko": "아군 유닛 1명을 조준해 지속적으로 마법 대미지를 입히며, 그동안 목표의 공격력 일부를 훔침",
+  "en": "Locks onto an allied unit to deal continuous Arts damage, stealing part of the target's ATK in the meantime",
+  "ja": "味方ユニットに狙いを定めて継続的に術ダメージを与え、その間対象の攻撃力の一部を奪う"
+ },
+ "你不知道你为什么在这里，你也不知道这里究竟是哪里，但你知道你要做什么——击败它们，生存下去，就这么简单。": {
+  "ko": "네가 왜 여기 있는지도, 여기가 대체 어디인지도 너는 모른다. 다만 무엇을 해야 하는지는 안다 — 저들을 쓰러뜨리고 살아남는 것. 그뿐이다.",
+  "en": "You don't know why you're here, nor where exactly here is, but you know what you have to do—defeat them and survive. Simple as that.",
+  "ja": "なぜここにいるのかも、ここが一体どこなのかもわからない。だが、何をすべきかはわかっている――奴らを倒し、生き延びる。ただそれだけだ。"
+ },
+ "使自身周围一定范围内地面敌人的攻击速度和法术抗性提升": {
+  "ko": "자신 주변 일정 범위 내 지상 적의 공격 속도와 마법 저항 증가",
+  "en": "Increases the ASPD and RES of ground enemies within a certain range around itself",
+  "ja": "自身の周囲一定範囲内の地上の敵の攻撃速度と術耐性が上昇する"
+ },
+ "免疫元素伤害": {
+  "ko": "원소 대미지 면역",
+  "en": "Immune to Elemental damage",
+  "ja": "元素ダメージ無効"
+ },
+ "免疫晕眩，但能被攻击弱点而倒地": {
+  "ko": "기절 면역, 단 약점을 공격받으면 쓰러짐",
+  "en": "Immune to Stun, but can be knocked down by attacks on its weakness",
+  "ja": "スタン無効。ただし弱点を攻撃されるとダウンする"
+ },
+ "免疫法术伤害": {
+  "ko": "마법 대미지 면역",
+  "en": "Immune to Arts damage",
+  "ja": "術ダメージ無効"
+ },
+ "免疫物理伤害": {
+  "ko": "물리 대미지 면역",
+  "en": "Immune to Physical damage",
+  "ja": "物理ダメージ無効"
+ },
+ "兽道通向林地深处，在这里能遇到的可不止温顺的生物，也有危险的捕食者。": {
+  "ko": "짐승길은 숲 깊은 곳으로 이어진다. 이곳에서 마주치는 건 온순한 생물만이 아니다. 위험한 포식자도 있다.",
+  "en": "The game trail leads deep into the woods. Here you'll encounter not only docile creatures, but dangerous predators as well.",
+  "ja": "獣道は森の奥深くへと続いている。ここで出会うのはおとなしい生き物だけではなく、危険な捕食者もいる。"
+ },
+ "几个看上去已经相当心力交瘁的居民拜托你好好教训教训他们的孩子，自从沉迷在叙拉古黑帮电影里以后，孩子们已经无法无天了！": {
+  "ko": "몹시 지쳐 보이는 주민 몇이 제 아이들을 좀 혼내 달라고 부탁해 왔다. 시라쿠사 갱 영화에 빠진 뒤로 아이들이 통 말을 듣지 않는단다!",
+  "en": "A few thoroughly worn-out residents have asked you to teach their kids a lesson. Ever since they got hooked on Siracusan gangster movies, the kids have become completely lawless!",
+  "ja": "すっかり疲れ果てた様子の住民数人が、子どもたちを懲らしめてほしいと頼んできた。シラクーザのギャング映画にはまってから、子どもたちは手がつけられなくなったらしい！"
+ },
+ "几乎每个卡特斯小时候都玩过的捉迷藏：躲进地下错综复杂的兔子洞里，再把显眼的出口用什么东西堵上，嘿嘿......不是，怎么出不去了？": {
+  "ko": "카우투스라면 어릴 적 거의 다 해 본 숨바꼭질. 얽히고설킨 지하 토끼굴에 숨은 다음, 눈에 띄는 출구를 뭔가로 막아 두고, 헤헤…… 아니, 어째서 못 나가지?",
+  "en": "Hide-and-seek, a game almost every Cautus played as a child: hide in the tangled rabbit holes underground, then block the conspicuous exits with something, heh heh... Wait, why can't I get out?",
+  "ja": "ほとんどのコータスが子どもの頃に遊んだかくれんぼ。地下の入り組んだウサギ穴に隠れて、目立つ出口を何かで塞いで、へへ……あれ、どうして出られないの？"
+ },
+ "刚刚还笑容阳光地把信件递给你的女孩，下一秒可能就会成为动用源石技艺让偷件的小偷飞上半空的强力术师。": {
+  "ko": "방금까지 환한 웃음으로 편지를 건네주던 소녀가, 다음 순간에는 오리지늄 아츠로 편지 도둑을 공중에 띄워 버리는 강력한 캐스터가 될지도 모른다.",
+  "en": "The girl who was just handing you letters with a sunny smile might, in the next second, become a powerful Caster who uses Originium Arts to send parcel thieves flying into the air.",
+  "ja": "さっきまで明るい笑顔で手紙を渡してくれた少女が、次の瞬間にはアーツで荷物泥棒を宙に浮かせる強力な術師になるかもしれない。"
+ },
+ "本次行动投满邮箱后信使安洁莉娜会更大幅度强化": {
+  "ko": "이번 작전에서 우체통을 가득 채우면 메신저 안젤리나가 더 크게 강화됨",
+  "en": "In this operation, Messenger Angelina is strengthened even more once the Mailbox is filled",
+  "ja": "今回の作戦では、ポストを満杯にするとメッセンジャー・アンジェリーナがより大幅に強化される"
+ },
+ "初始处于第一形态，每次从倒地状态恢复时，在第一形态和第二形态间切换，不同形态下弱点不同": {
+  "ko": "처음에는 제1형태이며, 쓰러진 상태에서 회복할 때마다 제1형태와 제2형태가 전환됨. 형태마다 약점이 다름",
+  "en": "Starts in its First Form; each time it recovers from being knocked down, switches between its First and Second Form. Its weakness differs by form",
+  "ja": "初期状態は第一形態。ダウン状態から回復するたびに第一形態と第二形態を切り替え、形態ごとに弱点が異なる"
+ },
+ "友情是由什么组成的？是诺言，是决心，是敢于说不的胆量，是永远都向对方奔跑过去的脚步。": {
+  "ko": "우정은 무엇으로 이루어지는가? 약속이고, 결심이고, 아니라고 말할 용기이며, 언제나 서로를 향해 달려가는 발걸음이다.",
+  "en": "What is friendship made of? It is promises, resolve, the courage to say no, and footsteps that always run toward each other.",
+  "ja": "友情は何でできているのか？ それは約束であり、決意であり、ノーと言える勇気であり、いつだって相手に向かって駆け寄る足取りだ。"
+ },
+ "受到<泄漏源>的影响后一段时间内，受到攻击时造成的物理伤害变为溅射且伤害提升": {
+  "ko": "<누출원>의 영향을 받은 뒤 일정 시간 동안, 공격받을 때 입히는 물리 대미지가 스플래시로 바뀌고 대미지가 증가",
+  "en": "For a while after being affected by a <Leak Source>, the Physical damage it deals when attacked becomes splash damage and is increased",
+  "ja": "<漏出源>の影響を受けてから一定時間、攻撃を受けた時に与える物理ダメージが範囲ダメージになり、ダメージが上昇する"
+ },
+ "受到<泄漏源>的影响后，下一次攻击变为三连击": {
+  "ko": "<누출원>의 영향을 받은 뒤 다음 공격이 3연타가 됨",
+  "en": "After being affected by a <Leak Source>, its next attack becomes a triple strike",
+  "ja": "<漏出源>の影響を受けた後、次の攻撃が3連撃になる"
+ },
+ "受到一定次数伤害后会转移至伤害来源所在位置": {
+  "ko": "일정 횟수의 대미지를 받으면 대미지를 준 대상의 위치로 옮겨 감",
+  "en": "After taking a certain number of hits, moves to the position of the damage source",
+  "ja": "一定回数ダメージを受けると、ダメージ源の位置へ移動する"
+ },
+ "受到伤害时会转移至伤害来源所在位置并重置倒计时": {
+  "ko": "대미지를 받으면 대미지를 준 대상의 위치로 옮겨 가고 카운트다운이 초기화됨",
+  "en": "When taking damage, moves to the position of the damage source and resets its countdown",
+  "ja": "ダメージを受けるとダメージ源の位置へ移動し、カウントダウンがリセットされる"
+ },
+ "受到攻击时对目标造成物理伤害": {
+  "ko": "공격받으면 공격한 대상에게 물리 대미지를 입힘",
+  "en": "Deals Physical damage to the attacker when attacked",
+  "ja": "攻撃を受けると、攻撃してきた対象に物理ダメージを与える"
+ },
+ "受到浮空及失衡效果后会大摔一跤并瘫痪，同时对周围其他敌方单位造成真实伤害": {
+  "ko": "공중 부양이나 강제 이동 효과를 받으면 크게 넘어져 행동 불능이 되며, 동시에 주변의 다른 적 유닛에게 트루 대미지를 입힘",
+  "en": "When affected by Levitate or Shift, takes a big tumble and becomes incapacitated, dealing True damage to other nearby enemy units at the same time",
+  "ja": "浮遊や強制移動の効果を受けると派手に転んで行動不能になり、同時に周囲の他の敵ユニットに確定ダメージを与える"
+ },
+ "受到浮空及失衡效果后防御力大幅降低": {
+  "ko": "공중 부양이나 강제 이동 효과를 받으면 방어력 대폭 감소",
+  "en": "DEF is greatly reduced after being affected by Levitate or Shift",
+  "ja": "浮遊や強制移動の効果を受けると防御力が大幅に低下する"
+ },
+ "受到的物理和法术伤害降低，每当“再灌注”和“过灌注”被击倒时该减伤效果减弱": {
+  "ko": "받는 물리·마법 대미지 감소. '재관류'나 '과관류'가 쓰러질 때마다 이 대미지 감소 효과가 약해짐",
+  "en": "Takes reduced Physical and Arts damage; this reduction weakens each time a 'Reperfusion' or 'Hyperperfusion' is defeated",
+  "ja": "受ける物理・術ダメージが減少する。「再灌流」または「過灌流」が倒されるたびに、この軽減効果が弱まる"
+ },
+ "可以吃掉周围重量不大于2的其他敌人，随后自身下次攻击的攻击距离提升并造成范围伤害": {
+  "ko": "주변의 무게 2 이하인 다른 적을 먹어 치울 수 있으며, 이후 자신의 다음 공격은 사거리가 늘어나고 범위 대미지를 입힘",
+  "en": "Can devour other nearby enemies with a weight of 2 or less; afterwards, its next attack has increased range and deals AoE damage",
+  "ja": "周囲の重量2以下の他の敵を食べることができ、その後、自身の次の攻撃の射程が伸び、範囲ダメージを与える"
+ },
+ "可别等到临近发车才发现自己走错了上车地点。": {
+  "ko": "발차 직전에야 승차 장소를 잘못 찾아왔다는 걸 깨닫는 일은 없도록 하자.",
+  "en": "Don't wait until the train is about to depart to realize you're at the wrong boarding spot.",
+  "ja": "発車間際になってから、乗車場所を間違えたと気づくことのないように。"
+ },
+ "可诅咒周围地块，使处于地块上的敌人移动速度提升；御龙技能以被诅咒的地块为目标时效果会更好": {
+  "ko": "주변 타일을 저주할 수 있으며, 그 타일 위의 적은 이동 속도가 증가. 어룡 스킬이 저주받은 타일을 목표로 하면 효과가 더 좋아짐",
+  "en": "Can curse nearby tiles, increasing the Movement Speed of enemies on them; Wyvern Riding skills are more effective when targeting cursed tiles",
+  "ja": "周囲のマスを呪うことができ、そのマス上の敵の移動速度が上昇する。操竜スキルは呪われたマスを目標にすると効果が高まる"
+ },
+ "叽叽叽叽，嘶咔嘶咔嘶咔，嘎嘎！（孩子们快跟我来，我发现了个又好吃又好玩的好去处！）": {
+  "ko": "찍찍찍찍, 쓱싹쓱싹쓱싹, 꽥꽥! (얘들아 어서 따라와, 맛있고 재미있는 좋은 데를 찾았어!)",
+  "en": "Squeak squeak squeak squeak, skritch skritch skritch, quack quack! (Kids, follow me, quick! I found a spot that's tasty and fun!)",
+  "ja": "チチチチ、シャカシャカシャカ、ガーガー！（みんな早くついておいで、おいしくて楽しい場所を見つけたよ！）"
+ },
+ "叽叽叽，嘎嘎嘎，叽叽叽嘎！（今天阳光明媚，微风和煦，我带着满满一口袋的好宝贝，准备再去拿点新的来！）": {
+  "ko": "찍찍찍, 꽥꽥꽥, 찍찍찍꽥! (오늘은 햇살도 좋고 바람도 부드럽지. 주머니 가득 좋은 보물을 챙겼으니, 이제 새것을 좀 더 가지러 가야겠어!)",
+  "en": "Squeak squeak squeak, quack quack quack, squeak squeak squeak quack! (The sun is shining and the breeze is gentle today. I've got a whole pouch full of treasures, and I'm off to grab some new ones!)",
+  "ja": "チチチ、ガーガーガー、チチチガー！（今日はいい天気で、そよ風も気持ちいい。袋いっぱいのお宝を持って、新しいのをもらいに行くんだ！）"
+ },
+ "向攻击范围内当前生命值最高的我方单位发射蛛丝，持续造成晕眩和法术伤害": {
+  "ko": "공격 범위 내 현재 HP가 가장 높은 아군 유닛에게 거미줄을 쏴 지속적으로 기절 및 마법 대미지를 입힘",
+  "en": "Shoots spider silk at the allied unit with the highest current HP within attack range, continuously inflicting Stun and Arts damage",
+  "ja": "攻撃範囲内で現在HPが最も高い味方ユニットに糸を放ち、継続的にスタンと術ダメージを与える"
+ },
+ "周围其他敌方单位死亡时，战栗一段时间": {
+  "ko": "주변의 다른 적 유닛이 사망하면 일정 시간 전율 상태가 됨",
+  "en": "Becomes Frightened for a while when other nearby enemy units die",
+  "ja": "周囲の他の敵ユニットが死亡すると、一定時間戦慄状態になる"
+ },
+ "周围有我方单位，或<“雷之主”>当前在场时，会停止攻击并缩起来": {
+  "ko": "주변에 아군 유닛이 있거나 <「번개의 주인」>이 전장에 있으면 공격을 멈추고 몸을 움츠림",
+  "en": "Stops attacking and curls up when allied units are nearby or <'Lord of Thunder'> is on the field",
+  "ja": "周囲に味方ユニットがいる時、または<「雷の主」>が戦場にいる時、攻撃をやめて縮こまる"
+ },
+ "周围有领袖以外的非机械敌人时会将其装载为乘客（最多2个），自身被击败时释放出乘客": {
+  "ko": "주변에 리더가 아닌 비기계 적이 있으면 승객으로 태우며(최대 2명), 자신이 격파되면 승객을 내보냄",
+  "en": "Loads nearby non-Leader, non-Mechanical enemies as passengers (up to 2); releases them when defeated",
+  "ja": "周囲にボス以外の非機械の敵がいると乗客として乗せ（最大2体）、自身が撃破されると乗客を解放する"
+ },
+ "周期性使其他敌人的非弱点变为免疫，且在受到非弱点攻击时，一定时间内弱点失效且攻击速度和移动速度提升": {
+  "ko": "주기적으로 다른 적의 약점이 아닌 속성을 면역으로 바꾸며, 그 적이 약점이 아닌 공격을 받으면 일정 시간 약점이 무효화되고 공격 속도와 이동 속도 증가",
+  "en": "Periodically makes other enemies immune to everything except their weaknesses; when those enemies are hit by a non-weakness attack, their weaknesses are disabled and their ASPD and Movement Speed increase for a while",
+  "ja": "周期的に他の敵の弱点以外の属性を無効化し、その敵が弱点以外の攻撃を受けると一定時間弱点が無効になり、攻撃速度と移動速度が上昇する"
+ },
+ "周期性蓄力，期间受到物理和法术伤害大幅降低，若蓄力未被打断，对场上所有我方单位造成攻击力一定比例的物理伤害（对距离较近的目标伤害提升）": {
+  "ko": "주기적으로 차지하며 그동안 받는 물리·마법 대미지가 대폭 감소. 차지가 중단되지 않으면 전장의 모든 아군 유닛에게 공격력의 일정 비율만큼 물리 대미지를 입힘 (가까운 대상일수록 대미지 증가)",
+  "en": "Periodically charges up, taking greatly reduced Physical and Arts damage meanwhile; if the charge isn't interrupted, deals Physical damage equal to a percentage of ATK to all allied units on the field (more damage to closer targets)",
+  "ja": "周期的にチャージを行い、その間受ける物理・術ダメージが大幅に減少する。チャージが中断されなければ、戦場の全ての味方ユニットに攻撃力の一定割合の物理ダメージを与える（距離が近い対象ほどダメージが上昇）"
+ },
+ "周期性选择一名我方干员及其周围4格生成<活性躁乱>": {
+  "ko": "주기적으로 아군 오퍼레이터 1명을 골라 그 위치와 주변 4칸에 <활성 교란> 생성",
+  "en": "Periodically selects 1 allied Operator and creates <Active Agitation> on its tile and the 4 surrounding tiles",
+  "ja": "周期的に味方オペレーター1人を選び、その位置と周囲4マスに<活性擾乱>を生成する"
+ },
+ "回忆中那个惊艳了黑暗地下的人，在十数年以后再度出现。": {
+  "ko": "기억 속에서 어두운 지하를 놀라게 했던 그 사람이, 십여 년이 지나 다시 나타났다.",
+  "en": "The one who dazzled the dark underground in memory reappears more than a decade later.",
+  "ja": "記憶の中で暗い地下を驚かせたあの人が、十数年の時を経て再び現れた。"
+ },
+ "在下一趟升降机下井之前，必须清理掉这些狂暴的生物以保证安全。": {
+  "ko": "다음 승강기가 갱도로 내려가기 전에, 안전을 위해 이 난폭한 생물들을 반드시 처리해야 한다.",
+  "en": "Before the next elevator descends into the shaft, these rampaging creatures must be cleared out for safety.",
+  "ja": "次の昇降機が坑道へ下りる前に、安全のためこの凶暴な生物たちを片付けなければならない。"
+ },
+ "在周围4格的地面甩出“风化的碎屑”，使地面不可部署": {
+  "ko": "주변 4칸의 지상에 「풍화된 잔해」를 흩뿌려 배치 불가로 만듦",
+  "en": "Flings 'Weathered Debris' onto the 4 surrounding ground tiles, making them undeployable",
+  "ja": "周囲4マスの地上に「風化した破片」をまき散らし、配置不可にする"
+ },
+ "对死亡的抗拒，让它们从无边绝望里破土而出。": {
+  "ko": "죽음에 대한 거부가, 그것들을 끝없는 절망 속에서 땅을 뚫고 솟아나게 했다.",
+  "en": "Their refusal to die drives them to break through the earth out of boundless despair.",
+  "ja": "死への拒絶が、果てしない絶望の中から彼らを土を破って這い出させた。"
+ },
+ "对生存的渴求，让它们从一片荒芜中复苏而起。": {
+  "ko": "삶에 대한 갈망이, 그것들을 황무지 속에서 되살아나게 했다.",
+  "en": "Their yearning to live brings them back to life out of the barren wastes.",
+  "ja": "生への渇望が、荒れ果てた地から彼らを蘇らせた。"
+ },
+ "弱点：元素，受到一定对应伤害后倒地一段时间": {
+  "ko": "약점: 원소. 해당 대미지를 일정량 받으면 일정 시간 쓰러짐",
+  "en": "Weakness: Elemental. Is knocked down for a while after taking a certain amount of the corresponding damage",
+  "ja": "弱点：元素。対応するダメージを一定量受けると一定時間ダウンする"
+ },
+ "弱点：法术、元素，受到一定对应伤害后倒地一段时间": {
+  "ko": "약점: 마법, 원소. 해당 대미지를 일정량 받으면 일정 시간 쓰러짐",
+  "en": "Weakness: Arts, Elemental. Is knocked down for a while after taking a certain amount of the corresponding damage",
+  "ja": "弱点：術、元素。対応するダメージを一定量受けると一定時間ダウンする"
+ },
+ "弱点：法术、元素，被阻挡时受到一定对应伤害后倒地一段时间": {
+  "ko": "약점: 마법, 원소. 저지당한 상태에서 해당 대미지를 일정량 받으면 일정 시간 쓰러짐",
+  "en": "Weakness: Arts, Elemental. While blocked, is knocked down for a while after taking a certain amount of the corresponding damage",
+  "ja": "弱点：術、元素。ブロックされている時に対応するダメージを一定量受けると一定時間ダウンする"
+ },
+ "弱点：法术，受到一定对应伤害后倒地一段时间": {
+  "ko": "약점: 마법. 해당 대미지를 일정량 받으면 일정 시간 쓰러짐",
+  "en": "Weakness: Arts. Is knocked down for a while after taking a certain amount of the corresponding damage",
+  "ja": "弱点：術。対応するダメージを一定量受けると一定時間ダウンする"
+ },
+ "弱点：物理、元素，受到一定对应伤害后倒地一段时间": {
+  "ko": "약점: 물리, 원소. 해당 대미지를 일정량 받으면 일정 시간 쓰러짐",
+  "en": "Weakness: Physical, Elemental. Is knocked down for a while after taking a certain amount of the corresponding damage",
+  "ja": "弱点：物理、元素。対応するダメージを一定量受けると一定時間ダウンする"
+ },
+ "弱点：物理、法术、元素，受到一定对应伤害后倒地一段时间": {
+  "ko": "약점: 물리, 마법, 원소. 해당 대미지를 일정량 받으면 일정 시간 쓰러짐",
+  "en": "Weakness: Physical, Arts, Elemental. Is knocked down for a while after taking a certain amount of the corresponding damage",
+  "ja": "弱点：物理、術、元素。対応するダメージを一定量受けると一定時間ダウンする"
+ },
+ "弱点：物理，受到一定对应伤害后倒地一段时间": {
+  "ko": "약점: 물리. 해당 대미지를 일정량 받으면 일정 시간 쓰러짐",
+  "en": "Weakness: Physical. Is knocked down for a while after taking a certain amount of the corresponding damage",
+  "ja": "弱点：物理。対応するダメージを一定量受けると一定時間ダウンする"
+ },
+ "得好好教训一下这群敌人，让对方明白如果方向错了，再坚持也没有用。": {
+  "ko": "이 적들을 단단히 혼내 줘야 한다. 방향이 틀렸다면 아무리 버텨도 소용없다는 걸 깨닫게.",
+  "en": "These enemies need to be taught a proper lesson, so they understand that if you're headed the wrong way, perseverance won't help.",
+  "ja": "この敵たちをしっかり懲らしめてやらなければ。方向が間違っていれば、いくら粘っても無駄だとわからせるために。"
+ },
+ "御龙状态": {
+  "ko": "어룡 상태",
+  "en": "Wyvern Riding State",
+  "ja": "操竜状態"
+ },
+ "御龙：反壳龟·缚滚到指定位置后消失，期间对沿途所有地面敌人造成真实伤害和停顿": {
+  "ko": "어룡: 반각귀·박이 지정한 위치까지 굴러간 뒤 사라지며, 그동안 경로상의 모든 지상 적에게 트루 대미지와 정지를 부여",
+  "en": "Wyvern Riding: Flipshell Turtle - Bound rolls to the designated position and then disappears, dealing True damage and Slow to all ground enemies along the way",
+  "ja": "操竜：反殻亀・縛が指定位置まで転がった後に消え、その間進路上の全ての地上の敵に確定ダメージと足止めを与える"
+ },
+ "御龙：反壳龟滚到指定位置后消失，期间对沿途所有地面敌人造成真实伤害和停顿": {
+  "ko": "어룡: 반각귀가 지정한 위치까지 굴러간 뒤 사라지며, 그동안 경로상의 모든 지상 적에게 트루 대미지와 정지를 부여",
+  "en": "Wyvern Riding: Flipshell Turtle rolls to the designated position and then disappears, dealing True damage and Slow to all ground enemies along the way",
+  "ja": "操竜：反殻亀が指定位置まで転がった後に消え、その間進路上の全ての地上の敵に確定ダメージと足止めを与える"
+ },
+ "御龙：岩甲兽·咒在指定位置钻出，在周围4格甩出可部署干员的“盘踞岩峰”，随后离场": {
+  "ko": "어룡: 암갑수·주가 지정한 위치에서 솟아올라, 주변 4칸에 오퍼레이터를 배치할 수 있는 「자리 잡은 암봉」을 흩뿌린 뒤 떠남",
+  "en": "Wyvern Riding: Rockshell Beast - Curse bursts out at the designated position, flinging 'Entrenched Rock Peaks' that Operators can be deployed on onto the 4 surrounding tiles, then leaves",
+  "ja": "操竜：岩甲獣・呪が指定位置から飛び出し、周囲4マスにオペレーターを配置できる「居座る岩峰」をまき散らした後、退場する"
+ },
+ "御龙：岩甲兽在指定位置钻出，在周围4格甩出可部署干员的“盘踞岩峰”，随后离场": {
+  "ko": "어룡: 암갑수가 지정한 위치에서 솟아올라, 주변 4칸에 오퍼레이터를 배치할 수 있는 「자리 잡은 암봉」을 흩뿌린 뒤 떠남",
+  "en": "Wyvern Riding: Rockshell Beast bursts out at the designated position, flinging 'Entrenched Rock Peaks' that Operators can be deployed on onto the 4 surrounding tiles, then leaves",
+  "ja": "操竜：岩甲獣が指定位置から飛び出し、周囲4マスにオペレーターを配置できる「居座る岩峰」をまき散らした後、退場する"
+ },
+ "御龙：影丝蛛·怨移动到指定位置，对攻击范围内当前生命值最高的3个敌人发射蛛丝，持续造成晕眩和法术伤害，随后离场": {
+  "ko": "어룡: 영사주·원이 지정한 위치로 이동해, 공격 범위 내 현재 HP가 가장 높은 적 3명에게 거미줄을 쏴 지속적으로 기절 및 마법 대미지를 입힌 뒤 떠남",
+  "en": "Wyvern Riding: Shadowsilk Spider - Grudge moves to the designated position and shoots spider silk at the 3 enemies with the highest current HP within attack range, continuously inflicting Stun and Arts damage, then leaves",
+  "ja": "操竜：影糸蜘蛛・怨が指定位置へ移動し、攻撃範囲内で現在HPが最も高い敵3体に糸を放って継続的にスタンと術ダメージを与えた後、退場する"
+ },
+ "御龙：影丝蛛移动到指定位置，对攻击范围内当前生命值最高的3个敌人发射蛛丝，持续造成晕眩和法术伤害，随后离场": {
+  "ko": "어룡: 영사주가 지정한 위치로 이동해, 공격 범위 내 현재 HP가 가장 높은 적 3명에게 거미줄을 쏴 지속적으로 기절 및 마법 대미지를 입힌 뒤 떠남",
+  "en": "Wyvern Riding: Shadowsilk Spider moves to the designated position and shoots spider silk at the 3 enemies with the highest current HP within attack range, continuously inflicting Stun and Arts damage, then leaves",
+  "ja": "操竜：影糸蜘蛛が指定位置へ移動し、攻撃範囲内で現在HPが最も高い敵3体に糸を放って継続的にスタンと術ダメージを与えた後、退場する"
+ },
+ "总有人许愿说要是时间能停下来该多好，也许他们可以来这里许愿试一试。": {
+  "ko": "시간이 멈추면 얼마나 좋을까 하고 소원을 비는 사람은 늘 있다. 어쩌면 여기 와서 한번 빌어 봐도 좋을지 모른다.",
+  "en": "There are always people who wish time could stand still. Perhaps they should come here and try making that wish.",
+  "ja": "時間が止まってくれたらいいのにと願う人はいつだっている。ここに来て願ってみるのもいいかもしれない。"
+ },
+ "我在寂静的森林中散步，突然降下了轰雷喵！放出落雷的是雷狼龙喵......！我都快吓死了，胡须一直在颤抖喵——！不能放着那家伙不管喵。请你想办法打倒它喵。": {
+  "ko": "고요한 숲을 거닐고 있었는데 갑자기 우렛소리가 떨어졌다냥! 벼락을 내린 건 진오우거였다냥……! 무서워 죽는 줄 알았다냥, 수염이 계속 떨린다냥——! 저 녀석을 그냥 둘 수는 없다냥. 어떻게든 쓰러뜨려 달라냥.",
+  "en": "I was taking a walk in the quiet forest when thunder suddenly came crashing down, meow! It was a Zinogre that called down the lightning, meow...! I was scared half to death, my whiskers won't stop trembling, meow—! We can't just leave that thing be, meow. Please find a way to take it down, meow.",
+  "ja": "静かな森を散歩していたら、突然雷が落ちてきたニャ！ 雷を落としたのはジンオウガだったニャ……！ 死ぬほど怖かったニャ、ヒゲがずっと震えてるニャ――！ あいつを放っておくわけにはいかないニャ。なんとかして倒してほしいニャ。"
+ },
+ "战斗能力的高低在无边重力面前往往不值一提。": {
+  "ko": "끝없는 중력 앞에서 전투 능력의 높고 낮음은 대개 보잘것없다.",
+  "en": "Before boundless gravity, one's combat prowess often counts for nothing.",
+  "ja": "果てしない重力の前では、戦闘能力の高低などたいてい取るに足らない。"
+ },
+ "投满<邮箱>时，会立即攻击自身周围所有敌人，使其浮空及停顿较长时间。每次投满<邮箱>，会使自身选择我方干员数量、回复其技力及提高其攻速数值永久提升。会使自身攻击敌人数量、浮空及停顿敌人时间永久提升": {
+  "ko": "<우체통>을 가득 채우면 즉시 자신 주변의 모든 적을 공격해 비교적 오랫동안 공중 부양 및 정지시킴. <우체통>을 가득 채울 때마다 자신이 고르는 아군 오퍼레이터 수, 회복시키는 SP, 올려 주는 공격 속도 수치가 영구히 증가. 공격하는 적의 수와 적을 공중 부양·정지시키는 시간도 영구히 증가",
+  "en": "When the <Mailbox> is filled, immediately attacks all enemies around herself, inflicting Levitate and Slow for a long time. Each time the <Mailbox> is filled, the number of allied Operators she selects, the SP she restores to them, and the ASPD she grants them permanently increase. Also permanently increases the number of enemies she attacks and the duration of the Levitate and Slow she inflicts",
+  "ja": "<ポスト>が満杯になると、即座に自身の周囲の全ての敵を攻撃し、長時間浮遊および足止め状態にする。<ポスト>が満杯になるたびに、自身が選ぶ味方オペレーターの数、回復させるSP、上昇させる攻撃速度の数値が永続的に上昇する。攻撃する敵の数と、敵を浮遊・足止め状態にする時間も永続的に上昇する"
+ },
+ "拥有一定生命值的屏障": {
+  "ko": "일정량의 보호막 보유",
+  "en": "Has a Barrier with a certain amount of HP",
+  "ja": "一定量のバリアを持つ"
+ },
+ "拥有一定生命值的屏障，屏障存在时自身一定范围内的敌人弱点失效": {
+  "ko": "일정량의 보호막 보유. 보호막이 있는 동안 자신 주변 일정 범위 내 적의 약점이 무효화됨",
+  "en": "Has a Barrier with a certain amount of HP; while the Barrier holds, enemies within a certain range around itself have their weaknesses disabled",
+  "ja": "一定量のバリアを持つ。バリアがある間、自身の周囲一定範囲内の敵の弱点が無効になる"
+ },
+ "拥有可以抵挡物理和法术伤害的护盾，护盾在受到单次超过一定值的伤害时破碎；护盾生效时，自身防御力大幅提升，法术抗性降低；受到<泄漏源>的影响时，生成该护盾": {
+  "ko": "물리·마법 대미지를 막는 실드를 보유하며, 한 번에 일정량을 넘는 대미지를 받으면 실드가 깨짐. 실드가 있는 동안 자신의 방어력이 대폭 증가하고 마법 저항이 감소. <누출원>의 영향을 받으면 이 실드를 생성",
+  "en": "Has a Shield that blocks Physical and Arts damage, which breaks upon taking a single instance of damage above a certain value; while the Shield is active, its DEF is greatly increased and its RES is reduced. Generates this Shield when affected by a <Leak Source>",
+  "ja": "物理・術ダメージを防ぐシールドを持ち、1回で一定値を超えるダメージを受けるとシールドが砕ける。シールドがある間、自身の防御力が大幅に上昇し、術耐性が低下する。<漏出源>の影響を受けると、このシールドを生成する"
+ },
+ "攻击速度提升": {
+  "ko": "공격 속도 증가",
+  "en": "Increased ASPD",
+  "ja": "攻撃速度上昇"
+ },
+ "攻击造成三连击的法术伤害": {
+  "ko": "공격 시 3연타 마법 대미지를 입힘",
+  "en": "Attacks deal Arts damage in a triple strike",
+  "ja": "攻撃が3連撃の術ダメージを与える"
+ },
+ "攻击附带一定比例的狂躁损伤": {
+  "ko": "공격 시 일정 비율의 광란 손상을 추가로 입힘",
+  "en": "Attacks also inflict a certain proportion of Frenzy",
+  "ja": "攻撃時、一定割合の狂躁損傷を付与する"
+ },
+ "无人鬼城广播中传来的异响，带领感染者追寻幸福的“引领者”，竟是——？": {
+  "ko": "무인 유령 도시의 방송에서 들려온 이상한 소리, 감염자들을 이끌고 행복을 좇던 「인도자」는 다름 아닌——?",
+  "en": "A strange sound from the broadcast of a deserted ghost town—the 'Guide' who led the Infected in pursuit of happiness is none other than—?",
+  "ja": "無人の廃墟都市の放送から聞こえてきた異音、感染者を率いて幸福を追い求める「導き手」の正体は――？"
+ },
+ "既然通讯塔可以用来晾晒胡萝卜干，那邮箱是不是可以当小型粮仓用用？——喂，不要往里面乱放东西呀！": {
+  "ko": "통신탑을 말린 당근 너는 데 쓸 수 있다면, 우체통은 작은 곳간으로 써도 되지 않을까? —— 야, 아무거나 넣지 마!",
+  "en": "If a communications tower can be used to dry carrots, can't a mailbox work as a little granary?—Hey, don't just stuff random things in there!",
+  "ja": "通信塔が干しニンジン作りに使えるなら、ポストは小さな穀物庫として使えるんじゃない？――ちょっと、変なものを入れないでよ！"
+ },
+ "是什么遮住了雷姆必拓强烈的阳光？是什么为无遮挡的矿场带来阴凉？是太阳谷工业强壮的卡特斯矿工！": {
+  "ko": "무엇이 림 빌리턴의 따가운 햇빛을 가렸는가? 무엇이 가릴 것 없는 광산에 그늘을 드리웠는가? 바로 선 밸리 공업의 억센 카우투스 광부들이다!",
+  "en": "What has blocked out Rim Billiton's harsh sunlight? What has brought shade to the unsheltered mines? The sturdy Cautus miners of Sun Valley Industries!",
+  "ja": "何がリム・ビリトンの強烈な日差しを遮ったのか？ 何が遮るもののない採掘場に日陰をもたらしたのか？ それはサンバレー工業のたくましいコータスの鉱夫たちだ！"
+ },
+ "暴躁的厨师长：气死我了！又是那些盗壳虫干的好事！它们最喜欢半夜钻进锅碗瓢盆然后顶着器具跑走。猎人阁下，请狠狠敲打它们，把被偷走的厨具夺回来！": {
+  "ko": "성마른 주방장: 속 터져 죽겠네! 또 그 도각충들 짓이야! 한밤중에 냄비며 그릇에 기어들어 가 그걸 뒤집어쓰고 달아나는 걸 제일 좋아하지. 헌터 나리, 저것들을 호되게 두들겨서 빼앗긴 조리 도구를 되찾아 주십시오!",
+  "en": "Hot-Tempered Head Chef: This drives me up the wall! It's those Shellthief Bugs again! Nothing they love more than crawling into pots and pans in the middle of the night and running off wearing them. Honored hunter, please give them a good thrashing and get our stolen cookware back!",
+  "ja": "短気な料理長：腹が立つ！ またあの盗殻虫どもの仕業だ！ 夜中に鍋や食器に潜り込んで、それをかぶったまま逃げるのが大好きなんだ。ハンター殿、あいつらを思い切り叩きのめして、盗まれた調理器具を取り返してください！"
+ },
+ "未驾驶状态下，会驾驶自身周围的<传奇矿车>": {
+  "ko": "운전 중이 아니면 주변의 <전설의 광차>를 운전함",
+  "en": "When not driving, drives a nearby <Legendary Mine Cart>",
+  "ja": "運転していない時、周囲の<伝説のトロッコ>を運転する"
+ },
+ "未驾驶状态下，会驾驶自身周围的<手推小矿车>": {
+  "ko": "운전 중이 아니면 주변의 <손수레 광차>를 운전함",
+  "en": "When not driving, drives a nearby <Hand-Pushed Mine Cart>",
+  "ja": "運転していない時、周囲の<手押しトロッコ>を運転する"
+ },
+ "村里的药师：哎呀，药圃里的药草又被祸害了！这次不是虫子，是一群背着蛋壳的滑溜家伙——碎壳螈！猎人大人，请帮我把这些“长脚的石头”扔出去吧，我的腰都要弯断了！": {
+  "ko": "마을 약사: 아이고, 약초밭이 또 결딴났어요! 이번엔 벌레가 아니라 알 껍데기를 지고 다니는 미끌미끌한 녀석들 — 쇄각원입니다! 헌터님, 이 「다리 달린 돌」들 좀 내다 버려 주세요. 허리가 끊어질 지경이에요!",
+  "en": "Village Apothecary: Oh dear, the herb garden's been ravaged again! This time it's not bugs, but a bunch of slippery critters carrying eggshells on their backs—Shellcrusher Newts! Honored hunter, please toss these 'rocks with legs' out for me. My back's about to give out!",
+  "ja": "村の薬師：ああもう、薬草畑がまた荒らされてしまいました！ 今度は虫じゃなくて、卵の殻を背負ったぬるぬるした連中――砕殻イモリです！ ハンター様、この「足の生えた石」を放り出してください、腰が折れそうです！"
+ },
+ "来体验一下信使分拣各种货物的一天吧？": {
+  "ko": "메신저가 온갖 화물을 분류하는 하루를 체험해 볼까?",
+  "en": "How about experiencing a day in the life of a messenger sorting all kinds of cargo?",
+  "ja": "メッセンジャーがいろいろな荷物を仕分ける一日を体験してみない？"
+ },
+ "每受到1种异常状态时，使场上所有<“过灌注”>及后续出现的<“过灌注”>免疫该状态": {
+  "ko": "상태 이상을 1종 받을 때마다 전장의 모든 <'과관류'>와 이후 나타나는 <'과관류'>가 그 상태 이상에 면역이 됨",
+  "en": "Each time it is afflicted by 1 type of negative status, all <'Hyperperfusion'> on the field and any <'Hyperperfusion'> that appear afterwards become immune to that status",
+  "ja": "状態異常を1種類受けるたびに、戦場の全ての<「過灌流」>と以降に出現する<「過灌流」>がその状態異常を無効化する"
+ },
+ "每次受到伤害后降低自身攻击力，最多降低10次": {
+  "ko": "대미지를 받을 때마다 자신의 공격력 감소 (최대 10회)",
+  "en": "ATK decreases each time it takes damage, up to 10 times",
+  "ja": "ダメージを受けるたびに自身の攻撃力が低下する（最大10回）"
+ },
+ "每次受到伤害后降低自身攻击力，最多降低12次": {
+  "ko": "대미지를 받을 때마다 자신의 공격력 감소 (최대 12회)",
+  "en": "ATK decreases each time it takes damage, up to 12 times",
+  "ja": "ダメージを受けるたびに自身の攻撃力が低下する（最大12回）"
+ },
+ "每隔一段时间及投入<浮空信件>后，会选择多名场上我方干员，回复其一定技力并使其攻击速度提升一段时间": {
+  "ko": "일정 시간마다, 그리고 <떠다니는 편지>를 넣은 뒤, 전장의 아군 오퍼레이터 여러 명을 골라 SP를 일정량 회복시키고 일정 시간 공격 속도를 증가시킴",
+  "en": "Periodically, and after posting a <Floating Letter>, selects multiple allied Operators on the field, restoring some SP to them and increasing their ASPD for a while",
+  "ja": "一定時間ごと、および<浮遊する手紙>を投函した後に、戦場の味方オペレーターを複数選び、SPを一定量回復させ、一定時間攻撃速度を上昇させる"
+ },
+ "泡影国国主宝巫迦：为了抑制“御轮”的暴走，我们必须利用“雷之主”的力量。梓兰小姐，空爆小姐，斑弥罗，还有......月见夜，请助吾一臂之力吧！": {
+  "ko": "포영국 국주 바오우가: 「어륜」의 폭주를 억누르려면 「번개의 주인」의 힘을 빌려야 한다. 오키드 양, 캐터펄트 양, 반미라, 그리고…… 미드나이트, 부디 나에게 힘을 보태 다오!",
+  "en": "Baowujia, Sovereign of the Bubbly Realm: To suppress the rampage of the 'Royal Wheel', we must harness the power of the 'Lord of Thunder'. Miss Orchid, Miss Catapult, Banmiluo, and... Midnight, please lend me your strength!",
+  "ja": "泡沫国国主宝巫迦：「御輪」の暴走を抑えるには、「雷の主」の力を借りねばならぬ。オーキッド殿、カタパルト殿、斑弥羅、そして……ミッドナイト、どうか吾に力を貸してくれ！"
+ },
+ "泡影国国主宝巫迦：这应该是受“御轮”泄漏的“诅咒”影响的最后一群野兽了。消灭它们后，泡影国将迎来彻底的和平。月见夜，斑弥罗，猎人们，辛苦你们了。": {
+  "ko": "포영국 국주 바오우가: 「어륜」에서 새어 나온 「저주」의 영향을 받은 마지막 야수 무리일 것이다. 저들을 없애면 포영국에는 온전한 평화가 찾아온다. 미드나이트, 반미라, 헌터들이여, 모두 수고가 많았다.",
+  "en": "Baowujia, Sovereign of the Bubbly Realm: This should be the last pack of beasts affected by the 'curse' leaking from the 'Royal Wheel'. Once they're eliminated, the Bubbly Realm will know true peace. Midnight, Banmiluo, hunters—thank you all for your hard work.",
+  "ja": "泡沫国国主宝巫迦：これが「御輪」から漏れ出た「呪い」の影響を受けた最後の獣の群れであろう。奴らを倒せば、泡沫国に完全な平和が訪れる。ミッドナイト、斑弥羅、ハンターたちよ、ご苦労であった。"
+ },
+ "泡影国国主宝巫迦：除了正面战斗，吾也要熟悉其他的狩猎技巧，免得月见夜又要担心。为此，吾找到了一个绝佳的训练场，想要磨练技巧的家伙就跟吾一起来吧。": {
+  "ko": "포영국 국주 바오우가: 정면 싸움 말고 다른 사냥 기술에도 익숙해져야겠다. 미드나이트가 또 걱정하지 않도록 말이다. 그래서 더없이 좋은 훈련장을 찾아 두었다. 기술을 갈고닦고 싶은 자는 나와 함께 오라.",
+  "en": "Baowujia, Sovereign of the Bubbly Realm: Besides head-on combat, I must also become familiar with other hunting techniques, lest Midnight worry again. To that end, I have found a superb training ground. Those who wish to hone their skills, come with me.",
+  "ja": "泡沫国国主宝巫迦：正面からの戦いだけでなく、吾も他の狩りの技を身につけねばならぬ。ミッドナイトにまた心配をかけぬようにな。そのために絶好の訓練場を見つけた。技を磨きたい者は吾と共に来るがよい。"
+ },
+ "泡影国将军月见夜：斥候发来急报，“御轮”方向的雪山正在流出岩浆。为了泡影国的安全，也为了各位能够返回家园，我请求你们前去调查。请务必小心那股不祥的热浪。": {
+  "ko": "포영국 장군 미드나이트: 척후가 급보를 보내왔다. 「어륜」 쪽 설산에서 용암이 흘러나오고 있다. 포영국의 안전을 위해, 또 여러분이 고향으로 돌아가기 위해, 부디 가서 살펴 주기를 청한다. 그 불길한 열기를 반드시 조심하라.",
+  "en": "General Midnight of the Bubbly Realm: Our scouts have sent an urgent report—lava is flowing from the snowy mountains in the direction of the 'Royal Wheel'. For the safety of the Bubbly Realm, and so that you may all return home, I ask that you go and investigate. Be sure to beware of that ominous heat.",
+  "ja": "泡沫国将軍ミッドナイト：斥候から急報が入った。「御輪」の方角の雪山から溶岩が流れ出している。泡沫国の安全のため、そして皆さんが故郷へ帰るためにも、調査に向かってほしい。あの不吉な熱気には、くれぐれも気をつけてくれ。"
+ },
+ "泡影国将军月见夜：新一轮的兽潮正在形成。但我们已经掌握了影丝蛛的习性，只要能引导它们的行动，就能把这轮兽潮扼杀在摇篮中。走吧，猎人们，狩猎的时候到了。": {
+  "ko": "포영국 장군 미드나이트: 새로운 야수의 물결이 형성되고 있다. 허나 우리는 이미 영사주의 습성을 파악했다. 그 움직임을 유도하기만 하면 이번 물결은 싹부터 잘라 낼 수 있다. 가자, 헌터들이여. 사냥할 때가 왔다.",
+  "en": "General Midnight of the Bubbly Realm: A new beast tide is forming. But we've already learned the habits of the Shadowsilk Spiders—if we can guide their movements, we can nip this tide in the bud. Let's go, hunters. It's time for the hunt.",
+  "ja": "泡沫国将軍ミッドナイト：新たな獣の波が形成されつつある。だが我々はすでに影糸蜘蛛の習性を把握している。その動きを誘導できれば、この波を芽のうちに摘み取れる。行こう、ハンターたち。狩りの時間だ。"
+ },
+ "泡影国将军月见夜：有一群野兽正在靠近“御轮”，看起来想要破坏它。即使如今我们已经知晓了它的一部分真相，“御轮”也始终是我国重要的象征，所以必须阻止它们。": {
+  "ko": "포영국 장군 미드나이트: 야수 무리가 「어륜」에 접근하고 있다. 그것을 부수려는 듯하다. 이제 그 진실의 일부를 알게 되었다 해도 「어륜」은 여전히 우리나라의 중요한 상징이다. 그러니 반드시 막아야 한다.",
+  "en": "General Midnight of the Bubbly Realm: A pack of beasts is approaching the 'Royal Wheel', seemingly intent on destroying it. Even though we now know part of its truth, the 'Royal Wheel' remains an important symbol of our nation, so they must be stopped.",
+  "ja": "泡沫国将軍ミッドナイト：獣の群れが「御輪」に近づいている。破壊するつもりのようだ。今やその真実の一端を知ったとはいえ、「御輪」は変わらず我が国の重要な象徴だ。だから必ず阻止しなければならない。"
+ },
+ "泡影国将军月见夜：这将是一场豪赌。如果我......如果陷阱失效，陛下就拜托各位了。无论如何，一定要守住这里。这是我唯一的请求。": {
+  "ko": "포영국 장군 미드나이트: 이건 큰 도박이 될 것이다. 만약 내가…… 만약 덫이 듣지 않으면, 폐하를 여러분께 부탁한다. 무슨 일이 있어도 이곳만은 지켜 다오. 이것이 나의 유일한 청이다.",
+  "en": "General Midnight of the Bubbly Realm: This will be a big gamble. If I... if the trap fails, I leave Her Majesty in your hands. No matter what, you must hold this place. That is my only request.",
+  "ja": "泡沫国将軍ミッドナイト：これは大きな賭けになる。もし私が……もし罠が効かなければ、陛下のことは皆さんに頼む。何があろうと、ここだけは守り抜いてくれ。それが私の唯一の頼みだ。"
+ },
+ "泡影国武士队长：难以置信......那些早已灭绝的咒鬼竟然复活了！猎人阁下，请务必挡住它们！如果让狼群突破这里，都城就危险了！": {
+  "ko": "포영국 무사 대장: 믿을 수가 없군…… 이미 멸종했던 주귀가 되살아나다니! 헌터 나리, 부디 저것들을 막아 주십시오! 늑대 무리가 여기를 뚫으면 도성이 위험합니다!",
+  "en": "Samurai Captain of the Bubbly Realm: Unbelievable... the Cursed Oni, long since extinct, have come back to life! Honored hunter, please hold them back! If the pack breaks through here, the capital will be in danger!",
+  "ja": "泡沫国武士隊長：信じられん……とうに絶滅したはずの呪鬼が蘇るとは！ ハンター殿、どうか奴らを食い止めてくだされ！ 群れにここを突破されれば、都が危うい！"
+ },
+ "泡影国铁匠斑弥罗：“移动城市”这个想法也太有趣了，要是能实现的话......总之，我需要有人帮我捕获大量的盗壳虫。报酬去找月见夜要，就说这是为了国家未来进行的研究。": {
+  "ko": "포영국 대장장이 반미라: 「움직이는 도시」라는 발상, 너무 재미있잖아. 실현만 된다면…… 아무튼 도각충을 잔뜩 잡아다 줄 사람이 필요해. 보수는 미드나이트한테 받아. 나라의 미래를 위한 연구라고 말하면 돼.",
+  "en": "Banmiluo, Blacksmith of the Bubbly Realm: This whole 'mobile city' idea is way too interesting. If it could actually be done... Anyway, I need someone to catch a whole bunch of Shellthief Bugs for me. Go ask Midnight for your pay—just tell him it's research for the nation's future.",
+  "ja": "泡沫国鍛冶師斑弥羅：「移動都市」って発想、面白すぎるでしょ。実現できたら……とにかく、盗殻虫を大量に捕まえてくれる人が必要なんだ。報酬はミッドナイトにもらって。国の未来のための研究だって言えばいいから。"
+ },
+ "泡影国铁匠斑弥罗：我强化了抵御兽潮的防御工事，普通的野兽绝对别想再靠近我们的城市。现在，我需要有人来帮我测试一下，有没有不怕死的——我是说，勇敢的家伙？": {
+  "ko": "포영국 대장장이 반미라: 야수의 물결을 막을 방어 시설을 강화했어. 평범한 야수는 두 번 다시 우리 도시 근처에 얼씬도 못 해. 이제 시험해 줄 사람이 필요한데, 죽음을 두려워하지 않는 — 아니, 용감한 친구 없나?",
+  "en": "Banmiluo, Blacksmith of the Bubbly Realm: I've reinforced the defenses against the beast tide—no ordinary beast will ever get near our city again. Now I need someone to test them out. Anyone not afraid of dying—I mean, anyone brave?",
+  "ja": "泡沫国鍛冶師斑弥羅：獣の波を防ぐ防御施設を強化したよ。普通の獣じゃもう二度とうちらの都に近づけない。で、試してくれる人が必要なんだけど、死ぬのが怖くない――じゃなくて、勇敢な人はいない？"
+ },
+ "泡影国铁匠斑弥罗：月见夜这家伙真会使唤人，算了，走吧，狩猎团的家伙们也都跟上。我还真挺好奇“御轮”底下究竟是什么样子的呢。": {
+  "ko": "포영국 대장장이 반미라: 미드나이트 저 녀석, 사람 부려먹는 재주 하나는 알아줘야 해. 됐고, 가자고. 사냥단 친구들도 다 따라와. 나도 「어륜」 밑이 대체 어떻게 생겼는지 꽤 궁금하거든.",
+  "en": "Banmiluo, Blacksmith of the Bubbly Realm: That Midnight sure knows how to put people to work. Oh well, let's go. Hunting party, you all follow along too. I'm actually pretty curious what it looks like under the 'Royal Wheel'.",
+  "ja": "泡沫国鍛冶師斑弥羅：ミッドナイトのやつ、ほんと人使いが荒いんだから。まあいいや、行こう。狩猟団のみんなもついてきて。「御輪」の下が一体どうなってるのか、けっこう気になるんだよね。"
+ },
+ "清洁公司说再有这样的情况就要加收服务费了。": {
+  "ko": "청소 업체는 이런 일이 또 생기면 서비스 요금을 더 받겠다고 했다.",
+  "en": "The cleaning company says they'll charge an extra service fee if this happens again.",
+  "ja": "清掃会社は、こんなことがまたあったら追加料金を取ると言っている。"
+ },
+ "激情能让人一往无前，也能让人失去理性。": {
+  "ko": "열정은 사람을 거침없이 나아가게도 하지만, 이성을 잃게도 한다.",
+  "en": "Passion can drive one ever forward—and it can also rob one of reason.",
+  "ja": "情熱は人をひたすら前へ突き動かすこともあれば、理性を失わせることもある。"
+ },
+ "猜猜唤醒展馆中央的那个大家伙会带来什么样的惊喜？": {
+  "ko": "전시관 한가운데의 저 덩치를 깨우면 어떤 놀라운 일이 벌어질지 맞혀 볼래?",
+  "en": "Care to guess what kind of surprise awaits if you wake that big guy in the middle of the exhibition hall?",
+  "ja": "展示館の真ん中にいるあのデカブツを起こしたら、どんなサプライズが待っていると思う？"
+ },
+ "生命值首次降为0时重生，随后选择所有我方干员及周围4格生成<活性躁乱>并进入第二形态": {
+  "ko": "HP가 처음 0이 되면 부활한 뒤, 모든 아군 오퍼레이터와 그 주변 4칸에 <활성 교란>을 생성하고 제2형태에 돌입",
+  "en": "Revives the first time its HP reaches 0, then creates <Active Agitation> on all allied Operators and their 4 surrounding tiles and enters its Second Form",
+  "ja": "HPが初めて0になると復活し、その後全ての味方オペレーターとその周囲4マスに<活性擾乱>を生成して第二形態になる"
+ },
+ "生命值首次降为0时，对三名我方非起飞单位所在行进行地毯式轰炸。重生后获得【领地宣示！】技能": {
+  "ko": "HP가 처음 0이 되면 이륙하지 않은 아군 유닛 3명이 있는 가로줄을 융단 폭격. 부활 후 [영역 선포!] 스킬 획득",
+  "en": "The first time its HP reaches 0, carpet-bombs the rows of 3 allied units that have not taken off. Gains the [Territory Declared!] skill after reviving",
+  "ja": "HPが初めて0になると、離陸していない味方ユニット3体の横列を絨毯爆撃する。復活後、【縄張り宣言！】スキルを獲得する"
+ },
+ "生命值首次降为0时，进入重生阶段，期间进行6次攻击，对全场我方单位造成法术伤害，一段时间后重生，重生后可以使用【最后的奖赏】，且受到免疫的伤害类型攻击时，还会反弹部分本应受到的伤害": {
+  "ko": "HP가 처음 0이 되면 부활 단계에 들어가 그동안 6회 공격하여 전장의 모든 아군 유닛에게 마법 대미지를 입히고, 일정 시간 뒤 부활. 부활 후 [마지막 보상]을 쓸 수 있으며, 면역인 대미지 유형의 공격을 받으면 받았어야 할 대미지의 일부를 반사함",
+  "en": "The first time its HP reaches 0, enters a revival phase, during which it attacks 6 times, dealing Arts damage to all allied units on the field, then revives after a while. After reviving, can use [Final Reward], and when hit by a damage type it is immune to, reflects part of the damage it would have taken",
+  "ja": "HPが初めて0になると復活段階に入り、その間6回攻撃して戦場の全ての味方ユニットに術ダメージを与え、一定時間後に復活する。復活後は【最後の報酬】を使えるようになり、無効化するダメージタイプの攻撃を受けると、本来受けるはずだったダメージの一部を反射する"
+ },
+ "生成后会进入5秒倒计时，倒计时结束后死亡并对周围我方单位造成物理伤害及晕眩": {
+  "ko": "생성되면 5초 카운트다운에 들어가며, 카운트다운이 끝나면 사망하고 주변 아군 유닛에게 물리 대미지와 기절을 부여",
+  "en": "Starts a 5-second countdown upon spawning; when the countdown ends, dies and deals Physical damage and Stun to nearby allied units",
+  "ja": "出現すると5秒のカウントダウンが始まり、終了すると死亡して周囲の味方ユニットに物理ダメージとスタンを与える"
+ },
+ "由Touch负责设计和程序校准的园艺机器人，除了能完成播种、灌溉和土壤监测工作外，还有巡逻和保护区域的能力。": {
+  "ko": "Touch가 설계와 프로그램 보정을 맡은 원예 로봇. 파종·관개·토양 모니터링은 물론, 구역을 순찰하고 지키는 능력도 갖추었다.",
+  "en": "A gardening robot designed and calibrated by Touch. Besides sowing, irrigation, and soil monitoring, it is also capable of patrolling and protecting an area.",
+  "ja": "Touchが設計とプログラム調整を担当した園芸ロボット。種まき、水やり、土壌監視のほか、区域を巡回して守る能力も備えている。"
+ },
+ "瘫痪后自身防御力、法术抗性及移动速度会永久降低": {
+  "ko": "행동 불능이 된 뒤 자신의 방어력, 마법 저항, 이동 속도가 영구히 감소",
+  "en": "After being incapacitated, its DEF, RES, and Movement Speed are permanently reduced",
+  "ja": "行動不能になった後、自身の防御力、術耐性、移動速度が永続的に低下する"
+ },
+ "移动速度不会低于初始值": {
+  "ko": "이동 속도가 초기값 아래로 떨어지지 않음",
+  "en": "Movement Speed cannot drop below its initial value",
+  "ja": "移動速度が初期値を下回らない"
+ },
+ "移动速度提升且不可阻挡": {
+  "ko": "이동 속도 증가, 저지 불가",
+  "en": "Increased Movement Speed; Unblockable",
+  "ja": "移動速度が上昇し、ブロック不可"
+ },
+ "窸窸窣窣，是风沙吹打在车窗上的声音，也是什么东西正偷翻你背包的声音。": {
+  "ko": "사각사각. 모래바람이 차창을 때리는 소리이기도 하고, 무언가가 네 배낭을 몰래 뒤지는 소리이기도 하다.",
+  "en": "Rustle, rustle. It's the sound of wind-blown sand pelting the car window—and the sound of something secretly rummaging through your backpack.",
+  "ja": "カサカサ。それは砂嵐が車窓を叩く音であり、何かがこっそりあなたのリュックを漁る音でもある。"
+ },
+ "经过我方单位但未被阻挡时碾压造成伤害": {
+  "ko": "저지당하지 않고 아군 유닛을 지나가면 깔아뭉개 대미지를 입힘",
+  "en": "Deals crushing damage when passing through allied units without being blocked",
+  "ja": "ブロックされずに味方ユニットを通過する際、轢いてダメージを与える"
+ },
+ "自身未携带<浮空信件>时，会夺取攻击范围内的<浮空信件>": {
+  "ko": "<떠다니는 편지>를 지니고 있지 않으면 공격 범위 내의 <떠다니는 편지>를 빼앗음",
+  "en": "When not carrying a <Floating Letter>, snatches a <Floating Letter> within its attack range",
+  "ja": "<浮遊する手紙>を所持していない時、攻撃範囲内の<浮遊する手紙>を奪う"
+ },
+ "蓄电状态": {
+  "ko": "축전 상태",
+  "en": "Charging State",
+  "ja": "蓄電状態"
+ },
+ "行动预备组A6队长梓兰：即使这只是一场梦，我也会记住在这里发生的一切。再会。": {
+  "ko": "예비작전팀 A6 팀장 오키드: 이것이 한낱 꿈일지라도, 나는 여기서 있었던 모든 일을 기억할 거야. 또 보자.",
+  "en": "Reserve Op Team A6 Captain Orchid: Even if this is only a dream, I will remember everything that happened here. Until we meet again.",
+  "ja": "行動予備隊A6隊長オーキッド：たとえこれがただの夢だとしても、ここで起きたことは全部覚えておくわ。また会いましょう。"
+ },
+ "行动预备组A6成员空爆：只要我狩猎下去，说不定就会有重逢的一天呢。再见！": {
+  "ko": "예비작전팀 A6 팀원 캐터펄트: 사냥을 계속하다 보면 언젠가 다시 만날 날이 올지도 몰라요. 안녕히!",
+  "en": "Reserve Op Team A6 Member Catapult: As long as I keep hunting, maybe we'll meet again someday. Bye!",
+  "ja": "行動予備隊A6メンバーカタパルト：狩りを続けていれば、いつかまた会える日が来るかもしれませんね。さよなら！"
+ },
+ "被击倒后提供大量部署费用": {
+  "ko": "격파되면 배치 코스트를 대량 제공",
+  "en": "Grants a large amount of DP when defeated",
+  "ja": "撃破されると大量のコストを獲得できる"
+ },
+ "被攻击时对伤害来源造成数点狂躁损伤": {
+  "ko": "공격받으면 대미지를 준 대상에게 광란 손상을 약간 입힘",
+  "en": "When attacked, inflicts a few points of Frenzy on the damage source",
+  "ja": "攻撃を受けると、ダメージ源に少量の狂躁損傷を与える"
+ },
+ "认真的生态学者：一个冠鸣龙群落正在迁徙，而在它们迁徙的路径上，生活着一群大喰怪。要是它们激发了大喰怪的食欲，可能会对周围的生态系统造成极大打击，请有志之士想想办法吧！": {
+  "ko": "진지한 생태학자: 관명룡 무리가 이동 중인데, 그 경로 위에 대식괴 무리가 살고 있습니다. 대식괴의 식욕을 자극하면 주변 생태계에 큰 타격이 갈 수 있어요. 뜻있는 분들께서 방법을 좀 궁리해 주십시오!",
+  "en": "Earnest Ecologist: A colony of Crowncall Wyverns is migrating, and a group of Great Gluttons lives along their migration route. If the wyverns whet the Great Gluttons' appetites, it could deal a major blow to the surrounding ecosystem. Would anyone willing please come up with a solution?",
+  "ja": "真面目な生態学者：冠鳴竜の群れが移動しているのですが、その移動ルート上に大喰怪の群れが棲んでいます。大喰怪の食欲を刺激してしまえば、周囲の生態系に大きな打撃を与えかねません。志ある方、どうか対策を考えてください！"
+ },
+ "超带电状态": {
+  "ko": "초대전 상태",
+  "en": "Supercharged State",
+  "ja": "超帯電状態"
+ },
+ "跟随Mechanist从哥伦比亚而来的学徒，沉默寡言，打心底认同Mechanist的机械艺术。酒量极差，酒后被Mechanist玩得团团转是绝不能当着他的面提的事情。": {
+  "ko": "메커니스트를 따라 컬럼비아에서 온 견습생. 과묵하며, 메커니스트의 기계 예술을 진심으로 인정한다. 술이 몹시 약한데, 취한 뒤 메커니스트에게 이리저리 휘둘렸던 일은 절대 그 앞에서 꺼내면 안 되는 이야기다.",
+  "en": "An apprentice who followed Mechanist from Columbia. Taciturn, and a true believer in Mechanist's mechanical art. Has an extremely low tolerance for alcohol—how Mechanist toyed with him after he got drunk must never be mentioned in his presence.",
+  "ja": "メカニストについてコロンビアからやって来た弟子。寡黙で、メカニストの機械芸術を心から認めている。酒にめっぽう弱く、酔った後にメカニストにさんざん振り回された件は、本人の前で決して口にしてはならない。"
+ },
+ "车后座的物资箱里放的可能不只是货物，洋蓟村的通讯塔上晾的也不只是胡萝卜干。": {
+  "ko": "차 뒷좌석 물자 상자에 실린 것이 짐만은 아닐지도 모르고, 양계촌 통신탑에 널린 것도 말린 당근만은 아니다.",
+  "en": "What's in the supply crate on the back seat may not be just cargo, and what's hanging on Artichoke Village's communications tower isn't just dried carrots.",
+  "ja": "後部座席の物資箱に入っているのは荷物だけではないかもしれないし、洋薊村の通信塔に干してあるのも干しニンジンだけではない。"
+ },
+ "转换遗憾的重量，重塑失望下沉的速度，让事情的结局在落地之前得以改变。": {
+  "ko": "아쉬움의 무게를 바꾸고, 실망이 가라앉는 속도를 다시 빚어, 일의 끝이 땅에 닿기 전에 달라지게 한다.",
+  "en": "Transform the weight of regret, reshape the speed at which disappointment sinks, and let the ending change before it hits the ground.",
+  "ja": "後悔の重さを変え、失望が沈む速さを作り直し、物事の結末が地に落ちる前に変えられるようにする。"
+ },
+ "这场纷争已经发展到了不用最终手段就无法解决的程度。": {
+  "ko": "이 분쟁은 최후의 수단을 쓰지 않고는 해결할 수 없는 지경에 이르렀다.",
+  "en": "This dispute has reached the point where it cannot be resolved without resorting to the final measure.",
+  "ja": "この争いは、最終手段を使わなければ解決できないところまで来てしまった。"
+ },
+ "这里是旅途的终点，这里是大地的尽头，这里是她们四个人给自己的答案。": {
+  "ko": "여기는 여정의 끝이고, 여기는 대지의 끝이며, 여기는 그녀들 넷이 스스로에게 내놓은 답이다.",
+  "en": "This is the end of the journey, this is the edge of the earth, and this is the answer the four of them gave themselves.",
+  "ja": "ここは旅の終点、ここは大地の果て、ここは彼女たち四人が自分たちに出した答え。"
+ },
+ "进入保护目标后，不扣除目标生命值": {
+  "ko": "방어 포인트에 진입해도 목표 HP가 감소하지 않음",
+  "en": "Does not reduce Life Points upon entering the Objective Point",
+  "ja": "目標地点に入っても防衛ラインの耐久値を減らさない"
+ },
+ "进入战斗之前务必确保安全帽和防尘面罩都已经戴好。": {
+  "ko": "전투에 들어가기 전에 안전모와 방진 마스크를 제대로 썼는지 반드시 확인하자.",
+  "en": "Before entering combat, be sure your hard hat and dust mask are properly on.",
+  "ja": "戦闘に入る前に、ヘルメットと防塵マスクをきちんと着けているか必ず確認すること。"
+ },
+ "遇到无法跨越的峡谷该怎么办？聪明的雷姆必拓人自会找到办法：乘着间歇泉喷发的水流，从天空中飞过去吧！": {
+  "ko": "건널 수 없는 협곡을 만나면 어떻게 할까? 영리한 림 빌리턴 사람들은 알아서 방법을 찾는다. 간헐천이 뿜는 물줄기를 타고 하늘로 날아 건너면 된다!",
+  "en": "What do you do when you come across a canyon you can't cross? The clever folk of Rim Billiton will find a way: ride the jets of an erupting geyser and fly across the sky!",
+  "ja": "越えられない峡谷に出くわしたらどうする？ 賢いリム・ビリトン人なら自分で方法を見つける。間欠泉が噴き出す水流に乗って、空を飛んで渡ればいい！"
+ },
+ "遇到霸占射击位不离场的人，记得要向主办方报告。": {
+  "ko": "사격 자리를 차지하고 비키지 않는 사람을 만나면 주최 측에 꼭 알리자.",
+  "en": "If you encounter someone hogging a shooting booth and refusing to leave, remember to report them to the organizers.",
+  "ja": "射撃ブースを独占して離れない人がいたら、主催者に報告するのを忘れずに。"
+ },
+ "附加条件：清除<活性躁乱>时产生更强的副作用：改为生成“过灌注”": {
+  "ko": "제한 조건: <활성 교란>을 제거할 때 더 강한 부작용 발생: 대신 '과관류'가 생성됨",
+  "en": "Condition: Removing <Active Agitation> causes a stronger side effect: 'Hyperperfusion' spawns instead",
+  "ja": "制限：<活性擾乱>を除去した時の副作用が強化される：代わりに「過灌流」が生成される"
+ },
+ "<“再度绽放”>部署后消除9格范围内的<活性躁乱>，治疗其中我方干员生命值并使其获得技力；随后每个被消除的<活性躁乱>附近各生成1只“过灌注”向目标点移动": {
+  "ko": "<「재개화」> 배치 후 9칸 범위 내의 <활성 교란>을 제거하고, 그 안의 아군 오퍼레이터의 HP를 치유하고 SP를 부여함. 이후 제거된 <활성 교란>마다 근처에 '과관류' 1마리가 생성되어 방어 포인트로 이동",
+  "en": "<'Rebloom'> After deployment, removes <Active Agitation> within a 9-tile range, restoring HP to and granting SP to allied Operators within; afterwards, 1 'Hyperperfusion' spawns near each removed <Active Agitation> and moves toward the Objective Point",
+  "ja": "<「再開花」>配置後、範囲9マス内の<活性擾乱>を除去し、範囲内の味方オペレーターのHPを回復してSPを付与する。その後、除去された<活性擾乱>ごとに近くに「過灌流」が1体出現し、目標地点へ向かう"
+ },
+ "附加条件：部署费用的自然回复速度降低60%；在<活性躁乱>上撤退的干员再部署时间进一步延长；清除<活性躁乱>时产生更强的副作用：改为生成“过灌注”": {
+  "ko": "제한 조건: 배치 코스트 자연 회복 속도 60% 감소. <활성 교란> 위에서 철수한 오퍼레이터의 재배치 시간이 더욱 연장됨. <활성 교란>을 제거할 때 더 강한 부작용 발생: 대신 '과관류'가 생성됨",
+  "en": "Condition: DP regeneration speed -60%; Operators retreated on <Active Agitation> have their Redeployment Time further extended; removing <Active Agitation> causes a stronger side effect: 'Hyperperfusion' spawns instead",
+  "ja": "制限：コストの自然回復速度が60%低下。<活性擾乱>上で撤退したオペレーターの再配置時間がさらに延長される。<活性擾乱>を除去した時の副作用が強化される：代わりに「過灌流」が生成される"
+ },
+ "飞行友好单位": {
+  "ko": "비행 아군 유닛",
+  "en": "Flying friendly unit",
+  "ja": "飛行する友軍ユニット"
+ },
+ "首次攻击时，在目标所在位置投放<“惊喜信件”>": {
+  "ko": "첫 공격 시 대상의 위치에 <「깜짝 편지」>를 투하",
+  "en": "On its first attack, drops a <'Surprise Letter'> at the target's position",
+  "ja": "初回攻撃時、対象の位置に<「サプライズレター」>を投下する"
+ },
+ "驾驶<传奇矿车>时攻击力及防御力大幅提升": {
+  "ko": "<전설의 광차>를 운전하는 동안 공격력과 방어력 대폭 증가",
+  "en": "ATK and DEF greatly increased while driving a <Legendary Mine Cart>",
+  "ja": "<伝説のトロッコ>を運転している間、攻撃力と防御力が大幅に上昇する"
+ },
+ "驾驶<手推小矿车>时攻击力及防御力大幅提升": {
+  "ko": "<손수레 광차>를 운전하는 동안 공격력과 방어력 대폭 증가",
+  "en": "ATK and DEF greatly increased while driving a <Hand-Pushed Mine Cart>",
+  "ja": "<手押しトロッコ>を運転している間、攻撃力と防御力が大幅に上昇する"
  }
 }

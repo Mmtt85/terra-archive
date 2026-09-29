@@ -154,6 +154,8 @@ export function mergeRogueDoc(base: StageDoc, rogue: StageDoc): StageDoc {
     events: [...base.events, ...rogue.events],
     enemyIds: [...base.enemyIds, ...rogue.enemyIds],
     types: { ...base.types, ...rogue.types },
+    // 드랍 이름 — 미래시 문서(future-dex)는 본 문서에 없는 재화 이름을 들고 온다
+    items: { ...rogue.items, ...base.items },
     // 같은 적이 양쪽에 있으면 **본 도감 이름을 정본으로** 둔다 (록라 데이터는 뒤에 깔린다)
     enemyNames: { ...rogue.enemyNames, ...base.enemyNames },
     ...(base.enemyImg || rogue.enemyImg ? { enemyImg: { ...rogue.enemyImg, ...base.enemyImg } } : {}),

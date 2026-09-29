@@ -89,11 +89,20 @@ def run(server):
         return True
 
     # ① 홈 테마 — 활동 id 인 것만 (main_N·rogue_*·sandbox_* 는 이벤트 도감 밖이다)
+    # 중섭(cn)은 **한섭에 아직 없는 미래시 이벤트**만, 한국어 자리가 비어 있을 때만 받는다 (2026-09-29 벡터 돌파 #3 —
+    # 스토리가 없어 섬네일이 없었다). 그림 속 제목이 중국어지만 다른 판이 아직 없다. 한섭에 열리면 kr 실행이 덮는다.
+    kr_basic = json.load(open(os.path.join(G, "kr_activity_table.json"), encoding="utf-8"))["basicInfo"] if server == "cn" else {}
     for p in man:
         if p.lower().startswith("arts/ui/stage/hometheme/"):
             aid = p.rsplit("/", 1)[1]
-            if aid in basic:
-                want(p, os.path.join(PUB, THUMB_SUB[server], f"{aid}.webp"), 720)
+            if aid not in basic:
+                continue
+            if server == "cn":
+                dest = os.path.join(PUB, f"{aid}.webp")
+                if aid not in kr_basic and not os.path.exists(dest):
+                    want(p, dest, 720)
+                continue
+            want(p, os.path.join(PUB, THUMB_SUB[server], f"{aid}.webp"), 720)
 
     # ② 듀얼 채널
     for aid, d in duel.items():
@@ -119,7 +128,7 @@ def run(server):
                     want("arts/ui/playeravatar/" + r["id"], os.path.join(PUB, "avatar", r["id"] + ".webp"))
                 elif r.get("type") == "FURN":
                     want("arts/ui/furnitureicons/drop/" + r["id"], os.path.join(PUB, "furni", r["id"] + ".webp"))
-    if duel:
+    if duel and server in GUIDE_LOC:
         for i in range(1, 10):
             if not want(f"arts/guidebookpages/[pack]enemyduel/entry_{i}",
                         os.path.join(PUB, "duel", "guide", GUIDE_LOC[server], f"entry_{i}.webp"), (1600, 900)):
@@ -258,7 +267,7 @@ def mirror_fallback():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--server", default="kr,jp,en")
+    ap.add_argument("--server", default="kr,jp,en", help="cn 을 더하면 미래시 이벤트 홈 테마 그림")
     ap.add_argument("--only-mirror", action="store_true", help="CDN 언팩 없이 ③ 지난 이벤트 대체 그림만")
     args = ap.parse_args()
     if not args.only_mirror:

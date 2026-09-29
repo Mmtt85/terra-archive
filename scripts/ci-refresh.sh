@@ -192,6 +192,9 @@ run "build-op-debut"     python3 scripts/build-operator-debut.py
 #     (새 미래시 이벤트가 열리면 `--cn-events` 를 한 번).
 # 이벤트 도감 — **맨 뒤**. 작전·아이템·스토리·오퍼 데뷔 장부를 전부 읽어 이벤트 단위로 접는다.
 run "build-events"       python3 scripts/build-events.py "$G"
+# 미래시 이벤트의 작전·적·재화 상세 (이벤트 창 전용) — build-events 산출물을 읽으므로 바로 뒤. 그림(중섭 도면·초상)은
+# 로컬에서만 받는다 (scripts/build-future-dex.py 머리주석).
+run "build-future-dex"   python3 scripts/build-future-dex.py "$G" --no-images
 
 # 중국어→한국어 번역 사전 공개본 — 외부 앱이 **바뀐 파일만** 받아가는 증분 배포본
 # (2026-09-17, 개인 번역 앱 문의). 데이터 단계 끝에 둔다. 형식은 public/tl/README.md.

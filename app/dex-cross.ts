@@ -7,6 +7,7 @@
 // 창끼리 앞뒤를 정하므로 겹쳐 떠도 그대로 동작한다.
 import type { Enemy, EnemyStages } from "./enemy-detail";
 import type { EnemyStatsIndex, StageDoc } from "./stage-data";
+import type { DexItem } from "./items";
 
 const ENEMY_LOADERS: Record<string, () => Promise<unknown>> = {
   ko: () => import("./data/enemies.json"),
@@ -89,4 +90,22 @@ export async function loadEnemyStages(locale: string): Promise<EnemyStages | nul
  *  (2026-08-11 사용자 제보: 적 도감→작전 모달 경로에서 실제로 빠져 있었다). */
 export async function loadEnemyStats(): Promise<EnemyStatsIndex> {
   return unwrap<EnemyStatsIndex>(await import("./data/enemy-stats.json"));
+}
+
+// 미래시(중섭 선행) 이벤트의 작전·적·재화 — 본 도감에 없는 id 만 여기서 찾는다 (scripts/build-future-dex.py).
+// 이벤트 창에서만 쓴다 — 본 도감 목록에는 섞지 않는다 (사용자 제보 2026-09-29 "스테이지 데이터같은것도 다 없고
+// 증표도 클릭해도 모달 안뜨네").
+export type FutureDex = { stages: StageDoc; items: DexItem[]; enemies: Enemy[]; enemyStages: EnemyStages };
+const FUTURE_LOADERS: Record<string, () => Promise<unknown>> = {
+  ko: () => import("./data/future-dex.json"),
+  en: () => import("./data/future-dex.en.json"),
+  ja: () => import("./data/future-dex.ja.json"),
+};
+const futureCache = new Map<string, FutureDex>();
+export async function loadFutureDex(locale: string): Promise<FutureDex> {
+  const hit = futureCache.get(locale);
+  if (hit) return hit;
+  const doc = unwrap<FutureDex>(await (FUTURE_LOADERS[locale] ?? FUTURE_LOADERS.ko)());
+  futureCache.set(locale, doc);
+  return doc;
 }
