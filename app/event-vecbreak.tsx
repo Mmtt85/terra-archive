@@ -134,9 +134,41 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
 
 type Ctx = {
   data: VecData; stageOf: Map<string, { code: string; name: string }>;
-  onOpenStage: (id: string) => void; onOpenEnemy: (id: string) => void;
+  onOpenStage: ((id: string) => void) | null; onOpenEnemy: (id: string) => void;
   onOpenTerm: (name: string) => void;
 };
+
+/**
+ * 작전 창(StageFile)의 작전 설명 — 「재개화」·<어둠>·<네온사인> 같은 기믹 이름을 눌러 설명 창을 연다
+ * (사용자 지적 2026-09-29 "애초에 맵설명에 어둠 네온사인 재개화 이런애들은 클릭도 안되는데?").
+ * 회차는 작전 id 앞부분(act3break_h03 → act3break). 자료를 받기 전·사전에 없는 회차는 그냥 글자.
+ */
+export function VecStageDesc({ stageId, text, onOpenEnemy }: {
+  stageId: string; text: string; onOpenEnemy?: (id: string) => void;
+}) {
+  const { locale } = useI18n();
+  const ev = stageId.split("_")[0];
+  const [data, setData] = useState<VecData | null>(null);
+  const [term, setTerm] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    loadVec(locale).then((all) => { if (live) setData(all[ev] ?? null); }, () => {});
+    return () => { live = false; };
+  }, [ev, locale]);
+  if (!data) return <>{text}</>;
+  const ctx: Ctx = {
+    data, stageOf: new Map(), onOpenStage: null,
+    // 적 창을 못 여는 자리면 적 이름은 글자로 둔다
+    onOpenEnemy: onOpenEnemy ?? (() => {}), onOpenTerm: setTerm,
+  };
+  const shown = onOpenEnemy ? data : { ...data, en: undefined };
+  return (
+    <>
+      <Rich text={text} ctx={{ ...ctx, data: shown }} />
+      {term && <TermModal name={term} ctx={ctx} onClose={() => setTerm(null)} />}
+    </>
+  );
+}
 
 /** 글 속 기믹·적 이름을 누를 수 있게 — 사전에 없는 이름은 그냥 글자 */
 function Rich({ text, ctx }: { text: string | null | undefined; ctx: Pick<Ctx, "data" | "onOpenEnemy" | "onOpenTerm"> }) {
@@ -172,7 +204,8 @@ function TermModal({ name, ctx, onClose }: { name: string; ctx: Ctx; onClose: ()
         <ul className="vb-term-defs">
           {g.d.map((line, i) => <li key={i}><Rich text={line} ctx={ctx} /></li>)}
         </ul>
-        {g.s.length > 0 && (
+        {/* 작전 창 속 설명 창(VecStageDesc)에선 다른 작전으로 건너가지 않는다 — 목록을 뺀다 */}
+        {g.s.length > 0 && ctx.onOpenStage && (
           <>
             <h4 className="ed-h">{t("나오는 작전 {n}", { n: g.s.length })}</h4>
             <div className="vb-term-stages">
@@ -185,10 +218,10 @@ function TermModal({ name, ctx, onClose }: { name: string; ctx: Ctx; onClose: ()
   );
 }
 
-function StageBtn({ sid, stageOf, onOpenStage }: { sid: string } & Pick<Ctx, "stageOf" | "onOpenStage">) {
+function StageBtn({ sid, stageOf, onOpenStage }: { sid: string; stageOf: Ctx["stageOf"]; onOpenStage: Ctx["onOpenStage"] }) {
   const st = stageOf.get(sid);
   return (
-    <button type="button" className="vb-stage" onClick={() => onOpenStage(sid)}>
+    <button type="button" className="vb-stage" onClick={() => onOpenStage?.(sid)}>
       <b>{st?.code ?? sid}</b><span>{st?.name ?? ""}</span>
     </button>
   );

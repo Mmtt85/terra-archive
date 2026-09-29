@@ -6,7 +6,7 @@
 //   인라인으로 그려야 상세 페이지 HTML에 본문이 박힌다 (근거는 app/enemy-detail.tsx 머리주석).
 //   1.6MB짜리 stages.json은 지연 로드되는 목록 탭에만 있다.
 
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { asset } from "./assets";
 import { enemyPath, enemyImg, enemyImgBase, itemDexPath, stageMap, stageMapOf, stagePath, stageListPath } from "./dex-paths";
@@ -25,6 +25,10 @@ import { SANDBOX_GRID_SHARE } from "./stage-cam";
 // rogue-routes.json(1.3MB). **두 파일의 레코드 구조는 완전히 같아**(h·w·g·r·f·e·sp·wv·
 // ems·cw·mm — 2026-08-16 키 비교) StageRouteMap은 그대로 쓴다. 캐시만 갈라 두면
 // 록라 작전만 보는 사람이 5.3MB를, 본 도감만 보는 사람이 1.3MB를 안 받는다.
+// 벡터 돌파 작전 설명 속 기믹 이름 링크 — 그 회차 자료(event-vecbreak.json)를 쓰므로 그 작전을 열 때만 받는다
+const VecStageDesc = lazy(() => import("./event-vecbreak").then((m) => ({ default: m.VecStageDesc })));
+const VB_STAGE = /^act\d+break_/;
+
 type RouteDoc = Record<string, StageRoutes | string>;
 // 경로 파일은 넷 — 본 도감 · 통합전략(rg) · 생존연산 사막 이야기(sb, 2026-09-23 도감 편입) ·
 // 이벤트 도감의 미래시 작전(fut, 2026-09-29 — scripts/build-future-dex.py, 이벤트 창에서만 연다).
@@ -325,7 +329,13 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
           ) : s.map ? photoOnly : (
             <p className="st-note">{t("이 작전은 지형 도면이 제공되지 않습니다.")}</p>
           )}
-          {s.desc && <p className="st-desc">{s.desc}</p>}
+          {s.desc && (
+            <p className="st-desc">
+              {VB_STAGE.test(s.id)
+                ? <Suspense fallback={s.desc}><VecStageDesc stageId={s.id} text={s.desc} onOpenEnemy={onOpenEnemy} /></Suspense>
+                : s.desc}
+            </p>
+          )}
           {/* 긴급 환경 제한 조건 — 설명을 지우지 않고 이어서 덧붙인다 (사용자 요청 2026-08-10).
               #f#는 일반판 행(chg), 보안 파견은 긴급 판 행 자체의 chg(긴급 보급 조건·위험 등급
               효과) — cur가 두 경우 모두 맞는 행을 가리킨다. */}

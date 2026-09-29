@@ -25127,17 +25127,24 @@ html[lang="ja"] .vn-box {
 .vb-medals span { display: flex; flex-direction: column; min-width: 0; font-size: 12px; }
 .vb-medals i { font-size: 11px; font-style: normal; color: var(--muted); }
 /* 글 속 기믹·적 이름 — 누르면 설명 창(기믹) · 적 창(적) */
+/* 로그라이크 글 속 링크(.rg-cond-node)처럼 금빛 글자 — 밑줄은 테두리가 아니라 text-decoration
+   (테두리는 전역 :where(button) 라운드에 끝이 휘었다, 사용자 지적 2026-09-29) */
 .vb-term {
   display: inline;
   padding: 0;
   border: 0;
-  border-bottom: 1px dashed currentColor;
+  border-radius: 0;
   background: none;
-  color: inherit;
+  color: var(--amber-ink);
   font: inherit;
+  font-weight: 600;
+  text-decoration: underline dashed;
+  text-underline-offset: 3px;
   cursor: pointer;
 }
-.vb-term:hover { color: var(--ink); border-bottom-style: solid; }
+.vb-term:hover { text-decoration-style: solid; }
+/* 적 이름은 글자색 그대로 — 기믹과 구분 */
+.vb-term.en { color: inherit; font-weight: inherit; }
 .vb-term-body { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 16px; }
 .vb-term-body h3 { margin: 0; font-size: 16px; }
 .vb-term-defs { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
