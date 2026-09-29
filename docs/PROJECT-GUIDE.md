@@ -411,7 +411,9 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
   찾는다(`app/dex-cross.ts` loadFutureDex) — 본 도감 목록엔 섞지 않는다. **작전 시뮬레이터도 붙는다**(사용자 지시
   2026-09-29): `app/data/future-routes.json`(본 도감 stage-routes.json 과 같은 형식) — 작전 상세가 `Stage.fut` 이면
   이 파일을 읽는다(`app/stage-detail.tsx` routeSrc). 레코드의 `sim`·`cam` 규칙도 본 도감과 같다(한 화면 규칙).
-  `/sim` 런처 검색에는 넣지 않았다 (미래시는 이벤트 창 안에서만 연다). 문구는 로케일 서버 공식 → 공식 정형 문구
+  `/sim` 런처 검색에는 넣지 않았다 (미래시는 이벤트 창 안에서만 연다). ⚠ 카메라 원본에 아직 없는 새 이벤트
+  (벡터 돌파 #3 32개)는 **도면에서 카메라를 추정**해 실사 도면 위 합성으로 통일한다 — `scripts/camfit.py` ·
+  `scripts/stagecams-fit.json` (route-map-rules ★절, 사용자 지시 2026-09-29). 문구는 로케일 서버 공식 → 공식 정형 문구
   짝(같은 원문) → `scripts/cn-translations.json` 순. ⚠ 벡터 돌파 #3 보스처럼 **작전마다 수치만 다른 숨김 변형**
   (`enemy_8018_etouch_1/2/3`)으로만 나오는 적은 보이는 본체로 접고 작전별 수치를 작전 칸에 싣는다
   (`scripts/enemyvariant.py` — 끝 조각을 떼되 레벨 데이터 이름으로 확인한다: `enemy_8019_pollut_3` 은 이름이 과관류라

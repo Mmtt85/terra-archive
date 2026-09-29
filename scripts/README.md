@@ -159,8 +159,9 @@ python3 scripts/build-future-dex.py            # → app/data/future-dex{,.en,.j
 #     scripts/enemyvariant.py. 끝 조각만 떼면 틀리므로 레벨 데이터 이름으로 확인한다. 작전별 수치는 그 작전 칸(es)에.
 #   · 경로·시뮬은 본 도감과 같은 추출기(routeutil)·같은 형식 — 작전 레코드에 sim(경로에 스폰 있음)·cam(실사 도면
 #     투영, stagecams)을 붙인다. 경로 주인 키도 위 본체로 접고 sp·ems 의 **키 순서 번호**를 다시 매긴다.
-#     카메라 원본(yuanyan3060 levels.json)이 아직 모르는 새 이벤트(벡터 돌파 #3)는 격자 경로 지도로 나오다가,
-#     원본이 따라오면 CI 의 매일 실행이 붙인다.
+#     카메라 원본(yuanyan3060 levels.json)이 아직 모르는 새 이벤트(벡터 돌파 #3)는 **도면에서 카메라를 추정**한다
+#     (scripts/camfit.py → scripts/stagecams-fit.json, 커밋되는 표 — 격자 지도로 떨어뜨리지 않는다. route-map-rules ★절).
+#     추정 뒤엔 격자·출현/목표 윤곽을 도면에 겹쳐 눈으로 확인할 것. 원본이 따라오면 원본 값이 이긴다.
 #   · 미번역 원문은 scripts/future-dex-untranslated.json — cn-translations.json 에 **줄 단위**로 채운다
 #     (작전 설명은 여러 줄이 섞여 줄마다 찾는다). 기믹 표식 `<…>` 은 원문대로 두고 옮긴다.
 python3 scripts/build-event-art.py             # → public/event/ (UnityPy — **로컬 전용**, kr·jp·en CDN)

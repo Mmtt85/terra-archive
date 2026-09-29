@@ -45,6 +45,25 @@ MAX_AGE = 12 * 3600          # 매일 갱신되는 원본이라 반나절이면 
 _views = None
 _refreshed = False   # 이번 프로세스에서 원본을 새로 받았나 (attach 의 '미리보기인데 카메라 없음' 재시도용)
 
+# 원본에 아직 없는 작전의 **추정 카메라** (scripts/camfit.py — 도면의 출현·목표 상자로 프리셋을 고른다).
+# 커밋되는 표다: CI 는 매일 원본만 보고 붙이므로, 표가 없으면 원본을 기다리는 동안 카메라가 날마다 떨어진다.
+# 원본이 따라오면 원본 값이 이긴다 (cam_for 순서). 표의 값은 사람이 눈으로 한 번 확인한 것만 남긴다.
+FIT_PATH = os.path.join(REPO, "scripts", "stagecams-fit.json")
+_fitted = None
+
+
+def fitted():
+    global _fitted
+    if _fitted is None:
+        _fitted = json.load(open(FIT_PATH, encoding="utf-8")) if os.path.exists(FIT_PATH) else {}
+    return _fitted
+
+
+def presets():
+    """원본에 있는 카메라 프리셋 전부 (추정 후보)"""
+    v = views()
+    return sorted({tuple(x) for x in v["s"].values()}) if v else []
+
 
 def views(refresh=False):
     """stageId·levelId → 카메라 위치(view[0]). 원본을 못 받으면 옛 캐시, 그것도 없으면 None."""
@@ -87,8 +106,10 @@ def cam_for(sid, img_dir, level_of=None):
     """작전 하나의 카메라 위치 — 인게임 미리보기가 아니거나 값을 못 찾으면 None."""
     v = views()
     img = os.path.join(img_dir, sid + ".webp")
-    if not v or not is_preview(img):
+    if not is_preview(img):
         return None
+    if not v:
+        return fitted().get(sid)
     # 고난판 도면은 대개 일반판 복사본(build-stages.py 폴백 0)이라 **그림의 주인(일반판) 카메라**가
     # 정답이다. 단 자기 미리보기를 가진 고난판도 18개 있고, 그중 tough_12-17 은 카메라가 일반판과
     # 다르다(−6.6/−10.63 vs −5.6/−8.9) — 그래서 파일이 실제로 같을 때만 일반판 것을 쓴다.
@@ -101,16 +122,21 @@ def cam_for(sid, img_dir, level_of=None):
         if c in v["s"]:
             return v["s"][c]
     lv = (level_of or {}).get(sid)
-    return v["l"].get(lv.lower()) if lv else None
+    hit = v["l"].get(lv.lower()) if lv else None
+    return hit or fitted().get(sid)
 
 
-def attach(doc, img_dir, level_of=None, keep=None):
+def attach(doc, img_dir, level_of=None, keep=None, grid_of=None):
     """doc["stages"] 레코드마다 cam 을 붙인다(없으면 뗀다). 붙은 수를 돌려준다.
-    keep: 원본을 아예 못 받았을 때 종전 값을 지키려고 넘기는 {stageId: cam} (선택)."""
+    keep: 원본을 아예 못 받았을 때 종전 값을 지키려고 넘기는 {stageId: cam} (선택).
+    grid_of: stageId → 타일 격자(경로 문서의 g) — 주면 원본에 없는 작전의 카메라를 **도면에서 추정**해
+      추정 표(FIT_PATH)에 적는다 (scripts/camfit.py). ⚠ 추정한 작전은 눈으로 확인할 것 (정확도 96.5%)."""
     if views() is None and keep is not None:
         for e in doc["stages"]:
             if e["id"] in keep:
                 e["cam"] = keep[e["id"]]
+            elif fitted().get(e["id"]) and is_preview(os.path.join(img_dir, e["id"] + ".webp")):
+                e["cam"] = fitted()[e["id"]]
         return sum(1 for e in doc["stages"] if "cam" in e)
     n = 0
     lack = []   # 인게임 미리보기인데 카메라를 못 찾은 작전
@@ -135,6 +161,26 @@ def attach(doc, img_dir, level_of=None, keep=None):
                 if cam:
                     e["cam"] = cam
                     n += 1
+    # 그래도 없으면 도면에서 추정한다 (scripts/camfit.py) — 원본이 새 이벤트를 아직 모를 때
+    lack = [e for e in lack if "cam" not in e]
+    if lack and grid_of:
+        import camfit
+        if camfit.available():
+            new = {}
+            for e in lack:
+                g = grid_of(e["id"])
+                if not g:
+                    continue
+                cam, margin = camfit.fit(os.path.join(img_dir, e["id"] + ".webp"), len(g[0]), len(g), g, presets())
+                if cam:
+                    new[e["id"]] = cam
+                    e["cam"] = cam
+                    n += 1
+            if new:
+                fitted().update(new)
+                json.dump(dict(sorted(fitted().items())), open(FIT_PATH, "w", encoding="utf-8"), indent=0)
+                print(f"  카메라 추정 {len(new)}개 → {os.path.relpath(FIT_PATH, REPO)} (눈으로 확인할 것: "
+                      f"{', '.join(sorted(new)[:6])}{' …' if len(new) > 6 else ''})")
     return n
 
 

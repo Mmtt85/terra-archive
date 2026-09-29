@@ -467,8 +467,11 @@ def build(loc, suf):
     # 원본(72MB)을 못 받는 날은 종전 산출물의 값을 지킨다.
     prev = os.path.join(DATA, f"future-dex{suf}.json")
     keep = {e["id"]: e["cam"] for e in load(prev)["stages"]["stages"] if "cam" in e} if os.path.exists(prev) else {}
+    # 원본이 아직 모르는 새 이벤트(벡터 돌파 #3)는 도면에서 추정한다 (grid_of → scripts/camfit.py) — 한 화면 규칙은
+    # "실사 도면 위 경로"로 통일돼 있다 (사용자 지시 2026-09-29, 격자 지도로 떨어진 것을 되돌림)
     stagecams.attach({"stages": stages}, os.path.join(REPO, "public", "stage"),
-                     {sid: (cn_stage.get(sid) or {}).get("levelId") for sid in lv_of}, keep)
+                     {sid: (cn_stage.get(sid) or {}).get("levelId") for sid in lv_of}, keep,
+                     grid_of=lambda sid: ((_body(routes.get(sid)) or {}).get("g")))
 
     doc = {
         "stages": {"zones": ev_names, "events": ev_names, "items": drop_items, "occ": [], "kinds": [],
