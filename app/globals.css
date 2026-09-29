@@ -3011,8 +3011,12 @@ html.dark .tags-track > span {
     gap: 12px;
   }
 }
+/* 줄어들 수는 있게(0 1 auto) — ⚠ flex: none 이면 안 된다. 이 칸은 줄바꿈(wrap) flex 라 내용폭이
+   **모든 줄을 한 줄로 늘어놓은 길이**로 잡힌다(윗줄 'OPERATOR FILE · 코드'+이름+성급+직군). 그래서 영문 코드가 긴
+   미실장 오퍼(Makoto Yuki · Angelina the Mellow Wish …)는 칸이 850px 까지 불어나, 오른쪽 미실장 안내(.modal-actions)를
+   히어로 밖으로 밀어 잘랐다 (사용자 제보 2026-09-29, 1440px 에서 104~329px 잘림). 자리가 넉넉하면 종전과 같은 폭이다. */
 .modal-title-main {
-  flex: none;
+  flex: 0 1 auto;
   min-width: 0;
 }
 .modal-name-row {
