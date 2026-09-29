@@ -536,6 +536,48 @@ for eid, st in stories.items():
                                for o in body["ops"]]
         row.update(body_loc)
         rows[loc].insert(0, row)      # 아직 안 나온 것이라 맨 위
+
+# 스토리가 없는 중섭 선행 이벤트 (사용자 제보 2026-09-29 "벡터 돌파3 어딨어? 라이브에서").
+# 위 반복은 stories.json 의 `unreleased` 만 훑는데, 벡터 돌파·집중 훈련류는 스토리가 없어 중섭 story_review 에
+# 안 올라온다 — 그래서 중섭에 열려도 도감에 안 떴다. 중섭 activity 표에서 **한섭에 없고 · 작전이 있고 · 복각이 아니고 ·
+# 아직 안 끝난** 이벤트를 직접 뽑는다. 이름은 중국어 원문뿐이라 **번역을 아래 표에 손으로 단다** (스토리 이벤트의
+# CN_PROVISIONAL_NAMES 와 같은 처지 — 한섭 activity 표에 오르면 위 KR 블록이 같은 id 로 이 행을 대체한다).
+# 표에 없는 이벤트는 건너뛰고 알린다 (중국어 원문을 한국어 화면에 그대로 싣지 않는다).
+CN_ONLY_NAMES = {
+    "act3break": {"ko": "벡터 돌파#3 유사 생태", "en": "Vector Breakthrough #3: Pseudo-Ecology",
+                  "ja": "鋒矢突破#3 擬似生態"},
+}
+if cn_act and cn_stage:
+    import time as _time
+    _now = _time.time()
+    _have = {r["id"] for r in rows["ko"]}
+    _z2a = cn_act.get("zoneToActivity") or {}
+    _staged = {_z2a.get(v.get("zoneId")) for v in cn_stage.values()}
+    _pairs = [(kr_basic_all[a]["startTime"], b["startTime"]) for a, b in cn_act["basicInfo"].items()
+              if a in kr_basic_all and b.get("hasStage") and not b.get("isReplicate")
+              and kr_basic_all[a].get("startTime") and b.get("startTime")]
+    _latest = max(_pairs) if _pairs else (0, 0)
+    _gap = _latest[0] - _latest[1]
+    for aid, info in sorted(cn_act["basicInfo"].items(), key=lambda kv: -(kv[1].get("startTime") or 0)):
+        if (aid in kr_basic_all or aid in _have or aid not in _staged or info.get("isReplicate")
+                or (info.get("endTime") or 0) < _now):
+            continue
+        names = CN_ONLY_NAMES.get(aid)
+        if not names:
+            print(f"  ⚠ 중섭 선행 이벤트 {aid}({info.get('name')})는 번역표(CN_ONLY_NAMES)에 없어 도감에서 뺐다")
+            continue
+        body = cn_event_body(aid)
+        for loc in LOCALES:
+            row = {"id": aid, "n": names.get(loc) or names["ko"], "type": "NONE",
+                   "start": None, "end": None, "fut": 1,
+                   "eta": _time.strftime("%Y-%m", _time.gmtime(info["startTime"] + _gap))}
+            loc_ops = per_loc[loc]["ops"]
+            body_loc = dict(body)
+            if body.get("ops"):
+                body_loc["ops"] = [[o[0], (loc_ops.get(o[0]) or {}).get("name", o[0]),
+                                    (loc_ops.get(o[0]) or {}).get("rarity", 0), o[3]] for o in body["ops"]]
+            row.update(body_loc)
+            rows[loc].insert(0, row)
 n_fut = sum(1 for r in rows["ko"] if r.get("fut"))
 
 # 같은 이름으로 여러 번 온 이벤트에 **회차 번호** (사용자 지시 2026-09-28 "인도자의 시련처럼 같은 이름의 이벤트가
