@@ -23,6 +23,11 @@ from concurrent.futures import ThreadPoolExecutor
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # 적 이름 교정 — 클뜯 표기가 통칭과 다른 보스 등 (사용자 확정). 재생성해도 유지된다.
 ENEMY_NAME_FIX = {"캔모씨": "캔낫"}
+# 소장품 효과 문구의 한섭 공식 오역 교정 — {이름: (틀린 말, 맞는 말)} (사용자 확정). 한섭 표를 읽는 자리(fetch_json)에서
+# 고치므로 그 문구를 빌려 쓰는 흑류수해(rogue_6)도 함께 바로잡힌다. 틀린 말이 없으면(한섭이 고치면) 손대지 않는다.
+#  · 블레이즈의 전기톱 — 한섭이 스카우트의 조준경 문구("거리가 멀수록")를 그대로 옮겨 적었다. 중섭 越近 ·
+#    글로벌 as distance is reduced · 일섭 距離が近いほど — 가까울수록이 맞다 (2026-09-30 사용자 제보)
+RELIC_USAGE_FIX = {"블레이즈의 전기톱": ("거리가 멀수록", "거리가 가까울수록")}
 # 초상이 없는 적의 대체 그림 — 게임에 그림이 없어 '?'로 나오던 것 (사용자 지시). 키 적 → 그림을 빌릴 적.
 # 부착된 부적(IS5)은 도감 항목이 없는 '붙은 상태'의 부적이다 — 스탯은 부적과 같고 면역 8종·목숨 1만 다르다
 # (2026-09-25 대조). 따로 두되 그림은 부적 것을 쓴다.
@@ -40,12 +45,24 @@ def fetch_json(path, branch="kr"):
     prefix = "" if branch == "kr" else f"{branch}__"
     cache = os.path.join(CACHE, prefix + path.replace("/", "__"))
     if os.path.exists(cache):
-        return json.load(open(cache, encoding="utf-8"))
+        return fix_kr(json.load(open(cache, encoding="utf-8")), path, branch)
     url = f"{GAMEDATA}/{branch}/gamedata/{path}"
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     raw = urllib.request.urlopen(req).read()
     open(cache, "wb").write(raw)
-    return json.loads(raw)
+    return fix_kr(json.loads(raw), path, branch)
+
+
+def fix_kr(doc, path, branch):
+    """한섭 통합전략 표의 공식 오역을 읽는 즉시 고친다 (RELIC_USAGE_FIX). 캐시 파일은 원본 그대로 둔다."""
+    if branch != "kr" or not path.endswith("roguelike_topic_table.json"):
+        return doc
+    for det in (doc.get("details") or {}).values():
+        for it in (det.get("items") or {}).values():
+            fx = RELIC_USAGE_FIX.get(it.get("name") or "")
+            if fx and fx[0] in (it.get("usage") or ""):
+                it["usage"] = it["usage"].replace(fx[0], fx[1])
+    return doc
 
 def download_webp(jobs, max_px=None, photo=True):
     """(url, dest) 목록을 병렬 다운로드해 webp 저장. 이미 있으면 스킵. 실패 목록 반환."""
