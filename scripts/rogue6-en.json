@@ -1329,5 +1329,21 @@
  "鸭托邦": "Ducktopia",
  "黑诞": "Black Birth",
  "沉沦者的黑流树海": "沉沦者的黑流树海",
- "黑流之下，树海之中，埋藏着不止一个秘密。\n阴谋家和探险者恣意出入，侵扰此地，沉沦其中。\n保持清醒，否则你也将永远成为其中一员。": "Beneath the Blackflow, within the forest, lies buried more than one secret.\nSchemers and explorers come and go as they please, intruding upon this land and sinking into it.\nStay lucid, or you too will forever become one of them."
+ "黑流之下，树海之中，埋藏着不止一个秘密。\n阴谋家和探险者恣意出入，侵扰此地，沉沦其中。\n保持清醒，否则你也将永远成为其中一员。": "Beneath the Blackflow, within the forest, lies buried more than one secret.\nSchemers and explorers come and go as they please, intruding upon this land and sinking into it.\nStay lucid, or you too will forever become one of them.",
+ "受到伤害时飞行一段时间，移动速度提升\n处于<$ba.float>近地悬浮</>时，会持续轰炸造成群体物理伤害\n接触赤金条时将其夺取，自身离场\n赤金条不在场时，自身免疫<$ba.stun>晕眩</>、<$ba.frozen>冻结</>、<$ba.fear>恐惧</>，攻击力提升，能够更频繁地起飞": "Flies for a period of time when taking damage, with increased Movement Speed\nWhile hovering low, continuously bombards, dealing AoE Physical damage\nSeizes the Pure Gold Bar upon contact and leaves the field\nWhile the Pure Gold Bar is not on the field, becomes immune to <$ba.stun>Stun</>, <$ba.frozen>Freeze</>, and <$ba.fear>Fear</>, gains increased ATK, and can take off more frequently",
+ "受到伤害时飞行一段时间，移动速度大幅提升\n处于<$ba.float>近地悬浮</>时，会持续轰炸造成群体物理伤害\n接触赤金条时将其夺取，自身离场\n赤金条不在场时，自身免疫<$ba.stun>晕眩</>、<$ba.frozen>冻结</>、<$ba.fear>恐惧</>，攻击力提升，能够更频繁地起飞": "Flies for a period of time when taking damage, with greatly increased Movement Speed\nWhile hovering low, continuously bombards, dealing AoE Physical damage\nSeizes the Pure Gold Bar upon contact and leaves the field\nWhile the Pure Gold Bar is not on the field, becomes immune to <$ba.stun>Stun</>, <$ba.frozen>Freeze</>, and <$ba.fear>Fear</>, gains increased ATK, and can take off more frequently",
+ "优先攻击阻挡数最高的目标\n【痛吼】对攻击范围内所有单位造成一次物理伤害，该伤害由攻击范围内所有单位平均分担；如果攻击范围内没有目标则改为<$ba.stun>晕眩</>全场我方单位，并造成物理伤害\n【行于荒原】传送到下个位置，对路径上所有单位造成法术伤害，并使其在20秒内攻击速度大幅降低\n【湮灭】战斗经过较长时间后，离场并扣除30点目标生命\n被击倒后召唤大量<猎犬proto>，全部击倒后依次召唤3个<痛楚化身>": "Prioritizes attacking the target with the highest Block count\n【Howl of Pain】Deals Physical damage once to all units within attack range, split evenly among all units within range; if there are no targets within range, instead <$ba.stun>Stuns</> all allied units on the field and deals Physical damage\n【Walking the Wilds】Teleports to the next position, dealing Arts damage to all units along the path and greatly reducing their ASPD for 20 seconds\n【Annihilation】After a long period of battle, leaves the field and deducts 30 Life Points\nWhen defeated, summons many <Hound Proto>; after all are defeated, summons 3 <Incarnation of Pain> one after another",
+ "优先攻击阻挡数最高的目标\n【痛吼】对攻击范围内所有单位造成一次物理伤害，该伤害由攻击范围内所有单位平均分担；如果攻击范围内没有目标则改为<$ba.stun>晕眩</>全场我方单位，并造成物理伤害\n【感官共生】任一<痛楚化身>离场后，剩余的<痛楚化身>攻击力提升，恢复一定生命值，并发动一次【行于荒原】\n【湮灭】战斗经过较长时间后离场，每个<痛楚化身>扣除10点目标生命": "Prioritizes attacking the target with the highest Block count\n【Howl of Pain】Deals Physical damage once to all units within attack range, split evenly among all units within range; if there are no targets within range, instead <$ba.stun>Stuns</> all allied units on the field and deals Physical damage\n【Sensory Symbiosis】When any <Incarnation of Pain> leaves the field, the remaining <Incarnation of Pain> gain increased ATK, restore some HP, and use 【Walking the Wilds】 once\n【Annihilation】After a long period of battle, leaves the field; each <Incarnation of Pain> deducts 10 Life Points",
+ "未冷的": "Not Yet Cold",
+ "这类事早就不是第一次，也不会是最后一次。": "This is far from the first time something like this has happened, and it won't be the last.",
+ "페드로": "Pedro",
+ "一部热门影片。": "A hit film.",
+ "一次术前谈话。": "A talk before surgery.",
+ "一场进步讨论。": "A progressive discussion.",
+ "南方往事": "Bygone Days in the South",
+ "我向你描述的，一定不是真实的特科马。": "What I described to you surely isn't the real Tacoma.",
+ "아프리사": "Aphrissa",
+ "欢迎来到特科马。": "Welcome to Tacoma.",
+ "疯子逃出特科马。": "A madman escapes Tacoma.",
+ "她已离开特科马。": "She has already left Tacoma."
 }
