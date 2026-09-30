@@ -250,6 +250,11 @@ python3 scripts/build-rogue-records.py         # → public/rogue/record/*.json 
 #     **build-rogue보다 먼저** 돌린다. 산출물은 R2 서빙 — 배포 전 r2-sync 필수.
 #     문단은 산문=문자열 / 대사={c,n,x} 두 종류 — IS1 방문객 기록만 대화 스크립트다.
 #     손으로 채운 로케일(IS6 ko 번역)은 덮어쓰지 않고 살린다)
+#   ⚠ 원본 받기 (2026-10-01): 둘 다 **게임 CDN 을 먼저** 본다 — 표 scripts/cdntables.py, 레벨·적 DB cdnlevels,
+#     기록 원문 cdntables.story. 종전엔 레포에서 한 번 받은 캐시(.gamedata/rogue)를 영영 써서 8월 판이 10월까지
+#     남았고(흑류수해 9·10월 방문객 누락), 레포에서 404 난 기록은 빈 캐시로 남아 다시 받지 않았다.
+#     한섭·영·일 roguelike_topic_table 은 CDN 스키마가 안 맞아 레포판으로 가되 6시간 지나면 다시 받는다.
+#     CDN 을 끄려면 ROGUE_NO_CDN=1 (비교용).
 python3 scripts/build-i18n.py .gamedata       # → app/data/operators.{en,ja}.json + extra-i18n.{en,ja}.json
 python3 scripts/download-avatars.py           # 신규 오퍼 아바타를 public/avatars/에 다운로드
 ```

@@ -29,6 +29,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(REPO, ".gamedata", "rogue", "records")
 OUT_DIR = os.path.join(REPO, "public", "rogue", "record")
 GAMEDATA = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master"
@@ -66,21 +67,33 @@ def record_ids(det):
 
 
 def fetch_text(branch, text_id, refresh=False):
-    """story 텍스트 1편 — 캐시 우선. 없거나 404면 None."""
+    """story 텍스트 1편 — 받아 둔 캐시 → 게임 CDN → 클뜯 레포. 없으면 None.
+
+    ⚠ (2026-10-01) 종전엔 레포에서 한 번 404 가 나면 **빈 캐시를 남겨 영영 다시 시도하지 않았다** — 그 뒤 레포에
+    올라와도, 이달 새로 열린 방문객 기록(흑류수해 9·10월)처럼 레포에 아직 없는 것도 끝내 안 들어왔다.
+    이제 빈 캐시(예전 404)는 다시 시도하고, 레포보다 먼저 게임 CDN(인게임과 같은 판)에서 찾는다.
+    받아 둔 본문(빈 파일이 아닌 캐시)은 그대로 쓴다 — 기록 원문은 한 번 나오면 거의 안 바뀐다 (--refresh 로 다시 받기)."""
     base = text_id.rsplit("/", 1)[-1]
     cache = os.path.join(CACHE, f"{branch}__{base}.txt")
     if os.path.exists(cache) and not refresh:
         raw = open(cache, encoding="utf-8").read()
-        return raw if raw.strip() else None       # 빈 파일 = 이전에 404였음 (재시도 안 함)
-    url = f"{GAMEDATA}/{branch}/gamedata/story/{text_id.lower()}.txt"
-    try:
-        raw = urllib.request.urlopen(
-            urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=30
-        ).read().decode("utf-8")
-    except Exception:
-        raw = ""
-    open(cache, "w", encoding="utf-8").write(raw)
-    return raw if raw.strip() else None
+        if raw.strip():
+            return raw
+    raw = None
+    server = {"kr": "kr", "cn": "cn", "en": "en", "jp": "jp"}.get(branch)
+    if server and not os.environ.get("ROGUE_NO_CDN"):
+        import cdntables
+        raw = cdntables.story(text_id, server)
+    if not raw:
+        url = f"{GAMEDATA}/{branch}/gamedata/story/{text_id.lower()}.txt"
+        try:
+            raw = urllib.request.urlopen(
+                urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=30
+            ).read().decode("utf-8")
+        except Exception:
+            raw = ""
+    open(cache, "w", encoding="utf-8").write(raw or "")
+    return raw if (raw or "").strip() else None
 
 
 # ── 대사형 기록 (IS1 월간 친목회) ───────────────────────────────────────────

@@ -17,7 +17,7 @@
 # 유물·무대 도구 아이콘은 KR CDN 스프라이트 아틀라스에만 있어 별도 모드로 언팩한다:
 #   python3 scripts/build-rogue.py --icons    # UnityPy·lz4inv 필요 (pip3 install --user)
 #   → public/rogue/relic/<itemId>.webp 생성 후 기본 모드 재실행하면 img 플래그가 붙는다.
-import json, os, re, sys, urllib.request
+import json, os, re, sys, time, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,17 +40,88 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cdnassets
 from imgutil import save_webp
 
+# ── 원본 받기: ① 게임 CDN(지금 게임이 쓰는 판) → ② 클뜯 레포(며칠 늦다) ─────────────────────────
+# (2026-10-01, 사용자 확인 "침몰자 블랙플로우 엔딩 추가된거 있나?") 종전엔 레포에서 **한 번 받은 캐시를 영영** 썼다 —
+# 8월 중순 판이 10월까지 쓰여, 그사이 중섭에 들어온 흑류수해 월간 방문객 두 팀(9월 未冷的·10월 南方往事)이 사이트에 없었다.
+# 이제 표·적 DB·레벨을 게임 CDN 에서 먼저 받는다 (표 cdntables · 레벨/적 DB cdnlevels). 못 얻으면 레포로 가되
+# 표·적 DB 캐시는 REPO_TTL_SEC 가 지나면 다시 받는다. 레벨 파일은 판 뒤에 거의 안 바뀌어 기한을 두지 않는다.
+# ⚠ 한섭·영·일 roguelike_topic_table 은 CDN 스키마가 안 맞는다 (공개 스키마는 중섭 기준 — 2026-10-01 fbs-repair 로도
+#   flatc 가 세그폴트). 그래서 그 셋은 레포판(기한 6시간)으로 간다. 중섭 판·적 도감·적 DB·레벨은 CDN 이 된다.
+#   ROGUE_NO_CDN=1 이면 CDN 을 건너뛴다 (비교·디버깅용).
+REPO_TTL_SEC = 6 * 3600
+CDN_SERVER = {"kr": "kr", "cn": "cn", "en": "en", "jp": "jp"}
+_cache_written = set()
+
+
 def fetch_json(path, branch="kr"):
-    """gamedata JSON — .gamedata/rogue 에 캐시. branch=kr|cn (미출시 토픽은 cn 선행 데이터)."""
+    """gamedata JSON. branch=kr|cn|en|jp (미출시 토픽은 cn 선행 데이터). 한섭 표의 공식 오역은 여기서 고친다(fix_kr)."""
+    doc = cdn_json(path, branch)
+    if doc is None:
+        doc = repo_json(path, branch)
+    return fix_kr(doc, path, branch)
+
+
+def cache_path(path, branch):
     prefix = "" if branch == "kr" else f"{branch}__"
-    cache = os.path.join(CACHE, prefix + path.replace("/", "__"))
-    if os.path.exists(cache):
-        return fix_kr(json.load(open(cache, encoding="utf-8")), path, branch)
+    return os.path.join(CACHE, prefix + path.replace("/", "__"))
+
+
+def cdn_json(path, branch):
+    """게임 CDN 판 — 못 얻으면 None. 표·적 DB 는 레포 캐시 자리에도 써 둔다(같은 캐시를 읽는 routenames 등도 새 판을 보게).
+    레벨은 쓰지 않는다 — 레벨 캐시는 경로 빌더(build-rogue-routes)가 레포 JSON 으로 채운 것이라 섞지 않는다."""
+    server = CDN_SERVER.get(branch)
+    if not server or os.environ.get("ROGUE_NO_CDN"):
+        return None
+    try:
+        if path.startswith("excel/") and path.endswith(".json"):
+            import cdntables
+            doc = cdntables.table(path[len("excel/"):-len(".json")], server)
+        elif path == "levels/enemydata/enemy_database.json":
+            import cdnlevels
+            doc = cdnlevels.level("levels/enemydata/enemy_database", schema="enemy_database", server=server)
+            if isinstance(doc, list):   # CDN 판은 [{Key, Value}] — 레포 캐시와 같은 {적키: [단계별]} 로 편다
+                doc = {e["Key"]: e["Value"] for e in doc if isinstance(e, dict) and "Key" in e}
+        elif path.startswith("levels/"):
+            import cdnlevels
+            return cdnlevels.level(path, server=server) or None
+        else:
+            return None
+    except Exception as e:
+        print(f"  ⚠ CDN {server} {path}: {str(e)[:80]} — 레포로 물러난다", file=sys.stderr)
+        return None
+    if not doc:
+        return None
+    key = (path, branch)
+    if key not in _cache_written:
+        _cache_written.add(key)
+        dest = cache_path(path, branch)
+        with open(dest + ".tmp", "w", encoding="utf-8") as f:
+            json.dump(doc, f, ensure_ascii=False)
+        os.replace(dest + ".tmp", dest)
+    return doc
+
+
+def repo_json(path, branch):
+    """클뜯 레포 판 (.gamedata/rogue 캐시). 표·적 DB 캐시는 REPO_TTL_SEC 가 지나면 다시 받고, 못 받으면 옛 캐시를 알리고 쓴다."""
+    cache = cache_path(path, branch)
+    ttl = None if path.startswith("levels/obt/") else REPO_TTL_SEC
+    if os.path.exists(cache) and (ttl is None or time.time() - os.path.getmtime(cache) < ttl):
+        return json.load(open(cache, encoding="utf-8"))
     url = f"{GAMEDATA}/{branch}/gamedata/{path}"
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    raw = urllib.request.urlopen(req).read()
-    open(cache, "wb").write(raw)
-    return fix_kr(json.loads(raw), path, branch)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        raw = urllib.request.urlopen(req, timeout=180).read()
+        doc = json.loads(raw)
+    except Exception as e:
+        if not os.path.exists(cache):
+            raise
+        age = (time.time() - os.path.getmtime(cache)) / 86400
+        print(f"  ⚠ 레포 {branch}/{path} 다시 받기 실패({str(e)[:60]}) — {age:.1f}일 된 캐시를 쓴다", file=sys.stderr)
+        return json.load(open(cache, encoding="utf-8"))
+    with open(cache + ".tmp", "wb") as f:
+        f.write(raw)
+    os.replace(cache + ".tmp", cache)
+    return doc
 
 
 def fix_kr(doc, path, branch):
