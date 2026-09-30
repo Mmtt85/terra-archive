@@ -1308,6 +1308,13 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 파라미터는 해당 탭이 직접 관리하므로 여기서 실어 나르지 않는다.
   // 헤더 진행중 이벤트 그룹의 칩 — 위수 협의 칩과 겹치는 시즌 행은 뺀다 (위 JSX 주석)
   const groupEvents = runningEvents.filter((ev) => !(PROMO_ON && EVENT_GUIDE_TAB[ev.type ?? ""] === PROMO.tab));
+  // 미래시 ON — 중섭에서 진행중인 이벤트도 칩으로 (사용자 지시 2026-09-30 "헤더에 벡터돌파#3 없는데?" — 확장부 목록만으론
+  // 안 보였다). includeFuture 는 마운트 뒤에 켜지므로 프리렌더와 어긋나지 않는다. 이름은 eventName 이 event-ids 의 EN·JA 로.
+  const cnGroupEvents: GameEvent[] = includeFuture
+    ? cnRunningEvents
+      .filter((ev) => Date.parse(ev.start) <= Date.now() && Date.now() <= Date.parse(ev.end) && !MINOR_EVENT_TYPES.has(ev.type ?? ""))
+      .map((ev) => ({ id: ev.id, name: ev.n[0], type: ev.type, start: ev.start, end: ev.end }))
+    : [];
   // 이벤트 칩을 누르면 **그때** 이벤트 도감 청크(ko 압축 약 77KB)를 받기 시작해 모달이 한 박자 늦게 떴다
   // (사용자 지적 2026-09-28). 칩이 떠 있으면 ① 페이지가 한가해질 때 미리 받고 ② 그 전에 칩에 손이 가면
   // (호버·포커스·터치) 그 순간 받는다. 데이터 절약 모드면 ①은 건너뛴다. 받아 둔 모듈은 lazy 가 그대로 쓴다.
@@ -2229,7 +2236,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             앞 칩과 겹치므로 뺀다. 칩은 **전부 사이트 안으로** 간다: 전용 가이드가 있는 모드는 그 가이드,
             이벤트 도감이 아는 이벤트는 그 상세, 아직 모르는 이벤트는 이벤트 가이드 목록 (공식 카페 공지는
             이벤트 상세 모달의 버튼으로 옮겼다 — 같은 날 사용자 지시). */}
-        {(PROMO_ON || groupEvents.length > 0) && (
+        {(PROMO_ON || groupEvents.length > 0 || cnGroupEvents.length > 0) && (
           <div className="ev-group" role="group" aria-label={t("진행중 이벤트")}>
             {/* 말머리('진행중 이벤트')는 뺐다 — 칩 모양만으로 읽힌다 (사용자 지시 2026-09-23). 스크린리더용 이름은
                 그룹의 aria-label 로 남긴다. 칩이 1줄에 다 안 들어가면(폰 390px: 셋 중 둘) **흘러간다** — 옆으로
@@ -2265,6 +2272,21 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 <b className="ev-promo-name">{eventName(locale, ev)}</b>
                 {/* 남은 기간 표기는 위수 협의 칩과 같은 문구로 (사용자 지시 2026-09-17) */}
                 <span className="promo-hint">{promoLeftLabel(Date.now(), t, Date.parse(ev.end)) ?? t("진행중")}</span>
+              </a>
+            ))}
+            {cnGroupEvents.map((ev) => (
+              <a key={`cn-${ev.id}`} className="promo-trigger ev-promo" href={eventHref(ev)}
+                title={`${eventName(locale, ev)} · ${t("중국 서버 진행중")}`}
+                onPointerEnter={prefetchEventDex} onFocus={prefetchEventDex}
+                onClick={(event) => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                  event.preventDefault();
+                  if (knownEventIds.has(ev.id)) openEventById(ev.id, ev.type);
+                  else { switchTab("event"); scrollMainTop(); }
+                }}>
+                <span className="promo-mark" aria-hidden>{modeGlyph(ev)}</span>
+                <b className="ev-promo-name">{eventName(locale, ev)}</b>
+                <span className="promo-hint">{t("중섭")} · {promoLeftLabel(Date.now(), t, Date.parse(ev.end)) ?? t("진행중")}</span>
               </a>
             ))}
             </Marquee>
