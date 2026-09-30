@@ -123,8 +123,33 @@ async function walk(dir) {
 // ── 1. 현재 R2 상태 (etag = md5) ──
 // 목록 조회(10MB·약 17초 — 워커가 R2 를 1,000개씩 넘긴다)와 아래 로컬 md5 계산(약 10초)은 서로
 // 무관하므로 **겹쳐 돈다** (2026-09-28). 조회를 먼저 걸어 두고 md5 를 다 센 뒤에 받는다.
-const listing = fetch(`${API}/files`, { headers: { "x-admin-key": KEY } })
-  .then(async (res) => ({ ok: res.ok, status: res.status, body: res.ok ? await res.json() : null }));
+// ⚠ 요청마다 **제한 시간**을 두고, 일시 오류(5xx·네트워크·시간 초과)는 **다시 시도**한다 (2026-10-01).
+//   2026-09-30 밤 목록 조회가 503 한 번에 배포를 통째로 끝냈는데, 워커는 바로 다음 순간 200 이었다.
+//   제한 시간이 없으면 응답이 안 오는 요청 하나가 배포 전체를 끝없이 세워 둔다 (deploy.sh 가 전환 전에 이걸 기다린다).
+//   키 문제(401·403)는 몇 번을 해도 같으므로 곧바로 실패한다.
+const LIST_TIMEOUT_MS = 120_000;   // 목록은 10MB — 평소 17초
+const PUT_TIMEOUT_MS = 120_000;
+const LIST_RETRY_WAIT_MS = [3_000, 8_000, 20_000];
+async function listRemote() {
+  for (let attempt = 0; ; attempt += 1) {
+    let why;
+    try {
+      const res = await fetch(`${API}/files`, {
+        headers: { "x-admin-key": KEY }, signal: AbortSignal.timeout(LIST_TIMEOUT_MS),
+      });
+      if (res.ok) return { ok: true, status: res.status, body: await res.json() };
+      if (res.status === 401 || res.status === 403) return { ok: false, status: res.status };
+      why = String(res.status);
+    } catch (err) {
+      why = err?.name === "TimeoutError" ? `시간 초과 ${LIST_TIMEOUT_MS / 1000}초` : String(err?.cause?.code ?? err).slice(0, 80);
+    }
+    if (attempt >= LIST_RETRY_WAIT_MS.length) return { ok: false, status: `${why}, ${attempt + 1}번 시도` };
+    const wait = LIST_RETRY_WAIT_MS[attempt];
+    console.error(`  R2 목록 조회 실패 (${why}) — ${wait / 1000}초 뒤 다시 (${attempt + 1}/${LIST_RETRY_WAIT_MS.length})`);
+    await new Promise((r) => setTimeout(r, wait));
+  }
+}
+const listing = listRemote();
 
 // ── 2. 로컬 파일 수집 + md5 ──
 const files = [];
@@ -203,7 +228,7 @@ if (DRY) {
   process.exit(0);
 }
 
-// ── 3. 병렬 업로드 (실패 2회 재시도) ──
+// ── 3. 병렬 업로드 (실패 2회 재시도 · 요청마다 제한 시간) ──
 let done = 0, failed = 0;
 async function put(f) {
   const body = await readFile(f.p);
@@ -217,6 +242,7 @@ async function put(f) {
           "x-cache-control": cacheFor(f.key),
         },
         body,
+        signal: AbortSignal.timeout(PUT_TIMEOUT_MS),
       });
       if (res.ok) {
         done += 1;
@@ -255,7 +281,9 @@ if (stale.length && pruneBlock) {
     Array.from({ length: CONCURRENCY }, async () => {
       while (delQueue.length) {
         const key = delQueue.shift();
-        const res = await fetch(`${API}/files/${encodeURIComponent(key)}`, { method: "DELETE", headers: { "x-admin-key": KEY } }).catch(() => null);
+        const res = await fetch(`${API}/files/${encodeURIComponent(key)}`, {
+          method: "DELETE", headers: { "x-admin-key": KEY }, signal: AbortSignal.timeout(PUT_TIMEOUT_MS),
+        }).catch(() => null);
         if (res?.ok) { pruned += 1; if (pruned % 1000 === 0) console.log(`  삭제 ${pruned}/${stale.length}…`); }
         else console.error(`  ✗ 삭제 실패: ${key}`);
       }

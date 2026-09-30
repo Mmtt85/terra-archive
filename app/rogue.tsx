@@ -1724,15 +1724,19 @@ export default function RogueGuide({ initialTopic }: {
   // 사용자가 CSS resize 손잡이로 바꾼 크기를 기억한다 (사용자 지시 2026-07-29)
   const INV_SIZE_KEY = "ta:rogue-inv-size";
   const [invSize, setInvSize] = useState<{ w: number; h: number } | null>(null);
-  useEffect(() => {
-    if (!invOpen) return;
+  // 저장한 자리·크기는 **여는 순간에** 읽는다 (사용자 제보 2026-10-01 "처음에 켜면 오른쪽에 이상하게 붙어서
+  // 나오고, 한번 껐다 켜면 가운데에 잘 나온다"). 종전엔 창이 뜬 뒤 effect 에서 읽었는데, 공통 창(ModalWindow)은
+  // defaultPos·initialSize 를 **처음 그릴 때만** 받으므로 첫 창은 기본값(오른쪽 위)으로 뜨고 두 번째부터 저장값으로 떴다.
+  // 같은 클릭 안에서 상태를 세우면 창이 처음부터 그 값으로 그려진다.
+  const openInv = () => {
     try {
       const rs = localStorage.getItem(INV_SIZE_KEY);
       if (rs) setInvSize(JSON.parse(rs) as { w: number; h: number });
       const rp = localStorage.getItem(INV_POS_KEY);
       if (rp) setInvPos(JSON.parse(rp) as { x: number; y: number });
     } catch { /* 프라이빗 모드 등 */ }
-  }, [invOpen]);
+    setInvOpen(true);
+  };
   /* 크기 조절·이동·화면 밖 보정은 이제 공통 창(ModalWindow)이 맡는다 — 종전엔 여기서
      손잡이 8개·clamp·배치 effect 를 직접 구현했다 (2026-09-20 제거, 약 90줄). */
   /** 공통 창(ModalWindow)이 끌기·크기 조절을 끝낼 때마다 자리를 기억한다 */
@@ -2270,7 +2274,7 @@ export default function RogueGuide({ initialTopic }: {
   const homeServerFull = t("{label} 서버", { label: t(homeServer.label) });
 
   const invButton = (
-    <button type="button" className="rg-inv-open" onClick={() => setInvOpen(true)}
+    <button type="button" className="rg-inv-open" onClick={openInv}
       title={t("소장품·자원 카드의 「＋ 보유」 버튼으로 담아두고 여기서 한눈에 봅니다")}>
       🎒 {t("보유 리스트")}
       {inv.size > 0 && <em className="rg-inv-count">{inv.size}</em>}

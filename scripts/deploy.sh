@@ -7,6 +7,13 @@
 # 클라이언트 렌더링이라 정적 HTML(로케일×탭 18페이지, SEO 메타 포함)로 충분하다.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# ── 멈추지 않는다 (2026-10-01, 사용자 지시 "에러가 나면 바로 그만두고 다시 시도를 하든지 … 원인 완벽하게 해결해") ──
+# stdin 을 닫는다 — 무엇이 입력을 기다리면(wrangler 로그인 프롬프트 등) 멈춰 서는 대신 곧바로 실패한다.
+# 네트워크를 타는 단계는 전부 제한 시간(run_to)을 두고, 일시 오류가 흔한 단계는 다시 시도(retry)한다.
+# 도구와 그날 멈춘 세 가지 사정은 scripts/proc-guard.sh 머리주석.
+exec </dev/null
+# shellcheck source=scripts/proc-guard.sh
+. scripts/proc-guard.sh
 
 # 대용량 정적 에셋(story·rogue·아바타 등 767MB/15,300파일)은 Pages가 아니라 R2에서
 # 서빙한다 (2026-07-27, files.terra-archive.net). 배포 전에 증분 동기화로 R2를 맞춰둔다.
@@ -71,6 +78,44 @@ deploy_summary() {
       printf "  %5d초        합계\n", t
     }'
 }
+R2_PID=""; R2_LOG=""
+STAGE=""
+LOCK_DIR=""
+cleanup() {
+  # 빌드가 죽어도 R2 업로드를 반쯤 끊지 않게 끝까지 기다린다 (다음 배포가 나머지를 맞추긴 하지만
+  # 도중에 끊긴 파일이 없는 편이 낫다). 단 **끝없이는 안 기다린다** — r2-sync 는 요청마다 제한 시간이 있어
+  # 정상이면 이 안에 끝난다 (2026-10-01).
+  [ -n "$R2_PID" ] && { wait_to "$R2_PID" 600 2>/dev/null || true; }
+  [ -n "$STAGE" ] && rm -rf "$STAGE"
+  [ -n "$R2_LOG" ] && rm -f "$R2_LOG"
+  [ -n "$LOCK_DIR" ] && rm -rf "$LOCK_DIR"
+  deploy_summary
+}
+trap cleanup EXIT
+
+# ── 배포 잠금 — 같은 저장소(워크트리 포함)에서 배포 둘이 겹치지 않게 (2026-10-01) ──────────────
+# 2026-10-01 00:03 세션이 배경으로 돌린 배포와 사용자가 터미널에서 돌린 배포가 **동시에** 돌았다. 둘이 같은
+# 프리뷰 브랜치에 올리고 번갈아 프로덕션을 전환하면 나중 것이 앞의 것을 덮는다. 잠금은 git 공용 디렉터리
+# (.git/deploy.lock)에 둔다 — 작업 트리 밖이라 아래 '커밋 안 된 변경' 검사에 안 걸리고, 워크트리끼리도 나눠 쓴다.
+# 주인 프로세스가 죽은 잠금(강제 종료 등)은 넘겨받는다. CI 는 따로 도는 기계라 잠그지 않는다.
+if [ -z "${GITHUB_ACTIONS:-}" ]; then
+  LOCK_PATH="$(git rev-parse --path-format=absolute --git-common-dir)/deploy.lock"
+  if ! mkdir "$LOCK_PATH" 2>/dev/null; then
+    OTHER=$(cat "$LOCK_PATH/pid" 2>/dev/null || true)
+    if [ -n "$OTHER" ] && kill -0 "$OTHER" 2>/dev/null; then
+      echo "✗ 다른 배포가 이미 돌고 있습니다 (pid $OTHER · $(cat "$LOCK_PATH/started" 2>/dev/null || echo '시작 시각 모름') 시작)." >&2
+      echo "  겹쳐 돌리면 서로의 프로덕션 전환을 덮습니다 — 그 배포가 끝난 뒤에 돌리세요." >&2
+      exit 1
+    fi
+    echo "⚠ 주인이 없는 배포 잠금(pid ${OTHER:-?})을 넘겨받습니다 — 직전 배포가 강제로 끝난 흔적입니다." >&2
+    rm -rf "$LOCK_PATH"
+    mkdir "$LOCK_PATH"
+  fi
+  LOCK_DIR=$LOCK_PATH
+  echo "$$" > "$LOCK_DIR/pid"
+  date '+%Y-%m-%d %H:%M:%S' > "$LOCK_DIR/started"
+fi
+
 # ── 배포는 origin/main 에 있는 것만 (2026-09-28, 사용자 지시 "앞으로 이런 일 없도록") ─────
 # 9/27 08:45 리더기 BGM·효과음을 **커밋하지 않은 채** 이 체크아웃에서 배포했다. 같은 날 CI 데이터
 # 자동 갱신이 origin/main(소리 없는 코드)으로 두 번 다시 배포하면서 사이트 코드도, R2 의 스크립트·
@@ -82,8 +127,11 @@ deploy_summary() {
 # 예외는 public/sitemap.xml(빌드 부산물) 하나. **우회 옵션은 일부러 두지 않는다** — 급하면 커밋하면 된다.
 # CI 는 직전에 커밋·푸시(ci-push.sh)하고 부르므로 여기서 검사하지 않는다.
 if [ -z "${GITHUB_ACTIONS:-}" ]; then
-  git fetch -q origin main
-  DIRTY=$(git status --porcelain --untracked-files=normal | grep -v ' public/sitemap\.xml$' || true)
+  retry 3 5 run_to 60 git fetch -q origin main \
+    || { echo "✗ git fetch 가 세 번 다 실패했습니다 — 네트워크를 확인하세요." >&2; exit 1; }
+  # GIT_OPTIONAL_LOCKS=0 — status 가 색인 잠금(index.lock)을 잡지 않게. 잡으면 같은 순간 도는 다른 git
+  # (VS Code 의 git 확장, 다른 세션)이 "index.lock exists" 로 실패한다 (2026-09-30 rebase 실패의 유력한 원인)
+  DIRTY=$(GIT_OPTIONAL_LOCKS=0 git status --porcelain --untracked-files=normal | grep -v ' public/sitemap\.xml$' || true)
   if [ -n "$DIRTY" ]; then
     echo "✗ 커밋 안 된 변경이 있어 배포하지 않습니다 — origin/main 에 없는 것은 다음 CI 배포가 되돌립니다." >&2
     echo "$DIRTY" | head -15 >&2
@@ -100,7 +148,7 @@ if [ -z "${GITHUB_ACTIONS:-}" ]; then
     exit 1
   fi
   if command -v gh >/dev/null 2>&1; then
-    RUNNING=$(gh run list --workflow data-refresh.yml -L 5 --json status \
+    RUNNING=$(run_to 30 gh run list --workflow data-refresh.yml -L 5 --json status \
       -q '[.[] | select(.status != "completed")] | length' 2>/dev/null || echo "?")
     if [ "$RUNNING" = "?" ]; then
       echo "⚠ CI 상태를 못 읽었습니다(gh) — data-refresh 가 도는 중이면 끝난 뒤에 배포해야 합니다." >&2
@@ -125,17 +173,7 @@ fi
 # 22~50초를 그대로 더했다 (그중 17초는 R2 목록 조회).
 # ⚠ **무중단 조건: 프로덕션 전환(2단계) 전에 반드시 끝나 있어야 한다** — 새 페이지가 새 R2 에셋을
 #   가리키므로. 아래 2단계 직전에 wait 로 기다리고, 실패했으면 전환하지 않고 멈춘다.
-R2_PID=""; R2_LOG=""
-STAGE=""
-cleanup() {
-  # 빌드가 죽어도 R2 업로드를 반쯤 끊지 않게 끝까지 기다린다 (다음 배포가 나머지를 맞추긴 하지만
-  # 도중에 끊긴 파일이 없는 편이 낫다)
-  [ -n "$R2_PID" ] && wait "$R2_PID" 2>/dev/null || true
-  [ -n "$STAGE" ] && rm -rf "$STAGE"
-  [ -n "$R2_LOG" ] && rm -f "$R2_LOG"
-  deploy_summary
-}
-trap cleanup EXIT
+# (R2_PID·STAGE·정리 트랩은 맨 앞 '배포 잠금' 위에서 세운다 — 검사에서 멈춰도 잠금이 풀리게)
 if [ -f .r2-sync-key ] || [ -n "${R2_SYNC_KEY:-}" ]; then
   R2_LOG=$(mktemp)
   node scripts/r2-sync.mjs > "$R2_LOG" 2>&1 &
@@ -145,7 +183,8 @@ else
   echo "⚠ R2 동기화 건너뜀 (--skip-r2) — 에셋이 바뀌었다면 사이트에서 404가 난다" >&2
 fi
 
-npm run build
+# 빌드는 결정적이라 다시 시도하지 않는다 — 제한 시간만 (평소 60~90초)
+run_to 900 npm run build
 step "빌드 (npm run build)"
 
 # dist/client가 정적 사이트 전체 (HTML + assets). 워커(_worker.js)는 올리지 않는다.
@@ -196,7 +235,7 @@ fi
 # 사이트맵이 가리키는 주소가 실제로 스테이지에 있는지 검사한다 — 위 같은 사고를 조용히
 # 넘기지 않기 위한 안전망. 하나라도 없으면 **배포를 중단**한다 (에셋 없는 배포를 막는
 # --skip-r2 가드와 같은 원칙: 고쳐야 할 상태를 만드느니 실패가 낫다).
-node scripts/check-staged.mjs "$STAGE"
+run_to 300 node scripts/check-staged.mjs "$STAGE"
 
 # 관리자 페이지는 본사이트에서 제거 — admin.terra-archive.net(Cloudflare Access 뒤)으로
 # 분리됐다 (2026-07-27, scripts/deploy-admin.sh). 옛 주소는 아래 _redirects가 넘겨준다.
@@ -267,7 +306,7 @@ echo ".rsc content-type 규칙 1건(글롭) — 대상 $(find "$STAGE" -name "*.
 # 직전 배포들의 청크를 함께 올린다 (2026-08-06, 사용자 제보: 배포 직후 콘솔에 "청크를 못
 # 불러온다"). 파일명이 내용 해시라 재배포하면 옛 이름이 사라지고, 그 순간 열려 있던 탭의
 # 지연 로딩이 404를 맞는다. 최근 3회분을 남겨 두면 그 창 자체가 없어진다.
-node scripts/keep-assets.mjs "$STAGE" || true
+run_to 300 node scripts/keep-assets.mjs "$STAGE" || true
 step "스테이지 준비 (복사·트림·검사)"
 
 # 2단계 배포 — **기본값** (끄려면 --one-phase)
@@ -283,7 +322,8 @@ if [ -n "$ONE_PHASE" ]; then
   echo "1단계 선행 업로드 건너뜀 (--one-phase)"
 else
   echo "1단계: 프리뷰 브랜치(deploy-stage)에 먼저 업로드 — 블롭을 미리 올려 둔다"
-  npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch deploy-stage --commit-dirty=true
+  # 업로드는 내용 해시로 중복 제거되므로 다시 시도해도 올린 만큼은 건너뛴다 (평소 70~90초)
+  retry 3 10 run_to 600 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch deploy-stage --commit-dirty=true
 fi
 step "1단계 선행 업로드"
 
@@ -296,10 +336,18 @@ step "1단계 선행 업로드"
 
 # R2 동기화가 끝났는지 — 새 페이지가 가리킬 에셋이 R2 에 다 있어야 전환한다 (위 '동시에' 주석)
 if [ -n "$R2_PID" ]; then
-  R2_RC=0; wait "$R2_PID" || R2_RC=$?
+  # 끝없이 기다리지 않는다 — r2-sync 는 요청마다 제한 시간·재시도가 있어 평소 20~50초에 끝난다 (2026-10-01)
+  R2_RC=0; wait_to "$R2_PID" 900 || R2_RC=$?
   R2_PID=""
   echo "── R2 동기화 결과 (빌드와 동시에 돌았다 — 기다린 시간은 요약의 'R2 동기화 대기') ──"
   cat "$R2_LOG"
+  if [ "$R2_RC" -ne 0 ]; then
+    # 실패하면 **한 번 더** — 증분이라 남은 것만 올린다. 2026-09-30 밤엔 목록 조회 503 한 번에 배포가 통째로
+    # 끝났고, 워커는 바로 다음 순간 정상(200)이었다.
+    echo "⚠ R2 동기화 실패(종료 코드 $R2_RC) — 10초 뒤 한 번 더 돌립니다" >&2
+    sleep 10
+    R2_RC=0; run_to 900 node scripts/r2-sync.mjs || R2_RC=$?
+  fi
   if [ "$R2_RC" -ne 0 ]; then
     echo "✗ R2 동기화 실패(종료 코드 $R2_RC) — 프로덕션 전환을 하지 않는다. 라이브는 그대로다." >&2
     exit 1
@@ -308,18 +356,18 @@ fi
 step "R2 동기화 대기"
 
 echo "2단계: 프로덕션 전환"
-npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true
+retry 3 10 run_to 600 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true
 step "2단계 프로덕션 전환"
 
 # 전환 직후 이번 빌드의 청크를 우리가 먼저 한 번 당겨 엣지에 올린다 (2026-08-06 밤).
 # 사용자보다 먼저 당겨 두면 첫 방문자가 404를 맞지 않는다. 안 뜨는 파일이 있으면 여기서
 # 이름이 찍힌다 — 그게 곧 사용자가 콘솔에서 볼 파일이다.
-node scripts/warm-assets.mjs --seconds 180 || true
+run_to 300 node scripts/warm-assets.mjs --seconds 180 || true
 step "청크 예열 (warm-assets)"
 
 # 색인 통보(IndexNow) — 직전 커밋 대비 **실제로 바뀐** 페이지만 Bing·네이버에 알린다.
 # 바뀐 게 없으면 아무것도 안 쏜다. 실패해도 배포는 성공이다(부가 작업이라 || true).
-node scripts/indexnow.mjs || true
+run_to 120 node scripts/indexnow.mjs || true
 step "색인 통보 (IndexNow)"
 
 # 관리자 사이트(admin.terra-archive.net)는 **별도 배포**다 (2026-07-28 재분리 — 한때 여기서
