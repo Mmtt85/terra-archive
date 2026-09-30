@@ -94,6 +94,7 @@ import type { StorySummaries, OpIndex, ScriptData } from "./story";
 import recordIdsData from "./data/record-ids.json";
 import acSeasonList from "./data/autochess-seasons.json";
 import eventIdsData from "./data/event-ids.json";
+import cnRunningData from "./data/cn-running.json";
 /** 스토리 요약(로케일별 1.8MB)은 **스토리 탭에 들어갈 때만** 받는다 (2026-08-09 INP 작업).
  *  종전엔 로케일 래퍼가 정적 import해 모든 페이지가 파싱했다. 셸에서 쓰던 곳은
  *  Portal의 죽은 stats prop 하나뿐이라 데이터 자체가 필요 없었다. */
@@ -446,6 +447,13 @@ const MINOR_EVENT_TYPES = new Set([
   "GRID_GACHA", "GRID_GACHA_V2", "FLIP_ONLY", "CHECKIN_VIDEO",
 ]);
 
+// 중섭(CN)에서 진행중·곧 시작할 이벤트 — 미래시 ON 일 때만 헤더 이벤트 목록에 (사용자 지시 2026-09-30).
+// 방송 워커는 한섭만 주므로 build-events.py 가 받아 둔 중섭 표에서 끝나지 않은 것만 낸다(app/data/cn-running.json).
+// 진행중인지는 여기서 지금 시각으로 가린다. n·thumb 은 [ko, en, ja].
+type CnRunning = { id: string; type?: string; start: string; end: string; n: [string, string, string]; thumb?: [string, string, string]; dex?: 1 };
+const cnRunningEvents = (cnRunningData as { events: CnRunning[] }).events;
+const LOC_IX: Record<Locale, 0 | 1 | 2> = { ko: 0, en: 1, ja: 2 };
+
 
 /** 지금 돌고 있는 이벤트 **전부**(대표 순) — 헤더 '진행중 이벤트' 그룹이 쓴다. 종전엔 대표 하나만 칩으로 냈다
  *  (사용자 요청 2026-09-17) → 2026-09-23 "세 개 다 헤더에". 워커 fetch 는 모듈 공유 프라미스
@@ -535,9 +543,11 @@ function useTapOnly() {
 
 /* 진행중·예정 게임 이벤트 배지. 2026-09-23 까지는 유튜브 공식 방송 버튼과 한 몸이었고
    (slot 으로 갈라 썼다) 그래서 이름이 BroadcastBadges 였다 — 방송 기능을 걷어내며 갈랐다. */
-function EventBadges({ onOpenEvent }: {
+function EventBadges({ onOpenEvent, includeFuture }: {
   /** 이벤트 줄을 누르면 이벤트 도감 상세로 (사용자 지시 2026-09-17) */
   onOpenEvent?: (id: string, type?: string | null) => void;
+  /** 미래시 ON — 중섭 진행중 이벤트 묶음을 더한다 */
+  includeFuture?: boolean;
 }) {
   const { locale, t } = useI18n();
   const tapOnly = useTapOnly();
@@ -593,6 +603,10 @@ function EventBadges({ onOpenEvent }: {
   const upcoming = gameEvents
     .filter((event) => Date.parse(event.start) > now && !MINOR_EVENT_TYPES.has(event.type ?? ""))
     .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  const cnRunning = includeFuture
+    ? cnRunningEvents.filter((event) => Date.parse(event.start) <= now && now <= Date.parse(event.end)
+      && !MINOR_EVENT_TYPES.has(event.type ?? ""))
+    : [];
   const headline = running[0] ?? upcoming[0]; // 진행중이 없으면 가장 가까운 예정을 대표로
   const headlineUpcoming = running.length === 0 && upcoming.length > 0;
   const evName = (event: GameEvent): string => eventName(locale, event);
@@ -673,6 +687,32 @@ function EventBadges({ onOpenEvent }: {
                         공식카페 링크는 사이트 내 이벤트 가이드로"). 도감이 아직 모르는 이벤트는 가이드 목록으로
                         (openEventById). 공식 카페 공지는 이벤트 상세 모달의 버튼이 맡는다. */}
                     {onOpenEvent
+                      ? <button type="button" className="event-row-btn"
+                          onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 가이드에서 보기")}>{body}</button>
+                      : <span className="event-row-plain">{body}</span>}
+                  </li>
+                );
+              })}
+            </ul>
+          </>}
+          {/* 중국 서버 진행중 — 미래시 ON 일 때만 (사용자 지시 2026-09-30). 기간은 중섭 기준(KST 표기). */}
+          {cnRunning.length > 0 && <>
+            <h3 className="event-menu-upcoming">{t("중국 서버 진행중")}</h3>
+            <ul>
+              {cnRunning.map((event) => {
+                const i = LOC_IX[locale];
+                const thumb = event.thumb?.[i];
+                const endDday = Math.max(0, Math.ceil((Date.parse(event.end) - now) / DAY));
+                const body = (
+                  <>
+                    {thumb && <span className="event-banner"><img src={asset(thumb)} alt="" loading="lazy" /></span>}
+                    <span className="event-row-name">{event.n[i]}</span>
+                    <small>{md(event.start)} ~ {md(event.end)} · D-{endDday}</small>
+                  </>
+                );
+                return (
+                  <li key={`cn-${event.id}`}>
+                    {onOpenEvent && event.dex
                       ? <button type="button" className="event-row-btn"
                           onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 가이드에서 보기")}>{body}</button>
                       : <span className="event-row-plain">{body}</span>}
@@ -2427,7 +2467,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           <div className="header-sub-right">
             {/* 진행중 이벤트 · 공식 방송 — 둘 다 확장부로 (이벤트 배지는 사용자 요청 2026-07-30에
                 1줄 배너에서 여기 작은 버튼으로 내려왔다. 방송은 2026-07-25부터 여기). */}
-            <EventBadges onOpenEvent={openEventById} />
+            <EventBadges onOpenEvent={openEventById} includeFuture={includeFuture} />
             {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}
             <label className={`future-toggle${futureFlash ? " flash" : ""}`} title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
               <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />

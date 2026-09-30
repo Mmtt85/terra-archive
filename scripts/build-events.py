@@ -717,3 +717,46 @@ json.dump({"updated": updated, "ids": sorted(r["id"] for r in rows["ko"]), "name
 print(f"  event-ids.json  {os.path.getsize(ids_path) // 1024}KB")
 print(f"이벤트 {len(rows['ko'])}개(미래시 {n_fut}) — 작전 {n_stage} · 등장 적 {n_enemy} · "
       f"재화 {n_item} · 오퍼 {n_op}")
+
+# ── 중섭 진행·예정 이벤트 (헤더 이벤트 목록, 미래시 ON 일 때만) ─────────────────────
+# 사용자 지시 2026-09-30 "미래시 데이터 켜면 헤더에 이벤트 목록에 지금 중섭에서 진행중인 이벤트도 표시해줘".
+# 헤더의 한섭 목록은 방송 워커가 주지만 중섭은 없다 — 받아 둔 중섭 activity 표에서 **끝나지 않은** 이벤트를
+# 시각과 함께 싣고, 진행중인지는 화면이 그 자리의 시각으로 가린다(CI 가 하루 한 번 돌아도 맞게).
+# 출석·로그인류는 헤더와 같은 규칙으로 뺀다 (app/home.tsx MINOR_EVENT_TYPES — 화면에서도 한 번 더 거른다).
+# 이름: 이벤트 도감 행(미래시 포함) → 한섭 표(같은 id) → 복각이면 원본 도감 행 + 재개방 → 없으면 싣지 않는다.
+_CN_MINOR = re.compile(r"CHECKIN|LOGIN|PRAY_ONLY|BLESS_ONLY|UNIQUE_ONLY|GRID_GACHA|FLIP_ONLY")
+_RERUN = {"ko": " (재개방)", "en": " - Rerun", "ja": "・復刻"}
+cn_running = []
+if cn_act:
+    _now = datetime.now(KST).timestamp()
+    _row = {loc: {r["id"]: r for r in rows[loc]} for loc in LOCALES}
+    for aid, info in sorted(cn_act["basicInfo"].items(), key=lambda kv: kv[1].get("startTime") or 0):
+        if (info.get("endTime") or 0) < _now or _CN_MINOR.search(info.get("type") or ""):
+            continue
+        if (info.get("startTime") or 0) > _now + 21 * 86400:
+            continue
+        names, dex = {}, aid in _row["ko"]
+        for loc in LOCALES:
+            if aid in _row[loc]:
+                names[loc] = _row[loc][aid]["n"]
+        if not names and info.get("isReplicate"):
+            origin = re.sub(r"sre$", "side", aid)
+            for loc in LOCALES:
+                if origin in _row[loc]:
+                    names[loc] = _row[loc][origin]["n"] + _RERUN[loc]
+        if not names.get("ko"):
+            print(f"  ⚠ 중섭 진행 이벤트 {aid}({info.get('name')}) — 이름이 없어 헤더에 안 싣는다 (CN_ONLY_NAMES)")
+            continue
+        ev = {"id": aid, "type": info.get("type"),
+              "start": datetime.fromtimestamp(info["startTime"], KST).isoformat(),
+              "end": datetime.fromtimestamp(info["endTime"], KST).isoformat(),
+              "n": [names.get("ko"), names.get("en") or names["ko"], names.get("ja") or names["ko"]]}
+        th = [(_row[loc].get(aid) or {}).get("thumb") for loc in LOCALES]
+        if any(th):
+            ev["thumb"] = [t or th[0] for t in th]
+        if dex:
+            ev["dex"] = 1
+        cn_running.append(ev)
+_cr_path = os.path.join(DATA, "cn-running.json")
+json.dump({"events": cn_running}, open(_cr_path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+print(f"  cn-running.json  중섭 진행·예정 {len(cn_running)}건")
