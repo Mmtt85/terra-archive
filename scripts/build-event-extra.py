@@ -12,6 +12,9 @@
   훈장      basicInfo.medalGroupId → medal_table 훈장 세트 (이름·설명·획득 조건) / 세트가 없으면 ungroupedMedalIds
   가구      미션 보상의 FURN → building_data 가구 + 그 테마(이벤트 가구 세트 이름·설명)
   신뢰도    activity[…][id].favorUpList — 이벤트 기간 신뢰도 보너스 오퍼
+  스토리    그 이벤트의 스토리(전문 화 목록 [작전 코드, 구분]) — 작전 카드에서 그 화를 리더기로 바로 연다
+            (사용자 요청 2026-10-01 "17-1같은경우는 스토리인데, 이것도 다 스토리 리더랑 전문보기 AI 요약 모든이벤트에").
+            스토리 id 는 이벤트 행의 sid/id, 없으면 메인 사이드(actNmainss)는 작전 코드의 장 번호로 main_<N>.
 
 ⚠ 교환소 품목은 **없다** — basicInfo.templateShopId 만 있고 품목표는 서버가 쥐고 있다 (build-events.py 주석과 같다).
 ⚠ 듀얼 채널·벡터 돌파는 자기 상세(app/event-duel.tsx·event-vecbreak.tsx)가 훈장·일정을 이미 보여 주므로 뺀다.
@@ -161,7 +164,39 @@ def build_event(aid, T, tx, name_of, skip):
     return rec or None
 
 
+SCRIPT_IDS = {loc: set(load(os.path.join(DATA, f"story-script-ids{'' if loc == 'ko' else '.' + loc}.json")))
+              for loc in LOCALES}
+SUMMARY_IDS = set(load(os.path.join(DATA, "story-summaries.json")))
+SCENE_IDS = set(load(os.path.join(DATA, "story-scene-ids.json")))
+
+
+def story_of(row, loc):
+    """이벤트 행 → {id, eps:[[작전 코드, 구분], …](전문 화 순서 그대로 — 리더기의 화 번호), sum?, scene?} | None.
+    리더기는 로케일 전문이 없으면 한국어 전문을 읽는다(app/story.tsx scriptLoc) — 화 목록도 같은 파일에서 뽑는다."""
+    cands = [row.get("sid"), row["id"]]
+    chap = [m.group(1) for s in row.get("stages") or [] for m in [re.match(r"^(\d+)-\d+$", s[1])] if m]
+    if chap:
+        cands.append("main_" + max(set(chap), key=chap.count))
+    sid = next((c for c in cands if c and (c in SCRIPT_IDS["ko"] or c in SUMMARY_IDS)), None)
+    if not sid:
+        return None
+    out = {"id": sid}
+    if sid in SCRIPT_IDS["ko"]:
+        path = os.path.join(REPO, "public", "story", "script",
+                            *([loc] if loc != "ko" and sid in SCRIPT_IDS[loc] else []), f"{sid}.json")
+        try:
+            out["eps"] = [[e.get("code") or "", e.get("tag") or ""] for e in load(path)["eps"]]
+        except (OSError, KeyError, ValueError):
+            pass
+    if sid in SUMMARY_IDS:
+        out["sum"] = 1
+    if sid in SCENE_IDS:
+        out["scene"] = 1
+    return out
+
+
 rows = load(os.path.join(DATA, "events.json"))["events"]
+row_by = {r["id"]: r for r in rows}
 ids = [r["id"] for r in rows if not r.get("fut")]
 fut_ids = [r["id"] for r in rows if r.get("fut")]
 special = {r["id"] for r in rows if r.get("vb") or r.get("duel")}
@@ -269,13 +304,19 @@ def make_name_of(loc, T, tx, fut):
 for loc, T in TB.items():
     out = {}
     for aid in ids:
-        rec = build_event(aid, T, lambda s, ctx: clean(s), make_name_of(loc, T, None, False), aid in special)
+        rec = build_event(aid, T, lambda s, ctx: clean(s), make_name_of(loc, T, None, False), aid in special) or {}
+        st = story_of(row_by[aid], loc)
+        if st:
+            rec["story"] = st
         if rec:
             out[aid] = rec
     tx = make_tx(loc)
     name_of = make_name_of(loc, T, tx, True)
     for aid in fut_ids:
-        rec = build_event(aid, CN, tx, name_of, aid in special)
+        rec = build_event(aid, CN, tx, name_of, aid in special) or {}
+        st = story_of(row_by[aid], loc)
+        if st:
+            rec["story"] = st
         if rec:
             if rec.get("sched"):
                 rec["sched"]["cn"] = 1            # 중국 서버 날짜 — 화면이 그렇게 적는다
@@ -294,7 +335,7 @@ for loc, T in TB.items():
             open(p, "w", encoding="utf-8").write(txt)
     n = lambda k: sum(1 for v in out.values() if k in v)
     print(f"  event-extra/{loc}: 이벤트 {len(out)}(미실장 {sum(1 for a in out if a in fut_ids)}) — 일정 {n('sched')} · "
-          f"미션 {n('missions')} · 훈장 {n('medals')} · 가구 {n('furn')} · 신뢰도 {n('favor')} — 합 {total // 1024}KB")
+          f"미션 {n('missions')} · 훈장 {n('medals')} · 가구 {n('furn')} · 신뢰도 {n('favor')} · 스토리 {n('story')} — 합 {total // 1024}KB")
 
 json.dump(missing, open(MISSING, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 for loc in LOCALES:

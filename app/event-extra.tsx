@@ -29,7 +29,10 @@ type Extra = {
   furn?: { theme?: [string, string]; list: [string, string, number][] };
   /** 이벤트 기간 신뢰도 보너스 오퍼 [id, 이름] */
   favor?: [string, string][];
+  /** 이 이벤트의 스토리 — id · 전문 화 목록 eps [작전 코드, 구분](배열 순서 = 리더기 화 번호) · AI 요약 sum · 리더기 scene */
+  story?: EventStory;
 };
+export type EventStory = { id: string; eps?: [string, string][]; sum?: 1; scene?: 1 };
 
 const FILES = import.meta.glob<{ default: Extra }>("./data/event-extra/*/*.json");
 
@@ -48,7 +51,7 @@ type Open = { onOpenItem: (id: string) => void; onShowOperator: (id: string) => 
 /** 이 이벤트의 추가 탭들 + 개요에 얹을 일정. 받는 동안·파일이 없으면 빈 배열·null (탭 막대는 있는 것만 그린다).
  *  일정은 탭이 아니라 **개요에** 둔다 (사용자 지시 2026-10-01 "일정도 개요에 보여줘").
  *  skipMedals — 듀얼 채널·벡터 돌파는 자기 상세에 훈장 탭이 있고, 일정도 자기 개요(기간·진행 단계)에 있다. */
-export function useExtraTabs(id: string, open: Open, skipMedals = false): { tabs: ExtraTab[]; schedule: ReactNode } {
+export function useExtraTabs(id: string, open: Open, skipMedals = false): { tabs: ExtraTab[]; schedule: ReactNode; story: EventStory | null } {
   const { locale, t } = useI18n();
   const [got, setGot] = useState<{ key: string; data: Extra } | null>(null);
   const key = `${locale}/${id}`;
@@ -60,7 +63,7 @@ export function useExtraTabs(id: string, open: Open, skipMedals = false): { tabs
     return () => { live = false; };
   }, [key]);
   const data = got?.key === key ? got.data : null;
-  if (!data) return { tabs: [], schedule: null };
+  if (!data) return { tabs: [], schedule: null, story: null };
   const tabs: ExtraTab[] = [];
   const schedule = data.sched && !skipMedals ? (
     <section className="ev-sec evx-sched-sec">
@@ -80,7 +83,7 @@ export function useExtraTabs(id: string, open: Open, skipMedals = false): { tabs
   if (data.favor?.length) {
     tabs.push({ key: "favor", label: t("신뢰도 보너스 오퍼레이터"), node: <Favor list={data.favor} open={open} /> });
   }
-  return { tabs, schedule };
+  return { tabs, schedule, story: data.story ?? null };
 }
 
 function Schedule({ s }: { s: NonNullable<Extra["sched"]> }) {

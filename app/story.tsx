@@ -472,7 +472,7 @@ function EntityPeekCard({ anchor, mobile, pinned, label, children }: {
 const epLabelOf = (e: { code?: string; name?: string; tag?: string } | undefined, i: number) =>
   [e?.code || `#${i + 1}`, e?.name, e?.tag].filter(Boolean).join(" · ");
 
-export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId, sceneOn, withPrefs, withScene }: {
+export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId, sceneOn, withPrefs, withScene, initialEp }: {
   script: ScriptData | null; error: boolean;
   entities: Entity[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void; eventId?: string;
   /** 장면 모드(무대 재생)가 켜져 있는가 — 보기 방식 탭이 소유한다 */
@@ -485,6 +485,8 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
    *  있지만, 오퍼 기록 모달엔 그 탭이 없다 (사용자 요청 2026-09-04). 연출 트랙이 있는
    *  에피소드에서만 버튼이 뜨고, 없으면 전문 그대로다. */
   withScene?: boolean;
+  /** 처음 펼칠 화(0부터) — 이벤트 창의 작전 카드에서 그 작전의 화로 바로 들어올 때 (2026-10-01). 없으면 해시(ep<N>) */
+  initialEp?: number;
 }) {
   const { locale, t } = useI18n();
   const [ownPrefs, setOwnPrefs] = useReaderPrefs();
@@ -514,6 +516,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   // 에피소드 딥링크(#story-<id>/ep<N>) — 첫 마운트에 해시에서 읽고, 탭 전환 시 URL에 남긴다
   // (사용자 요청 2026-07-22). replaceState라 뒤로가기 히스토리는 안 쌓인다.
   const [epIdx, setEpIdx] = useState(() => {
+    if (initialEp != null) return Math.max(0, initialEp);
     if (typeof window === "undefined") return 0;
     const m = decodeURIComponent(window.location.hash).match(/(?:^#|\/)ep(\d+)$/);
     return m ? Math.max(0, parseInt(m[1], 10) - 1) : 0;
@@ -772,8 +775,14 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
 //   (react-hooks/set-state-in-effect, app/enemies.tsx useStagesDoc 과 같은 처방).
 let _summaryCache: StorySummaries | null = null;
 
-export function StoryDetailById({ id, onClose, onShowOperator }: {
+export function StoryDetailById({ id, onClose, onShowOperator, view, ep, name }: {
   id: string; onClose: () => void; onShowOperator?: (operatorId: string) => void;
+  /** 처음 보기 — 리더기(scene, 기본) · 전문(script) · AI 요약(summary). 없는 보기는 StoryDetail 이 폴백한다 */
+  view?: "scene" | "script" | "summary";
+  /** 처음 펼칠 화(0부터) — 이벤트 창 작전 카드에서 그 작전의 화로 (2026-10-01) */
+  ep?: number;
+  /** 스토리 목록에 없는 스토리(요약 없이 전문만 있는 중섭 선행 메인 스토리 main_17 …)의 제목 */
+  name?: string;
 }) {
   const { t } = useI18n();
   const [, bump] = useState(0);
@@ -786,18 +795,21 @@ export function StoryDetailById({ id, onClose, onShowOperator }: {
     }).catch(() => { /* 요약이 없어도 전문·기록은 읽힌다 */ });
     return () => { live = false; };
   }, []);
-  const event = data.events.find((e) => e.id === id);
+  // 스토리 목록·연대기에 없는 스토리라도 전문이 있으면 연다 — 상전이 임계의 main_17(중섭 선행 메인 17장)처럼
+  // 요약이 아직 없어 연대기 합성 항목(CHRON_SYNTH)에서 빠진 것 (사용자 요청 2026-10-01 "모든 이벤트에 싹 다")
+  const event = eventById.get(id)
+    ?? (scriptIds.has(id) ? { id, name: { ko: name ?? id }, start: "", episodes: 0, thumb: "" } as StoryEvent : undefined);
   if (!event) return null;
   if (!_summaryCache) return <p className="no-detail">{t("불러오는 중…")}</p>;
   // 기본 보기는 **리더기** (사용자 지시 2026-09-17). defaultView="scene" 은 StoryDetail 의
   // fallbackMode(리더기 > 전문 > 요약 > 기록)를 그대로 타라는 뜻이다.
   return (
     <StoryDetail event={event} summary={_summaryCache[id]} onClose={onClose}
-      onShowOperator={onShowOperator} defaultView="scene" embedded />
+      onShowOperator={onShowOperator} defaultView={view ?? "scene"} initialEp={ep} embedded />
   );
 }
 
-export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, defaultView, related, onOpenStory, embedded }: {
+export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, defaultView, related, onOpenStory, embedded, initialEp }: {
   event: StoryEvent; summary?: Summary; onClose: () => void; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
   /** 해시로 지정된 게 없을 때의 기본 보기 — 상세 라우트(/stories/<id>)는 "summary"를 준다 */
   defaultView?: "summary" | "script" | "scene";
@@ -807,6 +819,8 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
   /** 모달 안에 얹었을 때 — '스토리 목록으로' 버튼을 감춘다. 창에 이미 × 가 있고,
    *  누르면 목록이 아니라 그 창만 닫히므로 문구가 거짓이 된다 (사용자 지시 2026-09-17). */
   embedded?: boolean;
+  /** 리더기·전문이 처음 펼칠 화(0부터) — StoryDetailById 가 넘긴다 */
+  initialEp?: number;
 }) {
   const { locale, t } = useI18n();
 
@@ -1025,7 +1039,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
         </header>
         {scriptView && hasScript && <ScriptReader script={script} error={scriptErr} entities={entities}
           opIndex={opIndex} onShowOperator={onShowOperator} eventId={event.id}
-          sceneOn={mode === "scene"} />}
+          sceneOn={mode === "scene"} initialEp={initialEp} />}
         {scriptView && futureNoScript && (
           <div className="sc-future-note">
             <b>{t("전문은 정식 출시 후에 열려요")}</b>

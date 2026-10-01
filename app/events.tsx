@@ -34,7 +34,7 @@ import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems,
 import { EnemyFile, enemyImg, type Enemy, type EnemyLevel, type EnemyStages, type StatOverride } from "./enemy-detail";
 import { DuelDetail, type DuelFighter } from "./event-duel";
 import { VecDetail } from "./event-vecbreak";
-import { EventTabs, useExtraTabs, type ExtraTab } from "./event-extra";
+import { EventTabs, useExtraTabs, type ExtraTab, type EventStory } from "./event-extra";
 import { StageFile } from "./stage-detail";
 import { mergeRogueDoc, viewOf, type StageView } from "./stage-data";
 import { findItem, ItemFile, itemIcon, type DexItem, type ItemDoc } from "./items";
@@ -237,6 +237,25 @@ function useCafeUrl(id: string): { url: string; exact: boolean } {
   return url ? { url, exact: true } : { url: CAFE_EVENT_BOARD, exact: false };
 }
 
+/** 스토리 창을 어떻게 열지 — 보기(리더기·전문·AI 요약) · 처음 펼칠 화(0부터) · 스토리 목록에 없는 스토리의 제목 */
+type StoryOpen = { view?: "scene" | "script" | "summary"; ep?: number; name?: string };
+
+/** 화 구분 → 짧은 표기 키. 전문이 그 언어로 아직 없으면 한국어 구분이 섞여 온다(리더기가 한국어 전문을 읽는다) —
+ *  글자로 판별해 지금 언어로 다시 적는다. */
+const epKind = (tag: string) =>
+  /전$|Before|前/.test(tag) ? "작전 전" : /후$|After|後/.test(tag) ? "작전 후" : "브릿지";
+
+/** 작전 코드 → 그 작전의 스토리 화들 [화 번호, 구분 키] */
+function epsByCode(story: EventStory | null) {
+  const m = new Map<string, [number, string][]>();
+  (story?.eps ?? []).forEach(([code, tag], i) => {
+    const list = m.get(code) ?? [];
+    list.push([i, epKind(tag)]);
+    m.set(code, list);
+  });
+  return m;
+}
+
 /** 이벤트 상세 — 작전·등장 적·교환 재화·보상 오퍼를 한 화면에. 누르면 각 도감이 겹쳐 뜬다. */
 function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpenItem, onShowOperator, onOpenStory, onOpenOrigin }: {
   row: EventRow;
@@ -248,13 +267,18 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
   onOpenFighter: (f: DuelFighter) => void;
   onOpenItem: (id: string) => void;
   onShowOperator: (id: string) => void;
-  onOpenStory: (id: string) => void;
+  onOpenStory: (id: string, opts?: StoryOpen) => void;
   onOpenOrigin: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
   const cafe = useCafeUrl(row.id);
   // 일정·미션·훈장·가구·신뢰도 보너스 탭 — 이벤트마다 따로 받는다 (app/event-extra.tsx)
-  const { tabs: extra, schedule } = useExtraTabs(row.id, { onOpenItem, onShowOperator }, !!(row.vb || row.duel));
+  const { tabs: extra, schedule, story } = useExtraTabs(row.id, { onOpenItem, onShowOperator }, !!(row.vb || row.duel));
+  // 스토리 — 작전 카드에서 그 작전의 화를 리더기로 바로 (사용자 요청 2026-10-01 "17-1같은경우는 스토리인데, 이것도 다
+  // 스토리 리더랑 전문보기 AI 요약 모든이벤트에"). 스토리 id 는 행의 sid/id, 메인 사이드는 main_<장>(build-event-extra.py)
+  const storyId = story?.id ?? (row.story ? row.sid ?? row.id : null);
+  const openStory = (opts?: StoryOpen) => { if (storyId) onOpenStory(storyId, { name: row.n, ...opts }); };
+  const epMap = epsByCode(story);
   // 썸네일 + 그 밑 교환 재화 — 공통 윗칸의 왼쪽 칸이자, 듀얼 채널에서는 개요 탭의 왼쪽 칸
   const side = (
     <div className="ev-top-side">
@@ -331,17 +355,52 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
   );
   // 작전 — 코드 앞머리로 묶고(PA · PA-EX …), 카드마다 작은 실사 도면 (사용자 요청 2026-10-01 "작전카드에 쪼그만하게
   // 실사도면 섬네일"). 도면은 작전 도감과 같은 파일(public/stage/<작전 id>.webp) — 없는 작전(46/2545)은 자리를 접는다.
+  // 카드 오른쪽 칩 = 그 작전의 스토리 화(작전 전·작전 후·브릿지) — 누르면 리더기가 그 화부터. 전투 없는 스토리 작전
+  // (st_/spst_ — 17-1 같은 것)은 카드 자체가 그 화를 연다(작전 상세엔 볼 게 없다).
   const stageCards = (items: [string, string, string][]) => (
     <div className="ev-stages">
-      {items.map(([id, code, name]) => (
-        <button key={id} type="button" className="ev-stage" onClick={() => onOpenStage(id)}>
-          <img className="ev-stage-map" src={asset(`/stage/${id}.webp`)} alt="" aria-hidden width={56} height={56}
-            loading="lazy" decoding="async" onError={(e) => { e.currentTarget.remove(); }} />
-          <b>{code}</b><span>{name}</span>
-        </button>
-      ))}
+      {items.map(([id, code, name]) => {
+        const eps = storyId ? epMap.get(code) ?? [] : [];
+        const storyOnly = eps.length > 0 && /^(st|spst)_/.test(id);
+        return (
+          <div key={id} className="ev-stage">
+            <button type="button" className="ev-stage-open"
+              onClick={() => (storyOnly ? openStory({ view: "scene", ep: eps[0][0] }) : onOpenStage(id))}>
+              <img className="ev-stage-map" src={asset(`/stage/${id}.webp`)} alt="" aria-hidden width={56} height={56}
+                loading="lazy" decoding="async" onError={(e) => { e.currentTarget.remove(); }} />
+              <b>{code}</b><span>{name}</span>
+            </button>
+            {eps.length > 0 && (
+              <span className="ev-stage-sy">
+                {eps.map(([i, kind]) => (
+                  <button key={i} type="button" title={t("{code} {kind} 스토리 — 리더기로 읽기", { code, kind: t(kind) })}
+                    onClick={() => openStory({ view: "scene", ep: i })}>{t(kind)}</button>
+                ))}
+              </span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
+  // 작전 탭 맨 위 — 스토리 보기 세 가지 + 작전 카드가 없는 스토리 화(브릿지 PA-ST-1 등)
+  const codes = new Set((row.stages ?? []).map((s) => s[1]));
+  const looseEps = (story?.eps ?? []).map(([code, tag], i) => [i, code, epKind(tag)] as const).filter(([, code]) => !codes.has(code));
+  const storyBar = storyId ? (
+    <div className="ev-story-bar">
+      <b>{t("스토리")}</b>
+      {(story?.eps?.length ?? 0) > 0 && <button type="button" onClick={() => openStory({ view: "scene" })}>{t("리더기")}</button>}
+      {(story?.eps?.length ?? 0) > 0 && <button type="button" onClick={() => openStory({ view: "script" })}>{t("전문 보기 (풀 스크립트)")}</button>}
+      {(story?.sum || (!story && row.story)) && <button type="button" onClick={() => openStory({ view: "summary" })}>{t("AI 요약")}</button>}
+      {looseEps.length > 0 && (
+        <span className="ev-story-loose">
+          {looseEps.map(([i, code, kind]) => (
+            <button key={i} type="button" onClick={() => openStory({ view: "scene", ep: i })}>{code} {t(kind)}</button>
+          ))}
+        </span>
+      )}
+    </div>
+  ) : null;
   const stageGroups = row.stages && row.stages.length > 0 ? groupStages(row.stages) : [];
   const stageList = !row.stages?.length ? null : stageGroups.length < 2 ? stageCards(stageGroups[0].items) : stageGroups.map((g) => (
     <div key={g.key} className="ev-stage-group">
@@ -408,6 +467,9 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
                   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
                   e.preventDefault(); onOpenStory(row.sid ?? row.id);
                 }}>{t(row.sid ? "원본 이벤트 스토리 읽기" : "이 이벤트 스토리 읽기")}</a>
+            ) : storyId ? (
+              // 스토리 목록에 따로 없는 스토리(메인 사이드의 main_<장> 등) — 정본 페이지가 없으니 버튼으로 창만 연다
+              <button type="button" className="it-link ev-story-link" onClick={() => openStory()}>{t("이 이벤트 스토리 읽기")}</button>
             ) : null}
             {/* 공식 카페 — 스토리 읽기 오른쪽 (사용자 지시 2026-09-23). 헤더 이벤트 목록·칩이 전부 사이트 안
                 (이벤트 가이드)으로 바뀌면서 공식 공지로 가는 길은 여기 하나다. 중섭 선행(미실장) 이벤트는
@@ -436,7 +498,7 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
             <div className="ev-top-main">
               {pair}
               {row.stages && row.stages.length > 0 ? (
-                <VecDetail id={row.id} stages={row.stages} stagesTab={stageList} more={more}
+                <VecDetail id={row.id} stages={row.stages} stagesTab={<>{storyBar}{stageList}</>} more={more}
                   onOpenStage={onOpenStage} onOpenEnemy={onOpenEnemy} />
               ) : <EventTabs key={row.id} tabs={more} />}
             </div>
@@ -444,7 +506,7 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
         ) : (
           <EventTabs key={row.id} tabs={[
             { key: "overview", label: t("개요"), node: <div className="ev-top">{side}<div className="ev-top-main">{pair}{schedule}</div></div> },
-            ...(stageList ? [{ key: "stages", label: t("작전 {n}", { n: row.stages?.length ?? 0 }), node: stageList }] : []),
+            ...(stageList ? [{ key: "stages", label: t("작전 {n}", { n: row.stages?.length ?? 0 }), node: <>{storyBar}{stageList}</> }] : []),
             ...more,
           ]} />
         )}
@@ -490,7 +552,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
   const [fut, setFut] = useState<FutureDex | null>(null);
   const [subItem, setSubItem] = useState<DexItem | null>(null);
   const [itemDoc, setItemDoc] = useState<ItemDoc | null>(null);
-  const [subStory, setSubStory] = useState<string | null>(null);
+  const [subStory, setSubStory] = useState<({ id: string } & StoryOpen) | null>(null);
   const [raise, setRaise] = useState(0);
 
   const events = doc.events;
@@ -632,7 +694,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
           <EventFile row={open} series={open.ser ? seriesOf.get(open.ser) : undefined} onOpenStage={openStage} onOpenEnemy={openEnemy}
             onOpenFighter={(f) => openFighter(f, open)}
             onOpenItem={openItem} onShowOperator={onShowOperator}
-            onOpenStory={(id) => { setRaise((k) => k + 1); setSubStory(id); }}
+            onOpenStory={(id, opts) => { setRaise((k) => k + 1); setSubStory({ id, ...opts }); }}
             onOpenOrigin={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
         </ModalWindow>
       )}
@@ -657,10 +719,11 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
         </ModalWindow>
       )}
       {subStory && (
-        <ModalWindow key={`sy-${raise}`} label={byId.get(subStory)?.n ?? ""}
+        <ModalWindow key={`sy-${raise}`} label={byId.get(subStory.id)?.n ?? subStory.name ?? ""}
           className="operator-modal sy-modal" onClose={() => setSubStory(null)}>
           <Suspense fallback={<p className="no-detail">{t("불러오는 중…")}</p>}>
-            <StoryModal id={subStory} onClose={() => setSubStory(null)} onShowOperator={onShowOperator} />
+            <StoryModal id={subStory.id} view={subStory.view} ep={subStory.ep} name={subStory.name}
+              onClose={() => setSubStory(null)} onShowOperator={onShowOperator} />
           </Suspense>
         </ModalWindow>
       )}

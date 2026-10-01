@@ -3197,6 +3197,11 @@ const D: Record<string, Pair> = {
   // 이벤트 창 '더 보기' — 일정·미션·훈장·가구·신뢰도 보너스 (2026-10-01, app/event-extra.tsx)
   "일정": ["Schedule", "日程"],
   "일정 (중국 서버 기준)": ["Schedule (CN server)", "日程（中国サーバー基準）"],
+  // 이벤트 창 작전 카드의 스토리 화 (2026-10-01) — 영어·일본어는 그 언어 전문의 공식 구분 표기
+  "작전 전": ["Before", "戦闘前"],
+  "작전 후": ["After", "戦闘後"],
+  "브릿지": ["Interlude", "幕間"],
+  "{code} {kind} 스토리 — 리더기로 읽기": ["{code} {kind} story — read in the reader", "{code} {kind}のストーリー — リーダーで読む"],
   "이벤트 기간": ["Event period", "開催期間"],
   "교환소 마감": ["Shop closes", "交換所終了"],
   "이벤트 미션 {n}": ["Event missions {n}", "イベントミッション {n}"],
