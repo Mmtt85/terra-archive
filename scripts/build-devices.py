@@ -51,6 +51,11 @@ HIDDEN_KEYS = {
     "trap_250_hlctrl",       # 근원 탐구 성사 — 전역 제어(ctrl)
     "trap_335_totalattack",  # 全场总攻击 — 전역 총공격 신호
 }
+# 변종 키(<장치>@<모습>)의 이름 — 맵 테마에 따라 모습이 다른 장치 (routeutil.DEVICE_VARIANTS 가 키를 고른다).
+# 설명·아이콘은 @ 앞의 원래 장치를 그대로 쓴다
+VARIANT_NAMES = {
+    "trap_027_stone@box": {"ko": "박스", "en": "Box", "ja": "箱"},   # 흑류수해 맵의 돌무더기 (사용자 요청 2026-10-01)
+}
 TAG = re.compile(r"<[@$/][^>]*>|</>")
 
 
@@ -109,27 +114,29 @@ def main():
     out, untranslated = {}, []
     for key in sorted(device_keys()):
         row = {}
-        kr = tables["ko"].get(key)
-        cn = tables["cn"].get(key) or {}
+        base = key.split("@")[0]
+        kr = tables["ko"].get(base)
+        cn = tables["cn"].get(base) or {}
         if kr:
-            n = {loc: tables[loc].get(key, {}).get("name") or kr.get("name") for loc in ("ko", "en", "ja")}
-            d = {loc: clean(tables[loc].get(key, {}).get("description")) for loc in ("ko", "en", "ja")}
+            n = {loc: tables[loc].get(base, {}).get("name") or kr.get("name") for loc in ("ko", "en", "ja")}
+            d = {loc: clean(tables[loc].get(base, {}).get("description")) for loc in ("ko", "en", "ja")}
         else:
             # 미래시(중섭 선행) 장치 — 중섭 원문 + 비공식 번역. 번역이 없으면 원문 그대로 두고 알린다
             t_n, t_d = tr.get(cn.get("name") or "") or {}, tr.get(cn.get("description") or "") or {}
             if cn.get("name") and not t_n:
                 untranslated.append(cn["name"])
-            n = {loc: t_n.get(loc) or cn.get("name") or key for loc in ("ko", "en", "ja")}
+            n = {loc: t_n.get(loc) or cn.get("name") or base for loc in ("ko", "en", "ja")}
             d = {loc: clean(t_d.get(loc) or cn.get("description")) for loc in ("ko", "en", "ja")}
+        n = VARIANT_NAMES.get(key) or n
         row["n"] = {loc: v.strip() for loc, v in n.items()}
         if any(d.values()):
             row["d"] = {loc: v for loc, v in d.items() if v}
         name_all = " ".join(filter(None, [(kr or {}).get("name"), cn.get("name")]))
         desc_all = " ".join(filter(None, [(kr or {}).get("description"), cn.get("description")]))
-        if key in HIDDEN_KEYS or HIDDEN_NAME.search(name_all) or "보이지 않는" in desc_all or "不可见" in desc_all:
+        if base in HIDDEN_KEYS or HIDDEN_NAME.search(name_all) or "보이지 않는" in desc_all or "不可见" in desc_all:
             row["h"] = 1
         else:
-            ic = icon(key, want_icons)
+            ic = icon(base, want_icons)
             if ic:
                 row["i"] = ic
         out[key] = row

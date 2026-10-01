@@ -573,7 +573,7 @@ for sid, lv in lv_json.items():
         continue
     d = routes_of_level(lv, enemy_db)
     if d:
-        d.update(devices_of_level(lv))    # 미리 깔린 장치·밤 표시 (routeutil 주석, 2026-09-29)
+        d.update(devices_of_level(lv, sid))    # 미리 깔린 장치·밤 표시 (routeutil 주석, 2026-09-29)
         routes[sid] = fold_routes(d)
         first_sid[lid] = sid
 _body = lambda v: routes.get(v) if isinstance(v, str) else v

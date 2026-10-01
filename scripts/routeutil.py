@@ -215,7 +215,14 @@ def routes_of_level(lv, enemy_db=None):
     return doc
 
 
-def devices_of_level(lv):
+# 같은 장치가 맵 테마마다 모습이 달라 이름을 따로 다는 것 — {(경로 키 접두, 장치 키): 변종 키}.
+# 변종 이름은 build-devices.py 의 VARIANT_NAMES 가 달고, 설명·아이콘은 원래 장치를 물려받는다.
+#  · 흑류수해(ro6)의 '돌무더기'는 맵에서 상자로 놓여 있다 — 사용자 요청 2026-10-01 "박스라고 바꿔줘".
+#    공식 이름은 어느 맵에서나 돌무더기(碎石)라 다른 맵은 그대로 둔다
+DEVICE_VARIANTS = {("ro6_", "trap_027_stone"): "trap_027_stone@box"}
+
+
+def devices_of_level(lv, sid=None):
     """레벨 JSON → {pd?, nt?} — 미리 깔린 장치와 밤(어둠) 표시 (사용자 요청 2026-09-29
     "어둠이랑 네온사인은 어디에 있는거야? 보이질 않네").
 
@@ -225,7 +232,7 @@ def devices_of_level(lv):
         시계), 조건 분기(branches)에서만 켜지면 [-1, 0]. 어디서도 켜지지 않는 숨김 장치는 뺀다
         (VEC-C 네온사인 셋 중 둘이 웨이브 도중 켜지는 것이었다).
         좌표는 경로와 같은 규약(row 0 = 아래)이라 렌더러가 뒤집는다. 이름·설명·아이콘은
-        app/data/devices.json (scripts/build-devices.py).
+        app/data/devices.json (scripts/build-devices.py). sid(경로 키)를 주면 DEVICE_VARIANTS 로 변종 키를 쓴다.
     nt: 1 — mapData.tags 에 'night'. 시야 밖 칸엔 배치할 수 없고 적이 은신한다
         (act13side·act2break·lt04 … 작전 설명의 <어둠> 줄과 같은 규칙).
     생존연산은 따로 ob(자원·바위)를 싣는다 — 여기를 부르지 않는다.
@@ -252,6 +259,7 @@ def devices_of_level(lv):
         pos = tk.get("position") or {}
         if not key or not isinstance(pos.get("row"), int):
             continue
+        key = next((v for (pre, k), v in DEVICE_VARIANTS.items() if k == key and (sid or "").startswith(pre)), key)
         row = [key, pos.get("col", 0), pos["row"]]
         if tk.get("hidden"):
             al = tk.get("alias")
@@ -269,12 +277,12 @@ def devices_of_level(lv):
     return out
 
 
-def set_devices(rec, lv):
+def set_devices(rec, lv, sid=None):
     """경로 레코드에 pd·nt 를 제자리로 — 레벨이 없으면 건드리지 않는다. 바뀌었으면 True."""
     if not isinstance(rec, dict) or not lv:
         return False
     before = (rec.get("pd"), rec.get("nt"))
     rec.pop("pd", None)
     rec.pop("nt", None)
-    rec.update(devices_of_level(lv))
+    rec.update(devices_of_level(lv, sid))
     return (rec.get("pd"), rec.get("nt")) != before

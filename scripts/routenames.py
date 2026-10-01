@@ -124,7 +124,7 @@ def attach(doc, ctx_of, enemy_db, img_of, names, devices=False):
         keys = list((rec.get("e") or {}).keys())
         lv, known = ctx_of(sid)
         if devices:
-            routeutil.set_devices(rec, lv)
+            routeutil.set_devices(rec, lv, sid)
         nm = owner_names(lv, keys, known, enemy_db, img_of, names) if keys and lv else {}
         if nm:
             rec["nm"] = nm
@@ -294,7 +294,7 @@ def _fix_future():
     for sid, rec in doc.items():
         lid = ((stages.get(sid) or {}).get("levelId") or "").lower()
         if isinstance(rec, dict) and lid:
-            routeutil.set_devices(rec, cdnlevels.level(lid, server="cn"))
+            routeutil.set_devices(rec, cdnlevels.level(lid, server="cn"), sid)
     return p, doc, (sum(1 for r in doc.values() if isinstance(r, dict) and r.get("nm")),
                     sum(len(r["nm"]) for r in doc.values() if isinstance(r, dict) and r.get("nm")))
 
