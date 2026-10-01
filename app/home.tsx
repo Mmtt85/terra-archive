@@ -1110,6 +1110,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 기간 한정 바로가기의 남은 시간 시계 — 첫 값은 빌드 시각(서버·클라 일치), 마운트 뒤
   // 실제 시각으로 갈아 끼우고 1분마다 갱신한다. PROMO가 안 뜨는 동안은 타이머도 안 돈다.
   const [promoNow, setPromoNow] = useState(BUILD_NOW);
+  // 기간이 끝나면 **화면이 스스로** 칩을 내린다 — PROMO_ON 은 빌드 시각 판정이라, 종료 직전에 빌드된 배포가
+  // 끝난 칩을 다음 배포까지 계속 띄웠다 (2026-10-01 위수 협의: 01시 빌드가 04시 종료 뒤에도 '기간 한정'으로 남음,
+  // 사용자 지적 "기간 끝났으니 헤더에 버튼 내려줘"). promoNow 는 마운트 뒤 진짜 시각이라 프리렌더와 어긋나지 않는다.
+  const promoOn = PROMO_ON && promoNow < PROMO_END;
   useEffect(() => {
     if (!PROMO_ON) return;
     // 첫 보정도 타이머로 미룬다 — 이펙트 안에서 곧바로 setState하면 렌더가 한 번 더 돈다
@@ -1307,7 +1311,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 전역 파라미터(future)는 탭을 옮겨도 URL에 유지한다 (공유·일관성). ops 같은 탭 전용
   // 파라미터는 해당 탭이 직접 관리하므로 여기서 실어 나르지 않는다.
   // 헤더 진행중 이벤트 그룹의 칩 — 위수 협의 칩과 겹치는 시즌 행은 뺀다 (위 JSX 주석)
-  const groupEvents = runningEvents.filter((ev) => !(PROMO_ON && EVENT_GUIDE_TAB[ev.type ?? ""] === PROMO.tab));
+  const groupEvents = runningEvents.filter((ev) => !(promoOn && EVENT_GUIDE_TAB[ev.type ?? ""] === PROMO.tab));
   // 미래시 ON — 중섭에서 진행중인 이벤트도 칩으로 (사용자 지시 2026-09-30 "헤더에 벡터돌파#3 없는데?" — 확장부 목록만으론
   // 안 보였다). includeFuture 는 마운트 뒤에 켜지므로 프리렌더와 어긋나지 않는다. 이름은 eventName 이 event-ids 의 EN·JA 로.
   const cnGroupEvents: GameEvent[] = includeFuture
@@ -2236,14 +2240,14 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             앞 칩과 겹치므로 뺀다. 칩은 **전부 사이트 안으로** 간다: 전용 가이드가 있는 모드는 그 가이드,
             이벤트 도감이 아는 이벤트는 그 상세, 아직 모르는 이벤트는 이벤트 가이드 목록 (공식 카페 공지는
             이벤트 상세 모달의 버튼으로 옮겼다 — 같은 날 사용자 지시). */}
-        {(PROMO_ON || groupEvents.length > 0 || cnGroupEvents.length > 0) && (
+        {(promoOn || groupEvents.length > 0 || cnGroupEvents.length > 0) && (
           <div className="ev-group" role="group" aria-label={t("진행중 이벤트")}>
             {/* 말머리('진행중 이벤트')는 뺐다 — 칩 모양만으로 읽힌다 (사용자 지시 2026-09-23). 스크린리더용 이름은
                 그룹의 aria-label 로 남긴다. 칩이 1줄에 다 안 들어가면(폰 390px: 셋 중 둘) **흘러간다** — 옆으로
                 밀어야 세 번째가 보이던 것을 마퀴로 바꿨다 (같은 날 사용자 지시 "마퀴 형식으로 흘러가게").
                 넘치지 않으면(데스크톱) Marquee 는 아무 일도 하지 않는다. */}
             <Marquee className="ev-run">
-            {PROMO_ON && (
+            {promoOn && (
               <a className={`promo-trigger${tab === PROMO.tab ? " selected" : ""}`}
                 href={`${localeBase}/${TAB_SEG[PROMO.tab]}`}
                 onClick={(event) => {
