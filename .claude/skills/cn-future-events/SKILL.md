@@ -149,7 +149,11 @@ python3 scripts/build-event-art.py --server cn      # ①(지금 걸린 것) + �
 python3 scripts/build-events.py                     # 행에 thumb 를 잇는다
 ```
 미러에도 없으면 `⚠ mirror(cn): … 못 찾았다` — 카드는 '이미지 없음'으로 뜬다. 미실장은 중섭판이 원본이라
-그림 속 중국어 제목은 허용한다. 교환 재화 아이콘은 빌더가 `public/items/icon/<id>.webp` 로 받아 둔다.
+그림 속 중국어 제목은 허용한다. 교환 재화 아이콘은 빌더가 `public/items/icon/<id>.webp` 로 받아 둔다(`cn_icon`). 지금 CDN 에 없으면(중섭에서 끝난 이벤트 —
+CDN 이 그림을 내린다) **그 이벤트가 열려 있던 판의 CDN** 에서 꺼낸다: 클뜯 레포 `cn/hot_update_list.json` 의 그 무렵
+`versionId` → 옛 판 주소(중섭 CDN 은 옛 판을 아직 준다) → 활동 번들 안 그림(`activity/[uc]<id>/arts/…/<iconId>`).
+`gh` 가 필요해 로컬에서만 된다. 2026-10-01 포영창정 재화 17종이 이렇게 채워졌다 — 에셋 미러·yuanyan3060 에도 없던
+(콜라보라 빠진 듯) 그림이다.
 ⚠ `public/event/`·`public/items/` 는 **R2 폴더**다 — 새 파일은 커밋하고, 배포(deploy.sh 가 r2-sync)까지 해야 뜬다.
 dev 도 그림을 R2(files.terra-archive.net)에서 받으므로 **배포 전 dev 에선 새 그림이 '이미지 없음'인 게 정상**이다.
 

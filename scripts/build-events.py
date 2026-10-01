@@ -409,8 +409,67 @@ except (OSError, KeyError):
     print("⚠ 중섭 표가 없다 — 미래시 이벤트는 이름·개방 예정만 싣는다")
 
 
-def cn_icon(icon_id):
-    """중섭 전용 재화 아이콘을 받아 둔다 (아이템 도감과 같은 폴더·이름)."""
+_old_cdn = {}       # 이벤트 id → (fbsutil.Cdn | None) — 그 이벤트가 열려 있던 판
+
+
+def _cdn_at(aid):
+    """그 중섭 이벤트가 **열려 있던 때의 CDN 판**. 중섭 CDN 은 지금 판엔 끝난 이벤트의 그림을 내리지만, 옛 판 주소는
+    아직 그대로 준다(2026-10-01 실측: 5월 27일 판 26-05-27-13-32-37_d44f28 이 살아 있다). 판 번호는 클뜯 레포의
+    `cn/hot_update_list.json` 이 그 무렵 커밋마다 들고 있다 — 개방일 사흘 뒤까지의 마지막 커밋 판을 쓴다."""
+    if aid in _old_cdn:
+        return _old_cdn[aid]
+    _old_cdn[aid] = None
+    st = (((cn_act or {}).get("basicInfo") or {}).get(aid) or {}).get("startTime")
+    if not st:
+        return None
+    try:
+        import subprocess, time as _t, urllib.request
+        import fbsutil
+        until = _t.strftime("%Y-%m-%dT%H:%M:%SZ", _t.gmtime(st + 3 * 86400))
+        out = subprocess.run(["gh", "api", "-X", "GET", "repos/ArknightsAssets/ArknightsGamedata/commits",
+                              "-f", "path=cn/hot_update_list.json", "-f", f"until={until}", "-f", "per_page=1",
+                              "--jq", ".[0].sha"], capture_output=True, text=True, timeout=60).stdout.strip()
+        if not out:
+            return None
+        url = f"https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/{out}/cn/hot_update_list.json"
+        with urllib.request.urlopen(url, timeout=120) as r:
+            ver = json.loads(r.read().decode("utf-8")).get("versionId")
+        c = fbsutil.Cdn("cn", cache_dir=os.path.join(G, "cdn-cache"))
+        c.res_version = ver
+        c.assets = "%s/%s/assets/%s" % (c.urls["hu"], "Android", ver)
+        c.hot_update = fbsutil._get(c.assets + "/hot_update_list.json")
+        _old_cdn[aid] = c
+        print(f"  {aid}: 개방 당시 중섭 CDN 판 {ver} 에서 그림을 찾는다")
+    except Exception as e:  # noqa: BLE001 — gh 없음(CI)·네트워크 — 그림 없이 간다
+        print(f"  ⚠ {aid}: 옛 CDN 판을 못 열었다 ({str(e)[:60]})")
+    return _old_cdn[aid]
+
+
+def _old_icon(icon_id, aid):
+    """옛 판에서 에셋 이름이 icon_id 인 그림 하나 (PIL.Image | None). 활동 재화는 활동 번들 안
+    (`activity/[uc]act50side/arts/meldingitem/act50side_melding_1`)에 있어 경로 끝 이름으로 찾는다."""
+    c = _cdn_at(aid) if aid else None
+    if not c:
+        return None
+    want = icon_id.lower()
+    hits = [(k, v) for k, v in c.manifest().items() if k.lower().rsplit("/", 1)[-1] == want]
+    for path, bundle in hits:
+        import io as _io
+        import UnityPy
+        env = UnityPy.load(_io.BytesIO(c.bundle(bundle)))
+        for kind in ("Sprite", "Texture2D"):
+            for obj in env.objects:
+                if obj.type.name == kind:
+                    d = obj.read()
+                    if (getattr(d, "m_Name", "") or "").lower() == want:
+                        return d.image
+    return None
+
+
+def cn_icon(icon_id, aid=None):
+    """중섭 전용 재화 아이콘을 받아 둔다 (아이템 도감과 같은 폴더·이름).
+    지금 CDN(중섭 → 한섭)에 없으면 **그 이벤트가 열려 있던 판**에서 꺼낸다 — 끝난 이벤트(포영창정)의 재화 17종이
+    전부 그림 없이 떴다 (사용자 지적 2026-10-01 "포영창정 교환재화도 섬네일 하나도 안나옴")."""
     if not icon_id:
         return ""
     dest = os.path.join(REPO, "public", "items", "icon", f"{icon_id}.webp")
@@ -419,13 +478,13 @@ def cn_icon(icon_id):
     try:
         import cdnassets
         from imgutil import save_webp
-        for server in ("cn", "kr"):
-            im = cdnassets.image_named(icon_id, server)
-            if im is not None:
-                import io as _io
-                buf = _io.BytesIO(); im.save(buf, "PNG")
-                save_webp(buf.getvalue(), dest, max_px=128, method=4, try_lossless=False)
-                return icon_id
+        ims = (cdnassets.image_named(icon_id, server) for server in ("cn", "kr"))
+        im = next((x for x in ims if x is not None), None) or _old_icon(icon_id, aid)
+        if im is not None:
+            import io as _io
+            buf = _io.BytesIO(); im.save(buf, "PNG")
+            save_webp(buf.getvalue(), dest, max_px=128, method=4, try_lossless=False)
+            return icon_id
     except Exception as e:  # noqa: BLE001
         print(f"  ⚠ 미래시 아이콘 실패({icon_id}): {str(e)[:50]}")
     return ""
@@ -497,7 +556,7 @@ def cn_event_body(aid):
         nm = (meta.get("name") or "").strip()
         if not nm:
             continue
-        ic = cn_icon(meta.get("iconId") or "")
+        ic = cn_icon(meta.get("iconId") or "", aid)
         items.append([iid, nm] + ([ic] if ic else []))
     ops = []
     for m in (cn_act.get("missionData") or []):
