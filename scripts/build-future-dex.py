@@ -108,6 +108,9 @@ for loc, srv, _ in LOCALES:
 
 # ② 공식 정형 문구 사전 — 같은 id 의 중섭 원문 ↔ 그 로케일 문구
 official = {loc: {} for loc, _, _ in LOCALES}
+# 기믹 표식 이름 사전 — 짝지은 줄의 `<…>` 를 순서대로 맞춘다 (활성源石 → 활성 오리지늄 …). _hit 의 표식 복원이 쓴다
+official_tag = {loc: {} for loc, _, _ in LOCALES}
+_TAG = re.compile(r"<([^<>@$/][^<>]*)>")
 
 
 def _pair(loc, a, b):
@@ -120,6 +123,10 @@ def _pair(loc, a, b):
             for x, y in zip(la, lb):
                 if x.strip() and y.strip():
                     official[loc].setdefault(x.strip(), y.strip())
+                    tx, ty = _TAG.findall(x), _TAG.findall(y)
+                    if tx and len(tx) == len(ty):
+                        for p, q in zip(tx, ty):
+                            official_tag[loc].setdefault(p, q)
 
 
 for loc, _, _ in LOCALES:
@@ -151,7 +158,18 @@ HAN = re.compile(r"[一-鿿]")
 
 
 def _hit(cn, loc):
-    return official[loc].get(cn) or (CN_TR.get(cn) or {}).get(loc)
+    off = official[loc].get(cn)
+    # 공식 짝이 **기믹 표식을 잃은** 판이 있다 — 영어판 일부가 `<障碍物>…` 줄을 표식 없이 본문만 쓴다
+    # ("Deploy to block a tile…"). 그대로 쓰면 그 줄만 무슨 장치 설명인지 모르게 된다 (2026-10-01 act1dp_05·act21mini_05).
+    # 그럴 땐 표식이 살아 있는 사전 번역을 쓰고, 사전에 없으면 공식 문구 앞에 원문 표식을 붙인다.
+    if off and cn.startswith("<") and not off.lstrip().startswith("<"):
+        got = (CN_TR.get(cn) or {}).get(loc)
+        if got:
+            return got
+        m = _TAG.match(cn)
+        tag = m and official_tag[loc].get(m.group(1))
+        return f"<{tag}> {off}" if tag else off     # 표식 이름을 못 옮기면 종전처럼 본문만 (원문 표식을 붙이지 않는다)
+    return off or (CN_TR.get(cn) or {}).get(loc)
 
 
 def tr(cn, loc, ctx=""):

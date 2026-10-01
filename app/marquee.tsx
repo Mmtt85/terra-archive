@@ -41,11 +41,15 @@ export function Marquee({ children, className }: { children: ReactNode; classNam
       else el.style.removeProperty("--mq-dur");
     };
     measure();
-    // 칸이 좁아지거나(회전·창 크기) 글이 바뀌면(값 갱신) 다시 잰다
-    const observer = new ResizeObserver(measure);
+    // 칸이 좁아지거나(회전·창 크기) 글이 바뀌면(값 갱신) 다시 잰다.
+    // ⚠ 재기는 **다음 프레임으로** 미룬다 — 관찰 콜백 안에서 data-mq·--mq-dur 를 바꾸면 그게 다시 크기를 흔들어
+    //   "ResizeObserver loop completed with undelivered notifications" 가 난다(이벤트 도감 미실장 줄에 여러 개를
+    //   얹은 뒤 dev 오버레이로 드러났다, 2026-10-01).
+    let raf = 0;
+    const observer = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(measure); });
     observer.observe(el);
     observer.observe(copy);
-    return () => observer.disconnect();
+    return () => { cancelAnimationFrame(raf); observer.disconnect(); };
   });
 
   return (

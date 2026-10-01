@@ -112,6 +112,26 @@ for f in ('events.json', 'events.en.json', 'events.ja.json'):
             if cn.search(x[1] or ''): print(f, e['id'], x[0], x[1])
 PY
 ```
+**번역 전에 공식 짝부터 찾는다** — 새 이벤트도 지난 모드의 용어를 그대로 잇는 일이 많다. 같은 id 의 중섭 원문과
+한·영·일 판을 맞대면(`{cn,kr,en,jp}_enemy_handbook_table` 의 name·abilityList, `{…}_stage_table` 의 description —
+`\\n` 을 줄바꿈으로 풀고 `<@…>`·`</>` 를 벗긴 뒤 줄·표식 순서로) 공식 표기가 나온다. 2026-10-01 에 지어냈다가 고친 것:
+
+| 원문 | 한 | 영 | 일 |
+|---|---|---|---|
+| 阵地足球 · 阵地屏障 | 진지 축구 · 진지 방호벽 | Positional Football · Positional Barrier | ポジションサッカー · 陣地障壁 |
+| 击球手 · 守门员 · 击人手 | 스트라이커 · 골키퍼 · 미드킬러 | Shooter · Goalie · Hitter | ストライカー · キーパー · エースキラー (팀명 뒤 の 없이) |
+| 爱球会 · 球德联 · 战术队 | 동호회 · 축덕연 · 전술팀 | Ball Mania Club · Sportsmen United · Tactical Team | 愛球会 · 公正連 · 戦術組 |
+| 风情街“…” | 패션가 '…' | Fashion Street '…' | 商店街「…」 |
+| 集团军 | 군단 | (the) Army | ウルサス軍 |
+| 真实伤害 · 法术伤害 · 技力 · 目标生命 · 假死 | 트루 대미지 · 마법 대미지 · SP · 목표 HP · 빈사 상태 | True/Arts damage · SP · Life Points · coma | 確定/術ダメージ · SP · 耐久値 · 仮死 |
+| 菲林 | 필라인 | Feline | フェリーン |
+
+기믹 표식 줄(`<활성 오리지늄> …`)은 한섭 문체 그대로 — `<표식> 설명 … 부여/획득/증가/불가`.
+양이 많으면(100줄+) 영어·일본어를 에이전트 둘에 나눠 맡겨도 된다 — 입력에 원문·한국어·맥락, 위 표와 공식 표식 사전을 주고
+"공식 짝을 `.gamedata` 에서 확인하라"고 시킨다. 돌아온 결과는 위 표대로 한 번 더 맞춘다.
+⚠ build-future-dex 는 공식 짝을 사전보다 먼저 쓴다. 공식 영어판이 표식을 잃은 줄(`Deploy to block a tile…`)은
+빌더가 표식 있는 사전 번역 → 공식 표식 이름 + 공식 본문 순으로 되살린다(`_hit`).
+
 맥락이 필요하면 적은 `cn_enemy_handbook_table` 설명, 작전은 `cn_stage_table` 의 description 을 본다
 (예: 逐影集趣의 绒绒 = 놀이공원의 복슬복슬한 생물 → 폭신이 / Fluffies / モフモフ).
 일본어가 원문 한자와 같아도(消耗品·三生花) **값을 채운다** — 비어 있으면 미번역으로 친다.
@@ -201,6 +221,12 @@ PY
 `app/data/events*.json` · `app/data/event-ids.json` · `app/data/operator-debut.json` · `app/data/stories*.json`(바뀌었으면) ·
 `app/data/future-dex*.json` · `app/data/future-routes.json` · `scripts/stagecams-fit.json`(바뀌었으면) ·
 새 `public/event/*.webp` · 새 `public/items/icon/*.webp` · 새 `public/stage/…`·`public/enemy/…` (`git status` 의 `??` 를 빠짐없이).
+새 그림이 수십 장이면 경로를 변수에 담아 넘기지 말 것 — 셸이 zsh 라 `$NEW` 가 **한 덩어리**로 넘어가 git 이
+`pathspec … did not match` 로 멈춘다(2026-10-01). 목록 파일 + xargs 로 넘긴다:
+```bash
+git ls-files --others --exclude-standard -z public/enemy public/stage public/event public/items > "$SP/new.lst"
+xargs -0 bash scripts/ship.sh -m "$MSG" <고친 파일들…> < "$SP/new.lst"
+```
 **한국어가 다 되면 먼저 배포**하고 영어·일본어는 뒤이어 (korean-first-deploy 기억). 배포 뒤
 `https://files.terra-archive.net/assets/event/<id>.webp` 가 200 인지, 라이브 `/events` 줄을 확인한다.
 업데이트 내역은 changelog-post 스킬 (점검으로 열린 게 아니므로 "미실장 이벤트 N개 추가" 정도로 묶는다).
