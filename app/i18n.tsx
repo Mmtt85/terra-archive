@@ -2139,6 +2139,31 @@ const D: Record<string, Pair> = {
     "No combo guarantees 4★ or higher with these tags — turn the toggle off to see all combos.",
     "このタグでは星4以上が確定する組み合わせはありません — トグルをオフにすると全ての組み合わせが表示されます。",
   ],
+  // 공개채용 — 오퍼로 태그 찾기 (2026-10-01, app/recruit.tsx reverseCombos)
+  "오퍼로 태그 찾기": ["Find tags by operator", "オペレーターからタグを探す"],
+  "다른 오퍼 고르기": ["Pick another operator", "別のオペレーターを選ぶ"],
+  "오퍼 이름 검색": ["Search operator name", "オペレーター名で検索"],
+  "공개모집으로 나오는 오퍼를 고르면, 그 오퍼가 나오는 태그 조합을 보여 줍니다.": [
+    "Pick an operator obtainable from Recruitment to see the tag combinations that can give them.",
+    "公開求人で出るオペレーターを選ぶと、そのオペレーターが出るタグの組み合わせを表示します。"],
+  "이 오퍼 확정": ["Guaranteed", "確定"],
+  "다른 후보와 함께 — 확률 높은 순": ["With other candidates — likeliest first", "他の候補と一緒に — 確率の高い順"],
+  "약 {p}%": ["~{p}%", "約{p}%"],
+  "이 조합을 골랐을 때 대략의 등장 확률 (9시간 기준)": ["Approximate chance with this combination (9-hour recruitment)", "この組み合わせを選んだときのおおよその出現確率（9時間基準）"],
+  "오퍼 옆의 **%**는 그 조합을 골랐을 때 **대략의 등장 확률**입니다 — 9시간 모집의 기본 성급 비율(3★ 40 · 4★ 50 · 5★ 8 · 6★ 2)을 그 조합에 나오는 성급끼리 다시 나누고, 같은 성급 후보끼리 고르게 나눈 근사라 실제와 조금 다를 수 있습니다.": [
+    "The **%** next to an operator is the **approximate chance** of getting them with that combination — the base rarity rates of a 9-hour recruitment (3★ 40 · 4★ 50 · 5★ 8 · 6★ 2) re-split among the rarities that combination can give, then shared evenly among candidates of the same rarity. It is an estimate and may differ slightly from the game.",
+    "オペレーター横の**%**は、その組み合わせを選んだときの**おおよその出現確率**です — 9時間求人の基本レアリティ比率（★3 40・★4 50・★5 8・★6 2）をその組み合わせで出るレアリティ同士で配分し直し、同じレアリティの候補で均等に分けた概算なので、実際とは少し異なる場合があります。"],
+  "같은 성급 {n}명 중": ["1 of {n} same rarity", "同レア{n}人中"],
+  "이 오퍼가 나오는 태그 조합이 없습니다.": ["No tag combination gives this operator.", "このオペレーターが出るタグの組み合わせはありません。"],
+  "6★는 **고급 특별 채용** 태그가 떠야만 나옵니다. 아래 조합이 모집 태그에 뜨면 체크하세요 — 위쪽일수록 이 오퍼가 나올 확률이 높습니다.": [
+    "6★ operators appear only with the **Top Operator** tag. Check these combinations when they show up — the higher, the better the odds for this operator.",
+    "★6は**上級エリート**タグが出たときだけ出現します。下の組み合わせが求人タグに出たら選んでください — 上ほどこのオペレーターが出る確率が高いです。"],
+  "1·2★는 모집 시간을 낮춰야 나옵니다 — **1★는 3시간 50분 이하**, **2★는 7시간 30분 이하**. 아래 조합이 모집 태그에 뜨면 체크하세요.": [
+    "1·2★ operators need a shorter recruitment time — **3h50m or less for 1★**, **7h30m or less for 2★**. Check these combinations when they show up.",
+    "★1・★2は求人時間を短くしないと出ません — **★1は3時間50分以下**、**★2は7時間30分以下**。下の組み合わせが求人タグに出たら選んでください。"],
+  "아래 조합이 모집 태그에 뜨면 체크하세요 — **위쪽일수록** 이 오퍼가 나올 확률이 높습니다. 확률은 9시간 모집의 기본 성급 비율로 셈한 근사입니다.": [
+    "Check these combinations when they show up — **the higher**, the better the odds for this operator. Odds are an estimate from the base rarity rates of a 9-hour recruitment.",
+    "下の組み合わせが求人タグに出たら選んでください — **上ほど**このオペレーターが出る確率が高いです。確率は9時間求人の基本レアリティ比率で計算した概算です。"],
   "4·5성 저격 조합 사전": ["4★/5★ snipe combo dictionary", "星4・5狙い撃ち組み合わせ辞典"],
   "특별 채용·고급 특별 채용 없이도 **4★ 이상이 확정**되는 최소 태그 조합 전체입니다. 모집 태그에 아래 조합이 뜨면 놓치지 마세요. (태그를 더 얹어도 확정은 유지됩니다)": [
     "Every minimal tag combination that **guarantees 4★ or higher** without Senior/Top Operator. Don't miss these when they appear in your tags. (Adding more tags keeps the guarantee.)",

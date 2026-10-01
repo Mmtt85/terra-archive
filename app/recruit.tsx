@@ -96,28 +96,64 @@ const SNIPE_DICT: ComboResult[] = (() => {
     .sort((a, b) => b.floor - a.floor || a.combo.length - b.combo.length || a.ops.length - b.ops.length);
 })();
 
-function ComboCard({ result, onShowOperator, tagLabel, opLabel }: { result: ComboResult; onShowOperator?: (id: string) => void; tagLabel: (tag: string) => string; opLabel: (op: RecruitOp) => string }) {
+/** 오퍼로 태그 찾기 (사용자 요청 2026-10-01 "역으로 어떤 오퍼를 선택하면 걔가 나오는 태그가 나오는 기능") —
+ *  그 오퍼가 가진 태그(자격·직군·위치·특성)의 1~3개 조합을 전부 돌려, 그 오퍼가 결과에 남는 조합만 고른다.
+ *  순서는 **그 조합을 골랐을 때 이 오퍼가 나올 대략의 확률**: 성급이 먼저 정해지고(9시간 기본 비율 3★ 40 · 4★ 50 ·
+ *  5★ 8 · 6★ 2 를 그 조합 후보에 있는 성급끼리만 다시 나눈다) 그 성급 후보 중 하나가 고르게 나온다고 본 근사다.
+ *  같은 성급 후보 수만 세면 4★가 섞여 5★가 드문 조합이 5★ 확정 조합보다 위에 섰다. 6★는 고급 특별 채용이 조합에
+ *  있어야 하고(evaluate), 1·2★는 저시간 전용이라 같은 성급 후보 수로만 줄 세운다. */
+const RARITY_WEIGHT: Record<number, number> = { 3: 40, 4: 50, 5: 8, 6: 2 };
+/** 그 조합을 골랐을 때 오퍼별 대략의 등장 확률(9시간, 3★ 이상) — 위 근사와 같은 셈 (사용자 요청 2026-10-01
+ *  "오퍼 등장확률도 다 계산돼? 그럼 표시할 수 있는 모든 곳에 다 표시해줘"). 1·2★(저시간 전용)는 모집 시간에
+ *  따라 달라 싣지 않는다. */
+function opOdds(r: ComboResult): Map<string, number> {
+  const pool = [...new Set(r.ops.map((o) => o.rarity))];
+  const sum = pool.reduce((n, x) => n + (RARITY_WEIGHT[x] ?? 0), 0);
+  const count = new Map<number, number>();
+  for (const o of r.ops) count.set(o.rarity, (count.get(o.rarity) ?? 0) + 1);
+  return new Map(r.ops.map((o) => [o.id, sum ? (RARITY_WEIGHT[o.rarity] ?? 0) / sum / (count.get(o.rarity) ?? 1) : 0]));
+}
+const pctText = (p: number) => (p >= 0.995 ? "100%" : p < 0.01 ? "<1%" : `${Math.round(p * 100)}%`);
+type ReverseResult = ComboResult & { rivals: number; prob: number };
+function reverseCombos(op: RecruitOp): ReverseResult[] {
+  return allCombos(op.tags)
+    .map(evaluate)
+    .filter((r): r is ComboResult => r !== null && [...r.ops, ...r.lowOps].some((o) => o.id === op.id))
+    .map((r) => {
+      const rivals = [...r.ops, ...r.lowOps].filter((o) => o.rarity === op.rarity).length;
+      const pool = [...new Set(r.ops.map((o) => o.rarity))];
+      const sum = pool.reduce((n, x) => n + (RARITY_WEIGHT[x] ?? 0), 0);
+      const prob = op.rarity >= 3 && sum ? (RARITY_WEIGHT[op.rarity] / sum) / rivals : 1 / rivals;
+      return { ...r, rivals, prob };
+    })
+    .sort((a, b) => b.prob - a.prob || a.combo.length - b.combo.length);
+}
+
+function ComboCard({ result, onShowOperator, tagLabel, opLabel, target, note }: { result: ComboResult; onShowOperator?: (id: string) => void; tagLabel: (tag: string) => string; opLabel: (op: RecruitOp) => string; target?: string; note?: string }) {
   const { t } = useI18n();
   const lowOnly = result.ops.length === 0;
+  const odds = opOdds(result);
   return (
     <article className={`recruit-combo${result.floor >= 4 ? " prized" : ""}`}>
       <header>
         <div className="combo-tags">{result.combo.map((tag) => <span key={tag}>{tagLabel(tag)}</span>)}</div>
+        {note && <em className="combo-note">{note}</em>}
         <b style={{ background: RARITY_COLORS[result.floor] }}>
           {lowOnly ? t("{n}★ · 저시간 전용", { n: result.floor }) : result.floor === result.ceil ? t("{n}★ 확정", { n: result.floor }) : t("{n}★ 이상", { n: result.floor })}
         </b>
       </header>
       <ul>
         {result.ops.map((op) => (
-          <li key={op.id} className={op.pending ? "pending" : undefined} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
+          <li key={op.id} className={[op.pending ? "pending" : "", op.id === target ? "target" : ""].filter(Boolean).join(" ") || undefined} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
             <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
               title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
             <span>{opLabel(op)}{op.pending && <em className="pending-tag">{t("추가 예정")}</em>}</span>
+            <em className="op-pct" title={t("이 조합을 골랐을 때 대략의 등장 확률 (9시간 기준)")}>{pctText(odds.get(op.id) ?? 0)}</em>
             <i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>
           </li>
         ))}
         {result.lowOps.map((op) => (
-          <li key={op.id} className="low-time" style={{ borderColor: RARITY_COLORS[op.rarity] }}>
+          <li key={op.id} className={`low-time${op.id === target ? " target" : ""}`} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
             <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
               title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
             <span>{opLabel(op)}<em className="time-req">{t(LOW_TIME_HINT[op.rarity])}</em></span>
@@ -144,6 +180,9 @@ const PH_GAP = 36;
 export default function RecruitHelper({ onShowOperator, extra }: { onShowOperator?: (id: string) => void; extra?: ExtraI18n | null } = {}) {
   const { t, locale } = useI18n();
   const [showDict, setShowDict] = useState(false);
+  const [showReverse, setShowReverse] = useState(false);
+  const [reverseOp, setReverseOp] = useState<RecruitOp | null>(null);
+  const [reverseTerm, setReverseTerm] = useState("");
   const [showGuide, setShowGuide] = useState(false);
   /* 빠른 입력 안내문은 좌우 분할의 왼쪽 칸(입력란 176px)에서 통째로 잘린다 (사용자 지적
      2026-09-20). 네이티브 placeholder 는 애니메이션이 안 되니 같은 자리에 겹쳐 그려 흘린다 —
@@ -428,6 +467,11 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
           태그를 고르기 전에도 미리 켜둘 수 있다 (사용자 확정 2026-08-16) */}
       <div className="recruit-main">
       <div className="recruit-results-bar">
+        {/* 오퍼로 태그 찾기 — 결과 막대 왼쪽, 강조 버튼 색 (사용자 지시 2026-10-01: 제목 옆 도움말 줄에 있으니
+            "알아채기 힘들어 보인다 · 4성 이상 조합만 보기 왼쪽에 조금 더 눈에 띄는 색으로") */}
+        <button type="button" className="recruit-reverse-btn" onClick={() => setShowReverse(true)}>
+          <span aria-hidden>⌕</span>{t("오퍼로 태그 찾기")}
+        </button>
         <button type="button" className={`recruit-prized-toggle${prizedOnly ? " on" : ""}`} aria-pressed={prizedOnly}
           title={t("높은 성급이 확정되는 조합만 남기고 나머지를 숨깁니다")} onClick={togglePrizedOnly}>
           <span className="recruit-prized-box" aria-hidden />{t("4★ 이상 확정 조합만 보기")}
@@ -446,6 +490,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
       {showGuide && (
         <ModalWindow label={t("공개채용 도우미 읽는 법")} className="recruit-guide-modal" onClose={() => setShowGuide(false)}>
           <p className="recruit-guide-p">{rich(t("게임 공개모집에 **제시된 태그 5개**를 아래에서 그대로 입력하세요. 실제 게임에서 체크할 수 있는 **최대 3개**짜리 조합 전부를 계산해, 높은 성급이 확정되는 조합부터 순서대로 보여줍니다. 성급 배지는 모집 시간 **9시간** 기준 — 6★는 고급 특별 채용이 있어야 나옵니다. 모집 시간을 낮추면 나오는 **1·2★**도 함께 표시되며, 각 결과에 필요한 시간 조건이 붙어 있습니다."))}</p>
+          <p className="recruit-guide-p">{rich(t("오퍼 옆의 **%**는 그 조합을 골랐을 때 **대략의 등장 확률**입니다 — 9시간 모집의 기본 성급 비율(3★ 40 · 4★ 50 · 5★ 8 · 6★ 2)을 그 조합에 나오는 성급끼리 다시 나누고, 같은 성급 후보끼리 고르게 나눈 근사라 실제와 조금 다를 수 있습니다."))}</p>
           <p className="recruit-time-note">{rich(t("**모집 시간별 출현 성급** — 1시간~3시간 50분: **1·2·3·4★** · 4시간~7시간 30분: **2·3·4·5★** · 7시간 40분 이상: **3·4·5★**만 출현. 저격 조합은 반드시 **7시간 40분 이상(보통 9시간)**으로 돌려야 3★ 미만이 섞이지 않습니다."))}</p>
         </ModalWindow>
       )}
@@ -453,6 +498,64 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
         <ModalWindow label={t("4·5성 저격 조합 사전")} className="recruit-dict-modal" onClose={() => setShowDict(false)}>
           <p className="recruit-dict-lead">{rich(t("특별 채용·고급 특별 채용 없이도 **4★ 이상이 확정**되는 최소 태그 조합 전체입니다. 모집 태그에 아래 조합이 뜨면 놓치지 마세요. (태그를 더 얹어도 확정은 유지됩니다)"))}</p>
           {renderGroups(SNIPE_DICT)}
+        </ModalWindow>
+      )}
+      {showReverse && (
+        <ModalWindow label={t("오퍼로 태그 찾기")} className="recruit-dict-modal recruit-reverse-modal"
+          onClose={() => { setShowReverse(false); setReverseOp(null); setReverseTerm(""); }}>
+          {reverseOp ? (() => {
+            const list = reverseCombos(reverseOp);
+            const sure = list.filter((r) => r.prob >= 0.999);
+            const rest = list.filter((r) => r.prob < 0.999);
+            const pct = (r: ReverseResult) => r.prob >= 0.999 ? undefined
+              : reverseOp.rarity <= 2 ? t("같은 성급 {n}명 중", { n: r.rivals }) : t("약 {p}%", { p: Math.max(1, Math.round(r.prob * 100)) });
+            return (
+              <>
+                <div className="recruit-rev-head">
+                  <img src={asset(reverseOp.image)} alt="" width={56} height={56} />
+                  <b>{opLabel(reverseOp)}</b><i style={{ color: RARITY_COLORS[reverseOp.rarity] }}>{reverseOp.rarity}★</i>
+                  <button type="button" onClick={() => setReverseOp(null)}>{t("다른 오퍼 고르기")}</button>
+                </div>
+                <p className="recruit-dict-lead">{rich(
+                  reverseOp.rarity === 6 ? t("6★는 **고급 특별 채용** 태그가 떠야만 나옵니다. 아래 조합이 모집 태그에 뜨면 체크하세요 — 위쪽일수록 이 오퍼가 나올 확률이 높습니다.")
+                  : reverseOp.rarity <= 2 ? t("1·2★는 모집 시간을 낮춰야 나옵니다 — **1★는 3시간 50분 이하**, **2★는 7시간 30분 이하**. 아래 조합이 모집 태그에 뜨면 체크하세요.")
+                  : t("아래 조합이 모집 태그에 뜨면 체크하세요 — **위쪽일수록** 이 오퍼가 나올 확률이 높습니다. 확률은 9시간 모집의 기본 성급 비율로 셈한 근사입니다."))}</p>
+                {list.length === 0 && <p className="recruit-empty">{t("이 오퍼가 나오는 태그 조합이 없습니다.")}</p>}
+                {sure.length > 0 && (
+                  <section className="recruit-group">
+                    <h3><span style={{ background: RARITY_COLORS[reverseOp.rarity] }}>{t("이 오퍼 확정")}</span><em>{t("{n}개 조합", { n: sure.length })}</em></h3>
+                    <div className="recruit-results">
+                      {sure.map((r) => <ComboCard key={r.combo.join("+")} result={r} onShowOperator={onShowOperator} tagLabel={tagLabel} opLabel={opLabel} target={reverseOp.id} />)}
+                    </div>
+                  </section>
+                )}
+                {rest.length > 0 && (
+                  <section className="recruit-group">
+                    <h3><span style={{ background: RARITY_COLORS[3] }}>{t("다른 후보와 함께 — 확률 높은 순")}</span><em>{t("{n}개 조합", { n: rest.length })}</em></h3>
+                    <div className="recruit-results">
+                      {rest.map((r) => <ComboCard key={r.combo.join("+")} result={r} onShowOperator={onShowOperator} tagLabel={tagLabel} opLabel={opLabel} target={reverseOp.id} note={pct(r)} />)}
+                    </div>
+                  </section>
+                )}
+              </>
+            );
+          })() : (
+            <>
+              <p className="recruit-dict-lead">{t("공개모집으로 나오는 오퍼를 고르면, 그 오퍼가 나오는 태그 조합을 보여 줍니다.")}</p>
+              <input className="recruit-rev-search" value={reverseTerm} onChange={(e) => setReverseTerm(e.target.value)}
+                placeholder={t("오퍼 이름 검색")} aria-label={t("오퍼 이름 검색")} />
+              <div className="recruit-rev-grid">
+                {[...data.ops].sort((a, b) => b.rarity - a.rarity || b.seq - a.seq)
+                  .filter((op) => !reverseTerm.trim() || opLabel(op).toLowerCase().includes(reverseTerm.trim().toLowerCase()))
+                  .map((op) => (
+                    <button key={op.id} type="button" onClick={() => setReverseOp(op)} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
+                      <img src={asset(op.image)} alt="" width={64} height={64} loading="lazy" decoding="async" />
+                      <span>{opLabel(op)}</span><i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>
+                    </button>
+                  ))}
+              </div>
+            </>
+          )}
         </ModalWindow>
       )}
       {/* 도움말은 공용 창(ModalWindow)이라 백드롭·포털을 스스로 만든다 (2026-09-05) */}

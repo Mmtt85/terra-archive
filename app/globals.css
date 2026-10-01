@@ -7396,8 +7396,28 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 .recruit-results-bar {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 18px;
 }
+/* 오퍼로 태그 찾기 — '강조' 역할 버튼 (--btn-pri-*: 어두운 칩 + 라임 글자, 호버 라임 채움) */
+.recruit-reverse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--btn-pri-line);
+  background: var(--btn-pri-bg);
+  color: var(--btn-pri-ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.recruit-reverse-btn:hover {
+  background: var(--btn-pri-bg-hover);
+  color: var(--btn-pri-ink-hover);
+}
+.recruit-reverse-btn > span { font-size: 14px; line-height: 1; }
 .recruit-prized-toggle {
   display: inline-flex;
   align-items: center;
@@ -16692,9 +16712,11 @@ main.site-main > .site-header {
 .lens-auto-pill {
   position: fixed;
   left: 50%;
-  top: 74px; /* 헤더(접힘) 바로 아래 */
+  /* 헤더 **실제 높이** 바로 아래 — 종전 74px 고정은 헤더(데스크톱 79px · 폰 126px · 펼침은 더)와 겹쳐 안내가 헤더 밑에
+     깔려 잘려 보였다 (사용자 지적 2026-10-01). --header-h 는 home.tsx 가 ResizeObserver 로 늘 갱신한다. */
+  top: calc(var(--header-h, 74px) + 8px);
   transform: translateX(-50%);
-  z-index: 60;
+  z-index: 90; /* 헤더(20)·헤더 드롭다운보다 위, 창(ModalWindow)보다는 아래 */
   display: flex;
   align-items: center;
   gap: 9px;
@@ -25522,3 +25544,25 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .ev-story-loose { display: flex; flex-wrap: wrap; gap: 4px; margin-left: 6px; }
 /* 스토리 칩이 붙은 작전 목록은 칸을 넓힌다 — 칩 둘(작전 전·작전 후)이 이름을 '영…'까지 깎았다 (2026-10-01) */
 .ev-stages:has(.ev-stage-sy) { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+
+/* ── 공개채용 — 오퍼로 태그 찾기 (app/recruit.tsx reverseCombos, 2026-10-01) ─────────────────────
+   오퍼 고르기 격자는 결과 카드의 오퍼 칸과 같은 결(성급색 테두리·초상·이름). 결과 카드에선 고른 오퍼만 굵은 테두리. */
+.recruit-rev-search { width: min(320px, 100%); margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; font-size: 13px; }
+.recruit-rev-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+.recruit-rev-grid button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; border: 1px solid var(--line); border-left-width: 3px; background: var(--bg-faint); color: inherit; font: inherit; font-size: 11.5px; cursor: pointer; }
+.recruit-rev-grid button:hover { background: var(--white); }
+.recruit-rev-grid img { width: 56px; height: 56px; object-fit: cover; }
+.recruit-rev-grid span { text-align: center; line-height: 1.25; }
+.recruit-rev-grid i { font: 700 10px var(--mono); font-style: normal; }
+.recruit-rev-head { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+.recruit-rev-head img { width: 48px; height: 48px; object-fit: cover; border: 1px solid var(--line); }
+.recruit-rev-head b { font-size: 15px; }
+.recruit-rev-head i { font: 700 12px var(--mono); font-style: normal; }
+.recruit-rev-head button { margin-left: auto; padding: 5px 12px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.recruit-combo li.target { outline: 2px solid var(--lime); outline-offset: -2px; }
+.recruit-combo .combo-note { margin-left: 6px; font: 700 11px var(--mono); font-style: normal; color: var(--muted); }
+/* 결과 카드의 오퍼별 등장 확률 (recruit.tsx opOdds) — 이름과 성급 사이, 이름보다 한 단계 작고 흐리게.
+   칸이 좁아지니 오퍼 칸 최소 폭을 124 → 148px 로 */
+.recruit-combo ul { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
+.recruit-combo li > .op-pct { flex: none; margin-left: auto; font: 700 10.5px var(--mono); font-style: normal; color: var(--ink2); }
+.recruit-combo li > .op-pct + i { margin-left: 4px; }
