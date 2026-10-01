@@ -68,10 +68,20 @@ def when(ts):
     return datetime.fromtimestamp(ts, KST).strftime("%Y-%m-%d %H:%M") if ts else None
 
 
+def opt(srv, name):
+    """그 서버 표 — 없으면 빈 표로 넘어간다(그 서버 탭이 비는 것뿐). ⚠ 2026-10-01 밤 CI 가 중섭 medal_table 을
+    안 받아 2단계 전체가 여기서 멈췄다 — 탭 하나 때문에 데이터 갱신·배포가 통째로 서면 안 된다."""
+    p = os.path.join(G, f"{srv}_{name}.json")
+    if not os.path.exists(p):
+        print(f"  ⚠ {srv}_{name}.json 없음 — 그 서버의 해당 탭은 빈다", file=sys.stderr)
+        return {}
+    return load(p)
+
+
 def tables(srv):
-    act = load(os.path.join(G, f"{srv}_activity_table.json"))
-    medal = load(os.path.join(G, f"{srv}_medal_table.json"))
-    bld = load(os.path.join(G, f"{srv}_building_data.json"))["customData"]
+    act = opt(srv, "activity_table")
+    medal = opt(srv, "medal_table")
+    bld = opt(srv, "building_data").get("customData") or {}
     detail, missions = {}, {}
     for typ in (act.get("activity") or {}).values():
         for aid, d in (typ or {}).items():
@@ -84,9 +94,9 @@ def tables(srv):
         "medal": {m["medalId"]: m for m in medal.get("medalList") or []},
         "groups": {g["groupId"]: g for t in (medal.get("medalTypeData") or {}).values() for g in (t.get("groupData") or [])},
         "themes": bld.get("themes") or {}, "furn": bld.get("furnitures") or {},
-        "items": load(os.path.join(G, f"{srv}_item_table.json"))["items"],
-        "chars": load(os.path.join(G, f"{srv}_character_table.json")),
-        "skins": load(os.path.join(G, f"{srv}_skin_table.json")).get("charSkins") or {},
+        "items": opt(srv, "item_table").get("items") or {},
+        "chars": opt(srv, "character_table"),
+        "skins": opt(srv, "skin_table").get("charSkins") or {},
     }
 
 
