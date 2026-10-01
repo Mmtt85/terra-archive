@@ -190,6 +190,21 @@ python3 scripts/build-future-dex.py       # 로컬은 그림까지 (중섭 CDN �
 - 새 도면 `public/stage/…`·적 초상 `public/enemy/…` 등 `git status` 의 `??` 를 전부 커밋한다(R2 폴더).
 - 새 이벤트 카메라는 도면에서 추정(scripts/camfit.py → stagecams-fit.json) — route-map-rules 스킬 ★절, 겹쳐서 눈으로 확인.
 
+## 6-2. 이벤트 창 추가 탭 (일정·미션·훈장·가구·신뢰도) — build-event-extra.py
+
+한섭 이벤트와 **같은 탭**을 미실장에도 단다 (사용자 지시 2026-10-01 "미실장 이벤트들도 다 동일하게"). 중섭 표에서 뽑고
+① 같은 id 공식 짝 → ② 미션 틀(한섭 미션 중·한·영·일 짝에서 작전 코드·숫자를 자리표시로 배운 것: 通关{0} → {0} 클리어 …)
+→ ③ cn-translations.json 순으로 옮긴다. 일정은 **중국 서버 날짜**라 화면이 '일정 (중국 서버 기준)'으로 적는다(sched.cn).
+```bash
+python3 scripts/build-event-extra.py          # → app/data/event-extra/<ko|en|ja>/<id>.json · 미번역은 scripts/event-extra-untranslated.json
+python3 scripts/build-event-art.py --extra    # 훈장·가구 아이콘 — 한섭 → 중섭 → 개방 당시 중섭 옛 판(cdnold)
+```
+- 미번역 세 언어 0건까지 (훈장 이름·획득 조건·설명, 미션, 가구·테마, 일정 문구). 공식 문형: `<이벤트> 이벤트 기간 동안, 오퍼레이터 X 획득` ·
+  `3★ 평가로 [구역] 내 모든 스테이지 클리어 (튜토리얼 및 스토리 스테이지 제외)` · 突袭模式 = 하드 모드 · 绝境作战 = 익스트림 모드 ·
+  险地作战 = 험지 작전 · 沙盘推演 = 모의 훈련 · 活动已开放 = `<이벤트> 이벤트 개방 중` · "X"内关卡已开放 = `'X' 스테이지 개방 중`.
+  고유명사는 사이트에 이미 쓴 이름(오퍼 목록·cn-translations — 몬스터 헌터 몬스터명 등)을 따른다.
+- 듀얼 채널·벡터 돌파는 일정·훈장을 자기 상세가 보여 줘서 빠진다(파일이 없으면 탭도 없다).
+
 ## 7. 상위 재료 (맵에서 파밍되는 재료)
 
 한섭 이벤트와 **같은 규칙**: 작전의 **주요 드랍**(`dropType NORMAL`)이면서 재료이고 **T3 이상**(`MAT_TIER`)인 것만,
@@ -227,6 +242,7 @@ PY
 `scripts/build-events.py`(이름표) · `scripts/build-story.py`(이름표) · `scripts/cn-translations.json` ·
 `app/data/events*.json` · `app/data/event-ids.json` · `app/data/operator-debut.json` · `app/data/stories*.json`(바뀌었으면) ·
 `app/data/future-dex*.json` · `app/data/future-routes.json` · `scripts/stagecams-fit.json`(바뀌었으면) ·
+`app/data/event-extra/**` · `scripts/event-extra-untranslated.json` · 새 `public/event/medal/*`·`public/event/furni/*` ·
 새 `public/event/*.webp` · 새 `public/items/icon/*.webp` · 새 `public/stage/…`·`public/enemy/…` (`git status` 의 `??` 를 빠짐없이).
 새 그림이 수십 장이면 경로를 변수에 담아 넘기지 말 것 — 셸이 zsh 라 `$NEW` 가 **한 덩어리**로 넘어가 git 이
 `pathspec … did not match` 로 멈춘다(2026-10-01). 목록 파일 + xargs 로 넘긴다:

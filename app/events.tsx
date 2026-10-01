@@ -34,6 +34,7 @@ import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems,
 import { EnemyFile, enemyImg, type Enemy, type EnemyLevel, type EnemyStages, type StatOverride } from "./enemy-detail";
 import { DuelDetail, type DuelFighter } from "./event-duel";
 import { VecDetail } from "./event-vecbreak";
+import { EventTabs, useExtraTabs, type ExtraTab } from "./event-extra";
 import { StageFile } from "./stage-detail";
 import { mergeRogueDoc, viewOf, type StageView } from "./stage-data";
 import { findItem, ItemFile, itemIcon, type DexItem, type ItemDoc } from "./items";
@@ -114,8 +115,14 @@ function groupStages(stages: [string, string, string][]): { key: string; label: 
     if (letter) g.letters.push(letter);
     groups.set(key, g);
   }
-  return [...groups.values()].map(({ letters, ...g }) =>
-    (g.key.endsWith("|l") && letters.length > 1 ? { ...g, label: `${g.label}-${letters[0]}~${letters[letters.length - 1]}` } : g));
+  // 묶음 안은 **코드 번호 순**(17-1 · 17-2 … 17-10 … 17-21) — 게임 표 순서(sortId)를 그대로 두면 전투 없는 스토리 작전
+  // (st_17-01 = 17-1, st_17-02~04 = 17-19~21)이 뒤로 몰렸다 (사용자 지적 2026-10-01 "17-1~17-21로 정렬이 돼야지").
+  const byCode = (a: [string, string, string], b: [string, string, string]) => a[1].localeCompare(b[1], "en", { numeric: true });
+  return [...groups.values()].map(({ letters, ...g }) => {
+    const items = [...g.items].sort(byCode);
+    return g.key.endsWith("|l") && letters.length > 1
+      ? { ...g, items, label: `${g.label}-${[...letters].sort()[0]}~${[...letters].sort()[letters.length - 1]}` } : { ...g, items };
+  });
 }
 
 const HAS = ["stages", "enemies", "items", "mats", "ops", "story", "fut"] as const;
@@ -246,6 +253,8 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
 }) {
   const { locale, t } = useI18n();
   const cafe = useCafeUrl(row.id);
+  // 일정·미션·훈장·가구·신뢰도 보너스 탭 — 이벤트마다 따로 받는다 (app/event-extra.tsx)
+  const { tabs: extra, schedule } = useExtraTabs(row.id, { onOpenItem, onShowOperator }, !!(row.vb || row.duel));
   // 썸네일 + 그 밑 교환 재화 — 공통 윗칸의 왼쪽 칸이자, 듀얼 채널에서는 개요 탭의 왼쪽 칸
   const side = (
     <div className="ev-top-side">
@@ -275,6 +284,89 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
       )}
     </div>
   );
+  // 개요 오른쪽 — 이벤트 오퍼레이터 ↔ 맵에서 나오는 상위 재료를 나란히 (사용자 요청 2026-09-17). 한쪽만 있으면 그쪽이
+  // 폭을 다 쓰고, 둘 다 있으면 높이를 맞춘다(opsPerRow).
+  const perRow = opsPerRow(row.ops?.length ?? 0, row.mats?.length ?? 0);
+  const pair = (
+    <div className={perRow ? "ev-pair bal" : "ev-pair"}
+      style={perRow ? ({ "--ev-ops-w": `${perRow * OP_CARD + (perRow - 1) * OP_GAP}px` } as React.CSSProperties) : undefined}>
+      {row.ops && row.ops.length > 0 && (
+        <section className="ev-sec">
+          <b>{t("이벤트 오퍼레이터")}</b>
+          {/* 보상(무료 배포)과 신규 데뷔를 구분해 적는다 — 성격이 다르다.
+              신규는 게임 데이터가 이벤트와 묶어 주지 않아 데뷔 장부로 붙인 것이라,
+              사이트 개설(2026-07) 이전 이벤트에는 보상 오퍼만 있다. */}
+          <div className="ev-ops">
+            {row.ops.map(([id, name, rarity, how]) => (
+              <button key={id} type="button" className={`ev-op k-${how}`} data-rarity={rarity}
+                onClick={() => onShowOperator(id)}>
+                <img src={asset(`/avatars/${id}.webp`)} alt="" aria-hidden width={56} height={56}
+                  loading="lazy" decoding="async" />
+                <span>{name}</span>
+                <i>{"★".repeat(rarity)}</i>
+                <em>{t(OP_KIND[how] ?? how)}</em>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      {row.mats && row.mats.length > 0 && (
+        <section className="ev-sec">
+          <b>{t("맵에서 나오는 상위 재료")}</b>
+          <div className="ev-mats">
+            {row.mats.map(([id, name, icon, rarity, codes]) => (
+              <button key={id} type="button" className="ev-mat" onClick={() => onOpenItem(id)}>
+                {icon && <img src={itemIcon(icon)} alt="" aria-hidden width={36} height={36}
+                  loading="lazy" decoding="async" />}
+                <span>
+                  <b>{name}<em className={`farm-tier tier-${rarity}`}>T{rarity}</em></b>
+                  <i>{codes.join(" · ")}</i>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+  // 작전 — 코드 앞머리로 묶고(PA · PA-EX …), 카드마다 작은 실사 도면 (사용자 요청 2026-10-01 "작전카드에 쪼그만하게
+  // 실사도면 섬네일"). 도면은 작전 도감과 같은 파일(public/stage/<작전 id>.webp) — 없는 작전(46/2545)은 자리를 접는다.
+  const stageCards = (items: [string, string, string][]) => (
+    <div className="ev-stages">
+      {items.map(([id, code, name]) => (
+        <button key={id} type="button" className="ev-stage" onClick={() => onOpenStage(id)}>
+          <img className="ev-stage-map" src={asset(`/stage/${id}.webp`)} alt="" aria-hidden width={56} height={56}
+            loading="lazy" decoding="async" onError={(e) => { e.currentTarget.remove(); }} />
+          <b>{code}</b><span>{name}</span>
+        </button>
+      ))}
+    </div>
+  );
+  const stageGroups = row.stages && row.stages.length > 0 ? groupStages(row.stages) : [];
+  const stageList = !row.stages?.length ? null : stageGroups.length < 2 ? stageCards(stageGroups[0].items) : stageGroups.map((g) => (
+    <div key={g.key} className="ev-stage-group">
+      <span className="ev-stage-gh">{g.label}<em>{g.items.length}</em></span>
+      {stageCards(g.items)}
+    </div>
+  ));
+  // 작전 뒤에 붙는 탭 — 등장 적 + 일정·미션·훈장·가구·신뢰도 (듀얼·벡터 돌파 상세에도 이어 붙인다)
+  const more: ExtraTab[] = [
+    ...(row.enemies && row.enemies.length > 0 ? [{
+      key: "enemies", label: t("등장 적 {n}", { n: row.enemies.length }), node: (
+        <div className="ev-enemies">
+          {row.enemies.map(([id, name]) => (
+            <button key={id} type="button" className="ev-enemy" onClick={() => onOpenEnemy(id)}>
+              <img src={enemyImg(id)} alt="" aria-hidden width={44} height={44}
+                loading="lazy" decoding="async"
+                onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
+              <span>{name}</span>
+            </button>
+          ))}
+        </div>
+      ),
+    }] : []),
+    ...extra,
+  ];
   return (
     <>
       <header>
@@ -331,115 +423,31 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
             : row.start && <span className="ev-period">{row.start}{row.end ? ` ~ ${row.end}` : ""}</span>}
         </div>
       </header>
-      {/* 썸네일은 왼쪽, 스토리 읽기·이벤트 오퍼·작전은 오른쪽 — 한눈에 들어오게
-          (사용자 요청 2026-09-17). 좁은 화면에서는 CSS가 한 줄로 되돌린다. */}
-      {/* ⚠ 썸네일이 없다고 한 칸으로 바꾸지 않는다 — 자리표시가 모달 폭을 다 먹어
-          다른 이벤트와 모양이 달라진다 (사용자 지적 2026-09-17). 칸 수는 늘 둘이다. */}
-      {/* 듀얼 채널은 상세 탭이 **맨 위**다 — 공통 윗칸(썸네일 | 오퍼·작전)은 그리지 않고, 썸네일+교환 재화는
-          개요 탭 왼쪽 칸으로 옮긴다(오른쪽은 진행 단계). 작전(VS-1)은 뺀다 — 맵이 대결 무대 하나뿐이라 볼 게 없다
-          (사용자 지시 2026-09-23 "듀얼 채널 상세를 맨위로 … 섬네일(밑에 교환재화) | 진행단계", "작전맵은 없애도됨"). */}
-      {row.duel ? <DuelDetail id={row.id} onOpenFighter={onOpenFighter} side={side} /> : (
-      <div className="ev-top">
-        {side}
-        <div className="ev-top-main">
-      {/* 이벤트 오퍼레이터 ↔ 맵에서 나오는 상위 재료를 나란히 (사용자 요청 2026-09-17).
-          한쪽만 있으면 그쪽이 폭을 다 쓴다. */}
-      <div {...(() => {
-        const perRow = opsPerRow(row.ops?.length ?? 0, row.mats?.length ?? 0);
-        return perRow
-          ? { className: "ev-pair bal", style: { "--ev-ops-w": `${perRow * OP_CARD + (perRow - 1) * OP_GAP}px` } as React.CSSProperties }
-          : { className: "ev-pair" };
-      })()}>
-      {row.ops && row.ops.length > 0 && (
-        <section className="ev-sec">
-          <b>{t("이벤트 오퍼레이터")}</b>
-          {/* 보상(무료 배포)과 신규 데뷔를 구분해 적는다 — 성격이 다르다.
-              신규는 게임 데이터가 이벤트와 묶어 주지 않아 데뷔 장부로 붙인 것이라,
-              사이트 개설(2026-07) 이전 이벤트에는 보상 오퍼만 있다. */}
-          <div className="ev-ops">
-            {row.ops.map(([id, name, rarity, how]) => (
-              <button key={id} type="button" className={`ev-op k-${how}`} data-rarity={rarity}
-                onClick={() => onShowOperator(id)}>
-                <img src={asset(`/avatars/${id}.webp`)} alt="" aria-hidden width={56} height={56}
-                  loading="lazy" decoding="async" />
-                <span>{name}</span>
-                <i>{"★".repeat(rarity)}</i>
-                <em>{t(OP_KIND[how] ?? how)}</em>
-              </button>
-            ))}
+      {/* 탭 — 개요(썸네일·교환 재화 | 이벤트 오퍼·맵 상위 재료) · 작전 · 등장 적 · 일정 · 미션 · 훈장 · 가구 · 신뢰도 보너스
+          (사용자 지시 2026-10-01 "개요에다가 이벤트 오퍼 맵에서 나오는 상위재료 교환재화 이런류 보여주고 다른 정보들은
+          다 탭으로"). 듀얼 채널·벡터 돌파는 자기 탭 막대가 있어 **거기에 이어 붙인다**(탭 막대는 언제나 하나).
+          ⚠ 개요의 두 칸(썸네일 | 오퍼·재료)은 썸네일이 없어도 둘이다 — 자리표시가 폭을 다 먹으면 모양이 달라진다
+          (사용자 지적 2026-09-17). 좁은 화면에서는 CSS가 한 줄로 되돌린다. */}
+      {row.duel ? <DuelDetail id={row.id} onOpenFighter={onOpenFighter} side={side} more={more} />
+        : row.vb ? (
+          // 벡터 돌파 — 작전 자리가 탭이 된다(개요 · 작전 · 커널 돌파 · 총력전 …, 사용자 지시 2026-09-29). 썸네일 칸은 그대로 옆에
+          <div className="ev-top">
+            {side}
+            <div className="ev-top-main">
+              {pair}
+              {row.stages && row.stages.length > 0 ? (
+                <VecDetail id={row.id} stages={row.stages} stagesTab={stageList} more={more}
+                  onOpenStage={onOpenStage} onOpenEnemy={onOpenEnemy} />
+              ) : <EventTabs key={row.id} tabs={more} />}
+            </div>
           </div>
-        </section>
-      )}
-
-      {row.mats && row.mats.length > 0 && (
-        <section className="ev-sec">
-          <b>{t("맵에서 나오는 상위 재료")}</b>
-          <div className="ev-mats">
-            {row.mats.map(([id, name, icon, rarity, codes]) => (
-              <button key={id} type="button" className="ev-mat" onClick={() => onOpenItem(id)}>
-                {icon && <img src={itemIcon(icon)} alt="" aria-hidden width={36} height={36}
-                  loading="lazy" decoding="async" />}
-                <span>
-                  <b>{name}<em className={`farm-tier tier-${rarity}`}>T{rarity}</em></b>
-                  <i>{codes.join(" · ")}</i>
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-      </div>
-
-      {row.stages && row.stages.length > 0 && (() => {
-        const groups = groupStages(row.stages);
-        const list = (items: [string, string, string][]) => (
-          <div className="ev-stages">
-            {items.map(([id, code, name]) => (
-              <button key={id} type="button" className="ev-stage" onClick={() => onOpenStage(id)}>
-                <b>{code}</b><span>{name}</span>
-              </button>
-            ))}
-          </div>
-        );
-        // 묶음이 하나뿐이면 머리말 없이 종전대로
-        const stageList = groups.length < 2 ? list(row.stages) : groups.map((g) => (
-          <div key={g.key} className="ev-stage-group">
-            <span className="ev-stage-gh">{g.label}<em>{g.items.length}</em></span>
-            {list(g.items)}
-          </div>
-        ));
-        // 벡터 돌파 — 작전 자리가 **탭**이 된다: 개요 · 작전(이 목록) · 커널 돌파 · 총력전 · 특별 전선 · 전투 보급 ·
-        // 돌파 마일스톤 · 게임 안내 (사용자 지시 2026-09-29 "지금 작전 있는부분에다가 개요 작전 커널돌파 총력전 …").
-        if (row.vb) return (
-          <VecDetail id={row.id} stages={row.stages} stagesTab={stageList}
-            onOpenStage={onOpenStage} onOpenEnemy={onOpenEnemy} />
-        );
-        return (
-          <section className="ev-sec">
-            <b>{t("작전 {n}", { n: row.stages.length })}</b>
-            {stageList}
-          </section>
-        );
-      })()}
-        </div>
-      </div>
-      )}
-
-      {row.enemies && row.enemies.length > 0 && (
-        <section className="ev-sec">
-          <b>{t("등장 적 {n}", { n: row.enemies.length })}</b>
-          <div className="ev-enemies">
-            {row.enemies.map(([id, name]) => (
-              <button key={id} type="button" className="ev-enemy" onClick={() => onOpenEnemy(id)}>
-                <img src={enemyImg(id)} alt="" aria-hidden width={44} height={44}
-                  loading="lazy" decoding="async"
-                  onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
-                <span>{name}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+        ) : (
+          <EventTabs key={row.id} tabs={[
+            { key: "overview", label: t("개요"), node: <div className="ev-top">{side}<div className="ev-top-main">{pair}{schedule}</div></div> },
+            ...(stageList ? [{ key: "stages", label: t("작전 {n}", { n: row.stages?.length ?? 0 }), node: stageList }] : []),
+            ...more,
+          ]} />
+        )}
     </>
   );
 }

@@ -1,3 +1,6 @@
+/// <reference types="vite/client" />
+// ↑ import.meta.glob · import.meta.env 타입 (app/event-extra.tsx 가 이벤트별 상세를 glob 으로 나눠 받는다, 2026-10-01)
+
 // vite.config.ts의 define으로 주입되는 빌드(배포) 시각 ISO 문자열.
 declare const __BUILD_TIME__: string;
 

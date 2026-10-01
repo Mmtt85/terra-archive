@@ -150,6 +150,10 @@ python3 scripts/build-events.py .gamedata     # → app/data/events{,.en,.ja}.js
 #     이벤트 단위로 접는다. 작전↔이벤트는 zoneToActivity, 재화↔이벤트는 activityItems,
 #     보상 오퍼는 missionData 의 missionGroup 이 정본이다 (이름 매칭 금지).
 #   · 스토리가 없는 이벤트의 썸네일은 public/event/<id>.webp(아래 build-event-art.py)가 있으면 쓴다.
+python3 scripts/build-event-extra.py           # → app/data/event-extra/<ko|en|ja>/<이벤트 id>.json (이벤트 창의 일정·미션·훈장·가구·신뢰도 보너스)
+#   ⚠ **build-events.py 뒤에** — 그 목록의 한섭 이벤트 id 를 읽는다(미실장은 싣지 않는다). 이벤트마다 한 파일이라 창은 그 이벤트 것만
+#     받는다(app/event-extra.tsx import.meta.glob). 그림은 `python3 scripts/build-event-art.py --extra`(훈장 → public/event/medal/,
+#     가구 → public/event/furni/, 한섭 CDN — 지난 이벤트 것도 남아 있다). 교환소 품목은 클라이언트 데이터에 없어 못 싣는다.
 python3 scripts/build-future-dex.py            # → app/data/future-dex{,.en,.ja}.json (미래시 이벤트의 작전·적·재화 상세)
 #                                                  + app/data/future-routes.json (이동 경로·작전 시뮬레이터, 로케일 무관 1벌)
 #   ⚠ **build-events.py 바로 뒤에** — 그 미래시 행(fut)을 읽는다. 이벤트 창이 본 도감(stages/enemies/items)에서

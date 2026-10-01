@@ -20543,5 +20543,875 @@
   "ko": "곧 폐장 시간이다. 소지품을 잘 챙기고 차례차례 나가자. 떠나기 전에 웃는 얼굴로 기념사진 한 장 찍는 것도 잊지 말고~",
   "en": "Closing time is almost here. Keep an eye on your belongings and leave in an orderly fashion, and don't forget to take a smiling souvenir photo before you go!",
   "ja": "もうすぐ閉園時間。持ち物をしっかり確認して、順番に退場しよう。帰る前に、笑顔の記念写真を一枚撮るのも忘れずにね～"
+ },
+ "<逐影集趣>活动已开放": {
+  "ko": "<그림자를 좇는 즐거움> 이벤트 개방 중",
+  "en": "Event <Chasing Shadows for Fun> is now open",
+  "ja": "<逐影集趣>イベント開催中"
+ },
+ "逐影乐趣奖章": {
+  "ko": "그림자 놀이 훈장",
+  "en": "Shadow-Chasing Fun Medal",
+  "ja": "逐影楽趣勲章"
+ },
+ "逐影集趣活动期间，获得头像“云在看着你”": {
+  "ko": "<그림자를 좇는 즐거움> 이벤트 기간 동안, 프로필 '구름이 널 보고 있어' 획득",
+  "en": "During the Chasing Shadows for Fun event, obtain the 'A Cloud Is Watching You' icon",
+  "ja": "「逐影集趣」開催期間中に、アイコン「雲が見てるよ」を獲得。"
+ },
+ "逐影集趣中，为成功完成了多利的嬉闹挑战之人颁发的奖章。\n欢闹的云朵们已经散去，坐下来喝一杯汽水，享受重归平静的晴空吧。": {
+  "ko": "<그림자를 좇는 즐거움>에서 도리의 장난스러운 도전을 해낸 이에게 수여하는 훈장.\n떠들썩하던 구름들이 흩어졌다. 앉아서 사이다 한 잔 마시며, 다시 고요해진 맑은 하늘을 즐겨 보자.",
+  "en": "Medal awarded to those who completed Dolly's playful challenge in Chasing Shadows for Fun.\nThe rowdy clouds have scattered. Sit down with a soda and enjoy the clear sky, calm once more.",
+  "ja": "逐影集趣において、ドリーのいたずらチャレンジを見事やり遂げた者に贈られる勲章。\nはしゃぎ回っていた雲たちはもう散っていった。腰を下ろしてサイダーでも飲みながら、静けさを取り戻した青空を楽しもう。"
+ },
+ "逐影扬风奖章": {
+  "ko": "그림자 바람 훈장",
+  "en": "Shadow-Chasing Gust Medal",
+  "ja": "逐影揚風勲章"
+ },
+ "逐影集趣活动期间，累计吹散200次云团（不包含教学关）": {
+  "ko": "<그림자를 좇는 즐거움> 이벤트 기간 동안, 구름 누적 200회 날려 보내기 (튜토리얼 스테이지 제외)",
+  "en": "During the Chasing Shadows for Fun event, blow away clouds a total of 200 times (excluding tutorials)",
+  "ja": "「逐影集趣」開催期間中に、雲を累計200回吹き飛ばす。（チュートリアルを除く）"
+ },
+ "逐影集趣中，为吹散大量蒸汽云之人颁发的奖章。\n下一次藏在云层之中的，会是什么样的惊喜呢？": {
+  "ko": "<그림자를 좇는 즐거움>에서 증기 구름을 잔뜩 날려 보낸 이에게 수여하는 훈장.\n다음번에 구름 속에 숨어 있는 건 어떤 서프라이즈일까?",
+  "en": "Medal awarded to those who blew away a great many steam clouds in Chasing Shadows for Fun.\nWhat kind of surprise will be hiding in the clouds next time?",
+  "ja": "逐影集趣において、大量の蒸気雲を吹き飛ばした者に贈られる勲章。\n次に雲の中に隠れているのは、どんなサプライズだろうか？"
+ },
+ "<月行水上>活动已开放": {
+  "ko": "<월행수상> 이벤트 개방 중",
+  "en": "Event <The Moon Walks on Water> is now open",
+  "ja": "<月行水上>イベント開催中"
+ },
+ "\"殡仪堂\"内关卡已开放": {
+  "ko": "'장례식장' 스테이지 개방 중",
+  "en": "'Funeral Hall' stages opened",
+  "ja": "「葬儀堂」ステージ開放中"
+ },
+ "圣芭菲拱门": {
+  "ko": "세인트 파르페 아치",
+  "en": "Saint Parfait Archway",
+  "ja": "聖パフェのアーチ"
+ },
+ "承重立柱": {
+  "ko": "하중 기둥",
+  "en": "Load-Bearing Pillar",
+  "ja": "耐力柱"
+ },
+ "光环吊灯": {
+  "ko": "헤일로 펜던트 조명",
+  "en": "Halo Chandelier",
+  "ja": "光輪シャンデリア"
+ },
+ "证书置物架": {
+  "ko": "증서 선반",
+  "en": "Certificate Shelf",
+  "ja": "証書の飾り棚"
+ },
+ "圣芭菲收银台": {
+  "ko": "세인트 파르페 계산대",
+  "en": "Saint Parfait Checkout Counter",
+  "ja": "聖パフェのレジ"
+ },
+ "晴朗启示壁纸": {
+  "ko": "맑은 계시 벽지",
+  "en": "Sunny Revelations Wallpaper",
+  "ja": "晴れやかな啓示の壁紙"
+ },
+ "蔚蓝挂布": {
+  "ko": "쪽빛 밸런스 커튼",
+  "en": "Azure Valance",
+  "ja": "紺碧のタペストリー"
+ },
+ "方糖结晶地板": {
+  "ko": "각설탕 결정 바닥",
+  "en": "Sugar Cube Crystal Floor",
+  "ja": "角砂糖結晶の床"
+ },
+ "莓果地毯": {
+  "ko": "베리 카펫",
+  "en": "Berry Carpet",
+  "ja": "ベリー柄のカーペット"
+ },
+ "圣芭菲甜点店": {
+  "ko": "세인트 파르페 디저트 가게",
+  "en": "Saint Parfait Dessert Shop",
+  "ja": "聖パフェ洋菓子店"
+ },
+ "位于伊卡莱西亚区，备受本地人与游客欢迎的甜点店。附近的人常会来这里度过一段悠闲时光。不仅周末，工作日也是如此——应该说，尤其是在工作日。": {
+  "ko": "파구스 에클레시아에 있는, 현지인과 관광객 모두에게 사랑받는 디저트 가게. 근처 사람들은 이곳에 와서 한가로운 시간을 보내곤 한다. 주말만이 아니라 평일에도 그렇다——아니, 평일에 특히 그렇다고 해야겠다.",
+  "en": "A dessert shop in Pagus Ecclesia, popular with locals and tourists alike. People from the neighborhood often come here to spend some leisurely time. Not just on weekends, but on weekdays too—or rather, especially on weekdays.",
+  "ja": "パグス・エクレシアにある、地元の人にも観光客にも大人気の洋菓子店。近所の人々はよくここを訪れ、のんびりとしたひと時を過ごしている。週末だけでなく平日も――いや、むしろ平日こそ、と言うべきだろう。"
+ },
+ "忠实伙伴": {
+  "ko": "충실한 동료",
+  "en": "Faithful Companion",
+  "ja": "忠実な相棒"
+ },
+ "月行水上活动期间，获得干员虎狼丸": {
+  "ko": "<월행수상> 이벤트 기간 동안, 오퍼레이터 코로마루 획득",
+  "en": "During the event The Moon Walks on Water, obtain Operator Koromaru",
+  "ja": "「月行水上」開催期間中に、コロマルを雇用。"
+ },
+ "您为广受欢迎的“佩洛兽亲”提供了休息之所。\n当然了，您知道虎狼丸真正的来历。也许这正是他喜爱与您相伴的原因，无论是谁，都会享受在朋友的陪伴中做自己。": {
+  "ko": "당신은 인기 만점인 '페로 근연종'에게 쉴 곳을 마련해 주었습니다.\n물론 당신은 코로마루의 진짜 내력을 알고 있습니다. 어쩌면 그래서 그가 당신과 함께 있기를 좋아하는지도 모릅니다. 누구든 친구 곁에서 자기 자신으로 있는 것을 즐기기 마련이니까요.",
+  "en": "You provided a place of rest for the much-loved 'Perro Beast Steward'.\nOf course, you know where Koromaru really comes from. Perhaps that is exactly why he enjoys your company. No matter who you are, it feels good to be yourself in the company of friends.",
+  "ja": "貴殿は人気者の「ペッローの獣眷」に憩いの場を提供した。\nもちろん、貴殿はコロマルの本当の素性を知っている。彼が貴殿と共に過ごすのを好むのは、だからこそなのかもしれない。誰であれ、友の傍らでありのままの自分でいられるのは嬉しいものだ。"
+ },
+ "终有一别": {
+  "ko": "언젠가의 이별",
+  "en": "Farewells Must Come",
+  "ja": "いつか来る別れ"
+ },
+ "月行水上活动期间，以3星评价完成[通学路]内的全部关卡（不包含教学关与剧情关）": {
+  "ko": "<월행수상> 이벤트 기간 동안, 3★ 평가로 [통학로] 내 모든 스테이지 클리어 (튜토리얼 및 스토리 스테이지 제외)",
+  "en": "During the event The Moon Walks on Water, complete all stages in [The Way to School] with 3-star ratings (excluding tutorials and story stages)",
+  "ja": "「月行水上」開催期間中に、「通学路」の全ステージを★3でクリア。（チュートリアルと幕間を除く）"
+ },
+ "您结识了远道而来的学生，也目送他们回归自己的道路。\n时不我待，终有一别，您深明这个道理。告别过去的生活，告别落幕的时代，告别眷恋不舍的自己，去相信希望滚滚向前，未来尚在等待。": {
+  "ko": "당신은 먼 길을 온 학생들을 만났고, 그들이 각자의 길로 돌아가는 것도 배웅했습니다.\n시간은 기다려 주지 않고, 이별은 언젠가 찾아온다는 것을 당신은 잘 압니다. 지난 삶과, 막을 내린 시대와, 미련을 버리지 못한 자신과 작별하고, 희망이 힘차게 앞으로 굴러가리라고, 미래가 아직 기다리고 있으리라고 믿으세요.",
+  "en": "You befriended students who had come from far away, and watched them return to their own paths.\nTime waits for no one, and every meeting must one day end in parting—you understand this well. Bid farewell to the life that was, to an era that has drawn to a close, to the self that cannot let go, and believe that hope keeps rolling onward, and that the future is still waiting.",
+  "ja": "貴殿は遠方からやって来た学生たちと知り合い、そして彼らが自らの道へ帰っていくのを見送った。\n時は人を待たず、別れはいつか必ず訪れる――貴殿はそのことをよく理解している。過ぎ去った日々に、幕を下ろした時代に、名残を惜しむ自分自身に別れを告げ、希望は絶えず前へと進んでいくのだと信じよう。未来はまだ、待っているのだから。"
+ },
+ "<奇象巡展>活动已开放": {
+  "ko": "<기상 순회전> 이벤트 개방 중",
+  "en": "Event <Wondrous Exhibition> is now open",
+  "ja": "<奇象巡回展>イベント開催中"
+ },
+ "部分生物出现概率提升、新道具追加": {
+  "ko": "일부 생물 출현 확률 증가, 새 아이템 추가",
+  "en": "Increased appearance rates for some creatures, new items added",
+  "ja": "一部生物の出現確率アップ、新アイテム追加"
+ },
+ "与引导员夏妮对话，了解奇象寻迹玩法": {
+  "ko": "안내원 샤니와 대화해 기상 탐색 진행 방식 알아보기",
+  "en": "Talk to Guide Shani to learn how Wondrous Tracking works",
+  "ja": "案内係のシャニと会話し、奇象追跡の遊び方を知る"
+ },
+ "与奇象收集师对话，完成奇象寻迹生物扫描引导": {
+  "ko": "기상 수집가와 대화해 기상 탐색 생물 스캔 안내 마치기",
+  "en": "Talk to the Wondrous Collector and complete the Wondrous Tracking creature scan tutorial",
+  "ja": "奇象コレクターと会話し、奇象追跡の生物スキャンチュートリアルを完了する"
+ },
+ "与对决专员苍苔对话，了解奇象拟合的对决规则": {
+  "ko": "대결 담당 브라이오피타와 대화해 기상 시뮬레이션의 대결 규칙 알아보기",
+  "en": "Talk to Duel Specialist Bryophyta to learn the duel rules of Wondrous Simulation",
+  "ja": "対戦担当のブライオファイタと会話し、奇象シミュレーションの対戦ルールを知る"
+ },
+ "累计参加奇象巡展并领取每日物资1天": {
+  "ko": "기상 순회전에 누적 1일 참가해 일일 물자 받기",
+  "en": "Attend the Wondrous Exhibition and claim the daily supplies on a total of 1 day",
+  "ja": "奇象巡回展に参加し、デイリー物資を累計1日受け取る"
+ },
+ "累计参加奇象巡展并领取每日物资3天": {
+  "ko": "기상 순회전에 누적 3일 참가해 일일 물자 받기",
+  "en": "Attend the Wondrous Exhibition and claim the daily supplies on a total of 3 days",
+  "ja": "奇象巡回展に参加し、デイリー物資を累計3日受け取る"
+ },
+ "累计参加奇象巡展并领取每日物资5天": {
+  "ko": "기상 순회전에 누적 5일 참가해 일일 물자 받기",
+  "en": "Attend the Wondrous Exhibition and claim the daily supplies on a total of 5 days",
+  "ja": "奇象巡回展に参加し、デイリー物資を累計5日受け取る"
+ },
+ "8月18日更新后，参加巡展并领取每日物资1天": {
+  "ko": "8월 18일 업데이트 후, 순회전에 1일 참가해 일일 물자 받기",
+  "en": "After the August 18 update, attend the exhibition and claim the daily supplies on 1 day",
+  "ja": "8月18日のアップデート後、巡回展に参加してデイリー物資を1日受け取る"
+ },
+ "8月18日更新后，参加巡展并领取每日物资3天": {
+  "ko": "8월 18일 업데이트 후, 순회전에 3일 참가해 일일 물자 받기",
+  "en": "After the August 18 update, attend the exhibition and claim the daily supplies on 3 days",
+  "ja": "8月18日のアップデート後、巡回展に参加してデイリー物資を3日受け取る"
+ },
+ "收集3种不同奇象生物的数据": {
+  "ko": "서로 다른 기상 생물 3종의 데이터 수집",
+  "en": "Collect data on 3 different Wondrous creatures",
+  "ja": "異なる奇象生物のデータを3種類収集する"
+ },
+ "收集10种不同奇象生物的数据": {
+  "ko": "서로 다른 기상 생물 10종의 데이터 수집",
+  "en": "Collect data on 10 different Wondrous creatures",
+  "ja": "異なる奇象生物のデータを10種類収集する"
+ },
+ "收集15种不同奇象生物的数据": {
+  "ko": "서로 다른 기상 생물 15종의 데이터 수집",
+  "en": "Collect data on 15 different Wondrous creatures",
+  "ja": "異なる奇象生物のデータを15種類収集する"
+ },
+ "8月18日更新后，收集1种活动频繁的不同奇象生物的数据": {
+  "ko": "8월 18일 업데이트 후, 활동이 활발한 서로 다른 기상 생물 1종의 데이터 수집",
+  "en": "After the August 18 update, collect data on 1 different highly active Wondrous creature",
+  "ja": "8月18日のアップデート後、活発に動き回る異なる奇象生物のデータを1種類収集する"
+ },
+ "8月18日更新后，收集2种活动频繁的不同奇象生物的数据": {
+  "ko": "8월 18일 업데이트 후, 활동이 활발한 서로 다른 기상 생물 2종의 데이터 수집",
+  "en": "After the August 18 update, collect data on 2 different highly active Wondrous creatures",
+  "ja": "8月18日のアップデート後、活発に動き回る異なる奇象生物のデータを2種類収集する"
+ },
+ "8月18日更新后，收集3种活动频繁的不同奇象生物的数据": {
+  "ko": "8월 18일 업데이트 후, 활동이 활발한 서로 다른 기상 생물 3종의 데이터 수집",
+  "en": "After the August 18 update, collect data on 3 different highly active Wondrous creatures",
+  "ja": "8月18日のアップデート後、活発に動き回る異なる奇象生物のデータを3種類収集する"
+ },
+ "扫描1次被信息素诱引出的奇象生物": {
+  "ko": "페로몬에 이끌려 나온 기상 생물 1회 스캔",
+  "en": "Scan 1 Wondrous creature lured out by pheromones",
+  "ja": "フェロモンでおびき出された奇象生物を1回スキャンする"
+ },
+ "发起1次生物数据交换": {
+  "ko": "생물 데이터 교환 1회 신청",
+  "en": "Initiate 1 creature data exchange",
+  "ja": "生物データ交換を1回申し込む"
+ },
+ "参与5次奇象拟合对决": {
+  "ko": "기상 시뮬레이션 대결 5회 참가",
+  "en": "Participate in 5 Wondrous Simulation duels",
+  "ja": "奇象シミュレーション対戦に5回参加する"
+ },
+ "参与10次奇象拟合对决": {
+  "ko": "기상 시뮬레이션 대결 10회 참가",
+  "en": "Participate in 10 Wondrous Simulation duels",
+  "ja": "奇象シミュレーション対戦に10回参加する"
+ },
+ "参与15次奇象拟合对决": {
+  "ko": "기상 시뮬레이션 대결 15회 참가",
+  "en": "Participate in 15 Wondrous Simulation duels",
+  "ja": "奇象シミュレーション対戦に15回参加する"
+ },
+ "创作并发布1次画像": {
+  "ko": "초상화 1회 그려서 공개",
+  "en": "Create and publish 1 portrait",
+  "ja": "ドット絵を1回作成して公開する"
+ },
+ "创作并发布3次画像": {
+  "ko": "초상화 3회 그려서 공개",
+  "en": "Create and publish 3 portraits",
+  "ja": "ドット絵を3回作成して公開する"
+ },
+ "从其他参展游客处收集5幅画像": {
+  "ko": "다른 관람객에게서 초상화 5점 수집",
+  "en": "Collect 5 portraits from other exhibition visitors",
+  "ja": "他の来場者からドット絵を5枚収集する"
+ },
+ "从其他参展游客处收集10幅画像": {
+  "ko": "다른 관람객에게서 초상화 10점 수집",
+  "en": "Collect 10 portraits from other exhibition visitors",
+  "ja": "他の来場者からドット絵を10枚収集する"
+ },
+ "巡展印象奖章": {
+  "ko": "순회전 인상 훈장",
+  "en": "Exhibition Impressions Medal",
+  "ja": "巡回展印象勲章"
+ },
+ "从任意途径收集到4幅画像": {
+  "ko": "어떤 방법으로든 초상화 4점 수집",
+  "en": "Collect 4 portraits by any means",
+  "ja": "任意の方法でドット絵を4枚収集する。"
+ },
+ "奇象巡展期间，向收集了大量画像的游客赠送的奖章。\n用鲜艳的色彩，记录下展会上的欢乐回忆。": {
+  "ko": "<기상 순회전> 기간 동안, 초상화를 많이 모은 관람객에게 증정하는 훈장.\n선명한 색채로 전시회의 즐거운 추억을 기록했다.",
+  "en": "Medal presented to visitors who collected a large number of portraits during the Wondrous Exhibition.\nJoyful memories of the exhibition, captured in vivid colors.",
+  "ja": "奇象巡回展の期間中、ドット絵を数多く集めた来場者に贈られる勲章。\n鮮やかな色彩で、展示会での楽しい思い出を記録しよう。"
+ },
+ "巡展珍奇奖章": {
+  "ko": "순회전 진귀 훈장",
+  "en": "Exhibition Rarities Medal",
+  "ja": "巡回展珍奇勲章"
+ },
+ "收录10种不同的奇象生物数据": {
+  "ko": "서로 다른 기상 생물 데이터 10종 수록",
+  "en": "Record data on 10 different Wondrous creatures",
+  "ja": "異なる奇象生物のデータを10種類収録する。"
+ },
+ "奇象巡展期间，向在奇象寻迹中收集了多种生物数据的游客赠送的奖章。\n寻得珍奇生物的喜悦与激动，让这场别开生面的巡展注定令人难忘。": {
+  "ko": "<기상 순회전> 기간 동안, 기상 탐색에서 여러 생물 데이터를 모은 관람객에게 증정하는 훈장.\n진귀한 생물을 찾아낸 기쁨과 설렘이 이 색다른 순회전을 잊지 못할 기억으로 만든다.",
+  "en": "Medal presented to visitors who collected data on many kinds of creatures in Wondrous Tracking during the Wondrous Exhibition.\nThe joy and thrill of finding rare creatures make this one-of-a-kind exhibition truly unforgettable.",
+  "ja": "奇象巡回展の期間中、奇象追跡で多種多様な生物データを集めた来場者に贈られる勲章。\n珍しい生物を見つけた喜びと興奮が、この一風変わった巡回展を忘れがたいものにしてくれる。"
+ },
+ "<直到大地变成一颗酸橙>活动已开放": {
+  "ko": "<대지가 라임 하나가 될 때까지> 이벤트 개방 중",
+  "en": "Event <Until the Land Becomes a Lime> is now open",
+  "ja": "<大地が一つのライムになるまで>イベント開催中"
+ },
+ "\"踏上归家长途\"内关卡已开放": {
+  "ko": "'긴 귀갓길에 올라' 스테이지 개방 중",
+  "en": "'On the Long Road Home' stages opened",
+  "ja": "「遥かなる家路へ」ステージ開放中"
+ },
+ "\"眺望待行之路\"内关卡已开放": {
+  "ko": "'가야 할 길을 바라보며' 스테이지 개방 중",
+  "en": "'Gazing at the Road Ahead' stages opened",
+  "ja": "「まだ見ぬ道を望む」ステージ開放中"
+ },
+ "在安洁莉娜的旅行小记中，收集1次物资箱": {
+  "ko": "안젤리나의 여행 수첩에서 물자 상자 1회 수집",
+  "en": "In Angelina's Travel Notes, collect 1 Supply Crate",
+  "ja": "「アンジェリーナの旅日記」で、物資箱を1回収集する"
+ },
+ "在安洁莉娜的旅行小记中，收集2次物资箱": {
+  "ko": "안젤리나의 여행 수첩에서 물자 상자 2회 수집",
+  "en": "In Angelina's Travel Notes, collect 2 Supply Crates",
+  "ja": "「アンジェリーナの旅日記」で、物資箱を2回収集する"
+ },
+ "在安洁莉娜的旅行小记中，收集3次物资箱": {
+  "ko": "안젤리나의 여행 수첩에서 물자 상자 3회 수집",
+  "en": "In Angelina's Travel Notes, collect 3 Supply Crates",
+  "ja": "「アンジェリーナの旅日記」で、物資箱を3回収集する"
+ },
+ "在安洁莉娜的旅行小记中，收集5次物资箱": {
+  "ko": "안젤리나의 여행 수첩에서 물자 상자 5회 수집",
+  "en": "In Angelina's Travel Notes, collect 5 Supply Crates",
+  "ja": "「アンジェリーナの旅日記」で、物資箱を5回収集する"
+ },
+ "在安洁莉娜的旅行小记中，收集所有物资箱": {
+  "ko": "안젤리나의 여행 수첩에서 모든 물자 상자 수집",
+  "en": "In Angelina's Travel Notes, collect all Supply Crates",
+  "ja": "「アンジェリーナの旅日記」で、全ての物資箱を収集する"
+ },
+ "在安洁莉娜的旅行小记中，完成任务“能在平台上留宿就好了”": {
+  "ko": "안젤리나의 여행 수첩에서 임무 '플랫폼에서 하룻밤 묵을 수 있으면 좋겠는데' 완료",
+  "en": "In Angelina's Travel Notes, complete the quest 'If Only We Could Stay the Night on the Platform'",
+  "ja": "「アンジェリーナの旅日記」で、任務「プラットフォームに泊まれたらいいのに」を完了する"
+ },
+ "在安洁莉娜的旅行小记中，完成任务“为钻井成功出一份力吧”": {
+  "ko": "안젤리나의 여행 수첩에서 임무 '시추 성공에 힘을 보태자' 완료",
+  "en": "In Angelina's Travel Notes, complete the quest 'Let's Help the Drilling Succeed'",
+  "ja": "「アンジェリーナの旅日記」で、任務「掘削の成功に一役買おう」を完了する"
+ },
+ "在安洁莉娜的旅行小记中，完成任务“得找到麦尼尔先生才行”": {
+  "ko": "안젤리나의 여행 수첩에서 임무 '맥닐 씨를 찾아야 해' 완료",
+  "en": "In Angelina's Travel Notes, complete the quest 'We Have to Find Mr. McNeil'",
+  "ja": "「アンジェリーナの旅日記」で、任務「マクニールさんを見つけなきゃ」を完了する"
+ },
+ "在安洁莉娜的旅行小记中，完成全部任务": {
+  "ko": "안젤리나의 여행 수첩에서 모든 임무 완료",
+  "en": "In Angelina's Travel Notes, complete all quests",
+  "ja": "「アンジェリーナの旅日記」で、全ての任務を完了する"
+ },
+ "“嘎叽”备餐桌": {
+  "ko": "'가지' 서빙 테이블",
+  "en": "'Squeak-Squeak' Serving Table",
+  "ja": "「ピコッ」配膳台"
+ },
+ "手提包": {
+  "ko": "핸드백",
+  "en": "Handbag",
+  "ja": "ハンドバッグ"
+ },
+ "矿石吊灯": {
+  "ko": "광석 펜던트 조명",
+  "en": "Ore Ceiling Light",
+  "ja": "鉱石のペンダントライト"
+ },
+ "瓶树状置物柜": {
+  "ko": "병나무 모양 수납장",
+  "en": "Bottletree Cabinet",
+  "ja": "サカビンノキ型の収納棚"
+ },
+ "胡萝卜种植槽": {
+  "ko": "당근 재배함",
+  "en": "Carrot Planter",
+  "ja": "ニンジンのプランター"
+ },
+ "大涌泉镇民居壁纸": {
+  "ko": "대용천진 민가 벽지",
+  "en": "Great Springs Town Home Wallpaper",
+  "ja": "大湧泉町の民家の壁紙"
+ },
+ "吸水地毯": {
+  "ko": "흡수 카펫",
+  "en": "Absorbent Carpet",
+  "ja": "吸水カーペット"
+ },
+ "瓶树木制地板": {
+  "ko": "병나무 원목 바닥",
+  "en": "Bottletree Wood Floor",
+  "ja": "サカビンノキの木製フロア"
+ },
+ "胡萝卜样书桌": {
+  "ko": "당근 모양 책상",
+  "en": "Carrot-Style Desk",
+  "ja": "ニンジン型の机"
+ },
+ "饰牌《百果》": {
+  "ko": "플레이트 《백과》",
+  "en": "Plaque - Fruit Medley",
+  "ja": "パネル「百果」"
+ },
+ "大涌泉镇欢迎你！": {
+  "ko": "대용천진에 온 걸 환영해!",
+  "en": "Welcome to Great Springs Town!",
+  "ja": "ようこそ大湧泉町へ！"
+ },
+ "根据安洁莉娜一行人的描述复现的大涌泉镇常见民居的内景。走进来一闻，空气中似乎都飘荡着胡萝卜的甜香，还有温泉所散发的淡淡硫磺味。": {
+  "ko": "안젤리나 일행의 이야기를 바탕으로 재현한 대용천진의 흔한 민가 내부. 들어서서 숨을 들이쉬면 공기 중에 당근의 달큰한 향과 온천에서 풍기는 옅은 유황 냄새가 감도는 듯하다.",
+  "en": "A recreation of a typical home interior in Great Springs Town, based on descriptions from Angelina and her companions. Step inside and take a breath, and the air seems to carry the sweet scent of carrots, along with the faint smell of sulfur from the hot springs.",
+  "ja": "アンジェリーナ一行の話をもとに、大湧泉町でよく見られる民家の内装を再現した部屋。足を踏み入れて息を吸い込むと、ニンジンの甘い香りと、温泉から漂うほのかな硫黄の匂いが感じられる気がする。"
+ },
+ "“旅途的惦念”": {
+  "ko": "'여행길의 그리움'",
+  "en": "'A Thought from the Road'",
+  "ja": "「旅先からの想い」"
+ },
+ "您收到了一份礼物，一份从雷姆必拓一路寄来，里面还放着降温冰块的……胡萝卜汽水？！\n送来这份礼物的人带着您跃上云层，飞上天空，直到大地变成一颗酸橙。": {
+  "ko": "당신은 선물을 하나 받았습니다. 림 빌리턴에서 줄곧 부쳐 온, 안에 얼음까지 넣은…… 당근 사이다?!\n이 선물을 보낸 사람은 당신을 데리고 구름 위로 뛰어올라 하늘을 날았습니다. 대지가 라임 하나가 될 때까지.",
+  "en": "You received a gift, sent all the way from Rim Billiton, with ice packed inside to keep it cool... a carrot soda?!\nThe one who sent it carries you leaping above the clouds and soaring into the sky, until the land becomes a lime.",
+  "ja": "貴殿は贈り物を受け取った。はるばるレム・ビリトンから送られてきたもので、中には保冷用の氷まで入っている……ニンジンソーダ？！\nこの贈り物を届けてくれた人は、貴殿を連れて雲の上へと跳び上がり、空高く飛んでいく――大地が一つのライムになるまで。"
+ },
+ "“拜托了，小飞虫！”": {
+  "ko": "'부탁해, 작은 날벌레들!'",
+  "en": "'Counting on You, Little Bugs!'",
+  "ja": "「お願いね、羽虫ちゃんたち！」"
+ },
+ "直到大地变成一颗酸橙活动期间，获得赠送干员时隙": {
+  "ko": "<대지가 라임 하나가 될 때까지> 이벤트 기간 동안, 증정 오퍼레이터 타임슬롯 획득",
+  "en": "During the Until the Land Becomes a Lime event, obtain the free Operator Timeslot",
+  "ja": "「大地が一つのライムになるまで」開催期間中に、タイムスロットを雇用。"
+ },
+ "您被她放出的一群小飞虫吓了一大跳，随后察觉那些东西只是一些器械。\n站在高处的工程师没有留意到下方的小小混乱，她仍在认真地调试。虽然因高空作业而被吓出了几点泪花，但她仍旧坚定无比。": {
+  "ko": "당신은 그녀가 풀어놓은 작은 날벌레 떼에 깜짝 놀랐다가, 곧 그것들이 그저 기계 장치일 뿐이라는 걸 알아차렸습니다.\n높은 곳에 선 엔지니어는 아래의 작은 소동을 눈치채지 못하고, 여전히 진지하게 장치를 조정하고 있습니다. 고공 작업이 무서워 눈물이 몇 방울 맺히긴 했지만, 그녀는 여전히 더없이 굳건합니다.",
+  "en": "You were startled by a swarm of little flying bugs she released, before realizing they were just machines.\nThe engineer standing high above didn't notice the small commotion below, and kept carefully calibrating away. Working at such heights had frightened a few tears out of her, yet she remained utterly resolute.",
+  "ja": "貴殿は彼女が放った羽虫の群れに飛び上がるほど驚いたが、すぐにそれがただの機械だと気づいた。\n高所に立つエンジニアは、下で起きた小さな騒ぎに気づくことなく、真剣に調整を続けている。高所作業の怖さに少し涙がにじんでいても、その決意は少しも揺らがない。"
+ },
+ "旅者轶闻奖章": {
+  "ko": "여행자 일화 훈장",
+  "en": "Traveler's Anecdotes Medal",
+  "ja": "旅人逸話勲章"
+ },
+ "直到大地变成一颗酸橙活动期间，在[旅行者的背包]中消耗4000个沿途的点滴": {
+  "ko": "<대지가 라임 하나가 될 때까지> 이벤트 기간 동안, [여행자의 배낭]에서 여행길의 조각들 4000개 소모",
+  "en": "During the Until the Land Becomes a Lime event, consume 4000 Moments Along the Way in [Traveler's Backpack]",
+  "ja": "「大地が一つのライムになるまで」開催期間中に、「旅人のバックパック」で道すがらの断片を4000個消費。"
+ },
+ "您听旅途结束后的少女分享了许多有趣的回忆。\n她们描述着半夜帐篷被沙地兽挖洞打穿、提起越野车后座被陌生牙兽占领当窝……您仍旧坐在椅子上，但仿佛已经感受到了雷姆必拓带着一丝胡萝卜甜味的风。": {
+  "ko": "당신은 여행을 마친 소녀들에게서 재미있는 추억을 잔뜩 들었습니다.\n한밤중에 모래땅 짐승이 땅굴을 파다 텐트를 뚫어 버린 일, 오프로드 차 뒷좌석을 낯선 송곳니 짐승이 둥지로 차지해 버린 일…… 당신은 여전히 의자에 앉아 있지만, 당근의 단내가 살짝 묻은 림 빌리턴의 바람이 느껴지는 것만 같습니다.",
+  "en": "You listened as the girls, their journey over, shared many fun memories.\nThey told of a sand beast burrowing right through their tent in the middle of the night, of a strange tuskbeast claiming the back seat of their off-roader as its den... You're still sitting in your chair, yet you can almost feel the Rim Billiton wind, with its faint hint of carrot sweetness.",
+  "ja": "貴殿は旅を終えた少女たちから、たくさんの楽しい思い出話を聞いた。\n夜中にサンドビーストがテントの下に穴を掘って突き破ってきたこと、オフロード車の後部座席が見知らぬ牙獣に巣として占領されていたこと……貴殿は椅子に座ったままなのに、ほんのりニンジンの甘い香りを帯びたレム・ビリトンの風を感じたような気がした。"
+ },
+ "心愿成真奖章": {
+  "ko": "소원 성취 훈장",
+  "en": "Wishes Come True Medal",
+  "ja": "願望成就勲章"
+ },
+ "完成[愿望清单]中全部内容，并领取奖励": {
+  "ko": "[소원 목록]의 모든 내용을 완료하고 보상 수령",
+  "en": "Complete all the content in [Wish List] and collect the rewards",
+  "ja": "「願いごとリスト」を全てクリアし、報酬を獲得。"
+ },
+ "您见证了旅途中所有愿望的实现。\n并在心中祝愿她们能够跑得更快、更远，永远跑在前进的路上。": {
+  "ko": "당신은 여행길의 모든 소원이 이루어지는 것을 지켜보았습니다.\n그리고 마음속으로 빌었습니다. 그녀들이 더 빨리, 더 멀리 달려가기를. 언제까지나 앞으로 나아가는 길 위에 있기를.",
+  "en": "You witnessed every wish along the journey come true.\nAnd in your heart, you wish that they may run faster and farther, forever running on the road ahead.",
+  "ja": "貴殿は旅の中で、すべての願いが叶う瞬間を見届けた。\nそして心の中で願った。彼女たちがもっと速く、もっと遠くまで走り、いつまでも前へ進む道を走り続けられるようにと。"
+ },
+ "灿烂黄昏奖章": {
+  "ko": "찬란한 황혼 훈장",
+  "en": "Brilliant Dusk Medal",
+  "ja": "燦爛黄昏勲章"
+ },
+ "在[安洁莉娜的旅行小记]中，解锁“黄昏突进号”的全部可探索区域": {
+  "ko": "[안젤리나의 여행 수첩]에서 '황혼 돌진호'의 모든 탐색 가능 구역 개방",
+  "en": "In [Angelina's Travel Notes], unlock all explorable areas of the 'Dusk Dash'",
+  "ja": "「アンジェリーナの旅日記」で、「黄昏突進号」の探索可能なエリアを全て開放する。"
+ },
+ "您游览了“黄昏突进号”的全部区域。\n这艘移动采矿平台摇身一变，现在正冒着温泉的水汽。黄昏虽至，它仍在前行。": {
+  "ko": "당신은 '황혼 돌진호'의 모든 구역을 둘러보았습니다.\n이 이동식 채굴 플랫폼은 완전히 탈바꿈해, 지금은 온천의 수증기를 내뿜고 있습니다. 황혼이 찾아와도 그것은 계속 나아갑니다.",
+  "en": "You toured every area of the 'Dusk Dash'.\nThis mobile mining platform has been completely transformed, and now billows with hot spring steam. Though dusk has come, it keeps moving forward.",
+  "ja": "貴殿は「黄昏突進号」の全エリアを見て回った。\nこの移動式採掘プラットフォームはすっかり様変わりし、今では温泉の湯気を立ち上らせている。黄昏が訪れようとも、その歩みは止まらない。"
+ },
+ "新外号奖章": {
+  "ko": "새 별명 훈장",
+  "en": "New Nickname Medal",
+  "ja": "新たなあだ名勲章"
+ },
+ "以3星评价通关TO-6，并且至少让“美食的诱惑”大摔一跤3次": {
+  "ko": "3★ 평가로 TO-6 클리어, '맛있는 유혹'을 3회 이상 넘어뜨리기",
+  "en": "Clear TO-6 with a 3-star rating and make 'Temptation of Gourmet' take a hard fall at least 3 times",
+  "ja": "★3評価、かつ<「美食の誘惑」>を3回以上派手に転ばせた上でTO-6をクリア。"
+ },
+ "您获得了“扫腿侠”的新外号。\n为了吃到最多美味的胡萝卜冰淇淋，使一点小小的手段也没什么关系啦！": {
+  "ko": "당신은 '다리걸기 협객'이라는 새 별명을 얻었습니다.\n맛있는 당근 아이스크림을 가장 많이 먹기 위해서라면, 조그만 꼼수쯤은 괜찮잖아요!",
+  "en": "You earned yourself a new nickname: 'the Leg Sweeper'.\nIf it means getting the most delicious carrot ice cream, a little trickery never hurt anyone!",
+  "ja": "貴殿は「足払い名人」という新たなあだ名を手に入れた。\n美味しいニンジンアイスを一番たくさん食べるためなら、ちょっとくらいズルしたって構わないよね！"
+ },
+ "终抵南境奖章": {
+  "ko": "남쪽 끝 도착 훈장",
+  "en": "Southern Journey's End Medal",
+  "ja": "南境到達勲章"
+ },
+ "以3星评价完成[驶向大地尽头]内的全部关卡": {
+  "ko": "3★ 평가로 [대지의 끝을 향해] 내 모든 스테이지 클리어",
+  "en": "Complete all stages in [Toward the Land's End] with 3-star ratings",
+  "ja": "★3で「大地の果てへ」の全ステージをクリア。"
+ },
+ "您坐在颠簸的越野车上，与她们一同驶向了旅程的尽头。\n清晨的日光洒在身上，追寻问题的答案的人来到了这片无人之境，朝阳不言，海浪不语，不过为了梦想而不顾一切来到这里的自己，本身就是一切问题的答案。": {
+  "ko": "당신은 덜컹거리는 오프로드 차에 앉아 그녀들과 함께 여정의 끝으로 달려갔습니다.\n아침 햇살이 몸에 쏟아집니다. 질문의 답을 좇던 이들은 이 인적 없는 땅에 다다랐습니다. 아침 해는 말이 없고 파도도 아무 말 하지 않지만, 꿈을 위해 모든 것을 무릅쓰고 여기까지 온 자신이야말로 모든 질문의 답입니다.",
+  "en": "You rode with them in a bumpy off-roader all the way to the end of their journey.\nThe morning sun shines down on you. Those in search of answers have come to this land without a soul in sight. The rising sun says nothing, and the waves say nothing, but the very selves who gave everything to come here for their dreams are the answer to every question.",
+  "ja": "貴殿は揺れるオフロード車に乗り、彼女たちと共に旅の終わりへと向かった。\n朝の日差しが降り注ぐ中、問いの答えを探し求める者たちはこの無人の地へとたどり着いた。朝日は何も語らず、波もまた黙したまま。だが、夢のためにすべてを顧みずここまでやって来た自分自身こそが、あらゆる問いへの答えなのだ。"
+ },
+ "长路待行奖章": {
+  "ko": "먼 길 훈장",
+  "en": "Long Road Ahead Medal",
+  "ja": "長き道のり勲章"
+ },
+ "完成[眺望待行之路]中全部关卡的突袭模式": {
+  "ko": "[가야 할 길을 바라보며] 내 모든 스테이지의 하드 모드 클리어",
+  "en": "Complete all stages in [Gazing at the Road Ahead] on Challenge Mode",
+  "ja": "「まだ見ぬ道を望む」の全てのステージの強襲作戦をクリア。"
+ },
+ "您没有停下继续前行的脚步。\n行李已经收好，但旅途从未结束，您与她们的下一次远行会去哪里呢？": {
+  "ko": "당신은 계속 나아가는 발걸음을 멈추지 않았습니다.\n짐은 이미 꾸렸지만 여행은 끝난 적이 없습니다. 당신과 그녀들의 다음 먼 길은 어디로 향할까요?",
+  "en": "You never stopped moving forward.\nThe bags are packed, but the journey has never ended. Where will your next trip with them take you?",
+  "ja": "貴殿は前へ進む歩みを止めなかった。\n荷物はもうまとめてある。だが、旅が終わったことなど一度もない。貴殿と彼女たちの次の遠出は、どこへ向かうのだろうか？"
+ },
+ "漫漫归家路奖章": {
+  "ko": "머나먼 귀갓길 훈장",
+  "en": "Long Way Home Medal",
+  "ja": "遥かなる家路勲章"
+ },
+ "完成[踏上归家长途]内全部关卡的突袭模式": {
+  "ko": "[긴 귀갓길에 올라] 내 모든 스테이지의 하드 모드 클리어",
+  "en": "Complete all stages in [On the Long Road Home] on Challenge Mode",
+  "ja": "「遥かなる家路へ」の全てのステージの強襲作戦をクリア。"
+ },
+ "您完成了一趟完满的旅行。\n从承载着梦想的目的地到满是温馨的家，这一路的欢喜与悲伤，现在都有了一个归处。": {
+  "ko": "당신은 빈틈없이 완벽한 여행을 마쳤습니다.\n꿈을 실은 목적지에서 온기로 가득한 집까지, 이 길 위의 기쁨과 슬픔이 이제 모두 돌아갈 곳을 찾았습니다.",
+  "en": "You completed a journey to remember.\nFrom a destination that carried their dreams to a home full of warmth, all the joys and sorrows along the way have now found a place to rest.",
+  "ja": "貴殿は満ち足りた旅を終えた。\n夢を乗せた目的地から、ぬくもりにあふれた我が家まで。この道のりの喜びも悲しみも、今はすべて帰る場所を見つけた。"
+ },
+ "心意传递奖章": {
+  "ko": "마음 전달 훈장",
+  "en": "Heartfelt Delivery Medal",
+  "ja": "想い伝達勲章"
+ },
+ "直到大地变成一颗酸橙活动期间，累计投递30封浮空信件": {
+  "ko": "<대지가 라임 하나가 될 때까지> 이벤트 기간 동안, 떠다니는 편지 누적 30통 배달",
+  "en": "During the Until the Land Becomes a Lime event, deliver a total of 30 Floating Letters",
+  "ja": "「大地が一つのライムになるまで」開催期間中に、浮遊する手紙を累計30通配達。"
+ },
+ "您传递了无数等待送达的心意。\n那些没能说出口的话，那些即使相隔千里万里，也想要告诉对方的话——它们会去往那个等待着的人心中，带去幸福的笑容。": {
+  "ko": "당신은 배달을 기다리던 수많은 마음을 전했습니다.\n입 밖에 내지 못한 말들, 천 리 만 리 떨어져 있어도 꼭 전하고 싶었던 말들——그 말들은 기다리는 사람의 마음에 닿아 행복한 웃음을 가져다줄 것입니다.",
+  "en": "You delivered countless feelings waiting to reach their recipients.\nWords that went unspoken, words people wanted to tell each other even from thousands of miles apart—they will reach the hearts of those waiting, and bring them happy smiles.",
+  "ja": "貴殿は、届けられるのを待つ数えきれない想いを運んだ。\n口に出せなかった言葉、どれほど遠く離れていても相手に伝えたかった言葉――それらは待っている人の心へと届き、幸せな笑顔をもたらすだろう。"
+ },
+ "直到大地变成一颗酸橙蚀刻章套组": {
+  "ko": "대지가 라임 하나가 될 때까지 훈장 세트",
+  "en": "Until the Land Becomes a Lime Engraved Medal Set",
+  "ja": "大地が一つのライムになるまで勲章シリーズ"
+ },
+ "记录了一段一路向南的雷姆必拓之旅的蚀刻章套组。\n旅途会让你送别旧识，也会帮你结识新友，更会令你发现一个更好、更坚定的自己。所以当出发的念头在脑海冒出来时，不用再犹豫，背上行囊启程吧！": {
+  "ko": "남쪽으로 줄곧 향했던 림 빌리턴 여행을 기록한 훈장 세트.\n여행은 오랜 친구를 떠나보내게도 하고, 새 친구를 사귀게도 하며, 무엇보다 더 낫고 더 단단한 자신을 발견하게 해 줍니다. 그러니 떠나고 싶다는 생각이 떠오르면 더는 망설이지 말고 짐을 메고 출발하세요!",
+  "en": "A set of engraved medals recording a journey southward across Rim Billiton.\nA journey will see you bid farewell to old acquaintances, help you make new friends, and above all, lead you to discover a better, more resolute self. So when the thought of setting out pops into your head, don't hesitate any longer—shoulder your pack and hit the road!",
+  "ja": "ひたすら南を目指したレム・ビリトンの旅を記録した勲章シリーズ。\n旅は古い知り合いとの別れをもたらし、新しい友との出会いを授け、そして、より良く、より揺るぎない自分を見つけさせてくれる。だから旅立ちの思いが頭に浮かんだなら、もう迷うことはない。荷物を背負って出発しよう！"
+ },
+ "<丛林症结>活动已开放": {
+  "ko": "<밀림의 응어리> 이벤트 개방 중",
+  "en": "Event <Crux of the Jungle> is now open",
+  "ja": "<叢林症結>イベント開催中"
+ },
+ "“蝴蝶效应”": {
+  "ko": "'나비 효과'",
+  "en": "'Butterfly Effect'",
+  "ja": "「バタフライエフェクト」"
+ },
+ "解锁丛林症结的全部故事": {
+  "ko": "밀림의 응어리의 모든 스토리 개방",
+  "en": "Unlock all the stories in Crux of the Jungle",
+  "ja": "「叢林症結」で、全てのストーリーを解禁する。"
+ },
+ "引发剧变的微小因子就藏在报告的字里行间，翻阅这些报告，你会明晓一切。\n它蛰居在丛林，或盘旋于头顶。它正轻轻扇动翅膀，它是这里的每一个人。": {
+  "ko": "격변을 일으킨 작은 인자는 보고서의 행간에 숨어 있다. 이 보고서들을 넘겨 보면 모든 것을 알게 될 것이다.\n그것은 밀림에 숨어 살거나, 머리 위를 맴돈다. 그것은 지금 가볍게 날개를 퍼덕이고 있다. 그것은 이곳의 모든 사람이다.",
+  "en": "The tiny factor that set off the upheaval lies hidden between the lines of the reports. Read through them, and you will understand everything.\nIt lurks in the jungle, or circles overhead. It is gently flapping its wings. It is every person here.",
+  "ja": "劇的な変化を引き起こす小さな因子は、報告書の行間に潜んでいる。それらを読み解けば、あなたはすべてを知ることになるだろう。\nそれは密林に潜み、あるいは頭上を旋回している。それはそっと羽ばたいている。それは、ここにいる一人ひとりなのだ。"
+ },
+ "“闲暇之甜”": {
+  "ko": "'한가로움의 단맛'",
+  "en": "'Sweetness of Leisure'",
+  "ja": "「余暇の甘み」"
+ },
+ "丛林症结活动期间，获得时装悠然假日 HDm25": {
+  "ko": "<밀림의 응어리> 이벤트 기간 동안, 컬렉션 '느긋한 휴일 HDm25' 획득",
+  "en": "During the Crux of the Jungle event, obtain the outfit Holiday HDm25",
+  "ja": "「叢林症結」開催期間中に、コーデ「ホリデーHDm25」を獲得。"
+ },
+ "隐现在休假结束之前亲手交给你的奖章，感谢你为他安排一次难得又难忘的假期。\n他还附送了一包他用海边素材烤制的饼干，你从中品尝到的清凉味道可谓是夏日的绝配。": {
+  "ko": "인사이더가 휴가가 끝나기 전에 직접 건넨 훈장. 드물고도 잊지 못할 휴가를 마련해 준 데 대한 감사의 표시다.\n그는 바닷가 재료로 구운 쿠키 한 봉지도 함께 주었다. 거기서 느껴지는 시원한 맛은 여름에 딱 어울린다.",
+  "en": "A medal Insider personally handed you before his vacation ended, in thanks for arranging such a rare and unforgettable vacation for him.\nHe also gave you a bag of cookies he baked with ingredients from the seaside. The cool, refreshing flavor you taste in them is the perfect match for summer.",
+  "ja": "休暇が終わる前に、インサイダーがあなたに手ずから渡してくれた勲章。めったにない、忘れられない休暇を用意してくれたことへの感謝の印。\n彼は海辺の素材で焼いたクッキーも一袋添えてくれた。そこから感じられる爽やかな味わいは、まさに夏にぴったりだ。"
+ },
+ "<阵地足球锦标>活动已开放": {
+  "ko": "<진지 축구 토너먼트> 이벤트 개방 중",
+  "en": "Event <Positional Football Championship> is now open",
+  "ja": "<ポジションサッカー選手権>イベント開催中"
+ },
+ "\"淘汰赛\"内关卡已开放": {
+  "ko": "'결선 토너먼트' 스테이지 개방 중",
+  "en": "'Knockout Rounds' stages opened",
+  "ja": "「トーナメント」ステージ開放中"
+ },
+ "锦标桂冠奖章": {
+  "ko": "토너먼트 월계관 훈장",
+  "en": "Championship Laurels Medal",
+  "ja": "選手権栄冠勲章"
+ },
+ "阵地足球锦标活动期间，完成关卡PF-EX-4": {
+  "ko": "<진지 축구 토너먼트> 이벤트 기간 동안, PF-EX-4 클리어",
+  "en": "During the Positional Football Championship event, complete Stage PF-EX-4",
+  "ja": "「ポジションサッカー選手権」開催期間中に、ステージPF-EX-4をクリア。"
+ },
+ "阵地足球锦标中，为夺得锦标冠军奖杯的队伍颁发的奖章。\n在这场战术与技巧的终极比拼中，您带领的队伍展现了最高的竞技水平。": {
+  "ko": "<진지 축구 토너먼트>에서 우승 트로피를 차지한 팀에게 수여하는 훈장.\n전술과 기술의 최종 대결에서 당신이 이끈 팀은 최고의 경기력을 보여 주었습니다.",
+  "en": "Medal awarded to the team that won the championship trophy in the Positional Football Championship.\nIn this ultimate contest of tactics and skill, the team you led displayed the highest level of play.",
+  "ja": "ポジションサッカー選手権において、優勝トロフィーを勝ち取ったチームに贈られる勲章。\n戦術と技術がぶつかり合うこの究極の勝負で、貴殿の率いるチームは最高の競技レベルを示した。"
+ },
+ "锦标新星奖章": {
+  "ko": "토너먼트 신성 훈장",
+  "en": "Championship Rising Star Medal",
+  "ja": "選手権新星勲章"
+ },
+ "阵地足球锦标活动期间，完成关卡PF-4": {
+  "ko": "<진지 축구 토너먼트> 이벤트 기간 동안, PF-4 클리어",
+  "en": "During the Positional Football Championship event, complete Stage PF-4",
+  "ja": "「ポジションサッカー選手権」開催期間中に、ステージPF-4をクリア。"
+ },
+ "阵地足球锦标中，为成功从业余组别晋级的队伍颁发的奖章，以兹鼓励。\n每一场比赛都同等重要，坚实的基础才能保证胜利。": {
+  "ko": "<진지 축구 토너먼트>에서 아마추어 부문을 통과한 팀에게 격려의 뜻으로 수여하는 훈장.\n모든 경기는 똑같이 중요하다. 탄탄한 기본기가 있어야 승리할 수 있다.",
+  "en": "Medal awarded to encourage teams that advanced out of the Amateur division in the Positional Football Championship.\nEvery match matters just as much as the next. Only a solid foundation can guarantee victory.",
+  "ja": "ポジションサッカー選手権において、アマチュアリーグからの昇格を果たしたチームを激励するために贈られる勲章。\nどの試合も等しく重要であり、確かな基礎こそが勝利を約束する。"
+ },
+ "锦标突围奖章": {
+  "ko": "토너먼트 돌파 훈장",
+  "en": "Championship Breakthrough Medal",
+  "ja": "選手権突破勲章"
+ },
+ "阵地足球锦标活动期间，完成关卡PF-7": {
+  "ko": "<진지 축구 토너먼트> 이벤트 기간 동안, PF-7 클리어",
+  "en": "During the Positional Football Championship event, complete Stage PF-7",
+  "ja": "「ポジションサッカー選手権」開催期間中に、ステージPF-7をクリア。"
+ },
+ "阵地足球锦标中，为成功从职业组别晋级的队伍颁发的奖章，以兹鼓励。\n上下一心，为了最终的冠军，大踏步前进！": {
+  "ko": "<진지 축구 토너먼트>에서 프로 부문을 통과한 팀에게 격려의 뜻으로 수여하는 훈장.\n한마음으로, 최후의 우승을 향해 성큼성큼 나아가자!",
+  "en": "Medal awarded to encourage teams that advanced out of the Professional division in the Positional Football Championship.\nUnited as one, march boldly on toward the final title!",
+  "ja": "ポジションサッカー選手権において、プロリーグからの昇格を果たしたチームを激励するために贈られる勲章。\n心を一つに、最後の優勝を目指して大きく前進せよ！"
+ },
+ "锦标风尚奖章": {
+  "ko": "토너먼트 스타일 훈장",
+  "en": "Championship Style Medal",
+  "ja": "選手権スタイル勲章"
+ },
+ "阵地足球锦标活动期间，获得时装跃动节拍": {
+  "ko": "<진지 축구 토너먼트> 이벤트 기간 동안, 컬렉션 '약동하는 비트' 획득",
+  "en": "During the Positional Football Championship event, obtain the outfit Pulsing Beat",
+  "ja": "「ポジションサッカー選手権」開催期間中に、コーデ「躍動ビート」を獲得。"
+ },
+ "阵地足球锦标中，随赛事纪念时装一同赠送的奖章。\n赛事的氛围可不是只有开球之后才能感受到，赛前表演也能炒热气氛。": {
+  "ko": "<진지 축구 토너먼트>에서 대회 기념 컬렉션과 함께 증정하는 훈장.\n경기 분위기는 킥오프 뒤에만 느낄 수 있는 게 아니다. 경기 전 공연도 분위기를 달군다.",
+  "en": "Medal gifted with the tournament's commemorative outfit in the Positional Football Championship.\nThe atmosphere of a tournament isn't something you only feel after kickoff—a pre-match show can fire up the crowd, too.",
+  "ja": "ポジションサッカー選手権において、大会記念コーデのおまけについてくる勲章。\n大会の熱気はキックオフの後だけのものではない。試合前のパフォーマンスも会場を盛り上げてくれる。"
+ },
+ "锦标攻势奖章": {
+  "ko": "토너먼트 공세 훈장",
+  "en": "Championship Offensive Medal",
+  "ja": "選手権攻勢勲章"
+ },
+ "阵地足球锦标活动期间，累计5关的净胜球数达到3（不包含教学关）": {
+  "ko": "<진지 축구 토너먼트> 이벤트 기간 동안, 5개 스테이지 누적 득실차 3 달성 (튜토리얼 스테이지 제외)",
+  "en": "During the Positional Football Championship event, achieve a goal difference of 3 in a total of 5 stages (excluding tutorials)",
+  "ja": "「ポジションサッカー選手権」開催期間中に、得失点差3以上を達成したステージが累計5つに到達。（チュートリアルを除く）"
+ },
+ "阵地足球锦标中，为攻入了大量进球的队伍颁发的奖章。\n“进球足够多，胜利自然有”，在锦标赛的球场上，这句话就是真理。": {
+  "ko": "<진지 축구 토너먼트>에서 골을 많이 넣은 팀에게 수여하는 훈장.\n'골을 많이 넣으면 승리는 저절로 따라온다'——토너먼트의 경기장에서는 이 말이 곧 진리다.",
+  "en": "Medal awarded to teams that scored a great many goals in the Positional Football Championship.\n'Score enough goals, and victory will follow.' On the championship pitch, these words are the truth.",
+  "ja": "ポジションサッカー選手権において、数多くのゴールを決めたチームに贈られる勲章。\n「ゴールさえ十分に決めれば、勝利は自然とついてくる」――選手権のピッチでは、この言葉こそが真理だ。"
+ },
+ "<泡影苍霆>活动已开放": {
+  "ko": "<포영창정> 이벤트 개방 중",
+  "en": "Event <Mirage Phalanx> is now open",
+  "ja": "<泡影蒼霆>イベント開催中"
+ },
+ "\"踏破泡影\"内关卡已开放": {
+  "ko": "'답파포영' 스테이지 개방 중",
+  "en": "'Shattering the Mirage' stages opened",
+  "ja": "「泡影踏破」ステージ開放中"
+ },
+ "通关TD-1，且至少击败碎壳螈3次": {
+  "ko": "TD-1 클리어, 쇄각원 3회 이상 처치",
+  "en": "Clear TD-1, and defeat at least 3 Shellcrusher Newts",
+  "ja": "<砕殻イモリ>を3体以上撃破してTD-1をクリアする"
+ },
+ "通关TD-2，且打碎盗壳虫的容器至少4次": {
+  "ko": "TD-2 클리어, 도각충의 용기 4회 이상 파괴",
+  "en": "Clear TD-2, and break Shellthief Bugs' containers at least 4 times",
+  "ja": "<盗殻虫>の容器を4回以上壊してTD-2をクリアする"
+ },
+ "通关TD-6，且至少击败咒鬼3次": {
+  "ko": "TD-6 클리어, 주귀 3회 이상 처치",
+  "en": "Clear TD-6, and defeat at least 3 Cursed Oni",
+  "ja": "<呪鬼>を3体以上撃破してTD-6をクリアする"
+ },
+ "解锁所有4种翔虫技，且对反壳龟、影丝蛛、岩甲兽与“雷之主”进行御龙各1次": {
+  "ko": "밧줄벌레 기술 4종을 모두 해금하고, 반각귀·영사주·암갑수·「번개의 주인」에게 각각 어룡 1회",
+  "en": "Unlock all 4 Wirebug Skills, and perform Wyvern Riding once each on a Flipshell Turtle, Shadowsilk Spider, Rockshell Beast, and the 'Lord of Thunder'",
+  "ja": "4種類の翔蟲技を全て解放し、<反殻亀>、<影糸蜘蛛>、<岩甲獣>、<「雷の主」>をそれぞれ1回操竜する"
+ },
+ "泡影苍霆活动期间，累计对“雷之主”进行御龙3次": {
+  "ko": "<포영창정> 이벤트 기간 동안, 「번개의 주인」에게 누적 어룡 3회",
+  "en": "During the Mirage Phalanx event, perform Wyvern Riding on the 'Lord of Thunder' a total of 3 times",
+  "ja": "「泡影蒼霆」開催期間中に、<「雷の主」>を累計3回操竜する"
+ },
+ "泡影苍霆活动期间，累计对反壳龟进行御龙3次": {
+  "ko": "<포영창정> 이벤트 기간 동안, 반각귀에게 누적 어룡 3회",
+  "en": "During the Mirage Phalanx event, perform Wyvern Riding on Flipshell Turtles a total of 3 times",
+  "ja": "「泡影蒼霆」開催期間中に、<反殻亀>を累計3回操竜する"
+ },
+ "泡影苍霆活动期间，累计对影丝蛛进行御龙3次": {
+  "ko": "<포영창정> 이벤트 기간 동안, 영사주에게 누적 어룡 3회",
+  "en": "During the Mirage Phalanx event, perform Wyvern Riding on Shadowsilk Spiders a total of 3 times",
+  "ja": "「泡影蒼霆」開催期間中に、<影糸蜘蛛>を累計3回操竜する"
+ },
+ "泡影苍霆活动期间，累计对岩甲兽进行御龙3次": {
+  "ko": "<포영창정> 이벤트 기간 동안, 암갑수에게 누적 어룡 3회",
+  "en": "During the Mirage Phalanx event, perform Wyvern Riding on Rockshell Beasts a total of 3 times",
+  "ja": "「泡影蒼霆」開催期間中に、<岩甲獣>を累計3回操竜する"
+ },
+ "泡影苍霆活动期间，累计击败100只冠鸣龙（不含教学关）": {
+  "ko": "<포영창정> 이벤트 기간 동안, 관명룡 누적 100마리 처치 (튜토리얼 스테이지 제외)",
+  "en": "During the Mirage Phalanx event, defeat a total of 100 Crowncall Wyverns (excluding tutorials)",
+  "ja": "「泡影蒼霆」開催期間中に、<冠鳴竜>を累計100体撃破する（チュートリアルを除く）"
+ },
+ "泡影苍霆活动期间，累计击败10只没吃饱的大喰怪（不含教学关）": {
+  "ko": "<포영창정> 이벤트 기간 동안, 배고픈 대식괴 누적 10마리 처치 (튜토리얼 스테이지 제외)",
+  "en": "During the Mirage Phalanx event, defeat a total of 10 hungry Great Gluttons (excluding tutorials)",
+  "ja": "「泡影蒼霆」開催期間中に、腹ペコの<大喰怪>を累計10体撃破する（チュートリアルを除く）"
+ },
+ "通关TD-EX-2，且至少击败荒神大喰怪9次": {
+  "ko": "TD-EX-2 클리어, 황신 대식괴 9회 이상 처치",
+  "en": "Clear TD-EX-2, and defeat at least 9 Wrathful Great Gluttons",
+  "ja": "<荒神大喰怪>を9体以上撃破してTD-EX-2をクリアする"
+ },
+ "通关TD-EX-5，且至少击败岩甲兽·咒6次": {
+  "ko": "TD-EX-5 클리어, 암갑수·주 6회 이상 처치",
+  "en": "Clear TD-EX-5, and defeat at least 6 Rockshell Beast - Curse",
+  "ja": "<岩甲獣・呪>を6体以上撃破してTD-EX-5をクリアする"
+ },
+ "通关TD-EX-7，且至少击败“异兽”熔火蜗1次": {
+  "ko": "TD-EX-7 클리어, 「이수」 용화와 1회 이상 처치",
+  "en": "Clear TD-EX-7, and defeat at least 1 'Aberrant' Magma Snail",
+  "ja": "<「異獣」熔火カタツムリ>を1体以上撃破してTD-EX-7をクリアする"
+ },
+ "“最佳拍档”": {
+  "ko": "'최고의 파트너'",
+  "en": "'Best Partners'",
+  "ja": "「最高の相棒」"
+ },
+ "泡影苍霆活动期间，获得干员罗德岛隐秘队": {
+  "ko": "<포영창정> 이벤트 기간 동안, 오퍼레이터 로도스 아일랜드 정찰대 획득",
+  "en": "During the Mirage Phalanx event, obtain Operator Rhodes Island Recon",
+  "ja": "「泡影蒼霆」開催期間中に、ロドスの隠密隊を雇用。"
+ },
+ "您真幸运，几乎没有比政宗和义经更好的狩猎拍档了。\n瞧，他们正在向您招手呢，还等什么，出发吧，猎人。": {
+  "ko": "당신은 정말 운이 좋습니다. 마사무네와 요시츠네보다 더 좋은 사냥 파트너는 거의 없으니까요.\n보세요, 그들이 당신에게 손을 흔들고 있어요. 뭘 기다리나요, 출발하세요, 헌터.",
+  "en": "You're in luck—there are hardly any better hunting partners than Masamune and Yoshitsune.\nLook, they're waving at you. What are you waiting for? Let's go, hunter.",
+  "ja": "貴殿は本当に幸運だ。政宗と義経ほど頼もしい狩りの相棒は、そうそういないだろう。\nほら、彼らが貴殿に手を振っている。何をためらうことがあろうか。さあ出発だ、ハンター。"
+ },
+ "“月下雷鸣”": {
+  "ko": "'달 아래의 뇌명'",
+  "en": "'Thunder Beneath the Moon'",
+  "ja": "「月下の雷鳴」"
+ },
+ "泡影苍霆活动期间，以3星评价完成[竞逐苍霆]内的全部关卡（不包含教学关与剧情关）": {
+  "ko": "<포영창정> 이벤트 기간 동안, 3★ 평가로 [경축창정] 내 모든 스테이지 클리어 (튜토리얼 및 스토리 스테이지 제외)",
+  "en": "During the Mirage Phalanx event, complete all stages in [Racing the Azure Thunder] with 3-star ratings (excluding tutorials and story stages)",
+  "ja": "「泡影蒼霆」開催期間中に、「蒼霆競逐」の全ステージを★3でクリア。（チュートリアルと幕間を除く）"
+ },
+ "将军与国主，少女与“异兽”，狩猎与宿命。\n您感觉自己像是做了一个梦，但梦中的一切，又如此真实。": {
+  "ko": "장군과 국주, 소녀와 「이수」, 사냥과 숙명.\n당신은 꿈을 꾼 것만 같지만, 꿈속의 모든 것이 너무나도 생생합니다.",
+  "en": "The general and the sovereign, the girl and the 'Aberrant', the hunt and destiny.\nYou feel as though you have been dreaming, and yet everything in that dream was so real.",
+  "ja": "将軍と国主、少女と「異獣」、狩りと宿命。\n貴殿はまるで夢を見ていたかのように感じた。だが、その夢の中のすべては、あまりにも真に迫っていた。"
+ },
+ "<相变临界>活动已开放": {
+  "ko": "<상전이 임계> 이벤트 개방 중",
+  "en": "Event <Critical Phase Transition> is now open",
+  "ja": "<相転移臨界>イベント開催中"
+ },
+ "追加绝境关卡": {
+  "ko": "익스트림 모드 스테이지 개방 중",
+  "en": "Extreme Mode added",
+  "ja": "死地作戦ステージ追加"
+ },
+ "“恶类”": {
+  "ko": "'악류'",
+  "en": "'Vile Breed'",
+  "ja": "「悪しき種」"
+ },
+ "在任意模式以3星评价完成关卡17-15": {
+  "ko": "임의의 모드에서, 3★ 평가로 메인 스테이지 17-15 클리어",
+  "en": "Clear Stage 17-15 in any mode with a 3-star rating.",
+  "ja": "任意の作戦環境において、★3評価で17-15をクリア。"
+ },
+ "您直面了那为硝烟与杀戮而降生的异类——\n空洞的凡人躯壳被污秽填满，埋进名为战争的无尽深渊。": {
+  "ko": "당신은 화약 연기와 살육을 위해 태어난 이물과 마주했습니다——\n텅 빈 범인의 몸뚱이는 오물로 채워져, 전쟁이라는 이름의 끝없는 심연에 묻혔습니다.",
+  "en": "You came face to face with the aberration born for gunsmoke and slaughter—\nAn empty mortal shell filled with filth, buried in the endless abyss called war.",
+  "ja": "貴殿は、硝煙と殺戮のために生まれ落ちた異形と対峙した――\n空虚な人の躯は穢れに満たされ、戦争という名の果てなき深淵へと埋められていく。"
+ },
+ "“沉默的尽头”": {
+  "ko": "'침묵의 끝'",
+  "en": "'The End of Silence'",
+  "ja": "「沈黙の果て」"
+ },
+ "在任意模式以3星评价完成关卡17-18": {
+  "ko": "임의의 모드에서, 3★ 평가로 메인 스테이지 17-18 클리어",
+  "en": "Clear Stage 17-18 in any mode with a 3-star rating.",
+  "ja": "任意の作戦環境において、★3評価で17-18をクリア。"
+ },
+ "她自黑暗中苏醒，挣脱了永恒的桎梏，选择回到您的身边。\n这一次，您绝不会松开双手。": {
+  "ko": "그녀는 어둠 속에서 깨어나 영원한 족쇄를 벗어던지고, 당신 곁으로 돌아오기를 택했습니다.\n이번에는 당신도 결코 두 손을 놓지 않을 것입니다.",
+  "en": "She awoke from the darkness, broke free of her eternal shackles, and chose to return to your side.\nThis time, you will never let go.",
+  "ja": "彼女は闇の中から目覚め、永遠の枷を振りほどき、貴殿のもとへ戻ることを選んだ。\n今度こそ、貴殿はその手を決して離さない。"
+ },
+ "失地存人奖章": {
+  "ko": "실지존인 훈장",
+  "en": "People Before Land Medal",
+  "ja": "失地存人勲章"
+ },
+ "以3星评价完成第十七章中全部非绝境作战关卡的险地作战": {
+  "ko": "3★ 평가로 에피소드 17의 모든 비 익스트림 모드 스테이지의 험지 작전 클리어",
+  "en": "Clear all non-Extreme Mode Adverse Combat stages in Episode 17 with 3-star ratings.",
+  "ja": "★3で第十七章の死地作戦以外のステージの危地作戦を全てクリア。"
+ },
+ "在您的帮助下，人们自名为泽尔格勒的地狱撤离。\n死亡的阴影在身后訇然褪色，从林间而来的微风里，有着泥土、麦浪与明天的气息。": {
+  "ko": "당신의 도움으로 사람들은 젤그라드라는 이름의 지옥에서 벗어났습니다.\n죽음의 그림자가 등 뒤에서 와르르 빛을 잃고, 숲에서 불어오는 산들바람에는 흙과 보리 물결과 내일의 냄새가 실려 있습니다.",
+  "en": "With your help, the people escaped the hell called Zelgrad.\nThe shadow of death crumbles away behind them, and the breeze from the woods carries the scent of soil, rippling wheat, and tomorrow.",
+  "ja": "貴殿の助けにより、人々はゼルグラードという名の地獄から脱出した。\n死の影は背後で轟然と色褪せていく。林の間から吹くそよ風には、土と麦の波、そして明日の匂いが混じっている。"
+ },
+ "异变终结奖章": {
+  "ko": "이변 종결 훈장",
+  "en": "End of Mutation Medal",
+  "ja": "異変終結勲章"
+ },
+ "以3星评价完成第十七章全部绝境作战关卡": {
+  "ko": "3★ 평가로 에피소드 17의 모든 익스트림 모드 스테이지 클리어",
+  "en": "Complete all Extreme Mode stages in Episode 17 with 3-star ratings.",
+  "ja": "★3で第十七章の死地作戦を全てクリア。"
+ },
+ "当最后一只变种生物倒在您的脚边时，疯狂的历史在此终结。\n焦土之城最终化作了它们的墓群。然而，在这片灰暗的废墟上，破土的云莓仍会结出橘红色的果实。": {
+  "ko": "마지막 변종 생물이 당신 발밑에 쓰러졌을 때, 광기의 역사는 여기서 끝났습니다.\n초토가 된 도시는 끝내 그것들의 무덤이 되었습니다. 그러나 이 잿빛 폐허 위에서도 흙을 뚫고 나온 클라우드베리는 여전히 주황빛 열매를 맺을 것입니다.",
+  "en": "When the last mutant fell at your feet, the history of madness came to an end.\nThe scorched city has at last become their graveyard. Yet upon these gray ruins, cloudberries breaking through the soil will still bear orange-red fruit.",
+  "ja": "最後の変異生物が貴殿の足元に倒れた時、狂気の歴史はここに終わりを告げた。\n焦土の都市は、ついには彼らの墓標の群れと化した。それでも、この灰色の廃墟の上で、土を破って芽吹いたクラウドベリーは、やがて橙色の実をつけるだろう。"
+ },
+ "再造新生奖章": {
+  "ko": "재생 신생 훈장",
+  "en": "Renewed Life Medal",
+  "ja": "再造新生勲章"
+ },
+ "在第十七章的沙盘推演中累计获得7分": {
+  "ko": "에피소드 17의 모의 훈련에서 누적 7점 획득",
+  "en": "Earn a total of 7 points in the Strategic Simulation of Episode 17.",
+  "ja": "第十七章の砂盤推論で累計7ポイントを獲得。"
+ },
+ "您拥抱了新生，遏阻了死亡。\n在危局之中，您的谋略或许能够为人们带来希望。": {
+  "ko": "당신은 새로운 삶을 끌어안고, 죽음을 막아 냈습니다.\n위기 속에서 당신의 계략이 사람들에게 희망을 가져다줄지도 모릅니다.",
+  "en": "You embraced new life and held back death.\nIn the midst of crisis, your strategies may bring hope to the people.",
+  "ja": "貴殿は新生を抱きしめ、死を食い止めた。\n危機的な局面において、貴殿の策略は人々に希望をもたらすことができるかもしれない。"
  }
 }

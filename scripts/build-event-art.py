@@ -336,11 +336,70 @@ def mirror_fallback():
     print(f"mirror: 미실장 이벤트 그림 {fut_got}장 (그림 없던 {len(fut_rows)}개 중)")
 
 
+def extra_art():
+    """④ 이벤트 창 추가 탭(app/event-extra.tsx)의 그림 — 훈장 아이콘 → public/event/medal/<id>.webp,
+    이벤트 가구 아이콘 → public/event/furni/<id>.webp (2026-10-01). 목록은 scripts/build-event-extra.py 산출물에서 읽는다.
+    둘 다 **지난 이벤트 것도 한섭 CDN 에 남아 있다**(실측 훈장 536/536 · 가구 363/363) — 폴더가 테마·이벤트마다 달라
+    (medalicon/act51side/…, furnitureicons/ursusroom/…) 경로 끝 이름으로 찾는다. 이미 있는 파일은 건너뛴다."""
+    import glob
+    import cdnassets
+    want, aid_of = {}, {}
+    for f in glob.glob(os.path.join(REPO, "app", "data", "event-extra", "ko", "*.json")):
+        d = json.load(open(f, encoding="utf-8"))
+        aid = os.path.basename(f)[:-5]
+        for m in (d.get("medals") or {}).get("list") or []:
+            want[m[0]] = os.path.join(PUB, "medal", m[0] + ".webp"); aid_of[m[0]] = aid
+        for x in (d.get("furn") or {}).get("list") or []:
+            want[x[0]] = os.path.join(PUB, "furni", x[0] + ".webp"); aid_of[x[0]] = aid
+        for m in d.get("missions") or []:
+            for r in m[1]:
+                if r[0] == "furn":
+                    want[r[1]] = os.path.join(PUB, "furni", r[1] + ".webp"); aid_of[r[1]] = aid
+    todo = {k: v for k, v in want.items() if not os.path.exists(v)}
+    if not todo:
+        print(f"extra: 훈장·가구 그림 {len(want)}장 다 있다")
+        return
+    # 한섭 → 중섭(미실장 이벤트) → 그 이벤트가 열려 있던 중섭 옛 판(끝난 미실장 이벤트 — scripts/cdnold.py)
+    last = {}
+    for server in ("kr", "cn"):
+        for p in cdnassets._conn(server).manifest():
+            lp = p.lower()
+            if lp.startswith(("arts/ui/medalicon/", "arts/ui/furnitureicons/")):
+                last.setdefault(lp.rsplit("/", 1)[-1], (server, p))
+    cn_basic = {}
+    cn_p = os.path.join(G, "cn_activity_table.json")
+    if os.path.exists(cn_p):
+        cn_basic = json.load(open(cn_p, encoding="utf-8")).get("basicInfo") or {}
+    got = miss = 0
+    for name, dest in sorted(todo.items()):
+        hit = last.get(name.lower())
+        im = cdnassets.image(hit[1], hit[0]) if hit else None
+        if im is None:
+            st = (cn_basic.get(aid_of.get(name)) or {}).get("startTime")
+            if st:
+                import cdnold
+                im = cdnold.image_at(name, st)
+        if im is None:
+            miss += 1
+            print(f"  ⚠ extra: {name} 그림을 못 찾았다")
+            continue
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        save_webp(im, dest, 96)
+        got += 1
+        if got % 100 == 0:
+            print(f"  extra: {got}/{len(todo)}")
+    print(f"extra: 훈장·가구 그림 새로 {got} · 못 찾음 {miss} (전체 {len(want)})")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--server", default="kr,jp,en", help="cn 을 더하면 미래시 이벤트 홈 테마 그림")
     ap.add_argument("--only-mirror", action="store_true", help="CDN 언팩 없이 ③ 지난 이벤트 대체 그림만")
+    ap.add_argument("--extra", action="store_true", help="④ 이벤트 창 추가 탭의 훈장·가구 그림만 (build-event-extra.py 뒤)")
     args = ap.parse_args()
+    if args.extra:
+        extra_art()
+        return
     if not args.only_mirror:
         for s in args.server.split(","):
             run(s.strip())

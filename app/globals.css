@@ -25480,3 +25480,31 @@ html[lang="ja"] .vn-box {
 /* 맹약 고르기 — 한도는 숫자로 (사용자 지시 "최대 세 개까지 선택 가능이라고 표시") */
 .ac-party-add > i { font-style: normal; font-weight: 400; color: var(--muted); }
 .ac-party-limit { font-size: 12px; color: var(--ink2); }
+
+/* ── 이벤트 창 '더 보기' (app/event-extra.tsx, 2026-10-01) — 일정·미션·훈장·가구·신뢰도 보너스 ─────────────
+   훈장은 벡터 돌파 훈장 목록(.vb-medals)과 같은 칸을 쓴다. 보상·가구 칩은 교환 재화 칩(.ev-item)보다 한 단계 작게. */
+.evx-sched { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 0; font-size: 12px; }
+.evx-sched dt { color: var(--muted); font: 700 11px var(--mono); }
+.evx-sched dd { margin: 0; }
+.evx-node { display: contents; }
+.evx-missions { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 4px 10px; margin: 0; padding: 0; list-style: none; counter-reset: evx; }
+.evx-missions li { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; border: 1px solid var(--line); background: var(--bg-faint); font-size: 12px; }
+.evx-goal { line-height: 1.4; }
+.evx-rws { display: flex; flex-wrap: wrap; gap: 4px; }
+.evx-rw { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px 2px 2px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; font-size: 11px; text-align: left; }
+button.evx-rw { cursor: pointer; }
+button.evx-rw:hover { border-color: var(--border-strong); }
+.evx-rw img { flex: none; object-fit: contain; }
+.evx-rw em { font-style: normal; font-family: var(--mono); color: var(--muted); }
+.evx-more { margin-top: 6px; padding: 4px 10px; border: 1px solid var(--line); background: transparent; color: var(--ink2); font: inherit; font-size: 12px; cursor: pointer; }
+.evx-more:hover { border-color: var(--border-strong); }
+.evx-set { display: flex; flex-direction: column; gap: 2px; margin: 0 0 8px; font-size: 12px; }
+.evx-set span { color: var(--muted); white-space: pre-line; line-height: 1.5; }
+.evx-tier, .evx-hidden { margin-left: 6px; padding: 0 5px; font: 700 10px var(--mono); font-style: normal; border: 1px solid var(--line); color: var(--muted); }
+.vb-medals .evx-desc { font-size: 11px; font-style: normal; line-height: 1.5; color: var(--ink2); white-space: pre-line; }
+.evx-furn { display: flex; flex-wrap: wrap; gap: 5px; }
+.evx-furn .evx-rw { font-size: 12px; padding: 3px 8px 3px 3px; }
+
+/* 작전 카드의 작은 실사 도면 (사용자 요청 2026-10-01) — 작전 도감과 같은 파일. 카드 높이를 크게 늘리지 않게 정사각 40px */
+.ev-stage .ev-stage-map { flex: none; width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--line); background: var(--bg-faint); }
+.ev-tabwrap > .ed-tabs { margin-top: 0; }

@@ -3194,6 +3194,16 @@ const D: Record<string, Pair> = {
   "참가자 {n}": ["Player {n}", "参加者{n}"],
   // 파티 공유 — 게임의 '맹약 초대' 문구로 같은 방에 모여 전략·목표 맹약을 서로 본다 (2026-09-21, app/autochess-party.tsx)
   "파티 공유": ["Party share", "パーティ共有"],
+  // 이벤트 창 '더 보기' — 일정·미션·훈장·가구·신뢰도 보너스 (2026-10-01, app/event-extra.tsx)
+  "일정": ["Schedule", "日程"],
+  "일정 (중국 서버 기준)": ["Schedule (CN server)", "日程（中国サーバー基準）"],
+  "이벤트 기간": ["Event period", "開催期間"],
+  "교환소 마감": ["Shop closes", "交換所終了"],
+  "이벤트 미션 {n}": ["Event missions {n}", "イベントミッション {n}"],
+  "모두 보기 ({n})": ["Show all ({n})", "すべて表示 ({n})"],
+  "숨김 훈장": ["Hidden", "隠し勲章"],
+  "이벤트 가구 {n}": ["Event furniture {n}", "イベント家具 {n}"],
+  "신뢰도 보너스 오퍼레이터": ["Trust bonus operators", "信頼度ボーナス対象オペレーター"],
   "게임의 맹약 초대 문구로 같은 방에 모여, 고른 전략과 가고 싶은 맹약을 서로 봅니다": [
     "Paste the game's alliance invite to meet in one room and see each other's strategy and target alliances",
     "ゲームの盟約招待文で同じ部屋に集まり、選んだ戦略と狙う盟約を互いに見られます"],

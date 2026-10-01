@@ -21,6 +21,7 @@ import { asset } from "./assets";
 import { useI18n } from "./i18n";
 import { enemyImg } from "./dex-paths";
 import { Dropdown } from "./dropdown";
+import type { ExtraTab } from "./event-extra";
 
 type StatKey = "hp" | "atk" | "def" | "res";
 /** 선수 한 명 — o = 원본 적 id(적 도감), on = 원본 이름(듀얼 이름과 다를 때만), d = 원본과 다른 스탯 */
@@ -101,10 +102,14 @@ const spans = (xs: number[]) => {
 };
 
 /** side — 개요 탭 왼쪽 칸(썸네일 + 교환 재화). 이벤트 모달이 공통 윗칸에서 쓰는 블록을 그대로 넘긴다. */
-export function DuelDetail({ id, onOpenFighter, side }: { id: string; onOpenFighter: (f: DuelFighter) => void; side?: ReactNode }) {
+export function DuelDetail({ id, onOpenFighter, side, more = [] }: {
+  id: string; onOpenFighter: (f: DuelFighter) => void; side?: ReactNode;
+  /** 이벤트 창 공통 탭(등장 적·일정·미션 …) — 이 탭 막대 뒤에 이어 붙인다 (2026-10-01, app/event-extra.tsx) */
+  more?: ExtraTab[];
+}) {
   const { locale, t } = useI18n();
   const [data, setData] = useState<DuelData | null | undefined>(undefined);
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<string>("overview");
   useEffect(() => {
     let live = true;
     loadDuel(locale).then((all) => { if (live) setData(all[id] ?? null); }, () => { if (live) setData(null); });
@@ -125,8 +130,13 @@ export function DuelDetail({ id, onOpenFighter, side }: { id: string; onOpenFigh
           <button key={k} type="button" role="tab" aria-selected={tab === k}
             className={tab === k ? "on" : undefined} onClick={() => setTab(k)}>{label[k]}</button>
         ))}
+        {more.map((x) => (
+          <button key={x.key} type="button" role="tab" aria-selected={tab === x.key}
+            className={tab === x.key ? "on" : undefined} onClick={() => setTab(x.key)}>{x.label}</button>
+        ))}
       </div>
       <div className="ed-panel" role="tabpanel">
+        {more.find((x) => x.key === tab)?.node}
         {tab === "overview" && <Overview data={data} side={side} />}
         {tab === "reward" && <Rewards data={data} />}
         {tab === "roster" && <Roster data={data} onOpen={onOpenFighter} />}

@@ -18,6 +18,7 @@ import { asset } from "./assets";
 import { useI18n } from "./i18n";
 import { GuideZoom } from "./event-duel";
 import { ModalWindow } from "./modal-window";
+import { EventTabs, type ExtraTab } from "./event-extra";
 
 type Boss = { e: string; n: string | null; d: string | null; lv?: number; i: string | null };
 /** [완벽 클리어, 일반 클리어, [기간 한정 시작, 끝, 추가 포인트]?] */
@@ -73,7 +74,7 @@ const n0 = (v: number | null | undefined) => (v ?? 0).toLocaleString("en-US");
 type Tab = "overview" | "stages" | "kernel" | "allout" | "front" | "supply" | "mile" | "medal" | "guide";
 const TABS: Tab[] = ["overview", "stages", "kernel", "allout", "front", "supply", "mile", "medal", "guide"];
 
-export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
+export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy, more = [] }: {
   id: string;
   /** 이벤트 행의 작전 [id, 코드, 이름] — 코드·이름은 여기서 빌린다 (작전 도감·미래시 도감과 같은 표기) */
   stages: [string, string, string][];
@@ -81,10 +82,12 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
   stagesTab: ReactNode;
   onOpenStage: (id: string) => void;
   onOpenEnemy: (id: string) => void;
+  /** 이벤트 창 공통 탭(등장 적·일정·미션·가구 …) — 이 탭 막대 뒤에 이어 붙인다 (2026-10-01, app/event-extra.tsx) */
+  more?: ExtraTab[];
 }) {
   const { locale, t } = useI18n();
   const [data, setData] = useState<VecData | null | undefined>(undefined);
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<string>("overview");
   const [term, setTerm] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
@@ -99,7 +102,7 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
       {stagesTab}
     </section>
   );
-  if (!data) return plain;
+  if (!data) return more.length ? <EventTabs key={id} tabs={[{ key: "stages", label: t("작전 {n}", { n: stages.length }), node: stagesTab }, ...more]} /> : plain;
   const zone = (i: number, fb: string) => data.zones[i]?.[1] ?? fb;
   const label: Record<Tab, string> = {
     overview: t("개요"), stages: t("작전 {n}", { n: stages.length }),
@@ -115,8 +118,13 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy }: {
           <button key={k} type="button" role="tab" aria-selected={tab === k}
             className={tab === k ? "on" : undefined} onClick={() => setTab(k)}>{label[k]}</button>
         ))}
+        {more.map((x) => (
+          <button key={x.key} type="button" role="tab" aria-selected={tab === x.key}
+            className={tab === x.key ? "on" : undefined} onClick={() => setTab(x.key)}>{x.label}</button>
+        ))}
       </div>
       <div className="ed-panel" role="tabpanel">
+        {more.find((x) => x.key === tab)?.node}
         {tab === "overview" && <Overview {...ctx} />}
         {tab === "stages" && stagesTab}
         {tab === "kernel" && <Floors {...ctx} />}
