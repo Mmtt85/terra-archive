@@ -20,6 +20,7 @@
 
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { asset } from "./assets";
+import { Marquee } from "./marquee";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { useLazyVisible } from "./lazy-img";
@@ -133,8 +134,11 @@ const localeBase = (locale: string) => (locale === "ko" ? "" : `/${locale}`);
 // app/story.tsx 의 storyPath 와 같은 규칙 — 거기서 가져오면 요약·리더기 모듈이 딸려 온다
 const storyHref = (locale: string, id: string) => `${localeBase(locale)}/stories/${id}`;
 
-function EventCard({ row, onSelect, onGuide }: {
+function EventCard({ row, onSelect, onGuide, mini }: {
   row: EventRow; onSelect: (r: EventRow) => void; onGuide: (seg: string) => void;
+  /** 위쪽 미실장 줄의 작은 카드 — 이름을 한 줄로 두고 넘치면 흘린다 (사용자 요청 2026-10-01 "제목 길어서 개행되니까
+   *  마퀴형식으로"). 두 줄로 접히면 그 카드만 키가 커져 줄이 들쭉날쭉했다. 본 목록 카드는 그대로 접는다 */
+  mini?: boolean;
 }) {
   const { locale, t } = useI18n();
   const Tag = (row.guide ? "a" : "button") as "a";
@@ -168,7 +172,7 @@ function EventCard({ row, onSelect, onGuide }: {
         )}
       </span>
       <span className="ev-card-body">
-        <b className="ev-card-name">{row.n}</b>
+        <b className="ev-card-name">{mini ? <Marquee>{row.n}</Marquee> : row.n}</b>
         <span className="ev-card-meta">
           <em className={`ev-type t-${typeOf(row).toLowerCase()}`}>{t(TYPE_LABEL[typeOf(row)])}</em>
           {row.fut
@@ -685,7 +689,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
                     <small>{t("중국 서버 선행 — 한국 서버엔 아직 없습니다")}</small>
                   </h3>
                   <div className="ev-grid mini">
-                    {futureRows.map((e) => <EventCard key={e.id} row={e} onSelect={setOpen} onGuide={onOpenGuide} />)}
+                    {futureRows.map((e) => <EventCard key={e.id} row={e} onSelect={setOpen} onGuide={onOpenGuide} mini />)}
                   </div>
                 </section>
               )}
