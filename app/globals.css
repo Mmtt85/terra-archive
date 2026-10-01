@@ -6450,8 +6450,10 @@ html[lang="ja"] .potential-detail { word-break: normal; }
    아래 항목이 180px 씩 밀려서(375×812 실측), 밀어 올리다 손을 떼면 엉뚱한 메뉴가 눌린다
    (사용자 제보 2026-09-22 "터치 시작될 때 걍 메뉴 열려버린다").
    :focus-within 도 같이 뺀다 — 터치로 묶음 버튼을 누르면 포커스가 남아 **다시 눌러도
-   안 닫히기** 때문이다. 터치에서 여닫는 건 .open 하나뿐 (app/home.tsx setOpenGroup). */
-@media (hover: hover) {
+   안 닫히기** 때문이다. 터치에서 여닫는 건 .open 하나뿐 (app/home.tsx setOpenGroup).
+   좁은 창(≤760px)도 뺀다 — 거기선 부메뉴가 들여쓴 목록이라 호버로 펴면 아래 항목이 밀린다 (2026-10-01).
+   JS 짝: home.tsx canHover() — 조건을 바꾸면 둘 다 바꿀 것. */
+@media (hover: hover) and (min-width: 761px) {
   .tab-flyout:hover > .tab-submenu,
   .tab-flyout:focus-within > .tab-submenu {
     display: flex;
@@ -23318,11 +23320,13 @@ html.dark .ac-bring-dial {
   white-space: nowrap;
 }
 .main-tabs .tab-submenu2 .tab-sub2:hover { color: var(--ink); }
-/* 호버가 없는 기기(터치)와 좁은 창에서는 옆으로 여는 패널을 쓸 수 없다 — 종전처럼
-   들여쓴 인라인 목록으로 늘 펼쳐 둔다 (크롤러 링크도 그대로 살아 있다). */
+/* 호버가 없는 기기(터치)와 좁은 창에서는 옆으로 여는 패널을 쓸 수 없다 — 들여쓴 인라인 목록으로 편다.
+   ⚠ **늘 펼쳐 두지 않는다** — 머리(통합전략·생존연산·위수협의)를 탭해야 연다(.open, home.tsx tapSub).
+   종전엔 늘 펼쳐 둬서 가이드가 화면보다 길어졌고, 태블릿에선 옆 패널 아래쪽이 화면 밖이라 끝까지
+   내릴 수 없었다 (사용자 제보 2026-10-01 "터치 해야 부메뉴 뜨도록"). 접혀 있어도 <a> 는 HTML 에 그대로라
+   크롤러 링크는 산다. 화살표(◂)도 1단 묶음처럼 남겨 '열리는 줄'임을 보인다. */
 @media (hover: none), (max-width: 760px) {
   .tab-flyout2 > .tab-submenu2 {
-    display: flex;
     position: static;
     min-width: 0;
     gap: 1px;
@@ -23339,8 +23343,6 @@ html.dark .ac-bring-dial {
     font-weight: 600;
     color: var(--muted);
   }
-  /* 옆으로 열리지 않으니 방향 화살표도 지운다 */
-  .tab-flyout2 > .tab-sub > .tab-group-arrow { display: none; }
 }
 /* 지금 보고 있는 2단 항목(테마·시즌) — 위 세 규칙(0,3,0 · 호버 0,4,0)이 글자를 --ink2·
    --muted·--ink 로 덮는데, 판은 선택됨(반전)이라 라이트·다크 모두 글자가 판에 묻혔다

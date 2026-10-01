@@ -1126,7 +1126,12 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 메뉴 안 묶음(도감·시뮬레이터) 펼침 — 데스크탑은 호버로도 열리지만, iOS는 탭해도 버튼에
   // 포커스가 안 가 focus-within이 무력하므로 클릭 토글 상태가 따로 필요하다 (2026-08-09).
   // 초기화는 effect가 아니라 햄버거 토글 클릭에서 한다 (set-state-in-effect 린트 관례).
-  const [openGroup, setOpenGroup] = useState<"" | "dex" | "sim" | "guide">("");
+  // 가이드 안 2단(모드별 테마·시즌)도 터치에선 탭으로 하나씩 연다 — "guide/rogue" 처럼 경로로 두면 부모(가이드)가
+  // 같이 열린 채로 읽히고, 묶음을 닫거나 메뉴를 닫는 곳(setOpenGroup(""))이 2단까지 한 번에 접는다.
+  // 종전엔 터치·좁은 화면에서 2단이 **늘 펼쳐져** 있어 태블릿에선 가이드 패널이 화면 아래로 넘쳐 끝까지
+  // 내릴 수 없었다 (사용자 제보 2026-10-01 "태블릿에서 메뉴가 모바일마냥 전부 다 열린 상태 … 터치 해야 부메뉴 뜨도록").
+  const [openGroup, setOpenGroup] = useState<"" | "dex" | "sim" | "guide" | `guide/${"rogue" | "ra" | "autochess"}`>("");
+  const guideOpen = openGroup === "guide" || openGroup.startsWith("guide/");
   // ── 플라이아웃 닫힘 지연 (사용자 요청 2026-09-05 "마우스 오버했던거 밖으로 삐져나가도
   //    안사라지게 해 줘") ────────────────────────────────────────────────────────
   // CSS `:hover` 만으로는 커서가 경계를 1px만 벗어나도 그 순간 닫힌다. 가이드 안에 2단
@@ -1159,7 +1164,18 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
      다른 메뉴가 와 있다 (사용자 제보 2026-09-22 "터치 시작될 때 걍 메뉴 열려버린다").
      터치에서는 탭(onClick → setOpenGroup)으로만 연다. CSS 쪽 짝은 globals.css 의
      `@media (hover: hover)` — 둘 중 하나만 고치면 다른 쪽이 그대로 연다. */
-  const canHover = () => window.matchMedia("(hover: hover)").matches;
+  // 좁은 창(≤760px)은 부메뉴가 옆 패널이 아니라 들여쓴 목록이라, 마우스가 있어도 호버로 펴면 아래 항목이
+  // 밀린다 — 터치처럼 탭으로만 연다. CSS 짝도 같은 조건이다 (globals.css `(hover: hover) and (min-width: 761px)`).
+  const canHover = () => window.matchMedia("(hover: hover) and (min-width: 761px)").matches;
+  /** 2단 머리(통합전략·생존연산·위수협의)를 눌렀을 때 — 호버 메뉴에선 그 페이지로 가고, 터치·좁은 창에선
+   *  아래 2단 목록을 여닫는다 (페이지는 목록의 테마·시즌으로 간다). 가면 true. */
+  const tapSub = (event: React.MouseEvent, sub: "rogue" | "ra" | "autochess") => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return false;
+    event.preventDefault();
+    if (canHover()) return true;
+    setOpenGroup((cur) => (cur === `guide/${sub}` ? "guide" : `guide/${sub}`));
+    return false;
+  };
   const hoverHold = (id: string) => () => { if (canHover()) holdFlyout(id); };
   const hoverRelease = (back = "") => () => { if (canHover()) releaseFlyout(back); };
   const tapOnly = useTapOnly();
@@ -2365,24 +2381,22 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 (사용자 요청 "주메뉴 - 부메뉴로 구성해서 마우스오버하면 뜨게 해 줘") —
                 들여쓴 인라인 목록으로 되돌리지 말 것. 호버가 없는 기기(터치)에서는 CSS가
                 알아서 인라인 목록으로 펼친다 (globals.css `@media (hover: none)`). */}
-            <div className={`tab-flyout${openGroup === "guide" || flyoutOpen("guide") ? " open" : ""}`}
+            <div className={`tab-flyout${guideOpen || flyoutOpen("guide") ? " open" : ""}`}
               onMouseEnter={hoverHold("guide")} onMouseLeave={hoverRelease()}>
               <button type="button"
                 className={`tab-group${GUIDE_TABS.includes(tab) ? " selected" : ""}`}
-                aria-expanded={openGroup === "guide"}
-                onClick={() => setOpenGroup((cur) => (cur === "guide" ? "" : "guide"))}>
+                aria-expanded={guideOpen}
+                onClick={() => setOpenGroup((cur) => (cur === "guide" || cur.startsWith("guide/") ? "" : "guide"))}>
                 <span className="tab-icon" aria-hidden>❖</span>{t("가이드")}
                 {GUIDE_TABS.some((x) => tabHasNewFeature(x)) && <span className="new-badge">{t("새기능")}</span>}
                 <span className="tab-group-arrow" aria-hidden>◂</span>
               </button>
               <div className="tab-submenu tab-submenu-guide" role="group" aria-label={t("가이드")}>
-                <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/rogue") ? " open" : ""}`}
+                <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/rogue") || openGroup === "guide/rogue" ? " open" : ""}`}
                   onMouseEnter={hoverHold("guide/rogue")} onMouseLeave={hoverRelease("guide")}>
                   <a href={`${localeBase}/rogue`} className={`tab-sub tab-rogue${tab === "rogue" ? " selected" : ""}`}
-                    onClick={(event) => {
-                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                      event.preventDefault(); switchTab("rogue");
-                    }}>
+                    aria-expanded={openGroup === "guide/rogue"}
+                    onClick={(event) => { if (tapSub(event, "rogue")) switchTab("rogue"); }}>
                     <span className="tab-sub-mark" aria-hidden>›</span>{t("통합전략(로그라이크)")}
                     {tabHasNewFeature("rogue") && <span className="new-badge">{t("새기능")}</span>}
                     <span className="tab-group-arrow" aria-hidden>◂</span>
@@ -2401,13 +2415,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                     ))}
                   </div>
                 </div>
-                <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/ra") ? " open" : ""}`}
+                <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/ra") || openGroup === "guide/ra" ? " open" : ""}`}
                   onMouseEnter={hoverHold("guide/ra")} onMouseLeave={hoverRelease("guide")}>
                   <a href={`${localeBase}/ra`} className={`tab-sub tab-ra${tab === "ra" ? " selected" : ""}`}
-                    onClick={(event) => {
-                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                      event.preventDefault(); switchTab("ra");
-                    }}>
+                    aria-expanded={openGroup === "guide/ra"}
+                    onClick={(event) => { if (tapSub(event, "ra")) switchTab("ra"); }}>
                     <span className="tab-sub-mark" aria-hidden>›</span>{t("생존연산")}
                     {tabHasNewFeature("ra") && <span className="new-badge">{t("새기능")}</span>}
                     <span className="tab-group-arrow" aria-hidden>◂</span>
@@ -2426,13 +2438,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                       }}><span className="tab-sub-mark" aria-hidden>·</span>{t("재기동 앵커")}<em className="tab-sub-future">{t("미래시")}</em></a>
                   </div>
                 </div>
-                <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/autochess") ? " open" : ""}`}
+                <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/autochess") || openGroup === "guide/autochess" ? " open" : ""}`}
                   onMouseEnter={hoverHold("guide/autochess")} onMouseLeave={hoverRelease("guide")}>
                   <a href={`${localeBase}/autochess`} className={`tab-sub tab-autochess${tab === "autochess" ? " selected" : ""}`}
-                    onClick={(event) => {
-                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                      event.preventDefault(); switchTab("autochess");
-                    }}>
+                    aria-expanded={openGroup === "guide/autochess"}
+                    onClick={(event) => { if (tapSub(event, "autochess")) switchTab("autochess"); }}>
                     <span className="tab-sub-mark" aria-hidden>›</span>{t("위수협의(명토체스)")}
                     {tabHasNewFeature("autochess") && <span className="new-badge">{t("새기능")}</span>}
                     <span className="tab-group-arrow" aria-hidden>◂</span>
