@@ -469,11 +469,16 @@ def cn_event_body(aid):
     #   맛보기라 **표준판만** 싣는다.
     sids = [k for k in sids if "#" not in k]
     sids.sort(key=lambda k: (cn_stage[k].get("sortId") or 0, k))
-    stages, seen = [], {}
+    stages, seen, mats = [], {}, {}
     import cdnlevels
     for k in sids:
         v = cn_stage[k]
         stages.append([k, (v.get("code") or k), (v.get("name") or "")])
+        # 맵에서 파밍되는 상위 재료 — 한섭 행과 같은 규칙(**주요 드랍**만, 등급은 fut_localize 가 MAT_TIER 로 거른다).
+        # 사용자 요청 2026-10-01 "맵에서 나오는 상위재료도 다 붙여줘" — 종전엔 미실장 행에 재료가 아예 없었다.
+        for r in ((v.get("stageDropInfo") or {}).get("displayDetailRewards") or []):
+            if r.get("dropType") in ("NORMAL", 2) and r.get("type") == "MATERIAL" and r.get("id"):
+                mats.setdefault(str(r["id"]), set()).add(v.get("code") or k)
         lid = v.get("levelId")
         if not lid:
             continue
@@ -507,6 +512,8 @@ def cn_event_body(aid):
         if rid not in [o[0] for o in ops]:
             ops.append([rid, rid, 0, "new"])
     out = {}
+    if mats:
+        out["mats"] = mats          # {재료 id: 작전 코드 집합} — 로케일별 모양은 fut_localize 가 만든다
     if stages:
         out["stages"] = stages
     if seen:
@@ -547,8 +554,35 @@ def fut_name(cn, loc):
     return cn
 
 
+def _cn_tier(meta):
+    """중섭 아이템 표의 등급 — 'TIER_3' 또는 숫자(0 부터). 사이트 표기(1~5)로."""
+    r = meta.get("rarity")
+    if isinstance(r, str):
+        return int(re.sub(r"\D", "", r) or 0)
+    return (r or 0) + 1
+
+
 def fut_localize(body, loc):
     out = dict(body)
+    out.pop("mats", None)
+    if body.get("mats"):
+        li = per_loc[loc]["items"]
+        rows_m = []
+        for iid, codes in body["mats"].items():
+            it = li.get(iid)
+            if it:
+                if it.get("g") != "material" or (it.get("r") or 0) < MAT_TIER:
+                    continue
+                rows_m.append([iid, it["n"], it.get("i") or "", it["r"], sorted(codes)])
+            else:   # 한섭에 아직 없는 새 재료 — 중섭 표 + 비공식 번역
+                meta = (cn_item or {}).get(iid) or {}
+                tier = _cn_tier(meta)
+                if meta.get("classifyType") != "MATERIAL" or tier < MAT_TIER:
+                    continue
+                rows_m.append([iid, fut_name(meta.get("name"), loc), meta.get("iconId") or "", tier, sorted(codes)])
+        rows_m.sort(key=lambda m: (-m[3], m[1]))
+        if rows_m:
+            out["mats"] = rows_m
     if body.get("stages"):
         out["stages"] = [[s[0], s[1], fut_name(s[2], loc)] for s in body["stages"]]
     if body.get("enemies"):

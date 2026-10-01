@@ -77,6 +77,12 @@ SKIP_FETCH=1 bash scripts/ci-refresh.sh fast 2>&1 | grep -Ei "미번역|未|译"
 
 걸리면 [`cn-translation-fill`](../cn-translation-fill/SKILL.md) 스킬로.
 
+## 4-1. 중섭 이벤트가 새로 열렸으면
+
+순단 패치로도 이벤트는 열린다(해금). `cn_activity_table` 에 새 id 가 보이거나 사용자가 "중섭 이벤트 열렸어"라고 하면
+[`cn-future-events`](../cn-future-events/SKILL.md) 스킬을 끝까지 돈다 — 이벤트 도감 미실장 줄의 이름·번역·그림·
+상위 재료·신규 오퍼가 거기서만 채워진다.
+
 ## 5. 마무리
 
 ```bash

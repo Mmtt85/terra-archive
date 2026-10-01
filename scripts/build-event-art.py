@@ -311,6 +311,30 @@ def mirror_fallback():
                 break
     print(f"mirror: 홈 테마 그림 {got} · 작전 도면 {cropped} · 작은 그림 합성 {made}  (스토리 없는 이벤트 {len(rows)}개 중)")
 
+    # ⓓ 미실장(중섭 선행) 이벤트 중 그림이 없는 것 — 미러의 **중섭(cn) 브랜치** 홈 테마 그림 (2026-10-01).
+    #    ①(--server cn)은 중섭 CDN 에 **지금 걸린** 이벤트 것만 받으니, 중섭에서 이미 끝난 미실장 이벤트
+    #    (相变临界·진지 축구·丛林症结 …)는 그림 없이 떴다. 미실장은 중섭판이 원본이라 그림 속 중국어 제목을 허용한다
+    #    (build-story.py 미실장 썸네일과 같은 예외). 메인 사이드(actNmainss)는 _1 로 쪼개져 있다.
+    #    스토리가 있는 미실장은 build-story.py 가 /story/cn/ 에 따로 받으므로 여기서 건드리지 않는다.
+    fut_rows = [r for r in json.load(open(ev_path, encoding="utf-8"))["events"]
+                if r.get("fut") and not r.get("story") and not str(r.get("thumb") or "").startswith("/event/")]
+    fut_got = 0
+    for r in fut_rows:
+        aid = r["id"]
+        dest = os.path.join(PUB, f"{aid}.webp")
+        if os.path.exists(dest):
+            continue
+        for name in (f"{aid}.png", f"{aid}_1.png"):
+            img = mirror_png(f"arts/ui/stage/hometheme/{name}")
+            if img is not None:
+                save_webp(img, dest, 720)
+                fut_got += 1
+                print(f"  mirror(cn): {aid} ← hometheme/{name}")
+                break
+        else:
+            print(f"  ⚠ mirror(cn): {aid} 홈 테마 그림을 못 찾았다 — 카드는 '이미지 없음'으로 뜬다")
+    print(f"mirror: 미실장 이벤트 그림 {fut_got}장 (그림 없던 {len(fut_rows)}개 중)")
+
 
 def main():
     ap = argparse.ArgumentParser()

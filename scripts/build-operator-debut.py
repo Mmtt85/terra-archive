@@ -48,7 +48,10 @@
 개방일 직전 판과 직후 판의 오퍼 id 집합을 빼면 그 패치로 들어온 오퍼가 나온다.
 미래시 이벤트가 셋이면 여섯 판(약 110MB)이면 끝난다.
 
-사용: python3 scripts/build-operator-debut.py [--repo-history] [--cn-events]
+사용: python3 scripts/build-operator-debut.py [--repo-history] [--cn-events] [--cn-only]
+  --cn-only  미실장 이벤트 신규 오퍼(cnEventOps)**만** 다시 뽑는다 — 한섭 데뷔 장부(debut·baseline)는 손대지 않는다.
+             미래시 이벤트 절차(cn-future-events 스킬)는 이것만 쓴다. 이력 전수를 다시 돌리면 기준선이 커밋된 판과
+             달라져(2026-10-01: 425명 → 403명) 이번 일과 상관없는 변경이 딸려 나온다.
 """
 import json, os, re, subprocess, sys
 
@@ -281,7 +284,8 @@ def kr_ids(blob):
 
 
 REPO_HISTORY = "--repo-history" in sys.argv
-CN_EVENTS = "--cn-events" in sys.argv
+CN_ONLY = "--cn-only" in sys.argv
+CN_EVENTS = "--cn-events" in sys.argv or CN_ONLY
 prev = json.load(open(DEST, encoding="utf-8")) if os.path.exists(DEST) else {}
 debut = dict(prev.get("debut") or {})
 baseline = set(prev.get("baselineIds") or [])
@@ -294,7 +298,9 @@ today = subprocess.run(["date", "+%Y-%m-%d"], capture_output=True, text=True).st
 # ⚠ 무인 CI 는 얕은 체크아웃(fetch-depth 2)이라 이력을 되짚을 수 없다. 그래서 장부를
 #   **커밋해 두고**, 이력이 얕으면 이미 있는 장부에 새 오퍼만 덧붙인다. 이력이 깊으면
 #   (로컬) 처음부터 다시 훑어 빠진 것을 메운다.
-if len(commits) > 2:
+if CN_ONLY:
+    mode = "미실장 이벤트 오퍼만 (한섭 데뷔 장부는 그대로)"
+elif len(commits) > 2:
     seen = None
     for sha, date in commits:
         try:

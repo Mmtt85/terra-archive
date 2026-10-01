@@ -38,6 +38,11 @@ import { useAcRun, acRun, setAcStack, setAcStacks, mergeAcRun, resetAcRun, isAcL
 import { solveAcBans } from "./lens/acsolve";
 import { AcPartyModal, AcRoomsModal, ROOM_ID_RE, usePartyRoomCount } from "./autochess-party";
 
+/** 파티 공유를 여는가 — 위수 협의가 게임에서 도는 동안만 true. 시즌 밖에선 게임이 맹약 초대 문구를 안 주니
+ *  버튼을 끄고(회색·눌리지 않음), 예전 방 링크(#…?p=)로 들어와도 창을 열지 않는다
+ *  (사용자 지시 2026-10-01 "위수협의 끝났으니 파티공유 버튼은 비활성화"). **다음 시즌이 열리면 true 로.** */
+const AC_PARTY_OPEN = false;
+
 // 전투 맵 (scripts/build-autochess-routes.py) — 작전 도감·통합전략과 **같은 렌더러**를 쓴다
 // (규칙: .claude/skills/route-map-rules). '전투 맵' 탭을 처음 눌렀을 때만 지연 로드한다.
 // ⚠ 맵 이미지는 안 쓴다 — 타일 격자와 경로를 데이터에서 그린다 (제보 c3d2c056, 2026-08-30).
@@ -836,7 +841,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       applySimHash(p);
       // 파티 공유 방 — p=<방ID>. 없으면 창을 닫는다 (뒤로가기 = 나가기). 입장 전 화면("")은 해시에 없다.
       const pid = p.get("p");
-      setParty(pid && ROOM_ID_RE.test(pid) ? pid.toLowerCase() : null);
+      setParty(AC_PARTY_OPEN && pid && ROOM_ID_RE.test(pid) ? pid.toLowerCase() : null);
     };
     apply();
     hydrated.current = true;
@@ -1921,13 +1926,16 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             aria-label={t("PRTS 링크 도움말")} onClick={() => setAcHelp(true)}>?</button>
           </span>
           {/* 파티 공유 — 게임의 '맹약 초대' 문구로 같은 방에 모여 전략·목표 맹약을 서로 본다
-              (사용자 요청 2026-09-21). 채팅 없음. 창을 닫으면 나간 것이다 (autochess-party.tsx). */}
+              (사용자 요청 2026-09-21). 채팅 없음. 창을 닫으면 나간 것이다 (autochess-party.tsx).
+              시즌 밖에선 맹약 초대 문구가 없어 쓸 데가 없다 — AC_PARTY_OPEN 으로 버튼을 끈다. */}
           <button type="button" className={`ac-simcta ac-prtscta ac-partycta${party !== null ? " on" : ""}`}
-            aria-haspopup="dialog"
-            title={t("게임의 맹약 초대 문구로 같은 방에 모여, 고른 전략과 가고 싶은 맹약을 서로 봅니다")}
+            aria-haspopup="dialog" disabled={!AC_PARTY_OPEN}
+            title={AC_PARTY_OPEN
+              ? t("게임의 맹약 초대 문구로 같은 방에 모여, 고른 전략과 가고 싶은 맹약을 서로 봅니다")
+              : t("위수 협의 기간이 끝나 파티 공유를 쉬고 있습니다 — 다음 시즌에 다시 열립니다")}
             onClick={() => { setParty((v) => (v === null ? "" : v)); closeMenus(); }}>
             {t("파티 공유")}
-            {isNewFeature("ac-party") && <span className="new-badge">{t("새기능")}</span>}
+            {AC_PARTY_OPEN && isNewFeature("ac-party") && <span className="new-badge">{t("새기능")}</span>}
           </button>
           {/* 지금 열린 방 수 — 운영자에게만 보인다(usePartyRoomCount 주석). 눌러서 방 목록을 연다
               (사용자 요청 2026-09-21). 값이 없을 때(= 운영자 아님)는 빈 칸이라 CSS 가 자리를 접는다. */}

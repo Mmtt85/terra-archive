@@ -3197,6 +3197,9 @@ const D: Record<string, Pair> = {
   "게임의 맹약 초대 문구로 같은 방에 모여, 고른 전략과 가고 싶은 맹약을 서로 봅니다": [
     "Paste the game's alliance invite to meet in one room and see each other's strategy and target alliances",
     "ゲームの盟約招待文で同じ部屋に集まり、選んだ戦略と狙う盟約を互いに見られます"],
+  "위수 협의 기간이 끝나 파티 공유를 쉬고 있습니다 — 다음 시즌에 다시 열립니다": [
+    "Party share is paused because the Stronghold Protocol event has ended — it reopens next season",
+    "堅守協定の開催期間が終わったため、パーティ共有はお休み中です — 次のシーズンに再開します"],
   "게임이 준 맹약 초대 문구를 그대로 붙여 넣거나, 대괄호 속 방 ID만 넣고 입장하세요. 같은 방에 들어온 사람(최대 4명)이 고른 전략과 가고 싶은 맹약을 서로 봅니다. 채팅은 없습니다.": [
     "Paste the alliance invite text the game gave you as-is, or just the room ID from the brackets, and enter. Everyone in the room (up to 4) sees each other's chosen strategy and target alliances. There is no chat.",
     "ゲームが出した盟約招待文をそのまま貼るか、角括弧内の部屋IDだけを入れて入室してください。同じ部屋の人（最大4人）が選んだ戦略と狙う盟約を互いに見られます。チャットはありません。"],

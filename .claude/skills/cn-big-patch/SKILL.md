@@ -163,6 +163,12 @@ python3 scripts/build-sandbox.py
 python3 scripts/build-stages-sandbox.py             # 작전 도감·시뮬레이터의 생존연산 색인도 따라가야 한다
 ```
 
+**중섭 이벤트 (미실장 이벤트 줄)** — 새 이벤트가 열렸거나 지난 패치 뒤 처음이면 **반드시**:
+```bash
+Skill: cn-future-events     # 이름표·작전/적/재화 번역·그림·상위 재료·신규 오퍼(--cn-only)까지 빠짐없이
+```
+벡터 돌파 새 회차도 그 스킬 8절에서 여기 위 절차로 돌아온다.
+
 ## 7. 마무리
 
 ```bash
@@ -188,6 +194,8 @@ dev 에서 확인하고 멈춘다. **커밋·빌드·푸시·배포는 사용자
 
 - **중섭 이벤트는 이벤트 도감(`/events`)의 미래시에만 잡힌다** (2026-09-17~ — `activity`·`stage`·`zone`
   표를 받아 작전·등장 적·교환 재화를 미리 뽑는다). 헤더 진행중 이벤트·한섭 화면에는 안 싣는다.
+  싣는 규칙·순서 전부는 [`cn-future-events`](../cn-future-events/SKILL.md) 스킬 — ⚠ 맨 위 "14표·activity 없음"은
+  2026-09-17 전 이야기다(지금은 17표).
   스토리는 AI 요약·번역 전문(`scripts/story-cn/` → `build-story-scripts.py --cn-merge`)으로 따로 들어간다.
 - **미실장 오퍼는 인프라 플래너·공채에서 자동 제외된다** (KR 데이터 기반 — INFRA-RULES §9).
   번역은 표시용일 뿐 계산에 영향이 없다.
