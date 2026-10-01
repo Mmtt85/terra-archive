@@ -129,7 +129,16 @@ function reverseCombos(op: RecruitOp): ReverseResult[] {
     .sort((a, b) => b.prob - a.prob || a.combo.length - b.combo.length);
 }
 
-function ComboCard({ result, onShowOperator, tagLabel, opLabel, target, note }: { result: ComboResult; onShowOperator?: (id: string) => void; tagLabel: (tag: string) => string; opLabel: (op: RecruitOp) => string; target?: string; note?: string }) {
+/** 오퍼로 태그 찾기 — 찾는 오퍼를 **같은 확률(= 같은 성급) 무리의 맨 앞**으로 (사용자 요청 2026-10-01
+ *  "같은 확률 중에서는 해당 오퍼를 제일 위로"). 성급 순서는 그대로라 확률 높은 칸이 여전히 먼저다. */
+function targetFirst(list: RecruitOp[], target?: string): RecruitOp[] {
+  const i = list.findIndex((o) => o.id === target);
+  if (i < 0) return list;
+  const j = list.findIndex((o) => o.rarity === list[i].rarity);
+  return [...list.slice(0, j), list[i], ...list.slice(j, i), ...list.slice(i + 1)];
+}
+
+function ComboCard({ result, onShowOperator, tagLabel, opLabel, target }: { result: ComboResult; onShowOperator?: (id: string) => void; tagLabel: (tag: string) => string; opLabel: (op: RecruitOp) => string; target?: string }) {
   const { t } = useI18n();
   const lowOnly = result.ops.length === 0;
   const odds = opOdds(result);
@@ -137,13 +146,12 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel, target, note }: 
     <article className={`recruit-combo${result.floor >= 4 ? " prized" : ""}`}>
       <header>
         <div className="combo-tags">{result.combo.map((tag) => <span key={tag}>{tagLabel(tag)}</span>)}</div>
-        {note && <em className="combo-note">{note}</em>}
         <b style={{ background: RARITY_COLORS[result.floor] }}>
           {lowOnly ? t("{n}★ · 저시간 전용", { n: result.floor }) : result.floor === result.ceil ? t("{n}★ 확정", { n: result.floor }) : t("{n}★ 이상", { n: result.floor })}
         </b>
       </header>
       <ul>
-        {result.ops.map((op) => (
+        {targetFirst(result.ops, target).map((op) => (
           <li key={op.id} className={[op.pending ? "pending" : "", op.id === target ? "target" : ""].filter(Boolean).join(" ") || undefined} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
             <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
               title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
@@ -152,7 +160,7 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel, target, note }: 
             <i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>
           </li>
         ))}
-        {result.lowOps.map((op) => (
+        {targetFirst(result.lowOps, target).map((op) => (
           <li key={op.id} className={`low-time${op.id === target ? " target" : ""}`} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
             <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
               title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
@@ -507,8 +515,6 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
             const list = reverseCombos(reverseOp);
             const sure = list.filter((r) => r.prob >= 0.999);
             const rest = list.filter((r) => r.prob < 0.999);
-            const pct = (r: ReverseResult) => r.prob >= 0.999 ? undefined
-              : reverseOp.rarity <= 2 ? t("같은 성급 {n}명 중", { n: r.rivals }) : t("약 {p}%", { p: Math.max(1, Math.round(r.prob * 100)) });
             return (
               <>
                 <div className="recruit-rev-head">
@@ -533,7 +539,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
                   <section className="recruit-group">
                     <h3><span style={{ background: RARITY_COLORS[3] }}>{t("다른 후보와 함께 — 확률 높은 순")}</span><em>{t("{n}개 조합", { n: rest.length })}</em></h3>
                     <div className="recruit-results">
-                      {rest.map((r) => <ComboCard key={r.combo.join("+")} result={r} onShowOperator={onShowOperator} tagLabel={tagLabel} opLabel={opLabel} target={reverseOp.id} note={pct(r)} />)}
+                      {rest.map((r) => <ComboCard key={r.combo.join("+")} result={r} onShowOperator={onShowOperator} tagLabel={tagLabel} opLabel={opLabel} target={reverseOp.id} />)}
                     </div>
                   </section>
                 )}

@@ -25559,8 +25559,11 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .recruit-rev-head b { font-size: 15px; }
 .recruit-rev-head i { font: 700 12px var(--mono); font-style: normal; }
 .recruit-rev-head button { margin-left: auto; padding: 5px 12px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
-.recruit-combo li.target { outline: 2px solid var(--lime); outline-offset: -2px; }
-.recruit-combo .combo-note { margin-left: 6px; font: 700 11px var(--mono); font-style: normal; color: var(--muted); }
+/* 오퍼로 태그 찾기 — 찾는 오퍼가 한눈에 (사용자 요청 2026-10-01 "해당 오퍼가 조금 더 눈에 띄게"):
+   라임 테두리 + 옅은 라임 바탕, 같은 카드의 다른 후보는 흐리게(마우스를 올리면 돌아온다) */
+.recruit-combo li.target { outline: 2px solid var(--lime); outline-offset: -2px; background: color-mix(in srgb, var(--lime) 24%, var(--white)); }
+.recruit-reverse-modal .recruit-combo li:not(.target) { opacity: 0.45; transition: opacity 0.15s; }
+.recruit-reverse-modal .recruit-combo li:not(.target):hover { opacity: 1; }
 /* 결과 카드의 오퍼별 등장 확률 (recruit.tsx opOdds) — 이름과 성급 사이, 이름보다 한 단계 작고 흐리게.
    칸이 좁아지니 오퍼 칸 최소 폭을 124 → 148px 로 */
 .recruit-combo ul { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }

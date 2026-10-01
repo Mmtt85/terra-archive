@@ -2148,12 +2148,10 @@ const D: Record<string, Pair> = {
     "公開求人で出るオペレーターを選ぶと、そのオペレーターが出るタグの組み合わせを表示します。"],
   "이 오퍼 확정": ["Guaranteed", "確定"],
   "다른 후보와 함께 — 확률 높은 순": ["With other candidates — likeliest first", "他の候補と一緒に — 確率の高い順"],
-  "약 {p}%": ["~{p}%", "約{p}%"],
   "이 조합을 골랐을 때 대략의 등장 확률 (9시간 기준)": ["Approximate chance with this combination (9-hour recruitment)", "この組み合わせを選んだときのおおよその出現確率（9時間基準）"],
   "오퍼 옆의 **%**는 그 조합을 골랐을 때 **대략의 등장 확률**입니다 — 9시간 모집의 기본 성급 비율(3★ 40 · 4★ 50 · 5★ 8 · 6★ 2)을 그 조합에 나오는 성급끼리 다시 나누고, 같은 성급 후보끼리 고르게 나눈 근사라 실제와 조금 다를 수 있습니다.": [
     "The **%** next to an operator is the **approximate chance** of getting them with that combination — the base rarity rates of a 9-hour recruitment (3★ 40 · 4★ 50 · 5★ 8 · 6★ 2) re-split among the rarities that combination can give, then shared evenly among candidates of the same rarity. It is an estimate and may differ slightly from the game.",
     "オペレーター横の**%**は、その組み合わせを選んだときの**おおよその出現確率**です — 9時間求人の基本レアリティ比率（★3 40・★4 50・★5 8・★6 2）をその組み合わせで出るレアリティ同士で配分し直し、同じレアリティの候補で均等に分けた概算なので、実際とは少し異なる場合があります。"],
-  "같은 성급 {n}명 중": ["1 of {n} same rarity", "同レア{n}人中"],
   "이 오퍼가 나오는 태그 조합이 없습니다.": ["No tag combination gives this operator.", "このオペレーターが出るタグの組み合わせはありません。"],
   "6★는 **고급 특별 채용** 태그가 떠야만 나옵니다. 아래 조합이 모집 태그에 뜨면 체크하세요 — 위쪽일수록 이 오퍼가 나올 확률이 높습니다.": [
     "6★ operators appear only with the **Top Operator** tag. Check these combinations when they show up — the higher, the better the odds for this operator.",
