@@ -592,12 +592,23 @@ for eid, st in stories.items():
 # 스토리가 없는 중섭 선행 이벤트 (사용자 제보 2026-09-29 "벡터 돌파3 어딨어? 라이브에서").
 # 위 반복은 stories.json 의 `unreleased` 만 훑는데, 벡터 돌파·집중 훈련류는 스토리가 없어 중섭 story_review 에
 # 안 올라온다 — 그래서 중섭에 열려도 도감에 안 떴다. 중섭 activity 표에서 **한섭에 없고 · 작전이 있고 · 복각이 아니고 ·
-# 아직 안 끝난** 이벤트를 직접 뽑는다. 이름은 중국어 원문뿐이라 **번역을 아래 표에 손으로 단다** (스토리 이벤트의
-# CN_PROVISIONAL_NAMES 와 같은 처지 — 한섭 activity 표에 오르면 위 KR 블록이 같은 id 로 이 행을 대체한다).
-# 표에 없는 이벤트는 건너뛰고 알린다 (중국어 원문을 한국어 화면에 그대로 싣지 않는다).
+# 한섭이 마지막으로 따라온 이벤트보다 뒤에 연** 이벤트를 직접 뽑는다. 이름은 중국어 원문뿐이라 **번역을 아래 표에 손으로
+# 단다** (스토리 이벤트의 CN_PROVISIONAL_NAMES 와 같은 처지 — 한섭 activity 표에 오르면 위 KR 블록이 같은 id 로 이 행을
+# 대체한다). 표에 없는 이벤트는 건너뛰고 알린다 (중국어 원문을 한국어 화면에 그대로 싣지 않는다).
+# ⚠ '중섭에서 아직 안 끝난 것'으로 거르면 안 된다 — 중섭에서 끝났어도 한섭엔 아직 안 온 이벤트다. 그 조건 때문에
+#   이격 켈시·클로저가 오는 7주년 「相变临界」(4월 말 중섭, 2주)와 진지 축구·丛林症结·奇象巡展·逐影集趣가 빠져 있었다
+#   (사용자 제보 2026-10-01 "이격켈시랑 클로저 오는 이벤트는 어디간거야?"). 한섭이 건너뛴 중섭 전용 이벤트는
+#   한섭이 그 뒤 이벤트를 따라오는 순간 기준선 앞으로 밀려 저절로 빠진다.
 CN_ONLY_NAMES = {
     "act3break": {"ko": "벡터 돌파#3 유사 생태", "en": "Vector Breakthrough #3: Pseudo-Ecology",
                   "ja": "鋒矢突破#3 擬似生態"},
+    # 이하 2026-10-01 — 비공식 번역. 메인 사이드(actNmainss)는 해리성 결합·비정상 스펙트럼처럼 낱말을 옮긴다
+    "act4mainss": {"ko": "상전이 임계", "en": "Critical Phase Transition", "ja": "相転移臨界"},   # 相变临界 (17장 · 7주년)
+    "act1football": {"ko": "진지 축구 토너먼트", "en": "Positional Football Championship",
+                     "ja": "陣地サッカー選手権"},   # 阵地足球锦标 — 재화 설명 번역(cn-translations)과 같은 말
+    "act21mini": {"ko": "밀림의 응어리", "en": "Crux of the Jungle", "ja": "叢林症結"},          # 丛林症结
+    "act1arkhub": {"ko": "기상 순회전", "en": "Wondrous Exhibition", "ja": "奇象巡回展"},       # 奇象巡展 — 재화 설명과 같은 말
+    "act1dp": {"ko": "그림자를 좇는 즐거움", "en": "Chasing Shadows for Fun", "ja": "逐影集趣"},  # 逐影集趣
 }
 if cn_act and cn_stage:
     import time as _time
@@ -612,7 +623,7 @@ if cn_act and cn_stage:
     _gap = _latest[0] - _latest[1]
     for aid, info in sorted(cn_act["basicInfo"].items(), key=lambda kv: -(kv[1].get("startTime") or 0)):
         if (aid in kr_basic_all or aid in _have or aid not in _staged or info.get("isReplicate")
-                or (info.get("endTime") or 0) < _now):
+                or (info.get("startTime") or 0) <= _latest[1]):
             continue
         names = CN_ONLY_NAMES.get(aid)
         if not names:
@@ -620,10 +631,12 @@ if cn_act and cn_stage:
             continue
         body = cn_event_body(aid)
         for loc in LOCALES:
-            row = {"id": aid, "n": names.get(loc) or names["ko"], "type": "NONE",
+            # 추정월은 이번 달보다 앞서지 않게 — 시차가 들쭉날쭉해 중섭에서 오래된 이벤트는 지난달로 나온다
+            row = {"id": aid, "n": names.get(loc) or names["ko"], "type": info.get("displayType") or "NONE",
                    "start": None, "end": None, "fut": 1,
                    **({"vb": 1} if info.get("type") == "VEC_BREAK_V2" else {}),
-                   "eta": _time.strftime("%Y-%m", _time.gmtime(info["startTime"] + _gap))}
+                   "eta": max(_time.strftime("%Y-%m", _time.gmtime(info["startTime"] + _gap)),
+                              _time.strftime("%Y-%m", _time.gmtime(_now)))}
             # 섬네일 — build-event-art.py --server cn 이 받아 둔 중섭 홈 테마 그림
             for rel in ([f"/event/{loc}/{aid}.webp"] if loc != "ko" else []) + [f"/event/{aid}.webp"]:
                 if os.path.exists(os.path.join(REPO, "public", rel.lstrip("/"))):
@@ -636,6 +649,13 @@ if cn_act and cn_stage:
                                     (loc_ops.get(o[0]) or {}).get("rarity", 0), o[3]] for o in body["ops"]]
             row.update(body_loc)
             rows[loc].insert(0, row)
+# 미실장 줄은 **중섭에서 늦게 연 것이 앞**(왼쪽) — 스토리 이벤트와 스토리 없는 이벤트를 두 번에 나눠 맨 앞에 끼워서,
+# 종전엔 뒤에 끼운 벡터 돌파#3만 맨 앞이고 나머지는 오래된 순이었다 (사용자 지적 2026-10-01 "맨왼쪽이 제일 최신으로").
+# 중섭 표가 없으면 추정월(eta)로 대신 줄 세운다.
+_cn_start = lambda r: ((cn_act or {}).get("basicInfo", {}).get(r["id"]) or {}).get("startTime") or 0
+for loc in LOCALES:
+    _fut = sorted((r for r in rows[loc] if r.get("fut")), key=lambda r: (_cn_start(r), r.get("eta") or ""), reverse=True)
+    rows[loc] = _fut + [r for r in rows[loc] if not r.get("fut")]
 n_fut = sum(1 for r in rows["ko"] if r.get("fut"))
 for loc in LOCALES:
     if fut_untranslated[loc]:

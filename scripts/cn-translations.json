@@ -19514,5 +19514,105 @@
   "ko": "원계방 모듈",
   "en": "Source Cube Module",
   "ja": "源階方モジュール"
+ },
+ "入场吧绒绒！": {
+  "ko": "입장하자 폭신이!",
+  "en": "In We Go, Fluffies!",
+  "ja": "入場だよモフモフ！"
+ },
+ "选择吧绒绒！": {
+  "ko": "골라 보자 폭신이!",
+  "en": "Make a Choice, Fluffies!",
+  "ja": "選んでモフモフ！"
+ },
+ "等待吧绒绒！": {
+  "ko": "기다리자 폭신이!",
+  "en": "Wait Your Turn, Fluffies!",
+  "ja": "待っててモフモフ！"
+ },
+ "跟上吧绒绒！": {
+  "ko": "따라오자 폭신이!",
+  "en": "Keep Up, Fluffies!",
+  "ja": "ついてきてモフモフ！"
+ },
+ "欢呼吧绒绒！": {
+  "ko": "환호하자 폭신이!",
+  "en": "Cheer, Fluffies!",
+  "ja": "歓声だよモフモフ！"
+ },
+ "返程吧绒绒！": {
+  "ko": "돌아가자 폭신이!",
+  "en": "Homeward, Fluffies!",
+  "ja": "帰ろうモフモフ！"
+ },
+ "集结吧绒绒！": {
+  "ko": "모여라 폭신이!",
+  "en": "Gather Round, Fluffies!",
+  "ja": "集まれモフモフ！"
+ },
+ "花车游行秀": {
+  "ko": "꽃수레 퍼레이드",
+  "en": "Float Parade",
+  "ja": "フロートパレード"
+ },
+ "人气摄影点": {
+  "ko": "인기 포토 스폿",
+  "en": "Popular Photo Spot",
+  "ja": "人気撮影スポット"
+ },
+ "射击小摊位": {
+  "ko": "사격 노점",
+  "en": "Shooting Stall",
+  "ja": "射的の屋台"
+ },
+ "密室空走廊": {
+  "ko": "밀실의 빈 복도",
+  "en": "The Locked Room's Empty Corridor",
+  "ja": "密室の空き廊下"
+ },
+ "粉丝大比拼": {
+  "ko": "팬 대결",
+  "en": "Fan Showdown",
+  "ja": "ファン対決"
+ },
+ "拥挤停车场": {
+  "ko": "붐비는 주차장",
+  "en": "Crowded Parking Lot",
+  "ja": "混雑した駐車場"
+ },
+ "午间休息！": {
+  "ko": "점심 휴식!",
+  "en": "Lunch Break!",
+  "ja": "お昼休み！"
+ },
+ "傍晚小憩！": {
+  "ko": "해 질 녘 휴식!",
+  "en": "Evening Breather!",
+  "ja": "夕方のひと休み！"
+ },
+ "云众演员": {
+  "ko": "구름 엑스트라",
+  "en": "Cloud Extra",
+  "ja": "雲エキストラ"
+ },
+ "风情街“热情导游”": {
+  "ko": "테마 거리 “열정 가이드”",
+  "en": "Themed Street “Eager Guide”",
+  "ja": "テーマ通り「熱烈ガイド」"
+ },
+ "风情街“飘游客”": {
+  "ko": "테마 거리 “둥실 관광객”",
+  "en": "Themed Street “Drifting Tourist”",
+  "ja": "テーマ通り「ふわふわ観光客」"
+ },
+ "绒绒欢乐像": {
+  "ko": "폭신이 기쁨상",
+  "en": "Fluffy Joy Figure",
+  "ja": "モフモフ歓楽像"
+ },
+ "渐入佳境": {
+  "ko": "점입가경",
+  "en": "Getting Better",
+  "ja": "佳境に入る"
  }
 }
