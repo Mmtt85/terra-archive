@@ -24772,6 +24772,11 @@ html[lang="ja"] .vn-box {
 @media (max-width: 720px) {
   .ev-pair { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }
+/* 높이 맞추기 — 오퍼 칸을 고른 장수(--ev-ops-w)로 좁혀 오퍼는 줄을 바꾸고, 재료는 넓어진 칸에 여러 열로 (events.tsx
+   opsPerRow, 사용자 요청 2026-10-01). 두 칸이 나란할 때만 — 좁은 화면은 위아래로 쌓으므로 종전 그대로 */
+@media (min-width: 721px) {
+  .ev-pair.bal { grid-template-columns: var(--ev-ops-w) minmax(0, 1fr); }
+}
 .ev-mat {
   display: flex;
   align-items: center;

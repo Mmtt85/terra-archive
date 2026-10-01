@@ -192,6 +192,9 @@ python3 scripts/build-future-dex.py       # 로컬은 그림까지 (중섭 CDN �
 등급 높은 것 먼저. 미실장은 `cn_stage_table` 의 `stageDropInfo.displayDetailRewards` 에서 빌더가 같은 기준으로 뽑는다
 (`cn_event_body` → `fut_localize`). 이름·아이콘·등급은 사이트 아이템 목록, 없으면 중섭 아이템 표(이름은 cn-translations).
 특별·추가 드랍·완벽 작전 보상은 세지 않는다. 축구·DP·ARK_HUB 처럼 재료가 안 나오는 모드는 빈 게 정상이다.
+**한섭에 아직 없는 새 재료**(액화 고에너지 가스·전극 유닛 …)는 빌더가 아이콘을 중섭 CDN 에서 받아 `public/items/icon/`
+에 두고(`cn_icon` — 새 파일은 커밋), build-future-dex 가 아이템 상세를 future-dex 에 싣는다(눌렀을 때 열리게).
+이벤트 창에선 오퍼 칸과 재료 칸 높이를 맞추려고 오퍼를 한 줄에 몇 장 둘지 개수로 고른다(events.tsx `opsPerRow`).
 
 ## 8. 특수 이벤트
 

@@ -130,6 +130,28 @@ const hasThing = (row: EventRow, key: string) =>
 
 const OP_KIND: Record<string, string> = { reward: "보상", new: "신규" };
 
+/** 이벤트 오퍼 ↔ 맵 상위 재료 두 칸의 **높이 맞추기** — 오퍼 카드를 한 줄에 몇 장 둘지를 개수로 고른다
+ *  (사용자 요청 2026-10-01 "상위재료가 세로로 너무 길다. 이벤트오퍼를 두줄로 하는 한이 있어도 높이 좀 맞춰줘").
+ *  왼쪽 칸은 오퍼 카드 폭만큼(auto)이라 오퍼 다섯이면 한 줄로 418px 을 먹고, 재료는 남은 230px 에 한 열로
+ *  12칸 — 841px 까지 내려갔다(상전이 임계). 데스크톱 쌍 폭(666px)과 카드 크기 실측값으로, 두 칸 중 높은 쪽이
+ *  가장 낮아지는 장수를 고른다. 그대로가 가장 나으면 null(종전 배치 그대로). 측정 없이 개수만 보므로 첫 페인트부터 같다. */
+const OP_CARD = 78, OP_CARD_H = 139, OP_GAP = 7, PAIR_W = 666, PAIR_GAP = 18, MAT_MIN = 180, MAT_H = 63, MAT_GAP = 6;
+function opsPerRow(nOps: number, nMats: number): number | null {
+  if (!nOps || !nMats) return null;
+  const tallest = (r: number) => {
+    const opRows = Math.ceil(nOps / r);
+    const opsW = r * OP_CARD + (r - 1) * OP_GAP;
+    const cols = Math.max(1, Math.floor((PAIR_W - opsW - PAIR_GAP + MAT_GAP) / (MAT_MIN + MAT_GAP)));
+    const matRows = Math.ceil(nMats / cols);
+    return Math.max(opRows * OP_CARD_H + (opRows - 1) * OP_GAP, matRows * MAT_H + (matRows - 1) * MAT_GAP);
+  };
+  // 오퍼는 **두 줄까지만** ("두줄로 하는 한이 있어도") — 세 줄 넘게 세로로 쌓이면 오히려 어색하다.
+  // 바꿔도 15% 넘게 낮아지지 않으면 종전 배치를 둔다 (오퍼 셋·재료 열셋인 메인 사이드는 477→431 이라 그대로)
+  let best = nOps;
+  for (let r = nOps - 1; r >= 1 && Math.ceil(nOps / r) <= 2; r--) if (tallest(r) < tallest(best)) best = r;
+  return best < nOps && tallest(best) <= tallest(nOps) * 0.85 ? best : null;
+}
+
 const localeBase = (locale: string) => (locale === "ko" ? "" : `/${locale}`);
 // app/story.tsx 의 storyPath 와 같은 규칙 — 거기서 가져오면 요약·리더기 모듈이 딸려 온다
 const storyHref = (locale: string, id: string) => `${localeBase(locale)}/stories/${id}`;
@@ -322,7 +344,12 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
         <div className="ev-top-main">
       {/* 이벤트 오퍼레이터 ↔ 맵에서 나오는 상위 재료를 나란히 (사용자 요청 2026-09-17).
           한쪽만 있으면 그쪽이 폭을 다 쓴다. */}
-      <div className="ev-pair">
+      <div {...(() => {
+        const perRow = opsPerRow(row.ops?.length ?? 0, row.mats?.length ?? 0);
+        return perRow
+          ? { className: "ev-pair bal", style: { "--ev-ops-w": `${perRow * OP_CARD + (perRow - 1) * OP_GAP}px` } as React.CSSProperties }
+          : { className: "ev-pair" };
+      })()}>
       {row.ops && row.ops.length > 0 && (
         <section className="ev-sec">
           <b>{t("이벤트 오퍼레이터")}</b>

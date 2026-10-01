@@ -457,15 +457,18 @@ def build(loc, suf):
             rec["link"] = link
         enemies.append(rec)
 
-    items = []
+    items, seen_items = [], set()
+    # 교환 재화 + **맵 상위 재료**(events.json 의 mats) 중 본 아이템 도감에 없는 것 — 한섭에 아직 없는 새 재료
+    # (액화 고에너지 가스·전극 유닛 …)는 여기 없으면 이벤트 창에서 눌러도 아무것도 안 열린다 (2026-10-01)
     for r in ev_rows[loc]:
-        for it in r.get("items") or []:
+        for g, it in [("event", x) for x in r.get("items") or []] + [("material", x) for x in r.get("mats") or []]:
             iid = it[0]
-            if iid in item_tbl["ko"]:
-                continue                     # 본 아이템 도감에 있다
+            if iid in item_tbl["ko"] or iid in seen_items:
+                continue                     # 본 아이템 도감에 있다 / 이미 실었다
+            seen_items.add(iid)
             meta = cn_item.get(iid) or {}
             rarity = str(meta.get("rarity") or "TIER_1")
-            rec = {"id": iid, "n": item_name(iid, loc), "r": int(re.sub(r"\D", "", rarity) or 1), "g": "event",
+            rec = {"id": iid, "n": item_name(iid, loc), "r": int(re.sub(r"\D", "", rarity) or 1), "g": g,
                    "s": meta.get("sortId") or 0, "evName": r["n"], "fut": 1}
             if len(it) > 2 and it[2]:
                 rec["i"] = it[2]

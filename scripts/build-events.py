@@ -579,7 +579,9 @@ def fut_localize(body, loc):
                 tier = _cn_tier(meta)
                 if meta.get("classifyType") != "MATERIAL" or tier < MAT_TIER:
                     continue
-                rows_m.append([iid, fut_name(meta.get("name"), loc), meta.get("iconId") or "", tier, sorted(codes)])
+                # 아이콘은 사이트에 아직 없다 — 교환 재화처럼 중섭 CDN 에서 받아 둔다 (못 받으면 빈 칸 = 그림 없이).
+                # 종전엔 iconId 만 적어 액화 고에너지 가스·전극 유닛이 깨진 그림으로 떴다 (사용자 지적 2026-10-01)
+                rows_m.append([iid, fut_name(meta.get("name"), loc), cn_icon(meta.get("iconId") or ""), tier, sorted(codes)])
         rows_m.sort(key=lambda m: (-m[3], m[1]))
         if rows_m:
             out["mats"] = rows_m
