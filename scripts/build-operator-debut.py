@@ -164,22 +164,40 @@ def cn_event_debuts(names):
         return out
     basic = cn.get("basicInfo") or {}
     path = "cn/gamedata/excel/character_table.json"
-    for ev in stories:
-        if not ev.get("unreleased"):
-            continue
-        info = basic.get(ev["id"]) or {}
+    # 대상 = 스토리가 있는 미실장 이벤트 + **스토리 없는** 미실장 이벤트(이벤트 도감 events.json 의 fut 행).
+    # 종전엔 앞쪽만 봐서 스토리 없는 메인 사이드 「相变临界」(이격 켈시·클로저)가 오퍼 없이 떴다 (사용자 지적 2026-10-01
+    # "이벤트 오퍼레이터가 안나오는데").
+    targets = [ev["id"] for ev in stories if ev.get("unreleased")]
+    try:
+        _ev = json.load(open(os.path.join(REPO, "app", "data", "events.json"), encoding="utf-8"))["events"]
+        targets += [r["id"] for r in _ev if r.get("fut") and r["id"] not in targets]
+    except (OSError, KeyError):
+        pass
+    # 창의 앞끝은 **바로 앞 중섭 이벤트 개방일 다음 날**보다 이르지 않게 — 중섭은 2~3주, 붙으면 1주 간격이라
+    #   14일을 거슬러 보면 앞 이벤트의 오퍼가 먼저 '처음 나타난 판'으로 잡힌다 (진지 축구 06-08 ← 포영창정 05-31).
+    _opens = sorted(v["startTime"] for v in basic.values()
+                    if v.get("hasStage") and not v.get("isReplicate") and v.get("startTime"))
+    for eid in targets:
+        info = basic.get(eid) or {}
+        ev = {"id": eid}
         st = info.get("startTime")
         if not st:
             print(f"  ⚠ {ev['id']}: 중섭 개방일을 모른다")
             continue
         day = _t.strftime("%Y-%m-%d", _t.localtime(st))
+        _prev = [o for o in _opens if o < st]
+        back = LOOKBACK
+        if _prev:
+            gap_days = int((_t.mktime(_t.strptime(day, "%Y-%m-%d"))
+                            - _t.mktime(_t.strptime(_t.strftime("%Y-%m-%d", _t.localtime(_prev[-1])), "%Y-%m-%d"))) // 86400)
+            back = max(1, min(LOOKBACK, gap_days - 1))
         # ⚠ 중섭 표에는 오퍼가 **개방 하루 전쯤 먼저 들어온다** (act53side 실측: 08-01 개방인데
         #   07-31 스냅샷에 이미 있다). 그래서 개방일 앞뒤 한 판씩만 보면 차분이 0이 된다.
         #   창을 넉넉히 열어 **처음 나타난 판**을 직접 찾는다.
-        win = _commits(path, since=f"{_iso_shift(day, -LOOKBACK)}T00:00:00Z",
+        win = _commits(path, since=f"{_iso_shift(day, -back)}T00:00:00Z",
                        until=f"{_iso_shift(day, 3)}T23:59:59Z")
         win.reverse()                       # 오래된 것부터
-        base = commit_near(path, _iso_shift(day, -LOOKBACK), before=True)
+        base = commit_near(path, _iso_shift(day, -back), before=True)
         if not base or not win:
             print(f"  ⚠ {ev['id']}: 창 안에 커밋이 없다")
             continue
@@ -191,6 +209,7 @@ def cn_event_debuts(names):
                 new_ids = now_ids - seen_ids
                 if new_ids and not fresh:
                     fresh, when = new_ids, d   # 처음 나타난 판이 그 이벤트의 데뷔
+                    break                      # 그 뒤 판은 볼 필요가 없다 (한 판이 18MB)
                 seen_ids |= now_ids
         except Exception as e:  # noqa: BLE001
             print(f"  ⚠ {ev['id']} 받기 실패: {str(e)[:60]}")
