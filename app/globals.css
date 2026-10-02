@@ -15075,23 +15075,32 @@ html.rg-theme.rg6 .rg-kv-page {
 .rg-modal.rg-skymodal {
   max-width: 700px;   /* 실측 700×682 (660px 이하는 설명이 한 줄 더 접혀 오히려 길어진다) */
 }
-/* 소란 창은 30px 넓게 — 묶음 상자가 있는 목록은 칸 사이가 18px(겹침 방지)라 980px 창에선 카드가 층 창(8px 간격)보다 9px 좁다.
-   1010px 이면 (968 − 3×18)/4 = 228.5px 로 층 창 카드와 같다 (사용자 지시 2026-10-03 "N층 작전 맵 카드랑 똑같이") */
-.rg-modal.rg-skybattle {
-  max-width: 1010px;
-}
-/* 잔식 소란 창의 맵 카드 — 층 창(.rg-zmodal)과 같은 한 줄 4장 (사용자 지시 2026-10-03 "너무 크다" → "N층 작전 맵 카드랑 똑같이",
-   두 창 다 980px 라 카드 폭이 같다). 좁으면 3장 */
-.rg-stage-cards.rg-sky-cards {
-  grid-template-columns: repeat(4, 1fr);
-  --cols: 4;
-}
 @media (max-width: 1100px) {
-  .rg-zone-wide .rg-stage-cards,
-  .rg-stage-cards.rg-sky-cards {
+  .rg-zone-wide .rg-stage-cards {
     grid-template-columns: repeat(3, 1fr);
     --cols: 3;
   }
+}
+/* 록라 창 안의 작전 카드는 **어디서나 층 창(N층)과 같은 크기** — 한 줄 4장 (사용자 지시 2026-10-03 "명촉대 시련이나 외나무다리 안
+   작전 카드도 N층 작전 카드랑 크기 동일하게, 록라 모든 곳"). 종전엔 묶음 창(조우 전투·외나무다리·명촉대 시련·추격전 …) 3장(307px),
+   우연한 만남 창 2장(205px), 묶음 상자가 든 목록 220px 이었다. 층 창처럼 좁은 화면에서도 4장.
+   ⚠ 묶음 상자가 든 창은 칸 사이가 18px(상자 겹침 방지)라, 그 창을 30px 넓히고 창 안 목록 간격을 모두 18px 로 맞춘다 —
+   (1010 − 42 − 3×18)/4 = 228.5px 로 묶음 없는 창 (980 − 42 − 3×8)/4 = 228.5px 와 같다. 한 창 안에서 목록마다 간격이 다르면
+   같은 창 안에서도 카드 폭이 갈린다. */
+.rg-modal .rg-stage-cards,
+.rg-modal .rg-zone-wide .rg-stage-cards {
+  grid-template-columns: repeat(4, 1fr);
+  --cols: 4;
+}
+.rg-modal:has(.rg-stage-vgroup),
+.rg-modal.rg-zmodal:has(.rg-stage-vgroup) {
+  max-width: 1010px;
+}
+.rg-modal.rg-zmodal:has(.rg-stage-vgroup) {
+  width: min(1010px, calc(100vw - 48px));
+}
+.rg-modal:has(.rg-stage-vgroup) .rg-stage-cards {
+  gap: 18px;
 }
 /* 기타 노드 — 노드 타입 설명 그리드; 외나무다리(wide)는 한 줄 전체 + 결투 카드 포함 */
 .rg-nodetype-list {
@@ -15126,6 +15135,11 @@ html.rg-theme.rg6 .rg-kv-page {
   height: 48px;
   object-fit: contain;
   /* 원본이 이미 어두운 원판 + 발광 글리프라 테두리·배경을 덧대지 않는다 (덧대면 이중 원이 된다) */
+}
+/* 컬러 판(4·5번째 테마, 138×48 가로형) — 정사각 칸에 넣으면 납작해져 가로로 길게 (2026-10-03) */
+.rg-nodetype-ico.plate {
+  width: 104px;
+  height: 36px;
 }
 /* cn 병기(Nm)는 두 줄 — 한 덩어리로 묶어 아이콘 오른쪽에 세로로 쌓는다 */
 .rg-nodetype-title {
@@ -15195,7 +15209,7 @@ html.rg-theme.rg6 .rg-kv-page {
 .rg-stage-cards:has(> .rg-stage-vgroup) {
   gap: 18px;
   /* 위아래로 나간 7px 가 바로 위 제목(「시비경 26」 등)을 덮던 것 — 사용자 지적 2026-10-02 "문구랑 겹친다" */
-  padding-block: 7px;
+  padding-block: 8px;
 }
 .rg-stage-vgroup {
   grid-column: span min(var(--n, 2), var(--cols, 3));
@@ -15203,7 +15217,8 @@ html.rg-theme.rg6 .rg-kv-page {
   grid-template-columns: subgrid;
   gap: 18px;
   padding: 7px;
-  margin: -7px;
+  /* 여백 7 + 테두리 1 — 테두리만큼 덜 내밀면 안쪽 카드가 1px 좁아진다 (2026-10-03 실측 227.5 vs 228.5) */
+  margin: -8px;
   border: 1px solid color-mix(in srgb, var(--rggold) 45%, var(--rgline));
   border-radius: var(--r-md);
 }
@@ -15451,6 +15466,10 @@ html.rg-theme.rg6 .rg-kv-page {
   padding-top: 8px;
   border-top: 1px solid var(--rgline);
 }
+/* 두 칸 밑 전체 폭(창 본문 938px)에 — 층 창 목록과 같은 폭이라 카드도 같다 (2026-10-03) */
+.rg-enc-battles.wide {
+  margin: 12px 0 0;
+}
 .rg-enc-battles > strong {
   display: block;
   margin-bottom: 8px;
@@ -15458,18 +15477,10 @@ html.rg-theme.rg6 .rg-kv-page {
   letter-spacing: .04em;
   color: var(--rgtext2);
 }
-.rg-enc-battles .rg-stage-cards {
-  grid-template-columns: repeat(2, 1fr);
-}
 .rg-enc-battles-random {
   margin: 0;
   font-size: 12px;
   color: var(--rgmut);
-}
-@media (max-width: 720px) {
-  .rg-enc-battles .rg-stage-cards {
-    grid-template-columns: 1fr;
-  }
 }
 /* 계단식 선택지 트리 — 선택 아래에 결과 서사(▸)와 하위 선택지를 들여쓰기+연결선으로 */
 .rg-choice {
@@ -16505,6 +16516,10 @@ html.rg-theme .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
   width: 52px;
   height: 52px;
   object-fit: contain;
+}
+.rg-modal-ico.plate {
+  width: 112px;
+  height: 39px;
 }
 /* 노드 종류별 색 (2026-07-29). 클라 스프라이트는 전부 청록 한 벌이고 게임이 런타임에
    색을 입히므로 — 번들 전수 확인 — 여기서도 원판만 돌린다. 흰 글리프는 그대로 남는다.

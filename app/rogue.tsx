@@ -130,8 +130,12 @@ type RogueData = {
 };
 
 const rogue1 = rogue1Data as unknown as RogueData;
-const NODE_ICONS: Record<string, string[]> = nodeIconData as Record<string, string[]>;
+const NODE_ICONS: Record<string, string[]> = nodeIconData as unknown as Record<string, string[]>;
 const hasNodeIcon = (topic: string, nodeId: string) => (NODE_ICONS[topic] ?? []).includes(nodeId);
+// 4·5번째 테마의 컬러 판(138×48 가로형) — 게임 지도가 실제로 그리는 그림. 있으면 흰 글리프 대신 이걸 그린다 (2026-10-03,
+// build-rogue.py PLATES · rogue-node-icons.json 의 "_plate")
+const NODE_PLATES: Record<string, string[]> = ((nodeIconData as Record<string, unknown>)._plate ?? {}) as Record<string, string[]>;
+const hasNodePlate = (topic: string, nodeId: string) => (NODE_PLATES[topic] ?? []).includes(nodeId);
 // 현재 활성 토픽 데이터 — RogueGuide 렌더 최상단에서 갱신한다 (모달·applyDiff 등이 참조).
 // 자식 컴포넌트는 항상 RogueGuide 렌더 뒤에 동기 렌더되므로 안전하다.
 let data = rogue1;
@@ -372,13 +376,19 @@ const variantBase = (id: string) => {
   const m = id.match(/^(.*?)(?:_[a-e])?(_dlc1)?$/);
   return m ? m[1] + (m[2] ?? "") : id;
 };
+// ⚠ 접미사 없는 **기본판이 실제로 있을 때만** 묶는다 (사용자 지시 2026-10-03 "묶음에서 풀어줘"). 기본판 없이 _a~_e 만 있는
+// 것은 같은 자리의 판이 아니라 갈래다 — 「바다에서 온 손님」 통보 결과로 갈리는 대국 세 판(ro5_t_9_a~c·긴급 ro5_e_t_9_a~c)과
+// 「모정」에서 지닌 소장품으로 고르는 절변 5판(ro5_b_9_a~e). 이름 규칙만으로 묶여 있었다.
 function groupPairs(pairs: StagePair[]): StagePair[][] {
+  const ids = new Set(data.stages.map((s) => s.id));
   const out: StagePair[][] = [];
   const at = new Map<string, StagePair[]>();
   for (const p of pairs) {
-    const g = at.get(variantBase(p.n.id));
+    const base = variantBase(p.n.id);
+    const key = ids.has(base) ? base : p.n.id;
+    const g = at.get(key);
     if (g) g.push(p);
-    else { const ng = [p]; at.set(variantBase(p.n.id), ng); out.push(ng); }
+    else { const ng = [p]; at.set(key, ng); out.push(ng); }
   }
   return out;
 }
@@ -611,7 +621,12 @@ const NODE_TINT: Record<string, string> = {
 
 /** 노드 종류 글리프 — 이 테마에 그 타입 아이콘이 있을 때만 그린다 */
 function NodeIco({ id, cls = "rg-nodetype-ico" }: { id?: string | null; cls?: string }) {
-  if (!id || !hasNodeIcon(data.id, id)) return null;
+  if (!id) return null;
+  if (hasNodePlate(data.id, id)) {
+    return <img className={`${cls} plate`} src={asset(`/rogue/node/${data.id}/plate/${id}.webp`)}
+      alt="" width={138} height={48} loading="lazy" decoding="async" />;
+  }
+  if (!hasNodeIcon(data.id, id)) return null;
   const tint = NODE_TINT[id];
   // ?v=2 — 트리밍 전 이미지가 CDN 엣지에 남아 몇 시간째 옛 그림이 나오던 것을 끊는다
   return <img className={`${cls}${tint ? ` ${tint}` : ""}`} src={asset(`/rogue/node/${data.id}/${id}.webp?v=2`)}
@@ -838,23 +853,26 @@ function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
               </button>
             )}
           </>)}
-          {/* 이 조우에서 전투가 벌어지면 그 맵을 바로 열 수 있게 (사용자 요청 2026-08-16).
-              게임 데이터에 조우↔전투 링크가 없어 수작업 대응표로만 붙는다 — 없으면 안 그린다. */}
-          {battles && battles.length > 0 && onOpenStage ? (
-            <div className="rg-enc-battles">
-              <strong>{t("이 만남의 전투")}</strong>
-              <div className="rg-stage-cards">
-                {battles.map((p) => <StageCard key={p.n.id} pair={p} onOpen={onOpenStage} />)}
-              </div>
-            </div>
-          ) : enc.battlesRandom ? (
+          {enc.battlesRandom && !(battles && battles.length > 0 && onOpenStage) && (
             <div className="rg-enc-battles">
               <strong>{t("이 만남의 전투")}</strong>
               <p className="rg-enc-battles-random">{t("랜덤 전투 — 고정된 전투 맵 없이, 현재 층의 일반 전투 맵 중 하나에서 벌어집니다.")}</p>
             </div>
-          ) : null}
+          )}
         </div>
       </div>
+      {/* 이 조우에서 전투가 벌어지면 그 맵을 바로 열 수 있게 (사용자 요청 2026-08-16).
+          게임 데이터에 조우↔전투 링크가 없어 수작업 대응표로만 붙는다 — 없으면 안 그린다.
+          두 칸 밑 **전체 폭**에 층 창과 같은 한 줄 4장 (2026-10-03 "록라 모든 곳 N층 작전 카드랑 크기 동일") — 오른쪽 칸(418px)
+          안에선 2장(205px)뿐이었다. */}
+      {battles && battles.length > 0 && onOpenStage && (
+        <div className="rg-enc-battles wide">
+          <strong>{t("이 만남의 전투")}</strong>
+          <div className="rg-stage-cards">
+            {battles.map((p) => <StageCard key={p.n.id} pair={p} onOpen={onOpenStage} />)}
+          </div>
+        </div>
+      )}
     </ModalWindow>
   );
 }
@@ -1715,8 +1733,7 @@ export default function RogueGuide({ initialTopic }: {
                     ))}
                   </div>
                   {tab === "kin" && <p className="rg-zone-desc">{t("6B 명멸정의 기이한 공간 「고금교차」로 들어가는 특수판 — 같은 전투의 더 어려운 판입니다.")}</p>}
-                  {/* 카드는 층 창과 같은 한 줄 4장 (사용자 지시 2026-10-03 "N층 작전 맵 카드랑 똑같이") */}
-                  <div className="rg-stage-cards rg-sky-cards"><StageCardGroups pairs={pairsOf(tab === "shi" ? shiStages : kinStages)} onOpen={setStageOpen} /></div>
+                  <div className="rg-stage-cards"><StageCardGroups pairs={pairsOf(tab === "shi" ? shiStages : kinStages)} onOpen={setStageOpen} /></div>
                 </div>
               );
             })()}
@@ -3450,7 +3467,7 @@ export default function RogueGuide({ initialTopic }: {
       {secOpen && (() => {
         const sec = mapSections.find((x) => x.id === secOpen);
         return sec ? (
-          <ModalWindow key={sec.id} label={sec.label} className={`rg-modal rg-secmodal${sec.id === "sky:BATTLE" ? " rg-skybattle" : ""}`} onClose={() => { setSecOpen(""); setNtFocus(""); }}>
+          <ModalWindow key={sec.id} label={sec.label} className="rg-modal rg-secmodal" onClose={() => { setSecOpen(""); setNtFocus(""); }}>
             <header className="rg-modal-head">
               <div>
                 <h3 className={sec.cls}>{sec.ico ? <><NodeIco id={sec.ico} cls="rg-modal-ico" /><span className="rg-modal-title">{sec.name}</span></> : sec.name}</h3>

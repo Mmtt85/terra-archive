@@ -1863,9 +1863,10 @@ def build_topic(tid="rogue_1", loc=None):
         "name": topic["name"],
         "line": topic.get("lineText"),
         "zones": zones,
+        # nodeTypeDrop — 표엔 남아 있지만 그 테마 지도에 안 나오는 종류 (curated 주석)
         "nodeTypes": [{"id": k, "name": v["name"], "desc": v.get("description"),
                        "func": tr(node_func(tid, k))}
-                      for k, v in r["nodeTypeData"].items()],
+                      for k, v in r["nodeTypeData"].items() if k not in (curated.get("nodeTypeDrop") or [])],
         **({"skyNodes": sky_nodes} if sky_nodes else {}),
         "difficulties": difficulties,
         "stages": stages,
@@ -3040,7 +3041,22 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
         "rogue_4": [("WISH", _r3, "node_wish", "glyph"), ("STORY", _r3, "node_story", "glyph"),
                     ("STORY_HIDDEN", _r3, "node_story", "glyph"), ("ALCHEMY", _r4, "node_alchemy", "crop")],
         "rogue_5": [("WISH", _r5, "node_wish", "white"), ("STORY", _r5, "node_story", "white"),
-                    ("STORY_HIDDEN", _r5, "node_story", "white"), ("ALCHEMY", _r4, "node_alchemy", "crop")],
+                    ("STORY_HIDDEN", _r5, "node_story", "white")],
+    }
+    # 4·5번째 테마의 **컬러 판**(138×48 가로형) — 그 테마 지도 화면이 실제로 그리는 그림 (node_view_data._activeIcons 를
+    # 비트별로 푼 것, 2026-10-03). 화면은 판이 있으면 판을 쓴다 → public/rogue/node/<tid>/plate/<종류>.webp (흰 글리프 파일은
+    # 그대로 두고 따로 — 라이브가 쓰는 파일을 덮지 않는다). 사용자 지시 2026-10-03 "거짓과 진실만 컬러라 이상하다 — 다른 노드도
+    # 다 컬러로 가능하면, 컬러 노드는 가로로 긴 직사각형". 자욱한 안개(256)는 게임도 흰 공용 글리프(img_unknown)라 판이 없다.
+    PLATES = {
+        "rogue_4": {"BATTLE_NORMAL": "node_battle", "BATTLE_ELITE": "node_battle_elite", "BATTLE_BOSS": "boss_focus",
+                    "REST": "node_safe", "INCIDENT": "node_inv", "ENTERTAINMENT": "node_enter", "WISH": "node_wish",
+                    "SACRIFICE": "node_sac", "EXPEDITION": "node_exp", "BATTLE_SHOP": "node_shop", "PORTAL": "node_port",
+                    "ALCHEMY": "node_alchemy", "DUEL": "node_duel", "STORY": "node_story", "STORY_HIDDEN": "node_story"},
+        "rogue_5": {"BATTLE_NORMAL": "node_battle", "BATTLE_ELITE": "node_battle_elite", "BATTLE_BOSS": "boss_focus",
+                    "REST": "node_safe", "INCIDENT": "node_inv", "WISH": "node_wish", "SACRIFICE": "node_sac",
+                    "EXPEDITION": "node_exp", "BATTLE_SHOP": "node_shop", "PORTAL": "node_spZone", "DUEL": "node_duel",
+                    "STORY": "node_story", "STORY_HIDDEN": "node_story", "SPECIAL_ZONE": "node_spZone",
+                    "STASHED_RECRUIT": "node_stashed_recruit"},
     }
     theme_cache = {}
 
@@ -3055,7 +3071,7 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
                 for obj in env.objects:
                     if obj.type.name == "Sprite":
                         d = obj.read()
-                        if d.m_Name.startswith("node_") and d.m_Name not in out:
+                        if d.m_Name.startswith(("node_", "boss_")) and d.m_Name not in out:
                             out[d.m_Name] = d.image.convert("RGBA")
             except Exception as err:  # noqa: BLE001
                 print(f"  {bundle}: {err}")
@@ -3173,6 +3189,22 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
             save_webp(tb.getvalue(), os.path.join(dest, f"{nid}.webp"), photo=False, max_px=160,
                       method=4, try_lossless=False)
             found[nid] = True
+        # 컬러 판 (PLATES) — 판 폴더에 따로
+        plates = {k: v for k, v in PLATES.get(tid, {}).items() if k in wanted}
+        if plates:
+            pdir = os.path.join(dest, "plate")
+            os.makedirs(pdir, exist_ok=True)
+            got = 0
+            for nid, sprite in plates.items():
+                im = theme_sprites(base, f"refs/rglktp_{tid}.ab").get(sprite)
+                if im is None:
+                    continue
+                tb = _io.BytesIO()
+                im.save(tb, "PNG")
+                save_webp(tb.getvalue(), os.path.join(pdir, f"{nid}.webp"), photo=False, max_px=160,
+                          method=4, try_lossless=False)
+                got += 1
+            print(f"{tid}: 컬러 판 {got}/{len(plates)}종")
         sky_want = sky_icons(tid)
         if sky_want:
             sky_found = set()
@@ -3209,10 +3241,17 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
     inv_path = os.path.join(REPO, "app", "data", "rogue-node-icons.json")
     inv = {}
     node_root = os.path.join(REPO, "public", "rogue", "node")
+    plate_inv = {}
     for tid in sorted(os.listdir(node_root)) if os.path.isdir(node_root) else []:
         d = os.path.join(node_root, tid)
         if os.path.isdir(d):
             inv[tid] = sorted(f[:-5] for f in os.listdir(d) if f.endswith(".webp"))
+            pd = os.path.join(d, "plate")
+            if os.path.isdir(pd):
+                plate_inv[tid] = sorted(f[:-5] for f in os.listdir(pd) if f.endswith(".webp"))
+    # "_plate" = 컬러 판이 있는 (테마, 종류) — 화면이 판 경로·가로형 크기로 그린다
+    if plate_inv:
+        inv["_plate"] = plate_inv
     json.dump(inv, open(inv_path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"보유 목록 → app/data/rogue-node-icons.json ({sum(len(v) for v in inv.values())}건)")
     print(f"\n합계 {total}장 → public/rogue/node/  ·  R2 반영: node scripts/r2-sync.mjs")
