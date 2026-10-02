@@ -1546,9 +1546,10 @@ export default function RogueGuide({ initialTopic }: {
      종전엔 아래로 열리는 아코디언이었다. 카드로 바꾸고 누르면 모달에서 펼친다
      (사용자 요청 2026-09-20). 카드와 모달이 같은 정의를 쓰도록 여기 한 곳에 모은다. */
   // side "s" = 쉐이의 잔식 창에만 (계원 지도판에선 뺀다 — hasSky 주석)
-  const mapSections: { id: string; show: boolean; label: string; name: React.ReactNode; cls?: string; side?: "s"; ico?: string; clr?: string; sel?: string; count: React.ReactNode; body: React.ReactNode }[] = [
+  const mapSections: { id: string; show: boolean; label: string; name: React.ReactNode; cls?: string; side?: "s"; ico?: string; clr?: string; sel?: string; bg?: string; count: React.ReactNode; body: React.ReactNode }[] = [
     {
       id: "enc",
+      bg: "INCIDENT",
       show: true,
       label: `${t("우연한 만남")}`,
       name: <>{t("우연한 만남")}</>,
@@ -1600,6 +1601,7 @@ export default function RogueGuide({ initialTopic }: {
     },
     {
       id: "boss",
+      bg: "BATTLE_BOSS",
       show: orphanBosses.length > 0,
       label: `${t("험난한 길 (보스)")}`,
       name: <>{t("험난한 길 (보스)")}</>,
@@ -1627,6 +1629,7 @@ export default function RogueGuide({ initialTopic }: {
     },
     {
       id: "trial",
+      bg: huntZone ? "STASHED_RECRUIT" : undefined,   // 명촉대 시련 = 길라잡이 「촛불 사당」에서 이어지는 전투
       // 쉐이는 이 묶음이 '명촉대 시련'이다 — 길라잡이 「촛불 사당」의 '지촉인에게 자신을 증명한다'에서 랜덤으로 이어지는 대사냥
       // 5종(+단좌판). 가운데 명촉대를 끝까지 지켜야 한다. 외나무다리처럼 따로 둔다 (사용자 지시 2026-10-02).
       // 종전 같은 날엔 '금석경 · 특수 전투'로 잘못 불렀다 — 금석경은 잔식의 특수판이다(위 shiStages 주석).
@@ -1685,6 +1688,7 @@ export default function RogueGuide({ initialTopic }: {
     // 앞에 끼우면 기존 카드들이 한 칸씩 밀린다.
     {
       id: "duel",
+      bg: "DUEL",
       show: duelStages.length > 0 && !!duelNode,
       label: duelNode?.name ?? "",
       name: <>{duelNode && <Nm name={duelNode.name} cn={duelNode.cn} />}</>,
@@ -2927,7 +2931,14 @@ export default function RogueGuide({ initialTopic }: {
           <div className="rg-sec-cards">
             {mapSections.filter((sec) => sec.show && !sec.side).map((sec) => (
               // '▸' 표시는 뺐다 — 지도판 카드에서 오른쪽 아래 개수와 겹쳐 보였다 (사용자 지시 2026-09-25 "필요 없을듯")
-              <button key={sec.id} type="button" className="rg-sec-card" onClick={() => { setNtFocus(""); setSecOpen(sec.id); }}>
+              <button key={sec.id} type="button" className={`rg-sec-card${sec.bg && hasNodePlate(data.id, sec.bg) ? " plate" : ""}`}
+                onClick={() => { setNtFocus(""); setSecOpen(sec.id); }}>
+                {/* 그 묶음의 노드에 게임 컬러 판이 있으면 층 카드처럼 옅게 깐다 — 4·5번째 테마 (사용자 지시 2026-10-03
+                    "우연한 만남이나 외나무다리 버튼도 컬러 노드 있으면 그걸로 배경" → "정사각형이라 이상해짐, 직사각형으로" —
+                    카드 자체를 판 모양(138:48 가로형)으로, CSS .rg-sec-card.plate) */}
+                {sec.bg && hasNodePlate(data.id, sec.bg) && (
+                  <img className="rg-zonecard-bg" src={asset(`/rogue/node/${data.id}/plate/${sec.bg}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
+                )}
                 <h3 className={sec.cls}>{sec.name}</h3>
                 <span className="rg-zone-counts">{sec.count}</span>
               </button>

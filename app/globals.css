@@ -13912,9 +13912,34 @@ html.rg-theme.rg6 .site-header {
      ④ 명촉대 시련(길라잡이 「촛불 사당」의 대사냥 5종)은 기타 노드 밑(3 / 5).
      ⑤ 외나무다리(2026-09-25 기타 노드에서 분리) — 조우 전투 **오른쪽** (사용자 지시 같은 날).
      판이 좁으면 그 자리가 아치의 3층 카드와 겹쳐 **밑으로** 내린다 (아래 @container — "겹치면 자동으로 밑으로"). */
-  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(4) { grid-area: 3 / 5; }
-  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(5) { grid-area: 3 / 2; }
-  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(6) { grid-area: 4 / 5; }
+  /* ⚠ 2026-10-03 — 쉐이는 역아치 꼭짓점이 왼쪽(2·3층 사이)으로 갔다(아래 rg5 --dy). 묶음 카드는 **전부 오른쪽**에 (사용자 지시
+     같은 날 "버튼들 다 오른쪽으로 몰아놔줘" — 한때 기타 노드·조우 전투를 왼쪽에 뒀다가 지적받음). 오른쪽은 층이 계단처럼 걸려
+     칸 격자로는 안 맞아 판 기준 절대 위치로 놓는다:
+       오른쪽 끝 열 — 정사각형 기타 노드·조우 전투: 6B층 바닥(106 + 118 = 224) + 10 = 234px 부터 쌓는다
+       그 왼쪽 열 — 가로형 우연한 만남·명촉대 시련·외나무다리: 6A층 바닥(189 + 118 = 307) + 10 = 317px 부터 쌓는다
+     판 높이는 마지막 가로형 바닥(317 + 3×48 + 2×10 = 481) + 10. 1101·1400·1920px 겹침 0 (실측). */
+  /* 판 높이는 절대 위치 카드가 못 늘리므로 판의 ::after 를 한 줄짜리 격자의 받침으로 — 넓은 판 435(조우 전투 밑단) + 아래 여백 10,
+     좁은 판(아래 @container) 513(외나무다리 밑단) + 10. 묶음 카드가 다 절대 위치라 줄은 ①층 하나뿐이다 */
+  html.rg-theme.rg5 .rg-mapfield:has(> .rg-zone-cards) { grid-template-rows: auto; min-height: 0; }
+  html.rg-theme.rg5 .rg-mapfield:has(> .rg-zone-cards)::after { content: ""; grid-area: 1 / 1 / 2 / 2; height: 435px; pointer-events: none; }
+  /* grid-area: auto — 격자 칸이 지정된 절대 위치 요소는 그 칸을 기준으로 잡혀 229px 어긋났다 (실측) */
+  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > * { position: absolute; grid-area: auto; right: 0; width: var(--sec-col, 111px); }
+  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > .plate { width: 138px; right: calc(var(--sec-col, 111px) + 10px); }
+  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(2) { top: 234px; }
+  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(3) { top: calc(234px + var(--sec-col, 111px) * 0.86 + 10px); }
+  /* 가로형 세 장은 한 묶음으로 — 외나무다리 밑단을 조우 전투 밑단에 맞춘다 (사용자 지시 같은 날). 조우 전투 밑단 =
+     234 + 2 × 정사각형 높이(--sec-col × 0.86) + 10, 세 장 높이 = 3×48 + 2×10 = 164 */
+  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(1) { top: calc(234px + var(--sec-col, 111px) * 1.72 + 10px - 164px); }
+  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(4) { top: calc(234px + var(--sec-col, 111px) * 1.72 + 10px - 106px); }
+  html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(5) { top: calc(234px + var(--sec-col, 111px) * 1.72 + 10px - 48px); }
+  /* 판이 1060px 보다 좁으면 가로형 세 장이 6A층 밑으로 들어가 겹친다(판 840px 에서 47×36px — 1400px 창은 옆 칸이 생겨 판이 좁다).
+     그때만 6A층 바닥(221 + 118 = 339) + 10 밑으로 — 경계: 가로형 왼쪽 끝 W − 259 ≥ 6A 오른쪽 끝(3% 당김) 0.746W + 6 + 8 → W ≥ 1075 */
+  @container rg-mapfield (max-width: 1074px) {
+    html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(1) { top: 349px; }
+    html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(4) { top: 407px; }
+    html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(5) { top: 465px; }
+    html.rg-theme.rg5 .rg-mapfield:has(> .rg-zone-cards)::after { height: 513px; }
+  }
   /* 팬텀 & 크림슨 솔리테어는 6층이라 묶음 카드가 152px 로 가장 컸다 — 10% 줄인다.
      ⚠ 팬텀은 **테마 클래스가 붙지 않는 기본값**이다 (html 에 rg-theme 만; rg1 은 없다) —
      rg1 로 집으면 아무 것도 안 걸린다. 나머지 테마를 배제해서 집는다. */
@@ -13928,6 +13953,8 @@ html.rg-theme.rg6 .site-header {
      그 폭이면 2층이 좌우 칸에 닿으므로 ③줄은 2층 바닥(151px) 아래에서 시작하고,
      결과적으로 ③줄이 밑변보다 30px 쯤 내려간다 — 크기를 택한 대가다. */
   html.rg-theme.rg6 .rg-mapfield:has(> .rg-zone-cards) { --sec-col: 114px; --arch-r2: 0px; --arch-2nd: 196px; }
+  /* 미즈키 묶음 카드 10% 작게 — 6층 기본 152 → 137px (사용자 지시 2026-10-03 "우연한 만남 등의 버튼을 10%씩만 줄여줘") */
+  html.rg-theme.rg2 .rg-mapfield:has(> .rg-zone-cards) { --sec-col: 137px; --arch-r2: 0px; --arch-2nd: 196px; }
   /* 층 카드는 판 전체 폭을 쓴다 — 좌우 칸에 눌리면 층 이름이 두세 줄로 접힌다 */
   .rg-mapfield > .rg-zone-cards {
     grid-column: 1 / -1;
@@ -13960,15 +13987,17 @@ html.rg-theme.rg6 .site-header {
   /* 살카즈(8층)의 4번째 = 외나무다리(2026-09-25 분리) — 기본 자리(3 / 2)는 아치의 3층 카드와 16px 겹친다
      (1440px 실측). 오른쪽 주머니 기타 노드 밑(3 / 5)으로 — 좌우 두 장씩 균형도 맞는다. */
   html.rg-theme.rg4 .rg-mapfield > .rg-sec-cards > *:nth-child(4) { grid-area: 3 / 5; }
+  /* 살카즈도 컬러 판 카드(우연한 만남·외나무다리)는 가로형 — 위쪽 띠엔 조우 전투(왼쪽)·기타 노드(오른쪽), 그 밑에 가로형 둘 (2026-10-03) */
+  html.rg-theme.rg4 .rg-mapfield > .rg-sec-cards > *:nth-child(1) { grid-area: 3 / 1 / 4 / 3; }
+  html.rg-theme.rg4 .rg-mapfield > .rg-sec-cards > *:nth-child(3) { grid-area: 2 / 1; }
+  html.rg-theme.rg4 .rg-mapfield > .rg-sec-cards > *:nth-child(4) { grid-area: 3 / 4 / 4 / 6; justify-self: end; }
   /* 미즈키의 4번째 = 원더랜드(짙푸른 요람, 2026-10-02 층 줄에서 분리) — 기타 노드 바로 밑 (사용자 지시 "기타 노드 밑에다가") */
   html.rg-theme.rg2 .rg-mapfield > .rg-sec-cards > *:nth-child(4) { grid-area: 3 / 5; }
   /* 쉐이(10층)의 외나무다리 — 판 폭이 1040px 보다 좁으면 조우 전투 바로 **밑**(4 / 1)으로. 오른쪽 자리(3 / 2)는
      층 카드 폭이 판 폭에 비례해 좁아지면 3층 카드와 겹친다 — 실측 판 1016px 3px · 980px 10px · 856px 35px 겹침,
      1051px 부터 0 (계산상 경계 1032px, 여유 8px). 화면 폭이 아니라 판 폭으로 가른다: 1400px 부터 옆 칸이 생겨
      판이 오히려 좁아지므로(1440px 화면 = 판 856px) 화면 폭 구간으로는 못 가른다. */
-  @container rg-mapfield (max-width: 1039px) {
-    html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(5) { grid-area: 4 / 1; }
-  }
+  /* (쉐이 외나무다리 자동 내림 @container 규칙은 2026-10-03 가로형 재배치로 뺐다 — 외나무다리가 늘 ④줄 왼쪽) */
   /* 정사각형에 가깝게, 한 번 더 10% 작게 (사용자 지시 2026-09-20) */
   .rg-mapfield > .rg-sec-cards > * {
     flex-direction: column;
@@ -13981,12 +14010,21 @@ html.rg-theme.rg6 .site-header {
     position: relative;
   }
 
+  /* 컬러 판 카드 — 판 그림 원래 크기(138×48) 가로형이라 그림이 잘리지 않는다. 처음엔 층 카드 두 장 폭(1400px 에서 196×68)이었다가
+     "너무 크다, 반으로 줄여도 될 듯"(2026-10-03)으로 면적 절반 = 원래 크기. 길이 반(98×34)은 이름·개수가 안 들어간다 */
+  .rg-mapfield > .rg-sec-cards > .plate {
+    width: 138px;
+    aspect-ratio: 138 / 48;
+    justify-content: space-between;
+    gap: 0;
+    padding: 6px 10px;
+  }
   /* ── 역아치 곡선 ── */
   .rg-zone-cards > * {
-    transform: translateY(var(--dy, 0px));
+    transform: translate(var(--dx, 0px), var(--dy, 0px));   /* --dx — 옆으로 옮기는 층(흑류수해 3·4층, 2026-10-03). 기본 0 */
     transition: transform 0.16s ease;
   }
-  .rg-zone-cards > *:hover { transform: translateY(calc(var(--dy, 0px) - 4px)); }
+  .rg-zone-cards > *:hover { transform: translate(var(--dx, 0px), calc(var(--dy, 0px) - 4px)); }
   /* ── 역아치 곡선 — **층이 몇 장이든 한가운데는 늘 같은 깊이(307px — 2026-10-02 에 236 에서 1.3배)** ──
      기준은 쉐이의 기이한 계원(10층)이다 (사용자 지시 2026-09-20). 층 수는 6~10으로
      제각각인데 끝에서부터 같은 값을 주면 층이 적은 테마는 얕게 파여 다른 판처럼 보였다
@@ -14005,6 +14043,25 @@ html.rg-theme.rg6 .site-header {
   .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(3) { --dy: 295px; }
   .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(4) { --dy: 295px; }
   .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(5) { --dy: 196px; }
+  /* 흑류수해 — 가운데 배경 인물을 덜 가리게 (사용자 지시 2026-10-03): 2·5층을 196 → 160px 로 살짝 올리고, 3·4층은 그 바닥
+     (278px) 밑 288px 에 두되 **추격전·거점전이 움직이지 않는 선에서 겹치지 않을 만큼만** 양옆으로 벌린다 — 3층 왼쪽 끝 =
+     추격전(②열) 오른쪽 끝 + 8px. 판 폭과 무관하게: --dx = (두 묶음 칸 2×--sec-col + 칸 간격 10 + 8) − (원래 자리 2×카드 + 16)
+     = 2×--sec-col + 2px − 200%(카드 두 장). 4층은 거울. (한 번 3·4층을 2·5층 바로 밑까지 보냈다가 "너무 양옆으로 보냈다"로 되돌림) */
+  /* 미즈키 — 흑류수해처럼 가운데 배경을 덜 가리게 (사용자 지시 2026-10-03 "미즈키의 N층 카드도 흑류수해랑 비슷하게 좀 벌려줘"):
+     2·5층은 196 → 160px 로 올린다(바깥 칸 우연한 만남·기타 노드와 4px 뿐이라 옆으로는 안 벌린다), 3·4층은 아래 끝을 조우 전투·
+     원더랜드 줄(③줄 324 + 118 = 442px) 아래 끝에 맞추고 양옆으로 30px 씩. 묶음 카드는 그대로 (1101·1400·1920px 겹침 0) */
+  html.rg-theme.rg2 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(2),
+  html.rg-theme.rg2 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(5) { --dy: 160px; }
+  html.rg-theme.rg2 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(3) { --dx: -30px; --dy: 324px; }
+  html.rg-theme.rg2 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(4) { --dx: 30px; --dy: 324px; }
+  /* 2·5층도 바깥 칸(우연한 만남·기타 노드)과 8px 떨어질 만큼만 더 벌린다 — 2층 왼쪽 끝 = --sec-col + 8 → --dx = --sec-col − 100%
+     (사용자 지시 같은 날 "2층 5층을 양옆으로 쪼금만 더 벌려줘", 1400px 에서 19px). 3·4층은 아래 끝을 조우 전투·추격전 줄 아래
+     끝(③줄 326.5 + 98 = 424.5px — 판 높이가 줄로 2.5px 퍼진 값)에 맞춘다 — --dy = 424.5 − 118 ("3층 4층을 조우 전투 추격전 버튼이랑 밑줄을 맞춰줘") */
+  html.rg-theme.rg6 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(2) { --dx: calc(var(--sec-col, 114px) - 100%); --dy: 160px; }
+  html.rg-theme.rg6 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(5) { --dx: calc(100% - var(--sec-col, 114px)); --dy: 160px; }
+  /* 3·4층은 그 자리에서 안쪽으로 10px 더 모은다 — 추격전·거점전과 18px ("3층 4층을 안쪽으로 아주 조금만 모아줘") */
+  html.rg-theme.rg6 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(3) { --dx: calc(2 * var(--sec-col, 114px) + 12px - 200%); --dy: 306.5px; }
+  html.rg-theme.rg6 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(4) { --dx: calc(200% - 2 * var(--sec-col, 114px) - 12px); --dy: 306.5px; }
   /* 7층 — 0 · 159 · 254 · 286 · 254 · 159 · 0 */
   .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(2) { --dy: 170px; }
   .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(3) { --dy: 273px; }
@@ -14018,6 +14075,16 @@ html.rg-theme.rg6 .site-header {
   .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(5) { --dy: 300px; }
   .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(6) { --dy: 251px; }
   .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(7) { --dy: 151px; }
+  /* 쉐이 — 나이키 로고(스우시)처럼, 사용자가 그려 준 배치 그대로 (2026-10-03, 판 1214px 화면을 그림에서 실측해 옮김):
+     깊이 0 · 156 · 302 · 309 · 294 · 221 · 109 · 0 에, 2~6A층을 왼쪽으로 당긴다 — 칸(카드 + 간격 8px) 기준 49 · 68 · 43 · 17 · 3%.
+     당김은 카드 폭에 비례(translate %)라 판 폭이 달라도 같은 모양. (그 전: 왼쪽 sin·오른쪽 cos 곡선 — 칸이 고르게 벌어져
+     왼쪽이 찌그러져 보였다) */
+  html.rg-theme.rg5 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(2) { --dx: calc(-0.49 * (100% + 8px)); --dy: 156px; }
+  html.rg-theme.rg5 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(3) { --dx: calc(-0.68 * (100% + 8px)); --dy: 302px; }
+  html.rg-theme.rg5 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(4) { --dx: calc(-0.43 * (100% + 8px)); --dy: 309px; }
+  html.rg-theme.rg5 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(5) { --dx: calc(-0.17 * (100% + 8px)); --dy: 294px; }
+  html.rg-theme.rg5 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(6) { --dx: calc(-0.03 * (100% + 8px)); --dy: 221px; }
+  html.rg-theme.rg5 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(7) { --dy: 109px; }
   /* 9층 — 0 · 125 · 214 · 268 · 286 · 268 · 214 · 125 · 0 */
   .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(2) { --dy: 134px; }
   .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(3) { --dy: 230px; }
@@ -14198,6 +14265,14 @@ html.rg-theme.rg6 .site-header {
 }
 .rg-sec-card:hover {
   border-color: color-mix(in srgb, var(--rgcrim) 60%, var(--rgline));
+}
+/* 노드 컬러 판 배경(.rg-zonecard-bg, 4·5번째 테마) — 층 카드처럼 카드 밖으로 안 넘치게, 글자는 그림 위로 (2026-10-03) */
+.rg-sec-card {
+  position: relative;
+  overflow: hidden;
+}
+.rg-sec-card > :not(.rg-zonecard-bg) {
+  position: relative;
 }
 .rg-sec-card h3 {
   margin: 0;
@@ -15748,7 +15823,7 @@ html.rg-theme.rg6 .rg-kv-page {
   .rg-skybtn {
     position: absolute;
     top: 0;
-    left: 50%;
+    left: calc(50% + 24px);   /* 가운데에서 오른쪽으로 살짝 (사용자 지시 2026-10-03 "아주 살짝만 오른쪽으로") */
     transform: translateX(-50%);
     width: calc((100% - 56px) / 8);
     min-height: 96px;
