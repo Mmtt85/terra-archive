@@ -15465,14 +15465,107 @@ html.rg-theme.rg6 .rg-kv-page {
 .rg-filterbar input[type="search"]::placeholder {
   color: var(--rgmut);
 }
-/* 노드 이름 검색란은 안내 문구가 길어 기본의 2배 폭으로 (사용자 요청 2026-07-18) */
-/* 노드 검색 줄은 .rg-map 그리드의 한 칸이 아니라 **한 줄 전체**를 쓴다 — 오른쪽 끝에
-   보유 리스트 버튼이 붙으므로(2026-07-26) 칸 폭(400px)에 갇히면 버튼이 아래로 밀린다 */
-.rg-map-search {
-  grid-column: 1 / -1;
+/* 통합 검색란 — 탭 줄 오른쪽, **보유 리스트 버튼 바로 왼쪽** (사용자 지시 2026-10-02 — "엔딩 버튼이랑 보유리스트
+   정가운데" → "엔딩 버튼 바로 오른쪽" → "보유 리스트 버튼 왼쪽에다, 길이도 20% 줄여"). 폭 300 → 240px.
+   margin-left: auto 가 탭 묶음과의 빈자리를 먹으므로 보유 리스트 버튼의 auto 는 끄고, 둘 사이는 12px 를 더 띄운다
+   (4px 탭 간격만이면 버튼에 딱 붙어 보인다 — 엔딩 옆에 둘 때 받은 지적 "너무 딱 붙이지 말고 살짝 띄워줘").
+   종전엔 맵·노드·적 도감·소장품 탭마다 .rg-filterbar 안에 검색란이 따로 있었다.
+   높이는 탭 버튼에 맞춘다 — 32px 를 박으면 줄 높이가 1px 커져 탭 버튼이 같이 늘어난다(align-items: stretch). */
+.rg-uni-search {
+  flex: 0 1 240px;
+  display: flex;
+  min-width: 0;
+  margin-left: auto;
 }
-.rg-map-search input[type="search"] {
-  min-width: 360px;
+.rg-tabs .rg-uni-search + .rg-inv-open {
+  margin-left: 12px;
+}
+.rg-uni-box {
+  position: relative;   /* 검색 제안 드롭다운(.suggest-drop) 앵커 */
+  width: 100%;
+}
+.rg-uni-box input[type="search"] {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--rgline);
+  background: var(--rgdeep);
+  color: var(--rgink);
+  padding: 0 12px;
+  font-weight: 500;
+  font-size: 12.5px;
+}
+.rg-uni-box input[type="search"]::placeholder {
+  color: var(--rgmut);
+}
+/* 좁은 화면 — 탭이 두 줄로 접히므로 검색란은 맨 아랫줄을 통째로 쓴다 */
+@media (max-width: 720px) {
+  .rg-uni-search {
+    order: 10;
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+  .rg-tabs .rg-uni-search + .rg-inv-open {
+    margin-left: auto;   /* 검색란이 아랫줄로 내려가므로 보유 리스트는 다시 줄 오른쪽 끝 */
+  }
+  .rg-uni-box {
+    width: 100%;
+    height: 32px;
+  }
+}
+/* 통합 검색 결과 판 — 검색어가 있으면 탭 본문 자리를 대신한다. 카드는 각 탭 것 그대로 */
+.rg-uni-results {
+  display: grid;
+  gap: 12px;
+}
+.rg-uni-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rgink);
+}
+.rg-uni-head button,
+.rg-uni-links button {
+  border: 1px solid var(--rgline);
+  background: var(--rgcard);
+  color: var(--rgink);
+  padding: 5px 12px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+.rg-uni-head button:hover,
+.rg-uni-links button:hover {
+  border-color: var(--rggold);
+  color: var(--rggold);
+}
+.rg-uni-results .rg-stage-group {
+  margin-top: 0;
+}
+.rg-uni-results .rg-stage-cards {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+.rg-uni-kind {
+  margin-left: auto;
+  flex: none;
+  font: 700 10.5px var(--mono);
+  font-style: normal;
+  color: var(--rgmut);
+}
+.rg-uni-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rg-uni-links button em {
+  margin-right: 6px;
+  font: 700 10.5px var(--mono);
+  font-style: normal;
+  color: var(--rgmut);
 }
 .rg-filterbar button {
   border: 1px solid var(--rgline);
@@ -15692,11 +15785,19 @@ html.rg-theme.rg6 .rg-kv-page {
 .rg-diff-view .rg-zone-desc {
   margin-bottom: 12px;
 }
+/* 모서리 — collapse 인 표엔 border-radius 가 안 먹어서, 아래 .rg .rg-diff-table 의 --r-md(10px)가 있는데도 직각이었다
+   (사용자 지적 2026-10-02 "난이도 표도 너무 직각인데 라디우스 좀 줘"). separate + 간격 0 으로 같은 줄 모양을 내고,
+   칸 배경(머리·선택 행)은 overflow 로 모서리에서 자른다. 마지막 줄 밑줄은 표 테두리와 겹치므로 뺀다. */
 .rg-diff-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
   background: var(--rgcard);
   border: 1px solid var(--rgline);
+}
+.rg-diff-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 .rg-diff-table th,
 .rg-diff-table td {

@@ -17,7 +17,7 @@ import { useConfirm } from "./confirm";
 import rogueIndexData from "./data/rogue-index.json";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
-import { SearchSuggest } from "./search-suggest";
+import { SearchSuggest, type Suggest } from "./search-suggest";
 import { anyNewFeature, isNewFeature } from "./whats-new";
 import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import { LENS_ITEM_SECTIONS, type LensGoto, type LensOutcome } from "./lens/match";
@@ -93,6 +93,9 @@ type Difficulty = { mode: string; grade: number; name: string; rule: string | nu
 type InvStage = { label: string; name: string; usage?: string | null; desc?: string | null };
 // stages: 붕괴 패러다임 등 다단계 시스템 — 카드 1장 안에 단계별 [섬네일+이름+효과] 행 (사용자 확정 2026-07-24)
 type InvItem = { id: string; name: string; usage?: string | null; desc?: string | null; obtain?: string | null; order?: string | null; kind?: string | null; typeName?: string | null; img?: boolean; iconId?: string; cn?: string; stages?: InvStage[] };
+// 통합 검색 결과의 전시관 자원·난이도 한 장 — label = 전시관 서브탭(또는 그 안 갈래) 이름.
+// open = 누르면 — relic: 탭에서처럼 상세 창(부품·테마 고유 시스템) · diff: 난이도 탭으로 · 없으면 카드만(탭에서도 카드뿐인 것)
+type ArcHit = { key: string; item: InvItem; label: string; img: string | null; open?: "relic" | "diff" };
 // book = 엔딩 기록(엔딩북) 조각 — 게임 공식 해금 조건 텍스트 (사용자 소원 2026-08-17).
 // rid/txt = 기록 원문 (public/rogue/record/<rid>.json — build-rogue-records.py), txt면 클릭 열람.
 type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string; book?: { name?: string; cond?: string; rid?: string; txt?: 1; cn?: string }[] };
@@ -1204,12 +1207,9 @@ export default function RogueGuide({ initialTopic }: {
   const [relicOpen, setRelicOpen] = useState<InvItem | null>(null); // 소장품·부품·자원 공용 상세
   // 기록 원문(엔딩북 조각·방문객 장면) 열람 — 제목·부제는 여는 쪽이 채운다
   const [recOpen, setRecOpen] = useState<{ rid: string; title: string; sub?: string } | null>(null);
-  // 비제어 입력 3종 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 목록 갱신 (search.ts)
-  const { term: enemyTerm, set: setEnemyTerm, inputProps: enemyProps } = useSearchInput();
+  // 통합 검색란 하나 (탭 줄 가운데 — 아래 uniHits 주석). 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 갱신 (search.ts)
+  const { term: uniTerm, set: setUniTerm, inputProps: uniProps } = useSearchInput();
   const [enemyRank, setEnemyRank] = useState<string>("");
-  const { term: relicTerm, set: setRelicTerm, inputProps: relicProps } = useSearchInput();
-  // 맵·노드 이름 검색 (작전·조우 전투·우연한 만남 전부)
-  const { term: mapTerm, set: setMapTerm, inputProps: mapProps } = useSearchInput();
   // 표준 카테고리 + 토픽 고유 시스템(mechanics)의 라벨을 탭 id로 쓰므로 string
   const [arcTab, setArcTab] = useState<string>("relic");
   const VIEWS = viewsFor();
@@ -1248,7 +1248,7 @@ export default function RogueGuide({ initialTopic }: {
     setView("map");
     setGrade(0);
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null); setRecOpen(null);
-    setEnemyTerm("", false); setEnemyRank(""); setRelicTerm("", false); setMapTerm("", false); setArcTab("relic");
+    setUniTerm("", false); setEnemyRank(""); setArcTab("relic");
     setLensHits(null); setLensMulti(null); // 렌즈 하이라이트·모아보기는 토픽 전환 시 해제
     setInvOpen(false); setInvTab("relic"); // 보유 리스트 모달·탭 리셋 (목록 자체는 테마별 저장)
   };
@@ -1586,13 +1586,9 @@ export default function RogueGuide({ initialTopic }: {
   // 적 도감 탭도 카드를 누르면 본 도감을 받은 뒤에 상세가 뜬다 — 탭을 열 때 미리 받아 둔다 (노드 모달과 같은 이유)
   useEffect(() => { if (view === "enemy") void loadEnemies(locale).catch(() => {}); }, [view, locale]);
 
-  const enemies = useMemo(() => {
-    const q = normSearch(enemyTerm);
-    return Object.entries(data.enemies)
-      .filter(([, e]) => (!enemyRank || e.rank === enemyRank))
-      .filter(([, e]) => !q || normSearch(e.name).includes(q) || (e.cn && normSearch(e.cn).includes(q)))
-      .sort(([, a], [, b]) => (RANK_SORT[a.rank ?? ""] ?? 0) - (RANK_SORT[b.rank ?? ""] ?? 0) || a.name.localeCompare(b.name, "ko"));
-  }, [enemyTerm, enemyRank, active]); // eslint-disable-line react-hooks/exhaustive-deps
+  const enemies = useMemo(() => Object.entries(data.enemies)
+    .filter(([, e]) => (!enemyRank || e.rank === enemyRank))
+    .sort(enemyOrder), [enemyRank, active]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 무대 도구는 소장품에 통합해 함께 표시 (사용자 확정 2026-07-24) — 목록 끝에 붙는다
   const relicsAll = useMemo(() => [
@@ -1602,26 +1598,83 @@ export default function RogueGuide({ initialTopic }: {
       obtain: null, order: null, group: null, sort: 100000 + i, sp: false, img: tool.img,
     } as Relic)),
   ], [active]); // eslint-disable-line react-hooks/exhaustive-deps
-  const relics = useMemo(() => {
-    const q = normSearch(relicTerm);
-    // 소장품 번호(order)로도 검색 — 순수 숫자 질의는 번호 정확일치 우선 (사용자 요청)
-    return relicsAll.filter((r) => !q
-      || normSearch(r.name).includes(q)
-      || (r.cn && normSearch(r.cn).includes(q))
-      || normSearch(r.usage ?? "").includes(q)
-      || (r.order != null && (/^\d+$/.test(q) ? String(r.order) === q : normSearch(String(r.order)).includes(q))));
-  }, [relicTerm, relicsAll]);
-
-  // 맵 탭 이름 검색 — 전투 노드(작전·긴급·보스·조우 전투·특수·시련·추격전·거점전·외나무다리)
-  // + 우연한 만남(조우)을 전부 이름/중국어 원문으로 매칭
-  const mapHits = useMemo(() => {
-    const q = normSearch(mapTerm);
+  // ── 통합 검색 — 탭 줄 가운데 검색란 하나로 노드·적·소장품·전시관·층·엔딩을 한꺼번에 찾는다 (사용자 요청 2026-10-02
+  //    "작전맵 보고 있다가 갑자기 유물 검색이 필요할 땐 유물 탭 가서 검색하고 다시 작전맵 와야 해서 불편 … 통합 검색
+  //    가능하도록 검색란 하나를 엔딩 버튼이랑 보유 리스트 정가운데, 각 탭별 검색란은 없애자"). 종전엔 맵·노드(노드 이름)·
+  //    적 도감(적 이름)·소장품(이름·번호·효과) 탭마다 검색란이 따로라 그 탭 것만 찾았다. 매칭 규칙은 그때 것 그대로 —
+  //    이름·중국어 원문, 소장품·전시관 자원은 효과 문장까지, 순수 숫자는 소장품 번호 정확 일치.
+  //    검색어가 있으면 어느 탭에서든 결과 판이 탭 본문 자리를 대신하고(탭을 누르면 풀린다), 카드를 누르면 그 탭의 상세가 그대로 뜬다.
+  const uniHits = useMemo(() => {
+    const q = normSearch(uniTerm);
     if (!q) return null;
-    const nm = (name: string, cn?: string) => normSearch(name).includes(q) || (cn ? normSearch(cn).includes(q) : false);
-    const stages = data.stages.filter((s) => s.kind !== "emergency" && nm(s.name, s.cn));
-    const encs = data.encounters.filter((e) => nm(e.title, e.cn));
-    return { stages, encs };
-  }, [mapTerm, active]); // eslint-disable-line react-hooks/exhaustive-deps
+    const nm = (name?: string | null, cn?: string) => normSearch(name ?? "").includes(q) || (cn ? normSearch(cn).includes(q) : false);
+    const inUse = (u?: string | null) => !!u && normSearch(u).includes(q);
+    // 분류 이름으로도 찾는다 (사용자 요청 2026-10-02 "1층 2층 외나무다리 조우전투 엔딩 방문객 뭐 이런 식으로 검색해도
+    // 다 나오게") — 검색어가 분류 이름(두 글자 이상)의 일부면 그 분류를 통째로 싣고, 'N층'이면 그 층의 층 카드·작전·
+    // 우연한 만남을 싣는다. 탭·지도 묶음·기타 노드 같은 '가는 곳'은 결과 판의 바로 가기 단추가 맡는다(uniShort).
+    const kw = (label: string) => uniKw(q, label, t);
+    const fm = q.match(/^(\d+)(?:층|階|f)$/) ?? q.match(/^(?:f|floor)(\d+)$/);
+    const floor = fm ? Number(fm[1]) : null;
+    const kinds = new Set(Object.keys(KIND_LABEL).filter((k) => kw(KIND_LABEL[k]) || (k === "boss" && kw("보스"))));
+    const ranks = new Set(Object.keys(RANK_KO).filter((k) => kw(RANK_KO[k]) || (k === "BOSS" && kw("보스"))));
+    // "모든 자료에 대해서 다 나오게" (사용자 요청 2026-10-02, 흑류수해 전시관 › 환경이 안 나온다는 지적) — 이름에 더해
+    // 작전 코드·적 번호·우연한 만남 선택지·효과 문장(층 효과·환각·환경·난이도 규칙·엔딩 설명·엔딩북 조각)까지 본다.
+    // 플레이버 설명(desc)은 대부분 빼둔다 — 'HP' 한 마디에 수백 장이 걸린다.
+    const choiceHit = (cs?: EncChoice[]): boolean => !!cs?.some((c) => nm(c.title, c.cn) || choiceHit(c.next?.choices));
+    const stages = data.stages.filter((s) => s.kind !== "emergency"
+      && (nm(s.name, s.cn) || nm(s.code) || kinds.has(s.kind) || (floor != null && s.zone === floor)));
+    const encs = data.encounters.filter((e) => nm(e.title, e.cn) || choiceHit(e.choices) || kw("우연한 만남") || (floor != null && !!e.floors?.includes(floor)));
+    const foes = Object.entries(data.enemies).filter(([, e]) => nm(e.name, e.cn) || nm(e.index) || ranks.has(e.rank ?? "")).sort(enemyOrder);
+    const relics = relicsAll.filter((r) => nm(r.name, r.cn) || inUse(r.usage)
+      || (r.order != null && (/^\d+$/.test(q) ? String(r.order) === q : normSearch(String(r.order)).includes(q))));
+    // 전시관 자원 — 탭에서 상세가 뜨는 것(부품·테마 고유 시스템)만 open, 나머지는 탭처럼 카드에 효과까지 싣는다
+    const arc: ArcHit[] = [];
+    // also = 이 이름으로도 통째로 (흑류수해 '환경' 서브탭 안의 실토피아·유토피아 갈래처럼 탭 이름이 따로 있는 것)
+    const add = (label: string, items: InvItem[] | undefined, img: (it: InvItem) => string | null, open?: ArcHit["open"], also?: string) => {
+      const all = kw(label) || (!!also && kw(also));   // '분대'·'암호판'처럼 서브탭 이름이면 그 서브탭 전부
+      for (const it of items ?? []) {
+        if (all || nm(it.name, it.cn) || inUse(it.usage) || it.stages?.some((st) => nm(st.name) || inUse(st.usage))) {
+          arc.push({ key: `${label}:${it.id}`, item: it, label, img: it.img ? img(it) : null, open });
+        }
+      }
+    };
+    const relicImg = (it: InvItem) => asset(`/rogue/relic/${it.iconId ?? it.id}.webp`);
+    const miscImg = (it: InvItem) => asset(`/rogue/misc/${it.id}.webp`);
+    // 환각(팬텀)·메아리(미즈키)·환경(흑류수해) — 탭 카드와 같은 효과 문장을 usage 로 옮겨 싣는다
+    const hallu = HALLU_LABEL[topic];
+    if (topic === "rogue_6") {
+      const lv = (l: string) => (l === "a" ? t("초기") : l === "b" ? t("중기") : t("말기"));
+      add("실토피아 · 이념", (data.weathers ?? []).map((w) => ({ id: w.id, name: w.name, cn: w.cn, img: w.img,
+        usage: w.levels.map((l) => `${lv(l.lv)} ${l.desc ?? ""}`).join("\n") })), miscImg, undefined, hallu);
+      add("실토피아 · 방침", (data.subweathers ?? []).map((w) => ({ id: w.id, name: w.name, cn: w.cn, img: w.img, usage: w.desc })), miscImg, undefined, hallu);
+      add("유토피아 (흑담)", data.variations.map((v) => ({ id: v.id, name: v.name, cn: v.cn, img: v.img, usage: v.func, desc: v.desc })),
+        (it) => asset(`/rogue/misc/rogue_6_${it.id}.webp`), undefined, hallu);
+    } else if (hallu) {
+      add(hallu, data.variations.map((v) => ({ id: v.id, name: v.name, cn: v.cn, usage: v.func, desc: v.desc })), () => null);
+    }
+    add("레퍼토리 (음반)", data.capsules, (it) => asset(`/rogue/capsule/${it.id}.webp`));
+    for (const m of data.mechanics ?? []) add(m.label, m.items, relicImg, "relic");
+    add("부품 (零件)", data.scraps, relicImg, "relic");
+    add("탐사 도구", data.exploreTools, relicImg);
+    add("분대", data.bands, relicImg);
+    add("유산", data.legacies, relicImg);
+    add("지도 마커 (부표)", data.buoys, miscImg);
+    // 난이도 — 이름·규칙 문장. 누르면 난이도 탭으로 (그 탭이 규칙 전체 표)
+    const seenDiff = new Set<string>();
+    add("난이도", data.difficulties.filter((d) => {
+      const k = `${d.mode}${d.grade}`;
+      if (seenDiff.has(k) || (d.mode !== "EASY" && d.mode !== "NORMAL")) return false;
+      seenDiff.add(k);
+      return true;
+    }).map((d) => ({ id: `${d.mode}${d.grade}`, name: `${d.mode === "EASY" ? t("쉬움") : d.grade} · ${d.name}`, usage: d.rule })), () => null, "diff");
+    const zones = data.zones.filter((z) => nm(z.name, z.cn) || inUse(z.buff) || (floor != null && z.num === floor));
+    const ends = data.endings.filter((e) => nm(e.name, e.cn) || inUse(e.desc) || kw("엔딩")
+      || !!e.book?.some((b) => nm(b.name, b.cn) || inUse(b.cond)));
+    // 월간 방문객 — 팀 이름·방문객 오퍼 이름으로도
+    const visitors = (data.visitors ?? []).filter((v) => kw("방문객") || nm(v.name, v.cn) || v.chars.some((c) => nm(c.name)));
+    const n = stages.length + encs.length + foes.length + relics.length + arc.length + zones.length + ends.length + visitors.length;
+    return { stages, encs, foes, relics, arc, zones, ends, visitors, n };
+  }, [uniTerm, relicsAll, active, topic, locale]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // 엔딩 조건 문장 속 「이름」 참조를 전부 클릭 가능하게 — 스테이지·조우·유물·적 순으로 매칭
@@ -1831,7 +1884,7 @@ export default function RogueGuide({ initialTopic }: {
       const gmax = Math.max(15, ...data.difficulties.filter((df) => df.mode === "NORMAL").map((df) => df.grade));
       if (g.grade <= gmax) setGrade(g.grade);
     }
-    setRelicTerm("", false); setMapTerm("", false); // 검색 필터가 하이라이트 대상을 가리지 않게
+    setUniTerm("", false); // 검색 결과 판이 하이라이트 대상(탭 본문)을 가리지 않게
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
     if (g.modal) {
       const { type, id } = g.modal;
@@ -2127,6 +2180,17 @@ export default function RogueGuide({ initialTopic }: {
     setEndFlash(id);
     window.setTimeout(() => setEndFlash((cur) => (cur === id ? "" : cur)), 1600);
   };
+  // 통합 검색 결과의 엔딩 → 검색을 풀고 엔딩 탭으로 가서 그 카드를 짚는다. 탭은 전환(startTransition) 뒤에야 그려지므로
+  // 카드가 생길 때까지 프레임마다 본다(최대 0.5초)
+  const jumpEnding = (id: string) => {
+    setUniTerm("", false);
+    goView("ending");
+    const tryGo = (n: number) => {
+      if (document.getElementById(`rg-end-${id}`)) goEnding(id);
+      else if (n < 30) requestAnimationFrame(() => tryGo(n + 1));
+    };
+    requestAnimationFrame(() => tryGo(0));
+  };
   // 난이도 → 난이도 탭. 엔딩 목록 한참 아래에서 눌러도 탭 첫머리부터 보이게 탭 줄로 올린다
   const goDiff = () => {
     goView("diff");
@@ -2283,6 +2347,109 @@ export default function RogueGuide({ initialTopic }: {
     </button>
   );
 
+  // 카드 그리기 — 각 탭과 통합 검색 결과 판이 같은 카드를 쓴다 (누르면 같은 상세)
+  const enemyCell = ([key, e]: [string, Enemy]) => (
+    <button type="button" key={key} className="rg-enemy-cell row" id={`rg-en-${key}`}
+      onClick={() => setEnemyOpen({ key, ctx: dexCtx(key) })}>
+      {e.img ? <img className="rg-enemy-face" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
+        : <span className="rg-enemy-face none" aria-hidden>?</span>}
+      <span className="rg-enemy-cell-info">
+        <span className="rg-enemy-cell-head">
+          <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
+        </span>
+        <span className="rg-enemy-name"><Nm name={e.name} cn={e.cn} /></span>
+        <StatRow e={e} grade={grade} ctx={dexCtx(key)} />
+      </span>
+      {e.index && <span className="rg-enemy-idx">{e.index}</span>}
+    </button>
+  );
+  const relicCard = (r: Relic) => (
+    <article key={r.id} className={`rg-relic clickable${lensHits?.has(r.id) ? " rg-lens-hit" : ""}`}
+      role="button" tabIndex={0}
+      onClick={() => setRelicOpen(r)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRelicOpen(r); } }}>
+      <header>
+        {r.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
+        <h4><Nm name={r.name} cn={r.cn} /></h4>
+        <InvPill owned={inv.has(r.id)} onToggle={() => toggleInv(r.id)} />
+      </header>
+      {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
+    </article>
+  );
+  const encItem = (enc: Encounter) => (
+    <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
+      {enc.bg
+        ? <img className="rg-enc-thumb" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
+        : <span className="rg-enc-thumb none" aria-hidden />}
+      <span className="rg-enc-txt">
+        {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
+        <span className="rg-enc-title"><Nm name={enc.title} cn={enc.cn} /></span>
+      </span>
+    </button>
+  );
+  // 통합 검색 '바로 가기' — 검색어가 탭·전시관 서브탭·지도 묶음(조우 전투·외나무다리 …)·기타 노드 이름에
+  // 걸리면 그리로 가는 단추. 지도 묶음·기타 노드는 어느 탭에서든 모달로 열린다(secOpen). 렌더마다 새로 — 몇십 개뿐이다.
+  const uniShort: { key: string; label: string; go: () => void }[] = [];
+  if (uniHits) {
+    const q = normSearch(uniTerm);
+    const kw = (label: string) => uniKw(q, label, t);
+    const toTab = (v: View) => () => { setUniTerm("", false); goView(v); };
+    for (const v of VIEWS) if (kw(v.label)) uniShort.push({ key: `v:${v.id}`, label: t(v.label), go: toTab(v.id) });
+    for (const [id, label] of archiveTabs) {
+      if (kw(label)) uniShort.push({ key: `t:${id}`, label: `${t("전시관")} › ${t(label)}`, go: () => { setUniTerm("", false); setArcTab(id); goView("archive"); } });
+    }
+    // 묶음 이름표는 이미 화면 언어다(mapSections) — t() 를 또 거치지 않는다
+    for (const sec of mapSections) {
+      if (sec.show && q.length >= 2 && normSearch(sec.label).includes(q)) uniShort.push({ key: `m:${sec.id}`, label: sec.label, go: () => { setNtFocus(""); setSecOpen(sec.id); } });
+    }
+    for (const nt of otherNodes) {
+      if (normSearch(nt.name).includes(q) || (nt.cn ? normSearch(nt.cn).includes(q) : false)) {
+        uniShort.push({ key: `o:${nt.id}`, label: `${t("기타 노드")} › ${nt.name}`, go: () => { setNtFocus(nt.id); setSecOpen("nodes"); } });
+      }
+    }
+  }
+  const toVisitors = () => { setUniTerm("", false); setArcTab("visitor"); goView("archive"); };
+  const openArc = (h: ArcHit) => {
+    if (h.open === "relic") setRelicOpen(h.item);
+    else if (h.open === "diff") { setUniTerm("", false); goDiff(); }
+  };
+  // 검색란 제안 — 바로 가기 먼저, 그다음 이름이 맞는 것(효과 문장 일치는 결과 판에서만)을 이름이 그 말로 시작하는 것부터.
+  // 검색어가 비면 지금 탭의 전체 목록(종전 탭별 검색란과 같은 '클릭만 해도 목록' — 소장품·적 도감 탭만).
+  const uniSuggest: Suggest[] = (() => {
+    const q = normSearch(uniTerm);
+    const relicSg = (r: Relic): Suggest => ({ key: `r:${r.id}`, label: r.name || r.cn || r.id, sub: t("소장품"), img: asset(`/rogue/relic/${r.iconId ?? r.id}.webp`) });
+    const foeSg = ([key, e]: [string, Enemy]): Suggest => ({ key: `f:${key}`, label: e.name || e.cn || key, sub: e.index ?? t("적 도감"), img: e.img ? asset(`/rogue/enemy/${e.img}.webp`) : undefined });
+    if (!q || !uniHits) return view === "relic" ? relicsAll.map(relicSg) : view === "enemy" ? enemies.map(foeSg) : [];
+    const head = (name: string, cn?: string) => (normSearch(name).startsWith(q) || (cn ? normSearch(cn).startsWith(q) : false) ? 0 : 1);
+    const named = (name: string, cn?: string) => normSearch(name).includes(q) || (cn ? normSearch(cn).includes(q) : false);
+    const items: (Suggest & { h: number })[] = [
+      ...uniHits.stages.filter((s) => named(s.name, s.cn)).map((s) => ({ key: `s:${s.id}`, label: s.name, sub: t("전투 노드"), h: head(s.name, s.cn) })),
+      ...uniHits.encs.filter((e) => named(e.title, e.cn)).map((e) => ({ key: `e:${e.scene}`, label: e.title, sub: t("우연한 만남"), h: head(e.title, e.cn),
+        img: e.bg ? asset(`/rogue/scene/${e.bg}.webp`) : undefined })),
+      ...uniHits.foes.filter(([, e]) => named(e.name, e.cn)).map((f) => ({ ...foeSg(f), h: head(f[1].name, f[1].cn) })),
+      ...uniHits.relics.filter((r) => named(r.name, r.cn)).map((r) => ({ ...relicSg(r), h: head(r.name, r.cn) })),
+      ...uniHits.arc.filter((a) => a.open === "relic" && named(a.item.name, a.item.cn))
+        .map((a) => ({ key: `a:${a.key}`, label: a.item.name, sub: t(a.label), img: a.img ?? undefined, h: head(a.item.name, a.item.cn) })),
+      ...uniHits.zones.map((z) => ({ key: `z:${z.id}`, label: z.name, sub: zoneBadge(z), h: head(z.name, z.cn) })),
+      ...uniHits.ends.filter((e) => named(e.name, e.cn)).map((e) => ({ key: `n:${e.id}`, label: e.name, sub: t("엔딩"), h: head(e.name, e.cn) })),
+    ];
+    // 안정 정렬 — 같은 무리 안에선 분류 순서(노드 → 적 → 소장품 …) 그대로
+    return [...uniShort.map((g) => ({ key: `g:${g.key}`, label: g.label, sub: t("바로 가기") })), ...items.sort((a, b) => a.h - b.h)];
+  })();
+  // 검색란 제안을 고르면 — 키 앞머리가 종류(uniSuggest): g 바로 가기 · s 작전 · e 우연한 만남 · f 적 · r 소장품 · a 전시관 · z 층 · n 엔딩
+  const pickUni = (key: string) => {
+    const i = key.indexOf(":");
+    const kind = key.slice(0, i), id = key.slice(i + 1);
+    if (kind === "g") uniShort.find((g) => g.key === id)?.go();
+    else if (kind === "s") { const st = stageById.get(id); if (st) setStageOpen(pairOf(st)); }
+    else if (kind === "e") { const e = encByScene.get(id); if (e) setEncOpen(e); }
+    else if (kind === "f") { if (data.enemies[id]) setEnemyOpen({ key: id, ctx: dexCtx(id) }); }
+    else if (kind === "r") { const r = relicById.get(id); if (r) setRelicOpen(r); }
+    else if (kind === "a") { const h = uniHits?.arc.find((x) => x.key === id); if (h) setRelicOpen(h.item); }
+    else if (kind === "z") { const z = zoneById.get(id); if (z) setZoneOpen(z); }
+    else if (kind === "n") jumpEnding(id);
+  };
+
   return (
     <section className={`rg${topic === "rogue_1" ? "" : " rg" + topic.split("_")[1]}`} aria-labelledby="rg-title">
       {/* 테마 키비주얼 — 히어로 상자가 아니라 페이지 배경 (위 프리렌더 분기와 같은 그림) */}
@@ -2400,8 +2567,17 @@ export default function RogueGuide({ initialTopic }: {
       {!loading && (<>
       <nav className="rg-tabs" aria-label={t("통합전략 섹션")}>
         {VIEWS.map((v) => (
-          <button key={v.id} type="button" className={view === v.id ? "on" : ""} onClick={() => goView(v.id)}>{t(v.label)}</button>
+          <button key={v.id} type="button" className={view === v.id ? "on" : ""}
+            onClick={() => { setUniTerm("", false); goView(v.id); }}>{t(v.label)}</button>
         ))}
+        {/* 통합 검색란 — 보유 리스트 버튼 바로 왼쪽 (사용자 지시 2026-10-02, uniHits 주석) */}
+        <div className="rg-uni-search">
+          <div className="rg-uni-box">
+            <input type="search" {...uniProps}
+              placeholder={t("노드·적·소장품 전체 검색")} aria-label={t("노드·적·소장품 전체 검색")} />
+            <SearchSuggest query={uniTerm} items={uniSuggest} onPick={pickUni} />
+          </div>
+        </div>
         {invButton}
       </nav>
       {/* 자동인식 상태 필 — fixed 오버레이(레이아웃 안 밀음) + 인식 이미지 미니 썸네일.
@@ -2415,50 +2591,108 @@ export default function RogueGuide({ initialTopic }: {
         </div>
       )}
 
-      {view === "map" && (
+      {/* 통합 검색 결과 — 검색어가 있으면 어느 탭에서든 탭 본문 자리를 잠시 대신한다 (uniHits 주석).
+          카드는 각 탭의 것 그대로라 누르면 같은 상세가 뜬다 */}
+      {uniHits && (
+        <div className="rg-uni-results">
+          <p className="rg-uni-head">
+            <span>{t("'{q}' 검색 결과 {n}건", { q: uniTerm, n: uniHits.n + uniShort.length })}</span>
+            <button type="button" onClick={() => setUniTerm("", false)}>{t("검색 지우기")}</button>
+          </p>
+          {uniHits.n + uniShort.length === 0 && <p className="rg-zone-desc">{t("검색 결과가 없습니다.")}</p>}
+          {/* 바로 가기는 늘 맨 위 (사용자 지시 2026-10-02) — 탭·묶음·노드·난이도 단추에 층·엔딩 단추까지 한 줄로 */}
+          {uniShort.length + uniHits.zones.length + uniHits.ends.length > 0 && (
+            <div className="rg-stage-group">
+              <h4>{t("바로 가기")} <em>{uniShort.length + uniHits.zones.length + uniHits.ends.length}</em></h4>
+              <div className="rg-uni-links">
+                {uniShort.map((g) => <button key={g.key} type="button" onClick={g.go}>{g.label}</button>)}
+                {uniHits.zones.map((z) => (
+                  <button key={z.id} type="button" onClick={() => setZoneOpen(z)}>
+                    <em>{zoneBadge(z)}</em><Nm name={z.name} cn={z.cn} />
+                  </button>
+                ))}
+                {uniHits.ends.map((e) => (
+                  <button key={e.id} type="button" onClick={() => jumpEnding(e.id)}>
+                    <em>{t("엔딩")}</em><Nm name={e.name} cn={e.cn} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {uniHits.stages.length > 0 && (
+            <div className="rg-stage-group">
+              <h4>{t("전투 노드")} <em>{uniHits.stages.length}</em></h4>
+              <div className="rg-stage-cards">
+                {uniHits.stages.map((s) => (
+                  <StageCard key={s.id} pair={pairOf(s)} onOpen={setStageOpen} boss={s.kind === "boss"} />
+                ))}
+              </div>
+            </div>
+          )}
+          {uniHits.encs.length > 0 && (
+            <div className="rg-stage-group">
+              <h4>{t("우연한 만남")} <em>{uniHits.encs.length}</em></h4>
+              <div className="rg-enc-list">{uniHits.encs.map(encItem)}</div>
+            </div>
+          )}
+          {uniHits.foes.length > 0 && (
+            <div className="rg-stage-group">
+              <h4>{t("적 도감")} <em>{uniHits.foes.length}</em></h4>
+              <div className="rg-enemy-grid">{uniHits.foes.map(enemyCell)}</div>
+            </div>
+          )}
+          {uniHits.relics.length > 0 && (
+            <div className="rg-stage-group">
+              <h4>{t("소장품")} <em>{uniHits.relics.length}</em></h4>
+              <div className="rg-relic-grid">{uniHits.relics.map(relicCard)}</div>
+            </div>
+          )}
+          {[["전시관", uniHits.arc.filter((h) => h.label !== "난이도")], ["난이도", uniHits.arc.filter((h) => h.label === "난이도")]].map(([title, list]) => {
+            const hits = list as ArcHit[];
+            if (hits.length === 0) return null;
+            return (
+              <div key={title as string} className="rg-stage-group">
+                <h4>{t(title as string)} <em>{hits.length}</em></h4>
+                <div className="rg-relic-grid">
+                  {hits.map((h) => (
+                    <article key={h.key} className={`rg-relic${h.open ? " clickable" : ""}`}
+                      role={h.open ? "button" : undefined} tabIndex={h.open ? 0 : undefined}
+                      onClick={h.open ? () => openArc(h) : undefined}
+                      onKeyDown={h.open ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openArc(h); } } : undefined}>
+                      <header>
+                        {h.img && <img className="rg-relic-icon" src={h.img} alt="" aria-hidden loading="lazy" decoding="async" />}
+                        <h4><Nm name={h.item.name} cn={h.item.cn} /></h4>
+                        {h.label !== "난이도" && <em className="rg-uni-kind">{t(h.label)}</em>}
+                      </header>
+                      {(h.item.usage ?? h.item.stages?.map((st) => st.name).join(" · ")) && (
+                        <p className="rg-relic-usage rg-multiline">{h.item.usage ?? h.item.stages?.map((st) => st.name).join(" · ")}</p>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          {uniHits.visitors.length > 0 && (
+            <div className="rg-stage-group">
+              <h4>{t("방문객")} <em>{uniHits.visitors.length}</em></h4>
+              <div className="rg-uni-links">
+                {uniHits.visitors.map((v) => (
+                  <button key={v.id} type="button" className="rg-uni-visitor" onClick={toVisitors}>
+                    {v.chars.map((c) => <img key={c.id} src={asset(`/avatars/${c.id}.webp`)} alt="" aria-hidden width={22} height={22} loading="lazy" decoding="async" />)}
+                    <span>{v.chars.map((c) => c.name).join(" · ")}</span>
+                    {v.name && <em><Nm name={v.name} cn={v.cn} /></em>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!uniHits && view === "map" && (
         <div className="rg-map">
-          {/* 노드 이름 검색 — 작전·보스·조우 전투·특수·우연한 만남 전부 (사용자 요청 2026-07-18) */}
-          <div className="rg-filterbar rg-map-search">
-            <input type="search" {...mapProps}
-              placeholder={t("노드 이름 검색 (작전·조우·우연한 만남)")} aria-label={t("노드 이름 검색 (작전·조우·우연한 만남)")} />
-            {mapHits && <span className="rg-count">{mapHits.stages.length + mapHits.encs.length}</span>}
-          </div>
 
-          {mapHits && (<>
-            {mapHits.stages.length === 0 && mapHits.encs.length === 0 && (
-              <p className="rg-zone-desc">{t("검색 결과가 없습니다.")}</p>
-            )}
-            {mapHits.stages.length > 0 && (
-              <div className="rg-stage-group rg-map-hits">
-                <h4>{t("전투 노드")} <em>{mapHits.stages.length}</em></h4>
-                <div className="rg-stage-cards">
-                  {mapHits.stages.map((s) => (
-                    <StageCard key={s.id} pair={pairOf(s)} onOpen={setStageOpen} boss={s.kind === "boss"} />
-                  ))}
-                </div>
-              </div>
-            )}
-            {mapHits.encs.length > 0 && (
-              <div className="rg-stage-group rg-map-hits">
-                <h4>{t("우연한 만남")} <em>{mapHits.encs.length}</em></h4>
-                <div className="rg-enc-list">
-                  {mapHits.encs.map((enc) => (
-                    <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
-                      {enc.bg
-                        ? <img className="rg-enc-thumb" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
-                        : <span className="rg-enc-thumb none" aria-hidden />}
-                      <span className="rg-enc-txt">
-                        {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
-                        <span className="rg-enc-title"><Nm name={enc.title} cn={enc.cn} /></span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>)}
-
-          {!mapHits && (<>
           {/* 지도판 — 층 카드가 가운데에서 **역아치(∪)**를 그리고, 묶음 카드(조우 전투·기타
               노드·우연한 만남)가 그 왼쪽·오른쪽에 끼어든다 (사용자 지시 2026-09-20).
               좁은 화면에서는 이 판이 풀려 위아래 두 줄로 돌아간다 — CSS 쪽에 조건. */}
@@ -2504,20 +2738,13 @@ export default function RogueGuide({ initialTopic }: {
 
 
           {/* 기타 노드 — 전투·우연한 만남 외 노드 타입 설명. 외나무다리 상세에 결투 전투 포함 (사용자 요청 2026-07-18) */}
-
-          </>)}
         </div>
       )}
 
-      {view === "enemy" && (
+      {!uniHits && view === "enemy" && (
         <div className="rg-enemy-view">
+          {/* 이름 검색은 탭 줄의 통합 검색으로 옮겼다 (2026-10-02) — 여기엔 등급 거르기만 */}
           <div className="rg-filterbar">
-            <input type="search" {...enemyProps}
-              placeholder={t("적 이름 검색")} aria-label={t("적 이름 검색")} />
-            {/* 검색란 제안 — 고르면 그 적 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
-            <SearchSuggest query={enemyTerm}
-              items={enemies.map(([key, e]) => ({ key, label: e.name || e.cn || key, sub: e.index ?? undefined, img: e.img ? asset(`/rogue/enemy/${e.img}.webp`) : undefined }))}
-              onPick={(key) => setEnemyOpen({ key, ctx: dexCtx(key) })} />
             {["", "NORMAL", "ELITE", "BOSS"].map((rk) => (
               <button key={rk || "all"} type="button" className={enemyRank === rk ? "on" : ""}
                 onClick={() => setEnemyRank(rk)}>{rk ? t(RANK_KO[rk]) : t("전체")}</button>
@@ -2526,57 +2753,22 @@ export default function RogueGuide({ initialTopic }: {
           </div>
           {/* 도감은 사진 왼쪽·정보 오른쪽 가로형 카드 (피드백 반영 2026-07-18) */}
           <div className="rg-enemy-grid">
-            {enemies.map(([key, e]) => (
-              <button type="button" key={key} className="rg-enemy-cell row" id={`rg-en-${key}`}
-                onClick={() => setEnemyOpen({ key, ctx: dexCtx(key) })}>
-                {e.img ? <img className="rg-enemy-face" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
-                  : <span className="rg-enemy-face none" aria-hidden>?</span>}
-                <span className="rg-enemy-cell-info">
-                  <span className="rg-enemy-cell-head">
-                    <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
-                  </span>
-                  <span className="rg-enemy-name"><Nm name={e.name} cn={e.cn} /></span>
-                  <StatRow e={e} grade={grade} ctx={dexCtx(key)} />
-                </span>
-                {e.index && <span className="rg-enemy-idx">{e.index}</span>}
-              </button>
-            ))}
+            {enemies.map(enemyCell)}
           </div>
         </div>
       )}
 
       {/* 소장품(유물) — 전시관에서 최상위 탭으로 승격 (사용자 요청 2026-07-18) */}
-      {view === "relic" && (
+      {!uniHits && view === "relic" && (
         <div className="rg-archive">
-          <div className="rg-filterbar">
-            <input type="search" {...relicProps}
-              placeholder={t("유물 검색 (이름·번호)")} aria-label={t("유물 검색 (이름·번호)")} />
-            {/* 검색란 제안 — 고르면 그 유물 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
-            <SearchSuggest query={relicTerm}
-              items={relics.map((r) => ({ key: r.id, label: r.name || r.cn || r.id, img: asset(`/rogue/relic/${r.iconId ?? r.id}.webp`) }))}
-              onPick={(id) => { const r = relics.find((x) => x.id === id); if (r) setRelicOpen(r); }} />
-            <span className="rg-count">{relics.length}</span>
-          </div>
-          {/* 목록 카드는 섬네일·이름·효과만 — 번호·설명은 클릭 시 상세 모달에서 (사용자 요청 2026-07-23) */}
+          {/* 소장품 검색(이름·번호·효과)은 탭 줄의 통합 검색으로 옮겼다 (2026-10-02) */}
           <div className="rg-relic-grid">
-            {relics.map((r) => (
-              <article key={r.id} className={`rg-relic clickable${lensHits?.has(r.id) ? " rg-lens-hit" : ""}`}
-                role="button" tabIndex={0}
-                onClick={() => setRelicOpen(r)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRelicOpen(r); } }}>
-                <header>
-                  {r.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
-                  <h4><Nm name={r.name} cn={r.cn} /></h4>
-                  <InvPill owned={inv.has(r.id)} onToggle={() => toggleInv(r.id)} />
-                </header>
-                {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
-              </article>
-            ))}
+            {relicsAll.map(relicCard)}
           </div>
         </div>
       )}
 
-      {view === "archive" && (
+      {!uniHits && view === "archive" && (
         <div className="rg-archive">
           <div className="rg-filterbar">
             {archiveTabs.map(([id, label]) => (
@@ -2867,7 +3059,7 @@ export default function RogueGuide({ initialTopic }: {
         </div>
       )}
 
-      {view === "diff" && (
+      {!uniHits && view === "diff" && (
         <div className="rg-diff-view">
           <p className="rg-zone-desc">{t("난이도는 하위 등급의 규칙을 전부 포함합니다. 현재 선택한 난이도까지의 규칙이 강조됩니다.")}</p>
           <table className="rg-diff-table">
@@ -2890,7 +3082,7 @@ export default function RogueGuide({ initialTopic }: {
         </div>
       )}
 
-      {view === "ending" && (
+      {!uniHits && view === "ending" && (
         <div className="rg-endings">
           {/* 엔딩 카드 — 진입 선행조건과 엔딩 후 해금 스토리(엔딩북)를 섹션으로 구분
               (사용자 지시 2026-08-17 "중구난방이니 나눠서 하나씩 볼 수 있게").
@@ -3117,3 +3309,11 @@ export default function RogueGuide({ initialTopic }: {
 }
 
 const RANK_SORT: Record<string, number> = { BOSS: 0, ELITE: 1, NORMAL: 2 };
+// 통합 검색의 분류 이름 일치 — 검색어(공백 뺀 소문자)가 두 글자 이상이고 분류 이름(한국어 원문 또는 화면 언어)의 일부
+function uniKw(q: string, label: string, t: (k: string) => string) {
+  return q.length >= 2 && (normSearch(label).includes(q) || normSearch(t(label)).includes(q));
+}
+// 적 도감 순서 — 리더 → 정예 → 일반, 같은 등급은 이름 순 (적 도감 탭·통합 검색 결과 공용)
+function enemyOrder([, a]: [string, Enemy], [, b]: [string, Enemy]) {
+  return (RANK_SORT[a.rank ?? ""] ?? 0) - (RANK_SORT[b.rank ?? ""] ?? 0) || a.name.localeCompare(b.name, "ko");
+}
