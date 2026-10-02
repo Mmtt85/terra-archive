@@ -13867,31 +13867,33 @@ html.rg-theme.rg6 .site-header {
     grid-template-rows: auto calc(var(--arch-2nd, 150px) - 10px) auto;
     align-items: start;
     gap: 10px;
-    --arch-deep: 236px;
+    /* 아치 바닥 236 → 307px (사용자 지시 2026-10-02 "맵노드 제일 밑단을 30% 더 내려줘, 전체적으로 다") —
+       아래 --dy(층마다 깊이)·--arch-2nd(테마마다 2층 깊이)도 전부 1.3배. 곡선 모양은 그대로, 바닥만 깊어진다. */
+    --arch-deep: 307px;
     min-height: calc(var(--arch-deep) + 130px);
     padding-bottom: 10px;
     /* 판 폭을 재는 기준 — 쉐이의 외나무다리 자동 내림(아래 @container rg-mapfield)이 쓴다 (2026-09-25).
        판은 부모 격자의 전체 칸(1 / -1)을 받아 폭이 내용과 무관하므로 크기 격리를 걸어도 폭이 변하지 않는다. */
     container: rg-mapfield / inline-size;
   }
-  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(4)) { --sec-col: 236px; --arch-r2: 0px; --arch-2nd: 213px; }
-  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(5)) { --sec-col: 186px; --arch-r2: 0px; --arch-2nd: 177px; }
-  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(6)) { --sec-col: 152px; --arch-r2: 0px; --arch-2nd: 151px; }
-  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(7)) { --sec-col: 129px; --arch-r2: 0px; --arch-2nd: 131px; }
-  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(8)) { --sec-col: 111px; --arch-r2: 0px; --arch-2nd: 116px; }
-  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(9)) { --sec-col: 97px; --arch-r2: 0px; --arch-2nd: 103px; }
-  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(10)) { --sec-col: 86px; --arch-r2: 0px; --arch-2nd: 93px; }
-  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(11)) { --sec-col: 77px; --arch-r2: 0px; --arch-2nd: 85px; }
-  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(12)) { --sec-col: 76px; --arch-r2: 0px; --arch-2nd: 78px; }
-  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(4)) { --sec-col: 236px; --arch-r2: 0px; --arch-2nd: 217px; }
-  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(5)) { --sec-col: 186px; --arch-r2: 0px; --arch-2nd: 174px; }
-  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(6)) { --sec-col: 152px; --arch-r2: 0px; --arch-2nd: 145px; }
-  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(7)) { --sec-col: 129px; --arch-r2: 0px; --arch-2nd: 125px; }
-  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(8)) { --sec-col: 111px; --arch-r2: 0px; --arch-2nd: 109px; }
-  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(9)) { --sec-col: 97px; --arch-r2: 0px; --arch-2nd: 97px; }
-  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(10)) { --sec-col: 86px; --arch-r2: 0px; --arch-2nd: 88px; }
-  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(11)) { --sec-col: 77px; --arch-r2: 0px; --arch-2nd: 80px; }
-  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(12)) { --sec-col: 76px; --arch-r2: 0px; --arch-2nd: 79px; }
+  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(4)) { --sec-col: 236px; --arch-r2: 0px; --arch-2nd: 277px; }
+  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(5)) { --sec-col: 186px; --arch-r2: 0px; --arch-2nd: 230px; }
+  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(6)) { --sec-col: 152px; --arch-r2: 0px; --arch-2nd: 196px; }
+  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(7)) { --sec-col: 129px; --arch-r2: 0px; --arch-2nd: 170px; }
+  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(8)) { --sec-col: 111px; --arch-r2: 0px; --arch-2nd: 151px; }
+  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(9)) { --sec-col: 97px; --arch-r2: 0px; --arch-2nd: 134px; }
+  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(10)) { --sec-col: 86px; --arch-r2: 0px; --arch-2nd: 121px; }
+  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(11)) { --sec-col: 77px; --arch-r2: 0px; --arch-2nd: 110px; }
+  .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(12)) { --sec-col: 76px; --arch-r2: 0px; --arch-2nd: 101px; }
+  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(4)) { --sec-col: 236px; --arch-r2: 0px; --arch-2nd: 282px; }
+  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(5)) { --sec-col: 186px; --arch-r2: 0px; --arch-2nd: 226px; }
+  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(6)) { --sec-col: 152px; --arch-r2: 0px; --arch-2nd: 188px; }
+  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(7)) { --sec-col: 129px; --arch-r2: 0px; --arch-2nd: 162px; }
+  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(8)) { --sec-col: 111px; --arch-r2: 0px; --arch-2nd: 142px; }
+  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(9)) { --sec-col: 97px; --arch-r2: 0px; --arch-2nd: 126px; }
+  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(10)) { --sec-col: 86px; --arch-r2: 0px; --arch-2nd: 114px; }
+  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(11)) { --sec-col: 77px; --arch-r2: 0px; --arch-2nd: 104px; }
+  html.rg-theme.rg3 .rg-mapfield:has(> .rg-zone-cards > :first-child:nth-last-child(12)) { --sec-col: 76px; --arch-r2: 0px; --arch-2nd: 103px; }
   /* 침몰자의 블랙플로우만 묶음 카드를 한 단계 더 작게 (사용자 지시 2026-09-20) — 이 테마는
      묶음이 5장이라 ③줄이 생기는데, 6층짜리라 2층이 151px 나 내려와 ③줄이 그만큼 밀려
      아치 밑변 밖으로 65px 삐져나갔다. 좌우 두 칸을 합쳐 **층 카드 하나보다 좁게**(162px)
@@ -13902,7 +13904,7 @@ html.rg-theme.rg6 .site-header {
        ③줄을 3층 밑으로 내리면 겹침은 없어지지만 위아래 카드가 뚝 떨어진다 — 사용자가
        바로 반려했다. 대신 **③줄도 바깥 칸(1·5)만 쓰게** 해 한 칸(99px)으로 좁혔다.
        2층이 시작하는 99.9px 보다 좁으므로 겹치지 않고, 간격도 종전 그대로다. */
-  html.rg-theme.rg5 .rg-mapfield:has(> .rg-zone-cards) { --sec-col: 99px; --arch-r2: 0px; --arch-2nd: 95px; }
+  html.rg-theme.rg5 .rg-mapfield:has(> .rg-zone-cards) { --sec-col: 99px; --arch-r2: 0px; --arch-2nd: 124px; }
   html.rg-theme.rg5 .rg-mapfield > .rg-sec-cards > *:nth-child(4) { grid-area: 3 / 5; }
   /* 5번째 = 외나무다리(2026-09-25 기타 노드에서 분리, mapSections 맨 끝) — 조우 전투 **오른쪽** (사용자 지시 같은 날).
      판이 좁으면 그 자리가 아치의 3층 카드와 겹쳐 **밑으로** 내린다 (아래 @container — "겹치면 자동으로 밑으로"). */
@@ -13914,13 +13916,13 @@ html.rg-theme.rg6 .site-header {
   html.rg-theme:not(.rg2):not(.rg3):not(.rg4):not(.rg5):not(.rg6) .rg-mapfield:has(> .rg-zone-cards) {
     --sec-col: 137px;
     --arch-r2: 0px;
-    --arch-2nd: 151px;
+    --arch-2nd: 196px;
   }
   /* 침몰자의 블랙플로우는 묶음이 5장이라 ③줄이 생긴다. 76px 까지 줄이면 밑변 안에 다
      들어가지만 카드가 너무 작아진다는 지적(2026-09-20)이 있어 114px 로 되키웠다.
      그 폭이면 2층이 좌우 칸에 닿으므로 ③줄은 2층 바닥(151px) 아래에서 시작하고,
      결과적으로 ③줄이 밑변보다 30px 쯤 내려간다 — 크기를 택한 대가다. */
-  html.rg-theme.rg6 .rg-mapfield:has(> .rg-zone-cards) { --sec-col: 114px; --arch-r2: 0px; --arch-2nd: 151px; }
+  html.rg-theme.rg6 .rg-mapfield:has(> .rg-zone-cards) { --sec-col: 114px; --arch-r2: 0px; --arch-2nd: 196px; }
   /* 층 카드는 판 전체 폭을 쓴다 — 좌우 칸에 눌리면 층 이름이 두세 줄로 접힌다 */
   .rg-mapfield > .rg-zone-cards {
     grid-column: 1 / -1;
@@ -13978,153 +13980,153 @@ html.rg-theme.rg6 .site-header {
     transition: transform 0.16s ease;
   }
   .rg-zone-cards > *:hover { transform: translateY(calc(var(--dy, 0px) - 4px)); }
-  /* ── 역아치 곡선 — **층이 몇 장이든 한가운데는 늘 같은 깊이(236px)** ──
+  /* ── 역아치 곡선 — **층이 몇 장이든 한가운데는 늘 같은 깊이(307px — 2026-10-02 에 236 에서 1.3배)** ──
      기준은 쉐이의 기이한 계원(10층)이다 (사용자 지시 2026-09-20). 층 수는 6~10으로
      제각각인데 끝에서부터 같은 값을 주면 층이 적은 테마는 얕게 파여 다른 판처럼 보였다
      (실측: 6층 테마 132px vs 10층 테마 186px). 그래서 자리를 0~1로 정규화한 포물선
      236 × 4t(1−t) 을 **층 수마다** 따로 깔아 어느 테마나 같은 깊이가 되게 한다.
      `:first-child:nth-last-child(N) ~ :nth-child(k)` 가 '전체 N장 중 k번째'를 집는다. */
   /* 4층 — 0 · 254 · 254 · 0 */
-  .rg-zone-cards > :first-child:nth-last-child(4) ~ :nth-child(2) { --dy: 210px; }
-  .rg-zone-cards > :first-child:nth-last-child(4) ~ :nth-child(3) { --dy: 210px; }
+  .rg-zone-cards > :first-child:nth-last-child(4) ~ :nth-child(2) { --dy: 273px; }
+  .rg-zone-cards > :first-child:nth-last-child(4) ~ :nth-child(3) { --dy: 273px; }
   /* 5층 — 0 · 214 · 286 · 214 · 0 */
-  .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(2) { --dy: 177px; }
-  .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(3) { --dy: 236px; }
-  .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(4) { --dy: 177px; }
+  .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(2) { --dy: 230px; }
+  .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(3) { --dy: 307px; }
+  .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(4) { --dy: 230px; }
   /* 6층 — 0 · 183 · 275 · 275 · 183 · 0 */
-  .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(2) { --dy: 151px; }
-  .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(3) { --dy: 227px; }
-  .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(4) { --dy: 227px; }
-  .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(5) { --dy: 151px; }
+  .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(2) { --dy: 196px; }
+  .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(3) { --dy: 295px; }
+  .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(4) { --dy: 295px; }
+  .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(5) { --dy: 196px; }
   /* 7층 — 0 · 159 · 254 · 286 · 254 · 159 · 0 */
-  .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(2) { --dy: 131px; }
-  .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(3) { --dy: 210px; }
-  .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(4) { --dy: 236px; }
-  .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(5) { --dy: 210px; }
-  .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(6) { --dy: 131px; }
+  .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(2) { --dy: 170px; }
+  .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(3) { --dy: 273px; }
+  .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(4) { --dy: 307px; }
+  .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(5) { --dy: 273px; }
+  .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(6) { --dy: 170px; }
   /* 8층 — 0 · 140 · 233 · 280 · 280 · 233 · 140 · 0 */
-  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(2) { --dy: 116px; }
-  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(3) { --dy: 193px; }
-  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(4) { --dy: 231px; }
-  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(5) { --dy: 231px; }
-  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(6) { --dy: 193px; }
-  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(7) { --dy: 116px; }
+  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(2) { --dy: 151px; }
+  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(3) { --dy: 251px; }
+  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(4) { --dy: 300px; }
+  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(5) { --dy: 300px; }
+  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(6) { --dy: 251px; }
+  .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(7) { --dy: 151px; }
   /* 9층 — 0 · 125 · 214 · 268 · 286 · 268 · 214 · 125 · 0 */
-  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(2) { --dy: 103px; }
-  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(3) { --dy: 177px; }
-  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(4) { --dy: 221px; }
-  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(5) { --dy: 236px; }
-  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(6) { --dy: 221px; }
-  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(7) { --dy: 177px; }
-  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(8) { --dy: 103px; }
+  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(2) { --dy: 134px; }
+  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(3) { --dy: 230px; }
+  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(4) { --dy: 287px; }
+  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(5) { --dy: 307px; }
+  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(6) { --dy: 287px; }
+  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(7) { --dy: 230px; }
+  .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(8) { --dy: 134px; }
   /* 10층 — 0 · 113 · 198 · 254 · 282 · 282 · 254 · 198 · 113 · 0 */
-  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(2) { --dy: 93px; }
-  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(3) { --dy: 163px; }
-  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(4) { --dy: 210px; }
-  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(5) { --dy: 233px; }
-  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(6) { --dy: 233px; }
-  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(7) { --dy: 210px; }
-  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(8) { --dy: 163px; }
-  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(9) { --dy: 93px; }
+  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(2) { --dy: 121px; }
+  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(3) { --dy: 212px; }
+  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(4) { --dy: 273px; }
+  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(5) { --dy: 303px; }
+  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(6) { --dy: 303px; }
+  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(7) { --dy: 273px; }
+  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(8) { --dy: 212px; }
+  .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(9) { --dy: 121px; }
   /* 11층 — 0 · 103 · 183 · 240 · 275 · 286 · 275 · 240 · 183 · 103 · 0 */
-  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(2) { --dy: 85px; }
-  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(3) { --dy: 151px; }
-  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(4) { --dy: 198px; }
-  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(5) { --dy: 227px; }
-  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(6) { --dy: 236px; }
-  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(7) { --dy: 227px; }
-  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(8) { --dy: 198px; }
-  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(9) { --dy: 151px; }
-  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(10) { --dy: 85px; }
+  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(2) { --dy: 110px; }
+  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(3) { --dy: 196px; }
+  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(4) { --dy: 257px; }
+  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(5) { --dy: 295px; }
+  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(6) { --dy: 307px; }
+  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(7) { --dy: 295px; }
+  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(8) { --dy: 257px; }
+  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(9) { --dy: 196px; }
+  .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(10) { --dy: 110px; }
   /* 12층 — 0 · 95 · 170 · 227 · 265 · 284 · 284 · 265 · 227 · 170 · 95 · 0 */
-  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(2) { --dy: 78px; }
-  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(3) { --dy: 140px; }
-  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(4) { --dy: 187px; }
-  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(5) { --dy: 218px; }
-  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(6) { --dy: 234px; }
-  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(7) { --dy: 234px; }
-  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(8) { --dy: 218px; }
-  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(9) { --dy: 187px; }
-  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(10) { --dy: 140px; }
-  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(11) { --dy: 78px; }
+  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(2) { --dy: 101px; }
+  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(3) { --dy: 182px; }
+  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(4) { --dy: 243px; }
+  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(5) { --dy: 283px; }
+  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(6) { --dy: 304px; }
+  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(7) { --dy: 304px; }
+  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(8) { --dy: 283px; }
+  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(9) { --dy: 243px; }
+  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(10) { --dy: 182px; }
+  .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(11) { --dy: 101px; }
   /* 사미는 묶음 카드를 **전부 왼쪽**에 몬다 (사용자 지시 2026-09-20) — 사선이 오른쪽
      아래로 내려가 오른쪽 칸을 층 카드가 차지하기 때문이다. */
   /* ── 사미(탐험가의 은빛 서리 끝자락)만 사선 — 왼쪽 위에서 오른쪽 아래로 (사용자 지시
      2026-09-20). 직선이 아니라 **아래로 볼록한 포물선** 236×(1−(1−t)²) 이라 초반에
-     가파르게 처졌다가 끝에서 평평해진다. 마지막 층의 깊이(236px)는 다른 테마 역아치의
+     가파르게 처졌다가 끝에서 평평해진다. 마지막 층의 깊이(307px)는 다른 테마 역아치의
      가장 깊은 곳과 같다 — 테마가 바뀌어도 판의 바닥선이 흔들리지 않게. */
   /* 4층 — 0 · 159 · 254 · 286 */
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(4) ~ :nth-child(2) { --dy: 131px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(4) ~ :nth-child(3) { --dy: 210px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(4) ~ :nth-child(4) { --dy: 236px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(4) ~ :nth-child(2) { --dy: 170px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(4) ~ :nth-child(3) { --dy: 273px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(4) ~ :nth-child(4) { --dy: 307px; }
   /* 5층 — 0 · 125 · 214 · 268 · 286 */
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(2) { --dy: 103px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(3) { --dy: 177px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(4) { --dy: 221px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(5) { --dy: 236px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(2) { --dy: 134px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(3) { --dy: 230px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(4) { --dy: 287px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(5) ~ :nth-child(5) { --dy: 307px; }
   /* 6층 — 0 · 103 · 183 · 240 · 275 · 286 */
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(2) { --dy: 85px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(3) { --dy: 151px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(4) { --dy: 198px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(5) { --dy: 227px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(6) { --dy: 236px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(2) { --dy: 110px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(3) { --dy: 196px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(4) { --dy: 257px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(5) { --dy: 295px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(6) ~ :nth-child(6) { --dy: 307px; }
   /* 7층 — 0 · 87 · 159 · 214 · 254 · 278 · 286 */
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(2) { --dy: 72px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(3) { --dy: 131px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(4) { --dy: 177px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(5) { --dy: 210px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(6) { --dy: 229px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(7) { --dy: 236px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(2) { --dy: 94px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(3) { --dy: 170px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(4) { --dy: 230px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(5) { --dy: 273px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(6) { --dy: 298px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(7) ~ :nth-child(7) { --dy: 307px; }
   /* 8층 — 0 · 76 · 140 · 193 · 233 · 263 · 280 · 286 */
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(2) { --dy: 63px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(3) { --dy: 116px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(4) { --dy: 159px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(5) { --dy: 193px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(6) { --dy: 217px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(7) { --dy: 231px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(8) { --dy: 236px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(2) { --dy: 82px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(3) { --dy: 151px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(4) { --dy: 207px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(5) { --dy: 251px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(6) { --dy: 282px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(7) { --dy: 300px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(8) ~ :nth-child(8) { --dy: 307px; }
   /* 9층 — 0 · 67 · 125 · 174 · 214 · 246 · 268 · 282 · 286 */
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(2) { --dy: 55px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(3) { --dy: 103px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(4) { --dy: 144px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(5) { --dy: 177px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(6) { --dy: 203px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(7) { --dy: 221px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(8) { --dy: 232px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(9) { --dy: 236px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(2) { --dy: 72px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(3) { --dy: 134px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(4) { --dy: 187px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(5) { --dy: 230px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(6) { --dy: 264px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(7) { --dy: 287px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(8) { --dy: 302px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(9) ~ :nth-child(9) { --dy: 307px; }
   /* 10층 — 0 · 60 · 113 · 159 · 198 · 230 · 254 · 272 · 282 · 286 */
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(2) { --dy: 50px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(3) { --dy: 93px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(4) { --dy: 131px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(5) { --dy: 163px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(6) { --dy: 189px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(7) { --dy: 210px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(8) { --dy: 224px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(9) { --dy: 233px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(10) { --dy: 236px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(2) { --dy: 65px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(3) { --dy: 121px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(4) { --dy: 170px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(5) { --dy: 212px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(6) { --dy: 246px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(7) { --dy: 273px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(8) { --dy: 291px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(9) { --dy: 303px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(10) ~ :nth-child(10) { --dy: 307px; }
   /* 11층 — 0 · 54 · 103 · 146 · 183 · 214 · 240 · 260 · 275 · 283 · 286 */
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(2) { --dy: 45px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(3) { --dy: 85px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(4) { --dy: 120px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(5) { --dy: 151px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(6) { --dy: 177px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(7) { --dy: 198px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(8) { --dy: 215px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(9) { --dy: 227px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(10) { --dy: 234px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(11) { --dy: 236px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(2) { --dy: 58px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(3) { --dy: 110px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(4) { --dy: 156px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(5) { --dy: 196px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(6) { --dy: 230px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(7) { --dy: 257px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(8) { --dy: 280px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(9) { --dy: 295px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(10) { --dy: 304px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(11) ~ :nth-child(11) { --dy: 307px; }
   /* 12층 — 0 · 50 · 95 · 135 · 170 · 201 · 227 · 248 · 265 · 277 · 284 · 286 */
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(2) { --dy: 41px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(3) { --dy: 78px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(4) { --dy: 111px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(5) { --dy: 140px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(6) { --dy: 166px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(7) { --dy: 187px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(8) { --dy: 205px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(9) { --dy: 218px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(10) { --dy: 228px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(11) { --dy: 234px; }
-  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(12) { --dy: 236px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(2) { --dy: 53px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(3) { --dy: 101px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(4) { --dy: 144px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(5) { --dy: 182px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(6) { --dy: 216px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(7) { --dy: 243px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(8) { --dy: 266px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(9) { --dy: 283px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(10) { --dy: 296px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(11) { --dy: 304px; }
+  html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(12) { --dy: 307px; }
   /* 묶음 카드가 전부 왼쪽 두 칸이라, 그 폭(290px)에 걸치는 가장 깊은 층까지만 비우면 된다 */
 }
 /* ── 카드는 전부 살짝 비친다 (사용자 지시 2026-09-20) ──────────────────
