@@ -14943,29 +14943,27 @@ html.rg-theme.rg6 .rg-kv-page {
   margin: 16px 0 20px;
   /* 밑줄은 최대한 옅게 (사용자 지시 2026-09-25 "최대한 투명하게") — 종전 70%(2026-09-20 에 30% 덜어낸 값).
      자리(2px)는 남겨 탭 줄 아래 간격이 흔들리지 않게 한다. */
-  /* 밑줄은 탭 단추·검색란·보유 리스트 **밑에만** — 줄 전체가 아니라 (사용자 지시 2026-10-03 "탭 버튼이랑 전체 검색 및 보유
-     리스트 버튼이 있는 밑에만"). 테두리 자리(2px)는 투명으로 남기고, 각 칸의 ::after 가 그 자리에 선을 긋는다 — 칸 사이 간격
-     4px 은 좌우 2px 씩 내밀어 잇고, 검색란은 보유 리스트까지 16px 를 이어 한 토막으로. */
+  /* 밑줄은 **탭 단추 묶음 밑에만** 한 줄로 (사용자 지시 2026-10-03 "탭 버튼이랑 전체 검색 및 보유 리스트 버튼이 있는 밑에만" →
+     "전체 검색이랑 보유 리스트 밑에는 필요 없겠다" · "가운데 빵꾸가 송송 나 있네, 한 줄로 쭉"). 단추마다 짧은 선을 이어 붙였더니
+     이음매가 비어 보여서, 탭 단추들을 .rg-tabs-views 로 감싸 그 묶음의 ::after 하나로 긋는다. 테두리 자리(2px)는 투명으로 남긴다. */
   border-bottom: 2px solid transparent;
   padding-bottom: 8px;
 }
-.rg-tabs > button,
-.rg-tabs > .rg-uni-search {
+.rg-tabs-views {
   position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
-.rg-tabs > button::after,
-.rg-tabs > .rg-uni-search::after {
+.rg-tabs-views::after {
   content: "";
   position: absolute;
-  left: -2px;
-  right: -2px;
+  left: 0;
+  right: 0;
   bottom: -10px;
   height: 2px;
   background: color-mix(in srgb, var(--rgcrim) 10%, transparent);
   pointer-events: none;
-}
-.rg-tabs > .rg-uni-search::after {
-  right: -14px;
 }
 .rg-tabs button {
   border: 1px solid var(--rgline);
@@ -15718,6 +15716,17 @@ html.rg-theme.rg6 .rg-kv-page {
 }
 /* 좁은 화면 — 탭이 두 줄로 접히므로 검색란은 맨 아랫줄을 통째로 쓴다 */
 @media (max-width: 720px) {
+  /* 탭 묶음(.rg-tabs-views)을 풀어 보유 리스트가 접힌 탭 둘째 줄 끝에 그대로 붙게 — 묶음이 한 줄을 다 차지하면 한 줄 밀린다
+     (390px 실측). 밑줄은 종전처럼 줄 전체에 (2026-10-03) */
+  .rg-tabs-views {
+    display: contents;
+  }
+  .rg-tabs-views::after {
+    display: none;
+  }
+  .rg-tabs {
+    border-bottom-color: color-mix(in srgb, var(--rgcrim) 10%, transparent);
+  }
   .rg-uni-search {
     order: 10;
     flex-basis: 100%;

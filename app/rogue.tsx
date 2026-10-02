@@ -1695,7 +1695,8 @@ export default function RogueGuide({ initialTopic }: {
       bg: "DUEL",
       show: duelStages.length > 0 && !!duelNode,
       label: duelNode?.name ?? "",
-      name: <>{duelNode && <Nm name={duelNode.name} cn={duelNode.cn} />}</>,
+      // 외나무다리는 원문(狭路相逢) 병기 없이 한글만 (사용자 지시 2026-10-03)
+      name: <>{duelNode?.name}</>,
       count: <>{t("작전 {n}개", { n: duelStages.length })}</>,
       body: (<>
           {duelNode?.func && <p className="rg-zone-desc">{duelNode.func}</p>}
@@ -2764,10 +2765,13 @@ export default function RogueGuide({ initialTopic }: {
 
       {!loading && (<>
       <nav className="rg-tabs" aria-label={t("통합전략 섹션")}>
+        {/* 탭 단추 묶음 — 밑줄을 이 묶음 밑에 한 줄로 긋는다 (CSS .rg-tabs-views, 2026-10-03) */}
+        <div className="rg-tabs-views">
         {VIEWS.map((v) => (
           <button key={v.id} type="button" className={view === v.id ? "on" : ""}
             onClick={() => { setUniTerm("", false); goView(v.id); }}>{t(v.label)}</button>
         ))}
+        </div>
         {/* 통합 검색란 — 보유 리스트 버튼 바로 왼쪽 (사용자 지시 2026-10-02, uniHits 주석) */}
         <div className="rg-uni-search">
           <div className="rg-uni-box">
