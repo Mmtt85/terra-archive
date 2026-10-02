@@ -15498,6 +15498,10 @@ html.rg-theme.rg6 .rg-kv-page {
 .rg-uni-box input[type="search"]::placeholder {
   color: var(--rgmut);
 }
+/* 입력하면 뜨는 지우기(✕) 단추 — 누르는 것이니 손가락 커서 (사용자 지시 2026-10-02) */
+.rg-uni-box input[type="search"]::-webkit-search-cancel-button {
+  cursor: pointer;
+}
 /* 좁은 화면 — 탭이 두 줄로 접히므로 검색란은 맨 아랫줄을 통째로 쓴다 */
 @media (max-width: 720px) {
   .rg-uni-search {

@@ -205,8 +205,17 @@ def parse_topic(data):
                     **({"subs": subs} if subs else {}),
                 })
             scenes.append(sc)
-        if scenes:
-            events.append({"key": key, "scenes": scenes})
+        # 한 블록에 **다른 조우가 이어 적힌** 경우 — '开始' 씬이 제목을 바꿔 다시 나오면 거기서 끊는다. 그 뒤 dest 는
+        # 그 조우 안 번호다 (빙설 「探寻前路」 블록 끝의 「前行的林地」 — 사이트에 트리 없이 평탄하게 나오던 원인,
+        # 전수검사 2026-10-02). 블록마다 하나뿐인 지금은 이 한 건이다.
+        groups = [[]]
+        for sc in scenes:
+            if groups[-1] and sc["name"] == "开始" and sc["title"] and sc["title"] != groups[-1][0]["title"]:
+                groups.append([])
+            groups[-1].append(sc)
+        for gi, g in enumerate(groups):
+            if g:
+                events.append({"key": key if gi == 0 else f"{key}~{gi}", "scenes": g})
     return events
 
 
@@ -221,6 +230,43 @@ def norm(s):
 # PRTS 편집자 라벨(【검정 성공】·【수집품 획득】류) — 게임 선택지가 아니라 랜덤 분기 라벨.
 # 확률 표기: 【源石锭】20%概率
 PROB_RE = re.compile(r"【([^】]+)】\s*(\d+(?:\.\d+)?)%概率")
+
+
+def fix_dests(scenes_out, n_prts, all_choices, stats):
+    """PRTS 씬 번호가 **확실히 깨진** 선택지만 게임 데이터의 nextSceneId 로 바로잡는다 (전수검사 2026-10-02).
+    ① 번호가 없거나 범위 밖(「칭송받는 그림자」 '받는다' → 없는 27번) ② 게임이 가리키는 결과 씬에 어디서도 닿지
+    않을 때(「안전한 곳」 선택지 4개가 전부 1번을 가리켜 2~4번 결과가 고아). 그 밖의 불일치(101건)는 PRTS 가 맞다 —
+    통보 재도전·반복 단계를 진행 순서대로 **펼쳐 적은** 사본들이라, 게임의 같은 씬 하나로 덮으면 펼침이 무너진다."""
+    sid_idx = {}
+    for i, nd in enumerate(scenes_out[:n_prts]):
+        if nd.get("sid"):
+            sid_idx.setdefault(nd["sid"], []).append(i)
+    def reach():
+        seen, stack = {0}, [0]
+        while stack:
+            for c in scenes_out[stack.pop()]["choices"]:
+                d = c.get("dest")
+                if d is not None and d not in seen:
+                    seen.add(d)
+                    stack.append(d)
+        return seen
+    changed = True
+    while changed:
+        changed = False
+        seen = reach()
+        for nd in scenes_out[:n_prts]:
+            for c in nd["choices"]:
+                ns = (all_choices.get(c.get("cid") or "") or {}).get("nextSceneId")
+                idxs = sid_idx.get(ns or "", [])
+                d = c.get("dest")
+                if not idxs or d in idxs:
+                    continue
+                if d is None or not any(i in seen for i in idxs):
+                    c["dest"] = idxs[0]
+                    stats["dest_fix"] = stats.get("dest_fix", 0) + 1
+                    changed = True
+            if changed:
+                break
 
 
 def match_topic(tid, events, det):
@@ -359,7 +405,8 @@ def match_topic(tid, events, det):
                             return sc2
                         cid = max(cids, key=lambda k: (amb_score(k), k not in used, -cids.index(k)))
                     used.add(cid)
-                    dest = c["dest"] if c["dest"] is not None else (sub_scene(c["subs"]) if c.get("subs") else None)
+                    pd = c["dest"] if c["dest"] is not None and 0 <= c["dest"] < len(ev["scenes"]) else None
+                    dest = pd if pd is not None else (sub_scene(c["subs"]) if c.get("subs") else None)
                     node["choices"].append({"cid": cid,
                                             **({"relicCn": c["relicCn"]} if c.get("relicCn") else {}),
                                             **({"noteCn": c["note"]} if c.get("note") else {}),
@@ -384,6 +431,7 @@ def match_topic(tid, events, det):
                     stats["ch_fail"] += 1
             scenes_out.append(node)
         scenes_out.extend(extra)
+        fix_dests(scenes_out, len(ev["scenes"]), all_choices, stats)
         # 씬이 1개뿐이고 링크가 없으면 트리로서 무의미 — 평탄 렌더 유지.
         # 전투 링크는 트리 유무와 무관하게 남긴다 (encounterBattles 자동 보강용).
         entry = {}
@@ -419,7 +467,7 @@ def main():
         result[tid] = trees
         print(f"{tid}: PRTS {st['events']}건 → 매칭 {st['matched']} · 트리 {len(trees)} · "
               f"선택지 정확 {st['ch_ok']} 퍼지 {st['ch_fuzzy']} 분기 {st['ch_branch']} 노트 {st['ch_note']} "
-              f"실패 {st['ch_fail']} · 씬 해결 {st['sc_ok']} 실패 {st['sc_fail']}")
+              f"실패 {st['ch_fail']} · 씬 해결 {st['sc_ok']} 실패 {st['sc_fail']} · 씬 번호 교정 {st.get('dest_fix', 0)}")
     meta = {"_comment": "조우 씬 트리 — PRTS 事件一览을 게임 id에 매칭 (build-rogue-enc-scenes.py 재생성, 손대지 말 것). "
                         "sid/cid = 게임 데이터 id (로케일 텍스트는 build-rogue.py가 해석), dest = 이 조우 씬 배열 인덱스, "
                         "branch = PRTS 편집자 분기 라벨(랜덤 결과), prob = %확률, noteCn = 안내 블록(랜덤 출현 규칙·"

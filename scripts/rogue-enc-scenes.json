@@ -1270,15 +1270,15 @@
       },
       {
        "cid": "choice_rest_2",
-       "dest": 1
+       "dest": 2
       },
       {
        "cid": "choice_rest_3",
-       "dest": 1
+       "dest": 3
       },
       {
        "cid": "choice_rest_4",
-       "dest": 1
+       "dest": 4
       }
      ]
     },
@@ -1394,7 +1394,8 @@
      "sid": "scene_ent1_7",
      "choices": [
       {
-       "cid": "choice_ent1_7"
+       "cid": "choice_ent1_7",
+       "dest": 9
       }
      ]
     },
@@ -2971,7 +2972,8 @@
       },
       {
        "cid": "choice_ro2_king_3",
-       "noteCn": "循环此场景，直到检定成功结束事件"
+       "noteCn": "循环此场景，直到检定成功结束事件",
+       "dest": 3
       },
       {
        "cid": "choice_ro2_king_4",
@@ -7088,20 +7090,23 @@
     {
      "sid": "scene_ro3_scout_1",
      "choices": []
-    },
+    }
+   ]
+  },
+  "scene_ro3_portalsample_enter": {
+   "scenes": [
     {
-     "sid": null,
+     "sid": "scene_ro3_portalsample_enter",
      "choices": [
       {
-       "branch": "树上就不能走吗？",
+       "cid": "choice_ro3_portalsample_7",
        "dest": 1
       },
       {
-       "branch": "取出伐木斧",
+       "cid": "choice_ro3_portalsample_1",
        "dest": 2
       }
-     ],
-     "descCn": "虬结的树木与藤蔓彻底拦住了你的去路，萨米人口中无数生灵的命运顺枝叶延伸，在你眼前交错相连。你反复确认过，当地人给你的路线图确实指向这个方向。"
+     ]
     },
     {
      "sid": null,
@@ -7109,13 +7114,2334 @@
      "descCn": "进入【深埋迷境】"
     },
     {
-     "sid": null,
+     "sid": "scene_ro3_portalsample_1",
      "choices": [
       {
        "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
       }
-     ],
-     "descCn": "你终于砍开了杂乱的林木和藤条，阳光照入林间，什么东西掉在了地上。你产生了一种奇怪的直觉——或许你刚刚破坏了什么精妙的人造物。但造成的损坏已经无法复原，你只好捡起掉落的物件离开。"
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0201a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0301a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0401a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0501a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0601a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0201b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0301b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0401b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0501b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0601b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0201c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0301c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0401c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0501c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0601c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0201d_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0301d_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0401d_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0501d_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0601d_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0201e_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0301e_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0401e_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0501e_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0601e_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0202a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0302a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0402a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0502a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0602a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0202b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0302b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0402b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0502b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0602b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0202c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0302c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0402c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0502c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0602c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0203a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0303a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0403a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0503a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0603a_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0203b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0303b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0403b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0503b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0603b_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0203c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0303c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0403c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0503c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
+    }
+   ]
+  },
+  "scene_ro3_portal0603c_enter": {
+   "scenes": [
+    {
+     "sid": "scene_ro3_portalsample_enter",
+     "choices": [
+      {
+       "cid": "choice_ro3_portalsample_7",
+       "dest": 1
+      },
+      {
+       "cid": "choice_ro3_portalsample_1",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [],
+     "descCn": "进入【深埋迷境】"
+    },
+    {
+     "sid": "scene_ro3_portalsample_1",
+     "choices": [
+      {
+       "noteCn": "以下选项随机出现一项"
+      },
+      {
+       "cid": "choice_ro3_portalsample_3"
+      },
+      {
+       "cid": "choice_ro3_portalsample_4"
+      },
+      {
+       "cid": "choice_ro3_portalsample_5"
+      },
+      {
+       "cid": "choice_ro3_portalsample_6"
+      }
+     ]
     }
    ]
   }
@@ -27054,7 +29380,7 @@
       {
        "cid": "choice_ro6_normal4_26",
        "relicCn": "犬植浆",
-       "dest": 27
+       "dest": 26
       }
      ]
     },
