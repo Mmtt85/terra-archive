@@ -633,6 +633,9 @@ function NodeIco({ id, cls = "rg-nodetype-ico" }: { id?: string | null; cls?: st
     alt="" width={160} height={160} loading="lazy" decoding="async" />;
 }
 
+// 묶음 카드 배경에 정사각형 노드 아이콘을 까는 테마 — 컬러 판이 없는 흑류수해 (2026-10-03)
+const SQUARE_ICO_BG = new Set(["rogue_6"]);
+
 // 층 줄(역아치) 밖, 지도판 묶음 칸에 따로 두는 구역 "토픽:구역" — RogueGuide 의 pocketZones
 const POCKET_ZONES = new Set(["rogue_2:zone_7"]);
 
@@ -1672,6 +1675,7 @@ export default function RogueGuide({ initialTopic }: {
     },
     {
       id: "savage",
+      bg: "BATTLE_SAVAGE",
       show: savageStages.length > 0,
       label: `${t("거점전 ('주민' 거점)")}`,
       name: <>{t("거점전 ('주민' 거점)")}</>,
@@ -2938,6 +2942,11 @@ export default function RogueGuide({ initialTopic }: {
                     카드 자체를 판 모양(138:48 가로형)으로, CSS .rg-sec-card.plate) */}
                 {sec.bg && hasNodePlate(data.id, sec.bg) && (
                   <img className="rg-zonecard-bg" src={asset(`/rogue/node/${data.id}/plate/${sec.bg}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
+                )}
+                {/* 흑류수해는 판이 없어 정사각형 노드 아이콘을 (CSS .rg-sec-icobg) */}
+                {sec.bg && SQUARE_ICO_BG.has(data.id) && !hasNodePlate(data.id, sec.bg) && hasNodeIcon(data.id, sec.bg) && (
+                  <img className={`rg-zonecard-bg rg-sec-icobg${NODE_TINT[sec.bg] ? ` ${NODE_TINT[sec.bg]}` : ""}`}
+                    src={asset(`/rogue/node/${data.id}/${sec.bg}.webp?v=2`)} alt="" aria-hidden loading="lazy" decoding="async" />
                 )}
                 <h3 className={sec.cls}>{sec.name}</h3>
                 <span className="rg-zone-counts">{sec.count}</span>

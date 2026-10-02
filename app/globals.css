@@ -14266,6 +14266,13 @@ html.rg-theme.rg6 .site-header {
 .rg-sec-card:hover {
   border-color: color-mix(in srgb, var(--rgcrim) 60%, var(--rgline));
 }
+/* 흑류수해는 컬러 판이 없고 정사각형 노드 아이콘(256×256 원판)뿐이라 자르지 않고 카드 가운데에 (2026-10-03 "흑류수해는 우연한 만남이랑
+   외나무다리 아이콘 없어?") */
+.rg-sec-card > .rg-sec-icobg {
+  object-fit: contain;
+  padding: 6px;
+  box-sizing: border-box;
+}
 /* 노드 컬러 판 배경(.rg-zonecard-bg, 4·5번째 테마) — 층 카드처럼 카드 밖으로 안 넘치게, 글자는 그림 위로 (2026-10-03) */
 .rg-sec-card {
   position: relative;
@@ -14936,8 +14943,29 @@ html.rg-theme.rg6 .rg-kv-page {
   margin: 16px 0 20px;
   /* 밑줄은 최대한 옅게 (사용자 지시 2026-09-25 "최대한 투명하게") — 종전 70%(2026-09-20 에 30% 덜어낸 값).
      자리(2px)는 남겨 탭 줄 아래 간격이 흔들리지 않게 한다. */
-  border-bottom: 2px solid color-mix(in srgb, var(--rgcrim) 10%, transparent);
+  /* 밑줄은 탭 단추·검색란·보유 리스트 **밑에만** — 줄 전체가 아니라 (사용자 지시 2026-10-03 "탭 버튼이랑 전체 검색 및 보유
+     리스트 버튼이 있는 밑에만"). 테두리 자리(2px)는 투명으로 남기고, 각 칸의 ::after 가 그 자리에 선을 긋는다 — 칸 사이 간격
+     4px 은 좌우 2px 씩 내밀어 잇고, 검색란은 보유 리스트까지 16px 를 이어 한 토막으로. */
+  border-bottom: 2px solid transparent;
   padding-bottom: 8px;
+}
+.rg-tabs > button,
+.rg-tabs > .rg-uni-search {
+  position: relative;
+}
+.rg-tabs > button::after,
+.rg-tabs > .rg-uni-search::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  bottom: -10px;
+  height: 2px;
+  background: color-mix(in srgb, var(--rgcrim) 10%, transparent);
+  pointer-events: none;
+}
+.rg-tabs > .rg-uni-search::after {
+  right: -14px;
 }
 .rg-tabs button {
   border: 1px solid var(--rgline);
