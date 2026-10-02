@@ -198,10 +198,13 @@ function SceneChoices({ scenes, idx, path, link }: {
         const cyclic = dest !== undefined && path.includes(dest);
         const expandable = dest !== undefined && !cyclic;
         const expanded = expandable && open.has(i);
+        // 랜덤 결과 라벨 — 흑류수해(CN 선행)는 선택지처럼 중국어 원문 + 번역 (사용자 지적 2026-10-02)
         const head = c.branch !== undefined
           ? <>
               <span className="rg-choice-prob" aria-hidden>▮</span>
-              <strong className="rg-choice-branch">{c.branch}</strong>
+              {c.cn && c.cn !== c.branch
+                ? <><strong className="rg-choice-branch" lang="zh">{c.cn}</strong><span className="rg-choice-kr">{c.branch}</span></>
+                : <strong className="rg-choice-branch">{c.branch}</strong>}
               {c.prob !== undefined && <span className="rg-choice-prob-pct">{c.prob}%</span>}
             </>
           : c.cn

@@ -186,6 +186,14 @@ def parse_topic(data):
                 # 병렬 선택지를 구분해 주는 정보. 사라진 풍습 린수 제보, 2026-08-16).
                 # 원문 선두의 ※는 떼어 둔다 — 표시할 때 ※를 붙이므로 중복되지 않게.
                 cnote = clean(cnamed.get("desc2", "")).lstrip("※").strip()
+                # subChoose — 이 선택지의 **랜덤 결과** 목록 「라벨;씬;;라벨;씬」 (dest 대신 쓴다, IS5·IS6).
+                # 2026-10-02 까지 이 인자를 안 읽어, 「안면일우」 '주위를 둘러본다'(3가지 중 1가지)처럼 선택지 뒤가
+                # 통째로 잘렸다 — 결과 씬들이 어디에도 이어지지 않았다 (사용자 제보 "인카운터 짤렸다").
+                subs = []
+                for part in (cnamed.get("subChoose") or "").split(";;"):
+                    bits = [b.strip() for b in part.split(";")]
+                    if len(bits) >= 2 and bits[0] and bits[1].isdigit():
+                        subs.append({"label": clean(bits[0]), "dest": int(bits[1])})
                 sc["choices"].append({
                     "kind": cpos[0].strip() if cpos else "",
                     "title": clean(cpos[1]) if len(cpos) > 1 else "",
@@ -194,6 +202,7 @@ def parse_topic(data):
                     "links": extract_links(cpos[1] if len(cpos) > 1 else "", cnamed.get("desc1", "")),
                     **({"relicCn": relic_cn} if relic_cn else {}),
                     **({"note": cnote} if cnote else {}),
+                    **({"subs": subs} if subs else {}),
                 })
             scenes.append(sc)
         if scenes:
@@ -281,6 +290,16 @@ def match_topic(tid, events, det):
         stats["battles"] += len(ev_battles)
 
         scenes_out = []
+        # subChoose 랜덤 결과 — 선택지를 누르면 결과 줄(분기 라벨 → 결과 씬)만 든 **중간 씬**이 펼쳐지게, 그 씬을
+        # PRTS 씬 뒤에 덧붙인다(앞의 씬 번호 = PRTS dest 가 그대로 맞도록). 같은 결과 목록은 한 씬을 같이 쓴다.
+        extra, extra_at = [], {}
+        def sub_scene(subs):
+            key = tuple((x["label"], x["dest"]) for x in subs)
+            if key not in extra_at:
+                extra_at[key] = len(ev["scenes"]) + len(extra)
+                extra.append({"sid": None, "choices": [{"branch": x["label"], "dest": x["dest"]} for x in subs]})
+                stats["ch_branch"] += len(subs)
+            return extra_at[key]
         used = set()   # 이 조우에서 이미 배선한 cid — 동명 병렬 선택지의 중복 배선 방지
         for idx, s in enumerate(ev["scenes"]):
             # 씬 id: 첫 씬은 enter 확정, 나머지는 지문 텍스트로
@@ -328,17 +347,23 @@ def match_topic(tid, events, det):
                         def amb_score(k):
                             d_n, r_n = ch_sig[k]
                             sc2 = 0.0
-                            if want_r and r_n:
+                            if want_r and d_n and want_r in d_n:
+                                # 소장품 이름이 게임 선택지 문장에 그대로 있다 — 가장 확실한 신호. 보상 아이템 id 가 없는
+                                # 소장품 선택지(获得收藏品「源私钥」)는 아래 비교에서 빠져, 이름 글자 하나 겹치는 源石锭(99개)
+                                # 선택지가 이겼다 (「안면일우」 첫 장면이 오리지늄각뿔 +99 로 나오던 오배선, 2026-10-02)
+                                sc2 += 3
+                            elif want_r and r_n:
                                 sc2 += 2 * difflib.SequenceMatcher(None, want_r, r_n).ratio()
                             if want_d and d_n:
                                 sc2 += difflib.SequenceMatcher(None, want_d, d_n).ratio()
                             return sc2
                         cid = max(cids, key=lambda k: (amb_score(k), k not in used, -cids.index(k)))
                     used.add(cid)
+                    dest = c["dest"] if c["dest"] is not None else (sub_scene(c["subs"]) if c.get("subs") else None)
                     node["choices"].append({"cid": cid,
                                             **({"relicCn": c["relicCn"]} if c.get("relicCn") else {}),
                                             **({"noteCn": c["note"]} if c.get("note") else {}),
-                                            **({"dest": c["dest"]} if c["dest"] is not None else {})})
+                                            **({"dest": dest} if dest is not None else {})})
                     continue
                 # 게임 선택지에 없음 — dest가 있으면 랜덤 결과 분기 라벨(【검정 성공】·주화명·보상명),
                 # PRTS 편집자가 롤 테이블을 선택지 모양으로 적은 것이다.
@@ -358,6 +383,7 @@ def match_topic(tid, events, det):
                 elif c["title"]:
                     stats["ch_fail"] += 1
             scenes_out.append(node)
+        scenes_out.extend(extra)
         # 씬이 1개뿐이고 링크가 없으면 트리로서 무의미 — 평탄 렌더 유지.
         # 전투 링크는 트리 유무와 무관하게 남긴다 (encounterBattles 자동 보강용).
         entry = {}

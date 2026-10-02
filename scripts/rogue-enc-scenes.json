@@ -11380,7 +11380,8 @@
      "sid": "scene_ro5_double4b_3",
      "choices": [
       {
-       "cid": "choice_ro5_double4b_4"
+       "cid": "choice_ro5_double4b_4",
+       "dest": 6
       }
      ]
     },
@@ -11400,6 +11401,19 @@
     {
      "sid": "scene_ro5_double4b_5",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 3
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 4
+      }
+     ]
     }
    ]
   },
@@ -11430,7 +11444,8 @@
      "sid": "scene_ro5_double4b_3",
      "choices": [
       {
-       "cid": "choice_ro5_double4b_4"
+       "cid": "choice_ro5_double4b_4",
+       "dest": 6
       }
      ]
     },
@@ -11450,6 +11465,19 @@
     {
      "sid": "scene_ro5_double4b_5",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 3
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 4
+      }
+     ]
     }
    ]
   },
@@ -12765,13 +12793,16 @@
      "sid": "scene_ro5_res6_1",
      "choices": [
       {
-       "cid": "choice_ro5_res6_5"
+       "cid": "choice_ro5_res6_5",
+       "dest": 10
       },
       {
-       "cid": "choice_ro5_res6_8"
+       "cid": "choice_ro5_res6_8",
+       "dest": 10
       },
       {
-       "cid": "choice_ro5_res6_9"
+       "cid": "choice_ro5_res6_9",
+       "dest": 10
       }
      ]
     },
@@ -12779,13 +12810,16 @@
      "sid": "scene_ro5_res6_1",
      "choices": [
       {
-       "cid": "choice_ro5_res6_10"
+       "cid": "choice_ro5_res6_10",
+       "dest": 11
       },
       {
-       "cid": "choice_ro5_res6_11"
+       "cid": "choice_ro5_res6_11",
+       "dest": 11
       },
       {
-       "cid": "choice_ro5_res6_12"
+       "cid": "choice_ro5_res6_12",
+       "dest": 11
       }
      ]
     },
@@ -12793,13 +12827,16 @@
      "sid": "scene_ro5_res6_1",
      "choices": [
       {
-       "cid": "choice_ro5_res6_16"
+       "cid": "choice_ro5_res6_16",
+       "dest": 12
       },
       {
-       "cid": "choice_ro5_res6_17"
+       "cid": "choice_ro5_res6_17",
+       "dest": 12
       },
       {
-       "cid": "choice_ro5_res6_18"
+       "cid": "choice_ro5_res6_18",
+       "dest": 12
       }
      ]
     },
@@ -12853,6 +12890,45 @@
       },
       {
        "cid": "choice_ro5_res6_20"
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 4
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 7
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 7
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 9
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 7
       }
      ]
     }
@@ -12914,7 +12990,8 @@
       },
       {
        "cid": "choice_ro5_heaven1_7",
-       "noteCn": "（持有至少2枚花钱时可选）\n 仅在持有寅诗壶时出现"
+       "noteCn": "（持有至少2枚花钱时可选）\n 仅在持有寅诗壶时出现",
+       "dest": 4
       },
       {
        "cid": "choice_ro5_heaven1_4",
@@ -12942,6 +13019,19 @@
     {
      "sid": "scene_ro5_heaven1_3",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 1
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 2
+      }
+     ]
     }
    ]
   },
@@ -12956,11 +13046,13 @@
        "dest": 1
       },
       {
-       "cid": "choice_ro5_heaven3_2"
+       "cid": "choice_ro5_heaven3_2",
+       "dest": 6
       },
       {
        "cid": "choice_ro5_heaven3_5",
-       "noteCn": "仅在持有寅诗壶时出现"
+       "noteCn": "仅在持有寅诗壶时出现",
+       "dest": 7
       },
       {
        "cid": "choice_ro5_heaven3_4",
@@ -12999,6 +13091,32 @@
        "dest": 4
       }
      ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "随机出现：成功",
+       "dest": 3
+      },
+      {
+       "branch": "随机出现：失败",
+       "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 5
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 2
+      }
+     ]
     }
    ]
   },
@@ -13021,10 +13139,12 @@
      "sid": "scene_ro5_heaven4_1",
      "choices": [
       {
-       "cid": "choice_ro5_heaven4_4"
+       "cid": "choice_ro5_heaven4_4",
+       "dest": 9
       },
       {
-       "cid": "choice_ro5_heaven4_5"
+       "cid": "choice_ro5_heaven4_5",
+       "dest": 10
       }
      ]
     },
@@ -13119,6 +13239,32 @@
     {
      "sid": "scene_ro5_heaven4_5",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "随机出现：源石锭",
+       "dest": 2
+      },
+      {
+       "branch": "随机出现：希望",
+       "dest": 3
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "随机出现：源石锭",
+       "dest": 4
+      },
+      {
+       "branch": "随机出现：希望",
+       "dest": 5
+      }
+     ]
     }
    ]
   },
@@ -13746,13 +13892,16 @@
      "sid": "scene_ro5_ent3_2",
      "choices": [
       {
-       "cid": "choice_ro5_ent3_3"
+       "cid": "choice_ro5_ent3_3",
+       "dest": 27
       },
       {
-       "cid": "choice_ro5_ent3_4"
+       "cid": "choice_ro5_ent3_4",
+       "dest": 28
       },
       {
-       "cid": "choice_ro5_ent3_5"
+       "cid": "choice_ro5_ent3_5",
+       "dest": 29
       }
      ]
     },
@@ -13761,11 +13910,13 @@
      "choices": [
       {
        "cid": "choice_ro5_ent3_7",
-       "noteCn": "选择后随机再来一次或直接离开"
+       "noteCn": "选择后随机再来一次或直接离开",
+       "dest": 30
       },
       {
        "cid": "choice_ro5_ent3_38",
-       "noteCn": "仅在持有申铸轮时出现"
+       "noteCn": "仅在持有申铸轮时出现",
+       "dest": 31
       }
      ]
     },
@@ -13842,13 +13993,16 @@
      "sid": "scene_ro5_ent3_2",
      "choices": [
       {
-       "cid": "choice_ro5_ent3_15"
+       "cid": "choice_ro5_ent3_15",
+       "dest": 32
       },
       {
-       "cid": "choice_ro5_ent3_16"
+       "cid": "choice_ro5_ent3_16",
+       "dest": 33
       },
       {
-       "cid": "choice_ro5_ent3_17"
+       "cid": "choice_ro5_ent3_17",
+       "dest": 34
       }
      ]
     },
@@ -13857,11 +14011,13 @@
      "choices": [
       {
        "cid": "choice_ro5_ent3_19",
-       "noteCn": "选择后随机再来一次或直接离开"
+       "noteCn": "选择后随机再来一次或直接离开",
+       "dest": 35
       },
       {
        "cid": "choice_ro5_ent3_40",
-       "noteCn": "仅在持有申铸轮时出现"
+       "noteCn": "仅在持有申铸轮时出现",
+       "dest": 36
       }
      ]
     },
@@ -13938,13 +14094,16 @@
      "sid": "scene_ro5_ent3_2",
      "choices": [
       {
-       "cid": "choice_ro5_ent3_27"
+       "cid": "choice_ro5_ent3_27",
+       "dest": 37
       },
       {
-       "cid": "choice_ro5_ent3_28"
+       "cid": "choice_ro5_ent3_28",
+       "dest": 38
       },
       {
-       "cid": "choice_ro5_ent3_29"
+       "cid": "choice_ro5_ent3_29",
+       "dest": 39
       }
      ]
     },
@@ -13953,11 +14112,13 @@
      "choices": [
       {
        "cid": "choice_ro5_ent3_31",
-       "noteCn": "选择后随机再来一次或直接离开"
+       "noteCn": "选择后随机再来一次或直接离开",
+       "dest": 40
       },
       {
        "cid": "choice_ro5_ent3_41",
-       "noteCn": "仅在持有申铸轮时出现"
+       "noteCn": "仅在持有申铸轮时出现",
+       "dest": 41
       }
      ]
     },
@@ -14001,6 +14162,189 @@
       {
        "cid": "choice_ro5_ent3_37",
        "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 6
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 9
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 6
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 6
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "再来一次",
+       "dest": 4
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 7
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 16
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 14
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 17
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 14
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 18
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 14
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "再来一次",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 18
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 15
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 24
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 22
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 25
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 22
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 26
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 22
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "再来一次",
+       "dest": 20
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 26
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 23
       }
      ]
     }
@@ -15688,7 +16032,8 @@
       },
       {
        "cid": "choice_ro5_chest_4",
-       "noteCn": "持有至少1枚花钱时可选"
+       "noteCn": "持有至少1枚花钱时可选",
+       "dest": 11
       }
      ]
     },
@@ -15727,7 +16072,8 @@
       },
       {
        "cid": "choice_ro5_chest_5",
-       "noteCn": "持有至少1枚厉钱时可选"
+       "noteCn": "持有至少1枚厉钱时可选",
+       "dest": 12
       }
      ]
     },
@@ -15756,6 +16102,32 @@
     {
      "sid": "scene_ro5_chest_7",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 4
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 9
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 7
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 9
+      }
+     ]
     }
    ]
   },
@@ -15807,11 +16179,13 @@
       },
       {
        "cid": "choice_ro5_trash0_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -15854,11 +16228,13 @@
       },
       {
        "cid": "choice_ro5_trash1_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_7",
@@ -15901,11 +16277,13 @@
       },
       {
        "cid": "choice_ro5_trash2_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash2_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash3_2",
@@ -15948,11 +16326,13 @@
       },
       {
        "cid": "choice_ro5_trash3_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash3_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash5_7",
@@ -15995,11 +16375,13 @@
       },
       {
        "cid": "choice_ro5_trash5_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash5_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -16042,11 +16424,13 @@
       },
       {
        "cid": "choice_ro5_trash4_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash4_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -16077,6 +16461,84 @@
       {
        "cid": "choice_ro5_trash0_2",
        "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 4
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 5
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 7
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 8
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 11
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 13
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 14
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 16
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 17
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 19
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 20
       }
      ]
     }
@@ -16130,11 +16592,13 @@
       },
       {
        "cid": "choice_ro5_trash0_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -16177,11 +16641,13 @@
       },
       {
        "cid": "choice_ro5_trash1_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_7",
@@ -16224,11 +16690,13 @@
       },
       {
        "cid": "choice_ro5_trash2_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash2_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash3_2",
@@ -16271,11 +16739,13 @@
       },
       {
        "cid": "choice_ro5_trash3_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash3_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash5_7",
@@ -16318,11 +16788,13 @@
       },
       {
        "cid": "choice_ro5_trash5_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash5_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -16365,11 +16837,13 @@
       },
       {
        "cid": "choice_ro5_trash4_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash4_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -16400,6 +16874,84 @@
       {
        "cid": "choice_ro5_trash0_2",
        "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 4
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 5
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 7
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 8
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 11
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 13
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 14
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 16
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 17
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 19
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 20
       }
      ]
     }
@@ -16453,11 +17005,13 @@
       },
       {
        "cid": "choice_ro5_trash0_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -16500,11 +17054,13 @@
       },
       {
        "cid": "choice_ro5_trash1_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_7",
@@ -16547,11 +17103,13 @@
       },
       {
        "cid": "choice_ro5_trash2_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash2_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash3_2",
@@ -16594,11 +17152,13 @@
       },
       {
        "cid": "choice_ro5_trash3_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash3_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash5_7",
@@ -16641,11 +17201,13 @@
       },
       {
        "cid": "choice_ro5_trash5_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash5_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -16688,11 +17250,13 @@
       },
       {
        "cid": "choice_ro5_trash4_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash4_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -16723,6 +17287,84 @@
       {
        "cid": "choice_ro5_trash0_2",
        "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 4
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 5
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 7
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 8
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 11
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 13
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 14
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 16
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 17
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 19
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 20
       }
      ]
     }
@@ -16776,11 +17418,13 @@
       },
       {
        "cid": "choice_ro5_trash0_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -16823,11 +17467,13 @@
       },
       {
        "cid": "choice_ro5_trash1_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_7",
@@ -16870,11 +17516,13 @@
       },
       {
        "cid": "choice_ro5_trash2_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash2_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash3_2",
@@ -16917,11 +17565,13 @@
       },
       {
        "cid": "choice_ro5_trash3_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash3_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash5_7",
@@ -16964,11 +17614,13 @@
       },
       {
        "cid": "choice_ro5_trash5_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash5_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -17011,11 +17663,13 @@
       },
       {
        "cid": "choice_ro5_trash4_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash4_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -17046,6 +17700,84 @@
       {
        "cid": "choice_ro5_trash0_2",
        "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 4
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 5
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 7
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 8
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 11
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 13
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 14
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 16
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 17
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 19
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 20
       }
      ]
     }
@@ -17099,11 +17831,13 @@
       },
       {
        "cid": "choice_ro5_trash0_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -17146,11 +17880,13 @@
       },
       {
        "cid": "choice_ro5_trash1_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_7",
@@ -17193,11 +17929,13 @@
       },
       {
        "cid": "choice_ro5_trash2_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash2_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash3_2",
@@ -17240,11 +17978,13 @@
       },
       {
        "cid": "choice_ro5_trash3_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash3_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash5_7",
@@ -17287,11 +18027,13 @@
       },
       {
        "cid": "choice_ro5_trash5_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash5_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -17334,11 +18076,13 @@
       },
       {
        "cid": "choice_ro5_trash4_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash4_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -17369,6 +18113,84 @@
       {
        "cid": "choice_ro5_trash0_2",
        "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 4
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 5
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 7
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 8
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 11
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 13
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 14
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 16
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 17
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 19
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 20
       }
      ]
     }
@@ -17422,11 +18244,13 @@
       },
       {
        "cid": "choice_ro5_trash0_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 21
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -17469,11 +18293,13 @@
       },
       {
        "cid": "choice_ro5_trash1_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 22
       },
       {
        "cid": "choice_ro5_trash1_7",
@@ -17516,11 +18342,13 @@
       },
       {
        "cid": "choice_ro5_trash2_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash2_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 23
       },
       {
        "cid": "choice_ro5_trash3_2",
@@ -17563,11 +18391,13 @@
       },
       {
        "cid": "choice_ro5_trash3_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash3_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 24
       },
       {
        "cid": "choice_ro5_trash5_7",
@@ -17610,11 +18440,13 @@
       },
       {
        "cid": "choice_ro5_trash5_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash5_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 25
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -17657,11 +18489,13 @@
       },
       {
        "cid": "choice_ro5_trash4_3",
-       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash4_4",
-       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现"
+       "noteCn": "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现",
+       "dest": 26
       },
       {
        "cid": "choice_ro5_trash0_2",
@@ -17692,6 +18526,84 @@
       {
        "cid": "choice_ro5_trash0_2",
        "dest": 2
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 4
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 5
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 7
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 8
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 11
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 13
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 14
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 16
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 17
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 19
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 20
       }
      ]
     }
@@ -19640,10 +20552,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -19689,6 +20603,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -19815,10 +20755,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -19864,6 +20806,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -19990,10 +20958,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -20039,6 +21009,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -20165,10 +21161,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -20214,6 +21212,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -20340,10 +21364,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -20389,6 +21415,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -20515,10 +21567,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -20564,6 +21618,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -20690,10 +21770,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -20739,6 +21821,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -20865,10 +21973,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -20914,6 +22024,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -21040,10 +22176,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -21089,6 +22227,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -21215,10 +22379,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -21264,6 +22430,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -21390,10 +22582,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -21439,6 +22633,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -21565,10 +22785,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -21614,6 +22836,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -21740,10 +22988,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -21789,6 +23039,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -21915,10 +23191,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -21964,6 +23242,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -22090,10 +23394,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -22139,6 +23445,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -22265,10 +23597,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -22314,6 +23648,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -22440,10 +23800,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -22489,6 +23851,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -22615,10 +24003,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -22664,6 +24054,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -22790,10 +24206,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -22839,6 +24257,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -22965,10 +24409,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -23014,6 +24460,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -23140,10 +24612,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -23189,6 +24663,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -23315,10 +24815,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -23364,6 +24866,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -23490,10 +25018,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -23539,6 +25069,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -23665,10 +25221,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -23714,6 +25272,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -23840,10 +25424,12 @@
      "sid": "scene_ro5_lokk16_3",
      "choices": [
       {
-       "cid": "choice_ro5_lokk16_5"
+       "cid": "choice_ro5_lokk16_5",
+       "dest": 14
       },
       {
-       "cid": "choice_ro5_lokk16_6"
+       "cid": "choice_ro5_lokk16_6",
+       "dest": 15
       }
      ]
     },
@@ -23889,6 +25475,32 @@
     {
      "sid": "scene_ro5_lokk16_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 8
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "天随人愿",
+       "dest": 10
+      },
+      {
+       "branch": "不尽人意",
+       "dest": 12
+      }
+     ]
     }
    ]
   },
@@ -24195,7 +25807,8 @@
      "choices": [
       {
        "cid": "choice_ro6_bat5_7",
-       "noteCn": "随机出现以下2种选项中的1种"
+       "noteCn": "随机出现以下2种选项中的1种",
+       "dest": 10
       },
       {
        "cid": "choice_ro6_bat5_4",
@@ -24228,6 +25841,19 @@
     {
      "sid": "scene_ro6_bat5_9",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "我不要困在这里！",
+       "dest": 7
+      },
+      {
+       "branch": "获得了奖励",
+       "dest": 8
+      }
+     ]
     }
    ],
    "battles": [
@@ -24241,7 +25867,8 @@
      "choices": [
       {
        "cid": "choice_ro6_bat6_1",
-       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复"
+       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复",
+       "dest": 23
       },
       {
        "cid": "choice_ro6_bat6_2",
@@ -24294,7 +25921,8 @@
      "choices": [
       {
        "cid": "choice_ro6_bat6_7",
-       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复"
+       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复",
+       "dest": 24
       },
       {
        "cid": "choice_ro6_bat6_8",
@@ -24347,7 +25975,8 @@
      "choices": [
       {
        "cid": "choice_ro6_bat6_13",
-       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复"
+       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复",
+       "dest": 25
       },
       {
        "cid": "choice_ro6_bat6b_8",
@@ -24396,7 +26025,8 @@
      "choices": [
       {
        "cid": "choice_ro6_bat6_18",
-       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复"
+       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复",
+       "dest": 26
       },
       {
        "cid": "choice_ro6_bat6_8",
@@ -24443,6 +26073,90 @@
     {
      "sid": "scene_ro6_bat6_22",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "乌鸦的宝贝",
+       "dest": 1
+      },
+      {
+       "branch": "松鼠的宝贝",
+       "dest": 3
+      },
+      {
+       "branch": "空树洞",
+       "dest": 4
+      },
+      {
+       "branch": "树洞咬人",
+       "dest": 5
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "乌鸦的宝贝",
+       "dest": 8
+      },
+      {
+       "branch": "松鼠的宝贝",
+       "dest": 9
+      },
+      {
+       "branch": "空树洞",
+       "dest": 10
+      },
+      {
+       "branch": "树洞咬人",
+       "dest": 11
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "乌鸦的宝贝",
+       "dest": 13
+      },
+      {
+       "branch": "松鼠的宝贝",
+       "dest": 14
+      },
+      {
+       "branch": "空树洞",
+       "dest": 15
+      },
+      {
+       "branch": "树洞咬人",
+       "dest": 16
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "乌鸦的宝贝",
+       "dest": 18
+      },
+      {
+       "branch": "松鼠的宝贝",
+       "dest": 19
+      },
+      {
+       "branch": "空树洞",
+       "dest": 20
+      },
+      {
+       "branch": "树洞咬人",
+       "dest": 21
+      }
+     ]
     }
    ],
    "randomBattle": true
@@ -24454,7 +26168,8 @@
      "choices": [
       {
        "cid": "choice_ro6_bat6_1",
-       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复"
+       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复",
+       "dest": 23
       },
       {
        "cid": "choice_ro6_bat6_2",
@@ -24507,7 +26222,8 @@
      "choices": [
       {
        "cid": "choice_ro6_bat6_7",
-       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复"
+       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复",
+       "dest": 24
       },
       {
        "cid": "choice_ro6_bat6_8",
@@ -24560,7 +26276,8 @@
      "choices": [
       {
        "cid": "choice_ro6_bat6_13",
-       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复"
+       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复",
+       "dest": 25
       },
       {
        "cid": "choice_ro6_bat6b_8",
@@ -24609,7 +26326,8 @@
      "choices": [
       {
        "cid": "choice_ro6_bat6_18",
-       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复"
+       "noteCn": "以下选项随机出现一个，若出现乌鸦的宝贝/空树洞则重复",
+       "dest": 26
       },
       {
        "cid": "choice_ro6_bat6_8",
@@ -24656,6 +26374,90 @@
     {
      "sid": "scene_ro6_bat6_22",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "乌鸦的宝贝",
+       "dest": 1
+      },
+      {
+       "branch": "松鼠的宝贝",
+       "dest": 3
+      },
+      {
+       "branch": "空树洞",
+       "dest": 4
+      },
+      {
+       "branch": "树洞咬人",
+       "dest": 5
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "乌鸦的宝贝",
+       "dest": 8
+      },
+      {
+       "branch": "松鼠的宝贝",
+       "dest": 9
+      },
+      {
+       "branch": "空树洞",
+       "dest": 10
+      },
+      {
+       "branch": "树洞咬人",
+       "dest": 11
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "乌鸦的宝贝",
+       "dest": 13
+      },
+      {
+       "branch": "松鼠的宝贝",
+       "dest": 14
+      },
+      {
+       "branch": "空树洞",
+       "dest": 15
+      },
+      {
+       "branch": "树洞咬人",
+       "dest": 16
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "乌鸦的宝贝",
+       "dest": 18
+      },
+      {
+       "branch": "松鼠的宝贝",
+       "dest": 19
+      },
+      {
+       "branch": "空树洞",
+       "dest": 20
+      },
+      {
+       "branch": "树洞咬人",
+       "dest": 21
+      }
+     ]
     }
    ],
    "randomBattle": true
@@ -25014,7 +26816,8 @@
      "choices": [
       {
        "cid": "choice_ro6_normal4_1",
-       "noteCn": "以下选项随机出现1个"
+       "noteCn": "以下选项随机出现1个",
+       "dest": 27
       },
       {
        "cid": "choice_ro6_normal4_2",
@@ -25049,7 +26852,8 @@
      "choices": [
       {
        "cid": "choice_ro6_normal4_5",
-       "noteCn": "以下选项随机出现1个"
+       "noteCn": "以下选项随机出现1个",
+       "dest": 28
       },
       {
        "cid": "choice_ro6_normal4_8",
@@ -25080,7 +26884,8 @@
      "choices": [
       {
        "cid": "choice_ro6_normal4_9",
-       "noteCn": "以下选项随机出现1个"
+       "noteCn": "以下选项随机出现1个",
+       "dest": 29
       },
       {
        "cid": "choice_ro6_normal4_8",
@@ -25111,7 +26916,8 @@
      "choices": [
       {
        "cid": "choice_ro6_normal4_12",
-       "noteCn": "以下选项随机出现1个"
+       "noteCn": "以下选项随机出现1个",
+       "dest": 30
       },
       {
        "cid": "choice_ro6_normal4_8",
@@ -25151,7 +26957,8 @@
      "choices": [
       {
        "cid": "choice_ro6_normal4_16",
-       "noteCn": "以下选项随机出现1个"
+       "noteCn": "以下选项随机出现1个",
+       "dest": 31
       },
       {
        "cid": "choice_ro6_normal4_8",
@@ -25182,7 +26989,8 @@
      "choices": [
       {
        "cid": "choice_ro6_normal4_19",
-       "noteCn": "以下选项随机出现1个"
+       "noteCn": "以下选项随机出现1个",
+       "dest": 32
       },
       {
        "cid": "choice_ro6_normal4_8",
@@ -25222,7 +27030,8 @@
      "choices": [
       {
        "cid": "choice_ro6_normal4_23",
-       "noteCn": "以下选项随机出现1个"
+       "noteCn": "以下选项随机出现1个",
+       "dest": 33
       },
       {
        "cid": "choice_ro6_normal4_8",
@@ -25254,7 +27063,8 @@
      "choices": [
       {
        "cid": "choice_ro6_normal4_25",
-       "noteCn": "以下选项随机出现1个，若在进入事件前已持有【犬植浆】则后续无限出现1行动力"
+       "noteCn": "以下选项随机出现1个，若在进入事件前已持有【犬植浆】则后续无限出现1行动力",
+       "dest": 34
       },
       {
        "cid": "choice_ro6_normal4_8",
@@ -25274,6 +27084,114 @@
     {
      "sid": "scene_ro6_normal4_27",
      "choices": []
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "4源石锭",
+       "dest": 1
+      },
+      {
+       "branch": "1目标生命值",
+       "dest": 3
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "2希望",
+       "dest": 5
+      },
+      {
+       "branch": "1目标生命值",
+       "dest": 6
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "1件随机自然物",
+       "dest": 8
+      },
+      {
+       "branch": "2目标生命值",
+       "dest": 9
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "1件随机加工品",
+       "dest": 11
+      },
+      {
+       "branch": "12源石锭",
+       "dest": 12
+      },
+      {
+       "branch": "2目标生命值",
+       "dest": 13
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "1件随机收藏品",
+       "dest": 15
+      },
+      {
+       "branch": "5目标生命值",
+       "dest": 16
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "8希望",
+       "dest": 18
+      },
+      {
+       "branch": "可携带干员+1",
+       "dest": 19
+      },
+      {
+       "branch": "3目标生命值",
+       "dest": 20
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "3件随机收藏品",
+       "dest": 22
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "1行动力",
+       "dest": 25
+      },
+      {
+       "branch": "犬植浆",
+       "dest": 23
+      }
+     ]
     }
    ]
   },
@@ -25510,7 +27428,7 @@
      "sid": "scene_ro6_surprise_enter",
      "choices": [
       {
-       "cid": "choice_ro6_surprise_12",
+       "cid": "choice_ro6_surprise_1",
        "relicCn": "源私钥",
        "dest": 1
       }
@@ -25521,7 +27439,8 @@
      "choices": [
       {
        "cid": "choice_ro6_surprise_5",
-       "noteCn": "随机出现以下3种奖励中的1种"
+       "noteCn": "随机出现以下3种奖励中的1种",
+       "dest": 12
       }
      ]
     },
@@ -25566,7 +27485,8 @@
      "choices": [
       {
        "cid": "choice_ro6_surprise_6",
-       "noteCn": "随机出现以下2种奖励中的1种"
+       "noteCn": "随机出现以下2种奖励中的1种",
+       "dest": 13
       }
      ]
     },
@@ -25592,7 +27512,8 @@
       },
       {
        "cid": "choice_ro6_surprise_9",
-       "noteCn": "随机出现以下2种奖励中的1种"
+       "noteCn": "随机出现以下2种奖励中的1种",
+       "dest": 14
       }
      ]
     },
@@ -25610,7 +27531,64 @@
      "choices": [
       {
        "cid": "choice_ro6_surprise_11",
-       "noteCn": "随机出现以下2种奖励中的1种"
+       "noteCn": "随机出现以下2种奖励中的1种",
+       "dest": 15
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "小狗",
+       "dest": 2
+      },
+      {
+       "branch": "捕梦网",
+       "dest": 4
+      },
+      {
+       "branch": "松鼠",
+       "dest": 5
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "果园",
+       "dest": 7
+      },
+      {
+       "branch": "竞速比赛",
+       "dest": 3
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "动物泥偶",
+       "dest": 10
+      }
+     ]
+    },
+    {
+     "sid": null,
+     "choices": [
+      {
+       "branch": "果园",
+       "dest": 7
+      },
+      {
+       "branch": "竞速比赛",
+       "dest": 3
+      },
+      {
+       "branch": "动物泥偶",
+       "dest": 10
       }
      ]
     }

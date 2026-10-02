@@ -83,13 +83,26 @@ if [ ${#PATHS[@]} -gt 0 ]; then
 fi
 
 # ── 2. origin/main 위로 rebase — 실패하면 되돌리고, 충돌이 아니면 다시 ──
+# rebase 는 트리를 origin/main 으로 돌렸다가 우리 커밋을 다시 얹는다 — 그 커밋의 파일은 1초 안에 **두 번 뒤집힌다**.
+# 상시 켜 둔 dev 서버(vite)가 두 번째 변경을 놓치면 옛 판(origin/main 쪽)을 계속 내보낸다: 라이브는 멀쩡한데
+# 로컬만 CSS 가 안 먹는 일이 두 번 났다 (2026-10-01·10-02, 둘 다 CI 커밋 위로 rebase 한 배포 직후 — 실측:
+# /app/globals.css 가 어제 판이었다). 다시 얹힌 우리 커밋의 파일을 한 번 더 건드려 dev 가 마지막 내용을 읽게 한다.
+nudge_dev() {
+  local before="$1" f
+  [ "$(git rev-parse HEAD)" = "$before" ] && return 0     # 아무것도 안 뒤집혔다
+  git diff --name-only origin/main HEAD 2>/dev/null | while IFS= read -r f; do
+    [ -f "$f" ] && touch "$f"
+  done
+}
 sync_main() {
   local attempt out
   for attempt in 1 2 3; do
     retry 3 5 run_to 60 git fetch -q origin main || return 1
     wait_index_lock || return 1
     # --autostash — 트리에 다른 세션의 미커밋 작업이 있어도 rebase 가 거부하지 않게 잠깐 치웠다 되돌린다
+    local before; before=$(git rev-parse HEAD)
     if out=$(git rebase -q --autostash origin/main 2>&1); then
+      nudge_dev "$before"
       return 0
     fi
     echo "⚠ rebase 실패 ($attempt/3):" >&2
