@@ -155,9 +155,14 @@ def is_named(p):
     return "=" in head and not p.startswith("{{")
 
 
-def parse_topic(data):
+def parse_topic(data, node_names=()):
+    """node_names = 이 테마의 노드 이름(CN) — PRTS 는 이벤트를 `<!--노드 이름-->` 주석 묶음으로 나눠 적는다. 이벤트마다
+    그 묶음 이름을 node 로 단다 (쉐이는 계원 노드와 **쉐이의 잔식** 노드가 다르다 — 사이트가 두 지도로 나눠 보여 준다,
+    사용자 지시 2026-10-02). 주석엔 '1'·'3~~10' 같은 편집 메모도 섞여 있어 노드 이름인 것만 쓴다."""
     wt = data["parse"]["wikitext"]["*"]
     bounds = [(m.group(1), m.start()) for m in re.finditer(r"\|事件([0-9a-zA-Z_]+)=", wt)]
+    marks = [(m.start(), m.group(1).strip()) for m in re.finditer(r"<!--([^>]{1,20})-->", wt)
+             if m.group(1).strip() in node_names]
     events = []
     for k, (key, start) in enumerate(bounds):
         end = bounds[k + 1][1] if k + 1 < len(bounds) else len(wt)
@@ -213,9 +218,10 @@ def parse_topic(data):
             if groups[-1] and sc["name"] == "开始" and sc["title"] and sc["title"] != groups[-1][0]["title"]:
                 groups.append([])
             groups[-1].append(sc)
+        node = next((nm for mp, nm in reversed(marks) if mp < start), None)
         for gi, g in enumerate(groups):
             if g:
-                events.append({"key": key if gi == 0 else f"{key}~{gi}", "scenes": g})
+                events.append({"key": key if gi == 0 else f"{key}~{gi}", "scenes": g, **({"node": node} if node else {})})
     return events
 
 
@@ -435,6 +441,8 @@ def match_topic(tid, events, det):
         # 씬이 1개뿐이고 링크가 없으면 트리로서 무의미 — 평탄 렌더 유지.
         # 전투 링크는 트리 유무와 무관하게 남긴다 (encounterBattles 자동 보강용).
         entry = {}
+        if ev.get("node"):
+            entry["nodes"] = [ev["node"]]
         if len(scenes_out) > 1:
             entry["scenes"] = scenes_out
         if ev_battles:
@@ -448,21 +456,28 @@ def match_topic(tid, events, det):
             entry["randomBattle"] = True
         if entry:
             for sid_k in sids:
-                out[sid_k] = entry
+                # 같은 제목이 두 묶음에 다 있으면(쉐이 传讯 — 우연한 만남이자 잔식 전설) 나중 것이 트리를 덮되 노드는 합친다
+                prev = (out.get(sid_k) or {}).get("nodes") or []
+                nodes = list(dict.fromkeys(prev + (entry.get("nodes") or [])))
+                out[sid_k] = {**entry, **({"nodes": nodes} if nodes else {})}
     return out, stats
 
 
 def main():
     refresh = "--refresh" in sys.argv
     os.makedirs(CACHE, exist_ok=True)
-    cn = json.load(open(os.path.join(CACHE, "cn__excel__roguelike_topic_table.json"), encoding="utf-8"))["details"]
+    cn_all = json.load(open(os.path.join(CACHE, "cn__excel__roguelike_topic_table.json"), encoding="utf-8"))
+    cn = cn_all["details"]
     result = {}
     for tid in THEMES:
         det = cn.get(tid)
         if det is None:
             print(f"{tid}: cn excel에 없음 — 건너뜀")
             continue
-        events = parse_topic(fetch_events(tid, refresh))
+        node_names = {v.get("name") for v in (det.get("nodeTypeData") or {}).values()}
+        sky = (((cn_all.get("modules") or {}).get(tid) or {}).get("sky") or {}).get("nodeData") or {}
+        node_names |= {v.get("name") for v in sky.values()}
+        events = parse_topic(fetch_events(tid, refresh), node_names - {None})
         trees, st = match_topic(tid, events, det)
         result[tid] = trees
         print(f"{tid}: PRTS {st['events']}건 → 매칭 {st['matched']} · 트리 {len(trees)} · "

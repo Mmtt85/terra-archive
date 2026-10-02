@@ -279,16 +279,56 @@
  },
  "_encounterBattles_comment": "조우 → 그 조우에서 이어지는 전투 스테이지. 게임 데이터에 링크가 없어(전투 선택지는 type=TRADE_PROB·nextSceneId=null) 조우의 결과 서사와 스테이지 설명·적 편성을 대조해 손으로 확정했다 (2026-08-16). 확신이 없는 조우는 넣지 않는다 — 틀린 맵을 링크하느니 링크가 없는 게 낫다. build-rogue.py가 encounters[].battles로 병합한다.",
  "encounterBattles": {
-  "scene_ro3_bat1_enter": ["ro3_t_1"],
-  "scene_ro3_bat2_enter": ["ro3_t_2"],
-  "scene_ro3_bat3_enter": ["ro3_t_3"],
-  "scene_ro3_bat4_enter": ["ro3_t_4"],
-  "scene_ro3_bat5_enter": ["ro3_ev_1"],
-  "scene_ro3_bat6_enter": ["ro3_ev_2"],
-  "scene_ro3_bat7_enter": ["ro3_ev_3"],
-  "scene_ro3_bat8_enter": ["ro3_ev_4"],
-  "scene_ro3_bat9_enter": ["ro3_ev_5"],
-  "scene_ro3_ex1_enter": ["ro3_ev_8"],
-  "scene_ro3_ex3_enter": ["ro3_ev_9"]
+  "scene_ro3_bat1_enter": [
+   "ro3_t_1"
+  ],
+  "scene_ro3_bat2_enter": [
+   "ro3_t_2"
+  ],
+  "scene_ro3_bat3_enter": [
+   "ro3_t_3"
+  ],
+  "scene_ro3_bat4_enter": [
+   "ro3_t_4"
+  ],
+  "scene_ro3_bat5_enter": [
+   "ro3_ev_1"
+  ],
+  "scene_ro3_bat6_enter": [
+   "ro3_ev_2"
+  ],
+  "scene_ro3_bat7_enter": [
+   "ro3_ev_3"
+  ],
+  "scene_ro3_bat8_enter": [
+   "ro3_ev_4"
+  ],
+  "scene_ro3_bat9_enter": [
+   "ro3_ev_5"
+  ],
+  "scene_ro3_ex1_enter": [
+   "ro3_ev_8"
+  ],
+  "scene_ro3_ex3_enter": [
+   "ro3_ev_9"
+  ]
+ },
+ "_bossEnding_comment": "보스마다 몇 번 엔딩(히든) 경로의 보스인가 — 엔딩 조건(endingConds)의 「이름」에 나오는 험난한 길 보스를 그 엔딩 번호로 (사용자 요청 2026-10-02 '히든 N 표시는 다른 록라도 전부 똑같이'). 1 = 기본 엔딩. 화면은 작전 카드에 '기본 엔딩'/'히든 N' 배지.",
+ "bossEnding": {
+  "ro3_b_4": 1,
+  "ro3_b_4_b": 1,
+  "ro3_b_5": 2,
+  "ro3_b_5_b": 2,
+  "ro3_b_6": 3,
+  "ro3_b_6_b": 3,
+  "ro3_b_7": 4,
+  "ro3_b_7_b": 4
+ },
+ "_bossVariant_comment": "강화판 보스 (사용자 요청 2026-10-02 '강화판 표시는 다른 록라도 전부'). 게임 표의 기믹 아이템 rogue_3_feature_enroll2_d12('콘텐츠 업데이트 난이도 변경')가 4~7번째 보스를 가중치 65:35 로 _b 판에 다시 뽑는다(reroll_stage_id). 난이도 12 는 이름(d12)과 PRTS 엔딩 설명('12+ 난이도에서')으로. 1~3층 보스의 _b(호흡·나무 약탈자·깨어난 대지)는 다시 뽑기 표에 없어 넣지 않는다.",
+ "bossVariant": {
+  "ro3_b_4_b": {"label": "강화판", "prob": 35, "cond": "난이도 12 이상에서 35% 확률로 이 판이 나옵니다."},
+  "ro3_b_5_b": {"label": "강화판", "prob": 35, "cond": "난이도 12 이상에서 35% 확률로 이 판이 나옵니다."},
+  "ro3_b_6_b": {"label": "강화판", "prob": 35, "cond": "난이도 12 이상에서 35% 확률로 이 판이 나옵니다."},
+  "ro3_b_7_b": {"label": "강화판", "prob": 35, "cond": "난이도 12 이상에서 35% 확률로 이 판이 나옵니다."}
  }
 }

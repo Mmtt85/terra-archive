@@ -4117,6 +4117,9 @@
  },
  "rogue_3": {
   "scene_ro3_res1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_res1_enter",
@@ -4142,6 +4145,9 @@
    ]
   },
   "scene_ro3_res2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_res2_enter",
@@ -4167,6 +4173,9 @@
    ]
   },
   "scene_ro3_res3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_res3_enter",
@@ -4193,6 +4202,9 @@
    "randomBattle": true
   },
   "scene_ro3_res4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_res4_enter",
@@ -4227,6 +4239,9 @@
    ]
   },
   "scene_ro3_res5_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_res5_enter",
@@ -4292,6 +4307,9 @@
    ]
   },
   "scene_ro3_month2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_res5_enter",
@@ -4357,6 +4375,9 @@
    ]
   },
   "scene_ro3_res2a_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_res2a_enter",
@@ -4391,6 +4412,9 @@
    ]
   },
   "scene_ro3_res3a_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_res3a_enter",
@@ -4458,6 +4482,9 @@
    "randomBattle": true
   },
   "scene_ro3_month3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_res3a_enter",
@@ -4525,6 +4552,9 @@
    "randomBattle": true
   },
   "scene_ro3_res5a_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_res5a_enter",
@@ -4559,6 +4589,9 @@
    ]
   },
   "scene_ro3_rec1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_rec1_enter",
@@ -4592,6 +4625,9 @@
    ]
   },
   "scene_ro3_rec2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_rec2_enter",
@@ -4636,6 +4672,9 @@
    ]
   },
   "scene_ro3_month7_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_rec2_enter",
@@ -4680,6 +4719,9 @@
    ]
   },
   "scene_ro3_relic1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_relic1_enter",
@@ -4735,6 +4777,9 @@
    ]
   },
   "scene_ro3_relic2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_relic2_enter",
@@ -4781,6 +4826,9 @@
    ]
   },
   "scene_ro3_month8_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_relic2_enter",
@@ -4827,6 +4875,9 @@
    ]
   },
   "scene_ro3_spring_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_spring_enter",
@@ -4844,6 +4895,9 @@
    ]
   },
   "scene_ro3_height_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_height_enter",
@@ -4869,6 +4923,9 @@
    ]
   },
   "scene_ro3_pick1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_pick1_enter",
@@ -4912,6 +4969,9 @@
    ]
   },
   "scene_ro3_pick2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_pick2_enter",
@@ -4966,6 +5026,9 @@
    ]
   },
   "scene_ro3_month4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_pick2_enter",
@@ -5020,6 +5083,9 @@
    ]
   },
   "scene_ro3_normal1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_normal1_enter",
@@ -5048,6 +5114,9 @@
    ]
   },
   "scene_ro3_month5_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_normal1_enter",
@@ -5076,6 +5145,9 @@
    ]
   },
   "scene_ro3_normal2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_normal2_enter",
@@ -5109,6 +5181,9 @@
    ]
   },
   "scene_ro3_normal3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_normal3_enter",
@@ -5142,6 +5217,9 @@
    ]
   },
   "scene_ro3_bat1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_bat1_enter",
@@ -5182,6 +5260,9 @@
    ]
   },
   "scene_ro3_bat2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_bat2_enter",
@@ -5222,6 +5303,9 @@
    ]
   },
   "scene_ro3_bat3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_bat3_enter",
@@ -5262,6 +5346,9 @@
    ]
   },
   "scene_ro3_bat4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_bat4_enter",
@@ -5303,6 +5390,9 @@
    ]
   },
   "scene_ro3_bat5_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_bat5_enter",
@@ -5343,6 +5433,9 @@
    ]
   },
   "scene_ro3_bat6_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_bat6_enter",
@@ -5383,6 +5476,9 @@
    ]
   },
   "scene_ro3_bat7_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_bat7_enter",
@@ -5423,6 +5519,9 @@
    ]
   },
   "scene_ro3_bat8_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_bat8_enter",
@@ -5455,6 +5554,9 @@
    ]
   },
   "scene_ro3_bat9_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_bat9_enter",
@@ -5499,6 +5601,9 @@
    ]
   },
   "scene_ro3_ex1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_ex1_enter",
@@ -5531,6 +5636,9 @@
    ]
   },
   "scene_ro3_story1_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_story1_enter",
@@ -5556,6 +5664,9 @@
    ]
   },
   "scene_ro3_story2_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_story2_enter",
@@ -5582,6 +5693,9 @@
    ]
   },
   "scene_ro3_story3_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_story3_enter",
@@ -5608,6 +5722,9 @@
    ]
   },
   "scene_ro3_ex2_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_ex2_enter",
@@ -5681,6 +5798,9 @@
    ]
   },
   "scene_ro3_ex3_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_ex3_enter",
@@ -5765,6 +5885,9 @@
    "randomBattle": true
   },
   "scene_ro3_chest_enter": {
+   "nodes": [
+    "得偿所愿"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_chest_enter",
@@ -5795,6 +5918,9 @@
    ]
   },
   "scene_ro3_rest1_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_rest1_enter",
@@ -5866,6 +5992,9 @@
    ]
   },
   "scene_ro3_rest2_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_rest1_enter",
@@ -5937,6 +6066,9 @@
    ]
   },
   "scene_ro3_rest3_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_rest1_enter",
@@ -6008,6 +6140,9 @@
    ]
   },
   "scene_ro3_rest4_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_rest1_enter",
@@ -6079,6 +6214,9 @@
    ]
   },
   "scene_ro3_month1_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_rest1_enter",
@@ -6150,6 +6288,9 @@
    ]
   },
   "scene_ro3_ent1_enter": {
+   "nodes": [
+    "兴致盎然"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_ent1_enter",
@@ -6275,6 +6416,9 @@
    ]
   },
   "scene_ro3_ent2_enter": {
+   "nodes": [
+    "兴致盎然"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_ent2_enter",
@@ -6362,6 +6506,9 @@
    ]
   },
   "scene_ro3_ent3_enter": {
+   "nodes": [
+    "兴致盎然"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_ent3_enter",
@@ -6502,6 +6649,9 @@
    ]
   },
   "scene_ro3_month6_enter": {
+   "nodes": [
+    "兴致盎然"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_ent3_enter",
@@ -6642,6 +6792,9 @@
    ]
   },
   "scene_ro3_sacrifice1_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_sacrifice1_enter",
@@ -6781,6 +6934,9 @@
    "randomBattle": true
   },
   "scene_ro3_sacrifice1a_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_sacrifice1a_enter",
@@ -6921,6 +7077,9 @@
    "randomBattle": true
   },
   "scene_ro3_sacrifice2_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_sacrifice2_enter",
@@ -7060,6 +7219,9 @@
    "randomBattle": true
   },
   "scene_ro3_scout_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_scout_enter",
@@ -7094,6 +7256,9 @@
    ]
   },
   "scene_ro3_portalsample_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7136,6 +7301,9 @@
    ]
   },
   "scene_ro3_portal0201a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7178,6 +7346,9 @@
    ]
   },
   "scene_ro3_portal0301a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7220,6 +7391,9 @@
    ]
   },
   "scene_ro3_portal0401a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7262,6 +7436,9 @@
    ]
   },
   "scene_ro3_portal0501a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7304,6 +7481,9 @@
    ]
   },
   "scene_ro3_portal0601a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7346,6 +7526,9 @@
    ]
   },
   "scene_ro3_portal0201b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7388,6 +7571,9 @@
    ]
   },
   "scene_ro3_portal0301b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7430,6 +7616,9 @@
    ]
   },
   "scene_ro3_portal0401b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7472,6 +7661,9 @@
    ]
   },
   "scene_ro3_portal0501b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7514,6 +7706,9 @@
    ]
   },
   "scene_ro3_portal0601b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7556,6 +7751,9 @@
    ]
   },
   "scene_ro3_portal0201c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7598,6 +7796,9 @@
    ]
   },
   "scene_ro3_portal0301c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7640,6 +7841,9 @@
    ]
   },
   "scene_ro3_portal0401c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7682,6 +7886,9 @@
    ]
   },
   "scene_ro3_portal0501c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7724,6 +7931,9 @@
    ]
   },
   "scene_ro3_portal0601c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7766,6 +7976,9 @@
    ]
   },
   "scene_ro3_portal0201d_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7808,6 +8021,9 @@
    ]
   },
   "scene_ro3_portal0301d_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7850,6 +8066,9 @@
    ]
   },
   "scene_ro3_portal0401d_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7892,6 +8111,9 @@
    ]
   },
   "scene_ro3_portal0501d_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7934,6 +8156,9 @@
    ]
   },
   "scene_ro3_portal0601d_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -7976,6 +8201,9 @@
    ]
   },
   "scene_ro3_portal0201e_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8018,6 +8246,9 @@
    ]
   },
   "scene_ro3_portal0301e_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8060,6 +8291,9 @@
    ]
   },
   "scene_ro3_portal0401e_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8102,6 +8336,9 @@
    ]
   },
   "scene_ro3_portal0501e_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8144,6 +8381,9 @@
    ]
   },
   "scene_ro3_portal0601e_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8186,6 +8426,9 @@
    ]
   },
   "scene_ro3_portal0202a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8228,6 +8471,9 @@
    ]
   },
   "scene_ro3_portal0302a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8270,6 +8516,9 @@
    ]
   },
   "scene_ro3_portal0402a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8312,6 +8561,9 @@
    ]
   },
   "scene_ro3_portal0502a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8354,6 +8606,9 @@
    ]
   },
   "scene_ro3_portal0602a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8396,6 +8651,9 @@
    ]
   },
   "scene_ro3_portal0202b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8438,6 +8696,9 @@
    ]
   },
   "scene_ro3_portal0302b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8480,6 +8741,9 @@
    ]
   },
   "scene_ro3_portal0402b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8522,6 +8786,9 @@
    ]
   },
   "scene_ro3_portal0502b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8564,6 +8831,9 @@
    ]
   },
   "scene_ro3_portal0602b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8606,6 +8876,9 @@
    ]
   },
   "scene_ro3_portal0202c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8648,6 +8921,9 @@
    ]
   },
   "scene_ro3_portal0302c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8690,6 +8966,9 @@
    ]
   },
   "scene_ro3_portal0402c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8732,6 +9011,9 @@
    ]
   },
   "scene_ro3_portal0502c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8774,6 +9056,9 @@
    ]
   },
   "scene_ro3_portal0602c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8816,6 +9101,9 @@
    ]
   },
   "scene_ro3_portal0203a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8858,6 +9146,9 @@
    ]
   },
   "scene_ro3_portal0303a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8900,6 +9191,9 @@
    ]
   },
   "scene_ro3_portal0403a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8942,6 +9236,9 @@
    ]
   },
   "scene_ro3_portal0503a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -8984,6 +9281,9 @@
    ]
   },
   "scene_ro3_portal0603a_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -9026,6 +9326,9 @@
    ]
   },
   "scene_ro3_portal0203b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -9068,6 +9371,9 @@
    ]
   },
   "scene_ro3_portal0303b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -9110,6 +9416,9 @@
    ]
   },
   "scene_ro3_portal0403b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -9152,6 +9461,9 @@
    ]
   },
   "scene_ro3_portal0503b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -9194,6 +9506,9 @@
    ]
   },
   "scene_ro3_portal0603b_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -9236,6 +9551,9 @@
    ]
   },
   "scene_ro3_portal0203c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -9278,6 +9596,9 @@
    ]
   },
   "scene_ro3_portal0303c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -9320,6 +9641,9 @@
    ]
   },
   "scene_ro3_portal0403c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -9362,6 +9686,9 @@
    ]
   },
   "scene_ro3_portal0503c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -9404,6 +9731,9 @@
    ]
   },
   "scene_ro3_portal0603c_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro3_portalsample_enter",
@@ -9448,6 +9778,9 @@
  },
  "rogue_4": {
   "scene_ro4_res1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_res1_enter",
@@ -9482,6 +9815,9 @@
    ]
   },
   "scene_ro4_res2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_res2_enter",
@@ -9508,6 +9844,9 @@
    ]
   },
   "scene_ro4_res3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_res3_enter",
@@ -9542,6 +9881,9 @@
    ]
   },
   "scene_ro4_res4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_res4_enter",
@@ -9575,6 +9917,9 @@
    ]
   },
   "scene_ro4_res5_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_res5_enter",
@@ -9601,6 +9946,9 @@
    ]
   },
   "scene_ro4_res6_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_res6_enter",
@@ -9635,6 +9983,9 @@
    ]
   },
   "scene_ro4_fin2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_fin2_enter",
@@ -9685,6 +10036,9 @@
    ]
   },
   "scene_ro4_fin3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_fin3_enter",
@@ -9711,6 +10065,9 @@
    ]
   },
   "scene_ro4_fin4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_fin4_enter",
@@ -9770,6 +10127,9 @@
    ]
   },
   "scene_ro4_fin5_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_fin4_enter",
@@ -9829,6 +10189,9 @@
    ]
   },
   "scene_ro4_fin6_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_fin4_enter",
@@ -9888,6 +10251,9 @@
    ]
   },
   "scene_ro4_rec1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_rec1_enter",
@@ -9930,6 +10296,9 @@
    ]
   },
   "scene_ro4_rec2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_rec2_enter",
@@ -9964,6 +10333,9 @@
    ]
   },
   "scene_ro4_rec3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_rec3_enter",
@@ -9990,6 +10362,9 @@
    ]
   },
   "scene_ro4_relic1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_relic1_enter",
@@ -10033,6 +10408,9 @@
    ]
   },
   "scene_ro4_relic2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_relic2_enter",
@@ -10093,6 +10471,9 @@
    ]
   },
   "scene_ro4_relic3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_relic3_enter",
@@ -10127,6 +10508,9 @@
    ]
   },
   "scene_ro4_pick1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_pick1_enter",
@@ -10171,6 +10555,9 @@
    ]
   },
   "scene_ro4_normal1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal1_enter",
@@ -10212,6 +10599,9 @@
    ]
   },
   "scene_ro4_normal2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal2_enter",
@@ -10237,6 +10627,9 @@
    ]
   },
   "scene_ro4_normal3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal3_enter",
@@ -10272,6 +10665,9 @@
    ]
   },
   "scene_ro4_normal4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal4_enter",
@@ -10320,6 +10716,9 @@
    "randomBattle": true
   },
   "scene_ro4_normal5_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal5_enter",
@@ -10373,6 +10772,9 @@
    "randomBattle": true
   },
   "scene_ro4_normal6_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal6_enter",
@@ -10402,6 +10804,9 @@
    ]
   },
   "scene_ro4_normal7_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal7_enter",
@@ -10427,6 +10832,9 @@
    ]
   },
   "scene_ro4_normal8_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal8_enter",
@@ -10467,6 +10875,9 @@
    ]
   },
   "scene_ro4_normal9_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal9_enter",
@@ -10511,6 +10922,9 @@
    "randomBattle": true
   },
   "scene_ro4_normal10_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal10_enter",
@@ -10565,6 +10979,9 @@
    ]
   },
   "scene_ro4_normal11_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal11_enter",
@@ -10599,6 +11016,9 @@
    ]
   },
   "scene_ro4_normal12_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_normal12_enter",
@@ -10633,6 +11053,9 @@
    ]
   },
   "scene_ro4_bat1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_bat1_enter",
@@ -10665,6 +11088,9 @@
    ]
   },
   "scene_ro4_bat2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_bat2_enter",
@@ -10697,6 +11123,9 @@
    ]
   },
   "scene_ro4_bat3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_bat3_enter",
@@ -10743,6 +11172,9 @@
    ]
   },
   "scene_ro4_bat4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_bat4_enter",
@@ -10789,6 +11221,9 @@
    ]
   },
   "scene_ro4_bat5_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_bat5_enter",
@@ -10835,6 +11270,9 @@
    ]
   },
   "scene_ro4_ent1_enter": {
+   "nodes": [
+    "兴致盎然"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_ent1_enter",
@@ -10922,6 +11360,9 @@
    ]
   },
   "scene_ro4_ent2_enter": {
+   "nodes": [
+    "兴致盎然"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_ent2_enter",
@@ -11067,6 +11508,9 @@
    ]
   },
   "scene_ro4_ent3_enter": {
+   "nodes": [
+    "兴致盎然"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_ent3_enter",
@@ -11195,6 +11639,9 @@
    ]
   },
   "scene_ro4_scout_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_scout_enter",
@@ -11220,6 +11667,9 @@
    ]
   },
   "scene_ro4_sacrifice1_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_sacrifice1_enter",
@@ -11332,6 +11782,9 @@
    ]
   },
   "scene_ro4_chest_enter": {
+   "nodes": [
+    "得偿所愿"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_chest_enter",
@@ -11385,6 +11838,9 @@
    ]
   },
   "scene_ro4_chest2_enter": {
+   "nodes": [
+    "得偿所愿"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_chest_enter",
@@ -11438,6 +11894,9 @@
    ]
   },
   "scene_ro4_nportal1_enter": {
+   "nodes": [
+    "思维边界"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_nportal1_enter",
@@ -11476,6 +11935,9 @@
    ]
   },
   "scene_ro4_nportal2_enter": {
+   "nodes": [
+    "思维边界"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_nportal1_enter",
@@ -11514,6 +11976,9 @@
    ]
   },
   "scene_ro4_nportal3_enter": {
+   "nodes": [
+    "思维边界"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_nportal1_enter",
@@ -11552,6 +12017,9 @@
    ]
   },
   "scene_ro4_nportal4_enter": {
+   "nodes": [
+    "思维边界"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_nportal1_enter",
@@ -11590,6 +12058,9 @@
    ]
   },
   "scene_ro4_nportal5_enter": {
+   "nodes": [
+    "思维边界"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_nportal1_enter",
@@ -11628,6 +12099,9 @@
    ]
   },
   "scene_ro4_nportal6_enter": {
+   "nodes": [
+    "思维边界"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_nportal1_enter",
@@ -11666,6 +12140,9 @@
    ]
   },
   "scene_ro4_sala1_enter": {
+   "nodes": [
+    "狭路相逢"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_sala1_enter",
@@ -11712,6 +12189,9 @@
    ]
   },
   "scene_ro4_sala2_enter": {
+   "nodes": [
+    "狭路相逢"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_sala2_enter",
@@ -11758,6 +12238,9 @@
    ]
   },
   "scene_ro4_sala3_enter": {
+   "nodes": [
+    "狭路相逢"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_sala3_enter",
@@ -11804,6 +12287,9 @@
    ]
   },
   "scene_ro4_fin1_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_fin1_enter",
@@ -11829,6 +12315,9 @@
    ]
   },
   "scene_ro4_end1_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_end1_enter",
@@ -11942,6 +12431,9 @@
    ]
   },
   "scene_ro4_eportal1_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_eportal1_enter",
@@ -11983,6 +12475,9 @@
    ]
   },
   "scene_ro4_eportal2_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_eportal1_enter",
@@ -12024,6 +12519,9 @@
    ]
   },
   "scene_ro4_end2_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_end2_enter",
@@ -12050,6 +12548,9 @@
    ]
   },
   "scene_ro4_rest1_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_rest1_enter",
@@ -12165,6 +12666,9 @@
    ]
   },
   "scene_ro4_rest2_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_rest1_enter",
@@ -12280,6 +12784,9 @@
    ]
   },
   "scene_ro4_rest3_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_rest1_enter",
@@ -12395,6 +12902,9 @@
    ]
   },
   "scene_ro4_rest4_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_rest1_enter",
@@ -12510,6 +13020,9 @@
    ]
   },
   "scene_ro4_rest5_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_rest1_enter",
@@ -12625,6 +13138,9 @@
    ]
   },
   "scene_ro4_rest6_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_rest1_enter",
@@ -12740,6 +13256,9 @@
    ]
   },
   "scene_ro4_spring_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_spring_enter",
@@ -12760,6 +13279,9 @@
    ]
   },
   "scene_ro4_egg1_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_egg1_enter",
@@ -12795,6 +13317,9 @@
    ]
   },
   "scene_ro4_egg2_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_egg1_enter",
@@ -12830,6 +13355,9 @@
    ]
   },
   "scene_ro4_egg3_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro4_egg1_enter",
@@ -12867,6 +13395,10 @@
  },
  "rogue_5": {
   "scene_ro5_double2_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double2_enter",
@@ -12908,6 +13440,10 @@
    ]
   },
   "scene_ro5_double2b_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double2_enter",
@@ -12949,6 +13485,9 @@
    ]
   },
   "scene_ro5_normal1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_normal1_enter",
@@ -12982,6 +13521,10 @@
    ]
   },
   "scene_ro5_double1_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double1_enter",
@@ -13050,6 +13593,10 @@
    ]
   },
   "scene_ro5_double1b_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double1_enter",
@@ -13118,6 +13665,10 @@
    ]
   },
   "scene_ro5_double3_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double3_enter",
@@ -13399,6 +13950,10 @@
    ]
   },
   "scene_ro5_double3b_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double3_enter",
@@ -13680,6 +14235,10 @@
    ]
   },
   "scene_ro5_double4_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double4_enter",
@@ -13744,6 +14303,10 @@
    ]
   },
   "scene_ro5_double4b_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double4_enter",
@@ -13808,6 +14371,10 @@
    ]
   },
   "scene_ro5_double5_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double5_enter",
@@ -13865,6 +14432,10 @@
    "randomBattle": true
   },
   "scene_ro5_double5b_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double5_enter",
@@ -13922,6 +14493,9 @@
    "randomBattle": true
   },
   "scene_ro5_bat1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_bat1_enter",
@@ -13968,6 +14542,9 @@
    ]
   },
   "scene_ro5_bat2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_bat2_enter",
@@ -14013,6 +14590,9 @@
    ]
   },
   "scene_ro5_bat3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_bat3_enter",
@@ -14067,6 +14647,9 @@
    ]
   },
   "scene_ro5_bat4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_bat4_enter",
@@ -14124,6 +14707,9 @@
    ]
   },
   "scene_ro5_bat5_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_bat5_enter",
@@ -14169,6 +14755,9 @@
    ]
   },
   "scene_ro5_pick1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_pick1_enter",
@@ -14203,6 +14792,9 @@
    ]
   },
   "scene_ro5_bat6_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_bat6_enter",
@@ -14249,6 +14841,9 @@
    ]
   },
   "scene_ro5_bat7_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_bat7_enter",
@@ -14294,6 +14889,9 @@
    ]
   },
   "scene_ro5_bat10_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_bat10_enter",
@@ -14347,6 +14945,9 @@
    ]
   },
   "scene_ro5_res1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_res1_enter",
@@ -14381,6 +14982,9 @@
    ]
   },
   "scene_ro5_res3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_res3_enter",
@@ -14424,6 +15028,9 @@
    ]
   },
   "scene_ro5_res4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_res4_enter",
@@ -14457,6 +15064,9 @@
    ]
   },
   "scene_ro5_relic1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_relic1_enter",
@@ -14490,6 +15100,9 @@
    ]
   },
   "scene_ro5_res5a_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_res5a_enter",
@@ -14532,6 +15145,9 @@
    ]
   },
   "scene_ro5_wait1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_wait1_enter",
@@ -14558,6 +15174,9 @@
    ]
   },
   "scene_ro5_ticket_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_ticket_enter",
@@ -14655,6 +15274,10 @@
    ]
   },
   "scene_ro5_double6_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double6_enter",
@@ -14816,6 +15439,10 @@
    ]
   },
   "scene_ro5_double6b_enter": {
+   "nodes": [
+    "不期而遇",
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_double6_enter",
@@ -14977,6 +15604,9 @@
    ]
   },
   "scene_ro5_bat9_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_bat9_enter",
@@ -15093,6 +15723,9 @@
    ]
   },
   "scene_ro5_res6_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_res6_enter",
@@ -15261,6 +15894,9 @@
    ]
   },
   "scene_ro5_spring_enter": {
+   "nodes": [
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_spring_enter",
@@ -15296,6 +15932,9 @@
    ]
   },
   "scene_ro5_heaven1_enter": {
+   "nodes": [
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_heaven1_enter",
@@ -15362,6 +16001,9 @@
    ]
   },
   "scene_ro5_heaven3_enter": {
+   "nodes": [
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_heaven3_enter",
@@ -15447,6 +16089,9 @@
    ]
   },
   "scene_ro5_heaven4_enter": {
+   "nodes": [
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_heaven4_enter",
@@ -15595,6 +16240,9 @@
    ]
   },
   "scene_ro5_heaven5_enter": {
+   "nodes": [
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_heaven5_enter",
@@ -15713,6 +16361,9 @@
    ]
   },
   "scene_ro5_heaven7_enter": {
+   "nodes": [
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_heaven7_enter",
@@ -15758,6 +16409,9 @@
    ]
   },
   "scene_ro5_heaven8_enter": {
+   "nodes": [
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_heaven8_enter",
@@ -15802,6 +16456,9 @@
    ]
   },
   "scene_ro5_heaven11_enter": {
+   "nodes": [
+    "传说"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_heaven11_enter",
@@ -15854,6 +16511,9 @@
    ]
   },
   "scene_ro5_ent1_enter": {
+   "nodes": [
+    "常乐"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_ent1_enter",
@@ -16007,6 +16667,9 @@
    ]
   },
   "scene_ro5_ent2_enter": {
+   "nodes": [
+    "常乐"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_ent2_enter",
@@ -16162,6 +16825,9 @@
    ]
   },
   "scene_ro5_ent3_enter": {
+   "nodes": [
+    "常乐"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_ent3_enter",
@@ -16677,6 +17343,9 @@
    ]
   },
   "scene_ro5_market_enter": {
+   "nodes": [
+    "故肆"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_market_enter",
@@ -16800,6 +17469,9 @@
    ]
   },
   "scene_ro5_marketsp_enter": {
+   "nodes": [
+    "故肆"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_market_enter",
@@ -16923,6 +17595,9 @@
    ]
   },
   "scene_ro5_scout_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_scout_enter",
@@ -16987,6 +17662,9 @@
    ]
   },
   "scene_ro5_sacrifice1_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_sacrifice1_enter",
@@ -17096,6 +17774,9 @@
    ]
   },
   "scene_ro5_gild1_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_sacrifice1_enter",
@@ -17205,6 +17886,9 @@
    ]
   },
   "scene_ro5_gild2_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_sacrifice1_enter",
@@ -17314,6 +17998,9 @@
    ]
   },
   "scene_ro5_gild3_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_sacrifice1_enter",
@@ -17423,6 +18110,9 @@
    ]
   },
   "scene_ro5_gild4_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_sacrifice1_enter",
@@ -17532,6 +18222,9 @@
    ]
   },
   "scene_ro5_gild5_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_sacrifice1_enter",
@@ -17641,6 +18334,9 @@
    ]
   },
   "scene_ro5_gild6_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_sacrifice1_enter",
@@ -17750,6 +18446,9 @@
    ]
   },
   "scene_ro5_gild7_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_sacrifice1_enter",
@@ -17859,6 +18558,9 @@
    ]
   },
   "scene_ro5_gild8_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_sacrifice1_enter",
@@ -17968,6 +18670,9 @@
    ]
   },
   "scene_ro5_swpp_enter": {
+   "nodes": [
+    "筹谋"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_swpp_enter",
@@ -18142,6 +18847,9 @@
    ]
   },
   "scene_ro5_swpp1_enter": {
+   "nodes": [
+    "筹谋"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_swpp_enter",
@@ -18316,6 +19024,9 @@
    ]
   },
   "scene_ro5_chest_enter": {
+   "nodes": [
+    "得偿所愿"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_chest_enter",
@@ -18458,6 +19169,9 @@
    ]
   },
   "scene_ro5_trash0_enter": {
+   "nodes": [
+    "拾遗"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_trash0_enter",
@@ -18871,6 +19585,9 @@
    ]
   },
   "scene_ro5_trash1_enter": {
+   "nodes": [
+    "拾遗"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_trash0_enter",
@@ -19284,6 +20001,9 @@
    ]
   },
   "scene_ro5_trash2_enter": {
+   "nodes": [
+    "拾遗"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_trash0_enter",
@@ -19697,6 +20417,9 @@
    ]
   },
   "scene_ro5_trash3_enter": {
+   "nodes": [
+    "拾遗"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_trash0_enter",
@@ -20110,6 +20833,9 @@
    ]
   },
   "scene_ro5_trash5_enter": {
+   "nodes": [
+    "拾遗"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_trash0_enter",
@@ -20523,6 +21249,9 @@
    ]
   },
   "scene_ro5_trash4_enter": {
+   "nodes": [
+    "拾遗"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_trash0_enter",
@@ -20936,6 +21665,9 @@
    ]
   },
   "scene_ro5_camp1_enter": {
+   "nodes": [
+    "指点迷津"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_camp1_enter",
@@ -20994,6 +21726,9 @@
    ]
   },
   "scene_ro5_camp2_enter": {
+   "nodes": [
+    "指点迷津"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_camp1_enter",
@@ -21052,6 +21787,9 @@
    ]
   },
   "scene_ro5_portal1_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_portal1_enter",
@@ -21201,6 +21939,9 @@
    "randomBattle": true
   },
   "scene_ro5_portal2_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_portal1_enter",
@@ -21350,6 +22091,9 @@
    "randomBattle": true
   },
   "scene_ro5_portal3_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_portal1_enter",
@@ -21499,6 +22243,9 @@
    "randomBattle": true
   },
   "scene_ro5_portal4_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_portal1_enter",
@@ -21648,6 +22395,9 @@
    "randomBattle": true
   },
   "scene_ro5_portal5_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_portal1_enter",
@@ -21797,6 +22547,9 @@
    "randomBattle": true
   },
   "scene_ro5_portal6_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_portal1_enter",
@@ -21946,6 +22699,9 @@
    "randomBattle": true
   },
   "scene_ro5_portalcopper_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_portal1_enter",
@@ -22095,6 +22851,9 @@
    "randomBattle": true
   },
   "scene_ro5_portalboss_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_portalboss_enter",
@@ -22135,6 +22894,9 @@
    "randomBattle": true
   },
   "scene_ro5_sala1_enter": {
+   "nodes": [
+    "狭路相逢"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_sala1_enter",
@@ -22181,6 +22943,9 @@
    ]
   },
   "scene_ro5_sala2_enter": {
+   "nodes": [
+    "狭路相逢"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_sala2_enter",
@@ -22228,6 +22993,9 @@
    ]
   },
   "scene_ro5_end1_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_end1_enter",
@@ -22254,6 +23022,9 @@
    ]
   },
   "scene_ro5_end2_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_end2_enter",
@@ -22276,6 +23047,9 @@
    ]
   },
   "scene_ro5_end3_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_end3_enter",
@@ -22298,6 +23072,9 @@
    ]
   },
   "scene_ro5_end4_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_end4_enter",
@@ -22360,6 +23137,9 @@
    ]
   },
   "scene_ro5_rest1_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_rest1_enter",
@@ -22459,6 +23239,9 @@
    ]
   },
   "scene_ro5_rest3_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_rest1_enter",
@@ -22558,6 +23341,9 @@
    ]
   },
   "scene_ro5_rest4_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_rest1_enter",
@@ -22657,6 +23443,9 @@
    ]
   },
   "scene_ro5_rest2_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_rest1_enter",
@@ -22756,6 +23545,9 @@
    ]
   },
   "scene_ro5_lokk12_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -22959,6 +23751,9 @@
    ]
   },
   "scene_ro5_lokk13_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -23162,6 +23957,9 @@
    ]
   },
   "scene_ro5_lokk14_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -23365,6 +24163,9 @@
    ]
   },
   "scene_ro5_lokk15_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -23568,6 +24369,9 @@
    ]
   },
   "scene_ro5_lokk16_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -23771,6 +24575,9 @@
    ]
   },
   "scene_ro5_lokk23_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -23974,6 +24781,9 @@
    ]
   },
   "scene_ro5_lokk24_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -24177,6 +24987,9 @@
    ]
   },
   "scene_ro5_lokk25_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -24380,6 +25193,9 @@
    ]
   },
   "scene_ro5_lokk26_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -24583,6 +25399,9 @@
    ]
   },
   "scene_ro5_lokk34_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -24786,6 +25605,9 @@
    ]
   },
   "scene_ro5_lokk35_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -24989,6 +25811,9 @@
    ]
   },
   "scene_ro5_lokk36_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -25192,6 +26017,9 @@
    ]
   },
   "scene_ro5_lokk45_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -25395,6 +26223,9 @@
    ]
   },
   "scene_ro5_lokk46_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -25598,6 +26429,9 @@
    ]
   },
   "scene_ro5_lokk56_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -25801,6 +26635,9 @@
    ]
   },
   "scene_ro5_lokk21_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -26004,6 +26841,9 @@
    ]
   },
   "scene_ro5_lokk31_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -26207,6 +27047,9 @@
    ]
   },
   "scene_ro5_lokk32_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -26410,6 +27253,9 @@
    ]
   },
   "scene_ro5_lokk41_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -26613,6 +27459,9 @@
    ]
   },
   "scene_ro5_lokk42_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -26816,6 +27665,9 @@
    ]
   },
   "scene_ro5_lokk43_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -27019,6 +27871,9 @@
    ]
   },
   "scene_ro5_lokk51_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -27222,6 +28077,9 @@
    ]
   },
   "scene_ro5_lokk52_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -27425,6 +28283,9 @@
    ]
   },
   "scene_ro5_lokk53_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -27628,6 +28489,9 @@
    ]
   },
   "scene_ro5_lokk54_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokk12_enter",
@@ -27831,6 +28695,9 @@
    ]
   },
   "scene_ro5_bosslokk_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_bosslokk_enter",
@@ -27879,6 +28746,9 @@
    ]
   },
   "scene_ro5_lokksp_enter": {
+   "nodes": [
+    "杂疑"
+   ],
    "scenes": [
     {
      "sid": "scene_ro5_lokksp_enter",
@@ -27909,6 +28779,9 @@
  },
  "rogue_6": {
   "scene_ro6_bat1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_bat1_enter",
@@ -27941,6 +28814,9 @@
    ]
   },
   "scene_ro6_bat2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_bat2_enter",
@@ -27973,6 +28849,9 @@
    ]
   },
   "scene_ro6_bat3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_bat3_enter",
@@ -28018,6 +28897,9 @@
    ]
   },
   "scene_ro6_bat4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_bat4_enter",
@@ -28064,6 +28946,9 @@
    ]
   },
   "scene_ro6_bat5_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_bat5_enter",
@@ -28187,6 +29072,9 @@
    ]
   },
   "scene_ro6_bat6_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_bat6_enter",
@@ -28488,6 +29376,9 @@
    "randomBattle": true
   },
   "scene_ro6_bat6b_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_bat6_enter",
@@ -28789,6 +29680,9 @@
    "randomBattle": true
   },
   "scene_ro6_res1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_res1_enter",
@@ -28814,6 +29708,9 @@
    ]
   },
   "scene_ro6_res2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_res2_enter",
@@ -28847,6 +29744,9 @@
    ]
   },
   "scene_ro6_res3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_res3_enter",
@@ -28888,6 +29788,9 @@
    ]
   },
   "scene_ro6_res4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_res4_enter",
@@ -28921,6 +29824,9 @@
    ]
   },
   "scene_ro6_res5_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_res5_enter",
@@ -28954,6 +29860,9 @@
    ]
   },
   "scene_ro6_relic1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_relic1_enter",
@@ -28998,6 +29907,9 @@
    ]
   },
   "scene_ro6_relic2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_relic2_enter",
@@ -29033,6 +29945,9 @@
    ]
   },
   "scene_ro6_normal1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_normal1_enter",
@@ -29066,6 +29981,9 @@
    ]
   },
   "scene_ro6_normal2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_normal2_enter",
@@ -29103,6 +30021,9 @@
    ]
   },
   "scene_ro6_normal3_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_normal3_enter",
@@ -29136,6 +30057,9 @@
    ]
   },
   "scene_ro6_normal4_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_normal4_enter",
@@ -29522,6 +30446,9 @@
    ]
   },
   "scene_ro6_normal5_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_normal5_enter",
@@ -29574,6 +30501,9 @@
    ]
   },
   "scene_ro6_hire1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_hire1_enter",
@@ -29622,6 +30552,9 @@
    ]
   },
   "scene_ro6_task1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_task1_enter",
@@ -29656,6 +30589,9 @@
    ]
   },
   "scene_ro6_task2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_task2_enter",
@@ -29689,6 +30625,9 @@
    ]
   },
   "scene_ro6_bomb1_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_bomb1_enter",
@@ -29723,6 +30662,9 @@
    ]
   },
   "scene_ro6_chimera2_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_chimera2_enter",
@@ -29749,6 +30691,9 @@
    ]
   },
   "scene_ro6_surprise_enter": {
+   "nodes": [
+    "不期而遇"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_surprise_enter",
@@ -29921,6 +30866,9 @@
    ]
   },
   "scene_ro6_scout_enter": {
+   "nodes": [
+    "先行一步"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_scout_enter",
@@ -29958,6 +30906,9 @@
    ]
   },
   "scene_ro6_sacrifice1_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_sacrifice1_enter",
@@ -30076,6 +31027,9 @@
    ]
   },
   "scene_ro6_sacrifice2_enter": {
+   "nodes": [
+    "失与得"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_sacrifice1_enter",
@@ -30194,6 +31148,9 @@
    ]
   },
   "scene_ro6_wish_enter": {
+   "nodes": [
+    "得偿所愿"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_wish_enter",
@@ -30240,6 +31197,9 @@
    ]
   },
   "scene_ro6_portal1a_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30288,6 +31248,9 @@
    ]
   },
   "scene_ro6_portal1b_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30336,6 +31299,9 @@
    ]
   },
   "scene_ro6_portal2a_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30384,6 +31350,9 @@
    ]
   },
   "scene_ro6_portal2b_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30432,6 +31401,9 @@
    ]
   },
   "scene_ro6_portal3a_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30480,6 +31452,9 @@
    ]
   },
   "scene_ro6_portal3b_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30528,6 +31503,9 @@
    ]
   },
   "scene_ro6_portal4a_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30576,6 +31554,9 @@
    ]
   },
   "scene_ro6_portal4b_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30624,6 +31605,9 @@
    ]
   },
   "scene_ro6_portal5a_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30672,6 +31656,9 @@
    ]
   },
   "scene_ro6_portal5b_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30720,6 +31707,9 @@
    ]
   },
   "scene_ro6_portal5c_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30768,6 +31758,9 @@
    ]
   },
   "scene_ro6_portal6a_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30816,6 +31809,9 @@
    ]
   },
   "scene_ro6_portal6b_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30864,6 +31860,9 @@
    ]
   },
   "scene_ro6_portal6c_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30912,6 +31911,9 @@
    ]
   },
   "scene_ro6_portal7a_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -30960,6 +31962,9 @@
    ]
   },
   "scene_ro6_portal7b_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -31008,6 +32013,9 @@
    ]
   },
   "scene_ro6_portal8a_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -31056,6 +32064,9 @@
    ]
   },
   "scene_ro6_portal8b_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -31104,6 +32115,9 @@
    ]
   },
   "scene_ro6_portal9_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_portal1a_enter",
@@ -31152,6 +32166,9 @@
    ]
   },
   "scene_ro6_sala1_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_sala1_enter",
@@ -31184,6 +32201,9 @@
    ]
   },
   "scene_ro6_sala2_enter": {
+   "nodes": [
+    "误入奇境"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_sala2_enter",
@@ -31216,6 +32236,9 @@
    ]
   },
   "scene_ro6_end1_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_end1_enter",
@@ -31242,6 +32265,9 @@
    ]
   },
   "scene_ro6_end2_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_end2_enter",
@@ -31275,6 +32301,9 @@
    ]
   },
   "scene_ro6_end3_enter": {
+   "nodes": [
+    "命运所指"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_end3_enter",
@@ -31352,6 +32381,9 @@
    ]
   },
   "scene_ro6_final1_enter": {
+   "nodes": [
+    "险路尽头"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_final1_enter",
@@ -31393,6 +32425,9 @@
    ]
   },
   "scene_ro6_evacuate_enter": {
+   "nodes": [
+    "险路小径"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_evacuate_enter",
@@ -31422,6 +32457,9 @@
    ]
   },
   "scene_ro6_evacuate2_enter": {
+   "nodes": [
+    "险路小径"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_evacuate_enter",
@@ -31451,6 +32489,9 @@
    ]
   },
   "scene_ro6_evacuate3_enter": {
+   "nodes": [
+    "险路小径"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_evacuate_enter",
@@ -31480,6 +32521,9 @@
    ]
   },
   "scene_ro6_rest_enter": {
+   "nodes": [
+    "安全的角落"
+   ],
    "scenes": [
     {
      "sid": "scene_ro6_rest_enter",

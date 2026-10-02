@@ -832,8 +832,8 @@ NODE_FUNC = {
         "ALCHEMY": "'사고'를 투입해 다른 결과물로 바꾸는 정련 노드입니다. 사고의 레어도가 결과물의 품질에 영향을 줍니다.",
     },
     "rogue_5": {
-        "PORTAL": "특수 구역 '시비경'으로 통하는 입구입니다.",
-        "SPECIAL_ZONE": "특수 구역 '시비경'으로 통하는 입구입니다.",
+        "PORTAL": "쉐이의 잔식(특수 구역 '시비경')으로 들어가는 입구입니다.",
+        "SPECIAL_ZONE": "쉐이의 잔식(특수 구역 '시비경')으로 들어가는 입구입니다.",
         "STASHED_RECRUIT": "저장해 둔 모집권을 사용할 수 있는 노드입니다. 여기서 사용하면 희망 소모가 줄어듭니다.",
     },
     "rogue_6": {
@@ -1342,6 +1342,26 @@ def build_topic(tid="rogue_1", loc=None):
     band_ids = [iid for iid, it in items.items() if it.get("type") == "BAND"]
     download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/{tid}/init/initreliciconpic/{bid}.png",
                     os.path.join(relic_icon_dir, f"{bid}.webp")) for bid in band_ids], max_px=180, photo=False)
+    # 미러·CDN 에 아이콘이 없는 분대(나중에 추가된 것) — PRTS 위키 그림 (rogueN-curated.json bandIconPrts,
+    # 사용자 지적 2026-10-02 "분대에도 아이콘이 없는 게 꽤 있네"). ⚠ PRTS 는 User-Agent·Accept-Language 없이 받으면 403.
+    import urllib.parse as _up
+    _cur_path = os.path.join(REPO, "scripts", f"rogue{tid.split('_')[1]}-curated.json")
+    _prts_band = (json.load(open(_cur_path, encoding="utf-8")).get("bandIconPrts") or {}) if os.path.exists(_cur_path) else {}
+    for bid, fname in _prts_band.items():
+        dest = os.path.join(relic_icon_dir, f"{bid}.webp")
+        if bid not in band_ids or os.path.exists(dest):
+            continue
+        try:
+            url = "https://prts.wiki/index.php?" + _up.urlencode({"title": "Special:FilePath", "file": fname})
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+                "Accept-Language": "ko,en;q=0.9"})
+            save_webp(urllib.request.urlopen(req, timeout=15).read(), dest, photo=False, max_px=180)
+        except Exception as e:  # noqa: BLE001 — 못 받으면 그 분대는 아이콘 없이
+            # 한 번 실패하면 나머지는 건너뛴다 — 그림 서버(media.prts.wiki)가 안 닿는 날이 있다(2026-10-02 실측: DNS 부터 무응답).
+            # 종전처럼 분대마다 기다리면 빌드가 수십 분 멈춘다.
+            print(f"  ⚠ 분대 아이콘 PRTS {fname}: {str(e)[:60]} — 나머지 PRTS 분대 아이콘은 건너뜀", file=sys.stderr)
+            break
 
     def item_group(itype):
         # 같은 이름은 업그레이드 티어 중복 (스쿼드 등) — usage가 가장 긴(최종 티어) 항목만 대표로
@@ -1382,6 +1402,27 @@ def build_topic(tid="rogue_1", loc=None):
     mech_jobs = set()
     mechanics = []
     mods = (table.get("modules") or {}).get(tid) or {}
+    # 쉐이의 잔식(정사각형 지도) 노드 — modules.sky.nodeData. 시작점은 빼고, 같은 이름(소란·소란(어려움), 전설·전설(보스))은
+    # 하나로. 계원 노드(nodeTypes)와 따로 싣는다 (사용자 지시 2026-10-02)
+    sky_cn = ((((fetch_json("excel/roguelike_topic_table.json", "cn").get("modules") or {}).get(tid) or {})
+               .get("sky") or {}).get("nodeData") or {})
+    sky_nodes, _seen_sky = [], set()
+    for k, v in ((mods.get("sky") or {}).get("nodeData") or {}).items():
+        nm = (v.get("name") or "").strip()
+        if k == "ORIGIN" or not nm or nm in _seen_sky:
+            continue
+        _seen_sky.add(nm)
+        # 세부 종류 설명(회수 = 오리지늄각뿔·목표 HP …, 여흥 = 마작·통보 던지기 …) — '설명 없음'류는 뺀다
+        subs = [re.sub(r"</?color[^>]*>", "", x.get("desc") or "").strip()
+                for x in ((mods.get("sky") or {}).get("subTypeData") or [])
+                if x.get("evtType") == k and x.get("subTypeId")]
+        # icon = 지도 칸 그림(spnode_*) — --node-icons 가 refs/rglktp_<tid>add.ab 에서 같은 이름으로 뽑는다
+        sky_nodes.append({"id": k, "name": nm, "desc": re.sub(r"</?color[^>]*>", "", v.get("desc") or "").strip() or None,
+                          **({"icon": v["iconId"]} if v.get("iconId") else {}),
+                          # 지도 칸 이름표 색(nameBkgClr)·고를 때 색(selectClr) — 3×3 잔식 지도가 인게임처럼 칠한다 (2026-10-03)
+                          **({"clr": v["nameBkgClr"][:7]} if v.get("nameBkgClr") else {}),
+                          **({"sel": v["selectClr"][:7]} if v.get("selectClr") else {}),
+                          **({"subs": [x for x in subs if x]} if any(subs) else {})})
     for label, source, mfilter in MECH_GROUPS.get(tid, []):
         entries = []
         # usage=기계적 효과, desc=플레이버 (소장품처럼 둘 다 상세 모달에 표시)
@@ -1774,11 +1815,48 @@ def build_topic(tid="rogue_1", loc=None):
                 elif t2.get("randomBattle"):
                     # 전투 선택지는 있지만 고정 맵이 없다 — 층 랜덤 전투 (사용자 지시 2026-08-16)
                     enc["battlesRandom"] = 1
+        # 어느 지도의 어느 노드에서 나오는 이벤트인가 — PRTS 묶음 이름(CN)을 노드 키로 (build-rogue-enc-scenes.py node).
+        # m = g(계원 — 오른쪽으로 진행하는 기본 지도) | s(쉐이의 잔식 — 정사각형 지도, modules.sky). 쉐이만 둘이 갈린다
+        # (사용자 지시 2026-10-02 "계원 / 쉐이의 잔식 탭을 서로 나눠서"). 같은 이름 키가 둘이면(PORTAL·SPECIAL_ZONE) 앞 것.
+        if sky_cn:
+            cn_det = fetch_json("excel/roguelike_topic_table.json", "cn")["details"].get(tid, {})
+            key_of = {}
+            for k, v in (cn_det.get("nodeTypeData") or {}).items():
+                key_of.setdefault(("g", v.get("name")), k)
+            for k, v in sky_cn.items():
+                key_of.setdefault(("s", v.get("name")), k)
+            g_names = {nm for (m, nm) in key_of if m == "g"}
+            for enc in encounters:
+                ns = []
+                for nm in (enc_trees.get(enc["scene"]) or {}).get("nodes") or []:
+                    m = "g" if nm in g_names else "s"
+                    k = key_of.get((m, nm))
+                    if k and {"m": m, "k": k} not in ns:
+                        ns.append({"m": m, "k": k})
+                if ns:
+                    enc["nodes"] = ns
         # 보스(험난한 길) 출현 층 — 사용자 확인: b_1~5=3층, b_6~7=5층, b_8~9=히든 6층
         boss_floors = curated.get("bossFloors", {})
         for s in stages:
             if s["id"] in boss_floors:
                 s["zone"] = boss_floors[s["id"]]
+        # 층 보스가 아닌 험로 판(쉐이 「기억 기록」 — 기이한 공간 특수 전투)은 특수 전투로 · 보스마다 몇 번 엔딩 경로인가(end)
+        # (rogueN-curated.json bossAsSpecial·bossEnding, 사용자 요청 2026-10-02 "히든 몇 번 보스인지도 표시")
+        as_special = set(curated.get("bossAsSpecial") or [])
+        boss_end = curated.get("bossEnding") or {}
+        for s in stages:
+            if s["id"] in as_special:
+                s["kind"] = "special"
+                s["zone"] = None
+            if s["id"] in boss_end:
+                s["end"] = boss_end[s["id"]]
+            bv = (curated.get("bossVariant") or {}).get(s["id"])
+            if bv:
+                s["var"] = bv.get("label")                       # 강화판 — 화면이 라벨을 번역한다(i18n)
+                if bv.get("cond"):
+                    s["varCond"] = tr_quoted(tr(bv["cond"]))     # 어떤 조건에서 이 판으로 바뀌는가
+                if bv.get("prob"):
+                    s["varProb"] = bv["prob"]                    # 확률로 나오는 판만 — 배지에 '강화판 35%' (사용자 요청 2026-10-03)
 
     out = {
         "id": tid,
@@ -1788,6 +1866,7 @@ def build_topic(tid="rogue_1", loc=None):
         "nodeTypes": [{"id": k, "name": v["name"], "desc": v.get("description"),
                        "func": tr(node_func(tid, k))}
                       for k, v in r["nodeTypeData"].items()],
+        **({"skyNodes": sky_nodes} if sky_nodes else {}),
         "difficulties": difficulties,
         "stages": stages,
         "enemies": enemies,
@@ -1880,7 +1959,7 @@ def cn_koreanize(ronum, out):
     for e in out["enemies"].values():
         keep_cn(e)
     for coll in ("relics", "capsules", "tools", "bands", "exploreTools", "variations",
-                 "endings", "nodeTypes"):
+                 "endings", "nodeTypes", "skyNodes"):
         for x in out.get(coll) or []:
             keep_cn(x)
     for m in out.get("mechanics") or []:
@@ -1912,6 +1991,7 @@ def cn_koreanize(ronum, out):
         "exploreTools": ("id", ("name", "desc", "usage")),
         "variations": ("id", ("name", "func", "desc")),
         "endings": ("id", ("name", "desc", "change")),
+        "skyNodes": ("id", ("name", "desc")),
     }
     def put_txt(dst, src, fields):
         for f in fields:
@@ -1924,6 +2004,11 @@ def cn_koreanize(ronum, out):
             k = kr_by.get(x[key])
             if k:
                 put_txt(x, k, fields)
+    # 잔식 노드 세부 종류(목록) — 문자열 필드가 아니라 put_txt 가 못 다룬다
+    kr_sky = {x["id"]: x for x in kr.get("skyNodes") or []}
+    for x in out.get("skyNodes") or []:
+        if (kr_sky.get(x["id"]) or {}).get("subs"):
+            x["subs"] = kr_sky[x["id"]]["subs"]
     # 엔딩 기록(book)·월간 방문객 — 같은 excel 구조라 id 교차 + 조각/장면 위치 교차
     kr_end2 = {x["id"]: x for x in kr.get("endings") or []}
     for x in out.get("endings") or []:
@@ -2613,6 +2698,11 @@ def build_rogue6():
         for s in stages:
             if s["id"] in boss_floors:
                 s["zone"] = boss_floors[s["id"]]
+        # 보스마다 몇 번 엔딩 경로인가 (rogue6-curated.json bossEnding — 위 KR 경로와 같은 규칙, 2026-10-02)
+        boss_end = curated.get("bossEnding") or {}
+        for s in stages:
+            if s["id"] in boss_end:
+                s["end"] = boss_end[s["id"]]
 
     # 조우 씬 트리 — CN 텍스트로 부착하면 아래 keep_cn·translate()가 KR 오버레이를
     # 일괄 처리한다 (분기 라벨 포함 — 미번역은 rogue6-untranslated.json 리포트로)
@@ -2906,11 +2996,19 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
             return set()
         return {n["id"] for n in json.load(open(path, encoding="utf-8"))["nodeTypes"]}
 
-    # rogue_1~5는 노드 타입별 스프라이트가 클라 번들에 **없다** (KR·CN 양쪽 전수 확인
-    # 2026-07-29 — rogue_6만 새 지도 UI라 타입 ID 이름의 스프라이트를 싣는다). 그 세대는
-    # 공용 지도 글리프 한 벌(arts/ui/rogueliketopic/dungeon)을 돌려 쓰므로, 실제로 대응되는
-    # 것만 골라 복사한다. 대응이 없는 타입(파견·소원성취 등)은 아이콘 없이 둔다.
-    SHARED = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn/arts/ui/rogueliketopic/dungeon"
+    # 쉐이의 잔식(IS5 정사각형 지도) 노드 그림 = skyNodes[].icon(spnode_*). 지도 화면 번들은 그림을 직접 싣지 않고
+    # 공용 그림 묶음 refs/rglktp_<tid>add.ab 를 가리킨다 (rl05_spzone_node_view_data._iconSprites → CAB 의존 추적,
+    # 2026-10-02). 칸 틀까지 그려진 완성 그림이라 글리프처럼 잘라내지 않는다.
+    def sky_icons(tid):
+        path = os.path.join(REPO, "app", "data", f"rogue{tid[-1]}.json")
+        if not os.path.exists(path):
+            return set()
+        return {n["icon"] for n in json.load(open(path, encoding="utf-8")).get("skyNodes") or [] if n.get("icon")}
+
+    # rogue_1~5는 노드 타입 ID 이름의 스프라이트가 클라 번들에 없다 (rogue_6만 새 지도 UI라 싣는다 — 2026-07-29).
+    # 그 세대의 기본 글리프 한 벌은 공용 묶음 arts/rglktopic.ab 의 arts/ui/rogueliketopic/dungeon/img_*_active 다.
+    # ⚠ 종전엔 같은 그림을 남의 에셋 미러(ArknightsAssets2 GitHub)에서 받았다 — 공식 CDN 번들로 바꿨다
+    #   (사용자 지시 2026-10-02 "남의 사이트에 의존하면 안 되니까", 보이는 픽셀 최대차 2 = 압축 오차로 같은 그림 확인).
     SHARED_MAP = {
         "BATTLE_NORMAL": "img_battle_active", "BATTLE_ELITE": "img_elite_active",
         "BATTLE_BOSS": "img_boss_active", "SHOP": "img_shop_active",
@@ -2918,6 +3016,81 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
         "INCIDENT": "img_incident_active", "ENTERTAINMENT": "img_entertainment_active",
         "TREASURE": "img_treasure_active", "UNKNOWN": "img_unknown",
     }
+
+    # 공용 묶음 arts/rglktopic.ab 의 선택지 그림(득과 실 = 주사위 화살표 · 외나무다리 = 엇갈린 화살 · 앞서 출발 = 위쪽 화살 ·
+    # 기이한 공간 = 소용돌이 · 길라잡이 = HUMAN RESOURCE 성탑) — 노드 글리프와 같은 흰 그림이라 노드 아이콘으로 쓴다
+    # (사용자 지적 2026-10-02 "기타 노드에도 아이콘 이미지가 다 있을 텐데"). 소원성취·운명의 암시·거짓과 진실·임무는 짝이 없다.
+    # ⚠ img_tag_* 는 206×21 글자 띠라 아이콘으로 못 쓴다.
+    GLYPH_MAP = {"SACRIFICE": "sacrifice", "EXPEDITION": "adventure", "PORTAL": "teleport", "SPECIAL_ZONE": "teleport",
+                 "DUEL": "duel", "STASHED_RECRUIT": "stashed_recruit"}
+    glyph_cache = {}
+
+    # 테마 전용 지도 노드 그림 — 지도 화면의 node_view_data._activeIcons(노드 종류 비트 → 그림)가 가리키는
+    # refs/rglktp_<tid>.ab 의 node_* (2026-10-02 추적, 사용자 지적 "소원성취·운명의 암시·거짓과 진실은 아이콘이 없는데").
+    # 비트: 512 WISH · 16384 MISSION · 32768 STORY · 65536 STORY_HIDDEN · 131072 ALCHEMY.
+    # mode — glyph: 원래 흰 글리프(2·3번째 테마) · white: 색판 위 흰 그림만 오린다(5번째) ·
+    #   crop: 색판 가운데 정사각형 그대로(거짓과 진실 — 흰 그림만 오리면 일러스트라 깨지고, 흰 글리프판은 어느 번들에도 없다).
+    # 4번째 테마의 소원성취·운명의 암시도 판이 일러스트라 오리면 깨져 3번째 테마의 같은 종류 글리프를 빌린다.
+    # 5번째 테마의 거짓과 진실은 그 테마 지도 표에 없어(노드가 안 나온다) 4번째 것을 빌린다.
+    _r2, _r3, _r4, _r5 = (f"refs/rglktp_rogue_{n}.ab" for n in (2, 3, 4, 5))
+    THEME_ART = {
+        "rogue_2": [("WISH", _r2, "node_reward_2", "glyph"), ("MISSION", _r2, "node_mission", "glyph")],
+        "rogue_3": [("WISH", _r3, "node_wish", "glyph"), ("STORY", _r3, "node_story", "glyph"),
+                    ("STORY_HIDDEN", _r3, "node_story", "glyph")],
+        "rogue_4": [("WISH", _r3, "node_wish", "glyph"), ("STORY", _r3, "node_story", "glyph"),
+                    ("STORY_HIDDEN", _r3, "node_story", "glyph"), ("ALCHEMY", _r4, "node_alchemy", "crop")],
+        "rogue_5": [("WISH", _r5, "node_wish", "white"), ("STORY", _r5, "node_story", "white"),
+                    ("STORY_HIDDEN", _r5, "node_story", "white"), ("ALCHEMY", _r4, "node_alchemy", "crop")],
+    }
+    theme_cache = {}
+
+    def theme_sprites(base, bundle):
+        key = (base, bundle)
+        if key not in theme_cache:
+            out = {}
+            dat = bundle.replace("/", "_").split(".")[0] + ".dat"
+            try:
+                with zipfile.ZipFile(_io.BytesIO(fetch(f"{base}/{dat}", binary=True))) as z:
+                    env = UnityPy.load(_io.BytesIO(z.read(z.filelist[0])))
+                for obj in env.objects:
+                    if obj.type.name == "Sprite":
+                        d = obj.read()
+                        if d.m_Name.startswith("node_") and d.m_Name not in out:
+                            out[d.m_Name] = d.image.convert("RGBA")
+            except Exception as err:  # noqa: BLE001
+                print(f"  {bundle}: {err}")
+            theme_cache[key] = out
+        return theme_cache[key]
+
+    def white_of(im):
+        """색판 위의 흰 그림만 남긴다 — 밝고(최소 채널 150~230) 채도가 낮은 픽셀일수록 불투명한 흰색."""
+        import numpy as _np
+        from PIL import Image as _Im
+        a = _np.asarray(im.convert("RGBA")).astype(float)
+        mn, mx = a[..., :3].min(-1), a[..., :3].max(-1)
+        w = _np.clip((mn - 150) / 80, 0, 1) * _np.clip(1 - (mx - mn) / 60, 0, 1) * (a[..., 3] / 255)
+        out = _np.zeros_like(a)
+        out[..., :3] = 255
+        out[..., 3] = w * 255
+        return _Im.fromarray(out.astype("uint8"), "RGBA")
+
+    def shared_glyphs(base):
+        if base in glyph_cache:
+            return glyph_cache[base]
+        out = {}
+        try:
+            with zipfile.ZipFile(_io.BytesIO(fetch(f"{base}/arts_rglktopic.dat", binary=True))) as z:
+                env = UnityPy.load(_io.BytesIO(z.read(z.filelist[0])))
+            want_names = set(GLYPH_MAP.values()) | set(SHARED_MAP.values())
+            for obj in env.objects:
+                if obj.type.name == "Sprite":
+                    d = obj.read()
+                    if d.m_Name in want_names and d.m_Name not in out:
+                        out[d.m_Name] = d.image
+        except Exception as err:  # noqa: BLE001 — 없으면 그 타입은 아이콘 없음
+            print(f"  arts/rglktopic.ab: {err}")
+        glyph_cache[base] = out
+        return out
 
     total = 0
     for tid in topics:
@@ -2935,6 +3108,16 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
                     env = UnityPy.load(_io.BytesIO(z.read(z.filelist[0])))
             except Exception as err:  # noqa: BLE001 — 토픽마다 번들 구성이 다르다
                 print(f"  {bundle}: {err}"); continue
+            # 비경(쉐이의 잔식) 단추 배경 = 시비경에 들어갈 때의 전환 그림 bg_zone_sky_1 (Texture2D) → public/rogue/zone/
+            # (사용자 지시 2026-10-03 — 지도 그림 rogue_5_map_0 을 어둡게 깐 것은 탁해서 바꿨다)
+            if sky_icons(tid):
+                for obj in env.objects:
+                    if obj.type.name in ("Texture2D", "Sprite") and obj.peek_name() == "bg_zone_sky_1":
+                        buf = _io.BytesIO()
+                        obj.read().image.convert("RGB").save(buf, "PNG")
+                        save_webp(buf.getvalue(), os.path.join(REPO, "public", "rogue", "zone", f"{tid}_bg_zone_sky_1.webp"),
+                                  photo=True, max_px=900)
+                        break
             for obj in env.objects:
                 if obj.type.name != "Sprite":
                     continue
@@ -2946,21 +3129,76 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
                 save_webp(buf.getvalue(), os.path.join(dest, f"{d.m_Name}.webp"),
                           photo=False, max_px=160, method=4, try_lossless=False)
                 found[d.m_Name] = True
-        # 번들에 없던 타입은 공용 글리프로 메운다 (rogue_1~5)
-        for nid in sorted(wanted - set(found)):
-            src = SHARED_MAP.get(nid)
-            if not src:
+        # 번들에 없던 타입은 공용 글리프로 메운다 (rogue_1~5, arts/rglktopic.ab)
+        rest = sorted(n for n in wanted - set(found) if n in SHARED_MAP)
+        if rest:
+            gl = shared_glyphs(base)
+            for nid in rest:
+                im = gl.get(SHARED_MAP[nid])
+                if im is None:
+                    continue
+                tb = _io.BytesIO()
+                trim_glyph(im).save(tb, "PNG")
+                save_webp(tb.getvalue(), os.path.join(dest, f"{nid}.webp"), photo=False, max_px=160,
+                          method=4, try_lossless=False)
+                found[nid] = True
+        # 그래도 없는 타입은 공용 묶음의 선택지 그림으로 (GLYPH_MAP)
+        rest = sorted(n for n in wanted - set(found) if n in GLYPH_MAP)
+        if rest:
+            gl = shared_glyphs(base)
+            for nid in rest:
+                im = gl.get(GLYPH_MAP[nid])
+                if im is None:
+                    continue
+                tb = _io.BytesIO()
+                trim_glyph(im).save(tb, "PNG")
+                save_webp(tb.getvalue(), os.path.join(dest, f"{nid}.webp"), photo=False, max_px=160,
+                          method=4, try_lossless=False)
+                found[nid] = True
+        # 그래도 없는 타입은 테마 전용 지도 그림 묶음 refs/rglktp_<tid>.ab 에서 (THEME_ART)
+        rest = [x for x in THEME_ART.get(tid, ()) if x[0] in wanted - set(found)]
+        for nid, bundle, sprite, mode in rest:
+            im = theme_sprites(base, bundle).get(sprite)
+            if im is None:
                 continue
-            try:
-                png = fetch(f"{SHARED}/{src}.png", binary=True)
-            except Exception:  # noqa: BLE001 — 공용 글리프가 없으면 그 타입은 아이콘 없음
-                continue
-            from PIL import Image as _Im2
+            if mode == "white":
+                im = trim_glyph(white_of(im))
+            elif mode == "crop":
+                side = im.height
+                im = im.crop(((im.width - side) // 2, 0, (im.width + side) // 2, side))
+            else:
+                im = trim_glyph(im)
             tb = _io.BytesIO()
-            trim_glyph(_Im2.open(_io.BytesIO(png))).save(tb, "PNG")
+            im.save(tb, "PNG")
             save_webp(tb.getvalue(), os.path.join(dest, f"{nid}.webp"), photo=False, max_px=160,
                       method=4, try_lossless=False)
             found[nid] = True
+        sky_want = sky_icons(tid)
+        if sky_want:
+            sky_found = set()
+            for bundle in (f"refs/rglktp_{tid}add.ab", f"refs/rglktp_{tid}.ab"):
+                dat = bundle.replace("/", "_").split(".")[0] + ".dat"
+                try:
+                    with zipfile.ZipFile(_io.BytesIO(fetch(f"{base}/{dat}", binary=True))) as z:
+                        env = UnityPy.load(_io.BytesIO(z.read(z.filelist[0])))
+                except Exception as err:  # noqa: BLE001
+                    print(f"  {bundle}: {err}"); continue
+                for obj in env.objects:
+                    if obj.type.name != "Sprite":
+                        continue
+                    d = obj.read()
+                    if d.m_Name not in sky_want or d.m_Name in sky_found:
+                        continue
+                    buf = _io.BytesIO()
+                    d.image.save(buf, "PNG")
+                    save_webp(buf.getvalue(), os.path.join(dest, f"{d.m_Name}.webp"),
+                              photo=False, max_px=160, method=4, try_lossless=False)
+                    sky_found.add(d.m_Name)
+                if sky_found >= sky_want:
+                    break
+            total += len(sky_found)
+            print(f"{tid}: 잔식 노드 {len(sky_found)}/{len(sky_want)}종"
+                  + (f" · 누락 {sorted(sky_want - sky_found)}" if sky_want - sky_found else ""))
         miss = sorted(wanted - set(found))
         total += len(found)
         print(f"{tid}: {len(found)}/{len(wanted)}종 (resVersion {res})"

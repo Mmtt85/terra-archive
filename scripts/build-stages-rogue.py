@@ -75,6 +75,7 @@ def load_topic(n, suffix):
 # 시뮬레이트 가능 여부 — 작전 시뮬레이터(/sim)가 통합전략 작전도 찾게 (사용자 요청 2026-09-23).
 # 본 도감의 sim-stages.json 과 같은 판정: 경로 데이터에 스폰(sp)·웨이브(wv)가 있으면 된다.
 _ROUTES = json.load(open(os.path.join(DATA, "rogue-routes.json"), encoding="utf-8"))
+_rbody = lambda v: _ROUTES.get(v) if isinstance(v, str) else v   # 같은 레벨을 쓰는 판은 별칭 문자열
 
 
 def _can_sim(sid):
@@ -218,11 +219,25 @@ by_loc = {loc: build(loc, suffix) for loc, suffix in LOCALES}
 # 록라 도면(public/rogue/map)도 같은 인게임 미리보기라 같은 규칙으로 붙는다.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import stagecams  # noqa: E402
+# stageId → levelId — 원본은 stageId 로 못 찾아도 레벨로 찾힌다 (흑류수해 c_5~7 은 다른 판과 같은 레벨, 2026-10-02).
+# 한섭 표에 없는 테마(흑류수해)는 중섭 표에서.
+_level_of = {}
+for _t in ("cn_roguelike_topic_table.json", "roguelike_topic_table.json"):
+    _tp = os.path.join(REPO, ".gamedata", _t)
+    if os.path.exists(_tp):
+        for _d in (json.load(open(_tp, encoding="utf-8")).get("details") or {}).values():
+            for _sid, _st in (_d.get("stages") or {}).items():
+                if _st.get("levelId"):
+                    _level_of[_sid] = _st["levelId"]
 for loc, suffix in LOCALES:
     _prev = os.path.join(DATA, f"stages-rogue{suffix}.json")
     _keep = {e["id"]: e["cam"] for e in json.load(open(_prev, encoding="utf-8"))["stages"] if "cam" in e} \
         if os.path.exists(_prev) else {}
-    stagecams.attach(by_loc[loc], os.path.join(REPO, "public", "rogue", "map"), keep=_keep)
+    # 원본에 레벨이 없는 판(살카즈 보스 강화판 _c·_d, 쉐이 대체 맵 _b·_c — 2026-10-02 19개)은 도면에서 추정한다
+    # (grid_of → scripts/camfit.py). 없으면 타일 지도로 떨어진다 (사용자 지적 2026-10-02 "실사도면에 경로가 표시되니
+    # 타일맵은 필요 없지 않음?")
+    stagecams.attach(by_loc[loc], os.path.join(REPO, "public", "rogue", "map"), _level_of, keep=_keep,
+                     grid_of=lambda sid: (_rbody(_ROUTES.get(sid)) or {}).get("g"))
 stagecams.write_rogue_cams(by_loc["ko"])   # /rogue 모달용 (카메라는 로케일 무관)
 
 for loc, suffix in LOCALES:

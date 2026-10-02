@@ -73,7 +73,9 @@ type Emg = {
   per?: { keys: string[]; mul: Record<string, number> }[];  // 특정 적 한정 배율
   replace?: Record<string, string>;                          // 긴급 시 적 교체 (원본→변종)
 } | null;
-type Stage = { id: string; kind: string; zone: number | null; code: string | null; name: string; desc: string | null; eliteDesc: string | null; emg: Emg; map?: string | null; enemies: StageEnemy[]; cn?: string };
+// end = 몇 번 엔딩 경로의 보스인가 (1 = 기본 엔딩, N = 히든 N-1 — rogueN-curated.json bossEnding, 2026-10-02)
+// var = 강화판 등 같은 자리 보스의 다른 판, varCond = 그 판으로 바뀌는 조건, varProb = 확률로 나오는 판의 확률 (bossVariant)
+type Stage = { var?: string; varCond?: string; varProb?: number; id: string; kind: string; zone: number | null; code: string | null; name: string; desc: string | null; eliteDesc: string | null; emg: Emg; map?: string | null; enemies: StageEnemy[]; cn?: string; end?: number };
 type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number; immune?: string[]; img?: string | null; cn?: string };
 // 소장품 효과의 수치 (scripts/build-rogue.py relic_effects) — usage 문장이 아니라 게임
 // 데이터의 blackboard에서 뽑아 3개 로케일에 같은 배열로 심는다(언어 무관 합산).
@@ -110,10 +112,13 @@ type EncChoice = { title: string; desc: string | null; cn?: string; variants?: s
 // note = 안내 블록(랜덤 출현 규칙·주사위 판정·조건 — 선택지가 아닌 정보 행).
 type EncSceneChoice = { title?: string; desc?: string | null; cn?: string; cnTitle?: string; cnDesc?: string; branch?: string; prob?: number; dest?: number; note?: string };
 type EncScene = { desc?: string | null; cn?: string; choices: EncSceneChoice[] };
-type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string; battles?: string[]; battlesRandom?: 1; scenes?: EncScene[] };
+// nodes = 이 이벤트가 나오는 노드 — m: g 계원(기본 지도) · s 쉐이의 잔식(정사각형 지도), k: 노드 키 (쉐이만, build-rogue.py)
+type Encounter = { nodes?: { m: "g" | "s"; k: string }[]; scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string; battles?: string[]; battlesRandom?: 1; scenes?: EncScene[] };
 type RogueData = {
   id: string; name: string; line: string | null; cnName?: string; future?: boolean; server?: string;
   zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null; func?: string | null; cn?: string }[];
+  // 쉐이의 잔식(정사각형 지도) 노드 — 계원 노드(nodeTypes)와 따로 (쉐이만, 2026-10-02)
+  skyNodes?: { id: string; name: string; desc: string | null; cn?: string; icon?: string; clr?: string; sel?: string; subs?: string[] }[];
   difficulties: Difficulty[]; stages: Stage[]; enemies: Record<string, Enemy>;
   relics: Relic[]; capsules?: Capsule[]; tools: Simple[]; bands: Simple[]; exploreTools?: Simple[];
   scraps?: Scrap[]; legacies?: Simple[]; buoys?: Simple[];
@@ -358,6 +363,42 @@ function StatRow({ e, grade, ctx }: { e: Enemy; grade: number; ctx: StatCtx }) {
 
 // ── 스테이지 상세 모달 — 일반/긴급이 같은 맵을 공유하므로 페어로 받아 탭 전환 ──
 export type StagePair = { n: Stage; e?: Stage; init?: "n" | "e" };   // init — 렌즈가 긴급 화면을 인식하면 "e"
+
+// 같은 자리에 랜덤·조건으로 나오는 여러 판을 **테두리 하나로 묶는다** — 카드는 그대로 다 둔다 (사용자 지시 2026-10-02 "같은 맵인데
+// 랜덤으로 나오는 여러 맵들은 하나로 그루핑" → "이름이 다른 맵을 하나로 합쳐버리면 어떡해, border 같은 거 줘서 그루핑"). 같은 날
+// 잠깐 카드 하나 + 판 탭으로 합쳤다가 되돌렸다. id 끝의 변형 글자(_a~_e)만 다른 것끼리 — ro5_b_4 / _b(뒤바뀔 운명), ro5_b_9_a~e(절변),
+// ro5_duel_1 / _1_b(원거리/근거리판), ro5_sv_1 / _1_b(다른 지도). 금석경판(_dlc1)은 따로 묶는다. 순서는 처음 나온 자리.
+const variantBase = (id: string) => {
+  const m = id.match(/^(.*?)(?:_[a-e])?(_dlc1)?$/);
+  return m ? m[1] + (m[2] ?? "") : id;
+};
+function groupPairs(pairs: StagePair[]): StagePair[][] {
+  const out: StagePair[][] = [];
+  const at = new Map<string, StagePair[]>();
+  for (const p of pairs) {
+    const g = at.get(variantBase(p.n.id));
+    if (g) g.push(p);
+    else { const ng = [p]; at.set(variantBase(p.n.id), ng); out.push(ng); }
+  }
+  return out;
+}
+const pairsOf = (stages: Stage[]): StagePair[] => stages.map((s) => ({ n: s }));
+
+// 작전 카드 목록 — 같은 자리의 판들은 테두리 상자(.rg-stage-vgroup)로. 상자는 부모 격자의 칸을 판 수만큼(최대 한 줄) 쓰고
+// 안쪽은 subgrid 라 카드 폭이 다른 카드와 같다.
+function StageCardGroups({ pairs, onOpen, boss }: { pairs: StagePair[]; onOpen: (p: StagePair) => void; boss?: boolean }) {
+  const { t } = useI18n();
+  return (<>
+    {groupPairs(pairs).map((g) => g.length === 1
+      ? <StageCard key={g[0].n.id} pair={g[0]} onOpen={onOpen} boss={boss} />
+      : (
+        <div key={g[0].n.id} className="rg-stage-vgroup" style={{ "--n": g.length } as React.CSSProperties}
+          title={t("같은 자리에 나오는 판 {n}개", { n: g.length })}>
+          {g.map((p) => <StageCard key={p.n.id} pair={p} onOpen={onOpen} boss={boss} />)}
+        </div>
+      ))}
+  </>);
+}
 function StageModal({ pair, grade, onClose, onOpenEnemy }: {
   pair: StagePair; grade: number; onClose: () => void; onOpenEnemy: (key: string, ctx: StatCtx) => void;
 }) {
@@ -397,7 +438,10 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
   // 카메라 없는 노드는 미리보기가 없어 레벨 격자로 그린 도면이라 경로 지도로 잃는 게 없다.
   // 이 페이지엔 작전 색인의 경로 표식이 없어 열자마자 경로 파일을 받는다 (합친 도면과 같은 파일·세션당 한 번).
   const cam = stage.map ? ROGUE_CAMS[stage.map] : undefined;
-  const fused = !!cam;
+  // ⚠ 외나무다리는 예외 — 타일 경로 지도만 (사용자 지시 2026-10-02 "외나무다리는 그냥 타일맵만 남겨 주고, 맵 카드 섬네일만
+  // 실사 도면으로"). 한 맵에 두 칸(오퍼 고르는 칸 + 전투 칸, 18×6)인데 미리보기는 그중 일부만 찍어 실사에선 맵이 잘린다.
+  // 같은 날 실사 상자를 넓혀 바깥 칸을 타일로 잇는 안을 만들었다가 반려됐다. 카드 섬네일(StageCard)은 그대로 실사.
+  const fused = !!cam && stage.kind !== "duel";
   const rd = routesFor(stage.id);
   useEffect(() => {
     if (ROUTES_CACHE) return;
@@ -574,6 +618,9 @@ function NodeIco({ id, cls = "rg-nodetype-ico" }: { id?: string | null; cls?: st
     alt="" width={160} height={160} loading="lazy" decoding="async" />;
 }
 
+// 층 줄(역아치) 밖, 지도판 묶음 칸에 따로 두는 구역 "토픽:구역" — RogueGuide 의 pocketZones
+const POCKET_ZONES = new Set(["rogue_2:zone_7"]);
+
 const KIND_LABEL: Record<string, string> = {
   normal: "작전", emergency: "긴급 작전", boss: "험난한 길", event: "조우 전투", special: "특수",
   duel: "외나무다리", trial: "시련", chase: "추격전", savage: "거점전", incident: "조우 전투",
@@ -581,10 +628,20 @@ const KIND_LABEL: Record<string, string> = {
 
 // 전투 노드 카드 — 인게임 맵 미리보기 + 이름 (클릭 → 상세, 일반/긴급은 모달 탭 전환)
 function StageCard({ pair, onOpen, boss }: { pair: StagePair; onOpen: (p: StagePair) => void; boss?: boolean }) {
+  const { t } = useI18n();
   const s = pair.n;
   return (
     <button type="button" className={`rg-stagecard${boss ? " boss" : ""}`} onClick={() => onOpen(pair)}>
       {s.map && <img className="rg-stagecard-map" src={asset(`/rogue/map/${s.map}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
+      {/* 몇 번 엔딩 경로의 보스인가 (사용자 요청 2026-10-02 "각 보스들, 히든 몇 번 보스인지도 표시") — 커뮤니티 표기대로
+          기본 엔딩 다음이 히든 1 (엔딩 N = 히든 N-1, 사용자 지시 같은 날 "히든은 1부터 시작해야 돼"). 강화판이면 뒤에 붙이고 조건은 툴팁 */}
+      {s.end != null && (
+        <span className={`rg-stagecard-end${s.end > 1 ? " secret" : ""}`} title={s.varCond}>
+          {s.end > 1 ? t("히든 {n}", { n: s.end - 1 }) : t("기본 엔딩")}
+          {/* 라벨은 ' · ' 로 이어 쓴 조각마다 번역('강화판 · 탁생연좌 추가'), 확률로 나오는 판만 뒤에 % (2026-10-03) */}
+          {s.var && ` · ${s.var.split(" · ").map((x) => t(x)).join(" · ")}${s.varProb ? ` ${s.varProb}%` : ""}`}
+        </span>
+      )}
       <span className="rg-stagecard-name"><Nm name={s.name} cn={s.cn} /></span>
     </button>
   );
@@ -736,6 +793,8 @@ function RecordModal({ rid, title, sub, onClose }: { rid: string; title: string;
 }
 
 // ── 조우 상세 모달 — 엔딩 조건 등에서 조우를 참조할 때 연다 ──────────────────
+const ENC_CHOICE_FOLD = 8;   // 씬 트리 없는 조우의 선택지가 이보다 많으면 접어 둔다
+
 function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
   enc: Encounter; onClose: () => void; link?: (t: string | null) => React.ReactNode;
   battles?: StagePair[]; onOpenStage?: (p: StagePair) => void;
@@ -743,6 +802,11 @@ function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
   // battlesRandom: 전투 선택지는 있지만 고정 맵이 없는 조우 — '힘든 전투 직면' 류는
   // 그 층의 일반 전투 맵에서 무작위로 벌어진다 (사용자 지시 2026-08-16 "랜덤전투라고 적어줘")
   const { t } = useI18n();
+  // 씬 트리가 없는 조우는 게임 데이터의 선택지를 전부 한 목록에 쏟는다 — 쉐이 「수반」은 37개라 처음부터 다 펼쳐져
+  // 있었다 (사용자 지적 2026-10-02 "왜 처음부터 모든 게 다 열려 있는 상태야" → "목록 접어서"). 8개를 넘으면 접는다.
+  const [allChoices, setAllChoices] = useState(false);
+  const fold = !enc.scenes && enc.choices.length > ENC_CHOICE_FOLD;
+  const shownChoices = fold && !allChoices ? enc.choices.slice(0, ENC_CHOICE_FOLD) : enc.choices;
   return (
     <ModalWindow label={nmText(enc.title, enc.cn)} className="rg-modal" onClose={onClose}>
       <header className="rg-modal-head">
@@ -763,11 +827,17 @@ function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
               없으면 기존 평탄 트리. rogue_6은 게임 버튼이 중국어라 원문을 대표로 병기. */}
           {enc.scenes ? (
             <SceneChoices scenes={enc.scenes} idx={0} path={[0]} link={link} />
-          ) : (
+          ) : (<>
+            {fold && <p className="rg-enc-note">{t("이 만남은 장면 순서 정보가 없어 모든 선택지를 한 목록으로 보여 줍니다.")}</p>}
             <ul className="rg-enc-choices">
-              {enc.choices.map((c, i) => <ChoiceNode key={i} c={c} link={link} />)}
+              {shownChoices.map((c, i) => <ChoiceNode key={i} c={c} link={link} />)}
             </ul>
-          )}
+            {fold && (
+              <button type="button" className="rg-enc-more" onClick={() => setAllChoices((v) => !v)}>
+                {allChoices ? t("접기") : t("나머지 선택지 {n}개 더 보기", { n: enc.choices.length - ENC_CHOICE_FOLD })}
+              </button>
+            )}
+          </>)}
           {/* 이 조우에서 전투가 벌어지면 그 맵을 바로 열 수 있게 (사용자 요청 2026-08-16).
               게임 데이터에 조우↔전투 링크가 없어 수작업 대응표로만 붙는다 — 없으면 안 그린다. */}
           {battles && battles.length > 0 && onOpenStage ? (
@@ -1035,7 +1105,7 @@ function ZoneModal({ zone, badge, pairs, bosses, onOpenStage, onClose }: {
         <div className="rg-stage-group">
           <h4>{t("작전")} <em>{pairs.length}</em> <span className="rg-stage-hint">{t("카드를 열면 일반/긴급 탭으로 전환할 수 있습니다")}</span></h4>
           <div className="rg-stage-cards">
-            {pairs.map((p) => <StageCard key={p.n.id} pair={p} onOpen={onOpenStage} />)}
+            <StageCardGroups pairs={pairs} onOpen={onOpenStage} />
           </div>
         </div>
       )}
@@ -1043,7 +1113,7 @@ function ZoneModal({ zone, badge, pairs, bosses, onOpenStage, onClose }: {
         <div className="rg-stage-group">
           <h4 className="boss">{t("험난한 길 (보스)")} <em>{bosses.length}</em></h4>
           <div className="rg-stage-cards">
-            {bosses.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={onOpenStage} boss />)}
+            <StageCardGroups pairs={pairsOf(bosses)} onOpen={onOpenStage} boss />
           </div>
         </div>
       )}
@@ -1212,6 +1282,12 @@ export default function RogueGuide({ initialTopic }: {
   const [recOpen, setRecOpen] = useState<{ rid: string; title: string; sub?: string } | null>(null);
   // 통합 검색란 하나 (탭 줄 가운데 — 아래 uniHits 주석). 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 갱신 (search.ts)
   const { term: uniTerm, set: setUniTerm, inputProps: uniProps } = useSearchInput();
+  // 쉐이 — 맵·노드 탭 안의 두 지도: g 계원(오른쪽으로 진행) / s 쉐이의 잔식(정사각형) (사용자 지시 2026-10-02)
+  // 쉐이의 잔식 창 — 계원 지도판 위쪽(4층·5층 사이) 단추로 연다 (사용자 지시 2026-10-03 "탭으로 나누지 말고 … 살짝 작은 버튼,
+  // 클릭하면 모달"). 종전(2026-10-02)엔 맵·노드 안을 계원 / 쉐이의 잔식 두 탭으로 나눴다.
+  const [skyOpen, setSkyOpen] = useState(false);
+  // 잔식 소란 모달 — 시비경 / 금석경 탭 (사용자 지시 2026-10-02 "소란 노드는 시비경 / 금석경 탭으로 나눠줘")
+  const [skyBattleTab, setSkyBattleTab] = useState<"shi" | "kin">("shi");
   const [enemyRank, setEnemyRank] = useState<string>("");
   // 표준 카테고리 + 토픽 고유 시스템(mechanics)의 라벨을 탭 id로 쓰므로 string
   const [arcTab, setArcTab] = useState<string>("relic");
@@ -1251,7 +1327,7 @@ export default function RogueGuide({ initialTopic }: {
     setView("map");
     setGrade(0);
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null); setRecOpen(null);
-    setUniTerm("", false); setEnemyRank(""); setArcTab("relic");
+    setUniTerm("", false); setEnemyRank(""); setArcTab("relic"); setSkyOpen(false);
     setLensHits(null); setLensMulti(null); // 렌즈 하이라이트·모아보기는 토픽 전환 시 해제
     setInvOpen(false); setInvTab("relic"); // 보유 리스트 모달·탭 리셋 (목록 자체는 테마별 저장)
   };
@@ -1375,17 +1451,51 @@ export default function RogueGuide({ initialTopic }: {
   // 제보: 쉐이 시비경·금석경 모달이 텅 빔). 이름이 근거다: sv·dv = 시비 판정류(우쭐함·
   // 노여움·탐욕과 망념…) → 시비경, fs = 대사냥류(방천·영뢰·멸진·부운·척홍) → 금석경.
   // 변형판(_b·_c·_dlc1)은 같은 이름의 강화판이라 기본판만 카드로 싣는다.
+  // ⚠ 2026-10-02 바로잡음 — 금석경은 대사냥(fs)이 아니라 시비경 전투의 금석경판(_dlc1)이다 (아래 shiStages 주석)
   const TRIAL_ZONE_RE: Record<string, RegExp> = {
-    zone_sky_1: /^ro5_(?:sv|dv)_\d+$/,
-    zone_sky_2: /^ro5_fs_\d+$/,
+    zone_sky_1: /^ro5_sv_\d+(?:_[bc])?$/,
+    zone_sky_2: /^ro5_sv_\d+(?:_[bc])?_dlc1$/,
   };
   const trialPairsFor = (z: Zone): StagePair[] => {
     const re = TRIAL_ZONE_RE[z.id];
     return re ? trialStages.filter((s) => re.test(s.id)).map((s) => ({ n: s })) : [];
   };
+  // 쉐이 특수 구역 둘은 층 줄(아치)에서 빼고 **묶음 카드**로 (사용자 지시 2026-10-02 "비경맵을 따로 표시해줘. 그 안에
+  // 시비경을 넣어주고, 금석경은 그냥 특수전투로 따로 다시 빼자"). 둘 다 층이 아니다 — 시비경은 '기이한 공간' 노드로
+  // 들어가는 비경, 금석경은 대사냥(명촉대를 끝까지 지키는 맵). 묶음에는 변형판(_b·_c·_dlc1)도 다 싣는다 — 이름·설명만
+  // 같고 지도·적 구성이 다른 별개의 맵이다(실측). 층 카드 시절의 '기본판만'(TRIAL_ZONE_RE)은 층 상세 창(통합 검색으로
+  // 여는 시비경·금석경)에만 남는다. 같은 번호끼리 붙도록 번호 → 변형 순으로 줄 세운다.
+  const trialOrder = (a: Stage, b: Stage) => {
+    const no = (id: string) => Number(id.match(/_(\d+)/)?.[1] ?? 0);
+    return no(a.id) - no(b.id) || a.id.localeCompare(b.id);
+  };
+  const realmZone = data.zones.find((z) => z.id === "zone_sky_1" && TRIAL_ZONE_RE[z.id]) ?? null;
+  const huntZone = data.zones.find((z) => z.id === "zone_sky_2" && TRIAL_ZONE_RE[z.id]) ?? null;
+  // 소란(잔식 전투 노드) 맵 — 시비경판(sv)과 금석경판(sv_*_dlc1, 같은 전투의 더 어려운 판 — PRTS 「…(今昔境)」 문서의
+  // 关卡id=ro5_sv_1_dlc1). _b·_c 는 같은 전투의 다른 지도('其二'). 대사냥 5종(fs)은 잔식이 아니라 계원 길라잡이 「촛불 사당」의
+  // 시련이라 계원의 '명촉대 시련' 묶음으로 (PRTS 보상표 '指点迷津 烛堂', 사용자 지시 2026-10-02 "외나무다리처럼 명촉대 시련으로").
+  const shiStages = realmZone ? trialStages.filter((s) => /^ro5_sv_\d/.test(s.id) && !s.id.endsWith("_dlc1")).sort(trialOrder) : [];
+  const kinStages = huntZone ? trialStages.filter((s) => /^ro5_sv_\d/.test(s.id) && s.id.endsWith("_dlc1")).sort(trialOrder) : [];
+  const huntStages = huntZone ? trialStages.filter((s) => /^ro5_fs_\d/.test(s.id)).sort(trialOrder) : [];
+  // 층 줄 밖으로 빼서 기타 노드 밑 칸에 따로 두는 구역 — 미즈키 '짙푸른 요람'은 층이 아니라 원더랜드 노드로 들어가는 곳
+  // (사용자 지시 2026-10-02 "원더랜드는 기타 노드 밑에다가 따로 빼줘. N층 이쪽이 아니라")
+  const pocketZones = data.zones.filter((z) => POCKET_ZONES.has(`${data.id}:${z.id}`));
+  const archZones = data.zones.filter((z) => z !== realmZone && z !== huntZone && !pocketZones.includes(z));
+  // 쉐이는 노드 지도가 둘이다 — 계원(기존 록라처럼 오른쪽으로 진행)과 쉐이의 잔식(들어가면 정사각형 지도). 전투 맵·기타
+  // 노드·이벤트가 서로 달라 따로 보인다 — 계원은 지도판, 잔식은 지도판 위쪽 단추로 여는 3×3 창 (사용자 지시 2026-10-02 "이거
+  // 두 개를 구분해 줘야 할 것 같음" → 두 탭 → 2026-10-03 "탭으로 나누지 말고 4층·5층 사이 위쪽에 작은 버튼, 클릭하면 모달").
+  // 이벤트의 소속은 PRTS 노드 묶음(encounters[].nodes) — 양쪽에 다 나오는 것(6건)은 양쪽 모두, 묶음이 없는 것(분대 바꾸기 2건)은 계원. 잔식 = 계원의 「기이한 공간」으로 들어가는
+  // 평면 지도 — 기본판 시비경, 6B 명멸정의 「고금교차」로 들어가는 특수판 금석경(PRTS). 「분명」(dv)·대사냥(fs)은 계원 길라잡이
+  // 「촛불 사당」에서 이어지는 전투라 계원 쪽(조우 전투·명촉대 시련)으로.
+  const hasSky = (data.skyNodes?.length ?? 0) > 0;
+  const onSide = (e: Encounter, m: "g" | "s") => (e.nodes?.length ? e.nodes.some((n) => n.m === m) : m === "g");
+  const gardenEncs = hasSky ? data.encounters.filter((e) => onSide(e, "g")) : data.encounters;
+  const dvStages = hasSky ? trialStages.filter((s) => /^ro5_dv_\d/.test(s.id)) : [];
   // 층 배지 — 히든 층 중 진입 경로명이 확정된 곳은 ? 대신 그 이름 (사용자 확정 2026-07-26:
   // 미즈키 '짙푸른 요람'은 원더랜드로 진입)
-  const ZONE_BADGE: Record<string, string> = { "rogue_2:zone_7": "원더랜드" };
+  // 쉐이 6~8구역은 순서대로 가는 층이 아니다 — 5층 뒤 6A 시말릉(엔딩 3) / 6B 명멸정(엔딩 4)으로 갈리고, 왕래처가 7층(엔딩 5)
+  // (PRTS 층 표 — 6층 칸에 시말릉·명멸정이 함께, 사용자 확인 2026-10-02 "명멸정이 6B층, 왕래처가 7층")
+  const ZONE_BADGE: Record<string, string> = { "rogue_2:zone_7": "원더랜드", "rogue_5:zone_6": "6A층", "rogue_5:zone_7": "6B층", "rogue_5:zone_8": "7층" };
   const zoneBadge = (z: Zone): string => {
     const custom = ZONE_BADGE[`${data.id}:${z.id}`];
     if (custom) return t(custom);
@@ -1417,17 +1527,18 @@ export default function RogueGuide({ initialTopic }: {
   /* 지도 탭 묶음(험난한 길·조우 전투·시련·추격전·거점전·기타 노드·우연한 만남) —
      종전엔 아래로 열리는 아코디언이었다. 카드로 바꾸고 누르면 모달에서 펼친다
      (사용자 요청 2026-09-20). 카드와 모달이 같은 정의를 쓰도록 여기 한 곳에 모은다. */
-  const mapSections: { id: string; show: boolean; label: string; name: React.ReactNode; cls?: string; count: React.ReactNode; body: React.ReactNode }[] = [
+  // side "s" = 쉐이의 잔식 창에만 (계원 지도판에선 뺀다 — hasSky 주석)
+  const mapSections: { id: string; show: boolean; label: string; name: React.ReactNode; cls?: string; side?: "s"; ico?: string; clr?: string; sel?: string; count: React.ReactNode; body: React.ReactNode }[] = [
     {
       id: "enc",
       show: true,
       label: `${t("우연한 만남")}`,
       name: <>{t("우연한 만남")}</>,
-      count: <>{data.encounters.length}</>,
+      count: <>{gardenEncs.length}</>,
       body: (<>
           <p className="rg-zone-desc">{topic === "rogue_6" ? t("비전투 노드에서 발생하는 이벤트입니다. 출시 직후라 출현 층 정보는 아직 정리되지 않았습니다.") : t("비전투 노드에서 발생하는 이벤트입니다. 출현 층 표기는 위키 실측 기반입니다.")}</p>
           <div className="rg-enc-list">
-            {[...data.encounters]
+            {[...gardenEncs]
               .sort((a, b) => (a.floors?.[0] ?? 99) - (b.floors?.[0] ?? 99) || (a.floors?.length ?? 9) - (b.floors?.length ?? 9) || a.title.localeCompare(b.title, "ko"))
               .map((enc) => (
                 <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
@@ -1479,33 +1590,36 @@ export default function RogueGuide({ initialTopic }: {
       body: (<>
           <p className="rg-zone-desc">{t("각 구역 끝에서 마주치는 강력한 적입니다.")}</p>
           <div className="rg-stage-cards">
-            {orphanBosses.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} boss />)}
+            <StageCardGroups pairs={pairsOf(orphanBosses)} onOpen={setStageOpen} boss />
           </div>
       </>),
     },
     {
       id: "event",
-      show: (evStages.length > 0 || specialStages.length > 0),
+      show: (evStages.length > 0 || specialStages.length > 0 || dvStages.length > 0),
       label: `${t("조우 전투")} · ${t("특수")}`,
       name: <>{t("조우 전투")} · {t("특수")}</>,
-      count: <>{t("작전 {n}개", { n: evStages.length + specialStages.length })}</>,
+      count: <>{t("작전 {n}개", { n: evStages.length + specialStages.length + dvStages.length })}</>,
       body: (<>
           <p className="rg-zone-desc">{t("우연한 만남 등 이벤트에서 발생하는 전투입니다. 카드를 열면 일반/긴급 탭이 있는 경우 전환할 수 있습니다.")}</p>
           <div className="rg-stage-cards">
-            {evStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
-            {specialStages.map((s) => <StageCard key={s.id} pair={pairOf(s)} onOpen={setStageOpen} />)}
+            <StageCardGroups pairs={[...evStages.map((s) => ({ n: s })), ...specialStages.map(pairOf), ...dvStages.map((s) => ({ n: s }))]} onOpen={setStageOpen} />
           </div>
       </>),
     },
     {
       id: "trial",
-      show: trialStages.length > 0,
-      label: `${t("시련·특수 전투")}`,
-      name: <>{t("시련·특수 전투")}</>,
-      count: <>{t("작전 {n}개", { n: trialStages.length })}</>,
+      // 쉐이는 이 묶음이 '명촉대 시련'이다 — 길라잡이 「촛불 사당」의 '지촉인에게 자신을 증명한다'에서 랜덤으로 이어지는 대사냥
+      // 5종(+단좌판). 가운데 명촉대를 끝까지 지켜야 한다. 외나무다리처럼 따로 둔다 (사용자 지시 2026-10-02).
+      // 종전 같은 날엔 '금석경 · 특수 전투'로 잘못 불렀다 — 금석경은 잔식의 특수판이다(위 shiStages 주석).
+      show: (huntZone ? huntStages : trialStages).length > 0,
+      label: huntZone ? t("명촉대 시련") : `${t("시련·특수 전투")}`,
+      name: <>{huntZone ? t("명촉대 시련") : t("시련·특수 전투")}</>,
+      count: <>{t("작전 {n}개", { n: (huntZone ? huntStages : trialStages).length })}</>,
       body: (<>
+          {huntZone && <p className="rg-zone-desc">{t("길라잡이 「촛불 사당」에서 이어지는 시련 작전입니다. 가운데 명촉대에 둔 오퍼레이터를 전투가 끝날 때까지 퇴각시키지 않아야 합니다.")}</p>}
           <div className="rg-stage-cards">
-            {trialStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+            <StageCardGroups pairs={pairsOf(huntZone ? huntStages : trialStages)} onOpen={setStageOpen} />
           </div>
       </>),
     },
@@ -1518,7 +1632,7 @@ export default function RogueGuide({ initialTopic }: {
       body: (<>
           <p className="rg-zone-desc">{t("우연한 만남 등 이벤트에서 발생하는 전투입니다. 카드를 열면 일반/긴급 탭이 있는 경우 전환할 수 있습니다.")}</p>
           <div className="rg-stage-cards">
-            {incidentStages.map((s) => <StageCard key={s.id} pair={pairOf(s)} onOpen={setStageOpen} />)}
+            <StageCardGroups pairs={incidentStages.map(pairOf)} onOpen={setStageOpen} />
           </div>
       </>),
     },
@@ -1531,7 +1645,7 @@ export default function RogueGuide({ initialTopic }: {
       body: (<>
           <p className="rg-zone-desc">{t("행동력이 다 떨어지면 강제로 발생하는 전투입니다. 보스 층에서는 보스 특수판으로 대체됩니다.")}</p>
           <div className="rg-stage-cards">
-            {chaseStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+            <StageCardGroups pairs={pairsOf(chaseStages)} onOpen={setStageOpen} />
           </div>
       </>),
     },
@@ -1544,7 +1658,7 @@ export default function RogueGuide({ initialTopic }: {
       body: (<>
           <p className="rg-zone-desc">{t("난이도(보밀등급) 4 이상에서만 나타나는 '주민' 거점 노드의 전투입니다. 거점을 격파해 '주민'을 옮겨내면 '주민'의 악의를 완전히 없앨 수 있습니다.")}</p>
           <div className="rg-stage-cards">
-            {savageStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+            <StageCardGroups pairs={pairsOf(savageStages)} onOpen={setStageOpen} />
           </div>
       </>),
     },
@@ -1561,10 +1675,66 @@ export default function RogueGuide({ initialTopic }: {
           {duelNode?.func && <p className="rg-zone-desc">{duelNode.func}</p>}
           {duelNode?.desc && <p className="rg-zone-desc">{duelNode.desc}</p>}
           <div className="rg-stage-cards">
-            {duelStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+            <StageCardGroups pairs={pairsOf(duelStages)} onOpen={setStageOpen} />
           </div>
       </>),
     },
+    // 쉐이의 잔식 노드마다 한 장 — 누르면 그 노드의 설명·세부 종류·이벤트, 소란은 전투 맵 (사용자 지시 2026-10-02 "의문 전설 회수
+    // 얘네들이 N층처럼 버튼이 되고 누르면 상세 모달 … 시비경 전투는 소란 노드 눌러야"). 잔식 탭에만.
+    ...(data.skyNodes ?? []).map((nd) => {
+      const encs = data.encounters.filter((e) => e.nodes?.some((n) => n.m === "s" && n.k === nd.id));
+      const battle = nd.id === "BATTLE";
+      const n = battle ? shiStages.length + kinStages.length : encs.length;
+      return {
+        id: `sky:${nd.id}`,
+        side: "s" as const,
+        ico: nd.icon,
+        clr: nd.clr,
+        sel: nd.sel,
+        show: true,
+        label: `${t("쉐이의 잔식")} · ${nd.name}`,
+        name: <Nm name={nd.name} cn={nd.cn} />,
+        count: <>{n > 0 ? (battle ? t("작전 {n}개", { n }) : n) : ""}</>,
+        body: (<>
+            {nd.desc && <p className="rg-zone-desc rg-multiline">{nd.desc}</p>}
+            {nd.subs && <ul className="rg-sky-subs">{nd.subs.map((x) => <li key={x}>{x}</li>)}</ul>}
+            {battle && (shiStages.length > 0 || kinStages.length > 0) && (() => {
+              const tab = !kinStages.length ? "shi" : !shiStages.length ? "kin" : skyBattleTab;
+              const tabs = [
+                { k: "shi" as const, z: realmZone, n: shiStages.length },
+                { k: "kin" as const, z: huntZone, n: kinStages.length },
+              ].filter((x) => x.n > 0);
+              return (
+                <div className="rg-stage-group">
+                  <div className="rg-filterbar rg-mapside rg-sky-tabs" role="tablist">
+                    {tabs.map((x) => (
+                      <button key={x.k} type="button" role="tab" aria-selected={tab === x.k} className={tab === x.k ? "on" : ""}
+                        onClick={() => setSkyBattleTab(x.k)}>
+                        {x.z ? nmText(x.z.name, x.z.cn) : ""} <em>{x.n}</em>
+                      </button>
+                    ))}
+                  </div>
+                  {tab === "kin" && <p className="rg-zone-desc">{t("6B 명멸정의 기이한 공간 「고금교차」로 들어가는 특수판 — 같은 전투의 더 어려운 판입니다.")}</p>}
+                  {/* 카드는 층 창과 같은 한 줄 4장 (사용자 지시 2026-10-03 "N층 작전 맵 카드랑 똑같이") */}
+                  <div className="rg-stage-cards rg-sky-cards"><StageCardGroups pairs={pairsOf(tab === "shi" ? shiStages : kinStages)} onOpen={setStageOpen} /></div>
+                </div>
+              );
+            })()}
+            {encs.length > 0 && (
+              <div className="rg-enc-list">
+                {encs.map((enc) => (
+                  <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
+                    {enc.bg
+                      ? <img className="rg-enc-thumb" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
+                      : <span className="rg-enc-thumb none" aria-hidden />}
+                    <span className="rg-enc-txt"><span className="rg-enc-title"><Nm name={enc.title} cn={enc.cn} /></span></span>
+                  </button>
+                ))}
+              </div>
+            )}
+        </>),
+      };
+    }),
     ];
 
   // 적 → 등장 스테이지 역매핑
@@ -2695,6 +2865,7 @@ export default function RogueGuide({ initialTopic }: {
 
       {!uniHits && view === "map" && (
         <div className="rg-map">
+          <>
 
           {/* 지도판 — 층 카드가 가운데에서 **역아치(∪)**를 그리고, 묶음 카드(조우 전투·기타
               노드·우연한 만남)가 그 왼쪽·오른쪽에 끼어든다 (사용자 지시 2026-09-20).
@@ -2702,7 +2873,7 @@ export default function RogueGuide({ initialTopic }: {
           <div className="rg-mapfield">
           {/* 층 카드 — 가로 일렬, 클릭하면 층 상세 모달 (사용자 확정 2026-07) */}
           <div className="rg-zone-cards">
-          {data.zones.map((z) => {
+          {archZones.map((z) => {
             const pairs = z.variant ? [] : (pairsByZone.get(z.num) ?? []).concat(trialPairsFor(z));
             const zoneBosses = z.variant ? [] : bossStages.filter((s) => s.zone === z.num);
             return (
@@ -2715,23 +2886,47 @@ export default function RogueGuide({ initialTopic }: {
                 {z.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
                 <span className="rg-zone-counts">
                   {pairs.length > 0 && t("작전 {n}개", { n: pairs.length })}
-                  {zoneBosses.length > 0 && ` · ${t("보스 {n}개", { n: zoneBosses.length })}`}
+                  {/* 일반 작전 없이 보스만 있는 층(쉐이 왕래처)은 앞 구분점 없이 — 종전엔 '· 보스 8개'로 나왔다 */}
+                  {zoneBosses.length > 0 && `${pairs.length > 0 ? " · " : ""}${t("보스 {n}개", { n: zoneBosses.length })}`}
                 </span>
               </button>
             );
           })}
           </div>
 
+          {/* 쉐이의 잔식 — 역아치가 파인 위쪽 가운데(4층·5층 사이)에 작은 단추, 누르면 3×3 잔식 지도 창 */}
+          {hasSky && (
+            <button type="button" className="rg-skybtn" onClick={() => setSkyOpen(true)}>
+              {/* 층 카드와 같은 배지 + 이름 (사용자 지시 2026-10-03 "비경을 N층이랑 똑같은 배지로, 밑에다가 쉐이의 잔식").
+                  배경은 층 카드처럼 그림을 옅게 — 시비경에 들어갈 때의 전환 그림 (build-rogue.py --node-icons) */}
+              <img className="rg-zonecard-bg" src={asset(`/rogue/zone/${data.id}_bg_zone_sky_1.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
+              <span className="rg-zone-num">{t("비경")}</span>
+              <span className="rg-zonecard-name">{t("쉐이의 잔식")}</span>
+            </button>
+          )}
+
           {/* 층이 배정되지 않은 보스(험난한 길) — 층 큐레이션이 없는 토픽에서 보스맵이 누락되지 않도록 폴백 */}
           {/* 묶음은 아코디언이 아니라 **카드** — 누르면 모달에서 펼친다 (사용자 요청 2026-09-20) */}
           <div className="rg-sec-cards">
-            {mapSections.filter((sec) => sec.show).map((sec) => (
+            {mapSections.filter((sec) => sec.show && !sec.side).map((sec) => (
               // '▸' 표시는 뺐다 — 지도판 카드에서 오른쪽 아래 개수와 겹쳐 보였다 (사용자 지시 2026-09-25 "필요 없을듯")
               <button key={sec.id} type="button" className="rg-sec-card" onClick={() => { setNtFocus(""); setSecOpen(sec.id); }}>
                 <h3 className={sec.cls}>{sec.name}</h3>
                 <span className="rg-zone-counts">{sec.count}</span>
               </button>
             ))}
+            {/* 층 줄에서 뺀 구역(원더랜드) — 묶음 카드 모양으로, 누르면 층 상세 창 그대로 */}
+            {pocketZones.map((z) => {
+              const nb = bossStages.filter((s) => s.zone === z.num).length;
+              const np = (pairsByZone.get(z.num) ?? []).length;
+              return (
+                <button key={z.id} type="button" className="rg-sec-card" onClick={() => setZoneOpen(z)}>
+                  <h3>{zoneBadge(z)}</h3>
+                  <span className="rg-zone-counts"><Nm name={z.name} cn={z.cn} /><br />
+                    {[np > 0 && t("작전 {n}개", { n: np }), nb > 0 && t("보스 {n}개", { n: nb })].filter(Boolean).join(" · ")}</span>
+                </button>
+              );
+            })}
           </div>
           </div>
 
@@ -2741,6 +2936,7 @@ export default function RogueGuide({ initialTopic }: {
 
 
           {/* 기타 노드 — 전투·우연한 만남 외 노드 타입 설명. 외나무다리 상세에 결투 전투 포함 (사용자 요청 2026-07-18) */}
+          </>
         </div>
       )}
 
@@ -3227,14 +3423,37 @@ export default function RogueGuide({ initialTopic }: {
             </div>
         </ModalWindow>
       )}
+      {/* 쉐이의 잔식 창 — 노드를 누르면 그 노드 창(secOpen)이 위에 겹쳐 뜬다 */}
+      {skyOpen && (
+        <ModalWindow label={t("쉐이의 잔식 (비경)")} className="rg-modal rg-secmodal rg-skymodal" onClose={() => setSkyOpen(false)}>
+          <header className="rg-modal-head">
+            <div><h3>{t("쉐이의 잔식 (비경)")}</h3></div>
+          </header>
+          <p className="rg-zone-desc">{t("계원의 「기이한 공간」으로 들어가는 평면 지도입니다. 기본은 시비경(5×7, 가운데에서 출발)이고, 6B 명멸정의 「고금교차」로 들어가면 금석경(5×5, 왼쪽 가운데에서 출발 — 소란 전투가 더 어려운 판)입니다. 노드를 누르면 그 노드의 이벤트·전투가 나옵니다.")}</p>
+          {/* 인게임 잔식 지도 흉내 — 노드 9종을 3×3 칸에, 칸 사이를 선으로 잇고 이름표는 게임 색(nameBkgClr), 배경은
+              시비경 지도 그림 (사용자 지시 2026-10-03 "총 9개니까 3×3 으로 인게임 흉내 낸 노드맵"). 실제 지도는 판마다 새로
+              만들어져 이 배치는 게임의 한 판이 아니다 — 노드 고르는 단추판이다. */}
+          <div className="rg-skymap" style={{ ["--skybg" as string]: `url(${asset("/rogue/zone/rogue_5_map_0.webp")})` }}>
+            {mapSections.filter((x) => x.show && x.side === "s").map((sec) => (
+              <button key={sec.id} type="button" className="rg-skynode"
+                style={{ ["--nc" as string]: sec.clr ?? "#0d9980", ["--ns" as string]: sec.sel ?? "#32e9c7" }}
+                onClick={() => { setNtFocus(""); setSecOpen(sec.id); }}>
+                {/* 그림 + 이름만 — 개수는 빼고 (사용자 지시 같은 날 "작전 N개 뭐 이런 거 필요 없이 섬네일이랑 노드 이름만 있는 정사각형 버튼") */}
+                <NodeIco id={sec.ico} cls="rg-skynode-ico" />
+                <span className="rg-skynode-name">{sec.name}</span>
+              </button>
+            ))}
+          </div>
+        </ModalWindow>
+      )}
       {/* 지도 탭 묶음 카드의 내용 — 카드와 같은 정의(mapSections)를 그대로 편다 */}
       {secOpen && (() => {
         const sec = mapSections.find((x) => x.id === secOpen);
         return sec ? (
-          <ModalWindow key={sec.id} label={sec.label} className="rg-modal rg-secmodal" onClose={() => { setSecOpen(""); setNtFocus(""); }}>
+          <ModalWindow key={sec.id} label={sec.label} className={`rg-modal rg-secmodal${sec.id === "sky:BATTLE" ? " rg-skybattle" : ""}`} onClose={() => { setSecOpen(""); setNtFocus(""); }}>
             <header className="rg-modal-head">
               <div>
-                <h3 className={sec.cls}>{sec.name}</h3>
+                <h3 className={sec.cls}>{sec.ico ? <><NodeIco id={sec.ico} cls="rg-modal-ico" /><span className="rg-modal-title">{sec.name}</span></> : sec.name}</h3>
                 <span className="rg-modal-zone">{sec.count}</span>
               </div>
             </header>
