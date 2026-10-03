@@ -409,11 +409,6 @@ function fmtYm(locale: Locale, ym: string): string {
 type StoryEventLite = { id: string; name: { ko: string; en?: string; ja?: string }; thumb?: string; thumbEn?: string; thumbJa?: string; unreleased?: boolean; eta?: string };
 const storyEventsList = (storyEventsData as { events: StoryEventLite[] }).events;
 const storyEventById = new Map(storyEventsList.map((event) => [event.id, event]));
-// 미실장(중섭 선행) 이벤트 — 헤더 이벤트 드롭다운 '향후 다가올'에 추정월과 함께 노출 (미래시 ON일 때만).
-// 정렬은 추정월 이른(= 먼저 KR에 올) 순 — 다음에 올 이벤트가 위로.
-const futureEvents = storyEventsList
-  .filter((event) => event.unreleased)
-  .sort((a, b) => (a.eta ?? a.id).localeCompare(b.eta ?? b.id));
 // 섬네일이 없는 이벤트(= 스토리 이벤트가 아닌 **게임 모드**)를 위한 글리프.
 // 벡터 돌파·생존 연산 같은 모드는 story_review_table에 없어 storyEntryPicId 자체가 없다
 // (실측 2026-07-30: act2break는 KR·CN 어느 저장소에도 배너 에셋이 없다).
@@ -451,7 +446,12 @@ const MINOR_EVENT_TYPES = new Set([
 // 방송 워커는 한섭만 주므로 build-events.py 가 받아 둔 중섭 표에서 끝나지 않은 것만 낸다(app/data/cn-running.json).
 // 진행중인지는 여기서 지금 시각으로 가린다. n·thumb 은 [ko, en, ja].
 type CnRunning = { id: string; type?: string; start: string; end: string; n: [string, string, string]; thumb?: [string, string, string]; dex?: 1 };
-const cnRunningEvents = (cnRunningData as { events: CnRunning[] }).events;
+const cnRunningEvents = (cnRunningData as unknown as { events: CnRunning[] }).events;
+// 향후 다가올 이벤트 — 한섭에 아직 안 온 중섭 선행 이벤트 전부(도감 미래시 행 + 재개방 + 공지만 난 것), 중섭 개방 순
+// (= 한섭에 올 순서). build-events.py 가 줄 세워 낸다. 종전엔 stories.json 의 스토리 이벤트 3건만 봤다
+// (사용자 지시 2026-10-03 "목록 꽉 채워줘"). eta = 한섭 추정월.
+type CnFuture = { id: string; n: [string, string, string]; eta?: string; thumb?: [string, string, string]; dex?: 1 };
+const futureEvents = (cnRunningData as unknown as { future?: CnFuture[] }).future ?? [];
 const LOC_IX: Record<Locale, 0 | 1 | 2> = { ko: 0, en: 1, ja: 2 };
 
 
@@ -556,6 +556,8 @@ function EventBadges({ onOpenEvent, includeFuture }: {
   const [gameEvents, setGameEvents] = useState<GameEvent[]>([]);
   const [settled, setSettled] = useState(false); // 워커 응답 여부 — 응답 전엔 스켈레톤으로 슬롯 예약
   const [evOpen, setEvOpen] = useState(false);
+  // '향후 다가올 이벤트'는 접어 둔다 — 열면 펼쳐지는 아코디언 (사용자 지시 2026-10-03)
+  const [futOpen, setFutOpen] = useState(false);
   const evRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setNow(Date.now());
@@ -722,12 +724,20 @@ function EventBadges({ onOpenEvent, includeFuture }: {
             </ul>
           </>}
           {/* 향후 다가올 이벤트 — 아직 KR 미출시(중섭 선행) 이벤트를 순서대로 + 추정월과 함께.
-              2026-09-04 규칙 변경: 미래시를 꺼도 숨기지 않고 흑백(.fut-dim)으로 보여준다. */}
+              2026-09-04 규칙 변경: 미래시를 꺼도 숨기지 않고 흑백(.fut-dim)으로 보여준다.
+              2026-10-03 — 목록이 길어져 제목을 눌러 펼치는 아코디언으로 (기본은 접힘). */}
           {futureEvents.length > 0 && <>
-            <h3 className="event-menu-upcoming">{t("향후 다가올 이벤트")}</h3>
+            <h3 className="event-menu-upcoming">
+              <button type="button" className="event-acc" aria-expanded={futOpen} onClick={() => setFutOpen((o) => !o)}>
+                <span>{t("향후 다가올 이벤트")}</span>
+                <span className="event-acc-n">{futureEvents.length}</span>
+                <span className="event-caret" aria-hidden>▾</span>
+              </button>
+            </h3>
+            {futOpen && <>
             <ul>
               {futureEvents.map((event) => {
-                const name = (locale === "ko" ? event.name.ko : event.name[locale]) ?? event.name.ko;
+                const name = event.n[LOC_IX[locale]] || event.n[0];
                 return (
                   <li key={event.id} className="fut-dim">
                     <span className="event-row-plain">
@@ -739,6 +749,7 @@ function EventBadges({ onOpenEvent, includeFuture }: {
               })}
             </ul>
             <p className="event-menu-note">{t("중국 서버 선행 이벤트예요. 한국 출시일은 미정이며, 표시 월은 중↔한 시차로 추정한 대략적 시점입니다.")}</p>
+            </>}
           </>}
         </div>
       )}

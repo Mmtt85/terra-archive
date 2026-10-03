@@ -863,6 +863,9 @@ button {
   border: 1px solid var(--border-strong);
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
   padding: 10px 12px;
+  /* 향후 다가올 이벤트를 펼치면 화면보다 길어진다 — 상자 안에서 스크롤 (2026-10-03) */
+  max-height: calc(100dvh - var(--header-h, 56px) - 16px);
+  overflow-y: auto;
 }
 .event-menu h3 {
   margin: 0 0 6px;
@@ -876,6 +879,35 @@ button {
   margin-top: 12px;
   padding-top: 10px;
   border-top: 1px solid var(--line);
+}
+/* '향후 다가올 이벤트' 아코디언 제목 — h3 글자 그대로, 줄 전체가 누르는 칸 (2026-10-03) */
+.event-menu .event-acc {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: 0 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.event-menu .event-acc:hover {
+  color: var(--ink);
+}
+.event-menu .event-acc-n {
+  font: 600 11px var(--mono);
+}
+.event-menu .event-acc .event-caret {
+  margin-left: auto;
+  transition: transform 0.15s;
+}
+.event-menu .event-acc[aria-expanded="true"] .event-caret {
+  transform: rotate(180deg);
 }
 .event-menu ul {
   list-style: none;
@@ -16622,16 +16654,16 @@ html.rg-theme .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
 .rg-modal-title {
   min-width: 0;
 }
-/* 노드 종류 글리프 — 상세 모달 제목 왼쪽. 목록보다 조금 크게 (2026-07-29) */
+/* 노드 종류 글리프 — 상세 모달 제목 왼쪽. 목록보다 조금 크게 (2026-07-29) · 크다고 해서 약 85%로 (2026-10-03) */
 .rg-modal-ico {
   flex: none;
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
 }
 .rg-modal-ico.plate {
-  width: 112px;
-  height: 39px;
+  width: 96px;
+  height: 33px;
 }
 /* 노드 종류별 색 (2026-07-29). 클라 스프라이트는 전부 청록 한 벌이고 게임이 런타임에
    색을 입히므로 — 번들 전수 확인 — 여기서도 원판만 돌린다. 흰 글리프는 그대로 남는다.

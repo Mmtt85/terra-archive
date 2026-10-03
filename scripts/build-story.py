@@ -506,6 +506,10 @@ for act in minis:
 # 이 블록을 대체하므로 자연 소멸). 새 CN 이벤트가 잡히면 AI(Claude)가 여기에 번역을
 # 채운다 — 없는 이벤트는 중국어 원문 그대로 나간다. 한자 시제(詩題)류는 KR 공식 관례대로
 # 한자 독음(懷黍離→회서리, 將進酒→장진주)을 따른다.
+# 중섭이 공지만 하고 표에 아직 안 올린 이벤트의 임시 이름 (헤더 '향후 다가올 이벤트'용 — build-events.py).
+# 표에 오르면 id 를 모르는 채로도 같은 원문 이름으로 찾아 이어 쓴다. CN_PROVISIONAL_NAMES 가 있으면 그쪽이 이긴다.
+CN_ANNOUNCED_NAMES = {a["cn"]: a["n"] for a in json.load(open(os.path.join(REPO, "scripts", "cn-announced.json"),
+                                                               encoding="utf-8"))["events"]}
 CN_PROVISIONAL_NAMES = {
     "act49side": {"ko": "사세행", "en": "A Farewell to the Passing Year", "ja": "辞歳行"},  # 辞岁行
     "act50side": {"ko": "포영창정", "en": "Mirage Phalanx", "ja": "泡影蒼霆"},              # 泡影苍霆 (몬스터 헌터 콜라보)
@@ -584,7 +588,8 @@ for act in cn_acts:
                 # 플레이스홀더로 목록에 넣는다. 무인 리포트가 이 WARNING을 잡아 알려준다.
                 print(f"WARNING: cn event 썸네일 없음 — 플레이스홀더 사용: {eid} ({act['name']}) {err}", file=sys.stderr)
                 thumb_path = CN_PLACEHOLDER_THUMB
-    trans = CN_PROVISIONAL_NAMES.get(eid)
+    # 표에 막 오른 이벤트는 공지 때 미리 달아 둔 이름(scripts/cn-announced.json, 중섭 원문 이름으로 찾는다)을 잇는다
+    trans = CN_PROVISIONAL_NAMES.get(eid) or CN_ANNOUNCED_NAMES.get(act["name"].strip())
     if not trans:
         print("untranslated cn event (원문 노출):", eid, act["name"], file=sys.stderr)
     ev_obj = {

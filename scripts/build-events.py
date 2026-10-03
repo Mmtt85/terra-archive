@@ -824,6 +824,58 @@ if cn_act:
         if dex:
             ev["dex"] = 1
         cn_running.append(ev)
+# ── 향후 다가올 이벤트 (헤더 이벤트 목록 맨 아래 접이식) ─────────────────────
+# 사용자 지시 2026-10-03 "향후 다가올 이벤트 목록이 좀 적다 … 목록 꽉 채워줘". 종전엔 헤더가 stories.json 의
+# 미실장 **스토리** 이벤트(3건)만 봐서, 도감에 있는 스토리 없는 중섭 선행 이벤트(벡터 돌파#3·상전이 임계 …)가 빠졌다.
+# ① 도감의 미래시 행 전부 ② 한섭이 아직 안 연 중섭 재개방(원본 도감 이름 + 재개방) ③ 중섭이 공지만 하고 아직 표에
+# 안 올린 이벤트(scripts/cn-announced.json — 표에 같은 이름이 오르면 저절로 빠진다). 줄은 중섭 개방 순(= 한섭에 올
+# 순서), 추정월은 도감과 같은 시차(한섭이 마지막으로 따라온 이벤트의 한↔중 간격)이고 이번 달보다 앞서지 않는다.
+cn_future = []
+if cn_act:
+    _now = datetime.now(KST).timestamp()
+    _row = {loc: {r["id"]: r for r in rows[loc]} for loc in LOCALES}
+    _cb = cn_act["basicInfo"]
+    _pairs = [(kr_basic_all[a]["startTime"], b["startTime"]) for a, b in _cb.items()
+              if a in kr_basic_all and b.get("hasStage") and not b.get("isReplicate")
+              and kr_basic_all[a].get("startTime") and b.get("startTime")]
+    _latest = max(_pairs) if _pairs else (0, 0)
+    _gap = _latest[0] - _latest[1]
+    _eta = lambda ts: max(datetime.fromtimestamp(ts + _gap, KST).strftime("%Y-%m"),
+                          datetime.fromtimestamp(_now, KST).strftime("%Y-%m"))
+    _fut = []   # (중섭 개방 시각, 항목)
+    for r in rows["ko"]:
+        if not r.get("fut"):
+            continue
+        aid = r["id"]
+        ev = {"id": aid, "n": [_row[loc].get(aid, r)["n"] for loc in LOCALES], "dex": 1}
+        if r.get("eta"):
+            ev["eta"] = r["eta"]
+        th = [(_row[loc].get(aid) or {}).get("thumb") for loc in LOCALES]
+        if any(th):
+            ev["thumb"] = [t or th[0] for t in th]
+        _fut.append(((_cb.get(aid) or {}).get("startTime") or 0, ev))
+    for aid, info in _cb.items():
+        if (aid in kr_basic_all or not info.get("isReplicate") or (info.get("startTime") or 0) <= _latest[1]
+                or _CN_MINOR.search(info.get("type") or "")):
+            continue
+        origin = re.sub(r"sre$", "side", aid)
+        if origin not in _row["ko"]:
+            print(f"  ⚠ 중섭 재개방 {aid}({info.get('name')}) — 원본 도감 행이 없어 '향후 다가올'에 안 싣는다")
+            continue
+        ev = {"id": aid, "n": [(_row[loc].get(origin) or _row["ko"][origin])["n"] + _RERUN[loc] for loc in LOCALES],
+              "eta": _eta(info["startTime"])}
+        th = [(_row[loc].get(origin) or {}).get("thumb") for loc in LOCALES]
+        if any(th):
+            ev["thumb"] = [t or th[0] for t in th]
+        _fut.append((info["startTime"], ev))
+    _cn_names = {(v.get("name") or "").strip() for v in _cb.values()}
+    for a in load(os.path.join(REPO, "scripts", "cn-announced.json"))["events"]:
+        if a["cn"] in _cn_names:
+            continue
+        ts = datetime.fromisoformat(a["start"]).timestamp()
+        _fut.append((ts, {"id": a["id"], "n": [a["n"].get(loc) or a["n"]["ko"] for loc in LOCALES], "eta": _eta(ts)}))
+    cn_future = [ev for _, ev in sorted(_fut, key=lambda x: x[0])]
 _cr_path = os.path.join(DATA, "cn-running.json")
-json.dump({"events": cn_running}, open(_cr_path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-print(f"  cn-running.json  중섭 진행·예정 {len(cn_running)}건")
+json.dump({"events": cn_running, "future": cn_future}, open(_cr_path, "w", encoding="utf-8"),
+          ensure_ascii=False, separators=(",", ":"))
+print(f"  cn-running.json  중섭 진행·예정 {len(cn_running)}건 · 향후 다가올 {len(cn_future)}건")
