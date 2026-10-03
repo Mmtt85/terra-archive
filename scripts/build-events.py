@@ -862,8 +862,9 @@ if cn_act:
         if origin not in _row["ko"]:
             print(f"  ⚠ 중섭 재개방 {aid}({info.get('name')}) — 원본 도감 행이 없어 '향후 다가올'에 안 싣는다")
             continue
+        # 재개방은 도감에 따로 행이 없다 — 누르면 원본 이벤트 상세를 연다(open)
         ev = {"id": aid, "n": [(_row[loc].get(origin) or _row["ko"][origin])["n"] + _RERUN[loc] for loc in LOCALES],
-              "eta": _eta(info["startTime"])}
+              "eta": _eta(info["startTime"]), "open": origin}
         th = [(_row[loc].get(origin) or {}).get("thumb") for loc in LOCALES]
         if any(th):
             ev["thumb"] = [t or th[0] for t in th]

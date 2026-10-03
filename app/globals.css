@@ -863,9 +863,11 @@ button {
   border: 1px solid var(--border-strong);
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
   padding: 10px 12px;
-  /* 향후 다가올 이벤트를 펼치면 화면보다 길어진다 — 상자 안에서 스크롤 (2026-10-03) */
-  max-height: calc(100dvh - var(--header-h, 56px) - 16px);
+  /* 향후 다가올 이벤트를 펼치면 화면보다 길어진다 — 화면 높이 절반까지, 넘치면 상자 안에서 스크롤
+     (사용자 지시 2026-10-03 "드랍다운 리스트는 화면 높이 절반정도의 길이로") */
+  max-height: 50dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .event-menu h3 {
   margin: 0 0 6px;

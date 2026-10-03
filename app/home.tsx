@@ -450,7 +450,8 @@ const cnRunningEvents = (cnRunningData as unknown as { events: CnRunning[] }).ev
 // 향후 다가올 이벤트 — 한섭에 아직 안 온 중섭 선행 이벤트 전부(도감 미래시 행 + 재개방 + 공지만 난 것), 중섭 개방 순
 // (= 한섭에 올 순서). build-events.py 가 줄 세워 낸다. 종전엔 stories.json 의 스토리 이벤트 3건만 봤다
 // (사용자 지시 2026-10-03 "목록 꽉 채워줘"). eta = 한섭 추정월.
-type CnFuture = { id: string; n: [string, string, string]; eta?: string; thumb?: [string, string, string]; dex?: 1 };
+// 누르면 이벤트 상세 — 도감에 행이 있으면(dex) 그 id, 재개방은 원본 이벤트(open). 공지만 난 것은 상세가 없다.
+type CnFuture = { id: string; n: [string, string, string]; eta?: string; thumb?: [string, string, string]; dex?: 1; open?: string };
 const futureEvents = (cnRunningData as unknown as { future?: CnFuture[] }).future ?? [];
 const LOC_IX: Record<Locale, 0 | 1 | 2> = { ko: 0, en: 1, ja: 2 };
 
@@ -738,12 +739,20 @@ function EventBadges({ onOpenEvent, includeFuture }: {
             <ul>
               {futureEvents.map((event) => {
                 const name = event.n[LOC_IX[locale]] || event.n[0];
+                const target = event.open ?? (event.dex ? event.id : undefined);
+                const body = (
+                  <span className="event-row-plain">
+                    <span className="event-row-name">{name}</span>
+                    {event.eta && <small>{t("{ym}쯤 예정 (추정)", { ym: fmtYm(locale, event.eta) })}</small>}
+                  </span>
+                );
                 return (
                   <li key={event.id} className="fut-dim">
-                    <span className="event-row-plain">
-                      <span className="event-row-name">{name}</span>
-                      {event.eta && <small>{t("{ym}쯤 예정 (추정)", { ym: fmtYm(locale, event.eta) })}</small>}
-                    </span>
+                    {/* 미실장 이벤트 상세는 도감에 이미 있다 — 다른 줄처럼 눌러서 연다 (사용자 지시 2026-10-03) */}
+                    {onOpenEvent && target
+                      ? <button type="button" className="event-row-btn"
+                          onClick={() => onOpenEvent(target)} title={t("이벤트 가이드에서 보기")}>{body}</button>
+                      : body}
                   </li>
                 );
               })}
