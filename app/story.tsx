@@ -7,7 +7,7 @@
 // 본문의 인물·용어는 점선 밑줄로 표시하고, 마우스오버(데스크탑)·탭(모바일)하면 설명 카드가
 // 뜬다 (`useEntityPeek` — 2026-07-25에 종전 오른쪽 참조 레일을 대체).
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { asset } from "./assets";
+import { asset, storyCutUrl } from "./assets";
 import { Dropdown } from "./dropdown";
 import { scrollMainTop } from "./scroll";
 // 스샷 레이더 (/stories 설치, 2026-07-24) — 게임 전문 대사 화면을 인식해 해당 에피소드로 이동
@@ -43,6 +43,11 @@ import loreIndexData from "./data/eventlore-index.json";
 import { rich, useI18n, type Locale } from "./i18n";
 import { ModalWindow } from "./modal-window";
 const SceneMode = lazy(() => import("./story-vn"));
+// 요약 본문 그림 — 스토리 CG(/story/cut/)는 캐시 키를 붙인다 (assets.ts CUT_VER — 같은 이름으로 내용이 바뀐 CG)
+const summaryImg = (src: string) => {
+  const m = /^\/story\/cut\/(.+)\.webp$/.exec(src);
+  return m ? storyCutUrl(decodeURIComponent(m[1])) : asset(src);
+};
 import type { LoreEvent } from "./eventlore";
 import { normSearch, useSearchInput } from "./search";
 import type { AuSnap } from "./story-audio";
@@ -716,7 +721,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
             const cutDim = imageDims[cutSrc];
             return (
               <figure key={i} className="sc-cut">
-                <img src={asset(cutSrc)} alt="" loading="lazy" decoding="async" width={cutDim?.[0]} height={cutDim?.[1]} />
+                <img src={storyCutUrl(ln.img)} alt="" loading="lazy" decoding="async" width={cutDim?.[0]} height={cutDim?.[1]} />
               </figure>
             );
           }
@@ -1063,7 +1068,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
                 const dim = imageDims[block.src];
                 return (
                   <figure key={index} data-idx={index}>
-                    <img src={asset(block.src)} alt={block.cap ?? ""} loading="lazy" decoding="async"
+                    <img src={summaryImg(block.src)} alt={block.cap ?? ""} loading="lazy" decoding="async"
                       width={dim?.[0]} height={dim?.[1]} />
                     {block.cap && <figcaption>{block.cap}</figcaption>}
                   </figure>
@@ -1081,7 +1086,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
                 const dim = imageDims[block.src];
                 return (
                   <figure key={index} className={`story-deco story-deco-${block.side ?? "right"}`}>
-                    <img src={asset(block.src)} alt={block.cap ?? ""} loading="lazy" decoding="async"
+                    <img src={summaryImg(block.src)} alt={block.cap ?? ""} loading="lazy" decoding="async"
                       width={dim?.[0]} height={dim?.[1]} />
                     {block.cap && <figcaption>{block.cap}</figcaption>}
                   </figure>

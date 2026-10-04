@@ -9,7 +9,7 @@
 // data-hashswap 가리개 + useLayoutEffect 로 맞춘다 (new-screen 점검표 §1).
 
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { asset } from "./assets";
+import { asset, storyCutUrl } from "./assets";
 import { useI18n } from "./i18n";
 import { ModalWindow } from "./modal-window";
 import { normSearch, useSearchInput } from "./search";
@@ -64,7 +64,7 @@ const writeSpoil = (on: boolean) => {
 const storyHref = (base: string, id: string, ep = 1) => `${base}/stories#story-${id}${ep > 1 ? `/ep${ep}` : ""}`;
 // 링크는 새 탭·크롤러용으로 남기고, 그냥 누르면 페이지를 넘기지 않고 그 자리의 동작(오퍼 상세 모달)만
 const plainClick = (event: React.MouseEvent) => !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0);
-const cutSrc = (n: string) => asset(`/story/cut/${encodeURIComponent(n)}.webp`);
+const cutSrc = (n: string) => storyCutUrl(n);
 const spriteSrc = (c: GChar, tail: string) => asset(`/story/sprite/${encodeURIComponent(c.id + tail)}.webp`);
 const viewFromHash = (h: string): View => (VIEWS.includes(h.replace(/^#/, "") as View) ? (h.replace(/^#/, "") as View) : "cg");
 // 해시만 바꾼다 — location.hash 대입은 vinext RSC 내비게이션을 타서 정적 배포에서 무한 재시도에 빠진다 (점검표 §2)

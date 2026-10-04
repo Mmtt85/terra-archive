@@ -53,6 +53,9 @@ export const PORTAL_TILES: PortalTile[] = [
   // 시뮬레이터 상자와 같은 4칸 구성이 된다.
   { id: "item", label: "아이템 도감", tab: "item", area: "dex", kind: "plate", group: "dex",
     desc: "아이템 1,400여 종의 설명·용도·획득처", icon: "◇" },
+  // 갤러리 — 헤더 메뉴 도감 묶음과 같은 구성 (사용자 지시 2026-10-04 "홈화면에 도감 메뉴에도 갤러리 추가")
+  { id: "gallery", label: "갤러리", tab: "gallery", area: "dex", kind: "plate", group: "dex",
+    desc: "스토리 CG·스탠딩·오퍼 일러스트 모아 보기", icon: "▧" },
   // ── 시뮬레이터 묶음 (헤더 메뉴와 같은 구성 + 작전 시뮬레이터) ──
   { id: "recruit", label: "공개채용 도우미", tab: "recruit", area: "sim", kind: "plate", group: "sim",
     desc: "공개모집 태그 조합으로 확정·고성급 탐색", icon: "◎" },

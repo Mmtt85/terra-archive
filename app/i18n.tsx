@@ -3820,6 +3820,7 @@ const D: Record<string, Pair> = {
   "요리 조합·제작 재료·지역과 조우 선택지": ["Recipes, materials, areas and encounter choices", "料理レシピ・製作素材・エリアと遭遇の選択肢"],
   "적 1,500여 종의 스탯·능력과 등장 작전": ["Stats, abilities and appearances for 1,500+ enemies", "1,500種以上の敵のステータス・能力と出現作戦"],
   "아이템 1,400여 종의 설명·용도·획득처": ["Descriptions, uses and sources for 1,400+ items", "1,400種以上のアイテムの説明・用途・入手先"],
+  "스토리 CG·스탠딩·오퍼 일러스트 모아 보기": ["Story CGs, sprites and operator artwork", "ストーリーCG・立ち絵・オペレーターイラスト"],
   "적이 언제 어디서 나와 어디로 가는지 재생": ["When and where enemies spawn, and where they go", "敵がいつどこに現れどこへ向かうかを再生"],
 };
 

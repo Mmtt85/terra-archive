@@ -15,6 +15,13 @@
 //   런타임 분기(location.hostname 등)로 하면 프리렌더와 값이 갈라져 하이드레이션이 깨진다.
 export const ASSET_BASE = __ASSET_BASE__;
 
+/** 스토리 CG(/story/cut/<이름>.webp) 캐시 키 — 파일명이 같은 채 내용이 바뀔 때 올린다. R2 엣지·브라우저가 30일 붙드는
+ *  옛 그림을 새 키로 우회한다 (dex-paths.ts MAP_VER 와 같은 이유).
+ *  20261004: 7월에 중섭 미러에서 받아 중국어로 남아 있던 글자 박힌 CG 38장(메인 스토리 장 카드 등)을 한섭판으로 교체.
+ *  ⚠ 올리기 전에 R2 동기화(배포)가 끝나 있어야 한다 — 먼저 열면 옛 그림이 새 키로 30일 박힌다. */
+export const CUT_VER = "20261004";
+export const storyCutUrl = (name: string) => `${asset(`/story/cut/${encodeURIComponent(name)}.webp`)}?v=${CUT_VER}`;
+
 /** 루트 상대 에셋 경로 → R2 URL. 이미 절대 URL이면 그대로 돌려준다.
  *  버킷은 assets/(사이트 에셋 — r2-sync 관할)와 uploads/(수동 업로드)로 나뉜다 (2026-07-27). */
 export function asset(path: string): string {

@@ -23,7 +23,7 @@
 //   **넘어온 순간**에만 울린다. 브라우저 자동재생 정책 때문에 리더기를 처음 누를 때 소리가 켜진다.
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { asset } from "./assets";
+import { asset, storyCutUrl } from "./assets";
 import { useI18n } from "./i18n";
 import type { ScriptEp, VnSnap } from "./story";
 import { getSound, setSound, SOUND_DEFAULT, storyAudio, subscribeSound, type AuSnap } from "./story-audio";
@@ -236,7 +236,7 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine
   // 리더기를 벗어나면(화 이동·보기 전환·창 닫기) 멈춘다 — 다음 화는 새로 마운트되며 제 곡을 건다
   useEffect(() => () => storyAudio.silence(), []);
 
-  const cutSrc = stage.cut ? asset(`/story/cut/${stage.cut}.webp`) : null;
+  const cutSrc = stage.cut ? storyCutUrl(stage.cut) : null;
   const bgSrc = stage.bg ? asset(`/story/bg/${stage.bg}.webp`) : null;
   const atEnd = idx >= last;
 
