@@ -168,6 +168,13 @@ $$;
 -- 목록은 **자르지 않고 전부** 보낸다 — 어드민이 상위 5·10·20·50·100·전체를 고른다 (사용자 지시 2026-10-04).
 -- 세션 타임라인만 한 번에 최대 5,000개.
 
+-- 기간의 시작 시각 — p_days 일 전부터. **0 이면 오늘(KST 0시 00분)부터** (사용자 지시 2026-10-04 "오늘 하루 방문자도")
+create or replace function public.visits_from(p_days int) returns timestamptz
+language sql stable as $$
+  select case when p_days <= 0 then date_trunc('day', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul'
+              else now() - make_interval(days => p_days) end
+$$;
+
 -- 화면 조각을 화면 단위로 합친 것 + 세션 속 순번·마지막 여부
 create or replace function public.visits_views(p_from timestamptz)
 returns table (session uuid, seq int, n int, last boolean, path text, hash text, t0 int,
@@ -192,7 +199,7 @@ $$;
 create or replace function public.visits_summary(p_days int default 30, p_human boolean default true)
 returns json language sql stable as $$
   with v as (
-    select * from public.visits_views(now() - make_interval(days => p_days) - interval '1 day')
+    select * from public.visits_views(public.visits_from(p_days) - interval '1 day')
   ),
   sh as (
     select v.session, bool_or(v.interacted) as human, count(*) as views, sum(v.active_ms) as active_ms
@@ -203,7 +210,7 @@ returns json language sql stable as $$
            (vs.started_at at time zone 'Asia/Seoul') as kst,
            coalesce(sh.human, false) as human, coalesce(sh.views, 0) as views, coalesce(sh.active_ms, 0) as active_ms
     from public.visit_session vs left join sh on sh.session = vs.id
-    where vs.started_at >= now() - make_interval(days => p_days) and vs.env = 'live'
+    where vs.started_at >= public.visits_from(p_days) and vs.env = 'live'
       and (not p_human or coalesce(sh.human, false))
   ),
   sv as (select v.* from v join s on s.id = v.session)
@@ -213,7 +220,7 @@ returns json language sql stable as $$
         'active_ms', coalesce(sum(active_ms), 0), 'revisit', count(*) filter (where revisit),
         'bounce', count(*) filter (where views <= 1),
         'bots', (select count(*) from public.visit_session x left join sh on sh.session = x.id
-                 where x.started_at >= now() - make_interval(days => p_days) and x.env = 'live' and not coalesce(sh.human, false)))
+                 where x.started_at >= public.visits_from(p_days) and x.env = 'live' and not coalesce(sh.human, false)))
       from s),
     'days', (select coalesce(json_agg(d order by d.day), '[]') from (
         select kst::date as day, count(*) as sessions, count(distinct visitor) as visitors,
@@ -265,13 +272,13 @@ create or replace function public.visits_sessions(p_days int default 7, p_human 
   p_src text default null, p_landing text default null, p_limit int default 100)
 returns json language sql stable as $$
   with v as (
-    select * from public.visits_views(now() - make_interval(days => p_days) - interval '1 day')
+    select * from public.visits_views(public.visits_from(p_days) - interval '1 day')
   ),
   s as (
     select vs.*, public.visit_src(vs.ref_host) as src, coalesce(h.human, false) as human
     from public.visit_session vs
     left join (select session, bool_or(interacted) as human from v group by 1) h on h.session = vs.id
-    where vs.started_at >= now() - make_interval(days => p_days) and vs.env = 'live'
+    where vs.started_at >= public.visits_from(p_days) and vs.env = 'live'
       and (not p_human or coalesce(h.human, false))
       and (p_src is null or public.visit_src(vs.ref_host) = p_src)
       and (p_landing is null or public.visit_path(split_part(vs.landing, '#', 1)) = p_landing)

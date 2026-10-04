@@ -91,38 +91,64 @@ function niceMax(v: number): number {
   return [1, 2, 2.5, 5, 10].map((m) => m * p).find((m) => m >= v) ?? v;
 }
 
-/** 일별 꺾은선 — 빈 날은 0으로 채운다 */
-function LineChart({ days, series }: { days: string[]; series: { name: string; cls: string; values: number[] }[] }) {
+/** 일별 꺾은선 — 빈 날은 0으로 채운다. 날짜 칸에 올리면(폰은 터치) 그날의 정확한 숫자 (사용자 지시 2026-10-04) */
+const WEEK = "일월화수목금토";
+function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), tip }: {
+  days: string[]; series: { name: string; cls: string; values: number[] }[];
+  fmt?: (label: string) => string;
+  /** 숫자 상자의 머리글 — 기본은 '10/03 (금)' */
+  tip?: (label: string) => string;
+}) {
+  const [hi, setHi] = useState<number | null>(null);
   const W = 960, H = 230, L = 44, R = 12, T = 12, B = 28;
   const max = niceMax(Math.max(1, ...series.flatMap((s) => s.values)));
   const n = days.length;
   const x = (i: number) => L + (n <= 1 ? (W - L - R) / 2 : (i / (n - 1)) * (W - L - R));
   const y = (v: number) => T + (1 - v / max) * (H - T - B);
   const every = Math.max(1, Math.ceil(n / 12));
+  const step = n <= 1 ? W - L - R : (W - L - R) / (n - 1);
+  const head = tip ?? ((d: string) => {
+    const dt = new Date(`${d.slice(0, 10)}T00:00:00Z`);
+    return Number.isNaN(dt.getTime()) ? d : `${d.slice(5, 10).replace("-", "/")} (${WEEK[dt.getUTCDay()]})`;
+  });
   return (
     <div className="vz-chart">
       <div className="vz-legend">
         {series.map((s) => <span key={s.name} className={s.cls}><i />{s.name}</span>)}
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="일별 추이">
-        {[0, 0.25, 0.5, 0.75, 1].map((f) => (
-          <g key={f} className="vz-grid">
-            <line x1={L} x2={W - R} y1={y(max * f)} y2={y(max * f)} />
-            <text x={L - 6} y={y(max * f) + 4} textAnchor="end">{num(Math.round(max * f))}</text>
-          </g>
-        ))}
-        {days.map((d, i) => (i % every === 0 || i === n - 1) && (
-          <text key={d} className="vz-axis" x={x(i)} y={H - 8} textAnchor={i === n - 1 && n > 1 ? "end" : i === 0 && n > 1 ? "start" : "middle"}>{d.slice(5).replace("-", "/")}</text>
-        ))}
-        {series.map((s) => (
-          <g key={s.name} className={`vz-series ${s.cls}`}>
-            <polyline points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} />
-            {s.values.map((v, i) => (
-              <circle key={i} cx={x(i)} cy={y(v)} r={n > 45 ? 1.6 : 2.6}><title>{`${days[i]} · ${s.name} ${num(v)}`}</title></circle>
-            ))}
-          </g>
-        ))}
-      </svg>
+      <div className="vz-plot">
+        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="추이" onMouseLeave={() => setHi(null)}>
+          {[0, 0.25, 0.5, 0.75, 1].map((f) => (
+            <g key={f} className="vz-grid">
+              <line x1={L} x2={W - R} y1={y(max * f)} y2={y(max * f)} />
+              <text x={L - 6} y={y(max * f) + 4} textAnchor="end">{num(Math.round(max * f))}</text>
+            </g>
+          ))}
+          {days.map((d, i) => (i % every === 0 || i === n - 1) && (
+            <text key={d} className="vz-axis" x={x(i)} y={H - 8} textAnchor={i === n - 1 && n > 1 ? "end" : i === 0 && n > 1 ? "start" : "middle"}>{fmt(d)}</text>
+          ))}
+          {hi != null && <line className="vz-guide" x1={x(hi)} x2={x(hi)} y1={T} y2={H - B} />}
+          {series.map((s) => (
+            <g key={s.name} className={`vz-series ${s.cls}`}>
+              <polyline points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} />
+              {s.values.map((v, i) => (
+                <circle key={i} cx={x(i)} cy={y(v)} r={i === hi ? 4.5 : n > 45 ? 1.6 : 2.6} />
+              ))}
+            </g>
+          ))}
+          {/* 날짜 칸 전체가 올림 영역 — 작은 점을 정확히 노리지 않아도 된다 */}
+          {days.map((d, i) => (
+            <rect key={d} className="vz-hit" x={x(i) - step / 2} y={T} width={step} height={H - T - B}
+                  onMouseEnter={() => setHi(i)} onPointerDown={() => setHi(i)} />
+          ))}
+        </svg>
+        {hi != null && (
+          <div className={`vz-tip${x(hi) > W * 0.62 ? " left" : ""}`} style={{ left: `${(x(hi) / W) * 100}%` }}>
+            <b>{head(days[hi])}</b>
+            {series.map((s) => <span key={s.name} className={s.cls}><i />{s.name} <em>{num(s.values[hi])}</em></span>)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -342,7 +368,7 @@ function SessionLine({ s }: { s: SessRow }) {
 }
 
 export function VisitsPanel() {
-  const [days, setDays] = useState<7 | 30 | 90 | 365>(30);
+  const [days, setDays] = useState<0 | 7 | 30 | 90 | 365>(0);   // 0 = 오늘 (KST 0시 00분부터) — 기본 (사용자 지시 2026-10-04)
   const [human, setHuman] = useState(true);
   const [data, setData] = useState<Summary | null>(null);
   const [trend, setTrend] = useState<TrendRow[] | null>(null);
@@ -362,10 +388,23 @@ export function VisitsPanel() {
   const [status, setStatus] = useState("");
   const [missing, setMissing] = useState(false);
   const [tick, setTick] = useState(0);
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null);
+  const auto = tick > 0 && loadedAt != null;   // 자동·수동 새로고침 — 화면이 출렁이지 않게 '불러오는 중'을 띄우지 않는다
+
+  // 켜 둔 동안 5분마다 새로고침 (사용자 지시 2026-10-04). 탭이 가려져 있으면 쉬었다가, 다시 보일 때 5분이 지났으면 곧바로.
+  useEffect(() => {
+    const EVERY = 5 * 60_000;
+    let last = Date.now();
+    const bump = () => { last = Date.now(); setTick((n) => n + 1); };
+    const timer = setInterval(() => { if (document.visibilityState === "visible" && Date.now() - last >= EVERY) bump(); }, 15_000);
+    const onVis = () => { if (document.visibilityState === "visible" && Date.now() - last >= EVERY) bump(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", onVis); };
+  }, []);
 
   useEffect(() => {
     let alive = true;
-    setStatus("불러오는 중…");
+    if (!auto) setStatus("불러오는 중…");
     const fail = (e: unknown) => {
       if (!alive) return;
       if ((e as Error).message === "not-configured") { setMissing(true); setStatus(""); }
@@ -373,10 +412,10 @@ export function VisitsPanel() {
     };
     if (days === 365) {
       rpc<TrendRow[]>("visits_trend", { p_days: 365 })
-        .then((t) => { if (alive) { setTrend(t); setStatus(""); } }).catch(fail);
+        .then((t) => { if (alive) { setTrend(t); setStatus(""); setLoadedAt(new Date()); } }).catch(fail);
     } else {
       rpc<Summary>("visits_summary", { p_days: days, p_human: human })
-        .then((d) => { if (alive) { setData(d); setStatus(""); } }).catch(fail);
+        .then((d) => { if (alive) { setData(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail);
     }
     return () => { alive = false; };
   }, [days, human, tick]);
@@ -406,14 +445,15 @@ export function VisitsPanel() {
   return (
     <section className="vz">
       <div className="admin-tools vz-controls">
-        {([7, 30, 90, 365] as const).map((d) => (
-          <button key={d} className={days === d ? "selected" : ""} onClick={() => setDays(d)}>{d === 365 ? "1년(일별 집계)" : `${d}일`}</button>
+        {([0, 7, 30, 90, 365] as const).map((d) => (
+          <button key={d} className={days === d ? "selected" : ""} onClick={() => setDays(d)}>{d === 0 ? "오늘" : d === 365 ? "1년(일별 집계)" : `${d}일`}</button>
         ))}
         <button className={human ? "selected" : ""} onClick={() => setHuman((h) => !h)} disabled={days === 365}
                 title="세션 동안 스크롤·클릭·터치·키 입력이 한 번도 없으면 사람이 아닌 것으로 본다 (JS 를 도는 위장 크롤러 거르기)">
           {human ? "사람만" : "봇 포함"}
         </button>
         <button onClick={() => setTick((n) => n + 1)}>새로고침</button>
+        {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · 5분마다 자동</span>}
       </div>
       {status && <p className="admin-status">{status}</p>}
 
@@ -442,12 +482,28 @@ export function VisitsPanel() {
             <div><b>{num(t.bots)}</b><span>거른 세션(조작 없음)</span></div>
           </div>
 
-          <h3 className="vz-h">일별 추이</h3>
-          <LineChart days={filled.map((d) => d.day)} series={[
-            { name: "방문자", cls: "s1", values: filled.map((d) => d.visitors) },
-            { name: "세션", cls: "s2", values: filled.map((d) => d.sessions) },
-            { name: "화면 조회", cls: "s3", values: filled.map((d) => d.views) },
-          ]} />
+          {days === 0 ? (() => {
+            // 오늘 — 시간대별 세션 (KST 0시~지금). hours 는 [요일, 시, 세션] 이고 오늘 하루치뿐이다
+            const nowHour = new Date(Date.now() + 9 * 3600_000).getUTCHours();
+            const perHour = Array<number>(nowHour + 1).fill(0);
+            for (const [, h, n] of data.hours) if (h <= nowHour) perHour[h] += n;
+            return (
+              <>
+                <Head title="오늘 시간대별" sub="KST 0시 00분부터 지금까지, 시작 시각 기준 세션 수" />
+                <LineChart days={perHour.map((_, h) => String(h))} fmt={(h) => `${h}시`} tip={(h) => `오늘 ${h}시대`}
+                           series={[{ name: "세션", cls: "s2", values: perHour }]} />
+              </>
+            );
+          })() : (
+            <>
+              <h3 className="vz-h">일별 추이</h3>
+              <LineChart days={filled.map((d) => d.day)} series={[
+                { name: "방문자", cls: "s1", values: filled.map((d) => d.visitors) },
+                { name: "세션", cls: "s2", values: filled.map((d) => d.sessions) },
+                { name: "화면 조회", cls: "s3", values: filled.map((d) => d.views) },
+              ]} />
+            </>
+          )}
 
           <div className="vz-cols">
             <div>
