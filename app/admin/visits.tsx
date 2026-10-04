@@ -391,14 +391,17 @@ export function VisitsPanel() {
   const [missing, setMissing] = useState(false);
   const [tick, setTick] = useState(0);
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
-  const auto = tick > 0 && loadedAt != null;   // 자동·수동 새로고침 — 화면이 출렁이지 않게 '불러오는 중'을 띄우지 않는다
+  // 받아오는 중 표시 (사용자 지시 2026-10-04) — 요약·세션 두 갈래 중 하나라도 돌면 새로고침 버튼이 '불러오는 중'으로 바뀐다
+  const [loadMain, setLoadMain] = useState(false);
+  const [loadSess, setLoadSess] = useState(false);
+  const busy = loadMain || loadSess;
 
-  // 켜 둔 동안 5분마다 새로고침 (사용자 지시 2026-10-04). 탭이 가려져 있으면 쉬었다가, 다시 보일 때 5분이 지났으면 곧바로.
+  // 켜 둔 동안 1분마다 새로고침 (사용자 지시 2026-10-04, 5분 → 1분). 탭이 가려져 있으면 쉬었다가, 다시 보일 때 1분이 지났으면 곧바로.
   useEffect(() => {
-    const EVERY = 5 * 60_000;
+    const EVERY = 60_000;
     let last = Date.now();
     const bump = () => { last = Date.now(); setTick((n) => n + 1); };
-    const timer = setInterval(() => { if (document.visibilityState === "visible" && Date.now() - last >= EVERY) bump(); }, 15_000);
+    const timer = setInterval(() => { if (document.visibilityState === "visible" && Date.now() - last >= EVERY) bump(); }, 5_000);
     const onVis = () => { if (document.visibilityState === "visible" && Date.now() - last >= EVERY) bump(); };
     document.addEventListener("visibilitychange", onVis);
     return () => { clearInterval(timer); document.removeEventListener("visibilitychange", onVis); };
@@ -406,18 +409,19 @@ export function VisitsPanel() {
 
   useEffect(() => {
     let alive = true;
-    if (!auto) setStatus("불러오는 중…");
+    setLoadMain(true);
     const fail = (e: unknown) => {
       if (!alive) return;
       if ((e as Error).message === "not-configured") { setMissing(true); setStatus(""); }
       else setStatus(String((e as Error).message ?? e));
     };
+    const done = () => { if (alive) setLoadMain(false); };
     if (days === 365) {
       rpc<TrendRow[]>("visits_trend", { p_days: 365 })
-        .then((t) => { if (alive) { setTrend(t); setStatus(""); setLoadedAt(new Date()); } }).catch(fail);
+        .then((t) => { if (alive) { setTrend(t); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
     } else {
       rpc<Summary>("visits_summary", { p_days: days, p_human: human })
-        .then((d) => { if (alive) { setData(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail);
+        .then((d) => { if (alive) { setData(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
     }
     return () => { alive = false; };
   }, [days, human, tick]);
@@ -425,8 +429,10 @@ export function VisitsPanel() {
   useEffect(() => {
     if (days === 365) return;
     let alive = true;
+    setLoadSess(true);
     rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), p_human: human, p_src: srcFilter || null, p_limit: limit })
-      .then((s) => { if (alive) setSessions(s); }).catch(() => { if (alive) setSessions(null); });
+      .then((s) => { if (alive) setSessions(s); }).catch(() => { if (alive) setSessions(null); })
+      .finally(() => { if (alive) setLoadSess(false); });
     return () => { alive = false; };
   }, [days, human, srcFilter, limit, tick]);
 
@@ -454,8 +460,11 @@ export function VisitsPanel() {
                 title="세션 동안 스크롤·클릭·터치·키 입력이 한 번도 없으면 사람이 아닌 것으로 본다 (JS 를 도는 위장 크롤러 거르기)">
           {human ? "사람만" : "봇 포함"}
         </button>
-        <button onClick={() => setTick((n) => n + 1)}>새로고침</button>
-        {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · 5분마다 자동</span>}
+        <button className={`vz-refresh${busy ? " busy" : ""}`} onClick={() => setTick((n) => n + 1)} disabled={busy} aria-busy={busy}>
+          <span>새로고침</span>
+          <span role="status"><i className="vz-spin" aria-hidden />불러오는 중</span>
+        </button>
+        {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · 1분마다 자동</span>}
       </div>
       {status && <p className="admin-status">{status}</p>}
 
