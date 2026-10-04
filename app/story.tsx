@@ -472,7 +472,7 @@ function EntityPeekCard({ anchor, mobile, pinned, label, children }: {
 const epLabelOf = (e: { code?: string; name?: string; tag?: string } | undefined, i: number) =>
   [e?.code || `#${i + 1}`, e?.name, e?.tag].filter(Boolean).join(" · ");
 
-export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId, sceneOn, withPrefs, withScene, initialEp }: {
+export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId, sceneOn, withPrefs, withScene, initialEp, initialLine }: {
   script: ScriptData | null; error: boolean;
   entities: Entity[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void; eventId?: string;
   /** 장면 모드(무대 재생)가 켜져 있는가 — 보기 방식 탭이 소유한다 */
@@ -487,6 +487,8 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   withScene?: boolean;
   /** 처음 펼칠 화(0부터) — 이벤트 창의 작전 카드에서 그 작전의 화로 바로 들어올 때 (2026-10-01). 없으면 해시(ep<N>) */
   initialEp?: number;
+  /** 그 화의 리더기를 몇 번째 줄부터 (0부터) — 갤러리 CG '스토리에서 보기'가 그 CG 가 뜨는 장면으로 (2026-10-04) */
+  initialLine?: number;
 }) {
   const { locale, t } = useI18n();
   const [ownPrefs, setOwnPrefs] = useReaderPrefs();
@@ -693,6 +695,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
           {/* key: 에피소드가 바뀌면 새로 마운트해 첫 줄부터 — 안에서 이펙트로 되감으면
               연쇄 렌더가 된다 (react-compiler 규칙) */}
           <SceneMode key={epIdx} ep={ep} title={`${ep.code} ${ep.name}`.trim()}
+            startLine={initialLine != null && epIdx === (initialEp ?? 0) ? initialLine : undefined}
             hasPrev={epIdx > 0} hasNext={epIdx < script.eps.length - 1}
             onEp={(d) => goEp(epIdx + d)} />
         </Suspense>
@@ -775,12 +778,14 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
 //   (react-hooks/set-state-in-effect, app/enemies.tsx useStagesDoc 과 같은 처방).
 let _summaryCache: StorySummaries | null = null;
 
-export function StoryDetailById({ id, onClose, onShowOperator, view, ep, name }: {
+export function StoryDetailById({ id, onClose, onShowOperator, view, ep, line, name }: {
   id: string; onClose: () => void; onShowOperator?: (operatorId: string) => void;
   /** 처음 보기 — 리더기(scene, 기본) · 전문(script) · AI 요약(summary). 없는 보기는 StoryDetail 이 폴백한다 */
   view?: "scene" | "script" | "summary";
   /** 처음 펼칠 화(0부터) — 이벤트 창 작전 카드에서 그 작전의 화로 (2026-10-01) */
   ep?: number;
+  /** 그 화의 리더기 시작 줄(0부터) — 갤러리 CG 가 뜨는 장면으로 (2026-10-04) */
+  line?: number;
   /** 스토리 목록에 없는 스토리(요약 없이 전문만 있는 중섭 선행 메인 스토리 main_17 …)의 제목 */
   name?: string;
 }) {
@@ -805,11 +810,11 @@ export function StoryDetailById({ id, onClose, onShowOperator, view, ep, name }:
   // fallbackMode(리더기 > 전문 > 요약 > 기록)를 그대로 타라는 뜻이다.
   return (
     <StoryDetail event={event} summary={_summaryCache[id]} onClose={onClose}
-      onShowOperator={onShowOperator} defaultView={view ?? "scene"} initialEp={ep} embedded />
+      onShowOperator={onShowOperator} defaultView={view ?? "scene"} initialEp={ep} initialLine={line} embedded />
   );
 }
 
-export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, defaultView, related, onOpenStory, embedded, initialEp }: {
+export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, defaultView, related, onOpenStory, embedded, initialEp, initialLine }: {
   event: StoryEvent; summary?: Summary; onClose: () => void; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
   /** 해시로 지정된 게 없을 때의 기본 보기 — 상세 라우트(/stories/<id>)는 "summary"를 준다 */
   defaultView?: "summary" | "script" | "scene";
@@ -821,6 +826,8 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
   embedded?: boolean;
   /** 리더기·전문이 처음 펼칠 화(0부터) — StoryDetailById 가 넘긴다 */
   initialEp?: number;
+  /** 리더기 시작 줄(0부터, initialEp 화에만) */
+  initialLine?: number;
 }) {
   const { locale, t } = useI18n();
 
@@ -1039,7 +1046,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
         </header>
         {scriptView && hasScript && <ScriptReader script={script} error={scriptErr} entities={entities}
           opIndex={opIndex} onShowOperator={onShowOperator} eventId={event.id}
-          sceneOn={mode === "scene"} initialEp={initialEp} />}
+          sceneOn={mode === "scene"} initialEp={initialEp} initialLine={initialLine} />}
         {scriptView && futureNoScript && (
           <div className="sc-future-note">
             <b>{t("전문은 정식 출시 후에 열려요")}</b>
@@ -1707,15 +1714,21 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
   const [selected, setSelected] = useState<StoryEvent | null>(
     () => (initialStory ? eventById.get(initialStory) ?? null : null));
 
-  const pushedDetail = useRef(false);
+  // 목록에서 상세로 **몇 번** 넘어왔나 — 상세 안에서 '같은 테마의 다른 이야기'로 더 들어가면 늘어난다.
+  // '스토리 목록으로'는 그만큼 한 번에 되돌아가 **목록에** 닿는다 (사용자 지적 2026-10-04: 종전엔 뒤로 한 칸이라
+  // 다른 이야기로 넘어간 뒤 누르면 직전 이야기로 돌아갔다). 0 이면 딥링크 첫 진입 — 목록 주소로 간다.
+  const pushedDetail = useRef(0);
   // 해시 동기화(복붙·공유·뒤로가기): 상세 #story-<id> · 연대기 #chronicle · 테마별 #theme · 종류별 #kind
   // useLayoutEffect로 첫 페인트 전에 상세를 반영해, #story-<id> 새로고침 시 목록이 잠깐 보였다
   // 상세로 들어오는 플래시를 없앤다 (pre-paint 스크립트가 목록을 숨겨두고, 여기서 상세로 전환).
   useLayoutEffect(() => {
-    const apply = () => {
+    const apply = (ev?: Event) => {
       const h = decodeURIComponent(window.location.hash);
       // 경로 우선(/stories/<id> = 정본), 없으면 옛 해시 딥링크
       const detail = eventFromPath() ?? eventFromHash();
+      // 브라우저 뒤로가기로 목록에 닿았으면 셈을 비우고, 상세끼리 물러섰으면 한 칸 줄인다
+      if (!detail) pushedDetail.current = 0;
+      else if (ev?.type === "popstate") pushedDetail.current = Math.max(0, pushedDetail.current - 1);
       setSelected(detail);
       if (detail) return;                              // 상세 진입 시 뷰/그룹 상태는 유지
       if (h === "#chronicle") setView("chronicle");
@@ -1744,7 +1757,7 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
       // 요약도 전문도 없이 **기록만** 있는 이벤트(재건 계획)는 곧장 기록으로 연다
       : summaries[event.id] ? "#summary" : "#lore";
     history.pushState(null, "", storyPath(locale, event.id) + suffix);
-    pushedDetail.current = true;
+    pushedDetail.current += 1;
     setSelected(event);
   };
   // 같은 테마(스토리라인)의 다른 이야기 — 열 수 있는 것만, 최대 8편.
@@ -1772,7 +1785,7 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
 
   const listPath = `${STORY_BASE[locale]}#theme`;
   const close = () => {
-    if (pushedDetail.current) { pushedDetail.current = false; history.back(); }
+    if (pushedDetail.current > 0) { const n = pushedDetail.current; pushedDetail.current = 0; history.go(-n); }
     else { window.location.assign(listPath); }  // 딥링크 첫 진입이면 목록으로
   };
   // 연대기에서 이벤트 클릭 → 요약이 있으면 상세로, 없으면 무시
@@ -1837,7 +1850,7 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
       if (g && ev && canOpenStory(g.id)) {
         // 전문 뷰어는 마운트 시 해시에서 ep를 읽는다 — 해시 먼저, 리마운트 강제(lensNav)
         history.pushState(null, "", `#story-${g.id}${g.ep != null && g.ep > 0 ? `/ep${g.ep + 1}` : ""}`);
-        pushedDetail.current = true;
+        pushedDetail.current += 1;
         setLensNav((n) => n + 1);
         setSelected(ev);
         // 일회성 스캔 — 스토리로 이동했으면 자동인식을 끈다 (사용자 확정 2026-07-24:

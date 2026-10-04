@@ -26092,3 +26092,542 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .recruit-combo ul { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
 .recruit-combo li > .op-pct { flex: none; margin-left: auto; font: 700 10.5px var(--mono); font-style: normal; color: var(--ink2); }
 .recruit-combo li > .op-pct + i { margin-left: 4px; }
+
+/* ── 갤러리 (/gallery, app/gallery.tsx — 2026-10-04) ─────────────────────────────
+   스토리 CG · 스탠딩 · 오퍼 일러스트. 그림은 전부 R2 의 기존 파일이다. 버튼 색은 역할 토큰만 쓴다. */
+.gl-views {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 4px 0 12px;
+}
+.gl-views button {
+  padding: 8px 6px;
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gl-views button:hover {
+  background: var(--btn-bg-hover);
+  border-color: var(--btn-line-hover);
+}
+.gl-views button.selected {
+  background: var(--btn-on-bg);
+  border-color: var(--btn-on-line);
+  color: var(--btn-on-ink);
+}
+.gl-spoil-toggle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2px 8px;
+  margin-top: 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.gl-spoil-toggle small {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.gl-group + .gl-group {
+  margin-top: 22px;
+}
+.gl-group h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.gl-group h3 em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.gl-group h3 small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.gl-cg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+/* CG 카드 = 그림 + 아래 한 줄 설명 (그 CG 가 뜨는 장면의 대사 — 사용자 요청 2026-10-04) */
+.gl-cg-card {
+  display: grid;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: zoom-in;
+  min-width: 0;
+}
+.gl-cg {
+  display: block;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--bg-faint);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+.gl-cg-card:hover .gl-cg {
+  border-color: var(--border-strong);
+}
+.gl-cg-cap {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.gl-cg-cap em {
+  margin-right: 5px;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--ink2);
+}
+.gl-cg-line {
+  margin: 2px 2px 0;
+  color: var(--ink2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.gl-cg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: filter 0.2s, transform 0.2s;
+}
+.gl-cg-card:hover .gl-cg img {
+  transform: scale(1.03);
+}
+.gl-cg-grid.spoil .gl-cg img {
+  filter: blur(14px) saturate(0.6);
+}
+.gl-cg-grid.spoil .gl-cg-card:hover img,
+.gl-cg-grid.spoil .gl-cg-card:focus-visible img {
+  filter: none;
+}
+.gl-char-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 8px;
+}
+.gl-char,
+.gl-op {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 0 0 8px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+.gl-char:hover,
+.gl-op:hover {
+  border-color: var(--border-strong);
+}
+.gl-char-img {
+  display: block;
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  background: var(--bg-faint);
+}
+.gl-char-img img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+.gl-char b,
+.gl-op b {
+  padding: 4px 6px 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+.gl-char small,
+.gl-op small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.gl-op-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+}
+.gl-op {
+  padding-top: 8px;
+}
+.gl-op img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+}
+/* 창 — 큰 그림 + 넘기기 + 아래 줄 */
+/* 공용 창(.operator-modal — 바탕·테두리·높이 상한)에 폭만 넓힌다 */
+.operator-modal.gl-modal {
+  width: min(1100px, 100%);
+}
+/* 그림 칸은 **보기마다 정해진 비율**로 고정한다 — 그림마다 크기가 달라 넘길 때마다 창이 줄었다 늘었다 했고
+   (사용자 지적 2026-10-04), 높이를 고정했더니 창이 화면보다 길어져 아래가 잘렸다(같은 날). 그래서 비율은 실제 파일
+   분포로 정하고(CG 1080×608 ≈ 16:9 · 스탠딩 세로 760에 폭 340~500 → 2:3 · 일러스트 1024×1024 → 1:1), 폭을
+   '화면 높이 × 비율' 안으로 묶어 창 전체가 화면 안에 들어오게 한다. 그림은 칸 안에 비율대로(contain), 누르면
+   원본 크기 확대 창(.gl-zoom). */
+.gl-view {
+  --gl-ratio: 16 / 9;
+  --gl-maxh: 58vh;
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: var(--gl-ratio);
+  width: min(100%, calc(var(--gl-maxh) * (var(--gl-ratio))));
+  margin: 0 auto;
+  background: var(--bg-faint);
+  overflow: hidden;
+}
+.gl-view img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  cursor: zoom-in;
+}
+.gl-view.sprite {
+  --gl-ratio: 2 / 3;
+}
+.gl-view.illust {
+  --gl-ratio: 1 / 1;
+}
+.operator-modal.gl-zoom {
+  width: min(1600px, 100%);
+}
+.gl-zoom-body {
+  max-height: 86vh;
+  overflow: auto;
+  background: var(--bg-faint);
+}
+.gl-zoom-body img {
+  display: block;
+  max-width: none;
+  width: auto;
+  margin: 0 auto;
+}
+.gl-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 56px;
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.85;
+}
+.gl-nav:hover {
+  background: var(--btn-bg-hover);
+  opacity: 1;
+}
+.gl-nav.prev {
+  left: 8px;
+}
+.gl-nav.next {
+  right: 8px;
+}
+.gl-caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 10px 2px 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.gl-caption b {
+  color: var(--ink);
+}
+.gl-caption a {
+  color: var(--ink);
+  font-weight: 700;
+}
+.gl-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 6px 0 2px;
+}
+.gl-strip button {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--bg-faint);
+  overflow: hidden;
+  cursor: pointer;
+}
+.gl-strip button img {
+  width: 100%;
+  height: 128px;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+.gl-strip.illust button {
+  width: 56px;
+  height: 112px;
+}
+.gl-strip.illust button img {
+  height: 112px;
+  object-fit: cover;
+}
+.gl-strip button.selected {
+  border-color: var(--btn-on-line);
+  outline: 2px solid var(--btn-on-line);
+  outline-offset: -2px;
+}
+@media (max-width: 640px) {
+  .gl-cg-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .gl-char-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .gl-char-img {
+    height: 120px;
+  }
+  .gl-char-img img {
+    height: 240px;
+  }
+  .gl-nav {
+    width: 32px;
+    height: 44px;
+    font-size: 20px;
+  }
+  .gl-view {
+    --gl-maxh: 52vh;
+  }
+  .gl-zoom-body img {
+    max-width: none;
+  }
+}
+.gl-fut {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.gl-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 2px 2px;
+  font-size: 12.5px;
+}
+.gl-links b {
+  margin-right: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.gl-links a {
+  padding: 3px 9px;
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  text-decoration: none;
+}
+.gl-links a:hover {
+  background: var(--btn-bg-hover);
+  border-color: var(--btn-line-hover);
+}
+/* 표정 고르기 — 썸네일 줄 + 슬라이더를 한 덩어리로 가로 스크롤.
+   썸네일 64px · 간격 6px → i번째 가운데 = 32 + 70i. 손잡이(26px) 가운데가 거기 오도록 슬라이더 좌우를 19px(=32-13)
+   들이고 폭을 줄 전체 - 38px 로 잡는다. 그래야 끝 손잡이가 첫·마지막 썸네일 가운데에 정확히 선다. */
+.gl-pick {
+  overflow-x: auto;
+  padding: 6px 0 4px;
+}
+/* 줄 폭은 **썸네일만으로** 정한다 — 슬라이더는 절대 위치라 폭 계산에 안 낀다. 그냥 두면 썸네일이 두 장(134px)일 때
+   입력칸의 기본 최소 폭(약 130px + 좌우 19px)이 줄을 밀어 넓혀 오른쪽으로 삐져나갔다 (사용자 지적 2026-10-04). */
+.gl-pick-inner {
+  position: relative;
+  width: max-content;
+  padding-bottom: 40px;   /* 슬라이더 자리 */
+}
+.gl-pick .gl-strip {
+  overflow: visible;
+  padding: 0;
+}
+.gl-slider {
+  --pct: 0%;
+  position: absolute;
+  left: 19px;
+  right: 19px;
+  bottom: 4px;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  height: 26px;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: grab;
+}
+.gl-slider:active {
+  cursor: grabbing;
+}
+.gl-slider:focus-visible {
+  outline: none;
+}
+.gl-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--btn-on-bg) var(--pct), var(--line) var(--pct));
+}
+.gl-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--line);
+}
+.gl-slider::-moz-range-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--btn-on-bg);
+}
+.gl-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  margin-top: -9px;
+  border-radius: 50%;
+  border: 3px solid var(--white);
+  /* 손잡이 가운데 세로 홈 세 줄 — '잡고 끄는 것'으로 읽히게 */
+  background:
+    linear-gradient(var(--btn-on-ink), var(--btn-on-ink)) center / 2px 9px no-repeat,
+    linear-gradient(var(--btn-on-ink), var(--btn-on-ink)) calc(50% - 4px) 50% / 2px 7px no-repeat,
+    linear-gradient(var(--btn-on-ink), var(--btn-on-ink)) calc(50% + 4px) 50% / 2px 7px no-repeat,
+    var(--btn-on-bg);
+  box-shadow: 0 2px 8px #0006, 0 0 0 1px var(--btn-on-line);
+  transition: transform 0.12s;
+}
+.gl-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid var(--white);
+  background:
+    linear-gradient(var(--btn-on-ink), var(--btn-on-ink)) center / 2px 9px no-repeat,
+    linear-gradient(var(--btn-on-ink), var(--btn-on-ink)) calc(50% - 4px) 50% / 2px 7px no-repeat,
+    linear-gradient(var(--btn-on-ink), var(--btn-on-ink)) calc(50% + 4px) 50% / 2px 7px no-repeat,
+    var(--btn-on-bg);
+  box-shadow: 0 2px 8px #0006, 0 0 0 1px var(--btn-on-line);
+}
+.gl-slider:hover::-webkit-slider-thumb,
+.gl-slider:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+.gl-slider:active::-webkit-slider-thumb {
+  transform: scale(1.18);
+}
+/* 탐색 조건 드롭다운 — 고른 줄은 마우스를 올려도·하위 목록을 펼쳐도 **선택 색 그대로** (사용자 지적 2026-10-04).
+   종전엔 '펼친 줄' 배경(.attr-has-sub.open)이 선택 배경만 덮고 글자는 선택 글자색으로 남아, 다크에서 어두운 글자가
+   어두운 바탕에 묻혔다. 위 두 규칙보다 뒤·더 구체적이어야 이긴다. */
+.attr-drop .attr-has-sub.open > button.selected,
+.attr-drop button.selected:hover {
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
+}
+.gl-pick-inner:not(:has(.gl-slider)) {
+  padding-bottom: 0;
+}
+/* 큰 그림을 받는 동안 — 칸 가운데 '불러오는 중…' (그림 칸은 비율이 고정이라 자리가 출렁이지 않는다) */
+.gl-zoom-body {
+  position: relative;
+  min-height: 240px;
+}
+.gl-view img.gl-img-wait,
+.gl-zoom-body img.gl-img-wait {
+  opacity: 0;
+}
+.gl-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  pointer-events: none;
+}
+.gl-loading i {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--line);
+  border-top-color: var(--muted);
+  border-radius: 50%;
+  animation: gl-spin 0.8s linear infinite;
+}
+@keyframes gl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gl-loading i {
+    animation: none;
+  }
+}
+/* 일러스트 창은 그림(1:1) 폭에 맞춘다 — 1100px 창에 정사각 그림이 가운데 섬처럼 떠 양옆이 비었다 (사용자 지적 2026-10-04).
+   폭 = 그림 칸(58vh · 모바일 52vh) + 본문 좌우 여백 40px. 아래 스킨 줄은 넘치면 그 안에서 옆으로 스크롤된다. */
+.operator-modal.gl-modal.gl-fit-sq {
+  width: min(calc(58vh + 40px), 100%);
+  min-width: min(380px, 100%);
+}
+@media (max-width: 640px) {
+  .operator-modal.gl-modal.gl-fit-sq {
+    width: min(calc(52vh + 40px), 100%);
+  }
+}
+/* 스탠딩 창도 그림(2:3) 폭에 맞춘다 (사용자 요청 2026-10-04). 그림만으로는 300px 남짓이라 아래 '등장 스토리' 버튼이
+   줄줄이 꺾여, 최소 폭은 400px. 표정 줄·슬라이더는 넘치면 그 안에서 옆으로 스크롤된다. */
+.operator-modal.gl-modal.gl-fit-tall {
+  width: min(calc(58vh * 2 / 3 + 40px), 100%);
+  min-width: min(400px, 100%);
+}
+@media (max-width: 640px) {
+  .operator-modal.gl-modal.gl-fit-tall {
+    width: min(calc(52vh * 2 / 3 + 40px), 100%);
+  }
+}
+.gl-cg-grid.spoil .gl-cg-cap {
+  filter: blur(4px);
+}
+.gl-cg-grid.spoil .gl-cg-card:hover .gl-cg-cap,
+.gl-cg-grid.spoil .gl-cg-card:focus-visible .gl-cg-cap {
+  filter: none;
+}

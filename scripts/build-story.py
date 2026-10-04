@@ -68,13 +68,21 @@ def download_cuts(event_id):
         txt = fetch(f"{GAMEDATA}/kr/gamedata/story/{info['storyTxt']}.txt", binary=True).decode("utf-8")
         for m in re.finditer(r'\[Image\(image="([^"]+)"', txt, re.I):
             if m.group(1) not in names: names.append(m.group(1))
+    # 받기 규칙은 scripts/storycut.py — 한섭 CDN 판은 건너뛰고, 없거나 미러(중섭)판이면 한섭 CDN 을 다시 본다
+    import storycut
     for name in names:
         dest = os.path.join(cut_dir, f"{name}.webp")
-        if os.path.exists(dest):
+        if not storycut.needs_fetch(name):
             print("skip:", name); continue
-        png = fetch(f"{ASSETS}/avg/images/{name}.png", binary=True)
+        png, src = storycut.fetch_png(name)
+        if png is None:
+            print("miss:", name); continue
+        if src == "mirror" and os.path.exists(dest):
+            storycut.mark(name, src); print("keep(mirror):", name); continue
         to_jpeg(png, dest, max_px=1080)
-        print("cut:", f"/story/cut/{name}.webp")
+        storycut.mark(name, src)
+        print(f"cut({src}):", f"/story/cut/{name}.webp")
+    storycut.save()
     print(f"{event_id}: {len(names)} cutscenes → public/story/cut/")
 
 if len(sys.argv) > 2 and sys.argv[1] == "--cuts":

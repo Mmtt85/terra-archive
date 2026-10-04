@@ -5,6 +5,7 @@
 // days를 지정하면 예외로 그 기간을 쓰지만, 기본 3일을 그대로 두는 것이 정책이다.
 // 판정은 클라이언트 렌더 시각 기준.
 export const FEATURE_RELEASED: Record<string, string | { date: string; days: number }> = {
+  gallery: "2026-10-04", // 갤러리 — 스토리 CG·스탠딩·오퍼 일러스트 (/gallery, 제안 게시판 요청)
   scanner: "2026-07-23", // 스크린샷으로 보유 오퍼 스캔 (보유 오퍼 설정 모달)
   lens: "2026-07-23", // 스샷 레이더 — 게임 화면 인식 → 해당 정보로 이동 (/rogue·공채 페이지별 설치)
   invest: "2026-07-24", // 인프라 오퍼 육성 추천
@@ -102,6 +103,7 @@ const TAB_FEATURES: Record<string, string[]> = {
   sim: ["sim-page"],
   ra: ["ra-guide"],
   autochess: ["autochess-guide"],
+  gallery: ["gallery"],
 };
 
 /** 해당 탭 안에 아직 '새기능' 기간인 기능이 하나라도 있으면 true. */

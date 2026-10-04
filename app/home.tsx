@@ -47,6 +47,12 @@ const EVENT_DEX = {
   ja: lazy(EVENT_DEX_IMPORT.ja),
 } as const;
 // 아이템 도감도 같은 이유로 로케일별 청크 (데이터 ~650KB, 2026-09-16)
+// 갤러리 — CG·스탠딩·일러스트 색인 (로케일당 ~170KB, 2026-10-04)
+const GALLERY = {
+  ko: lazy(() => import("./gallery-ko")),
+  en: lazy(() => import("./gallery-en")),
+  ja: lazy(() => import("./gallery-ja")),
+} as const;
 const ITEM_DEX = {
   ko: lazy(() => import("./items-ko")),
   en: lazy(() => import("./items-en")),
@@ -277,17 +283,17 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "autochess" | "about";
+export type Tab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "gallery" | "rogue" | "ra" | "autochess" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
 // ⚠ 적 도감의 URL 세그먼트는 "enemies"(복수)인데 초상 자산 폴더는 public/enemy/(단수)다.
 //    일부러 다르게 뒀다 — scripts/deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만
 //    떼어내는데(서빙은 R2), 이름이 같으면 라우트 HTML까지 통째로 지워진다.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", gallery: "gallery", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 // ⚠ TAB_SEG와 짝 — 세그먼트를 더하면 여기도 같이 (enemies·stages가 빠져 /stages가
 //   portal로 판정되던 기존 누락도 2026-08-10에 함께 채움)
-const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", items: "item", events: "event", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", items: "item", events: "event", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", gallery: "gallery", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 빌드(=배포) 시각 — vite define으로 박히는 ISO 문자열을 KST 분 단위로 찍는다.
@@ -1295,6 +1301,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const [stagePageOpen, setStagePageOpen] = useState<boolean>(() => !!pageStage);
   const StageDexForLocale = STAGE_DEX[locale as keyof typeof STAGE_DEX] ?? STAGE_DEX.ko;
   const ItemDexForLocale = ITEM_DEX[locale as keyof typeof ITEM_DEX] ?? ITEM_DEX.ko;
+  const GalleryForLocale = GALLERY[locale as keyof typeof GALLERY] ?? GALLERY.ko;
   const EventDexForLocale = EVENT_DEX[locale as keyof typeof EVENT_DEX] ?? EVENT_DEX.ko;
   const runningEvents = useRunningEvents();
   /** 헤더·배너에서 연 이벤트 — **페이지를 안 넘기고** 그 자리에 모달만 띄운다
@@ -1847,6 +1854,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
               ? (storyTitle
                 ? t("{name} 스토리 요약 - 명일방주 | 테라 아카이브", { name: storyTitle })
                 : t("스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브"))
+              : tab === "gallery"
+                ? t("갤러리 - 명일방주 스토리 CG·스탠딩·일러스트 | 테라 아카이브")
               : tab === "rogue"
                 ? t("통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브")
                 : tab === "ra"
@@ -1907,6 +1916,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     upgrade: t("육성 비용 계산기"),
     sim: t("작전 시뮬레이터"),
     story: t("스토리"),
+    gallery: t("갤러리"),
     rogue: t("통합전략 가이드"),
     ra: t("생존연산 가이드"),
     autochess: t("위수 협의 가이드"),
@@ -1924,6 +1934,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     { id: "dex", name: t("도감"), icon: "▤", items: [
       { tab: "archive", short: t("오퍼레이터") }, { tab: "enemy", short: t("적") }, { tab: "stage", short: t("작전") },
       { tab: "item", short: t("아이템") },
+      // 갤러리 — 스토리 CG·스탠딩·오퍼 일러스트 (제안 게시판 요청 2026-10-04). 그림 모음집이라 도감 묶음 (사용자 확정 같은 날)
+      { tab: "gallery", short: t("갤러리") },
     ] },
     { id: "sim", name: t("시뮬레이터"), icon: "◈", items: [
       { tab: "recruit", short: t("공개채용") }, { tab: "farm", short: t("재료파밍") }, { tab: "upgrade", short: t("오퍼 육성") },
@@ -2723,6 +2735,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
         {tab === "stage" && !(pageStage && stagePageOpen) && <StageDexForLocale onOpenEnemy={openEnemyFromStage} />}
         {tab === "item" && <ItemDexForLocale />}
+        {tab === "gallery" && <GalleryForLocale operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} onOpenEvent={openEventById} />}
         {/* 전용 가이드가 있는 모드(위수 협의)는 이벤트 모달 대신 그 가이드로 넘긴다.
             ⚠ 위수 협의는 시즌마다 페이지가 따로다 — "autochess/s1" 처럼 뒤에 슬러그가
             붙어 오면 그 시즌을 연다 (사용자 지적 2026-09-17: 시즌 1을 눌러도 최신

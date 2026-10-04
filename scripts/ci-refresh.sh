@@ -159,6 +159,8 @@ run "build-costs"      python3 scripts/build-costs.py "$G"
 run "build-story"      python3 scripts/build-story.py
 # 인게임 스토리라인(테마 시계열) — stories.json을 참조하므로 build-story 뒤에
 run "build-storylines" python3 scripts/build-storylines.py "$G"
+# 갤러리 색인 (/gallery) — 스토리 대본(public/story/script)·스탠딩 파일 목록을 읽어 CG·스탠딩을 묶는다. 네트워크 없음.
+run "build-gallery"    python3 scripts/build-gallery.py
 
 # 7) 무거운 오퍼당 파일 — 보이스 대사·스킨 메타 (도감 첫 화면엔 안 보이는 것들)
 # ⚠ build-skins는 **--meta-only** — 스킨 이미지 296MB는 git에 없고(gitignore) R2가 서빙하므로

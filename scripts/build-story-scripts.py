@@ -878,23 +878,9 @@ def normalize_case(eps, faces):
 
 
 def fetch_cut_png(name):
-    """컷씬/레이어 원본 png — 대문자 참조(21_I1)는 소문자로도 재시도. 없으면 None.
-
-    게임 CDN을 먼저 본다 (에셋 미러는 며칠씩 밀린다). 없으면 종전대로 미러.
-    """
-    import cdnassets
-    for folder in ("avg/images", "avg/items"):
-        for cand in dict.fromkeys([name, name.lower()]):
-            png = cdnassets.png_bytes(f"{folder}/{cand}")
-            if png:
-                return png
-    for folder in ("avg/images", "avg/items"):
-        for cand in dict.fromkeys([name, name.lower()]):
-            try:
-                return fetch(f"{ASSETS}/{folder}/{cand}.png", binary=True)
-            except urllib.error.HTTPError:
-                continue
-    return None
+    """컷씬/레이어 원본 png — 게임 CDN(한섭) 우선, 없으면 에셋 미러. 없으면 None. 규칙은 scripts/storycut.py."""
+    import storycut
+    return storycut.fetch_png(name)[0]
 
 
 def composite_cg(base_png, layers):
@@ -920,29 +906,37 @@ def composite_cg(base_png, layers):
 
 
 def download_cuts(names, cg_layers=None):
-    """컷씬 webp — 이미 있으면 스킵. 404(에셋 미러 누락)는 건너뛰고 목록 반환.
+    """컷씬 webp — 한섭 CDN 에서 받은 것은 건너뛰고, 없거나 **미러(중섭)판**이면 다시 본다 (scripts/storycut.py 머리주석 —
+    예전엔 '있으면 건너뛰기'라 7월에 중섭 미러에서 받은 글자 박힌 CG 가 중국어로 남았다). 못 받은 이름 목록을 돌려준다.
     cgitem 레이어가 있는 컷씬은 **항상 다시 합성**한다 (배경만 저장된 구버전 교체)."""
+    import storycut
     from imgutil import save_webp
     cg_layers = cg_layers or {}
     os.makedirs(CUT_DIR, exist_ok=True)
-    missing = [n for n in names
-               if n in cg_layers or not os.path.exists(os.path.join(CUT_DIR, f"{n}.webp"))]
+    missing = [n for n in names if n in cg_layers or storycut.needs_fetch(n)]
     failed = []
 
     def dl(name):
-        png = fetch_cut_png(name)
+        png, src = storycut.fetch_png(name)
         if png is None:
             failed.append(name)
+            return
+        dest = os.path.join(CUT_DIR, f"{name}.webp")
+        # 이미 있는 미러판을 또 미러판으로 덮을 까닭은 없다 — 한섭판이 나올 때까지 그대로 두고 목록만 유지
+        if src == "mirror" and os.path.exists(dest) and not cg_layers.get(name):
+            storycut.mark(name, src)
             return
         if cg_layers.get(name):
             try:
                 png = composite_cg(png, cg_layers[name])
             except Exception as exc:   # 합성 실패는 배경만이라도 살린다
                 print(f"  ! CG 합성 실패 {name}: {exc}")
-        save_webp(png, os.path.join(CUT_DIR, f"{name}.webp"), photo=True, max_px=1080)
+        save_webp(png, dest, photo=True, max_px=1080)
+        storycut.mark(name, src)
 
     with ThreadPoolExecutor(8) as ex:
         list(ex.map(dl, missing))
+    storycut.save()
     return failed
 
 

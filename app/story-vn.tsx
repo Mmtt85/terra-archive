@@ -95,8 +95,10 @@ function upcoming(au: AuSnap[], idx: number, cur: AuSnap | null): string[] {
   return [...ids];
 }
 
-export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
+export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine }: {
   ep: ScriptEp;
+  /** 처음 보여 줄 줄(0부터) — 갤러리 CG '스토리에서 보기' (2026-10-04). 화가 바뀌면 key 로 다시 마운트돼 0부터 */
+  startLine?: number;
   title: string;
   hasPrev?: boolean;
   hasNext?: boolean;
@@ -104,7 +106,7 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
   onEp?: (delta: number) => void;
 }) {
   const { t } = useI18n();
-  const [idx, setIdx] = useState(0);
+  const [idx, setIdx] = useState(() => Math.max(0, Math.min(startLine ?? 0, ep.lines.length - 1)));
   const [full, setFull] = useState(false);
   const [auto, setAuto] = useState(false);
   const last = ep.lines.length - 1;
