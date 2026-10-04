@@ -46,9 +46,9 @@ done < <(find "$STAGE" -name "*.rsc" -type f | sort)
 
 # 안전망 — 한도에 다시 다가가면 배포 전에 멈춘다 (조용히 실패하느니 여기서 실패한다)
 COUNT=$(find "$STAGE" -type f | wc -l | tr -d ' ')
-echo "관리자 스테이지 파일 $COUNT개"
+echo "관리자 스테이지 파일 ${COUNT}개"
 if [ "$COUNT" -gt 19000 ]; then
-  echo "관리자 배포 파일이 $COUNT개 — Pages 한도(20,000)에 너무 가깝다. 담는 목록을 확인할 것." >&2
+  echo "관리자 배포 파일이 ${COUNT}개 — Pages 한도(20,000)에 너무 가깝다. 담는 목록을 확인할 것." >&2
   exit 1
 fi
 if [ ! -s "$STAGE/admin.html" ]; then

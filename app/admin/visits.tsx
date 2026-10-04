@@ -6,7 +6,8 @@
 //
 // 데이터는 같은 오리진 `/api/visits/rpc/<함수>` — 실서비스는 admin-api 워커, localhost 는 dev 프록시가
 // 관리자 키를 붙여 방문 기록 전용 Supabase 프로젝트로 중계한다. 프로젝트가 아직 없으면 503 → 안내만 띄운다.
-// 기간 7·30·90일은 원장(90일 보관)에서, '1년'은 매일 밤 말아 둔 일별 집계표에서 읽는다.
+// 기간 7·30·90일은 원장에서, '1년'은 매일 밤 말아 둔 일별 집계표에서 읽는다. 원장은 기간으로 자르지 않고
+// DB 가 80% 차면 오래된 것부터 지운다(docs/supabase-visits.sql visits_maintain).
 
 import { useEffect, useMemo, useState } from "react";
 import { Dropdown } from "../dropdown";
@@ -425,7 +426,7 @@ export function VisitsPanel() {
               { name: "방문자", cls: "s2", values: trend.map((r) => r.visitors) },
               { name: "세션(전체)", cls: "s3", values: trend.map((r) => r.sessions) },
             ]} />
-            <p className="vz-note">1년 보기는 추이만 있습니다 — 유입·페이지·동선의 원본은 90일만 보관합니다.</p>
+            <p className="vz-note">1년 보기는 추이만 있습니다 — 유입·페이지·동선의 원본은 DB 가 80% 차면 오래된 것부터 지워집니다.</p>
           </>
         )
       ) : data && t && (

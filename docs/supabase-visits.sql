@@ -17,8 +17,12 @@
 --  3. **이탈 = 그 세션의 마지막 화면.** 브라우저는 '떠나는 중'과 '다음 화면으로 가는 중'을 구분하지 못한다.
 --  4. **사람 판정** — 세션 동안 조작(스크롤·터치·클릭·키)이 한 번이라도 있었으면 사람.
 --     JS 를 실행하며 사람 브라우저로 위장하는 크롤러(2026-09 싱가포르 건)를 거른다.
---  5. **보관 90일** — 매일 00:10 KST pg_cron 이 전날·그전날을 일별 집계표로 말아 두고(영구 보관)
---     90일 지난 원장을 지운다. DB 가 400MB 를 넘으면 원장을 30일로 줄인다(500MB 읽기 전용 방지).
+--  5. **보관 — 기간으로 자르지 않는다. DB 가 80% 차면 오래된 것부터** (사용자 지시 2026-10-04 "90일 유지가 아니라
+--     디비 데이터 80% 이상 차면 순차 삭제"). 매일 00:10 KST pg_cron 이 전날·그전날을 일별 집계표로 말아 두고(영구),
+--     visits_maintain 이 용량을 본다. ⚠ Postgres 는 행을 지워도 DB 크기 숫자가 줄지 않는다(빈자리를 다시 쓸 뿐) — 그래서
+--     '크기 > 80% 면 지운다'를 그대로 쓰면 한 번 닿은 뒤 매일 밤 지운다. 처음 80% 에 닿은 날의 원장 행 수를 **상한**으로
+--     적어 두고(visit_cap), 그 뒤로는 행 수를 상한의 85% 아래로 유지한다(가장 오래된 조각부터). 지운 자리는 VACUUM 이
+--     재사용 가능으로 돌려 크기가 80% 언저리에서 멈춘다. 그래도 90% 를 넘으면 상한을 10% 낮춘다.
 --  6. 개인 식별 정보는 없다 — IP·계정·위치를 받지 않는다. visitor 는 브라우저 localStorage 의
 --     무작위 id(재방문 판정용)뿐이다. 나라는 모른다(브라우저 → DB 직행이라 IP 국가가 없다) — 시간대로 갈음.
 
@@ -285,7 +289,7 @@ returns json language sql stable as $$
   from s
 $$;
 
--- 긴 기간 추이 — 90일을 넘으면 원장이 없으니 일별 집계표에서
+-- 긴 기간 추이 — 원장이 지워진 옛날도 남도록 일별 집계표에서
 create or replace function public.visits_trend(p_days int default 365)
 returns json language sql stable as $$
   select coalesce(json_agg(d order by d.day), '[]')
@@ -332,26 +336,58 @@ begin
     group by 2;
 end $$;
 
-create or replace function public.visits_maintain() returns void
-language plpgsql as $$
-declare d date := (now() at time zone 'Asia/Seoul')::date;
+-- 용량 상한 기록 — 처음 80% 에 닿은 날의 원장 행 수 (한 줄짜리)
+create table if not exists public.visit_cap (
+  id boolean primary key default true check (id),
+  cap_rows bigint not null,
+  set_at timestamptz not null default now()
+);
+alter table public.visit_cap enable row level security;
+drop policy if exists "admin read visit cap" on public.visit_cap;
+create policy "admin read visit cap" on public.visit_cap for select to anon using (public.visits_is_admin());
+
+drop function if exists public.visits_maintain();   -- 예전(90일 보관) 판 — 인자 없는 판이 남으면 호출이 모호해진다
+create or replace function public.visits_maintain(p_limit_bytes bigint default 500 * 1024 * 1024)
+returns void language plpgsql as $$
+declare
+  d date := (now() at time zone 'Asia/Seoul')::date;
+  size bigint := pg_database_size(current_database());
+  n bigint;
+  cap bigint;
+  keep bigint;
+  cutoff timestamptz;
 begin
   -- 자정 넘어 도착한 조각도 담기게 그전날까지 다시 만다 (집계는 매번 지우고 새로 넣어 멱등)
   perform public.visits_rollup(d - 2);
   perform public.visits_rollup(d - 1);
-  delete from public.visit_view where at < now() - interval '90 days';
-  delete from public.visit_session where started_at < now() - interval '90 days';
-  -- 용량 안전장치 — 무료 DB 는 500MB 를 넘으면 읽기 전용이 된다
-  if pg_database_size(current_database()) > 400 * 1024 * 1024 then
-    delete from public.visit_view where at < now() - interval '30 days';
-    delete from public.visit_session where started_at < now() - interval '30 days';
+
+  select count(*) into n from public.visit_view;
+  select cap_rows into cap from public.visit_cap;
+  if cap is null and size >= p_limit_bytes * 0.8 then          -- 처음 80% 에 닿았다 — 지금 행 수가 상한
+    cap := n;
+    insert into public.visit_cap (cap_rows) values (cap);
+  elsif cap is not null and size >= p_limit_bytes * 0.9 then    -- 빈자리 재사용으로도 못 막았다 — 상한을 낮춘다
+    cap := floor(cap * 0.9);
+    update public.visit_cap set cap_rows = cap, set_at = now();
   end if;
+  if cap is null then return; end if;
+
+  keep := floor(cap * 0.85);
+  if n <= keep then return; end if;
+  -- 가장 오래된 조각부터 (n - keep) 개를 지운다 — 그 경계 시각을 찾아 그 앞을 통째로
+  select at into cutoff from public.visit_view order by at asc offset (n - keep) limit 1;
+  delete from public.visit_view where at < cutoff;
+  delete from public.visit_session s
+   where s.started_at < cutoff and not exists (select 1 from public.visit_view v where v.session = s.id);
 end $$;
 
 -- 정리 함수는 익명에게 열지 않는다 (조회 함수는 열어 둬도 RLS 가 키 없는 요청에 빈 결과를 준다)
 revoke execute on function public.visits_rollup(date) from public, anon, authenticated;
-revoke execute on function public.visits_maintain() from public, anon, authenticated;
+revoke execute on function public.visits_maintain(bigint) from public, anon, authenticated;
 
 create extension if not exists pg_cron;
 select cron.unschedule('visits-maintain') where exists (select 1 from cron.job where jobname = 'visits-maintain');
 select cron.schedule('visits-maintain', '10 15 * * *', $$select public.visits_maintain()$$);   -- 15:10 UTC = 00:10 KST
+-- 지운 자리를 재사용 가능으로 — VACUUM 은 트랜잭션 안에서 못 돌아서 함수가 아니라 따로 둔다 (한 문장이어야 한다)
+select cron.unschedule('visits-vacuum') where exists (select 1 from cron.job where jobname = 'visits-vacuum');
+select cron.schedule('visits-vacuum', '30 15 * * *', $$vacuum (analyze) public.visit_view, public.visit_session$$);   -- 00:30 KST
