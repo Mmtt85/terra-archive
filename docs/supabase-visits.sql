@@ -222,7 +222,14 @@ returns json language sql stable as $$
     where vs.started_at >= public.visits_from(p_days) and vs.env = 'live'
       and (not p_human or coalesce(sh.human, false))
   ),
-  sv as (select v.* from v join s on s.id = v.session)
+  sv as (select v.* from v join s on s.id = v.session),
+  -- 동선 흐름용 — 갈래만(모달·해시 없이) 보고 같은 갈래가 이어지면 한 칸으로 접는다 (사용자 지시 2026-10-04
+  -- "인프라는 인프라로 합쳐줘. 모달을 굳이 나눌 필요 없음"). 통합전략은 테마 번호까지가 갈래다.
+  fl as (
+    select session, row_number() over (partition by session order by n) as k, sec from (
+      select session, n, sec, lag(sec) over (partition by session order by n) as prev
+      from (select session, n, public.visit_section(path, null) as sec from sv) x
+    ) y where prev is distinct from sec)
   select json_build_object(
     'total', (select json_build_object(
         'sessions', count(*), 'visitors', count(distinct visitor), 'views', coalesce(sum(views), 0),
@@ -269,13 +276,12 @@ returns json language sql stable as $$
     -- 흐름도: 유입원 → 1번째 화면 → 2번째 → 3번째 (그 뒤는 끊는다). '이탈' 은 거기서 끝난 세션.
     'flow', (select coalesce(json_agg(d), '[]') from (
         select step, src, dst, count(*) as n from (
-          select 0 as step, s.src as src, public.visit_section(a.path, a.hash) as dst
-          from s join sv a on a.session = s.id and a.n = 1
+          select 0 as step, s.src as src, a.sec as dst
+          from s join fl a on a.session = s.id and a.k = 1
           union all
-          select a.n as step, public.visit_section(a.path, a.hash) as src,
-                 case when b.session is null then '이탈' else public.visit_section(b.path, b.hash) end as dst
-          from sv a left join sv b on b.session = a.session and b.n = a.n + 1
-          where a.n between 1 and 3
+          select a.k as step, a.sec as src, case when b.session is null then '이탈' else b.sec end as dst
+          from fl a left join fl b on b.session = a.session and b.k = a.k + 1
+          where a.k between 1 and 3
         ) e group by 1, 2, 3) d)
   )
 $$;

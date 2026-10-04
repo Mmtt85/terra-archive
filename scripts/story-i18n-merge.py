@@ -80,10 +80,12 @@ def validate(ko, tr, loc):
                 fatal.append(f"{grp}[{i}].op 변경됨: {k.get('op')} → {t.get('op')}")
             if k.get("img") != t.get("img"):
                 fatal.append(f"{grp}[{i}].img 변경됨")
-            # alias는 로케일 본문 하이라이트와 한국어 원문 화자 매칭을 겸해 언어가 섞인다.
-            # 길이만 KO와 맞추면 되고, 어긋나도 하이라이트가 조금 덜 걸릴 뿐이라 경고에 그친다.
-            if len(k.get("alias") or []) != len(t.get("alias") or []):
-                warn.append(f"{grp}[{i}].alias 길이 불일치 (KO {len(k.get('alias') or [])} vs {len(t.get('alias') or [])})")
+            # alias = [KO 별칭 그대로…] + [그 언어 별칭…] (2026-10-04 — story-i18n/alias-fill.py).
+            # 앞부분은 한국어 원문(전문 보기) 화자 매칭용이라 KO 와 같아야 하고, 뒤에 덧붙인 것은 로케일 본문 밑줄용이다.
+            # 어긋나도 밑줄·화자 얼굴이 조금 덜 걸릴 뿐이라 경고에 그친다.
+            ka, ta = k.get("alias") or [], t.get("alias") or []
+            if ta[: len(ka)] != ka:
+                warn.append(f"{grp}[{i}].alias 앞부분이 KO 와 다름 (KO {ka} vs {ta[:len(ka)]})")
             check_str(k.get("name", ""), t.get("name", ""), f"{grp}[{i}].name", fatal, warn, kor)
             check_str(k.get("desc", ""), t.get("desc", ""), f"{grp}[{i}].desc", fatal, warn, kor)
     kb, tb = ko["blocks"], tr["blocks"]

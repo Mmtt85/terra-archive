@@ -573,7 +573,7 @@ export function VisitsPanel() {
             </div>
           </div>
 
-          <Head title="동선 흐름" sub="띠 굵기 = 세션 수. 줄에 올리면 수가 나온다" />
+          <Head title="동선 흐름" sub="띠 굵기 = 세션 수. 갈래 단위라 모달·같은 갈래 안의 이동은 한 칸으로 친다. 줄에 올리면 수가 나온다" />
           <Sankey flow={data.flow} />
 
           <Head title="화면 순위" sub={`${data.pages.length}개 화면`} {...top("pages")} />

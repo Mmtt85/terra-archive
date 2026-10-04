@@ -3,7 +3,7 @@
 
 스토리 요약 상세에서 CG(figure)·장식 삽화(deco)에 width/height를 박아 로딩 중 레이아웃
 밀림(CLS)을 없애기 위한 데이터. 이미지의 고유 비율만 있으면 브라우저가 렌더 폭에 맞춰
-높이를 미리 예약한다. CG를 새로 받으면(build-story.py --cuts / --chars) 재실행할 것.
+높이를 미리 예약한다. CG를 새로 받거나 요약에 배경 삽화를 넣으면 재실행할 것.
 
 의존성: pip install pillow
 """
@@ -24,6 +24,16 @@ for sub in ("cut", "char"):
             continue
         rel = "/story/" + sub + "/" + os.path.basename(path)
         dims[rel] = [w, h]
+
+# 배경(public/story/bg, 967장)은 리더기용이라 전부 재면 이 파일만 커진다 — 요약 본문이 삽화로 쓰는 것만 잰다
+# (CG 가 적은 이벤트에 원문 배경을 장면 삽화로 보태기 시작, 2026-10-04)
+used = {b["src"] for v in json.load(open(f"{REPO}/app/data/story-summaries.json", encoding="utf-8")).values()
+        for b in v.get("blocks", []) if b.get("t") in ("img", "deco") and b.get("src", "").startswith("/story/bg/")}
+for rel in sorted(used):
+    path = f"{REPO}/public{rel}"
+    if os.path.exists(path):
+        with Image.open(path) as im:
+            dims[rel] = list(im.size)
 
 out = f"{REPO}/app/data/story-image-dims.json"
 json.dump(dims, open(out, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))

@@ -216,11 +216,15 @@ function entityMatcher(rawKeys: string[]): RegExp {
     return `${k}(?=(?:${josa})(?![가-힣]))`;
   };
   const parts = keys.map((k) =>
-    k.length === 1
-      ? INTERJECTION_HOMOGRAPHS.has(k)
-        ? `(?:${particle(k)})`
-        : `(?:${k}(?![가-힣])|${particle(k)})`
-      : k,
+    // 로마자가 든 이름은 영어 단어 속에 걸리지 않게 앞뒤를 끊는다 — 'W' 가 When·What 의 머리에,
+    // 'Ash'·'Lin' 이 Ashlock·Linked 에 밑줄을 긋던 것 (2026-10-04 영어 요약 번역 중 발견)
+    /[A-Za-z]/.test(k)
+      ? `(?<![A-Za-z0-9])${k}(?![A-Za-z0-9])`
+      : k.length === 1
+        ? INTERJECTION_HOMOGRAPHS.has(k)
+          ? `(?:${particle(k)})`
+          : `(?:${k}(?![가-힣])|${particle(k)})`
+        : k,
   );
   return new RegExp(`(?<![가-힣])(?:${parts.join("|")})`);
 }

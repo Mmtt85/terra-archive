@@ -26804,15 +26804,15 @@ button.evx-rw:hover { border-color: var(--border-strong); }
     width: min(calc(52vh + 40px), 100%);
   }
 }
-/* 스탠딩 창도 그림(2:3) 폭에 맞춘다 (사용자 요청 2026-10-04). 그림만으로는 300px 남짓이라 아래 '등장 스토리' 버튼이
-   줄줄이 꺾여, 최소 폭은 400px. 표정 줄·슬라이더는 넘치면 그 안에서 옆으로 스크롤된다. */
+/* 스탠딩 창은 일러스트 창과 같은 폭 (사용자 지시 2026-10-04 "스탠딩 모달창 너비가 너무 좁다. 일러스트의 모달창 너비랑
+   동일하게") — 처음엔 그림(2:3) 폭에 맞춰 300px 남짓이었다. 그림 칸은 2:3 그대로 가운데, 표정 줄·등장 스토리가 넓어진다. */
 .operator-modal.gl-modal.gl-fit-tall {
-  width: min(calc(58vh * 2 / 3 + 40px), 100%);
-  min-width: min(400px, 100%);
+  width: min(calc(58vh + 40px), 100%);
+  min-width: min(380px, 100%);
 }
 @media (max-width: 640px) {
   .operator-modal.gl-modal.gl-fit-tall {
-    width: min(calc(52vh * 2 / 3 + 40px), 100%);
+    width: min(calc(52vh + 40px), 100%);
   }
 }
 .gl-cg-grid.spoil .gl-cg-cap {
