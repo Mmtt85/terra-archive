@@ -235,8 +235,10 @@ for loc, suf, sub in LOCALES:
         shown_ko = ko_names[cid].most_common(1)[0][0] if ko_names.get(cid) else ""
         oid = op_of(cid) or npc_op(cid, shown_ko)
         nm = names[cid].most_common(1)[0][0] if names.get(cid) else None
-        if oid and (not nm or loc != "ko"):
-            nm = ops[loc].get(oid, {}).get("name") or nm
+        # 이름은 **그 언어 대본의 화자 이름**이 먼저다 — 세 언어 모두 같은 규칙 (사용자 지시 2026-10-04 "대본 속 이름으로 맞춰줘").
+        # 종전엔 EN·JA 만 오퍼 이름으로 덮어써서 '가난한 소녀'가 영어에선 Fonsiracus 로 나왔다. 대본에 이름이 없을 때만 오퍼 이름.
+        if oid and not nm:
+            nm = ops[loc].get(oid, {}).get("name")
         if not nm:
             continue
         row = {"id": cid, "n": nm, "f": sorted(tails, key=natural)}

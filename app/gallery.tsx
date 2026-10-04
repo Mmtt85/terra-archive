@@ -51,6 +51,8 @@ const VIEW_LABEL: Record<View, Record<string, string>> = {
   illust: { ko: "일러스트", en: "Artwork", ja: "イラスト" },
 };
 const LOCALE_BASE: Record<string, string> = { ko: "", en: "/en", ja: "/ja" };
+// 그림 수 — 사전의 "{n}장" 키는 다른 화면이 '부(copies)' 뜻으로 쓰고 있어 EN 이 "9 copies" 로 나왔다. 여기서 직접 정한다.
+const imgCount = (locale: string, n: number) => (locale === "en" ? `${n} images` : locale === "ja" ? `${n}枚` : `${n}장`);
 const SPOIL_KEY = "ta:gallery-spoiler";
 // 스포일러 가리기 — 브라우저 저장소 값을 useSyncExternalStore 로 읽는다 (서버·하이드레이션 스냅샷은 꺼짐이라 프리렌더와 안 갈린다)
 const SPOIL_EVENT = "ta:gallery-spoiler";
@@ -328,7 +330,7 @@ export default function Gallery({ doc, operators, includeFuture, onShowOperator,
                     <img src={spriteSrc(c, c.f[0])} alt="" loading="lazy" decoding="async" />
                   </span>
                   <b>{c.n}</b>
-                  <small>{t("{n}장", { n: c.f.length })}</small>
+                  <small>{imgCount(locale, c.f.length)}</small>
                 </button>
               ))}
             </div>
