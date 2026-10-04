@@ -98,6 +98,19 @@ export default {
       });
     }
 
+    // 방문 동선 기록 중계 — /api/visits/<표>|rpc/<함수> → 방문 기록 전용 Supabase 프로젝트 (docs/supabase-visits.sql).
+    // 관리자 키는 본 프로젝트와 같은 SUPABASE_ADMIN_KEY (make-visits-sql.mjs 가 같은 키를 박는다).
+    if (url.pathname.startsWith("/api/visits/")) {
+      if (!env.VISITS_URL) return json({ ok: false, error: "not-configured" }, 503);
+      const rest = url.pathname.slice("/api/visits/".length);
+      if (!/^(rpc\/)?[A-Za-z0-9_]+$/.test(rest)) return json({ ok: false, error: "bad-table" }, 400);
+      return proxy(request, `${env.VISITS_URL}/rest/v1/${rest}${url.search}`, {
+        apikey: env.VISITS_ANON_KEY,
+        Authorization: `Bearer ${env.VISITS_ANON_KEY}`,
+        "x-admin-key": env.SUPABASE_ADMIN_KEY ?? "",
+      });
+    }
+
     // 업로드 워커(R2) 중계 — /api/files[...] → UPLOAD_API/files[...]
     if (url.pathname === "/api/files" || url.pathname.startsWith("/api/files/")) {
       const rest = url.pathname.slice("/api".length); // "/files..." 그대로

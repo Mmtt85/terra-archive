@@ -24,3 +24,6 @@ SUPABASE_URL = "https://exirlkhpkgxsflbglhld.supabase.co"
 # anon 키는 공개 값(사이트 번들에 이미 들어있음) — 시크릿 아님
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4aXJsa2hwa2d4c2ZsYmdsaGxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTAwNDEsImV4cCI6MjA5ODgyNjA0MX0.IKwvqp0OyHOacl89JWIoRwzvJRDc2t0678qs3NPZ4fw"
 UPLOAD_API = "https://terra-archive-upload.nzkonaru.workers.dev"
+# 방문 동선 기록 전용 Supabase 프로젝트 (docs/supabase-visits.sql) — 비어 있으면 /api/visits 는 503
+VISITS_URL = "https://ytulglqiwcwufeyguvrj.supabase.co"
+VISITS_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0dWxnbHFpd2N3dWZleWd1dnJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwODgxMDMsImV4cCI6MjEwNjY2NDEwM30.N0bLhSrTtqoP3xOcYcnZfa32grznXN7LBcbp26OqX7E"

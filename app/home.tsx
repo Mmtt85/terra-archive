@@ -127,6 +127,7 @@ import { EnemyPage, type Enemy as EnemyEntry, type EnemyStages } from "./enemy-d
 // 작전 상세도 **lazy가 아니다** — 같은 프리렌더 이유 (app/enemy-detail.tsx 머리주석)
 import { StagePage } from "./stage-detail";
 import type { StageView } from "./stage-data";
+import { startVisitTrack } from "./visit-track";
 import { I18nProvider, useI18n, conceptName, makeT, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n, type T } from "./i18n";
 import { SPECIAL_CONCEPTS, conceptTitle, conceptMatches, resolveConcepts, suggestConcepts } from "./concepts";
 
@@ -1062,6 +1063,8 @@ const FUTURE_KEY = "ta-include-future";
 
 function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory, initialOperator, initialRogue, initialSandbox, initialAutochess, initialEnemy, pageEnemy, pageEnemyStages, pageStage }: { operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialSandbox?: string; initialAutochess?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null }) {
   const { locale, t } = useI18n();
+  // 방문 동선 기록 (app/visit-track.ts — 라이브 도메인에서만, 한 번만 켜진다)
+  useEffect(() => { startVisitTrack(locale); }, [locale]);
   // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
   // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
   const [includeFuture, setIncludeFuture] = useState(false);

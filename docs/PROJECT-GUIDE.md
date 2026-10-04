@@ -1187,6 +1187,23 @@ CRUD가 늘며 위험해진 /admin을 본사이트에서 떼어냈다. **비밀�
   `SUPABASE_ADMIN_KEY`/`UPLOAD_ADMIN_KEY` 갱신. 옛 키('admin')는 SQL 문서에 평문
   커밋돼 있었으므로 **Access가 동작 확인된 직후 반드시 회전**한다.
 
+### 방문 동선 통계 (2026-10-04, 사용자 확정)
+
+"어디로 유입돼서 어느 페이지를 열었고 어디에 몇 초간 머물렀고"를 **우리 DB 에** 쌓고 `/admin` → **방문 통계** 탭에서 그래프로 본다.
+
+- **DB 는 방문 기록 전용 Supabase 프로젝트** `ytulglqiwcwufeyguvrj` (본 프로젝트와 따로 — 무료 DB 는 500MB 를 넘으면 통째로
+  읽기 전용이 되므로, 방문 기록이 넘쳐도 제안 게시판·업데이트 내역·검색 학습이 멈추지 않게). 스키마·권한·집계·정리는
+  [supabase-visits.sql](supabase-visits.sql) 한 파일 — `node scripts/make-visits-sql.mjs` 가 관리자 키를 박은 사본
+  (`.visits-setup.generated.sql`, gitignore)을 만들고 그걸 그 프로젝트 SQL Editor 에서 돌린다. 재실행 안전.
+- **수집** [app/visit-track.ts](../app/visit-track.ts) — 라이브 도메인 + 자동화 브라우저 아님일 때만. 세션(탭) 1행 + 화면(주소=경로+해시,
+  모달 딥링크 포함) 조각 행. 보인 시간·조작 시간(30초 무입력은 제외)·스크롤·바깥 링크. 익명 키는 INSERT 만, IP·계정은 받지 않는다.
+  **운영자 본인은 기록하지 않는다** — 제안 게시판 관리자 모드 브라우저, 그리고 admin 을 연 브라우저(어드민이 `.terra-archive.net` 에
+  `ta-no-track` 쿠키를 1년 건다). localhost 시험은 `localStorage['ta-visit-debug']='1'` → env='dev'(통계에서 빠짐).
+- **보관**: 원장 90일, 매일 00:10 KST pg_cron 이 일별 집계표로 말고 지운다(400MB 넘으면 30일로). 사람 판정 = 세션 중 조작이 한 번이라도.
+- **읽기**: 어드민 `/api/visits/rpc/<함수>` — admin-api 워커(실서비스)·dev 프록시가 관리자 키(본 프로젝트와 같은 키)를 붙인다.
+  프로젝트 주소·anon 키는 **세 곳**에 같은 값: visit-track.ts · scripts/admin-dev-proxy.ts · workers/admin-api/wrangler.toml.
+- 어드민 목록은 전부 상위 5·10·20·50·100·전체(기본 10, 고른 값은 브라우저에 남는다). 차트는 라이브러리 없이 SVG 직접.
+
 ### 업데이트 내역 — DB 원장 (2026-07-27, 사용자 확정)
 
 헤더 로고 오른쪽 🛠 버튼 모달. **내용은 코드에 두지 않는다** — "매번 빌드해서 올리지 말고,

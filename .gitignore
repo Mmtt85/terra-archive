@@ -53,6 +53,11 @@ Arknights_OperBox_Export.json
 # 스토리 요약 번역 작업 중간 산출물 (최종본은 app/data/story-summaries.{en,ja}.json)
 scripts/story-i18n/
 scripts/story-cn/
+# 스토리 요약 재집필(2026-10) 중간 산출물 — 원문 평문·카드·초안·에이전트 작업물 (도구·지시서·진행표만 추적)
+scripts/story-resum/src/
+scripts/story-resum/cards/
+scripts/story-resum/out/
+scripts/story-resum/work/
 
 # CI 임시 리포트/로그
 # 디렉터리째(`.ci/`) 무시하면 git 이 안으로 내려가지 않아 아래 예외가 먹지 않는다.
@@ -65,6 +70,7 @@ scripts/story-cn/
 .r2-sync-key
 .supabase-admin-key
 .admin-rotate.generated.sql
+.visits-setup.generated.sql
 .upload-admin-key
 
 # 스킨 이미지(반신 초상 + 전체 일러, ~296MB) — git에 넣지 않는다 (2026-07-28 사용자 확정).

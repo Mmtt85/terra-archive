@@ -6,6 +6,8 @@ import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishReleas
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKey, type StoredFile } from "../files-api";
 import { useConfirm } from "../confirm";
+import { markOwnerBrowser } from "../visit-track";
+import { VisitsPanel } from "./visits";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
 import { RULES as bundledRules } from "../rules";
 import operatorsData from "../data/operators.json";
@@ -235,7 +237,7 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
-  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "files">("feedback"); // 상단 탭
+  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "files" | "visits">("feedback"); // 상단 탭
   // 파일 저장소(R2) — 워커 미배포·비밀번호 불일치면 null + 안내
   const [files, setFiles] = useState<StoredFile[] | null>(null);
   const [fileStatus, setFileStatus] = useState("");
@@ -254,6 +256,10 @@ export default function AdminPage() {
   const [rulesStatus, setRulesStatus] = useState("");
   const [editingRule, setEditingRule] = useState<RuleRow | null>(null);
   const [publishNote, setPublishNote] = useState(""); // 발행 메모 — prompt() 미지원 환경 대응 인라인 입력
+
+  // 운영자 본인의 사이트 방문은 동선 통계에서 뺀다 (사용자 지시 2026-10-04) — 여기 들어온 브라우저에
+  // terra-archive.net 전체 쿠키를 건다. 어드민은 Access 뒤라 운영자만 이 줄에 닿는다.
+  useEffect(() => { if (me) markOwnerBrowser(); }, [me]);
 
   useEffect(() => {
     if (!me) return;
@@ -577,6 +583,7 @@ export default function AdminPage() {
         <h1>TERRA ARCHIVE 관리</h1>
         <div className="admin-tools admin-tabs">
           <button className={tab === "feedback" ? "selected" : ""} onClick={() => setTab("feedback")}>피드백 ({rows.length})</button>
+          <button className={tab === "visits" ? "selected" : ""} onClick={() => setTab("visits")}>방문 통계</button>
           <button className={tab === "rules" ? "selected" : ""} onClick={() => setTab("rules")}>
             플래너 규칙{release ? ` (v${release.version}${release.version !== bundledRules.version ? " ⚠" : ""})` : ""}
           </button>
@@ -631,6 +638,8 @@ export default function AdminPage() {
           </>
         )}
       </section>
+
+      {tab === "visits" && <VisitsPanel />}
 
       {tab === "feedback" && (<>
       <div className="admin-tools admin-status-tools">

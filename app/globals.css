@@ -9659,6 +9659,150 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   color: var(--on-lime);
 }
 
+/* ── 어드민 '방문' 탭 — 방문 동선 그래프 (app/admin/visits.tsx, 2026-10-04) ──────────
+   차트는 SVG 직접. 계열 색은 채도 낮은 세 톤(카드 디자인 취향 — 형광 금지), 다크는 한 단계 밝게. */
+.vz {
+  --vz-s1: #4f7391;
+  --vz-s2: #a37f45;
+  --vz-s3: #6f8a5a;
+  --vz-heat: #3d5f7c;
+  margin-top: 18px;
+}
+html.dark .vz {
+  --vz-s1: #82a6c4;
+  --vz-s2: #cfa96c;
+  --vz-s3: #9db985;
+  --vz-heat: #8fb6d8;
+}
+.vz-controls { margin: 4px 0 12px; }
+.vz-h {
+  margin: 26px 0 10px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+.vz-h small { color: var(--muted); font-weight: 600; font-size: 12px; }
+.vz-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 26px 0 10px;
+}
+.vz-head .vz-h { margin: 0; }
+.vz-head-tools { display: flex; gap: 6px; align-items: center; }
+.vz-note, .vz-empty { color: var(--muted); font-size: 12.5px; margin: 6px 0; }
+.vz-muted { color: var(--muted); font-size: 12px; }
+.vz-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.vz-kpis > div {
+  border: 1px solid var(--line);
+  background: var(--bg-panel);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.vz-kpis b { font: 800 20px var(--mono); letter-spacing: -0.5px; }
+.vz-kpis span { color: var(--muted); font-size: 12px; }
+.vz-chart svg, .vz-sankey, .vz-heat { width: 100%; height: auto; display: block; }
+.vz-legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink3); margin-bottom: 4px; }
+.vz-legend i { display: inline-block; width: 14px; height: 3px; margin-right: 5px; vertical-align: middle; background: currentColor; }
+.vz-legend .s1 i { background: var(--vz-s1); }
+.vz-legend .s2 i { background: var(--vz-s2); }
+.vz-legend .s3 i { background: var(--vz-s3); }
+.vz-grid line { stroke: var(--line); stroke-width: 1; }
+.vz-grid text, .vz-axis { fill: var(--muted); font: 600 11px var(--mono); }
+.vz-series polyline { fill: none; stroke-width: 2; stroke-linejoin: round; }
+.vz-series.s1 polyline, .vz-series.s1 circle { stroke: var(--vz-s1); fill: var(--vz-s1); }
+.vz-series.s2 polyline, .vz-series.s2 circle { stroke: var(--vz-s2); fill: var(--vz-s2); }
+.vz-series.s3 polyline, .vz-series.s3 circle { stroke: var(--vz-s3); fill: var(--vz-s3); }
+.vz-series polyline { fill: none !important; }
+.vz-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 760px) { .vz-cols { grid-template-columns: 1fr; } }
+.vz-bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.vz-bars li {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 12.5px;
+  min-height: 24px;
+}
+.vz-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--vz-s1);
+  opacity: 0.16;
+}
+.vz-bar-label { position: relative; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.vz-bar-sub { position: relative; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+.vz-bar-n { position: relative; font: 700 12px var(--mono); white-space: nowrap; }
+.vz-bar-n small { color: var(--muted); font-weight: 600; margin-left: 2px; }
+.vz-heat rect { fill: var(--vz-heat); }
+.vz-link { fill: var(--vz-s1); opacity: 0.28; }
+.vz-link.exit { fill: var(--muted); opacity: 0.16; }
+.vz-link:hover { opacity: 0.55; }
+.vz-node rect { fill: var(--ink2); }
+.vz-node.exit rect { fill: var(--muted); }
+.vz-node text {
+  fill: var(--ink);
+  font-weight: 700;
+  font-size: 11.5px;
+  /* 띠 위에 얹히는 이름표 — 종이색 테두리로 띄워 읽히게 */
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.vz-node-n { fill: var(--muted); font: 600 11px var(--mono); }
+.vz-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.vz-table th {
+  text-align: right;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 11.5px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+.vz-table th:first-child, .vz-table td:first-child { text-align: left; }
+.vz-table td {
+  text-align: right;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+.vz-table td:first-child {
+  position: relative;
+  font-family: inherit;
+  font-weight: 700;
+  max-width: 380px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vz-cellbar { position: absolute; inset: 2px auto 2px 0; background: var(--vz-s1); opacity: 0.13; pointer-events: none; }
+.vz-sessions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.vz-sessions li { border: 1px solid var(--line); background: var(--bg-panel); padding: 8px 10px; }
+.vz-sessions li.bot { opacity: 0.6; }
+.vz-sessions header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; font-size: 12px; margin-bottom: 5px; }
+.vz-sessions time { font: 700 12px var(--mono); color: var(--ink3); }
+.vz-tag { border: 1px solid var(--line); padding: 0 5px; font-size: 11px; color: var(--ink3); }
+.vz-tag.warn { border-color: var(--border-strong); }
+.vz-trail { margin: 0; font-size: 12.5px; line-height: 1.9; }
+.vz-trail i { font-style: normal; color: var(--muted); margin: 0 5px; }
+.vz-step { background: var(--bg-soft); padding: 1px 6px; font-weight: 700; white-space: nowrap; }
+.vz-step small { color: var(--muted); font: 600 11px var(--mono); margin-left: 3px; }
+.vz-step.out { background: none; border: 1px dashed var(--border-hover); font-weight: 600; }
+.vz-step.exit { background: none; color: var(--muted); font-weight: 600; }
+
 /* ── 재료 파밍 효율표 탭 ─────────────────────────────── */
 .farm {
   /* 도감·인프라·스토리와 같은 리듬 (2026-09-20) */

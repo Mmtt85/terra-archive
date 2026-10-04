@@ -15,6 +15,10 @@ import type { Plugin } from "vite";
 const SUPABASE_URL = "https://exirlkhpkgxsflbglhld.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4aXJsa2hwa2d4c2ZsYmdsaGxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTAwNDEsImV4cCI6MjA5ODgyNjA0MX0.IKwvqp0OyHOacl89JWIoRwzvJRDc2t0678qs3NPZ4fw";
 const UPLOAD_API = "https://terra-archive-upload.nzkonaru.workers.dev";
+// 방문 동선 기록 전용 Supabase 프로젝트 (docs/supabase-visits.sql) — app/visit-track.ts·workers/admin-api 와 같은 값.
+// 비어 있으면 /api/visits 는 503(not-configured) → 어드민 '방문' 탭이 설치 안내를 띄운다.
+const VISITS_URL = "https://ytulglqiwcwufeyguvrj.supabase.co";
+const VISITS_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0dWxnbHFpd2N3dWZleWd1dnJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwODgxMDMsImV4cCI6MjEwNjY2NDEwM30.N0bLhSrTtqoP3xOcYcnZfa32grznXN7LBcbp26OqX7E";
 
 const readKey = (root: string, name: string): string | null =>
   existsSync(join(root, name)) ? readFileSync(join(root, name), "utf8").trim() : null;
@@ -75,6 +79,20 @@ export function adminDevProxy(): Plugin {
             return relay(req, res, `${SUPABASE_URL}/rest/v1/${rest}`, {
               apikey: SUPABASE_ANON_KEY,
               Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+              "x-admin-key": key,
+            });
+          }
+
+          // 방문 기록 — /api/visits/<표> 또는 /api/visits/rpc/<함수>. 관리자 키는 본 프로젝트와 같다.
+          if (url.startsWith("/api/visits/")) {
+            if (!VISITS_URL) return send(res, 503, { ok: false, error: "not-configured" });
+            const key = readKey(root, ".supabase-admin-key");
+            if (!key) return send(res, 503, { ok: false, error: "키 파일 없음 (.supabase-admin-key)" });
+            const rest = url.slice("/api/visits/".length);
+            if (!/^(rpc\/)?[A-Za-z0-9_]+(\?|$)/.test(rest)) return send(res, 400, { ok: false, error: "bad-table" });
+            return relay(req, res, `${VISITS_URL}/rest/v1/${rest}`, {
+              apikey: VISITS_ANON_KEY,
+              Authorization: `Bearer ${VISITS_ANON_KEY}`,
               "x-admin-key": key,
             });
           }
