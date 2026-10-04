@@ -131,7 +131,7 @@ function sendSession(locale: string): void {
   post("visit_session", [{
     id: sess.id,
     visitor,
-    landing: clip(location.pathname + location.hash, 300),
+    landing: clip(trackPath() + location.hash, 300),
     ref_host: clip(refHost, 120),
     ref: clip(ref, 300),
     utm_source: clip(q.get("utm_source"), 60),
@@ -173,14 +173,21 @@ function flush(): void {
   v.sentVis = v.vis; v.sentAct = v.act; v.touched = false; v.out = null; v.sentOnce = true;
 }
 
-const here = () => location.pathname + location.hash;
+// 통합전략 옛 링크(/rogue?topic=is3)는 경로가 /rogue 뿐이라 몇 번 테마였는지가 사라진다 — 테마 경로로 적는다
+// (사용자 지시 2026-10-04 "통합전략 몇번에 접속했는지가 제일 중요". 맨 /rogue 는 1번 테마라 그대로 둔다)
+function trackPath(): string {
+  const p = location.pathname;
+  const topic = /^\/(?:en\/|ja\/)?rogue\/?$/.test(p) ? new URLSearchParams(location.search).get("topic") : null;
+  return topic && /^is\d$/.test(topic) ? p.replace(/\/?$/, `/${topic}`) : p;
+}
+const here = () => trackPath() + location.hash;
 
 function beginView(): void {
   if (!sess) return;
   sess.seq += 1;
   saveSess();
   view = {
-    seq: sess.seq, path: location.pathname, hash: location.hash || null,
+    seq: sess.seq, path: trackPath(), hash: location.hash || null,
     t0: Math.max(0, Math.round((Date.now() - sess.start) / 1000)),
     vis: 0, act: 0, sentVis: 0, sentAct: 0, scroll: 0, touched: false, out: null, sentOnce: false,
   };

@@ -151,17 +151,26 @@ language sql immutable as $$
   end
 $$;
 
--- 경로 정규화 — /en·/ja 접두를 떼고 빈 경로는 '/'.
+-- 경로 정규화 — /en·/ja 접두를 떼고 빈 경로는 '/'. 맨 /rogue 는 1번 테마가 열리는 주소라 /rogue/is1 로 합친다
+-- (통합전략은 몇 번 테마인지가 제일 중요하다 — 사용자 지시 2026-10-04).
 create or replace function public.visit_path(p_path text) returns text
 language sql immutable as $$
-  select coalesce(nullif(regexp_replace(p_path, '^/(en|ja)(/|$)', '/'), ''), '/')
+  select case when x ~ '^/rogue/?$' then '/rogue/is1' else x end
+  from (select coalesce(nullif(regexp_replace(p_path, '^/(en|ja)(/|$)', '/'), ''), '/') as x) t
 $$;
 
 -- 흐름도용 화면 묶음 — 경로 첫 마디(+ 모달이면 해시 종류). 상세 페이지 수천 개를 갈래 단위로 접는다.
+-- 통합전략만은 **몇 번 테마인지**가 갈래다 (사용자 지시 2026-10-04 "통합전략 몇번에 접속했는지가 제일 중요") —
+-- 'rogue/is3' 처럼 테마까지 적고(맨 /rogue 는 1번 테마가 열린다), 해시는 #rg-<화면>(맵·적 도감·소장품 …)의 화면 이름.
 create or replace function public.visit_section(p_path text, p_hash text) returns text
 language sql immutable as $$
-  select coalesce(nullif(split_part(public.visit_path(p_path), '/', 2), ''), '홈')
-      || coalesce(' #' || substring(p_hash from '^#([a-z]+)'), '')
+  select case
+    when split_part(public.visit_path(p_path), '/', 2) = 'rogue' then
+      'rogue/' || coalesce(nullif(split_part(public.visit_path(p_path), '/', 3), ''), 'is1')
+        || coalesce(' #' || substring(p_hash from '^#rg-([a-z]+)'), '')
+    else coalesce(nullif(split_part(public.visit_path(p_path), '/', 2), ''), '홈')
+        || coalesce(' #' || substring(p_hash from '^#([a-z]+)'), '')
+  end
 $$;
 
 -- ── 어드민 조회 (security invoker — RLS 가 관리자 키를 본다. 키가 없으면 빈 결과) ─────────────

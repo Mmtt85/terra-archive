@@ -1205,6 +1205,9 @@ CRUD가 늘며 위험해진 /admin을 본사이트에서 떼어냈다. **비밀�
 - **읽기**: 어드민 `/api/visits/rpc/<함수>` — admin-api 워커(실서비스)·dev 프록시가 관리자 키(본 프로젝트와 같은 키)를 붙인다.
   프로젝트 주소·anon 키는 **세 곳**에 같은 값: visit-track.ts · scripts/admin-dev-proxy.ts · workers/admin-api/wrangler.toml.
 - 어드민 목록은 전부 상위 5·10·20·50·100·전체(기본 10, 고른 값은 브라우저에 남는다). 차트는 라이브러리 없이 SVG 직접.
+- **통합전략은 몇 번 테마인지까지** 가른다 (사용자 지시 2026-10-04) — 맨 `/rogue` 는 1번 테마가 열리므로 `/rogue/is1` 로 합치고
+  (SQL `visit_path`), 흐름도·화면 묶음은 `rogue/is3 #relic` 처럼 테마 + 화면(맵·적 도감·소장품 …)으로 묶는다(`visit_section`).
+  옛 링크 `/rogue?topic=is3` 은 수집기가 `/rogue/is3` 로 적는다. 어드민 이름표는 '통합전략 3 · 사미'.
 
 ### 업데이트 내역 — DB 원장 (2026-07-27, 사용자 확정)
 

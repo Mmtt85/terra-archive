@@ -59,15 +59,29 @@ const SECTION_KO: Record<string, string> = {
   ra: "생존연산", autochess: "위수 협의", gallery: "갤러리", sim: "시뮬레이터", about: "소개",
 };
 const DEVICE_KO: Record<string, string> = { mobile: "폰", tablet: "태블릿", desktop: "PC" };
+// 통합전략은 몇 번 테마인지가 제일 중요하다 (사용자 지시 2026-10-04) — 맨 /rogue 는 1번 테마가 열린다.
+// 별명은 커뮤니티 호칭(omni.ts TOPIC_NICKS 첫 낱말), 화면 이름은 rogue.tsx viewsFor 와 같다.
+const ROGUE_NICK = ["팬텀", "미즈키", "사미", "살카즈", "쉐이", "블랙플로우"];
+const ROGUE_VIEW_KO: Record<string, string> = { map: "맵·노드", enemy: "적 도감", relic: "소장품", archive: "전시관", diff: "난이도", ending: "엔딩" };
+function rogueLabel(slug: string): string {
+  const n = Number(/^is(\d)$/.exec(slug || "is1")?.[1]);
+  return n ? `통합전략 ${n} · ${ROGUE_NICK[n - 1] ?? ""}` : `통합전략 · ${slug}`;
+}
 
 function sectionLabel(s: string): string {
   const [head, hash] = s.split(" #");
+  if (head.startsWith("rogue/")) return rogueLabel(head.slice(6)) + (hash ? ` · ${ROGUE_VIEW_KO[hash] ?? hash}` : "");
   return (SECTION_KO[head] ?? head) + (hash ? ` · 모달(${hash})` : "");
 }
 function pathLabel(path: string, hash?: string | null): string {
   const p = path.replace(/^\/(en|ja)(?=\/|$)/, "") || "/";
   const [, head = "", id = ""] = p.split("/");
   const key = decodeURIComponent(id);
+  if (head === "rogue") {
+    const m = hash && /^#rg-([a-z]+)(?:~[a-z]+~(.+))?$/.exec(hash);
+    const tail = m ? ` · ${ROGUE_VIEW_KO[m[1]] ?? m[1]}${m[2] ? ` ${decodeURIComponent(m[2])}` : ""}` : hash ? ` ${hash}` : "";
+    return rogueLabel(id) + tail;
+  }
   const name =
     p === "/" ? "홈"
     : !id && SECTION_KO[head] ? SECTION_KO[head]
