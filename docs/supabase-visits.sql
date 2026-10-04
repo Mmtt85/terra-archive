@@ -244,6 +244,10 @@ returns json language sql stable as $$
         select public.visit_section(path, hash) as section, count(*) as views,
                avg(active_ms)::bigint as avg_active, count(*) filter (where last) as exits
         from sv group by 1) d),
+    -- 오늘 보기의 시간대별 추이 — 시작 시각(KST)의 시로 세션·방문자·화면 조회 (기간이 하루를 넘으면 비운다)
+    'hourly', (select coalesce(json_agg(d order by d.hr), '[]') from (
+        select extract(hour from kst)::int as hr, count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
+        from s where p_days <= 0 group by 1) d),
     'hours', (select coalesce(json_agg(json_build_array(dow, hr, n)), '[]') from (
         select extract(isodow from kst)::int - 1 as dow, extract(hour from kst)::int as hr, count(*) as n
         from s group by 1, 2) d),

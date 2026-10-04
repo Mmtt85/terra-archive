@@ -25,6 +25,8 @@ type Summary = {
   pages: { path: string; views: number; sessions: number; avg_active: number; med_active: number; exits: number; scroll: number | null }[];
   sections: { section: string; views: number; avg_active: number; exits: number }[];
   hours: [number, number, number][];
+  /** 오늘 보기 전용 — 시작 시각(KST)의 시별 (옛 DB 함수엔 없다) */
+  hourly?: { hr: number; sessions: number; visitors: number; views: number }[];
   device: Kv[]; site_lang: Kv[]; tz: Kv[];
   out: { host: string; n: number }[];
   flow: FlowRow[];
@@ -483,15 +485,18 @@ export function VisitsPanel() {
           </div>
 
           {days === 0 ? (() => {
-            // 오늘 — 시간대별 세션 (KST 0시~지금). hours 는 [요일, 시, 세션] 이고 오늘 하루치뿐이다
+            // 오늘 — 시간대별 (KST 0시~지금, 세션 시작 시각 기준). 방문자·세션·화면 조회를 일별 추이와 같은 세 선으로
             const nowHour = new Date(Date.now() + 9 * 3600_000).getUTCHours();
-            const perHour = Array<number>(nowHour + 1).fill(0);
-            for (const [, h, n] of data.hours) if (h <= nowHour) perHour[h] += n;
+            const hrs = Array.from({ length: nowHour + 1 }, (_, h) => h);
+            const by = new Map((data.hourly ?? []).map((r) => [r.hr, r]));
             return (
               <>
-                <Head title="오늘 시간대별" sub="KST 0시 00분부터 지금까지, 시작 시각 기준 세션 수" />
-                <LineChart days={perHour.map((_, h) => String(h))} fmt={(h) => `${h}시`} tip={(h) => `오늘 ${h}시대`}
-                           series={[{ name: "세션", cls: "s2", values: perHour }]} />
+                <Head title="오늘 시간대별" sub="KST 0시 00분부터 지금까지, 세션이 시작된 시각 기준" />
+                <LineChart days={hrs.map(String)} fmt={(h) => `${h}시`} tip={(h) => `오늘 ${h}시대`} series={[
+                  { name: "방문자", cls: "s1", values: hrs.map((h) => by.get(h)?.visitors ?? 0) },
+                  { name: "세션", cls: "s2", values: hrs.map((h) => by.get(h)?.sessions ?? 0) },
+                  { name: "화면 조회", cls: "s3", values: hrs.map((h) => by.get(h)?.views ?? 0) },
+                ]} />
               </>
             );
           })() : (
