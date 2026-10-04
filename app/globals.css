@@ -9831,6 +9831,11 @@ html.dark .vz {
   text-overflow: ellipsis;
 }
 .vz-cellbar { position: absolute; inset: 2px auto 2px 0; background: var(--vz-s1); opacity: 0.13; pointer-events: none; }
+/* 화면 이름 = 라이브 사이트의 그 화면 링크(새 탭) — 겉모습은 그대로 두고 올렸을 때만 밑줄 (사용자 지시 2026-10-04) */
+.vz .vz-go { color: inherit; text-decoration: none; cursor: pointer; }
+.vz .vz-go:hover { text-decoration: underline; text-underline-offset: 2px; }
+.vz-table td:first-child .vz-go { position: relative; }
+.vz-node .vz-go:hover text { text-decoration: underline; }
 .vz-sessions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .vz-sessions li { border: 1px solid var(--line); background: var(--bg-panel); padding: 8px 10px; }
 .vz-sessions li.bot { opacity: 0.6; }

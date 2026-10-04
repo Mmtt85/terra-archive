@@ -9,7 +9,7 @@
 // 기간 7·30·90일은 원장에서, '1년'은 매일 밤 말아 둔 일별 집계표에서 읽는다. 원장은 기간으로 자르지 않고
 // DB 가 80% 차면 오래된 것부터 지운다(docs/supabase-visits.sql visits_maintain).
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
 import operatorsData from "../data/operators.json";
 import storiesData from "../data/stories.json";
@@ -89,6 +89,22 @@ function pathLabel(path: string, hash?: string | null): string {
     : head === "stories" && STORY_NAME.has(key) ? `스토리 · ${STORY_NAME.get(key)}`
     : decodeURIComponent(p);
   return name + (hash ? ` ${hash}` : "");
+}
+// 화면 이름을 누르면 라이브 사이트의 그 화면을 새 탭으로 (사용자 지시 2026-10-04). 운영자 브라우저는 어드민이
+// ta-no-track 쿠키를 걸어 두어서 이렇게 열어 봐도 통계에 안 잡힌다.
+const SITE = "https://terra-archive.net";
+const siteUrl = (path: string, hash?: string | null) => SITE + (path.startsWith("/") ? path : `/${path}`) + (hash ?? "");
+/** 갈래 → 그 갈래의 첫 주소 ('operators #op' → /operators, 'rogue/is3 #relic' → /rogue/is3#rg-relic). 이탈·기타는 없음 */
+function sectionUrl(s: string): string | null {
+  if (s === "이탈" || s === "기타") return null;
+  const [head, hash] = s.split(" #");
+  if (head === "홈") return siteUrl("/");
+  if (head.startsWith("rogue/")) return siteUrl(`/${head}`, hash ? `#rg-${hash}` : null);
+  return siteUrl(`/${head}`);
+}
+function Go({ href, className, children }: { href?: string | null; className?: string; children: ReactNode }) {
+  if (!href) return <span className={className}>{children}</span>;
+  return <a className={`vz-go${className ? ` ${className}` : ""}`} href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
 }
 function fmtDur(ms: number | null | undefined): string {
   const s = Math.round((ms ?? 0) / 1000);
@@ -170,7 +186,7 @@ function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), ti
 }
 
 /** 가로 막대 목록 */
-function BarList({ rows, top, unit = "" }: { rows: { label: string; n: number; sub?: string; title?: string }[]; top: number; unit?: string }) {
+function BarList({ rows, top, unit = "" }: { rows: { label: string; n: number; sub?: string; title?: string; href?: string | null }[]; top: number; unit?: string }) {
   const total = rows.reduce((a, r) => a + r.n, 0);   // % 는 잘라 낸 뒤가 아니라 전체 기준
   rows = top ? rows.slice(0, top) : rows;
   const max = Math.max(1, ...rows.map((r) => r.n));
@@ -180,7 +196,7 @@ function BarList({ rows, top, unit = "" }: { rows: { label: string; n: number; s
       {rows.map((r) => (
         <li key={r.label} title={r.title ?? r.label}>
           <span className="vz-bar" style={{ width: `${(r.n / max) * 100}%` }} />
-          <span className="vz-bar-label">{r.label}</span>
+          <Go className="vz-bar-label" href={r.href}>{r.label}</Go>
           {r.sub && <span className="vz-bar-sub">{r.sub}</span>}
           <span className="vz-bar-n">{num(r.n)}{unit} <small>{pct(r.n, total)}</small></span>
         </li>
@@ -285,9 +301,15 @@ function Sankey({ flow }: { flow: FlowRow[] }) {
       {layout.cols.flat().map((n) => (
         <g key={`${n.c}|${n.k}`} className={n.k === "이탈" ? "vz-node exit" : "vz-node"}>
           <rect x={layout.colX(n.c)} y={n.y} width={NODE} height={n.h} />
-          <text x={layout.colX(n.c) + NODE + 5} y={n.y + Math.min(n.h, 24) / 2 + 4}>
-            {name(n.c, n.k)} <tspan className="vz-node-n">{num(n.v)}</tspan>
-          </text>
+          {(() => {
+            const label = (
+              <text x={layout.colX(n.c) + NODE + 5} y={n.y + Math.min(n.h, 24) / 2 + 4}>
+                {name(n.c, n.k)} <tspan className="vz-node-n">{num(n.v)}</tspan>
+              </text>
+            );
+            const href = n.c === 0 ? null : sectionUrl(n.k);   // 0열은 유입원(바깥)
+            return href ? <a className="vz-go" href={href} target="_blank" rel="noopener noreferrer">{label}</a> : label;
+          })()}
         </g>
       ))}
     </svg>
@@ -359,7 +381,7 @@ function SessionLine({ s }: { s: SessRow }) {
       <header>
         <time>{when}</time>
         <b>{s.src}</b>
-        {s.ref && s.ref !== s.src && <span className="vz-muted" title={s.ref}>{s.ref.replace(/^https?:\/\//, "").slice(0, 60)}</span>}
+        {s.ref && s.ref !== s.src && <span className="vz-muted" title={s.ref}><Go href={/^https?:\/\//.test(s.ref) ? s.ref : null}>{s.ref.replace(/^https?:\/\//, "").slice(0, 60)}</Go></span>}
         {s.utm && <span className="vz-tag">utm:{s.utm}</span>}
         <span className="vz-tag">{DEVICE_KO[s.device ?? ""] ?? s.device}</span>
         {s.site_lang && s.site_lang !== "ko" && <span className="vz-tag">{s.site_lang}</span>}
@@ -371,10 +393,11 @@ function SessionLine({ s }: { s: SessRow }) {
         {s.views.map((v, i) => (
           <span key={i}>
             {i > 0 && <i>→</i>}
-            <span className="vz-step" title={`${v.path}${v.hash ?? ""} · 보인 ${fmtDur(v.vis)} · 조작 ${fmtDur(v.act)}${v.scroll != null ? ` · 스크롤 ${v.scroll}%` : ""}`}>
+            <a className="vz-step vz-go" href={siteUrl(v.path, v.hash)} target="_blank" rel="noopener noreferrer"
+               title={`${v.path}${v.hash ?? ""} · 보인 ${fmtDur(v.vis)} · 조작 ${fmtDur(v.act)}${v.scroll != null ? ` · 스크롤 ${v.scroll}%` : ""}`}>
               {pathLabel(v.path, v.hash)} <small>{fmtDur(v.act || v.vis)}</small>
-            </span>
-            {v.out && <><i>↗</i><span className="vz-step out">{v.out.replace(/^https?:\/\//, "").slice(0, 40)}</span></>}
+            </a>
+            {v.out && <><i>↗</i><Go className="vz-step out" href={/^https?:\/\//.test(v.out) ? v.out : null}>{v.out.replace(/^https?:\/\//, "").slice(0, 40)}</Go></>}
           </span>
         ))}
         {last && !last.out && <><i>→</i><span className="vz-step exit">이탈</span></>}
@@ -540,13 +563,13 @@ export function VisitsPanel() {
               {data.ref.length > 0 && (
                 <>
                   <Head title="경로까지 온 리퍼러" sub={`${data.ref.length}개`} {...top("ref")} />
-                  <BarList top={tops.ref} rows={data.ref.map((r) => ({ label: r.ref.replace(/^https?:\/\//, ""), n: r.sessions, title: r.ref }))} />
+                  <BarList top={tops.ref} rows={data.ref.map((r) => ({ label: r.ref.replace(/^https?:\/\//, ""), n: r.sessions, title: r.ref, href: /^https?:\/\//.test(r.ref) ? r.ref : null }))} />
                 </>
               )}
             </div>
             <div>
               <Head title="첫 화면 (랜딩)" {...top("landing")} />
-              <BarList top={tops.landing} rows={data.landing.map((r) => ({ label: pathLabel(r.path), n: r.sessions, sub: `바로 이탈 ${pct(r.bounces, r.sessions)}`, title: r.path }))} />
+              <BarList top={tops.landing} rows={data.landing.map((r) => ({ label: pathLabel(r.path), n: r.sessions, sub: `바로 이탈 ${pct(r.bounces, r.sessions)}`, title: r.path, href: siteUrl(r.path) }))} />
             </div>
           </div>
 
@@ -563,7 +586,7 @@ export function VisitsPanel() {
                 const maxV = data.pages[0]?.views || 1;
                 return (
                   <tr key={p.path}>
-                    <td title={p.path}><span className="vz-cellbar" style={{ width: `${(p.views / maxV) * 100}%` }} />{pathLabel(p.path)}</td>
+                    <td title={p.path}><span className="vz-cellbar" style={{ width: `${(p.views / maxV) * 100}%` }} /><Go href={siteUrl(p.path)}>{pathLabel(p.path)}</Go></td>
                     <td>{num(p.views)}</td>
                     <td>{num(p.sessions)}</td>
                     <td>{fmtDur(p.avg_active)}</td>
@@ -579,7 +602,7 @@ export function VisitsPanel() {
           <div className="vz-cols">
             <div>
               <Head title="갈래별 (모달 포함)" {...top("sections")} />
-              <BarList top={tops.sections} rows={data.sections.map((r) => ({ label: sectionLabel(r.section), n: r.views, sub: `평균 ${fmtDur(r.avg_active)}` }))} />
+              <BarList top={tops.sections} rows={data.sections.map((r) => ({ label: sectionLabel(r.section), n: r.views, sub: `평균 ${fmtDur(r.avg_active)}`, href: sectionUrl(r.section) }))} />
             </div>
             <div>
               <Head title="요일·시간 (KST)" />
