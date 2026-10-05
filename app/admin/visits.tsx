@@ -324,7 +324,7 @@ function Sankey({ flow }: { flow: FlowRow[] }) {
   );
 }
 
-// ── 목록 길이 — 모든 목록은 상위 5·15·30, 기본 15, 바꾸면 이 브라우저에 남는다. '전체 보기'는 목록을 늘리지 않고
+// ── 목록 길이 — 모든 목록은 상위 5·15·30, 기본 5, 바꾸면 이 브라우저에 남는다. '전체 보기'는 목록을 늘리지 않고
 //    창(모달)을 띄워 업데이트 내역처럼 내릴수록 이어서 그린다 (사용자 지시 2026-10-05 — 종전 5·10·20·50·100·전체) ──
 
 const TOPS = [5, 15, 30];
@@ -380,7 +380,7 @@ function Head({ title, sub, top, setTop, onAll, children }: { title: string; sub
 }
 
 type TopKey = "src" | "ref" | "landing" | "pages" | "sections" | "devlang" | "tz" | "out" | "sessions" | "mesync";
-const TOP_DEFAULT: Record<TopKey, number> = { src: 15, ref: 15, landing: 15, pages: 15, sections: 15, devlang: 15, tz: 15, out: 15, sessions: 15, mesync: 15 };
+const TOP_DEFAULT: Record<TopKey, number> = { src: 5, ref: 5, landing: 5, pages: 5, sections: 5, devlang: 5, tz: 5, out: 5, sessions: 5, mesync: 5 };
 const TOPS_KEY = "ta-admin-visit-tops";   // localStorage — 목록마다 고른 개수
 
 function loadTops(): Record<TopKey, number> {
