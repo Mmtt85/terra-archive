@@ -34,6 +34,10 @@ export default defineConfig(async () => {
     // 스테이지에서 지운다. Pages 가 서빙할 것만 scripts/copy-public.mjs 가 빌드 뒤에 골라 복사한다.
     // dev 서버는 이 설정과 무관하게 public/ 을 그대로 서빙한다.
     build: { copyPublicDir: false },
+    // dev 서버가 배포용 워크트리(.claude/worktrees — 빌드 산출물 수만 개·자기 tsconfig)를 감시하지 않게 (2026-10-05).
+    // 감시하면 배포할 때마다 page reload 수천 번 + "tsconfig 바뀜 → program reload" 가 일어나, 이후 /me SSR 응답이
+    // 중간에 끊겨 "server could not finish this Suspense boundary" 가 떴다 (새로 띄운 dev 서버는 멀쩡했다).
+    server: { watch: { ignored: ["**/.claude/**", "**/dist/**"] } },
     plugins: [
       // dev 전용: localhost /api/* → 키 파일로 Supabase·업로드 워커 중계 (관리자 로컬 개발용)
       adminDevProxy(),

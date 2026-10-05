@@ -328,6 +328,8 @@ function Sankey({ flow }: { flow: FlowRow[] }) {
 //    창(모달)을 띄워 업데이트 내역처럼 내릴수록 이어서 그린다 (사용자 지시 2026-10-05 — 종전 5·10·20·50·100·전체) ──
 
 const TOPS = [5, 15, 30];
+const SPANS = [7, 30, 90, 365] as const;
+const SPAN_LABEL: Record<number, string> = { 7: "최근 7일", 30: "최근 30일", 90: "최근 90일", 365: "1년(일별 집계)" };
 const SESSIONS_ALL = 5000;                // 세션 타임라인 '전체 보기'의 상한 (visits_sessions 도 5,000 에서 자른다)
 const ALL_STEP = 50;                      // 전체 보기 창에서 한 번에 더 그리는 줄 수
 
@@ -417,6 +419,7 @@ function fillRange(days: Summary["days"], from: string, to: string) {
 }
 const kstToday = () => new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
 const nextDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86400_000).toISOString().slice(0, 10);
+const prevDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) - 86400_000).toISOString().slice(0, 10);
 
 function SessionLine({ s }: { s: SessRow }) {
   const at = new Date(s.at);
@@ -634,18 +637,38 @@ export function VisitsPanel() {
     if (next.from > next.to) next = which === "from" ? { from: v, to: v } : { from: v, to: v };
     setRange(next);
   };
+  // 전날·다음날 (사용자 지시 2026-10-05) — 지정 기간을 하루씩 민다. 기간이 없으면 오늘 하루에서 출발한다.
+  // 오늘 너머로는 못 가고, 오늘 하루에 닿으면 기간을 풀어 '오늘' 보기(자동 새로고침)로 돌아간다.
+  const shiftDay = (dir: -1 | 1) => {
+    const cur = range ?? { from: today, to: today };
+    const step = dir < 0 ? prevDay : nextDay;
+    const next = { from: step(cur.from), to: step(cur.to) };
+    if (next.to > today) return;
+    if (next.from === today && next.to === today) { setRange(null); setDays(0); return; }
+    setRange(next);
+  };
+  const canNext = !!range && range.to < today;
   return (
     <section className="vz">
       <div className="admin-tools vz-controls">
-        {([0, 7, 30, 90, 365] as const).map((d) => (
-          <button key={d} className={!range && days === d ? "selected" : ""} onClick={() => { setRange(null); setDays(d); }}>{d === 0 ? "오늘" : d === 365 ? "1년(일별 집계)" : `${d}일`}</button>
-        ))}
+        <button className={!range && days === 0 ? "selected" : ""} onClick={() => { setRange(null); setDays(0); }}>오늘</button>
+        {/* 7·30·90일·1년은 드롭다운 하나로 (사용자 지시 2026-10-05) */}
+        <Dropdown
+          label={!range && days !== 0 ? SPAN_LABEL[days] : "최근 기간"}
+          items={SPANS.map((d) => ({ value: String(d), label: SPAN_LABEL[d] }))}
+          selected={!range && days !== 0 ? [String(days)] : []}
+          onPick={(v) => { setRange(null); setDays(Number(v) as typeof SPANS[number]); }}
+          ariaLabel="최근 기간"
+          buttonClassName={!range && days !== 0 ? "selected" : ""}
+        />
         {/* 기간 지정 — 하루만 고르면 시작=끝. 날짜 칸을 누르면 브라우저 달력이 뜬다 */}
         <span className={`vz-range${range ? " on" : ""}`}>
           <span>기간</span>
+          <button type="button" className="vz-day" onClick={() => shiftDay(-1)} title="하루 앞으로">‹ 전날</button>
           <input type="date" max={today} value={range?.from ?? ""} onChange={(e) => pickDate("from", e.target.value)} aria-label="시작일" />
           <i>~</i>
           <input type="date" max={today} value={range?.to ?? ""} onChange={(e) => pickDate("to", e.target.value)} aria-label="끝일" />
+          <button type="button" className="vz-day" onClick={() => shiftDay(1)} disabled={!canNext} title="하루 뒤로">다음날 ›</button>
           {range && <button type="button" className="vz-range-x" onClick={() => setRange(null)} aria-label="기간 지정 해제">×</button>}
         </span>
         <button className={human ? "selected" : ""} onClick={() => setHuman((h) => !h)} disabled={days === 365 && !range}

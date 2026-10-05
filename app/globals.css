@@ -9705,6 +9705,8 @@ html.dark .vz {
 .vz-range.on { border-color: var(--border-strong); color: var(--ink); }
 .vz-range input[type="date"] { height: 28px; padding: 0 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--ink); font: inherit; font-size: 12px; color-scheme: light dark; }
 .vz-range i { font-style: normal; }
+.admin-tools .vz-range .vz-day { height: 28px; padding: 0 8px; font-size: 12px; font-weight: 600; }
+.admin-tools .vz-range .vz-day:disabled { opacity: 0.4; cursor: default; }
 .vz-range .vz-range-x { width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 15px; cursor: pointer; }
 /* 기간·사람만 버튼 묶음과 떼어 놓는다 · 받아오는 동안은 버튼 글자만 '불러오는 중'으로 (사용자 지시 2026-10-04).
    두 글자를 한 칸에 겹쳐 두고 하나만 보여서 버튼 폭이 바뀌지 않는다 */
