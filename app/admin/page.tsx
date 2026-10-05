@@ -237,7 +237,7 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
-  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "files" | "visits">("feedback"); // 상단 탭
+  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "files" | "visits">("visits"); // 상단 탭 — 처음은 방문 통계 (사용자 지시 2026-10-05)
   // 파일 저장소(R2) — 워커 미배포·비밀번호 불일치면 null + 안내
   const [files, setFiles] = useState<StoredFile[] | null>(null);
   const [fileStatus, setFileStatus] = useState("");
@@ -582,8 +582,8 @@ export default function AdminPage() {
       <header>
         <h1>TERRA ARCHIVE 관리</h1>
         <div className="admin-tools admin-tabs">
-          <button className={tab === "feedback" ? "selected" : ""} onClick={() => setTab("feedback")}>피드백 ({rows.length})</button>
           <button className={tab === "visits" ? "selected" : ""} onClick={() => setTab("visits")}>방문 통계</button>
+          <button className={tab === "feedback" ? "selected" : ""} onClick={() => setTab("feedback")}>피드백 ({rows.length})</button>
           <button className={tab === "rules" ? "selected" : ""} onClick={() => setTab("rules")}>
             플래너 규칙{release ? ` (v${release.version}${release.version !== bundledRules.version ? " ⚠" : ""})` : ""}
           </button>
