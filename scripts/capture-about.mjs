@@ -45,6 +45,9 @@ const SHOTS = [
   { name: "rogue", path: "/rogue" },
   { name: "ra", path: "/ra" },
   { name: "autochess", path: "/autochess" },
+  // 2026-10-05 추가 — 갤러리·내 정보 (내 정보는 로그인 전 예시 화면이 찍힌다)
+  { name: "gallery", path: "/gallery" },
+  { name: "me", path: "/me" },
   { name: "chronicle", path: "/stories", prep: async (page, loc) => {
     const btn = page.locator(".story-viewtabs button, .digest-viewtabs button", { hasText: loc.chron });
     if (await btn.count()) { await btn.first().click(); await page.waitForTimeout(600); }

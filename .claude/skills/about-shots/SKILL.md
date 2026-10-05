@@ -1,6 +1,6 @@
 ---
 name: about-shots
-description: 소개(/about) 페이지 스크린샷 전면 재촬영·교체 절차. "소개 페이지 갱신", "소개 스샷 다시 찍어줘", "about 스크린샷 교체" 같은 요청에 사용. ko/en/ja × 라이트/다크 × 데스크탑/모바일 108장을 자동 촬영한다.
+description: 소개(/about) 페이지 스크린샷 전면 재촬영·교체 절차. "소개 페이지 갱신", "소개 스샷 다시 찍어줘", "about 스크린샷 교체" 같은 요청에 사용. ko/en/ja × 라이트/다크 × 데스크탑/모바일 × 18화면 216장을 자동 촬영한다.
 ---
 
 # 소개 페이지 스크린샷 재촬영 (/about)
@@ -16,7 +16,7 @@ description: 소개(/about) 페이지 스크린샷 전면 재촬영·교체 절�
 #    "terra-archive-dist" = node scripts/serve-dist.mjs 3100). dev(:3000)는 그대로 켜 둔다.
 #    ⚠ `npm run start`(vinext start)는 쓰지 않는다 — SESSION.md §2 금지 (2026-09-28 전환).
 
-# 1) 촬영 — ko/en/ja × light/dark × 데스크탑(1200×760)/모바일(440×952) × 16화면 = 192장 PNG (~8분)
+# 1) 촬영 — ko/en/ja × light/dark × 데스크탑(1200×760)/모바일(440×952) × 18화면 = 216장 PNG (~9분)
 node scripts/capture-about.mjs <임시출력폴더>     # 기본 대상 http://127.0.0.1:3100 (--base= 로 바꿈)
 
 # 2) webp 변환·배치 — ko는 public/about/ 루트(기존 URL 유지), en/ja는 public/about/{en,ja}/
@@ -53,8 +53,9 @@ node scripts/r2-sync.mjs
 ## 촬영 대상 (capture-about.mjs SHOTS)
 
 portal(홈) · planner(/infra) · archive(/operators) · enemy · stage · item · event · sim · recruit · farm ·
-upgrade(예시 오퍼 2명 쿼리) · story · rogue · ra · autochess · chronicle(스토리→연대기 탭).
-**새 기능 페이지가 생기면 SHOTS 배열에 추가**하고 about.tsx의 SHOTS 맵도 함께 갱신.
+upgrade(예시 오퍼 2명 쿼리) · story · rogue · ra · autochess · gallery · me(로그인 전 예시 화면) · chronicle(스토리→연대기 탭).
+**새 기능 페이지가 생기면 SHOTS 배열에 추가**하고 about.tsx의 SHOTS 맵과 **소개 카드(features — ko/en/ja 세 벌)** 도 함께 갱신.
+⚠ 홈 메뉴에 새 칸이 생기면 여기도 같이 넣는다 — 갤러리(2026-10-04)·내 정보(10-05)가 소개 페이지에서 빠진 채 배포됐다 (2026-10-05 사용자 지적).
 
 ## 품질 체크리스트 (몇 장만 샘플 확인)
 

@@ -42,6 +42,8 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   rogue: { d: "/about/rogue.webp", m: "/about/rogue-m.webp" },
   ra: { d: "/about/ra.webp", m: "/about/ra-m.webp" },
   autochess: { d: "/about/autochess.webp", m: "/about/autochess-m.webp" },
+  gallery: { d: "/about/gallery.webp", m: "/about/gallery-m.webp" },
+  me: { d: "/about/me.webp", m: "/about/me-m.webp" },
 };
 
 // 다크모드 구독 — html.dark 클래스를 관찰해 테마 토글 시 실시간 리렌더.
@@ -109,7 +111,7 @@ const CONTENT: Record<Locale, Content> = {
     tagline: "명일방주(Arknights) 도우미 · 한국어 / English / 日本語",
     intro:
       "테라 아카이브는 명일방주 박사를 위한 비영리 팬 도구 모음입니다. 오퍼레이터 자료 조사부터 기반시설 편성, 공개모집, 재료 파밍, 오퍼 육성 계획, 스토리 요약까지 — 게임 데이터를 직접 파싱해 자동 파이프라인으로 항상 최신 상태를 유지합니다. 설치·로그인 없이 웹에서 바로 쓸 수 있고, 헤더의 만능검색(⌘K)에 단어 하나만 넣으면 오퍼·재료·스토리·기능 어디로든 한 번에 이동합니다.",
-    featureLead: "일곱 가지 도구가 있습니다. 카드를 누르면 해당 기능으로 이동합니다.",
+    featureLead: "카드를 누르면 해당 기능으로 이동합니다.",
     features: [
       {
         tab: "planner", icon: "⌂", name: "인프라 자동편성기",
@@ -162,6 +164,15 @@ const CONTENT: Record<Locale, Content> = {
           "게임이 아이템마다 달아 둔 플레이버 텍스트와 용도를 그대로 싣습니다",
           "이벤트 교환 재화는 이벤트가 끝나면 게임에서 다시 볼 수 없는 글입니다 — 여기 남습니다",
           "드랍 작전을 눌러 작전 도감으로, 파밍 재료는 재료파밍 효율표로 바로 넘어갑니다",
+        ],
+      },
+      {
+        tab: "gallery", icon: "▧", name: "갤러리",
+        summary: "스토리 CG·인물 스탠딩·오퍼 일러스트를 한곳에서 크게 둘러봅니다.",
+        bullets: [
+          "스토리 CG — 메인 스토리·이벤트·통합전략·생존연산을 작품별로 묶어 차례대로",
+          "스탠딩 — 스토리에 나온 인물 1,100여 명의 표정·의상 차분을 한 창에서 넘겨 보기, 등장 스토리로 바로 이동",
+          "일러스트 — 오퍼레이터의 기본·정예화·스킨 일러스트",
         ],
       },
       {
@@ -253,6 +264,17 @@ const CONTENT: Record<Locale, Content> = {
           "아이템 59종·전략 40종·전략 전술 효과 43종·마일스톤 보상 60단계",
         ],
       },
+      {
+        tab: "me", icon: "◉", name: "내 정보",
+        summary: "게임 계정을 연동하면 내 오퍼·창고·진행 상황을 한 화면에 정리하고, 사이트 전체에 함께 반영합니다.",
+        bullets: [
+          "보유 오퍼·성급별 보유·정예화·스킬 특화·모듈·신뢰도 현황, 원하는 조건으로 직접 만드는 통계 칸",
+          "창고·재화, 메인 스토리 진행과 아직 못 깬 작전·3성 미달성 작전, 공개모집 슬롯·지원 유닛·친구",
+          "오퍼 도감·인프라 자동편성기·아이템 도감·공개채용 도우미에 내 보유 현황이 자동으로 붙습니다",
+          "공유용 요약 이미지 내보내기 — 정품 인증 QR로 숫자가 진짜인지 확인할 수 있습니다",
+          "받은 계정 데이터는 이 브라우저 안에만 남고, 언제든 지울 수 있습니다",
+        ],
+      },
     ],
     chronicleCap: "테라 연대기 — 이벤트·메인스토리·통합 전략을 테라력 연표로",
     future: {
@@ -279,7 +301,7 @@ const CONTENT: Record<Locale, Content> = {
     tagline: "An Arknights companion · 한국어 / English / 日本語",
     intro:
       "Terra Archive is a non-commercial fan toolkit for Arknights players (Doctors). From researching operators to planning your base, recruitment, material farming, upgrade budgeting, and catching up on the story — it parses the game data directly and an automated pipeline keeps everything up to date. No install, no login; it runs right in the browser, and the universal search in the header (⌘K) jumps to any operator, material, story, or tool from a single word.",
-    featureLead: "Seven tools in one. Tap a card to jump to that feature.",
+    featureLead: "Tap a card to jump to that feature.",
     features: [
       {
         tab: "planner", icon: "⌂", name: "Base Auto-Planner",
@@ -332,6 +354,15 @@ const CONTENT: Record<Locale, Content> = {
           "The flavour text and usage note the game attaches to each item, kept as written",
           "Event exchange currencies vanish from the game once the event ends — they stay here",
           "Tap a drop stage to jump to the Stage Handbook; farmable materials link to the efficiency table",
+        ],
+      },
+      {
+        tab: "gallery", icon: "▧", name: "Gallery",
+        summary: "Browse story CGs, character sprites and operator illustrations in one place, full size.",
+        bullets: [
+          "Story CGs — grouped by main story, event, Integrated Strategies and Reclamation Algorithm, in order",
+          "Sprites — flip through the expressions and outfits of 1,100+ story characters in one window, then jump to the stories they appear in",
+          "Illustrations — operators' base, Elite and skin artwork",
         ],
       },
       {
@@ -423,6 +454,17 @@ const CONTENT: Record<Locale, Content> = {
           "59 items, 40 strategies, 43 tactics effects and 60 milestone reward steps",
         ],
       },
+      {
+        tab: "me", icon: "◉", name: "My Account",
+        summary: "Link your game account to see your operators, depot and progress on one screen — and across the whole site.",
+        bullets: [
+          "Owned operators, rarity breakdown, Elite, skill mastery, modules and trust — plus stat tiles you build with your own conditions",
+          "Depot and currencies, main story progress, uncleared and not-yet-3-star stages, recruitment slots, support units and friends",
+          "The Operator Encyclopedia, Base Auto-Planner, Item Handbook and Recruitment Helper pick up what you own automatically",
+          "Export a shareable summary image — a verification QR shows the numbers are genuine",
+          "Your account data stays in this browser only, and you can delete it any time",
+        ],
+      },
     ],
     chronicleCap: "Terra Chronicle — events, main story, and Integrated Strategies on a Terra-calendar timeline",
     future: {
@@ -449,7 +491,7 @@ const CONTENT: Record<Locale, Content> = {
     tagline: "アークナイツの補助ツール · 한국어 / English / 日本語",
     intro:
       "テラアーカイブは、アークナイツのプレイヤー（ドクター）のための非営利ファンツール集です。オペレーターの調査から基地編成、公開求人、素材周回、オペレーター育成の計画、ストーリー要約まで — ゲームデータを直接解析し、自動パイプラインで常に最新の状態を保ちます。インストールもログインも不要、ブラウザですぐに使えます。ヘッダーのユニバーサル検索（⌘K）に一語入れるだけで、オペレーター・素材・ストーリー・機能のどこへでも一度に移動できます。",
-    featureLead: "7つのツールがあります。カードを押すとその機能へ移動します。",
+    featureLead: "カードを押すとその機能へ移動します。",
     features: [
       {
         tab: "planner", icon: "⌂", name: "基地自動編成",
@@ -502,6 +544,15 @@ const CONTENT: Record<Locale, Content> = {
           "ゲームがアイテムごとに付けたフレーバーテキストと用途をそのまま掲載します",
           "イベント交換素材はイベント終了後ゲームで見られなくなる文章です — ここに残ります",
           "ドロップ作戦を押せば作戦図鑑へ、周回できる素材は効率表へそのまま移動できます",
+        ],
+      },
+      {
+        tab: "gallery", icon: "▧", name: "ギャラリー",
+        summary: "ストーリーCG・キャラクター立ち絵・オペレーターイラストをまとめて大きく見られます。",
+        bullets: [
+          "ストーリーCG — メインストーリー・イベント・統合戦略・生息演算を作品ごとに順番どおり",
+          "立ち絵 — ストーリーに登場する1,100人以上の表情・衣装差分を一つのウィンドウでめくり、登場ストーリーへそのまま移動",
+          "イラスト — オペレーターの基本・昇進・コーデのイラスト",
         ],
       },
       {
@@ -591,6 +642,17 @@ const CONTENT: Record<Locale, Content> = {
           "敵 — リーダー級10種（隠し3種含む）と訓練用仮想敵7系統119種を肖像カードで、押すと図鑑と同じステータス・能力まで",
           "補給センター — 等級別の購入・売却価格と精鋭化・レベル・スキルの数値、モード別の昇級コストと陳列枠、自由選択枠に入れられる★6名簿",
           "アイテム59種・戦略40種・戦略戦術の効果43種・マイルストーン報酬60段階",
+        ],
+      },
+      {
+        tab: "me", icon: "◉", name: "マイページ",
+        summary: "ゲームアカウントを連携すると、手持ちオペレーター・倉庫・進行状況を一つの画面にまとめ、サイト全体にも反映します。",
+        bullets: [
+          "所持オペレーター・レアリティ別・昇進・スキル特化・モジュール・信頼度、好きな条件で作れる統計カード",
+          "倉庫・通貨、メインストーリーの進行と未クリア・星3未達成の作戦、公開求人の枠・サポートユニット・フレンド",
+          "オペレーター図鑑・基地自動編成・アイテム図鑑・公開求人ヘルパーに手持ち状況が自動で付きます",
+          "共有用のまとめ画像を書き出し — 正規認証QRで数字が本物か確かめられます",
+          "取得したアカウントデータはこのブラウザの中だけに残り、いつでも削除できます",
         ],
       },
     ],
