@@ -23,6 +23,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { LensOutcome } from "./match";
+import { holdVisitActive } from "../visit-track";
 
 // 변화 감지용 축소본. 전투노드 화면끼리는 맵·패널이 그대로고 **오른쪽 패널 글자만**
 // 바뀌므로, 너무 거칠면 그 차이가 전체 평균에 묻힌다 (2026-07-26 제보: 전투노드 →
@@ -239,6 +240,9 @@ export function downloadBridgePayload(payload: BridgeLogPayload): void {
   console.debug("[bridge] 플레이 로그", payload);
 }
 
+// 방문 통계에 '쓰는 중'으로 걸어 두었는가 (visit-track holdVisitActive)
+let visitHeld = false;
+
 /** 창 선택 → 캡처 시작. 사용자 제스처(버튼 클릭) 안에서만 부를 수 있다.
  *  withLock을 주면 그 테마로 하드 고정 — 인식이 다른 테마로 절대 넘어가지 않는다. */
 export async function connectBridge(withLock?: BridgeLock): Promise<void> {
@@ -288,6 +292,8 @@ export async function connectBridge(withLock?: BridgeLock): Promise<void> {
   console.debug(`[bridge] 캡처 시작 — ${latestW}×${latestH} · dpr ${settings.devicePixelRatio} · ${settings.label}`);
   timer = window.setInterval(tick, TICK_MS);
   holdLock();
+  // 연결해 둔 동안은 방문 통계의 조작 시간으로 센다 (게임이 화면을 덮고 있어도 쓰는 중이다)
+  if (!visitHeld) { visitHeld = true; holdVisitActive(true); }
   notify();
 }
 
@@ -299,6 +305,7 @@ export function disconnectBridge(): void {
       endedAt: new Date().toISOString(), width: settings.width, height: settings.height };
   }
   running = false;
+  if (visitHeld) { visitHeld = false; holdVisitActive(false); }
   if (timer !== undefined) { window.clearInterval(timer); timer = undefined; }
   if (lockRelease) { lockRelease(); lockRelease = null; }
   if (reader) { void reader.cancel().catch(() => { /* 이미 닫힘 */ }); reader = null; }

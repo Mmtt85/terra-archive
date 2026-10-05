@@ -64,6 +64,16 @@ let sess: Sess | null = null;
 let view: View | null = null;
 let lastInput = 0;
 let lastTick = 0;
+// 화면을 안 봐도 쓰는 중인 기능 — 게임 연결(PRTS, lens/bridge.ts)이 켜져 있으면 게임 창이 브라우저를 덮고 있어도
+// 그 시간을 보인 시간·조작 시간으로 센다 (사용자 지시 2026-10-05). 가려진 채 오래 돌므로 1분마다 중간 전송한다.
+let holds = 0;
+let lastHoldFlush = 0;
+export function holdVisitActive(on: boolean): void {
+  holds = Math.max(0, holds + (on ? 1 : -1));
+  if (on && view) view.touched = true;
+  lastTick = Date.now();
+  lastHoldFlush = Date.now();
+}
 
 const uuid = () =>
   crypto?.randomUUID?.() ??
@@ -227,9 +237,11 @@ function tick(): void {
     beginView();
     return;
   }
-  if (document.visibilityState !== "visible") return;
+  const held = holds > 0;
+  if (document.visibilityState !== "visible" && !held) return;
   view.vis += dt;
-  if (now - lastInput < IDLE_MS) view.act += dt;
+  if (held || now - lastInput < IDLE_MS) view.act += dt;
+  if (held && now - lastHoldFlush >= 60_000) { lastHoldFlush = now; view.touched = true; flush(); }
 }
 
 function onInput(): void {
