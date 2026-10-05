@@ -193,3 +193,6 @@ export function rogueProgress(me: MeData | null, topic: string): RogueProgress |
   byTopic.set(topic, prog);
   return prog;
 }
+
+/** 재화 묶음 — 내 정보 '재화' 카드의 칸 줄(용문폐·합성옥·순오리지늄 / 허가증 / 증명서)과 이미지 내보내기의 '재화' 칸이 같이 쓴다 */
+export const WALLET_ROWS = [["4001", "4003", "4002"], ["7003", "7004", "7001", "7002"], ["4004", "4005", "4006", "classic_normal_ticket"]];

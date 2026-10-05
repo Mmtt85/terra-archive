@@ -11,7 +11,8 @@ import { asset } from "./assets";
 import { useI18n, DT_LOCALE } from "./i18n";
 import { ModalWindow } from "./modal-window";
 import type { AccountChar } from "./account";
-import { eliteText, masteryText, potText, type MeData } from "./me-store";
+import { eliteText, masteryText, potText, WALLET_ROWS, type MeData } from "./me-store";
+import type { ItemDoc } from "./items";
 import { evalTile, tileLabel, useCustomTiles } from "./me-custom";
 import type { StageDoc } from "./stage-data";
 import { openChecker } from "./stage-open";
@@ -20,6 +21,9 @@ import qrcode from "qrcode-generator";
 // 카드 안 그림 — R2 아바타는 CORS 로 받아야 이미지에 들어간다. ?cors 는 캐시 키를 갈라 그리드 <img> 가 남긴
 // 무-CORS 응답을 재사용하지 않게 한다 (planner.tsx 편성표 이미지와 같은 규약)
 const corsAvatar = (id: string) => `${asset(`/avatars/${id}.webp`)}?cors`;
+const corsItem = (icon: string) => `${asset(`/items/icon/${icon}.webp`)}?cors`;
+// 재화 칸은 고를 때만 넣는다 (사용자 지시 2026-10-05 "재화도 내보낼 수 있게") — 고른 것은 이 브라우저에 기억한다
+const WALLET_KEY = "ta:me-share-wallet";
 
 type ShareOp = { id: string; name: string; rarity: number; modules: { id: string; type?: string }[] };
 
@@ -66,8 +70,8 @@ function QrSvg({ text, size }: { text: string; size: number }) {
   );
 }
 
-export function MeShare({ me, owned, released, opById, stages, onClose }: {
-  me: MeData; owned: AccountChar[]; released: ShareOp[]; opById: Map<string, ShareOp>; stages: StageDoc | null; onClose: () => void;
+export function MeShare({ me, owned, released, opById, stages, items, onClose }: {
+  me: MeData; owned: AccountChar[]; released: ShareOp[]; opById: Map<string, ShareOp>; stages: StageDoc | null; items: ItemDoc | null; onClose: () => void;
 }) {
   const { locale, t } = useI18n();
   const fmt = useMemo(() => new Intl.NumberFormat(DT_LOCALE[locale]).format, [locale]);
@@ -84,6 +88,18 @@ export function MeShare({ me, owned, released, opById, stages, onClose }: {
     const timer = setTimeout(() => setToast(null), 2400);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  const [withWallet, setWithWallet] = useState(() => { try { return window.localStorage.getItem(WALLET_KEY) === "1"; } catch { return false; } });
+  const pickWallet = (on: boolean) => {
+    setWithWallet(on);
+    try { window.localStorage.setItem(WALLET_KEY, on ? "1" : "0"); } catch { /* 기억 못 해도 이번엔 반영한다 */ }
+  };
+  const inv = me.profile?.inventory;
+  const wallet = useMemo(() => {
+    if (!inv || !items) return null;
+    const byId = new Map(items.items.map((i) => [i.id, i]));
+    return WALLET_ROWS.flat().map((id) => ({ id, it: byId.get(id), n: inv[id] ?? 0 }));
+  }, [inv, items]);
 
   const st = me.profile?.status;
   const rar = (c: AccountChar) => opById.get(c.id)?.rarity ?? 0;
@@ -131,6 +147,7 @@ export function MeShare({ me, owned, released, opById, stages, onClose }: {
   useEffect(() => {
     let alive = true;
     let made: string | null = null;
+    setUrl(null); setBlob(null); setFailed(false);
     const run = async () => {
       const el = cardRef.current;
       if (!el) return;
@@ -153,8 +170,8 @@ export function MeShare({ me, owned, released, opById, stages, onClose }: {
     };
     void run();
     return () => { alive = false; if (made) URL.revokeObjectURL(made); };
-    // 카드 내용은 열 때 한 번 찍는다 — 작전 데이터(stages)가 늦게 오면 그때 한 번 더
-  }, [stages]);
+    // 카드 내용은 열 때 한 번 찍는다 — 작전 데이터(stages)·아이템 표(재화 그림)가 늦게 오거나 재화 칸을 켜고 끄면 다시
+  }, [stages, wallet, withWallet]);
 
   const save = () => {
     if (!url) return;
@@ -176,6 +193,7 @@ export function MeShare({ me, owned, released, opById, stages, onClose }: {
     <ModalWindow label={t("이미지로 내보내기")} className="operator-modal me-share-modal" onClose={onClose}>
       <div className="me-share-wrap">
         <header className="me-share-bar">
+          {inv && <label className="me-toggle"><input type="checkbox" checked={withWallet} onChange={(e) => pickWallet(e.target.checked)} />{t("재화 포함")}</label>}
           <div className="me-share-actions">
             <button type="button" className="import-action" disabled={!blob} onClick={() => void copy()}><span className="btn-icon" aria-hidden>⧉</span>{t("복사")}</button>
             <button type="button" className="import-action apply" disabled={!url} onClick={save}><span className="btn-icon" aria-hidden>⤓</span>{t("PNG 저장")}</button>
@@ -210,6 +228,19 @@ export function MeShare({ me, owned, released, opById, stages, onClose }: {
                     {stats.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}
                   </div>
 
+                  {withWallet && wallet && (
+                    <section>
+                      <h4>{t("재화")}</h4>
+                      <ul className="me-share-wallet">
+                        {wallet.map(({ id, it, n }) => (
+                          <li key={id}>
+                            {it?.i ? <img src={corsItem(it.i)} crossOrigin="anonymous" alt="" width={40} height={40} /> : <i />}
+                            <div><b>{fmt(n)}</b><span>{it?.n ?? id}</span></div>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
                   {assist.length > 0 && (
                     <section className="me-share-assist">
                       <h4>{t("내 지원 유닛")}</h4>

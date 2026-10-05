@@ -582,6 +582,8 @@ export default function AdminPage() {
       <header>
         <h1>TERRA ARCHIVE 관리</h1>
         <div className="admin-tools admin-tabs">
+          {/* 사이트 바로 가기 — 방문 통계 왼쪽 (사용자 지시 2026-10-05) */}
+          <a className="admin-site" href="https://terra-archive.net" target="_blank" rel="noopener noreferrer">terra-archive.net ↗</a>
           <button className={tab === "visits" ? "selected" : ""} onClick={() => setTab("visits")}>방문 통계</button>
           <button className={tab === "feedback" ? "selected" : ""} onClick={() => setTab("feedback")}>피드백 ({rows.length})</button>
           <button className={tab === "rules" ? "selected" : ""} onClick={() => setTab("rules")}>

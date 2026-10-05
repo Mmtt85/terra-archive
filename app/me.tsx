@@ -19,7 +19,7 @@ import { useConfirm } from "./confirm";
 import { AccountLoginForm, AccountSteps } from "./roster-import";
 import { MeVerify } from "./me-verify";
 import { AccountError, accountErrorText, syncAccount, ACCOUNT_SERVERS, type AccountChar, type AccountStep } from "./account";
-import { clearMe, dropMeToken, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, potText, saveMe, useMe, type MeData } from "./me-store";
+import { clearMe, dropMeToken, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadItems, loadStages } from "./dex-cross";
 import { GROUPS, GROUP_LABEL, ItemFile, itemIcon, type DexItem, type ItemDoc, type ItemGroup } from "./items";
 import { StageFile } from "./stage-detail";
@@ -48,8 +48,7 @@ const subscribeNoop = () => () => { /* 마운트 판정용 */ };
 const RARITIES = [6, 5, 4, 3, 2, 1];
 
 // 재화 — 용문폐·합성옥·순오리지늄을 맨 위로, 크레딧은 뺀다 · 구매증명서·모듈 데이터 칩·순금(금괴)을 더한다 (사용자 지시 2026-10-05)
-// 한 줄짜리 묶음(용문폐·합성옥·오리지늄 / 허가증 / 증명서, 사용자 지시 2026-10-05) + 나머지 목록
-const WALLET_ROWS = [["4001", "4003", "4002"], ["7003", "7004", "7001", "7002"], ["4004", "4005", "4006", "classic_normal_ticket"]];
+// 한 줄짜리 묶음(용문폐·합성옥·오리지늄 / 허가증 / 증명서, 사용자 지시 2026-10-05 — WALLET_ROWS 는 me-store, 내보내기 카드도 쓴다) + 나머지 목록
 const WALLET_LIST = ["mod_unlock_token", "3003"];
 
 // 기반시설 방 종류 (building roomId) — 표시 순서
@@ -152,7 +151,7 @@ function sampleMe(operators: MeOp[]): MeData {
       rooms: [["CONTROL", 5], ["MANUFACTURE", 3], ["MANUFACTURE", 3], ["MANUFACTURE", 3], ["TRADING", 3], ["TRADING", 3], ["POWER", 3], ["POWER", 3], ["POWER", 3],
         ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["MEETING", 3], ["HIRE", 3], ["WORKSHOP", 3], ["TRAINING", 3]]
         .map(([room, level], i) => ({ slot: String(i), room: String(room), level: Number(level) })),
-      skins: 87, medals: 140, medalTotal: 1516, furniture: 620,
+      skins: 87, medals: 140, medalTotal: 1402, furniture: 620,
       friends: Array.from({ length: 6 }, (_, i) => ({
         nickName: `Doctor${String.fromCharCode(65 + i)}`, nickNumber: String(1000 + i * 37), level: 80 + i * 7,
         avatar: null, secretary: pick(`fs${i}`).id, secretarySkin: null, lastOnline: SAMPLE_TS - i * 86400 * 2, resume: "",
@@ -352,7 +351,7 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
       </div>
       <Depot me={me} items={items} onOpen={(i) => setOpenItem(i)} />
 
-      {share && onShareClose && <MeShare me={me} owned={owned} released={released} opById={opById} stages={stages} onClose={onShareClose} />}
+      {share && onShareClose && <MeShare me={me} owned={owned} released={released} opById={opById} stages={stages} items={items} onClose={onShareClose} />}
       {list && (
         <ModalWindow key={`ls-${list.key}`} label={list.title} className="operator-modal me-list-modal" onClose={() => setList(null)}>
           <OpListBody title={list.title} entries={list.entries} opById={opById} onShowOperator={onShowOperator} />

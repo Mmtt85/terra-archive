@@ -51,8 +51,11 @@ export default function RootLayout({
       {/* 본문 서체 SUITE(둥근 본문) + Pretendard(빠진 글자 받침) — public/fonts/ 에 자체 호스팅.
           ⚠ next/font 로 불러오면 안 된다 (한글 92조각이 Link 헤더를 넘겨 프리렌더가 전부
             죽는다 — app/story-vn.tsx·그 CSS 머리말 주석 참조). public 의 정적 파일을
-            <link> 로 부르면 번들러가 건드리지 않아 안전하다. */}
-      <link rel="stylesheet" href="/fonts/site.css" />
+            <link> 로 부르면 번들러가 건드리지 않아 안전하다.
+          ⚠ <head> 안에 둔다 — <html> 바로 아래 두면 dev 에서 수화 오류가 나고 Suspense 가 클라 렌더로 넘어간다 (2026-10-05) */}
+      <head>
+        <link rel="stylesheet" href="/fonts/site.css" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
