@@ -247,7 +247,7 @@ returns json language sql stable as $$
            (vs.started_at at time zone 'Asia/Seoul') as kst,
            coalesce(sh.human, false) as human, coalesce(sh.views, 0) as views, coalesce(sh.active_ms, 0) as active_ms
     from public.visit_session vs left join sh on sh.session = vs.id
-    where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live'
+    where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
       -- p_human: true 사람만 · false 봇만 · null 둘 다 (사용자 지시 2026-10-05 — 종전 false 는 '둘 다'였다)
       and (p_human is null or coalesce(sh.human, false) = p_human)
   ),
@@ -265,7 +265,8 @@ returns json language sql stable as $$
         'active_ms', coalesce(sum(active_ms), 0), 'revisit', count(*) filter (where revisit),
         'bounce', count(*) filter (where views <= 1),
         'bots', (select count(*) from public.visit_session x left join sh on sh.session = x.id
-                 where x.started_at >= p_from and x.started_at < p_to and x.env = 'live' and not coalesce(sh.human, false)))
+                 where x.started_at >= p_from and x.started_at < p_to and x.env = 'live' and not coalesce(sh.human, false)
+                   and coalesce(x.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'))
       from s),
     'days', (select coalesce(json_agg(d order by d.day), '[]') from (
         select kst::date as day, count(*) as sessions, count(distinct visitor) as visitors,
@@ -352,7 +353,7 @@ returns json language sql stable as $$
     select vs.*, public.visit_src(vs.ref_host) as src, coalesce(h.human, false) as human
     from public.visit_session vs
     left join (select session, bool_or(interacted) as human from v group by 1) h on h.session = vs.id
-    where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live'
+    where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
       and (p_human is null or coalesce(h.human, false) = p_human)
       and (p_src is null or public.visit_src(vs.ref_host) = p_src)
       and (p_landing is null or public.visit_path(split_part(vs.landing, '#', 1)) = p_landing)
@@ -406,7 +407,7 @@ begin
     select vs.id, vs.visitor, vs.revisit, public.visit_src(vs.ref_host) as src,
            coalesce(bool_or(v.interacted), false) as human, count(v.seq) as views, coalesce(sum(v.active_ms), 0) as active_ms
     from public.visit_session vs left join _v v on v.session = vs.id
-    where vs.started_at >= d0 and vs.started_at < d1 and vs.env = 'live'
+    where vs.started_at >= d0 and vs.started_at < d1 and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
     group by vs.id, vs.visitor, vs.revisit, vs.ref_host;
 
   insert into public.visit_day

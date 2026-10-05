@@ -21,6 +21,7 @@
 //   ① 제안 게시판 관리자 모드가 켜진 브라우저(localStorage 에 관리자 키, feedback.ts getBoardAdminKey)
 //   ② admin.terra-archive.net 을 연 적 있는 브라우저 — 어드민 페이지가 terra-archive.net 전체에 거는
 //      'ta-no-track' 쿠키(1년). 어드민은 Cloudflare Access 뒤라 운영자만 이 쿠키를 받는다.
+//   ③ 로컬 dev(localhost) 화면에서 링크로 들어온 브라우저 — 그 자리에서 ② 쿠키도 건다 (2026-10-06)
 //   세션 도중에 관리자 모드를 켜면 그 순간부터 더 보내지 않는다.
 //
 // 화면 전환은 history 함수를 가로채지 않고 **주소를 1초마다 본다** — 사이트 곳곳이 pushState 를 직접
@@ -42,6 +43,14 @@ export const NO_TRACK_COOKIE = "ta-no-track";   // 어드민 페이지가 거는
 /** 운영자 본인 브라우저인가 — 그러면 아무것도 보내지 않는다 */
 function isOwner(): boolean {
   if (getBoardAdminKey()) return true;
+  // ③ 로컬 dev(localhost·127.0.0.1)에서 링크를 눌러 들어온 브라우저 — 로컬 관리자 화면에서 라이브를 열어 본 운영자다
+  //    (사용자 지시 2026-10-06 "유입원 localhost:3000 은 통계에 안 잡히게"). 다음부터도 빠지게 표식을 건다
+  try {
+    if (document.referrer && /^(localhost|127\.0\.0\.1)$/.test(new URL(document.referrer).hostname)) {
+      markOwnerBrowser();
+      return true;
+    }
+  } catch { /* 이상한 리퍼러 */ }
   try { return document.cookie.split("; ").some((c) => c === `${NO_TRACK_COOKIE}=1`); } catch { return false; }
 }
 
