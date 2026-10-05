@@ -64,13 +64,23 @@ const OP_NAME = new Map((operatorsData as { id: string; name: string }[]).map((o
 // 작전·적 상세 주소의 이름 — 작전 데이터(1.5MB)는 관리자 화면을 열 때 뒤늦게 받아 채운다 (loadDexNames)
 const STAGE_NAME = new Map<string, string>();
 const ENEMY_NAME = new Map<string, string>();
+const ITEM_NAME = new Map<string, string>();
 let dexNames: Promise<void> | null = null;
 function loadDexNames(): Promise<void> {
   dexNames ??= import("../data/stages.json").then((m) => {
     const doc = m.default as unknown as { stages: { id: string; code: string; name: string }[]; enemyNames: Record<string, string> };
     for (const st of doc.stages) STAGE_NAME.set(st.id, st.code && st.code !== st.name ? `${st.code} ${st.name}` : st.name);
     for (const [k, v] of Object.entries(doc.enemyNames ?? {})) ENEMY_NAME.set(k, v);
-  }).catch(() => { dexNames = null; });
+  }).then(() => Promise.all([
+    // 작전에 안 나오는 적(통합전략·생존연산 전용 등)은 적 이름표에서 — enemy-names.json {ids, ko}
+    import("../data/enemy-names.json").then((m) => {
+      const e = m.default as unknown as { ids: string[]; ko: string[] };
+      e.ids.forEach((id, i) => { if (!ENEMY_NAME.has(id) && e.ko[i]) ENEMY_NAME.set(id, e.ko[i]); });
+    }),
+    import("../data/items.json").then((m) => {
+      for (const it of (m.default as unknown as { items: { id: string; n: string }[] }).items) ITEM_NAME.set(it.id, it.n);
+    }),
+  ])).then(() => undefined).catch(() => { dexNames = null; });
   return dexNames;
 }
 const STORY_NAME = new Map((storiesData as unknown as { events: { id: string; name: { ko: string } }[] }).events.map((e) => [e.id, e.name.ko]));
@@ -89,10 +99,57 @@ function rogueLabel(slug: string): string {
   return n ? `통합전략 ${n} · ${ROGUE_NICK[n - 1] ?? ""}` : `통합전략 · ${slug}`;
 }
 
+// 해시(탭·모달) 이름 — 영어 해시 그대로 두지 않는다 (사용자 지시 2026-10-06 "이런애들도 다 한국어로")
+const ROOM_KO: Record<string, string> = {
+  CONTROL: "제어 센터", MANUFACTURE: "제조소", TRADING: "무역소", POWER: "발전소", DORMITORY: "숙소",
+  MEETING: "응접실", HIRE: "사무실", WORKSHOP: "가공소", TRAINING: "훈련실",
+};
+const RA_VIEW_KO: Record<string, string> = {
+  food: "요리·음료", craft: "제작·설치물", stage: "지역", enemy: "적 도감", weather: "날씨", event: "조우", rift: "균열·원정", tech: "테크트리",
+  v3item: "아이템", v3craft: "가공·건설", v3map: "전투 지형", v3enemy: "적 도감", v3stage: "시나리오", v3weather: "날씨", v3event: "조우",
+};
+const AC_VIEW_KO: Record<string, string> = {
+  bond: "맹약", band: "전략", op: "오퍼레이터", item: "아이템", misc: "게임 정보",
+  enemy: "적", map: "전투 맵", hunt: "수배·특훈", mode: "모드", supply: "보급센터", buff: "전략 전술",
+};
+/** 갈래 묶음의 해시 종류(문자만) → 이름. 흐름도·갈래 목록용 */
+const HASH_KIND_KO: Record<string, string> = {
+  changelog: "업데이트 내역", help: "도움말", verify: "정품 인증", room: "방 상세", roster: "보유 오퍼 설정",
+  flows: "생산 흐름", ep: "에피소드", scene: "리더기", script: "전문", summary: "AI 요약", theme: "테마별", kind: "분류별",
+  release: "출시순", chronicle: "연대기", story: "스토리", sprite: "스탠딩", illust: "일러스트", op: "오퍼 상세",
+  en: "적 상세", st: "작전 상세", it: "아이템 상세", item: "아이템", ev: "이벤트 상세", ra: "탭", bond: "맹약", band: "전략",
+  misc: "게임 정보", prts: "PRTS 연결 도움말",
+};
+function hashLabel(head: string, hash: string): string {
+  const h = decodeURIComponent(hash).replace(/^#/, "");
+  let m: RegExpExecArray | null;
+  if (h === "changelog") return "업데이트 내역";
+  if (h === "help") return "도움말";
+  if (h === "prts-help") return "PRTS 연결 도움말";
+  if (h.startsWith("verify=")) return "정품 인증";
+  if ((m = /^op-(char_\w+)/.exec(h))) return `오퍼 · ${OP_NAME.get(m[1]) ?? m[1]}`;
+  if ((m = /^en-(enemy_\w+)/.exec(h))) return `적 · ${ENEMY_NAME.get(m[1]) ?? m[1]}`;
+  if ((m = /^st-(.+)$/.exec(h))) return `작전 · ${STAGE_NAME.get(m[1]) ?? m[1]}`;
+  if ((m = /^(?:it|item)-(.+)$/.exec(h))) return `아이템 · ${ITEM_NAME.get(m[1]) ?? m[1]}`;
+  if ((m = /^ev-(.+)$/.exec(h))) return `이벤트 · ${STORY_NAME.get(m[1]) ?? m[1]}`;
+  if ((m = /^story-([^/]+)(?:\/ep(\d+))?$/.exec(h))) return `스토리 · ${STORY_NAME.get(m[1]) ?? m[1]}${m[2] ? ` ${m[2]}화` : ""}`;
+  if ((m = /^room-([A-Z]+)-(\d+)$/.exec(h))) return `방 · ${ROOM_KO[m[1]] ?? m[1]} ${Number(m[2]) + 1}`;
+  if ((m = /^ep(\d+)$/.exec(h))) return `${m[1]}화`;
+  if ((m = /^theme-(.+)$/.exec(h))) return `테마 · ${m[1] === "mainLine" ? "메인 라인" : m[1]}`;
+  if ((m = /^ra-(sandbox_[\w]+)$/.exec(h))) return `지역 상세 · ${m[1]}`;
+  if ((m = /^ra-(.+)$/.exec(h))) return RA_VIEW_KO[m[1]] ?? m[1];
+  if (head === "autochess") {
+    const [v, sub] = h.split("?")[0].split("/");
+    return [AC_VIEW_KO[v] ?? v, sub ? AC_VIEW_KO[sub] ?? sub : ""].filter(Boolean).join(" · ");
+  }
+  if (h === "roster-import") return "보유 오퍼 가져오기";
+  return HASH_KIND_KO[h] ?? `#${h}`;
+}
 function sectionLabel(s: string): string {
   const [head, hash] = s.split(" #");
   if (head.startsWith("rogue/")) return rogueLabel(head.slice(6)) + (hash ? ` · ${ROGUE_VIEW_KO[hash] ?? hash}` : "");
-  return (SECTION_KO[head] ?? head) + (hash ? ` · 모달(${hash})` : "");
+  const kind = hash ? (head === "autochess" ? AC_VIEW_KO[hash] : head === "ra" ? null : HASH_KIND_KO[hash]) ?? hash : null;
+  return (SECTION_KO[head] ?? head) + (kind ? ` · ${kind}` : "");
 }
 export function pathLabel(path: string, hash?: string | null): string {
   const p = path.replace(/^\/(en|ja)(?=\/|$)/, "") || "/";
@@ -100,7 +157,7 @@ export function pathLabel(path: string, hash?: string | null): string {
   const key = decodeURIComponent(id);
   if (head === "rogue") {
     const m = hash && /^#rg-([a-z]+)(?:~[a-z]+~(.+))?$/.exec(hash);
-    const tail = m ? ` · ${ROGUE_VIEW_KO[m[1]] ?? m[1]}${m[2] ? ` ${decodeURIComponent(m[2])}` : ""}` : hash ? ` ${hash}` : "";
+    const tail = m ? ` · ${ROGUE_VIEW_KO[m[1]] ?? m[1]}${m[2] ? ` ${decodeURIComponent(m[2])}` : ""}` : hash ? ` · ${hashLabel(head, hash)}` : "";
     return rogueLabel(id) + tail;
   }
   const main = /^main_(\d+)$/.exec(key), rogueStory = /^rogue_(\d+)$/.exec(key), season = /^s(\d+)$/.exec(key);
@@ -117,7 +174,7 @@ export function pathLabel(path: string, hash?: string | null): string {
     // 모르는 하위 주소도 영어 경로 통째가 아니라 '기능 · id' 로 (사용자 지적 2026-10-05 "왜 영어로 나오는겨")
     : SECTION_KO[head] && id ? `${SECTION_KO[head]} · ${key}`
     : decodeURIComponent(p);
-  return name + (hash ? ` ${hash}` : "");
+  return name + (hash ? ` · ${hashLabel(head, hash)}` : "");
 }
 // 화면 이름을 누르면 라이브 사이트의 그 화면을 새 탭으로 (사용자 지시 2026-10-04). 운영자 브라우저는 어드민이
 // ta-no-track 쿠키를 걸어 두어서 이렇게 열어 봐도 통계에 안 잡힌다.
