@@ -122,8 +122,10 @@ export async function fetchOldestReleaseDate(): Promise<string | null> {
   return rows[0]?.released_at ?? null;
 }
 
-/** 최근 중요 항목 하나 — 헤더 버튼의 '중요' 배지용 (없으면 null). 기간은 IMPORTANT_DAYS */
-export const IMPORTANT_DAYS = 14;
+/** 최근 중요 항목 하나 — 헤더 버튼의 '중요' 배지용 (없으면 null). 기간은 IMPORTANT_DAYS
+ *  배지는 **등록한 날 + 다음 날 23:59(KST)까지만** (사용자 지시 2026-10-05 "10월 6일 23시 59분까지만" — 10-05 항목 기준).
+ *  1 = 어제 날짜(released_at) 이후. 그 전에 내역을 열어 보면 changelog.tsx 가 바로 끈다. */
+export const IMPORTANT_DAYS = 1;
 export async function fetchLatestImportant(): Promise<{ id: string } | null> {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/changelog?select=id&important=eq.true&released_at=gte.${daysAgoKst(IMPORTANT_DAYS)}&order=released_at.desc,created_at.desc&limit=1`,

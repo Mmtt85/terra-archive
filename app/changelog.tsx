@@ -68,7 +68,7 @@ export default function ChangelogButton() {
   const sentinelRef = useRef<HTMLDivElement | null>(null); // 바닥 감시자
   const [autoLoad, setAutoLoad] = useState(false);       // IntersectionObserver가 붙었는가
   const lastLoadAt = useRef(0);                          // 직전 구간을 불러온 시각 (연속 로드 간격 조절)
-  // 중요 배지 (사용자 지시 2026-10-05) — 최근 2주 안에 '중요' 항목이 있고 아직 내역을 안 열어 봤으면 버튼에 띄운다.
+  // 중요 배지 (사용자 지시 2026-10-05) — 등록 다음 날까지(IMPORTANT_DAYS) '중요' 항목이 있고 아직 내역을 안 열어 봤으면 버튼에 띄운다.
   // 열면 그 항목 id 를 기억해 끈다. 첫 페인트를 밀지 않게 마운트 뒤에 조용히 받는다.
   const [importantId, setImportantId] = useState<string | null>(null);
   useEffect(() => {
