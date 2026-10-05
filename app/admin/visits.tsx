@@ -77,7 +77,7 @@ const STORY_NAME = new Map((storiesData as unknown as { events: { id: string; na
 export const SECTION_KO: Record<string, string> = {
   홈: "홈", operators: "오퍼레이터", stories: "스토리", enemies: "적 도감", stages: "작전", events: "이벤트",
   infra: "인프라", recruit: "공채", farm: "파밍", upgrade: "육성", items: "아이템", rogue: "통합전략",
-  ra: "생존연산", autochess: "위수 협의", gallery: "갤러리", sim: "시뮬레이터", about: "소개",
+  ra: "생존연산", autochess: "위수 협의", gallery: "갤러리", sim: "시뮬레이터", about: "소개", me: "내 정보",
 };
 const DEVICE_KO: Record<string, string> = { mobile: "폰", tablet: "태블릿", desktop: "PC" };
 // 통합전략은 몇 번 테마인지가 제일 중요하다 (사용자 지시 2026-10-04) — 맨 /rogue 는 1번 테마가 열린다.
