@@ -9857,6 +9857,9 @@ html.dark .vz {
 .vz .vz-go:hover { text-decoration: underline; text-underline-offset: 2px; }
 .vz-table td:first-child .vz-go { position: relative; }
 .vz-node .vz-go:hover text { text-decoration: underline; }
+/* 방문 통계 '전체 보기' 창 — 내릴수록 이어서 그린다 (2026-10-05). 창 안쪽이 스크롤 상자라 무한 스크롤의 기준이 된다 */
+.vz-all-modal { width: min(980px, calc(100vw - 32px)); height: min(880px, 100svh - var(--modal-pad, 24px) * 2 - var(--modal-top, 40px)); }
+.vz.vz-all { flex: 1 1 0; padding: 14px 18px 18px; overflow-y: auto; min-height: 0; max-width: none; }
 .vz-sessions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .vz-sessions li { border: 1px solid var(--line); background: var(--bg-panel); padding: 8px 10px; }
 .vz-sessions li.bot { opacity: 0.6; }

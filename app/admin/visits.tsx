@@ -9,8 +9,9 @@
 // 기간 7·30·90일은 원장에서, '1년'은 매일 밤 말아 둔 일별 집계표에서 읽는다. 원장은 기간으로 자르지 않고
 // DB 가 80% 차면 오래된 것부터 지운다(docs/supabase-visits.sql visits_maintain).
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
+import { ModalWindow } from "../modal-window";
 import operatorsData from "../data/operators.json";
 import storiesData from "../data/stories.json";
 
@@ -323,38 +324,63 @@ function Sankey({ flow }: { flow: FlowRow[] }) {
   );
 }
 
-// ── 목록 길이 — 모든 목록은 상위 5·10·20·50·100·전체, 기본 10, 바꾸면 이 브라우저에 남는다 (사용자 지시 2026-10-04) ──
+// ── 목록 길이 — 모든 목록은 상위 5·15·30, 기본 15, 바꾸면 이 브라우저에 남는다. '전체 보기'는 목록을 늘리지 않고
+//    창(모달)을 띄워 업데이트 내역처럼 내릴수록 이어서 그린다 (사용자 지시 2026-10-05 — 종전 5·10·20·50·100·전체) ──
 
-const TOPS = [5, 10, 20, 50, 100, 0];   // 0 = 전체
-const SESSIONS_ALL = 5000;                // 세션 타임라인 '전체'의 상한 (visits_sessions 도 5,000 에서 자른다)
+const TOPS = [5, 15, 30];
+const SESSIONS_ALL = 5000;                // 세션 타임라인 '전체 보기'의 상한 (visits_sessions 도 5,000 에서 자른다)
+const ALL_STEP = 50;                      // 전체 보기 창에서 한 번에 더 그리는 줄 수
 
-function TopPick({ value, onChange, what }: { value: number; onChange: (n: number) => void; what: string }) {
+function TopPick({ value, onChange, onAll, what }: { value: number; onChange: (n: number) => void; onAll?: () => void; what: string }) {
   return (
     <Dropdown
-      label={value ? `상위 ${value}` : "전체 보기"}
-      items={TOPS.map((n) => ({ value: String(n), label: n ? `상위 ${n}` : "전체 보기" }))}
+      label={`상위 ${value}`}
+      items={[...TOPS.map((n) => ({ value: String(n), label: `상위 ${n}` })), ...(onAll ? [{ value: "all", label: "전체 보기" }] : [])]}
       selected={[String(value)]}
-      onPick={(v) => onChange(Number(v))}
+      onPick={(v) => (v === "all" ? onAll?.() : onChange(Number(v)))}
       ariaLabel={`${what} 보여 줄 개수`}
     />
   );
 }
 
+/** 전체 보기 창 — 처음 ALL_STEP 줄, 바닥에 닿으면 ALL_STEP 줄씩 더 (업데이트 내역과 같은 무한 스크롤) */
+function AllWindow({ title, total, loading, render, onClose }: { title: string; total: number; loading?: boolean; render: (n: number) => ReactNode; onClose: () => void }) {
+  const [n, setN] = useState(ALL_STEP);
+  const box = useRef<HTMLDivElement | null>(null);
+  const end = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const target = end.current;
+    if (!target || n >= total) return;
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) setN((x) => Math.min(total, x + ALL_STEP)); },
+      { root: box.current, rootMargin: "300px 0px" });
+    io.observe(target);
+    return () => io.disconnect();
+  }, [n, total]);
+  return (
+    <ModalWindow label={`${title} — 전체 ${num(total)}`} className="operator-modal vz-all-modal" onClose={onClose}>
+      <div className="vz vz-all" ref={box}>
+        {loading ? <p className="vz-empty">불러오는 중…</p> : render(n)}
+        {!loading && n < total && <div ref={end} className="vz-empty">불러오는 중…</div>}
+      </div>
+    </ModalWindow>
+  );
+}
+
 /** 제목 + (목록이면) 개수 고르기 */
-function Head({ title, sub, top, setTop, children }: { title: string; sub?: string; top?: number; setTop?: (n: number) => void; children?: React.ReactNode }) {
+function Head({ title, sub, top, setTop, onAll, children }: { title: string; sub?: string; top?: number; setTop?: (n: number) => void; onAll?: () => void; children?: React.ReactNode }) {
   return (
     <div className="vz-head">
       <h3 className="vz-h">{title}{sub && <small> — {sub}</small>}</h3>
       <div className="vz-head-tools">
         {children}
-        {top != null && setTop && <TopPick value={top} onChange={setTop} what={title} />}
+        {top != null && setTop && <TopPick value={top} onChange={setTop} onAll={onAll} what={title} />}
       </div>
     </div>
   );
 }
 
-type TopKey = "src" | "ref" | "landing" | "pages" | "sections" | "devlang" | "tz" | "out" | "sessions";
-const TOP_DEFAULT: Record<TopKey, number> = { src: 10, ref: 10, landing: 10, pages: 10, sections: 10, devlang: 10, tz: 10, out: 10, sessions: 10 };
+type TopKey = "src" | "ref" | "landing" | "pages" | "sections" | "devlang" | "tz" | "out" | "sessions" | "mesync";
+const TOP_DEFAULT: Record<TopKey, number> = { src: 15, ref: 15, landing: 15, pages: 15, sections: 15, devlang: 15, tz: 15, out: 15, sessions: 15, mesync: 15 };
 const TOPS_KEY = "ta-admin-visit-tops";   // localStorage — 목록마다 고른 개수
 
 function loadTops(): Record<TopKey, number> {
@@ -440,15 +466,18 @@ export function VisitsPanel() {
   const [srcFilter, setSrcFilter] = useState<string>("");
   const [tops, setTops] = useState(TOP_DEFAULT);
   useEffect(() => { setTops(loadTops()); }, []);   // 하이드레이션 뒤에 저장값을 읽는다
-  const top = (k: TopKey) => ({
+  // 전체 보기 창 — 어느 목록인지
+  const [allOf, setAllOf] = useState<{ key: TopKey; title: string } | null>(null);
+  const top = (k: TopKey, title = "") => ({
     top: tops[k],
+    onAll: () => setAllOf({ key: k, title }),
     setTop: (n: number) => setTops((t) => {
       const next = { ...t, [k]: n };
       try { localStorage.setItem(TOPS_KEY, JSON.stringify(next)); } catch { /* 프라이빗 모드 */ }
       return next;
     }),
   });
-  const limit = tops.sessions || SESSIONS_ALL;
+  const limit = tops.sessions;
   const [status, setStatus] = useState("");
   const [missing, setMissing] = useState(false);
   const [tick, setTick] = useState(0);
@@ -506,6 +535,20 @@ export function VisitsPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days, human, srcFilter, limit, tick, range]);
 
+  // 세션 타임라인 '전체 보기' — 창을 열 때 상한(5,000)까지 따로 받는다
+  const [allSessions, setAllSessions] = useState<SessRow[] | null>(null);
+  const sessAll = allOf?.key === "sessions";
+  useEffect(() => {
+    if (!sessAll) return;
+    let alive = true;
+    (rangeArgs
+      ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, p_human: human, p_src: srcFilter || null, p_limit: SESSIONS_ALL })
+      : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), p_human: human, p_src: srcFilter || null, p_limit: SESSIONS_ALL }))
+      .then((rows) => { if (alive) setAllSessions(rows); }).catch(() => { if (alive) setAllSessions([]); });
+    return () => { alive = false; setAllSessions(null); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessAll, days, human, srcFilter, range]);
+
   if (missing) {
     return (
       <section className="vz">
@@ -519,6 +562,69 @@ export function VisitsPanel() {
   }
 
   const t = data?.total;
+  // 막대 목록의 줄 — 본문과 '전체 보기' 창이 같이 쓴다
+  type BarRow = { label: string; n: number; sub?: string; title?: string; href?: string | null };
+  const barRows: Record<"src" | "ref" | "landing" | "sections" | "devlang" | "tz" | "out", BarRow[]> = data ? {
+    src: data.src.map((r) => ({ label: r.src, n: r.sessions, sub: `세션당 ${fmtDur(r.active_ms / Math.max(1, r.sessions))}` })),
+    ref: data.ref.map((r) => ({ label: r.ref.replace(/^https?:\/\//, ""), n: r.sessions, title: r.ref, href: /^https?:\/\//.test(r.ref) ? r.ref : null })),
+    landing: data.landing.map((r) => ({ label: pathLabel(r.path), n: r.sessions, sub: `바로 이탈 ${pct(r.bounces, r.sessions)}`, title: r.path, href: siteUrl(r.path) })),
+    sections: data.sections.map((r) => ({ label: sectionLabel(r.section), n: r.views, sub: `평균 ${fmtDur(r.avg_active)}`, href: sectionUrl(r.section) })),
+    devlang: [...data.device.map((r) => ({ label: DEVICE_KO[r.k ?? ""] ?? String(r.k), n: r.n })),
+      ...data.site_lang.map((r) => ({ label: `언어 ${r.k ?? "?"}`, n: r.n }))],
+    tz: data.tz.map((r) => ({ label: r.k ?? "?", n: r.n })),
+    out: data.out.map((r) => ({ label: r.host, n: r.n })),
+  } : { src: [], ref: [], landing: [], sections: [], devlang: [], tz: [], out: [] };
+  // 화면 순위·내 정보 동기화 표 — 본문(상위 n)과 '전체 보기' 창이 같이 쓴다
+  const pageTable = (n: number) => !data ? null : (
+    <table className="vz-table">
+      <thead>
+        <tr><th>화면</th><th>조회</th><th>세션</th><th>평균 조작</th><th>중앙 조작</th><th>여기서 이탈</th><th>스크롤</th></tr>
+      </thead>
+      <tbody>
+        {data.pages.slice(0, n).map((p) => {
+          const maxV = data.pages[0]?.views || 1;
+          return (
+            <tr key={p.path}>
+              <td title={p.path}><span className="vz-cellbar" style={{ width: `${(p.views / maxV) * 100}%` }} /><Go href={siteUrl(p.path)}>{pathLabel(p.path)}</Go></td>
+              <td>{num(p.views)}</td>
+              <td>{num(p.sessions)}</td>
+              <td>{fmtDur(p.avg_active)}</td>
+              <td>{fmtDur(p.med_active)}</td>
+              <td>{pct(p.exits, p.views)}</td>
+              <td>{p.scroll != null ? `${p.scroll}%` : "–"}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+  const meTable = (n: number) => !data?.me_sync ? null : (
+    <table className="vz-table">
+      <thead><tr><th>방문자</th><th>유입</th><th>합계</th><th>로그인</th><th>다시 동기화</th><th>서버</th><th>마지막</th></tr></thead>
+      <tbody>
+        {data.me_sync.by.slice(0, n).map((b) => (
+          <tr key={b.visitor ?? "?"}>
+            <td title={b.visitor ?? ""}><code>{(b.visitor ?? "—").slice(0, 8)}</code></td>
+            {/* 유입 — 로그인한 세션이 어디서 왔는가 (사용자 요청 2026-10-05). 주소가 있으면 호스트·경로를 툴팁으로 */}
+            <td title={b.ref ?? ""}>{b.src ?? "—"}{b.ref && <small className="vz-note"> {b.ref.replace(/^https?:\/\//, "").slice(0, 40)}</small>}</td>
+            <td>{num(b.n)}</td><td>{num(b.login)}</td><td>{num(b.sync)}</td><td>{b.server ?? "—"}</td>
+            <td>{new Date(b.last).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+  // 전체 보기 창의 내용 · 줄 수
+  const allTotal = !allOf || !data ? 0
+    : allOf.key === "pages" ? data.pages.length
+    : allOf.key === "mesync" ? data.me_sync?.by.length ?? 0
+    : allOf.key === "sessions" ? allSessions?.length ?? 0
+    : barRows[allOf.key].length;
+  const allRender = (n: number) => !allOf ? null
+    : allOf.key === "pages" ? pageTable(n)
+    : allOf.key === "mesync" ? meTable(n)
+    : allOf.key === "sessions" ? <ol className="vz-sessions">{(allSessions ?? []).slice(0, n).map((x) => <SessionLine key={x.id} s={x} />)}</ol>
+    : <BarList top={n} rows={barRows[allOf.key]} />;
   const filled = data ? (range ? fillRange(data.days, range.from, range.to) : fillDays(data.days, days)) : [];
   const today = kstToday();
   const pickDate = (which: "from" | "to", v: string) => {
@@ -582,23 +688,8 @@ export function VisitsPanel() {
           {/* 내 정보 동기화 — 누가(익명 방문자 id) 몇 번 (사용자 요청 2026-10-05) */}
           {data.me_sync && (
             <div className="vz-mesync">
-              <Head title="내 정보 동기화" sub={`로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · ${num(data.me_sync.people)}명 — 누가 = 방문자 익명 id (닉네임은 받지 않는다) · 유입 = 이 기간 첫 로그인 세션이 들어온 곳`} />
-              {data.me_sync.by.length ? (
-                <table className="vz-table">
-                  <thead><tr><th>방문자</th><th>유입</th><th>합계</th><th>로그인</th><th>다시 동기화</th><th>서버</th><th>마지막</th></tr></thead>
-                  <tbody>
-                    {data.me_sync.by.map((b) => (
-                      <tr key={b.visitor ?? "?"}>
-                        <td title={b.visitor ?? ""}><code>{(b.visitor ?? "—").slice(0, 8)}</code></td>
-                        {/* 유입 — 로그인한 세션이 어디서 왔는가 (사용자 요청 2026-10-05). 주소가 있으면 호스트·경로를 툴팁으로 */}
-                        <td title={b.ref ?? ""}>{b.src ?? "—"}{b.ref && <small className="vz-note"> {b.ref.replace(/^https?:\/\//, "").slice(0, 40)}</small>}</td>
-                        <td>{num(b.n)}</td><td>{num(b.login)}</td><td>{num(b.sync)}</td><td>{b.server ?? "—"}</td>
-                        <td>{new Date(b.last).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : <p className="vz-note">이 기간에는 동기화 기록이 없습니다.</p>}
+              <Head title="내 정보 동기화" {...top("mesync", "내 정보 동기화")} sub={`로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · ${num(data.me_sync.people)}명 — 누가 = 방문자 익명 id (닉네임은 받지 않는다) · 유입 = 이 기간 첫 로그인 세션이 들어온 곳`} />
+              {data.me_sync.by.length ? meTable(tops.mesync) : <p className="vz-note">이 기간에는 동기화 기록이 없습니다.</p>}
             </div>
           )}
 
@@ -632,73 +723,52 @@ export function VisitsPanel() {
 
           <div className="vz-cols">
             <div>
-              <Head title="유입원" {...top("src")} />
-              <BarList top={tops.src} rows={data.src.map((r) => ({ label: r.src, n: r.sessions, sub: `세션당 ${fmtDur(r.active_ms / Math.max(1, r.sessions))}` }))} />
+              <Head title="유입원" {...top("src", "유입원")} />
+              <BarList top={tops.src} rows={barRows.src} />
               {data.ref.length > 0 && (
                 <>
-                  <Head title="경로까지 온 리퍼러" sub={`${data.ref.length}개`} {...top("ref")} />
-                  <BarList top={tops.ref} rows={data.ref.map((r) => ({ label: r.ref.replace(/^https?:\/\//, ""), n: r.sessions, title: r.ref, href: /^https?:\/\//.test(r.ref) ? r.ref : null }))} />
+                  <Head title="경로까지 온 리퍼러" sub={`${data.ref.length}개`} {...top("ref", "경로까지 온 리퍼러")} />
+                  <BarList top={tops.ref} rows={barRows.ref} />
                 </>
               )}
             </div>
             <div>
-              <Head title="첫 화면 (랜딩)" {...top("landing")} />
-              <BarList top={tops.landing} rows={data.landing.map((r) => ({ label: pathLabel(r.path), n: r.sessions, sub: `바로 이탈 ${pct(r.bounces, r.sessions)}`, title: r.path, href: siteUrl(r.path) }))} />
+              <Head title="첫 화면 (랜딩)" {...top("landing", "첫 화면 (랜딩)")} />
+              <BarList top={tops.landing} rows={barRows.landing} />
             </div>
           </div>
 
           <Head title="동선 흐름" sub="띠 굵기 = 세션 수. 갈래 단위라 모달·같은 갈래 안의 이동은 한 칸으로 친다. 줄에 올리면 수가 나온다" />
           <Sankey flow={data.flow} />
 
-          <Head title="화면 순위" sub={`${data.pages.length}개 화면`} {...top("pages")} />
-          <table className="vz-table">
-            <thead>
-              <tr><th>화면</th><th>조회</th><th>세션</th><th>평균 조작</th><th>중앙 조작</th><th>여기서 이탈</th><th>스크롤</th></tr>
-            </thead>
-            <tbody>
-              {(tops.pages ? data.pages.slice(0, tops.pages) : data.pages).map((p) => {
-                const maxV = data.pages[0]?.views || 1;
-                return (
-                  <tr key={p.path}>
-                    <td title={p.path}><span className="vz-cellbar" style={{ width: `${(p.views / maxV) * 100}%` }} /><Go href={siteUrl(p.path)}>{pathLabel(p.path)}</Go></td>
-                    <td>{num(p.views)}</td>
-                    <td>{num(p.sessions)}</td>
-                    <td>{fmtDur(p.avg_active)}</td>
-                    <td>{fmtDur(p.med_active)}</td>
-                    <td>{pct(p.exits, p.views)}</td>
-                    <td>{p.scroll != null ? `${p.scroll}%` : "–"}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <Head title="화면 순위" sub={`${data.pages.length}개 화면`} {...top("pages", "화면 순위")} />
+          {pageTable(tops.pages)}
 
           <div className="vz-cols">
             <div>
-              <Head title="갈래별 (모달 포함)" {...top("sections")} />
-              <BarList top={tops.sections} rows={data.sections.map((r) => ({ label: sectionLabel(r.section), n: r.views, sub: `평균 ${fmtDur(r.avg_active)}`, href: sectionUrl(r.section) }))} />
+              <Head title="갈래별 (모달 포함)" {...top("sections", "갈래별 (모달 포함)")} />
+              <BarList top={tops.sections} rows={barRows.sections} />
             </div>
             <div>
               <Head title="요일·시간 (KST)" />
               <Heatmap cells={data.hours} />
-              <Head title="기기 · 사이트 언어" {...top("devlang")} />
-              <BarList top={tops.devlang} rows={[...data.device.map((r) => ({ label: DEVICE_KO[r.k ?? ""] ?? String(r.k), n: r.n })),
-                              ...data.site_lang.map((r) => ({ label: `언어 ${r.k ?? "?"}`, n: r.n }))]} />
+              <Head title="기기 · 사이트 언어" {...top("devlang", "기기 · 사이트 언어")} />
+              <BarList top={tops.devlang} rows={barRows.devlang} />
             </div>
           </div>
 
           <div className="vz-cols">
             <div>
-              <Head title="시간대 (나라 대신)" {...top("tz")} />
-              <BarList top={tops.tz} rows={data.tz.map((r) => ({ label: r.k ?? "?", n: r.n }))} />
+              <Head title="시간대 (나라 대신)" {...top("tz", "시간대 (나라 대신)")} />
+              <BarList top={tops.tz} rows={barRows.tz} />
             </div>
             <div>
-              <Head title="눌러서 나간 바깥 링크" {...top("out")} />
-              <BarList top={tops.out} rows={data.out.map((r) => ({ label: r.host, n: r.n }))} />
+              <Head title="눌러서 나간 바깥 링크" {...top("out", "눌러서 나간 바깥 링크")} />
+              <BarList top={tops.out} rows={barRows.out} />
             </div>
           </div>
 
-          <Head title="세션 타임라인" sub="한 줄이 한 사람의 동선 · 최근 순. 시간은 조작 시간(없으면 보인 시간)" {...top("sessions")}>
+          <Head title="세션 타임라인" sub="한 줄이 한 사람의 동선 · 최근 순. 시간은 조작 시간(없으면 보인 시간)" {...top("sessions", "세션 타임라인")}>
             <Dropdown
               label={srcFilter || "유입원 전체"}
               items={[{ value: "", label: "유입원 전체" }, ...data.src.map((r) => ({ value: r.src, label: r.src, count: r.sessions }))]}
@@ -711,10 +781,14 @@ export function VisitsPanel() {
           {sessions == null ? <p className="vz-empty">불러오는 중…</p> : (
             <>
               <ol className="vz-sessions">{sessions.map((s) => <SessionLine key={s.id} s={s} />)}</ol>
-              {!tops.sessions && sessions.length >= SESSIONS_ALL && <p className="vz-note">한 번에 {num(SESSIONS_ALL)}개까지만 보여 줍니다 — 기간을 줄이거나 유입원으로 거르세요.</p>}
+              
             </>
           )}
         </>
+      )}
+      {allOf && (
+        <AllWindow key={allOf.key} title={allOf.title} total={allTotal} loading={allOf.key === "sessions" && allSessions == null}
+          render={allRender} onClose={() => setAllOf(null)} />
       )}
     </section>
   );
