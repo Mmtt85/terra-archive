@@ -312,18 +312,10 @@ function rogueDigest(user) {
   return out;
 }
 
-function medalProbe(medals) {
-  const rows = Object.entries(medals);
-  const keys = {};
-  for (const [, m] of rows) for (const k of Object.keys(m ?? {})) keys[k] = (keys[k] ?? 0) + 1;
-  const pos = (k) => rows.filter(([, m]) => num(m?.[k]) > 0).length;
-  return {
-    keys,
-    fts: pos("fts"), rts: pos("rts"),
-    ftsOnly: rows.filter(([, m]) => num(m?.fts) > 0 && !(num(m?.rts) > 0)).map(([id]) => id),
-    sample: rows.slice(0, 3).map(([id, m]) => ({ id, ...m })),
-  };
-}
+// 게임 '수집' 수에 안 드는 훈장 — 숨김 훈장(medal_hidden_*, 34개)과 금장 훈장(원래 훈장을 금테로 올린 판, id 끝이 세 자리 …5,
+// 80개). 실계정 대조: 처음 얻은 시각(fts) 기준 1,358 − 금장 75 − 숨김 31 = 1,252 = 게임 수 (2026-10-05). medal_table 의
+// isHidden·originMedal 과 id 모양이 KR·CN 전부 일치한다 — 워커는 표를 안 들고 있어 id 로 가른다.
+const countedMedal = (id) => !id.startsWith("medal_hidden_") && !/_\d{2}5$/.test(id);
 
 // '내 정보' 화면용 계정 요약 (2026-10-04). syncData 원본은 수 MB라 화면이 쓰는 것만 추린다.
 // 브라우저 localStorage 에 그대로 남으므로 **토큰·기기 id 같은 접근 권한 값은 넣지 않는다.**
@@ -417,17 +409,16 @@ function profile(user, friends, shop) {
     rooms,
     skins: Object.keys(user?.skin?.characterSkins ?? {}).length,
     // 훈장 — 원본엔 아직 못 얻은 훈장의 진행 기록도 같이 있다(실계정 1,516개). 처음 얻은 시각(fts)이 있는 것만 센다
-    medals: Object.values(user?.medal?.medals ?? {}).filter((m) => num(m?.fts) > 0).length,
+    // (숨김·금장 훈장은 게임 '수집' 수처럼 뺀다 — countedMedal)
+    medals: Object.entries(user?.medal?.medals ?? {}).filter(([id, m]) => countedMedal(id) && num(m?.fts) > 0).length,
     // 전체 훈장 수 — 계정 원본은 훈장마다 기록을 하나씩 갖고 있다(medal_table 1,516개와 같다). '현재 / 최대' 표시용
-    medalTotal: Object.keys(user?.medal?.medals ?? {}).length,
+    medalTotal: Object.keys(user?.medal?.medals ?? {}).filter(countedMedal).length,
     furniture: Object.keys(user?.building?.furniture ?? {}).length,
     friends: friendRows,
     // 누적 소비 크레딧 — 구매센터 → 크레딧 → '오퍼레이터 언락'의 숫자. 상점을 열 때 받는 정보(getSocialGoodList)의
     // costSocialPoint 다 (실계정 1,804,976 대조, 2026-10-05)
     creditSpent: typeof shop?.costSocialPoint === "number" ? shop.costSocialPoint : null,
     rogue: rogueDigest(user),
-    // 훈장 수 확인용 — 게임 '수집' 수(실계정 1,252)와 fts 기준(1,358)이 달라 기록 모양을 본다. 확인 뒤 뺀다 (2026-10-05)
-    medalProbe: medalProbe(user?.medal?.medals ?? {}),
   };
 }
 
