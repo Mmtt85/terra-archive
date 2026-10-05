@@ -601,6 +601,8 @@ export default function AdminPage() {
       </header>
       {status && <p className="admin-status">{status}</p>}
 
+      {/* 게임 데이터 갱신 안내는 피드백 탭에서만 (사용자 지시 2026-10-05 "통계에는 필요 없겠다") */}
+      {tab === "feedback" && (
       <section className={`data-status ${dataCheck ? (needsUpdate ? "warn" : "ok") : ""}`}>
         {!dataCheck ? (
           <p>게임 데이터 확인 중… (크론 워커 응답 대기)</p>
@@ -640,6 +642,7 @@ export default function AdminPage() {
           </>
         )}
       </section>
+      )}
 
       {tab === "visits" && <VisitsPanel />}
 

@@ -12,12 +12,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
 import { ModalWindow } from "../modal-window";
+import { VisitsReport } from "./visits-report";
 import operatorsData from "../data/operators.json";
 import storiesData from "../data/stories.json";
 
 type Kv = { k: string | null; n: number };
 type FlowRow = { step: number; src: string; dst: string; n: number };
-type Summary = {
+export type Summary = {
   total: { sessions: number; visitors: number; views: number; active_ms: number; revisit: number; bounce: number; bots: number };
   days: { day: string; sessions: number; visitors: number; views: number; active_ms: number }[];
   src: { src: string; sessions: number; views: number; active_ms: number }[];
@@ -61,7 +62,7 @@ async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
 
 const OP_NAME = new Map((operatorsData as { id: string; name: string }[]).map((o) => [o.id, o.name]));
 const STORY_NAME = new Map((storiesData as unknown as { events: { id: string; name: { ko: string } }[] }).events.map((e) => [e.id, e.name.ko]));
-const SECTION_KO: Record<string, string> = {
+export const SECTION_KO: Record<string, string> = {
   홈: "홈", operators: "오퍼레이터", stories: "스토리", enemies: "적 도감", stages: "작전", events: "이벤트",
   infra: "인프라", recruit: "공채", farm: "파밍", upgrade: "육성", items: "아이템", rogue: "통합전략",
   ra: "생존연산", autochess: "위수 협의", gallery: "갤러리", sim: "시뮬레이터", about: "소개",
@@ -81,7 +82,7 @@ function sectionLabel(s: string): string {
   if (head.startsWith("rogue/")) return rogueLabel(head.slice(6)) + (hash ? ` · ${ROGUE_VIEW_KO[hash] ?? hash}` : "");
   return (SECTION_KO[head] ?? head) + (hash ? ` · 모달(${hash})` : "");
 }
-function pathLabel(path: string, hash?: string | null): string {
+export function pathLabel(path: string, hash?: string | null): string {
   const p = path.replace(/^\/(en|ja)(?=\/|$)/, "") || "/";
   const [, head = "", id = ""] = p.split("/");
   const key = decodeURIComponent(id);
@@ -114,7 +115,7 @@ function Go({ href, className, children }: { href?: string | null; className?: s
   if (!href) return <span className={className}>{children}</span>;
   return <a className={`vz-go${className ? ` ${className}` : ""}`} href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
 }
-function fmtDur(ms: number | null | undefined): string {
+export function fmtDur(ms: number | null | undefined): string {
   const s = Math.round((ms ?? 0) / 1000);
   if (s < 60) return `${s}초`;
   if (s < 3600) return `${Math.floor(s / 60)}분 ${s % 60}초`;
@@ -240,7 +241,7 @@ function Heatmap({ cells }: { cells: [number, number, number][] }) {
 }
 
 /** 흐름도 — 유입원 → 첫 화면 → 두 번째 → 세 번째. 칸마다 상위 7개만, 나머지는 '기타' */
-function Sankey({ flow }: { flow: FlowRow[] }) {
+export function Sankey({ flow, nameOf, links = true }: { flow: FlowRow[]; nameOf?: (label: string) => string; links?: boolean }) {
   const TOP = 7;
   const W = 960, H = 380, NODE = 10, GAP = 8, LABEL = 150;
   const layout = useMemo(() => {
@@ -295,7 +296,10 @@ function Sankey({ flow }: { flow: FlowRow[] }) {
     return { cols, paths, colX };
   }, [flow]);
   if (!layout.paths.length) return <p className="vz-empty">기록 없음</p>;
-  const name = (c: number, k: string) => (c === 0 || k === "이탈" || k === "기타" ? k : sectionLabel(k));
+  const name = (c: number, k: string) => {
+    const label = c === 0 || k === "이탈" || k === "기타" ? k : sectionLabel(k);
+    return nameOf ? nameOf(label) : label;
+  };
   return (
     <svg className="vz-sankey" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="방문 동선 흐름">
       {["유입", "첫 화면", "두 번째", "세 번째"].map((t, c) => (
@@ -315,7 +319,7 @@ function Sankey({ flow }: { flow: FlowRow[] }) {
                 {name(n.c, n.k)} <tspan className="vz-node-n">{num(n.v)}</tspan>
               </text>
             );
-            const href = n.c === 0 ? null : sectionUrl(n.k);   // 0열은 유입원(바깥)
+            const href = !links || n.c === 0 ? null : sectionUrl(n.k);   // 0열은 유입원(바깥) · 리포트 이미지엔 링크 없음
             return href ? <a className="vz-go" href={href} target="_blank" rel="noopener noreferrer">{label}</a> : label;
           })()}
         </g>
@@ -329,6 +333,10 @@ function Sankey({ flow }: { flow: FlowRow[] }) {
 
 const TOPS = [5, 15, 30];
 const SPANS = [7, 30, 90, 365] as const;
+// 세션 종류 — 사람 = 세션 동안 스크롤·클릭·터치·키 입력이 한 번이라도 있었던 것 (JS 를 도는 위장 크롤러 거르기)
+type Who = "human" | "bot" | "all";
+const WHO_LABEL: Record<Who, string> = { human: "사람만", bot: "봇만", all: "둘 다 포함" };
+const WHO_ARG: Record<Who, boolean | null> = { human: true, bot: false, all: null };
 const SPAN_LABEL: Record<number, string> = { 7: "최근 7일", 30: "최근 30일", 90: "최근 90일", 365: "1년(일별 집계)" };
 const SESSIONS_ALL = 5000;                // 세션 타임라인 '전체 보기'의 상한 (visits_sessions 도 5,000 에서 자른다)
 const ALL_STEP = 50;                      // 전체 보기 창에서 한 번에 더 그리는 줄 수
@@ -462,8 +470,11 @@ export function VisitsPanel() {
   const [range, setRange] = useState<{ from: string; to: string } | null>(null);
   const rangeArgs = range ? { p_from: `${range.from}T00:00:00+09:00`, p_to: `${nextDay(range.to)}T00:00:00+09:00` } : null;
   const oneDay = !!range && range.from === range.to;
-  const [human, setHuman] = useState(true);
+  // 사람만 · 봇만 · 둘 다 (사용자 지시 2026-10-05 드롭다운) — DB 의 p_human 은 true·false·null 로 받는다
+  const [who, setWho] = useState<Who>("human");
+  const human = WHO_ARG[who];
   const [data, setData] = useState<Summary | null>(null);
+  const [report, setReport] = useState(false);   // 이미지 리포트 창 (visits-report.tsx)
   const [trend, setTrend] = useState<TrendRow[] | null>(null);
   const [sessions, setSessions] = useState<SessRow[] | null>(null);
   const [srcFilter, setSrcFilter] = useState<string>("");
@@ -648,6 +659,14 @@ export function VisitsPanel() {
     setRange(next);
   };
   const canNext = !!range && range.to < today;
+  // 리포트 기간 = 지금 고른 기간. 최근 N일은 수집 첫날(데이터가 있는 첫 날)보다 앞으로 늘리지 않는다
+  const reportSpan = (() => {
+    if (range) return range;
+    if (days === 0) return { from: today, to: today };
+    const start = new Date(Date.parse(`${today}T00:00:00Z`) - (days - 1) * 86400_000).toISOString().slice(0, 10);
+    const first = data?.days.find((x) => x.sessions > 0)?.day.slice(0, 10);
+    return { from: first && first > start ? first : start, to: today };
+  })();
   return (
     <section className="vz">
       <div className="admin-tools vz-controls">
@@ -671,17 +690,24 @@ export function VisitsPanel() {
           <button type="button" className="vz-day" onClick={() => shiftDay(1)} disabled={!canNext} title="하루 뒤로">다음날 ›</button>
           {range && <button type="button" className="vz-range-x" onClick={() => setRange(null)} aria-label="기간 지정 해제">×</button>}
         </span>
-        <button className={human ? "selected" : ""} onClick={() => setHuman((h) => !h)} disabled={days === 365 && !range}
-                title="세션 동안 스크롤·클릭·터치·키 입력이 한 번도 없으면 사람이 아닌 것으로 본다 (JS 를 도는 위장 크롤러 거르기)">
-          {human ? "사람만" : "봇 포함"}
-        </button>
+<Dropdown
+          label={WHO_LABEL[who]}
+          items={(Object.keys(WHO_LABEL) as Who[]).map((k) => ({ value: k, label: WHO_LABEL[k] }))}
+          selected={[who]}
+          onPick={(v) => setWho(v as Who)}
+          ariaLabel="세션 종류"
+          disabled={days === 365 && !range}
+        />
         <button className={`vz-refresh${busy ? " busy" : ""}`} onClick={() => setTick((n) => n + 1)} disabled={busy} aria-busy={busy}>
           <span>새로고침</span>
           <span role="status"><i className="vz-spin" aria-hidden />불러오는 중</span>
         </button>
+        {/* 이미지 리포트 — 지금 고른 기간·사람만/봇 포함 그대로 (사용자 지시 2026-10-05). 1년 보기는 일별 집계라 빠진다 */}
+        <button className="vz-report-btn" onClick={() => setReport(true)} disabled={!data || busy || (days === 365 && !range)}>리포트 이미지</button>
         {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · 1분마다 자동</span>}
       </div>
       {status && <p className="admin-status">{status}</p>}
+      {report && data && <VisitsReport data={data} from={reportSpan.from} to={reportSpan.to} who={WHO_LABEL[who]} onlyHuman={who === "human"} tops={tops} onClose={() => setReport(false)} />}
 
       {days === 365 && !range ? (
         trend && (

@@ -13372,7 +13372,7 @@ html.dark .pt-stage {
     "guide    guide    dex      dex      sim      sim     "
     "guide    guide    dex      dex      sim      sim     "
     "guide    guide    dex      dex      sim      sim     "
-    "story    story    story    archives archives archives";
+    "story    story    me       me       archives archives";
 }
 /* 묶음 상자 — 캡션 + 세로로 쌓인 작은 타일들 */
 .pt-group {
@@ -13405,6 +13405,8 @@ html.dark .pt-stage {
 /* 묶음 속 타일은 한 단계 촘촘하게 — 시뮬레이터 상자엔 4칸이 들어간다 */
 .pt-group .pt-tile { padding: 5px 10px; }
 
+/* 묶음 밖 칸(스토리·내 정보·소개)도 위로 뺀 배지가 overflow에 잘린다 — 칸 안쪽 오른쪽 위로 (2026-10-05 내 정보 칸) */
+.pt-plate .new-badge { top: 8px; right: 8px; }
 /* 납작한 묶음 타일에선 위로 뺀 배지(top:-13px)가 overflow에 잘린다 (사용자 제보
    2026-08-10 "새기능 뱃지가 짤려서 보임") — 세로 메뉴 행과 같은 줄 안 오른쪽 배치로 */
 .pt-group .pt-tile .new-badge {
@@ -13718,7 +13720,7 @@ html.dark .pt-stage {
       "banner   story   "
       "dex      dex     "
       "sim      sim     "
-      "archives archives";
+      "me       archives";
   }
   /* 묶음 속은 2열로 접는다 — 세로 한 줄이면 홈이 너무 길어진다 */
   .pt-group-tiles {
@@ -27332,3 +27334,65 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .hdr-synced:hover { color: var(--ink); text-decoration: underline; }
 /* 방문 통계 — 내 정보 동기화 */
 .vz-mesync { margin: 18px 0 8px; }
+
+/* ── 방문 통계 이미지 리포트 (app/admin/visits-report.tsx) — 테마와 무관한 고정 색 판 ── */
+.vz-controls .vz-report-btn { margin-left: 8px; }
+.vzr-modal { width: min(1100px, calc(100vw - 32px)); }
+.vzr-wrap { padding: 14px 18px 18px; display: grid; gap: 10px; overflow: auto; }
+.vzr-bar-top { display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
+.vzr-stage { position: relative; overflow: hidden; }
+.vzr-stage:has(.vzr-src.failed) { overflow: auto; }
+.vzr-img { display: block; width: 100%; height: auto; border-radius: var(--r-sm); border: 1px solid var(--line); }
+.vzr-src { position: absolute; left: -99999px; top: 0; }
+.vzr-src.failed { position: static; }
+.vzr { width: 1240px; box-sizing: border-box; padding: 44px 48px 40px; background: #f4f3ef; color: #1d2326; font-family: inherit; }
+.vzr * { box-sizing: border-box; }
+.vzr h1, .vzr h2, .vzr p { margin: 0; }
+.vzr-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 26px; }
+.vzr-head h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.8px; }
+.vzr-head p { color: #6b7479; font-size: 15px; margin-top: 6px; white-space: nowrap; }
+.vzr-brand { flex: none; }
+.vzr-brand { font-size: 13px; font-weight: 800; letter-spacing: 1.5px; color: #4f7a8c; text-align: right; }
+.vzr-brand span { display: block; color: #6b7479; font-weight: 500; letter-spacing: 0; margin-top: 4px; }
+.vzr-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.vzr-kpis > div { background: #fff; border: 1px solid #e3e1da; border-radius: 14px; padding: 16px 18px; }
+.vzr-kpis span { display: block; color: #6b7479; font-size: 13px; white-space: nowrap; }
+.vzr-kpis b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -0.6px; margin-top: 4px; white-space: nowrap; }
+.vzr-kpis em { display: block; font-style: normal; color: #6b7479; font-size: 12px; margin-top: 2px; white-space: nowrap; }
+.vzr-ins { background: #eef3f5; border: 1px solid #d6e2e7; border-radius: 14px; padding: 16px 20px; margin-bottom: 18px; }
+.vzr-ins h2 { margin-bottom: 8px; font-size: 16px; font-weight: 800; color: #4f7a8c; }
+.vzr-ins li { display: list-item; }
+.vzr-ins ul { margin: 0; padding-left: 20px; list-style: disc; display: grid; gap: 6px; font-size: 14.5px; line-height: 1.55; }
+.vzr-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+.vzr-card { background: #fff; border: 1px solid #e3e1da; border-radius: 14px; padding: 18px 20px; min-width: 0; }
+.vzr-card.wide { grid-column: 1 / -1; }
+.vzr-card h2 { margin-bottom: 4px; font-size: 17px; font-weight: 800; }
+.vzr-card .vzr-h2b { margin-top: 18px; }
+.vzr .vzr-hint { color: #6b7479; font-size: 12.5px; margin-bottom: 12px; }
+.vzr-bar { display: grid; grid-template-columns: 150px minmax(0, 1fr) 64px 128px; gap: 10px; align-items: center; font-size: 14px; padding: 4px 0; }
+.vzr-bars.compact .vzr-bar { grid-template-columns: 80px minmax(0, 1fr) 44px 40px; }
+.vzr-bl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vzr-bt { height: 12px; background: #efede7; border-radius: 6px; overflow: hidden; display: block; }
+.vzr-bt i { display: block; height: 100%; border-radius: 6px; }
+.vzr-bar b { text-align: right; font-variant-numeric: tabular-nums; }
+.vzr-bar em { font-style: normal; color: #6b7479; font-size: 12.5px; white-space: nowrap; }
+.vzr table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.vzr th { text-align: right; color: #6b7479; font-weight: 600; font-size: 12.5px; padding: 6px 8px; border-bottom: 1px solid #e3e1da; }
+.vzr td { text-align: right; padding: 7px 8px; border-bottom: 1px solid #f0eee8; font-variant-numeric: tabular-nums; }
+.vzr th.l, .vzr td.l { text-align: left; }
+.vzr td:first-child { color: #6b7479; width: 28px; }
+.vzr-hours { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 4px; height: 150px; align-items: end; }
+.vzr-hours > div { display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+.vzr-hours i { width: 100%; background: #c39a3a; border-radius: 4px 4px 0 0; display: block; }
+.vzr-hours span { font-size: 11px; color: #6b7479; height: 16px; margin-top: 4px; }
+.vzr-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.vzr-foot { margin-top: 18px; color: #6b7479; font-size: 12px; display: flex; justify-content: space-between; gap: 24px; white-space: nowrap; }
+.vzr-top { margin-bottom: 18px; }
+/* 리포트의 동선 흐름 — 관리자 테마 변수 대신 리포트 고정 색 */
+.vzr-flow .vz-axis { fill: #6b7479; font: 600 11px var(--mono); }
+.vzr-flow .vz-link { fill: #4f7a8c; opacity: 0.28; }
+.vzr-flow .vz-link.exit { fill: #9aa1a5; opacity: 0.18; }
+.vzr-flow .vz-node rect { fill: #2c3539; }
+.vzr-flow .vz-node.exit rect { fill: #9aa1a5; }
+.vzr-flow .vz-node text { fill: #1d2326; stroke: #fff; }
+.vzr-flow .vz-node-n { fill: #6b7479; }

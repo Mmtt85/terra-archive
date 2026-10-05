@@ -248,7 +248,8 @@ returns json language sql stable as $$
            coalesce(sh.human, false) as human, coalesce(sh.views, 0) as views, coalesce(sh.active_ms, 0) as active_ms
     from public.visit_session vs left join sh on sh.session = vs.id
     where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live'
-      and (not p_human or coalesce(sh.human, false))
+      -- p_human: true 사람만 · false 봇만 · null 둘 다 (사용자 지시 2026-10-05 — 종전 false 는 '둘 다'였다)
+      and (p_human is null or coalesce(sh.human, false) = p_human)
   ),
   sv as (select v.* from v join s on s.id = v.session),
   -- 동선 흐름용 — 갈래만(모달·해시 없이) 보고 같은 갈래가 이어지면 한 칸으로 접는다 (사용자 지시 2026-10-04
@@ -352,7 +353,7 @@ returns json language sql stable as $$
     from public.visit_session vs
     left join (select session, bool_or(interacted) as human from v group by 1) h on h.session = vs.id
     where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live'
-      and (not p_human or coalesce(h.human, false))
+      and (p_human is null or coalesce(h.human, false) = p_human)
       and (p_src is null or public.visit_src(vs.ref_host) = p_src)
       and (p_landing is null or public.visit_path(split_part(vs.landing, '#', 1)) = p_landing)
     order by vs.started_at desc

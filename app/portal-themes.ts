@@ -78,6 +78,9 @@ export const PORTAL_TILES: PortalTile[] = [
   // 자료를 뒤지는 도감이 아니라 "이 콘텐츠를 보러 간다"는 결이라 여기 들어간다.
   { id: "event", label: "이벤트", tab: "event", area: "guide", kind: "plate", group: "guide",
     desc: "이벤트별 작전·적·교환 재화·보상 오퍼", icon: "✧" },
+  // 내 정보 — 게임 계정 연동 (사용자 지시 2026-10-05 "홈 화면에 내 정보 메뉴 추가된거 표시해줘"). 맨 아랫줄 스토리·소개 사이
+  { id: "me", label: "내 정보", tab: "me", area: "me", kind: "plate",
+    desc: "게임 계정을 연동해 육성·창고·진행 상황을 한 화면에", icon: "◉" },
   { id: "archives", label: "테라 아카이브 소개", tab: "about", area: "archives", kind: "plate",
     desc: "각 기능이 무엇이고 언제 쓰는지 안내", icon: "ⓘ" },
   // 제안 보내기 타일은 뺐다 (사용자 지시 2026-08-10) — 떠 있는 💬 제안 버튼과 중복.

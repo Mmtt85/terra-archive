@@ -2301,6 +2301,7 @@ const D: Record<string, Pair> = {
   "예: 6성 3마 1스킬": ["e.g. 6★ S1 M3", "例: ★6 S1 特化3"],
   "이미지 만드는 중…": ["Making image…", "画像を作成中…"],
   "이미지로 내보내기": ["Export as image", "画像で書き出す"],
+  "게임 계정을 연동해 육성·창고·진행 상황을 한 화면에": ["Link your game account to see training, depot and progress in one place", "ゲームアカウントを連携して育成・倉庫・進行状況をひとつの画面に"],
   "추가": ["Add", "追加"],
   "항목 고치기": ["Edit item", "項目を編集"],
   "항목 추가": ["Add item", "項目を追加"],

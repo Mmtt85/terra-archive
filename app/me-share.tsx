@@ -27,7 +27,7 @@ const corsItem = (icon: string) => `${asset(`/items/icon/${icon}.webp`)}?cors`;
 type ShareOp = { id: string; name: string; rarity: number; modules: { id: string; type?: string }[] };
 
 /** 카드에 실제로 쓰인 글자가 든 @font-face 만 — 한글 서체가 유니코드 범위별 조각 수십 개라 전부 넣으면 수십 초가 걸린다 */
-function usedFontCss(el: HTMLElement): string {
+export function usedFontCss(el: HTMLElement): string {
   const cps = new Set<number>();
   for (const ch of el.innerText) cps.add(ch.codePointAt(0)!);
   const hits = (range: string) => range.split(",").some((part) => {
