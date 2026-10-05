@@ -33,8 +33,9 @@ type Summary = {
   /** '내 정보' 로그인·다시 동기화 기록 (2026-10-05~ DB 함수) — 누가 = 익명 방문자 id */
   me_sync?: {
     n: number; people: number; login: number; sync: number;
-    by: { visitor: string | null; n: number; login: number; sync: number; last: string; server: string | null }[];
-    recent: { at: string; visitor: string | null; kind: string; server: string | null }[];
+    /** src·ref = 이 기간 첫 로그인(없으면 첫 동기화) 세션의 유입 (2026-10-05~) */
+    by: { visitor: string | null; n: number; login: number; sync: number; last: string; server: string | null; src?: string | null; ref?: string | null }[];
+    recent: { at: string; visitor: string | null; kind: string; server: string | null; src?: string | null; ref?: string | null }[];
   };
 };
 type TrendRow = { day: string; sessions: number; human_sessions: number; visitors: number; new_visitors: number; views: number; active_ms: number };
@@ -581,14 +582,16 @@ export function VisitsPanel() {
           {/* 내 정보 동기화 — 누가(익명 방문자 id) 몇 번 (사용자 요청 2026-10-05) */}
           {data.me_sync && (
             <div className="vz-mesync">
-              <Head title="내 정보 동기화" sub={`로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · ${num(data.me_sync.people)}명 — 누가 = 방문자 익명 id (닉네임은 받지 않는다)`} />
+              <Head title="내 정보 동기화" sub={`로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · ${num(data.me_sync.people)}명 — 누가 = 방문자 익명 id (닉네임은 받지 않는다) · 유입 = 이 기간 첫 로그인 세션이 들어온 곳`} />
               {data.me_sync.by.length ? (
                 <table className="vz-table">
-                  <thead><tr><th>방문자</th><th>합계</th><th>로그인</th><th>다시 동기화</th><th>서버</th><th>마지막</th></tr></thead>
+                  <thead><tr><th>방문자</th><th>유입</th><th>합계</th><th>로그인</th><th>다시 동기화</th><th>서버</th><th>마지막</th></tr></thead>
                   <tbody>
                     {data.me_sync.by.map((b) => (
                       <tr key={b.visitor ?? "?"}>
                         <td title={b.visitor ?? ""}><code>{(b.visitor ?? "—").slice(0, 8)}</code></td>
+                        {/* 유입 — 로그인한 세션이 어디서 왔는가 (사용자 요청 2026-10-05). 주소가 있으면 호스트·경로를 툴팁으로 */}
+                        <td title={b.ref ?? ""}>{b.src ?? "—"}{b.ref && <small className="vz-note"> {b.ref.replace(/^https?:\/\//, "").slice(0, 40)}</small>}</td>
                         <td>{num(b.n)}</td><td>{num(b.login)}</td><td>{num(b.sync)}</td><td>{b.server ?? "—"}</td>
                         <td>{new Date(b.last).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</td>
                       </tr>

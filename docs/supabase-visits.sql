@@ -293,12 +293,20 @@ returns json language sql stable as $$
     'me_sync', (select json_build_object(
         'n', count(*), 'people', count(distinct e.visitor),
         'login', count(*) filter (where e.kind = 'me_login'), 'sync', count(*) filter (where e.kind = 'me_sync'),
+        -- 유입(src·ref) = 그 사람이 이 기간에 처음 로그인한(없으면 처음 동기화한) 세션이 어디서 왔는가 (2026-10-05)
         'by', (select coalesce(json_agg(b order by b.n desc, b.last desc), '[]') from (
-            select x.visitor, count(*) as n, count(*) filter (where x.kind = 'me_login') as login,
-                   count(*) filter (where x.kind = 'me_sync') as sync, max(x.at) as last, max(x.server) as server
-            from public.visit_event x where x.at >= p_from and x.at < p_to and x.env = 'live' group by 1) b),
+            select g.*, f.src, f.ref from (
+              select x.visitor, count(*) as n, count(*) filter (where x.kind = 'me_login') as login,
+                     count(*) filter (where x.kind = 'me_sync') as sync, max(x.at) as last, max(x.server) as server
+              from public.visit_event x where x.at >= p_from and x.at < p_to and x.env = 'live' group by 1) g
+            left join lateral (
+              select public.visit_src(vs.ref_host) as src, coalesce(vs.ref, vs.ref_host) as ref
+              from public.visit_event y join public.visit_session vs on vs.id = y.session
+              where y.visitor is not distinct from g.visitor and y.at >= p_from and y.at < p_to and y.env = 'live'
+              order by (y.kind = 'me_login') desc, y.at asc limit 1) f on true) b),
         'recent', (select coalesce(json_agg(r order by r.at desc), '[]') from (
-            select x.at, x.visitor, x.kind, x.server from public.visit_event x
+            select x.at, x.visitor, x.kind, x.server, public.visit_src(vs.ref_host) as src, coalesce(vs.ref, vs.ref_host) as ref
+            from public.visit_event x left join public.visit_session vs on vs.id = x.session
             where x.at >= p_from and x.at < p_to and x.env = 'live' order by x.at desc limit 100) r))
       from public.visit_event e where e.at >= p_from and e.at < p_to and e.env = 'live'),
     'hourly', (select coalesce(json_agg(d order by d.hr), '[]') from (

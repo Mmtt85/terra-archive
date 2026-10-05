@@ -141,6 +141,26 @@ export function matchesCond(c: AccountChar, op: CondOp, cond: Cond): boolean {
 }
 
 /** 칸 하나 만들기·고치기 창 — 계정 숫자 칸(builtin)은 제목만 고친다 */
+/** 조건으로 제목을 지어 준다 (사용자 지시 2026-10-05 "무슨 조건을 설정했는지에 따라 제목을 자동으로 제안") —
+ *  예: 6★ 2정 90 풀잠 · 1스킬 3마 · 신뢰도 200%. 조건이 없으면 빈 문자열 */
+export function suggestTitle(cond: Cond, locale: string, t: (k: string, v?: Record<string, string | number>) => string): string {
+  const parts: string[] = [];
+  if (cond.rarity.length) parts.push(`${[...cond.rarity].sort((a, b) => b - a).join("·")}★`);
+  const eliteOnly = (e: number) => (locale === "en" ? `E${e}` : locale === "ja" ? `昇進${e}` : `${e}정`);
+  if (cond.maxed) parts.push(cond.elite ? `${eliteOnly(cond.elite)} ${t("만렙")}` : t("만렙"));
+  else if (cond.elite && cond.level) parts.push(`${eliteOnly(cond.elite)} ${cond.level}${cond.elite === 2 && cond.level >= 90 ? "" : "+"}`);
+  else if (cond.elite) parts.push(cond.elite === 1 ? `${eliteOnly(1)}+` : eliteOnly(cond.elite));
+  else if (cond.level) parts.push(`Lv.${cond.level}+`);
+  if (cond.pot) parts.push(potText(locale, cond.pot));
+  const ms = cond.ms.map((x) => [...x].sort());
+  if (ms.every((x) => x.length === 1 && x[0] === 3)) parts.push(t("3스킬 모두 3마스터"));
+  else ms.forEach((x, i) => { if (x.length) parts.push(`${t("{n}스킬", { n: i + 1 })} ${x.map((m) => masteryText(locale, m)).join("·")}`); });
+  if (cond.skill && !hasMastery(cond)) parts.push(`${t("스킬")} Lv.${cond.skill}`);
+  for (const [kind, lv] of Object.entries(cond.mods)) if (lv.length) parts.push(`${t("{k}모듈", { k: kind })} ${[...lv].sort().map((m) => `Lv.${m}`).join("·")}`);
+  if (cond.trust) parts.push(`${t("신뢰도")} ${cond.trust}%${cond.trust < 200 ? "+" : ""}`);
+  return parts.join(" ");
+}
+
 export function CustomTileEditor({ tile, countOf, valueOf, onSave, onDelete, onClose }: {
   tile: CustomTile | null;
   /** 지금 조건으로 몇 명인지 (미리보기) — [인원, 전체] */
@@ -154,8 +174,17 @@ export function CustomTileEditor({ tile, countOf, valueOf, onSave, onDelete, onC
   const { locale, t } = useI18n();
   const builtin = tile?.kind === "builtin" ? tile : null;
   const condTile = tile && tile.kind !== "builtin" ? tile : null;
-  const [label, setLabel] = useState(tile ? tileLabel(tile, t) : "");
   const [cond, setCond] = useState<Cond>(condTile?.cond ?? EMPTY);
+  // 제목 자동 제안 — 직접 쓰기 전까지는 조건을 바꿀 때마다 제목이 따라간다. 직접 쓰면 그대로 두고, 칸을 비우면 다시 따라간다.
+  // 고치는 칸은 지금 제목이 그 조건의 제안과 같을 때만 따라간다 (사용자가 붙인 이름을 덮지 않게)
+  const suggested = builtin ? "" : suggestTitle(cond, locale, t);
+  const [typed, setTyped] = useState<string | null>(() => {
+    if (!tile) return null;
+    const now = tileLabel(tile, t);
+    return condTile && now === suggestTitle(condTile.cond, locale, t) ? null : now;
+  });
+  const label = typed ?? suggested;
+  const setLabel = (v: string) => setTyped(v === "" ? null : v);
   const [total, setTotal] = useState(condTile?.total ?? false);
   const set = (part: Partial<Cond>) => setCond((c) => ({ ...c, ...part }));
   const [n, all] = countOf(cond);
@@ -182,7 +211,7 @@ export function CustomTileEditor({ tile, countOf, valueOf, onSave, onDelete, onC
         </div>
         <label className="me-tile-name">
           <span>{t("제목")}</span>
-          <input value={label} maxLength={24} placeholder={t("예: 6성 3마 1스킬")} onChange={(e) => setLabel(e.target.value)} />
+          <input value={label} maxLength={40} placeholder={t("예: 6성 3마 1스킬")} onChange={(e) => setLabel(e.target.value)} />
         </label>
         {builtin ? <p className="me-note">{t("이 칸은 계정 숫자라 조건을 바꿀 수 없습니다 — 제목만 고치거나 지울 수 있습니다.")}</p> : <div className="me-cm-cond">
           <span>{t("성급")}</span>

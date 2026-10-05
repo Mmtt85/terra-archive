@@ -343,8 +343,9 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
         <div className="me-col me-col-main">
           <Kpis owned={owned} released={released} opById={opById} me={me} onList={openList} demo={demo} />
           <RarityTable owned={owned} released={released} opById={opById} onList={openList} />
-          <Progress me={me} stages={stages} onOpenStage={openStage} />
+          {/* 공개모집으로 채울 오퍼를 진행 상황 위로 (사용자 지시 2026-10-05) */}
           <RecruitPool mine={mine} opById={opById} onShowOperator={onShowOperator} />
+          <Progress me={me} stages={stages} onOpenStage={openStage} />
           <Friends me={me} now={now} opById={opById} onShowOperator={onShowOperator} />
           <Recent owned={owned} opById={opById} onShowOperator={onShowOperator} />
         </div>
