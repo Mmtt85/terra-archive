@@ -8,6 +8,8 @@ import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKe
 import { useConfirm } from "../confirm";
 import { markOwnerBrowser } from "../visit-track";
 import { VisitsPanel } from "./visits";
+import { buildPromoHtml } from "./promo-html";
+import { ModalWindow } from "../modal-window";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
 import { RULES as bundledRules } from "../rules";
 import operatorsData from "../data/operators.json";
@@ -247,6 +249,7 @@ export default function AdminPage() {
   const [fileQuery, setFileQuery] = useState("");
   // 업데이트 내역 원장 (null = 조회 실패 → 미설치 안내)
   const [changes, setChanges] = useState<ChangeRow[] | null>(null);
+  const [promo, setPromo] = useState<string | null>(null);
   const [changeStatus, setChangeStatus] = useState("");
   const [editingChange, setEditingChange] = useState<ChangeDraft | null>(null);
   const [dataCheck, setDataCheck] = useState<DataCheck | null>(null);
@@ -749,7 +752,10 @@ export default function AdminPage() {
           <div className="admin-tools">
             <button onClick={() => setEditingChange({ released_at: daysAgoKst(0), kind: "new", ko: "", en: "", ja: "", href: "", seq: 0 })}>+ 새 항목</button>
             <button onClick={loadChanges}>새로고침</button>
+            {/* 커뮤니티 소개글 HTML — 홈 칸 정의 + 이 내역으로 그때그때 만든다 (사용자 지시 2026-10-05, promo-html.ts) */}
+            <button onClick={() => setPromo(buildPromoHtml(changes))}>커뮤니티 소개글 HTML</button>
           </div>
+          {promo && <PromoWindow html={promo} onClose={() => setPromo(null)} />}
           {editingChange && !editingChange.id && <ChangeEditor row={editingChange} onSave={saveChange} onCancel={() => setEditingChange(null)} />}
           {changes.length === 0 && <p className="admin-status">아직 등록된 항목이 없습니다.</p>}
           {changes.map((row) => (
@@ -896,5 +902,27 @@ export default function AdminPage() {
       )}
       </>)}
     </main>
+  );
+}
+
+/** 커뮤니티 소개글 — 미리보기(별도 문서라 관리자 스타일이 안 섞인다) + HTML 코드 복사 */
+function PromoWindow({ html, onClose }: { html: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(html); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { setCopied(false); }
+  };
+  return (
+    <ModalWindow label="커뮤니티 소개글 HTML" className="operator-modal promo-modal" onClose={onClose}>
+      <div className="promo-wrap">
+        <div className="admin-tools">
+          <button className="selected" onClick={() => void copy()}>{copied ? "복사했습니다" : "HTML 코드 복사"}</button>
+          <span className="admin-status promo-note">디시 글쓰기의 &lsquo;HTML로 쓰기&rsquo;에 그대로 붙여 넣으세요. 기능 표는 홈 화면 칸, 최근 업데이트는 이 내역(신기능·개선, 최근 60일, 12개)에서 만듭니다.</span>
+        </div>
+        <div className="promo-cols">
+          <iframe className="promo-preview" title="미리보기" srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:16px;background:#fff">${html}</body>`} />
+          <textarea className="promo-code" readOnly value={html} onFocus={(e) => e.currentTarget.select()} />
+        </div>
+      </div>
+    </ModalWindow>
   );
 }

@@ -27396,3 +27396,11 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .vzr-flow .vz-node.exit rect { fill: #9aa1a5; }
 .vzr-flow .vz-node text { fill: #1d2326; stroke: #fff; }
 .vzr-flow .vz-node-n { fill: #6b7479; }
+/* 관리자 — 커뮤니티 소개글 HTML 창 (admin/page.tsx PromoWindow) */
+.promo-modal { width: min(1280px, calc(100vw - 32px)); }
+.promo-wrap { padding: 14px 18px 18px; display: grid; gap: 10px; }
+.promo-wrap .promo-note { margin: 0; align-self: center; }
+.promo-cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 12px; }
+.promo-preview { width: 100%; height: min(70vh, 760px); border: 1px solid var(--line); border-radius: var(--r-sm); background: #fff; }
+.promo-code { width: 100%; height: min(70vh, 760px); box-sizing: border-box; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-faint); color: var(--ink); font: 11.5px/1.5 var(--mono); resize: none; }
+@media (max-width: 900px) { .promo-cols { grid-template-columns: 1fr; } }
