@@ -22,8 +22,7 @@ import qrcode from "qrcode-generator";
 // 무-CORS 응답을 재사용하지 않게 한다 (planner.tsx 편성표 이미지와 같은 규약)
 const corsAvatar = (id: string) => `${asset(`/avatars/${id}.webp`)}?cors`;
 const corsItem = (icon: string) => `${asset(`/items/icon/${icon}.webp`)}?cors`;
-// 재화 칸은 고를 때만 넣는다 (사용자 지시 2026-10-05 "재화도 내보낼 수 있게") — 고른 것은 이 브라우저에 기억한다
-const WALLET_KEY = "ta:me-share-wallet";
+// 재화 칸은 늘 넣는다 (사용자 지시 2026-10-05 "재화도 내보낼 수 있게" → "켜건말건 보여줘" — '재화 포함' 체크는 걷어냈다)
 
 type ShareOp = { id: string; name: string; rarity: number; modules: { id: string; type?: string }[] };
 
@@ -89,11 +88,6 @@ export function MeShare({ me, owned, released, opById, stages, items, onClose }:
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const [withWallet, setWithWallet] = useState(() => { try { return window.localStorage.getItem(WALLET_KEY) === "1"; } catch { return false; } });
-  const pickWallet = (on: boolean) => {
-    setWithWallet(on);
-    try { window.localStorage.setItem(WALLET_KEY, on ? "1" : "0"); } catch { /* 기억 못 해도 이번엔 반영한다 */ }
-  };
   const inv = me.profile?.inventory;
   const wallet = useMemo(() => {
     if (!inv || !items) return null;
@@ -171,7 +165,7 @@ export function MeShare({ me, owned, released, opById, stages, items, onClose }:
     void run();
     return () => { alive = false; if (made) URL.revokeObjectURL(made); };
     // 카드 내용은 열 때 한 번 찍는다 — 작전 데이터(stages)·아이템 표(재화 그림)가 늦게 오거나 재화 칸을 켜고 끄면 다시
-  }, [stages, wallet, withWallet]);
+  }, [stages, wallet]);
 
   const save = () => {
     if (!url) return;
@@ -193,7 +187,6 @@ export function MeShare({ me, owned, released, opById, stages, items, onClose }:
     <ModalWindow label={t("이미지로 내보내기")} className="operator-modal me-share-modal" onClose={onClose}>
       <div className="me-share-wrap">
         <header className="me-share-bar">
-          {inv && <label className="me-toggle"><input type="checkbox" checked={withWallet} onChange={(e) => pickWallet(e.target.checked)} />{t("재화 포함")}</label>}
           <div className="me-share-actions">
             <button type="button" className="import-action" disabled={!blob} onClick={() => void copy()}><span className="btn-icon" aria-hidden>⧉</span>{t("복사")}</button>
             <button type="button" className="import-action apply" disabled={!url} onClick={save}><span className="btn-icon" aria-hidden>⤓</span>{t("PNG 저장")}</button>
@@ -228,7 +221,7 @@ export function MeShare({ me, owned, released, opById, stages, items, onClose }:
                     {stats.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}
                   </div>
 
-                  {withWallet && wallet && (
+                  {wallet && (
                     <section>
                       <h4>{t("재화")}</h4>
                       <ul className="me-share-wallet">

@@ -27286,7 +27286,7 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .me-share-assist figcaption span { font-size: 13px; color: #8f989c; }
 .me-share-foot { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid #2a3338; font-size: 13px; color: #8f989c; }
 .me-share-prog dt { white-space: nowrap; }
-/* 재화 칸 ('재화 포함'을 켰을 때) — 왼쪽 넓은 열에 가로 칸 두 줄(오른쪽에 쌓으면 카드가 세로로 길어져 16:9 가 깨진다) */
+/* 재화 칸 — 왼쪽 넓은 열에 가로 칸 두 줄(오른쪽에 쌓으면 카드가 세로로 길어져 16:9 가 깨진다) */
 .me-share-wallet { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
 .me-share-wallet li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; background: #1f272b; min-width: 0; }
 .me-share-wallet img, .me-share-wallet li > i { width: 40px; height: 40px; display: block; object-fit: contain; }
