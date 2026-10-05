@@ -201,7 +201,12 @@ const onStoryPath = () => typeof window !== "undefined" && STORY_PATH_RE.test(wi
 // 단독으로 서 있거나 바로 뒤가 조사일 때만 매칭 (사용자 리포트 2026-07-18).
 // 감탄사와 겹치는 한 글자 이름(아 등)은 "아," "아……" 같은 감탄 표기에 오탐되므로
 // 반드시 조사가 붙을 때만 매칭한다 (사용자 리포트 2026-07-22 — 오퍼 '아' vs 감탄사 '아').
-const INTERJECTION_HOMOGRAPHS = new Set(["아", "야", "어", "와", "하", "오", "에", "응", "음", "허"]);
+const INTERJECTION_HOMOGRAPHS = new Set(["아", "야", "어", "와", "하", "오", "에", "응", "음", "허",
+  // 흔한 낱말과 겹치는 한 글자 이름도 조사가 붙을 때만 — '시 한 편'·'위의 글자'·'량' (통합전략 5 쉐이 대리인, 2026-10-05)
+  "시", "위", "왕", "량"]);
+// 지시어와 겹치는 한 글자 이름은 아예 밑줄을 긋지 않는다 — 쉐이 대리인 '이'(易)는 "이 정원·이를·이는"처럼 지시어로
+// 훨씬 많이 쓰여 34곳 중 대부분이 오탐이었다 (2026-10-05). 카드 자체는 그대로 남는다.
+const NEVER_MARK = new Set(["이", "그", "저"]);
 // 받침 유무에 맞는 조사만 허용 — 받침 없는 이름(아·첸X)에 '이'를 허용하면 "아이" 같은
 // 일반 단어에 오탐된다 (첸처럼 받침 있는 이름은 이/은/을이 정상 조사)
 const hasBatchim = (ch: string) => (ch.charCodeAt(0) - 0xac00) % 28 !== 0;
@@ -215,7 +220,7 @@ function entityMatcher(rawKeys: string[]): RegExp {
       : "가|는|를|와|도|만|의|랑|에게|한테|께서?";
     return `${k}(?=(?:${josa})(?![가-힣]))`;
   };
-  const parts = keys.map((k) =>
+  const parts = keys.filter((k) => !NEVER_MARK.has(k)).map((k) =>
     // 로마자가 든 이름은 영어 단어 속에 걸리지 않게 앞뒤를 끊는다 — 'W' 가 When·What 의 머리에,
     // 'Ash'·'Lin' 이 Ashlock·Linked 에 밑줄을 긋던 것 (2026-10-04 영어 요약 번역 중 발견)
     /[A-Za-z]/.test(k)
@@ -226,6 +231,7 @@ function entityMatcher(rawKeys: string[]): RegExp {
           : `(?:${k}(?![가-힣])|${particle(k)})`
         : k,
   );
+  if (!parts.length) return /(?!)/; // 밑줄 걸 이름이 하나도 없다 (NEVER_MARK 뿐)
   return new RegExp(`(?<![가-힣])(?:${parts.join("|")})`);
 }
 
