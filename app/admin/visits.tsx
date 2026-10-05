@@ -61,6 +61,18 @@ async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
 // ── 이름표 ─────────────────────────────────────────────────────────────────────
 
 const OP_NAME = new Map((operatorsData as { id: string; name: string }[]).map((o) => [o.id, o.name]));
+// 작전·적 상세 주소의 이름 — 작전 데이터(1.5MB)는 관리자 화면을 열 때 뒤늦게 받아 채운다 (loadDexNames)
+const STAGE_NAME = new Map<string, string>();
+const ENEMY_NAME = new Map<string, string>();
+let dexNames: Promise<void> | null = null;
+function loadDexNames(): Promise<void> {
+  dexNames ??= import("../data/stages.json").then((m) => {
+    const doc = m.default as unknown as { stages: { id: string; code: string; name: string }[]; enemyNames: Record<string, string> };
+    for (const st of doc.stages) STAGE_NAME.set(st.id, st.code && st.code !== st.name ? `${st.code} ${st.name}` : st.name);
+    for (const [k, v] of Object.entries(doc.enemyNames ?? {})) ENEMY_NAME.set(k, v);
+  }).catch(() => { dexNames = null; });
+  return dexNames;
+}
 const STORY_NAME = new Map((storiesData as unknown as { events: { id: string; name: { ko: string } }[] }).events.map((e) => [e.id, e.name.ko]));
 export const SECTION_KO: Record<string, string> = {
   홈: "홈", operators: "오퍼레이터", stories: "스토리", enemies: "적 도감", stages: "작전", events: "이벤트",
@@ -91,11 +103,19 @@ export function pathLabel(path: string, hash?: string | null): string {
     const tail = m ? ` · ${ROGUE_VIEW_KO[m[1]] ?? m[1]}${m[2] ? ` ${decodeURIComponent(m[2])}` : ""}` : hash ? ` ${hash}` : "";
     return rogueLabel(id) + tail;
   }
+  const main = /^main_(\d+)$/.exec(key), rogueStory = /^rogue_(\d+)$/.exec(key), season = /^s(\d+)$/.exec(key);
   const name =
     p === "/" ? "홈"
     : !id && SECTION_KO[head] ? SECTION_KO[head]
     : head === "operators" && OP_NAME.has(key) ? `오퍼 · ${OP_NAME.get(key)}`
     : head === "stories" && STORY_NAME.has(key) ? `스토리 · ${STORY_NAME.get(key)}`
+    : head === "stories" && main ? `스토리 · 메인 ${Number(main[1])}장`
+    : head === "stories" && rogueStory ? `스토리 · ${rogueLabel(`is${rogueStory[1]}`)}`
+    : head === "autochess" && season ? `위수 협의 · 시즌 ${season[1]}`
+    : head === "stages" && STAGE_NAME.has(key) ? `작전 · ${STAGE_NAME.get(key)}`
+    : head === "enemies" && ENEMY_NAME.has(key) ? `적 · ${ENEMY_NAME.get(key)}`
+    // 모르는 하위 주소도 영어 경로 통째가 아니라 '기능 · id' 로 (사용자 지적 2026-10-05 "왜 영어로 나오는겨")
+    : SECTION_KO[head] && id ? `${SECTION_KO[head]} · ${key}`
     : decodeURIComponent(p);
   return name + (hash ? ` ${hash}` : "");
 }
@@ -474,6 +494,8 @@ export function VisitsPanel() {
   const [who, setWho] = useState<Who>("human");
   const human = WHO_ARG[who];
   const [data, setData] = useState<Summary | null>(null);
+  const [, setNamesReady] = useState(false);
+  useEffect(() => { void loadDexNames().then(() => setNamesReady(true)); }, []);
   const [report, setReport] = useState(false);   // 이미지 리포트 창 (visits-report.tsx)
   const [trend, setTrend] = useState<TrendRow[] | null>(null);
   const [sessions, setSessions] = useState<SessRow[] | null>(null);
