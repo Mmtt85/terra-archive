@@ -36,6 +36,10 @@ export type AccountChar = {
   modules: Record<string, number>;
   trust: number;
   skin: string | null;
+  /** 아래 셋은 '내 정보' 화면용 — 2026-10-04 이전 워커 응답에는 없다 */
+  gain?: number;
+  skillIndex?: number;
+  equip?: string | null;
 };
 
 export type AccountPlayer = {
@@ -50,7 +54,49 @@ export type AccountPlayer = {
 /** 재동기화용 인증값 — 계정 접근 권한이 있으므로 절대 저장하지 않는다. */
 export type AccountToken = { uid: string; token: string; deviceId: string };
 
-export type AccountRoster = { player: AccountPlayer; chars: AccountChar[]; token: AccountToken };
+/** 친구·지원 유닛의 오퍼 한 칸 */
+export type AccountAssist = {
+  id: string; elite: number; level: number; potential: number; skin: string | null;
+  skillIndex: number; mastery: number[]; skill: number; equip: string | null; equipLevel: number;
+};
+
+export type AccountFriend = {
+  nickName: string; nickNumber: string; level: number; avatar: string | null;
+  secretary: string | null; secretarySkin: string | null; lastOnline: number; resume: string;
+  charCnt: number; progress: string | null; assist: AccountAssist[];
+};
+
+/** '내 정보' 화면용 계정 요약 (workers/account profile()) — 접근 권한 값은 들어 있지 않다 */
+export type AccountProfile = {
+  status: {
+    level: number; exp: number; ap: number; maxAp: number; apTs: number;
+    register: number; lastOnline: number; progress: string | null;
+    secretary: string | null; secretarySkin: string | null; avatar: string | null;
+    resume: string; friendLimit: number; monthlyEnd: number;
+  };
+  inventory: Record<string, number>;
+  /** 작전 id → 0 해금 · 1 진입 · 2 클리어 · 3 완벽 */
+  stages: Record<string, number>;
+  campaigns: Record<string, number>;
+  recruit: { slot: number; state: number; tags: number[]; picked: number[]; finish: number }[];
+  assist: { id: string; skillIndex: number; equip: string | null }[];
+  rooms: { slot: string; room: string; level: number }[];
+  skins: number;
+  medals: number;
+  /** 전체 훈장 수 (2026-10-05~ 워커) */
+  medalTotal?: number;
+  furniture: number;
+  /** 친구 목록 — 받아 오지 못했으면 null */
+  friends: AccountFriend[] | null;
+  /** 정품 인증 서명 — 공유 카드의 QR 이 담는다 ("숫자.서명", 2026-10-05~ 워커) */
+  seal?: string | null;
+  /** 누적 소비 크레딧 — 크레딧 상점 '오퍼레이터 언락'의 숫자 (2026-10-05~ 워커) */
+  creditSpent?: number | null;
+  /** 통합전략 테마별 진행 — collect: 갈래 → 얻은 id 들, record: 원본(작으면) (2026-10-05) */
+  rogue?: Record<string, { collect: Record<string, string[]>; chat?: { chat?: Record<string, number>; chatV2?: Record<string, string[]> }; record: Record<string, unknown> | null }>;
+};
+
+export type AccountRoster = { player: AccountPlayer; chars: AccountChar[]; token: AccountToken; profile?: AccountProfile };
 
 /** 워커가 돌려준 오류 코드 — 문구는 accountErrorText()가 정한다. */
 export class AccountError extends Error {
@@ -73,19 +119,83 @@ async function post(path: string, body: unknown): Promise<Record<string, unknown
   return data;
 }
 
+/** 로그인·동기화 진행 단계 — 워커가 이 순서로 알린다 (2026-10-05) */
+export const ACCOUNT_STEPS = [
+  { id: "network", label: "서버 주소 확인" },
+  { id: "yostar", label: "요스타 인증" },
+  { id: "game", label: "게임 서버 접속" },
+  { id: "sync", label: "계정 데이터 받기 — 오퍼·창고·작전·기지·통합전략" },
+  { id: "friends", label: "친구 목록" },
+  { id: "shop", label: "크레딧 상점" },
+  { id: "digest", label: "정리하기" },
+] as const;
+export type AccountStep = (typeof ACCOUNT_STEPS)[number]["id"];
+
+/** 진행 단계를 줄 단위(NDJSON)로 받는 요청 — 마지막 줄이 결과다. 옛 워커(JSON 한 덩어리)도 그대로 읽는다. */
+async function postStream(path: string, body: Record<string, unknown>, onStep?: (step: AccountStep) => void): Promise<Record<string, unknown>> {
+  let res: Response;
+  try {
+    res = await fetch(apiBase() + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, stream: true }),
+    });
+  } catch {
+    throw new AccountError("offline");
+  }
+  if (!res.body || !(res.headers.get("Content-Type") ?? "").includes("ndjson")) {
+    const data = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+    if (!res.ok || !data || data.ok !== true) throw new AccountError(String(data?.error ?? `http-${res.status}`));
+    return data;
+  }
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buf = "";
+  let last: Record<string, unknown> | null = null;
+  const take = (line: string) => {
+    if (!line.trim()) return;
+    let row: Record<string, unknown>;
+    try { row = JSON.parse(line) as Record<string, unknown>; } catch { return; }
+    if (typeof row.step === "string") onStep?.(row.step as AccountStep);
+    else last = row;
+  };
+  for (;;) {
+    let chunk: ReadableStreamReadResult<string>;
+    try { chunk = await reader.read(); } catch { throw new AccountError("offline"); }
+    if (chunk.done) break;
+    buf += chunk.value;
+    const lines = buf.split("\n");
+    buf = lines.pop() ?? "";
+    lines.forEach(take);
+  }
+  take(buf);
+  const data = last as Record<string, unknown> | null;
+  if (!data || data.ok !== true) throw new AccountError(String(data?.error ?? "internal"));
+  return data;
+}
+
 /** 요스타 계정 이메일로 인증코드를 보낸다. */
 export async function sendAccountCode(email: string, server: AccountServer): Promise<void> {
   await post("/send-code", { email: email.trim(), server });
 }
 
 /** 인증코드로 로그인해 보유 오퍼 목록을 받는다. **게임 세션이 이 시점에 끊긴다.** */
-export async function loginAccount(email: string, code: string, server: AccountServer): Promise<AccountRoster> {
-  return (await post("/login", { email: email.trim(), code: code.trim(), server })) as unknown as AccountRoster;
+export async function loginAccount(email: string, code: string, server: AccountServer, onStep?: (step: AccountStep) => void): Promise<AccountRoster> {
+  return (await postStream("/login", { email: email.trim(), code: code.trim(), server }, onStep)) as unknown as AccountRoster;
 }
 
 /** 이미 받은 토큰으로 다시 동기화 (인증코드 불필요, 역시 게임 세션이 끊긴다). */
-export async function syncAccount(token: AccountToken, server: AccountServer): Promise<AccountRoster> {
-  return (await post("/sync", { token, server })) as unknown as AccountRoster;
+export async function syncAccount(token: AccountToken, server: AccountServer, onStep?: (step: AccountStep) => void): Promise<AccountRoster> {
+  return (await postStream("/sync", { token, server }, onStep)) as unknown as AccountRoster;
+}
+
+/** 공유 카드 정품 인증 — 서명이 맞으면 서명된 그때의 숫자를 돌려준다 */
+export type SealData = {
+  v: number; server: string; uid: string; nick: string; nickNo: string; level: number; register: number; at: number;
+  owned: number; e2: number; e2l90: number; pot6: number; m3: number; skins: number; medals: number;
+};
+export async function verifySeal(code: string): Promise<SealData | null> {
+  const data = await post("/verify", { code, server: "kr" });
+  return data.valid === true ? (data.data as SealData) : null;
 }
 
 /** 오류 코드를 한국어 원문(i18n 키)으로 — 사전에 같은 키가 있어야 EN/JA가 나온다. */

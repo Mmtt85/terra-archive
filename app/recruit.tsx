@@ -2,6 +2,7 @@
 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
+import { useMe, meChars, potText } from "./me-store";
 import recruitData from "./data/recruit.json";
 import { useI18n, rich, type ExtraI18n } from "./i18n";
 import { ModalWindow } from "./modal-window";
@@ -139,7 +140,14 @@ function targetFirst(list: RecruitOp[], target?: string): RecruitOp[] {
 }
 
 function ComboCard({ result, onShowOperator, tagLabel, opLabel, target }: { result: ComboResult; onShowOperator?: (id: string) => void; tagLabel: (tag: string) => string; opLabel: (op: RecruitOp) => string; target?: string }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
+  // 내 보유 ('내 정보' 로그인 시) — 미보유·잠재를 이름 옆에 붙인다
+  const mine = meChars(useMe());
+  const own = (id: string) => {
+    if (!mine) return null;
+    const c = mine.get(id);
+    return <em className={`me-rc${c ? c.potential >= 6 ? " full" : "" : " new"}`}>{c ? potText(locale, c.potential) : t("미보유")}</em>;
+  };
   const lowOnly = result.ops.length === 0;
   const odds = opOdds(result);
   return (
@@ -155,7 +163,7 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel, target }: { resu
           <li key={op.id} className={[op.pending ? "pending" : "", op.id === target ? "target" : ""].filter(Boolean).join(" ") || undefined} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
             <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
               title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
-            <span>{opLabel(op)}{op.pending && <em className="pending-tag">{t("추가 예정")}</em>}</span>
+            <span>{opLabel(op)}{op.pending && <em className="pending-tag">{t("추가 예정")}</em>}{own(op.id)}</span>
             <em className="op-pct" title={t("이 조합을 골랐을 때 대략의 등장 확률 (9시간 기준)")}>{pctText(odds.get(op.id) ?? 0)}</em>
             <i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>
           </li>
@@ -164,7 +172,7 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel, target }: { resu
           <li key={op.id} className={`low-time${op.id === target ? " target" : ""}`} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
             <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
               title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
-            <span>{opLabel(op)}<em className="time-req">{t(LOW_TIME_HINT[op.rarity])}</em></span>
+            <span>{opLabel(op)}<em className="time-req">{t(LOW_TIME_HINT[op.rarity])}</em>{own(op.id)}</span>
             <i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>
           </li>
         ))}
@@ -189,8 +197,6 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   const { t, locale } = useI18n();
   const [showDict, setShowDict] = useState(false);
   const [showReverse, setShowReverse] = useState(false);
-  const [reverseOp, setReverseOp] = useState<RecruitOp | null>(null);
-  const [reverseTerm, setReverseTerm] = useState("");
   const [showGuide, setShowGuide] = useState(false);
   /* 빠른 입력 안내문은 좌우 분할의 왼쪽 칸(입력란 176px)에서 통째로 잘린다 (사용자 지적
      2026-09-20). 네이티브 placeholder 는 애니메이션이 안 되니 같은 자리에 겹쳐 그려 흘린다 —
@@ -508,9 +514,32 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
           {renderGroups(SNIPE_DICT)}
         </ModalWindow>
       )}
-      {showReverse && (
-        <ModalWindow label={t("오퍼로 태그 찾기")} className="recruit-dict-modal recruit-reverse-modal"
-          onClose={() => { setShowReverse(false); setReverseOp(null); setReverseTerm(""); }}>
+      {showReverse && <RecruitReverseModal extra={extra} onShowOperator={onShowOperator} onClose={() => setShowReverse(false)} />}
+      {/* 도움말은 공용 창(ModalWindow)이라 백드롭·포털을 스스로 만든다 (2026-09-05) */}
+      {lensOpen && (
+        <Suspense fallback={null}>
+          <LensHelpModal mode="recruit" onClose={() => setLensOpen(false)} />
+        </Suspense>
+      )}
+    </section>
+  );
+}
+
+/** '오퍼로 태그 찾기' 창 — 공개채용 도우미와 오퍼 상세의 '공개모집' 버튼이 같이 쓴다 (2026-10-04 분리).
+ *  initialOp 를 주면 그 오퍼의 태그 조합부터 연다. */
+export function RecruitReverseModal({ extra, onShowOperator, onClose, initialOp }: {
+  extra?: ExtraI18n | null; onShowOperator?: (id: string) => void; onClose: () => void; initialOp?: string;
+}) {
+  const { t } = useI18n();
+  const [reverseOp, setReverseOp] = useState<RecruitOp | null>(() => (initialOp ? (data.ops.find((o) => o.id === initialOp) as RecruitOp | undefined) ?? null : null));
+  const [reverseTerm, setReverseTerm] = useState("");
+  const tagLabel = (tag: string) => {
+    const id = data.tags.find((x) => x.name === tag)?.id;
+    return (id != null && extra?.recruitTags[String(id)]) || tag;
+  };
+  const opLabel = (op: RecruitOp) => extra?.names[op.id] ?? op.name;
+  return (
+        <ModalWindow label={t("오퍼로 태그 찾기")} className="recruit-dict-modal recruit-reverse-modal" onClose={onClose}>
           {reverseOp ? (() => {
             const list = reverseCombos(reverseOp);
             const sure = list.filter((r) => r.prob >= 0.999);
@@ -563,13 +592,5 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
             </>
           )}
         </ModalWindow>
-      )}
-      {/* 도움말은 공용 창(ModalWindow)이라 백드롭·포털을 스스로 만든다 (2026-09-05) */}
-      {lensOpen && (
-        <Suspense fallback={null}>
-          <LensHelpModal mode="recruit" onClose={() => setLensOpen(false)} />
-        </Suspense>
-      )}
-    </section>
   );
 }

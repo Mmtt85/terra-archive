@@ -40,6 +40,7 @@ import { buildMaaInfrast } from "./maa-export";
 // 공용 창형 모달 — 이동·리사이즈·고정·z순서 (2026-08-03)
 import { ModalWindow } from "./modal-window";
 import type { AccountRoster } from "./account";
+import { getMe } from "./me-store";
 import costsData from "./data/costs.json";
 
 // 재료 표시용 카탈로그 (이름·아이콘) — costs.json items (build-costs.py 수확)
@@ -56,6 +57,8 @@ function strategyLabel(plan: Plan, locale: Locale, t: T): string {
 }
 
 const STORAGE_KEY = "terra-archive-infra-v3";
+// '내 정보' 계정 데이터를 마지막으로 반영한 동기화 시각 (app/me-store.ts)
+const ME_APPLIED_KEY = "terra-archive-infra-me-at";
 // 육성 추천 표시 개수 — 엔진은 정렬 전체를 반환하고, 숨긴 오퍼 자리는 다음 순위가 채운다
 const INVEST_SHOW = 20;
 
@@ -1004,7 +1007,33 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      let saved = localStorage.getItem(STORAGE_KEY);
+      // '내 정보'(게임 로그인)에서 받은 계정이 마지막으로 반영한 것보다 새로우면 보유·정예화·레벨을
+      // 그걸로 바꿔 끼운다 — 인프라 안에서 따로 로그인하지 않아도 따라오게 (사용자 지시 2026-10-04).
+      // 저장분 자체를 고쳐 두고 아래 복원 경로를 그대로 탄다. 보유가 바뀌었으니 편성·육성 추천은 버리고 새로 짠다.
+      const me = getMe();
+      let meSeen = 0;
+      try { meSeen = Number(localStorage.getItem(ME_APPLIED_KEY)) || 0; } catch { /* 무시 */ }
+      if (me && me.syncedAt > meSeen) {
+        const base = saved ? JSON.parse(saved) : {};
+        const owned: string[] = [];
+        const elite: [string, Elite][] = [];
+        const opLevels: [string, number][] = [];
+        for (const char of me.chars) {
+          const op = opById.get(char.id);
+          if (!op) continue;
+          owned.push(op.id);
+          const e = Math.max(0, Math.min(2, char.elite)) as Elite;
+          if (e < 2 && eliteOptions(op).length > 0) elite.push([op.id, e]);
+          if (Number.isFinite(char.level) && char.level >= 1) opLevels.push([op.id, Math.min(MAX_OP_LEVEL, Math.round(char.level))]);
+        }
+        const buckets = base.buckets && typeof base.buckets === "object" ? base.buckets : {};
+        for (const k of Object.keys(buckets)) buckets[k] = { ...buckets[k], plan: null, invest: null, investHidden: [], basePlan: null };
+        saved = JSON.stringify({ ...base, owned, elite, opLevels, buckets, plan: null, invest: null, investHidden: [] });
+        localStorage.setItem(STORAGE_KEY, saved);
+        localStorage.setItem(ME_APPLIED_KEY, String(me.syncedAt));
+        showToast(t("내 정보의 계정 데이터로 보유 오퍼를 맞췄습니다 — {name} 박사 · 보유 {n}명", { name: me.player.nickName, n: owned.length }));
+      }
       if (saved) {
         const data = JSON.parse(saved);
         const ids = new Set<string>((data.owned as string[]).filter((id: string) => opById.has(id)));
@@ -3320,6 +3349,8 @@ function RosterModal({ allOps, lockFuture, ownedIds, eliteById, levelById, onApp
   // 목록**이라 보유 체크를 통째로 덮어쓴다 — 계정에 없는 오퍼는 미보유가 정답이다.
   // 사이트에 없는 오퍼(미실장 데이터를 끈 상태의 중섭 선행분 등)는 건너뛰고 건수만 알린다.
   const applyAccount = (roster: AccountRoster) => {
+    // 이 로그인은 이미 '내 정보'에 저장됐다(roster-import) — 다음 진입 때 같은 데이터로 편성을 또 덮지 않게 표시해 둔다
+    try { localStorage.setItem(ME_APPLIED_KEY, String(getMe()?.syncedAt ?? Date.now())); } catch { /* 무시 */ }
     const byId = new Map(ownableOps.map((op) => [op.id, op]));
     const nextDraft = new Set<string>();
     const nextElite = new Map<string, Elite>();

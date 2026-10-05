@@ -30,6 +30,12 @@ type Summary = {
   device: Kv[]; site_lang: Kv[]; tz: Kv[];
   out: { host: string; n: number }[];
   flow: FlowRow[];
+  /** '내 정보' 로그인·다시 동기화 기록 (2026-10-05~ DB 함수) — 누가 = 익명 방문자 id */
+  me_sync?: {
+    n: number; people: number; login: number; sync: number;
+    by: { visitor: string | null; n: number; login: number; sync: number; last: string; server: string | null }[];
+    recent: { at: string; visitor: string | null; kind: string; server: string | null }[];
+  };
 };
 type TrendRow = { day: string; sessions: number; human_sessions: number; visitors: number; new_visitors: number; views: number; active_ms: number };
 type SessView = { path: string; hash: string | null; t0: number | null; vis: number; act: number; scroll: number | null; out: string | null };
@@ -372,6 +378,19 @@ function fillDays(days: Summary["days"], span: number) {
   return out;
 }
 
+// 기간 지정의 날짜(KST) — 시작~끝(끝 날 포함)을 하루씩 채운다
+function fillRange(days: Summary["days"], from: string, to: string) {
+  const byDay = new Map(days.map((d) => [d.day.slice(0, 10), d]));
+  const out: { day: string; sessions: number; visitors: number; views: number; active_ms: number }[] = [];
+  for (let t = Date.parse(`${from}T00:00:00Z`); t <= Date.parse(`${to}T00:00:00Z`); t += 86400_000) {
+    const key = new Date(t).toISOString().slice(0, 10);
+    out.push(byDay.get(key) ?? { day: key, sessions: 0, visitors: 0, views: 0, active_ms: 0 });
+  }
+  return out;
+}
+const kstToday = () => new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
+const nextDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86400_000).toISOString().slice(0, 10);
+
 function SessionLine({ s }: { s: SessRow }) {
   const at = new Date(s.at);
   const when = at.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -408,6 +427,11 @@ function SessionLine({ s }: { s: SessRow }) {
 
 export function VisitsPanel() {
   const [days, setDays] = useState<0 | 7 | 30 | 90 | 365>(0);   // 0 = 오늘 (KST 0시 00분부터) — 기본 (사용자 지시 2026-10-04)
+  // 기간 지정 (사용자 지시 2026-10-05 "특정 일 혹은 특정 기간 지정도") — KST 날짜. 정해 두면 위 기간 버튼 대신 이것을 본다.
+  // DB 쪽 visits_summary_range·visits_sessions_range (docs/supabase-visits.sql) 를 부른다.
+  const [range, setRange] = useState<{ from: string; to: string } | null>(null);
+  const rangeArgs = range ? { p_from: `${range.from}T00:00:00+09:00`, p_to: `${nextDay(range.to)}T00:00:00+09:00` } : null;
+  const oneDay = !!range && range.from === range.to;
   const [human, setHuman] = useState(true);
   const [data, setData] = useState<Summary | null>(null);
   const [trend, setTrend] = useState<TrendRow[] | null>(null);
@@ -453,7 +477,10 @@ export function VisitsPanel() {
       else setStatus(String((e as Error).message ?? e));
     };
     const done = () => { if (alive) setLoadMain(false); };
-    if (days === 365) {
+    if (rangeArgs) {
+      rpc<Summary>("visits_summary_range", { ...rangeArgs, p_human: human, p_hourly: oneDay })
+        .then((d) => { if (alive) { setData(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
+    } else if (days === 365) {
       rpc<TrendRow[]>("visits_trend", { p_days: 365 })
         .then((t) => { if (alive) { setTrend(t); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
     } else {
@@ -461,17 +488,22 @@ export function VisitsPanel() {
         .then((d) => { if (alive) { setData(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
     }
     return () => { alive = false; };
-  }, [days, human, tick]);
+    // rangeArgs 는 range 에서 나온다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [days, human, tick, range]);
 
   useEffect(() => {
-    if (days === 365) return;
+    if (days === 365 && !rangeArgs) return;
     let alive = true;
     setLoadSess(true);
-    rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), p_human: human, p_src: srcFilter || null, p_limit: limit })
+    (rangeArgs
+      ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, p_human: human, p_src: srcFilter || null, p_limit: limit })
+      : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), p_human: human, p_src: srcFilter || null, p_limit: limit }))
       .then((s) => { if (alive) setSessions(s); }).catch(() => { if (alive) setSessions(null); })
       .finally(() => { if (alive) setLoadSess(false); });
     return () => { alive = false; };
-  }, [days, human, srcFilter, limit, tick]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [days, human, srcFilter, limit, tick, range]);
 
   if (missing) {
     return (
@@ -486,14 +518,30 @@ export function VisitsPanel() {
   }
 
   const t = data?.total;
-  const filled = data ? fillDays(data.days, days) : [];
+  const filled = data ? (range ? fillRange(data.days, range.from, range.to) : fillDays(data.days, days)) : [];
+  const today = kstToday();
+  const pickDate = (which: "from" | "to", v: string) => {
+    if (!v) return;
+    const cur = range ?? { from: v, to: v };
+    let next = { ...cur, [which]: v };
+    if (next.from > next.to) next = which === "from" ? { from: v, to: v } : { from: v, to: v };
+    setRange(next);
+  };
   return (
     <section className="vz">
       <div className="admin-tools vz-controls">
         {([0, 7, 30, 90, 365] as const).map((d) => (
-          <button key={d} className={days === d ? "selected" : ""} onClick={() => setDays(d)}>{d === 0 ? "오늘" : d === 365 ? "1년(일별 집계)" : `${d}일`}</button>
+          <button key={d} className={!range && days === d ? "selected" : ""} onClick={() => { setRange(null); setDays(d); }}>{d === 0 ? "오늘" : d === 365 ? "1년(일별 집계)" : `${d}일`}</button>
         ))}
-        <button className={human ? "selected" : ""} onClick={() => setHuman((h) => !h)} disabled={days === 365}
+        {/* 기간 지정 — 하루만 고르면 시작=끝. 날짜 칸을 누르면 브라우저 달력이 뜬다 */}
+        <span className={`vz-range${range ? " on" : ""}`}>
+          <span>기간</span>
+          <input type="date" max={today} value={range?.from ?? ""} onChange={(e) => pickDate("from", e.target.value)} aria-label="시작일" />
+          <i>~</i>
+          <input type="date" max={today} value={range?.to ?? ""} onChange={(e) => pickDate("to", e.target.value)} aria-label="끝일" />
+          {range && <button type="button" className="vz-range-x" onClick={() => setRange(null)} aria-label="기간 지정 해제">×</button>}
+        </span>
+        <button className={human ? "selected" : ""} onClick={() => setHuman((h) => !h)} disabled={days === 365 && !range}
                 title="세션 동안 스크롤·클릭·터치·키 입력이 한 번도 없으면 사람이 아닌 것으로 본다 (JS 를 도는 위장 크롤러 거르기)">
           {human ? "사람만" : "봇 포함"}
         </button>
@@ -505,7 +553,7 @@ export function VisitsPanel() {
       </div>
       {status && <p className="admin-status">{status}</p>}
 
-      {days === 365 ? (
+      {days === 365 && !range ? (
         trend && (
           <>
             <h3 className="vz-h">일별 추이 (최근 1년 · 매일 밤 말아 둔 집계 — 오늘은 내일 반영)</h3>
@@ -530,15 +578,38 @@ export function VisitsPanel() {
             <div><b>{num(t.bots)}</b><span>거른 세션(조작 없음)</span></div>
           </div>
 
-          {days === 0 ? (() => {
-            // 오늘 — 시간대별 (KST 0시~지금, 세션 시작 시각 기준). 방문자·세션·화면 조회를 일별 추이와 같은 세 선으로
+          {/* 내 정보 동기화 — 누가(익명 방문자 id) 몇 번 (사용자 요청 2026-10-05) */}
+          {data.me_sync && (
+            <div className="vz-mesync">
+              <Head title="내 정보 동기화" sub={`로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · ${num(data.me_sync.people)}명 — 누가 = 방문자 익명 id (닉네임은 받지 않는다)`} />
+              {data.me_sync.by.length ? (
+                <table className="vz-table">
+                  <thead><tr><th>방문자</th><th>합계</th><th>로그인</th><th>다시 동기화</th><th>서버</th><th>마지막</th></tr></thead>
+                  <tbody>
+                    {data.me_sync.by.map((b) => (
+                      <tr key={b.visitor ?? "?"}>
+                        <td title={b.visitor ?? ""}><code>{(b.visitor ?? "—").slice(0, 8)}</code></td>
+                        <td>{num(b.n)}</td><td>{num(b.login)}</td><td>{num(b.sync)}</td><td>{b.server ?? "—"}</td>
+                        <td>{new Date(b.last).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : <p className="vz-note">이 기간에는 동기화 기록이 없습니다.</p>}
+            </div>
+          )}
+
+          {(range ? oneDay : days === 0) ? (() => {
+            // 하루 보기 — 시간대별 (세션 시작 시각 KST). 오늘이면 지금 시각까지, 지난 날이면 24시간 전부
+            const isToday = !range || range.from === today;
             const nowHour = new Date(Date.now() + 9 * 3600_000).getUTCHours();
-            const hrs = Array.from({ length: nowHour + 1 }, (_, h) => h);
+            const hrs = Array.from({ length: isToday ? nowHour + 1 : 24 }, (_, h) => h);
             const by = new Map((data.hourly ?? []).map((r) => [r.hr, r]));
+            const dayLabel = range && !isToday ? range.from.slice(5).replace("-", "/") : "오늘";
             return (
               <>
-                <Head title="오늘 시간대별" sub="KST 0시 00분부터 지금까지, 세션이 시작된 시각 기준" />
-                <LineChart days={hrs.map(String)} fmt={(h) => `${h}시`} tip={(h) => `오늘 ${h}시대`} series={[
+                <Head title={`${dayLabel} 시간대별`} sub={isToday ? "KST 0시 00분부터 지금까지, 세션이 시작된 시각 기준" : "KST 0시~24시, 세션이 시작된 시각 기준"} />
+                <LineChart days={hrs.map(String)} fmt={(h) => `${h}시`} tip={(h) => `${dayLabel} ${h}시대`} series={[
                   { name: "방문자", cls: "s1", values: hrs.map((h) => by.get(h)?.visitors ?? 0) },
                   { name: "세션", cls: "s2", values: hrs.map((h) => by.get(h)?.sessions ?? 0) },
                   { name: "화면 조회", cls: "s3", values: hrs.map((h) => by.get(h)?.views ?? 0) },

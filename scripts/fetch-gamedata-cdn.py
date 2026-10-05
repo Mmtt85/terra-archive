@@ -54,7 +54,9 @@ TABLES = {
            # 새 이벤트 전문이 조용히 안 만들어지던 자리다 (2026-09-16 「사람들, 우리들」).
            "climb_tower_table", "sandbox_perm_table", "retro_table", "story_review_table",
            # medal_table: 이벤트 도감 듀얼 채널 메달(build-event-duel.py, 로컬 전용이라 레포판 세트엔 없다) — 2026-09-23
-           "medal_table"],
+           "medal_table",
+           # campaign_table: 섬멸 작전 순환 일정 — 내 정보 '진행 상황'이 지금 못 들어가는 순환 섬멸을 미완료에서 뺀다 (build-stage-open.py, 2026-10-04)
+           "campaign_table"],
     # ⚠ 2026-09-17에 activity/stage/zone 세 표가 **다시 들어왔다.** 종전 주석("중섭은 미래시
     #   전용이라 이벤트·구역·스테이지 표는 받아도 쓰는 데가 없다")은 이제 맞지 않는다 —
     #   이벤트 도감이 미래시 이벤트의 작전·등장 적·교환 재화를 중섭에서 미리 뽑는다

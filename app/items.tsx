@@ -35,6 +35,7 @@ import { loadEnemies, loadEnemyStages, loadEnemyStats, loadStages } from "./dex-
 import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
+import { useMe } from "./me-store";
 
 export type DexItem = {
   id: string;
@@ -66,8 +67,8 @@ export function findItem(items: DexItem[], id: string): DexItem | undefined {
 export type ItemGroup = "material" | "event" | "resource" | "voucher" | "etc";
 
 // 분류 표시 순서 — 사람이 찾는 빈도 순 (재료 → 이벤트 재화 → 자원 → 교환권 → 기타)
-const GROUPS: ItemGroup[] = ["material", "event", "resource", "voucher", "etc"];
-const GROUP_LABEL: Record<ItemGroup, string> = {
+export const GROUPS: ItemGroup[] = ["material", "event", "resource", "voucher", "etc"];
+export const GROUP_LABEL: Record<ItemGroup, string> = {
   material: "재료",
   event: "이벤트 재화",
   resource: "기초 자원",
@@ -92,7 +93,12 @@ const storyHref = (locale: string, id: string) => `${localeBase(locale)}/stories
 
 export const itemIcon = (icon: string) => asset(`/items/icon/${icon}.webp`);
 
-function ItemCard({ item, onSelect }: { item: DexItem; onSelect: (i: DexItem) => void }) {
+/** 내 창고 수량 — 합쳐진 id(alt)까지 더한다 */
+const haveOf = (inv: Record<string, number> | undefined, item: DexItem) =>
+  inv ? [item.id, ...(item.alt ?? [])].reduce((n, id) => n + (inv[id] ?? 0), 0) : undefined;
+
+function ItemCard({ item, onSelect, have }: { item: DexItem; onSelect: (i: DexItem) => void;
+  /** 내 창고 수량 ('내 정보' 로그인 시) — undefined 면 표시하지 않는다 */ have?: number }) {
   // 1,400장이 진입 즉시 전부 요청되지 않도록 화면 근처에 올 때만 <img>를 붙인다
   const [ref, visible] = useLazyVisible<HTMLDivElement>();
   return (
@@ -105,6 +111,7 @@ function ItemCard({ item, onSelect }: { item: DexItem; onSelect: (i: DexItem) =>
       </span>
       <b className="it-card-name">{item.n}</b>
       <span className={`farm-tier tier-${item.r}`}>T{item.r}</span>
+      {have !== undefined && have > 0 && <em className="it-have">×{have.toLocaleString()}</em>}
     </button>
   );
 }
@@ -116,6 +123,7 @@ export function ItemFile({ item, doc, onOpenStage }: {
   item: DexItem; doc: ItemDoc; onOpenStage: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
+  const have = haveOf(useMe()?.profile?.inventory, item);
   return (
     <>
       <header>
@@ -126,6 +134,7 @@ export function ItemFile({ item, doc, onOpenStage }: {
           <h3>{item.n}</h3>
           <span className={`farm-tier tier-${item.r}`}>T{item.r}</span>
           <em className="it-group-badge">{t(GROUP_LABEL[item.g])}</em>
+          {have !== undefined && <p className="it-have-line">{t("내 창고")} <b>{have.toLocaleString()}</b></p>}
         </div>
       </header>
       {item.d && <p className="item-desc">{item.d}</p>}
@@ -201,6 +210,7 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
   const [enemyRaise, setEnemyRaise] = useState(0);
 
   const items = doc.items;
+  const inv = useMe()?.profile?.inventory;
   const famIdx = useMemo(() => familyIndex(items.map((i) => ({ id: i.id, tier: i.r, name: i.n }))), [items]);
   // 합쳐진 id(alt)도 대표 카드로 — 옛 딥링크 #it-<재개방 id> 가 그대로 열린다
   const byId = useMemo(() => new Map(items.flatMap((i) => [[i.id, i] as const, ...(i.alt ?? []).map((a) => [a, i] as const)])), [items]);
@@ -299,7 +309,7 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
         <div className="results-scroll">
           {shown.length > 0 ? (
             <div className="it-grid">
-              {shown.map((i) => <ItemCard key={i.id} item={i} onSelect={setOpen} />)}
+              {shown.map((i) => <ItemCard key={i.id} item={i} onSelect={setOpen} have={haveOf(inv, i)} />)}
             </div>
           ) : (
             <div className="empty"><span>NO MATCH</span><h3>{t("조건에 맞는 아이템이 없어요.")}</h3>

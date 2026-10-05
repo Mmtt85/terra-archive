@@ -24,6 +24,8 @@ export type ChangeRow = {
   ja: string | null;
   href: string | null;
   seq: number;
+  /** 중요 — 버튼·목록에 '중요' 배지 (2026-10-05 컬럼 추가, 기본 false) */
+  important?: boolean;
 };
 
 /** 종류 표시명 (i18n 키 — app/i18n.tsx 사전에 EN/JA가 있다) */
@@ -118,6 +120,18 @@ export async function fetchOldestReleaseDate(): Promise<string | null> {
   if (!res.ok) throw new Error(`조회 실패 (${res.status})`);
   const rows = (await res.json()) as { released_at: string }[];
   return rows[0]?.released_at ?? null;
+}
+
+/** 최근 중요 항목 하나 — 헤더 버튼의 '중요' 배지용 (없으면 null). 기간은 IMPORTANT_DAYS */
+export const IMPORTANT_DAYS = 14;
+export async function fetchLatestImportant(): Promise<{ id: string } | null> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/changelog?select=id&important=eq.true&released_at=gte.${daysAgoKst(IMPORTANT_DAYS)}&order=released_at.desc,created_at.desc&limit=1`,
+    { headers: anonHeaders },
+  );
+  if (!res.ok) return null;
+  const rows = (await res.json()) as { id: string }[];
+  return rows[0] ?? null;
 }
 
 /** 관리자 목록 — 기간 제한 없이 최신순 전체 (사이트 모달은 7일 창 단위로 나눠 읽는다) */

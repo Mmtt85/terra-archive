@@ -11,14 +11,14 @@ import { CONTACT_EMAIL } from "./contact";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "gallery" | "rogue" | "ra" | "autochess" | "about";
+export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "about";
 
 // 탭 → URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators로 분리 — 사용자 확정
 // 2026-07-17: 루트 진입 시 오퍼 이미지 강제 로딩을 없애기 위해 포탈 첫화면 도입). 라우트 폴더명과 반드시 일치.
 // ⚠ 적 도감 세그먼트는 "enemies"(복수) — 초상 자산 폴더 public/enemy/(단수)와 일부러 다르다.
 //    deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만 떼어내기 때문(서빙은 R2).
 export const TAB_SEG: Record<SeoTab, string> = {
-  portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", gallery: "gallery", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about",
+  portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -101,6 +101,11 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ko: { title: "갤러리 - 명일방주 스토리 CG·스탠딩·일러스트 | 테라 아카이브", description: "명일방주(아크나이츠) 갤러리 — 메인·이벤트 스토리 CG 1,400여 장과 인물 스탠딩 1,100여 명, 오퍼레이터 기본·정예화·스킨 일러스트를 한곳에서 둘러봅니다." },
     en: { title: "Gallery - Arknights Story CGs, Sprites & Artwork | Terra Archive", description: "Arknights gallery — browse 1,300+ main and event story CGs, character sprites for 1,000+ characters, and every operator's base, Elite and skin artwork in one place." },
     ja: { title: "ギャラリー - アークナイツ ストーリーCG・立ち絵・イラスト | テラアーカイブ", description: "アークナイツのギャラリー — メイン・イベントストーリーのCG 1,300枚以上、1,000人以上のキャラクター立ち絵、オペレーターの基本・昇進・コーデのイラストをまとめて閲覧できます。" },
+  },
+  me: {
+    ko: { title: "내 정보 - 명일방주 계정 육성 통계·창고 | 테라 아카이브", description: "요스타 계정으로 로그인해 내 명일방주 계정을 한눈에 — 보유 오퍼·2정 만렙·풀잠·특화 통계, 창고 아이템, 미클리어 작전, 공개모집으로 채울 오퍼, 친구와 지원 유닛을 정리하고 사이트 전체 도감에 보유 현황을 표시합니다." },
+    en: { title: "My Account - Arknights Roster Stats & Depot | Terra Archive", description: "Log in with your Yostar account to see your Arknights account at a glance — owned operators, E2 max-level, max-potential and mastery stats, depot items, uncleared stages, recruitable operators you still need, friends and support units, with ownership shown across the site." },
+    ja: { title: "マイページ - アークナイツ アカウント育成統計・倉庫 | テラアーカイブ", description: "Yostarアカウントでログインして自分のアークナイツアカウントを一覧 — 所持オペレーター・昇進2最大レベル・完凸・特化の統計、倉庫アイテム、未クリア作戦、公開求人で埋めるオペレーター、フレンドとサポートユニットをまとめ、サイト全体の図鑑に所持状況を表示します。" },
   },
   rogue: {
     ko: { title: "통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브", description: "명일방주 통합전략(IS) 가이드 — 팬텀 & 크림슨 솔리테어의 층별 노드, 적 도감(난이도 0~15 스탯 적용), 소장품·레퍼토리 전시관, 환각, 엔딩 조건을 정리합니다." },

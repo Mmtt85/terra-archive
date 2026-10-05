@@ -12,6 +12,7 @@ import storyEventsData from "./data/stories.json";
 // 탭은 이미 `tab === "x" && <X/>` 조건부 렌더라 경계가 그대로 맞는다.
 const InfraPlanner = lazy(() => import("./planner"));
 const RecruitHelper = lazy(() => import("./recruit"));
+const RecruitReverse = lazy(() => import("./recruit").then((m) => ({ default: m.RecruitReverseModal })));
 const FarmGuide = lazy(() => import("./farm"));
 const UpgradeSim = lazy(() => import("./farm").then((m) => ({ default: m.UpgradeSim })));
 // 적 도감 목록 — 로케일마다 자기 데이터(~1MB)만 든 청크를 받는다 (app/enemies-{ko,en,ja}.tsx).
@@ -110,6 +111,8 @@ import { TOPICS as ROGUE_TOPICS, slugOf as rogueSlugOf } from "./rogue-topics";
 const StoryGuide = lazy(() => import("./story"));
 const RogueGuide = lazy(() => import("./rogue"));
 const About = lazy(() => import("./about"));
+// 내 정보 (/me) — 게임 로그인으로 받은 내 계정 (2026-10-04)
+const MyInfo = lazy(() => import("./me"));
 import FeedbackWidget from "./feedback-widget";
 import { bindEscClose } from "./esc-close";
 import { feedbackReady } from "./feedback";
@@ -117,6 +120,8 @@ import { isNewFeature, inTimeWindow, tabHasNewFeature, BUILD_NOW } from "./whats
 import { scrollMainTop } from "./scroll";
 import { PORTAL_TILES, PORTAL_ART, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
+import { useMe, meChars, isMaxed, trustPct, eliteText, potText, masteryText, isCollectible } from "./me-store";
+import type { AccountChar } from "./account";
 // 속성 필터는 적 도감(app/enemies.tsx)과 공유하는 부품이라 별도 모듈에 있다 (2026-08-09)
 import { AttributeFilter } from "./attr-filter";
 import { Dropdown } from "./dropdown";
@@ -284,17 +289,17 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "gallery" | "rogue" | "ra" | "autochess" | "about";
+export type Tab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
 // ⚠ 적 도감의 URL 세그먼트는 "enemies"(복수)인데 초상 자산 폴더는 public/enemy/(단수)다.
 //    일부러 다르게 뒀다 — scripts/deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만
 //    떼어내는데(서빙은 R2), 이름이 같으면 라우트 HTML까지 통째로 지워진다.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", gallery: "gallery", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 // ⚠ TAB_SEG와 짝 — 세그먼트를 더하면 여기도 같이 (enemies·stages가 빠져 /stages가
 //   portal로 판정되던 기존 누락도 2026-08-10에 함께 채움)
-const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", items: "item", events: "event", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", gallery: "gallery", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", items: "item", events: "event", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 빌드(=배포) 시각 — vite define으로 박히는 ISO 문자열을 KST 분 단위로 찍는다.
@@ -1127,6 +1132,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 0.5초에 searchTerm만 갱신한다 (사용자 리포트 2026-07-25). search.ts가 정본.
   const { term: searchTerm, clear: clearSearch, inputProps: searchProps } = useSearchInput();
   const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
+  // 보유 필터 — '내 정보'에 계정 데이터가 있을 때만 나온다 (2026-10-04)
+  const [selectedOwn, setSelectedOwn] = useState<string[]>([]);
+  const me = useMe();
+  const myChars = meChars(me);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [selectedSubProfessions, setSelectedSubProfessions] = useState<string[]>([]);
@@ -1466,6 +1475,12 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     // damageTypeOf는 locale·t 클로저 (로케일이 바뀌면 라벨도 바뀐다)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roster, locale, t]);
+  const ownCount = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!myChars) return map;
+    for (const operator of roster) for (const key of OWN_KEYS) if (ownMatch(key, operator, myChars.get(operator.id))) map.set(key, (map.get(key) ?? 0) + 1);
+    return map;
+  }, [roster, myChars]);
 
   // 루트 레이아웃은 lang="ko" 고정이라, 로케일 라우트에서는 클라이언트에서 맞춘다
   useEffect(() => {
@@ -1859,6 +1874,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 : t("스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브"))
               : tab === "gallery"
                 ? t("갤러리 - 명일방주 스토리 CG·스탠딩·일러스트 | 테라 아카이브")
+              : tab === "me"
+                ? t("내 정보 - 명일방주 계정 육성 통계·창고 | 테라 아카이브")
               : tab === "rogue"
                 ? t("통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브")
                 : tab === "ra"
@@ -1920,6 +1937,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     sim: t("작전 시뮬레이터"),
     story: t("스토리"),
     gallery: t("갤러리"),
+    me: t("내 정보"),
     rogue: t("통합전략 가이드"),
     ra: t("생존연산 가이드"),
     autochess: t("위수 협의 가이드"),
@@ -2053,6 +2071,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 헤더 만능검색의 이동 — 종류별로 **기존** 딥링크·핸드오프 경로를 그대로 탄다
   // (오퍼=#op- 해시 모달, 스토리=#story- 해시, 통합전략=스샷 레이더 핸드오프,
   //  파밍·공채=탭 내부 상태라 sessionStorage 우편함). 새 라우팅을 만들지 않는다.
+  // 오퍼 상세의 '공개모집' 버튼 (RecruitButton) — 화면을 넘기지 않고 '오퍼로 태그 찾기' 창만 그 위에 띄운다
+  // (사용자 지시 2026-10-04). 창 본문은 공개채용 도우미 청크에 있어 누를 때 받는다.
+  const [recruitOp, setRecruitOp] = useState<{ id: string; key: number } | null>(null);
+  useEffect(() => {
+    const onRecruit = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (id) setRecruitOp((cur) => ({ id, key: (cur?.key ?? 0) + 1 }));
+    };
+    window.addEventListener(RECRUIT_OP_EVENT, onRecruit);
+    return () => window.removeEventListener(RECRUIT_OP_EVENT, onRecruit);
+  }, []);
   const runOmni = (target: OmniTarget) => {
     switch (target.kind) {
       case "tab":
@@ -2178,10 +2207,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       const matchesRarity = selectedRarities.length === 0 || selectedRarities.includes(String(operator.rarity));
       const conceptNames = operator.concepts.map((concept) => conceptName(locale, concept));
       const matchesQuery = !keyword || normSearch([operator.name, operator.code, operator.job, operator.subProfession, operator.position, ...operator.combatTags, ...operator.factions, operator.reason, ...operator.aliases, ...operator.concepts, ...conceptNames].join(" ")).includes(keyword);
-      return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesRarity && matchesQuery;
+      const matchesOwn = !myChars || selectedOwn.length === 0 || selectedOwn.some((key) => ownMatch(key, operator, myChars.get(operator.id)));
+      return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesRarity && matchesQuery && matchesOwn;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, searchTerm, locale]);
+  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, searchTerm, locale, myChars, selectedOwn]);
 
   // 백과사전 검색이 0건이면 그것도 "실패한 검색"이다 (뱅제 → 은재 → … 연쇄를 잇기 위해)
   useEffect(() => {
@@ -2197,6 +2227,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     setSelectedJobs([]);
     setSelectedSubProfessions([]);
     setSelectedRarities([]);
+    setSelectedOwn([]);
     clearSearch();
   };
 
@@ -2212,7 +2243,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     setSelectedSubProfessions((subs) => (subs.every((sub) => allowed.has(sub)) ? subs : subs.filter((sub) => allowed.has(sub))));
   };
 
-  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || selectedRarities.length > 0 || searchTerm.trim().length > 0;
+  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || selectedRarities.length > 0 || (!!myChars && selectedOwn.length > 0) || searchTerm.trim().length > 0;
 
   const sorted = useMemo(() => {
     if (sortKey === "기본") {
@@ -2252,7 +2283,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     const future = sorted.filter((operator) => operator.unreleased);
     const main = sorted.filter((operator) => !operator.unreleased);
     const cards = (list: Operator[]) => list.map((operator, index) => (
-      <OperatorCard key={operator.id ?? `${operator.name}-${index}`} operator={operator} index={index} onSelect={openOperator} />
+      <OperatorCard key={operator.id ?? `${operator.name}-${index}`} operator={operator} index={index} onSelect={openOperator}
+        mine={myChars ? myChars.get(operator.id) ?? null : undefined} />
     ));
     return (
       <>
@@ -2268,7 +2300,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         <div className="operator-grid">{cards(main)}</div>
       </>
     );
-  }, [sorted, openOperator, t]);
+  }, [sorted, openOperator, t, myChars]);
 
   return (
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
@@ -2372,12 +2404,21 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 늘었다 줄었다 해서 헤더가 흔들린다 (사용자 요청 2026-07-29) */}
             <span aria-hidden>☰</span>{t("메뉴")}
           </button>
+          {/* 내 정보 동기화 시각 — 메뉴 버튼 밑에 작게, 헤더 높이를 바꾸지 않게 absolute (사용자 요청 2026-10-05) */}
+          {me && !navOpen && (
+            <a className="hdr-synced" href={`${localeBase}/me`} title={t("내 정보")}
+              onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return; event.preventDefault(); switchTab("me"); }}>
+              {t("{time} 정보 동기화 완료", { time: new Date(me.syncedAt).toLocaleString(DT_LOCALE[locale], { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }) })}
+            </a>
+          )}
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
           {/* 순서 (사용자 확정 2026-08-10): 홈 · 인프라 · 도감▸ · 시뮬레이터▸ ·
               통합전략▸ · 스토리 · 소개. 인프라는 대표 기능이라 묶지 않고 톱레벨 유지(사용자 확정). */}
           <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")} {...tapOnly}
             onPointerOver={prefetchTabs} onTouchStart={prefetchTabs} onFocus={prefetchTabs}>
             <button className={`tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
+            {/* 내 정보 — 게임 로그인으로 받은 내 계정 (사용자 지시 2026-10-04 "메뉴에서 '내 정보' 메뉴를 하나 추가") */}
+            <button className={`tab-me${tab === "me" ? " selected" : ""}`} onClick={() => switchTab("me")}><span className="tab-icon" aria-hidden>◉</span>{t("내 정보")}{tabHasNewFeature("me") && <span className="new-badge">{t("새기능")}</span>}</button>
             <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}{tabHasNewFeature("planner") && <span className="new-badge">{t("새기능")}</span>}</button>
             {/* 도감·시뮬레이터 묶음 — 통합전략과 같은 플라이아웃 규격. 하위 항목은 실제 <a>
                 (크롤러용 내부 링크 — 통전 부메뉴와 같은 이유, 2026-08-06). 클릭은 SPA 전환. */}
@@ -2662,6 +2703,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             { title: t("전투 태그"), items: combatTags, selected: tags, onToggle: toggleTag, countForItem: (item) => chipCount.tag.get(item) ?? 0 },
             { title: t("공격 방식"), items: attackMethods, selected: selectedMethods, onToggle: toggleIn(setSelectedMethods), countForItem: (item) => chipCount.method.get(item) ?? 0 },
             { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => chipCount.faction.get(item) ?? 0 },
+            // 내 계정 — '내 정보'에서 로그인했을 때만 (보유·육성 상태로 거르기)
+            ...(myChars ? [{ title: t("내 보유"), items: [...OWN_KEYS], selected: selectedOwn, onToggle: toggleIn(setSelectedOwn), labelFor: (item: string) => t(item), countForItem: (item: string) => ownCount.get(item) ?? 0 }] : []),
           ]} />
           {/* (2026-08-01 삭제) DATA NOTE — 사용자 판단 "의미가 없어보임" */}
         </div>
@@ -2691,6 +2734,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             {tags.map((tag) => <button key={`t-${tag}`} onClick={() => toggleTag(tag)}>{tag} ×</button>)}
             {selectedJobs.map((item) => <button key={`j-${item}`} onClick={() => toggleJob(item)}>{item} ×</button>)}
             {selectedSubProfessions.map((item) => <button key={`s-${item}`} onClick={() => toggleIn(setSelectedSubProfessions)(item)}>{item} ×</button>)}
+            {myChars && selectedOwn.map((item) => <button key={`o-${item}`} onClick={() => toggleIn(setSelectedOwn)(item)}>{t(item)} ×</button>)}
             {searchTerm && <button onClick={() => clearSearch()}>“{searchTerm}” ×</button>}
           </div>
 
@@ -2738,6 +2782,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
         {tab === "stage" && !(pageStage && stagePageOpen) && <StageDexForLocale onOpenEnemy={openEnemyFromStage} />}
         {tab === "item" && <ItemDexForLocale />}
+        {tab === "me" && <MyInfo operators={operators} extra={extra} onShowOperator={showOperatorById} />}
         {tab === "gallery" && <GalleryForLocale operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} onOpenEvent={openEventById} />}
         {/* 전용 가이드가 있는 모드(위수 협의)는 이벤트 모달 대신 그 가이드로 넘긴다.
             ⚠ 위수 협의는 시즌마다 페이지가 따로다 — "autochess/s1" 처럼 뒤에 슬러그가
@@ -2889,6 +2934,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
 
       {/* 미실장 항목(.fut-dim) 안내 툴팁 — 위임 리스너 하나가 사이트 전체를 맡는다 */}
       <FutureTip />
+      {recruitOp && (
+        <Suspense fallback={null}>
+          <RecruitReverse key={recruitOp.key} initialOp={recruitOp.id} extra={extra} onShowOperator={showOperatorById} onClose={() => setRecruitOp(null)} />
+        </Suspense>
+      )}
       {selected && <OperatorModal operator={selected} onClose={closeOperator} includeFuture={includeFuture} onPinChange={(pinned) => { opPinnedRef.current = pinned; }} operators={operators} onRelated={openOperator} />}
       <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen}
         onNewCount={(n, admin) => { setFeedbackNew(n); setFeedbackNewAdmin(admin); }} />
@@ -3057,7 +3107,23 @@ function FilterGroup({ title, items, selected, onToggle, rows = 1, countForItem,
   );
 }
 
-function OperatorCard({ operator, index, onSelect }: { operator: Operator; index: number; onSelect: (operator: Operator) => void }) {
+// 내 보유 필터 (오퍼 백과사전) — 값이 곧 사전 키다
+const OWN_KEYS = ["보유", "미보유", "만렙", "육성 중", "풀잠", "3마스터 보유"] as const;
+function ownMatch(key: string, operator: Operator, c: AccountChar | undefined): boolean {
+  switch (key) {
+    case "보유": return !!c;
+    case "미보유": return !c && !operator.unreleased && isCollectible(operator.id);
+    case "만렙": return !!c && isMaxed(c, operator.rarity);
+    case "육성 중": return !!c && !isMaxed(c, operator.rarity);
+    case "풀잠": return !!c && c.potential >= 6;
+    case "3마스터 보유": return !!c && c.mastery.some((m) => m >= 3);
+    default: return true;
+  }
+}
+
+function OperatorCard({ operator, index, onSelect, mine }: { operator: Operator; index: number; onSelect: (operator: Operator) => void;
+  /** 내 계정의 이 오퍼 — undefined 면 계정 데이터 없음(표시 안 함), null 이면 미보유 */
+  mine?: AccountChar | null }) {
   const { locale, t } = useI18n();
   // 카드가 화면 근처에 실제로 들어오기 전엔 이미지 자체를 마운트하지 않는다 — 진입 즉시
   // 420장이 전부 요청되던 문제 대응 (스크롤·필터링 시에만 그때그때 받아옴, 2026-07-22)
@@ -3133,7 +3199,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
   // 실제 앵커 — 크롤러가 따라갈 내부 링크이자 새 탭/북마크가 되는 정본 주소.
   // 클릭은 종전대로 가로채 모달을 연다 (미실장 오퍼는 상세 라우트가 없어 목록 주소로).
   return (
-    <a className={`operator-card${operator.unreleased ? " fut-dim" : ""}${peek ? " peek" : ""}`} href={operatorHref(locale, operator)}
+    <a className={`operator-card${operator.unreleased ? " fut-dim" : ""}${peek ? " peek" : ""}${mine === null && !operator.unreleased && isCollectible(operator.id) ? " me-unowned" : ""}`} href={operatorHref(locale, operator)}
       onPointerEnter={remeasure} onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold}
       onContextMenu={(event) => { if (held.current || peek) event.preventDefault(); }}
       onClick={(event) => {
@@ -3149,6 +3215,12 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
         {/* 위 줄: 성급 별 + 직군 (사용자 지시 2026-09-18 "성급 오른쪽에다가 직군을 써줘") */}
         <div className="portrait-meta">{/* 성급+직군이 카드 폭을 넘으면 흘러간다 — 미실장 미니카드는 폭이 52~96px 라 별 6개에 "스페셜리스트" 같은 긴 직군이 붙으면 100px 을 넘긴다 (사용자 지적 2026-09-20). 이름·태그와 같은 마퀴 장치(.meta-track ← home.tsx 측정 → --flow-ms). */}<div className="meta-track"><span data-rarity={operator.rarity}>{"★".repeat(operator.rarity)}</span><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div></div>
         {visible && <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} decoding="async" />}
+        {/* 내 계정 — 보유하면 정예화·레벨(+잠재), 아니면 '미보유' (내 정보 로그인 시에만) */}
+        {mine !== undefined && !operator.unreleased && isCollectible(operator.id) && (
+          <span className={`me-own-badge${mine ? "" : " none"}`}>
+            {mine ? <><b>{eliteText(locale, mine.elite, mine.level)}</b><i>{potText(locale, mine.potential)}</i></> : t("미보유")}
+          </span>
+        )}
         {/* 아래 패널: 접힌 채엔 이름 한 줄, 펼치면 소속·출신·종족·컨셉 태그 */}
         <div className="card-reveal">
           {/* 길어서 넘치면 한 줄인 채 천천히 왼쪽으로 흐른다(마퀴) — 안쪽 span 이 움직인다 */}
@@ -3166,6 +3238,66 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
         </div>
       </div>
     </a>
+  );
+}
+
+// 오퍼 상세 히어로의 '공개모집' 버튼 — 공개모집으로 나오는 오퍼만 (사용자 요청 2026-10-04).
+// 누르면 공개채용 도우미의 '오퍼로 찾기'가 그 오퍼로 열린다. 모집 목록(30KB)은 오퍼 상세를 처음 열 때 받는다.
+const RECRUIT_OP_EVENT = "ta:recruit-op";
+let recruitIds: Set<string> | null = null;
+const recruitIdsListeners = new Set<() => void>();
+function useRecruitable(id: string): boolean {
+  const [, bump] = useState(0);
+  useEffect(() => {
+    if (recruitIds) return;
+    const on = () => bump((n) => n + 1);
+    recruitIdsListeners.add(on);
+    void import("./data/recruit.json").then((m) => {
+      const doc = (m as { default?: { ops: { id: string }[] } }).default ?? (m as unknown as { ops: { id: string }[] });
+      recruitIds = new Set(doc.ops.map((o) => o.id));
+      for (const fn of recruitIdsListeners) fn();
+    });
+    return () => { recruitIdsListeners.delete(on); };
+  }, []);
+  return !!recruitIds?.has(id);
+}
+function RecruitButton({ id, small }: { id: string; small?: boolean }) {
+  const { t } = useI18n();
+  if (!useRecruitable(id)) return null;
+  return (
+    <button type="button" className={`me-recruit-btn${small ? " small" : ""}`} onClick={() => window.dispatchEvent(new CustomEvent(RECRUIT_OP_EVENT, { detail: id }))}>
+      <span aria-hidden>⌕</span>{t("공개모집")}
+    </button>
+  );
+}
+
+// 오퍼 상세의 '내 육성 현황' — 내 정보(게임 로그인)에 계정 데이터가 있을 때만 (2026-10-04)
+function MyOperator({ operator }: { operator: Operator }) {
+  const { locale, t } = useI18n();
+  const me = useMe();
+  const mine = meChars(me);
+  if (operator.unreleased || !isCollectible(operator.id)) return null;
+  // 계정 데이터가 없으면 공개모집 버튼만 (공개모집으로 나오는 오퍼일 때)
+  if (!mine) return <RecruitButton id={operator.id} />;
+  const c = mine.get(operator.id);
+  // 공개모집 버튼은 '내 육성 현황' 글자 바로 오른쪽에 작게 (사용자 지시 2026-10-04)
+  const head = <b className="me-op-strip-head">{t("내 육성 현황")}<RecruitButton id={operator.id} small /></b>;
+  if (!c) return <div className="me-op-strip none">{head}<span>{t("미보유")}</span></div>;
+  const mods = operator.modules.filter((m) => (c.modules[m.id] ?? 0) > 0);
+  // 마스터가 하나라도 있으면 스킬 레벨은 7 이 당연하니 뺀다 · MAX 배지는 없앤다 (사용자 지시 2026-10-04 "너무 길어진다")
+  const mastered = c.mastery.some((m) => m > 0);
+  return (
+    <div className="me-op-strip">
+      {head}
+      <span><i>{t("정예화")}</i>{eliteText(locale, c.elite, c.level)}</span>
+      <span><i>{t("잠재")}</i>{potText(locale, c.potential)}</span>
+      {operator.skills.length > 0 && !mastered && <span><i>{t("스킬")}</i>Lv.{c.skill}</span>}
+      {operator.skills.map((sk, i) => (c.mastery[i] ?? 0) > 0 && (
+        <span key={sk.id}><i>{t("{n}스킬", { n: i + 1 })}</i>{masteryText(locale, c.mastery[i])}</span>
+      ))}
+      {mods.map((m) => <span key={m.id}><i>{m.type ?? m.name}</i>Lv.{c.modules[m.id]}</span>)}
+      <span><i>{t("신뢰도")}</i>{trustPct(c.trust)}%</span>
+    </div>
   );
 }
 
@@ -3382,6 +3514,8 @@ function OperatorFile({ operator, includeFuture, operators, onRelated }: { opera
                 (사용자 요청 2026-08-01). */}
             {/* '육성 비용 계산' 버튼은 2026-09-18에 뺐다 (사용자 "굳이 필요한가 싶음").
                 육성 시뮬은 헤더 메뉴로 들어간다. */}
+            {/* 내 육성 현황 — 히어로 오른쪽 빈자리 (사용자 지시 2026-10-04 "섬네일 띠 오른쪽이 비어 있으니 거기에") */}
+            {!operator.unreleased && <MyOperator operator={operator} />}
             {operator.unreleased && (
               <div className="modal-actions">
                 <p className="future-note">{t("미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>

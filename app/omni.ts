@@ -88,6 +88,8 @@ const TAB_ENTRIES: { tab: Tab; label: string; alt: string[] }[] = [
   // "인프라 딸깍" — 커뮤니티에서 기지 편성을 그렇게 부른다 (사용자 지정 2026-07-26)
   { tab: "enemy", label: "적 도감", alt: ["enemy", "적", "몹", "도감", "적도감", "enemies"] },
   { tab: "stage", label: "작전 도감", alt: ["stage", "작전", "스테이지", "맵", "지형", "stages"] },
+  // 내 정보 — 게임 로그인으로 받은 내 계정 (2026-10-04)
+  { tab: "me", label: "내 정보", alt: ["me", "my", "my page", "mypage", "마이페이지", "내정보", "계정", "계정 연동", "로그인", "창고", "보유", "통계", "account", "depot", "マイページ", "アカウント", "倉庫"] },
   { tab: "gallery", label: "갤러리", alt: ["gallery", "cg", "일러", "일러스트", "스탠딩", "입식", "스킨", "정예 일러", "2정 일러", "아트", "ギャラリー", "立ち絵", "イラスト"] },
   { tab: "item", label: "아이템 도감", alt: ["item", "items", "아이템", "재료", "도감", "교환", "교환권", "상점"] },
   { tab: "event", label: "이벤트 가이드", alt: ["event", "events", "이벤트", "복각", "사이드", "미니 이벤트", "이벤트 도감"] },

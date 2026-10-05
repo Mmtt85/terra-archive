@@ -75,6 +75,19 @@ create table if not exists public.visit_view (
 create index if not exists visit_view_session_idx on public.visit_view (session, seq);
 create index if not exists visit_view_at_idx on public.visit_view (at desc);
 
+-- 일 기록 — '내 정보' 로그인(me_login)·다시 동기화(me_sync) (2026-10-05 "누가, 몇 번 동기화했는지").
+-- 누가 = 방문자 익명 id(visit_session.visitor 와 같은 값). 닉네임·계정 정보는 받지 않는다.
+create table if not exists public.visit_event (
+  id bigint generated always as identity primary key,
+  session uuid not null,
+  visitor text check (char_length(visitor) <= 64),
+  at timestamptz not null default now(),
+  kind text not null check (kind in ('me_login', 'me_sync')),
+  server text check (char_length(server) <= 8),
+  env text not null default 'live' check (env in ('live', 'dev'))
+);
+create index if not exists visit_event_at_idx on public.visit_event (at desc);
+
 -- ── 일별 집계 (영구 보관) ─────────────────────────────────────────────────────
 
 create table if not exists public.visit_day (
@@ -103,6 +116,7 @@ $$;
 
 alter table public.visit_session enable row level security;
 alter table public.visit_view enable row level security;
+alter table public.visit_event enable row level security;
 alter table public.visit_day enable row level security;
 alter table public.visit_src_day enable row level security;
 alter table public.visit_page_day enable row level security;
@@ -112,6 +126,10 @@ create policy "anon insert visit session" on public.visit_session for insert to 
 drop policy if exists "anon insert visit view" on public.visit_view;
 create policy "anon insert visit view" on public.visit_view for insert to anon with check (true);
 
+drop policy if exists "anon insert visit event" on public.visit_event;
+create policy "anon insert visit event" on public.visit_event for insert to anon with check (true);
+drop policy if exists "admin read visit event" on public.visit_event;
+create policy "admin read visit event" on public.visit_event for select to anon using (public.visits_is_admin());
 drop policy if exists "admin read visit session" on public.visit_session;
 create policy "admin read visit session" on public.visit_session for select to anon using (public.visits_is_admin());
 drop policy if exists "admin read visit view" on public.visit_view;
@@ -185,7 +203,8 @@ language sql stable as $$
 $$;
 
 -- 화면 조각을 화면 단위로 합친 것 + 세션 속 순번·마지막 여부
-create or replace function public.visits_views(p_from timestamptz)
+-- 범위판 (2026-10-05 — 어드민 '기간 지정'). p_to 는 그 시각 **미만**.
+create or replace function public.visits_views_range(p_from timestamptz, p_to timestamptz)
 returns table (session uuid, seq int, n int, last boolean, path text, hash text, t0 int,
                visible_ms bigint, active_ms bigint, scroll int, interacted boolean, out_href text)
 language sql stable as $$
@@ -194,7 +213,7 @@ language sql stable as $$
            sum(v.visible_ms) as visible_ms, sum(v.active_ms) as active_ms, max(v.scroll)::int as scroll,
            bool_or(v.interacted) as interacted, max(v.out_href) as out_href
     from public.visit_view v
-    where v.at >= p_from
+    where v.at >= p_from and v.at < p_to
     group by v.session, v.seq
   )
   select g.session, g.seq,
@@ -204,11 +223,20 @@ language sql stable as $$
   from g
 $$;
 
--- 대시보드 한 장 분량 (기간 p_days 일, 사람만이면 p_human)
-create or replace function public.visits_summary(p_days int default 30, p_human boolean default true)
+create or replace function public.visits_views(p_from timestamptz)
+returns table (session uuid, seq int, n int, last boolean, path text, hash text, t0 int,
+               visible_ms bigint, active_ms bigint, scroll int, interacted boolean, out_href text)
+language sql stable as $$
+  select * from public.visits_views_range(p_from, 'infinity'::timestamptz)
+$$;
+
+-- 대시보드 한 장 분량 — 세션 시작이 [p_from, p_to) 인 것. p_hourly 면 시간대별(하루 보기)도 채운다.
+-- 조각(view)은 세션 시작 하루 전부터 끝 하루 뒤까지 읽는다 — 자정을 걸친 세션의 조각을 놓치지 않게.
+create or replace function public.visits_summary_range(p_from timestamptz, p_to timestamptz,
+  p_human boolean default true, p_hourly boolean default false)
 returns json language sql stable as $$
   with v as (
-    select * from public.visits_views(public.visits_from(p_days) - interval '1 day')
+    select * from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day')
   ),
   sh as (
     select v.session, bool_or(v.interacted) as human, count(*) as views, sum(v.active_ms) as active_ms
@@ -219,7 +247,7 @@ returns json language sql stable as $$
            (vs.started_at at time zone 'Asia/Seoul') as kst,
            coalesce(sh.human, false) as human, coalesce(sh.views, 0) as views, coalesce(sh.active_ms, 0) as active_ms
     from public.visit_session vs left join sh on sh.session = vs.id
-    where vs.started_at >= public.visits_from(p_days) and vs.env = 'live'
+    where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live'
       and (not p_human or coalesce(sh.human, false))
   ),
   sv as (select v.* from v join s on s.id = v.session),
@@ -236,7 +264,7 @@ returns json language sql stable as $$
         'active_ms', coalesce(sum(active_ms), 0), 'revisit', count(*) filter (where revisit),
         'bounce', count(*) filter (where views <= 1),
         'bots', (select count(*) from public.visit_session x left join sh on sh.session = x.id
-                 where x.started_at >= public.visits_from(p_days) and x.env = 'live' and not coalesce(sh.human, false)))
+                 where x.started_at >= p_from and x.started_at < p_to and x.env = 'live' and not coalesce(sh.human, false)))
       from s),
     'days', (select coalesce(json_agg(d order by d.day), '[]') from (
         select kst::date as day, count(*) as sessions, count(distinct visitor) as visitors,
@@ -261,9 +289,21 @@ returns json language sql stable as $$
                avg(active_ms)::bigint as avg_active, count(*) filter (where last) as exits
         from sv group by 1) d),
     -- 오늘 보기의 시간대별 추이 — 시작 시각(KST)의 시로 세션·방문자·화면 조회 (기간이 하루를 넘으면 비운다)
+    -- '내 정보' 동기화 — 횟수·사람 수, 사람(익명 방문자)별 횟수, 최근 기록 (사람만 보기와 무관하게 전부)
+    'me_sync', (select json_build_object(
+        'n', count(*), 'people', count(distinct e.visitor),
+        'login', count(*) filter (where e.kind = 'me_login'), 'sync', count(*) filter (where e.kind = 'me_sync'),
+        'by', (select coalesce(json_agg(b order by b.n desc, b.last desc), '[]') from (
+            select x.visitor, count(*) as n, count(*) filter (where x.kind = 'me_login') as login,
+                   count(*) filter (where x.kind = 'me_sync') as sync, max(x.at) as last, max(x.server) as server
+            from public.visit_event x where x.at >= p_from and x.at < p_to and x.env = 'live' group by 1) b),
+        'recent', (select coalesce(json_agg(r order by r.at desc), '[]') from (
+            select x.at, x.visitor, x.kind, x.server from public.visit_event x
+            where x.at >= p_from and x.at < p_to and x.env = 'live' order by x.at desc limit 100) r))
+      from public.visit_event e where e.at >= p_from and e.at < p_to and e.env = 'live'),
     'hourly', (select coalesce(json_agg(d order by d.hr), '[]') from (
         select extract(hour from kst)::int as hr, count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
-        from s where p_days <= 0 group by 1) d),
+        from s where p_hourly group by 1) d),
     'hours', (select coalesce(json_agg(json_build_array(dow, hr, n)), '[]') from (
         select extract(isodow from kst)::int - 1 as dow, extract(hour from kst)::int as hr, count(*) as n
         from s group by 1, 2) d),
@@ -286,18 +326,24 @@ returns json language sql stable as $$
   )
 $$;
 
+-- 종전 '최근 N일' 판 — 범위판을 그대로 부른다 (0 = 오늘)
+create or replace function public.visits_summary(p_days int default 30, p_human boolean default true)
+returns json language sql stable as $$
+  select public.visits_summary_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_days <= 0)
+$$;
+
 -- 세션 타임라인 목록 — 한 사람의 동선을 한 줄로
-create or replace function public.visits_sessions(p_days int default 7, p_human boolean default true,
+create or replace function public.visits_sessions_range(p_from timestamptz, p_to timestamptz, p_human boolean default true,
   p_src text default null, p_landing text default null, p_limit int default 100)
 returns json language sql stable as $$
   with v as (
-    select * from public.visits_views(public.visits_from(p_days) - interval '1 day')
+    select * from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day')
   ),
   s as (
     select vs.*, public.visit_src(vs.ref_host) as src, coalesce(h.human, false) as human
     from public.visit_session vs
     left join (select session, bool_or(interacted) as human from v group by 1) h on h.session = vs.id
-    where vs.started_at >= public.visits_from(p_days) and vs.env = 'live'
+    where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live'
       and (not p_human or coalesce(h.human, false))
       and (p_src is null or public.visit_src(vs.ref_host) = p_src)
       and (p_landing is null or public.visit_path(split_part(vs.landing, '#', 1)) = p_landing)
@@ -313,6 +359,12 @@ returns json language sql stable as $$
                 from v where v.session = s.id)
     ) order by s.started_at desc), '[]')
   from s
+$$;
+
+create or replace function public.visits_sessions(p_days int default 7, p_human boolean default true,
+  p_src text default null, p_landing text default null, p_limit int default 100)
+returns json language sql stable as $$
+  select public.visits_sessions_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_src, p_landing, p_limit)
 $$;
 
 -- 긴 기간 추이 — 원장이 지워진 옛날도 남도록 일별 집계표에서

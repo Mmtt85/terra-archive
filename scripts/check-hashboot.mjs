@@ -22,6 +22,7 @@ const EXEMPT = {
   "story.tsx": "#story-<id>는 data-story-detail 가리개 + useLayoutEffect로 이미 막았다",
   "rogue.tsx": "프리렌더가 '불러오는 중' 자리표시자뿐 — 기본 화면이 HTML에 없어 플래시가 없다",
   "sandbox.tsx": "생존연산은 프리렌더 라우트가 없다 (홈에서 lazy로만 뜬다)",
+  "me-verify.tsx": "공유 카드 정품 인증 창 — 전역 모달 해시(#verify=)라 화면을 고르지 않고 모달만 띄운다",
   "sim-launcher.tsx": "시뮬레이터 진입 버튼 — 해시를 쓰기만 하고 화면을 고르지 않는다",
 };
 

@@ -28,7 +28,8 @@ TABLES = {
            "gamedata_const", "item_table", "gacha_table", "stage_table", "skin_table",
            "charword_table", "enemy_handbook_table", "zone_table", "activity_table", "climb_tower_table",
            "sandbox_perm_table",  # 생존연산 가이드 (build-sandbox.py)
-           "retro_table"],  # 복각 상설(기록 복원) 존·이벤트명 — build-farm.py 이벤트명 병기
+           "retro_table",  # 복각 상설(기록 복원) 존·이벤트명 — build-farm.py 이벤트명 병기
+           "campaign_table"],  # 섬멸 순환 일정 — build-stage-open.py (내 정보 진행 상황)
     "cn": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
            "gamedata_const", "item_table", "charword_table", "skin_table",

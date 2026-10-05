@@ -167,3 +167,6 @@ from (values
 where not exists (
   select 1 from public.changelog c where c.released_at = v.released_at::date and c.ko = v.ko
 );
+
+-- 중요 배지 (2026-10-05) — 업데이트 내역 버튼·목록에 '중요' 표시. 버튼 배지는 최근 14일 안의 중요 항목을 안 열어 본 사람에게만
+alter table public.changelog add column if not exists important boolean not null default false;

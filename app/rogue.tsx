@@ -36,6 +36,7 @@ import type { StageCam } from "./stage-cam";
 import { EnemyChip } from "./stage-detail";
 import { EnemyFile, type Enemy as DexEnemy, type EnemyLevel, type EnemyStages, type StatOverride } from "./enemy-detail";
 import { loadEnemies } from "./dex-cross";
+import { rogueProgress, useMe } from "./me-store";
 // 전투 노드 도면의 전투 카메라 (scripts/stagecams.py → rogue-cams.json, ~20KB) — 있으면 모달이
 // 도면·이동 경로를 한 화면으로 합친다 (사용자 요청 2026-09-23 "통합전략도 마찬가지로", 작전 도감과 같은 형식).
 import rogueCamsJson from "./data/rogue-cams.json";
@@ -2365,6 +2366,8 @@ export default function RogueGuide({ initialTopic }: {
   // 묶인 것도 다 매핑, 다른 록라도"). 종전엔 작전·소장품·조우·적·테마 항목만 이어서, 엔딩 이름(「디 엔드?」)·
   // 층(「예견의 구상」)·노드(「득과 실」)·난이도(「일렁이는 파도」)는 글자로만 남았다.
   const endByName = useMemo(() => new Map(data.endings.map((e) => [e.name, e])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 내 진행 — '내 정보'에 계정 데이터가 있을 때만. 엔딩 달성·해금 스토리·방문객 장면 해금을 표시한다 (사용자 요청 2026-10-05)
+  const prog = rogueProgress(useMe(), data.id);
   const zoneByName = useMemo(() => {
     const m = new Map<string, Zone>();
     for (const z of data.zones) if (!m.has(z.name)) m.set(z.name, z);   // 숨겨진 비경처럼 겹치는 이름은 첫 층
@@ -3114,6 +3117,11 @@ export default function RogueGuide({ initialTopic }: {
                       <div className="rg-visitor-who">
                         <h4>{v.chars.map((c) => c.name).join(" · ")}</h4>
                         <span className="rg-visitor-team"><Nm name={v.name ?? ""} cn={v.cn} />{v.ym && <em>{v.ym}</em>}</span>
+                        {prog && v.scenes && v.scenes.some((s) => s.rid) && (() => {
+                          const sc = v.scenes!.filter((s) => s.rid);
+                          const n = sc.filter((s) => prog.scene(s.rid!, s.floor)).length;
+                          return <em className={`rg-prog${n === sc.length ? " on" : ""}`}>{t("해금 {n}/{m}", { n, m: sc.length })}</em>;
+                        })()}
                       </div>
                     </header>
                     {v.desc && <p className="rg-visitor-desc">{v.desc}</p>}
@@ -3123,7 +3131,9 @@ export default function RogueGuide({ initialTopic }: {
                           const where = `${s.floor !== undefined ? t("{n}층", { n: s.floor }) : ""}${s.zone ? ` · ${s.zone}` : ""}`;
                           const inner = (
                             <>
-                              <span className="rg-visitor-where">{where}{s.txt && <i className="rg-rec-read" aria-hidden>▸ {t("읽기")}</i>}</span>
+                              <span className="rg-visitor-where">{where}
+                                {prog && s.rid && <em className={`rg-prog sm${prog.scene(s.rid, s.floor) ? " on" : ""}`}>{prog.scene(s.rid, s.floor) ? t("해금됨") : t("미해금")}</em>}
+                                {s.txt && <i className="rg-rec-read" aria-hidden>▸ {t("읽기")}</i>}</span>
                               {(s.desc || s.cn) && (
                                 <span className="rg-visitor-quote"><Nm name={s.desc ?? ""} cn={s.cn} /></span>
                               )}
@@ -3329,7 +3339,10 @@ export default function RogueGuide({ initialTopic }: {
               기록 조각은 원문이 있으면(txt) 클릭해 전문을 읽는다. */}
           {data.endings.map((e) => (
             <article key={e.id} id={`rg-end-${e.id}`} className={`rg-ending${endFlash === e.id ? " flash" : ""}`}>
-              <header><h3><Nm name={e.name} cn={e.cn} /></h3></header>
+              <header>
+                <h3><Nm name={e.name} cn={e.cn} /></h3>
+                {prog && <em className={`rg-prog${prog.ending(e.id) ? " on" : ""}`}>{prog.ending(e.id) ? t("달성") : t("미달성")}</em>}
+              </header>
               {e.desc && <p className="rg-ending-desc">{e.desc}</p>}
               {/* 엔딩 달성 시의 인용구 — 스토리 설명 바로 밑 (사용자 지시 2026-08-17, 예전엔 카드 맨 아래) */}
               {e.change && <p className="rg-ending-change">“{e.change}”</p>}
@@ -3350,10 +3363,13 @@ export default function RogueGuide({ initialTopic }: {
                         {b.txt && b.rid ? (
                           <button type="button" className="rg-rec-btn"
                             onClick={() => setRecOpen({ rid: b.rid!, title: nmText(b.name ?? "", b.cn), sub: e.name })}>
-                            <strong><Nm name={b.name ?? ""} cn={b.cn} /></strong><span>{b.cond}</span><i className="rg-rec-read" aria-hidden>▸ {t("읽기")}</i>
+                            <strong><Nm name={b.name ?? ""} cn={b.cn} /></strong><span>{b.cond}</span>
+                            {prog && b.rid && <em className={`rg-prog sm${prog.has(b.rid) ? " on" : ""}`}>{prog.has(b.rid) ? t("해금됨") : t("미해금")}</em>}
+                            <i className="rg-rec-read" aria-hidden>▸ {t("읽기")}</i>
                           </button>
                         ) : (
-                          <div className="rg-rec-row"><strong><Nm name={b.name ?? ""} cn={b.cn} /></strong><span>{b.cond}</span></div>
+                          <div className="rg-rec-row"><strong><Nm name={b.name ?? ""} cn={b.cn} /></strong><span>{b.cond}</span>
+                            {prog && b.rid && <em className={`rg-prog sm${prog.has(b.rid) ? " on" : ""}`}>{prog.has(b.rid) ? t("해금됨") : t("미해금")}</em>}</div>
                         )}
                       </li>
                     ))}

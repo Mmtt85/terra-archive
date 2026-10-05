@@ -18,7 +18,7 @@ import { useI18n, rich, DT_LOCALE } from "./i18n";
 import { useHashSync } from "./hash-modal";
 import { ModalWindow } from "./modal-window";
 import {
-  fetchChangelogRange, fetchOldestReleaseDate, windowRange, changeText, splitChange, detailBlocks, areaOf,
+  fetchChangelogRange, fetchOldestReleaseDate, fetchLatestImportant, windowRange, changeText, splitChange, detailBlocks, areaOf,
   CHANGE_KIND_LABEL, CHANGE_AREA_LABEL, RECENT_DAYS, daysAgoKst, type ChangeRow,
 } from "./changelog-api";
 
@@ -44,6 +44,8 @@ function groupByDate(rows: ChangeRow[]): { date: string; rows: ChangeRow[] }[] {
 // 1년 반 넘게 빈 구간이면 멈춘다 (런어웨이 방지).
 const MAX_SKIP = 80;
 
+const IMPORTANT_SEEN_KEY = "ta:chlog-important-seen";
+
 export default function ChangelogButton() {
   const { locale, t } = useI18n();
   const localeBase = locale === "ko" ? "" : `/${locale}`;
@@ -66,6 +68,25 @@ export default function ChangelogButton() {
   const sentinelRef = useRef<HTMLDivElement | null>(null); // 바닥 감시자
   const [autoLoad, setAutoLoad] = useState(false);       // IntersectionObserver가 붙었는가
   const lastLoadAt = useRef(0);                          // 직전 구간을 불러온 시각 (연속 로드 간격 조절)
+  // 중요 배지 (사용자 지시 2026-10-05) — 최근 2주 안에 '중요' 항목이 있고 아직 내역을 안 열어 봤으면 버튼에 띄운다.
+  // 열면 그 항목 id 를 기억해 끈다. 첫 페인트를 밀지 않게 마운트 뒤에 조용히 받는다.
+  const [importantId, setImportantId] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void fetchLatestImportant().then((row) => {
+      if (!alive || !row) return;
+      let seen: string | null = null;
+      try { seen = localStorage.getItem(IMPORTANT_SEEN_KEY); } catch { /* 무시 */ }
+      if (seen !== row.id) setImportantId(row.id);
+    }).catch(() => { /* 배지는 없어도 된다 */ });
+    return () => { alive = false; };
+  }, []);
+  const openList = () => {
+    setOpen(true);
+    if (!importantId) return;
+    try { localStorage.setItem(IMPORTANT_SEEN_KEY, importantId); } catch { /* 무시 */ }
+    setImportantId(null);
+  };
 
   // 딥링크: #changelog — 기간 확장 상태는 URL에 담지 않는다.
   // 옛 #changelog-all(상세보기 시절 링크)도 계속 받아 준다.
@@ -168,10 +189,11 @@ export default function ChangelogButton() {
     <>
       {/* 버튼으로 열면 **상세보기**가 기본 (사용자 지시 2026-07-29) — 신기능만 보려면
           헤더 토글을 누르거나 #changelog 딥링크로 들어온다 */}
-      <button type="button" className="chlog-trigger" onClick={() => setOpen(true)} title={t("최근 업데이트 내역 보기")}>
+      <button type="button" className="chlog-trigger" onClick={openList} title={t("최근 업데이트 내역 보기")}>
         <span aria-hidden>🛠</span>
         {/* 모바일은 아이콘만 (1줄 로고 옆 — 폭이 좁다) */}
         <span className="chlog-label">{t("업데이트 내역")}</span>
+        {importantId && <span className="chlog-imp-dot">{t("중요")}</span>}
       </button>
       {/* 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로 portal로 body에 렌더.
           제목은 창 크롬 바(label)가 담당 — 종전 내부 header는 제목이 이중으로 떠서 제거하고,
@@ -193,7 +215,8 @@ export default function ChangelogButton() {
                       const full = changeText(row, locale);
                       const { head, rest } = splitChange(full);
                       return (
-                        <li key={row.id}>
+                        <li key={row.id} className={row.important ? "important" : undefined}>
+                          {row.important && <span className="chlog-imp">{t("중요")}</span>}
                           {/* 배지는 '인프라 개선'처럼 기능+종류로 읽힌다 (사용자 요청 2026-07-29).
                               어순은 로케일마다 다르므로 "{area} {kind}" 서식 키로 조립한다. */}
                           <span className={`chlog-kind ${row.kind}`}>
@@ -234,11 +257,6 @@ export default function ChangelogButton() {
                   )}
                 </div>
               )}
-              {/* 후원 안내 — 항상 보이는 하단 노트 (사용자 요청 2026-07-27) */}
-              <p className="chlog-donate">
-                ☕ {t("사이트 후원 버튼도 달았습니다 — 광고 없이 운영되는 사이트라, 후원해 주시면 서버·도메인 비용에 큰 힘이 됩니다. 감사합니다!")}{" "}
-                <a href="https://buymeacoffee.com/terra_archive" target="_blank" rel="noopener noreferrer">{t("서버 운영 후원")}</a>
-              </p>
             </div>
         </ModalWindow>,
         document.body

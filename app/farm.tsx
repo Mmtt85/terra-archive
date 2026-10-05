@@ -27,6 +27,7 @@ import { loadEnemies, loadEnemyStages, loadEnemyStats, loadStages } from "./dex-
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
+import { useMe } from "./me-store";
 
 type LocText = { ko: string; en?: string; ja?: string };
 type FarmStage = {
@@ -210,6 +211,8 @@ function useStageSubModal(onShowItem: (id: string) => void) {
 
 export default function FarmGuide() {
   const { locale, t } = useI18n();
+  // 내 창고 수량 — '내 정보'에 계정 데이터가 있을 때만 (사용자 요청 2026-10-05)
+  const inv = useMe()?.profile?.inventory;
   const [tiers, setTiers] = useState<number[]>([]);
   // 재료 종류(작전기록·칩·스킬개론·모듈·열합금·젤 …) — 아이템 도감과 같은 칸 (사용자 지시 2026-09-29, app/material-family.ts)
   const [fams, setFams] = useState<string[]>([]);
@@ -338,6 +341,7 @@ export default function FarmGuide() {
                     <h3>{locText(locale, item.name)}</h3>
                     <span className={`farm-tier tier-${item.rarity}`}>T{item.rarity}</span>
                     {item.unreleased && <em className="future-badge">{t("미실장")}</em>}
+                    {inv && <em className="farm-have" title={t("내 창고")}>{t("보유")} {(inv[item.id] ?? 0).toLocaleString()}</em>}
                   </div>
                 </header>
                 {item.farmable ? (
@@ -895,6 +899,7 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
   onShowStage?: (stageId: string) => void; // 스테이지 클릭 → 작전 도감 상세 모달 (2026-08-09)
 }) {
   const { locale, t } = useI18n();
+  const inv = useMe()?.profile?.inventory;
   const meta = costs.items[id];
   const farmItem = data.items.find((item) => item.id === id);
   if (!meta && !farmItem) return null;
@@ -912,6 +917,7 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
             {meta?.gainExp && <em className="exp-badge">{t("경험치 +{n}", { n: meta.gainExp.toLocaleString() })}</em>}
             {farmItem && <em className="item-farmable-badge">{t("파밍 가능")}</em>}
             {meta?.unreleased && <em className="future-badge">{t("미실장")}</em>}
+            {inv && <p className="it-have-line">{t("내 창고")} <b>{(inv[id] ?? 0).toLocaleString()}</b></p>}
           </div>
         </header>
         {meta?.unreleased && <p className="item-usage">{t("미실장 재료입니다 — 이름·설명은 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}

@@ -84,7 +84,7 @@ function saveSess(): void {
 
 let muted = false;
 
-function post(table: "visit_session" | "visit_view", rows: object[]): void {
+function post(table: "visit_session" | "visit_view" | "visit_event", rows: object[]): void {
   if (!rows.length || muted) return;
   if (isOwner()) { muted = true; return; }   // 도중에 관리자 모드를 켰다
   if (!VISITS_URL) {
@@ -149,6 +149,15 @@ function sendSession(locale: string): void {
   }]);
   sess.sent = true;
   saveSess();
+}
+
+/** 일이 있었다고 한 줄 남긴다 — 지금은 '내 정보' 로그인·다시 동기화 (사용자 요청 2026-10-05 "누가, 몇 번 했는지").
+ *  누가 = 방문 기록과 같은 익명 방문자 id. 닉네임·계정 정보는 보내지 않는다. */
+export function noteVisitEvent(kind: "me_login" | "me_sync", server?: string): void {
+  if (!started) return;
+  let visitor = "";
+  try { visitor = localStorage.getItem(VISITOR_KEY) ?? ""; } catch { /* 프라이빗 모드 */ }
+  post("visit_event", [{ session: sess?.id ?? uuid(), visitor: clip(visitor, 64), kind, server: clip(server ?? null, 8), env }]);
 }
 
 /** 지금 화면에서 그사이 늘어난 몫을 한 행으로 보낸다 */

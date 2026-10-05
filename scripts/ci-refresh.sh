@@ -194,6 +194,10 @@ run "build-op-debut"     python3 scripts/build-operator-debut.py
 #     (새 미래시 이벤트가 열리면 `--cn-events` 를 한 번).
 # 이벤트 도감 — **맨 뒤**. 작전·아이템·스토리·오퍼 데뷔 장부를 전부 읽어 이벤트 단위로 접는다.
 run "build-events"       python3 scripts/build-events.py "$G"
+# 지금 들어갈 수 있는 작전 기준표 (내 정보 '진행 상황') — build-events 산출물을 읽으므로 바로 뒤
+run "build-stage-open"   python3 scripts/build-stage-open.py "$G"
+# 내 정보 '현재 / 전체' 칸의 전체 수 (스킨)
+run "build-me-meta"      python3 scripts/build-me-meta.py "$G"
 # 이벤트 창 추가 탭(일정·미션·훈장·가구·신뢰도) — 이벤트마다 한 파일 (scripts/build-event-extra.py 머리주석).
 # 그림(훈장·가구 아이콘)은 로컬에서 build-event-art.py --extra 로 받는다
 run "build-event-extra"  python3 scripts/build-event-extra.py "$G"
