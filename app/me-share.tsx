@@ -107,9 +107,21 @@ export function MeShare({ me, owned, released, opById, stages, items, onClose }:
   // 한눈에 보기 배치 그대로 (보유 오퍼·6성 보유는 위 큰 칸이 맡는다) — 기본 칸을 지우거나 고친 것도 따라간다
   const ctx = { owned, released, opById, profile: me.profile };
   const stats: [string, string][] = layout
-    .filter((tile) => !(tile.kind === "builtin" && (tile.key === "owned" || tile.key === "six")) && tile.id !== "d-six")
-    .filter((tile) => !(tile.kind === "builtin" && (tile.key === "skins" || tile.key === "medals") && !me.profile))
+    // 보유 스킨·훈장은 윗줄 큰 칸으로 올렸다 (사용자 지시 2026-10-06) — 아래 격자에선 뺀다
+    .filter((tile) => !(tile.kind === "builtin" && (tile.key === "owned" || tile.key === "six" || tile.key === "skins" || tile.key === "medals")) && tile.id !== "d-six")
     .map((tile) => { const v = evalTile(tile, ctx); return [tileLabel(tile, t), v.total != null ? `${fmt(v.value)} / ${fmt(v.total)}` : fmt(v.value)]; });
+  // 윗줄 큰 칸 — 보유 오퍼 · 6성 보유 · 보유 스킨 · 훈장 (스킨·훈장은 계정 요약이 있을 때만)
+  const bigOf = (key: "skins" | "medals") => evalTile({ id: `b-${key}`, kind: "builtin", key } as Parameters<typeof evalTile>[0], ctx);
+  const hero: { label: string; n: number; total: number }[] = [
+    { label: t("보유 오퍼"), n: owned.length, total: released.length },
+    { label: t("6성 보유"), n: sixOwned, total: six },
+    ...(me.profile ? ([["skins", "보유 스킨"], ["medals", "훈장"]] as const).map(([k, label]) => {
+      const v = bigOf(k);
+      return { label: t(label), n: v.value, total: v.total ?? 0 };
+    }) : []),
+  ];
+  // 누적 소비 크레딧 — 구매센터 '오퍼레이터 언락'의 숫자 (사용자 요청 2026-10-06 — 내 정보 머리엔 있는데 카드엔 없었다)
+  if (me.profile?.creditSpent != null) stats.push([t("누적 소비 크레딧"), fmt(me.profile.creditSpent)]);
   const rarityRows = [6, 5, 4, 3, 2, 1].map((r) => {
     const all = released.filter((op) => op.rarity === r).length;
     const n = owned.filter((c) => rar(c) === r).length;
@@ -212,9 +224,13 @@ export function MeShare({ me, owned, released, opById, stages, items, onClose }:
 
               <div className="me-share-body">
                 <div className="me-share-l">
-                  <div className="me-share-hero">
-                    <div><span>{t("보유 오퍼")}</span><b>{fmt(owned.length)}<small>/{fmt(released.length)}</small></b><em>{Math.round((owned.length / Math.max(1, released.length)) * 100)}%</em></div>
-                    <div><span>{t("6성 보유")}</span><b>{fmt(sixOwned)}<small>/{fmt(six)}</small></b><em>{Math.round((sixOwned / Math.max(1, six)) * 100)}%</em></div>
+                  <div className="me-share-hero" style={{ gridTemplateColumns: `repeat(${hero.length}, minmax(0, 1fr))` }}>
+                    {hero.map((h) => (
+                      <div key={h.label}><span>{h.label}</span>
+                        <b>{fmt(h.n)}{h.total > 0 && <small>/{fmt(h.total)}</small>}</b>
+                        {h.total > 0 && <em>{Math.round((h.n / h.total) * 100)}%</em>}
+                      </div>
+                    ))}
                   </div>
 
                   <div className="me-share-grid">

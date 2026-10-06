@@ -344,7 +344,9 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
   };
 
   // 모을 수 있는 한섭 오퍼만 — 미실장(중섭 선행)과 임시 인원(예비 인원 등 15명)은 분모에서 뺀다
-  const released = useMemo(() => operators.filter((op) => !op.unreleased && isCollectible(op.id)), [operators]);
+  // 전체 오퍼(보유율의 분모) — 중섭 계정은 한섭 미실장 오퍼도 갖고 있어 그것까지 센다. 안 그러면 보유 416/410 = 101% 가 됐다
+  // (2026-10-06). 한·일·글섭 계정은 종전대로 한섭에 나온 오퍼만
+  const released = useMemo(() => operators.filter((op) => (cnAccount || !op.unreleased) && isCollectible(op.id)), [operators, cnAccount]);
   const opById = useMemo(() => new Map(operators.map((op) => [op.id, op])), [operators]);
   const mine = meChars(me) ?? new Map<string, AccountChar>();
   const owned = me.chars.filter((c) => opById.has(c.id) && isCollectible(c.id));
