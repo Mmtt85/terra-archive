@@ -1,5 +1,6 @@
 "use client";
 
+import { NewBadge } from "./new-badge";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
 import { useMe, meChars, potText } from "./me-store";
@@ -440,7 +441,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
               <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
                 title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}
                 onClick={toggleLensAuto}>
-                <span className="lens-auto-knob" aria-hidden />📷 {t("스샷으로 태그 입력")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
+                <span className="lens-auto-knob" aria-hidden />📷 {t("스샷으로 태그 입력")}<NewBadge id="lens" show={isNewFeature("lens")} />
               </button>
               <button type="button" className="lens-help-btn" aria-label={t("스샷 인식 도움말")}
                 onClick={() => setLensOpen(true)}>?</button>

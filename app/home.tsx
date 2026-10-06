@@ -3,6 +3,7 @@
 // 3개 탭(백과사전·플래너·공채)의 공용 루트. 로케일별 라우트(/ /en /ja)가
 // home-ko/en/ja.tsx 래퍼로 해당 언어의 operators 데이터를 정적 import해 넘긴다 —
 // 런타임 언어 전환은 전체 내비게이션이라 이 컴포넌트 안에서 로케일은 불변이다.
+import { NewBadge } from "./new-badge";
 import { lazy, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import storyEventsData from "./data/stories.json";
 // 탭 본문은 전부 지연 로드한다 (INP 조사 2026-08-09). 종전엔 정적 import라 **어느 탭을
@@ -116,7 +117,7 @@ const MyInfo = lazy(() => import("./me"));
 import FeedbackWidget from "./feedback-widget";
 import { bindEscClose } from "./esc-close";
 import { feedbackReady } from "./feedback";
-import { isNewFeature, inTimeWindow, tabHasNewFeature, BUILD_NOW } from "./whats-new";
+import { isNewFeature, inTimeWindow, tabHasNewFeature, tabNewSig, BUILD_NOW } from "./whats-new";
 import { scrollMainTop } from "./scroll";
 import { PORTAL_TILES, PORTAL_ART, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
@@ -1022,9 +1023,7 @@ function Portal({ onOpenTab, onOpenEvent }: {
                     <span className="pt-ko">{t(tile.label)}</span>
                     {/* 포탈 타일의 새 기능 표시 — 탭 배지는 헤더 메뉴와 같은 판정을 쓴다.
                         (업데이트 내역 타일에 붙던 dev-notes 배지는 2026-09-05 기능 제거로 삭제) */}
-                    {!!tile.tab && tabHasNewFeature(tile.tab) && (
-                      <span className="new-badge">{t("새기능")}</span>
-                    )}
+                    {!!tile.tab && <NewBadge id={`tab:${tile.tab}@${tabNewSig(tile.tab)}`} show={tabHasNewFeature(tile.tab)} />}
                   </span>
                   {tile.desc && <span className="pt-desc">{t(tile.desc)}</span>}
                 </>
@@ -2358,7 +2357,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 <span className="promo-hint" id="promo-hint" suppressHydrationWarning>{promoLeftLabel(promoNow, t) ?? t("기간 한정")}</span>
                 {/* 남은 기간도 빌드 시각 기준이라 그리기 전에 지금 시각으로 바꿔 둔다 (DAY 카운터와 같은 수법) */}
                 <script dangerouslySetInnerHTML={{ __html: `(function(){var e=document.getElementById("promo-hint");if(!e)return;var ms=${PROMO_END}-Date.now();if(!(ms>0))return;var d=Math.floor(ms/864e5),h=Math.floor(ms/36e5);e.textContent=d>=1?${JSON.stringify(t("{n}일 남음"))}.replace("{n}",d):h>=1?${JSON.stringify(t("{n}시간 남음"))}.replace("{n}",h):${JSON.stringify(t("{n}분 남음"))}.replace("{n}",Math.max(1,Math.floor(ms/6e4)))})()` }} />
-                {tabHasNewFeature(PROMO.tab) && <span className="new-badge">{t("새기능")}</span>}
+                <NewBadge id={`promo:${PROMO.tab}@${tabNewSig(PROMO.tab)}`} show={tabHasNewFeature(PROMO.tab)} />
               </a>
             )}
             {groupEvents.map((ev) => (
@@ -2434,8 +2433,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             onPointerOver={prefetchTabs} onTouchStart={prefetchTabs} onFocus={prefetchTabs}>
             <button className={`tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
             {/* 내 정보 — 게임 로그인으로 받은 내 계정 (사용자 지시 2026-10-04 "메뉴에서 '내 정보' 메뉴를 하나 추가") */}
-            <button className={`tab-me${tab === "me" ? " selected" : ""}`} onClick={() => switchTab("me")}><span className="tab-icon" aria-hidden>◉</span>{t("내 정보")}{tabHasNewFeature("me") && <span className="new-badge">{t("새기능")}</span>}</button>
-            <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}{tabHasNewFeature("planner") && <span className="new-badge">{t("새기능")}</span>}</button>
+            <button className={`tab-me${tab === "me" ? " selected" : ""}`} onClick={() => switchTab("me")}><span className="tab-icon" aria-hidden>◉</span>{t("내 정보")}<NewBadge id={`tab:me@${tabNewSig("me")}`} show={tabHasNewFeature("me")} /></button>
+            <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}<NewBadge id={`tab:planner@${tabNewSig("planner")}`} show={tabHasNewFeature("planner")} /></button>
             {/* 도감·시뮬레이터 묶음 — 통합전략과 같은 플라이아웃 규격. 하위 항목은 실제 <a>
                 (크롤러용 내부 링크 — 통전 부메뉴와 같은 이유, 2026-08-06). 클릭은 SPA 전환. */}
             {TAB_GROUPS.map((g) => (
@@ -2446,7 +2445,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                   aria-expanded={openGroup === g.id}
                   onClick={() => setOpenGroup((cur) => (cur === g.id ? "" : g.id))}>
                   <span className="tab-icon" aria-hidden>{g.icon}</span>{g.name}
-                  {g.items.some((it) => tabHasNewFeature(it.tab)) && <span className="new-badge">{t("새기능")}</span>}
+                  <NewBadge id={`menu:${g.id}@${g.items.map((it) => tabNewSig(it.tab)).join(";")}`} show={g.items.some((it) => tabHasNewFeature(it.tab))} />
                   <span className="tab-group-arrow" aria-hidden>◂</span>
                 </button>
                 <div className="tab-submenu" role="group" aria-label={g.name}>
@@ -2458,7 +2457,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                         event.preventDefault(); switchTab(it.tab);
                       }}>
                       <span className="tab-sub-mark" aria-hidden>›</span>{it.short}
-                      {tabHasNewFeature(it.tab) && <span className="new-badge">{t("새기능")}</span>}
+                      <NewBadge id={`tab:${it.tab}@${tabNewSig(it.tab)}`} show={tabHasNewFeature(it.tab)} />
                     </a>
                   ))}
                 </div>
@@ -2480,7 +2479,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 aria-expanded={guideOpen}
                 onClick={() => setOpenGroup((cur) => (cur === "guide" || cur.startsWith("guide/") ? "" : "guide"))}>
                 <span className="tab-icon" aria-hidden>❖</span>{t("가이드")}
-                {GUIDE_TABS.some((x) => tabHasNewFeature(x)) && <span className="new-badge">{t("새기능")}</span>}
+                <NewBadge id={`menu:guides@${GUIDE_TABS.map((x) => tabNewSig(x)).join(";")}`} show={GUIDE_TABS.some((x) => tabHasNewFeature(x))} />
                 <span className="tab-group-arrow" aria-hidden>◂</span>
               </button>
               <div className="tab-submenu tab-submenu-guide" role="group" aria-label={t("가이드")}>
@@ -2490,7 +2489,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                     aria-expanded={openGroup === "guide/rogue"}
                     onClick={(event) => { if (tapSub(event, "rogue")) switchTab("rogue"); }}>
                     <span className="tab-sub-mark" aria-hidden>›</span>{t("통합전략(로그라이크)")}
-                    {tabHasNewFeature("rogue") && <span className="new-badge">{t("새기능")}</span>}
+                    <NewBadge id={`tab:rogue@${tabNewSig("rogue")}`} show={tabHasNewFeature("rogue")} />
                     <span className="tab-group-arrow" aria-hidden>◂</span>
                   </a>
                   <div className="tab-submenu tab-submenu2" role="group" aria-label={t("통합전략(로그라이크)")}>
@@ -2513,7 +2512,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                     aria-expanded={openGroup === "guide/ra"}
                     onClick={(event) => { if (tapSub(event, "ra")) switchTab("ra"); }}>
                     <span className="tab-sub-mark" aria-hidden>›</span>{t("생존연산")}
-                    {tabHasNewFeature("ra") && <span className="new-badge">{t("새기능")}</span>}
+                    <NewBadge id={`tab:ra@${tabNewSig("ra")}`} show={tabHasNewFeature("ra")} />
                     <span className="tab-group-arrow" aria-hidden>◂</span>
                   </a>
                   <div className="tab-submenu tab-submenu2" role="group" aria-label={t("생존연산")}>
@@ -2536,7 +2535,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                     aria-expanded={openGroup === "guide/autochess"}
                     onClick={(event) => { if (tapSub(event, "autochess")) switchTab("autochess"); }}>
                     <span className="tab-sub-mark" aria-hidden>›</span>{t("위수협의(명토체스)")}
-                    {tabHasNewFeature("autochess") && <span className="new-badge">{t("새기능")}</span>}
+                    <NewBadge id={`tab:autochess@${tabNewSig("autochess")}`} show={tabHasNewFeature("autochess")} />
                     <span className="tab-group-arrow" aria-hidden>◂</span>
                   </a>
                   {/* 시즌도 통전 테마·생존연산 시즌과 같이 부메뉴에 둔다 (사용자 요청 2026-09-05).
@@ -2568,11 +2567,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                     event.preventDefault(); switchTab("event");
                   }}>
                   <span className="tab-sub-mark" aria-hidden>›</span>{t("이벤트")}
-                  {tabHasNewFeature("event") && <span className="new-badge">{t("새기능")}</span>}
+                  <NewBadge id={`tab:event@${tabNewSig("event")}`} show={tabHasNewFeature("event")} />
                 </a>
               </div>
             </div>
-            <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}{tabHasNewFeature("story") && <span className="new-badge">{t("새기능")}</span>}</button>
+            <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}<NewBadge id={`tab:story@${tabNewSig("story")}`} show={tabHasNewFeature("story")} /></button>
             <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("테라 아카이브 소개")}</button>
           </nav>
         </div>
@@ -2589,7 +2588,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 <span className="fb-reply-badge"
                   title={feedbackNewAdmin ? t("새 제안 {n}개", { n: feedbackNew }) : t("새 답변 {n}개", { n: feedbackNew })}>{feedbackNew}</span>
               )}
-              {feedbackNew === 0 && isNewFeature("feedback-board") && <span className="new-badge">{t("새기능")}</span>}
+              <NewBadge id="feedback-board" show={feedbackNew === 0 && isNewFeature("feedback-board")} />
             </button>
           )}
           <div className="header-sub-right">

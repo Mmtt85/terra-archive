@@ -1,5 +1,6 @@
 "use client";
 
+import { NewBadge } from "./new-badge";
 import { lazy, memo, startTransition, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
 import { Dropdown } from "./dropdown";
@@ -1439,7 +1440,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           {/* startTransition: 로스터 모달(카드 수백 장)은 렌더가 무거워 클릭 페인트부터 내보낸다 (INP, 2026-07-21) */}
           {/* 보유 오퍼 설정·전체 자동편성 = 핵심 2버튼(.primary) — 나머지는 보조 톤으로 낮춰
               위계를 만든다 (사용자 요청 2026-07-27: "버튼이 너무 많아 헷갈림") */}
-          <button className="primary" onClick={() => startTransition(() => { setRosterMode("direct"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}{anyNewFeature("scanner", "op-level") && <span className="new-badge">{t("새기능")}</span>}</button>
+          <button className="primary" onClick={() => startTransition(() => { setRosterMode("direct"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}<NewBadge id="scanner+op-level" show={anyNewFeature("scanner", "op-level")} /></button>
           {/* 라벨이 '계산 중…'으로 바뀌어도 버튼 폭이 줄지 않게 원 라벨로 폭을 잡아둔다 (사용자 요청 2026-07-21) */}
           <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}>
             <span className="btn-icon" aria-hidden>⟳</span>
@@ -1506,7 +1507,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       {/* 설정 행 — 기지 배치 → 운용 방식 → 우선 생산 순 (2026-07-28 순서 교체). 사용자 지정
           배치에선 품목을 칸마다 직접 고르므로 우선 생산 라디오를 숨긴다 (사용자 요청 2026-07-24) */}
       <div className="prio-setting">
-        <span className="prio-label">🏗 {t("기지 배치")}{isNewFeature("layout-153") && <span className="new-badge">{t("새기능")}</span>}</span>
+        <span className="prio-label">🏗 {t("기지 배치")}<NewBadge id="layout-153" show={isNewFeature("layout-153")} /></span>
         {(["243", "153", "252", "custom"] as const).map((preset) => (
           <label key={preset} className={layout === preset ? "on" : ""}
             title={preset === "243" ? t("무역소 2 · 제조소 4(순금 2+작전기록 2) · 발전소 3")
@@ -1528,7 +1529,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   : t("주력인 A조를 컨디션 소모·회복까지 계산해 오래가게 짭니다 — 소모는 효율과 저울질(1순위 아님), B조는 A조가 쉬는 동안의 생산 교대. 제어센터에 무한동력(순소모 0) 조합이 가능한 로스터면 그 조합을 무조건 우선합니다")}>
                 <input type="radio" name="drain-mode" checked={drainAxis === axis} onChange={() => setDrainAxis(axis)} />
                 {t(axis === "off" ? "효율 우선" : "장기 지속")}
-                {axis === "endless" && isNewFeature("endless") && <span className="new-badge">{t("새기능")}</span>}
+                <NewBadge id="endless" show={axis === "endless" && isNewFeature("endless")} />
               </label>
             ))}
             <span className="prio-label prio-label-layout" title={t("먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다")}>⚙ {t("우선 생산")}</span>
@@ -1663,7 +1664,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   위에 걸치고 인원수 자릿수에 따라 위치가 흔들린다 (사용자 지적 2026-08-05) */}
               <button className="srb-run" onClick={() => setShowInvest(true)} title={t("추천 열기 ({n})", { n: visibleRecs?.length ?? 0 })}>
                 <span className="srb-lbl">★ {t("인프라 오퍼 육성 추천")}<em className="srb-sub">{t("추천 {n}명", { n: visibleRecs?.length ?? 0 })}</em></span>
-                {anyNewFeature("invest", "invest-payback") && <span className="new-badge">{t("새기능")}</span>}
+                <NewBadge id="invest+invest-payback" show={anyNewFeature("invest", "invest-payback")} />
               </button>
               <span className="srb-btns">
                 <button onClick={() => { void runInvest(); }}>{t("다시 분석")}</button>
@@ -1681,7 +1682,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}<em className="srb-sub">{planEmpty ? t("자동편성 먼저") : t("미완성 {n}명", { n: unfinishedCount })}</em></span>
               {investing && <span className="srb-over">★ {investing.total ? t("분석 중 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
               {/* 분석 전/후 두 상태에서 배지가 **같은 자리**(버튼 오른쪽 위 모서리)에 오도록 */}
-              {anyNewFeature("invest", "invest-payback") && <span className="new-badge">{t("새기능")}</span>}
+              <NewBadge id="invest+invest-payback" show={anyNewFeature("invest", "invest-payback")} />
             </button>
           )}
           </div>
@@ -3413,7 +3414,7 @@ function RosterModal({ allOps, lockFuture, ownedIds, eliteById, levelById, onApp
             <h2>{t("보유 오퍼레이터 설정")}</h2>
             <div className="roster-mode" role="group" aria-label={t("보유 오퍼 입력 방식")}>
               <button type="button" className={mode === "direct" ? "selected" : ""} onClick={() => setMode("direct")}><span className="btn-icon" aria-hidden>▦</span>{t("직접 입력")}</button>
-              <button type="button" className={mode === "import" ? "selected" : ""} onClick={() => setMode("import")}><span className="btn-icon" aria-hidden>⤒</span>{t("가져오기")}{isNewFeature("account") && <span className="new-badge">{t("새기능")}</span>}</button>
+              <button type="button" className={mode === "import" ? "selected" : ""} onClick={() => setMode("import")}><span className="btn-icon" aria-hidden>⤒</span>{t("가져오기")}<NewBadge id="account" show={isNewFeature("account")} /></button>
             </div>
           </div>
           {/* 가져오기 모드에는 도구 줄이 없다 — 세 경로 모두 결과를 직접 입력으로 되돌리므로
@@ -3444,7 +3445,7 @@ function RosterModal({ allOps, lockFuture, ownedIds, eliteById, levelById, onApp
               onMaaFile={(file) => { importMaa(file); setMode("direct"); }}
               onScan={() => setShowScan(true)}
               onAccount={applyAccount}
-              scanBadge={isNewFeature("scanner") ? <span className="new-badge">{t("새기능")}</span> : null}
+              scanBadge={<NewBadge id="scanner" show={isNewFeature("scanner")} />}
             />
           ) : (
           <>

@@ -15,6 +15,7 @@
 // ⚠ 영어판은 시즌2가 글로벌 서버에 없어 **설명문이 한국어 원문**이다 (doc.krOnly).
 //    통합전략 IS6와 같은 취급 — 안내문을 띄우고 그대로 보여 준다.
 
+import { NewBadge } from "./new-badge";
 import { cloneElement, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useI18n, rich, DT_LOCALE, type T } from "./i18n";
@@ -1892,7 +1893,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           <button type="button" className={`ac-simcta${sim ? " on" : ""}`} aria-haspopup="dialog"
             onClick={() => { setSim(true); closeMenus(); clear(false); }}>
             {t("덱편성 시뮬레이터")}
-            {isNewFeature("ac-deck") && <span className="new-badge">{t("새기능")}</span>}
+            <NewBadge id="ac-deck" show={isNewFeature("ac-deck")} />
           </button>
           {/* 독립/연합는 **버튼으로 나누지 않는다** — 화면에서 알아낸다 (사용자 확정 2026-09-06).
               PRTS 와 ? 는 /rogue 툴바처럼 **붙은 한 덩어리**다. */}
@@ -1919,7 +1920,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             }}>
             <span aria-hidden>{acLocked ? "◉" : "○"}</span> {t("PRTS 시뮬레이션")}
             <span className="beta-badge">{acPrtsMobile ? t("PC 전용") : "BETA"}</span>
-            {!acLocked && isNewFeature("ac-prts") && <span className="new-badge">{t("새기능")}</span>}
+            <NewBadge id="ac-prts" show={!acLocked && isNewFeature("ac-prts")} />
           </button>
           {/* ? 는 PRTS 버튼 **바로 오른쪽**에 붙는다 (bridge-button.tsx 와 같은 규약) */}
           <button type="button" className="lens-help-btn"
@@ -1935,7 +1936,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               : t("위수 협의 기간이 끝나 파티 공유를 쉬고 있습니다 — 다음 시즌에 다시 열립니다")}
             onClick={() => { setParty((v) => (v === null ? "" : v)); closeMenus(); }}>
             {t("파티 공유")}
-            {AC_PARTY_OPEN && isNewFeature("ac-party") && <span className="new-badge">{t("새기능")}</span>}
+            <NewBadge id="ac-party" show={AC_PARTY_OPEN && isNewFeature("ac-party")} />
           </button>
           {/* 지금 열린 방 수 — 운영자에게만 보인다(usePartyRoomCount 주석). 눌러서 방 목록을 연다
               (사용자 요청 2026-09-21). 값이 없을 때(= 운영자 아님)는 빈 칸이라 CSS 가 자리를 접는다. */}

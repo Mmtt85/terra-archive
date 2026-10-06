@@ -8,6 +8,7 @@
 //   - 게임 로그인: 요스타 이메일 인증코드 → 계정의 실제 보유 목록 (전체를 덮어쓴다)
 // 로그인 경로만 여기서 상태를 갖고, 나머지 둘은 부모 콜백으로 넘긴다.
 
+import { NewBadge } from "./new-badge";
 import React, { useEffect, useRef, useState } from "react";
 import { rich, type T } from "./i18n";
 import { Dropdown } from "./dropdown";
@@ -49,7 +50,7 @@ export function RosterImportPanel({ t, onMaaFile, onScan, onAccount, scanBadge }
       </section>
 
       <section className="import-way import-login">
-        <h4>{t("게임 로그인")}{isNewFeature("account") && <span className="new-badge">{t("새기능")}</span>}</h4>
+        <h4>{t("게임 로그인")}<NewBadge id="account" show={isNewFeature("account")} /></h4>
         <p>{t("요스타 계정 이메일로 인증코드를 받아 로그인하면, 계정의 실제 보유 목록과 정예화를 그대로 가져옵니다 — 가장 정확한 방법입니다.")}</p>
         <p className="import-warn">{rich(t("**주의: 가져오는 순간 게임 접속이 끊깁니다.** 데이터를 받으려면 게임 서버에 접속을 새로 열어야 하고, 명일방주는 계정당 접속을 하나만 허용하기 때문입니다. 게임을 하지 않을 때 쓰세요 — 계정에는 아무 문제가 없고, 다시 실행하면 그대로 접속됩니다."))}</p>
         <AccountLoginForm t={t} onAccount={onAccount} submitLabel={t("로그인해서 보유 오퍼 가져오기")}

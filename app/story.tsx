@@ -6,6 +6,7 @@
 // 요약이 있는 이벤트만 카드가 열리고, 상세는 #story-<id> 해시로 공유·뒤로가기 가능.
 // 본문의 인물·용어는 점선 밑줄로 표시하고, 마우스오버(데스크탑)·탭(모바일)하면 설명 카드가
 // 뜬다 (`useEntityPeek` — 2026-07-25에 종전 오른쪽 참조 레일을 대체).
+import { NewBadge } from "./new-badge";
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { asset, storyCutUrl } from "./assets";
 import { Dropdown } from "./dropdown";
@@ -1028,7 +1029,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
                     className={mode === "scene" ? "on" : ""} onClick={openScene}
                     title={t("배경과 인물 일러스트를 세워 원작처럼 한 줄씩 재생합니다")}>
                     {t("리더기")}
-                    {isNewFeature("story-scene") && <span className="new-badge">{t("새기능")}</span>}
+                    <NewBadge id="story-scene" show={isNewFeature("story-scene")} />
                   </button>
                 )}
                 {(hasScript || futureNoScript) && (
@@ -1043,7 +1044,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
                   <button type="button" role="tab" aria-selected={mode === "lore"}
                     className={mode === "lore" ? "on" : ""} onClick={openLore}>
                     {t("이벤트 기록")}<i className="story-mode-n">{loreN}</i>
-                    {isNewFeature("event-lore") && <span className="new-badge">{t("새기능")}</span>}
+                    <NewBadge id="event-lore" show={isNewFeature("event-lore")} />
                   </button>
                 )}
               </div>
@@ -1883,7 +1884,7 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
             <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
               title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 스토리 화면을 캡처만 해도 해당 이벤트의 에피소드로 이동합니다")}
               onClick={toggleLensAuto}>
-              <span className="lens-auto-knob" aria-hidden />📷 {t("스샷 레이더")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
+              <span className="lens-auto-knob" aria-hidden />📷 {t("스샷 레이더")}<NewBadge id="lens" show={isNewFeature("lens")} />
             </button>
             <button type="button" className="lens-help-btn" aria-label={t("스샷 레이더 도움말")}
               onClick={() => setLensHelp(true)}>?</button>

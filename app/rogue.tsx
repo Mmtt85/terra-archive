@@ -6,6 +6,7 @@
 // 서버 탭(한국섭/중국섭, 2026-08-04): 중국섭은 rogueN.cn.json — CN 서버 텍스트에 KR 공식
 // 번역을 오버레이한 것으로 rogue_6과 같은 병기 표기. 블랙플로우는 KR 미출시라 KR 탭 비활성.
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
+import { NewBadge } from "./new-badge";
 import { Fragment, lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { TOPICS, slugOf, roguePath } from "./rogue-topics";
 import rogue1Data from "./data/rogue1.json";
@@ -2545,7 +2546,7 @@ export default function RogueGuide({ initialTopic }: {
       🎒 {t("보유 리스트")}
       {inv.size > 0 && <em className="rg-inv-count">{inv.size}</em>}
       {/* 창을 열어야 보이는 기능(Σ 효과 총합)도 여기서 알린다 — 새 기능을 창 안에 넣으면 키를 추가 */}
-      {anyNewFeature("rogue-inv", "rogue-eff") && <span className="new-badge">{t("새기능")}</span>}
+      <NewBadge id="rogue-inv+rogue-eff" show={anyNewFeature("rogue-inv", "rogue-eff")} />
     </button>
   );
 
@@ -2707,7 +2708,7 @@ export default function RogueGuide({ initialTopic }: {
           <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
             title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}
             onClick={toggleLensAuto}>
-            <span className="lens-auto-knob" aria-hidden />📷 {t("스샷 레이더")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
+            <span className="lens-auto-knob" aria-hidden />📷 {t("스샷 레이더")}<NewBadge id="lens" show={isNewFeature("lens")} />
           </button>
           <button type="button" className="lens-help-btn" aria-label={t("스샷 레이더 도움말")}
             onClick={() => setLensOpen(true)}>?</button>
@@ -2736,7 +2737,7 @@ export default function RogueGuide({ initialTopic }: {
               onClick={() => goServer("cn")}>{t("중국섭")}</button>
             {/* 배지는 버튼 안이 아니라 토글 컨테이너 직속 — 버튼 안에 두면 그 좁은 버튼이
                 기준이 돼 글자가 세로로 깨진다 (실측 2026-08-04) */}
-            {isNewFeature("rogue-cn") && <span className="new-badge">{t("새기능")}</span>}
+            <NewBadge id="rogue-cn" show={isNewFeature("rogue-cn")} />
           </div>
           {topicMenu && (
             <ul className="rg-topicsel-menu" role="listbox" aria-label={t("테마 변경")}>
@@ -3450,7 +3451,7 @@ export default function RogueGuide({ initialTopic }: {
                   자원 탭엔 수치 효과가 없어 소장품 탭에서만 낸다. */}
               {invTab === "relic" && ownedRelics.length > 0 && (
                 <button type="button" className="rg-inv-sum" onClick={() => setEffOpen(true)}>Σ {t("효과 총합")}
-                  {isNewFeature("rogue-eff") && <span className="new-badge">{t("새기능")}</span>}</button>
+                  <NewBadge id="rogue-eff" show={isNewFeature("rogue-eff")} /></button>
               )}
               {(invTab === "relic" ? ownedRelics : ownedRes).length > 0 && (
                 <button type="button" className="rg-inv-clear" onClick={() => void clearInvTab(invTab)}>{t("전체 비우기")}</button>

@@ -581,6 +581,15 @@ button {
    좁은 화면에서 본문 칸을 절반 넘게 잡아먹는다 — 실측: 390px에서 본문이 138px로 눌리고
    행 높이가 41px→102px로 튀었다. 상한을 넘으면 배지가 두 줄로 접힌다. */
 /* 중요 배지 (2026-10-05) — 목록 항목 앞, 그리고 헤더 버튼 모서리(폭을 늘리지 않게 absolute) */
+/* 목록 항목의 NEW — 떠 있는 배지가 아니라 '중요' 칩처럼 줄 안에 (new-badge.tsx, 2026-10-07) */
+.chlog-list li .new-badge {
+  position: static;
+  flex: none;
+  align-self: center;
+  margin: 0;
+  box-shadow: none;
+  animation: none;
+}
 .chlog-imp {
   flex: none;
   margin-top: 1px;

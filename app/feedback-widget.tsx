@@ -1,5 +1,6 @@
 "use client";
 
+import { NewBadge } from "./new-badge";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -698,7 +699,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
           <span className="fb-reply-badge"
             title={adminKey ? t("새 제안 {n}개", { n: badge }) : t("새 답변 {n}개", { n: badge })}>{badge}</span>
         )}
-        {!open && badge === 0 && isNewFeature("feedback-board") && <span className="new-badge">{t("새기능")}</span>}
+        <NewBadge id="feedback-board" show={!open && badge === 0 && isNewFeature("feedback-board")} />
       </button>
       {/* modal-backdrop 클래스 = 전역 esc-close 편입 — z 최상단이라 ESC가 이것만 닫고,
           아래 창모달은 유지된다 (esc-close.ts는 백드롭 mousedown을 디스패치한다) */}

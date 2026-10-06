@@ -17,6 +17,8 @@ import { createPortal } from "react-dom";
 import { useI18n, rich, DT_LOCALE } from "./i18n";
 import { useHashSync } from "./hash-modal";
 import { ModalWindow } from "./modal-window";
+import { NewBadge } from "./new-badge";
+import { isNewFeature, newChangelogIds } from "./whats-new";
 import {
   fetchChangelogRange, fetchOldestReleaseDate, fetchLatestImportant, windowRange, changeText, splitChange, detailBlocks, areaOf,
   CHANGE_KIND_LABEL, CHANGE_AREA_LABEL, RECENT_DAYS, daysAgoKst, type ChangeRow,
@@ -194,6 +196,8 @@ export default function ChangelogButton() {
         {/* 모바일은 아이콘만 (1줄 로고 옆 — 폭이 좁다) */}
         <span className="chlog-label">{t("업데이트 내역")}</span>
         {importantId && <span className="chlog-imp-dot">{t("중요")}</span>}
+        {/* NEW — 새 항목(whats-new.ts 'chlog:<id>')이 있으면 3일, 한 번 열면 그 묶음은 다시 안 뜬다 */}
+        <NewBadge id={`chlog-btn@${newChangelogIds().join(",")}`} show={newChangelogIds().length > 0} />
       </button>
       {/* 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로 portal로 body에 렌더.
           제목은 창 크롬 바(label)가 담당 — 종전 내부 header는 제목이 이중으로 떠서 제거하고,
@@ -217,6 +221,7 @@ export default function ChangelogButton() {
                       return (
                         <li key={row.id} className={row.important ? "important" : undefined}>
                           {row.important && <span className="chlog-imp">{t("중요")}</span>}
+                          <NewBadge id={`chlog:${row.id}`} show={isNewFeature(`chlog:${row.id}`)} host="li" seenOnView />
                           {/* 배지는 '인프라 개선'처럼 기능+종류로 읽힌다 (사용자 요청 2026-07-29).
                               어순은 로케일마다 다르므로 "{area} {kind}" 서식 키로 조립한다. */}
                           <span className={`chlog-kind ${row.kind}`}>

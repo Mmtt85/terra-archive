@@ -12,6 +12,7 @@
 //  · 통합전략 세부 항목(유물·조우·작전…)은 스샷 레이더 인덱스(2.9MB)라 기본 색인에서 빠져
 //    있고, 가벼운 색인으로 답이 안 나올 때만 지연 로드해 합친다.
 //  · **패널은 셸과 함께 와서 누르는 즉시 뜬다. 색인 엔진(omni.ts)만 따로 받는다** (loadEngine 주석).
+import { NewBadge } from "./new-badge";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { OmniHit, OmniItem, OmniKind, OmniTarget } from "./omni";
@@ -332,7 +333,7 @@ export default function OmniSearch({ roster, extra, onGo }: {
         onPointerOver={warm} onTouchStart={warm} onFocus={warm}
         title={t("유니버셜 서치 — 오퍼·재료·스토리·통합전략·기능을 한 번에 찾아 이동합니다 (⌘K)")}>
         <span aria-hidden>⌕</span>
-        <span className="omni-trigger-label">{t("유니버셜 서치")}{isNewFeature("omni") && <span className="new-badge">{t("새기능")}</span>}</span>
+        <span className="omni-trigger-label">{t("유니버셜 서치")}<NewBadge id="omni" show={isNewFeature("omni")} /></span>
         <kbd className="omni-trigger-kbd" aria-hidden>⌘K</kbd>
       </button>
       {panel}

@@ -5,6 +5,7 @@
 // 연결 자체는 /rogue 각 테마의 게임 연결 버튼에서 한다 (BridgeTopicButton — 테마 하드 고정).
 // 연결 전에는 아무것도 그리지 않는다.
 
+import { NewBadge } from "../new-badge";
 import { lazy, Suspense, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump } from "./bridge";
@@ -108,7 +109,7 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
         <span aria-hidden>{mine ? "◉" : "○"}</span> {mine ? t("PRTS 링크 연결됨") : t("PRTS 링크")}
         {/* 아직 다듬는 중이라 BETA 표시 (사용자 지시 2026-07-26) — 새기능 배지와 달리 상시 */}
         <span className="beta-badge">BETA</span>
-        {!settings && isNewFeature("bridge") && <span className="new-badge">{t("새기능")}</span>}
+        <NewBadge id="bridge" show={!settings && isNewFeature("bridge")} />
       </button>
       )}
       {/* ?는 **PRTS 링크 버튼 바로 오른쪽**에 붙는 세그먼트다 — 리플레이 뒤에 두면 리플레이
