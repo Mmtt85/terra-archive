@@ -215,3 +215,36 @@ export function accountErrorText(code: string): string {
     default: return "계정 연동에 실패했습니다 ({code}) — 잠시 뒤 다시 시도해 주세요.";
   }
 }
+
+// ── 중섭 계정 샘플 기증 (/cn-sample, 2026-10-06) ──
+// 중섭 '내 정보' 연동을 만들기 전에, 중섭 유저가 한 번 로그인해 syncData 원본을 제안 첨부로 보내 주는 용도.
+// 워커는 raw 요청에 재접속 토큰을 싣지 않고, 이름표·uid 같은 식별값을 지워서 돌려준다.
+// 官服은 한국 유저가 중국 휴대폰 문자를 못 받는 게 보통이라 '통행증 토큰 붙여넣기'가 주 경로다 (hgToken).
+export type CnServer = "cn" | "bili";
+
+/** 직영(官服) — 휴대폰으로 문자 인증코드를 보낸다 */
+export async function sendCnCode(phone: string): Promise<void> {
+  await post("/send-code", { server: "cn", phone: phone.trim() });
+}
+
+export type CnLogin =
+  | { server: "cn"; hgToken: string }
+  | { server: "cn"; phone: string; code?: string; password?: string }
+  | { server: "bili"; username: string; password: string };
+
+/** 로그인해 계정 요약 + 원본(raw)을 받는다. **게임 세션이 이 시점에 끊긴다.** step 은 network·passport·game·sync·friends·shop·digest */
+export async function loginCnSample(args: CnLogin, onStep?: (step: string) => void): Promise<Record<string, unknown>> {
+  return postStream("/login", { ...args, raw: true }, onStep);
+}
+
+/** 직영 QR 로그인 — 森空岛 앱으로 찍을 QR (scanUrl 을 QR 로 그린다) */
+export async function startCnScan(): Promise<{ scanId: string; scanUrl: string }> {
+  const data = await post("/scan-start", { server: "cn" });
+  return { scanId: String(data.scanId), scanUrl: String(data.scanUrl) };
+}
+
+/** QR 상태 — done 이면 통행증 토큰(hgToken)이 온다. 몇 초 간격으로 부른다 */
+export async function pollCnScan(scanId: string): Promise<{ state: "wait" | "scanned" | "done" | "expired"; hgToken?: string }> {
+  const data = await post("/scan-status", { server: "cn", scanId });
+  return { state: data.state as "wait" | "scanned" | "done" | "expired", hgToken: typeof data.hgToken === "string" ? data.hgToken : undefined };
+}

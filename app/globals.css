@@ -27411,3 +27411,55 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
 .fb-filechip small { flex: none; color: var(--muted); font-size: 10.5px; }
 .fb-filechip button { position: absolute; top: -6px; right: -6px; width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); font-size: 11px; line-height: 1; padding: 0; cursor: pointer; }
 .fb-files { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+
+/* ── 중섭 계정 샘플 기증 (/cn-sample, 2026-10-06) — 링크로만 오는 단독 페이지 ── */
+.cns { max-width: 560px; margin: 0 auto; padding: 28px 16px 64px; font-family: inherit; }
+.cns-home { font-size: 12px; color: var(--muted); text-decoration: none; letter-spacing: .04em; }
+.cns h1 { font-size: 22px; margin: 10px 0 2px; }
+.cns h2 { font-size: 16px; margin: 0 0 12px; }
+.cns-sub { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+.cns-box { border: 1px solid var(--line); background: var(--bg-panel); border-radius: 10px; padding: 16px; margin-bottom: 14px; font-size: 14px; line-height: 1.65; }
+.cns-box p { margin: 0 0 8px; }
+.cns-list { margin: 8px 0 0; padding-left: 18px; }
+.cns-list li { margin-bottom: 4px; }
+.cns-warn { color: var(--danger); }
+.cns-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.cns-tabs button, .cns-btn { font: inherit; font-size: 13px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); cursor: pointer; }
+.cns-tabs button { flex: 1; }
+.cns-tabs button:hover, .cns-btn:hover:not(:disabled) { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); color: var(--btn-ink-hover); }
+.cns-tabs button.on { background: var(--btn-on-bg); border-color: var(--btn-on-line); color: var(--btn-on-ink); }
+.cns-btn:disabled { opacity: .45; cursor: default; }
+.cns-pri { background: var(--btn-pri-bg); border-color: var(--btn-pri-line); color: var(--btn-pri-ink); font-weight: 700; }
+.cns-pri:hover:not(:disabled) { background: var(--btn-pri-bg-hover); border-color: var(--btn-pri-bg-hover); color: var(--btn-pri-ink-hover); }
+.cns-modes { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 10px; font-size: 13px; }
+.cns-modes label { white-space: nowrap; }
+.cns-field { display: block; margin-bottom: 12px; }
+.cns-field > span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.cns-field em { font-style: normal; color: var(--tint-lime-ink); }
+.cns-field input, .cns-field textarea { box-sizing: border-box; width: 100%; font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--white); color: var(--ink); }
+.cns-row { display: flex; gap: 6px; }
+.cns-row input { flex: 1; min-width: 0; }
+.cns-row .cns-btn { flex: none; }
+.cns-note { font-size: 12px; color: var(--muted); }
+.cns-agree { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 4px 0 12px; }
+.cns-agree input { margin-top: 4px; }
+.cns-go { width: 100%; padding: 11px; font-size: 14px; }
+.cns-steps { margin: 14px 0 0; padding-left: 20px; font-size: 13px; color: var(--muted); }
+.cns-steps li.done { color: var(--ink2); }
+.cns-steps li.now { color: var(--ink); font-weight: 700; }
+.cns-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 14px; }
+.cns-stats div { border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--white); }
+.cns-stats dt { font-size: 11px; color: var(--muted); }
+.cns-stats dd { margin: 0; font-size: 16px; font-weight: 700; }
+.cns-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.cns-done h2 { color: var(--tint-lime-ink); }
+.cns-error { color: var(--danger); font-size: 13px; }
+.cns-how { margin: 0 0 12px; padding-left: 20px; font-size: 13px; list-style: decimal; }
+.cns-how li { margin-bottom: 4px; }
+.cns-how a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.cns-how code { font-size: 11px; word-break: break-all; background: var(--bg-soft); padding: 1px 4px; border-radius: 4px; }
+/* 중국어 고유명사 옆 작은 주석 (官服 직영 서버) — 보는 언어 하나로 */
+.cns-gloss { font-size: .78em; margin-left: .3em; opacity: .7; font-weight: 400; white-space: nowrap; }
+.cns-scan { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 4px 0 14px; text-align: center; font-size: 13px; }
+.cns-scan p { margin: 0; }
+.cns-qr { width: 200px; height: 200px; border-radius: 8px; }
