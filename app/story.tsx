@@ -74,10 +74,10 @@ export type StorySummaries = Record<string, Summary>;
 // 테라 연대기 (app/data/chronology.json — 손수 큐레이트하는 스캐폴드).
 type ChronKind = "event" | "mini" | "main" | "roguelike";
 type Arc = { id: string; name: LocText };
-type RawEntry = { ref?: string; id?: string; kind: ChronKind; title?: LocText; terraYear?: number | null; arc?: string | null; dateNote?: string };
+type RawEntry = { ref?: string; id?: string; kind: ChronKind; title?: LocText; terraYear?: number | null; arc?: string | null; dateNote?: string; yearWhy?: LocText };
 type Chronology = { note: string; updated?: string; arcs: Arc[]; entries: RawEntry[] };
 // 연대기 항목 하나(이벤트 ref는 stories.json에서 이름·썸네일·출시월을 끌어온다)
-type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; thumbEn?: string; thumbJa?: string; terraYear: number | null; arc: string | null; eventId?: string; dateNote?: string; epNo?: number; ep?: LocText };
+type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; thumbEn?: string; thumbJa?: string; terraYear: number | null; arc: string | null; eventId?: string; dateNote?: string; yearWhy?: LocText; epNo?: number; ep?: LocText };
 
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaryIds = new Set(summaryIdsData as string[]);
@@ -1154,7 +1154,7 @@ function resolveChron(): ChronItem[] {
         name: ev ? ev.name : { ko: raw.ref },
         start: ev?.start, thumb: ev?.thumb,
         terraYear: raw.terraYear ?? null, arc: raw.arc ?? null,
-        eventId: ev ? raw.ref : undefined, dateNote: raw.dateNote,
+        eventId: ev ? raw.ref : undefined, dateNote: raw.dateNote, yearWhy: raw.yearWhy,
       };
     }
     const isMain = raw.kind === "main" && /^main_\d+$/.test(raw.id ?? "");
@@ -1163,7 +1163,7 @@ function resolveChron(): ChronItem[] {
     return {
       key: raw.id ?? `x${i}`, kind: raw.kind,
       name: raw.title ?? { ko: raw.id ?? "?" },
-      terraYear: raw.terraYear ?? null, arc: raw.arc ?? null, dateNote: raw.dateNote,
+      terraYear: raw.terraYear ?? null, arc: raw.arc ?? null, dateNote: raw.dateNote, yearWhy: raw.yearWhy,
       // 요약이 달린 메인스토리·로그라이크는 열 수 있게 eventId를 부여 (합성 이벤트와 매칭)
       eventId: raw.id && canOpenStory(raw.id) ? raw.id : undefined,
       epNo,
@@ -1391,6 +1391,8 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
           </span>
           <b>{tip.item.ep ? `${locText(locale, tip.item.ep)} · ` : ""}{locText(locale, tip.item.name)}</b>
           <span className="chron-tip-meta">{yearLabel(tip.item)}{tip.item.eventId ? ` · ${t("클릭해서 열기")}` : ""}</span>
+          {/* 테라력 근거 — 원문 어느 대사·장면 표기에서 뽑았는지 (사용자 요청 2026-10-07) */}
+          {tip.item.terraYear != null && tip.item.yearWhy && <span className="chron-tip-why">{locText(locale, tip.item.yearWhy)}</span>}
         </div>
       )}
 
@@ -1402,7 +1404,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
               {g.items.map((it) => (
                 <li key={it.key}>
                   <button type="button" className={`chron-item k-${it.kind}${it.eventId ? "" : " nolink"}`}
-                    onClick={() => openIf(it)} disabled={!it.eventId} title={it.dateNote}>
+                    onClick={() => openIf(it)} disabled={!it.eventId} title={it.yearWhy ? `${yearLabel(it)} — ${locText(locale, it.yearWhy)}` : undefined}>
                     <span className="chron-item-top">
                       <span className="chron-kind" style={it.arc ? { background: arcColor(it.arc) } : undefined}>{t(KIND_KO[it.kind])}</span>
                       {it.ep && <span className="chron-item-ep">{locText(locale, it.ep)}</span>}

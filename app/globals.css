@@ -10684,6 +10684,15 @@ html.dark .vz {
   color: #ffffffa8;
   font: 600 10px var(--mono);
 }
+.chron-tip-why {
+  display: block;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #ffffff26;
+  color: #ffffffd0;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
 /* 그룹핑 토글 */
 .chron-tabs {
   display: flex;

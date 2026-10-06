@@ -1,6 +1,6 @@
 {
- "note": "테라 연대기 (손큐레이트). terraYear = 이벤트 '당대' 연도(스크립트의 '올해/지금 = N년'만 채택; 'N년 전'·역사 참조 연도는 제외). 예) 아테누스=1100. 채운 건 dateNote에 출처 명시. entries 순서는 출시순(임시). arc(테마)=로어 기반 수작업, 확실한 것 우선. kind: event(ref→stories.json)/main/roguelike. ※ 이 파일은 이제 손으로 편집한다 — 스캐폴드 생성 스크립트로 재생성 금지(연도·테마 날아감).",
- "updated": "2026-08-13",
+ "note": "테라 연대기 (손큐레이트). terraYear = 이벤트 '당대' 연도(스크립트의 '올해/지금 = N년'만 채택; 'N년 전'·역사 참조 연도는 제외). 예) 아테누스=1100. 채운 건 dateNote에 출처 명시, yearWhy(ko/en/ja)는 연대기 툴팁에 뜨는 근거 (2026-10-07 전수조사 — 확신도 높음·중간만 채택, 정황뿐인 것은 비움). entries 순서는 출시순(임시). arc(테마)=로어 기반 수작업, 확실한 것 우선. kind: event(ref→stories.json)/main/roguelike. ※ 이 파일은 이제 손으로 편집한다 — 스캐폴드 생성 스크립트로 재생성 금지(연도·테마 날아감).",
+ "updated": "2026-10-07",
  "arcs": [
   {
    "id": "rl",
@@ -151,8 +151,14 @@
   {
    "ref": "act9d0",
    "kind": "event",
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "장면 표기 '현재, 체르노보그로 이동 중', 이네스 '3년 전과 똑같아' (1094 + 3)",
+   "yearWhy": {
+    "ko": "장면 표기 '현재, 체르노보그로 이동 중', 이네스 '3년 전과 똑같아' (1094 + 3)",
+    "en": "Scene stamp \"Present, en route to Chernobog\"; Ines: \"just like three years ago\" (1094 + 3)",
+    "ja": "場面表記「現在、チェルノボーグへ移動中」、イネス「3年前と同じ」（1094 + 3）"
+   }
   },
   {
    "ref": "act12d0",
@@ -187,8 +193,14 @@
   {
    "ref": "act18d0",
    "kind": "event",
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "장면 표기 '17년 전' + 같은 장면 자막 '1080년, 석관 사건에서 생존한 과학자…' (1080 + 17)",
+   "yearWhy": {
+    "ko": "장면 표기 '17년 전' + 같은 장면 자막 '1080년, 석관 사건에서 생존한 과학자…' (1080 + 17)",
+    "en": "Scene stamp \"17 years ago\" + caption \"In 1080, a scientist who survived the Sarcophagus incident…\" (1080 + 17)",
+    "ja": "場面表記「17年前」+ 字幕「1080年、石棺事件を生き延びた科学者…」（1080 + 17）"
+   }
   },
   {
    "ref": "act18d3",
@@ -205,8 +217,14 @@
   {
    "ref": "act13side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "ka"
+   "terraYear": 1097,
+   "arc": "ka",
+   "dateNote": "카시미어의 가을 + 메인 9장 '작년 말에 카시미어를 떠난 후' (9장 = 1098)",
+   "yearWhy": {
+    "ko": "카시미어의 가을 + 메인 9장 '작년 말에 카시미어를 떠난 후' (9장 = 1098)",
+    "en": "Autumn in Kazimierz + Ch.9 \"after leaving Kazimierz late last year\" (Ch.9 = 1098)",
+    "ja": "カジミエーシュの秋 + 9章「去年の末にカジミエーシュを離れて以来」（9章 = 1098）"
+   }
   },
   {
    "ref": "act14side",
@@ -225,7 +243,12 @@
    "kind": "event",
    "terraYear": 1099,
    "arc": "la",
-   "dateNote": "'지금은 1099년 3월 15일' — act16side"
+   "dateNote": "'지금은 1099년 3월 15일'",
+   "yearWhy": {
+    "ko": "'지금은 1099년 3월 15일'",
+    "en": "\"It is now 15 March 1099\"",
+    "ja": "「今は1099年3月15日」"
+   }
   },
   {
    "ref": "act17side",
@@ -236,8 +259,14 @@
   {
    "ref": "act18side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "le"
+   "terraYear": 1097,
+   "arc": "le",
+   "dateNote": "'위치킹이 쓰러진 이후 지금까지 20년 동안' (위치킹 사건 1077 + 20)",
+   "yearWhy": {
+    "ko": "'위치킹이 쓰러진 이후 지금까지 20년 동안' (위치킹 사건 1077 + 20)",
+    "en": "\"In the twenty years since the Witch King fell\" (Witch King incident 1077 + 20)",
+    "ja": "「ウィッチキングが倒れてから20年」（ウィッチキング事件 1077 + 20）"
+   }
   },
   {
    "ref": "act20side",
@@ -268,7 +297,12 @@
    "kind": "event",
    "terraYear": 1098,
    "arc": "ta",
-   "dateNote": "현재 씬 datestamp \"1098년 스카타나 들판\" (회상 \"8년 전 1090년\"과 구분; 1090+8=1098)"
+   "dateNote": "현재 장면 표기 '1098년 스카타나 들판' ('8년 전 1090년'은 회상)",
+   "yearWhy": {
+    "ko": "현재 장면 표기 '1098년 스카타나 들판' ('8년 전 1090년'은 회상)",
+    "en": "Present-day stamp \"1098\" in the plains scene (\"1090, eight years ago\" is a flashback)",
+    "ja": "現在の場面表記「1098年」（「8年前の1090年」は回想）"
+   }
   },
   {
    "ref": "act24side",
@@ -281,7 +315,12 @@
    "kind": "event",
    "terraYear": 1099,
    "arc": "rh",
-   "dateNote": "'1099년 11월 21일' 날짜 스탬프 — act25side"
+   "dateNote": "날짜 표기 '1099년 11월 21일'",
+   "yearWhy": {
+    "ko": "날짜 표기 '1099년 11월 21일'",
+    "en": "Date stamp \"21 Nov 1099\"",
+    "ja": "日付表記「1099年11月21日」"
+   }
   },
   {
    "ref": "act26side",
@@ -294,7 +333,12 @@
    "kind": "event",
    "terraYear": 1099,
    "arc": "st",
-   "dateNote": "'오늘은 1099년 8월 21일입니다' — act27side"
+   "dateNote": "'오늘은 1099년 8월 21일입니다'",
+   "yearWhy": {
+    "ko": "'오늘은 1099년 8월 21일입니다'",
+    "en": "\"Today is 21 August 1099\"",
+    "ja": "「今日は1099年8月21日です」"
+   }
   },
   {
    "ref": "act28side",
@@ -307,20 +351,36 @@
    "kind": "event",
    "terraYear": 1100,
    "arc": "le",
-   "dateNote": "현재 씬 datestamp \"1100년, 라이타니엔 북부 국경, 슈투름란트\" (페데리코 과거 사건 언급과 구분)"
+   "dateNote": "장면 표기 '1100년, 라이타니엔 북부 국경' + '23년 전 위치킹' (1077)",
+   "yearWhy": {
+    "ko": "장면 표기 '1100년, 라이타니엔 북부 국경' + '23년 전 위치킹' (1077)",
+    "en": "Scene stamp \"1100, northern border of Leithanien\" + \"the Witch King 23 years ago\" (1077)",
+    "ja": "場面表記「1100年、リターニア北部国境」+「23年前のウィッチキング」（1077）"
+   }
   },
   {
    "ref": "act30side",
    "kind": "event",
    "terraYear": 1100,
    "arc": "kj",
-   "dateNote": "'1100년 겨울, 쉐라그 페일로쉬' 장면 스탬프 — act30side"
+   "dateNote": "장면 표기 '1100년 겨울, 쉐라그 페일로쉬'",
+   "yearWhy": {
+    "ko": "장면 표기 '1100년 겨울, 쉐라그 페일로쉬'",
+    "en": "Scene stamp \"winter 1100, Kjerag\"",
+    "ja": "場面表記「1100年冬、イェラグ」"
+   }
   },
   {
    "ref": "act31side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "su"
+   "terraYear": 1102,
+   "arc": "su",
+   "dateNote": "'1101년에 … 승진, 당시 나이 17세' + 지금 19세인 좌락보다 1살 어림 → 지금 18세",
+   "yearWhy": {
+    "ko": "'1101년에 … 승진, 당시 나이 17세' + 지금 19세인 좌락보다 1살 어림 → 지금 18세",
+    "en": "\"Promoted in 1101, aged 17\" + one year younger than a 19-year-old colleague → now 18",
+    "ja": "「1101年に…昇進、当時17歳」+ 現在19歳の同僚より1歳年下 → 18歳"
+   }
   },
   {
    "ref": "act32side",
@@ -331,14 +391,26 @@
   {
    "ref": "act33side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1094,
+   "arc": "rl",
+   "dateNote": "과거편 — 장면 표기 '1091년 여름'(내전 발발)부터 '1094년 여름'(바벨 붕괴)까지",
+   "yearWhy": {
+    "ko": "과거편 — 장면 표기 '1091년 여름'(내전 발발)부터 '1094년 여름'(바벨 붕괴)까지",
+    "en": "A past-era story — scene stamps run from \"summer 1091\" (civil war) to \"summer 1094\" (Babel's fall)",
+    "ja": "過去編 — 場面表記「1091年夏」（内戦勃発）から「1094年夏」（バベル崩壊）まで"
+   }
   },
   {
    "ref": "act34side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "ae"
+   "terraYear": 1100,
+   "arc": "ae",
+   "dateNote": "'그 컬럼비아 과학자가 … 차단층을 뚫었다', '1년 넘게 그 공동이 닫히지 않았고' (론 트레일 1099 + 1)",
+   "yearWhy": {
+    "ko": "'그 컬럼비아 과학자가 … 차단층을 뚫었다', '1년 넘게 그 공동이 닫히지 않았고' (론 트레일 1099 + 1)",
+    "en": "\"That Columbian scientist pierced the barrier layer\"; \"the cavity hasn't closed for over a year\" (the 1099 event + 1)",
+    "ja": "「あのコロンビアの科学者が…遮断層を貫いた」、「1年以上その空洞は閉じていない」（1099年の事件 + 1）"
+   }
   },
   {
    "ref": "act35side",
@@ -357,14 +429,24 @@
    "kind": "event",
    "terraYear": 1100,
    "arc": "si",
-   "dateNote": "날짜 스탬프 1099년 12월~1100년 11월(당대 최신) — act38side"
+   "dateNote": "날짜 표기 1099년 12월 ~ 1100년 11월",
+   "yearWhy": {
+    "ko": "날짜 표기 1099년 12월 ~ 1100년 11월",
+    "en": "Date stamps from Dec 1099 to Nov 1100",
+    "ja": "日付表記 1099年12月〜1100年11月"
+   }
   },
   {
    "ref": "act37side",
    "kind": "event",
    "terraYear": 1098,
    "arc": "rl",
-   "dateNote": "'1098년 12월 21일' 날짜 스탬프 — act37side"
+   "dateNote": "날짜 표기 '1098년 12월 21일'",
+   "yearWhy": {
+    "ko": "날짜 표기 '1098년 12월 21일'",
+    "en": "Date stamp \"21 Dec 1098\"",
+    "ja": "日付表記「1098年12月21日」"
+   }
   },
   {
    "ref": "act39side",
@@ -375,20 +457,38 @@
   {
    "ref": "act40side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "su"
+   "terraYear": 1102,
+   "arc": "su",
+   "dateNote": "'1092년 … 사망' + '10년 전, 고전은 … 사망', '1062년에 실종' + '40년 전 … 행방불명된 아이'",
+   "yearWhy": {
+    "ko": "'1092년 … 사망' + '10년 전, 고전은 … 사망', '1062년에 실종' + '40년 전 … 행방불명된 아이'",
+    "en": "\"Died … 1092\" + \"ten years ago, he … died\"; \"went missing in 1062\" + \"the child who vanished 40 years ago\"",
+    "ja": "「1092年…死亡」+「10年前、彼は…死亡」、「1062年に失踪」+「40年前…行方不明になった子」"
+   }
   },
   {
    "ref": "act41side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "ta"
+   "terraYear": 1099,
+   "arc": "ta",
+   "dateNote": "'작년 가을, 당신도 그 도시에서 죽을뻔했나요?' — 런디니움 결전(1098 가을) 이듬해",
+   "yearWhy": {
+    "ko": "'작년 가을, 당신도 그 도시에서 죽을뻔했나요?' — 런디니움 결전(1098 가을) 이듬해",
+    "en": "\"Last autumn, did you nearly die in that city too?\" — the year after the Londinium battle (autumn 1098)",
+    "ja": "「去年の秋、あなたもあの都市で死にかけたの？」— ロンディニウム決戦（1098年秋）の翌年"
+   }
   },
   {
    "ref": "act42side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "la"
+   "terraYear": 1100,
+   "arc": "la",
+   "dateNote": "'1090년 겨울 … 살카즈 용병과 충돌' + '10년 전에는 … 총기사를 추방', 모스티마 '10년 만이네'",
+   "yearWhy": {
+    "ko": "'1090년 겨울 … 살카즈 용병과 충돌' + '10년 전에는 … 총기사를 추방', 모스티마 '10년 만이네'",
+    "en": "\"Winter 1090 … clashed with Sarkaz mercenaries\" + \"ten years ago … exiled a fallen Sankta knight\"; Mostima: \"it's been ten years\"",
+    "ja": "「1090年冬…サルカズ傭兵と衝突」+「10年前は…銃騎士を追放」、モスティマ「10年ぶりね」"
+   }
   },
   {
    "ref": "act43side",
@@ -413,33 +513,60 @@
    "kind": "event",
    "terraYear": 1101,
    "arc": "kj",
-   "dateNote": "'1101년 12월 7일' 날짜 스탬프(제목도 1101) — act46side"
+   "dateNote": "날짜 표기 '1101년 12월 7일' (제목도 1101)",
+   "yearWhy": {
+    "ko": "날짜 표기 '1101년 12월 7일' (제목도 1101)",
+    "en": "Date stamp \"7 Dec 1101\" (the title says 1101 too)",
+    "ja": "日付表記「1101年12月7日」（タイトルも1101）"
+   }
   },
   {
    "ref": "act47side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "rh"
+   "terraYear": 1101,
+   "arc": "rh",
+   "dateNote": "'2년 전, 트리마운츠에서 … 목격한 기적' (1099 + 2), '3년 전, 아이파닐이…' (1098 + 3)",
+   "yearWhy": {
+    "ko": "'2년 전, 트리마운츠에서 … 목격한 기적' (1099 + 2), '3년 전, 아이파닐이…' (1098 + 3)",
+    "en": "\"The miracle witnessed in Trimounts two years ago\" (1099 + 2); another \"three years ago\" line tied to Londinium (1098 + 3)",
+    "ja": "「2年前、トリマウンツで…目撃された奇跡」（1099 + 2）、ロンディニウムに結びつく「3年前」（1098 + 3）"
+   }
   },
   {
    "ref": "act48side",
    "kind": "event",
    "terraYear": 1100,
    "arc": "ts",
-   "dateNote": "'올해가 1100년' — act48side"
+   "dateNote": "'올해가 1100년'",
+   "yearWhy": {
+    "ko": "'올해가 1100년'",
+    "en": "\"This year is 1100\"",
+    "ja": "「今年は1100年」"
+   }
   },
   {
    "ref": "act49side",
    "kind": "event",
    "terraYear": 1102,
    "arc": "su",
-   "dateNote": "현재 씬 datestamp \"1102년 늦가을 … 초겨울\""
+   "dateNote": "장면 표기 '1102년 늦가을'·'초겨울' + '4년 전 런디니움 이상 기후' (1098 + 4)",
+   "yearWhy": {
+    "ko": "장면 표기 '1102년 늦가을'·'초겨울' + '4년 전 런디니움 이상 기후' (1098 + 4)",
+    "en": "Scene stamps \"late autumn 1102\" / \"early winter\" + \"Londinium's abnormal weather four years ago\" (1098 + 4)",
+    "ja": "場面表記「1102年晩秋」「初冬」+「4年前のロンディニウムの異常気象」（1098 + 4）"
+   }
   },
   {
    "ref": "act51side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "ur"
+   "terraYear": 1102,
+   "arc": "ur",
+   "dateNote": "장면 표기 '1102년 초' (1101년 12월 24일 무도회 이어서)",
+   "yearWhy": {
+    "ko": "장면 표기 '1102년 초' (1101년 12월 24일 무도회 이어서)",
+    "en": "Scene stamp \"early 1102\" (following the ball on 24 Dec 1101)",
+    "ja": "場面表記「1102年初め」（1101年12月24日の舞踏会に続く）"
+   }
   },
   {
    "id": "main_0",
@@ -449,8 +576,14 @@
     "en": "Evil Time Part 1",
     "ja": "暗黒時代・上"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "0~7장은 한 달 안에 이어진다 — 2장 '체르노보그 구출 작전으로부터 4일 후', 7장 켈시 '한 달 전 체르노보그에서 일어난 사건'",
+   "yearWhy": {
+    "ko": "0~7장은 한 달 안에 이어진다 — 2장 '체르노보그 구출 작전으로부터 4일 후', 7장 켈시 '한 달 전 체르노보그에서 일어난 사건'",
+    "en": "Chapters 0–7 span about a month — Ch.2 \"four days after the Chernobog rescue\", Ch.7 Kal'tsit \"the incident in Chernobog a month ago\"",
+    "ja": "0〜7章は約1か月の出来事 — 2章「チェルノボーグ救出作戦から4日後」、7章ケルシー「1か月前のチェルノボーグの事件」"
+   }
   },
   {
    "id": "main_1",
@@ -460,8 +593,14 @@
     "en": "Evil Time Part 2",
     "ja": "暗黒時代・下"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "0장의 체르노보그 작전이 그대로 이어진다 (2장 '체르노보그 구출 작전으로부터 4일 후')",
+   "yearWhy": {
+    "ko": "0장의 체르노보그 작전이 그대로 이어진다 (2장 '체르노보그 구출 작전으로부터 4일 후')",
+    "en": "Continues the Chernobog operation of Ch.0 (Ch.2: \"four days after the Chernobog rescue\")",
+    "ja": "0章のチェルノボーグ作戦の続き（2章「チェルノボーグ救出作戦から4日後」）"
+   }
   },
   {
    "id": "main_2",
@@ -471,8 +610,14 @@
     "en": "Separated Hearts",
     "ja": "相思相殺"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "'체르노보그 구출 작전으로부터 4일 후'",
+   "yearWhy": {
+    "ko": "'체르노보그 구출 작전으로부터 4일 후'",
+    "en": "\"Four days after the Chernobog rescue operation\"",
+    "ja": "「チェルノボーグ救出作戦から4日後」"
+   }
   },
   {
    "id": "main_3",
@@ -482,8 +627,14 @@
     "en": "Stinging Shock",
     "ja": "起死回生"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "2장 며칠 뒤의 용문 사건 — 7장 '한 달 전 체르노보그'",
+   "yearWhy": {
+    "ko": "2장 며칠 뒤의 용문 사건 — 7장 '한 달 전 체르노보그'",
+    "en": "The Lungmen incident a few days after Ch.2 — Ch.7 \"Chernobog a month ago\"",
+    "ja": "2章の数日後の龍門事件 — 7章「1か月前のチェルノボーグ」"
+   }
   },
   {
    "id": "main_4",
@@ -493,8 +644,14 @@
     "en": "Burning Run",
     "ja": "急転直下"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "용문 사건 진행 중 — 7장 '한 달 전 체르노보그'로 같은 해",
+   "yearWhy": {
+    "ko": "용문 사건 진행 중 — 7장 '한 달 전 체르노보그'로 같은 해",
+    "en": "Lungmen incident in progress — same year per Ch.7 \"Chernobog a month ago\"",
+    "ja": "龍門事件の最中 — 7章「1か月前のチェルノボーグ」で同年"
+   }
   },
   {
    "id": "main_5",
@@ -504,8 +661,14 @@
     "en": "Necessary Solutions",
     "ja": "快刀乱麻"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "용문 근위국 공방 — 7장 '한 달 전 체르노보그에서 일어난 사건'",
+   "yearWhy": {
+    "ko": "용문 근위국 공방 — 7장 '한 달 전 체르노보그에서 일어난 사건'",
+    "en": "Lungmen Guard Department battles — Ch.7 \"the incident in Chernobog a month ago\"",
+    "ja": "龍門近衛局の攻防 — 7章「1か月前のチェルノボーグの事件」"
+   }
   },
   {
    "id": "main_6",
@@ -515,8 +678,14 @@
     "en": "Partial Necrosis",
     "ja": "局部壊死"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "'용문 포위 토벌작전 마지막 단계' (937년은 역사 인용) — 7장 '한 달 전 체르노보그'",
+   "yearWhy": {
+    "ko": "'용문 포위 토벌작전 마지막 단계' (937년은 역사 인용) — 7장 '한 달 전 체르노보그'",
+    "en": "\"Final stage of the Lungmen siege operation\" (937 is a historical citation) — Ch.7 \"Chernobog a month ago\"",
+    "ja": "「龍門包囲討伐作戦の最終段階」（937年は歴史の引用）— 7章「1か月前のチェルノボーグ」"
+   }
   },
   {
    "id": "main_7",
@@ -526,8 +695,14 @@
     "en": "The Birth of Tragedy",
     "ja": "苦難揺籃"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "켈시 '한 달 전 체르노보그에서 일어난 사건으로 미루어 보면'",
+   "yearWhy": {
+    "ko": "켈시 '한 달 전 체르노보그에서 일어난 사건으로 미루어 보면'",
+    "en": "Kal'tsit: \"judging by the incident in Chernobog a month ago\"",
+    "ja": "ケルシー「1か月前のチェルノボーグの事件から考えると」"
+   }
   },
   {
    "id": "main_8",
@@ -537,8 +712,14 @@
     "en": "Roaring Flare",
     "ja": "怒号光明"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "'3년 전, 테레시아는 죽었어' + 바벨 붕괴 1094년",
+   "yearWhy": {
+    "ko": "'3년 전, 테레시아는 죽었어' + 바벨 붕괴 1094년",
+    "en": "\"Theresa died three years ago\" + Babel's fall in 1094",
+    "ja": "「3年前、テレジアは死んだ」+ バベル崩壊 1094年"
+   }
   },
   {
    "id": "main_9",
@@ -548,8 +729,14 @@
     "en": "Stormwatch",
     "ja": "暴風眺望"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1098,
+   "arc": "rl",
+   "dateNote": "켈시 '체르노보그 사건이 끝난 이후로 … 11개월 27일', '작년 말에 카시미어를 떠난 후'",
+   "yearWhy": {
+    "ko": "켈시 '체르노보그 사건이 끝난 이후로 … 11개월 27일', '작년 말에 카시미어를 떠난 후'",
+    "en": "Kal'tsit: \"since the Chernobog incident … 11 months and 27 days\"; \"after leaving Kazimierz late last year\"",
+    "ja": "ケルシー「チェルノボーグ事件以来…11か月と27日」、「去年の末にカジミエーシュを離れて以来」"
+   }
   },
   {
    "id": "main_10",
@@ -559,8 +746,14 @@
     "en": "Shatterpoint",
     "ja": "光冠残蝕"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1098,
+   "arc": "rl",
+   "dateNote": "아미야 '사 년 전에, 테레시아 씨는 이미 돌아가셨죠' (1094 + 4)",
+   "yearWhy": {
+    "ko": "아미야 '사 년 전에, 테레시아 씨는 이미 돌아가셨죠' (1094 + 4)",
+    "en": "Amiya: \"Theresa had already passed away four years ago\" (1094 + 4)",
+    "ja": "アーミヤ「4年前に、テレジアさんはもう亡くなっていました」（1094 + 4）"
+   }
   },
   {
    "id": "main_11",
@@ -572,7 +765,12 @@
    },
    "terraYear": 1098,
    "arc": "rl",
-   "dateNote": "11-4·11-5 나레이션 datestamp \"1098년\" (회상 1072년과 구분된 당대)"
+   "dateNote": "나레이션 장면 표기 '1098년' (1072년은 회상)",
+   "yearWhy": {
+    "ko": "나레이션 장면 표기 '1098년' (1072년은 회상)",
+    "en": "Narration stamp \"1098\" (1072 is a flashback)",
+    "ja": "ナレーションの表記「1098年」（1072年は回想）"
+   }
   },
   {
    "id": "main_12",
@@ -582,8 +780,14 @@
     "en": "All Quiet Under the Thunder",
     "ja": "驚靂蕭然"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1098,
+   "arc": "rl",
+   "dateNote": "카도르 '살카즈는 벌써 4년째 런디니움 안에 있었다' + 테레시스 입성 1094년",
+   "yearWhy": {
+    "ko": "카도르 '살카즈는 벌써 4년째 런디니움 안에 있었다' + 테레시스 입성 1094년",
+    "en": "Cador: \"the Sarkaz have been inside Londinium for four years\" + Theresis entered in 1094",
+    "ja": "カドール「サルカズはもう4年もロンディニウムにいる」+ テレシス入城 1094年"
+   }
   },
   {
    "id": "main_13",
@@ -593,8 +797,14 @@
     "en": "The Whirlpool that is Passion",
     "ja": "悪兆渦流"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1098,
+   "arc": "rl",
+   "dateNote": "'1094년 테레시스가 도시에 들어온 이후로', '4년 전 도시 내의 혼란이 가라앉은 뒤'",
+   "yearWhy": {
+    "ko": "'1094년 테레시스가 도시에 들어온 이후로', '4년 전 도시 내의 혼란이 가라앉은 뒤'",
+    "en": "\"Since Theresis entered the city in 1094\"; \"after the turmoil settled four years ago\"",
+    "ja": "「1094年にテレシスが都市に入って以来」、「4年前に都市の混乱が収まった後」"
+   }
   },
   {
    "id": "main_14",
@@ -604,8 +814,14 @@
     "en": "Absolved Will Be the Seekers",
     "ja": "慈悲光塔"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1098,
+   "arc": "rl",
+   "dateNote": "13장 런디니움 결전의 연속 — 15장 회상 '빅토리아의 공식 기록에는 1098년 10월 초 … 철수'",
+   "yearWhy": {
+    "ko": "13장 런디니움 결전의 연속 — 15장 회상 '빅토리아의 공식 기록에는 1098년 10월 초 … 철수'",
+    "en": "Continues the Londinium battle of Ch.13 — Ch.15 flashback: \"Victoria's official records: early October 1098 … withdrew\"",
+    "ja": "13章ロンディニウム決戦の続き — 15章回想「ヴィクトリアの公式記録では1098年10月初め…撤退」"
+   }
   },
   {
    "id": "main_15",
@@ -615,9 +831,14 @@
     "en": "Dissociative Recombination",
     "ja": "解離結合"
    },
-   "terraYear": 1098,
+   "terraYear": 1101,
    "arc": "rl",
-   "dateNote": "나레이션 \"1098년 10월 초 … 바벨/살카즈 런디니움 철수\" = 당대 사건"
+   "dateNote": "현재 장면 표기 '로도스 아일랜드 본함, 1101년 여름' (1098년 가을은 회상)",
+   "yearWhy": {
+    "ko": "현재 장면 표기 '로도스 아일랜드 본함, 1101년 여름' (1098년 가을은 회상)",
+    "en": "Present-day stamp \"Rhodes Island main ship, summer 1101\" (autumn 1098 is a flashback)",
+    "ja": "現在の場面表記「ロドス・アイランド本艦、1101年夏」（1098年秋は回想）"
+   }
   },
   {
    "id": "main_16",
@@ -627,8 +848,14 @@
     "en": "Abnormal Spectrum",
     "ja": "背理分光"
    },
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1101,
+   "arc": "rl",
+   "dateNote": "장면 표기 '크라이니 세베르 중앙 광산지구, 1101년 가을'·'1101년 겨울'",
+   "yearWhy": {
+    "ko": "장면 표기 '크라이니 세베르 중앙 광산지구, 1101년 가을'·'1101년 겨울'",
+    "en": "Scene stamps \"central mining district, autumn 1101\" and \"winter 1101\" (Ursus)",
+    "ja": "場面表記「中央鉱山地区、1101年秋」「1101年冬」（ウルサス）"
+   }
   },
   {
    "id": "rogue_1",
@@ -695,14 +922,26 @@
   {
    "ref": "act19mini",
    "kind": "event",
-   "terraYear": null,
-   "arc": "su"
+   "terraYear": 1102,
+   "arc": "su",
+   "dateNote": "'며칠 전, 그 대역무도한 대리인이 쉐이 능묘로 들어갔는데' — 사세행(1102 늦가을)의 능묘 진입 직후",
+   "yearWhy": {
+    "ko": "'며칠 전, 그 대역무도한 대리인이 쉐이 능묘로 들어갔는데' — 사세행(1102 늦가을)의 능묘 진입 직후",
+    "en": "\"A few days ago, that treacherous official entered the Sui mausoleum\" — right after the mausoleum entry of the late-autumn-1102 event",
+    "ja": "「数日前、あの大逆無道な代理人が歳の陵墓に入ったが」— 1102年晩秋の陵墓侵入の直後"
+   }
   },
   {
    "ref": "act18mini",
    "kind": "event",
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1098,
+   "arc": "rl",
+   "dateNote": "현재 장면 표기 '1098년 10월' + '4년 전 … 바벨' (1094·1086년은 회상)",
+   "yearWhy": {
+    "ko": "현재 장면 표기 '1098년 10월' + '4년 전 … 바벨' (1094·1086년은 회상)",
+    "en": "Present-day stamp \"October 1098\" + \"Babel four years ago\" (1094 and 1086 are flashbacks)",
+    "ja": "現在の場面表記「1098年10月」+「4年前…バベル」（1094年・1086年は回想）"
+   }
   },
   {
    "ref": "act17mini",
@@ -743,20 +982,38 @@
   {
    "ref": "act10mini",
    "kind": "event",
-   "terraYear": null,
-   "arc": "ts"
+   "terraYear": 1097,
+   "arc": "ts",
+   "dateNote": "일지 날짜 '1097년 11월 16일'~'12월 24일' ('2년 전 고도딘의 리유니온'은 별개 사건)",
+   "yearWhy": {
+    "ko": "일지 날짜 '1097년 11월 16일'~'12월 24일' ('2년 전 고도딘의 리유니온'은 별개 사건)",
+    "en": "Diary dates \"16 Nov 1097\" to \"24 Dec\" (\"Reunion in Gordin two years ago\" is a separate incident)",
+    "ja": "日誌の日付「1097年11月16日」〜「12月24日」（「2年前のゴドインのレユニオン」は別の事件）"
+   }
   },
   {
    "ref": "act9mini",
    "kind": "event",
-   "terraYear": null,
-   "arc": "ts"
+   "terraYear": 1097,
+   "arc": "ts",
+   "dateNote": "'그건 1072년의 일이야. 25년 전이지'",
+   "yearWhy": {
+    "ko": "'그건 1072년의 일이야. 25년 전이지'",
+    "en": "\"That was in 1072. Twenty-five years ago\"",
+    "ja": "「それは1072年のことだ。25年前だな」"
+   }
   },
   {
    "ref": "act8mini",
    "kind": "event",
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "켈시 '용문을 떠난 뒤 우리는 계속하여 황야에서 이동하고 있다', '지난 3개월간'",
+   "yearWhy": {
+    "ko": "켈시 '용문을 떠난 뒤 우리는 계속하여 황야에서 이동하고 있다', '지난 3개월간'",
+    "en": "Kal'tsit: \"since leaving Lungmen we have kept moving through the wastes\"; \"these past three months\"",
+    "ja": "ケルシー「龍門を離れてから我々は荒野を移動し続けている」、「この3か月間」"
+   }
   },
   {
    "ref": "act7mini",
@@ -779,8 +1036,14 @@
   {
    "ref": "act10d5",
    "kind": "event",
-   "terraYear": null,
-   "arc": "ur"
+   "terraYear": 1097,
+   "arc": "ur",
+   "dateNote": "'리유니온은 … 체르노보그를 공격하고 점령했습니다', '체르노보그에서 구해낸 난민' — 점령 직후",
+   "yearWhy": {
+    "ko": "'리유니온은 … 체르노보그를 공격하고 점령했습니다', '체르노보그에서 구해낸 난민' — 점령 직후",
+    "en": "\"Reunion attacked and occupied … Chernobog\"; \"refugees we rescued from Chernobog\" — right after the occupation",
+    "ja": "「レユニオンは…チェルノボーグを攻撃し占領しました」、「チェルノボーグから救った難民」— 占領直後"
+   }
   },
   {
    "ref": "act7d5",
@@ -791,14 +1054,26 @@
   {
    "ref": "act6d5",
    "kind": "event",
-   "terraYear": null,
-   "arc": "ts"
+   "terraYear": 1097,
+   "arc": "ts",
+   "dateNote": "'리유니온이 이미 자취를 감췄다고 하나… 연말에 특수 상황', '올해는 특수 상황' — 용문 사건이 있던 해의 연말",
+   "yearWhy": {
+    "ko": "'리유니온이 이미 자취를 감췄다고 하나… 연말에 특수 상황', '올해는 특수 상황' — 용문 사건이 있던 해의 연말",
+    "en": "\"Reunion may have vanished… a special situation at year's end\" — the year-end of the Lungmen incident",
+    "ja": "「レユニオンはもう姿を消したというが…年末の特殊状況」— 龍門事件の年の年末"
+   }
   },
   {
    "ref": "act4d0",
    "kind": "event",
-   "terraYear": null,
-   "arc": "rl"
+   "terraYear": 1097,
+   "arc": "rl",
+   "dateNote": "'리더께서 방금 체르노보그를 완전히 함락시켰다고…' — 체르노보그 사건 직후",
+   "yearWhy": {
+    "ko": "'리더께서 방금 체르노보그를 완전히 함락시켰다고…' — 체르노보그 사건 직후",
+    "en": "\"The leader has just taken Chernobog completely…\" — right after the Chernobog incident",
+    "ja": "「リーダーがたった今チェルノボーグを完全に陥落させたと…」— チェルノボーグ事件の直後"
+   }
   }
  ]
 }
