@@ -723,7 +723,7 @@ const validServer = (value) => SERVERS.includes(value);
 const validPhone = (value) => typeof value === "string" && /^1[0-9]{10}$/.test(value);
 const validSecret = (value) => typeof value === "string" && value.length >= 1 && value.length <= 64;
 
-// 중섭 계정 샘플 기증 (2026-10-06) — raw 를 달라고 하면 syncData 원본도 함께 돌려준다. 받는 쪽(/cn-sample)이
+// 중섭 계정 샘플 기증 (2026-10-06) — raw 를 달라고 하면 syncData 원본도 함께 돌려준다. 받는 쪽(기증 페이지 /cn-sample — 2026-10-06 마감·삭제, B服 샘플이 다시 필요할 때 쓰려고 워커 쪽은 남긴다)이
 // 개발자에게 제안 첨부로 보낸다. 남(친구)의 이름표와 기증자 본인의 식별값은 키 이름으로 지운다 — 값의 '모양'만 남긴다.
 const SCRUB_KEYS = new Set(["nickName", "nickNumber", "resume", "uid", "friendUid", "fromUid", "fromName", "userName", "phone"]);
 function scrub(value) {
