@@ -28,6 +28,7 @@ import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 import { useMe } from "./me-store";
+import { Dropdown } from "./dropdown";
 
 type LocText = { ko: string; en?: string; ja?: string };
 type FarmStage = {
@@ -237,6 +238,11 @@ export default function FarmGuide() {
     noteArrival(`mat:${id}`, { kind: "material", name: found ? locText(locale, found.name) : id, locale });
     setShownItem(id);
   };
+  // 스테이지 정렬 — 기본은 효율순(개당 기대 이성 오름차순, 데이터 순서 그대로). 드랍률순은 같은 목록을 드랍률 높은 순으로
+  // (사용자 요청 2026-10-06: 기대 이성 칸이 화면에 없어 '드랍률 순이 아니다'로 보였다 — 2026-09-28에 칸을 뺐다)
+  const [stageSort, setStageSort] = useState<"eff" | "rate">("eff");
+  const stagesOf = (stages: FarmStage[]) =>
+    stageSort === "rate" ? [...stages].sort((a, b) => b.rate - a.rate || a.sanity - b.sanity) : stages;
   // 스테이지 목록 펼침 — 기본은 최고 효율 1개만, '더 보기'로 나머지 전부 (2026-07 사용자 확정)
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
   const toggleStages = (id: string) => setExpandedStages((current) => {
@@ -321,6 +327,15 @@ export default function FarmGuide() {
               <div className="head-links"><button type="button" onClick={() => setShowGuide(true)}>{t("읽는 법과 출처")}</button></div>
             </div>
           </div>
+          <div className="results-tools">
+            <div className="sort-wrap">
+              <span>{t("정렬")}</span>
+              <Dropdown ariaLabel={t("정렬")} selected={[stageSort]}
+                label={stageSort === "rate" ? t("드랍률순") : t("효율순")}
+                items={[{ value: "eff", label: t("효율순") }, { value: "rate", label: t("드랍률순") }]}
+                onPick={(value) => setStageSort(value as "eff" | "rate")} />
+            </div>
+          </div>
         </div>
         <div className="results-scroll">
 
@@ -353,8 +368,8 @@ export default function FarmGuide() {
                       <i>{t("스테이지")}</i><i /><i>{t("드랍률")}</i>
                     </div>
                     <ul>
-                      {item.stages.slice(0, expandedStages.has(item.id) ? item.stages.length : 1).map((stage, index) => (
-                        <li key={stage.id} className={index === 0 ? "best" : undefined}
+                      {stagesOf(item.stages).slice(0, expandedStages.has(item.id) ? item.stages.length : 1).map((stage, index) => (
+                        <li key={stage.id} className={index === 0 && stageSort === "eff" ? "best" : undefined}
                           title={`${stage.event ? `${locText(locale, stage.event)} · ` : ""}${locText(locale, stage.name) ?? stage.code} · ${t("이성 {n} 소모", { n: stage.ap })} · ${t("표본 {n}회", { n: stage.times.toLocaleString() })}`}>
                           {/* 스테이지를 누르면 작전 도감 상세가 모달로 뜬다 (사용자 요청 2026-08-09) */}
                           <button type="button" className="farm-code as-btn" onClick={() => sub.openStage(stage.id)}>{stage.code}</button>

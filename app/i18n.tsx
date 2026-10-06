@@ -118,6 +118,9 @@ const D: Record<string, Pair> = {
   "페이지를 찾을 수 없습니다": ["Page not found", "ページが見つかりません"],
   "주소가 바뀌었거나 없어진 페이지입니다. 주소를 다시 확인하거나 홈에서 찾아 주세요.": ["This page has moved or no longer exists. Check the address, or find it from the home page.", "アドレスが変わったか、なくなったページです。アドレスを確認するか、ホームから探してください。"],
   "홈으로": ["Go home", "ホームへ"],
+  // 재료 파밍 효율표 정렬 (2026-10-06)
+  "효율순": ["By efficiency", "効率順"],
+  "드랍률순": ["By drop rate", "ドロップ率順"],
   // 갤러리 스포 방지 — 내 진행 기준 (2026-10-06)
   "내 진행 기준": ["By my progress", "自分の進行基準"],
   "아직 안 본 스토리의 CG만 흐리게 둡니다 — 내 정보의 작전 진행 기준. 가리키거나 눌러야 보입니다.": ["Only CGs from stories you haven't unlocked yet are blurred — based on your stage progress in My Account. Hover or tap to reveal.", "まだ見ていないストーリーのCGだけをぼかします — マイ情報の作戦進行基準。ポイントするかタップすると見えます。"],
