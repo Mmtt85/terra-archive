@@ -18,13 +18,17 @@ function apiBase(): string {
   }
 }
 
-export type AccountServer = "kr" | "jp" | "en";
+// cn = 중섭 직영(官服) · bili = 중섭 비리비리(B服) — 2026-10-06~. 로그인 방법이 요스타와 달라 폼은 app/account-cn.tsx
+export type AccountServer = "kr" | "jp" | "en" | "cn" | "bili";
 
 export const ACCOUNT_SERVERS: { code: AccountServer; label: string }[] = [
   { code: "kr", label: "한국" },
   { code: "jp", label: "일본" },
   { code: "en", label: "글로벌" },
+  { code: "cn", label: "중국 (직영)" },
+  { code: "bili", label: "중국 (비리비리)" },
 ];
+export const isYostarServer = (server: AccountServer) => server === "kr" || server === "jp" || server === "en";
 
 export type AccountChar = {
   id: string;
@@ -73,6 +77,8 @@ export type AccountProfile = {
     register: number; lastOnline: number; progress: string | null;
     secretary: string | null; secretarySkin: string | null; avatar: string | null;
     resume: string; friendLimit: number; monthlyEnd: number;
+    /** 중섭만 — 순오리지늄이 기기별로 따로다. inventory 4002 는 안드로이드 몫, 이건 iOS 몫 (2026-10-06~ 워커) */
+    iosDiamond?: number;
   };
   inventory: Record<string, number>;
   /** 작전 id → 0 해금 · 1 진입 · 2 클리어 · 3 완벽 */
@@ -123,6 +129,7 @@ async function post(path: string, body: unknown): Promise<Record<string, unknown
 export const ACCOUNT_STEPS = [
   { id: "network", label: "서버 주소 확인" },
   { id: "yostar", label: "요스타 인증" },
+  { id: "passport", label: "계정 인증" },   // 중섭 — 하이퍼그리프 통행증 / 비리비리
   { id: "game", label: "게임 서버 접속" },
   { id: "sync", label: "계정 데이터 받기 — 오퍼·창고·작전·기지·통합전략" },
   { id: "friends", label: "친구 목록" },
@@ -210,6 +217,11 @@ export function accountErrorText(code: string): string {
     case "bad-email":
     case "bad-request": return "이메일 형식과 서버 선택을 확인해 주세요.";
     case "token-expired": return "로그인 정보가 만료되었습니다 — 인증코드로 다시 로그인해 주세요.";
+    // 중섭 (2026-10-06)
+    case "bad-phone": return "휴대폰 번호 형식이 맞지 않습니다 (중국 휴대폰 번호 11자리).";
+    case "bad-password": return "아이디 또는 비밀번호가 맞지 않습니다.";
+    case "weak-password": return "비리비리가 비밀번호 변경을 요구했습니다 — 비리비리에서 비밀번호를 바꾼 뒤 다시 시도해 주세요.";
+    case "bad-token": return "토큰 모양이 아닙니다 — 주소를 연 화면의 글자를 통째로 복사해 붙여넣어 주세요.";
     case "login-failed":
     case "sync-failed": return "게임 서버 로그인에 실패했습니다 — 게임을 완전히 종료한 뒤 다시 시도해 주세요.";
     default: return "계정 연동에 실패했습니다 ({code}) — 잠시 뒤 다시 시도해 주세요.";
@@ -222,15 +234,15 @@ export function accountErrorText(code: string): string {
 // 官服은 한국 유저가 중국 휴대폰 문자를 못 받는 게 보통이라 '통행증 토큰 붙여넣기'가 주 경로다 (hgToken).
 export type CnServer = "cn" | "bili";
 
-/** 직영(官服) — 휴대폰으로 문자 인증코드를 보낸다 */
-export async function sendCnCode(phone: string): Promise<void> {
-  await post("/send-code", { server: "cn", phone: phone.trim() });
-}
-
 export type CnLogin =
   | { server: "cn"; hgToken: string }
   | { server: "cn"; phone: string; code?: string; password?: string }
   | { server: "bili"; username: string; password: string };
+
+/** 중섭 계정으로 로그인해 보유 목록·계정 요약을 받는다 ('내 정보'·인프라 가져오기). **게임 세션이 끊긴다.** */
+export async function loginCnAccount(args: CnLogin, onStep?: (step: AccountStep) => void): Promise<AccountRoster> {
+  return (await postStream("/login", args, onStep)) as unknown as AccountRoster;
+}
 
 /** 로그인해 계정 요약 + 원본(raw)을 받는다. **게임 세션이 이 시점에 끊긴다.** step 은 network·passport·game·sync·friends·shop·digest */
 export async function loginCnSample(args: CnLogin, onStep?: (step: string) => void): Promise<Record<string, unknown>> {

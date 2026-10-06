@@ -10,6 +10,11 @@ import qrcode from "qrcode-generator";
 import { AccountError, loginCnSample, pollCnScan, startCnScan, type CnServer } from "../account";
 import { sendFeedback, uploadFeedbackFile, fmtFileSize, FEEDBACK_IMG_MB } from "../feedback";
 
+// ── 마감 (사용자 계획 2026-10-06) ── 직영·B服 데이터가 각각 하나 이상 들어오면 페이지를 닫는다.
+// 닫을 때 여기에 받은 건수를 넣고 배포한다 — 로그인 화면 대신 감사 인사만 나온다. null 이면 열려 있다.
+// 닫기 전 모습 미리보기: /cn-sample?preview=closed (dev·라이브 모두)
+const CLOSED: { official: number; bili: number } | null = null;
+
 const STEPS: { id: string; label: string }[] = [
   { id: "network", label: "서버 주소 확인" },
   { id: "passport", label: "계정 인증" },
@@ -71,6 +76,31 @@ function Zh({ t, g }: { t: string; g: string }) {
 type Result = { json: string; level: number; chars: number; stages: number; items: number; rogue: number };
 
 export default function CnSamplePage() {
+  const [preview, setPreview] = useState(false);
+  useEffect(() => { setPreview(new URLSearchParams(location.search).get("preview") === "closed"); }, []);
+  const closed = CLOSED ?? (preview ? { official: 1, bili: 1 } : null);
+  return closed ? <CnSampleClosed {...closed} /> : <CnSampleForm />;
+}
+
+function CnSampleClosed({ official, bili }: { official: number; bili: number }) {
+  return (
+    <main className="cns">
+      <a className="cns-home" href="/">테라 아카이브</a>
+      <h1>중국 서버 계정 데이터 보내기</h1>
+      <p className="cns-sub">마감되었습니다</p>
+      <section className="cns-box cns-done">
+        <h2>도와주셔서 감사합니다!</h2>
+        <p>
+          총 <b>{official + bili}건</b>의 데이터를 전달받았습니다
+          {" "}(<Zh t="官服" g="직영 서버" /> {official}건 · <Zh t="B服" g="비리비리 서버" /> {bili}건).
+        </p>
+        <p>보내 주신 데이터로 「내 정보」의 중국 서버 지원을 준비하겠습니다. 이 페이지는 이제 닫혀서 더 이상 로그인할 수 없습니다.</p>
+      </section>
+    </main>
+  );
+}
+
+function CnSampleForm() {
   const [server, setServer] = useState<CnServer>("cn");
   // 官服: QR(기본 — 森空岛 앱으로 찍는다) · 토큰 붙여넣기 · 휴대폰 번호 + 비밀번호. 한국의 중섭 유저는 중국 휴대폰 문자를 못 받아서
   // 문자 인증코드는 워커만 지원하고 화면엔 안 둔다 (사용자 2026-10-06)

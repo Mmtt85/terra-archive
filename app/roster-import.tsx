@@ -13,10 +13,11 @@ import { rich, type T } from "./i18n";
 import { Dropdown } from "./dropdown";
 import { isNewFeature } from "./whats-new";
 import {
-  ACCOUNT_SERVERS, ACCOUNT_STEPS, AccountError, accountErrorText, loginAccount, sendAccountCode,
+  ACCOUNT_SERVERS, ACCOUNT_STEPS, AccountError, accountErrorText, isYostarServer, loginAccount, sendAccountCode,
   type AccountRoster, type AccountServer, type AccountStep,
 } from "./account";
 import { saveMe } from "./me-store";
+import { CnLoginFields } from "./account-cn";
 
 type Props = {
   t: T;
@@ -51,8 +52,8 @@ export function RosterImportPanel({ t, onMaaFile, onScan, onAccount, scanBadge }
         <h4>{t("게임 로그인")}{isNewFeature("account") && <span className="new-badge">{t("새기능")}</span>}</h4>
         <p>{t("요스타 계정 이메일로 인증코드를 받아 로그인하면, 계정의 실제 보유 목록과 정예화를 그대로 가져옵니다 — 가장 정확한 방법입니다.")}</p>
         <p className="import-warn">{rich(t("**주의: 가져오는 순간 게임 접속이 끊깁니다.** 데이터를 받으려면 게임 서버에 접속을 새로 열어야 하고, 명일방주는 계정당 접속을 하나만 허용하기 때문입니다. 게임을 하지 않을 때 쓰세요 — 계정에는 아무 문제가 없고, 다시 실행하면 그대로 접속됩니다."))}</p>
-        <AccountLoginForm t={t} onAccount={onAccount} submitLabel={t("로그인해서 보유 오퍼 가져오기")} />
-        <p className="import-privacy">{t("이메일과 인증코드는 저장하지 않습니다 — 요스타 인증을 대신 호출하는 데만 쓰고 바로 버립니다. 받은 보유 목록도 이 브라우저 안에만 남습니다.")}</p>
+        <AccountLoginForm t={t} onAccount={onAccount} submitLabel={t("로그인해서 보유 오퍼 가져오기")}
+          privacy={t("이메일과 인증코드는 저장하지 않습니다 — 요스타 인증을 대신 호출하는 데만 쓰고 바로 버립니다. 받은 보유 목록도 이 브라우저 안에만 남습니다.")} />
       </section>
     </div>
   );
@@ -62,8 +63,10 @@ export function RosterImportPanel({ t, onMaaFile, onScan, onAccount, scanBadge }
  *  로그인에 성공하면 결과를 '내 정보' 저장소(me-store)에 쌓은 뒤 onAccount 로 넘긴다. */
 /** 로그인·동기화 진행 단계 — 지난 단계 ✓, 지금 단계 강조, 남은 단계 흐리게 (사용자 요청 2026-10-05
  *  "로그인할 때 무슨 데이터 받아오고 있는지 진행 상황"). 다시 동기화는 요스타 인증을 건너뛴다. */
-export function AccountSteps({ t, step, sync }: { t: T; step: AccountStep | "start"; sync?: boolean }) {
-  const steps = ACCOUNT_STEPS.filter((entry) => !(sync && entry.id === "yostar"));
+export function AccountSteps({ t, step, sync, server = "kr" }: { t: T; step: AccountStep | "start"; sync?: boolean; server?: AccountServer }) {
+  // 인증 단계는 서버에 따라 하나 — 요스타(한·일·글) 또는 계정 인증(중섭 통행증·비리비리). 다시 동기화는 둘 다 건너뛴다
+  const yostar = isYostarServer(server);
+  const steps = ACCOUNT_STEPS.filter((entry) => !((entry.id === "yostar" && (sync || !yostar)) || (entry.id === "passport" && (sync || yostar))));
   const at = steps.findIndex((entry) => entry.id === step);
   return (
     <ol className="acct-steps" aria-live="polite">
@@ -76,7 +79,8 @@ export function AccountSteps({ t, step, sync }: { t: T; step: AccountStep | "sta
   );
 }
 
-export function AccountLoginForm({ t, onAccount, submitLabel }: { t: T; onAccount: (roster: AccountRoster) => void; submitLabel: string }) {
+/** privacy — 요스타 서버일 때만 맨 아래 붙는 개인정보 안내. 중섭은 폼(account-cn.tsx)이 자기 안내를 단다 — 둘이 겹쳐 나왔다 (2026-10-06) */
+export function AccountLoginForm({ t, onAccount, submitLabel, privacy }: { t: T; onAccount: (roster: AccountRoster) => void; submitLabel: string; privacy?: string }) {
   const [server, setServer] = useState<AccountServer>("kr");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -133,16 +137,29 @@ export function AccountLoginForm({ t, onAccount, submitLabel }: { t: T; onAccoun
     } catch (caught) { fail(caught); } finally { setBusy(""); }
   };
 
+  const serverPick = (
+    <div className="import-field">
+      <span>{t("서버")}</span>
+      <Dropdown ariaLabel={t("서버")} selected={[server]}
+        label={t(ACCOUNT_SERVERS.find((entry) => entry.code === server)?.label ?? server)}
+        items={ACCOUNT_SERVERS.map((entry) => ({ value: entry.code, label: t(entry.label) }))}
+        onPick={(value) => { setServer(value as AccountServer); setSent(false); setError(null); setNotice(null); }} />
+    </div>
+  );
+  // 중섭은 로그인 방법이 달라 폼을 따로 그린다 (app/account-cn.tsx, 2026-10-06)
+  if (server === "cn" || server === "bili") {
+    return (
+      <>
+        <div className="import-form">{serverPick}</div>
+        <CnLoginFields t={t} server={server} submitLabel={submitLabel} onAccount={onAccount} />
+      </>
+    );
+  }
+
   return (
     <>
       <div className="import-form">
-        <div className="import-field">
-          <span>{t("서버")}</span>
-          <Dropdown ariaLabel={t("서버")} selected={[server]}
-            label={t(ACCOUNT_SERVERS.find((entry) => entry.code === server)?.label ?? server)}
-            items={ACCOUNT_SERVERS.map((entry) => ({ value: entry.code, label: t(entry.label) }))}
-            onPick={(value) => { setServer(value as AccountServer); setSent(false); }} />
-        </div>
+        {serverPick}
         <label className="import-email">
           <span>{t("요스타 계정 이메일")}</span>
           <input type="email" inputMode="email" autoComplete="email" value={email} placeholder="doctor@example.com"
@@ -171,6 +188,7 @@ export function AccountLoginForm({ t, onAccount, submitLabel }: { t: T; onAccoun
       {busy === "login" && <AccountSteps t={t} step={step} />}
       {notice && <p className="import-msg">{notice}</p>}
       {error && <p className="import-msg error">{error}</p>}
+      {privacy && <p className="import-privacy">{privacy}</p>}
     </>
   );
 }

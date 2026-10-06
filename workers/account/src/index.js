@@ -441,11 +441,23 @@ async function friendList(call) {
 // syncData 전체는 수 MB라 그대로 넘기지 않는다. 보유 오퍼 설정에 필요한 것만 추린다.
 function roster(user) {
   const chars = [];
+  // 형태가 여럿인 오퍼(아미야 — 기본·근위 char_1001_amiya2·의료 char_1037_amiya3)는 계정에 charId 하나로 오고,
+  // 형태별 스킬·특화·모듈·스킨이 tmpl[형태 id] 안에 따로 있다 — 바깥 skills·equip 은 비어 있다. 형태마다 오퍼 하나로 펼친다
+  // (정예화·레벨·잠재·신뢰는 공유). 종전엔 바깥만 읽어 아미야가 특화·모듈 없음, 근위·의료 아미야는 미보유로 보였다
+  // (중섭 기증 데이터에서 발견 2026-10-06 — 한·일·글섭도 같은 구조다).
+  const forms = [];
   for (const entry of Object.values(user?.troop?.chars ?? {})) {
     if (!entry?.charId) continue;
+    const tmpl = entry.tmpl && typeof entry.tmpl === "object" ? Object.entries(entry.tmpl) : [];
+    if (tmpl.length) for (const [id, t] of tmpl) forms.push({ ...entry, charId: id, skills: t?.skills ?? [], equip: t?.equip ?? {}, currentEquip: t?.currentEquip ?? null, skin: t?.skinId ?? null, defaultSkillIndex: t?.defaultSkillIndex ?? -1 });
+    else forms.push(entry);
+  }
+  for (const entry of forms) {
     const modules = {};
     for (const [id, mod] of Object.entries(entry.equip ?? {})) {
-      if (mod && typeof mod.level === "number") modules[id] = mod.level;
+      // locked: 1 = 아직 해금 안 한 모듈 — 계정 기록엔 해금 전 모듈도 Lv1 로 같이 온다 (기증 데이터 848개 중 345개).
+      // 종전엔 이것까지 'Lv.1 보유'로 보였다 (2026-10-06)
+      if (mod && typeof mod.level === "number" && mod.locked !== 1) modules[id] = mod.level;
     }
     chars.push({
       id: entry.charId,
@@ -530,7 +542,10 @@ function profile(user, friends, shop) {
     classic_normal_ticket: status.classicShard,
   };
   for (const [id, count] of Object.entries(CURRENCY)) add(id, num(count));
-  add("4002", num(status.payDiamond) + num(status.freeDiamond));
+  // 순오리지늄 — 한·일·글섭은 유상(payDiamond)+무상(freeDiamond). 중섭은 기기별로 따로다(androidDiamond·iosDiamond,
+  // 서로 못 쓴다 — 중섭 기증 데이터 2026-10-06). 로그인은 안드로이드로 하므로 4002 는 안드로이드 몫, iOS 몫은 따로 싣는다
+  const cnDiamond = typeof status.androidDiamond === "number" || typeof status.iosDiamond === "number";
+  add("4002", cnDiamond ? num(status.androidDiamond) : num(status.payDiamond) + num(status.freeDiamond));
 
   // 작전 — state: 0 해금 · 1 진입 · 2 클리어 · 3 완벽(3성)
   const stages = {};
@@ -590,6 +605,7 @@ function profile(user, friends, shop) {
       resume: status.resume ?? "",
       friendLimit: num(status.friendNumLimit),
       monthlyEnd: num(status.monthlySubscriptionEndTime),
+      ...(cnDiamond ? { iosDiamond: num(status.iosDiamond) } : {}),
     },
     inventory,
     stages,

@@ -1139,6 +1139,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const [selectedOwn, setSelectedOwn] = useState<string[]>([]);
   const me = useMe();
   const myChars = meChars(me);
+  // 중섭 계정이 연동돼 있으면 미래시를 켠 채로 잠근다 — 그 계정의 오퍼·재료 상당수가 한섭엔 아직 없다
+  // (사용자 지시 2026-10-06). 풀려면 '내 정보'에서 데이터 지우기. 잠금이 풀려도 켜진 상태는 그대로 둔다
+  const futureLocked = me?.server === "cn" || me?.server === "bili";
+  useEffect(() => { if (futureLocked && !includeFuture) toggleFuture(true); }, [futureLocked, includeFuture]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 잠긴 토글의 말풍선 — 마우스를 올리거나(데스크탑) 탭하면(모바일) 뜬다
+  const [futureLockTip, setFutureLockTip] = useState(false);
+  useEffect(() => {
+    if (!futureLockTip) return;
+    const id = window.setTimeout(() => setFutureLockTip(false), 3500);
+    return () => window.clearTimeout(id);
+  }, [futureLockTip]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [selectedSubProfessions, setSelectedSubProfessions] = useState<string[]>([]);
@@ -2586,10 +2597,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 1줄 배너에서 여기 작은 버튼으로 내려왔다. 방송은 2026-07-25부터 여기). */}
             <EventBadges onOpenEvent={openEventById} includeFuture={includeFuture} />
             {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}
-            <label className={`future-toggle${futureFlash ? " flash" : ""}`} title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
-              <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
+            <label className={`future-toggle${futureFlash ? " flash" : ""}${futureLocked ? " locked" : ""}`}
+              title={futureLocked ? undefined : t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}
+              onMouseEnter={futureLocked ? () => setFutureLockTip(true) : undefined}
+              onMouseLeave={futureLocked ? () => setFutureLockTip(false) : undefined}
+              onClick={futureLocked ? (event) => { event.preventDefault(); setFutureLockTip(true); } : undefined}>
+              <input type="checkbox" checked={includeFuture || futureLocked} disabled={futureLocked} onChange={(event) => toggleFuture(event.target.checked)} />
               <span className="ft-full">{t("미래시 데이터 포함")}</span>
               <span className="ft-short">{t("미래시")}</span>
+              {futureLocked && futureLockTip && (
+                <span className="future-lock-tip" role="tooltip">{t("중국 서버 계정이 연동돼 있어 켜 둡니다 — 끄려면 '내 정보'에서 데이터 지우기로 연동을 풀어 주세요.")}</span>
+              )}
             </label>
             <ThemeToggle />
           </div>

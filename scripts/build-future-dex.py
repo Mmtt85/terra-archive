@@ -341,6 +341,31 @@ def enemy_name(eid, loc):
     return tr((cn_book["enemyData"].get(eid) or {}).get("name") or eid, loc, f"enemy {eid}")
 
 
+def future_item_icon(icon_id):
+    """중섭 신재료 아이콘 — 아이템 도감과 같은 폴더(public/items/icon/<iconId>.webp). 없으면 중섭 CDN 에서 받는다
+    (build-events.py cn_icon 과 같은 방식). --no-images 면 받아 둔 것만 쓴다."""
+    if not icon_id:
+        return ""
+    dest = os.path.join(REPO, "public", "items", "icon", f"{icon_id}.webp")
+    if os.path.exists(dest):
+        return icon_id
+    if NO_IMAGES:
+        return ""
+    try:
+        import io as _io
+        import cdnassets
+        from imgutil import save_webp
+        im = next((x for x in (cdnassets.image_named(icon_id, srv) for srv in ("cn", "kr")) if x is not None), None)
+        if im is None:
+            return ""
+        buf = _io.BytesIO(); im.save(buf, "PNG")
+        save_webp(buf.getvalue(), dest, max_px=128, method=4, try_lossless=False)
+        return icon_id
+    except Exception as e:  # noqa: BLE001
+        print(f"  ⚠ 신재료 아이콘 실패({icon_id}): {str(e)[:50]}")
+        return ""
+
+
 def item_name(iid, loc):
     own = (item_tbl[loc].get(iid) or {}).get("name")
     if own:
@@ -483,6 +508,30 @@ def build(loc, suf):
             if drops:
                 rec["drop"] = drops
             items.append(rec)
+
+    # 미래시 작전에 안 나오는 중섭 신재료 — 합성으로만 얻는 상위 재료(액화 고에너지 가스의 상위 31104 · 전극 유닛의
+    # 상위 31114 …)는 위 묶음(드랍·맵 상위 재료)에 없다. '내 정보'의 중섭 계정 창고가 이름·아이콘을 여기서 찾는다
+    # (직영 기증 데이터에서 창고 7칸이 빠져 보여 2026-10-06). 숫자 id 의 일반 재료만 — 잠재 증표(p_char_*)·기념품은 뺀다.
+    for iid, meta in sorted(cn_item.items()):
+        if not re.fullmatch(r"\d+", iid) or iid in item_tbl["ko"] or iid in seen_items:
+            continue
+        if meta.get("itemType") != "MATERIAL" or meta.get("classifyType") != "MATERIAL":
+            continue
+        seen_items.add(iid)
+        rarity = str(meta.get("rarity") or "TIER_1")
+        rec = {"id": iid, "n": item_name(iid, loc), "r": int(re.sub(r"\D", "", rarity) or 1), "g": "material",
+               "s": meta.get("sortId") or 0, "fut": 1}
+        icon = future_item_icon(meta.get("iconId"))
+        if icon:
+            rec["i"] = icon
+        for f, key in (("description", "d"), ("usage", "u")):
+            t = tr(meta.get(f), loc, f"{key} {iid}")
+            if t:
+                rec[key] = t
+        o = tr(meta.get("obtainApproach"), loc, f"o {iid}")
+        if o:
+            rec["o"] = o
+        items.append(rec)
 
     # 실사 도면 위 경로 투영용 전투 카메라 — 본 도감과 같은 출처·규칙 (scripts/stagecams.py).
     # 원본(72MB)을 못 받는 날은 종전 산출물의 값을 지킨다.

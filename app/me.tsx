@@ -19,8 +19,9 @@ import { useConfirm } from "./confirm";
 import { AccountLoginForm, AccountSteps } from "./roster-import";
 import { MeVerify } from "./me-verify";
 import { AccountError, accountErrorText, syncAccount, ACCOUNT_SERVERS, type AccountChar, type AccountStep } from "./account";
+import { cnErrorText } from "./account-cn";
 import { clearMe, dropMeToken, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
-import { loadEnemies, loadEnemyStages, loadEnemyStats, loadItems, loadStages } from "./dex-cross";
+import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages } from "./dex-cross";
 import { GROUPS, GROUP_LABEL, ItemFile, itemIcon, type DexItem, type ItemDoc, type ItemGroup } from "./items";
 import { StageFile } from "./stage-detail";
 import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
@@ -237,16 +238,20 @@ function MeActions({ onLogin }: { onLogin: () => void }) {
     const tok = meToken();
     if (!tok) { onLogin(); return; }   // 로그인 창에도 같은 주의문이 있다
     // 동기화 = 게임 서버에 새 접속 → 게임 쪽 접속이 끊긴다. 바로 보내지 말고 한 번 묻는다 (사용자 요청 2026-10-05)
-    if (!(await confirm({
+    // 다시 로그인 — 다른 계정·서버로 바꾸거나 저장된 로그인이 이상할 때 (사용자 요청 2026-10-06)
+    const choice = await confirm({
       message: t("다시 동기화하면 게임 접속이 끊깁니다 — 게임을 하고 있다면 저장한 뒤에 진행하세요. 계정에는 아무 문제가 없고, 게임을 다시 실행하면 그대로 접속됩니다."),
       confirmLabel: t("동기화하기"),
-    }))) return;
+      altLabel: t("다시 로그인"),
+    });
+    if (choice === "alt") { onLogin(); return; }
+    if (!choice) return;
     setErr(null); setBusy(true); setStep("start");
     try { saveMe(await syncAccount(tok.token, tok.server, setStep), tok.server, "me_sync"); }
     catch (caught) {
       const raw = caught instanceof AccountError ? caught.code : "internal";
       const code = /^u8 4\d\d$/.test(raw) ? "token-expired" : raw;
-      setErr(t(accountErrorText(code), { code }));
+      setErr(t((tok.server === "cn" || tok.server === "bili" ? cnErrorText : accountErrorText)(code), { code }));
       // 토큰이 죽었으면(만료·다른 기기 로그인) 지우고 로그인 창으로 — 요스타 단계에서 4xx 가 와도 같은 뜻이다
       if (code === "token-expired") { dropMeToken(); onLogin(); }
     } finally { setBusy(false); }
@@ -262,7 +267,7 @@ function MeActions({ onLogin }: { onLogin: () => void }) {
       <button type="button" className="import-action apply" disabled={busy} onClick={() => void resync()}>
         <span className="btn-icon" aria-hidden>⟳</span>{busy ? t("가져오는 중…") : t("다시 동기화")}
       </button>
-      {busy && <div className="me-sync-steps"><AccountSteps t={t} step={step} sync /></div>}
+      {busy && <div className="me-sync-steps"><AccountSteps t={t} step={step} sync server={meToken()?.server} /></div>}
       {err && <p className="import-msg error">{err}</p>}
     </div>
   );
@@ -275,8 +280,8 @@ function LoginCard({ onDone }: { onDone: () => void }) {
       <h3>{t("로그인해서 내 정보 가져오기")}</h3>
       <p className="me-lead">{rich(t("요스타 계정으로 로그인하면 **내 계정의 오퍼·창고·진행 상황**을 받아 와 이 화면에 정리하고, 사이트 전체에 함께 반영합니다 — 오퍼 도감에 보유·육성 현황, 인프라 자동편성기에 보유 오퍼, 아이템 도감에 창고 수량, 공개채용 도우미에 미보유·잠재 표시가 붙습니다."))}</p>
       <p className="import-warn">{rich(t("**주의: 가져오는 순간 게임 접속이 끊깁니다.** 데이터를 받으려면 게임 서버에 접속을 새로 열어야 하고, 명일방주는 계정당 접속을 하나만 허용하기 때문입니다. 게임을 하지 않을 때 쓰세요 — 계정에는 아무 문제가 없고, 다시 실행하면 그대로 접속됩니다."))}</p>
-      <AccountLoginForm t={t} onAccount={onDone} submitLabel={t("로그인해서 내 정보 가져오기")} />
-      <p className="import-privacy">{t("이메일과 인증코드는 저장하지 않습니다. 받은 계정 데이터는 이 브라우저 안에만 남고, 언제든 이 화면에서 지울 수 있습니다.")}</p>
+      <AccountLoginForm t={t} onAccount={onDone} submitLabel={t("로그인해서 내 정보 가져오기")}
+        privacy={t("이메일과 인증코드는 저장하지 않습니다. 받은 계정 데이터는 이 브라우저 안에만 남고, 언제든 이 화면에서 지울 수 있습니다.")} />
     </div>
   );
 }
@@ -291,12 +296,20 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
   const [now] = useState(() => Date.now());
   const [items, setItems] = useState<ItemDoc | null>(null);
   const [stages, setStages] = useState<StageDoc | null>(null);
+  // 중섭 계정이면 한섭 아이템 도감에 없는 신재료(액화 고에너지 가스 등)를 미래시 문서에서 더한다 — 안 그러면 창고에서
+  // 빠졌다 (직영 기증 데이터 2026-10-06). 한·일·글섭 계정은 미래시 문서를 받지 않는다
+  const cnAccount = given.server === "cn" || given.server === "bili";
   useEffect(() => {
     let alive = true;
-    void loadItems<ItemDoc>(locale).then((d) => { if (alive) setItems(d); });
+    void Promise.all([loadItems<ItemDoc>(locale), cnAccount ? loadFutureDex(locale) : null]).then(([d, fut]) => {
+      if (!alive) return;
+      if (!fut) { setItems(d); return; }
+      const have = new Set(d.items.map((i) => i.id));
+      setItems({ ...d, items: [...d.items, ...fut.items.filter((i) => !have.has(i.id))] });
+    });
     void loadStages(locale).then((d) => { if (alive) setStages(d); });
     return () => { alive = false; };
-  }, [locale]);
+  }, [locale, cnAccount]);
   const me = useMemo(() => (demo ? sampleFill(given, items, stages) : given), [demo, given, items, stages]);
 
   // 창고·작전 모달 — 아이템 도감과 같은 규약으로 겹쳐 띄운다 (자기 창 위에 작전·적이 쌓인다)
@@ -474,6 +487,7 @@ function ProfileCard({ me, now, opById, demo }: { me: MeData; now: number; opByI
 function Wallet({ me, items, onOpen }: { me: MeData; items: ItemDoc | null; onOpen: (i: DexItem) => void }) {
   const { locale, t } = useI18n();
   const inv = me.profile?.inventory;
+  const ios = me.profile?.status.iosDiamond;
   if (!inv) return null;
   const byId = new Map((items?.items ?? []).map((i) => [i.id, i]));
   const fmt = fmtOf(locale);
@@ -490,7 +504,9 @@ function Wallet({ me, items, onOpen }: { me: MeData; items: ItemDoc | null; onOp
                   <span className="me-ico" data-tier={it?.r}>{it?.i && <img src={itemIcon(it.i)} alt="" width={40} height={40} loading="lazy" />}</span>
                   {/* 좁은 칸에서 이름이 넘치면 흐른다 (사용자 지시 2026-10-05) */}
                   <Marquee className="me-wallet-name">{it?.n ?? id}</Marquee>
-                  <b>{fmt(inv[id] ?? 0)}</b>
+                  {/* 중섭은 순오리지늄이 기기별로 따로다 — 큰 숫자는 안드로이드 몫, iOS 몫은 옆에 작게 (2026-10-06).
+                      줄을 따로 쓰면 이 칸만 키가 커져 한 줄 칸들이 들쭉날쭉해진다 */}
+                  <b>{fmt(inv[id] ?? 0)}{id === "4002" && ios !== undefined && <small className="me-wallet-sub"> · iOS {fmt(ios)}</small>}</b>
                 </button>
               </li>
             );

@@ -9797,8 +9797,11 @@ html.dark .vz {
 .vz-series.s2 polyline, .vz-series.s2 circle { stroke: var(--vz-s2); fill: var(--vz-s2); }
 .vz-series.s3 polyline, .vz-series.s3 circle { stroke: var(--vz-s3); fill: var(--vz-s3); }
 .vz-series polyline { fill: none !important; }
-.vz-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-@media (max-width: 760px) { .vz-cols { grid-template-columns: 1fr; } }
+/* minmax(0, 1fr) — 그냥 1fr 은 최소 너비가 내용(줄바꿈 없는 긴 리퍼러 주소)이라 칸이 늘어나 표가 삐져나갔다.
+   0 까지 줄 수 있게 해야 막대 이름의 말줄임(…)이 걸린다 (2026-10-06 '경로까지 온 리퍼러') */
+.vz-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.vz-cols > * { min-width: 0; }
+@media (max-width: 760px) { .vz-cols { grid-template-columns: minmax(0, 1fr); } }
 .vz-bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 .vz-bars li {
   position: relative;
@@ -26903,6 +26906,8 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .me-head { margin-bottom: 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .me-head h2 { margin: 2px 0 0; font-size: 26px; letter-spacing: -0.6px; }
 .me-login { padding: 22px 24px; }
+/* 모달 안에선 창 본문(.mw-body 12/20/24)이 이미 여백을 준다 — 두 겹이면 사방 40px 가 넘었다 (사용자 지적 2026-10-06) */
+.mw-body > .me-login { padding: 4px 4px 0; }
 .me-login h3 { margin: 0 0 10px; font-size: 16px; }
 /* 인프라 '가져오기' 패널(.import-way p)과 같은 크기 — 지정이 없어 본문 16px 로 나와 위화감이 있었다 (사용자 지적 2026-10-04) */
 .me-login .me-lead, .me-login .import-warn { margin: 0 0 12px; font-size: 12px; line-height: 1.6; color: var(--ink3); }
@@ -27465,3 +27470,32 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
 .cns-scan { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 4px 0 14px; text-align: center; font-size: 13px; }
 .cns-scan p { margin: 0; }
 .cns-qr { width: 200px; height: 200px; border-radius: 8px; }
+.me-wallet-top .me-wallet-sub { font-size: 10.5px; font-weight: 600; color: var(--muted); }
+
+/* ── 중섭 게임 로그인 (app/account-cn.tsx, 2026-10-06) — 인프라 가져오기·내 정보 로그인 폼 안 ── */
+.zh-gloss { font-size: .78em; margin-left: .3em; opacity: .7; font-weight: 400; white-space: nowrap; }
+.cn-modes { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 4px 0 10px; font-size: 13px; }
+.cn-modes label { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.cn-how { margin: 0 0 10px; padding-left: 20px; font-size: 13px; line-height: 1.6; list-style: decimal; }
+.cn-how li { margin-bottom: 3px; }
+.cn-how a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; word-break: break-all; }
+.cn-field { display: block; margin-bottom: 10px; }
+.cn-field > span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.cn-field input, .cn-field textarea { box-sizing: border-box; width: 100%; font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--white); color: var(--ink); }
+.cn-note { display: block; font-size: 12px; color: var(--muted); margin: 6px 0; }
+.cn-scan { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 4px 0 12px; text-align: center; font-size: 13px; }
+.cn-scan p { margin: 0; }
+.cn-qr { width: 200px; height: 200px; border-radius: 8px; }
+/* 보유 오퍼 설정 '게임 로그인' 칸(.import-way, 세로 flex)에 바로 놓이면 칸 폭 전체로 늘어났다 (사용자 지적 2026-10-06) */
+.cn-go { align-self: flex-start; }
+.cn-go + .cn-note, .cn-scan + .cn-note { margin-top: 12px; }
+/* 중섭 계정 연동 중 — 미래시 토글 잠금 + 말풍선 (2026-10-06) */
+.future-toggle.locked { position: relative; cursor: help; }
+.future-toggle.locked input { cursor: help; opacity: .75; }
+.future-lock-tip {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 80;
+  width: max-content; max-width: min(280px, calc(100vw - 32px));
+  padding: 8px 10px; border-radius: var(--r-sm); border: 1px solid var(--line);
+  background: var(--chip); color: var(--chip-ink); box-shadow: var(--sh-2);
+  font-size: 12px; font-weight: 500; line-height: 1.5; white-space: normal; text-align: left;
+}

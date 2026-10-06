@@ -37,6 +37,18 @@ function room(el: HTMLElement): [number, number] {
   return [left, right];
 }
 
+/** 목록을 세로로 자르는 조상(모달 창 .mw-window overflow:hidden · 본문 .mw-body overflow:auto)의 안쪽 바닥.
+ *  거기 걸리면 목록이 모달 바닥에서 잘렸다 (로그인 창 서버 선택, 서버 5개로 늘며 드러남 — 사용자 지적 2026-10-06) */
+function clipBottom(el: HTMLElement): number {
+  let bottom = window.innerHeight;
+  for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+    if (getComputedStyle(p).overflowY === "visible") continue;
+    const box = p.getBoundingClientRect();
+    bottom = Math.min(bottom, box.top + p.clientTop + p.clientHeight);
+  }
+  return bottom;
+}
+
 export function Dropdown({
   label, items, selected, onPick, multi, ariaLabel,
   className, buttonClassName, scroll, disabled,
@@ -57,6 +69,10 @@ export function Dropdown({
 }) {
   const [open, setOpen] = useState(false);
   const [alignRight, setAlignRight] = useState(false);
+  // 조상에 잘릴 때만 화면 기준(position: fixed)으로 띄운다 — 늘 **아래로**, 모달 밖으로 넘어가도 보이게
+  // (사용자 지시 2026-10-06 "위로 나오면 안 돼, 밑으로 나오면서 모달 밖으로 삐져나가도 보이도록"). 모달 조상엔 transform 이 없어
+  // fixed 가 창 기준으로 잡힌다. 스크롤하면 버튼과 어긋나므로 그때는 닫는다
+  const [float, setFloat] = useState<React.CSSProperties | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,15 +84,26 @@ export function Dropdown({
     const onEsc = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
     window.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onEsc);
-    return () => { window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc); };
-  }, [open]);
+    // 떠 있는 목록(float)은 스크롤·창 크기 변경에 버튼과 어긋난다 — 닫는다. 목록 안 스크롤(scroll 목록)은 뺀다
+    const onScroll = (event: Event) => { if (!rootRef.current?.contains(event.target as Node)) setOpen(false); };
+    if (float) { window.addEventListener("scroll", onScroll, true); window.addEventListener("resize", onScroll); }
+    return () => {
+      window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc);
+      window.removeEventListener("scroll", onScroll, true); window.removeEventListener("resize", onScroll);
+    };
+  }, [open, float]);
 
   const toggle = (event: React.MouseEvent<HTMLButtonElement>) => {
     // 열기 직전에 여유를 재서 펼칠 방향을 정한다 — 화면·모달 오른끝 버튼이 잘리던 문제.
     // 오른쪽이 모자라도 왼쪽이 더 좁으면 그대로 둔다 (좁은 창 왼끝 버튼이 반대로 잘리지 않게)
     const rect = event.currentTarget.getBoundingClientRect();
     const [left, right] = room(event.currentTarget);
-    setAlignRight(right - rect.left < MENU_MIN_SPACE && rect.right - left > right - rect.left);
+    const alignRightNow = right - rect.left < MENU_MIN_SPACE && rect.right - left > right - rect.left;
+    setAlignRight(alignRightNow);
+    // 목록 높이는 줄 수로 어림한다(줄 ≈30px, scroll 이면 최대 440)
+    const need = Math.min(items.length * 30 + 14, scroll ? 440 : Infinity);
+    const clipped = clipBottom(event.currentTarget) - rect.bottom < need + 4 && clipBottom(event.currentTarget) < window.innerHeight;
+    setFloat(clipped ? { position: "fixed", top: rect.bottom + 4, ...(alignRightNow ? { right: window.innerWidth - rect.right, left: "auto" } : { left: rect.left }) } : null);
     setOpen((value) => !value);
   };
 
@@ -90,7 +117,7 @@ export function Dropdown({
         <i className="drop-caret" aria-hidden>▾</i>
       </button>
       {open && (
-        <ul className={`drop-menu${alignRight ? " align-right" : ""}${scroll ? " scroll" : ""}`}
+        <ul className={`drop-menu${alignRight ? " align-right" : ""}${scroll ? " scroll" : ""}`} style={float ?? undefined}
           role="menu" aria-label={ariaLabel}>
           {items.map((item) => {
             const on = selected.includes(item.value);
