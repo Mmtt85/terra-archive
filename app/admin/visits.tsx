@@ -11,6 +11,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
+import { ACCOUNT_SERVERS } from "../account";
 import { ModalWindow } from "../modal-window";
 import { VisitsReport } from "./visits-report";
 import operatorsData from "../data/operators.json";
@@ -541,7 +542,9 @@ function SessionLine({ s }: { s: SessRow }) {
 }
 
 export function VisitsPanel() {
-  const [days, setDays] = useState<0 | 7 | 30 | 90 | 365>(0);   // 0 = 오늘 (KST 0시 00분부터) — 기본 (사용자 지시 2026-10-04)
+  const [days, setDays] = useState<0 | 7 | 30 | 90 | 365>(0);
+  // 내 정보 동기화 — 서버별로 거르기 (사용자 요청 2026-10-06). 통계가 방문자별로 묶여 있어 방문자의 서버(max) 기준이다
+  const [meServer, setMeServer] = useState("");   // 0 = 오늘 (KST 0시 00분부터) — 기본 (사용자 지시 2026-10-04)
   // 기간 지정 (사용자 지시 2026-10-05 "특정 일 혹은 특정 기간 지정도") — KST 날짜. 정해 두면 위 기간 버튼 대신 이것을 본다.
   // DB 쪽 visits_summary_range·visits_sessions_range (docs/supabase-visits.sql) 를 부른다.
   const [range, setRange] = useState<{ from: string; to: string } | null>(null);
@@ -691,16 +694,19 @@ export function VisitsPanel() {
       </tbody>
     </table>
   );
+  const meBy = (data?.me_sync?.by ?? []).filter((b) => !meServer || b.server === meServer);
+  const meServers = [...new Set((data?.me_sync?.by ?? []).map((b) => b.server).filter((x): x is string => !!x))];
+  const serverLabel = (code: string) => ACCOUNT_SERVERS.find((x) => x.code === code)?.label ?? code;
   const meTable = (n: number) => !data?.me_sync ? null : (
     <table className="vz-table">
       <thead><tr><th>방문자</th><th>유입</th><th>합계</th><th>로그인</th><th>다시 동기화</th><th>서버</th><th>마지막</th></tr></thead>
       <tbody>
-        {data.me_sync.by.slice(0, n).map((b) => (
+        {meBy.slice(0, n).map((b) => (
           <tr key={b.visitor ?? "?"}>
             <td title={b.visitor ?? ""}><code>{(b.visitor ?? "—").slice(0, 8)}</code></td>
             {/* 유입 — 로그인한 세션이 어디서 왔는가 (사용자 요청 2026-10-05). 주소가 있으면 호스트·경로를 툴팁으로 */}
             <td title={b.ref ?? ""}>{b.src ?? "—"}{b.ref && <small className="vz-note"> {b.ref.replace(/^https?:\/\//, "").slice(0, 40)}</small>}</td>
-            <td>{num(b.n)}</td><td>{num(b.login)}</td><td>{num(b.sync)}</td><td>{b.server ?? "—"}</td>
+            <td>{num(b.n)}</td><td>{num(b.login)}</td><td>{num(b.sync)}</td><td>{b.server ? serverLabel(b.server) : "—"}</td>
             <td>{new Date(b.last).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</td>
           </tr>
         ))}
@@ -710,7 +716,7 @@ export function VisitsPanel() {
   // 전체 보기 창의 내용 · 줄 수
   const allTotal = !allOf || !data ? 0
     : allOf.key === "pages" ? data.pages.length
-    : allOf.key === "mesync" ? data.me_sync?.by.length ?? 0
+    : allOf.key === "mesync" ? meBy.length
     : allOf.key === "sessions" ? allSessions?.length ?? 0
     : barRows[allOf.key].length;
   const allRender = (n: number) => !allOf ? null
@@ -816,8 +822,20 @@ export function VisitsPanel() {
           {/* 내 정보 동기화 — 누가(익명 방문자 id) 몇 번 (사용자 요청 2026-10-05) */}
           {data.me_sync && (
             <div className="vz-mesync">
-              <Head title="내 정보 동기화" {...top("mesync", "내 정보 동기화")} sub={`로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · ${num(data.me_sync.people)}명 — 누가 = 방문자 익명 id (닉네임은 받지 않는다) · 유입 = 이 기간 첫 로그인 세션이 들어온 곳`} />
-              {data.me_sync.by.length ? meTable(tops.mesync) : <p className="vz-note">이 기간에는 동기화 기록이 없습니다.</p>}
+              <Head title="내 정보 동기화" {...top("mesync", "내 정보 동기화")} sub={meServer
+                ? `${serverLabel(meServer)} — 로그인 ${num(meBy.reduce((a, b) => a + b.login, 0))} · 다시 동기화 ${num(meBy.reduce((a, b) => a + b.sync, 0))} · ${num(meBy.length)}명`
+                : `로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · ${num(data.me_sync.people)}명 — 누가 = 방문자 익명 id (닉네임은 받지 않는다) · 유입 = 이 기간 첫 로그인 세션이 들어온 곳`} />
+              {meServers.length > 0 && (
+                <div className="vz-mesync-filter">
+                  <span>서버</span>
+                  <Dropdown ariaLabel="서버" selected={[meServer]} label={meServer ? serverLabel(meServer) : "전체"}
+                    items={[{ value: "", label: "전체", count: data.me_sync.by.length },
+                      ...ACCOUNT_SERVERS.filter((x) => meServers.includes(x.code)).map((x) => ({ value: x.code, label: x.label, count: data.me_sync!.by.filter((b) => b.server === x.code).length })),
+                      ...meServers.filter((c) => !ACCOUNT_SERVERS.some((x) => x.code === c)).map((c) => ({ value: c, label: c, count: data.me_sync!.by.filter((b) => b.server === c).length }))]}
+                    onPick={setMeServer} />
+                </div>
+              )}
+              {meBy.length ? meTable(tops.mesync) : <p className="vz-note">{meServer ? "이 서버의 동기화 기록이 없습니다." : "이 기간에는 동기화 기록이 없습니다."}</p>}
             </div>
           )}
 

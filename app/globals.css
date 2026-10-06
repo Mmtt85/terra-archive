@@ -27492,3 +27492,5 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
    사용자 지적 2026-10-06). 결과 판에서는 auto-fill 로 빈 칸을 남겨 평소 카드 크기를 지킨다 */
 .sb-uni-results .sb-grid { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
 .sb-uni-results .sb-cards { grid-template-columns: repeat(auto-fill, minmax(288px, 1fr)); }
+/* 관리자 방문 통계 — 내 정보 동기화 서버 거르기 (2026-10-06) */
+.vz-mesync-filter { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 12px; color: var(--muted); }
