@@ -33,6 +33,9 @@ import sceneIdsData from "./data/story-scene-ids.json";
 import scriptIdsEnData from "./data/story-script-ids.en.json";
 import scriptIdsJaData from "./data/story-script-ids.ja.json";
 import chronologyData from "./data/chronology.json";
+// 이벤트 도감에 있는 이벤트 id — 연대기에서 이벤트를 누르면 도감 상세 모달을 연다 (사용자 요청 2026-10-07)
+import eventIdsData from "./data/event-ids.json";
+import { openEvent } from "./event-open";
 // 인게임 '스토리라인'(테마 시계열) — scripts/build-storylines.py가 stage_table에서 추출.
 // 테마별 뷰의 순서·소속 정본 (사용자 확정 2026-07-21). guest=타 테마 소속의 시계열 참조(괄호).
 import storylinesData from "./data/storylines.json";
@@ -117,6 +120,7 @@ const translatedByLocale: Record<string, Set<string>> = {
   ja: new Set(translatedJaData as string[]),
 };
 const chronology = chronologyData as Chronology;
+const DEX_EVENT_IDS = new Set((eventIdsData as { ids: string[] }).ids);
 
 // 메인스토리·로그라이크는 stories.json이 아니라 chronology.json 스캐폴드에만 있다.
 // 요약이 달린 항목은 이벤트처럼 열 수 있도록 합성 StoryEvent로 만들어 eventById에 병합한다.
@@ -1211,212 +1215,131 @@ const arcNameOf = (locale: Locale, id: string) => {
   return a ? locText(locale, a.name) : id;
 };
 
-// 테라 연대기 뷰 — 한 줄 타임라인 + 연대순(테라력) 그룹. (테마별·종류별은 요약 뷰로 이동)
+// 테라 연대기 뷰 — 테라력 연도별 세로 타임라인 (사용자 요청 2026-10-07: 메인 에피소드 구간 → 테라력 구간, UI 개편).
+// 위: 연도 칩 한 줄(누르면 그 해로) · 본문: 왼쪽 큰 연도 + 세로 선 위 카드(썸네일·종류·테마·근거 한 줄).
 function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => void }) {
   const { locale, t } = useI18n();
-  const [tip, setTip] = useState<{ item: ChronItem; x: number; y: number } | null>(null);
-  const [activeKey, setActiveKey] = useState<string | null>(null);
-  const [pos, setPos] = useState(0); // 레일 가로 스크롤 진행도 0~1 (슬라이더 썸 위치)
   const arcName = (id: string) => arcNameOf(locale, id);
-  const yearLabel = (item: ChronItem) => item.terraYear == null ? t("테라력 미정") : t("테라력 {y}년", { y: item.terraYear });
-  const showTip = (e: React.FocusEvent<HTMLButtonElement> | React.MouseEvent<HTMLButtonElement>, it: ChronItem) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    setTip({ item: it, x: r.left + r.width / 2, y: r.top });
-  };
 
-  // 인게임 스토리라인을 병합한 전역 상대 시계열(CHRON_ORDER) — 메인 에피소드가 구간
-  // 경계가 되고, 사이 항목들은 그 에피소드 시점 언저리라는 뜻이다 (사용자 요청 2026-07-21).
-  // 스토리라인에 없는 항목(콜라보·통합 전략)은 맨 뒤 '시계열 미정' 그룹으로.
+  // 연도 묶음 — 인게임 스토리라인을 병합한 전역 순서(CHRON_ORDER)를 따라가며,
+  // 연도가 확정된 항목은 그 해로, 미정 항목은 '지금까지 나온 가장 늦은 해'(그 무렵)로 넣는다.
+  // 과거편(바벨 1094 등)이 순서 중간에 끼어도 뒤 항목을 과거로 끌어내리지 않게 누적 최댓값을 쓴다.
+  // 순서에 없는 항목(콜라보·통합 전략)과 앞에 아무 연도도 없는 미정 항목은 맨 끝 '미정'으로.
   const groups = useMemo(() => {
-    const out: { key: string; label: string; rail: string; items: ChronItem[] }[] = [];
-    let cur: { key: string; label: string; rail: string; items: ChronItem[] } | null = null;
+    const byYear = new Map<number, ChronItem[]>();
+    const unplaced: ChronItem[] = [];
+    let latest: number | null = null;
     for (const id of CHRON_ORDER) {
       const it = CHRON_BY_KEY.get(id);
       if (!it) continue;
-      if (it.kind === "main" && it.epNo != null) {
-        // 구간 헤더에 확정 테라력 병기 — 아는 연도는 계속 보여준다 (사용자 요청 2026-07-21)
-        const yr = it.terraYear != null ? ` · ${t("테라력 {y}년", { y: it.terraYear })}` : "";
-        cur = { key: `ep${it.epNo}`, label: `${locText(locale, epLabel(it.epNo))} · ${locText(locale, it.name)}${yr}`, rail: String(it.epNo), items: [it] };
-        out.push(cur);
-      } else {
-        if (!cur) { cur = { key: "pre", label: t("서장 이전"), rail: "·", items: [] }; out.push(cur); }
-        cur.items.push(it);
-      }
+      if (it.terraYear != null) latest = latest == null ? it.terraYear : Math.max(latest, it.terraYear);
+      const y = it.terraYear ?? latest;
+      if (y == null) { unplaced.push(it); continue; }
+      if (!byYear.has(y)) byYear.set(y, []);
+      byYear.get(y)!.push(it);
     }
     const placed = new Set(CHRON_ORDER);
-    const rest = CHRON_ITEMS.filter((it) => !placed.has(it.key));
-    if (rest.length) out.push({ key: "__rest", label: t("시계열 미정 — 콜라보·통합 전략"), rail: "?", items: rest });
+    unplaced.push(...CHRON_ITEMS.filter((it) => !placed.has(it.key)));
+    const out: { key: string; year: number | null; items: ChronItem[] }[] = [...byYear.entries()]
+      .sort((x, y) => x[0] - y[0])
+      .map(([year, items]) => ({ key: `y${year}`, year, items }));
+    if (unplaced.length) out.push({ key: "__rest", year: null, items: unplaced });
     return out;
-  }, [locale, t]);
-  // 레일·슬라이더는 전 구간을 다룬다 (예전 연도 그룹 → 에피소드 구간)
-  const yearGroups = groups;
+  }, []);
 
-  // 세로 목록(panel)이 스크롤 주체 — 연도 레일과 슬라이더는 목록 스크롤에 동기된다.
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const navRef = useRef<HTMLElement>(null);
   const secRefs = useRef<Map<string, HTMLElement>>(new Map());
-
-  useEffect(() => { setActiveKey((k) => k ?? groups[0]?.key ?? null); }, [groups]);
-
-  const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-  // 연도 확정 그룹들의 목록 내 세로 위치(offsetTop) 배열
-  const yearTops = () => yearGroups.map((g) => secRefs.current.get(g.key)?.offsetTop ?? 0);
-  // 목록 스크롤 위치 → 슬라이더 진행도(0~1). 연도 라벨이 균등 배치된 인덱스 공간에 맞춰 보간.
-  const posFromScroll = (top: number) => {
-    const tops = yearTops(); const n = tops.length;
-    if (n <= 1) return 0;
-    if (top <= tops[0]) return 0;
-    if (top >= tops[n - 1]) return 1;
-    let i = 0; for (let k = 0; k < n - 1; k++) if (top >= tops[k]) i = k;
-    const t = (top - tops[i]) / ((tops[i + 1] - tops[i]) || 1);
-    return clamp01((i + t) / (n - 1));
-  };
-  // 현재 스크롤이 걸친 그룹 key (미정 포함 전체 그룹 기준)
-  const currentKey = () => {
-    const c = panelRef.current; if (!c) return null;
-    const top = c.scrollTop + 56;
-    let best: string | null = null;
-    for (const g of groups) {
-      const el = secRefs.current.get(g.key); if (!el) continue;
-      if (el.offsetTop <= top) best = g.key; else break;
-    }
-    return best ?? groups[0]?.key ?? null;
-  };
-  const onPanelScroll = () => {
-    const c = panelRef.current; if (!c) return;
-    setPos(posFromScroll(c.scrollTop));
-    const key = currentKey();
-    if (key) setActiveKey((prev) => (key !== prev ? key : prev));
-  };
-  // 슬라이더 드래그 → 목록을 연도 구간에 맞춰 스크롤 (연도 라벨 균등 간격 기준 보간).
-  // 트랙에 포인터를 캡처해 드래그를 안정적으로 추적한다.
-  const seekTo = (clientX: number) => {
-    const track = sliderRef.current, panel = panelRef.current; if (!track || !panel) return;
-    const rect = track.getBoundingClientRect();
-    const tops = yearTops(); const n = tops.length; if (!n) return;
-    const p = clamp01((clientX - rect.left) / rect.width) * (n - 1);
-    const lo = Math.floor(p), hi = Math.min(n - 1, lo + 1);
-    const top = tops[lo] + (tops[hi] - tops[lo]) * (p - lo);
-    panel.scrollTo({ top, behavior: "auto" });
-  };
-  const onSliderDown = (e: React.PointerEvent) => {
-    const track = sliderRef.current; if (!track) return;
-    e.preventDefault(); track.setPointerCapture(e.pointerId); seekTo(e.clientX);
-  };
-  const onSliderMove = (e: React.PointerEvent) => {
-    const track = sliderRef.current;
-    if (!track || !track.hasPointerCapture(e.pointerId)) return;
-    seekTo(e.clientX);
-  };
-  const onSliderUp = (e: React.PointerEvent) => {
-    const track = sliderRef.current;
-    if (track?.hasPointerCapture(e.pointerId)) track.releasePointerCapture(e.pointerId);
-  };
-  // 연도 라벨 클릭 → 그 연도 섹션으로 부드럽게 이동
-  const goYear = (key: string) => {
-    setActiveKey(key);
-    const sec = secRefs.current.get(key);
-    if (sec && panelRef.current) panelRef.current.scrollTo({ top: sec.offsetTop, behavior: "instant" });
-  };
-  // 양끝 화살표 / 방향키 — 연도 그룹 단위로 이동
-  const stepYear = (dir: 1 | -1) => {
-    const i = yearGroups.findIndex((g) => g.key === activeKey);
-    const cur = i < 0 ? (dir > 0 ? -1 : yearGroups.length) : i;
-    const j = Math.min(yearGroups.length - 1, Math.max(0, cur + dir));
-    if (yearGroups[j]) goYear(yearGroups[j].key);
-  };
-  const onThumbKey = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowLeft") { e.preventDefault(); stepYear(-1); }
-    else if (e.key === "ArrowRight") { e.preventDefault(); stepYear(1); }
-  };
   const setSec = (key: string) => (el: HTMLElement | null) => { if (el) secRefs.current.set(key, el); else secRefs.current.delete(key); };
+  // 연도 칩 아래로 본문이 들어가므로, 스크롤 기준선 = 스크롤 영역 위쪽 + 칩 줄 높이
+  const offset = () => (navRef.current?.offsetHeight ?? 0) + 8;
+  // 사이트는 창이 아니라 .site-scroll 안에서 스크롤된다 (없으면 창)
+  const scroller = (): HTMLElement | null => navRef.current?.closest<HTMLElement>(".site-scroll") ?? null;
+  const scrollTopEdge = () => scroller()?.getBoundingClientRect().top ?? 0;
+  useEffect(() => {
+    const onScroll = () => {
+      const line = scrollTopEdge() + offset() + 24;
+      let cur: string | null = groups[0]?.key ?? null;
+      for (const g of groups) {
+        const el = secRefs.current.get(g.key);
+        if (el && el.getBoundingClientRect().top <= line) cur = g.key;
+      }
+      setActiveKey(cur);
+    };
+    onScroll();
+    const target: HTMLElement | Window = scroller() ?? window;
+    target.addEventListener("scroll", onScroll, { passive: true });
+    return () => target.removeEventListener("scroll", onScroll);
+  }, [groups]);
+  // 고른 칩이 칩 줄 밖이면 칩 줄을 가로로 따라 굴린다 (모바일)
+  useEffect(() => {
+    // scrollIntoView 는 세로 스크롤까지 건드려 칩으로 시작한 이동을 끊는다 — 칩 줄의 가로 위치만 만진다
+    const nav = navRef.current;
+    const chip = nav?.querySelector<HTMLElement>(".chron-yearchip.on");
+    if (nav && chip) {
+      const l = chip.offsetLeft - nav.offsetLeft, r = l + chip.offsetWidth;
+      if (l < nav.scrollLeft) nav.scrollLeft = l - 8;
+      else if (r > nav.scrollLeft + nav.clientWidth) nav.scrollLeft = r - nav.clientWidth + 8;
+    }
+  }, [activeKey]);
+  const goYear = (key: string) => {
+    const el = secRefs.current.get(key); if (!el) return;
+    const sc = scroller();
+    if (sc) sc.scrollTo({ top: sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - offset(), behavior: "smooth" });
+    else window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - offset(), behavior: "smooth" });
+  };
 
-  const openIf = (it: ChronItem) => { if (it.eventId) onOpenEvent(it.eventId); };
+  const yearText = (year: number | null) => (year == null ? t("미정") : String(year));
+  const thumbOf = (it: ChronItem) => (locale === "ja" ? it.thumbJa : locale === "en" ? it.thumbEn : undefined) ?? it.thumb;
+  // 이벤트는 이벤트 도감 상세 모달(셸이 띄운다), 메인스토리·통합 전략은 종전대로 스토리를 연다
+  const inDex = (it: ChronItem) => (it.kind === "event" || it.kind === "mini") && DEX_EVENT_IDS.has(it.key);
+  const openIf = (it: ChronItem) => {
+    if (inDex(it)) openEvent(it.key);
+    else if (it.eventId) onOpenEvent(it.eventId);
+  };
 
   return (
     <div className="chron">
-      <p className="chron-note">{rich(t("**테라 연대기** — 인게임 스토리라인(테마 시계열)을 하나로 병합한 상대 순서입니다. 메인 에피소드가 구간 경계가 되고, 사이 항목들은 그 시점 언저리의 이야기입니다. 정확한 테라력 연도는 확정된 것만 표기하며, 스토리라인에 없는 콜라보·통합 전략은 맨 뒤에 모았습니다."))}</p>
+      <p className="chron-note">{rich(t("**테라 연대기** — 이야기의 '현재'가 테라력 몇 년인지로 묶었습니다. 연도는 스토리 원문의 날짜 표기나, 연도를 아는 사건(체르노보그 1097년 등)을 기준으로 계산한 것만 적고 근거를 함께 보여 줍니다. 연도가 밝혀지지 않은 이야기는 인게임 스토리라인 순서상 그 무렵의 해에 두었고, 순서도 알 수 없는 콜라보·통합 전략은 맨 뒤 '미정'에 모았습니다."))}</p>
 
-      {/* 한 줄 연혁 바 — 연도 확정분만 100% 폭에 균등 배치(미정 제외). 슬라이더로 아래 목록을 이동. */}
-      <div className="chron-railwrap">
-        <div className="chron-rail" role="list" aria-label={t("테라 연대기")}
-          onMouseLeave={() => setTip(null)}>
-          {yearGroups.map((g) => (
-            <div key={g.key} className="chron-railseg">
-              <button type="button" className={`chron-railseg-yr${activeKey === g.key ? " on" : ""}`}
-                onClick={() => goYear(g.key)} title={g.label} aria-label={g.label}>
-                {g.rail}
-              </button>
-              <div className="chron-railseg-ticks">
-                {g.items.map((it) => (
-                  <button key={it.key} type="button" role="listitem"
-                    className={`chron-tick k-${it.kind}${it.eventId ? "" : " nolink"}${tip?.item.key === it.key ? " active" : ""}`}
-                    style={{ ["--arc" as string]: it.arc ? arcColor(it.arc) : "#c3c6bf" }}
-                    onClick={() => openIf(it)}
-                    onMouseEnter={(e) => showTip(e, it)} onFocus={(e) => showTip(e, it)} onBlur={() => setTip(null)}
-                    aria-label={locText(locale, it.name)}>
-                    <span className="chron-tick-dot" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 연대기 슬라이더 — 드래그하면 위 레일과 아래 목록이 함께 이동, 양끝 화살표는 연도 단위 이동 */}
-        <div className="chron-slider">
-          <button type="button" className="chron-slider-arrow" onClick={() => stepYear(-1)} aria-label={t("이전 구간")}>‹</button>
-          <div className="chron-slider-track" ref={sliderRef} onPointerDown={onSliderDown} onPointerMove={onSliderMove} onPointerUp={onSliderUp} onPointerCancel={onSliderUp}>
-            <div className="chron-slider-fill" style={{ width: `${pos * 100}%` }} />
-            <div className="chron-slider-thumb" style={{ left: `${pos * 100}%` }}
-              role="slider" tabIndex={0} aria-label={t("연대기 슬라이더")}
-              aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pos * 100)}
-              onKeyDown={onThumbKey}><span aria-hidden>⇆</span></div>
-          </div>
-          <button type="button" className="chron-slider-arrow" onClick={() => stepYear(1)} aria-label={t("다음 구간")}>›</button>
-        </div>
-
-        <div className="chron-legend">
-          <span><i className="lg-dot" /> {t("이벤트")}</span>
-          <span><i className="lg-dot lg-main" /> {t("메인스토리")}</span>
-          <span><i className="lg-dot lg-rl" /> {t("통합 전략")}</span>
-        </div>
-      </div>
-
-      {tip && (
-        <div className="chron-tip" style={{ left: tip.x, top: tip.y }} aria-hidden>
-          <span className="chron-tip-top">
-            <em className="chron-kind" style={{ background: tip.item.arc ? arcColor(tip.item.arc) : "#8b9294" }}>{t(KIND_KO[tip.item.kind])}</em>
-            {tip.item.arc && <em className="chron-tip-arc" style={{ color: arcColor(tip.item.arc) }}>{arcName(tip.item.arc)}</em>}
-          </span>
-          <b>{tip.item.ep ? `${locText(locale, tip.item.ep)} · ` : ""}{locText(locale, tip.item.name)}</b>
-          <span className="chron-tip-meta">{yearLabel(tip.item)}{tip.item.eventId ? ` · ${t("클릭해서 열기")}` : ""}</span>
-          {/* 테라력 근거 — 원문 어느 대사·장면 표기에서 뽑았는지 (사용자 요청 2026-10-07) */}
-          {tip.item.terraYear != null && tip.item.yearWhy && <span className="chron-tip-why">{locText(locale, tip.item.yearWhy)}</span>}
-        </div>
-      )}
-
-      <div className="chron-groups" ref={panelRef} onScroll={onPanelScroll}>
+      <nav className="chron-years" ref={navRef} aria-label={t("테라 연대기")}>
         {groups.map((g) => (
-          <section key={g.key} className={`chron-group${activeKey === g.key ? " active" : ""}`} ref={setSec(g.key)}>
-            <h3>{g.label} <em>{g.items.length}</em></h3>
-            <ul className="chron-list">
-              {g.items.map((it) => (
-                <li key={it.key}>
-                  <button type="button" className={`chron-item k-${it.kind}${it.eventId ? "" : " nolink"}`}
-                    onClick={() => openIf(it)} disabled={!it.eventId} title={it.yearWhy ? `${yearLabel(it)} — ${locText(locale, it.yearWhy)}` : undefined}>
-                    <span className="chron-item-top">
-                      <span className="chron-kind" style={it.arc ? { background: arcColor(it.arc) } : undefined}>{t(KIND_KO[it.kind])}</span>
-                      {it.ep && <span className="chron-item-ep">{locText(locale, it.ep)}</span>}
-                    </span>
-                    <span className="chron-item-name">{locText(locale, it.name)}</span>
-                    <span className="chron-item-bot">
-                      {it.terraYear != null && <span className="chron-item-year">{t("테라력 {y}년", { y: it.terraYear })}</span>}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <button key={g.key} type="button" className={`chron-yearchip${activeKey === g.key ? " on" : ""}`} onClick={() => goYear(g.key)}>
+            <b>{yearText(g.year)}</b><small>{g.items.length}</small>
+          </button>
+        ))}
+      </nav>
+
+      <div className="chron-tl">
+        {groups.map((g) => (
+          <section key={g.key} className="chron-yr" ref={setSec(g.key)}>
+            <header className="chron-yr-head">
+              <span className="chron-yr-num">{yearText(g.year)}</span>
+              <span className="chron-yr-sub">{g.year == null ? t("시계열 미정 — 콜라보·통합 전략") : t("테라력")} · {t("이야기 {n}편", { n: g.items.length })}</span>
+            </header>
+            <ol className="chron-yr-list">
+              {g.items.map((it) => {
+                const thumb = thumbOf(it);
+                const why = it.terraYear != null && it.yearWhy ? locText(locale, it.yearWhy) : null;
+                return (
+                  <li key={it.key} className="chron-row" style={{ ["--arc" as string]: it.arc ? arcColor(it.arc) : "#9aa0a3" }}>
+                    <button type="button" className={`chron-card k-${it.kind}`} onClick={() => openIf(it)} disabled={!it.eventId && !inDex(it)}>
+                      <span className="chron-card-thumb">{thumb ? <img src={asset(thumb)} alt="" loading="lazy" decoding="async" /> : null}</span>
+                      <span className="chron-card-body">
+                        <span className="chron-card-meta">
+                          <span className="chron-card-kind">{t(KIND_KO[it.kind])}</span>
+                          {it.arc && <span className="chron-card-arc">{arcName(it.arc)}</span>}
+                        </span>
+                        <span className="chron-card-name">{it.ep ? <em>{locText(locale, it.ep)}</em> : null}{locText(locale, it.name)}</span>
+                        {why
+                          ? <span className="chron-card-why" title={why}>{why}</span>
+                          : g.year != null && <span className="chron-card-why approx">{t("연도 미정 — 스토리라인 순서상 이 무렵")}</span>}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
           </section>
         ))}
       </div>

@@ -2630,10 +2630,13 @@ const D: Record<string, Pair> = {
     "配信時期のデータがないため末尾にまとめています",
   ],
   "클릭해서 열기": ["click to open", "クリックで開く"],
-  "**테라 연대기** — 인게임 스토리라인(테마 시계열)을 하나로 병합한 상대 순서입니다. 메인 에피소드가 구간 경계가 되고, 사이 항목들은 그 시점 언저리의 이야기입니다. 정확한 테라력 연도는 확정된 것만 표기하며, 스토리라인에 없는 콜라보·통합 전략은 맨 뒤에 모았습니다.": [
-    "**Terra Chronicle** — the in-game storylines merged into one relative timeline. Main story episodes mark the section boundaries, and items between them take place around that point. Exact Terra-calendar years are shown only where confirmed; collabs and Integrated Strategies, absent from the storylines, are gathered at the end.",
-    "**テラ年代記** — ゲーム内ストーリーライン（テーマ時系列）を一つに統合した相対順序です。メインエピソードが区間の境界となり、間の項目はその時点前後の物語です。テラ暦の年号は確定分のみ表記し、ストーリーラインにないコラボ・統合戦略は最後にまとめています。",
+  "**테라 연대기** — 이야기의 '현재'가 테라력 몇 년인지로 묶었습니다. 연도는 스토리 원문의 날짜 표기나, 연도를 아는 사건(체르노보그 1097년 등)을 기준으로 계산한 것만 적고 근거를 함께 보여 줍니다. 연도가 밝혀지지 않은 이야기는 인게임 스토리라인 순서상 그 무렵의 해에 두었고, 순서도 알 수 없는 콜라보·통합 전략은 맨 뒤 '미정'에 모았습니다.": [
+    "**Terra Chronicle** — stories grouped by the Terra-calendar year of their present day. Years come only from date stamps in the story text or from counting off events with known years (Chernobog, 1097, etc.), and the evidence is shown alongside. Stories with no stated year sit in the year they fall near in the in-game storyline order; collabs and Integrated Strategies, which have no place in that order, are gathered under 'TBD' at the end.",
+    "**テラ年代記** — 物語の「現在」がテラ暦何年かでまとめました。年号はストーリー本文の日付表記か、年が分かっている出来事（チェルノボーグ1097年など）から数えたものだけを載せ、根拠も併記しています。年が明かされていない物語はゲーム内ストーリーラインの順序でその頃の年に置き、順序も分からないコラボ・統合戦略は最後の「未定」にまとめています。",
   ],
+  "테라력": ["Terra calendar", "テラ暦"],
+  "이야기 {n}편": ["{n} stories", "物語{n}編"],
+  "연도 미정 — 스토리라인 순서상 이 무렵": ["Year unknown — around this time by storyline order", "年未詳 — ストーリーライン順でこの頃"],
   "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브": ["AI Story Digest - Arknights Story Summaries | Terra Archive", "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ"],
   "출시된 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.": [
     "An archive of all {count} stories released. AI reads the full story scripts and condenses each into a 10-minute digest with cutscenes. {done} available now — more on the way.",
