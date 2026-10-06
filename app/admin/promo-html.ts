@@ -39,9 +39,12 @@ const C = {
 const h2 = (text: string, sub = "") =>
   `<div style="font-size:19px;font-weight:bold;margin:30px 0 10px;border-left:4px solid ${C.accent};padding-left:10px;">${text}${sub ? ` <span style="font-size:13px;font-weight:normal;color:${C.muted};">${sub}</span>` : ""}</div>`;
 
-export type PromoOptions = { updates: number; days: number };
+// noLinks — 디시가 주소가 든 글을 지워 버려서(사용자 2026-10-06) 링크·외부 이미지·도메인 글자를 다 뺀 판.
+// 배너는 디시 이미지 첨부로 따로 올리고, 사이트는 '검색해서 오라'고만 안내한다.
+export type PromoOptions = { updates: number; days: number; noLinks?: boolean };
 
 export function buildPromoHtml(changes: ChangeRow[], opt: PromoOptions = { updates: 12, days: 60 }): string {
+  const nl = !!opt.noLinks;
   // ── 기능 표 — 홈 칸 순서 그대로 (배너·동작 칸 제외), 소개는 맨 끝
   const tiles = PORTAL_TILES.filter((t) => t.tab && TAB_PATH[t.tab]);
   const ordered = [...tiles.filter((t) => t.tab !== "about"), ...tiles.filter((t) => t.tab === "about")];
@@ -54,9 +57,11 @@ export function buildPromoHtml(changes: ChangeRow[], opt: PromoOptions = { updat
     const badge = isNew ? ` <span style="font-size:11px;color:#fff;background:#e5484d;border-radius:8px;padding:1px 6px;">NEW</span>` : "";
     let desc = esc(t.desc ? t.desc : "");
     if (t.tab === "rogue" && rogueThemes.length > 1) {
-      desc += " · " + rogueThemes.map((n) => `<a href="${SITE}/rogue/is${n}" target="_blank" style="color:${C.link};">IS${n}</a>`).join(" · ");
+      desc += " · " + rogueThemes.map((n) => (nl ? `IS${n}` : `<a href="${SITE}/rogue/is${n}" target="_blank" style="color:${C.link};">IS${n}</a>`)).join(" · ");
     }
-    return `  <tr><td style="${td}"><a href="${SITE}${TAB_PATH[t.tab!]}" target="_blank" style="color:${C.link};font-weight:bold;">${t.icon} ${esc(t.label)}${badge}</a></td><td style="${td}">${desc}</td></tr>`;
+    const label = `${t.icon} ${esc(t.label)}${badge}`;
+    const cell = nl ? `<b style="color:${C.link};">${label}</b>` : `<a href="${SITE}${TAB_PATH[t.tab!]}" target="_blank" style="color:${C.link};font-weight:bold;">${label}</a>`;
+    return `  <tr><td style="${td}">${cell}</td><td style="${td}">${desc}</td></tr>`;
   }).join("\n");
 
   // ── 최근 업데이트 — 신기능·개선만, 최근 N일, 최신순(날짜 → seq). 첫 항목만 펼친 채로
@@ -84,7 +89,7 @@ export function buildPromoHtml(changes: ChangeRow[], opt: PromoOptions = { updat
     const hrefTab = Object.entries(TAB_PATH).find(([, path]) => r.href && (r.href === path || r.href.startsWith(`${path}/`)))?.[0];
     const icon = iconOf.get(AREA_TAB[r.area ?? ""] ?? "") ?? (hrefTab && iconOf.get(hrefTab)) ?? "◆";
     const imp = r.important ? ` <span style="font-size:11px;color:#fff;background:#e5484d;border-radius:8px;padding:1px 6px;">중요</span>` : "";
-    const link = r.href ? ` <a href="${SITE}${esc(r.href)}" target="_blank" style="color:${C.link};font-size:13px;white-space:nowrap;">바로 가기 ↗</a>` : "";
+    const link = r.href && !nl ? ` <a href="${SITE}${esc(r.href)}" target="_blank" style="color:${C.link};font-size:13px;white-space:nowrap;">바로 가기 ↗</a>` : "";
     return `<div style="margin:8px 0;border:1px solid #e3e1da;border-radius:10px;padding:10px 14px;background:#fff;">
   <div style="font-weight:bold;">${icon} ${rich(title)}${imp} <span style="color:${C.muted};font-weight:normal;font-size:13px;">${mmdd(r.released_at)}</span></div>
   ${body ? `<div style="margin-top:4px;font-size:14px;color:#3b4448;">${rich(body)}${link}</div>` : link ? `<div style="margin-top:4px;">${link}</div>` : ""}
@@ -94,10 +99,10 @@ export function buildPromoHtml(changes: ChangeRow[], opt: PromoOptions = { updat
   const th = `text-align:left;padding:8px 10px;border-bottom:2px solid #d9d6cc;`;
   return `<div style="max-width:760px;margin:0 auto;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:${C.ink};line-height:1.7;font-size:15px;">
 
-<a href="${SITE}/infra" target="_blank"><img src="${BANNER}" alt="테라 아카이브 — 인프라 자동편성" style="display:block;width:100%;max-width:760px;height:auto;border-radius:12px;border:0;"></a>
-<div style="margin:12px 2px 0;font-size:14.5px;color:#3b4448;">
+${nl ? "" : `<a href="${SITE}/infra" target="_blank"><img src="${BANNER}" alt="테라 아카이브 — 인프라 자동편성" style="display:block;width:100%;max-width:760px;height:auto;border-radius:12px;border:0;"></a>
+`}<div style="margin:12px 2px 0;font-size:14.5px;color:#3b4448;">
   <b>테라 아카이브</b>는 명일방주 박사를 위한 비영리 팬 도구 모음입니다. 설치·회원가입 없이 웹에서 바로 쓰고, 게임 데이터를 직접 받아 점검 당일 최신으로 맞춥니다.
-  <a href="${SITE}" target="_blank" style="color:${C.link};font-weight:bold;">terra-archive.net ↗</a>
+  ${nl ? `<b>구글·네이버에서 「테라 아카이브 명일방주」로 검색</b>하면 바로 나옵니다.` : `<a href="${SITE}" target="_blank" style="color:${C.link};font-weight:bold;">terra-archive.net ↗</a>`}
 </div>
 
 <div style="margin:16px 0;padding:12px 16px;border-radius:10px;background:#eef3f5;border:1px solid #d6e2e7;font-size:14px;">
@@ -109,7 +114,7 @@ ${h2("기능별 바로가기")}
   <tr style="background:${C.soft};"><th style="${th}width:34%;">기능</th><th style="${th}">한 줄 설명</th></tr>
 ${rows}
 </table>
-<div style="font-size:12.5px;color:${C.muted};margin-top:6px;">영어·일본어판은 주소 앞에 /en, /ja 를 붙이면 됩니다 (예: terra-archive.net/en/infra)</div>
+${nl ? `<div style="font-size:12.5px;color:${C.muted};margin-top:6px;">영어·일본어판은 사이트 오른쪽 위 언어 버튼(KO)으로 바꿀 수 있습니다</div>` : `<div style="font-size:12.5px;color:${C.muted};margin-top:6px;">영어·일본어판은 주소 앞에 /en, /ja 를 붙이면 됩니다 (예: terra-archive.net/en/infra)</div>`}
 
 ${recent.length ? `${h2("최근 업데이트")}\n${updates}` : ""}
 
@@ -120,8 +125,8 @@ ${h2("알아 두면 좋은 것")}
 <div style="margin:4px 0;padding-left:14px;text-indent:-14px;">· <b>데이터 갱신</b> — 한국 서버 점검 당일 게임 데이터를 직접 받아 반영합니다</div>
 
 <div style="margin:26px 0 6px;padding:14px 16px;border-radius:10px;background:${C.soft};font-size:14px;">
-  오류 제보·기능 제안은 사이트 각 화면의 <b>💬 피드백 버튼</b>이 가장 빠릅니다 (어느 화면에서 보냈는지 함께 전달됩니다).<br>
-  그 밖의 문의: <a href="mailto:contact@terra-archive.net" style="color:${C.link};">contact@terra-archive.net</a>
+  오류 제보·기능 제안은 사이트 각 화면의 <b>💬 피드백 버튼</b>이 가장 빠릅니다 (어느 화면에서 보냈는지 함께 전달됩니다).${nl ? "" : `<br>
+  그 밖의 문의: <a href="mailto:contact@terra-archive.net" style="color:${C.link};">contact@terra-archive.net</a>`}
 </div>
 <div style="font-size:12px;color:#8f989c;text-align:center;margin-top:10px;">명일방주(Arknights) 비공식 팬 프로젝트 · 게임 내 명칭과 데이터의 권리는 Hypergryph · Yostar에 있습니다</div>
 

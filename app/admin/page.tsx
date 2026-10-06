@@ -764,6 +764,8 @@ export default function AdminPage() {
             <button onClick={loadChanges}>새로고침</button>
             {/* 커뮤니티 소개글 HTML — 홈 칸 정의 + 이 내역으로 그때그때 만든다 (사용자 지시 2026-10-05, promo-html.ts) */}
             <button onClick={() => setPromo(buildPromoHtml(changes))}>커뮤니티 소개글 HTML</button>
+            {/* 디시가 주소 든 글을 지워서 — 링크·외부 이미지·도메인 글자 없는 판 (2026-10-06) */}
+            <button onClick={() => setPromo(buildPromoHtml(changes, { updates: 12, days: 60, noLinks: true }))}>소개글 HTML (링크 없음)</button>
           </div>
           {promo && <PromoWindow html={promo} onClose={() => setPromo(null)} />}
           {editingChange && !editingChange.id && <ChangeEditor row={editingChange} onSave={saveChange} onCancel={() => setEditingChange(null)} />}
