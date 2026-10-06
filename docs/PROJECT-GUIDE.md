@@ -256,12 +256,12 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 ```bash
 python3 scripts/fetch-gamedata-cdn.py --check      # 지금 CDN의 resVersion만 확인
 python3 scripts/fetch-gamedata-cdn.py              # kr 세트 → .gamedata/kr_*.json
-python3 scripts/fetch-gamedata-cdn.py --server cn  # 중섭(미래시) 17표
+python3 scripts/fetch-gamedata-cdn.py --server cn  # 중섭(미래시) 19표
 python3 scripts/fetch-gamedata-cdn.py --tables activity_table --server kr
 ```
 
 출력이 `fetch-gamedata.py`와 **완전히 같아서** 뒤 파이프라인은 손댈 것이 없다.
-받는 표 목록은 서버마다 다르다 (`TABLES` 상수가 정본 — 2026-09-26 기준 kr 22 · jp/en 19 · **cn 17**).
+받는 표 목록은 서버마다 다르다 (`TABLES` 상수가 정본 — 2026-10-06 기준 kr 23 · jp/en 19 · **cn 19** — cn 에 medal·story_review 추가).
 필요한 것: `brew install flatbuffers`(flatc), pip `UnityPy` `lz4inv`.
 
 네 서버 모두 같은 구조로 뜯긴다 (2026-09-04 실측):

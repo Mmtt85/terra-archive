@@ -26481,11 +26481,11 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .gl-cg-card:hover .gl-cg img {
   transform: scale(1.03);
 }
-.gl-cg-grid.spoil .gl-cg img {
+.gl-cg-card.spoil .gl-cg img {
   filter: blur(14px) saturate(0.6);
 }
-.gl-cg-grid.spoil .gl-cg-card:hover img,
-.gl-cg-grid.spoil .gl-cg-card:focus-visible img {
+.gl-cg-card.spoil:hover img,
+.gl-cg-card.spoil:focus-visible img {
   filter: none;
 }
 .gl-char-grid {
@@ -26891,11 +26891,11 @@ button.evx-rw:hover { border-color: var(--border-strong); }
     width: min(calc(52vh + 40px), 100%);
   }
 }
-.gl-cg-grid.spoil .gl-cg-cap {
+.gl-cg-card.spoil .gl-cg-cap {
   filter: blur(4px);
 }
-.gl-cg-grid.spoil .gl-cg-card:hover .gl-cg-cap,
-.gl-cg-grid.spoil .gl-cg-card:focus-visible .gl-cg-cap {
+.gl-cg-card.spoil:hover .gl-cg-cap,
+.gl-cg-card.spoil:focus-visible .gl-cg-cap {
   filter: none;
 }
 
@@ -27465,3 +27465,6 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
 .cost-lmd .cost-have.short { color: var(--danger); opacity: 1; }
 .cost-short-sum { flex: 1 0 100%; margin: 0; font-size: 12px; font-weight: 600; color: var(--muted); }
 .cost-short-sum.short { color: var(--danger); }
+
+/* 스포 가리기 '내 진행 기준' 표시 (갤러리, 2026-10-06) — 카드마다 .spoil 이 붙는다(종전엔 격자 전체) */
+.gl-spoil-mine { margin-left: 6px; padding: 1px 6px; border-radius: var(--r-xs); background: var(--tint-lime); color: var(--tint-lime-ink); font-style: normal; font-size: 11px; font-weight: 700; }

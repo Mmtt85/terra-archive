@@ -519,6 +519,16 @@ function rogueDigest(user) {
 // isHidden·originMedal 과 id 모양이 KR·CN 전부 일치한다 — 워커는 표를 안 들고 있어 id 로 가른다.
 const countedMedal = (id) => !id.startsWith("medal_hidden_") && !/_\d{2}5$/.test(id);
 
+function storiesDigest(user) {
+  const out = {};
+  for (const [group, row] of Object.entries(user?.storyreview?.groups ?? {})) {
+    const ids = (row?.stories ?? []).map((st) => String(st?.id ?? "")).filter(Boolean)
+      .map((id) => (id.startsWith(`${group}_`) ? id.slice(group.length + 1) : `=${id}`));
+    if (ids.length) out[group] = ids;
+  }
+  return out;
+}
+
 // '내 정보' 화면용 계정 요약 (2026-10-04). syncData 원본은 수 MB라 화면이 쓰는 것만 추린다.
 // 브라우저 localStorage 에 그대로 남으므로 **토큰·기기 id 같은 접근 권한 값은 넣지 않는다.**
 const num = (value) => (typeof value === "number" && Number.isFinite(value) ? value : 0);
@@ -625,6 +635,9 @@ function profile(user, friends, shop) {
     // costSocialPoint 다 (실계정 1,804,976 대조, 2026-10-05)
     creditSpent: typeof shop?.costSocialPoint === "number" ? shop.costSocialPoint : null,
     rogue: rogueDigest(user),
+    // 연 스토리 — 게임 '스토리 회상'이 기록한 것(storyreview.groups[스토리].stories[].id). 끝난 이벤트는 작전 기록이 지워져
+    // 작전 조건만으론 '한 적 있음'을 알 수 없다 — 갤러리 스포 방지가 쓴다 (2026-10-06). '<스토리>_' 접두는 떼고 싣는다
+    stories: storiesDigest(user),
   };
 }
 

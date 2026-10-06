@@ -15,13 +15,18 @@ import { ModalWindow } from "./modal-window";
 import { normSearch, useSearchInput } from "./search";
 import { AttributeFilter } from "./attr-filter";
 import eventIdsData from "./data/event-ids.json";
+import { useMe } from "./me-store";
 
 // 스토리 상세 — 스탠딩 창의 '등장 스토리'를 누르면 페이지를 넘기지 않고 겹쳐 띄운다 (이벤트 도감과 같은 부품)
 // 이벤트 도감이 아는 이벤트 — '등장 스토리'가 이벤트면 이벤트 모달, 메인 스토리 장이면 스토리 상세 (사용자 지시 2026-10-04)
 const EVENT_IDS = new Set((eventIdsData as { ids: string[] }).ids);
 const StoryModal = lazy(() => import("./story").then((m) => ({ default: m.StoryDetailById })));
 
-type GEvent = { id: string; n: string; cuts: [string, number, number?, string?][]; fut?: 1 };
+/** req — 에피소드(1부터) → 그 스토리가 열리는 조건 [[작전 id, 최소 상태(1 진입·2 클리어·3 완벽)]] (scripts/build-gallery.py req_of).
+ *  키가 없는 에피소드는 '모름'이다 — 내 진행을 알아도 가린다 (중섭 선행 스토리 등) */
+type GEvent = { id: string; n: string; cuts: [string, number, number?, string?][]; fut?: 1; req?: Record<string, [string, number][]>;
+  /** 에피소드 → storyId(앞의 '<스토리 id>_' 를 뗀 것) — 계정의 '연 스토리'(profile.stories)와 맞춘다 */
+  sid?: Record<string, string> };
 // 통합전략·생존연산 묶음 — 섹션(키비주얼·조우 CG·층·음반 / 월드맵·보스·NPC·지역)마다 [경로, 이름]
 type GArt = { id: string; n: string; link: string; fut?: 1; secs: { k: string; pics: [string, string][] }[] };
 type CgKind = "main" | "event" | "rogue" | "sandbox";
@@ -33,7 +38,13 @@ const SEC_LABEL: Record<string, string> = {
 };
 /** CG 보기의 한 장 — 이야기 CG 와 통합전략·생존연산 그림을 같은 모양으로 */
 /** cap = 한 줄 설명(이야기 CG 는 그 CG 가 뜨는 장면의 대사, 통합전략은 조우·구역·음반 이름) · tag = EP 표시 */
-type Pic = { src: string; cap: string; tag?: string; href: string; go: string; story?: { id: string; n: string; ep: number; line: number } };
+type Pic = { src: string; cap: string; tag?: string; href: string; go: string; story?: { id: string; n: string; ep: number; line: number };
+  /** 이 CG 가 나오는 에피소드의 열림 조건 — undefined 면 모름(통합전략·생존연산 그림·중섭 선행 스토리) */
+  req?: [string, number][];
+  /** 그 스토리 전체가 조건으로 쓰는 작전 id — 조건 없는 에피소드(이벤트 첫 화 등)를 열어 줄지 가르는 데 쓴다 */
+  reqAll?: string[];
+  /** 그 에피소드의 storyId (계정 '연 스토리'와 같은 모양) + 그 스토리 id */
+  sid?: string; gid?: string };
 type CgGroup = { id: string; n: string; kind: CgKind; fut?: 1; secs: { k?: string; pics: Pic[] }[]; all: Pic[] };
 type GChar = { id: string; n: string; f: string[]; op?: string; s?: number[] };
 export type GalleryDoc = { main: GEvent[]; events: GEvent[]; rogue?: GArt[]; sandbox?: GArt[];
@@ -105,6 +116,21 @@ export default function Gallery({ doc, operators, includeFuture, onShowOperator,
   const [lv, setLv] = useState<string[]>([]);
   const [rar, setRar] = useState<string[]>([]);
   const spoil = useSyncExternalStore(subscribeSpoil, readSpoil, () => false);
+  // 스포 방지 — '내 정보' 계정이 있으면 내 진행 기준으로 아직 안 열린 에피소드의 CG 만 가린다 (사용자 요청 2026-10-06).
+  // 계정이 없으면 종전처럼 전부. 조건을 모르는 그림(req 없음)은 계정이 있어도 가린다
+  const myProfile = useMe()?.profile ?? null;
+  const myStages = myProfile?.stages ?? null;
+  const myStories = myProfile?.stories ?? null;
+  // 조건 없는 에피소드(작전 없이 이벤트가 열리면 바로 보이는 첫 화·미니 스토리)는 그 스토리의 작전에 한 번이라도 들어가 봤을 때만 연다 —
+  // 그냥 열면 이벤트를 안 한 사람에게도 보였다. 작전이 하나도 없는 스토리는 진행을 알 수 없어 가린다
+  const locked = (pic: Pic) => {
+    if (!myStages) return true;
+    // 게임 '스토리 회상'이 이미 연 에피소드면 보인다 — 끝난 이벤트도 여기로 안다 (다시 동기화 뒤부터 있다)
+    if (pic.sid && pic.gid && myStories?.[pic.gid]?.includes(pic.sid)) return false;
+    if (!pic.req) return true;
+    if (!pic.req.length) return !(pic.reqAll ?? []).some((id) => (myStages[id] ?? -1) >= 1);
+    return pic.req.some(([id, lv]) => (myStages[id] ?? -1) < lv);
+  };
   const [cgOpen, setCgOpen] = useState<{ g: CgGroup; i: number } | null>(null);
   const [charOpen, setCharOpen] = useState<GChar | null>(null);
   const [opOpen, setOpOpen] = useState<GalleryOp | null>(null);
@@ -137,9 +163,10 @@ export default function Gallery({ doc, operators, includeFuture, onShowOperator,
   // CG 묶음 전부 — 이야기(장·이벤트)는 '스토리에서 보기', 통합전략·생존연산은 '가이드에서 보기'
   const cgAll = useMemo<CgGroup[]>(() => {
     const story = (e: GEvent, kind: CgKind): CgGroup => {
+      const reqAll = [...new Set(Object.values(e.req ?? {}).flat().map(([id]) => id))];
       const pics = e.cuts.map(([name, ep, line, cap]) => ({
         src: cutSrc(name), cap: cap ?? "", tag: `EP ${ep}`, href: storyHref(base, e.id, ep), go: "스토리에서 보기",
-        story: { id: e.id, n: e.n, ep, line: line ?? 0 },
+        story: { id: e.id, n: e.n, ep, line: line ?? 0 }, req: e.req?.[String(ep)], reqAll, sid: e.sid?.[String(ep)], gid: e.id,
       }));
       return { id: e.id, n: e.n, kind, fut: e.fut, secs: [{ pics }], all: pics };
     };
@@ -276,8 +303,10 @@ export default function Gallery({ doc, operators, includeFuture, onShowOperator,
         {view === "cg" && (
           <label className="gl-spoil-toggle">
             <input type="checkbox" checked={spoil} onChange={toggleSpoil} />
-            <span>{t("스포일러 가리기")}</span>
-            <small>{t("CG를 흐리게 두고, 가리키거나 눌러야 보입니다.")}</small>
+            <span>{t("스포일러 가리기")}{myStages && <em className="gl-spoil-mine">{t("내 진행 기준")}</em>}</span>
+            <small>{myStages
+              ? t("아직 안 본 스토리의 CG만 흐리게 둡니다 — 내 정보의 작전 진행 기준. 가리키거나 눌러야 보입니다.")
+              : t("CG를 흐리게 두고, 가리키거나 눌러야 보입니다.")}</small>
           </label>
         )}
       </div>
@@ -303,9 +332,9 @@ export default function Gallery({ doc, operators, includeFuture, onShowOperator,
               {g.secs.map((sec, si) => (
                 <div key={sec.k ?? si} className="gl-sec">
                   {sec.k && <h4>{t(SEC_LABEL[sec.k] ?? sec.k)} <small>{sec.pics.length}</small></h4>}
-                  <div className={`gl-cg-grid${spoil ? " spoil" : ""}${sec.k === "capsule" || sec.k === "boss" || sec.k === "npc" ? " square" : ""}`}>
+                  <div className={`gl-cg-grid${sec.k === "capsule" || sec.k === "boss" || sec.k === "npc" ? " square" : ""}`}>
                     {sec.pics.map((pic) => (
-                      <button key={pic.src} type="button" className="gl-cg-card" title={pic.cap || undefined}
+                      <button key={pic.src} type="button" className={`gl-cg-card${spoil && locked(pic) ? " spoil" : ""}`} title={pic.cap || undefined}
                         onClick={() => setCgOpen({ g, i: g.all.indexOf(pic) })} aria-label={`${g.n} ${pic.cap}`}>
                         <span className="gl-cg">
                           {/* eslint-disable-next-line @next/next/no-img-element */}

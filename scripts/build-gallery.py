@@ -76,6 +76,50 @@ def line_caption(lines, at):
     return ""
 
 
+# ── 스포 방지 — 내 진행 기준 (사용자 요청 2026-10-06) ──
+# 에피소드마다 게임이 스토리를 여는 조건(story_review_table 의 requiredStages: 작전 id + 최소 상태)을 싣는다.
+# 화면은 '내 정보' 계정의 작전 상태(0 해금·1 진입·2 클리어·3 완벽)와 맞춰, 아직 안 열린 에피소드의 CG 만 가린다.
+#   PLAYED(진입) = '작전 전' 스토리 · PASS(클리어) = '작전 후' 스토리.
+# 대본은 대사 없는 에피소드를 빼고 싣기도 해서 표의 줄 번호와 어긋날 수 있다 — (코드·제목·태그)로 차례대로 짝을 맞추고,
+# 짝을 못 찾은 에피소드는 싣지 않는다(화면이 '모름'으로 보고 계속 가린다 — 틀린 매칭으로 스포가 새지 않게).
+# 한섭 표에 없는 중섭 선행 스토리는 중섭 표(cn_story_review_table)로 — 대본이 번역본이라 제목·태그가 표와 다르므로
+# 작전 코드와 순서로만 짝을 맞춘다. 둘 다 없으면 req 가 없다 → 종전처럼 토글 하나로 가린다.
+_review_path = os.path.join(REPO, ".gamedata", "kr_story_review_table.json")
+REVIEW = load(_review_path) if os.path.exists(_review_path) else {}
+_cn_review_path = os.path.join(REPO, ".gamedata", "cn_story_review_table.json")
+REVIEW_CN = load(_cn_review_path) if os.path.exists(_cn_review_path) else {}
+STATE_LV = {"UNLOCKED": 0, "PLAYED": 1, "PASS": 2, "COMPLETE": 3}
+_ko_eps = {}
+
+
+def req_of(eid, nep):
+    """(req, sid) — req: 에피소드(1부터, 문자열 키) → [[작전 id, 최소 상태]] (조건 없는 에피소드는 빈 목록),
+    sid: 에피소드 → storyId. 계정의 '스토리 회상'(syncData storyreview)이 연 스토리를 이 id 로 기록한다 — 끝난 이벤트는
+    작전 기록이 지워져 작전 조건만으론 '한 적 있음'을 알 수 없어서 같이 싣는다. 짝 못 찾은 에피소드는 둘 다에서 빠진다"""
+    if eid not in _ko_eps:
+        path = os.path.join(script_dir(""), f"{eid}.json")
+        _ko_eps[eid] = (load(path).get("eps") or []) if os.path.exists(path) else []
+    eps = _ko_eps[eid]
+    cn_only = eid not in REVIEW
+    infos = sorted(((REVIEW_CN if cn_only else REVIEW).get(eid) or {}).get("infoUnlockDatas") or [], key=lambda i: i.get("storySort", 0))
+    if not infos or len(eps) != nep:      # 다른 로케일 대본이 한국어와 화 수가 다르면 번호를 믿을 수 없다
+        return None, None
+    out, sid, j = {}, {}, 0
+    for i, ep in enumerate(eps, 1):
+        for k in range(j, len(infos)):
+            inf = infos[k]
+            same_code = (inf.get("storyCode") or "") == (ep.get("code") or "")
+            if same_code and (cn_only or ((inf.get("storyName") or "") == (ep.get("name") or "")
+                                          and (inf.get("avgTag") or "") == (ep.get("tag") or ""))):
+                out[str(i)] = [[r["stageId"], STATE_LV.get(r.get("minState"), 2)]
+                               for r in inf.get("requiredStages") or [] if r.get("stageId")]
+                if inf.get("storyId"):
+                    sid[str(i)] = inf["storyId"]
+                j = k + 1
+                break
+    return out or None, sid or None
+
+
 def cuts_of(script):
     out, seen = [], set()
     for i, ep in enumerate(script.get("eps") or [], 1):
@@ -199,7 +243,22 @@ for loc, suf, sub in LOCALES:
         if not sc:
             return None
         cuts = cuts_of(sc)
-        return {"id": eid, "n": name, "cuts": cuts} if cuts else None
+        if not cuts:
+            return None
+        row = {"id": eid, "n": name, "cuts": cuts}
+        req, sid = req_of(eid, len(sc.get("eps") or []))
+        used = {str(c[1]) for c in cuts}      # CG 가 있는 에피소드 것만 — 파일을 키우지 않게
+        if req:
+            req = {k: v for k, v in req.items() if k in used}
+            if req:
+                row["req"] = req
+        if sid:
+            # storyId 는 '<스토리 id>_' 로 시작하면 그 앞부분을 떼고 싣는다 (화면이 다시 붙인다)
+            pre = f"{eid}_"
+            sid = {k: (v[len(pre):] if v.startswith(pre) else "=" + v) for k, v in sid.items() if k in used}
+            if sid:
+                row["sid"] = sid
+        return row
 
     main = []
     for k in sorted((k for k in scripts if re.fullmatch(r"main_\d+", k)), key=lambda x: int(x.split("_")[1])):

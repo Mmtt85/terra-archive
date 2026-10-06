@@ -68,7 +68,10 @@ TABLES = {
            "activity_table", "stage_table", "zone_table",
            # medal_table: 미실장 이벤트의 훈장 탭(build-event-extra.py). 빠져 있어 2026-10-01 밤 CI 2단계가
            #   FileNotFoundError 로 멈췄다(로컬엔 따로 받아 둔 게 있어 몰랐다)
-           "medal_table"],
+           "medal_table",
+           # story_review_table: 갤러리 스포 방지 — 중섭 선행 스토리의 에피소드 열림 조건·storyId (build-gallery.py, 2026-10-06).
+           #   없으면 선행 스토리 CG 는 '모름'으로 계속 가려질 뿐 빌드는 멈추지 않는다
+           "story_review_table"],
     # en/jp 에 range_table 이 없는 것은 의도다 — 공격 범위 격자는 **언어와 무관**해서
     # kr(없으면 cn) 것만 읽는다 (build-skill-levels.py, regen-operators.py). 넣어 봐야
     # 아무도 안 읽는 파일이 하나 더 생길 뿐이고, 하필 CDN에서 못 뜯는 표라 레포까지 다녀온다.

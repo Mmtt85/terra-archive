@@ -100,6 +100,8 @@ export type AccountProfile = {
   creditSpent?: number | null;
   /** 통합전략 테마별 진행 — collect: 갈래 → 얻은 id 들, record: 원본(작으면) (2026-10-05) */
   rogue?: Record<string, { collect: Record<string, string[]>; chat?: { chat?: Record<string, number>; chatV2?: Record<string, string[]> }; record: Record<string, unknown> | null }>;
+  /** 연 스토리 — 스토리 id → 그 안의 storyId('<스토리>_' 접두를 뗀 것, 접두가 다르면 '=' + 전체) (2026-10-06~ 워커, 갤러리 스포 방지) */
+  stories?: Record<string, string[]>;
 };
 
 export type AccountRoster = { player: AccountPlayer; chars: AccountChar[]; token: AccountToken; profile?: AccountProfile };
