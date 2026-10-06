@@ -13,9 +13,10 @@ import type { ChangeRow } from "../changelog-api";
 import rogueIndex from "../data/rogue-index.json";
 
 const SITE = "https://terra-archive.net";
-// 맨 위 배너 — public/about/promo-banner.jpg (2560×816, R2 files.terra-archive.net). 인프라 자동편성을 가장 크게 민다
-// (사용자 지시 2026-10-05). 그림을 바꾸면 ?v= 를 올린다 — 커뮤니티 글에 박힌 주소라 캐시가 오래 남는다
-const BANNER = "https://files.terra-archive.net/assets/about/promo-banner.jpg?v=20261006";
+// 맨 위 배너 — 사용자가 /admin 파일 탭으로 올린 이격 스카디 배너 (2026-10-06, 종전 인프라 자동편성 배너는 'AI 티'로 교체).
+// 링크 없는 판에도 그림은 싣는다(사용자 지시). 같은 이름으로 다시 올리면 캐시 때문에 최대 1일 늦게 바뀐다
+const BANNER = "https://files.terra-archive.net/uploads/terra-archive-banner3-skadi-1280x408.jpg";
+const bannerImg = `<img src="${BANNER}" alt="테라 아카이브" style="display:block;width:100%;height:auto;border-radius:12px;border:0;">`;
 // 탭 → 주소 (home.tsx TAB_SEG 와 같은 값 — home.tsx 를 관리자 번들에 끌어오지 않으려고 따로 둔다)
 const TAB_PATH: Record<string, string> = {
   planner: "/infra", archive: "/operators", enemy: "/enemies", stage: "/stages", item: "/items", gallery: "/gallery",
@@ -98,8 +99,8 @@ export function buildPromoHtml(changes: ChangeRow[], opt: PromoOptions = { updat
   const th = `text-align:left;padding:8px 10px;border-bottom:2px solid #d9d6cc;`;
   return `<div style="width:100%;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:${C.ink};line-height:1.7;font-size:15px;">
 
-${nl ? "" : `<a href="${SITE}/infra" target="_blank"><img src="${BANNER}" alt="테라 아카이브 — 인프라 자동편성" style="display:block;width:100%;height:auto;border-radius:12px;border:0;"></a>
-`}<div style="margin:12px 2px 0;font-size:14.5px;color:#3b4448;">
+${nl ? bannerImg : `<a href="${SITE}" target="_blank">${bannerImg}</a>`}
+<div style="margin:12px 2px 0;font-size:14.5px;color:#3b4448;">
   <b>테라 아카이브</b>는 명일방주 박사를 위한 비영리 팬 도구 모음입니다. 설치·회원가입 없이 웹에서 바로 쓰고, 게임 데이터를 직접 받아 점검 당일 최신으로 맞춥니다.
   ${nl ? `<b>구글·네이버에서 「테라 아카이브 명일방주」로 검색</b>해도 바로 나옵니다.` : `<a href="${SITE}" target="_blank" style="color:${C.link};font-weight:bold;">terra-archive.net ↗</a>`}
 </div>
