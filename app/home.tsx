@@ -961,7 +961,10 @@ function Portal({ onOpenTab, onOpenEvent }: {
         {/* 장식이므로 alt는 비운다. 늦게 떠도 레이아웃이 안 밀리게 절대배치. */}
         <img className="pt-art" src={asset(PORTAL_ART)} alt="" decoding="async" fetchPriority="low" />
       <div className="pt-player">
-        <span className="pt-lv"><b>{days}</b><small>DAY</small></span>
+        {/* 미리 만든 HTML 의 숫자는 빌드한 날 기준이라, 자정을 넘긴 뒤 열면 87 → 88 로 바뀌어 보였다 (사용자 지적 2026-10-06).
+            그리기 전에 바로 뒤 스크립트가 지금 시각으로 바꿔 두고, React 는 그 글자를 건드리지 않는다(suppressHydrationWarning) */}
+        <span className="pt-lv"><b id="pt-days" suppressHydrationWarning>{days}</b><small>DAY</small></span>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var e=document.getElementById("pt-days");if(e)e.textContent=Math.max(1,Math.floor((Date.now()-${SITE_OPENED})/${DAY})+1)})()` }} />
         <h1 id="portal-title" className="pt-name">{t("테라 아카이브")}</h1>
         <p className="pt-sub">{t("명일방주(아크나이츠) 팬사이트 — 필요한 도구를 골라 들어가세요.")}</p>
         </div>
@@ -2341,7 +2344,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 {t(PROMO.label)}
                 {/* 남은 기간 — '기간 한정'보다 쓸모 있는 정보라 그 자리를 대신한다
                     (사용자 요청 2026-08-24). 못 구하면 종전 문구로 되돌아간다. */}
-                <span className="promo-hint">{promoLeftLabel(promoNow, t) ?? t("기간 한정")}</span>
+                <span className="promo-hint" id="promo-hint" suppressHydrationWarning>{promoLeftLabel(promoNow, t) ?? t("기간 한정")}</span>
+                {/* 남은 기간도 빌드 시각 기준이라 그리기 전에 지금 시각으로 바꿔 둔다 (DAY 카운터와 같은 수법) */}
+                <script dangerouslySetInnerHTML={{ __html: `(function(){var e=document.getElementById("promo-hint");if(!e)return;var ms=${PROMO_END}-Date.now();if(!(ms>0))return;var d=Math.floor(ms/864e5),h=Math.floor(ms/36e5);e.textContent=d>=1?${JSON.stringify(t("{n}일 남음"))}.replace("{n}",d):h>=1?${JSON.stringify(t("{n}시간 남음"))}.replace("{n}",h):${JSON.stringify(t("{n}분 남음"))}.replace("{n}",Math.max(1,Math.floor(ms/6e4)))})()` }} />
                 {tabHasNewFeature(PROMO.tab) && <span className="new-badge">{t("새기능")}</span>}
               </a>
             )}
