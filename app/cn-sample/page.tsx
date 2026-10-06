@@ -13,7 +13,8 @@ import { sendFeedback, uploadFeedbackFile, fmtFileSize, FEEDBACK_IMG_MB } from "
 // ── 마감 (사용자 계획 2026-10-06) ── 직영·B服 데이터가 각각 하나 이상 들어오면 페이지를 닫는다.
 // 닫을 때 여기에 받은 건수를 넣고 배포한다 — 로그인 화면 대신 감사 인사만 나온다. null 이면 열려 있다.
 // 닫기 전 모습 미리보기: /cn-sample?preview=closed (dev·라이브 모두)
-const CLOSED: { official: number; bili: number } | null = null;
+// 2026-10-06 마감 — 직영 1건(제안 327602ca)으로 '내 정보' 중섭 로그인을 붙였다
+const CLOSED: { official: number; bili: number } | null = { official: 1, bili: 0 };
 
 const STEPS: { id: string; label: string }[] = [
   { id: "network", label: "서버 주소 확인" },
@@ -92,9 +93,10 @@ function CnSampleClosed({ official, bili }: { official: number; bili: number }) 
         <h2>도와주셔서 감사합니다!</h2>
         <p>
           총 <b>{official + bili}건</b>의 데이터를 전달받았습니다
-          {" "}(<Zh t="官服" g="직영 서버" /> {official}건 · <Zh t="B服" g="비리비리 서버" /> {bili}건).
+          {/* 0건인 쪽은 적지 않는다 */}
+          {" "}({official > 0 && <><Zh t="官服" g="직영 서버" /> {official}건</>}{official > 0 && bili > 0 && " · "}{bili > 0 && <><Zh t="B服" g="비리비리 서버" /> {bili}건</>}).
         </p>
-        <p>보내 주신 데이터로 「내 정보」의 중국 서버 지원을 준비하겠습니다. 이 페이지는 이제 닫혀서 더 이상 로그인할 수 없습니다.</p>
+        <p>보내 주신 데이터로 「내 정보」의 중국 서버 지원을 마쳤습니다 — 이제 <a href="/me">내 정보</a>에서 중국 서버 계정으로 바로 로그인할 수 있어요. 이 페이지는 닫혀서 더 이상 데이터를 받지 않습니다.</p>
       </section>
     </main>
   );
