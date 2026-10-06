@@ -14,7 +14,7 @@ import { ModalWindow } from "./modal-window";
 import farmData from "./data/farm.json";
 import costsData from "./data/costs.json";
 import { accentOf, type Operator } from "./home";
-import { useI18n, type Locale } from "./i18n";
+import { useI18n, type Locale, type T } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
 import { AttributeFilter } from "./attr-filter";
@@ -519,6 +519,14 @@ function buildGroups(operator: Operator, entry: CostEntry, t: (key: string, para
   return groups;
 }
 
+/** 재료 칸 아래 한 줄 — 모자라면 'N 부족'(빨강), 충분하면 '보유 N'(흐리게) */
+function HaveLine({ t, need, have }: { t: T; need: number; have: number }) {
+  const short = need - have;
+  return short > 0
+    ? <small className="cost-have short">{t("{n} 부족", { n: short.toLocaleString() })}</small>
+    : <small className="cost-have">{t("보유 {n}", { n: have.toLocaleString() })}</small>;
+}
+
 function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }: {
   operators: Operator[];
   includeFuture: boolean;
@@ -539,6 +547,19 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   const [levelLv, setLevelLv] = useState<Record<string, number>>({});
 
   const byId = useMemo(() => new Map(operators.map((operator) => [operator.id, operator])), [operators]);
+
+  // 내 창고로 모자라는 것 — '내 정보'에 계정 데이터가 있을 때만 (사용자 요청 2026-10-06).
+  // 작전기록은 계산기가 고급작전기록(2004) 장수로 환산해 세므로, 창고의 네 등급(2001~2004) 경험치를 합쳐 같은 단위로 바꾼다.
+  const inv = useMe()?.profile?.inventory;
+  const haveOf = (id: string): number => {
+    if (!inv) return 0;
+    if (id !== EXP_CARD_ID) return inv[id] ?? 0;
+    const unit = costs.items[EXP_CARD_ID]?.gainExp ?? 0;
+    if (!unit) return inv[id] ?? 0;
+    const exp = ["2001", "2002", "2003", "2004"].reduce((sum, card) => sum + (inv[card] ?? 0) * (costs.items[card]?.gainExp ?? 0), 0);
+    return Math.floor(exp / unit);
+  };
+  const shortOf = (id: string, need: number) => Math.max(0, need - haveOf(id));
 
   // 공유 링크 복원 — URL ?ops=char_2027_wang,... 를 읽어 계산기에 담는다 (마운트 1회).
   // 하이드레이션 불일치를 피해 초기값은 [] 로 두고 이펙트에서 복원한다.
@@ -724,9 +745,15 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                 <button type="button" className="cost-clear" onClick={() => { setPicked([]); setTargets({}); }}>{t("전체 비우기")}</button>
               </div>
             </div>
+            {/* 내 창고 기준 요약 — 머리 줄(공유·비우기 버튼)에 같이 두면 300px 패널에서 버튼까지 두 줄로 꺾였다 */}
+            {inv && (() => {
+              const n = totals.rows.filter((row) => shortOf(row.id, row.count) > 0).length + (shortOf("4001", totals.lmd) > 0 ? 1 : 0);
+              return <p className={`cost-short-sum${n ? " short" : ""}`}>{n ? t("내 창고 기준 {n}종 부족", { n }) : t("내 창고로 모두 충분합니다")}</p>;
+            })()}
             <div className="cost-lmd">
               <img src={asset("/items/4001.webp")} alt="" width={183} height={183} />
-              <div><span>{t("용문폐")}</span><b>{totals.lmd.toLocaleString()}</b></div>
+              <div><span>{t("용문폐")}</span><b>{totals.lmd.toLocaleString()}</b>
+                {inv && <HaveLine t={t} need={totals.lmd} have={haveOf("4001")} />}</div>
             </div>
             <div className="cost-items">
               {totals.rows.map((row) => {
@@ -734,7 +761,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                 return (
                   <button key={row.id} type="button" className="cost-item farmable" title={t("{name} 상세 정보 열기", { name })} onClick={() => onShowItem(row.id)}>
                     <span className="cost-item-icon" data-tier={row.meta.rarity}><img src={asset(row.meta.image)} alt="" width={183} height={183} loading="lazy" decoding="async" /><i>{row.count.toLocaleString()}</i></span>
-                    <b>{name}</b>
+                    <span className="cost-item-txt"><b>{name}</b>{inv && <HaveLine t={t} need={row.count} have={haveOf(row.id)} />}</span>
                   </button>
                 );
               })}

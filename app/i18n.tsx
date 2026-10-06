@@ -118,6 +118,11 @@ const D: Record<string, Pair> = {
   "페이지를 찾을 수 없습니다": ["Page not found", "ページが見つかりません"],
   "주소가 바뀌었거나 없어진 페이지입니다. 주소를 다시 확인하거나 홈에서 찾아 주세요.": ["This page has moved or no longer exists. Check the address, or find it from the home page.", "アドレスが変わったか、なくなったページです。アドレスを確認するか、ホームから探してください。"],
   "홈으로": ["Go home", "ホームへ"],
+  // 육성 계산기 — 내 창고 기준 부족 표시 (app/farm.tsx, 2026-10-06)
+  "{n} 부족": ["{n} short", "{n}不足"],
+  "보유 {n}": ["Have {n}", "所持 {n}"],
+  "내 창고 기준 {n}종 부족": ["Short on {n} items vs. your depot", "倉庫基準で{n}種不足"],
+  "내 창고로 모두 충분합니다": ["Your depot covers everything", "倉庫ですべて足ります"],
   "명일방주(Arknights) 팬사이트": ["Arknights fansite", "アークナイツのファンサイト"],
   "테라 아카이브 홈": ["Terra Archive home", "テラアーカイブ ホーム"],
   "주요 탭": ["Main tabs", "メインタブ"],
