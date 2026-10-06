@@ -253,7 +253,7 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
       <div className="results">
         <div className="results-heading">
           <div><span className="section-no">RESULT / 02</span><h2>{active ? t("탐색 결과") : t("전체 작전")}</h2></div>
-          <div className="results-tools"><span className="count"><b>{shown.length}</b> STAGES</span></div>
+          <div className="results-tools"><span className="count"><b>{shown.length}</b> {t("작전")}</span></div>
         </div>
         <div className="active-filters">
           {types.map((v) => <button key={`t-${v}`} onClick={() => pickOne(setTypes)(v)}>{doc.types[v] ?? v} ×</button>)}
@@ -270,7 +270,7 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
               ))}
             </div>
           ) : (
-            <div className="empty"><span>NO MATCH</span><h3>{t("조건에 맞는 작전이 없어요.")}</h3>
+            <div className="empty"><h3>{t("조건에 맞는 작전이 없어요.")}</h3>
               <button onClick={reset}><span className="btn-icon" aria-hidden>↻</span>{t("전체 보기")}</button></div>
           )}
         </div>

@@ -8,6 +8,7 @@
 // 화면에는 재료당 효율 상위 3개 스테이지만 표시한다 (2026-07 사용자 확정).
 // 육성 비용 데이터는 scripts/build-costs.py가 생성하는 app/data/costs.json —
 // 정예화 1·2, 스킬 2~7, 특화 1~3, 모듈 1~3단계의 용문폐·재료 소요량.
+import { usePageHelp } from "./page-help";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
@@ -220,6 +221,7 @@ export default function FarmGuide() {
   // 표 읽는 법·출처는 한 번 읽으면 끝인데 머리글에 세 문단이 늘 깔려 있었다 —
   // 창으로 빼고 여는 버튼만 남긴다 (사용자 지시 2026-09-20, 공개채용 도우미와 같은 규약)
   const [showGuide, setShowGuide] = useState(false);
+  usePageHelp("farm", () => setShowGuide(true)); // 안내 창은 페이지 머리의 '?' 로 연다 (2026-10-07)
   // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에 searchTerm만 갱신 (search.ts)
   const { term: searchTerm, set: setSearchTerm, inputProps: searchProps } = useSearchInput();
   // 재료 상세 모달 — 효율표·계산기의 모든 재료 아이콘에서 연다 (id = item id)
@@ -324,7 +326,6 @@ export default function FarmGuide() {
           {/* 안내는 제목 오른쪽 짧은 버튼 하나 (사용자 지시 2026-09-28 "길게 만들지 말고 짧은 버튼으로") */}
           <div><span className="section-no">RESULT / 02</span>
             <div className="rh-title"><h2>{t("재료 파밍 효율표")}</h2>
-              <div className="head-links"><button type="button" onClick={() => setShowGuide(true)}>{t("읽는 법과 출처")}</button></div>
             </div>
           </div>
           <div className="results-tools">
@@ -553,6 +554,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   // 비제어 입력 — 후보 목록은 타이핑 멈춘 뒤 0.5초에만 (search.ts)
   const { term: draftTerm, set: setDraftTerm, inputRef: draftRef, inputProps: draftProps } = useSearchInput();
   const [showGuide, setShowGuide] = useState(false);
+  usePageHelp("upgrade", () => setShowGuide(true)); // 안내 창은 페이지 머리의 '?' 로 연다 (2026-10-07)
   // 검색창 포커스 여부 — 입력이 없어도 포커스만 하면 전체 오퍼 목록을 펼쳐 보여준다.
   const [focused, setFocused] = useState(false);
   // 그룹별 목표 단계 — "opId/groupKey" → 포함할 앞쪽 단계 수. 없으면 전체(steps.length) 기본.
@@ -790,7 +792,6 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
           {/* 한 번 읽으면 끝인 사용법은 창으로 (2026-09-20) — 여는 버튼은 제목 오른쪽 짧은 버튼 (2026-09-28) */}
           <div><span className="section-no">OPERATOR / 02</span>
             <div className="rh-title"><h2>{t("육성 비용 계산기")}</h2>
-              <div className="head-links"><button type="button" onClick={() => setShowGuide(true)}>{t("쓰는 법")}</button></div>
             </div>
           </div>
         </div>

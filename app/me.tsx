@@ -473,7 +473,7 @@ function ProfileCard({ me, now, opById, demo }: { me: MeData; now: number; opByI
       <div className="me-profile-top">
         <span className="me-avatar">{secretary ? <img src={avatarOf(secretary)} alt="" width={96} height={96} /> : <b aria-hidden>Dr.</b>}</span>
         <div className="me-profile-name">
-          <span className="modal-kicker">DOCTOR · {t(server)}</span>
+          <span className="modal-kicker keep">{t(server)}</span>
           <h3>{me.player.nickName}<small>#{me.player.nickNumber}</small></h3>
           <p>Lv.<b>{me.player.level}</b> · UID {me.player.uid}</p>
         </div>

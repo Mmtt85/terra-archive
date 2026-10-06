@@ -323,7 +323,7 @@ export default function Gallery({ doc, operators, includeFuture, onShowOperator,
         </div>
         <div className="results-scroll">
           {count === 0 && (
-            <div className="empty"><span>NO MATCH</span><h3>{t("조건에 맞는 그림이 없어요.")}</h3></div>
+            <div className="empty"><h3>{t("조건에 맞는 그림이 없어요.")}</h3></div>
           )}
           {view === "cg" && groups.map((g) => (
             <div key={g.id} className={`gl-group${g.fut ? " fut-dim" : ""}`}>

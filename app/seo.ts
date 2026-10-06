@@ -43,32 +43,32 @@ function languagesFor(tab: SeoTab) {
 // 탭별 제목·설명 (portal은 아래 META의 기본값=사이트 허브 메타를 그대로 쓴다)
 const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: string; description: string }>> = {
   archive: {
-    ko: { title: "오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브", description: "명일방주(아크나이츠) 오퍼레이터 백과사전 — 소속·직군·태그·시너지로 필터·검색하고, 오퍼레이터 상세 정보와 별명을 확인하세요." },
+    ko: { title: "오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브", description: "명일방주(Arknights) 오퍼레이터 백과사전 — 소속·직군·태그·시너지로 필터·검색하고, 오퍼레이터 상세 정보와 별명을 확인하세요." },
     en: { title: "Operator Archive - Arknights Operator Database | Terra Archive", description: "Arknights operator encyclopedia — filter and search by faction, class, tags, and synergy, and browse full operator details." },
     ja: { title: "オペレーター図鑑 - アークナイツ オペレーター一覧 | テラアーカイブ", description: "アークナイツのオペレーター図鑑 — 所属・クラス・タグ・シナジーで絞り込み検索し、オペレーターの詳細情報を確認できます。" },
   },
   enemy: {
-    ko: { title: "적 도감 - 명일방주 적 정보 | 테라 아카이브", description: "명일방주(아크나이츠) 적 도감 — 적 1,500여 종의 스탯·능력·상태이상 면역·종족을 등급별로 찾고, 그 적이 등장하는 작전까지 역으로 확인합니다." },
+    ko: { title: "적 도감 - 명일방주 적 정보 | 테라 아카이브", description: "명일방주(Arknights) 적 도감 — 적 1,500여 종의 스탯·능력·상태이상 면역·종족을 등급별로 찾고, 그 적이 등장하는 작전까지 역으로 확인합니다." },
     en: { title: "Enemy Handbook - Arknights Enemy Database | Terra Archive", description: "Arknights enemy handbook — stats, abilities, status immunities and races for 1,500+ enemies, plus the operations each one appears in." },
     ja: { title: "敵図鑑 - アークナイツ敵情報 | テラアーカイブ", description: "アークナイツの敵図鑑 — 1,500種以上の敵のステータス・能力・状態異常耐性・種族を等級別に検索し、その敵が出現する作戦も逆引きできます。" },
   },
   stage: {
-    ko: { title: "작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브", description: "명일방주(아크나이츠) 작전 도감 — 스테이지 2,200여 개의 지형 도면과 소모 이성·권장 편성·등장 적·드랍을 계열과 구역으로 찾습니다." },
+    ko: { title: "작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브", description: "명일방주(Arknights) 작전 도감 — 스테이지 2,200여 개의 지형 도면과 소모 이성·권장 편성·등장 적·드랍을 계열과 구역으로 찾습니다." },
     en: { title: "Stage Handbook - Arknights Stage Maps & Drops | Terra Archive", description: "Arknights stage handbook — terrain layouts for 2,200+ operations with sanity cost, recommended level, enemies and drops, searchable by category and zone." },
     ja: { title: "作戦図鑑 - アークナイツ ステージ地形・ドロップ | テラアーカイブ", description: "アークナイツの作戦図鑑 — 2,200以上のステージの地形図と理性消費・推奨編成・出現する敵・ドロップを系統とエリアで検索できます。" },
   },
   item: {
-    ko: { title: "아이템 도감 - 명일방주 아이템 정보 | 테라 아카이브", description: "명일방주(아크나이츠) 아이템 도감 — 재료·이벤트 교환 재화·자원·교환권 1,400여 종의 설명과 용도, 획득 방법, 드랍 작전을 한자리에서 찾습니다." },
+    ko: { title: "아이템 도감 - 명일방주 아이템 정보 | 테라 아카이브", description: "명일방주(Arknights) 아이템 도감 — 재료·이벤트 교환 재화·자원·교환권 1,400여 종의 설명과 용도, 획득 방법, 드랍 작전을 한자리에서 찾습니다." },
     en: { title: "Item Handbook - Arknights Item Database | Terra Archive", description: "Arknights item handbook — descriptions, uses, how to obtain and drop stages for 1,400+ materials, event currencies, resources and vouchers, all in one place." },
     ja: { title: "アイテム図鑑 - アークナイツ アイテム情報 | テラアーカイブ", description: "アークナイツのアイテム図鑑 — 素材・イベント交換素材・資源・引換券など1,400種以上の説明と用途、入手方法、ドロップ作戦をまとめて検索できます。" },
   },
   event: {
-    ko: { title: "이벤트 가이드 - 명일방주 이벤트 정보 | 테라 아카이브", description: "명일방주(아크나이츠) 이벤트 가이드 — 이벤트 150여 개의 작전·등장 적·교환 재화·보상 오퍼레이터를 한자리에서 봅니다. 끝난 이벤트도 그대로 남습니다." },
+    ko: { title: "이벤트 가이드 - 명일방주 이벤트 정보 | 테라 아카이브", description: "명일방주(Arknights) 이벤트 가이드 — 이벤트 150여 개의 작전·등장 적·교환 재화·보상 오퍼레이터를 한자리에서 봅니다. 끝난 이벤트도 그대로 남습니다." },
     en: { title: "Event Guide - Arknights Event Database | Terra Archive", description: "Arknights event guide — operations, enemies, exchange currencies and welfare operators for 150+ events, gathered in one place. Ended events stay here." },
     ja: { title: "イベントガイド - アークナイツ イベント情報 | テラアーカイブ", description: "アークナイツのイベントガイド — 150以上のイベントの作戦・出現する敵・交換素材・報酬オペレーターをまとめて確認できます。終了したイベントもそのまま残ります。" },
   },
   sim: {
-    ko: { title: "작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브", description: "명일방주(아크나이츠) 작전 시뮬레이터 — 작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지 스폰 타임라인을 재생합니다. 배속·구간 이동 지원, 통합전략 전투 노드 포함." },
+    ko: { title: "작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브", description: "명일방주(Arknights) 작전 시뮬레이터 — 작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지 스폰 타임라인을 재생합니다. 배속·구간 이동 지원, 통합전략 전투 노드 포함." },
     en: { title: "Stage Simulator - Arknights Enemy Spawn Timeline | Terra Archive", description: "Arknights stage simulator — pick an operation and replay its enemy spawn timeline: when each enemy appears, which route it takes, and where it goes, with playback speed and seeking." },
     ja: { title: "作戦シミュレーター - アークナイツ敵出現タイムライン | テラアーカイブ", description: "アークナイツ作戦シミュレーター — 作戦を選ぶと、敵が何秒にどこから現れどの経路でどこへ向かうか、出現タイムラインを再生します。倍速・シークにも対応。" },
   },
@@ -98,7 +98,7 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ja: { title: "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ", description: "アークナイツのイベントストーリーAI要約アーカイブ — サイドストーリーをカットシーンと共に10分で要約します。" },
   },
   gallery: {
-    ko: { title: "갤러리 - 명일방주 스토리 CG·스탠딩·일러스트 | 테라 아카이브", description: "명일방주(아크나이츠) 갤러리 — 메인·이벤트 스토리 CG 1,400여 장과 인물 스탠딩 1,100여 명, 오퍼레이터 기본·정예화·스킨 일러스트를 한곳에서 둘러봅니다." },
+    ko: { title: "갤러리 - 명일방주 스토리 CG·스탠딩·일러스트 | 테라 아카이브", description: "명일방주(Arknights) 갤러리 — 메인·이벤트 스토리 CG 1,400여 장과 인물 스탠딩 1,100여 명, 오퍼레이터 기본·정예화·스킨 일러스트를 한곳에서 둘러봅니다." },
     en: { title: "Gallery - Arknights Story CGs, Sprites & Artwork | Terra Archive", description: "Arknights gallery — browse 1,300+ main and event story CGs, character sprites for 1,000+ characters, and every operator's base, Elite and skin artwork in one place." },
     ja: { title: "ギャラリー - アークナイツ ストーリーCG・立ち絵・イラスト | テラアーカイブ", description: "アークナイツのギャラリー — メイン・イベントストーリーのCG 1,300枚以上、1,000人以上のキャラクター立ち絵、オペレーターの基本・昇進・コーデのイラストをまとめて閲覧できます。" },
   },
@@ -113,12 +113,12 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ja: { title: "統合戦略ガイド - アークナイツ統合戦略攻略 | テラアーカイブ", description: "アークナイツ統合戦略ガイド — ファントムと緋き貴石の各階層ノード、難易度0～15対応の敵図鑑、収蔵品・レパートリー、幻覚、エンディング条件を整理します。" },
   },
   ra: {
-    ko: { title: "생존연산 가이드 - 명일방주 생존연산 공략 | 테라 아카이브", description: "명일방주(아크나이츠) 생존연산 가이드 — 요리·음료 조합, 제작·설치물 재료, 지역·날씨, 조우 선택지, 균열 목표를 게임 데이터에서 정리했습니다. 중국 서버 선행 신시즌도 비공식 번역으로 미리 봅니다." },
+    ko: { title: "생존연산 가이드 - 명일방주 생존연산 공략 | 테라 아카이브", description: "명일방주(Arknights) 생존연산 가이드 — 요리·음료 조합, 제작·설치물 재료, 지역·날씨, 조우 선택지, 균열 목표를 게임 데이터에서 정리했습니다. 중국 서버 선행 신시즌도 비공식 번역으로 미리 봅니다." },
     en: { title: "Reclamation Algorithm Guide - Arknights RA Guide | Terra Archive", description: "Arknights Reclamation Algorithm guide — food recipes, crafting materials, areas & weather, encounter choices and rift objectives, plus a preview of the CN-first new season." },
     ja: { title: "生息演算ガイド - アークナイツ生息演算攻略 | テラアーカイブ", description: "アークナイツ生息演算ガイド — 料理レシピ、製作・設置物の素材、エリアと天候、遭遇の選択肢、裂け目の目標を整理。中国サーバー先行の新シーズンもプレビューできます。" },
   },
   autochess: {
-    ko: { title: "위수 협의 가이드 - 명일방주 명토체스 공략 | 테라 아카이브", description: "명일방주(아크나이츠) 위수 협의(오토체스) 시즌2 「맹약」 가이드 — 맹약 23종(진영 8·특성 15)별 오퍼레이터, 오퍼레이터 121명의 전용 능력과 스킬·모듈, 리더 적 10종과 특훈 적 7유형 119종, 보급센터 티어별 가격·레벨, 자유 선택 칸과 대체 기물, 아이템 59종·전략 40종까지 게임 데이터에서 정리했습니다." },
+    ko: { title: "위수 협의 가이드 - 명일방주 명토체스 공략 | 테라 아카이브", description: "명일방주(Arknights) 위수 협의(오토체스) 시즌2 「맹약」 가이드 — 맹약 23종(진영 8·특성 15)별 오퍼레이터, 오퍼레이터 121명의 전용 능력과 스킬·모듈, 리더 적 10종과 특훈 적 7유형 119종, 보급센터 티어별 가격·레벨, 자유 선택 칸과 대체 기물, 아이템 59종·전략 40종까지 게임 데이터에서 정리했습니다." },
     en: { title: "Stronghold Protocol Guide - Arknights Auto Chess | Terra Archive", description: "Arknights Stronghold Protocol (auto chess) Season 2 guide — 23 alliances (8 nation, 15 trait) with their operators, garrison abilities plus skills and modules for all 121 units, 10 leader enemies and 119 Tactical Training enemies across 7 types, Supply Center tier prices and levels, free-pick slots and stand-in units, 59 items and 40 strategies, straight from game data." },
     ja: { title: "堅守協定ガイド - アークナイツ オートチェス攻略 | テラアーカイブ", description: "アークナイツ堅守協定（オートチェス）シーズン2「盟約」ガイド — 盟約23種（国家8・特性15）ごとのオペレーター、121体それぞれの専用能力とスキル・モジュール、リーダー級10種と訓練用仮想敵7系統119種、補給センターの等級別価格とレベル、自由選択枠と代替ユニット、アイテム59種・戦略40種までゲームデータから整理しました。" },
   },
@@ -142,8 +142,8 @@ const META: Record<SeoLocale, {
     ogLocale: "ko_KR",
     siteName: "테라 아카이브",
     title: "테라 아카이브 | 명일방주(Arknights) 팬사이트",
-    description: "명일방주(아크나이츠) 팬사이트 — 오퍼레이터 백과사전, 기반시설(인프라) 자동 편성 플래너, 공개모집(공채) 태그 계산기, 재료 파밍 효율표.",
-    keywords: ["명일방주", "아크나이츠", "Arknights", "오퍼레이터", "오퍼레이터 도감", "인프라", "기반시설", "기반시설 편성", "공개모집", "공채 계산기", "공개모집 태그", "재료 파밍", "파밍 효율", "이성 효율", "테라 아카이브"],
+    description: "명일방주(Arknights) 팬사이트 — 오퍼레이터 백과사전, 기반시설(인프라) 자동 편성 플래너, 공개모집(공채) 태그 계산기, 재료 파밍 효율표.",
+    keywords: ["명일방주", "Arknights", "Arknights", "오퍼레이터", "오퍼레이터 도감", "인프라", "기반시설", "기반시설 편성", "공개모집", "공채 계산기", "공개모집 태그", "재료 파밍", "파밍 효율", "이성 효율", "테라 아카이브"],
   },
   en: {
     path: "/en",

@@ -233,7 +233,7 @@ const D: Record<string, Pair> = {
   "홈": ["Home", "ホーム"],
 
   // 포탈 첫화면 (루트 /)
-  "명일방주(아크나이츠) 팬사이트 — 필요한 도구를 골라 들어가세요.": ["An Arknights fansite — pick a tool and dive in.", "アークナイツのファンサイト — 使いたいツールを選んで入りましょう。"],
+  "명일방주(Arknights) 팬사이트 — 필요한 도구를 골라 들어가세요.": ["An Arknights fansite — pick a tool and dive in.", "アークナイツのファンサイト — 使いたいツールを選んで入りましょう。"],
   "소속·직군·태그·시너지로 찾는 오퍼레이터 도감": ["Operators by faction, class, tag and synergy", "所属・クラス・タグ・シナジーで探すオペレーター図鑑"],
   "보유 오퍼만 입력하면 기반시설 편성을 자동으로 계산": ["Enter your roster and it auto-builds your RIIC base layout.", "手持ちオペレーターを入力するだけで基地編成を自動計算。"],
   // EN 은 1024px 에서 세 줄이 되어 칸을 넘쳤다 (2026-09-21 실측) — 두 줄에 맞춰 줄였다
@@ -2341,6 +2341,7 @@ const D: Record<string, Pair> = {
   "서명이 맞지 않습니다 — QR이 손상됐거나 내용을 고친 카드입니다.": ["The signature doesn't match — the QR is damaged or the card was edited.", "署名が一致しません — QRが破損しているか、内容を編集したカードです。"],
   "QR을 찍으면 terra-archive.net에서 동기화 원본 숫자를 확인할 수 있습니다": ["Scan the QR to check the original synced numbers on terra-archive.net", "QRを読み取ると terra-archive.net で同期元の数値を確認できます"],
   "{time} 정보 동기화 완료": ["Account synced {time}", "{time} 情報同期完了"],
+  "정보 동기화 완료": ["Account synced", "情報同期完了"],
   "동기화하기": ["Sync", "同期する"],
   "다시 동기화하면 게임 접속이 끊깁니다 — 게임을 하고 있다면 저장한 뒤에 진행하세요. 계정에는 아무 문제가 없고, 게임을 다시 실행하면 그대로 접속됩니다.": ["Syncing again will disconnect your game session — if you're playing, save first. Your account is fine; relaunch the game to reconnect.", "再同期するとゲームの接続が切れます — プレイ中なら保存してから進めてください。アカウントには影響なく、ゲームを再起動すればそのまま接続できます。"],
   "누적 소비 크레딧": ["Total credits spent", "累計消費クレジット"],

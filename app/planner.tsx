@@ -1978,7 +1978,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
       <div className="invest-head">
         <div className="invest-head-title">
           <div>
-            <span className="section-no">{t("인프라 오퍼 육성 추천 · 정예화 완성 투자")}</span>
+            <span className="section-no keep">{t("인프라 오퍼 육성 추천 · 정예화 완성 투자")}</span>
             <h3>{recs.length ? t("완성하면 인프라가 좋아지는 오퍼 {n}명", { n: recs.length }) : t("추천할 오퍼가 없습니다")}</h3>
           </div>
           <button className="invest-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
@@ -3039,7 +3039,7 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
   return (
     <ModalWindow label={t("시너지 트리")} className="operator-modal room-modal" onClose={onClose} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         <header className="room-modal-head">
-          <span className="modal-kicker">SYNERGY LEDGER · {t("A조 기준")}</span>
+          <span className="modal-kicker keep">{t("A조 기준")}</span>
           <h2>{t("시너지 트리")}</h2>
         </header>
         <div className="modal-scroll">
@@ -3408,7 +3408,7 @@ function RosterModal({ allOps, lockFuture, ownedIds, eliteById, levelById, onApp
     <ModalWindow label={t("보유 오퍼레이터 설정")} className="operator-modal room-modal" onClose={() => { void closeGuarded(); }} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         {confirmDialog}
         <header className="room-modal-head">
-          <span className="modal-kicker">ROSTER · {t("{n}/{m} 보유", { n: draft.size, m: ownableOps.length })}</span>
+          <span className="modal-kicker keep">{t("{n}/{m} 보유", { n: draft.size, m: ownableOps.length })}</span>
           {/* 제목 오른쪽에 입력 방식 — 직접 입력(카드 격자) / 가져오기(MAA·스크린샷·게임 로그인) */}
           <div className="roster-head-row">
             <h2>{t("보유 오퍼레이터 설정")}</h2>
@@ -3476,7 +3476,7 @@ function RosterModal({ allOps, lockFuture, ownedIds, eliteById, levelById, onApp
                 onPick={setSortKey} />
               <button type="button" className="sort-direction" onClick={() => setSortAsc((current) => !current)} aria-label={sortAsc ? t("내림차순으로 변경") : t("오름차순으로 변경")}>{sortAsc ? "↑" : "↓"}</button>
             </div>
-            <span className="count"><b>{visible.length}</b> OPERATORS</span>
+            <span className="count"><b>{visible.length}</b> {t("오퍼레이터")}</span>
           </div>
           {futureOps.length > 0 && (
             <>

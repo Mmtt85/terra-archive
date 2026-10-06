@@ -3,7 +3,7 @@
 // 여러 속성 필터를 한 컨트롤로 묶는 공용 부품 — 오퍼 백과사전(app/home.tsx)과
 // 적 도감(app/enemies.tsx)·작전 도감(app/stages.tsx)이 함께 쓴다. 데이터 의존이 없어 별도
 // 모듈로 뺐다 (2026-08-09): home.tsx에 두면 적 도감 청크가 home.tsx를 통째로 끌어온다.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, Fragment, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "./i18n";
 
@@ -49,6 +49,8 @@ export type AttrGroup = {
   title: string; items: string[]; selected: string[]; onToggle: (value: string) => void;
   labelFor?: (value: string) => string; countForItem: (value: string) => number;
   disabled?: boolean; hint?: string; single?: boolean;
+  /** 이 조건 앞에서 줄을 바꾸고 간격을 둔다 — 성격이 다른 조건(내 보유 등)을 따로 떼어 보이게 (2026-10-07) */
+  breakBefore?: boolean;
   /** 이 경로의 **다음 계층** — 없으면 null. path는 루트부터 그 값까지 (깊이 무제한) */
   subFor?: (path: string[]) => AttrSub | null;
 };
@@ -236,6 +238,19 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
   // 열려 있는 동안 상위 조건이 풀리면(직군 해제) 목록도 같이 닫힌다
   const active = groups.find((g) => g.title === open && !g.disabled);
   const wrapRef = useRef<HTMLDivElement>(null);
+  // 값 목록은 **누른 버튼 바로 밑**에 연다 (사용자 2026-10-07 — 종전엔 버튼과 무관하게 칸 왼쪽 아래였다).
+  // 버튼 위치를 재서 left/top 을 주고, 오른쪽으로 넘치면 칸 안쪽으로 당긴다
+  const dropRef = useRef<HTMLUListElement>(null);
+  const [dropPos, setDropPos] = useState<{ left: number; top: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!open) { setDropPos(null); return; }
+    const wrap = wrapRef.current;
+    const btn = wrap?.querySelector<HTMLElement>(`.attr-cat[data-title="${CSS.escape(open)}"]`);
+    if (!wrap || !btn) return;
+    const dropW = dropRef.current?.offsetWidth ?? 0;
+    const left = Math.max(0, Math.min(btn.offsetLeft, wrap.clientWidth - dropW));
+    setDropPos({ left, top: btn.offsetTop + btn.offsetHeight + 6 });
+  }, [open]);
   // 마우스가 있는 기기에서만 옆 열 — 터치는 그 자리에서 아래로 펼친다.
   // ⚠ 이펙트로 상태에 담지 않는다(set-state-in-effect 린트 관례). 렌더 중에 읽어도 안전한 건
   //   이 값을 **드롭다운 안에서만** 쓰기 때문 — 드롭다운은 카테고리를 눌러야 생기므로
@@ -280,7 +295,9 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
       </small></legend>
       <div className="attr-cats" ref={wrapRef}>
         {groups.map((g) => (
-          <button key={g.title} type="button" disabled={g.disabled}
+          <Fragment key={g.title}>
+          {g.breakBefore && <span className="attr-cats-break" aria-hidden />}
+          <button type="button" disabled={g.disabled} data-title={g.title}
             className={`attr-cat${open === g.title ? " open" : ""}${g.selected.length ? " has-sel" : ""}`}
             aria-expanded={open === g.title} title={g.disabled ? g.hint : undefined}
             onClick={() => {
@@ -291,6 +308,7 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
             {g.disabled && g.hint && <small className="attr-cat-hint">{g.hint}</small>}
             <span className="attr-caret" aria-hidden>{open === g.title ? "▴" : "▾"}</span>
           </button>
+          </Fragment>
         ))}
         {active && (() => {
           const shown = filterItems(active.items, query, active.labelFor);
@@ -309,7 +327,7 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
           }
           return (
             <>
-              <ul className="attr-drop"
+              <ul className="attr-drop" ref={dropRef} style={dropPos ? { left: dropPos.left, top: dropPos.top } : undefined}
                 role="listbox" aria-multiselectable={!active.single} aria-label={active.title}>
                 <li className="attr-search">
                   {/* 모바일은 자동 포커스하지 않는다 — 키보드가 바로 솟아 목록을 가린다 */}

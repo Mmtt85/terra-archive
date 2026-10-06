@@ -4,6 +4,7 @@
 // home-ko/en/ja.tsx 래퍼로 해당 언어의 operators 데이터를 정적 import해 넘긴다 —
 // 런타임 언어 전환은 전체 내비게이션이라 이 컴포넌트 안에서 로케일은 불변이다.
 import { NewBadge } from "./new-badge";
+import { PAGE_HELP_TABS, openPageHelp } from "./page-help";
 import { lazy, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import storyEventsData from "./data/stories.json";
 // 탭 본문은 전부 지연 로드한다 (INP 조사 2026-08-09). 종전엔 정적 import라 **어느 탭을
@@ -103,6 +104,7 @@ import recordIdsData from "./data/record-ids.json";
 import acSeasonList from "./data/autochess-seasons.json";
 import eventIdsData from "./data/event-ids.json";
 import cnRunningData from "./data/cn-running.json";
+import krRunningData from "./data/kr-running.json";
 /** 스토리 요약(로케일별 1.8MB)은 **스토리 탭에 들어갈 때만** 받는다 (2026-08-09 INP 작업).
  *  종전엔 로케일 래퍼가 정적 import해 모든 페이지가 파싱했다. 셸에서 쓰던 곳은
  *  Portal의 죽은 stats prop 하나뿐이라 데이터 자체가 필요 없었다. */
@@ -473,7 +475,9 @@ const LOC_IX: Record<Locale, 0 | 1 | 2> = { ko: 0, en: 1, ja: 2 };
  *  (사용자 요청 2026-09-17) → 2026-09-23 "세 개 다 헤더에". 워커 fetch 는 모듈 공유 프라미스
  *  (fetchEventPayload)라 헤더 배지와 같은 요청을 나눠 쓴다. */
 function useRunningEvents(): GameEvent[] {
-  const [evts, setEvts] = useState<GameEvent[]>([]);
+  // 첫 값 = 빌드 때 구운 사본(scripts/snap-events.mjs)을 **빌드 시각**으로 거른 것 — 서버·클라가 같은 답이라
+  // 하이드레이션이 어긋나지 않고, 칩이 첫 화면부터 서 있다. 뜬 뒤 실제 피드(지금 시각)로 갈아 끼운다 (2026-10-07)
+  const [evts, setEvts] = useState<GameEvent[]>(() => sortRunning((krRunningData as { events: GameEvent[] }).events, BUILD_NOW));
   useEffect(() => {
     let live = true;
     void fetchEventPayload().then((data) => {
@@ -967,7 +971,7 @@ function Portal({ onOpenTab, onOpenEvent }: {
         <span className="pt-lv"><b id="pt-days" suppressHydrationWarning>{days}</b><small>DAY</small></span>
         <script dangerouslySetInnerHTML={{ __html: `(function(){var e=document.getElementById("pt-days");if(e)e.textContent=Math.max(1,Math.floor((Date.now()-${SITE_OPENED})/${DAY})+1)})()` }} />
         <h1 id="portal-title" className="pt-name">{t("테라 아카이브")}</h1>
-        <p className="pt-sub">{t("명일방주(아크나이츠) 팬사이트 — 필요한 도구를 골라 들어가세요.")}</p>
+        <p className="pt-sub">{t("명일방주(Arknights) 팬사이트 — 필요한 도구를 골라 들어가세요.")}</p>
         </div>
       </div>
 
@@ -2423,7 +2427,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           {me && !navOpen && (
             <a className="hdr-synced" href={`${localeBase}/me`} title={t("내 정보")}
               onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return; event.preventDefault(); switchTab("me"); }}>
-              {t("{time} 정보 동기화 완료", { time: new Date(me.syncedAt).toLocaleString(DT_LOCALE[locale], { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }) })}
+              {/* 메뉴 오른쪽에 두 줄 — 시각 / 문구 (사용자 2026-10-07, 헤더를 얇게 하며 밑에 매달 자리가 없어졌다) */}
+              <b>{new Date(me.syncedAt).toLocaleString(DT_LOCALE[locale], { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</b>
+              <span>{t("정보 동기화 완료")}</span>
             </a>
           )}
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
@@ -2677,6 +2683,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           onRelated={(op) => { setPageOperator(op); history.pushState(null, "", operatorHref(locale, op)); scrollMainTop(); }}
           onBack={() => { setPageOperator(null); history.pushState(null, "", tabPath("archive")); }} />
       )}
+      {PAGE_HEAD_TABS.has(tab)
+        && !(tab === "archive" && pageOperator)
+        && !(tab === "enemy" && pageEnemy && enemyPageOpen)
+        && !(tab === "stage" && pageStage && stagePageOpen)
+        && <PageHead tab={tab} />}
       {tab === "archive" && !pageOperator && <section className="explorer" aria-labelledby="explorer-title">
         <div className="filter-panel">
           <div className="panel-heading">
@@ -2726,7 +2737,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             { title: t("공격 방식"), items: attackMethods, selected: selectedMethods, onToggle: toggleIn(setSelectedMethods), countForItem: (item) => chipCount.method.get(item) ?? 0 },
             { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => chipCount.faction.get(item) ?? 0 },
             // 내 계정 — '내 정보'에서 로그인했을 때만 (보유·육성 상태로 거르기)
-            ...(myChars ? [{ title: t("내 보유"), items: [...OWN_KEYS], selected: selectedOwn, onToggle: toggleIn(setSelectedOwn), labelFor: (item: string) => t(item), countForItem: (item: string) => ownCount.get(item) ?? 0 }] : []),
+            ...(myChars ? [{ title: t("내 보유"), breakBefore: true, items: [...OWN_KEYS], selected: selectedOwn, onToggle: toggleIn(setSelectedOwn), labelFor: (item: string) => t(item), countForItem: (item: string) => ownCount.get(item) ?? 0 }] : []),
           ]} />
           {/* (2026-08-01 삭제) DATA NOTE — 사용자 판단 "의미가 없어보임" */}
         </div>
@@ -2745,7 +2756,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                   onPick={setSortKey} />
                 <button type="button" className="sort-direction" onClick={() => setSortAsc((current) => !current)} aria-label={sortAsc ? t("내림차순으로 변경") : t("오름차순으로 변경")}>{sortAsc ? "↑" : "↓"}</button>
               </div>
-              <span className="count"><b>{sorted.length}</b> OPERATORS</span>
+              <span className="count"><b>{sorted.length}</b> {t("오퍼레이터")}</span>
             </div>
           </div>
           <div className="active-filters">
@@ -2766,7 +2777,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           {sorted.length > 0 ? (
             operatorGrid
           ) : (
-            <div className="empty"><span>NO MATCH</span><h3>{t("조건에 맞는 오퍼레이터가 없어요.")}</h3><p>{t("소속이나 컨셉 태그를 하나씩 해제해 보세요.")}</p><button onClick={reset}><span className="btn-icon" aria-hidden>↻</span>{t("전체 보기")}</button></div>
+            <div className="empty"><h3>{t("조건에 맞는 오퍼레이터가 없어요.")}</h3><p>{t("소속이나 컨셉 태그를 하나씩 해제해 보세요.")}</p><button onClick={reset}><span className="btn-icon" aria-hidden>↻</span>{t("전체 보기")}</button></div>
           )}
           </div>
         </div>
@@ -3522,7 +3533,7 @@ function OperatorFile({ operator, includeFuture, operators, onRelated }: { opera
           <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} />
           <div className="modal-title-block">
             <div className="modal-title-main">
-              <span className="modal-kicker">OPERATOR FILE · {operator.code}</span>
+              <span className="modal-kicker keep">{operator.code}</span>
               <div className="modal-name-row">
                 <h2 id="operator-modal-title">{operator.name}</h2>
               </div>
@@ -5095,5 +5106,25 @@ function SkillRange({ grids, base, ownerName, note }: { grids: RangeGrid[]; base
       )}
       {note && <p className="skill-range-note">{t(note)}</p>}
     </div>
+  );
+}
+
+
+// 페이지 머리 — 자기 제목이 없던 도감·시뮬레이터 화면(맨 위가 '탐색 조건'으로 시작했다)에 공통으로 단다
+// (리디자인 2차, 2026-10-07). 이름·설명·아이콘은 홈 칸 정의(PORTAL_TILES)를 그대로 쓴다 — 번역도 거기 있다.
+// 묶음 이름(도감·시뮬레이터)은 뺐다 — 제목이 이미 말해 준다 (사용자 2026-10-07). 공채는 자기 제목 줄 대신 이걸 쓴다
+const PAGE_HEAD_TABS = new Set(["archive", "enemy", "stage", "item", "gallery", "farm", "upgrade", "sim", "event", "recruit", "story", "me", "planner"]);
+function PageHead({ tab }: { tab: string }) {
+  const { t } = useI18n();
+  const tile = PORTAL_TILES.find((x) => x.tab === tab);
+  if (!tile) return null;
+  return (
+    <header className="page-head" data-tab={tab}>
+      <h1><span className="page-head-ic" aria-hidden>{tile.icon}</span>{t(tile.label)}</h1>
+      {tile.desc && <p>{t(tile.desc)}</p>}
+      {PAGE_HELP_TABS.has(tab) && (
+        <button type="button" className="page-help" aria-label={t("안내")} title={t("안내")} onClick={() => openPageHelp(tab)}>?</button>
+      )}
+    </header>
   );
 }

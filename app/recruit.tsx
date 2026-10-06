@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageHelp } from "./page-help";
 import { NewBadge } from "./new-badge";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
@@ -152,16 +153,16 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel, target }: { resu
   const lowOnly = result.ops.length === 0;
   const odds = opOdds(result);
   return (
-    <article className={`recruit-combo${result.floor >= 4 ? " prized" : ""}`}>
+    <article className={`recruit-combo${result.floor >= 4 ? " prized" : ""}`} style={{ ["--rar" as string]: RARITY_COLORS[result.floor] }}>
       <header>
         <div className="combo-tags">{result.combo.map((tag) => <span key={tag}>{tagLabel(tag)}</span>)}</div>
-        <b style={{ background: RARITY_COLORS[result.floor] }}>
+        <b>
           {lowOnly ? t("{n}★ · 저시간 전용", { n: result.floor }) : result.floor === result.ceil ? t("{n}★ 확정", { n: result.floor }) : t("{n}★ 이상", { n: result.floor })}
         </b>
       </header>
       <ul>
         {targetFirst(result.ops, target).map((op) => (
-          <li key={op.id} className={[op.pending ? "pending" : "", op.id === target ? "target" : ""].filter(Boolean).join(" ") || undefined} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
+          <li key={op.id} className={[op.pending ? "pending" : "", op.id === target ? "target" : ""].filter(Boolean).join(" ") || undefined} style={{ ["--rar" as string]: RARITY_COLORS[op.rarity] }}>
             <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
               title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
             <span>{opLabel(op)}{op.pending && <em className="pending-tag">{t("추가 예정")}</em>}{own(op.id)}</span>
@@ -170,7 +171,7 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel, target }: { resu
           </li>
         ))}
         {targetFirst(result.lowOps, target).map((op) => (
-          <li key={op.id} className={`low-time${op.id === target ? " target" : ""}`} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
+          <li key={op.id} className={`low-time${op.id === target ? " target" : ""}`} style={{ ["--rar" as string]: RARITY_COLORS[op.rarity] }}>
             <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
               title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
             <span>{opLabel(op)}<em className="time-req">{t(LOW_TIME_HINT[op.rarity])}</em>{own(op.id)}</span>
@@ -199,6 +200,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   const [showDict, setShowDict] = useState(false);
   const [showReverse, setShowReverse] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  usePageHelp("recruit", () => setShowGuide(true)); // 안내 창은 페이지 머리의 '?' 로 연다 (2026-10-07)
   /* 빠른 입력 안내문은 좌우 분할의 왼쪽 칸(입력란 176px)에서 통째로 잘린다 (사용자 지적
      2026-09-20). 네이티브 placeholder 는 애니메이션이 안 되니 같은 자리에 겹쳐 그려 흘린다 —
      다만 **실제로 넘칠 때만**. 넘치는지는 CSS 가 알 수 없어 재서 data-run 을 다는데,
@@ -382,7 +384,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   const renderGroups = (list: ComboResult[]) => groupByBadge(list).map(([key, group]) => (
     <section key={key} className="recruit-group">
       <h3>
-        <span style={{ background: RARITY_COLORS[group.floor] }}>{group.label}</span>
+        <span style={{ ["--rar" as string]: RARITY_COLORS[group.floor] }}>{group.label}</span>
         <em>{t("{n}개 조합", { n: group.items.length })}</em>
       </h3>
       <div className="recruit-results">
@@ -401,17 +403,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
             둘 다 "지금 고른 태그와 무관한 참고표"라 본문에 깔 이유가 없다.
             손잡이는 **제목 오른쪽**에 — 네 화면(공채·파밍·육성·작전 시뮬) 공통 규격
             (.head-row, 사용자 지시 2026-09-20). 안내 버튼 문구는 "읽는 법" 같은 짧은 이름만 (2026-09-28). */}
-        <div className="head-row">
-        <h2>{t("공개채용 도우미")}</h2>
-        <div className="head-links">
-          <button type="button" onClick={() => setShowGuide(true)}>
-            {t("읽는 법")}
-          </button>
-          <button type="button" onClick={() => setShowDict(true)}>
-            {t("4·5성 저격 조합 사전")}<em>{t("{n}개 조합", { n: SNIPE_DICT.length })}</em>
-          </button>
-        </div>
-        </div>
+        {/* 제목은 공통 페이지 머리, 안내는 머리의 '?', 저격 조합 사전은 결과 막대로 옮겼다 (2026-10-07) */}
       </div>
 
       {/* 넓은 화면에선 왼쪽 태그 판 · 오른쪽 결과로 갈라 스크롤을 줄인다 (사용자 지시
@@ -486,6 +478,10 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
             "알아채기 힘들어 보인다 · 4성 이상 조합만 보기 왼쪽에 조금 더 눈에 띄는 색으로") */}
         <button type="button" className="recruit-reverse-btn" onClick={() => setShowReverse(true)}>
           <span aria-hidden>⌕</span>{t("오퍼로 태그 찾기")}
+        </button>
+        {/* 저격 조합 사전 — '오퍼로 태그 찾기'와 '4★ 이상만' 사이 (사용자 지시 2026-10-07) */}
+        <button type="button" className="recruit-dict-btn" onClick={() => setShowDict(true)}>
+          {t("4·5성 저격 조합 사전")}<em>{t("{n}개 조합", { n: SNIPE_DICT.length })}</em>
         </button>
         <button type="button" className={`recruit-prized-toggle${prizedOnly ? " on" : ""}`} aria-pressed={prizedOnly}
           title={t("높은 성급이 확정되는 조합만 남기고 나머지를 숨깁니다")} onClick={togglePrizedOnly}>

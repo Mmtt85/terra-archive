@@ -27340,3 +27340,827 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
 .sb-uni-results .sb-cards { grid-template-columns: repeat(auto-fill, minmax(288px, 1fr)); }
 /* 관리자 방문 통계 — 내 정보 동기화 서버 거르기 (2026-10-06) */
 .vz-mesync-filter { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   리디자인 시범 (redesign-trial 브랜치, 2026-10-07) — 사이트 전체 생김새를 이 블록 하나로 덮는다.
+   방향: 명일방주 인게임 UI처럼 **각진 판·가는 선·절제된 색**. 글로우·그라데이션·알약 모양을 걷어낸다.
+   되돌리기: 이 블록을 지우면 종전 그대로 (배치·컴포넌트 코드는 건드리지 않았다).
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --paper: #e8eae8;
+  --white: #f6f7f6;
+  --bg-panel: #eef0ee;
+  --bg-panel2: #e0e3e1;
+  --bg-soft: #e2e5e3;
+  --bg-soft2: #dfe2e0;
+  --bg-faint: #f1f2f1;
+  --line: #c7ccca;
+  --border-hover: #959c99;
+  --border-strong: #6f7774;
+  --ink: #1a1f22;
+  --ink2: #333b3f;
+  --ink3: #4a5357;
+  --muted: #5f686c;
+  --chip: #1a1f22;
+  --chip-line: #1a1f22;
+  --btn-on-bg: #1a1f22;
+  --btn-on-line: #1a1f22;
+  --btn-on-ink: #eef0ee;
+  --header-bg: #15191b;
+  --header-solid: #15191b;
+  --r-xs: 1px;
+  --r-sm: 2px;
+  --r-md: 3px;
+  --r-lg: 4px;
+  --r-pill: 3px;
+  --sh-1: 0 1px 0 #00000012;
+  --sh-2: 0 1px 0 #00000014, 0 14px 28px -18px #00000059;
+  --sh-3: 0 24px 60px -20px #0000008c;
+  --grid-line: #00000008;
+}
+html.dark,
+html.rg-theme {
+  --paper: #0f1315;
+  --white: #161b1e;
+  --line: #2b3337;
+  --header-bg: #0a0d0e;
+  --header-solid: #0a0d0e;
+  --grid-line: #ffffff06;
+  --sh-1: 0 1px 0 #00000059;
+  --sh-2: 0 14px 28px -18px #000000b3;
+}
+/* 바닥 결 — 아주 옅은 40px 격자 (작전 도면의 칸처럼). 글자 가독성에 닿지 않을 만큼만 */
+body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+/* 헤더 — 밝은 판 + 가는 선 (사용자 2026-10-07 "라이트모드인데 굳이 검정 계열이어야 하나").
+   흐림 유리 대신 불투명 판, 구분은 아래 선과 왼쪽 라임 표식으로 */
+.site-header {
+  background: var(--header-solid);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--line);
+}
+/* 헤더 아래 왼쪽의 짧은 포인트 띠 — 게임 UI의 판 모서리 표식.
+   ⚠ 데스크톱만 — 모바일 헤더는 ::before·::after 를 **줄바꿈**(flex-basis:100%)으로 쓴다 */
+@media (min-width: 761px) {
+.site-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 72px;
+  height: 2px;
+  background: var(--lime);
+  pointer-events: none;
+}
+}
+/* NEW 배지 — 번쩍이는 그라데이션·맥박 대신 단색 판 */
+.new-badge {
+  background: #d8442f;
+  box-shadow: none;
+  animation: none;
+  border-radius: var(--r-sm);
+  letter-spacing: 0.06em;
+}
+/* 홈 포탈 — 크림·오렌지 판을 차가운 회색 판으로, 떠오르는 그림자 대신 왼쪽 포인트 선 */
+.pt-stage {
+  --pt-plate: #f3f4f3;
+  --pt-plate-2: #e4e7e5;
+  --pt-ink: #171c1f;
+  --pt-mut: #5b6468;
+  --pt-accent: #8a9a1e;
+  --pt-line: #0000001f;
+  --pt-glow: transparent;
+  --pt-backdrop: #e3e6e4;
+}
+html.dark .pt-stage {
+  --pt-plate: #171c1f;
+  --pt-plate-2: #12171a;
+  --pt-accent: #b9cb4a;
+  --pt-line: #ffffff17;
+  --pt-backdrop: #0d1012;
+}
+.pt-stage {
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.pt-tile {
+  border-radius: var(--r-sm);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.pt-tile::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--pt-accent);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.18s ease;
+}
+.pt-tile:hover:not(.dead) {
+  transform: none;
+  box-shadow: none;
+  border-color: color-mix(in srgb, var(--pt-ink) 35%, transparent);
+  background: var(--pt-plate-2);
+}
+.pt-tile:hover:not(.dead)::before {
+  transform: scaleY(1);
+}
+.pt-ic {
+  border-radius: var(--r-sm);
+}
+.pt-group {
+  background: transparent;
+  border-color: var(--pt-line);
+}
+.pt-group-cap {
+  opacity: 0.8;
+  color: var(--pt-mut);
+}
+/* 라이트 모드 — 짙은 판을 걷어낸다 (사용자 2026-10-07: 흰검 대비가 부담 → 검정 계열 자체가 필요한가).
+   짙은 색은 핵심 버튼(--chip)에만 남기고, 헤더·푸터·인프라 방은 밝은 판 + 선 + 종류 색 띠로 가른다.
+   방 종류 색(ROOM_ACCENT)은 어두운 바탕용 밝은 색이라, 그 색으로 쓴 **글자**는 잉크 쪽으로 섞어 읽히게 한다. */
+:root {
+  --header-bg: #f6f7f6;
+  --header-solid: #f6f7f6;
+  --chip: #2b3337;
+  --chip-line: #2b3337;
+  --btn-on-bg: #2b3337;
+  --btn-on-line: #2b3337;
+}
+html:not(.dark):not(.rg-theme) .site-scroll > footer {
+  background: #dfe2e0;
+  color: var(--ink3);
+  border-top: 1px solid var(--line);
+}
+html:not(.dark):not(.rg-theme) .footer-tabs { border-bottom-color: var(--line); }
+html:not(.dark):not(.rg-theme) .footer-tabs a { color: var(--muted); }
+html:not(.dark):not(.rg-theme) .footer-tabs a:hover,
+html:not(.dark):not(.rg-theme) .footer-langs a:hover { color: var(--ink); }
+html:not(.dark):not(.rg-theme) .footer-tabs strong,
+html:not(.dark):not(.rg-theme) .footer-langs a { color: var(--ink3); }
+html:not(.dark):not(.rg-theme) .footer-langs strong { color: var(--ink); }
+html:not(.dark):not(.rg-theme) .footer-donate a,
+html:not(.dark):not(.rg-theme) .footer-contact span { color: var(--ink3); border-color: var(--border-hover); }
+html:not(.dark):not(.rg-theme) .footer-donate a:hover { color: #8a5a10; border-color: #c49a4a; }
+
+html:not(.dark):not(.rg-theme) .ship-room {
+  background: color-mix(in srgb, var(--room-accent) 7%, var(--white));
+  border-color: var(--line);
+  border-left-color: var(--room-accent);
+  color: var(--ink);
+}
+html:not(.dark):not(.rg-theme) .ship-room:hover {
+  border-color: color-mix(in srgb, var(--room-accent) 70%, var(--ink));
+  border-left-color: var(--room-accent);
+  box-shadow: var(--sh-2);
+}
+html:not(.dark):not(.rg-theme) .ship-room-head span,
+html:not(.dark):not(.rg-theme) .ship-room > small {
+  color: color-mix(in srgb, var(--room-accent) 55%, #1a1f22);
+}
+html:not(.dark):not(.rg-theme) .ship-room-crew img { background: var(--bg-soft); }
+html:not(.dark):not(.rg-theme) .ship-room-crew i { color: var(--muted); }
+html:not(.dark):not(.rg-theme) .dorm-room .ship-room-head span { color: var(--muted); }
+html:not(.dark):not(.rg-theme) .pos-control.ship-room {
+  background: color-mix(in srgb, var(--room-accent) 10%, var(--white));
+}
+html:not(.dark):not(.rg-theme) .room-type-switch [role="button"] { border-color: var(--line); color: var(--ink3); }
+html:not(.dark):not(.rg-theme) .room-type-switch [role="button"]:hover { border-color: var(--border-hover); color: var(--ink); }
+html:not(.dark):not(.rg-theme) .room-type-switch .on { color: var(--ink); }
+
+/* ── 다크 헤더 — 바닥보다 한 단계 **밝은** 판 (사용자 2026-10-07 "다크에서 헤더·본문 위화감").
+   종전 #0a0d0e 은 바닥(#0f1315)보다 어두워 헤더가 꺼진 구멍처럼 보였다. 라이트와 같은 위계로 */
+html.dark,
+html.rg-theme {
+  --header-bg: #171c1f;
+  --header-solid: #171c1f;
+}
+
+/* ── 상세 창 머리 띠 — 색 그라데이션을 걷고 창과 같은 무채색 면 (사용자 2026-10-07, 라이트·다크 모두).
+   직군·방 종류 색(--accent)은 왼쪽 가는 선 하나에만 남긴다. 머리 안 글자색은 어두운 바탕 전제로
+   박혀 있던 것을 토큰으로 되돌린다 */
+.modal-hero,
+.room-modal .room-modal-head {
+  background: var(--bg-panel2);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+html.dark .modal-hero,
+html.dark .room-modal .room-modal-head,
+html.rg-theme .modal-hero {
+  background: var(--bg-panel);
+}
+.modal-hero .detail-no,
+.modal-hero .modal-kicker,
+.modal-kicker {
+  color: var(--muted);
+}
+.modal-hero .modal-rarity { color: var(--star-ink); }
+.modal-hero .modal-rarity span,
+.modal-hero .class-line small { color: var(--ink3); }
+.room-modal .room-modal-head h2 .modal-head-tldr,
+.room-modal .rh-eff-total,
+.room-modal .rh-eff-parts span { color: var(--ink3); }
+.room-modal .rh-eff-total b,
+.room-modal .rh-eff-parts span b { color: var(--ink); }
+.room-modal .rh-eff-parts span { background: var(--bg-soft); }
+/* 방 창의 교대 탭 — 고르지 않은 탭이 흰 판에 흰 글자라 안 보였다 (리디자인 전부터) */
+.room-modal .shift-tabs.in-modal button {
+  border-color: var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+}
+
+/* ── 라이트 모드 대비 점검(자동 측정)에서 걸린 것 — 밝은 바탕 위 라임 글자 1.55:1 */
+html:not(.dark):not(.rg-theme) .promo-trigger.ev-promo .promo-mark,
+html:not(.dark):not(.rg-theme) .ev-eta {
+  color: var(--tint-lime-ink);
+}
+/* 오퍼 썸네일 테두리 — 어두운 카드용 짙은 테두리를 밝은 판에선 옅게 (사용자 2026-10-07) */
+html:not(.dark):not(.rg-theme) .ship-room-crew img {
+  border-color: var(--line);
+}
+/* 방 창 머리가 밝아지며 드러난 흰 글자 · 소개 문의 주소(라임 글자 1.37:1) */
+.room-modal .room-level-fxline { color: var(--ink3); }
+html:not(.dark):not(.rg-theme) .about-contact b { color: var(--tint-lime-ink); }
+
+/* ── 오퍼 상세 머리가 밝아지며 흐려진 것 (사용자 2026-10-07) — '내 육성 현황' 띠·공개모집 버튼은
+   어두운 머리용 흰 글자·반투명 흰 테두리였다 → 토큰으로 */
+.me-op-strip {
+  border-color: var(--line);
+  background: var(--white);
+  color: var(--ink);
+}
+.me-op-strip > b { color: var(--muted); }
+.me-op-strip i { color: var(--muted); }
+.me-op-strip em { border-color: var(--border-hover); color: var(--ink2); }
+.me-op-strip.none { color: var(--ink3); }
+.me-recruit-btn,
+.me-recruit-btn.small {
+  border-color: var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+}
+.me-recruit-btn:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); }
+/* 잠재 실제 증가폭(120% → 125%) — 밝은 판 위 라임 글자는 거의 안 읽힌다. 진한 올리브로 */
+html:not(.dark):not(.rg-theme) .potential-detail { color: var(--tint-lime-ink); }
+/* 상세 창 왼쪽 목차의 고른 칸 숫자 — 직군 색 그대로면 짙은 칸 위에서 1.56:1. 칸 글자색 쪽으로 섞는다
+   (라이트=밝은 쪽, 다크=어두운 쪽이라 두 모드 모두 대비가 선다) */
+.modal-rail button.active em {
+  color: color-mix(in srgb, var(--accent) 45%, var(--btn-on-ink));
+}
+/* 이벤트 상세의 오퍼 성급 별 — 밝은 판 위 살구색 1.66:1 */
+html:not(.dark):not(.rg-theme) .ev-op i { color: #b9621a; }
+/* 기반시설 용어 링크('감지 정보' 등) — 방 종류 색 그대로면 제조소(노랑)·무역소(하늘) 창에서 밝은 판 위 밝은 글자.
+   글자색(--ink) 쪽으로 섞어 두 모드 모두 읽히게 (사용자 2026-10-07) */
+.term-link {
+  color: color-mix(in srgb, var(--accent, #3b77a3) 50%, var(--ink));
+  font-weight: 600;
+}
+/* 방 창 머리 띠를 얇게 (사용자 2026-10-07 "제조소·무역소 위 띠가 굵다") — 여백·제목 크기를 한 단계씩 */
+.room-modal .room-modal-head {
+  padding: 16px 56px 14px 26px;
+}
+.room-modal .room-modal-head h2 {
+  margin: 4px 0 8px;
+  font-size: clamp(22px, 2.6vw, 30px);
+}
+@media (max-width: 760px) {
+  .room-modal .room-modal-head {
+    padding: 14px 52px 12px 18px;
+  }
+}
+
+/* ── 페이지 머리 (리디자인 2차) — 도감·시뮬레이터 화면 맨 위의 공통 제목 띠.
+   작은 묶음 이름 · 큰 제목 · 한 줄 설명 · 아래 가는 선. 왼쪽 라임 표식은 헤더와 같은 말투 */
+/* 높이를 고정한다 — 아래 도감 칸(.explorer)이 스크롤 영역 높이를 100% 채우게 짜여 있어, 머리가 얹히면
+   그만큼 화면 전체가 더 스크롤되고 목록 안쪽 스크롤과 겹친다. 머리 높이만큼 칸 높이에서 뺀다 */
+:root { --page-head-h: 74px; }
+.page-head {
+  position: relative;
+  box-sizing: border-box;
+  height: var(--page-head-h);
+  margin: 0 clamp(18px, 4vw, 64px);
+  padding: 20px 0 0;
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+  /* 설명은 제목 **오른쪽** 같은 줄에 (사용자 2026-10-07 — 아래 줄로 내리니 본문이 밀려 내려갔다) */
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.site-scroll > .page-head ~ section.explorer,
+.site-scroll > .page-head ~ .explorer {
+  height: calc(100% - var(--page-head-h));
+  min-height: calc(100% - var(--page-head-h));
+  padding-top: 18px;
+}
+/* 넓은 화면은 본문이 가운데 70% 컬럼 + 칸 안쪽 여백이라, 머리도 그 안쪽 여백만큼 더 들인다 */
+@media (min-width: 1400px) {
+  .site-scroll > .page-head {
+    margin-inline: calc(15% + clamp(18px, 4vw, 64px));
+  }
+}
+.page-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 48px;
+  height: 2px;
+  background: var(--lime);
+}
+.page-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.page-head-ic {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--white);
+  font-size: 15px;
+  color: var(--ink2);
+}
+.page-head h1 { flex: none; }
+.page-head p {
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 720px) {
+  .page-head { height: auto; padding: 16px 0 12px; overflow: visible; }
+  .page-head h1 { font-size: 22px; }
+  .page-head-ic { width: 28px; height: 28px; font-size: 13px; }
+  .page-head p { font-size: 13px; }
+}
+/* 모바일(≤760px)은 도감 칸이 자연 높이(화면 전체가 스크롤) — 위의 높이 고정을 풀고 머리도 자연 높이 */
+@media (max-width: 760px) {
+  .site-scroll > .page-head ~ section.explorer,
+  .site-scroll > .page-head ~ .explorer {
+    height: auto;
+    min-height: 0;
+    padding-top: 12px;
+  }
+  .page-head {
+    height: auto;
+    /* 위 22px 는 헤더 확장 핸들(가로 전체 띠)이 덮는 자리 */
+    padding: 36px 0 12px;
+    overflow: visible;
+  }
+  .page-head { flex-wrap: wrap; row-gap: 6px; }
+  .page-head p { white-space: normal; flex-basis: 100%; }
+}
+/* 공채 — 공통 머리를 쓰므로 자기 영문 표기·제목은 숨긴다(버튼 줄은 남김). 섹션 최소 높이도 머리만큼 뺀다 */
+.site-scroll > .page-head ~ section.recruit {
+  min-height: calc(100% - var(--page-head-h));
+}
+.page-head ~ .recruit .recruit-head > .section-no,
+.page-head ~ .recruit .head-row > h2 {
+  display: none;
+}
+
+/* ── 헤더 높이 줄이기 (사용자 2026-10-07 "헤더가 늘 떠 있어 본문이 그만큼 내려간다") ──
+   데스크톱: 로고 칸 52→40, 위아래 여백 12/14→8/8 → 78px 가 56px.
+   모바일: 세 줄(122px)을 두 줄로 — 1줄 로고·업데이트 | 제안·KO·검색·메뉴,
+           2줄 이벤트 선택 · 이벤트 칩(좁으면 글자가 흐른다) · 미래시 · 테마 */
+@media (min-width: 761px) {
+  /* ⚠ 펼침 아래 여백(10) − 접힘 아래 여백(0) + 확장 줄(33) = 43 이 **반드시** 펼침 상쇄 margin(-43px)과
+     같아야 한다 — 어긋나면 헤더를 펼칠 때 본문이 그만큼 끌려 올라간다 (사용자 지적 2026-10-07) */
+  .site-header {
+    min-height: 56px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .site-header .brand {
+    min-height: 40px;
+  }
+}
+@media (max-width: 760px) {
+  .feedback-header-btn { order: 3; margin-left: auto; }
+  .hdr-tail > .lang-wrap { order: 7; margin-left: 0; }
+  .site-header::before { order: 10; }
+  .site-header::after { display: none; }
+  .event-group { order: 11; flex: none; }
+  .ev-group { order: 12; flex: 1 1 0; min-width: 0; }
+  .site-header .future-toggle { order: 13; margin-left: 0; }
+  .site-header .theme-toggle { order: 14; }
+  .site-header .about-icon { order: 15; }
+}
+/* 헤더 '내 정보' 동기화 시각 — 메뉴 버튼 **오른쪽** 두 줄로 (사용자 2026-10-07). 종전엔 버튼 밑 absolute */
+.nav-group { display: flex; align-items: center; gap: 8px; }
+.hdr-synced {
+  position: static;
+  display: grid;
+  line-height: 1.25;
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.hdr-synced b { font-weight: 700; color: var(--ink3); font-variant-numeric: tabular-nums; }
+/* 데스크톱 헤더 위아래 여백을 같게 — 접힌 확장 줄도 row-gap(10px) 하나를 남기므로, 접힘 상태에선
+   아래 패딩을 0 으로 두면 위 10 / 아래 10 이 된다 (사용자 2026-10-07 "버튼 위·아래 패딩 동일하게") */
+@media (min-width: 761px) {
+  .site-header {
+    padding-top: 10px;
+  }
+  .site-header:not(.hdr-open) {
+    padding-bottom: 0;
+  }
+}
+/* 모바일 — 동기화 시각은 1줄에 자리가 없어 2줄 오른쪽 끝(테마 옆)으로. 메뉴 묶음을 풀어 문구에 order 를 준다.
+   (모바일 메뉴 드롭다운은 원래 헤더 기준 position 이라 묶음을 풀어도 자리가 같다) */
+@media (max-width: 760px) {
+  .site-header .nav-group { display: contents; }
+  .site-header .nav-toggle { order: 9; }
+  .hdr-synced { order: 16; text-align: right; }
+}
+/* 동기화 시각 자리 미리 비우기 — 문구는 마운트 뒤(계정 기록을 읽은 뒤)에 붙어서, 그 전엔 메뉴가 오른쪽 끝에
+   있다가 문구가 붙는 순간 왼쪽으로 밀렸다 (사용자 2026-10-07). 첫 페인트 전 스크립트가 html[data-me] 를 달면
+   같은 폭(문구 최소폭 74 + 틈 8)을 비워 두고, 문구가 붙으면 비운 자리를 거둔다 */
+@media (min-width: 761px) {
+  .hdr-synced { min-width: 74px; }
+  html[data-me] .site-header .nav-group:not(:has(.hdr-synced)) { padding-right: 82px; }
+}
+/* 세부 조건 — 성격이 다른 조건(내 보유)은 다음 줄로 떼고 위에 간격 (사용자 2026-10-07 "마스터 항목 같아 보인다") */
+.attr-cats-break {
+  flex-basis: 100%;
+  height: 6px;
+}
+/* 펼친 둘째 줄(미래시·테마)과 접기 핸들의 오른쪽 끝을 **메뉴 버튼** 오른쪽에 맞춘다 (사용자 2026-10-07).
+   동기화 시각이 메뉴 오른쪽에 붙으면서 1줄 끝이 그만큼 바깥으로 나가, 둘째 줄·핸들이 문구 끝에 맞춰져 있었다.
+   문구 폭을 고정(74)하고 틈(8)을 더한 82px 만큼 안으로 들인다. html[data-me] 기준이라 문구가 붙기 전에도 같은 자리 */
+@media (min-width: 761px) {
+  .hdr-synced { width: 74px; }
+  html[data-me] .site-header .header-sub { padding-right: 82px; }
+  html[data-me] .site-header .header-collapse-toggle { margin-right: 82px; }
+}
+
+/* ── 영문 장식 표기 걷기 (리디자인, 사용자 2026-10-07 승인 — 'AI 티'의 주범으로 꼽은 것).
+   제목 위 'FILTER / 01'·'SKILL / 03' 같은 번호표와 창 머리 'FACILITY FILE ·' 류는 바로 아래 한국어 제목이
+   같은 말을 하므로 숨긴다. 정보가 든 것(오퍼 영문명·서버·A조 기준·보유 수·한국어 부제)은 .keep 으로 남긴다 */
+.section-no:not(.keep),
+.detail-no:not(.keep),
+.modal-kicker:not(.keep) {
+  display: none;
+}
+.modal-kicker.keep {
+  font-family: inherit;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+/* ── 떠 있는 판 통일 (리디자인 4) — 햄버거 메뉴·하위 메뉴·공용 드롭다운·세부 조건 목록이 제각각이었다
+   (그림자 판 / 라임 굵은 왼쪽 테두리 / 패널색 바탕). 같은 판: 흰 면 + 가는 선 + 얕은 그림자.
+   마우스를 올린 줄은 홈 칸과 같은 말투 — 면이 한 단계 짙어지고 왼쪽에 가는 선 */
+.main-tabs,
+.tab-flyout > .tab-submenu,
+.drop-menu,
+.attr-drop {
+  background: var(--white);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-2);
+}
+.attr-drop { border-left-width: 1px; border-left-color: var(--border-hover); }
+.main-tabs :where(button, a.tab-sub):hover:not(.selected):not([aria-current]),
+.drop-menu button:hover:not(.on):not(:disabled),
+.attr-drop button:hover:not(.selected) {
+  background: var(--bg-soft);
+  box-shadow: inset 2px 0 0 var(--border-strong);
+}
+
+/* ── 자기 제목 줄이 있는 화면(인프라·스토리·내 정보) — 제목 옆 버튼과 붙어 있어 공통 머리를 얹지 않고,
+   제목 글자만 페이지 머리(.page-head h1)와 같은 크기·굵기로 맞춘다 (리디자인 2, 2026-10-07) */
+.planner-controls > h2,
+.story .head-row > h2,
+#me-title {
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+
+/* ── 카드 마우스오버 통일 (리디자인 3) — 떠오르기(위로 이동 + 그림자) 대신 테두리가 짙어지고 면이 한 단계.
+   홈 칸·메뉴와 같은 말투. ⚠ 오퍼 카드(확대해 정보 펼치기)·인프라 핵심 버튼(사용자 지정 '티 나게')·
+   통합전략 카드(전용 테마)는 제외 */
+.story-card button:hover:not(:disabled),
+.story-card a:hover,
+.en-card:hover,
+.st-card:hover,
+.sb-stage-btn:hover,
+.sb-clickable:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border-strong);
+}
+.en-card:hover,
+.st-card:hover,
+.sb-clickable:hover {
+  background: var(--bg-panel);
+}
+html:not(.dark):not(.rg-theme) .ship-room:hover,
+.ship-room:hover {
+  transform: none;
+}
+
+/* ── 공개채용 조합 카드 (사용자 2026-10-07 "형광색이 툭 튀어나와 촌스럽다") ──
+   라임 비낀 그림자·검정 태그 덩어리·금색 꽉 찬 배지를 걷고, 성급 색(--rar)은 왼쪽 띠와 배지 글자에만 */
+.recruit-combo {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--rar, var(--line));
+  border-radius: var(--r-md);
+}
+.recruit-combo.prized {
+  box-shadow: none;
+  border-color: var(--border-hover);
+  border-left-color: var(--rar);
+}
+.combo-tags span {
+  background: var(--bg-soft);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-weight: 600;
+}
+.recruit-combo > header > b,
+.recruit-group > h3 > span {
+  color: color-mix(in srgb, var(--rar) 72%, var(--ink));
+  background: color-mix(in srgb, var(--rar) 12%, var(--white));
+  border: 1px solid color-mix(in srgb, var(--rar) 40%, transparent);
+  border-radius: var(--r-sm);
+}
+.recruit-combo li {
+  border-color: var(--line);
+  border-radius: var(--r-sm);
+}
+.recruit-combo li:hover {
+  border-color: color-mix(in srgb, var(--rar) 60%, var(--line));
+}
+.recruit-combo li > i {
+  color: color-mix(in srgb, var(--rar) 80%, var(--ink));
+}
+
+/* ── 스토리·내 정보·인프라도 공통 페이지 머리 (사용자 2026-10-07) — 자체 제목은 숨기고 옆 버튼 줄은 남긴다 */
+/* 스토리 상세(목록 섹션이 없다)에선 머리를 숨긴다 */
+.page-head[data-tab="story"]:has(+ section.story-detail) { display: none; }
+.page-head ~ section .planner-controls > h2,
+.page-head ~ section .me-title-row > div:has(> #me-title) { display: none; }
+.site-scroll > .page-head ~ section.story,
+.site-scroll > .page-head ~ section.planner,
+.site-scroll > .page-head ~ section.me-page {
+  min-height: calc(100% - var(--page-head-h));
+}
+.story-guide-btn {
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+}
+.story-guide-btn:hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover); }
+/* 페이지 머리 ↔ 본문 첫 줄 간격을 전 화면 18px(도감과 같게), 왼쪽 끝도 도감과 같게 (사용자 2026-10-07) */
+.site-scroll > .page-head ~ section { padding-top: 18px; }
+.site-scroll > .page-head ~ section.story { padding-inline: clamp(18px, 4vw, 64px); }
+.page-head ~ section .story-viewtabs,
+.page-head ~ section .recruit-head .head-row,
+.page-head ~ section .me-head,
+.page-head ~ section .me-title-row { margin-top: 0; }
+.page-head ~ section .recruit-head { margin-top: 0; padding-top: 0; }
+/* 페이지 머리의 '?' — 안내 창 열기. 설명 오른쪽의 옅은 원 — 올리면 짙게 반전 (사용자 2026-10-07 "예쁘게") */
+.page-head .page-help {
+  flex: none;
+  align-self: baseline;  /* 설명 글줄의 기준선에 '?' 를 맞춘다 (center 면 줄 아래로 처졌다) */
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-left: -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-soft);
+  color: var(--ink3);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.page-head .page-help:hover,
+.page-head .page-help:focus-visible {
+  background: var(--chip);
+  color: var(--chip-ink);
+  outline: none;
+}
+/* 공채 — 결과 막대의 저격 조합 사전 (오퍼로 태그 찾기 · 4★ 이상만 사이) */
+.recruit-dict-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+.recruit-dict-btn em { font-style: normal; font-size: 11px; color: var(--muted); }
+.recruit-dict-btn:hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover); }
+/* 모바일 — 설명이 제목 아래 줄로 내려가므로 '?' 는 제목 줄 오른쪽 끝에 (혼자 한 줄을 먹지 않게) */
+@media (max-width: 760px) {
+  .page-head h1 { order: 0; }
+  .page-head .page-help { order: 1; margin-left: auto; align-self: center; }
+  .page-head p { order: 2; }
+}
+/* 공채 결과 막대 — 모바일에선 버튼 셋이 한 줄에 끼어 각자 두 줄로 접혔다. 줄을 넘겨 자연 폭으로 */
+@media (max-width: 760px) {
+  .recruit-results-bar { flex-wrap: wrap; row-gap: 8px; }
+  .recruit-results-bar > button { white-space: nowrap; flex: 0 0 auto; }
+  .recruit-dict-btn em { display: none; }
+}
+
+/* ── 글자 크기 체계 (리디자인 6, 2026-10-07) — 화면마다 제각각이던 제목을 세 단계로.
+   1단계 페이지 제목(.page-head h1) 32px·800 · 창 제목 24px·800
+   2단계 칸 제목('탐색 조건'·'전체 오퍼레이터'·상세 창 '잠재능력'·방 창 '편성') 20px·700
+   3단계 묶음·카드 제목(내 정보 '재화'·갤러리 장 묶음) 15px·700
+   종전엔 칸 제목(30px)이 페이지 제목(32px)과 거의 같아 위계가 뒤집혀 보였고, 소제목이 전부 가는 글씨(400)였다 */
+.panel-heading h2,
+.results-heading h2,
+.rh-title h2,
+.detail-section > h3,
+.detail-section > div > h3 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+}
+.modal-title-block h2,
+.room-modal .room-modal-head h2 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.me-card-head h3,
+.gl-group > h3 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+@media (max-width: 760px) {
+  .panel-heading h2,
+  .results-heading h2,
+  .rh-title h2,
+  .detail-section > h3,
+  .detail-section > div > h3 { font-size: 18px; }
+  .modal-title-block h2,
+  .room-modal .room-modal-head h2 { font-size: 21px; }
+}
+/* 잠재능력 칸 머리(P2~P6) — 라이트에선 검은 띠 대신 밝은 판 + 진한 올리브 글자 ('흰검' 대비 줄이기 연장) */
+html:not(.dark):not(.rg-theme) .potential-list article > span {
+  background: var(--bg-panel2);
+  color: var(--tint-lime-ink);
+  border-bottom: 1px solid var(--line);
+}
+
+/* ══ 홈 시안 (리디자인 5, 2026-10-07) — 배치 틀(칸 위치)은 그대로, 생김새·위계만.
+   ① 묶음 상자 속 칸은 테두리 카드 대신 가는 선으로 나뉜 목록 줄 — 상자 속 상자를 한 겹으로
+   ② 대표 칸(인프라 자동편성기)은 왼쪽 라임 띠를 늘 켠다 — 1순위로 읽히게
+   ③ 이벤트 칸 — 그림은 또렷하게, 글자는 아래 밝은 판 위에 (흐린 그림 위 흰 글자는 안 읽혔다)
+   ④ 운영 일수 배지 — 검은 덩어리 대신 밝은 판 */
+.pt-group {
+  padding: 8px 0 0;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--pt-ink) 30%, transparent);
+  border-radius: 0;
+  background: transparent;
+  gap: 0;
+}
+.pt-group-cap {
+  padding: 0 2px 6px;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  opacity: 1;
+}
+.pt-group-tiles {
+  gap: 0;
+}
+.pt-group .pt-tile {
+  border: 0;
+  border-bottom: 1px solid var(--pt-line);
+  border-radius: 0;
+  background: transparent;
+  padding: 6px 8px;
+}
+.pt-group .pt-tile:last-child { border-bottom: 0; }
+.pt-group .pt-tile:hover:not(.dead) {
+  background: color-mix(in srgb, var(--pt-plate) 80%, transparent);
+  border-color: var(--pt-line);
+}
+.pt-t-terminal::before {
+  transform: scaleY(1);
+  width: 4px;
+  background: var(--lime);
+}
+.pt-banner-img { opacity: 1; }
+.pt-banner-txt {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 6px 10px 7px;
+  background: color-mix(in srgb, var(--pt-plate) 92%, transparent);
+  border-top: 1px solid var(--pt-line);
+}
+.pt-banner-txt b { color: var(--pt-ink); text-shadow: none; }
+.pt-banner-txt small { color: var(--pt-mut); text-shadow: none; }
+.pt-lv {
+  background: var(--pt-plate);
+  color: var(--pt-ink);
+  border: 1px solid var(--pt-line);
+  border-radius: var(--r-sm);
+}
+.pt-lv small { color: var(--pt-mut); }
+/* 홈 시안 보정 (사용자 2026-10-07 "완전 투명이라 구분이 힘들다") — 줄마다 옅은 면 + 줄 사이 작은 틈.
+   테두리는 다시 두르지 않는다(상자 속 상자 회귀 방지). 올리면 면이 한 단계 짙어지고 왼쪽 포인트 선 */
+.pt-group-tiles { gap: 4px; }
+.pt-group .pt-tile {
+  border: 0;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--pt-plate) 72%, transparent);
+}
+.pt-group .pt-tile:hover:not(.dead) {
+  background: var(--pt-plate-2);
+}
+/* 이벤트 칸 — 아래 이름 판이 D-n 원형 게이지를 덮었다 (사용자 2026-10-07). 게이지는 위로 붙이고
+   아래는 이름 판 높이만큼 비운다 */
+.pt-banner-in {
+  align-items: flex-start;
+  padding-bottom: 42px;
+}
+/* 스카디와 대화 창 — 창 공용 본문 여백(12/20/24)과 안쪽 칸(대화 기록·입력·안내)의 여백이 두 겹이었다
+   (사용자 2026-10-07 "패딩이 많아 보인다"). 바깥 여백을 걷고 안쪽 한 겹만 */
+.chibi-chat .mw-body { padding: 0; }
+/* 이벤트 칸 — 이름은 아래 띠가 아니라 D-n 게이지 **오른쪽**에 (사용자 2026-10-07).
+   그림 위에서도 읽히게 글자 뒤에만 옅은 판 */
+.pt-banner-in {
+  align-items: center;
+  padding-bottom: 8px;
+}
+.pt-banner-txt {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0;
+  padding: 5px 9px 6px;
+  border-top: 0;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--pt-plate) 88%, transparent);
+  min-width: 0;
+}
+/* 이벤트 이름 — 뒤 판을 걷는다 (사용자 2026-10-07 "다른 색 상자가 박혀 있어 위화감"). 대신 글자 둘레에만
+   칸 바탕색 번짐을 줘 그림 위에서도 읽히게 */
+.pt-banner-txt {
+  background: transparent;
+  padding: 0 0 0 2px;
+}
+.pt-banner-txt b,
+.pt-banner-txt small {
+  text-shadow: 0 0 6px var(--pt-plate), 0 0 2px var(--pt-plate);
+}
+/* 위수협의 제목 옆 시즌 표식 — 밝은 바탕 위 라임 1.37:1 (전 화면 점검 2026-10-07) */
+html:not(.dark):not(.rg-theme) .ac-season { color: var(--tint-lime-ink); border-color: color-mix(in srgb, var(--tint-lime-ink) 45%, transparent); }

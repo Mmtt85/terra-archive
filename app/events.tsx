@@ -796,7 +796,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
               </div>
             </>
           ) : (
-            <div className="empty"><span>NO MATCH</span><h3>{t("조건에 맞는 이벤트가 없어요.")}</h3>
+            <div className="empty"><h3>{t("조건에 맞는 이벤트가 없어요.")}</h3>
               <button onClick={reset}><span className="btn-icon" aria-hidden>↻</span>{t("전체 보기")}</button></div>
           )}
         </div>

@@ -12,6 +12,7 @@
 // 페이지가 넘어가면 안 된다 (사용자 지시 2026-08-10). href(/stages/<id>?sim=1)는
 // 크롤러·새 탭·보조클릭용 딥링크로 남긴다.
 
+import { usePageHelp } from "./page-help";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
@@ -107,6 +108,7 @@ export default function SimLauncher() {
   const { term, clear, inputRef, inputProps } = useSearchInput();
   const [committed, setCommitted] = useState("");
   const [showGuide, setShowGuide] = useState(false);
+  usePageHelp("sim", () => setShowGuide(true)); // 안내 창은 페이지 머리의 '?' 로 연다 (2026-10-07)
   // 계층 필터 — 작전 도감과 **같은 부품·같은 조작** (사용자 요청 2026-08-16 "검색방식 똑같이").
   // 검색어는 종전대로 버튼·Enter로 확정하고(2026-08-10 확정 유지), 필터는 고르는 즉시 반영한다.
   const [types, setTypes] = useState<string[]>([]);
@@ -320,7 +322,6 @@ export default function SimLauncher() {
               같이 짧은 버튼으로"). ⚠ 창 안은 프리렌더에 안 들어간다 — 종전엔 버튼 문구가 소개 한 문장을 대신 들고 있었다. */}
           <div><span className="section-no">RESULT / 02</span>
             <div className="rh-title"><h2 id="sim-title">{t("작전 시뮬레이터")}</h2>
-              <div className="head-links"><button type="button" onClick={() => setShowGuide(true)}>{t("읽는 법과 주의")}</button></div>
             </div>
           </div>
         </div>

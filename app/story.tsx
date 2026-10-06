@@ -6,6 +6,7 @@
 // 요약이 있는 이벤트만 카드가 열리고, 상세는 #story-<id> 해시로 공유·뒤로가기 가능.
 // 본문의 인물·용어는 점선 밑줄로 표시하고, 마우스오버(데스크탑)·탭(모바일)하면 설명 카드가
 // 뜬다 (`useEntityPeek` — 2026-07-25에 종전 오른쪽 참조 레일을 대체).
+import { usePageHelp } from "./page-help";
 import { NewBadge } from "./new-badge";
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { asset, storyCutUrl } from "./assets";
@@ -1218,8 +1219,12 @@ const arcNameOf = (locale: Locale, id: string) => {
 
 // 테라 연대기 뷰 — 테라력 연도별 세로 타임라인 (사용자 요청 2026-10-07: 메인 에피소드 구간 → 테라력 구간, UI 개편).
 // 위: 연도 칩 한 줄(누르면 그 해로) · 본문: 왼쪽 큰 연도 + 세로 선 위 카드(썸네일·종류·테마·근거 한 줄).
-function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => void }) {
+function ChronologyView({ onShowOperator }: { onShowOperator?: (operatorId: string) => void }) {
   const { locale, t } = useI18n();
+  // 누르면 그 이야기의 **스토리 창**을 겹쳐 띄운다 (사용자 2026-10-07 "스토리니까 스토리가 뜨는 게 맞다").
+  // 스토리가 없는 이벤트만 이벤트 도감 상세로. 닫으면 연대기 해시로 되돌린다
+  const [storyOpen, setStoryOpen] = useState<{ id: string; name: string; k: number } | null>(null);
+  const closeStory = () => { setStoryOpen(null); history.replaceState(null, "", "#chronicle"); };
   const arcName = (id: string) => arcNameOf(locale, id);
 
   // 연도 묶음 — 인게임 스토리라인을 병합한 전역 순서(CHRON_ORDER)를 따라가며,
@@ -1292,16 +1297,14 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 
   const yearText = (year: number | null) => (year == null ? t("미정") : String(year));
   const thumbOf = (it: ChronItem) => (locale === "ja" ? it.thumbJa : locale === "en" ? it.thumbEn : undefined) ?? it.thumb;
-  // 이벤트는 이벤트 도감 상세 모달(셸이 띄운다), 메인스토리·통합 전략은 종전대로 스토리를 연다
   const inDex = (it: ChronItem) => (it.kind === "event" || it.kind === "mini") && DEX_EVENT_IDS.has(it.key);
   const openIf = (it: ChronItem) => {
-    if (inDex(it)) openEvent(it.key);
-    else if (it.eventId) onOpenEvent(it.eventId);
+    if (it.eventId) setStoryOpen((cur) => ({ id: it.eventId!, name: locText(locale, it.name), k: (cur?.k ?? 0) + 1 }));
+    else if (inDex(it)) openEvent(it.key);
   };
 
   return (
     <div className="chron">
-      <p className="chron-note">{rich(t("**테라 연대기** — 이야기의 '현재'가 테라력 몇 년인지로 묶었습니다. 연도는 스토리 원문의 날짜 표기나, 연도를 아는 사건(체르노보그 1097년 등)을 기준으로 계산한 것만 적고 근거를 함께 보여 줍니다. 연도가 밝혀지지 않은 이야기는 인게임 스토리라인 순서상 그 무렵의 해에 두었고, 순서도 알 수 없는 콜라보·통합 전략은 맨 뒤 '미정'에 모았습니다."))}</p>
 
       <nav className="chron-years" ref={navRef} aria-label={t("테라 연대기")}>
         {groups.map((g) => (
@@ -1344,6 +1347,11 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
           </section>
         ))}
       </div>
+      {storyOpen && (
+        <ModalWindow key={`sy-${storyOpen.k}`} label={storyOpen.name} className="operator-modal sy-modal" onClose={closeStory}>
+          <StoryDetailById id={storyOpen.id} name={storyOpen.name} onClose={closeStory} onShowOperator={onShowOperator} />
+        </ModalWindow>
+      )}
     </div>
   );
 }
@@ -1765,6 +1773,7 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
   const [lensHelp, setLensHelp] = useState(false);
   // 안내 세 문단을 창으로 (사용자 지시 2026-09-20, 다른 화면과 같은 규약)
   const [showGuide, setShowGuide] = useState(false);
+  usePageHelp("story", () => setShowGuide(true)); // 안내 창은 페이지 머리의 '?' 로 연다 (2026-10-07)
   const [lensMsg, setLensMsg] = useState<string | null>(null);
   const [lensThumb, setLensThumb] = useState<string | null>(null);
   const [lensNav, setLensNav] = useState(0); // 같은 스토리 안 다른 ep 재이동 시 전문 뷰어 리마운트용
@@ -1848,19 +1857,6 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
 
   return (
     <section className="story" aria-label={t("스토리")}>
-      <div className="story-head">
-        <span className="section-no">AI STORY DIGEST</span>
-        {/* 안내는 창으로 빼고 제목 오른쪽 손잡이만 남긴다 (사용자 지시 2026-09-20).
-            버튼은 "안내" 짧은 이름만 (사용자 지시 2026-09-28 "길게 만들지 말고") — 수록 개수·스포일러 경고는 창 안에 있다. */}
-        <div className="head-row">
-          <h2>{t("스토리")}</h2>
-          <div className="head-links">
-            <button type="button" onClick={() => setShowGuide(true)}>
-              {t("안내")}
-            </button>
-          </div>
-        </div>
-      </div>
       {showGuide && (
         <ModalWindow label={t("스토리 요약 안내")} className="story-guide-modal" onClose={() => setShowGuide(false)}>
           <p>{t("출시된 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
@@ -1878,6 +1874,7 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
         <button type="button" role="tab" aria-selected={view === "digest" && group === "release"} className={view === "digest" && group === "release" ? "on" : ""} onClick={() => goGroup("release")}>{t("출시순")}</button>
         <button type="button" role="tab" aria-selected={view === "digest" && group === "theme"} className={view === "digest" && group === "theme" ? "on" : ""} onClick={() => goGroup("theme")}>{t("테마별")}</button>
         <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
+
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 (KR 클라 전용) */}
         {locale === "ko" && (
           <div className="lens-open-wrap">
@@ -1895,7 +1892,7 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
       {lensHelpModal}
 
       {view === "chronicle" ? (
-        <ChronologyView onOpenEvent={openEvent} />
+        <ChronologyView onShowOperator={onShowOperator} />
       ) : (
         <DigestView onOpen={open} group={group} />
       )}

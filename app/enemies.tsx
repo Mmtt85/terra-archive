@@ -216,7 +216,7 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
       <div className="results">
         <div className="results-heading">
           <div><span className="section-no">RESULT / 02</span><h2>{active ? t("탐색 결과") : t("전체 적")}</h2></div>
-          <div className="results-tools"><span className="count"><b>{shown.length}</b> ENEMIES</span></div>
+          <div className="results-tools"><span className="count"><b>{shown.length}</b> {t("적")}</span></div>
         </div>
         <div className="active-filters">
           {ranks.map((v) => <button key={`k-${v}`} onClick={() => toggle(setRanks)(v)}>{t(RANK_KEY[v] ?? v)} ×</button>)}
@@ -234,7 +234,7 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
               {shown.map((e) => <EnemyCard key={e.id} enemy={e} onSelect={setOpen} />)}
             </div>
           ) : (
-            <div className="empty"><span>NO MATCH</span><h3>{t("조건에 맞는 적이 없어요.")}</h3>
+            <div className="empty"><h3>{t("조건에 맞는 적이 없어요.")}</h3>
               <button onClick={reset}><span className="btn-icon" aria-hidden>↻</span>{t("전체 보기")}</button></div>
           )}
         </div>
