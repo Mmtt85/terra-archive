@@ -42,10 +42,6 @@ const misc2Icon = (k: string) => asset(`/sandbox/misc2/${k}.webp`);
 const worldMap = asset("/sandbox/world/sandbox_1.webp");
 // 신시즌 전투 지형 프리뷰 (사용자 요청 2026-08-12 "맵 이미지같은것도 보여줘야 해")
 const v3MapImg = (id: string) => asset(`/sandbox/map2/${id}.webp`);
-const FOOD_ATTR_ICON: Record<string, string> = {
-  SURVIVE: "survive_main", ATTACK: "attack_main", COOLDOWN: "cooldown_main",
-  COST: "cost_main", SKILL_POINT: "skill_point_main", SPECIAL: "special_main",
-};
 const hideErr = (ev: React.SyntheticEvent<HTMLImageElement>) => { ev.currentTarget.style.display = "none"; };
 
 // 지역 상세의 타일 격자·경로·시뮬 데이터 — 모달을 열 때만 지연 로드
@@ -165,10 +161,12 @@ export type SandboxDoc = {
 
 // 한국 서버 상설(사막 이야기)과 중국 서버 신시즌은 **메뉴를 아예 분리**한다
 // (사용자 확정 2026-08-12) — 위쪽 시즌 탭으로 갈아타고, 아래 뷰 칩은 시즌마다 다르다.
-const VIEWS = ["item", "food", "craft", "stage", "enemy", "weather", "event", "rift", "tech"] as const;
+// 요리·음료 · 제작·설치물 탭은 아이템 탭으로 합쳤다 (사용자 지시 2026-10-06 "아이템에 다 있으니 필요없어") — 요리·설치물을
+// 누르면 종전 그 탭의 상세 창(조합식·재료)이 열린다. 옛 주소 #ra-food · #ra-craft 는 아이템 탭으로 보낸다 (applyHash)
+const VIEWS = ["item", "stage", "enemy", "weather", "event", "rift", "tech"] as const;
 type View = (typeof VIEWS)[number];
 const VIEW_LABEL: Record<View, string> = {
-  item: "아이템", food: "요리·음료", craft: "제작·설치물", stage: "지역", enemy: "적 도감", weather: "날씨",
+  item: "아이템", stage: "지역", enemy: "적 도감", weather: "날씨",
   event: "조우", rift: "균열·원정", tech: "테크트리",
 };
 const V3_VIEWS = ["v3item", "v3craft", "v3map", "v3enemy", "v3stage", "v3weather", "v3event"] as const;
@@ -184,9 +182,6 @@ const V2_ITEM_TYPE: [string, string][] = [
   ["INSECT", "원석충·벌레"], ["STAMINAPOT", "소모품"], ["SLUGITEM", "특수 아이템"], ["CRAFT", "제작 재료"],
   ["FOOD", "요리·음료"], ["BUILDING", "건축물"], ["TACTICAL", "전술 아이템"],
 ];
-const FOOD_ATTR: Record<string, string> = {
-  SURVIVE: "생존", ATTACK: "공격", COOLDOWN: "재배치", COST: "코스트", SKILL_POINT: "스킬", SPECIAL: "특수",
-};
 const TECH_TYPE: Record<string, string> = {
   SURVIVE: "생존", BATTLE: "전투", COLLECT: "채집", DUNGEON: "균열", SHOP: "상점",
 };
@@ -238,7 +233,8 @@ function matCounts(mats: string[]): [string, number][] {
 
 export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { doc: SandboxDoc; includeFuture?: boolean; season?: "v2" | "v3" }) {
   const { t, locale } = useI18n();
-  const [view, setView] = useState<View>("food");
+  const [view, setView] = useState<View>("item");
+  const [v2type, setV2type] = useState("");
   const [v3view, setV3view] = useState<V3View>("v3item");
   const { term, clear, inputProps } = useSearchInput();
   const q = normSearch(term);
@@ -335,6 +331,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
     }
     if (season === "v3") { if ((V3_VIEWS as readonly string[]).includes(key)) setV3view(key as V3View); }
     else if ((VIEWS as readonly string[]).includes(key)) setView(key as View);
+    else if (key === "food" || key === "craft") { setView("item"); setV2type(key === "food" ? "FOOD" : ""); }
   };
   const applyRef = useRef(applyHash);
   useEffect(() => { applyRef.current = applyHash; });
@@ -436,17 +433,12 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
     </button>
   );
   const matChips = (mats: string[]) => <span className="sb-matline">{matCounts(mats).map(([id, n]) => matChip(id, n))}</span>;
-  // 요리·음료에 쓰이는 모든 재료 (주재료·보조·음료용 + 조합에 등장하는 것 전부)
-  const allMats = useMemo(() => {
-    const ids = new Set<string>([...v2.foodMats.map((x) => x[0]), ...v2.drinkMats.map((x) => x[0])]);
-    for (const f of v2.foods) for (const r of f.recipes) for (const id of r) ids.add(id);
-    return [...ids].filter((id) => match(nameOf(id)));
-  }, [v2, q]);  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const searchable = season === "v3" ? (v3view === "v3item" || v3view === "v3enemy")
-    : (view === "item" || view === "food" || view === "craft" || view === "enemy" || view === "stage");
-  // 사막 이야기 아이템 탭 — 종류 필터
-  const [v2type, setV2type] = useState("");
+  // ── 통합 검색 (사용자 요청 2026-10-06 "록라처럼 종합 검색란으로") — 탭 줄 끝(테크트리 오른쪽)의 검색란 하나로
+  //    아이템·지역·적을 한꺼번에 찾는다. 검색어가 있으면 어느 탭에서든 결과 판이 탭 본문 자리를 대신하고(탭을 누르면 풀린다),
+  //    카드는 각 탭 것 그대로라 누르면 같은 상세가 뜬다. 탭마다 있던 검색란은 없앴다. 결과 판은 탭의 보조 필터
+  //    (아이템 종류·지역 자원)를 무시한다 — 검색어만으로 찾는다.
+  // 사막 이야기 아이템 탭 — 종류 필터 (상태는 위 view 옆에 둔다 — 옛 #ra-food 주소가 이걸 고른다)
   const v2ItemTypes = useMemo(() => V2_ITEM_TYPE.map(([k, label]) => [k, label, Object.values(v2.items).filter((it) => it[3] === k).length] as const)
     .filter(([, , n]) => n > 0), [v2]);
   const v2Items = useMemo(() => {
@@ -457,10 +449,6 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   }, [v2, v2type, q]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 목록들 ──────────────────────────────────────────────────────────────
-  const foods = useMemo(() => v2.foods.filter((f) => !q || f.variants.some((v) => normSearch(v[1]).includes(q))
-    || f.recipes.some((r) => r.some((m) => normSearch(nameOf(m)).includes(q)))), [v2, q]);  // eslint-disable-line react-hooks/exhaustive-deps
-  const [craftType, setCraftType] = useState("");
-  const crafts = useMemo(() => v2.crafts.filter((c) => (!craftType || c.type === craftType) && match(nameOf(c.id))), [v2, q, craftType]);  // eslint-disable-line react-hooks/exhaustive-deps
   // 지역 — 획득 자원별 필터 (게임 데이터에 지역↔노드 종류 고정 매핑이 없다)
   const [resFilter, setResFilter] = useState("");
   const resKinds = useMemo(() => {
@@ -493,6 +481,20 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   }, [v3]);
   const v3dex = useMemo(() => v3.dex.filter((e) => match(v3.enemyNames[e.id] ?? "")
     || match(v3.enemyCn[e.id] ?? "")), [v3, q]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const uni = !!q;
+  const uniHits = useMemo(() => {
+    if (!q) return null;
+    const none = { items: [] as [string, (typeof v2.items)[string]][], sts: [] as typeof v2.stages, foes: [] as typeof v2.dex,
+      items3: [] as [string, (typeof v3.items)[string]][], foes3: [] as typeof v3.dex };
+    if (season === "v3") {
+      const items3 = Object.entries(v3.items).filter(([, it]) => normSearch(it[0]).includes(q) || normSearch(it[1]).includes(q));
+      return { ...none, items3, foes3: v3dex, n: items3.length + v3dex.length };
+    }
+    const order = new Set(V2_ITEM_TYPE.map(([k]) => k));
+    const items = Object.entries(v2.items).filter(([, it]) => order.has(it[3]) && normSearch(it[0]).includes(q));
+    const sts = v2.stages.filter((st) => match(st[2]) || match(st[3]));
+    return { ...none, items, sts, foes: dex, n: items.length + sts.length + dex.length };
+  }, [q, season, v2, v3, v3dex, dex]);  // eslint-disable-line react-hooks/exhaustive-deps
   const zoneIdx = (zid: string) => v3.world.zones.findIndex((z) => z.id === zid);
   const zoneName = (zid: string) => {
     const z = v3.world.zones.find((x) => x.id === zid);
@@ -638,6 +640,87 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   const card = (key: string, onClick: () => void, inner: React.ReactNode, cls = "") => (
     <button key={key} type="button" className={`sb-card sb-clickable ${cls}`} onClick={onClick}>{inner}</button>
   );
+  // ── 카드 — 탭 목록과 통합 검색 결과 판이 같이 쓴다 (누르면 같은 상세, 2026-10-06) ──
+  const v2ItemCard = ([id, it]: [string, (typeof v2.items)[string]]) => card(`v2i-${id}`, () => {
+              // 요리·설치물은 종전 탭의 상세(조합식·재료)로, 나머지는 재료 상세로
+              const fi = v2.foods.findIndex((f) => f.id === id);
+              if (fi >= 0) return openDetail({ k: "food", i: fi });
+              const ci = v2.crafts.findIndex((c) => c.id === id);
+              if (ci >= 0) return openDetail({ k: "craft", i: ci });
+              openDetail({ k: "mat", id });
+            }, (
+              <>
+                <img className="sb-thumb" src={itemIcon(id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                <b className="sb-cname">{it[0]}</b>
+                <span className="sb-cmeta"><i className="sb-chip">{t(V2_ITEM_TYPE.find(([k]) => k === it[3])?.[1] ?? it[3])}</i></span>
+                <span className="sb-cdesc">{it[1]}</span>
+              </>
+            ));
+  const stageCard = (s: (typeof v2.stages)[number]) => (
+              <button key={s[0]} type="button" className="sb-card sb-map-card sb-clickable" onClick={() => openStage(s)}>
+                <img src={stageMapImg(s[0])} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                {PICKED[s[0]] && <i className="sb-pick" title={t("박사 추천 지역")}>👍</i>}
+                <h4><i className="sb-chip">{s[1]}</i>{s[2]}
+                  <i className="sb-lv">{t("행동력")} {s[4]}{s[5] !== s[4] ? ` · ⚔${s[5]}` : ""}</i></h4>
+                {/* 획득 자원 + 지도에 놓인 오브젝트 개수. 같은 자원이 양쪽에 있으면
+                    **개수 있는 쪽만** 남긴다 (사용자 지적 2026-08-12 "두 개 중첩"). */}
+                {(() => {
+                  const objs = OB_KINDS.filter(([k]) => v2.stageObjs[s[0]]?.[k]);
+                  const covered = new Set(objs.map(([, iid]) => iid));
+                  const plain = (v2.stageRewards[s[0]] ?? []).filter((id) => !covered.has(id));
+                  if (!objs.length && !plain.length) return null;
+                  return (
+                    <span className="sb-stres">
+                      {objs.map(([k, iid, label, color]) => (
+                        <i key={`ob-${k}`} className="ob">
+                          {iid ? <img src={itemIcon(iid)} alt="" aria-hidden loading="lazy" onError={hideErr} />
+                            : <b className="dot" style={{ background: color }} aria-hidden />}
+                          {t(label)} <b>×{v2.stageObjs[s[0]][k]}</b>
+                        </i>
+                      ))}
+                      {plain.map((id) => (
+                        <i key={id}><img src={itemIcon(id)} alt="" aria-hidden loading="lazy" onError={hideErr} />{nameOf(id)}</i>
+                      ))}
+                    </span>
+                  );
+                })()}
+                <p className="sb-dim">{s[3]}</p>
+              </button>
+            );
+  const dexCard = (e: (typeof v2.dex)[number]) => card(e.id, () => openDetail({ k: "dex", i: v2.dex.indexOf(e) }), (
+              <>
+                <img className="sb-thumb sb-thumb-en" src={enImgOf(e.id, e.img, e.src)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                <b className="sb-cname">{enName(e.id)}{e.lv > 0 && <em className="sb-lv">★{e.lv}</em>}</b>
+                <span className="sb-cdesc">HP {e.st[0].toLocaleString()} · {t("공격")} {e.st[1].toLocaleString()}</span>
+                <span className="sb-cmeta">
+                  <i className="sb-chip">{t("{n}개 지역", { n: String(e.at.length) })}</i>
+                  {v2.enemyRewards[e.id] && (
+                    <i className="sb-chip">
+                      <img src={itemIcon(v2.enemyRewards[e.id][0])} alt="" aria-hidden onError={hideErr} />
+                      {nameOf(v2.enemyRewards[e.id][0])}
+                    </i>
+                  )}
+                </span>
+              </>
+            ));
+  const v3ItemCard = ([id, it]: [string, (typeof v3.items)[string]]) => card(`v3i-${id}`, () => openDetail({ k: "v3item", id }), (
+                    <>
+                      <img className="sb-thumb" src={itemIcon(id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                      <b className="sb-cname">{it[1]}{locale === "ko" && it[0] !== it[1] && <span className="sb-cn">{it[0]}</span>}</b>
+                      <span className="sb-cmeta">{it[4] && <i className="sb-chip">{ty3(it[4], v3.itemTypes)}</i>}</span>
+                      <span className="sb-cdesc">{locale === "ko" && it[5] ? it[5] : it[2]}</span>
+                    </>
+                  ));
+  const v3DexCard = (e: (typeof v3.dex)[number]) => card(`v3d-${e.id}`, () => openV3Enemy(e.id), (
+                  <>
+                    <img className="sb-thumb sb-thumb-en" src={v3EnImg(e.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                    <b className="sb-cname">{v3EnName(e.id)}
+                      {locale === "ko" && v3.enemyCn[e.id] && v3.enemyCn[e.id] !== v3EnName(e.id) && <span className="sb-cn">{v3.enemyCn[e.id]}</span>}
+                      {e.lv > 0 && <em className="sb-lv">★{e.lv}</em>}</b>
+                    <span className="sb-cdesc">HP {e.st[0].toLocaleString()} · {t("공격")} {e.st[1].toLocaleString()}</span>
+                    <span className="sb-cmeta"><i className="sb-chip">{t("{n}개 지형", { n: String(e.at.length) })}</i></span>
+                  </>
+                ));
 
   return (
     <section className="sb-guide" aria-labelledby="sb-title">
@@ -662,23 +745,51 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       <div className="sb-views" role="tablist" aria-label={t("생존연산 보기")}>
         {season === "v2" ? views.map((vw) => (
           <button key={vw} type="button" role="tab" aria-selected={view === vw}
-            className={view === vw ? "on" : ""} onClick={() => setView(vw)}>{t(VIEW_LABEL[vw])}</button>
+            className={view === vw ? "on" : ""} onClick={() => { clear(); setView(vw); }}>{t(VIEW_LABEL[vw])}</button>
         )) : V3_VIEWS.map((vw) => (
           <button key={vw} type="button" role="tab" aria-selected={v3view === vw}
-            className={v3view === vw ? "on" : ""} onClick={() => setV3view(vw)}>{t(V3_LABEL[vw])}</button>
+            className={v3view === vw ? "on" : ""} onClick={() => { clear(); setV3view(vw); }}>{t(V3_LABEL[vw])}</button>
         ))}
+        {/* 통합 검색란 — 테크트리(마지막 탭) 바로 오른쪽 (사용자 지시 2026-10-06, uniHits 주석) */}
+        <div className="sb-uni-box">
+          <input type="search" {...inputProps} placeholder={t("아이템·지역·적 전체 검색")} aria-label={t("아이템·지역·적 전체 검색")}
+            autoComplete="off" spellCheck={false} />
+        </div>
       </div>
 
-      {searchable && (
-        <div className="search-wrap heading-search sim-search sb-search">
-          <span>⌕</span>
-          <input {...inputProps} placeholder={t("이름·재료 검색")} autoComplete="off" spellCheck={false} />
-          <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
+      {/* 통합 검색 결과 — 검색어가 있으면 어느 탭에서든 탭 본문 자리를 대신한다 */}
+      {uniHits && (
+        <div className="sb-uni-results">
+          <p className="sb-uni-head">
+            <span>{t("'{q}' 검색 결과 {n}건", { q: term, n: uniHits.n })}</span>
+            <button type="button" onClick={() => clear()}>{t("검색 지우기")}</button>
+          </p>
+          {uniHits.n === 0 && <p className="sim-note">{t("검색 결과가 없습니다.")}</p>}
+          {uniHits.items.length > 0 && (
+            <><h3 className="sb-h3">{t("아이템")} <em className="sb-count">{uniHits.items.length}</em></h3>
+              <div className="sb-cards">{uniHits.items.map(v2ItemCard)}</div></>
+          )}
+          {uniHits.sts.length > 0 && (
+            <><h3 className="sb-h3">{t("지역")} <em className="sb-count">{uniHits.sts.length}</em></h3>
+              <div className="sb-grid">{uniHits.sts.map(stageCard)}</div></>
+          )}
+          {uniHits.foes.length > 0 && (
+            <><h3 className="sb-h3">{t("적 도감")} <em className="sb-count">{uniHits.foes.length}</em></h3>
+              <div className="sb-cards">{uniHits.foes.map(dexCard)}</div></>
+          )}
+          {uniHits.items3.length > 0 && (
+            <><h3 className="sb-h3">{t("아이템")} <em className="sb-count">{uniHits.items3.length}</em></h3>
+              <div className="sb-cards">{uniHits.items3.map(v3ItemCard)}</div></>
+          )}
+          {uniHits.foes3.length > 0 && (
+            <><h3 className="sb-h3">{t("적 도감")} <em className="sb-count">{uniHits.foes3.length}</em></h3>
+              <div className="sb-cards">{uniHits.foes3.map(v3DexCard)}</div></>
+          )}
         </div>
       )}
 
       {/* ── 아이템 — 종류별 전부 (건축 재료·화폐·식재료·야생동물 …) ── */}
-      {season === "v2" && view === "item" && (
+      {!uni && season === "v2" && view === "item" && (
         <>
           <div className="sb-filters">
             <button type="button" className={v2type === "" ? "on" : ""} onClick={() => setV2type("")}>
@@ -689,97 +800,12 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
             ))}
           </div>
           <div className="sb-cards">
-            {v2Items.map(([id, it]) => card(`v2i-${id}`, () => openDetail({ k: "mat", id }), (
-              <>
-                <img className="sb-thumb" src={itemIcon(id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                <b className="sb-cname">{it[0]}</b>
-                <span className="sb-cmeta"><i className="sb-chip">{t(V2_ITEM_TYPE.find(([k]) => k === it[3])?.[1] ?? it[3])}</i></span>
-                <span className="sb-cdesc">{it[1]}</span>
-              </>
-            )))}
+            {v2Items.map(v2ItemCard)}
           </div>
         </>
       )}
 
-      {/* ── 요리·음료 ── */}
-      {season === "v2" && view === "food" && (
-        <>
-          <p className="sim-note">{t("재료 조합이 같으면 같은 요리가 나옵니다.")} {t("주재료로 요리를 정하고, 보조 재료를 함께 넣으면 그 재료의 종류에 따라 α·β·γ 변형이 됩니다 — α는 능력치가 하나 더 붙고, β(조미료)는 지속 시간이 늘며, γ는 공격 계열 효과가 크게 붙습니다.")}</p>
-          <div className="sb-cards">
-            {foods.map((f, i) => card(f.id, () => openDetail({ k: "food", i: v2.foods.indexOf(f) }), (
-              <>
-                <img className="sb-thumb" src={itemIcon(f.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                <b className="sb-cname">{f.variants[0]?.[1] ?? f.id}</b>
-                <span className="sb-cmeta">
-                  {f.attrs.map((a) => (
-                    <i key={a} className={`sb-chip a-${a}`}>
-                      {FOOD_ATTR_ICON[a] && <img src={miscIcon(FOOD_ATTR_ICON[a])} alt="" aria-hidden onError={hideErr} />}
-                      {t(FOOD_ATTR[a] ?? a)}
-                    </i>
-                  ))}
-                </span>
-                <span className="sb-cdesc">{f.recipes[0] ? matCounts(f.recipes[0]).map(([id, n]) => `${nameOf(id)}${n > 1 ? ` ×${n}` : ""}`).join(" + ") : t("정해진 조합 없음")}</span>
-              </>
-            )))}
-          </div>
-          <h3 className="sb-h3">{t("재료")} <em className="sb-count">{allMats.length}</em></h3>
-          <p className="sim-note">{t("요리·음료에 쓰이는 모든 재료입니다. 누르면 효과와 쓰이는 요리, 얻는 곳이 나옵니다.")}</p>
-          <div className="sb-cards">
-            {allMats.map((id) => {
-              const mm = matMeta.get(id);
-              return card(`mat-${id}`, () => openDetail({ k: "mat", id }), (
-                <>
-                  <img className="sb-thumb" src={itemIcon(id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                  <b className="sb-cname">{nameOf(id)}</b>
-                  <span className="sb-cmeta">
-                    {mm?.role && <i className="sb-chip">{mm.role === "SUB" ? t("보조") : t("주재료")}</i>}
-                    {mm?.variant && VAR_MARK[mm.variant] && mm.variant !== "NONE" && <i className="sb-chip">{VAR_MARK[mm.variant]}</i>}
-                    {mm?.water ? <i className="sb-chip">{t("수분")} {mm.water}</i> : null}
-                  </span>
-                  <span className="sb-cdesc">{mm?.buff || v2.items[id]?.[1] || ""}</span>
-                </>
-              ));
-            })}
-          </div>
-        </>
-      )}
-
-      {/* ── 제작·설치물 (종류별 분류 + 카드) ── */}
-      {season === "v2" && view === "craft" && (
-        <>
-          <div className="sb-filters">
-            <button type="button" className={craftType === "" ? "on" : ""} onClick={() => setCraftType("")}>{t("전체")} <em>{v2.crafts.length}</em></button>
-            {Object.entries(CRAFT_TYPE).map(([k, label]) => (
-              <button key={k} type="button" className={craftType === k ? "on" : ""} onClick={() => setCraftType(k)}>
-                {t(label)} <em>{v2.crafts.filter((c) => c.type === k).length}</em>
-              </button>
-            ))}
-          </div>
-          <div className="sb-cards">
-            {crafts.map((c) => card(c.id, () => openDetail({ k: "craft", i: v2.crafts.indexOf(c) }), (
-              <>
-                <img className="sb-thumb" src={itemIcon(c.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                <b className="sb-cname">{nameOf(c.id)}</b>
-                <span className="sb-cmeta">
-                  {c.tag && v2.trapTags[c.tag] && (
-                    <i className="sb-chip">
-                      {v2.trapTags[c.tag][1] && <img src={miscIcon(v2.trapTags[c.tag][1])} alt="" aria-hidden onError={hideErr} />}
-                      {v2.trapTags[c.tag][0]}
-                    </i>
-                  )}
-                  {c.lvs.length > 1 && <i className="sb-chip">Lv.{c.lvs[c.lvs.length - 1]}</i>}
-                </span>
-                <span className="sb-cdesc">
-                  {Object.entries(c.mats).map(([id, n]) => `${nameOf(id)} ×${n}`).join(" + ") || "—"}
-                </span>
-              </>
-            )))}
-          </div>
-        </>
-      )}
-
-      {/* ── 지역 (획득 자원 필터 + 카드) ── */}
-      {season === "v2" && view === "stage" && (
+      {!uni && season === "v2" && view === "stage" && (
         <>
           <h3 className="sb-h3">{t("전체 지도")}</h3>
           {/* ⚠ 노드 개별 좌표는 게임 데이터에 없다 — mapData.nodes에는 minDistance뿐이고
@@ -850,68 +876,23 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
             ))}
           </div>
           <div className="sb-grid">
-            {stages.map((s) => (
-              <button key={s[0]} type="button" className="sb-card sb-map-card sb-clickable" onClick={() => openStage(s)}>
-                <img src={stageMapImg(s[0])} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                {PICKED[s[0]] && <i className="sb-pick" title={t("박사 추천 지역")}>👍</i>}
-                <h4><i className="sb-chip">{s[1]}</i>{s[2]}
-                  <i className="sb-lv">{t("행동력")} {s[4]}{s[5] !== s[4] ? ` · ⚔${s[5]}` : ""}</i></h4>
-                {/* 획득 자원 + 지도에 놓인 오브젝트 개수. 같은 자원이 양쪽에 있으면
-                    **개수 있는 쪽만** 남긴다 (사용자 지적 2026-08-12 "두 개 중첩"). */}
-                {(() => {
-                  const objs = OB_KINDS.filter(([k]) => v2.stageObjs[s[0]]?.[k]);
-                  const covered = new Set(objs.map(([, iid]) => iid));
-                  const plain = (v2.stageRewards[s[0]] ?? []).filter((id) => !covered.has(id));
-                  if (!objs.length && !plain.length) return null;
-                  return (
-                    <span className="sb-stres">
-                      {objs.map(([k, iid, label, color]) => (
-                        <i key={`ob-${k}`} className="ob">
-                          {iid ? <img src={itemIcon(iid)} alt="" aria-hidden loading="lazy" onError={hideErr} />
-                            : <b className="dot" style={{ background: color }} aria-hidden />}
-                          {t(label)} <b>×{v2.stageObjs[s[0]][k]}</b>
-                        </i>
-                      ))}
-                      {plain.map((id) => (
-                        <i key={id}><img src={itemIcon(id)} alt="" aria-hidden loading="lazy" onError={hideErr} />{nameOf(id)}</i>
-                      ))}
-                    </span>
-                  );
-                })()}
-                <p className="sb-dim">{s[3]}</p>
-              </button>
-            ))}
+            {stages.map(stageCard)}
           </div>
         </>
       )}
 
       {/* ── 적 도감 ── */}
-      {season === "v2" && view === "enemy" && (
+      {!uni && season === "v2" && view === "enemy" && (
         <>
           <p className="sim-note">{t("생존연산에 나오는 적입니다. 스탯은 가장 강화된 등장 기준이며, 누르면 등장 지역과 처치 보상이 나옵니다.")}</p>
           <div className="sb-cards">
-            {dex.map((e) => card(e.id, () => openDetail({ k: "dex", i: v2.dex.indexOf(e) }), (
-              <>
-                <img className="sb-thumb sb-thumb-en" src={enImgOf(e.id, e.img, e.src)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                <b className="sb-cname">{enName(e.id)}{e.lv > 0 && <em className="sb-lv">★{e.lv}</em>}</b>
-                <span className="sb-cdesc">HP {e.st[0].toLocaleString()} · {t("공격")} {e.st[1].toLocaleString()}</span>
-                <span className="sb-cmeta">
-                  <i className="sb-chip">{t("{n}개 지역", { n: String(e.at.length) })}</i>
-                  {v2.enemyRewards[e.id] && (
-                    <i className="sb-chip">
-                      <img src={itemIcon(v2.enemyRewards[e.id][0])} alt="" aria-hidden onError={hideErr} />
-                      {nameOf(v2.enemyRewards[e.id][0])}
-                    </i>
-                  )}
-                </span>
-              </>
-            )))}
+            {dex.map(dexCard)}
           </div>
         </>
       )}
 
       {/* ── 날씨 (기후별 한 카드, 상세에서 위험도) ── */}
-      {season === "v2" && view === "weather" && (
+      {!uni && season === "v2" && view === "weather" && (
         <div className="sb-cards">
           {v2.weather.map((w, i) => card(w.type, () => openDetail({ k: "weather", i }), (
             <>
@@ -929,7 +910,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       )}
 
       {/* ── 조우 (섬네일+이름, 상세는 모달) — 여러 장면·갈래로 이어지는 조우는 한 카드 ── */}
-      {season === "v2" && view === "event" && (
+      {!uni && season === "v2" && view === "event" && (
         <>
           <p className="sim-note">{t("이어지는 장면과 갈래는 한 조우로 묶었습니다 — 카드를 누르면 갈래를 골라 장면 순서대로 볼 수 있습니다.")}</p>
           <div className="sb-cards">
@@ -950,7 +931,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       )}
 
       {/* ── 균열·원정 ── */}
-      {season === "v2" && view === "rift" && (
+      {!uni && season === "v2" && view === "rift" && (
         <>
           <h3 className="sb-h3">{t("균열")}</h3>
           <p className="sim-note">{t("환경압력(난이도)은 카드 안에서 골라 봅니다. 보상은 그 난이도에서 나오는 자원입니다.")}</p>
@@ -1026,7 +1007,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       )}
 
       {/* ── 테크트리 ── */}
-      {season === "v2" && view === "tech" && (
+      {!uni && season === "v2" && view === "tech" && (
         <>
           <p className="sim-note">{t("주둔지 연구 노트로 해금하는 상시 강화입니다. 숫자는 필요한 토큰입니다.")}</p>
           <div className="sb-table-wrap"><table className="sb-table">
@@ -1046,7 +1027,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       {/* ── 신시즌 (CN 메인 · 한국어 서브) ── */}
       {/* ── 신시즌 — 사막 이야기와 **같은 카드+상세 모달 규격** (사용자 확정 2026-08-12).
            CN 원문이 메인, 한국어 번역이 서브 병기. ── */}
-      {season === "v3" && (
+      {!uni && season === "v3" && (
         <>
           {locale !== "ko" && <p className="sim-note">{t("이 신시즌의 공식 번역은 아직 없어 원문(중국어)으로 표시됩니다.")}</p>}
           {v3view === "v3item" && (
@@ -1065,14 +1046,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                 {Object.entries(v3.items)
                   .filter(([, it]) => (!v3type || it[4] === v3type)
                     && (!q || normSearch(it[0]).includes(q) || normSearch(it[1]).includes(q)))
-                  .map(([id, it]) => card(`v3i-${id}`, () => openDetail({ k: "v3item", id }), (
-                    <>
-                      <img className="sb-thumb" src={itemIcon(id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                      <b className="sb-cname">{it[1]}{locale === "ko" && it[0] !== it[1] && <span className="sb-cn">{it[0]}</span>}</b>
-                      <span className="sb-cmeta">{it[4] && <i className="sb-chip">{ty3(it[4], v3.itemTypes)}</i>}</span>
-                      <span className="sb-cdesc">{locale === "ko" && it[5] ? it[5] : it[2]}</span>
-                    </>
-                  )))}
+                  .map(v3ItemCard)}
               </div>
             </>
           )}
@@ -1153,16 +1127,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
             <>
               <p className="sim-note">{t("신시즌 전투 지형에 나오는 적입니다. 스탯은 가장 강화된 등장 기준이며, 누르면 등장 지형과 스탯이 나옵니다.")}</p>
               <div className="sb-cards">
-                {v3dex.map((e) => card(`v3d-${e.id}`, () => openV3Enemy(e.id), (
-                  <>
-                    <img className="sb-thumb sb-thumb-en" src={v3EnImg(e.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                    <b className="sb-cname">{v3EnName(e.id)}
-                      {locale === "ko" && v3.enemyCn[e.id] && v3.enemyCn[e.id] !== v3EnName(e.id) && <span className="sb-cn">{v3.enemyCn[e.id]}</span>}
-                      {e.lv > 0 && <em className="sb-lv">★{e.lv}</em>}</b>
-                    <span className="sb-cdesc">HP {e.st[0].toLocaleString()} · {t("공격")} {e.st[1].toLocaleString()}</span>
-                    <span className="sb-cmeta"><i className="sb-chip">{t("{n}개 지형", { n: String(e.at.length) })}</i></span>
-                  </>
-                )))}
+                {v3dex.map(v3DexCard)}
               </div>
             </>
           )}

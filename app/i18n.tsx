@@ -118,6 +118,7 @@ const D: Record<string, Pair> = {
   "페이지를 찾을 수 없습니다": ["Page not found", "ページが見つかりません"],
   "주소가 바뀌었거나 없어진 페이지입니다. 주소를 다시 확인하거나 홈에서 찾아 주세요.": ["This page has moved or no longer exists. Check the address, or find it from the home page.", "アドレスが変わったか、なくなったページです。アドレスを確認するか、ホームから探してください。"],
   "홈으로": ["Go home", "ホームへ"],
+  "아이템·지역·적 전체 검색": ["Search items, areas & enemies", "アイテム・地域・敵をまとめて検索"],
   // 생존연산 사막 이야기 아이템 탭 종류 (app/sandbox.tsx V2_ITEM_TYPE, 2026-10-06)
   "건축 재료": ["Building Materials", "建築素材"],
   "화폐": ["Currency", "通貨"],

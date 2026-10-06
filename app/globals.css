@@ -27470,3 +27470,19 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
 .gl-spoil-mine { margin-left: 6px; padding: 1px 6px; border-radius: var(--r-xs); background: var(--tint-lime); color: var(--tint-lime-ink); font-style: normal; font-size: 11px; font-weight: 700; }
 /* 내 정보 최근 영입 — 성급·직군 거르기 (오퍼 도감과 같은 AttributeFilter 드롭다운, 2026-10-06) */
 .me-recent-tools { display: flex; justify-content: flex-end; min-width: 0; }
+
+/* ── 생존연산 통합 검색 (app/sandbox.tsx uniHits, 2026-10-06) — 탭 줄 끝, 테크트리 바로 오른쪽. 통합전략(.rg-uni-*)과 같은 동작 ── */
+.sb-uni-box { flex: 0 1 240px; display: flex; min-width: 0; }
+.sb-uni-box input[type="search"] {
+  box-sizing: border-box; width: 100%; min-height: 34px; padding: 0 12px;
+  border: 1px solid var(--btn-line); background: var(--white); color: var(--ink);
+  font: inherit; font-size: 12.5px; font-weight: 500;
+}
+.sb-uni-box input[type="search"]::placeholder { color: var(--muted); }
+.sb-uni-box input[type="search"]::-webkit-search-cancel-button { cursor: pointer; }
+@media (max-width: 720px) { .sb-uni-box { flex-basis: 100%; } }
+.sb-uni-results { display: grid; gap: 10px; margin-top: 12px; }
+.sb-uni-head { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 13px; font-weight: 600; }
+.sb-uni-head button { border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); padding: 5px 12px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.sb-uni-head button:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); color: var(--btn-ink-hover); }
+.sb-uni-results .sb-h3 { margin-top: 6px; }
