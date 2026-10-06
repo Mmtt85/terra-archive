@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  feedbackReady, sendFeedback, uploadFeedbackImage, imagesOf, FEEDBACK_IMG_MAX, FEEDBACK_IMG_MB,
+  feedbackReady, sendFeedback, uploadFeedbackFile, imagesOf, filesOf, fmtFileSize, isFeedbackImage, FEEDBACK_IMG_MAX, FEEDBACK_IMG_MB,
   getFeedbackToken, setFeedbackToken, getFeedbackSeen, markFeedbackSeen,
   fetchMyFeedback, countNewReplies, countNewFeedback, countNewFeedbackSince,
   updateMyFeedback, deleteMyFeedback,
@@ -309,36 +309,36 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
   const [statusText, setStatusText] = useState("");
   // 첨부 이미지 (사용자 요청 2026-08-05: 최대 3장). 고르면 미리보기만 만들고,
   // R2 업로드는 **보내기 시점**에 한다 — 쓰다 만 제안의 이미지가 버킷에 남지 않게.
-  const [images, setImages] = useState<{ file: File; preview: string }[]>([]);
+  const [images, setImages] = useState<{ file: File; preview: string }[]>([]);   // 첨부 — 이미지면 preview 가 objectURL, 아니면 ""
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   // objectURL은 우리가 만들었으니 우리가 해제한다 — 단 **언마운트 때만**. images를 deps에
   // 넣으면 장을 추가할 때마다 아직 쓰는 미리보기까지 해제된다.
   const imagesRef = useRef(images);
   imagesRef.current = images;
-  useEffect(() => () => { imagesRef.current.forEach((img) => URL.revokeObjectURL(img.preview)); }, []);
+  useEffect(() => () => { imagesRef.current.forEach((img) => img.preview && URL.revokeObjectURL(img.preview)); }, []);
 
   // ⚠ FileList는 라이브 객체다 — input.value=""로 비우면 나중에 도는 상태 갱신에서
   //   빈 목록이 된다 (실측: 2장 첨부가 0장으로). 핸들러에서 배열로 스냅샷해 넘길 것.
   const addImages = (picked: File[]) => {
     const room = FEEDBACK_IMG_MAX - imagesRef.current.length;
-    if (room <= 0) { setStatusText(t("이미지는 최대 {n}장까지 첨부할 수 있습니다", { n: FEEDBACK_IMG_MAX })); return; }
+    if (room <= 0) { setStatusText(t("파일은 최대 {n}개까지 첨부할 수 있습니다", { n: FEEDBACK_IMG_MAX })); return; }
     const ok: { file: File; preview: string }[] = [];
     for (const file of picked) {
       if (ok.length >= room) break;
-      if (!file.type.startsWith("image/")) continue;
-      if (file.size > FEEDBACK_IMG_MB * 1024 * 1024) {
-        setStatusText(t("이미지는 장당 {n}MB 이하만 첨부할 수 있습니다", { n: FEEDBACK_IMG_MB }));
+      // 모든 파일을 받는다 (사용자 지시 2026-10-06) — 이미지는 섬네일, 나머지는 이름 칩
+      if (file.size >= FEEDBACK_IMG_MB * 1024 * 1024) {
+        setStatusText(t("파일은 개당 {n}MB 미만만 첨부할 수 있습니다", { n: FEEDBACK_IMG_MB }));
         continue;
       }
-      ok.push({ file, preview: URL.createObjectURL(file) });
+      ok.push({ file, preview: isFeedbackImage(file) ? URL.createObjectURL(file) : "" });
     }
     if (ok.length) { setStatusText(""); setImages((cur) => [...cur, ...ok].slice(0, FEEDBACK_IMG_MAX)); }
   };
 
   const removeImage = (idx: number) => {
     setImages((cur) => {
-      URL.revokeObjectURL(cur[idx]?.preview ?? "");
+      if (cur[idx]?.preview) URL.revokeObjectURL(cur[idx].preview);
       return cur.filter((_, i) => i !== idx);
     });
   };
@@ -349,7 +349,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     if (!open || view !== "compose") return;
     const onPaste = (e: ClipboardEvent) => {
       const files = Array.from(e.clipboardData?.items ?? [])
-        .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+        .filter((item) => item.kind === "file")
         .map((item) => item.getAsFile())
         .filter((f): f is File => !!f);
       if (files.length) { e.preventDefault(); addImages(files); }
@@ -365,12 +365,18 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     setStatusText("");
     try {
       // 이미지 먼저 R2로 — 하나라도 실패하면 제안 자체를 보내지 않는다 (반쪽 전송 방지)
+      // 첨부 먼저 R2로 — 하나라도 실패하면 제안 자체를 보내지 않는다 (반쪽 전송 방지)
       const urls: string[] = [];
-      for (const img of images) urls.push(await uploadFeedbackImage(img.file));
-      await sendFeedback(kind, message.trim(), urls.length ? { images: urls } : undefined);
+      const files: { url: string; name: string; size: number }[] = [];
+      for (const img of images) {
+        const up = await uploadFeedbackFile(img.file);
+        if (up.image) urls.push(up.url); else files.push({ url: up.url, name: up.name, size: up.size });
+      }
+      const extra = { ...(urls.length ? { images: urls } : {}), ...(files.length ? { files } : {}) };
+      await sendFeedback(kind, message.trim(), Object.keys(extra).length ? extra : undefined);
       setStatus("done");
       setMessage("");
-      setImages((cur) => { cur.forEach((img) => URL.revokeObjectURL(img.preview)); return []; });
+      setImages((cur) => { cur.forEach((img) => img.preview && URL.revokeObjectURL(img.preview)); return []; });
       setTimeout(() => setStatus("idle"), 2600);
       await refresh(true); // 방금 보낸 제안이 목록 맨 위에 뜨도록
       setView("list");
@@ -543,22 +549,27 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
         placeholder={kind === "feature" ? t("이런 기능이 있으면 좋겠어요…") : t("어떤 오퍼의 어떤 데이터가 잘못됐는지 알려주세요")} />
       {/* 첨부 줄 — 섬네일 + 추가 버튼. 3장이 차면 추가 버튼이 사라진다 */}
       <div className="fb-attach">
-        {images.map((img, i) => (
+        {images.map((img, i) => img.preview ? (
           <span key={img.preview} className="fb-thumb">
             <img src={img.preview} alt="" />
+            <button type="button" aria-label={t("첨부 삭제")} onClick={() => removeImage(i)}>×</button>
+          </span>
+        ) : (
+          <span key={`${img.file.name}-${i}`} className="fb-filechip" title={img.file.name}>
+            <span className="fb-filechip-name">📄 {img.file.name}</span><small>{fmtFileSize(img.file.size)}</small>
             <button type="button" aria-label={t("첨부 삭제")} onClick={() => removeImage(i)}>×</button>
           </span>
         ))}
         {images.length < FEEDBACK_IMG_MAX && (
           <button type="button" className="fb-attach-btn" onClick={() => fileRef.current?.click()}
-            title={t("스크린샷 등 이미지 최대 {n}장 (장당 {m}MB 이하)", { n: FEEDBACK_IMG_MAX, m: FEEDBACK_IMG_MB })}>
-            📎 {t("이미지 첨부")} {images.length > 0 ? `${images.length}/${FEEDBACK_IMG_MAX}` : ""}
+            title={t("이미지·파일 최대 {n}개 (개당 {m}MB 미만)", { n: FEEDBACK_IMG_MAX, m: FEEDBACK_IMG_MB })}>
+            📎 {t("파일 첨부")} {images.length > 0 ? `${images.length}/${FEEDBACK_IMG_MAX}` : ""}
           </button>
         )}
-        <input ref={fileRef} type="file" accept="image/*" multiple hidden
+        <input ref={fileRef} type="file" multiple hidden
           onChange={(e) => { addImages(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
       </div>
-      <p className="fb-attach-hint">{t("이미지를 끌어다 놓거나 붙여넣기(Ctrl+V)도 됩니다")}</p>
+      <p className="fb-attach-hint">{t("이미지·파일을 끌어다 놓거나 붙여넣기(Ctrl+V)도 됩니다 — 개당 {n}MB 미만", { n: FEEDBACK_IMG_MB })}</p>
       <footer>
         <small>{status === "done" ? t("보냈습니다, 감사합니다!") : status === "error" ? t("전송 실패 — 잠시 후 다시 시도해주세요") : statusText || t("익명으로 전송됩니다")}</small>
         <button type="button" className="feedback-send" disabled={!message.trim() || status === "sending"} onClick={submit}>
@@ -572,6 +583,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
   // 목록 클릭으로 여는 두 번째 창 — 목록 높이는 그대로, 스레드는 창모달에서
   const threadRow = threadId ? (rows ?? []).find((r) => r.id === threadId) ?? null : null;
   const threadImgs = threadRow ? imagesOf(threadRow.payload) : [];
+  const threadFiles = threadRow ? filesOf(threadRow.payload) : [];
 
   return (
     <div className="feedback-widget">
@@ -608,6 +620,15 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
                   <button key={u} type="button" className="fb-img-zoom-btn" title={t("이미지 크게 보기")} onClick={() => setZoomSrc(u)}>
                     <img src={u} alt="" loading="lazy" />
                   </button>
+                ))}
+              </div>
+            )}
+            {threadFiles.length > 0 && (
+              <div className="fb-files">
+                {threadFiles.map((f) => (
+                  <a key={f.url} href={f.url} download={f.name} rel="noreferrer" className="fb-filechip">
+                    <span className="fb-filechip-name">📄 {f.name}</span><small>{fmtFileSize(f.size)}</small>
+                  </a>
                 ))}
               </div>
             )}

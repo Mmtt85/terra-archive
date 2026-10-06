@@ -27404,3 +27404,10 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .promo-preview { width: 100%; height: min(70vh, 760px); border: 1px solid var(--line); border-radius: var(--r-sm); background: #fff; }
 .promo-code { width: 100%; height: min(70vh, 760px); box-sizing: border-box; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-faint); color: var(--ink); font: 11.5px/1.5 var(--mono); resize: none; }
 @media (max-width: 900px) { .promo-cols { grid-template-columns: 1fr; } }
+/* 제안 첨부 — 이미지가 아닌 파일 칩 (2026-10-06 모든 파일 첨부) */
+.fb-filechip { position: relative; display: inline-flex; align-items: center; gap: 6px; max-width: 220px; height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-faint); color: var(--ink); font-size: 11.5px; text-decoration: none; }
+a.fb-filechip:hover { border-color: var(--border-strong); }
+.fb-filechip-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.fb-filechip small { flex: none; color: var(--muted); font-size: 10.5px; }
+.fb-filechip button { position: absolute; top: -6px; right: -6px; width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); font-size: 11px; line-height: 1; padding: 0; cursor: pointer; }
+.fb-files { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }

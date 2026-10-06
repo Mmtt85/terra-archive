@@ -2893,6 +2893,11 @@ const D: Record<string, Pair> = {
   "익명으로 전송됩니다": ["Sent anonymously", "匿名で送信されます"],
   // 첨부 이미지 (사용자 요청 2026-08-05: 최대 3장, R2로 바로 올라간다)
   "이미지 첨부": ["Attach images", "画像を添付"],
+  "파일은 최대 {n}개까지 첨부할 수 있습니다": ["You can attach up to {n} files", "ファイルは最大{n}個まで添付できます"],
+  "파일은 개당 {n}MB 미만만 첨부할 수 있습니다": ["Each file must be under {n} MB", "ファイルは1個あたり{n}MB未満のみ添付できます"],
+  "이미지·파일 최대 {n}개 (개당 {m}MB 미만)": ["Images or files, up to {n} (under {m} MB each)", "画像・ファイル 最大{n}個（1個あたり{m}MB未満）"],
+  "파일 첨부": ["Attach file", "ファイル添付"],
+  "이미지·파일을 끌어다 놓거나 붙여넣기(Ctrl+V)도 됩니다 — 개당 {n}MB 미만": ["You can also drag & drop or paste (Ctrl+V) images and files — under {n} MB each", "画像・ファイルはドラッグ＆ドロップや貼り付け（Ctrl+V）もできます — 1個あたり{n}MB未満"],
   "첨부 삭제": ["Remove attachment", "添付を削除"],
   "스크린샷 등 이미지 최대 {n}장 (장당 {m}MB 이하)": ["Up to {n} images, e.g. screenshots ({m}MB each max)", "スクリーンショットなど画像を最大{n}枚（1枚{m}MBまで）"],
   "이미지는 장당 {n}MB 이하만 첨부할 수 있습니다": ["Each image must be {n}MB or smaller", "画像は1枚{n}MB以下のみ添付できます"],

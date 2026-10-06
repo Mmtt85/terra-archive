@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminEditReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, flagOf, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
+import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminEditReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, filesOf, flagOf, fmtFileSize, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKey, type StoredFile } from "../files-api";
@@ -492,8 +492,9 @@ export default function AdminPage() {
   };
 
   const remove = async (row: FeedbackRow) => {
-    const imgs = imagesOf(row.payload);
-    const msg = imgs.length ? `이 항목과 첨부 이미지 ${imgs.length}장을 삭제할까요?` : "이 항목을 삭제할까요?";
+    // 첨부 — 이미지와 일반 파일(2026-10-06~) 모두 R2 에서 정리
+    const imgs = [...imagesOf(row.payload), ...filesOf(row.payload).map((f) => f.url)];
+    const msg = imgs.length ? `이 항목과 첨부 ${imgs.length}개를 삭제할까요?` : "이 항목을 삭제할까요?";
     if (!(await confirm({ message: msg, danger: true }))) return;
     try {
       // 첨부 이미지도 R2에서 정리 (용량 관리 — 사용자 방침 2026-08-05). 개별 실패는 무시:
@@ -694,6 +695,15 @@ export default function AdminPage() {
                 {imagesOf(row.payload).map((u) => (
                   <a key={u} href={u} target="_blank" rel="noreferrer" title={u}>
                     <img src={u} alt="" loading="lazy" />
+                  </a>
+                ))}
+              </div>
+            )}
+            {filesOf(row.payload).length > 0 && (
+              <div className="fb-files">
+                {filesOf(row.payload).map((f) => (
+                  <a key={f.url} href={f.url} download={f.name} rel="noreferrer" className="fb-filechip">
+                    <span className="fb-filechip-name">📄 {f.name}</span><small>{fmtFileSize(f.size)}</small>
                   </a>
                 ))}
               </div>

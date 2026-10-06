@@ -7,23 +7,27 @@ export const feedbackReady = !SUPABASE_ANON_KEY.startsWith("PASTE");
 
 export type FeedbackKind = "feature" | "data_error" | "plan";
 
-// ── 제안 첨부 이미지 (사용자 요청 2026-08-05: 최대 3장, 바로 R2로) ──
+// ── 제안 첨부 (사용자 요청 2026-08-05: 이미지 최대 3장, 바로 R2로 → 2026-10-06: **모든 파일**, 장당 10MB 미만) ──
 // 업로드 워커(workers/upload)의 익명 공개 엔드포인트 — 키는 서버가 만든다(feedback/…).
-// URL은 payload.images 배열로 제안과 함께 저장돼 /admin에서 보인다.
+// 이미지는 payload.images(URL 배열)로 — 지금처럼 섬네일로 보인다. 그 밖의 파일은 payload.files({url,name,size})로 —
+// 워커가 다운로드 전용으로 저장한다(열어도 실행되지 않는다).
 const FB_UPLOAD = "https://terra-archive-upload.nzkonaru.workers.dev/fb";
-export const FEEDBACK_IMG_MAX = 3;
-export const FEEDBACK_IMG_MB = 8;
+export const FEEDBACK_IMG_MAX = 3;          // 첨부 개수 (이미지·파일 합쳐서)
+export const FEEDBACK_IMG_MB = 10;          // 장당 한도 — 이 크기 **미만**
+/** 섬네일로 보여 줄 이미지 — 워커가 이미지로 저장하는 종류와 같다 (svg 는 스크립트를 품을 수 있어 일반 파일) */
+export const isFeedbackImage = (file: File) => /^image\/(png|jpeg|webp|gif|avif)$/.test(file.type);
+export type FeedbackFile = { url: string; name: string; size: number };
 
-export async function uploadFeedbackImage(file: File): Promise<string> {
-  if (file.size > FEEDBACK_IMG_MB * 1024 * 1024) throw new Error(`이미지가 너무 큽니다 (${FEEDBACK_IMG_MB}MB 이하)`);
-  const res = await fetch(FB_UPLOAD, {
+export async function uploadFeedbackFile(file: File): Promise<{ url: string; image: boolean; name: string; size: number }> {
+  if (file.size >= FEEDBACK_IMG_MB * 1024 * 1024) throw new Error(`파일이 너무 큽니다 (${FEEDBACK_IMG_MB}MB 미만)`);
+  const res = await fetch(`${FB_UPLOAD}?name=${encodeURIComponent(file.name || "")}`, {
     method: "POST",
     headers: { "Content-Type": file.type || "application/octet-stream" },
     body: file,
   });
-  if (!res.ok) throw new Error(`이미지 업로드 실패 (${res.status})`);
-  const data = (await res.json()) as { url: string };
-  return data.url;
+  if (!res.ok) throw new Error(`파일 업로드 실패 (${res.status})`);
+  const data = (await res.json()) as { url: string; image?: boolean; name?: string };
+  return { url: data.url, image: !!data.image, name: data.name || file.name, size: file.size };
 }
 
 /** payload.images — 제안에 첨부된 이미지 URL 목록 (없으면 빈 배열) */
@@ -31,6 +35,14 @@ export function imagesOf(payload: unknown): string[] {
   const value = payload && typeof payload === "object" ? (payload as { images?: unknown }).images : null;
   return Array.isArray(value) ? value.filter((u): u is string => typeof u === "string" && !!u) : [];
 }
+/** payload.files — 이미지가 아닌 첨부 (없으면 빈 배열) */
+export function filesOf(payload: unknown): FeedbackFile[] {
+  const value = payload && typeof payload === "object" ? (payload as { files?: unknown }).files : null;
+  return Array.isArray(value)
+    ? value.filter((f): f is FeedbackFile => !!f && typeof f === "object" && typeof (f as FeedbackFile).url === "string")
+    : [];
+}
+export const fmtFileSize = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(n / 1024))}KB`);
 
 // ── 제안 게시판 — 로그인 없는 작성자 식별 (사용자 확정 2026-08-17) ──
 // 첫 제안 때 uuid 토큰을 만들어 localStorage에 두고, 이후 그 토큰이 '내 제안'의 열람

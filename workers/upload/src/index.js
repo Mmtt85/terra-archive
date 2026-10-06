@@ -113,30 +113,45 @@ export default {
         ETag: object.httpEtag,
         "Content-Type": object.httpMetadata?.contentType ?? "application/octet-stream",
         "Access-Control-Allow-Origin": "*",
+        "X-Content-Type-Options": "nosniff",
+        ...(object.httpMetadata?.contentDisposition ? { "Content-Disposition": object.httpMetadata.contentDisposition } : {}),
       };
       if (!("body" in object) || !object.body) return new Response(null, { status: 304, headers }); // precondition 성립 → 304
       return new Response(request.method === "HEAD" ? null : object.body, { headers });
     }
 
-    // ── 제안 이미지 업로드 — 익명 공개 (사용자 요청 2026-08-05: 제안에 이미지 최대 3장).
+    // ── 제안 첨부 업로드 — 익명 공개 (사용자 요청 2026-08-05: 이미지 최대 3장 → 2026-10-06: **모든 파일, 장당 10MB 미만**).
     // 키는 서버가 만든다(feedback/YYYY-MM/<uuid>.<ext>) — 덮어쓰기·경로 장난이 원천 불가.
-    // 남용 방어: 사이트 오리진만 + 이미지 MIME만 + 8MB 한도. 장수 제한(3장)은 클라이언트
-    // 몫이고 여기선 강제할 수 없다 — 용량이 차면 /admin 파일 탭의 '제안 이미지'에서 정리한다.
+    // 이미지(png·jpg·webp·gif·avif)는 그대로 이미지로 저장해 바로 보이게 하고, **그 밖의 파일은 실행되지 않게**
+    // application/octet-stream + Content-Disposition: attachment 로 저장한다 — html·svg·js 가 files.terra-archive.net
+    // 에서 열려 스크립트가 도는 일을 막는다(svg 는 이미지여도 스크립트를 품을 수 있어 일반 파일로 친다).
+    // 원래 파일 이름은 ?name= 으로 받아 다운로드 이름으로만 쓴다. 남용 방어: 사이트 오리진만 + 10MB 미만.
+    // 장수 제한(3개)은 클라이언트 몫 — 용량이 차면 /admin 파일 탭의 '제안 첨부'에서 정리한다.
     if (url.pathname === "/fb" && request.method === "POST") {
       if (!ORIGIN_OK(origin)) return json({ ok: false, error: "forbidden" }, origin, 403);
-      const EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif", "image/avif": "avif" };
-      const type = (request.headers.get("Content-Type") ?? "").split(";")[0].trim();
-      const ext = EXT[type];
-      if (!ext) return json({ ok: false, error: "not-image" }, origin, 415);
+      const IMG = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif", "image/avif": "avif" };
+      const type = (request.headers.get("Content-Type") ?? "").split(";")[0].trim().toLowerCase();
       const size = Number(request.headers.get("Content-Length") ?? 0);
-      if (!size || size > 8 * 1024 * 1024) return json({ ok: false, error: "too-large" }, origin, 413);
+      if (!size || size >= 10 * 1024 * 1024) return json({ ok: false, error: "too-large" }, origin, 413);
+      // 다운로드 이름 — 경로·제어문자를 걷어 내고 120자까지
+      const rawName = (url.searchParams.get("name") ?? "").replace(/[\\/\u0000-\u001f\u007f"]/g, "_").trim().slice(0, 120);
+      const imgExt = IMG[type];
+      const ext = imgExt ?? ((/\.([a-z0-9]{1,10})$/i.exec(rawName)?.[1] ?? "bin").toLowerCase());
       const now = new Date();
       const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
       const key = `feedback/${month}/${crypto.randomUUID()}.${ext}`;
+      const name = rawName || `file.${ext}`;
       const object = await env.FILES.put(key, request.body, {
-        httpMetadata: { contentType: type, cacheControl: "public, max-age=2592000" }, // 키가 불변이라 길게
+        httpMetadata: imgExt
+          ? { contentType: type, cacheControl: "public, max-age=2592000" } // 키가 불변이라 길게
+          : {
+              contentType: "application/octet-stream",
+              contentDisposition: `attachment; filename="file.${ext}"; filename*=UTF-8''${encodeURIComponent(name)}`,
+              cacheControl: "public, max-age=2592000",
+            },
+        customMetadata: { name, type: type || "application/octet-stream" },
       });
-      return json({ ok: true, key, size: object.size, url: fileUrl(env, url, key) }, origin);
+      return json({ ok: true, key, size: object.size, url: fileUrl(env, url, key), image: !!imgExt, name }, origin);
     }
 
     // ── 이하 관리자 전용 ──
