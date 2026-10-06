@@ -27468,3 +27468,8 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
 
 /* 스포 가리기 '내 진행 기준' 표시 (갤러리, 2026-10-06) — 카드마다 .spoil 이 붙는다(종전엔 격자 전체) */
 .gl-spoil-mine { margin-left: 6px; padding: 1px 6px; border-radius: var(--r-xs); background: var(--tint-lime); color: var(--tint-lime-ink); font-style: normal; font-size: 11px; font-weight: 700; }
+/* 내 정보 최근 영입 — 성급·직군 거르기 (2026-10-06) */
+.me-recent-tools { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.me-recent-tools .me-seg small { color: var(--muted); margin-left: 2px; }
+.me-recent-tools .me-seg button.selected small { color: inherit; opacity: .75; }
+@media (max-width: 720px) { .me-recent-tools { align-items: flex-start; } }

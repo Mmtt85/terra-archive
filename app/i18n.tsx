@@ -118,6 +118,7 @@ const D: Record<string, Pair> = {
   "페이지를 찾을 수 없습니다": ["Page not found", "ページが見つかりません"],
   "주소가 바뀌었거나 없어진 페이지입니다. 주소를 다시 확인하거나 홈에서 찾아 주세요.": ["This page has moved or no longer exists. Check the address, or find it from the home page.", "アドレスが変わったか、なくなったページです。アドレスを確認するか、ホームから探してください。"],
   "홈으로": ["Go home", "ホームへ"],
+  "조건에 맞는 오퍼가 없어요.": ["No operators match.", "条件に合うオペレーターがいません。"],
   // 재료 파밍 효율표 정렬 (2026-10-06)
   "효율순": ["By efficiency", "効率順"],
   "드랍률순": ["By drop rate", "ドロップ率順"],

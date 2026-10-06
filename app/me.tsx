@@ -35,6 +35,8 @@ import { CustomTileEditor, DEFAULT_LAYOUT, MAX_CUSTOM, evalTile, saveCustomTiles
 
 export type MeOp = {
   id: string; name: string; rarity: number; image: string; unreleased?: boolean;
+  /** 직군 — 표시명은 로케일 데이터, 거르기는 jobCode(언어 무관) */
+  job?: string; jobCode?: string;
   skills: { id: string; name: string; icon?: string }[];
   modules: { id: string; name: string; type?: string }[];
 };
@@ -58,6 +60,9 @@ const ROOM_LABEL: Record<string, string> = {
   CONTROL: "제어 센터", MANUFACTURE: "제조소", TRADING: "무역소", POWER: "발전소", DORMITORY: "숙소",
   MEETING: "응접실", HIRE: "사무실", WORKSHOP: "가공소", TRAINING: "훈련실",
 };
+
+// 직군 표시 순서 — jobCode(언어 무관). home.tsx JOB_ORDER 와 같다 (planner-engine 을 이 묶음에 끌어오지 않으려고 따로 둔다)
+const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "SUPPORT", "SPECIAL"];
 
 // 접어 두는 줄 수 — 이만큼만 먼저 보이고 '전부 보기'로 편다
 const DEPOT_ROWS = 4;
@@ -1000,15 +1005,46 @@ function Friends({ me, now, opById, onShowOperator }: { me: MeData; now: number;
 function Recent({ owned, opById, onShowOperator }: { owned: AccountChar[]; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void }) {
   const { locale, t } = useI18n();
   const [all, setAll] = useState(false);
-  const list = owned.filter((c) => c.gain).sort((a, b) => (b.gain ?? 0) - (a.gain ?? 0));
+  // 성급·직군으로 거르기 (사용자 요청 2026-10-06) — 같은 축은 하나만, 다시 누르면 해제
+  const [rar, setRar] = useState<number | null>(null);
+  const [job, setJob] = useState<string | null>(null);
+  const gained = owned.filter((c) => c.gain).sort((a, b) => (b.gain ?? 0) - (a.gain ?? 0));
+  const list = gained.filter((c) => {
+    const op = opById.get(c.id);
+    return (rar === null || op?.rarity === rar) && (job === null || op?.jobCode === job);
+  });
   const [gridRef, cols] = useGridCols();
   const fold = (cols || 9) * OPS_ROWS;
-  if (!list.length) return null;
+  if (!gained.length) return null;
+  const rarities = [...new Set(gained.map((c) => opById.get(c.id)?.rarity ?? 0))].filter(Boolean).sort((a, b) => b - a);
+  const jobs = JOB_ORDER.filter((code) => gained.some((c) => opById.get(c.id)?.jobCode === code));
+  const jobLabel = (code: string) => opById.get(gained.find((c) => opById.get(c.id)?.jobCode === code)!.id)?.job ?? code;
+  const countOf = (r: number | null, j: string | null) => gained.filter((c) => {
+    const op = opById.get(c.id);
+    return (r === null || op?.rarity === r) && (j === null || op?.jobCode === j);
+  }).length;
   // 영입 시각 — 날짜와 시·분까지 (사용자 지시)
   const day = (sec: number) => new Date(sec * 1000).toLocaleDateString(DT_LOCALE[locale], { year: "2-digit", month: "2-digit", day: "2-digit" });
   const time = (sec: number) => new Date(sec * 1000).toLocaleTimeString(DT_LOCALE[locale], { hour: "2-digit", minute: "2-digit", hour12: false });
   return (
-    <Card no="RECENT" title={t("최근 영입")}>
+    <Card no="RECENT" title={t("최근 영입")} className="me-recent"
+      aside={(
+        <div className="me-recent-tools">
+          <div className="me-seg" role="group" aria-label={t("성급")}>
+            <button type="button" className={rar === null ? "selected" : ""} onClick={() => setRar(null)}>{t("전체")}</button>
+            {rarities.map((r) => (
+              <button key={r} type="button" className={rar === r ? "selected" : ""} onClick={() => setRar(rar === r ? null : r)}>★{r} <small>{countOf(r, job)}</small></button>
+            ))}
+          </div>
+          <div className="me-seg" role="group" aria-label={t("직군")}>
+            <button type="button" className={job === null ? "selected" : ""} onClick={() => setJob(null)}>{t("전체")}</button>
+            {jobs.map((code) => (
+              <button key={code} type="button" className={job === code ? "selected" : ""} onClick={() => setJob(job === code ? null : code)}>{jobLabel(code)} <small>{countOf(rar, code)}</small></button>
+            ))}
+          </div>
+        </div>
+      )}>
+      {!list.length && <p className="me-note">{t("조건에 맞는 오퍼가 없어요.")}</p>}
       <ul className="me-ops" ref={gridRef}>
         {(all ? list : list.slice(0, fold)).map((c) => {
           const op = opById.get(c.id)!;
