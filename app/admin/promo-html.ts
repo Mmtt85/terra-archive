@@ -43,7 +43,7 @@ const h2 = (text: string, sub = "") =>
 // 배너는 디시 이미지 첨부로 따로 올리고, 사이트는 '검색해서 오라'고만 안내한다.
 export type PromoOptions = { updates: number; days: number; noLinks?: boolean };
 
-export function buildPromoHtml(changes: ChangeRow[], opt: PromoOptions = { updates: 12, days: 60 }): string {
+export function buildPromoHtml(changes: ChangeRow[], opt: PromoOptions = { updates: 5, days: 60 }): string {
   const nl = !!opt.noLinks;
   // ── 기능 표 — 홈 칸 순서 그대로 (배너·동작 칸 제외), 소개는 맨 끝
   const tiles = PORTAL_TILES.filter((t) => t.tab && TAB_PATH[t.tab]);
@@ -69,9 +69,8 @@ export function buildPromoHtml(changes: ChangeRow[], opt: PromoOptions = { updat
   const recent = changes
     .filter((r) => (r.kind === "new" || r.kind === "improve") && r.released_at >= since)
     .sort((a, b) => (a.released_at < b.released_at ? 1 : a.released_at > b.released_at ? -1 : a.seq - b.seq))
-    .slice(0, opt.updates)
-    // 글은 아래로 내려 읽으니 최신이 맨 아래 (사용자 지시 2026-10-05) — 최근 N개를 고른 뒤 오래된 것부터 놓는다
-    .reverse();
+    // 최신이 맨 위 (사용자 지시 2026-10-06 — 10-05 의 '최신이 맨 아래'를 되돌림)
+    .slice(0, opt.updates);
   // 디시는 <details>/<summary> 를 풀어 버린다(스타일도 날아간다 — 2026-10-05 실측) → 테두리 카드(div)에 제목 + 짧은 요약.
   // 펼침이 없으니 본문은 '종전에는 …' 앞까지, 160자 안쪽으로 자른다
   const short = (body: string) => {
@@ -97,16 +96,12 @@ export function buildPromoHtml(changes: ChangeRow[], opt: PromoOptions = { updat
   }).join("\n");
 
   const th = `text-align:left;padding:8px 10px;border-bottom:2px solid #d9d6cc;`;
-  return `<div style="max-width:760px;margin:0 auto;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:${C.ink};line-height:1.7;font-size:15px;">
+  return `<div style="width:100%;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:${C.ink};line-height:1.7;font-size:15px;">
 
-${nl ? "" : `<a href="${SITE}/infra" target="_blank"><img src="${BANNER}" alt="테라 아카이브 — 인프라 자동편성" style="display:block;width:100%;max-width:760px;height:auto;border-radius:12px;border:0;"></a>
+${nl ? "" : `<a href="${SITE}/infra" target="_blank"><img src="${BANNER}" alt="테라 아카이브 — 인프라 자동편성" style="display:block;width:100%;height:auto;border-radius:12px;border:0;"></a>
 `}<div style="margin:12px 2px 0;font-size:14.5px;color:#3b4448;">
   <b>테라 아카이브</b>는 명일방주 박사를 위한 비영리 팬 도구 모음입니다. 설치·회원가입 없이 웹에서 바로 쓰고, 게임 데이터를 직접 받아 점검 당일 최신으로 맞춥니다.
-  ${nl ? `<b>구글·네이버에서 「테라 아카이브 명일방주」로 검색</b>하면 바로 나옵니다.` : `<a href="${SITE}" target="_blank" style="color:${C.link};font-weight:bold;">terra-archive.net ↗</a>`}
-</div>
-
-<div style="margin:16px 0;padding:12px 16px;border-radius:10px;background:#eef3f5;border:1px solid #d6e2e7;font-size:14px;">
-  💡 헤더의 <b>만능검색(Ctrl/⌘ + K)</b>에 오퍼·재료·스토리·기능 이름을 한 단어만 넣으면 어디로든 바로 이동합니다.
+  ${nl ? `<b>구글·네이버에서 「테라 아카이브 명일방주」로 검색</b>해도 바로 나옵니다.` : `<a href="${SITE}" target="_blank" style="color:${C.link};font-weight:bold;">terra-archive.net ↗</a>`}
 </div>
 
 ${h2("기능별 바로가기")}
@@ -128,7 +123,6 @@ ${h2("알아 두면 좋은 것")}
   오류 제보·기능 제안은 사이트 각 화면의 <b>💬 피드백 버튼</b>이 가장 빠릅니다 (어느 화면에서 보냈는지 함께 전달됩니다).${nl ? "" : `<br>
   그 밖의 문의: <a href="mailto:contact@terra-archive.net" style="color:${C.link};">contact@terra-archive.net</a>`}
 </div>
-<div style="font-size:12px;color:#8f989c;text-align:center;margin-top:10px;">명일방주(Arknights) 비공식 팬 프로젝트 · 게임 내 명칭과 데이터의 권리는 Hypergryph · Yostar에 있습니다</div>
 
 </div>
 `;

@@ -241,7 +241,9 @@ export default function AdminPage() {
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
   const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "files" | "visits">("visits"); // 상단 탭 — 처음은 방문 통계 (사용자 지시 2026-10-05)
   // 파일 저장소(R2) — 워커 미배포·비밀번호 불일치면 null + 안내
-  const [files, setFiles] = useState<StoredFile[] | null>(null);
+  const [files, setFiles] = useState<StoredFile[] | null>(null); // uploads/ + feedback/
+  // 사이트 에셋(assets/)은 4만 개가 넘어 따로, 그 탭을 열 때만 받는다 (2026-10-06 — 한꺼번에 받다 목록 전체가 끊겼다)
+  const [assetFiles, setAssetFiles] = useState<StoredFile[] | null | "loading" | "error">(null);
   const [fileStatus, setFileStatus] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -315,8 +317,12 @@ export default function AdminPage() {
 
 
   // ── 파일 저장소 (workers/upload → R2) ────────────────────────────────────────
-  const loadFiles = async (pw: string) => {
-    try { setFiles(await adminListFiles(pw)); setFileStatus(""); }
+  const loadFiles = async () => {
+    if (assetFiles !== null) setAssetFiles(null); // 에셋 탭이 열려 있으면 아래 effect 가 다시 받는다
+    try {
+      const [up, fb] = await Promise.all([adminListFiles("uploads/"), adminListFiles("feedback/")]);
+      setFiles([...up, ...fb]); setFileStatus("");
+    }
     catch (err) {
       setFiles(null);
       setFileStatus(`파일 목록 조회 실패 — ${String((err as Error).message ?? err)}`);
@@ -328,6 +334,11 @@ export default function AdminPage() {
     if (tab === "files" && files === null && me) loadFiles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, me]);
+  useEffect(() => {
+    if (tab !== "files" || fileSub !== "assets" || assetFiles !== null || !me) return;
+    setAssetFiles("loading");
+    adminListFiles("assets/").then(setAssetFiles, () => setAssetFiles("error"));
+  }, [tab, fileSub, assetFiles, me]);
 
   const uploadPicked = async (list: FileList | File[]) => {
     const picked = [...list];
@@ -515,7 +526,7 @@ export default function AdminPage() {
   const fileFilter = fileQuery.trim().toLowerCase();
   const uploadRows = (files ?? []).filter((row) => row.key.startsWith("uploads/"));
   const feedbackRows = (files ?? []).filter((row) => row.key.startsWith("feedback/"));
-  const assetRows = (files ?? []).filter((row) => !row.key.startsWith("uploads/") && !row.key.startsWith("feedback/"));
+  const assetRows = Array.isArray(assetFiles) ? assetFiles : [];
   const shownUploads = fileFilter ? uploadRows.filter((row) => row.key.toLowerCase().includes(fileFilter)) : uploadRows;
   const shownFeedback = fileFilter ? feedbackRows.filter((row) => row.key.toLowerCase().includes(fileFilter)) : feedbackRows;
   const shownAssets = fileFilter ? assetRows.filter((row) => row.key.toLowerCase().includes(fileFilter)) : assetRows;
@@ -765,7 +776,7 @@ export default function AdminPage() {
             {/* 커뮤니티 소개글 HTML — 홈 칸 정의 + 이 내역으로 그때그때 만든다 (사용자 지시 2026-10-05, promo-html.ts) */}
             <button onClick={() => setPromo(buildPromoHtml(changes))}>커뮤니티 소개글 HTML</button>
             {/* 디시가 주소 든 글을 지워서 — 링크·외부 이미지·도메인 글자 없는 판 (2026-10-06) */}
-            <button onClick={() => setPromo(buildPromoHtml(changes, { updates: 12, days: 60, noLinks: true }))}>소개글 HTML (링크 없음)</button>
+            <button onClick={() => setPromo(buildPromoHtml(changes, { updates: 5, days: 60, noLinks: true }))}>소개글 HTML (링크 없음)</button>
           </div>
           {promo && <PromoWindow html={promo} onClose={() => setPromo(null)} />}
           {editingChange && !editingChange.id && <ChangeEditor row={editingChange} onSave={saveChange} onCancel={() => setEditingChange(null)} />}
@@ -802,7 +813,7 @@ export default function AdminPage() {
         <div className="admin-tools">
           <button className={fileSub === "uploads" ? "selected" : ""} onClick={() => setFileSub("uploads")}>내 업로드 ({uploadRows.length})</button>
           <button className={fileSub === "feedback" ? "selected" : ""} onClick={() => setFileSub("feedback")}>제안 이미지 ({feedbackRows.length})</button>
-          <button className={fileSub === "assets" ? "selected" : ""} onClick={() => setFileSub("assets")}>사이트 에셋 ({assetRows.length.toLocaleString()})</button>
+          <button className={fileSub === "assets" ? "selected" : ""} onClick={() => setFileSub("assets")}>사이트 에셋{Array.isArray(assetFiles) ? ` (${assetRows.length.toLocaleString()})` : ""}</button>
           <input className="file-search" value={fileQuery} onChange={(e) => setFileQuery(e.target.value)} placeholder="파일 이름 검색…" />
           <button onClick={() => loadFiles()}>새로고침</button>
         </div>
@@ -841,7 +852,11 @@ export default function AdminPage() {
                 onStatus={setFileStatus} onDelete={() => removeFile(row)} />
             ))
           )}
-        </>) : fileFilter ? (<>
+        </>) : assetFiles === "loading" || assetFiles === null ? (
+          <p className="admin-status">사이트 에셋 목록을 받는 중… (4만여 개라 시간이 좀 걸립니다)</p>
+        ) : assetFiles === "error" ? (
+          <p className="admin-status">사이트 에셋 목록을 못 불러왔습니다 — 새로고침으로 다시 시도하세요.</p>
+        ) : fileFilter ? (<>
           {shownAssets.length === 0 && <p className="admin-status">검색 결과가 없습니다.</p>}
           {shownAssets.slice(0, 300).map((row) => (
             <FileRow key={row.key} row={row} label={row.key.slice("assets/".length)} onStatus={setFileStatus} />
@@ -928,7 +943,7 @@ function PromoWindow({ html, onClose }: { html: string; onClose: () => void }) {
       <div className="promo-wrap">
         <div className="admin-tools">
           <button className="selected" onClick={() => void copy()}>{copied ? "복사했습니다" : "HTML 코드 복사"}</button>
-          <span className="admin-status promo-note">디시 글쓰기의 &lsquo;HTML로 쓰기&rsquo;에 그대로 붙여 넣으세요. 기능 표는 홈 화면 칸, 최근 업데이트는 이 내역(신기능·개선, 최근 60일, 12개)에서 만듭니다.</span>
+          <span className="admin-status promo-note">디시 글쓰기의 &lsquo;HTML로 쓰기&rsquo;에 그대로 붙여 넣으세요. 기능 표는 홈 화면 칸, 최근 업데이트는 이 내역(신기능·개선, 최근 60일, 5개)에서 만듭니다.</span>
         </div>
         <div className="promo-cols">
           <iframe className="promo-preview" title="미리보기" srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:16px;background:#fff">${html}</body>`} />

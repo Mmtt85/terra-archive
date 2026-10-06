@@ -3,7 +3,7 @@
 //
 //   GET    /f/<key>      공개 서빙(폴백) — 평소엔 버킷 커스텀 도메인 files.terra-archive.net이 서빙
 //                        키가 /로 끝나면 index.html·readme.html을 찾는다 (디렉터리 인덱스)
-//   GET    /files        목록 — 전체 (admin UI가 uploads/·assets/ 탭으로 나눔)
+//   GET    /files        목록 — 전체, ?prefix= 로 접두사만 (admin UI가 uploads/·feedback/·assets/ 를 따로 받는다)
 //   PUT    /files/<key>  업로드 — admin은 uploads/<key>로 강제, 같은 이름은 덮어쓴다
 //   DELETE /files/<key>  삭제 — admin은 uploads/ 안에서만 (에셋 트리 보호)
 //
@@ -160,12 +160,16 @@ export default {
       if (!kind) return json({ ok: false, error: "unauthorized" }, origin, 401);
 
       if (request.method === "GET" && url.pathname === "/files") {
+        // 목록은 admin에게도 전체 공개 — /admin 파일 탭이 내 업로드/사이트 에셋 탭으로
+        // 나눠 보여준다 (2026-07-27). 쓰기·삭제 스코프는 아래에서 계속 uploads/로 제한.
+        // ?prefix=uploads/ 처럼 접두사만 받을 수 있다 (2026-10-06 — 버킷이 4만 개를 넘어 전체 목록이
+        // 36초·10MB 가 되자 /admin 파일 탭이 중계 단계에서 끊겼다). 폴더별 병렬 조회는 전체 목록이
+        // 503 으로 깨져(같은 날 실측) 되돌렸다 — 순차 그대로 둔다 (r2-sync.mjs 가 이 전체 목록에 기댄다).
+        const prefix = url.searchParams.get("prefix") || undefined;
         const files = [];
         let cursor;
         do {
-          // 목록은 admin에게도 전체 공개 — /admin 파일 탭이 내 업로드/사이트 에셋 탭으로
-          // 나눠 보여준다 (2026-07-27). 쓰기·삭제 스코프는 아래에서 계속 uploads/로 제한.
-          const page = await env.FILES.list({ limit: 500, cursor });
+          const page = await env.FILES.list({ prefix, limit: 1000, cursor });
           for (const obj of page.objects)
             // etag = 단일 PUT이면 본문 md5 (r2-sync.mjs 증분 판정에 쓴다)
             files.push({ key: obj.key, size: obj.size, uploaded: obj.uploaded, etag: obj.etag, url: fileUrl(env, url, obj.key) });

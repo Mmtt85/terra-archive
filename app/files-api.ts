@@ -28,8 +28,9 @@ export function safeKey(name: string): string {
   return cleaned || "file";
 }
 
-export async function adminListFiles(): Promise<StoredFile[]> {
-  const res = await fetch(FILES_API);
+/** 목록 — prefix 를 주면 그 접두사만 (버킷 전체는 4만 개가 넘어 36초 걸린다, 2026-10-06). */
+export async function adminListFiles(prefix?: string): Promise<StoredFile[]> {
+  const res = await fetch(prefix ? `${FILES_API}?prefix=${encodeURIComponent(prefix)}` : FILES_API);
   const data = await parse<{ files: StoredFile[] }>(res, "목록 조회");
   return data.files;
 }
