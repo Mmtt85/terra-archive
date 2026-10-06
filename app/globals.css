@@ -27472,7 +27472,7 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
 .me-recent-tools { display: flex; justify-content: flex-end; min-width: 0; }
 
 /* ── 생존연산 통합 검색 (app/sandbox.tsx uniHits, 2026-10-06) — 탭 줄 끝, 테크트리 바로 오른쪽. 통합전략(.rg-uni-*)과 같은 동작 ── */
-.sb-uni-box { flex: 0 1 240px; display: flex; min-width: 0; }
+.sb-uni-box { flex: 0 1 240px; display: flex; min-width: 0; margin-left: 12px; }   /* 테크트리와 살짝 띄운다 (사용자 지시 2026-10-06) */
 .sb-uni-box input[type="search"] {
   box-sizing: border-box; width: 100%; min-height: 34px; padding: 0 12px;
   border: 1px solid var(--btn-line); background: var(--white); color: var(--ink);
@@ -27480,9 +27480,13 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
 }
 .sb-uni-box input[type="search"]::placeholder { color: var(--muted); }
 .sb-uni-box input[type="search"]::-webkit-search-cancel-button { cursor: pointer; }
-@media (max-width: 720px) { .sb-uni-box { flex-basis: 100%; } }
+@media (max-width: 720px) { .sb-uni-box { flex-basis: 100%; margin-left: 0; } }
 .sb-uni-results { display: grid; gap: 10px; margin-top: 12px; }
 .sb-uni-head { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 13px; font-weight: 600; }
 .sb-uni-head button { border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); padding: 5px 12px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .sb-uni-head button:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); color: var(--btn-ink-hover); }
 .sb-uni-results .sb-h3 { margin-top: 6px; }
+/* 결과가 한두 장이면 auto-fit 이 빈 칸을 접어 카드가 줄 전체로 늘어났다(부족전쟁처럼 지역 이름이 딱 맞아 하나만 나올 때 —
+   사용자 지적 2026-10-06). 결과 판에서는 auto-fill 로 빈 칸을 남겨 평소 카드 크기를 지킨다 */
+.sb-uni-results .sb-grid { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
+.sb-uni-results .sb-cards { grid-template-columns: repeat(auto-fill, minmax(288px, 1fr)); }
