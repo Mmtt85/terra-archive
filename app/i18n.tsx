@@ -118,6 +118,16 @@ const D: Record<string, Pair> = {
   "페이지를 찾을 수 없습니다": ["Page not found", "ページが見つかりません"],
   "주소가 바뀌었거나 없어진 페이지입니다. 주소를 다시 확인하거나 홈에서 찾아 주세요.": ["This page has moved or no longer exists. Check the address, or find it from the home page.", "アドレスが変わったか、なくなったページです。アドレスを確認するか、ホームから探してください。"],
   "홈으로": ["Go home", "ホームへ"],
+  // 생존연산 사막 이야기 아이템 탭 종류 (app/sandbox.tsx V2_ITEM_TYPE, 2026-10-06)
+  "건축 재료": ["Building Materials", "建築素材"],
+  "화폐": ["Currency", "通貨"],
+  "특수 재료": ["Special Materials", "特殊素材"],
+  "식재료": ["Ingredients", "食材"],
+  "야생동물": ["Wildlife", "野生動物"],
+  "원석충·벌레": ["Slugs & Bugs", "源石虫・虫"],
+  "소모품": ["Consumables", "消耗品"],
+  "특수 아이템": ["Special Items", "特殊アイテム"],
+  "건축물": ["Buildings", "建築物"],
   "조건에 맞는 오퍼가 없어요.": ["No operators match.", "条件に合うオペレーターがいません。"],
   // 재료 파밍 효율표 정렬 (2026-10-06)
   "효율순": ["By efficiency", "効率順"],

@@ -165,10 +165,10 @@ export type SandboxDoc = {
 
 // 한국 서버 상설(사막 이야기)과 중국 서버 신시즌은 **메뉴를 아예 분리**한다
 // (사용자 확정 2026-08-12) — 위쪽 시즌 탭으로 갈아타고, 아래 뷰 칩은 시즌마다 다르다.
-const VIEWS = ["food", "craft", "stage", "enemy", "weather", "event", "rift", "tech"] as const;
+const VIEWS = ["item", "food", "craft", "stage", "enemy", "weather", "event", "rift", "tech"] as const;
 type View = (typeof VIEWS)[number];
 const VIEW_LABEL: Record<View, string> = {
-  food: "요리·음료", craft: "제작·설치물", stage: "지역", enemy: "적 도감", weather: "날씨",
+  item: "아이템", food: "요리·음료", craft: "제작·설치물", stage: "지역", enemy: "적 도감", weather: "날씨",
   event: "조우", rift: "균열·원정", tech: "테크트리",
 };
 const V3_VIEWS = ["v3item", "v3craft", "v3map", "v3enemy", "v3stage", "v3weather", "v3event"] as const;
@@ -177,6 +177,13 @@ const V3_LABEL: Record<V3View, string> = {
   v3item: "아이템", v3craft: "가공·건설", v3map: "전투 지형", v3enemy: "적 도감",
   v3stage: "시나리오", v3weather: "날씨", v3event: "조우",
 };
+// 사막 이야기 아이템 종류 (itemData.itemType) — 표시 순서이기도 하다. 목재·광석 같은 건축 재료와 화폐는 다른 탭 어디에도
+// 안 나와서 '없다'고 보였다 (사용자 지적 2026-10-06). 자리표시 아이템(PLACEHOLDER — '기타/고급 드랍 아이템')은 뺀다
+const V2_ITEM_TYPE: [string, string][] = [
+  ["BUILDINGMAT", "건축 재료"], ["COIN", "화폐"], ["SPECIALMAT", "특수 재료"], ["FOODMAT", "식재료"], ["ANIMAL", "야생동물"],
+  ["INSECT", "원석충·벌레"], ["STAMINAPOT", "소모품"], ["SLUGITEM", "특수 아이템"], ["CRAFT", "제작 재료"],
+  ["FOOD", "요리·음료"], ["BUILDING", "건축물"], ["TACTICAL", "전술 아이템"],
+];
 const FOOD_ATTR: Record<string, string> = {
   SURVIVE: "생존", ATTACK: "공격", COOLDOWN: "재배치", COST: "코스트", SKILL_POINT: "스킬", SPECIAL: "특수",
 };
@@ -437,7 +444,17 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   }, [v2, q]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const searchable = season === "v3" ? (v3view === "v3item" || v3view === "v3enemy")
-    : (view === "food" || view === "craft" || view === "enemy" || view === "stage");
+    : (view === "item" || view === "food" || view === "craft" || view === "enemy" || view === "stage");
+  // 사막 이야기 아이템 탭 — 종류 필터
+  const [v2type, setV2type] = useState("");
+  const v2ItemTypes = useMemo(() => V2_ITEM_TYPE.map(([k, label]) => [k, label, Object.values(v2.items).filter((it) => it[3] === k).length] as const)
+    .filter(([, , n]) => n > 0), [v2]);
+  const v2Items = useMemo(() => {
+    const order = new Map(V2_ITEM_TYPE.map(([k], i) => [k, i]));
+    return Object.entries(v2.items)
+      .filter(([, it]) => order.has(it[3]) && (!v2type || it[3] === v2type) && match(it[0]))
+      .sort((a, b) => (order.get(a[1][3])! - order.get(b[1][3])!));
+  }, [v2, v2type, q]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 목록들 ──────────────────────────────────────────────────────────────
   const foods = useMemo(() => v2.foods.filter((f) => !q || f.variants.some((v) => normSearch(v[1]).includes(q))
@@ -658,6 +675,30 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
           <input {...inputProps} placeholder={t("이름·재료 검색")} autoComplete="off" spellCheck={false} />
           <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
         </div>
+      )}
+
+      {/* ── 아이템 — 종류별 전부 (건축 재료·화폐·식재료·야생동물 …) ── */}
+      {season === "v2" && view === "item" && (
+        <>
+          <div className="sb-filters">
+            <button type="button" className={v2type === "" ? "on" : ""} onClick={() => setV2type("")}>
+              {t("전체")} <em>{v2ItemTypes.reduce((n, [, , c]) => n + c, 0)}</em>
+            </button>
+            {v2ItemTypes.map(([k, label, n]) => (
+              <button key={k} type="button" className={v2type === k ? "on" : ""} onClick={() => setV2type(k)}>{t(label)} <em>{n}</em></button>
+            ))}
+          </div>
+          <div className="sb-cards">
+            {v2Items.map(([id, it]) => card(`v2i-${id}`, () => openDetail({ k: "mat", id }), (
+              <>
+                <img className="sb-thumb" src={itemIcon(id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                <b className="sb-cname">{it[0]}</b>
+                <span className="sb-cmeta"><i className="sb-chip">{t(V2_ITEM_TYPE.find(([k]) => k === it[3])?.[1] ?? it[3])}</i></span>
+                <span className="sb-cdesc">{it[1]}</span>
+              </>
+            )))}
+          </div>
+        </>
       )}
 
       {/* ── 요리·음료 ── */}

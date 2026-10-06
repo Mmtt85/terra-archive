@@ -28,6 +28,7 @@ import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 import { viewOf, type StageDoc, type StageView } from "./stage-data";
 import { normSearch } from "./search";
 import { Marquee } from "./marquee";
+import { AttributeFilter } from "./attr-filter";
 import recruitData from "./data/recruit.json";
 import { MeShare } from "./me-share";
 import { openChecker } from "./stage-open";
@@ -1005,24 +1006,23 @@ function Friends({ me, now, opById, onShowOperator }: { me: MeData; now: number;
 function Recent({ owned, opById, onShowOperator }: { owned: AccountChar[]; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void }) {
   const { locale, t } = useI18n();
   const [all, setAll] = useState(false);
-  // 성급·직군으로 거르기 (사용자 요청 2026-10-06) — 같은 축은 하나만, 다시 누르면 해제
-  const [rar, setRar] = useState<number | null>(null);
-  const [job, setJob] = useState<string | null>(null);
+  // 성급·직군으로 거르기 (사용자 요청 2026-10-06) — 오퍼 도감과 같은 드롭다운(AttributeFilter), 여러 개 고를 수 있다
+  const [rars, setRars] = useState<string[]>([]);
+  const [jobSel, setJobSel] = useState<string[]>([]);
+  const toggle = (set: React.Dispatch<React.SetStateAction<string[]>>) => (v: string) =>
+    set((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
   const gained = owned.filter((c) => c.gain).sort((a, b) => (b.gain ?? 0) - (a.gain ?? 0));
-  const list = gained.filter((c) => {
+  const pass = (c: AccountChar, r: string[], j: string[]) => {
     const op = opById.get(c.id);
-    return (rar === null || op?.rarity === rar) && (job === null || op?.jobCode === job);
-  });
+    return (!r.length || r.includes(String(op?.rarity))) && (!j.length || j.includes(op?.jobCode ?? ""));
+  };
+  const list = gained.filter((c) => pass(c, rars, jobSel));
   const [gridRef, cols] = useGridCols();
   const fold = (cols || 9) * OPS_ROWS;
   if (!gained.length) return null;
-  const rarities = [...new Set(gained.map((c) => opById.get(c.id)?.rarity ?? 0))].filter(Boolean).sort((a, b) => b - a);
+  const rarities = [...new Set(gained.map((c) => opById.get(c.id)?.rarity ?? 0))].filter(Boolean).sort((a, b) => b - a).map(String);
   const jobs = JOB_ORDER.filter((code) => gained.some((c) => opById.get(c.id)?.jobCode === code));
   const jobLabel = (code: string) => opById.get(gained.find((c) => opById.get(c.id)?.jobCode === code)!.id)?.job ?? code;
-  const countOf = (r: number | null, j: string | null) => gained.filter((c) => {
-    const op = opById.get(c.id);
-    return (r === null || op?.rarity === r) && (j === null || op?.jobCode === j);
-  }).length;
   // 영입 시각 — 날짜와 시·분까지 (사용자 지시)
   const day = (sec: number) => new Date(sec * 1000).toLocaleDateString(DT_LOCALE[locale], { year: "2-digit", month: "2-digit", day: "2-digit" });
   const time = (sec: number) => new Date(sec * 1000).toLocaleTimeString(DT_LOCALE[locale], { hour: "2-digit", minute: "2-digit", hour12: false });
@@ -1030,18 +1030,12 @@ function Recent({ owned, opById, onShowOperator }: { owned: AccountChar[]; opByI
     <Card no="RECENT" title={t("최근 영입")} className="me-recent"
       aside={(
         <div className="me-recent-tools">
-          <div className="me-seg" role="group" aria-label={t("성급")}>
-            <button type="button" className={rar === null ? "selected" : ""} onClick={() => setRar(null)}>{t("전체")}</button>
-            {rarities.map((r) => (
-              <button key={r} type="button" className={rar === r ? "selected" : ""} onClick={() => setRar(rar === r ? null : r)}>★{r} <small>{countOf(r, job)}</small></button>
-            ))}
-          </div>
-          <div className="me-seg" role="group" aria-label={t("직군")}>
-            <button type="button" className={job === null ? "selected" : ""} onClick={() => setJob(null)}>{t("전체")}</button>
-            {jobs.map((code) => (
-              <button key={code} type="button" className={job === code ? "selected" : ""} onClick={() => setJob(job === code ? null : code)}>{jobLabel(code)} <small>{countOf(rar, code)}</small></button>
-            ))}
-          </div>
+          <AttributeFilter groups={[
+            { title: t("성급"), items: rarities, selected: rars, onToggle: toggle(setRars), labelFor: (v) => `${v}★`,
+              countForItem: (v) => gained.filter((c) => pass(c, [v], jobSel)).length },
+            { title: t("직군"), items: jobs, selected: jobSel, onToggle: toggle(setJobSel), labelFor: jobLabel,
+              countForItem: (v) => gained.filter((c) => pass(c, rars, [v])).length },
+          ]} />
         </div>
       )}>
       {!list.length && <p className="me-note">{t("조건에 맞는 오퍼가 없어요.")}</p>}
