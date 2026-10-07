@@ -1333,6 +1333,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const GalleryForLocale = GALLERY[locale as keyof typeof GALLERY] ?? GALLERY.ko;
   const EventDexForLocale = EVENT_DEX[locale as keyof typeof EVENT_DEX] ?? EVENT_DEX.ko;
   const runningEvents = useRunningEvents();
+  // 칩의 '남은 시간' 기준 시각 — 첫 그림은 **빌드 시각**(프리렌더와 같은 값), 뜬 뒤 지금 시각으로.
+  // 렌더 중 Date.now() 를 쓰면 미리 그린 HTML 과 글자가 달라 React #418 → 루트를 통째로 다시 그리며
+  // html.dark 가 날아갔다 (2026-10-07 — 칩을 첫 화면부터 그리게 바꾼 직후 '새로고침하면 라이트로' 회귀)
+  const [chipNow, setChipNow] = useState(BUILD_NOW);
+  useEffect(() => { setChipNow(Date.now()); }, []);
   /** 헤더·배너에서 연 이벤트 — **페이지를 안 넘기고** 그 자리에 모달만 띄운다
    *  (사용자 지시 2026-09-17: "이벤트 가이드로 페이지가 넘어가지 말고 그냥 모달창만").
    *  이미 이벤트 가이드 화면에 있으면 그쪽 목록이 해시로 열게 두고 여기선 띄우지 않는다 —
@@ -2377,7 +2382,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 {/* 이름 길이로 헤더 폭이 흔들리지 않게 CSS 가 최대 폭을 잡고 넘치면 말줄임한다 */}
                 <b className="ev-promo-name">{eventName(locale, ev)}</b>
                 {/* 남은 기간 표기는 위수 협의 칩과 같은 문구로 (사용자 지시 2026-09-17) */}
-                <span className="promo-hint">{promoLeftLabel(Date.now(), t, Date.parse(ev.end)) ?? t("진행중")}</span>
+                <span className="promo-hint">{promoLeftLabel(chipNow, t, Date.parse(ev.end)) ?? t("진행중")}</span>
               </a>
             ))}
             {cnGroupEvents.map((ev) => (
@@ -2392,7 +2397,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 }}>
                 <span className="promo-mark" aria-hidden>{modeGlyph(ev)}</span>
                 <b className="ev-promo-name">{eventName(locale, ev)}</b>
-                <span className="promo-hint">{t("중섭")} · {promoLeftLabel(Date.now(), t, Date.parse(ev.end)) ?? t("진행중")}</span>
+                <span className="promo-hint">{t("중섭")} · {promoLeftLabel(chipNow, t, Date.parse(ev.end)) ?? t("진행중")}</span>
               </a>
             ))}
             </Marquee>
