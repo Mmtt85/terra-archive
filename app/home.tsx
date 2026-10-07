@@ -870,12 +870,15 @@ function Portal({ onOpenTab, onOpenEvent }: {
 
   const [now, setNow] = useState<number | null>(null); // 서버 렌더엔 시각이 없다 → 마운트 후
   const [events, setEvents] = useState<GameEvent[]>([]);
+  // 피드를 다 받았는가 — 받았는데 진행·예정이 없으면 '없음'이라고 써야 한다 (종전엔 그때도 '불러오는 중…'에
+  // 멈춰 있었다 — 사용자 지적 2026-10-07, 이벤트 사이 공백일)
+  const [feedDone, setFeedDone] = useState(false);
   const [slide, setSlide] = useState(0);   // 배너에서 몇 번째 이벤트를 보고 있나
   const [hold, setHold] = useState(false); // 마우스를 올린 동안은 자동 넘김을 멈춘다
   useEffect(() => {
     setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 30_000);
-    void fetchEventPayload().then((data) => { if (data) setEvents(data.events); });
+    void fetchEventPayload().then((data) => { if (data) setEvents(data.events); setFeedDone(true); });
     return () => clearInterval(id);
   }, []);
   // 팔레트는 사이트 밝기를 그대로 따라간다 — 별도 테마 선택지를 두지 않는다
@@ -1000,11 +1003,11 @@ function Portal({ onOpenTab, onOpenEvent }: {
                   {/* 게이지 = 이벤트 진행률. 게임의 이성 시계 자리를 실제 기간에서 계산해 채운다. */}
                   <span className="pt-gauge" style={{ "--pt-ratio": ratio } as React.CSSProperties}>
                     <b>{headline ? `D-${dleft}` : "—"}</b>
-                    <small>{soon ? t("시작") : t("종료")}</small>
+                    <small>{headline ? (soon ? t("시작") : t("종료")) : ""}</small>
                   </span>
                   <span className="pt-banner-txt">
                     <b>{headline ? eventName(locale, headline) : t("진행중 이벤트")}</b>
-                    <small>{headline ? t(soon ? "곧 시작합니다" : "진행중") : t("불러오는 중…")}</small>
+                    <small>{headline ? t(soon ? "곧 시작합니다" : "진행중") : feedDone ? t("진행 중인 이벤트 없음") : t("불러오는 중…")}</small>
                   </span>
                   {/* 좌우로 진행 예정 이벤트까지 넘겨 본다. 버튼이라 안쪽에 두면 중첩되므로
                       배너 클릭(카페 공지 열기)과 겹치지 않게 이벤트 전파를 막는다. */}
