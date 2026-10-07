@@ -18,6 +18,7 @@
 // ⚠ 개별 라우트(/events/<id>)를 만들지 않는다 — 항목 1개당 6파일(html+rsc × 3언어)이고
 //   Pages 파일 수 한도가 있다 (아이템 도감과 같은 판단). 상세는 모달 + `#ev-<id>` 딥링크.
 
+import { confirmedDay, fmtMonthDay } from "./kr-confirmed";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { asset } from "./assets";
 import { Marquee } from "./marquee";
@@ -205,7 +206,8 @@ function EventCard({ row, onSelect, onGuide, mini }: {
         <span className="ev-card-meta">
           <em className={`ev-type t-${typeOf(row).toLowerCase()}`}>{t(TYPE_LABEL[typeOf(row)])}</em>
           {row.fut
-            ? <span className="ev-eta">{row.eta ? t("{ym} 예정", { ym: row.eta.replace("-", ".") }) : t("미실장")}</span>
+            ? <span className="ev-eta">{confirmedDay(row.id) ? t("{md} 개방 확정", { md: fmtMonthDay(locale, confirmedDay(row.id)!) })
+                : row.eta ? t("{ym} 예정", { ym: row.eta.replace("-", ".") }) : t("미실장")}</span>
             : row.start && <span>{row.start}</span>}
         </span>
         {counts.length > 0 && <span className="ev-card-counts">{counts.join(" · ")}</span>}
@@ -481,7 +483,8 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
           </h3>
           <em className={`ev-type t-${typeOf(row).toLowerCase()}`}>{t(TYPE_LABEL[typeOf(row)])}</em>
           {row.fut
-            ? <span className="ev-period">{row.eta ? t("한국 서버 {ym} 예정", { ym: row.eta.replace("-", ".") }) : t("미실장")}</span>
+            ? <span className="ev-period">{confirmedDay(row.id) ? t("한국 서버 {md} 개방 확정", { md: fmtMonthDay(locale, confirmedDay(row.id)!) })
+                : row.eta ? t("한국 서버 {ym} 예정", { ym: row.eta.replace("-", ".") }) : t("미실장")}</span>
             : row.start && <span className="ev-period">{row.start}{row.end ? ` ~ ${row.end}` : ""}</span>}
         </div>
       </header>

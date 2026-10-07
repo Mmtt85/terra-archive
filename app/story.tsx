@@ -6,6 +6,7 @@
 // 요약이 있는 이벤트만 카드가 열리고, 상세는 #story-<id> 해시로 공유·뒤로가기 가능.
 // 본문의 인물·용어는 점선 밑줄로 표시하고, 마우스오버(데스크탑)·탭(모바일)하면 설명 카드가
 // 뜬다 (`useEntityPeek` — 2026-07-25에 종전 오른쪽 참조 레일을 대체).
+import { confirmedDay, fmtMonthDay } from "./kr-confirmed";
 import { usePageHelp } from "./page-help";
 import { NewBadge } from "./new-badge";
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -1525,7 +1526,8 @@ function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; gr
     // 아직 KR에 없으니 eta(추정 출시월)를 '예정'으로 적는다. 다른 보기에서는 종전대로 없음.
     const when = group !== "release" ? null
       : ev?.unreleased
-        ? (ev.eta ? t("{ym} 예정", { ym: ev.eta.replace("-", ".") }) : null)
+        ? (confirmedDay(it.eventId) ? t("{md} 개방 확정", { md: fmtMonthDay(locale, confirmedDay(it.eventId)!) })
+          : ev.eta ? t("{ym} 예정", { ym: ev.eta.replace("-", ".") }) : null)
         : (ev?.start ? ev.start.replace("-", ".") : null);
     const body = (
       <>

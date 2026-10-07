@@ -3,6 +3,7 @@
 // 3개 탭(백과사전·플래너·공채)의 공용 루트. 로케일별 라우트(/ /en /ja)가
 // home-ko/en/ja.tsx 래퍼로 해당 언어의 operators 데이터를 정적 import해 넘긴다 —
 // 런타임 언어 전환은 전체 내비게이션이라 이 컴포넌트 안에서 로케일은 불변이다.
+import { confirmedDay, fmtMonthDay } from "./kr-confirmed";
 import { NewBadge } from "./new-badge";
 import { PAGE_HELP_TABS, openPageHelp } from "./page-help";
 import { lazy, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -764,7 +765,8 @@ function EventBadges({ onOpenEvent, includeFuture }: {
                 const body = (
                   <span className="event-row-plain">
                     <span className="event-row-name">{name}</span>
-                    {event.eta && <small>{t("{ym}쯤 예정 (추정)", { ym: fmtYm(locale, event.eta) })}</small>}
+                    {confirmedDay(event.id) ? <small>{t("{md} 개방 확정", { md: fmtMonthDay(locale, confirmedDay(event.id)!) })}</small>
+                      : event.eta && <small>{t("{ym}쯤 예정 (추정)", { ym: fmtYm(locale, event.eta) })}</small>}
                   </span>
                 );
                 return (

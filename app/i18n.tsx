@@ -2298,6 +2298,8 @@ const D: Record<string, Pair> = {
   ],
   "미실장": ["Unreleased", "未実装"],
   "{ym} 예정": ["{ym} (est.)", "{ym} 予定"],
+  "{md} 개방 확정": ["Opens {md} (confirmed)", "{md}開放確定"],
+  "한국 서버 {md} 개방 확정": ["Opens on KR {md} (confirmed)", "韓国サーバー{md}開放確定"],
   "오퍼 목록으로": ["Back to operators", "オペレーター一覧へ"],
   "관련 오퍼레이터": ["Related operators", "関連オペレーター"],
   // 관련 오퍼 갈래 라벨 — 진영·직군 이름은 데이터에서 번역돼 오고 이 둘만 UI 문구다
