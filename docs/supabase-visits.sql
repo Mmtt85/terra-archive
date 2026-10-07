@@ -332,6 +332,11 @@ returns json language sql stable as $$
     'hourly', (select coalesce(json_agg(d order by d.hr), '[]') from (
         select extract(hour from kst)::int as hr, count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
         from s where p_hourly group by 1) d),
+    -- 15분 칸 (하루 보기 그래프, 2026-10-07 사용자 지시 — 1시간 칸은 너무 뭉툭했다). q = 시×4 + 분÷15 (0~95)
+    'quarter', (select coalesce(json_agg(d order by d.q), '[]') from (
+        select (extract(hour from kst)::int * 4 + floor(extract(minute from kst) / 15)::int) as q,
+               count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
+        from s where p_hourly group by 1) d),
     'hours', (select coalesce(json_agg(json_build_array(dow, hr, n)), '[]') from (
         select extract(isodow from kst)::int - 1 as dow, extract(hour from kst)::int as hr, count(*) as n
         from s group by 1, 2) d),

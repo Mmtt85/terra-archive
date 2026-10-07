@@ -32,6 +32,8 @@ export type Summary = {
   hours: [number, number, number][];
   /** 오늘 보기 전용 — 시작 시각(KST)의 시별 (옛 DB 함수엔 없다) */
   hourly?: { hr: number; sessions: number; visitors: number; views: number }[];
+  /** 15분 칸 — q = 시×4 + 분÷15. 옛 DB 함수엔 없다(그땐 hourly 로 물러선다) */
+  quarter?: { q: number; sessions: number; visitors: number; views: number }[];
   device: Kv[]; site_lang: Kv[]; tz: Kv[];
   out: { host: string; n: number }[];
   flow: FlowRow[];
@@ -214,13 +216,15 @@ function niceMax(v: number): number {
 
 /** 일별 꺾은선 — 빈 날은 0으로 채운다. 날짜 칸에 올리면(폰은 터치) 그날의 정확한 숫자 (사용자 지시 2026-10-04) */
 const WEEK = "일월화수목금토";
-function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), tip }: {
+function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), tip, every: everyIn }: {
   /** axis "right" = 오른쪽 눈금에 따로 맞춘다 — 화면 조회와 방문자·세션은 자릿수가 달라 한 눈금이면
    *  방문자·세션 선이 바닥에 깔렸다 (사용자 지시 2026-10-07) */
   days: string[]; series: { name: string; cls: string; values: number[]; axis?: "right" }[];
   fmt?: (label: string) => string;
   /** 숫자 상자의 머리글 — 기본은 '10/03 (금)' */
   tip?: (label: string) => string;
+  /** 눈금 간격(칸 수) — 15분 칸은 8(=2시간)로 정각에 맞춘다 */
+  every?: number;
 }) {
   const [hi, setHi] = useState<number | null>(null);
   const dual = series.some((s) => s.axis === "right");
@@ -231,7 +235,7 @@ function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), ti
   const n = days.length;
   const x = (i: number) => L + (n <= 1 ? (W - L - R) / 2 : (i / (n - 1)) * (W - L - R));
   const y = (v: number, right = false) => T + (1 - v / (right ? maxR : max)) * (H - T - B);
-  const every = Math.max(1, Math.ceil(n / 12));
+  const every = everyIn ?? Math.max(1, Math.ceil(n / 12));
   const step = n <= 1 ? W - L - R : (W - L - R) / (n - 1);
   const head = tip ?? ((d: string) => {
     const dt = new Date(`${d.slice(0, 10)}T00:00:00Z`);
@@ -852,19 +856,25 @@ export function VisitsPanel() {
           )}
 
           {(range ? oneDay : days === 0) ? (() => {
-            // 하루 보기 — 시간대별 (세션 시작 시각 KST). 오늘이면 지금 시각까지, 지난 날이면 24시간 전부
+            // 하루 보기 — 15분 칸 (세션 시작 시각 KST, 2026-10-07 — 종전 1시간 칸). 오늘이면 지금 칸까지, 지난 날이면 96칸 전부.
+            // 옛 DB 함수(quarter 없음)면 종전 1시간 칸으로 물러선다
             const isToday = !range || range.from === today;
-            const nowHour = new Date(Date.now() + 9 * 3600_000).getUTCHours();
-            const hrs = Array.from({ length: isToday ? nowHour + 1 : 24 }, (_, h) => h);
-            const by = new Map((data.hourly ?? []).map((r) => [r.hr, r]));
+            const kstNow = new Date(Date.now() + 9 * 3600_000);
             const dayLabel = range && !isToday ? range.from.slice(5).replace("-", "/") : "오늘";
+            const q15 = data.quarter != null;
+            const per = q15 ? 4 : 1;
+            const nowSlot = q15 ? kstNow.getUTCHours() * 4 + Math.floor(kstNow.getUTCMinutes() / 15) : kstNow.getUTCHours();
+            const slots = Array.from({ length: isToday ? nowSlot + 1 : 24 * per }, (_, i) => i);
+            type Slot = { sessions: number; visitors: number; views: number };
+            const by = new Map<number, Slot>(q15 ? data.quarter!.map((r) => [r.q, r] as const) : (data.hourly ?? []).map((r) => [r.hr, r] as const));
+            const lab = (i: number) => q15 ? `${Math.floor(i / 4)}:${String((i % 4) * 15).padStart(2, "0")}` : `${i}시`;
             return (
               <>
-                <Head title={`${dayLabel} 시간대별`} sub={isToday ? "KST 0시 00분부터 지금까지, 세션이 시작된 시각 기준" : "KST 0시~24시, 세션이 시작된 시각 기준"} />
-                <LineChart days={hrs.map(String)} fmt={(h) => `${h}시`} tip={(h) => `${dayLabel} ${h}시대`} series={[
-                  { name: "방문자", cls: "s1", values: hrs.map((h) => by.get(h)?.visitors ?? 0), axis: "right" },
-                  { name: "세션", cls: "s2", values: hrs.map((h) => by.get(h)?.sessions ?? 0), axis: "right" },
-                  { name: "화면 조회", cls: "s3", values: hrs.map((h) => by.get(h)?.views ?? 0) },
+                <Head title={`${dayLabel} ${q15 ? "15분" : "시간대"}별`} sub={isToday ? "KST 0시 00분부터 지금까지, 세션이 시작된 시각 기준" : "KST 0시~24시, 세션이 시작된 시각 기준"} />
+                <LineChart days={slots.map(String)} every={q15 ? 8 : undefined} fmt={(i) => lab(Number(i))} tip={(i) => `${dayLabel} ${lab(Number(i))}${q15 ? "부터 15분" : "대"}`} series={[
+                  { name: "방문자", cls: "s1", values: slots.map((i) => by.get(i)?.visitors ?? 0), axis: "right" },
+                  { name: "세션", cls: "s2", values: slots.map((i) => by.get(i)?.sessions ?? 0), axis: "right" },
+                  { name: "화면 조회", cls: "s3", values: slots.map((i) => by.get(i)?.views ?? 0) },
                 ]} />
               </>
             );
