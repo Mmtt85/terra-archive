@@ -94,7 +94,7 @@ export const PORTAL_TILES: PortalTile[] = [
  *   (한 번 그렇게 넣었다가 공개 R2에 올라가 회수했다.)
  */
 export const PORTAL_ART = "/skin/full/char_1012_skadi2_1.webp";
-
+// 2026-10-07 부터 홈은 2정예 공식 움직이는 일러스트(home.tsx PortalArt — public/portal/)를 쓴다. 이 값은 예비.
 /** 인터페이스 팔레트(--pt-*)는 **app/globals.css의 `.pt-stage` / `html.dark .pt-stage`** 가
  *  쥔다. 사이트 밝기를 그대로 따르므로(사용자 확정 2026-07-30: "색깔만 바꿀 거면 다크/라이트
  *  두 가지만") 여기서 JS로 고르지 않는다 — 서버 렌더가 다크 여부를 몰라 정적 HTML이 늘

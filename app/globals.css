@@ -28319,3 +28319,18 @@ input[type="checkbox"]:disabled {
 @media (min-width: 901px) and (prefers-reduced-motion: reduce) {
   .about-stage-layer { transform: none; transition: opacity .2s; }
 }
+
+/* 홈 움직이는 일러스트 (2026-10-07) — 정지 그림(.pt-art img) 자리에 영상을 겹쳐 두고, 알파 검사를
+   통과하면 영상을 보이고 정지 그림을 끈다(움직이는 부분 뒤로 정지 그림이 비치면 잔상이 생긴다). */
+/* 스카디 중심으로 당겨 구운 장면이라 네 변에서 그림이 잘린다 — 가장자리를 흐려 바탕에 녹인다.
+   종전 1정예 그림(640px)보다 크게 (사용자 지시 "크기 좀 키워줘") */
+.pt-art-dyn {
+  width: min(50vw, 760px);
+  object-position: right center;
+  -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+}
+.pt-art-video { opacity: 0; transition: opacity .6s ease; }
+.pt-art-video.on { opacity: 1; }
+.pt-art.pt-art-off { visibility: hidden; transition: visibility 0s .6s; }
+@media (max-width: 900px) { .pt-art-video.on { opacity: .5; } }

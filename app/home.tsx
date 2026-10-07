@@ -121,7 +121,7 @@ import { bindEscClose } from "./esc-close";
 import { feedbackReady } from "./feedback";
 import { isNewFeature, inTimeWindow, tabHasNewFeature, tabNewSig, BUILD_NOW } from "./whats-new";
 import { scrollMainTop } from "./scroll";
-import { PORTAL_TILES, PORTAL_ART, type PortalTile } from "./portal-themes";
+import { PORTAL_TILES, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
 import { useMe, meChars, isMaxed, trustPct, eliteText, potText, masteryText, isCollectible } from "./me-store";
 import type { AccountChar } from "./account";
@@ -970,7 +970,7 @@ function Portal({ onOpenTab, onOpenEvent }: {
           (스테이지 기준이면 화면이 넓어질수록 타일과 멀어진다 — 사용자 지적 2026-07-30). */}
       <div className="pt-left">
         {/* 장식이므로 alt는 비운다. 늦게 떠도 레이아웃이 안 밀리게 절대배치. */}
-        <img className="pt-art" src={asset(PORTAL_ART)} alt="" decoding="async" fetchPriority="low" />
+        <PortalArt />
       <div className="pt-player">
         {/* 미리 만든 HTML 의 숫자는 빌드한 날 기준이라, 자정을 넘긴 뒤 열면 87 → 88 로 바뀌어 보였다 (사용자 지적 2026-10-06).
             그리기 전에 바로 뒤 스크립트가 지금 시각으로 바꿔 두고, React 는 그 글자를 건드리지 않는다(suppressHydrationWarning) */}
@@ -4620,6 +4620,47 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       ))}
     </button>
     {chatOpen && <ChibiChatPanel status={chatStatus} onReady={() => setChatStatus("available")} onAction={handleChatAction} onClose={() => setChatOpen(false)} />}
+    </>
+  );
+}
+
+// 홈 일러스트 — 이격 스카디 2정예 **공식 움직이는 일러스트**(Spine dyn_illust, 대기 4초 반복)를
+// 투명 영상으로 구운 것 (사용자 지시 2026-10-07). 처음엔 첫 프레임 정지 그림을 띄우고, 영상은 화면이
+// 그려진 뒤에 받는다(1.6MB — 첫 화면 속도 보호). 알파를 못 그리는 브라우저(사파리 계열 등)는 투명 자리가
+// 검게 나오므로 캔버스로 왼쪽 위 여백 한 점을 찍어 보고 투명할 때만 영상으로 바꾼다 (치비와 같은 검사 —
+// 그래서 R2 가 아니라 같은 출처 public/portal/ 에 둔다). 동작 줄이기 설정이면 정지 그림만.
+const PORTAL_DYN = { poster: "/portal/skadi2-dyn.webp", video: "/portal/skadi2-dyn.webm" };
+function PortalArt() {
+  const [load, setLoad] = useState(false);
+  const [live, setLive] = useState(false);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const go = () => setLoad(true);
+    const ric = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    if (document.readyState === "complete") { if (ric) ric(go, { timeout: 1500 }); else setTimeout(go, 300); return; }
+    window.addEventListener("load", go, { once: true });
+    return () => window.removeEventListener("load", go);
+  }, []);
+  const probe = (v: HTMLVideoElement) => {
+    try {
+      const c = document.createElement("canvas");
+      c.width = c.height = 8;
+      const g = c.getContext("2d");
+      if (!g) return;
+      // 영상 네 변에 8px 투명 테두리를 둘렀다 — 원본 왼쪽 위 4×4 만 그대로 떠 와 본다
+      // (그림이 화면을 꽉 채워서 축소 평균으로 찍으면 알파가 살아 있어도 불투명으로 나온다)
+      g.drawImage(v, 0, 0, 4, 4, 0, 0, 4, 4);
+      if (g.getImageData(1, 1, 1, 1).data[3] < 250) setLive(true);
+    } catch { /* 캔버스 이상 — 정지 그림 유지 */ }
+  };
+  return (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className={`pt-art pt-art-dyn${live ? " pt-art-off" : ""}`} src={PORTAL_DYN.poster} alt="" decoding="async" fetchPriority="low" />
+      {load && (
+        <video className={`pt-art pt-art-dyn pt-art-video${live ? " on" : ""}`} src={PORTAL_DYN.video} autoPlay loop muted playsInline
+          preload="auto" aria-hidden onLoadedData={(e) => probe(e.currentTarget)} />
+      )}
     </>
   );
 }
