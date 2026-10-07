@@ -20,7 +20,7 @@ import storiesData from "../data/stories.json";
 type Kv = { k: string | null; n: number };
 type FlowRow = { step: number; src: string; dst: string; n: number };
 export type Summary = {
-  /** visible_ms·med_* = 머문 시간(탭이 화면에 떠 있던 시간, 화면당 30분 상한) — 2026-10-07~ DB 함수 */
+  /** visible_ms·med_* = 머문 시간(탭이 화면에 떠 있던 시간, 화면당 3시간 상한) — 2026-10-07~ DB 함수 */
   total: { sessions: number; visitors: number; views: number; active_ms: number; revisit: number; bounce: number; bots: number;
     visible_ms?: number; med_active?: number; med_visible?: number };
   days: { day: string; sessions: number; visitors: number; views: number; active_ms: number }[];
@@ -676,7 +676,7 @@ export function VisitsPanel() {
   const pageTable = (n: number) => !data ? null : (
     <table className="vz-table">
       <thead>
-        <tr><th>화면</th><th>조회</th><th>세션</th><th>평균 조작</th><th>중앙 조작</th><th title="탭이 화면에 떠 있던 시간 · 화면당 30분 상한">중앙 머문</th><th>여기서 이탈</th><th>스크롤</th></tr>
+        <tr><th>화면</th><th>조회</th><th>세션</th><th>평균 조작</th><th>중앙 조작</th><th title="탭이 화면에 떠 있던 시간 · 화면당 3시간 상한">중앙 머문</th><th>여기서 이탈</th><th>스크롤</th></tr>
       </thead>
       <tbody>
         {data.pages.slice(0, n).map((p) => {
@@ -818,7 +818,7 @@ export function VisitsPanel() {
             <div><b>{t.sessions ? (t.views / t.sessions).toFixed(1) : "–"}</b><span>세션당 화면</span></div>
             <div><b>{fmtDur(t.sessions ? t.active_ms / t.sessions : 0)}</b><span>세션당 조작 시간</span></div>
             {/* 머문 시간 — 조작 없이 읽는 시간까지. 켜 두고 잊은 탭에 흔들리지 않게 중앙값 (2026-10-07) */}
-            {t.med_visible != null && <div title="탭이 화면에 떠 있던 시간 · 화면당 30분 상한 · 세션 중앙값"><b>{fmtDur(t.med_visible)}</b><span>세션당 머문 시간(중앙)</span></div>}
+            {t.med_visible != null && <div title="탭이 화면에 떠 있던 시간 · 화면당 3시간 상한 · 세션 중앙값"><b>{fmtDur(t.med_visible)}</b><span>세션당 머문 시간(중앙)</span></div>}
             <div><b>{pct(t.bounce, t.sessions)}</b><span>한 화면만 보고 이탈</span></div>
             <div><b>{pct(t.revisit, t.sessions)}</b><span>재방문</span></div>
             <div><b>{num(t.bots)}</b><span>거른 세션(조작 없음)</span></div>
