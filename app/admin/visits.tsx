@@ -475,8 +475,8 @@ function Head({ title, sub, top, setTop, onAll, children }: { title: string; sub
   );
 }
 
-type TopKey = "src" | "ref" | "landing" | "pages" | "sections" | "devlang" | "tz" | "out" | "sessions" | "mesync";
-const TOP_DEFAULT: Record<TopKey, number> = { src: 5, ref: 5, landing: 5, pages: 5, sections: 5, devlang: 5, tz: 5, out: 5, sessions: 5, mesync: 5 };
+type TopKey = "src" | "ref" | "landing" | "pages" | "sections" | "device" | "lang" | "tz" | "out" | "sessions" | "mesync";
+const TOP_DEFAULT: Record<TopKey, number> = { src: 5, ref: 5, landing: 5, pages: 5, sections: 5, device: 5, lang: 5, tz: 5, out: 5, sessions: 5, mesync: 5 };
 const TOPS_KEY = "ta-admin-visit-tops";   // localStorage — 목록마다 고른 개수
 
 function loadTops(): Record<TopKey, number> {
@@ -668,17 +668,18 @@ export function VisitsPanel() {
   const t = data?.total;
   // 막대 목록의 줄 — 본문과 '전체 보기' 창이 같이 쓴다
   type BarRow = { label: string; n: number; sub?: string; title?: string; href?: string | null };
-  const barRows: Record<"src" | "ref" | "landing" | "sections" | "devlang" | "tz" | "out", BarRow[]> = data ? {
+  const barRows: Record<"src" | "ref" | "landing" | "sections" | "device" | "lang" | "tz" | "out", BarRow[]> = data ? {
     // 시간은 전부 **중앙값** (사용자 지시 2026-10-07 "평균은 참고가 안 된다") — 옛 DB 함수면 평균으로 물러선다
     src: data.src.map((r) => ({ label: r.src, n: r.sessions, sub: `중앙 조작 ${fmtDur(r.med_active ?? r.active_ms / Math.max(1, r.sessions))}${r.med_visible != null ? ` · 머문 ${fmtDur(r.med_visible)}` : ""}` })),
     ref: data.ref.map((r) => ({ label: r.ref.replace(/^https?:\/\//, ""), n: r.sessions, title: r.ref, href: /^https?:\/\//.test(r.ref) ? r.ref : null })),
     landing: data.landing.map((r) => ({ label: pathLabel(r.path), n: r.sessions, sub: `바로 이탈 ${pct(r.bounces, r.sessions)}`, title: r.path, href: siteUrl(r.path) })),
     sections: data.sections.map((r) => ({ label: sectionLabel(r.section), n: r.views, sub: `중앙 조작 ${fmtDur(r.med_active ?? r.avg_active)}${r.med_visible != null ? ` · 머문 ${fmtDur(r.med_visible)}` : ""}`, href: sectionUrl(r.section) })),
-    devlang: [...data.device.map((r) => ({ label: DEVICE_KO[r.k ?? ""] ?? String(r.k), n: r.n })),
-      ...data.site_lang.map((r) => ({ label: `언어 ${r.k ?? "?"}`, n: r.n }))],
+    // 기기와 사이트 언어는 따로 (사용자 지시 2026-10-07 — 한 목록에 섞여 비율을 읽을 수 없었다)
+    device: data.device.map((r) => ({ label: DEVICE_KO[r.k ?? ""] ?? String(r.k), n: r.n })),
+    lang: data.site_lang.map((r) => ({ label: r.k ?? "?", n: r.n })),
     tz: data.tz.map((r) => ({ label: r.k ?? "?", n: r.n })),
     out: data.out.map((r) => ({ label: r.host, n: r.n })),
-  } : { src: [], ref: [], landing: [], sections: [], devlang: [], tz: [], out: [] };
+  } : { src: [], ref: [], landing: [], sections: [], device: [], lang: [], tz: [], out: [] };
   // 화면 순위·내 정보 동기화 표 — 본문(상위 n)과 '전체 보기' 창이 같이 쓴다
   const pageTable = (n: number) => !data ? null : (
     <table className="vz-table">
@@ -909,8 +910,18 @@ export function VisitsPanel() {
             <div>
               <Head title="요일·시간 (KST)" />
               <Heatmap cells={data.hours} />
-              <Head title="기기 · 사이트 언어" {...top("devlang", "기기 · 사이트 언어")} />
-              <BarList top={tops.devlang} rows={barRows.devlang} />
+            </div>
+          </div>
+
+          {/* 기기·사이트 언어는 따로 한 줄 — 위 칸 길이와 상관없이 두 제목 높이가 맞는다 */}
+          <div className="vz-cols">
+            <div>
+              <Head title="기기" {...top("device", "기기")} />
+              <BarList top={tops.device} rows={barRows.device} />
+            </div>
+            <div>
+              <Head title="사이트 언어" {...top("lang", "사이트 언어")} />
+              <BarList top={tops.lang} rows={barRows.lang} />
             </div>
           </div>
 

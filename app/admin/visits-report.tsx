@@ -65,7 +65,7 @@ function periodText(from: string, to: string) {
 }
 
 /** tops — 관리자 화면 목록마다 고른 개수(상위 5·15·30)를 그대로 따른다 (사용자 지시 2026-10-05 "페이지 설정값에 맞춰서") */
-type Tops = { src: number; landing: number; pages: number; sections: number; devlang: number; tz: number };
+type Tops = { src: number; landing: number; pages: number; sections: number; device: number; lang: number; tz: number };
 function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; from: string; to: string; who: string; onlyHuman: boolean; tops: Tops }) {
   const T = data.total;
   const sessions = Math.max(1, T.sessions);
@@ -173,8 +173,8 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
         </section>
 
         <section className="vzr-card wide vzr-three">
-          <div><h2>기기</h2><p className="vzr-hint">세션 비율</p><Bars rows={share(data.device, DEVICE, tops.devlang)} color="#4f7a8c" compact /></div>
-          <div><h2>사이트 언어</h2><p className="vzr-hint">세션 비율</p><Bars rows={share(data.site_lang, LANG, tops.devlang)} color="#c39a3a" compact /></div>
+          <div><h2>기기</h2><p className="vzr-hint">세션 비율</p><Bars rows={share(data.device, DEVICE, tops.device)} color="#4f7a8c" compact /></div>
+          <div><h2>사이트 언어</h2><p className="vzr-hint">세션 비율</p><Bars rows={share(data.site_lang, LANG, tops.lang)} color="#c39a3a" compact /></div>
           <div><h2>접속 지역</h2><p className="vzr-hint">브라우저 시간대 기준 상위 {tops.tz}</p><Bars rows={share(data.tz, TZ, tops.tz)} color="#7c8f4a" compact /></div>
         </section>
 

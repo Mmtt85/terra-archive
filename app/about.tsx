@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { asset } from "./assets";
 import { CONTACT_EMAIL } from "./contact";
 import { useI18n, rich, type Locale } from "./i18n";
@@ -27,6 +27,9 @@ type ShotPair = { d: string; m: string };
 // ⚠ 순서 주의: 이 값을 올린 뒤 r2-sync 전에 /about을 열면, 새 쿼리 키에 옛 이미지가
 // 엣지 캐시(max-age 14400)로 4시간 박힌다. r2-sync를 먼저 돌리고 나서 올릴 것 (2026-08-13).
 const SHOT_VER = "20261007";
+const PORTAL_SHOT: ShotPair = { d: "/about/portal.webp", m: "/about/portal-m.webp" };
+const HOME_NAME: Record<Locale, string> = { ko: "홈 화면", en: "Home", ja: "ホーム" };
+const CHRONICLE_SHOT: ShotPair = { d: "/about/chronicle.webp", m: "/about/chronicle-m.webp" };
 const SHOTS: Partial<Record<Tab, ShotPair>> = {
   archive: { d: "/about/archive.webp", m: "/about/archive-m.webp" },
   planner: { d: "/about/planner.webp", m: "/about/planner-m.webp" },
@@ -65,7 +68,7 @@ function useTheme(): "light" | "dark" | null {
 // 데스크톱 스크린샷과 모바일 화면을 겹치지 않게 나란히 놓아 반응형 UI를 한눈에 보여준다.
 // 래퍼 div에 고정 aspect-ratio를 주어 로드 전에도 공간을 예약(CLS 0)하고, 774:226 플렉스 비율로
 // 데스크톱·모바일 캡처의 렌더 높이를 동일하게 맞춘다. 다크모드일 땐 다크 캡처본(-dark)으로 스왑.
-function ShotFrame({ shot, alt, cap }: { shot: ShotPair; alt: string; cap?: string }) {
+function useShotSrc() {
   const theme = useTheme();
   const { locale } = useI18n();
   // EN/JA는 그 언어 UI 캡처본(/about/{en,ja}/)으로 스왑 — ko는 종전 루트 경로 유지
@@ -73,6 +76,10 @@ function ShotFrame({ shot, alt, cap }: { shot: ShotPair; alt: string; cap?: stri
     const localized = locale === "ko" ? p : p.replace("/about/", `/about/${locale}/`);
     return `${asset(theme === "dark" ? localized.replace(/\.webp$/, "-dark.webp") : localized)}?v=${SHOT_VER}`;
   };
+  return { theme, src };
+}
+function ShotFrame({ shot, alt, cap }: { shot: ShotPair; alt: string; cap?: string }) {
+  const { theme, src } = useShotSrc();
   return (
     <figure className="about-shot-fig">
       <div className="about-shots">
@@ -86,6 +93,12 @@ function ShotFrame({ shot, alt, cap }: { shot: ShotPair; alt: string; cap?: stri
       {cap && <figcaption className="about-shot-cap">{cap}</figcaption>}
     </figure>
   );
+}
+
+// PC 스크롤 연출의 고정 화면 한 장 — 데스크톱 캡처(왼쪽)와 모바일 캡처(오른쪽)를 따로 띄운다
+function StageShot({ path, w, h }: { path: string; w: number; h: number }) {
+  const { theme, src } = useShotSrc();
+  return <div className="about-shot">{theme && <img src={src(path)} alt="" width={w} height={h} decoding="async" />}</div>;
 }
 
 type Content = {
@@ -680,6 +693,44 @@ const CONTENT: Record<Locale, Content> = {
 export default function About({ onOpenTab }: { onOpenTab?: (tab: Tab) => void }) {
   const { locale } = useI18n();
   const c = CONTENT[locale];
+  // 스크롤 단계 — 기능마다 한 칸, 스토리 카드 안의 연대기는 따로 한 칸
+  const steps = [{ key: "portal", shot: PORTAL_SHOT, name: HOME_NAME[locale] }, ...c.features.flatMap((f) => {
+    const out: { key: string; shot: ShotPair; name: string }[] = [];
+    if (SHOTS[f.tab]) out.push({ key: f.tab, shot: SHOTS[f.tab]!, name: f.name });
+    if (f.tab === "story") out.push({ key: "chronicle", shot: CHRONICLE_SHOT, name: c.chronicleCap.split(" — ")[0] });
+    return out;
+  })];
+  const scrollyRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState<string>(steps[0]?.key ?? "");
+  const activeIdx = Math.max(0, steps.findIndex((st) => st.key === active));
+  // 지나온 칸 + 바로 다음 칸만 이미지를 붙인다 — 17장을 한꺼번에 받지 않게
+  const [mounted, setMounted] = useState<Set<string>>(() => new Set(steps.slice(0, 2).map((st) => st.key)));
+  useEffect(() => {
+    const next = steps[activeIdx + 1]?.key;
+    setMounted((cur) => (cur.has(active) && (!next || cur.has(next)) ? cur : new Set([...cur, active, ...(next ? [next] : [])])));
+  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 화면 가운데 줄을 넘어선 마지막 칸이 지금 칸 — 연대기 칸이 스토리 카드 안에 들어 있어서
+  // 교차 관찰 대신 위치로 고른다
+  useEffect(() => {
+    const root = scrollyRef.current;
+    if (!root) return;
+    const scroller: HTMLElement | Window = root.closest<HTMLElement>(".site-scroll") ?? window;
+    let raf = 0;
+    const pick = () => {
+      raf = 0;
+      const mid = window.innerHeight * 0.45;
+      let key = "";
+      for (const el of root.querySelectorAll<HTMLElement>("[data-shot]")) {
+        if (el.getBoundingClientRect().top <= mid) key = el.dataset.shot ?? key;
+      }
+      setActive(key || (root.querySelector<HTMLElement>("[data-shot]")?.dataset.shot ?? ""));
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(pick); };
+    pick();
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => { scroller.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); cancelAnimationFrame(raf); };
+  }, [locale]);
   return (
     <section className="about" aria-label={c.title}>
       <div className="about-hero">
@@ -687,34 +738,75 @@ export default function About({ onOpenTab }: { onOpenTab?: (tab: Tab) => void })
         <h2>{c.title}</h2>
         <p className="about-tagline">{c.tagline}</p>
         <p className="about-intro">{c.intro}</p>
-        <ShotFrame shot={{ d: "/about/portal.webp", m: "/about/portal-m.webp" }} alt={c.title} />
+        <ShotFrame shot={PORTAL_SHOT} alt={c.title} />
       </div>
 
       <p className="about-lead">{c.featureLead}</p>
-      <div className="about-features">
-        {c.features.map((f) => (
-          <article key={f.tab} className={`about-card${f.highlight ? " featured" : ""}`}>
-            <header>
-              <span className="about-card-icon" aria-hidden>{f.icon}</span>
-              <h3>{f.name}</h3>
-            </header>
-            {SHOTS[f.tab] && <ShotFrame shot={SHOTS[f.tab]!} alt={f.name} />}
-            {/* 테라 연대기는 AI 스토리 요약 기능의 일부 — 스토리 카드 안에 함께 보여준다 */}
-            {f.tab === "story" && (
-              <ShotFrame shot={{ d: "/about/chronicle.webp", m: "/about/chronicle-m.webp" }} alt={c.chronicleCap} cap={c.chronicleCap} />
-            )}
-            <p className="about-card-summary">{f.summary}</p>
-            {f.highlight && <p className="about-card-highlight">{rich(f.highlight)}</p>}
-            <ul className="about-card-bullets">
-              {f.bullets.map((b, i) => <li key={i}>{b}</li>)}
-            </ul>
-            {onOpenTab && (
-              <button type="button" className="about-card-go" onClick={() => { onOpenTab(f.tab); scrollMainTop(); }}>
-                {f.name} →
-              </button>
-            )}
+      {/* PC: 왼쪽 글이 스크롤되면 오른쪽 고정 화면이 지금 읽는 기능으로 바뀐다 (사용자 지시 2026-10-07 —
+          prompt-motion 'scroll-based sections' 착안). 폰은 종전대로 카드마다 스크린샷. */}
+      <div className="about-scrolly" ref={scrollyRef}>
+        <div className="about-features">
+          {/* 홈 화면 칸 — PC 스크롤 연출 전용(첫 칸). 폰은 위 머리말이 소개문·홈 캡처를 그대로 보여준다 */}
+          <article data-shot="portal" className={`about-card about-home${active === "portal" ? " on" : ""}`}>
+            <header><h3>{HOME_NAME[locale]}</h3></header>
+            <p className="about-card-summary">{c.intro}</p>
           </article>
-        ))}
+          {c.features.map((f) => (
+            <article key={f.tab} data-shot={f.tab}
+              className={`about-card${f.highlight ? " featured" : ""}${active === f.tab ? " on" : ""}`}>
+              <header>
+                <span className="about-card-icon" aria-hidden>{f.icon}</span>
+                <h3>{f.name}</h3>
+              </header>
+              {SHOTS[f.tab] && <ShotFrame shot={SHOTS[f.tab]!} alt={f.name} />}
+              <p className="about-card-summary">{f.summary}</p>
+              {f.highlight && <p className="about-card-highlight">{rich(f.highlight)}</p>}
+              <ul className="about-card-bullets">
+                {f.bullets.map((b, i) => <li key={i}>{b}</li>)}
+              </ul>
+              {/* 테라 연대기는 AI 스토리 요약 기능의 일부 — 스토리 카드 안에 함께 보여준다.
+                  PC에선 여기까지 읽어 내려오면 오른쪽 화면이 연대기로 넘어간다. */}
+              {f.tab === "story" && (
+                <div className={`about-chron${active === "chronicle" ? " on" : ""}`} data-shot="chronicle">
+                  <ShotFrame shot={CHRONICLE_SHOT} alt={c.chronicleCap} cap={c.chronicleCap} />
+                  <p className="about-chron-cap">{c.chronicleCap}</p>
+                </div>
+              )}
+              {onOpenTab && (
+                <button type="button" className="about-card-go" onClick={() => { onOpenTab(f.tab); scrollMainTop(); }}>
+                  {f.name} →
+                </button>
+              )}
+            </article>
+          ))}
+        </div>
+        {/* 왼쪽 데스크톱 캡처 · 가운데 글 · 오른쪽 모바일 캡처 (사용자 지시 2026-10-07) */}
+        <div className="about-stage about-stage-d" aria-hidden>
+          <div className="about-stage-pin">
+            <div className="about-stage-frames">
+              {steps.map((st) => (
+                <div key={st.key} className={`about-stage-layer${active === st.key ? " on" : ""}`}>
+                  {mounted.has(st.key) && <StageShot path={st.shot.d} w={1200} h={760} />}
+                </div>
+              ))}
+            </div>
+            <p className="about-stage-meta">
+              <b>{String(activeIdx + 1).padStart(2, "0")}</b> / {String(steps.length).padStart(2, "0")}
+              <span>{steps[activeIdx]?.name}</span>
+            </p>
+          </div>
+        </div>
+        <div className="about-stage about-stage-m" aria-hidden>
+          <div className="about-stage-pin">
+            <div className="about-stage-frames">
+              {steps.map((st) => (
+                <div key={st.key} className={`about-stage-layer${active === st.key ? " on" : ""}`}>
+                  {mounted.has(st.key) && <StageShot path={st.shot.m} w={440} h={952} />}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="about-notes">
