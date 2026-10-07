@@ -239,13 +239,16 @@ returns json language sql stable as $$
     select * from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day')
   ),
   sh as (
-    select v.session, bool_or(v.interacted) as human, count(*) as views, sum(v.active_ms) as active_ms
+    -- 머문 시간(visible_ms) — 화면 하나당 30분 상한: 켜 두고 자리 비운 탭이 평균을 끌어올리지 않게 (2026-10-07)
+    select v.session, bool_or(v.interacted) as human, count(*) as views, sum(v.active_ms) as active_ms,
+           sum(least(v.visible_ms, 1800000)) as visible_ms
     from v group by v.session
   ),
   s as (
     select vs.*, public.visit_src(vs.ref_host) as src,
            (vs.started_at at time zone 'Asia/Seoul') as kst,
-           coalesce(sh.human, false) as human, coalesce(sh.views, 0) as views, coalesce(sh.active_ms, 0) as active_ms
+           coalesce(sh.human, false) as human, coalesce(sh.views, 0) as views, coalesce(sh.active_ms, 0) as active_ms,
+           coalesce(sh.visible_ms, 0) as visible_ms
     from public.visit_session vs left join sh on sh.session = vs.id
     where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
       -- p_human: true 사람만 · false 봇만 · null 둘 다 (사용자 지시 2026-10-05 — 종전 false 는 '둘 다'였다)
@@ -262,7 +265,10 @@ returns json language sql stable as $$
   select json_build_object(
     'total', (select json_build_object(
         'sessions', count(*), 'visitors', count(distinct visitor), 'views', coalesce(sum(views), 0),
-        'active_ms', coalesce(sum(active_ms), 0), 'revisit', count(*) filter (where revisit),
+        'active_ms', coalesce(sum(active_ms), 0), 'visible_ms', coalesce(sum(visible_ms), 0),
+        'med_active', coalesce(percentile_cont(0.5) within group (order by active_ms), 0)::bigint,
+        'med_visible', coalesce(percentile_cont(0.5) within group (order by visible_ms), 0)::bigint,
+        'revisit', count(*) filter (where revisit),
         'bounce', count(*) filter (where views <= 1),
         'bots', (select count(*) from public.visit_session x left join sh on sh.session = x.id
                  where x.started_at >= p_from and x.started_at < p_to and x.env = 'live' and not coalesce(sh.human, false)
@@ -270,10 +276,10 @@ returns json language sql stable as $$
       from s),
     'days', (select coalesce(json_agg(d order by d.day), '[]') from (
         select kst::date as day, count(*) as sessions, count(distinct visitor) as visitors,
-               sum(views) as views, sum(active_ms) as active_ms
+               sum(views) as views, sum(active_ms) as active_ms, sum(visible_ms) as visible_ms
         from s group by 1) d),
     'src', (select coalesce(json_agg(d order by d.sessions desc), '[]') from (
-        select src, count(*) as sessions, sum(views) as views, sum(active_ms) as active_ms
+        select src, count(*) as sessions, sum(views) as views, sum(active_ms) as active_ms, sum(visible_ms) as visible_ms
         from s group by 1) d),
     'ref', (select coalesce(json_agg(d order by d.sessions desc), '[]') from (
         select ref, count(*) as sessions from s where ref is not null and ref ~ '^https?://[^/]+/.' group by 1) d),
@@ -284,11 +290,15 @@ returns json language sql stable as $$
     'pages', (select coalesce(json_agg(d order by d.views desc), '[]') from (
         select public.visit_path(path) as path, count(*) as views, count(distinct session) as sessions,
                avg(active_ms)::bigint as avg_active, percentile_cont(0.5) within group (order by active_ms)::bigint as med_active,
+               avg(least(visible_ms, 1800000))::bigint as avg_visible,
+               percentile_cont(0.5) within group (order by least(visible_ms, 1800000))::bigint as med_visible,
                count(*) filter (where last) as exits, avg(scroll)::int as scroll
         from sv group by 1) d),
     'sections', (select coalesce(json_agg(d order by d.views desc), '[]') from (
         select public.visit_section(path, hash) as section, count(*) as views,
-               avg(active_ms)::bigint as avg_active, count(*) filter (where last) as exits
+               avg(active_ms)::bigint as avg_active,
+               percentile_cont(0.5) within group (order by least(visible_ms, 1800000))::bigint as med_visible,
+               count(*) filter (where last) as exits
         from sv group by 1) d),
     -- 오늘 보기의 시간대별 추이 — 시작 시각(KST)의 시로 세션·방문자·화면 조회 (기간이 하루를 넘으면 비운다)
     -- '내 정보' 동기화 — 횟수·사람 수, 사람(익명 방문자)별 횟수, 최근 기록 (사람만 보기와 무관하게 전부)

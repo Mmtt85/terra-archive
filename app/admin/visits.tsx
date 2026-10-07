@@ -20,13 +20,15 @@ import storiesData from "../data/stories.json";
 type Kv = { k: string | null; n: number };
 type FlowRow = { step: number; src: string; dst: string; n: number };
 export type Summary = {
-  total: { sessions: number; visitors: number; views: number; active_ms: number; revisit: number; bounce: number; bots: number };
+  /** visible_ms·med_* = 머문 시간(탭이 화면에 떠 있던 시간, 화면당 30분 상한) — 2026-10-07~ DB 함수 */
+  total: { sessions: number; visitors: number; views: number; active_ms: number; revisit: number; bounce: number; bots: number;
+    visible_ms?: number; med_active?: number; med_visible?: number };
   days: { day: string; sessions: number; visitors: number; views: number; active_ms: number }[];
-  src: { src: string; sessions: number; views: number; active_ms: number }[];
+  src: { src: string; sessions: number; views: number; active_ms: number; visible_ms?: number }[];
   ref: { ref: string; sessions: number }[];
   landing: { path: string; sessions: number; bounces: number }[];
-  pages: { path: string; views: number; sessions: number; avg_active: number; med_active: number; exits: number; scroll: number | null }[];
-  sections: { section: string; views: number; avg_active: number; exits: number }[];
+  pages: { path: string; views: number; sessions: number; avg_active: number; med_active: number; avg_visible?: number; med_visible?: number; exits: number; scroll: number | null }[];
+  sections: { section: string; views: number; avg_active: number; med_visible?: number; exits: number }[];
   hours: [number, number, number][];
   /** 오늘 보기 전용 — 시작 시각(KST)의 시별 (옛 DB 함수엔 없다) */
   hourly?: { hr: number; sessions: number; visitors: number; views: number }[];
@@ -661,10 +663,10 @@ export function VisitsPanel() {
   // 막대 목록의 줄 — 본문과 '전체 보기' 창이 같이 쓴다
   type BarRow = { label: string; n: number; sub?: string; title?: string; href?: string | null };
   const barRows: Record<"src" | "ref" | "landing" | "sections" | "devlang" | "tz" | "out", BarRow[]> = data ? {
-    src: data.src.map((r) => ({ label: r.src, n: r.sessions, sub: `세션당 ${fmtDur(r.active_ms / Math.max(1, r.sessions))}` })),
+    src: data.src.map((r) => ({ label: r.src, n: r.sessions, sub: `세션당 조작 ${fmtDur(r.active_ms / Math.max(1, r.sessions))}${r.visible_ms != null ? ` · 머문 ${fmtDur(r.visible_ms / Math.max(1, r.sessions))}` : ""}` })),
     ref: data.ref.map((r) => ({ label: r.ref.replace(/^https?:\/\//, ""), n: r.sessions, title: r.ref, href: /^https?:\/\//.test(r.ref) ? r.ref : null })),
     landing: data.landing.map((r) => ({ label: pathLabel(r.path), n: r.sessions, sub: `바로 이탈 ${pct(r.bounces, r.sessions)}`, title: r.path, href: siteUrl(r.path) })),
-    sections: data.sections.map((r) => ({ label: sectionLabel(r.section), n: r.views, sub: `평균 ${fmtDur(r.avg_active)}`, href: sectionUrl(r.section) })),
+    sections: data.sections.map((r) => ({ label: sectionLabel(r.section), n: r.views, sub: `평균 조작 ${fmtDur(r.avg_active)}${r.med_visible != null ? ` · 중앙 머문 ${fmtDur(r.med_visible)}` : ""}`, href: sectionUrl(r.section) })),
     devlang: [...data.device.map((r) => ({ label: DEVICE_KO[r.k ?? ""] ?? String(r.k), n: r.n })),
       ...data.site_lang.map((r) => ({ label: `언어 ${r.k ?? "?"}`, n: r.n }))],
     tz: data.tz.map((r) => ({ label: r.k ?? "?", n: r.n })),
@@ -674,7 +676,7 @@ export function VisitsPanel() {
   const pageTable = (n: number) => !data ? null : (
     <table className="vz-table">
       <thead>
-        <tr><th>화면</th><th>조회</th><th>세션</th><th>평균 조작</th><th>중앙 조작</th><th>여기서 이탈</th><th>스크롤</th></tr>
+        <tr><th>화면</th><th>조회</th><th>세션</th><th>평균 조작</th><th>중앙 조작</th><th title="탭이 화면에 떠 있던 시간 · 화면당 30분 상한">중앙 머문</th><th>여기서 이탈</th><th>스크롤</th></tr>
       </thead>
       <tbody>
         {data.pages.slice(0, n).map((p) => {
@@ -686,6 +688,7 @@ export function VisitsPanel() {
               <td>{num(p.sessions)}</td>
               <td>{fmtDur(p.avg_active)}</td>
               <td>{fmtDur(p.med_active)}</td>
+              <td>{p.med_visible != null ? fmtDur(p.med_visible) : "–"}</td>
               <td>{pct(p.exits, p.views)}</td>
               <td>{p.scroll != null ? `${p.scroll}%` : "–"}</td>
             </tr>
@@ -814,6 +817,8 @@ export function VisitsPanel() {
             <div><b>{num(t.views)}</b><span>화면 조회</span></div>
             <div><b>{t.sessions ? (t.views / t.sessions).toFixed(1) : "–"}</b><span>세션당 화면</span></div>
             <div><b>{fmtDur(t.sessions ? t.active_ms / t.sessions : 0)}</b><span>세션당 조작 시간</span></div>
+            {/* 머문 시간 — 조작 없이 읽는 시간까지. 켜 두고 잊은 탭에 흔들리지 않게 중앙값 (2026-10-07) */}
+            {t.med_visible != null && <div title="탭이 화면에 떠 있던 시간 · 화면당 30분 상한 · 세션 중앙값"><b>{fmtDur(t.med_visible)}</b><span>세션당 머문 시간(중앙)</span></div>}
             <div><b>{pct(t.bounce, t.sessions)}</b><span>한 화면만 보고 이탈</span></div>
             <div><b>{pct(t.revisit, t.sessions)}</b><span>재방문</span></div>
             <div><b>{num(t.bots)}</b><span>거른 세션(조작 없음)</span></div>
