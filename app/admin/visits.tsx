@@ -301,7 +301,7 @@ function BarList({ rows, top, unit = "" }: { rows: { label: string; n: number; s
 }
 
 /** 요일 × 시간 (KST) */
-function Heatmap({ cells }: { cells: [number, number, number][] }) {
+export function Heatmap({ cells }: { cells: [number, number, number][] }) {
   const grid = Array.from({ length: 7 }, () => Array<number>(24).fill(0));
   for (const [d, h, n] of cells) if (grid[d]) grid[d][h] += n;
   const max = Math.max(1, ...grid.flat());

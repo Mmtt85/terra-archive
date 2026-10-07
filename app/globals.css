@@ -27216,7 +27216,7 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .vzr-brand { flex: none; }
 .vzr-brand { font-size: 13px; font-weight: 800; letter-spacing: 1.5px; color: #4f7a8c; text-align: right; }
 .vzr-brand span { display: block; color: #6b7479; font-weight: 500; letter-spacing: 0; margin-top: 4px; }
-.vzr-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.vzr-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; } /* 아홉 칸 = 5 + 4 (2026-10-07) */
 .vzr-kpis > div { background: #fff; border: 1px solid #e3e1da; border-radius: 14px; padding: 16px 18px; }
 .vzr-kpis span { display: block; color: #6b7479; font-size: 13px; white-space: nowrap; }
 .vzr-kpis b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -0.6px; margin-top: 4px; white-space: nowrap; }
@@ -27247,7 +27247,10 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .vzr-hours > div { display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
 .vzr-hours i { width: 100%; background: #c39a3a; border-radius: 4px 4px 0 0; display: block; }
 .vzr-hours span { font-size: 11px; color: #6b7479; height: 16px; margin-top: 4px; }
-.vzr-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.vzr-three { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; } /* 기기·언어·지역·바깥 링크 */
+/* 리포트의 요일·시간 표 — 관리자 테마 변수 대신 리포트 고정 색 */
+.vzr .vz-heat rect { fill: #c39a3a; }
+.vzr .vz-heat .vz-axis { fill: #6b7479; font-size: 11px; }
 .vzr-foot { margin-top: 18px; color: #6b7479; font-size: 12px; display: flex; justify-content: space-between; gap: 24px; white-space: nowrap; }
 .vzr-top { margin-bottom: 18px; }
 /* 리포트의 동선 흐름 — 관리자 테마 변수 대신 리포트 고정 색 */
@@ -28333,7 +28336,30 @@ input[type="checkbox"]:disabled {
   -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
   mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
 }
-.pt-art-video { opacity: 0; transition: opacity .6s ease; }
+.pt-art-video { opacity: 0; }
 .pt-art-video.on { opacity: 1; }
-.pt-art.pt-art-off { visibility: hidden; transition: visibility 0s .6s; }
+.pt-art.pt-art-off { visibility: hidden; }
 @media (max-width: 900px) { .pt-art-video.on { opacity: .5; } }
+
+/* 움직이는 일러스트 (app/dyn-illust.tsx, 2026-10-07) — 정지 그림(영상 첫 프레임) 위에 같은 구도의 영상을
+   겹치고, 알파 검사를 통과하면 영상을 보이고 정지 그림은 감춘다 */
+/* 바꿀 때 서서히 겹치면(크로스페이드) 정지 그림과 이미 움직인 영상이 이중으로 보였다 — 한 번에 바꾼다.
+   정지 그림 = 영상 첫 프레임이고, 바꾸는 순간 영상을 0초로 되감아 이음매가 없다 (사용자 지적 2026-10-07) */
+.dyn-video { opacity: 0; pointer-events: none; }
+.dyn-video.on { opacity: 1; }
+img.dyn-off { visibility: hidden; }
+.gl-view .gl-dyn { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.gl-zoom-body .gl-dyn { position: absolute; top: 0; left: 50%; translate: -50% 0; max-width: none; }
+.skin-lightbox-dyn {
+  display: grid;
+  /* 칸 폭은 영상 원래 크기로 잡히는데 정지 그림은 줄어든 폭이라, 가운데로 모으지 않으면 정지 그림은
+     왼쪽에, 영상은 가운데에 그려져 바뀌는 순간 오른쪽으로 튀었다 (사용자 지적 2026-10-07) */
+  place-items: center;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  cursor: zoom-out;
+}
+.skin-lightbox-dyn > * { grid-area: 1 / 1; min-height: 0; max-width: 100%; max-height: 100%; }
+.skin-lightbox-dyn > img { object-fit: contain; }
+.skin-lightbox-dyn > video { width: 100%; height: 100%; object-fit: contain; }

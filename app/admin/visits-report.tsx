@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ModalWindow } from "../modal-window";
 import { usedFontCss } from "../me-share";
-import { fmtDur, pathLabel, Sankey, SECTION_KO, type Summary } from "./visits";
+import { fmtDur, Heatmap, pathLabel, Sankey, SECTION_KO, type Summary } from "./visits";
 
 const n = (v: number) => v.toLocaleString("ko-KR");
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "–");
@@ -65,7 +65,7 @@ function periodText(from: string, to: string) {
 }
 
 /** tops — 관리자 화면 목록마다 고른 개수(상위 5·10·20·30)를 그대로 따른다 (사용자 지시 2026-10-05 "페이지 설정값에 맞춰서") */
-type Tops = { src: number; landing: number; pages: number; sections: number; device: number; lang: number; tz: number };
+type Tops = { src: number; landing: number; pages: number; sections: number; device: number; lang: number; tz: number; out: number };
 function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; from: string; to: string; who: string; onlyHuman: boolean; tops: Tops }) {
   const T = data.total;
   const sessions = Math.max(1, T.sessions);
@@ -84,7 +84,9 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
   const allViews = Math.max(1, feats.reduce((a, [, v]) => a + v.views, 0));
   const featRows: Row[] = feats.slice(0, tops.sections).map(([h, v]) => [featName(h), v.views, `평균 ${fmtDur(v.active / Math.max(1, v.views))}`]);
 
-  const srcRows: Row[] = data.src.slice(0, tops.src).map((s) => [SRC[s.src] ?? s.src, s.sessions, `세션당 ${(s.views / Math.max(1, s.sessions)).toFixed(1)}화면`]);
+  const srcRows: Row[] = data.src.slice(0, tops.src).map((s) => [SRC[s.src] ?? s.src, s.sessions,
+    `세션당 ${(s.views / Math.max(1, s.sessions)).toFixed(1)}화면${s.med_visible != null ? ` · 머문 ${fmtDur(s.med_visible)}` : ""}`]);
+  const outRows: Row[] = data.out.slice(0, tops.out).map((o) => [o.host, o.n, ""]);
   const landRows: Row[] = data.landing.slice(0, tops.landing).map((l) => [pageName(l.path), l.sessions, `바로 나감 ${pct(l.bounces, l.sessions)}`]);
   const share = (rows: { k: string | null; n: number }[], names: Record<string, string>, top = 7): Row[] => {
     const tot = Math.max(1, rows.reduce((a, r) => a + r.n, 0));
@@ -94,7 +96,6 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
   // 시간대 — 요일을 합쳐 24칸
   const hrs = Array<number>(24).fill(0);
   for (const [, h, c] of data.hours) if (h >= 0 && h < 24) hrs[h] += c;
-  const hmax = Math.max(1, ...hrs);
   const peak = hrs.indexOf(Math.max(...hrs));
 
   // 한눈에 보기 — 수치에서 바로 나오는 것만 (해석을 지어내지 않는다)
@@ -126,13 +127,17 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
         <div className="vzr-brand">TERRA ARCHIVE<span>terra-archive.net</span></div>
       </header>
 
+      {/* 관리자 화면 지표와 같은 아홉 칸 — 시간은 전부 중앙값 (2026-10-07 "리포트도 화면에 있는 건 전부") */}
       <section className="vzr-kpis">
         <div><span>방문자</span><b>{n(T.visitors)}</b><em>익명 방문자 수</em></div>
         <div><span>세션</span><b>{n(T.sessions)}</b><em>방문 횟수</em></div>
-        <div><span>화면 조회</span><b>{n(T.views)}</b><em>세션당 {(T.views / sessions).toFixed(1)}화면</em></div>
-        <div><span>세션당 조작 시간</span><b>{fmtDur(T.active_ms / sessions)}</b><em>실제로 만진 시간</em></div>
+        <div><span>화면 조회</span><b>{n(T.views)}</b><em>모달·창 포함</em></div>
+        <div><span>세션당 화면</span><b>{T.med_views != null ? (T.med_views % 1 ? T.med_views.toFixed(1) : n(T.med_views)) : (T.views / sessions).toFixed(1)}</b><em>중앙값</em></div>
+        <div><span>세션당 조작 시간</span><b>{fmtDur(T.med_active ?? T.active_ms / sessions)}</b><em>실제로 만진 시간 · 중앙값</em></div>
+        {T.med_visible != null && <div><span>세션당 머문 시간</span><b>{fmtDur(T.med_visible)}</b><em>화면이 떠 있던 시간 · 중앙값</em></div>}
         <div><span>재방문</span><b>{pct(T.revisit, T.sessions)}</b><em>세션 {n(T.revisit)}개</em></div>
         <div><span>한 화면만 보고 이탈</span><b>{pct(T.bounce, T.sessions)}</b><em>세션 {n(T.bounce)}개</em></div>
+        <div><span>거른 세션</span><b>{n(T.bots)}</b><em>조작이 한 번도 없음</em></div>
       </section>
 
       {insights.length > 0 && (
@@ -165,17 +170,16 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
           <Sankey flow={data.flow} nameOf={(l) => full(SRC[l] ?? l)} links={false} />
         </section>
 
-        <section className="vzr-card wide">
-          <h2>시간대별 방문</h2><p className="vzr-hint">세션 시작 시각(한국 시간) · 가장 붐비는 때는 {peak}시</p>
-          <div className="vzr-hours">
-            {hrs.map((v, h) => <div key={h}><i style={{ height: `${Math.max(2, (v / hmax) * 100)}%` }} /><span>{h % 3 === 0 ? h : ""}</span></div>)}
-          </div>
+        <section className="vzr-card wide vzr-heatcard">
+          <h2>요일·시간대별 방문</h2><p className="vzr-hint">세션 시작 시각(한국 시간) · 진할수록 많음 · 가장 붐비는 때는 {peak}시</p>
+          <Heatmap cells={data.hours} />
         </section>
 
         <section className="vzr-card wide vzr-three">
           <div><h2>기기</h2><p className="vzr-hint">세션 비율</p><Bars rows={share(data.device, DEVICE, tops.device)} color="#4f7a8c" compact /></div>
           <div><h2>사이트 언어</h2><p className="vzr-hint">세션 비율</p><Bars rows={share(data.site_lang, LANG, tops.lang)} color="#c39a3a" compact /></div>
           <div><h2>접속 지역</h2><p className="vzr-hint">브라우저 시간대 기준 상위 {tops.tz}</p><Bars rows={share(data.tz, TZ, tops.tz)} color="#7c8f4a" compact /></div>
+          <div><h2>눌러서 나간 바깥 링크</h2><p className="vzr-hint">클릭 수</p>{outRows.length ? <Bars rows={outRows} color="#8a7bb0" compact /> : <p className="vzr-hint">없음</p>}</div>
         </section>
 
         {days.length > 1 && (
