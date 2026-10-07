@@ -270,6 +270,7 @@ returns json language sql stable as $$
         'active_ms', coalesce(sum(active_ms), 0), 'visible_ms', coalesce(sum(visible_ms), 0),
         'med_active', coalesce(percentile_cont(0.5) within group (order by active_ms), 0)::bigint,
         'med_visible', coalesce(percentile_cont(0.5) within group (order by visible_ms), 0)::bigint,
+        'med_views', coalesce(percentile_cont(0.5) within group (order by views), 0),
         'revisit', count(*) filter (where revisit),
         'bounce', count(*) filter (where views <= 1),
         'bots', (select count(*) from public.visit_session x left join sh on sh.session = x.id
@@ -281,7 +282,9 @@ returns json language sql stable as $$
                sum(views) as views, sum(active_ms) as active_ms, sum(visible_ms) as visible_ms
         from s group by 1) d),
     'src', (select coalesce(json_agg(d order by d.sessions desc), '[]') from (
-        select src, count(*) as sessions, sum(views) as views, sum(active_ms) as active_ms, sum(visible_ms) as visible_ms
+        select src, count(*) as sessions, sum(views) as views, sum(active_ms) as active_ms, sum(visible_ms) as visible_ms,
+               percentile_cont(0.5) within group (order by active_ms)::bigint as med_active,
+               percentile_cont(0.5) within group (order by visible_ms)::bigint as med_visible
         from s group by 1) d),
     'ref', (select coalesce(json_agg(d order by d.sessions desc), '[]') from (
         select ref, count(*) as sessions from s where ref is not null and ref ~ '^https?://[^/]+/.' group by 1) d),
@@ -295,11 +298,13 @@ returns json language sql stable as $$
                percentile_cont(0.5) within group (order by least(active_ms, 10800000))::bigint as med_active,
                avg(least(visible_ms, 10800000))::bigint as avg_visible,
                percentile_cont(0.5) within group (order by least(visible_ms, 10800000))::bigint as med_visible,
-               count(*) filter (where last) as exits, avg(scroll)::int as scroll
+               -- 스크롤도 중앙값 (사용자 지시 2026-10-07 "평균은 참고가 안 된다")
+               count(*) filter (where last) as exits, percentile_cont(0.5) within group (order by scroll)::int as scroll
         from sv group by 1) d),
     'sections', (select coalesce(json_agg(d order by d.views desc), '[]') from (
         select public.visit_section(path, hash) as section, count(*) as views,
                avg(least(active_ms, 10800000))::bigint as avg_active,
+               percentile_cont(0.5) within group (order by least(active_ms, 10800000))::bigint as med_active,
                percentile_cont(0.5) within group (order by least(visible_ms, 10800000))::bigint as med_visible,
                count(*) filter (where last) as exits
         from sv group by 1) d),
