@@ -31,7 +31,8 @@ description: 디시 미니 갤러리 terra_archive 의 소개글(no=5)을 최신
    await new Promise(r=>setTimeout(r,1200)); const stamp=(document.body.innerText.match(/마지막 갱신[^\n]*/)||['없음'])[0]; const w=document.querySelector('.mini_mng_adminset'); const li=w&&[...w.querySelectorAll('li')].find(l=>l.textContent.trim()==='공지 등록'); if(li){window.confirm=()=>true; const t=[...w.querySelectorAll('*')].find(e=>/게시물 ?관리/.test(e.textContent.trim())&&e.children.length<3&&e.offsetParent); t&&t.click(); setTimeout(()=>li.click(),300);} ({stamp, notice: li?'등록 누름':(w?[...w.querySelectorAll('li')].map(l=>l.textContent.trim()).join('/'):'관리 메뉴 없음')})
    ```
    `notice` 가 '공지 해제/…' 면 이미 공지라 누르지 않은 것이다.
-7. 2초쯤 뒤 javascript_tool: `[...document.querySelectorAll('.mini_mng_adminset li')].some(l=>l.textContent.trim()==='공지 해제')` → true 면 공지 등록 완료.
+7. 같은 tabId 로 view 주소를 **다시 navigate** 한 뒤 javascript_tool: `[...document.querySelectorAll('.mini_mng_adminset li')].map(l=>l.textContent.trim()).join('/')` → '공지 해제'가 있으면 공지 등록 완료.
+   (공지 등록 직후 같은 페이지에서 바로 읽으면 새로 고쳐지는 중이라 45초 멈췄다가 실패한다 — 2026-10-07 실측)
 8. tabs_close_mcp 로 탭을 닫고, 6의 시각이 1의 시각과 같은지·공지가 걸렸는지 한 줄로 보고한다.
 
 ## 지켜야 할 것
