@@ -132,7 +132,7 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
         <div><span>방문자</span><b>{n(T.visitors)}</b><em>익명 방문자 수</em></div>
         <div><span>세션</span><b>{n(T.sessions)}</b><em>방문 횟수</em></div>
         <div><span>화면 조회</span><b>{n(T.views)}</b><em>모달·창 포함</em></div>
-        <div><span>세션당 화면</span><b>{T.med_views != null ? (T.med_views % 1 ? T.med_views.toFixed(1) : n(T.med_views)) : (T.views / sessions).toFixed(1)}</b><em>중앙값</em></div>
+        <div><span>세션당 화면</span><b>{(T.views / sessions).toFixed(1)}</b><em>평균</em></div>
         <div><span>세션당 조작 시간</span><b>{fmtDur(T.med_active ?? T.active_ms / sessions)}</b><em>실제로 만진 시간 · 중앙값</em></div>
         {T.med_visible != null && <div><span>세션당 머문 시간</span><b>{fmtDur(T.med_visible)}</b><em>화면이 떠 있던 시간 · 중앙값</em></div>}
         <div><span>재방문</span><b>{pct(T.revisit, T.sessions)}</b><em>세션 {n(T.revisit)}개</em></div>

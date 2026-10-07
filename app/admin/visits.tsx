@@ -840,7 +840,9 @@ export function VisitsPanel() {
             <div><b>{num(t.visitors)}</b><span>방문자</span></div>
             <div><b>{num(t.sessions)}</b><span>세션</span></div>
             <div><b>{num(t.views)}</b><span>화면 조회</span></div>
-            <div><b>{t.med_views != null ? (t.med_views % 1 ? t.med_views.toFixed(1) : num(t.med_views)) : t.sessions ? (t.views / t.sessions).toFixed(1) : "–"}</b><span>세션당 화면(중앙)</span></div>
+            {/* 세션당 화면은 **평균** (사용자 지시 2026-10-07) — 화면 수는 정수라 중앙값이 1·2화면 세션이 절반에
+                못 미치는 한 매일 3 에 붙어 움직임이 안 보였다. 시간 지표는 그대로 중앙값 */}
+            <div title={t.med_views != null ? `중앙값 ${t.med_views}` : undefined}><b>{t.sessions ? (t.views / t.sessions).toFixed(1) : "–"}</b><span>세션당 화면(평균)</span></div>
             <div><b>{fmtDur(t.med_active ?? (t.sessions ? t.active_ms / t.sessions : 0))}</b><span>세션당 조작 시간(중앙)</span></div>
             {/* 머문 시간 — 조작 없이 읽는 시간까지. 켜 두고 잊은 탭에 흔들리지 않게 중앙값 (2026-10-07) */}
             {t.med_visible != null && <div title="탭이 화면에 떠 있던 시간 · 화면당 3시간 상한 · 세션 중앙값"><b>{fmtDur(t.med_visible)}</b><span>세션당 머문 시간(중앙)</span></div>}
