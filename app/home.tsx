@@ -4629,7 +4629,9 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
 // 그려진 뒤에 받는다(1.6MB — 첫 화면 속도 보호). 알파를 못 그리는 브라우저(사파리 계열 등)는 투명 자리가
 // 검게 나오므로 캔버스로 왼쪽 위 여백 한 점을 찍어 보고 투명할 때만 영상으로 바꾼다 (치비와 같은 검사 —
 // 그래서 R2 가 아니라 같은 출처 public/portal/ 에 둔다). 동작 줄이기 설정이면 정지 그림만.
-const PORTAL_DYN = { poster: "/portal/skadi2-dyn.webp", video: "/portal/skadi2-dyn.webm" };
+// ?v= — 같은 이름으로 다시 구우면 브라우저가 옛 영상을 4시간 붙든다(영상은 강력 새로고침으로도 잘 안 풀린다). 다시 구우면 올린다
+const PORTAL_DYN_VER = "2";
+const PORTAL_DYN = { poster: `/portal/skadi2-dyn.webp?v=${PORTAL_DYN_VER}`, video: `/portal/skadi2-dyn.webm?v=${PORTAL_DYN_VER}` };
 function PortalArt() {
   const [load, setLoad] = useState(false);
   const [live, setLive] = useState(false);
