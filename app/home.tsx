@@ -3379,15 +3379,20 @@ const MODAL_SECTIONS = [
 function ModalRail({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | null> }) {
   const { t } = useI18n();
   const [active, setActive] = useState(MODAL_SECTIONS[0].id);
+  // 목차로 고른 섹션 — 직접 스크롤(휠·터치·키)하기 전까지 그대로 켜 둔다. 특성·오퍼레이터 기록처럼 짧은
+  // 섹션은 위로 올려 붙여도 28% 선을 다음 섹션이 넘어, 누른 것과 다른 항목(한 칸 아래)이 켜졌다 (사용자 지적 2026-10-08)
+  const pinned = useRef<string | null>(null);
 
   useEffect(() => {
     const scroller = scrollRef.current;
     if (!scroller) return;
+    const unpin = () => { pinned.current = null; };
     // 지금 읽고 있는 섹션 = 스크롤러 위쪽 28% 선을 마지막으로 지나간 섹션
     const sync = () => {
       // 바닥까지 내려갔으면 마지막으로 렌더된 섹션을 활성으로. 끝 섹션이 짧으면 더 스크롤할
       // 여지가 없어 28% 선을 영영 못 넘고, 목차 마지막 항목을 눌러도 앞 항목이 켜져 있었다
       // (관련 오퍼레이터를 11번으로 넣으며 드러남 — 2026-08-13).
+      if (pinned.current) { setActive(pinned.current); return; }
       if (scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight <= 2) {
         const tail = [...MODAL_SECTIONS].reverse().find((s) => document.getElementById(s.id));
         if (tail) { setActive(tail.id); return; }
@@ -3402,15 +3407,22 @@ function ModalRail({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | 
     };
     sync();
     scroller.addEventListener("scroll", sync, { passive: true });
+    for (const ev of ["wheel", "touchstart", "keydown", "mousedown"] as const) scroller.addEventListener(ev, unpin, { passive: true });
     // 지연 로딩(복장·프로필·보이스)이 도착하면 섹션 높이가 바뀐다
     const observer = new ResizeObserver(sync);
     observer.observe(scroller.firstElementChild ?? scroller);
-    return () => { scroller.removeEventListener("scroll", sync); observer.disconnect(); };
+    return () => {
+      scroller.removeEventListener("scroll", sync);
+      for (const ev of ["wheel", "touchstart", "keydown", "mousedown"] as const) scroller.removeEventListener(ev, unpin);
+      observer.disconnect();
+    };
   }, [scrollRef]);
 
   const go = (id: string) => {
     const scroller = scrollRef.current, el = document.getElementById(id);
     if (!scroller || !el) return;
+    pinned.current = id;
+    setActive(id);
     scroller.scrollTo({ top: Math.max(0, el.offsetTop - 12), behavior: "smooth" });
   };
 
