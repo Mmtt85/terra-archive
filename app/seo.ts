@@ -142,8 +142,8 @@ const META: Record<SeoLocale, {
     ogLocale: "ko_KR",
     siteName: "테라 아카이브",
     title: "테라 아카이브 | 명일방주(Arknights) 팬사이트",
-    description: "명일방주(Arknights) 팬사이트 — 오퍼레이터 백과사전, 기반시설(인프라) 자동 편성 플래너, 공개모집(공채) 태그 계산기, 재료 파밍 효율표.",
-    keywords: ["명일방주", "Arknights", "Arknights", "오퍼레이터", "오퍼레이터 도감", "인프라", "기반시설", "기반시설 편성", "공개모집", "공채 계산기", "공개모집 태그", "재료 파밍", "파밍 효율", "이성 효율", "테라 아카이브"],
+    description: "테라 아카이브(테라아카이브) — 명일방주(Arknights) 팬사이트. 오퍼레이터 백과사전, 기반시설(인프라) 자동 편성 플래너, 공개모집(공채) 태그 계산기, 재료 파밍 효율표.",
+    keywords: ["명일방주", "Arknights", "테라아카이브", "오퍼레이터", "오퍼레이터 도감", "인프라", "기반시설", "기반시설 편성", "공개모집", "공채 계산기", "공개모집 태그", "재료 파밍", "파밍 효율", "이성 효율", "테라 아카이브"],
   },
   en: {
     path: "/en",
@@ -242,7 +242,9 @@ export function jsonLdFor(locale: SeoLocale, tab: SeoTab = "portal") {
     "@type": "WebSite",
     "@id": `${home}#website`,
     name: meta.siteName,
-    alternateName: ["Terra Archive", "테라 아카이브", "テラアーカイブ", "명일방주 팬사이트"],
+    // 붙여 쓴 '테라아카이브'·'TerraArchive' 도 같은 사이트 — 구글이 띄어쓰기 변형을 따로 봐서
+    // '테라아카이브' 검색에 안 잡혔다 (사용자 지적 2026-10-07)
+    alternateName: ["Terra Archive", "TerraArchive", "테라 아카이브", "테라아카이브", "テラアーカイブ", "명일방주 팬사이트"],
     url: home,
     description: meta.description,
     inLanguage: locale,
