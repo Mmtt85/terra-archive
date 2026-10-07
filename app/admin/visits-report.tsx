@@ -85,7 +85,7 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
   const featRows: Row[] = feats.slice(0, tops.sections).map(([h, v]) => [featName(h), v.views, `평균 ${fmtDur(v.active / Math.max(1, v.views))}`]);
 
   const srcRows: Row[] = data.src.slice(0, tops.src).map((s) => [SRC[s.src] ?? s.src, s.sessions,
-    `세션당 ${(s.views / Math.max(1, s.sessions)).toFixed(1)}화면${s.med_visible != null ? ` · 머문 ${fmtDur(s.med_visible)}` : ""}`]);
+    `세션당 ${(s.views / Math.max(1, s.sessions)).toFixed(1)}화면${s.visible_ms != null ? ` · 머문 ${fmtDur(s.visible_ms / Math.max(1, s.sessions))}` : ""}`]);
   const outRows: Row[] = data.out.slice(0, tops.out).map((o) => [o.host, o.n, ""]);
   const landRows: Row[] = data.landing.slice(0, tops.landing).map((l) => [pageName(l.path), l.sessions, `바로 나감 ${pct(l.bounces, l.sessions)}`]);
   const share = (rows: { k: string | null; n: number }[], names: Record<string, string>, top = 7): Row[] => {
@@ -127,14 +127,14 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
         <div className="vzr-brand">TERRA ARCHIVE<span>terra-archive.net</span></div>
       </header>
 
-      {/* 관리자 화면 지표와 같은 아홉 칸 — 시간은 전부 중앙값 (2026-10-07 "리포트도 화면에 있는 건 전부") */}
+      {/* 관리자 화면 지표와 같은 아홉 칸 — 전부 평균 (2026-10-07) */}
       <section className="vzr-kpis">
         <div><span>방문자</span><b>{n(T.visitors)}</b><em>익명 방문자 수</em></div>
         <div><span>세션</span><b>{n(T.sessions)}</b><em>방문 횟수</em></div>
         <div><span>화면 조회</span><b>{n(T.views)}</b><em>모달·창 포함</em></div>
         <div><span>세션당 화면</span><b>{(T.views / sessions).toFixed(1)}</b><em>평균</em></div>
-        <div><span>세션당 조작 시간</span><b>{fmtDur(T.med_active ?? T.active_ms / sessions)}</b><em>실제로 만진 시간 · 중앙값</em></div>
-        {T.med_visible != null && <div><span>세션당 머문 시간</span><b>{fmtDur(T.med_visible)}</b><em>화면이 떠 있던 시간 · 중앙값</em></div>}
+        <div><span>세션당 조작 시간</span><b>{fmtDur(T.active_ms / sessions)}</b><em>실제로 만진 시간 · 평균</em></div>
+        {T.visible_ms != null && <div><span>세션당 머문 시간</span><b>{fmtDur(T.visible_ms / sessions)}</b><em>화면이 떠 있던 시간 · 평균</em></div>}
         <div><span>재방문</span><b>{pct(T.revisit, T.sessions)}</b><em>세션 {n(T.revisit)}개</em></div>
         <div><span>한 화면만 보고 이탈</span><b>{pct(T.bounce, T.sessions)}</b><em>세션 {n(T.bounce)}개</em></div>
         <div><span>거른 세션</span><b>{n(T.bots)}</b><em>조작이 한 번도 없음</em></div>

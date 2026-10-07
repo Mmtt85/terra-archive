@@ -298,14 +298,15 @@ returns json language sql stable as $$
                percentile_cont(0.5) within group (order by least(active_ms, 10800000))::bigint as med_active,
                avg(least(visible_ms, 10800000))::bigint as avg_visible,
                percentile_cont(0.5) within group (order by least(visible_ms, 10800000))::bigint as med_visible,
-               -- 스크롤도 중앙값 (사용자 지시 2026-10-07 "평균은 참고가 안 된다")
-               count(*) filter (where last) as exits, percentile_cont(0.5) within group (order by scroll)::int as scroll
+               -- 스크롤은 평균 (2026-10-07 — 한때 중앙값이었다가 지표 전부 평균으로 되돌렸다)
+               count(*) filter (where last) as exits, avg(scroll)::int as scroll
         from sv group by 1) d),
     'sections', (select coalesce(json_agg(d order by d.views desc), '[]') from (
         select public.visit_section(path, hash) as section, count(*) as views,
                avg(least(active_ms, 10800000))::bigint as avg_active,
                percentile_cont(0.5) within group (order by least(active_ms, 10800000))::bigint as med_active,
                percentile_cont(0.5) within group (order by least(visible_ms, 10800000))::bigint as med_visible,
+               avg(least(visible_ms, 10800000))::bigint as avg_visible,
                count(*) filter (where last) as exits
         from sv group by 1) d),
     -- 오늘 보기의 시간대별 추이 — 시작 시각(KST)의 시로 세션·방문자·화면 조회 (기간이 하루를 넘으면 비운다)
