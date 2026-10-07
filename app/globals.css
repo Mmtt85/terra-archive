@@ -28166,3 +28166,53 @@ html:not(.dark):not(.rg-theme) .potential-list article > span {
 html:not(.dark):not(.rg-theme) .ac-season { color: var(--tint-lime-ink); border-color: color-mix(in srgb, var(--tint-lime-ink) 45%, transparent); }
 /* 헤더 이벤트 목록 — 이벤트 공백일 안내 한 줄 */
 .event-menu-empty { margin: 4px 2px 8px; font-size: 13px; color: var(--muted); }
+
+/* ── 공용 체크박스 (사용자 2026-10-07 "기본 체크버튼 같아 못생겼다") — 사이트의 모든 체크박스가 이 모양.
+   각진 판 + 가는 선, 고르면 '선택됨' 역할색(--btn-on-*) 면에 체크 표시. 다크에선 역할색이 뒤집혀 그대로 선다.
+   ⚠ 따로 꾸미고 싶으면 이 규칙을 덮지 말고 체크박스를 숨긴 라벨 장치로 만든다(공채 '4★ 이상만' 처럼) */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: none;
+  display: inline-grid;
+  place-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--white);
+  vertical-align: -3px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+input[type="checkbox"]::after {
+  content: "";
+  width: 8px;
+  height: 4px;
+  border-left: 2px solid var(--btn-on-ink);
+  border-bottom: 2px solid var(--btn-on-ink);
+  transform: translateY(-1px) rotate(-45deg) scale(0);
+  transition: transform 0.12s ease;
+}
+input[type="checkbox"]:checked {
+  background: var(--btn-on-bg);
+  border-color: var(--btn-on-bg);
+}
+input[type="checkbox"]:checked::after {
+  transform: translateY(-1px) rotate(-45deg) scale(1);
+}
+input[type="checkbox"]:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+input[type="checkbox"]:checked:hover:not(:disabled) {
+  border-color: var(--btn-on-bg);
+}
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+input[type="checkbox"]:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
