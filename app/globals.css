@@ -12027,10 +12027,12 @@ html.dark .story-card:hover .story-thumb img {
   font: 700 12.5px/1 var(--mono);
   cursor: pointer;
 }
+/* 호버 = '선택됨' 역할색(명암 반전 쌍). 종전 --chip + --white 는 글자색이 다른 규칙에 눌려
+   검은 글자가 짙은 회색 위에 남았다 (사용자 지적 2026-10-07) */
 .about-card-go:hover {
-  background: var(--chip);
-  color: var(--white);
-  border-color: var(--border-hover);
+  background: var(--btn-on-bg);
+  color: var(--btn-on-ink);
+  border-color: var(--btn-on-bg);
 }
 .about-notes {
   display: grid;
@@ -28327,6 +28329,7 @@ input[type="checkbox"]:disabled {
 .pt-art-dyn {
   width: min(50vw, 760px);
   object-position: right center;
+  translate: 0 -52px; /* 조금씩 위로 (사용자 지시 2026-10-07, 세 번) */
   -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
   mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
 }

@@ -26,7 +26,7 @@ type ShotPair = { d: string; m: string };
 // 옛 캡처가 남는데, 쿼리가 바뀌면 새 캐시 키라 전부 즉시 새로 받는다 (2026-08-02).
 // ⚠ 순서 주의: 이 값을 올린 뒤 r2-sync 전에 /about을 열면, 새 쿼리 키에 옛 이미지가
 // 엣지 캐시(max-age 14400)로 4시간 박힌다. r2-sync를 먼저 돌리고 나서 올릴 것 (2026-08-13).
-const SHOT_VER = "20261007";
+const SHOT_VER = "2026100702";
 const PORTAL_SHOT: ShotPair = { d: "/about/portal.webp", m: "/about/portal-m.webp" };
 const HOME_NAME: Record<Locale, string> = { ko: "홈 화면", en: "Home", ja: "ホーム" };
 const CHRONICLE_SHOT: ShotPair = { d: "/about/chronicle.webp", m: "/about/chronicle-m.webp" };

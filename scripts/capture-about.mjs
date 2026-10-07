@@ -72,8 +72,11 @@ for (const loc of LOCALES) {
       // 첫 페인트 전에 테마 고정 (ta-theme) — 다크/라이트 플래시 방지
       await ctx.addInitScript((t) => { try { localStorage.setItem("ta-theme", t); } catch (e) {} }, theme);
       // 제안 버튼(모바일 헤더 버튼 · PC FAB · 패널)은 소개 스샷에서 감춘다 (사용자 요청 2026-07-22)
+      // + NEW·중요 배지, 헤더 치비 스카디(대화 창 포함)도 뺀다 (사용자 요청 2026-10-07 — 시점 따라 바뀌는 장식)
       await ctx.addInitScript(() => {
-        const css = ".feedback-header-btn,.feedback-fab,.feedback-widget{display:none !important}";
+        const css = ".feedback-header-btn,.feedback-fab,.feedback-widget,"
+          + ".new-badge,.chlog-imp-dot,.chlog-imp,"
+          + ".header-chibi,.chibi-chat{display:none !important}";
         const inject = () => { const s = document.createElement("style"); s.textContent = css; document.head.appendChild(s); };
         if (document.head) inject(); else document.addEventListener("DOMContentLoaded", inject);
       });
