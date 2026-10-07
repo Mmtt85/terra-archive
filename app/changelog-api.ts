@@ -136,6 +136,20 @@ export async function fetchLatestImportant(): Promise<{ id: string } | null> {
   return rows[0] ?? null;
 }
 
+/** 최근 등록한 항목 id — NEW 배지는 **올린 지 3일**이면 저절로 붙는다 (사용자 지시 2026-10-07 "업뎃 올리면 NEW 는
+ *  자동으로"). 종전엔 whats-new.ts 에 'chlog:<id>' 를 손으로 넣어야 해서 빠뜨린 항목엔 NEW 가 없었다.
+ *  기준은 등록 시각(created_at) — 날짜(released_at)를 지난날로 적은 항목도 올린 때부터 센다 */
+export const NEW_DAYS = 3;
+export async function fetchRecentChangeIds(): Promise<string[]> {
+  const since = new Date(Date.now() - NEW_DAYS * 86400_000).toISOString();
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/changelog?select=id&created_at=gte.${encodeURIComponent(since)}&order=created_at.desc&limit=30`,
+    { headers: anonHeaders },
+  );
+  if (!res.ok) return [];
+  return ((await res.json()) as { id: string }[]).map((r) => r.id);
+}
+
 /** 관리자 목록 — 기간 제한 없이 최신순 전체 (사이트 모달은 7일 창 단위로 나눠 읽는다) */
 export async function fetchAllChanges(): Promise<ChangeRow[]> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/changelog?${SELECT}&limit=500`, { headers: anonHeaders });

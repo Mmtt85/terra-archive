@@ -56,6 +56,11 @@ curl -s "$API?select=seq,created_at,ko&released_at=eq.$DATE&order=seq.asc" "${H[
 - `href`: 사이트 내부 경로 하나 (`/operators`, `/infra`, `/stories` …). 없으면 생략.
 - `released_at`: 생략하면 오늘. 배포한 날로 맞춘다.
 
+## NEW 배지는 자동 (2026-10-07~)
+
+올린 지 3일 안의 항목에는 사이트가 **저절로 NEW** 를 붙인다(created_at 기준 — `changelog-api.ts` fetchRecentChangeIds).
+`whats-new.ts` 에 'chlog:<id>' 를 손으로 넣지 않는다. 헤더 버튼 NEW 는 열면, 목록 NEW 는 그 줄이 보이면 꺼진다.
+
 ## 등록 뒤에는 반드시 dc-promo (사용자 규칙 2026-10-07)
 
 업데이트 내역을 올리면 **곧바로 `dc-promo` 스킬을 이어서 실행**한다 — 디시 미니갤 소개글(최근 업데이트)이

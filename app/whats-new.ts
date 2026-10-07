@@ -35,9 +35,8 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "ac-deck": "2026-08-29", // 덱편성 시뮬레이터 — 배치·정비구역에 기물을 담아 맹약 상태를 계산 (/autochess 제목 줄 버튼)
   "ac-prts": "2026-09-07", // PRTS 시뮬레이션 — 게임 창을 물려 밴 기물·시뮬레이션 종류·전략·맹약 중첩을 화면에서 읽는다 (/autochess 제목 줄 버튼, 2026-09-06 폐기 → 09-07 재가동)
   "ac-party": "2026-09-21", // 파티 공유 — 게임의 '맹약 초대' 문구로 같은 방에 모여 전략·목표 맹약을 서로 본다 (/autochess 제목 줄 버튼)
-  // 업데이트 내역 항목 NEW — 'chlog:<changelog 행 id>' (사용자 지시 2026-10-07). 3일 동안 헤더 '업데이트 내역'
-  // 버튼과 목록의 그 항목에 NEW 가 붙고, 누르면 사라진다 (new-badge.tsx). 새로 올린 항목을 띄우려면 여기 한 줄.
-  "chlog:a0479df2-defe-49ec-86cc-5ee428c8c532": "2026-10-07", // 테라 연대기를 테라력 연도별로 새 단장
+  // 업데이트 내역 항목 NEW 는 2026-10-07 부터 **자동**이다 — 올린 지 3일 안의 항목(changelog-api.ts fetchRecentChangeIds).
+  // 여기 'chlog:<id>' 를 손으로 넣지 않는다.
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
