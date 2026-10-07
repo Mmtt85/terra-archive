@@ -28426,3 +28426,78 @@ img.dyn-off { visibility: hidden; }
    안내는 옅게, 계정 기록이 있는 사람은 마운트 전까지 글자만 감춘다 */
 .hdr-synced.idle b { color: var(--muted); font-weight: 600; }
 html[data-me] .hdr-synced.idle { visibility: hidden; }
+
+/* 홈 스카디 TV 노이즈 (2026-10-07) — 그림 전체를 흔들지 않는다(사용자 지시 "부분부분 작은 노이즈, 전체가 흔들리면 안 돼").
+   ① 아주 옅은 지글거림 바탕 ② 가는 띠 셋이 서로 다른 박자로 그림 곳곳에 잠깐(한두 프레임) 번쩍이며 옆으로 찢어진다.
+   칸은 영상과 같은 정사각, 가면은 그림 모양(정지 그림) × 둥근 가장자리라 그림 밖엔 안 생긴다 */
+.pt-art-noise {
+  display: block;
+  bottom: auto;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  pointer-events: none;
+  overflow: hidden;
+  --pt-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --pt-grain-faint: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .34 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  -webkit-mask-image: var(--pt-mask), radial-gradient(closest-side, #000 62%, transparent 100%);
+  mask-image: var(--pt-mask), radial-gradient(closest-side, #000 62%, transparent 100%);
+  -webkit-mask-size: contain, 100% 100%;
+  mask-size: contain, 100% 100%;
+  -webkit-mask-position: right center, center;
+  mask-position: right center, center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  /* 부모 opacity 는 띠까지 흐리게 하므로 1 로 두고, 바탕 지글거림만 옅은 무늬(알파 .22)로 */
+  background: var(--pt-grain-faint);
+  background-size: 160px 160px;
+  mix-blend-mode: overlay;
+  animation: pt-grain .32s steps(4) infinite;
+}
+.pt-art-noise::before, .pt-art-noise::after {
+  content: "";
+  position: absolute;
+  opacity: 0;
+  /* 색이 갈라진 띠 — 빨강·하양·청록이 어긋나 겹친 찢김 + 굵은 지글 무늬 */
+  background:
+    linear-gradient(90deg, transparent, rgba(255,60,90,.7) 12%, rgba(255,255,255,.95) 35%, rgba(90,230,255,.8) 62%, rgba(255,255,255,.9) 85%, transparent),
+    var(--pt-grain);
+  background-size: 100% 100%, 70px 70px;
+  mix-blend-mode: screen;
+}
+.pt-art-noise::before { left: 4%; width: 68%; height: 3.4%; animation: pt-band-a 2.9s steps(1) infinite; }
+.pt-art-noise::after { left: 26%; width: 56%; height: 2%; animation: pt-band-b 3.7s steps(1) infinite; }
+@keyframes pt-grain {
+  0% { background-position: 0 0; } 25% { background-position: -40px 22px; }
+  50% { background-position: 31px -57px; } 75% { background-position: -73px -14px; } 100% { background-position: 12px 45px; }
+}
+/* 띠 A — 2.9초에 세 번, 높이를 바꿔 가며 두세 프레임씩 찢어진다 (사용자 "조금 더 강렬하게") */
+@keyframes pt-band-a {
+  0%, 100% { opacity: 0; }
+  18% { opacity: 1; top: 21%; transform: translateX(-14px) scaleY(1.4); background-position: 0 0, 10px 0; }
+  19% { opacity: .8; top: 22.5%; transform: translateX(11px); background-position: 0 0, -30px 4px; }
+  20% { opacity: 1; top: 21.5%; transform: translateX(-6px) scaleY(.7); }
+  21% { opacity: 0; }
+  52% { opacity: .95; top: 63%; transform: translateX(12px); background-position: 0 0, 50px 9px; }
+  53% { opacity: .7; top: 64%; transform: translateX(-9px) scaleY(1.6); }
+  54% { opacity: 0; }
+  83% { opacity: 1; top: 38%; transform: translateX(-10px); background-position: 0 0, -18px -7px; }
+  84% { opacity: 0; }
+}
+/* 띠 B — 3.7초에 세 번, 가늘고 빠르게 */
+@keyframes pt-band-b {
+  0%, 100% { opacity: 0; }
+  9% { opacity: 1; top: 45%; transform: translateX(16px); background-position: 0 0, -12px 3px; }
+  10% { opacity: 0; }
+  41% { opacity: 1; top: 13%; transform: translateX(-12px) scaleY(1.8); background-position: 0 0, 22px -6px; }
+  42% { opacity: .7; top: 14%; transform: translateX(8px); }
+  43% { opacity: 0; }
+  71% { opacity: .95; top: 77%; transform: translateX(-15px); background-position: 0 0, 40px 12px; }
+  72% { opacity: .6; top: 76%; transform: translateX(10px) scaleY(1.5); }
+  73% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pt-art-noise { display: none; }
+}
+

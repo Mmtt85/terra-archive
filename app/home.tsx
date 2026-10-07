@@ -4675,6 +4675,9 @@ function PortalArt() {
         <video className={`pt-art pt-art-dyn pt-art-video${live ? " on" : ""}`} src={PORTAL_DYN.video} autoPlay loop muted playsInline
           preload="auto" aria-hidden onLoadedData={(e) => probe(e.currentTarget)} />
       )}
+      {/* TV 노이즈 (사용자 지시 2026-10-07 "찌직 찌직 하는 테레비 노이즈") — 그림 모양(정지 그림)을 가면으로 씌워
+          그림 위에만 옅게 깔리고, 몇 초에 한 번 화면이 튄다(CSS). 장식이라 동작 줄이기면 CSS 가 끈다 */}
+      <span className="pt-art pt-art-dyn pt-art-noise" aria-hidden style={{ ["--pt-mask" as string]: `url("${PORTAL_DYN.poster}")` }} />
     </>
   );
 }
