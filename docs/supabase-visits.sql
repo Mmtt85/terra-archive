@@ -239,11 +239,12 @@ returns json language sql stable as $$
     select * from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day')
   ),
   sh as (
-    -- 머문 시간(visible_ms)·조작 시간 — 화면 하나당 **3시간 상한**을 둘 다에 (2026-10-07). 통합전략은 한 판에
+    -- 머문 시간(visible_ms)·조작 시간 — 화면 하나당 **1시간 상한**을 둘 다에 (2026-10-07, 3시간 → 1시간: 사용자 "1시간 넘게
+    -- 켜 둔 건 게임 안 하고 그냥 켜 둔 것"). 종전 3시간 사유: 통합전략은 한 판에
     -- 1시간씩 띄워 두고 참고하니 30분 상한은 진짜 사용을 잘랐다(사용자 지적). 밤새 켜 둔 탭 같은 극단값만 자른다.
     -- 같은 상한이라 화면마다 조작 ≤ 머문 이 늘 성립한다(수집이 '보일 때만 조작을 센다'이므로)
-    select v.session, bool_or(v.interacted) as human, count(*) as views, sum(least(v.active_ms, 10800000)) as active_ms,
-           sum(least(v.visible_ms, 10800000)) as visible_ms
+    select v.session, bool_or(v.interacted) as human, count(*) as views, sum(least(v.active_ms, 3600000)) as active_ms,
+           sum(least(v.visible_ms, 3600000)) as visible_ms
     from v group by v.session
   ),
   s as (
@@ -294,19 +295,19 @@ returns json language sql stable as $$
         from s group by 1) d),
     'pages', (select coalesce(json_agg(d order by d.views desc), '[]') from (
         select public.visit_path(path) as path, count(*) as views, count(distinct session) as sessions,
-               avg(least(active_ms, 10800000))::bigint as avg_active,
-               percentile_cont(0.5) within group (order by least(active_ms, 10800000))::bigint as med_active,
-               avg(least(visible_ms, 10800000))::bigint as avg_visible,
-               percentile_cont(0.5) within group (order by least(visible_ms, 10800000))::bigint as med_visible,
+               avg(least(active_ms, 3600000))::bigint as avg_active,
+               percentile_cont(0.5) within group (order by least(active_ms, 3600000))::bigint as med_active,
+               avg(least(visible_ms, 3600000))::bigint as avg_visible,
+               percentile_cont(0.5) within group (order by least(visible_ms, 3600000))::bigint as med_visible,
                -- 스크롤은 평균 (2026-10-07 — 한때 중앙값이었다가 지표 전부 평균으로 되돌렸다)
                count(*) filter (where last) as exits, avg(scroll)::int as scroll
         from sv group by 1) d),
     'sections', (select coalesce(json_agg(d order by d.views desc), '[]') from (
         select public.visit_section(path, hash) as section, count(*) as views,
-               avg(least(active_ms, 10800000))::bigint as avg_active,
-               percentile_cont(0.5) within group (order by least(active_ms, 10800000))::bigint as med_active,
-               percentile_cont(0.5) within group (order by least(visible_ms, 10800000))::bigint as med_visible,
-               avg(least(visible_ms, 10800000))::bigint as avg_visible,
+               avg(least(active_ms, 3600000))::bigint as avg_active,
+               percentile_cont(0.5) within group (order by least(active_ms, 3600000))::bigint as med_active,
+               percentile_cont(0.5) within group (order by least(visible_ms, 3600000))::bigint as med_visible,
+               avg(least(visible_ms, 3600000))::bigint as avg_visible,
                count(*) filter (where last) as exits
         from sv group by 1) d),
     -- 오늘 보기의 시간대별 추이 — 시작 시각(KST)의 시로 세션·방문자·화면 조회 (기간이 하루를 넘으면 비운다)

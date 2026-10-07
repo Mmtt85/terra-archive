@@ -20,7 +20,7 @@ import storiesData from "../data/stories.json";
 type Kv = { k: string | null; n: number };
 type FlowRow = { step: number; src: string; dst: string; n: number };
 export type Summary = {
-  /** visible_ms·med_* = 머문 시간(탭이 화면에 떠 있던 시간, 화면당 3시간 상한) — 2026-10-07~ DB 함수 */
+  /** visible_ms·med_* = 머문 시간(탭이 화면에 떠 있던 시간, 화면당 1시간 상한) — 2026-10-07~ DB 함수 */
   total: { sessions: number; visitors: number; views: number; active_ms: number; revisit: number; bounce: number; bots: number;
     visible_ms?: number; med_active?: number; med_visible?: number; med_views?: number };
   days: { day: string; sessions: number; visitors: number; views: number; active_ms: number }[];
@@ -702,7 +702,7 @@ export function VisitsPanel() {
   const pageTable = (n: number) => !data ? null : (
     <table className="vz-table">
       <thead>
-        <tr><th>화면</th><th>조회</th><th>세션</th><th>평균 조작</th><th title="탭이 화면에 떠 있던 시간 · 화면당 3시간 상한">평균 머문</th><th>여기서 이탈</th><th title="평균">스크롤</th></tr>
+        <tr><th>화면</th><th>조회</th><th>세션</th><th>평균 조작</th><th title="탭이 화면에 떠 있던 시간 · 화면당 1시간 상한">평균 머문</th><th>여기서 이탈</th><th title="평균">스크롤</th></tr>
       </thead>
       <tbody>
         {data.pages.slice(0, n).map((p) => {
@@ -841,10 +841,10 @@ export function VisitsPanel() {
             <div><b>{num(t.sessions)}</b><span>세션</span></div>
             <div><b>{num(t.views)}</b><span>화면 조회</span></div>
             {/* 지표는 전부 **평균** = 총량 ÷ 세션 (사용자 지시 2026-10-07 — 중앙값은 정수 화면 수에선 매일 3 에 붙고,
-                시간도 '실제로 쓴 양'이 안 보였다). 머문 시간은 화면당 3시간 상한이라 켜 두고 잊은 탭이 크게 흔들지 못한다 */}
+                시간도 '실제로 쓴 양'이 안 보였다). 머문 시간은 화면당 1시간 상한이라 켜 두고 잊은 탭이 크게 흔들지 못한다 */}
             <div><b>{t.sessions ? (t.views / t.sessions).toFixed(1) : "–"}</b><span>세션당 화면</span></div>
             <div><b>{fmtDur(t.sessions ? t.active_ms / t.sessions : 0)}</b><span>세션당 조작 시간</span></div>
-            {t.visible_ms != null && <div title="탭이 화면에 떠 있던 시간 · 화면당 3시간 상한"><b>{fmtDur(t.sessions ? t.visible_ms / t.sessions : 0)}</b><span>세션당 머문 시간</span></div>}
+            {t.visible_ms != null && <div title="탭이 화면에 떠 있던 시간 · 화면당 1시간 상한"><b>{fmtDur(t.sessions ? t.visible_ms / t.sessions : 0)}</b><span>세션당 머문 시간</span></div>}
             <div><b>{pct(t.bounce, t.sessions)}</b><span>한 화면만 보고 이탈</span></div>
             <div><b>{pct(t.revisit, t.sessions)}</b><span>재방문</span></div>
             <div><b>{num(t.bots)}</b><span>거른 세션(조작 없음)</span></div>
