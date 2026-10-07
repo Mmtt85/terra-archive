@@ -413,6 +413,15 @@ function Card({ no, title, aside, className, children }: { no: string; title: st
   );
 }
 
+/** '전부 보기' 창 — 접힌 목록의 전체를 창으로 띄운다 (사용자 2026-10-07 — 그 자리에서 펼치면 페이지가 너무 길어졌다) */
+function MoreModal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <ModalWindow label={title} className="operator-modal me-list-modal me-all-modal" onClose={onClose}>
+      <div className="me-all-body">{children}</div>
+    </ModalWindow>
+  );
+}
+
 /** 접힌 목록의 '전부 보기 / 접기' */
 function MoreButton({ open, total, onToggle }: { open: boolean; total: number; onToggle: () => void }) {
   const { locale, t } = useI18n();
@@ -796,13 +805,49 @@ function Progress({ me, stages, onOpenStage }: { me: MeData; stages: StageDoc | 
   const starTotal = inCat.reduce((n, g) => n + g.star.length, 0);
   const camp = data.list.find((g) => g.cat === "camp");
   const ordered = pendingFirst ? [...inCat].sort((a, b) => pendingOf(b).length - pendingOf(a).length || a.order - b.order) : inCat;
-  const shown = all ? ordered : ordered.slice(0, EP_FOLD);
+  const shown = ordered.slice(0, EP_FOLD);
   // 묶음별로 나눠 띄운다 — 지금 고른 분류 안에서
   const openStages = (title: string, pick: (g: ProgGroup) => string[]) => setStageList((cur) => ({
     title, key: (cur?.key ?? 0) + 1,
     groups: inCat.map((g) => ({ name: g.name, ids: pick(g) })).filter((x) => x.ids.length),
   }));
   const catCount = (c: ProgCat) => data.list.filter((g) => g.cat === c).reduce((n, g) => n + g.left.length, 0);
+  // 목록 그리기 — 본문(앞 몇 줄)과 '전부 보기' 창(전체)이 같이 쓴다 (사용자 2026-10-07 "페이지가 너무 길어진다")
+  const epList = (items: typeof ordered, withRef: boolean) => (
+    <ul className="me-eps">
+      {items.map((g) => {
+        const pending = pendingOf(g);
+        const open = openKey === g.key;
+        return (
+          <li key={g.key} className={pending.length ? "has-left" : "all-clear"}>
+            <button type="button" className="me-ep-row" disabled={!pending.length} aria-expanded={open} onClick={() => setOpenKey(open ? null : g.key)}>
+              <span className="me-ep-name">{g.name}</span>
+              <span className="me-bar" style={{ "--p": `${(g.clear / Math.max(1, g.total)) * 100}%` } as React.CSSProperties} />
+              <b>{fmt(g.clear)}<small>/{fmt(g.total)}</small></b>
+              {/* ★ 만으로는 뭔지 몰라 글자로 (사용자 지적 2026-10-05) — 3성(완벽 작전) 클리어 수 */}
+              {g.cat === "camp" ? <em /> : <em title={t("3성 클리어한 작전 수")}>{t("3성")} {fmt(g.perfect)}</em>}
+              {g.open === 0 ? <em className="me-closed" title={t("지금은 들어갈 수 없어 미클리어에서 뺀 묶음")}>{t("기간 종료")}</em>
+                : g.tough > 0 ? <em className="me-tough" title={t("고난")}>{t("고난")} {g.toughClear}/{g.tough}</em> : <em />}
+            </button>
+            {open && pending.length > 0 && (
+              <div className="me-stage-chips">
+                {pending.map((id) => {
+                  const s = data.byId.get(id);
+                  if (!s) return null;
+                  const kills = g.cat === "camp" ? camps?.[id] ?? 0 : null;
+                  return (
+                    <button key={id} type="button" className={g.left.includes(id) ? "left" : "star"} onClick={() => onOpenStage(id)} title={s.name}>
+                      <b>{s.code}</b><span>{s.name}{kills != null ? ` · ${fmt(kills)}/400` : ""}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
   return (
     <Card no="PROGRESS" title={t("진행 상황")}
       aside={<>
@@ -834,40 +879,9 @@ function Progress({ me, stages, onOpenStage }: { me: MeData; stages: StageDoc | 
           </button>
         ))}
       </div>
-      <ul className="me-eps">
-        {shown.map((g) => {
-          const pending = pendingOf(g);
-          const open = openKey === g.key;
-          return (
-            <li key={g.key} className={pending.length ? "has-left" : "all-clear"}>
-              <button type="button" className="me-ep-row" disabled={!pending.length} aria-expanded={open} onClick={() => setOpenKey(open ? null : g.key)}>
-                <span className="me-ep-name">{g.name}</span>
-                <span className="me-bar" style={{ "--p": `${(g.clear / Math.max(1, g.total)) * 100}%` } as React.CSSProperties} />
-                <b>{fmt(g.clear)}<small>/{fmt(g.total)}</small></b>
-                {/* ★ 만으로는 뭔지 몰라 글자로 (사용자 지적 2026-10-05) — 3성(완벽 작전) 클리어 수 */}
-                {g.cat === "camp" ? <em /> : <em title={t("3성 클리어한 작전 수")}>{t("3성")} {fmt(g.perfect)}</em>}
-                {g.open === 0 ? <em className="me-closed" title={t("지금은 들어갈 수 없어 미클리어에서 뺀 묶음")}>{t("기간 종료")}</em>
-                  : g.tough > 0 ? <em className="me-tough" title={t("고난")}>{t("고난")} {g.toughClear}/{g.tough}</em> : <em />}
-              </button>
-              {open && pending.length > 0 && (
-                <div className="me-stage-chips">
-                  {pending.map((id) => {
-                    const s = data.byId.get(id);
-                    if (!s) return null;
-                    const kills = g.cat === "camp" ? camps?.[id] ?? 0 : null;
-                    return (
-                      <button key={id} type="button" className={g.left.includes(id) ? "left" : "star"} onClick={() => onOpenStage(id)} title={s.name}>
-                        <b>{s.code}</b><span>{s.name}{kills != null ? ` · ${fmt(kills)}/400` : ""}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      {ordered.length > EP_FOLD && <MoreButton open={all} total={ordered.length} onToggle={() => setAll((v) => !v)} />}
+      {epList(shown, true)}
+      {ordered.length > EP_FOLD && <MoreButton open={false} total={ordered.length} onToggle={() => setAll(true)} />}
+      {all && <MoreModal title={t("진행 상황")} onClose={() => setAll(false)}>{epList(ordered, false)}</MoreModal>}
       {stageList && (
         <ModalWindow key={`sl-${stageList.key}`} label={stageList.title} className="operator-modal me-list-modal" onClose={() => setStageList(null)}>
           <div className="me-list">
@@ -915,7 +929,25 @@ function RecruitPool({ mine, opById, onShowOperator }: { mine: Map<string, Accou
   const list = mode === "missing" ? missing : notMax;
   const [gridRef, cols] = useGridCols();
   const fold = (cols || 9) * OPS_ROWS;
-  const shown = all ? list : list.slice(0, fold);
+  const shown = list.slice(0, fold);
+  // 목록 그리기 — 본문(앞 몇 줄)과 '전부 보기' 창(전체)이 같이 쓴다 (사용자 2026-10-07 "페이지가 너무 길어진다")
+  const recList = (items: typeof list, withRef: boolean) => (
+    <ul className="me-ops" ref={withRef ? gridRef : undefined}>
+      {items.map((o) => {
+        const op = opById.get(o.id)!;
+        const c = mine.get(o.id);
+        return (
+          <li key={o.id}>
+            <button type="button" onClick={() => onShowOperator?.(o.id)} title={op.name}>
+              <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(o.id)} alt="" width={56} height={56} loading="lazy" /></span>
+              <span className="me-op-name">{op.name}</span>
+              <em>{c ? `${op.rarity}★ · ${potText(locale, c.potential)}` : `${op.rarity}★`}</em>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
   return (
     <Card no="RECRUITMENT" title={t("공개모집으로 채울 오퍼")}
       aside={(
@@ -925,23 +957,10 @@ function RecruitPool({ mine, opById, onShowOperator }: { mine: Map<string, Accou
         </div>
       )}>
       {list.length ? (
-        <ul className="me-ops" ref={gridRef}>
-          {shown.map((o) => {
-            const op = opById.get(o.id)!;
-            const c = mine.get(o.id);
-            return (
-              <li key={o.id}>
-                <button type="button" onClick={() => onShowOperator?.(o.id)} title={op.name}>
-                  <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(o.id)} alt="" width={56} height={56} loading="lazy" /></span>
-                  <span className="me-op-name">{op.name}</span>
-                  <em>{c ? `${op.rarity}★ · ${potText(locale, c.potential)}` : `${op.rarity}★`}</em>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        recList(shown, true)
       ) : <p className="me-note">{mode === "missing" ? t("공개모집으로 나오는 오퍼를 모두 보유하고 있습니다.") : t("공개모집 오퍼의 잠재가 모두 6입니다.")}</p>}
-      {list.length > fold && <MoreButton open={all} total={list.length} onToggle={() => setAll((v) => !v)} />}
+      {list.length > fold && <MoreButton open={false} total={list.length} onToggle={() => setAll(true)} />}
+      {all && <MoreModal title={t("공개모집으로 채울 오퍼")} onClose={() => setAll(false)}>{recList(list, false)}</MoreModal>}
       <p className="me-note">{t("1·2성은 모집 시간을 줄여야 나옵니다 — 1성은 3시간 50분 이하, 2성은 7시간 30분 이하.")}</p>
     </Card>
   );
@@ -977,29 +996,34 @@ function Friends({ me, now, opById, onShowOperator }: { me: MeData; now: number;
   const list = me.profile?.friends;
   if (!me.profile) return null;
   const sorted = [...(list ?? [])].sort((a, b) => b.lastOnline - a.lastOnline);
+  // 목록 그리기 — 본문(앞 몇 줄)과 '전부 보기' 창(전체)이 같이 쓴다 (사용자 2026-10-07 "페이지가 너무 길어진다")
+  const friendList = (items: typeof sorted, withRef: boolean) => (
+    <ul className="me-friends">
+      {items.map((f) => (
+        <li key={`${f.nickName}#${f.nickNumber}`}>
+          <span className="me-avatar sm">{f.secretary && opById.has(f.secretary) ? <img src={avatarOf(f.secretary)} alt="" width={44} height={44} loading="lazy" /> : <b aria-hidden>Dr.</b>}</span>
+          <div className="me-friend-name">
+            <b>{f.nickName}<small>#{f.nickNumber}</small></b>
+            <span>Lv.{f.level} · {rel(t, now, f.lastOnline)}</span>
+          </div>
+          <ul className="me-ops me-ops-mini">
+            {f.assist.map((a, i) => {
+              const op = opById.get(a.id);
+              return op ? <OpChip key={`${a.id}-${i}`} op={op} c={a} skillIndex={a.skillIndex} onShowOperator={onShowOperator} /> : null;
+            })}
+          </ul>
+        </li>
+      ))}
+    </ul>
+  );
   return (
     <Card no="FRIENDS" title={t("친구")} aside={list ? <small>{fmt(list.length)} / {me.profile.status.friendLimit ? fmt(me.profile.status.friendLimit) : "—"}</small> : null}>
       {list === null ? <p className="me-note">{t("친구 목록을 받아 오지 못했습니다 — 다시 동기화해 보세요.")}</p>
         : !sorted.length ? <p className="me-note">{t("친구가 없습니다.")}</p> : (
-        <ul className="me-friends">
-          {(all ? sorted : sorted.slice(0, FRIEND_FOLD)).map((f) => (
-            <li key={`${f.nickName}#${f.nickNumber}`}>
-              <span className="me-avatar sm">{f.secretary && opById.has(f.secretary) ? <img src={avatarOf(f.secretary)} alt="" width={44} height={44} loading="lazy" /> : <b aria-hidden>Dr.</b>}</span>
-              <div className="me-friend-name">
-                <b>{f.nickName}<small>#{f.nickNumber}</small></b>
-                <span>Lv.{f.level} · {rel(t, now, f.lastOnline)}</span>
-              </div>
-              <ul className="me-ops me-ops-mini">
-                {f.assist.map((a, i) => {
-                  const op = opById.get(a.id);
-                  return op ? <OpChip key={`${a.id}-${i}`} op={op} c={a} skillIndex={a.skillIndex} onShowOperator={onShowOperator} /> : null;
-                })}
-              </ul>
-            </li>
-          ))}
-        </ul>
+        friendList(sorted.slice(0, FRIEND_FOLD), true)
       )}
-      {sorted.length > FRIEND_FOLD && <MoreButton open={all} total={sorted.length} onToggle={() => setAll((v) => !v)} />}
+      {sorted.length > FRIEND_FOLD && <MoreButton open={false} total={sorted.length} onToggle={() => setAll(true)} />}
+      {all && <MoreModal title={t("친구")} onClose={() => setAll(false)}>{friendList(sorted, false)}</MoreModal>}
     </Card>
   );
 }
@@ -1028,6 +1052,23 @@ function Recent({ owned, opById, onShowOperator }: { owned: AccountChar[]; opByI
   // 영입 시각 — 날짜와 시·분까지 (사용자 지시)
   const day = (sec: number) => new Date(sec * 1000).toLocaleDateString(DT_LOCALE[locale], { year: "2-digit", month: "2-digit", day: "2-digit" });
   const time = (sec: number) => new Date(sec * 1000).toLocaleTimeString(DT_LOCALE[locale], { hour: "2-digit", minute: "2-digit", hour12: false });
+  // 목록 그리기 — 본문(앞 몇 줄)과 '전부 보기' 창(전체)이 같이 쓴다 (사용자 2026-10-07 "페이지가 너무 길어진다")
+  const recentList = (items: typeof list, withRef: boolean) => (
+    <ul className="me-ops" ref={withRef ? gridRef : undefined}>
+      {items.map((c) => {
+        const op = opById.get(c.id)!;
+        return (
+          <li key={c.id}>
+            <button type="button" onClick={() => onShowOperator?.(c.id)} title={op.name}>
+              <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(c.id)} alt="" width={56} height={56} loading="lazy" /></span>
+              <span className="me-op-name">{op.name}</span>
+              <em className="me-when">{day(c.gain!)}<br />{time(c.gain!)}</em>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
   return (
     <Card no="RECENT" title={t("최근 영입")} className="me-recent"
       aside={(
@@ -1041,21 +1082,9 @@ function Recent({ owned, opById, onShowOperator }: { owned: AccountChar[]; opByI
         </div>
       )}>
       {!list.length && <p className="me-note">{t("조건에 맞는 오퍼가 없어요.")}</p>}
-      <ul className="me-ops" ref={gridRef}>
-        {(all ? list : list.slice(0, fold)).map((c) => {
-          const op = opById.get(c.id)!;
-          return (
-            <li key={c.id}>
-              <button type="button" onClick={() => onShowOperator?.(c.id)} title={op.name}>
-                <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(c.id)} alt="" width={56} height={56} loading="lazy" /></span>
-                <span className="me-op-name">{op.name}</span>
-                <em className="me-when">{day(c.gain!)}<br />{time(c.gain!)}</em>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      {list.length > fold && <MoreButton open={all} total={list.length} onToggle={() => setAll((v) => !v)} />}
+      {recentList(list.slice(0, fold), true)}
+      {list.length > fold && <MoreButton open={false} total={list.length} onToggle={() => setAll(true)} />}
+      {all && <MoreModal title={t("최근 영입")} onClose={() => setAll(false)}>{recentList(list, false)}</MoreModal>}
     </Card>
   );
 }
@@ -1085,6 +1114,20 @@ function Depot({ me, items, onOpen }: { me: MeData; items: ItemDoc | null; onOpe
   const nq = normSearch(q);
   const shown = (rows ?? []).filter((r) => (group === "all" || r.item.g === group) && (!nq || normSearch(r.item.n).includes(nq)));
   const count = (g: ItemGroup) => (rows ?? []).filter((r) => r.item.g === g).length;
+  // 목록 그리기 — 본문(앞 몇 줄)과 '전부 보기' 창(전체)이 같이 쓴다 (사용자 2026-10-07 "페이지가 너무 길어진다")
+  const depotList = (items: typeof shown, withRef: boolean) => (
+    <ul className="me-depot-grid" ref={withRef ? gridRef : undefined}>
+      {items.map(({ item, n, id }) => (
+        <li key={id}>
+          <button type="button" onClick={() => onOpen(item)} title={item.n}>
+            <span className="me-ico" data-tier={item.r}>{item.i && <img src={itemIcon(item.i)} alt="" width={56} height={56} loading="lazy" />}</span>
+            <b>{fmt(n)}</b>
+            <span className="me-depot-name">{item.n}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
   return (
     <Card no="DEPOT" title={t("창고")} className="me-depot"
       aside={(
@@ -1099,19 +1142,10 @@ function Depot({ me, items, onOpen }: { me: MeData; items: ItemDoc | null; onOpe
         </div>
       )}>
       {!rows ? <p className="me-note">{t("불러오는 중…")}</p> : (
-        <ul className="me-depot-grid" ref={gridRef}>
-          {(all || nq ? shown : shown.slice(0, fold)).map(({ item, n, id }) => (
-            <li key={id}>
-              <button type="button" onClick={() => onOpen(item)} title={item.n}>
-                <span className="me-ico" data-tier={item.r}>{item.i && <img src={itemIcon(item.i)} alt="" width={56} height={56} loading="lazy" />}</span>
-                <b>{fmt(n)}</b>
-                <span className="me-depot-name">{item.n}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        depotList((nq ? shown : shown.slice(0, fold)), true)
       )}
-      {rows && !nq && shown.length > fold && <MoreButton open={all} total={shown.length} onToggle={() => setAll((v) => !v)} />}
+      {rows && !nq && shown.length > fold && <MoreButton open={false} total={shown.length} onToggle={() => setAll(true)} />}
+      {all && <MoreModal title={t("창고")} onClose={() => setAll(false)}>{depotList(shown, false)}</MoreModal>}
     </Card>
   );
 }
