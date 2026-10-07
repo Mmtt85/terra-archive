@@ -558,6 +558,30 @@ ArknightsSpines @cn의 Relax 렌더 374명분 목록(+스킨명 3개 언어 조�
 - KR 실장 오퍼 커버리지는 소스 레포의 렌더 진도를 따른다(2026-08-03 기준 374/420) —
   없는 오퍼는 UI가 안내문으로 폴백하므로 재생성만 하면 자동 편입된다.
 
+## 7.8 움직이는 일러스트 (2026-10-07~)
+
+게임 Spine **dyn_illust**(2정예·한정 스킨 일부)의 대기 동작 한 바퀴를 투명 영상으로 구워 띄운다.
+- **홈** — 이격 스카디 2정예: `public/portal/skadi2-dyn.{webm,webp}` (Pages 같은 출처, 스카디 중심으로 당긴 1024 정사각 +
+  8px 투명 테두리). 다시 구우면 `home.tsx` 의 `PORTAL_DYN_VER` 를 올린다 — 영상은 브라우저가 4시간 붙들고 강력 새로고침으로도 잘 안 풀린다.
+- **스킨** — 오퍼 상세 전체 일러스트(SkinLightbox)·갤러리 일러스트 창/확대: `public/skin/dyn/<portrait>.{webm,webp}` (R2),
+  목록은 `app/data/skin-dyn.json`(구운 portrait 이름). 화면 코드는 `app/dyn-illust.tsx`. 한섭 88개 (2026-10-07).
+
+재굽기 절차 (세션 스크립트 — 레포엔 절차만):
+1. **원본**: `isHarryh/Ark-Models` `models_illust/<key>/` 의 `.skel/.atlas/.png` (`models_data.json` 의 type=DynIllust).
+   스킨 → key: kr_skin_table 의 `dynIllustId` 에서 `char_` 를 빼고 **소문자로** 맞춘다 (`_2` 로 끝나는 2정예는 그 꼬리도 뗀 이름이 key).
+   일부는 `.skel` 확장자에 **JSON 본문**이 들어 있다 → 첫 바이트가 `{` 면 SkeletonJson 으로 읽는다.
+   atlas 의 png 이름에 `#` 이 있으면 로컬 이름을 바꿔 로드(치비와 같은 함정).
+2. **구도**: 전체 범위(getBounds)는 멀리 튄 조각 때문에 크게 튄다 → 넓게 4장(동작 중 포함) 그려 알파 커버리지 0.4% 꼬리를 자른 범위 + 3%.
+3. **렌더**: spine-ts 3.8 webgl + 헤드리스 크로미움(swiftshader). ⚠ **안티에일리어싱이 없어 테두리가 계단진다** →
+   **2배로 그려 premultiplied(RGBa) Lanczos 로 줄인다**. 긴 변 960, 24fps, 동작 길이만큼(4~13초).
+   ⚠ 같은 페이지에서 캔버스 크기를 바꾸면 `gl.viewport` 를 다시 줘야 한다(안 주면 일부만 그려진다).
+4. **인코딩**: `-vf "format=rgba,pad=W+16:H+16:8:8:color=0x00000000" -c:v libvpx-vp9 -pix_fmt yuva420p -auto-alt-ref 0 -crf 44 -b:v 0`.
+   네 변 8px 투명 테두리는 **알파 검사 자리**다 — 화면 코드가 왼쪽 위 한 점을 찍어 투명하면 영상, 아니면(사파리 계열) 정지 그림.
+   정지 그림(.webp)은 첫 프레임 + 같은 테두리라 영상과 구도가 같다 → 영상이 살아나는 순간 0초로 되감고 한 번에 바꾼다(겹쳐 흐리면 이중으로 보였다).
+5. `node scripts/r2-sync.mjs` → 목록(json) 갱신 시에만 배포.
+
+⚠ 굽는 동안 CPU 를 다 써서 dev 서버의 렌더 워커가 "Network connection lost" 로 죽는다 — `touch vite.config.ts` 로 되살린다.
+
 ## 8. 정적 에셋 R2 동기화 (2026-07-27~)
 
 public/의 story·rogue·lens·tesseract·avatars·about·og·items·scan·profiles·skins·voice·skills는 사이트 배포(Pages)가

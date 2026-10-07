@@ -216,7 +216,7 @@ function niceMax(v: number): number {
 
 /** 일별 꺾은선 — 빈 날은 0으로 채운다. 날짜 칸에 올리면(폰은 터치) 그날의 정확한 숫자 (사용자 지시 2026-10-04) */
 const WEEK = "일월화수목금토";
-function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), tip, every: everyIn }: {
+function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), tip, every: everyIn, onPick, sel }: {
   /** axis "right" = 오른쪽 눈금에 따로 맞춘다 — 화면 조회와 방문자·세션은 자릿수가 달라 한 눈금이면
    *  방문자·세션 선이 바닥에 깔렸다 (사용자 지시 2026-10-07) */
   days: string[]; series: { name: string; cls: string; values: number[]; axis?: "right" }[];
@@ -225,6 +225,9 @@ function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), ti
   tip?: (label: string) => string;
   /** 눈금 간격(칸 수) — 15분 칸은 8(=2시간)로 정각에 맞춘다 */
   every?: number;
+  /** 칸을 누르면 (15분 칸 → 그 15분만 보기). sel = 고른 칸(띠로 표시) */
+  onPick?: (i: number) => void;
+  sel?: number | null;
 }) {
   const [hi, setHi] = useState<number | null>(null);
   const dual = series.some((s) => s.axis === "right");
@@ -258,6 +261,7 @@ function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), ti
           {days.map((d, i) => (i % every === 0 || i === n - 1) && (
             <text key={d} className="vz-axis" x={x(i)} y={H - 8} textAnchor={i === n - 1 && n > 1 ? "end" : i === 0 && n > 1 ? "start" : "middle"}>{fmt(d)}</text>
           ))}
+          {sel != null && sel < n && <rect className="vz-sel" x={x(sel) - step / 2} y={T} width={step} height={H - T - B} />}
           {hi != null && <line className="vz-guide" x1={x(hi)} x2={x(hi)} y1={T} y2={H - B} />}
           {series.map((s) => (
             <g key={s.name} className={`vz-series ${s.cls}`}>
@@ -269,8 +273,8 @@ function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), ti
           ))}
           {/* 날짜 칸 전체가 올림 영역 — 작은 점을 정확히 노리지 않아도 된다 */}
           {days.map((d, i) => (
-            <rect key={d} className="vz-hit" x={x(i) - step / 2} y={T} width={step} height={H - T - B}
-                  onMouseEnter={() => setHi(i)} onPointerDown={() => setHi(i)} />
+            <rect key={d} className={`vz-hit${onPick ? " pick" : ""}`} x={x(i) - step / 2} y={T} width={step} height={H - T - B}
+                  onMouseEnter={() => setHi(i)} onPointerDown={() => setHi(i)} onClick={onPick ? () => onPick(i) : undefined} />
           ))}
         </svg>
         {hi != null && (
@@ -560,8 +564,17 @@ export function VisitsPanel() {
   // 기간 지정 (사용자 지시 2026-10-05 "특정 일 혹은 특정 기간 지정도") — KST 날짜. 정해 두면 위 기간 버튼 대신 이것을 본다.
   // DB 쪽 visits_summary_range·visits_sessions_range (docs/supabase-visits.sql) 를 부른다.
   const [range, setRange] = useState<{ from: string; to: string } | null>(null);
-  const rangeArgs = range ? { p_from: `${range.from}T00:00:00+09:00`, p_to: `${nextDay(range.to)}T00:00:00+09:00` } : null;
-  const oneDay = !!range && range.from === range.to;
+  // 15분 칸 하나만 보기 (사용자 지시 2026-10-07) — 하루 보기 그래프에서 칸을 누르면 그 15분에 **시작한** 세션만으로
+  // 나머지 통계를 다시 센다. 그래프 자체는 하루 전체를 그대로 보여야 하니 하루치 칸(quarter)을 따로 쥐고 있는다
+  const [slot, setSlot] = useState<{ day: string; q: number } | null>(null);
+  const [dayQuarter, setDayQuarter] = useState<Summary["quarter"] | null>(null);
+  const slotAt = (q: number) => `${String(Math.floor(q / 4)).padStart(2, "0")}:${String((q % 4) * 15).padStart(2, "0")}`;
+  const rangeArgs = slot
+    ? { p_from: `${slot.day}T${slotAt(slot.q)}:00+09:00`, p_to: slot.q === 95 ? `${nextDay(slot.day)}T00:00:00+09:00` : `${slot.day}T${slotAt(slot.q + 1)}:00+09:00` }
+    : range ? { p_from: `${range.from}T00:00:00+09:00`, p_to: `${nextDay(range.to)}T00:00:00+09:00` } : null;
+  const oneDay = !!slot || (!!range && range.from === range.to);
+  // 기간을 바꾸면 고른 칸은 풀린다
+  useEffect(() => { setSlot(null); }, [range, days]);
   // 사람만 · 봇만 · 둘 다 (사용자 지시 2026-10-05 드롭다운) — DB 의 p_human 은 true·false·null 로 받는다
   const [who, setWho] = useState<Who>("human");
   const human = WHO_ARG[who];
@@ -628,7 +641,7 @@ export function VisitsPanel() {
     return () => { alive = false; };
     // rangeArgs 는 range 에서 나온다
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, human, tick, range]);
+  }, [days, human, tick, range, slot]);
 
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
@@ -641,7 +654,7 @@ export function VisitsPanel() {
       .finally(() => { if (alive) setLoadSess(false); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, human, srcFilter, limit, tick, range]);
+  }, [days, human, srcFilter, limit, tick, range, slot]);
 
   // 세션 타임라인 '전체 보기' — 창을 열 때 상한(5,000)까지 따로 받는다
   const [allSessions, setAllSessions] = useState<SessRow[] | null>(null);
@@ -655,8 +668,9 @@ export function VisitsPanel() {
       .then((rows) => { if (alive) setAllSessions(rows); }).catch(() => { if (alive) setAllSessions([]); });
     return () => { alive = false; setAllSessions(null); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessAll, days, human, srcFilter, range]);
+  }, [sessAll, days, human, srcFilter, range, slot]);
 
+  useEffect(() => { if (data && !slot && data.quarter) setDayQuarter(data.quarter); }, [data, slot]);
   if (missing) {
     return (
       <section className="vz">
@@ -802,7 +816,7 @@ export function VisitsPanel() {
           <span role="status"><i className="vz-spin" aria-hidden />불러오는 중</span>
         </button>
         {/* 이미지 리포트 — 지금 고른 기간·사람만/봇 포함 그대로 (사용자 지시 2026-10-05). 1년 보기는 일별 집계라 빠진다 */}
-        <button className="vz-report-btn" onClick={() => setReport(true)} disabled={!data || busy || (days === 365 && !range)}>리포트 이미지</button>
+        <button className="vz-report-btn" onClick={() => setReport(true)} disabled={!data || busy || (days === 365 && !range) || !!slot} title={slot ? "15분 칸을 고른 동안은 리포트를 뽑지 않습니다" : undefined}>리포트 이미지</button>
         {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · 1분마다 자동</span>}
       </div>
       {status && <p className="admin-status">{status}</p>}
@@ -841,16 +855,20 @@ export function VisitsPanel() {
               <Head title="내 정보 동기화" {...top("mesync", "내 정보 동기화")} sub={meServer
                 ? `${serverLabel(meServer)} — 로그인 ${num(meBy.reduce((a, b) => a + b.login, 0))} · 다시 동기화 ${num(meBy.reduce((a, b) => a + b.sync, 0))} · ${num(meBy.length)}명`
                 : `로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · ${num(data.me_sync.people)}명 — 누가 = 방문자 익명 id (닉네임은 받지 않는다) · 유입 = 이 기간 첫 로그인 세션이 들어온 곳`} />
-              {meServers.length > 0 && (
-                <div className="vz-mesync-filter">
-                  <span>서버</span>
-                  <Dropdown ariaLabel="서버" selected={[meServer]} label={meServer ? serverLabel(meServer) : "전체"}
-                    items={[{ value: "", label: "전체", count: data.me_sync.by.length },
-                      ...ACCOUNT_SERVERS.filter((x) => meServers.includes(x.code)).map((x) => ({ value: x.code, label: x.label, count: data.me_sync!.by.filter((b) => b.server === x.code).length })),
-                      ...meServers.filter((c) => !ACCOUNT_SERVERS.some((x) => x.code === c)).map((c) => ({ value: c, label: c, count: data.me_sync!.by.filter((b) => b.server === c).length }))]}
-                    onPick={setMeServer} />
-                </div>
-              )}
+              {/* 서버별 인원 — 버튼 줄로 늘 보이고 누르면 그 서버만. 중섭은 직영·비리비리를 0명이어도 따로 둔다
+                  (사용자 지시 2026-10-07 — 비리비리가 안 보여 합쳐진 줄 알았다. 종전 드롭다운은 기록 있는 서버만 나왔다) */}
+              <div className="vz-mesync-filter vz-srv-chips" role="group" aria-label="서버">
+                <span>서버</span>
+                {[{ value: "", label: "전체" },
+                  ...ACCOUNT_SERVERS.map((x) => ({ value: x.code, label: x.label })),
+                  ...meServers.filter((c) => !ACCOUNT_SERVERS.some((x) => x.code === c)).map((c) => ({ value: c, label: c }))].map((o) => {
+                  const cnt = o.value ? data.me_sync!.by.filter((b) => b.server === o.value).length : data.me_sync!.by.length;
+                  return (
+                    <button key={o.value || "all"} type="button" className={`${meServer === o.value ? "selected" : ""}${cnt ? "" : " zero"}`}
+                      onClick={() => setMeServer(o.value)}>{o.label} <b>{num(cnt)}</b></button>
+                  );
+                })}
+              </div>
               {meBy.length ? meTable(tops.mesync) : <p className="vz-note">{meServer ? "이 서버의 동기화 기록이 없습니다." : "이 기간에는 동기화 기록이 없습니다."}</p>}
             </div>
           )}
@@ -861,17 +879,28 @@ export function VisitsPanel() {
             const isToday = !range || range.from === today;
             const kstNow = new Date(Date.now() + 9 * 3600_000);
             const dayLabel = range && !isToday ? range.from.slice(5).replace("-", "/") : "오늘";
-            const q15 = data.quarter != null;
+            // 칸을 골라 둔 동안 data 는 그 15분치라, 그래프는 고르기 전에 쥐어 둔 하루치로 그린다
+            const quarter = slot ? dayQuarter : data.quarter;
+            const q15 = quarter != null;
             const per = q15 ? 4 : 1;
             const nowSlot = q15 ? kstNow.getUTCHours() * 4 + Math.floor(kstNow.getUTCMinutes() / 15) : kstNow.getUTCHours();
             const slots = Array.from({ length: isToday ? nowSlot + 1 : 24 * per }, (_, i) => i);
             type Slot = { sessions: number; visitors: number; views: number };
-            const by = new Map<number, Slot>(q15 ? data.quarter!.map((r) => [r.q, r] as const) : (data.hourly ?? []).map((r) => [r.hr, r] as const));
+            const by = new Map<number, Slot>(q15 ? quarter!.map((r) => [r.q, r] as const) : (data.hourly ?? []).map((r) => [r.hr, r] as const));
+            const day = range?.from ?? today;
             const lab = (i: number) => q15 ? `${Math.floor(i / 4)}:${String((i % 4) * 15).padStart(2, "0")}` : `${i}시`;
             return (
               <>
-                <Head title={`${dayLabel} ${q15 ? "15분" : "시간대"}별`} sub={isToday ? "KST 0시 00분부터 지금까지, 세션이 시작된 시각 기준" : "KST 0시~24시, 세션이 시작된 시각 기준"} />
-                <LineChart days={slots.map(String)} every={q15 ? 8 : undefined} fmt={(i) => lab(Number(i))} tip={(i) => `${dayLabel} ${lab(Number(i))}${q15 ? "부터 15분" : "대"}`} series={[
+                <Head title={`${dayLabel} ${q15 ? "15분" : "시간대"}별`} sub={`${isToday ? "KST 0시 00분부터 지금까지" : "KST 0시~24시"}, 세션이 시작된 시각 기준${q15 ? " · 칸을 누르면 그 15분만 본다" : ""}`}>
+                  {slot && (
+                    <button type="button" className="vz-slot-chip" onClick={() => setSlot(null)} title="하루 전체로 돌아가기">
+                      {slotAt(slot.q)}~{slot.q === 95 ? "24:00" : slotAt(slot.q + 1)} 만 보는 중 <b aria-hidden>×</b>
+                    </button>
+                  )}
+                </Head>
+                <LineChart days={slots.map(String)} every={q15 ? 8 : undefined}
+                  sel={slot?.q ?? null}
+                  onPick={q15 ? (i) => setSlot((cur) => (cur && cur.q === i ? null : { day, q: i })) : undefined} fmt={(i) => lab(Number(i))} tip={(i) => `${dayLabel} ${lab(Number(i))}${q15 ? "부터 15분" : "대"}`} series={[
                   { name: "방문자", cls: "s1", values: slots.map((i) => by.get(i)?.visitors ?? 0), axis: "right" },
                   { name: "세션", cls: "s2", values: slots.map((i) => by.get(i)?.sessions ?? 0), axis: "right" },
                   { name: "화면 조회", cls: "s3", values: slots.map((i) => by.get(i)?.views ?? 0) },

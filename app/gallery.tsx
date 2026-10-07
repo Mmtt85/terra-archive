@@ -8,6 +8,7 @@
 // 보기 선택(CG·스탠딩·일러스트)은 해시(#cg·#sprite·#illust)로 — 프리렌더는 언제나 CG 라, 딥링크 첫 페인트는
 // data-hashswap 가리개 + useLayoutEffect 로 맞춘다 (new-screen 점검표 §1).
 
+import { DynVideo, dynPoster, hasDyn } from "./dyn-illust";
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { asset, storyCutUrl } from "./assets";
 import { useI18n } from "./i18n";
@@ -411,14 +412,17 @@ export default function Gallery({ doc, operators, includeFuture, onShowOperator,
 
 /** 큰 그림 — 받는 동안 '불러오는 중…', 실패하면 안내 (사용자 요청 2026-10-04). 그림이 바뀌면 key 로 다시 마운트돼
  *  상태가 처음부터 시작한다. 이미 캐시에 있으면 onLoad 가 곧바로 와서 표시가 거의 안 보인다. */
-function ViewImg({ src, alt, onClick }: { src: string; alt: string; onClick?: () => void }) {
+function ViewImg({ src, alt, onClick, dyn }: { src: string; alt: string; onClick?: () => void; dyn?: string }) {
   const { t } = useI18n();
   const [state, setState] = useState<"load" | "ok" | "err">("load");
+  const [live, setLive] = useState(false);
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} onClick={onClick} className={state === "ok" ? undefined : "gl-img-wait"}
+      <img src={src} alt={alt} onClick={onClick} className={state === "ok" ? (live ? "dyn-off" : undefined) : "gl-img-wait"}
         onLoad={() => setState("ok")} onError={() => setState("err")} />
+      {/* 움직이는 일러스트 — 정지 그림(첫 프레임)과 같은 칸에 겹친다 */}
+      {dyn && state === "ok" && <DynVideo portrait={dyn} className="gl-dyn" onLive={setLive} />}
       {state !== "ok" && (
         <span className="gl-loading" role="status">
           {state === "load" ? <><i aria-hidden />{t("불러오는 중…")}</> : t("이미지를 불러오지 못했습니다.")}
@@ -540,11 +544,11 @@ function CharWindow({ c, stories, opHref, onOp, onStory, onClose }: {
 }
 
 /** 큰 그림을 누르면 뜨는 확대 창 — 원본 크기로, 넘치면 창 안에서 스크롤 (사용자 요청 2026-10-04) */
-function ZoomWindow({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+function ZoomWindow({ src, alt, onClose, dyn }: { src: string; alt: string; onClose: () => void; dyn?: string }) {
   return (
     <ModalWindow label={alt} className="operator-modal gl-modal gl-zoom" onClose={onClose}>
       <div className="gl-zoom-body">
-        <ViewImg src={src} alt={alt} />
+        <ViewImg src={src} alt={alt} dyn={dyn} />
       </div>
     </ModalWindow>
   );
@@ -575,7 +579,9 @@ function IllustWindow({ op, opHref, onOp, onClose }: { op: GalleryOp; opHref: st
   useArrows(step);
   const cur = skins?.[i];
   const [zoom, setZoom] = useState(false);
-  const fullSrc = (sk: SkinEntry) => asset(`/skin/full/${encodeURIComponent(sk.portrait)}.webp`);
+  // 움직이는 일러스트가 있는 스킨은 영상 첫 프레임을 정지 그림으로 (영상과 구도가 같아야 겹친다)
+  const fullSrc = (sk: SkinEntry) => hasDyn(sk.portrait) ? dynPoster(sk.portrait) : asset(`/skin/full/${encodeURIComponent(sk.portrait)}.webp`);
+  const dynOf = (sk: SkinEntry) => (hasDyn(sk.portrait) ? sk.portrait : undefined);
   const label = (s: SkinEntry) => (s.default ? (s.stage ?? s.name) : s.name);
   return (
     <ModalWindow label={op.name} className="operator-modal gl-modal gl-fit-sq" onClose={onClose}>
@@ -583,7 +589,7 @@ function IllustWindow({ op, opHref, onOp, onClose }: { op: GalleryOp; opHref: st
       {skins === null && <p className="no-detail">{t("일러스트가 아직 없습니다.")}</p>}
       {cur && <>
         <div className="gl-view illust">
-          <ViewImg key={cur.portrait} src={fullSrc(cur)} alt={`${op.name} ${label(cur)}`} onClick={() => setZoom(true)} />
+          <ViewImg key={cur.portrait} src={fullSrc(cur)} alt={`${op.name} ${label(cur)}`} onClick={() => setZoom(true)} dyn={dynOf(cur)} />
           {n > 1 && <>
             <button type="button" className="gl-nav prev" onClick={() => step(-1)} aria-label={t("이전")}>‹</button>
             <button type="button" className="gl-nav next" onClick={() => step(1)} aria-label={t("다음")}>›</button>
@@ -601,7 +607,7 @@ function IllustWindow({ op, opHref, onOp, onClose }: { op: GalleryOp; opHref: st
             </button>
           ))}
         </div>
-        {zoom && <ZoomWindow src={fullSrc(cur)} alt={`${op.name} ${label(cur)}`} onClose={() => setZoom(false)} />}
+        {zoom && <ZoomWindow src={fullSrc(cur)} alt={`${op.name} ${label(cur)}`} onClose={() => setZoom(false)} dyn={dynOf(cur)} />}
       </>}
     </ModalWindow>
   );

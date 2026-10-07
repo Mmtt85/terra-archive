@@ -122,6 +122,7 @@ import { feedbackReady } from "./feedback";
 import { isNewFeature, inTimeWindow, tabHasNewFeature, tabNewSig, BUILD_NOW } from "./whats-new";
 import { scrollMainTop } from "./scroll";
 import { PORTAL_TILES, type PortalTile } from "./portal-themes";
+import { DynVideo, dynPoster, hasDyn } from "./dyn-illust";
 import { useLazyVisible } from "./lazy-img";
 import { useMe, meChars, isMaxed, trustPct, eliteText, potText, masteryText, isCollectible } from "./me-store";
 import type { AccountChar } from "./account";
@@ -2435,7 +2436,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             <span aria-hidden>☰</span>{t("메뉴")}
           </button>
           {/* 내 정보 동기화 시각 — 메뉴 버튼 밑에 작게, 헤더 높이를 바꾸지 않게 absolute (사용자 요청 2026-10-05) */}
-          {me && !navOpen && (
+          {/* 메뉴를 열어도 그대로 둔다 — 문구가 버튼 밑에 있던 시절엔 드롭다운에 가려 감췄지만, 이제 버튼 오른쪽이다 (2026-10-07) */}
+          {me && (
             <a className="hdr-synced" href={`${localeBase}/me`} title={t("내 정보")}
               onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return; event.preventDefault(); switchTab("me"); }}>
               {/* 메뉴 오른쪽에 두 줄 — 시각 / 문구 (사용자 2026-10-07, 헤더를 얇게 하며 밑에 매달 자리가 없어졌다) */}
@@ -2669,7 +2671,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             if (handleDragged.current) { handleDragged.current = false; return; }
             setHeaderTucked((tucked) => !tucked);
           }}>
-          <span aria-hidden>{headerTucked ? "⌄" : "⌃"}</span>
+          {/* 화살표는 둘 다 그려 두고 CSS 가 고른다 — 서버 렌더는 폭을 몰라 '열림(⌃)'으로 그렸다가 데스크탑에서
+              마운트 뒤 '접힘(⌄)'으로 바뀌어 새로고침마다 한 번 뒤집혔다 (사용자 지적 2026-10-07) */}
+          <span className="hct-down" aria-hidden>⌄</span><span className="hct-up" aria-hidden>⌃</span>
         </button>
       </header>
 
@@ -4652,7 +4656,7 @@ function PortalArt() {
       // 영상 네 변에 8px 투명 테두리를 둘렀다 — 원본 왼쪽 위 4×4 만 그대로 떠 와 본다
       // (그림이 화면을 꽉 채워서 축소 평균으로 찍으면 알파가 살아 있어도 불투명으로 나온다)
       g.drawImage(v, 0, 0, 4, 4, 0, 0, 4, 4);
-      if (g.getImageData(1, 1, 1, 1).data[3] < 250) setLive(true);
+      if (g.getImageData(1, 1, 1, 1).data[3] < 250) { v.currentTime = 0; setLive(true); }
     } catch { /* 캔버스 이상 — 정지 그림 유지 */ }
   };
   return (
@@ -4672,6 +4676,7 @@ function PortalArt() {
 function SkinLightbox({ skin, alt, onClose }: { skin: SkinEntry; alt: string; onClose: () => void }) {
   const { t } = useI18n();
   const [broken, setBroken] = useState(false);
+  const [dynLive, setDynLive] = useState(false);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } };
     window.addEventListener("keydown", onKey, true);
@@ -4685,9 +4690,19 @@ function SkinLightbox({ skin, alt, onClose }: { skin: SkinEntry; alt: string; on
       {broken ? (
         <p className="skin-lightbox-empty">{t("전체 일러스트가 아직 없습니다.")}</p>
       ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={asset(`/skin/full/${encodeURIComponent(skin.portrait)}.webp`)}
-          alt={isDefaultSkin(skin) ? alt : skin.name} onError={() => setBroken(true)} />
+        hasDyn(skin.portrait) ? (
+          // 움직이는 일러스트 — 정지 그림(영상 첫 프레임)과 영상을 한 칸에 겹친다
+          <div className="skin-lightbox-dyn">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={dynPoster(skin.portrait)} className={dynLive ? "dyn-off" : undefined}
+              alt={isDefaultSkin(skin) ? alt : skin.name} onError={() => setBroken(true)} />
+            <DynVideo portrait={skin.portrait} onLive={setDynLive} />
+          </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={asset(`/skin/full/${encodeURIComponent(skin.portrait)}.webp`)}
+            alt={isDefaultSkin(skin) ? alt : skin.name} onError={() => setBroken(true)} />
+        )
       )}
       <figcaption>{isDefaultSkin(skin) ? t("기본 스킨") : skin.name}{skin.artists.length > 0 && <em> · {skin.artists.join(" · ")}</em>}</figcaption>
     </div>
