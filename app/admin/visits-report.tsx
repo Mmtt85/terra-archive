@@ -64,7 +64,7 @@ function periodText(from: string, to: string) {
   return from === to ? f(from, true) : `${f(from, true)} ~ ${f(to, from.slice(0, 4) !== to.slice(0, 4))}`;
 }
 
-/** tops — 관리자 화면 목록마다 고른 개수(상위 5·15·30)를 그대로 따른다 (사용자 지시 2026-10-05 "페이지 설정값에 맞춰서") */
+/** tops — 관리자 화면 목록마다 고른 개수(상위 5·10·20·30)를 그대로 따른다 (사용자 지시 2026-10-05 "페이지 설정값에 맞춰서") */
 type Tops = { src: number; landing: number; pages: number; sections: number; device: number; lang: number; tz: number };
 function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; from: string; to: string; who: string; onlyHuman: boolean; tops: Tops }) {
   const T = data.total;
