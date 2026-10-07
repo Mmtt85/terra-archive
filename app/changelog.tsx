@@ -195,7 +195,7 @@ export default function ChangelogButton() {
         <span aria-hidden>🛠</span>
         {/* 모바일은 아이콘만 (1줄 로고 옆 — 폭이 좁다) */}
         <span className="chlog-label">{t("업데이트 내역")}</span>
-        {importantId && <span className="chlog-imp-dot">{t("중요")}</span>}
+        {/* '중요' 배지는 뺐다 — NEW 와 같은 자리에 겹쳐 떴다 (사용자 지시 2026-10-07). 목록 안의 중요 표시는 그대로 */}
         {/* NEW — 새 항목(whats-new.ts 'chlog:<id>')이 있으면 3일, 한 번 열면 그 묶음은 다시 안 뜬다 */}
         <NewBadge id={`chlog-btn@${newChangelogIds().join(",")}`} show={newChangelogIds().length > 0} />
       </button>

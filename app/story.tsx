@@ -1328,7 +1328,7 @@ function ChronologyView({ onShowOperator }: { onShowOperator?: (operatorId: stri
                 const why = it.terraYear != null && it.yearWhy ? locText(locale, it.yearWhy) : null;
                 return (
                   <li key={it.key} className="chron-row" style={{ ["--arc" as string]: it.arc ? arcColor(it.arc) : "#9aa0a3" }}>
-                    <button type="button" className={`chron-card k-${it.kind}`} onClick={() => openIf(it)} disabled={!it.eventId && !inDex(it)}>
+                    <button type="button" className={`chron-card k-${it.kind}${it.eventId && inDex(it) ? " has-dex" : ""}`} onClick={() => openIf(it)} disabled={!it.eventId && !inDex(it)}>
                       <span className="chron-card-thumb">{thumb ? <img src={asset(thumb)} alt="" loading="lazy" decoding="async" /> : null}</span>
                       <span className="chron-card-body">
                         <span className="chron-card-meta">
@@ -1341,6 +1341,11 @@ function ChronologyView({ onShowOperator }: { onShowOperator?: (operatorId: stri
                           : g.year != null && <span className="chron-card-why approx">{t("연도 미정 — 스토리라인 순서상 이 무렵")}</span>}
                       </span>
                     </button>
+                    {/* 이벤트 도감에 있는 이벤트는 오른쪽 위에 '이벤트 상세' — 카드는 스토리, 이 버튼은 이벤트 상세 모달
+                        (사용자 지시 2026-10-07). 버튼 안에 버튼을 둘 수 없어 카드 옆 형제로 겹쳐 놓는다 */}
+                    {it.eventId && inDex(it) && (
+                      <button type="button" className="chron-card-dex" onClick={() => openEvent(it.key)}>{t("이벤트 상세")}</button>
+                    )}
                   </li>
                 );
               })}

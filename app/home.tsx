@@ -2439,14 +2439,20 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           </button>
           {/* 내 정보 동기화 시각 — 메뉴 버튼 밑에 작게, 헤더 높이를 바꾸지 않게 absolute (사용자 요청 2026-10-05) */}
           {/* 메뉴를 열어도 그대로 둔다 — 문구가 버튼 밑에 있던 시절엔 드롭다운에 가려 감췄지만, 이제 버튼 오른쪽이다 (2026-10-07) */}
-          {me && (
-            <a className="hdr-synced" href={`${localeBase}/me`} title={t("내 정보")}
-              onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return; event.preventDefault(); switchTab("me"); }}>
-              {/* 메뉴 오른쪽에 두 줄 — 시각 / 문구 (사용자 2026-10-07, 헤더를 얇게 하며 밑에 매달 자리가 없어졌다) */}
+          {/* 동기화 전이면 같은 자리에 '동기화 가능' 안내 (사용자 2026-10-07) — 누르면 내 정보로.
+              서버 렌더는 계정 기록을 몰라 늘 이 안내로 그리는데, 기록이 있는 사람은 첫 페인트 전 스크립트가
+              html[data-me] 를 달아 두므로 CSS 가 안내 글자를 감춰 둔다(자리는 그대로) — 마운트 뒤 시각으로 바뀔 때 깜빡이지 않게 */}
+          <a className={`hdr-synced${me ? "" : " idle"}`} href={`${localeBase}/me`} title={t("내 정보")}
+            onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return; event.preventDefault(); switchTab("me"); }}>
+            {/* 메뉴 오른쪽에 두 줄 — 시각 / 문구 (사용자 2026-10-07, 헤더를 얇게 하며 밑에 매달 자리가 없어졌다) */}
+            {me ? <>
               <b>{new Date(me.syncedAt).toLocaleString(DT_LOCALE[locale], { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</b>
               <span>{t("정보 동기화 완료")}</span>
-            </a>
-          )}
+            </> : <>
+              <b>{t("게임 계정 미연동")}</b>
+              <span>{t("정보 동기화 가능")}</span>
+            </>}
+          </a>
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
           {/* 순서 (사용자 확정 2026-08-10): 홈 · 인프라 · 도감▸ · 시뮬레이터▸ ·
               통합전략▸ · 스토리 · 소개. 인프라는 대표 기능이라 묶지 않고 톱레벨 유지(사용자 확정). */}
