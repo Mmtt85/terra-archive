@@ -9,7 +9,7 @@ description: 디시 미니 갤러리 terra_archive 의 소개글(no=5)을 최신
 '소개글 HTML (링크 없음)' + "마지막 갱신 · <시각> (한국 시간) · 자동 갱신" + 글 맨 밑 사이트 링크 카드
 (`scripts/dc-promo-footer.html`, 사용자가 디시 에디터로 만든 그대로)다.
 
-**탐색 금지 — 아래 순서 그대로.** 스크린샷·페이지 전체 읽기 없이 크롬 호출 5번이면 끝난다 (2026-10-07 확정).
+**탐색 금지 — 아래 순서 그대로.** 스크린샷·페이지 전체 읽기 없이 크롬 호출 6번이면 끝난다 (2026-10-07 확정).
 본문 1만 3천 자를 모델이 읽고 붙이면 1회 8~9만 토큰이 들었다 — 그래서 본문은 R2 에 올리고 디시 페이지가 직접 받는다.
 
 ## 순서
@@ -25,8 +25,14 @@ description: 디시 미니 갤러리 terra_archive 의 소개글(no=5)을 최신
    ```
    `stop` 이 있거나 `ok`·`btn` 이 false 면 멈추고 보고한다.
 5. navigate(같은 tabId) → `https://gall.dcinside.com/mini/board/view/?id=terra_archive&no=5`
-6. javascript_tool: `(document.body.innerText.match(/마지막 갱신[^\n]*/)||['없음'])[0]`
-7. tabs_close_mcp 로 탭을 닫고, 6의 시각이 1의 시각과 같은지 한 줄로 보고한다.
+6. javascript_tool, 코드 그대로 — 갱신 시각을 읽고, **공지 등록**을 누른다 (글을 수정하면 공지가 풀린다. 사용자 지시 2026-10-07:
+   "수정이 끝나면 view 로 다시 접속해서 게시물 관리 → 공지 등록까지"). 확인창은 자동으로 '예', 누르면 페이지가 새로 고쳐진다:
+   ```js
+   await new Promise(r=>setTimeout(r,1200)); const stamp=(document.body.innerText.match(/마지막 갱신[^\n]*/)||['없음'])[0]; const w=document.querySelector('.mini_mng_adminset'); const li=w&&[...w.querySelectorAll('li')].find(l=>l.textContent.trim()==='공지 등록'); if(li){window.confirm=()=>true; const t=[...w.querySelectorAll('*')].find(e=>/게시물 ?관리/.test(e.textContent.trim())&&e.children.length<3&&e.offsetParent); t&&t.click(); setTimeout(()=>li.click(),300);} ({stamp, notice: li?'등록 누름':(w?[...w.querySelectorAll('li')].map(l=>l.textContent.trim()).join('/'):'관리 메뉴 없음')})
+   ```
+   `notice` 가 '공지 해제/…' 면 이미 공지라 누르지 않은 것이다.
+7. 2초쯤 뒤 javascript_tool: `[...document.querySelectorAll('.mini_mng_adminset li')].some(l=>l.textContent.trim()==='공지 해제')` → true 면 공지 등록 완료.
+8. tabs_close_mcp 로 탭을 닫고, 6의 시각이 1의 시각과 같은지·공지가 걸렸는지 한 줄로 보고한다.
 
 ## 지켜야 할 것
 
