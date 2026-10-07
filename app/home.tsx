@@ -644,7 +644,9 @@ function EventBadges({ onOpenEvent, includeFuture }: {
     new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric" }).format(new Date(iso));
   // 스토리 탭용으로 이미 받아둔 이벤트 배너를 재활용 (로케일 변형 → ko 폴백)
   const evThumb = (event: GameEvent): string | undefined => eventThumb(locale, event);
-  const eventBadge = headline && (
+  // 대표 이벤트가 없어도(이벤트 공백일) 버튼은 남긴다 — 종전엔 버튼째 사라져 안의 '향후 다가올 이벤트'·
+  // 중섭 진행중 목록까지 못 열었다 (사용자 지적 2026-10-07). 그날은 힌트를 '없음'으로, 목록 맨 위에 안내 한 줄
+  const eventBadge = (headline || futureEvents.length > 0 || cnRunning.length > 0) && (
     <div className="event-group" ref={evRef}>
       {/* 배너째로 1줄에 눕히던 것을 확장부의 작은 버튼으로 (사용자 요청 2026-07-30).
           라벨은 "이벤트"로 **고정** — 이벤트 이름을 넣으면 이름 길이에 따라 헤더 폭이
@@ -655,12 +657,13 @@ function EventBadges({ onOpenEvent, includeFuture }: {
         <span className="event-mark" aria-hidden>✦</span>
         <span>{t("이벤트")}</span>
         <span className={`event-hint${headlineUpcoming ? " upcoming" : ""}`}>
-          · {headlineUpcoming ? startLabel(headline) : `D-${dday(headline)}`}
+          · {!headline ? t("없음") : headlineUpcoming ? startLabel(headline) : `D-${dday(headline)}`}
         </span>
         <span className="event-caret" aria-hidden>▾</span>
       </button>
       {evOpen && (
         <div className="event-menu" role="dialog" aria-label={t("진행중·예정 이벤트")} {...tapOnly}>
+          {!headline && <p className="event-menu-empty">{t("진행 중인 이벤트 없음")}</p>}
           {running.length > 0 && <>
             <h3>{t("진행중 이벤트")}</h3>
             <ul>

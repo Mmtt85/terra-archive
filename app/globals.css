@@ -28164,3 +28164,5 @@ html:not(.dark):not(.rg-theme) .potential-list article > span {
 }
 /* 위수협의 제목 옆 시즌 표식 — 밝은 바탕 위 라임 1.37:1 (전 화면 점검 2026-10-07) */
 html:not(.dark):not(.rg-theme) .ac-season { color: var(--tint-lime-ink); border-color: color-mix(in srgb, var(--tint-lime-ink) 45%, transparent); }
+/* 헤더 이벤트 목록 — 이벤트 공백일 안내 한 줄 */
+.event-menu-empty { margin: 4px 2px 8px; font-size: 13px; color: var(--muted); }

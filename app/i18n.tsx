@@ -2637,6 +2637,7 @@ const D: Record<string, Pair> = {
   ],
   "테라력": ["Terra calendar", "テラ暦"],
   "진행 중인 이벤트 없음": ["No events running", "開催中のイベントなし"],
+  "없음": ["none", "なし"],
   "이야기 {n}편": ["{n} stories", "物語{n}編"],
   "연도 미정 — 스토리라인 순서상 이 무렵": ["Year unknown — around this time by storyline order", "年未詳 — ストーリーライン順でこの頃"],
   "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브": ["AI Story Digest - Arknights Story Summaries | Terra Archive", "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ"],
