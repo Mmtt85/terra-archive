@@ -215,17 +215,22 @@ function niceMax(v: number): number {
 /** 일별 꺾은선 — 빈 날은 0으로 채운다. 날짜 칸에 올리면(폰은 터치) 그날의 정확한 숫자 (사용자 지시 2026-10-04) */
 const WEEK = "일월화수목금토";
 function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), tip }: {
-  days: string[]; series: { name: string; cls: string; values: number[] }[];
+  /** axis "right" = 오른쪽 눈금에 따로 맞춘다 — 화면 조회와 방문자·세션은 자릿수가 달라 한 눈금이면
+   *  방문자·세션 선이 바닥에 깔렸다 (사용자 지시 2026-10-07) */
+  days: string[]; series: { name: string; cls: string; values: number[]; axis?: "right" }[];
   fmt?: (label: string) => string;
   /** 숫자 상자의 머리글 — 기본은 '10/03 (금)' */
   tip?: (label: string) => string;
 }) {
   const [hi, setHi] = useState<number | null>(null);
-  const W = 960, H = 230, L = 44, R = 12, T = 12, B = 28;
-  const max = niceMax(Math.max(1, ...series.flatMap((s) => s.values)));
+  const dual = series.some((s) => s.axis === "right");
+  const W = 960, H = 230, L = 44, R = dual ? 44 : 12, T = 12, B = 28;
+  const max = niceMax(Math.max(1, ...series.filter((s) => s.axis !== "right").flatMap((s) => s.values)));
+  // 오른쪽 눈금은 4등분이 정수로 떨어지게 — 한 칸 크기를 먼저 반올림해 정한다 (50 → 12.5 단위로 '38'·'13' 이 찍혔다)
+  const maxR = niceMax(Math.max(1, ...series.filter((s) => s.axis === "right").flatMap((s) => s.values)) / 4) * 4;
   const n = days.length;
   const x = (i: number) => L + (n <= 1 ? (W - L - R) / 2 : (i / (n - 1)) * (W - L - R));
-  const y = (v: number) => T + (1 - v / max) * (H - T - B);
+  const y = (v: number, right = false) => T + (1 - v / (right ? maxR : max)) * (H - T - B);
   const every = Math.max(1, Math.ceil(n / 12));
   const step = n <= 1 ? W - L - R : (W - L - R) / (n - 1);
   const head = tip ?? ((d: string) => {
@@ -235,7 +240,7 @@ function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), ti
   return (
     <div className="vz-chart">
       <div className="vz-legend">
-        {series.map((s) => <span key={s.name} className={s.cls}><i />{s.name}</span>)}
+        {series.map((s) => <span key={s.name} className={s.cls}><i />{s.name}{dual && <small>{s.axis === "right" ? " · 오른쪽 눈금" : " · 왼쪽 눈금"}</small>}</span>)}
       </div>
       <div className="vz-plot">
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="추이" onMouseLeave={() => setHi(null)}>
@@ -243,6 +248,7 @@ function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), ti
             <g key={f} className="vz-grid">
               <line x1={L} x2={W - R} y1={y(max * f)} y2={y(max * f)} />
               <text x={L - 6} y={y(max * f) + 4} textAnchor="end">{num(Math.round(max * f))}</text>
+              {dual && <text className="vz-axis-r" x={W - R + 6} y={y(max * f) + 4} textAnchor="start">{num(Math.round(maxR * f))}</text>}
             </g>
           ))}
           {days.map((d, i) => (i % every === 0 || i === n - 1) && (
@@ -251,9 +257,9 @@ function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), ti
           {hi != null && <line className="vz-guide" x1={x(hi)} x2={x(hi)} y1={T} y2={H - B} />}
           {series.map((s) => (
             <g key={s.name} className={`vz-series ${s.cls}`}>
-              <polyline points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} />
+              <polyline points={s.values.map((v, i) => `${x(i)},${y(v, s.axis === "right")}`).join(" ")} />
               {s.values.map((v, i) => (
-                <circle key={i} cx={x(i)} cy={y(v)} r={i === hi ? 4.5 : n > 45 ? 1.6 : 2.6} />
+                <circle key={i} cx={x(i)} cy={y(v, s.axis === "right")} r={i === hi ? 4.5 : n > 45 ? 1.6 : 2.6} />
               ))}
             </g>
           ))}
@@ -815,7 +821,7 @@ export function VisitsPanel() {
             <div><b>{num(t.visitors)}</b><span>방문자</span></div>
             <div><b>{num(t.sessions)}</b><span>세션</span></div>
             <div><b>{num(t.views)}</b><span>화면 조회</span></div>
-            <div><b>{t.med_views != null ? num(t.med_views) : t.sessions ? (t.views / t.sessions).toFixed(1) : "–"}</b><span>세션당 화면(중앙)</span></div>
+            <div><b>{t.med_views != null ? (t.med_views % 1 ? t.med_views.toFixed(1) : num(t.med_views)) : t.sessions ? (t.views / t.sessions).toFixed(1) : "–"}</b><span>세션당 화면(중앙)</span></div>
             <div><b>{fmtDur(t.med_active ?? (t.sessions ? t.active_ms / t.sessions : 0))}</b><span>세션당 조작 시간(중앙)</span></div>
             {/* 머문 시간 — 조작 없이 읽는 시간까지. 켜 두고 잊은 탭에 흔들리지 않게 중앙값 (2026-10-07) */}
             {t.med_visible != null && <div title="탭이 화면에 떠 있던 시간 · 화면당 3시간 상한 · 세션 중앙값"><b>{fmtDur(t.med_visible)}</b><span>세션당 머문 시간(중앙)</span></div>}
@@ -855,8 +861,8 @@ export function VisitsPanel() {
               <>
                 <Head title={`${dayLabel} 시간대별`} sub={isToday ? "KST 0시 00분부터 지금까지, 세션이 시작된 시각 기준" : "KST 0시~24시, 세션이 시작된 시각 기준"} />
                 <LineChart days={hrs.map(String)} fmt={(h) => `${h}시`} tip={(h) => `${dayLabel} ${h}시대`} series={[
-                  { name: "방문자", cls: "s1", values: hrs.map((h) => by.get(h)?.visitors ?? 0) },
-                  { name: "세션", cls: "s2", values: hrs.map((h) => by.get(h)?.sessions ?? 0) },
+                  { name: "방문자", cls: "s1", values: hrs.map((h) => by.get(h)?.visitors ?? 0), axis: "right" },
+                  { name: "세션", cls: "s2", values: hrs.map((h) => by.get(h)?.sessions ?? 0), axis: "right" },
                   { name: "화면 조회", cls: "s3", values: hrs.map((h) => by.get(h)?.views ?? 0) },
                 ]} />
               </>
@@ -865,8 +871,8 @@ export function VisitsPanel() {
             <>
               <h3 className="vz-h">일별 추이</h3>
               <LineChart days={filled.map((d) => d.day)} series={[
-                { name: "방문자", cls: "s1", values: filled.map((d) => d.visitors) },
-                { name: "세션", cls: "s2", values: filled.map((d) => d.sessions) },
+                { name: "방문자", cls: "s1", values: filled.map((d) => d.visitors), axis: "right" },
+                { name: "세션", cls: "s2", values: filled.map((d) => d.sessions), axis: "right" },
                 { name: "화면 조회", cls: "s3", values: filled.map((d) => d.views) },
               ]} />
             </>
