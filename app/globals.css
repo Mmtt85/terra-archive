@@ -27932,9 +27932,9 @@ html:not(.dark):not(.rg-theme) .ship-room:hover,
 .page-head[data-tab="story"]:has(+ section.story-detail) { display: none; }
 .page-head ~ section .planner-controls > h2,
 .page-head ~ section .me-title-row > div:has(> #me-title) { display: none; }
-.site-scroll > .page-head ~ section.story,
-.site-scroll > .page-head ~ section.planner,
-.site-scroll > .page-head ~ section.me-page {
+/* ⚠ 원래 min-height:100% 가 걸린 섹션(story 등)만 — 인프라(planner)·내 정보(me-page)는 원래 높이 규칙이 없었다.
+   거기까지 걸었더니 섹션이 그 높이로 묶여 숙소 줄이 섹션 밖으로 넘쳐 푸터 위에 그려졌다 (사용자 지적 2026-10-07) */
+.site-scroll > .page-head ~ section.story {
   min-height: calc(100% - var(--page-head-h));
 }
 .story-guide-btn {
