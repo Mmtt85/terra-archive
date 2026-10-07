@@ -16,7 +16,7 @@ const R2_KEY = "uploads/dc-promo.html";
 const changes = await fetchAllChanges();
 // 갱신 시각 — 글이 실제로 바뀌었는지 보는 표식 (사용자 지시 2026-10-07). 한국 시간, 분 단위
 const at = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
-const stamp = `<div style="margin:14px 2px 0;font-size:12.5px;color:#6b7479;text-align:right;">마지막 갱신 · ${at} (한국 시간)</div>`;
+const stamp = `<div style="margin:14px 2px 0;font-size:12.5px;color:#6b7479;text-align:right;">마지막 갱신 · ${at} (한국 시간) · 자동 갱신</div>`;
 const footer = readFileSync(join(ROOT, "scripts", "dc-promo-footer.html"), "utf8").trim();
 const html = buildPromoHtml(changes, { updates: 5, days: 60, noLinks: true }) + stamp + footer;
 
