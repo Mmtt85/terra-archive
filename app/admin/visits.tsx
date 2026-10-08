@@ -593,7 +593,11 @@ export function VisitsPanel() {
   // 내 정보 동기화 — 서버별로 거르기 (사용자 요청 2026-10-06). 통계가 방문자별로 묶여 있어 방문자의 서버(max) 기준이다
   const [meServer, setMeServer] = useState("");
   // 내 정보 동기화 정렬 — 횟수순(기본) · 최신순 (사용자 지시 2026-10-08)
-  const [meSort, setMeSort] = useState<"n" | "last" | "sync">("n");   // 0 = 오늘 (KST 0시 00분부터) — 기본 (사용자 지시 2026-10-04)
+  // 정렬은 이 브라우저에 기억한다 — 새로고침하면 횟수순으로 풀렸다 (사용자 지적 2026-10-08)
+  const [meSort, setMeSortState] = useState<"n" | "last" | "sync">(() => {
+    try { const v = localStorage.getItem("ta-admin-visit-mesort"); return v === "last" || v === "sync" ? v : "n"; } catch { return "n"; }
+  });
+  const setMeSort = (v: "n" | "last" | "sync") => { setMeSortState(v); try { localStorage.setItem("ta-admin-visit-mesort", v); } catch { /* 무시 */ } };
   // 기간 지정 (사용자 지시 2026-10-05 "특정 일 혹은 특정 기간 지정도") — KST 날짜. 정해 두면 위 기간 버튼 대신 이것을 본다.
   // DB 쪽 visits_summary_range·visits_sessions_range (docs/supabase-visits.sql) 를 부른다.
   // 기간 — 날짜에 시각(HH:MM, KST)까지 고를 수 있다 (사용자 지시 2026-10-08). 시각을 비우면 그날 0시부터 / 끝날 24시까지
