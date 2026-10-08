@@ -9712,7 +9712,7 @@ html.dark .vz {
 /* 기간 지정 (2026-10-05) — 날짜 칸 두 개. 지정해 두면 테두리가 진해진다 */
 .vz-range { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; padding: 0 6px 0 10px; border: 1px solid var(--line); border-radius: var(--r-sm); font-size: 12px; color: var(--muted); }
 .vz-range.on { border-color: var(--border-strong); color: var(--ink); }
-.vz-range input[type="date"] { height: 28px; padding: 0 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--ink); font: inherit; font-size: 12px; color-scheme: light dark; }
+.vz-range input[type="date"], .vz-range input[type="time"] { height: 28px; padding: 0 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--ink); font: inherit; font-size: 12px; color-scheme: light dark; }
 .vz-range i { font-style: normal; }
 .admin-tools .vz-range .vz-day { height: 28px; padding: 0 8px; font-size: 12px; font-weight: 600; }
 .admin-tools .vz-range .vz-day:disabled { opacity: 0.4; cursor: default; }
@@ -28501,3 +28501,9 @@ html[data-me] .hdr-synced.idle { visibility: hidden; }
   .pt-art-noise { display: none; }
 }
 
+
+/* 방문 통계 칸 크기 15·30·60분 (2026-10-08) */
+.vz-step { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+.vz-step button { padding: 4px 9px; border: 0; background: var(--white); color: var(--ink2); font-size: 12px; cursor: pointer; }
+.vz-step button + button { border-left: 1px solid var(--line); }
+.vz-step button.selected { background: var(--btn-on-bg); color: var(--btn-on-ink); }

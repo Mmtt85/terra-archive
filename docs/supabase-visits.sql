@@ -339,6 +339,20 @@ returns json language sql stable as $$
         select (extract(hour from kst)::int * 4 + floor(extract(minute from kst) / 15)::int) as q,
                count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
         from s where p_hourly group by 1) d),
+    -- 시각 칸 (2026-10-08) — 15·30·60분, t = 칸 시작 epoch 초. 기간을 시각까지 고를 수 있어 날짜를 넘는 칸도 겹치지 않게
+    -- 하루 안의 순번(q) 대신 절대 시각으로 센다. 방문자는 칸마다 따로 중복 제외(합쳐서 내면 겹쳐 센다)
+    'b15', (select coalesce(json_agg(d order by d.t), '[]') from (
+        select (floor(extract(epoch from started_at) / 900) * 900)::bigint as t,
+               count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
+        from s where p_hourly group by 1) d),
+    'b30', (select coalesce(json_agg(d order by d.t), '[]') from (
+        select (floor(extract(epoch from started_at) / 1800) * 1800)::bigint as t,
+               count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
+        from s where p_hourly group by 1) d),
+    'b60', (select coalesce(json_agg(d order by d.t), '[]') from (
+        select (floor(extract(epoch from started_at) / 3600) * 3600)::bigint as t,
+               count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
+        from s where p_hourly group by 1) d),
     'hours', (select coalesce(json_agg(json_build_array(dow, hr, n)), '[]') from (
         select extract(isodow from kst)::int - 1 as dow, extract(hour from kst)::int as hr, count(*) as n
         from s group by 1, 2) d),

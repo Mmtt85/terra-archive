@@ -19,6 +19,7 @@ import storiesData from "../data/stories.json";
 
 type Kv = { k: string | null; n: number };
 type FlowRow = { step: number; src: string; dst: string; n: number };
+type Bucket = { t: number; sessions: number; visitors: number; views: number };
 export type Summary = {
   /** visible_ms·med_* = 머문 시간(탭이 화면에 떠 있던 시간, 화면당 1시간 상한) — 2026-10-07~ DB 함수 */
   total: { sessions: number; visitors: number; views: number; active_ms: number; revisit: number; bounce: number; bots: number;
@@ -34,6 +35,8 @@ export type Summary = {
   hourly?: { hr: number; sessions: number; visitors: number; views: number }[];
   /** 15분 칸 — q = 시×4 + 분÷15. 옛 DB 함수엔 없다(그땐 hourly 로 물러선다) */
   quarter?: { q: number; sessions: number; visitors: number; views: number }[];
+  /** 시각 칸 15·30·60분 — t = 칸 시작 epoch 초 (2026-10-08~ DB 함수). 기간이 48시간 이하일 때만 채운다 */
+  b15?: Bucket[]; b30?: Bucket[]; b60?: Bucket[];
   device: Kv[]; site_lang: Kv[]; tz: Kv[];
   out: { host: string; n: number }[];
   flow: FlowRow[];
@@ -563,18 +566,31 @@ export function VisitsPanel() {
   const [meServer, setMeServer] = useState("");   // 0 = 오늘 (KST 0시 00분부터) — 기본 (사용자 지시 2026-10-04)
   // 기간 지정 (사용자 지시 2026-10-05 "특정 일 혹은 특정 기간 지정도") — KST 날짜. 정해 두면 위 기간 버튼 대신 이것을 본다.
   // DB 쪽 visits_summary_range·visits_sessions_range (docs/supabase-visits.sql) 를 부른다.
-  const [range, setRange] = useState<{ from: string; to: string } | null>(null);
-  // 15분 칸 하나만 보기 (사용자 지시 2026-10-07) — 하루 보기 그래프에서 칸을 누르면 그 15분에 **시작한** 세션만으로
-  // 나머지 통계를 다시 센다. 그래프 자체는 하루 전체를 그대로 보여야 하니 하루치 칸(quarter)을 따로 쥐고 있는다
-  const [slot, setSlot] = useState<{ day: string; q: number } | null>(null);
-  const [dayQuarter, setDayQuarter] = useState<Summary["quarter"] | null>(null);
-  const slotAt = (q: number) => `${String(Math.floor(q / 4)).padStart(2, "0")}:${String((q % 4) * 15).padStart(2, "0")}`;
+  // 기간 — 날짜에 시각(HH:MM, KST)까지 고를 수 있다 (사용자 지시 2026-10-08). 시각을 비우면 그날 0시부터 / 끝날 24시까지
+  const [range, setRange] = useState<{ from: string; to: string; fromT?: string; toT?: string } | null>(null);
+  // 칸 크기 15·30·60분 (사용자 지시 2026-10-08) — 이 브라우저에 남긴다
+  const [step, setStepState] = useState<15 | 30 | 60>(() => {
+    try { const v = Number(localStorage.getItem("ta-admin-visit-step")); return v === 30 || v === 60 ? v : 15; } catch { return 15; }
+  });
+  const setStep = (v: 15 | 30 | 60) => { setStepState(v); try { localStorage.setItem("ta-admin-visit-step", String(v)); } catch { /* 무시 */ } };
+  const kstMs = (d: string, hm = "00:00") => Date.parse(`${d}T${hm}:00+09:00`);
+  const todayStr = kstToday();
+  // 보고 있는 구간 [시작, 끝) — 오늘 보기는 0시~지금
+  const spanStart = range ? kstMs(range.from, range.fromT || "00:00") : days === 0 ? kstMs(todayStr) : null;
+  const spanEnd = range ? (range.toT ? kstMs(range.to, range.toT) : kstMs(nextDay(range.to))) : days === 0 ? Date.now() : null;
+  // 48시간 이하면 시각 칸 그래프 (그보다 길면 일별 추이)
+  const fine = spanStart != null && spanEnd != null && spanEnd - spanStart <= 48 * 3600_000;
+  // 칸 하나만 보기 (사용자 지시 2026-10-07) — 그래프에서 칸을 누르면 그 칸에 **시작한** 세션만으로 나머지 통계를 다시 센다.
+  // 그래프 자체는 구간 전체를 그대로 보여야 하니 고르기 전의 칸 묶음을 따로 쥐고 있는다
+  const [slot, setSlot] = useState<{ t: number; step: number } | null>(null);
+  const [saved, setSaved] = useState<Summary | null>(null);
+  const isoAt = (ms: number) => new Date(ms).toISOString();
   const rangeArgs = slot
-    ? { p_from: `${slot.day}T${slotAt(slot.q)}:00+09:00`, p_to: slot.q === 95 ? `${nextDay(slot.day)}T00:00:00+09:00` : `${slot.day}T${slotAt(slot.q + 1)}:00+09:00` }
-    : range ? { p_from: `${range.from}T00:00:00+09:00`, p_to: `${nextDay(range.to)}T00:00:00+09:00` } : null;
-  const oneDay = !!slot || (!!range && range.from === range.to);
-  // 기간을 바꾸면 고른 칸은 풀린다
-  useEffect(() => { setSlot(null); }, [range, days]);
+    ? { p_from: isoAt(slot.t * 1000), p_to: isoAt((slot.t + slot.step * 60) * 1000) }
+    : range && spanStart != null && spanEnd != null ? { p_from: isoAt(spanStart), p_to: isoAt(spanEnd) } : null;
+  const oneDay = !!slot || (!!range && fine);
+  // 기간·칸 크기를 바꾸면 고른 칸은 풀린다
+  useEffect(() => { setSlot(null); }, [range, days, step]);
   // 사람만 · 봇만 · 둘 다 (사용자 지시 2026-10-05 드롭다운) — DB 의 p_human 은 true·false·null 로 받는다
   const [who, setWho] = useState<Who>("human");
   const human = WHO_ARG[who];
@@ -670,7 +686,7 @@ export function VisitsPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessAll, days, human, srcFilter, range, slot]);
 
-  useEffect(() => { if (data && !slot && data.quarter) setDayQuarter(data.quarter); }, [data, slot]);
+  useEffect(() => { if (data && !slot) setSaved(data); }, [data, slot]);
   if (missing) {
     return (
       <section className="vz">
@@ -758,17 +774,24 @@ export function VisitsPanel() {
     if (!v) return;
     const cur = range ?? { from: v, to: v };
     let next = { ...cur, [which]: v };
-    if (next.from > next.to) next = which === "from" ? { from: v, to: v } : { from: v, to: v };
+    if (next.from > next.to) next = { ...next, from: v, to: v };
     setRange(next);
   };
   // 전날·다음날 (사용자 지시 2026-10-05) — 지정 기간을 하루씩 민다. 기간이 없으면 오늘 하루에서 출발한다.
   // 오늘 너머로는 못 가고, 오늘 하루에 닿으면 기간을 풀어 '오늘' 보기(자동 새로고침)로 돌아간다.
   const shiftDay = (dir: -1 | 1) => {
     const cur = range ?? { from: today, to: today };
-    const step = dir < 0 ? prevDay : nextDay;
-    const next = { from: step(cur.from), to: step(cur.to) };
+    const mv = dir < 0 ? prevDay : nextDay;
+    const next = { ...cur, from: mv(cur.from), to: mv(cur.to) };   // 고른 시각은 그대로 들고 간다
     if (next.to > today) return;
-    if (next.from === today && next.to === today) { setRange(null); setDays(0); return; }
+    if (next.from === today && next.to === today && !next.fromT && !next.toT) { setRange(null); setDays(0); return; }
+    setRange(next);
+  };
+  // 시각 (사용자 지시 2026-10-08) — 비우면 0시부터 / 24시까지. 기간이 없으면 오늘 하루에 시각을 붙인다
+  const pickTime = (which: "fromT" | "toT", v: string) => {
+    const cur = range ?? { from: today, to: today };
+    const next = { ...cur, [which]: v || undefined };
+    if (next.from === next.to && next.fromT && next.toT && next.fromT >= next.toT) return;   // 끝이 시작보다 앞이면 무시
     setRange(next);
   };
   const canNext = !!range && range.to < today;
@@ -798,8 +821,10 @@ export function VisitsPanel() {
           <span>기간</span>
           <button type="button" className="vz-day" onClick={() => shiftDay(-1)} title="하루 앞으로">‹ 전날</button>
           <input type="date" max={today} value={range?.from ?? ""} onChange={(e) => pickDate("from", e.target.value)} aria-label="시작일" />
+          <input type="time" step={900} value={range?.fromT ?? ""} onChange={(e) => pickTime("fromT", e.target.value)} aria-label="시작 시각" title="비우면 0시부터" />
           <i>~</i>
           <input type="date" max={today} value={range?.to ?? ""} onChange={(e) => pickDate("to", e.target.value)} aria-label="끝일" />
+          <input type="time" step={900} value={range?.toT ?? ""} onChange={(e) => pickTime("toT", e.target.value)} aria-label="끝 시각" title="비우면 24시까지" />
           <button type="button" className="vz-day" onClick={() => shiftDay(1)} disabled={!canNext} title="하루 뒤로">다음날 ›</button>
           {range && <button type="button" className="vz-range-x" onClick={() => setRange(null)} aria-label="기간 지정 해제">×</button>}
         </span>
@@ -816,7 +841,7 @@ export function VisitsPanel() {
           <span role="status"><i className="vz-spin" aria-hidden />불러오는 중</span>
         </button>
         {/* 이미지 리포트 — 지금 고른 기간·사람만/봇 포함 그대로 (사용자 지시 2026-10-05). 1년 보기는 일별 집계라 빠진다 */}
-        <button className="vz-report-btn" onClick={() => setReport(true)} disabled={!data || busy || (days === 365 && !range) || !!slot} title={slot ? "15분 칸을 고른 동안은 리포트를 뽑지 않습니다" : undefined}>리포트 이미지</button>
+        <button className="vz-report-btn" onClick={() => setReport(true)} disabled={!data || busy || (days === 365 && !range) || !!slot} title={slot ? "칸을 고른 동안은 리포트를 뽑지 않습니다" : undefined}>리포트 이미지</button>
         {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · 1분마다 자동</span>}
       </div>
       {status && <p className="admin-status">{status}</p>}
@@ -874,37 +899,59 @@ export function VisitsPanel() {
             </div>
           )}
 
-          {(range ? oneDay : days === 0) ? (() => {
-            // 하루 보기 — 15분 칸 (세션 시작 시각 KST, 2026-10-07 — 종전 1시간 칸). 오늘이면 지금 칸까지, 지난 날이면 96칸 전부.
-            // 옛 DB 함수(quarter 없음)면 종전 1시간 칸으로 물러선다
-            const isToday = !range || range.from === today;
-            const kstNow = new Date(Date.now() + 9 * 3600_000);
-            const dayLabel = range && !isToday ? range.from.slice(5).replace("-", "/") : "오늘";
-            // 칸을 골라 둔 동안 data 는 그 15분치라, 그래프는 고르기 전에 쥐어 둔 하루치로 그린다
-            const quarter = slot ? dayQuarter : data.quarter;
-            const q15 = quarter != null;
-            const per = q15 ? 4 : 1;
-            const nowSlot = q15 ? kstNow.getUTCHours() * 4 + Math.floor(kstNow.getUTCMinutes() / 15) : kstNow.getUTCHours();
-            const slots = Array.from({ length: isToday ? nowSlot + 1 : 24 * per }, (_, i) => i);
-            type Slot = { sessions: number; visitors: number; views: number };
-            const by = new Map<number, Slot>(q15 ? quarter!.map((r) => [r.q, r] as const) : (data.hourly ?? []).map((r) => [r.hr, r] as const));
-            const day = range?.from ?? today;
-            const lab = (i: number) => q15 ? `${Math.floor(i / 4)}:${String((i % 4) * 15).padStart(2, "0")}` : `${i}시`;
+          {(range ? fine : days === 0) ? (() => {
+            // 시각 칸 그래프 — 15·30·60분 (세션 시작 시각 KST). 구간 시작~끝(오늘이면 지금)까지 빈 칸도 0 으로 채운다.
+            // 칸을 골라 둔 동안 data 는 그 칸치라, 그래프는 고르기 전에 쥐어 둔 묶음으로 그린다
+            const src = (slot ? saved : data) ?? data;
+            const stepMs = step * 60_000;
+            // 옛 DB 함수(시각 칸 없음)면 하루 순번 15분 칸(quarter)을 시각으로 바꿔 쓴다 — 30·60분은 더해서(방문자는 근사)
+            const legacy = (): Bucket[] | undefined => {
+              if (!src.quarter || spanStart == null) return undefined;
+              const day0 = kstMs(range?.from ?? todayStr) / 1000;
+              const m = new Map<number, Bucket>();
+              for (const r of src.quarter) {
+                const t = Math.floor((day0 + r.q * 900) * 1000 / stepMs) * stepMs / 1000;
+                const c = m.get(t) ?? { t, sessions: 0, visitors: 0, views: 0 };
+                c.sessions += r.sessions; c.visitors += r.visitors; c.views += r.views; m.set(t, c);
+              }
+              return [...m.values()];
+            };
+            const arr = src[`b${step}` as "b15" | "b30" | "b60"] ?? legacy();
+            if (!arr || spanStart == null || spanEnd == null) return <p className="vz-note">시각 칸 그래프는 DB 함수 갱신(바탕화면 visits-시각칸.sql)이 필요합니다.</p>;
+            const end = Math.min(spanEnd, Date.now());
+            const slots: number[] = [];
+            for (let t = Math.floor(spanStart / stepMs) * stepMs; t < end; t += stepMs) slots.push(t / 1000);
+            const by = new Map(arr.map((r) => [r.t, r] as const));
+            const kst = (sec: number) => new Date(sec * 1000 + 9 * 3600_000);
+            const sameDay = kst(slots[0] ?? 0).getUTCDate() === kst(slots[slots.length - 1] ?? 0).getUTCDate();
+            const lab = (sec: number) => {
+              const d = kst(sec), hm = `${d.getUTCHours()}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+              return sameDay ? hm : `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${hm}`;
+            };
+            const spanLabel = !range ? "오늘" : `${range.from.slice(5).replace("-", "/")}${range.fromT ? ` ${range.fromT}` : ""}${range.to !== range.from || range.toT ? ` ~ ${range.to !== range.from ? range.to.slice(5).replace("-", "/") + " " : ""}${range.toT ?? "24:00"}` : ""}`;
+            const every = Math.max(1, Math.round((slots.length * stepMs > 24 * 3600_000 ? 6 : 2) * 60 / step));
+            const selIdx = slot ? slots.indexOf(slot.t) : -1;
             return (
               <>
-                <Head title={`${dayLabel} ${q15 ? "15분" : "시간대"}별`} sub={`${isToday ? "KST 0시 00분부터 지금까지" : "KST 0시~24시"}, 세션이 시작된 시각 기준${q15 ? " · 칸을 누르면 그 15분만 본다" : ""}`}>
+                <Head title={`${spanLabel} ${step === 60 ? "1시간" : `${step}분`}별`} sub={`세션이 시작된 시각 기준 (KST) · 칸을 누르면 그 ${step === 60 ? "1시간" : `${step}분`}만 본다`}>
                   {slot && (
-                    <button type="button" className="vz-slot-chip" onClick={() => setSlot(null)} title="하루 전체로 돌아가기">
-                      {slotAt(slot.q)}~{slot.q === 95 ? "24:00" : slotAt(slot.q + 1)} 만 보는 중 <b aria-hidden>×</b>
+                    <button type="button" className="vz-slot-chip" onClick={() => setSlot(null)} title="구간 전체로 돌아가기">
+                      {lab(slot.t)}~{lab(slot.t + slot.step * 60)} 만 보는 중 <b aria-hidden>×</b>
                     </button>
                   )}
+                  <span className="vz-step" role="group" aria-label="칸 크기">
+                    {([15, 30, 60] as const).map((v) => (
+                      <button key={v} type="button" className={step === v ? "selected" : ""} onClick={() => setStep(v)}>{v === 60 ? "1시간" : `${v}분`}</button>
+                    ))}
+                  </span>
                 </Head>
-                <LineChart days={slots.map(String)} every={q15 ? 8 : undefined}
-                  sel={slot?.q ?? null}
-                  onPick={q15 ? (i) => setSlot((cur) => (cur && cur.q === i ? null : { day, q: i })) : undefined} fmt={(i) => lab(Number(i))} tip={(i) => `${dayLabel} ${lab(Number(i))}${q15 ? "부터 15분" : "대"}`} series={[
-                  { name: "방문자", cls: "s1", values: slots.map((i) => by.get(i)?.visitors ?? 0), axis: "right" },
-                  { name: "세션", cls: "s2", values: slots.map((i) => by.get(i)?.sessions ?? 0), axis: "right" },
-                  { name: "화면 조회", cls: "s3", values: slots.map((i) => by.get(i)?.views ?? 0) },
+                <LineChart days={slots.map(String)} every={every}
+                  sel={selIdx >= 0 ? selIdx : null}
+                  onPick={(i) => setSlot((cur) => (cur && cur.t === slots[i] ? null : { t: slots[i], step }))}
+                  fmt={(v) => lab(Number(v))} tip={(v) => `${lab(Number(v))}부터 ${step === 60 ? "1시간" : `${step}분`}`} series={[
+                  { name: "방문자", cls: "s1", values: slots.map((t) => by.get(t)?.visitors ?? 0), axis: "right" },
+                  { name: "세션", cls: "s2", values: slots.map((t) => by.get(t)?.sessions ?? 0), axis: "right" },
+                  { name: "화면 조회", cls: "s3", values: slots.map((t) => by.get(t)?.views ?? 0) },
                 ]} />
               </>
             );
