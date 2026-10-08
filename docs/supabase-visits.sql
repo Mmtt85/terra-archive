@@ -144,27 +144,12 @@ create policy "admin read visit page day" on public.visit_page_day for select to
 -- ── 분류 함수 ────────────────────────────────────────────────────────────────
 
 -- 유입 도메인 → 유입원 이름. 클라이언트를 고치지 않고 여기서만 늘린다.
+-- 유입원 = 리퍼러 호스트 그대로 (사용자 지시 2026-10-08 "굳이 왜 바꿈") — 종전엔 구글·네이버·X 처럼 이름을 붙였다.
+-- 리퍼러가 없거나 우리 사이트면 '직접'
 create or replace function public.visit_src(p_host text) returns text
 language sql immutable as $$
   select case
     when p_host is null or p_host = '' or p_host ~ '(^|\.)terra-archive\.(net|pages\.dev)$' then '직접'
-    when p_host ~ '(^|\.)(chatgpt\.com|openai\.com|perplexity\.ai|claude\.ai|gemini\.google\.com|copilot\.microsoft\.com)$' then 'AI 검색'
-    when p_host ~ '^(m\.)?blog\.naver\.com$' then '네이버 블로그'
-    when p_host ~ '^(m\.)?cafe\.naver\.com$' then '네이버 카페'
-    when p_host ~ '(^|\.)naver\.com$' then '네이버'
-    when p_host ~ '(^|\.)google\.[a-z.]+$' then '구글'
-    when p_host ~ '(^|\.)daum\.net$' then '다음'
-    when p_host ~ '(^|\.)bing\.com$' then '빙'
-    when p_host ~ '(^|\.)dcinside\.com$' then '디시인사이드'
-    when p_host ~ '(^|\.)arca\.live$' then '아카라이브'
-    when p_host ~ '(^|\.)(twitter\.com|x\.com|t\.co)$' then 'X'
-    when p_host ~ '(^|\.)discord(app)?\.com$' then '디스코드'
-    when p_host ~ '(^|\.)(youtube\.com|youtu\.be)$' then '유튜브'
-    when p_host ~ '(^|\.)namu\.wiki$' then '나무위키'
-    when p_host ~ '(^|\.)ruliweb\.com$' then '루리웹'
-    when p_host ~ '(^|\.)inven\.co\.kr$' then '인벤'
-    when p_host ~ '(^|\.)fmkorea\.com$' then '에펨코리아'
-    when p_host ~ '(^|\.)reddit\.com$' then '레딧'
     else p_host
   end
 $$;

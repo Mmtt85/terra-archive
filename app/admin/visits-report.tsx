@@ -20,7 +20,6 @@ const TZ: Record<string, string> = {
   "Asia/Taipei": "대만", "Asia/Singapore": "싱가포르", "Asia/Bangkok": "태국", "Asia/Hong_Kong": "홍콩", "Europe/London": "영국",
   "Etc/GMT-9": "UTC+9",
 };
-const SRC: Record<string, string> = { "duckduckgo.com": "덕덕고", "search.brave.com": "브레이브", "noai.duckduckgo.com": "덕덕고" };
 // 관리자 화면의 짧은 이름표 → 리포트는 사이트 메뉴 이름 그대로 (밖에 보여 줄 이미지라)
 const FULL: Record<string, string> = {
   인프라: "인프라 자동편성기", 공채: "공개채용 도우미", 파밍: "재료파밍 도우미", 육성: "육성 비용 계산기", 오퍼레이터: "오퍼 백과사전",
@@ -84,7 +83,7 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
   const allViews = Math.max(1, feats.reduce((a, [, v]) => a + v.views, 0));
   const featRows: Row[] = feats.slice(0, tops.sections).map(([h, v]) => [featName(h), v.views, `평균 ${fmtDur(v.active / Math.max(1, v.views))}`]);
 
-  const srcRows: Row[] = data.src.slice(0, tops.src).map((s) => [SRC[s.src] ?? s.src, s.sessions,
+  const srcRows: Row[] = data.src.slice(0, tops.src).map((s) => [s.src, s.sessions,
     `세션당 ${(s.views / Math.max(1, s.sessions)).toFixed(1)}화면${s.visible_ms != null ? ` · 머문 ${fmtDur(s.visible_ms / Math.max(1, s.sessions))}` : ""}`]);
   const outRows: Row[] = data.out.slice(0, tops.out).map((o) => [o.host, o.n, ""]);
   const landRows: Row[] = data.landing.slice(0, tops.landing).map((l) => [pageName(l.path), l.sessions, `바로 나감 ${pct(l.bounces, l.sessions)}`]);
@@ -100,7 +99,7 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
 
   // 한눈에 보기 — 수치에서 바로 나오는 것만 (해석을 지어내지 않는다)
   const top = feats[0];
-  const google = data.src.find((s) => s.src === "구글");
+  const google = data.src.find((s) => /(^|\.)google\./.test(s.src));   // 유입원은 호스트 그대로 (2026-10-08)
   const direct = data.src.find((s) => s.src === "직접");
   const bounceTop = [...data.landing].filter((l) => l.sessions >= 10).sort((a, b) => b.bounces / b.sessions - a.bounces / a.sessions)[0];
   const langTot = data.site_lang.reduce((a, r) => a + r.n, 0);
@@ -108,7 +107,7 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
   const deep = [...data.src].filter((s) => s.sessions >= 10).sort((a, b) => b.views / b.sessions - a.views / a.sessions)[0];
   const insights: React.ReactNode[] = [];
   if (top) insights.push(<><b>{featName(top[0])}가 전체 화면 조회의 {pct(top[1].views, allViews)}</b>를 차지합니다 (모달·창 포함).</>);
-  if (deep) insights.push(<><b>{SRC[deep.src] ?? deep.src} 유입이 세션당 {(deep.views / deep.sessions).toFixed(1)}화면</b>으로 가장 깊이 둘러봅니다{deep !== direct && direct ? ` (직접 방문 ${(direct.views / Math.max(1, direct.sessions)).toFixed(1)}화면)` : ""}.</>);
+  if (deep) insights.push(<><b>{deep.src} 유입이 세션당 {(deep.views / deep.sessions).toFixed(1)}화면</b>으로 가장 깊이 둘러봅니다{deep !== direct && direct ? ` (직접 방문 ${(direct.views / Math.max(1, direct.sessions)).toFixed(1)}화면)` : ""}.</>);
   else if (google) insights.push(<><b>구글 유입 {n(google.sessions)}세션</b> · 세션당 {(google.views / Math.max(1, google.sessions)).toFixed(1)}화면.</>);
   if (bounceTop) insights.push(<><b>{pageName(bounceTop.path)}로 들어온 방문의 {pct(bounceTop.bounces, bounceTop.sessions)}가 그 화면만 보고 나갑니다</b> — 첫 화면 중 가장 높습니다.</>);
   if (langTot) insights.push(<><b>영어·일본어 화면 이용 {pct(foreign, langTot)}</b> (세션 {n(foreign)}개).</>);
@@ -167,7 +166,7 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
         {/* 동선 흐름 (사용자 지시 2026-10-05) — 관리자 화면과 같은 흐름도, 이름표만 메뉴 이름으로 */}
         <section className="vzr-card wide vzr-flow">
           <h2>동선 흐름</h2><p className="vzr-hint">유입 → 첫 화면 → 두 번째 → 세 번째 · 띠 굵기 = 세션 수 · 같은 기능 안의 이동(모달 등)은 한 칸으로 셉니다</p>
-          <Sankey flow={data.flow} nameOf={(l) => full(SRC[l] ?? l)} links={false} />
+          <Sankey flow={data.flow} nameOf={(l) => full(l)} links={false} />
         </section>
 
         <section className="vzr-card wide vzr-heatcard">

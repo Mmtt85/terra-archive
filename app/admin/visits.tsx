@@ -108,6 +108,9 @@ export const SECTION_KO: Record<string, string> = {
   ra: "생존연산", autochess: "위수 협의", gallery: "갤러리", sim: "시뮬레이터", about: "소개", me: "내 정보",
 };
 const DEVICE_KO: Record<string, string> = { mobile: "폰", tablet: "태블릿", desktop: "PC" };
+// 사이트 언어 이름표 (사용자 지시 2026-10-08) — 유입원·시간대는 원래 값 그대로 둔다(사용자 지시).
+// 시간대는 실제로 들어온 값(2026-09~10, 70여 개)을 다 적었고, 모르는 것은 대륙 이름 + 도시로 물러선다
+const LANG_KO: Record<string, string> = { ko: "한국어", en: "영어", ja: "일본어" };
 // 통합전략은 몇 번 테마인지가 제일 중요하다 (사용자 지시 2026-10-04) — 맨 /rogue 는 1번 테마가 열린다.
 // 별명은 커뮤니티 호칭(omni.ts TOPIC_NICKS 첫 낱말), 화면 이름은 rogue.tsx viewsFor 와 같다.
 const ROGUE_NICK = ["팬텀", "미즈키", "사미", "살카즈", "쉐이", "블랙플로우"];
@@ -555,9 +558,9 @@ function SessionLine({ s }: { s: SessRow }) {
         <time>{when}</time>
         <b>{s.src}</b>
         {s.ref && s.ref !== s.src && <span className="vz-muted" title={s.ref}><Go href={/^https?:\/\//.test(s.ref) ? s.ref : null}>{s.ref.replace(/^https?:\/\//, "").slice(0, 60)}</Go></span>}
-        {s.utm && <span className="vz-tag">utm:{s.utm}</span>}
+        {s.utm && <span className="vz-tag" title="utm_source">유입 태그 {s.utm}</span>}
         <span className="vz-tag">{DEVICE_KO[s.device ?? ""] ?? s.device}</span>
-        {s.site_lang && s.site_lang !== "ko" && <span className="vz-tag">{s.site_lang}</span>}
+        {s.site_lang && s.site_lang !== "ko" && <span className="vz-tag">{LANG_KO[s.site_lang] ?? s.site_lang}</span>}
         {s.revisit && <span className="vz-tag">재방문</span>}
         {(s.kind ?? (s.human ? "human" : "bot")) === "skim" && <span className="vz-tag" title={KIND_HINT.skim}>훑고 감</span>}
         {(s.kind ?? (s.human ? "human" : "bot")) === "bot" && <span className="vz-tag warn" title={KIND_HINT.bot}>봇 추정</span>}
@@ -741,7 +744,7 @@ export function VisitsPanel() {
     sections: data.sections.map((r) => ({ label: sectionLabel(r.section), n: r.views, sub: `평균 조작 ${fmtDur(r.avg_active)}${r.avg_visible != null ? ` · 머문 ${fmtDur(r.avg_visible)}` : ""}`, href: sectionUrl(r.section) })),
     // 기기와 사이트 언어는 따로 (사용자 지시 2026-10-07 — 한 목록에 섞여 비율을 읽을 수 없었다)
     device: data.device.map((r) => ({ label: DEVICE_KO[r.k ?? ""] ?? String(r.k), n: r.n })),
-    lang: data.site_lang.map((r) => ({ label: r.k ?? "?", n: r.n })),
+    lang: data.site_lang.map((r) => ({ label: LANG_KO[r.k ?? ""] ?? r.k ?? "?", n: r.n })),
     tz: data.tz.map((r) => ({ label: r.k ?? "?", n: r.n })),
     out: data.out.map((r) => ({ label: r.host, n: r.n })),
   } : { src: [], ref: [], landing: [], sections: [], device: [], lang: [], tz: [], out: [] };
