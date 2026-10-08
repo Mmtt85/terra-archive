@@ -821,10 +821,17 @@ export function VisitsPanel() {
           <span>기간</span>
           <button type="button" className="vz-day" onClick={() => shiftDay(-1)} title="하루 앞으로">‹ 전날</button>
           <input type="date" max={today} value={range?.from ?? ""} onChange={(e) => pickDate("from", e.target.value)} aria-label="시작일" />
-          <input type="time" step={900} value={range?.fromT ?? ""} onChange={(e) => pickTime("fromT", e.target.value)} aria-label="시작 시각" title="비우면 0시부터" />
+          {/* 시각은 시 단위만 (사용자 지시 2026-10-08 "분까지는 필요없고 시간대까지만") */}
+          <select value={range?.fromT ?? ""} onChange={(e) => pickTime("fromT", e.target.value)} aria-label="시작 시각">
+            <option value="">0시</option>
+            {Array.from({ length: 23 }, (_, i) => i + 1).map((h) => <option key={h} value={`${String(h).padStart(2, "0")}:00`}>{h}시</option>)}
+          </select>
           <i>~</i>
           <input type="date" max={today} value={range?.to ?? ""} onChange={(e) => pickDate("to", e.target.value)} aria-label="끝일" />
-          <input type="time" step={900} value={range?.toT ?? ""} onChange={(e) => pickTime("toT", e.target.value)} aria-label="끝 시각" title="비우면 24시까지" />
+          <select value={range?.toT ?? ""} onChange={(e) => pickTime("toT", e.target.value)} aria-label="끝 시각">
+            {Array.from({ length: 23 }, (_, i) => i + 1).map((h) => <option key={h} value={`${String(h).padStart(2, "0")}:00`}>{h}시</option>)}
+            <option value="">24시</option>
+          </select>
           <button type="button" className="vz-day" onClick={() => shiftDay(1)} disabled={!canNext} title="하루 뒤로">다음날 ›</button>
           {range && <button type="button" className="vz-range-x" onClick={() => setRange(null)} aria-label="기간 지정 해제">×</button>}
         </span>
