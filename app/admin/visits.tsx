@@ -109,7 +109,7 @@ function rogueLabel(slug: string): string {
 
 // 해시(탭·모달) 이름 — 영어 해시 그대로 두지 않는다 (사용자 지시 2026-10-06 "이런애들도 다 한국어로")
 const ROOM_KO: Record<string, string> = {
-  CONTROL: "제어 센터", MANUFACTURE: "제조소", TRADING: "무역소", POWER: "발전소", DORMITORY: "숙소",
+  CONTROL: "제어 센터", MANUFACTURE: "제조소", TRADING: "무역소", POWER: "발전소", DORMITORY: "숙소", DORM: "숙소",
   MEETING: "응접실", HIRE: "사무실", WORKSHOP: "가공소", TRAINING: "훈련실",
 };
 const RA_VIEW_KO: Record<string, string> = {
@@ -126,7 +126,7 @@ const HASH_KIND_KO: Record<string, string> = {
   flows: "생산 흐름", ep: "에피소드", scene: "리더기", script: "전문", summary: "AI 요약", theme: "테마별", kind: "분류별",
   release: "출시순", chronicle: "연대기", story: "스토리", sprite: "스탠딩", illust: "일러스트", op: "오퍼 상세",
   en: "적 상세", st: "작전 상세", it: "아이템 상세", item: "아이템", ev: "이벤트 상세", ra: "탭", bond: "맹약", band: "전략",
-  misc: "게임 정보", prts: "PRTS 연결 도움말",
+  misc: "게임 정보", prts: "PRTS 연결 도움말", replay: "리플레이",
 };
 function hashLabel(head: string, hash: string): string {
   const h = decodeURIComponent(hash).replace(/^#/, "");
@@ -141,7 +141,8 @@ function hashLabel(head: string, hash: string): string {
   if ((m = /^(?:it|item)-(.+)$/.exec(h))) return `아이템 · ${ITEM_NAME.get(m[1]) ?? m[1]}`;
   if ((m = /^ev-(.+)$/.exec(h))) return `이벤트 · ${STORY_NAME.get(m[1]) ?? m[1]}`;
   if ((m = /^story-([^/]+)(?:\/ep(\d+))?$/.exec(h))) return `스토리 · ${STORY_NAME.get(m[1]) ?? m[1]}${m[2] ? ` ${m[2]}화` : ""}`;
-  if ((m = /^room-([A-Z]+)-(\d+)$/.exec(h))) return `방 · ${ROOM_KO[m[1]] ?? m[1]} ${Number(m[2]) + 1}`;
+  // 방 하나뿐인 곳(제어 센터·응접실·사무실·가공소·훈련실)은 번호가 없다 — 종전엔 '#room-CONTROL' 이 영어로 남았다 (2026-10-08)
+  if ((m = /^room-([A-Z]+)(?:-(\d+))?$/.exec(h))) return `방 · ${ROOM_KO[m[1]] ?? m[1]}${m[2] != null ? ` ${Number(m[2]) + 1}` : ""}`;
   if ((m = /^ep(\d+)$/.exec(h))) return `${m[1]}화`;
   if ((m = /^theme-(.+)$/.exec(h))) return `테마 · ${m[1] === "mainLine" ? "메인 라인" : m[1]}`;
   if ((m = /^ra-(sandbox_[\w]+)$/.exec(h))) return `지역 상세 · ${m[1]}`;
@@ -563,7 +564,9 @@ function SessionLine({ s }: { s: SessRow }) {
 export function VisitsPanel() {
   const [days, setDays] = useState<0 | 7 | 30 | 90 | 365>(0);
   // 내 정보 동기화 — 서버별로 거르기 (사용자 요청 2026-10-06). 통계가 방문자별로 묶여 있어 방문자의 서버(max) 기준이다
-  const [meServer, setMeServer] = useState("");   // 0 = 오늘 (KST 0시 00분부터) — 기본 (사용자 지시 2026-10-04)
+  const [meServer, setMeServer] = useState("");
+  // 내 정보 동기화 정렬 — 횟수순(기본) · 최신순 (사용자 지시 2026-10-08)
+  const [meSort, setMeSort] = useState<"n" | "last">("n");   // 0 = 오늘 (KST 0시 00분부터) — 기본 (사용자 지시 2026-10-04)
   // 기간 지정 (사용자 지시 2026-10-05 "특정 일 혹은 특정 기간 지정도") — KST 날짜. 정해 두면 위 기간 버튼 대신 이것을 본다.
   // DB 쪽 visits_summary_range·visits_sessions_range (docs/supabase-visits.sql) 를 부른다.
   // 기간 — 날짜에 시각(HH:MM, KST)까지 고를 수 있다 (사용자 지시 2026-10-08). 시각을 비우면 그날 0시부터 / 끝날 24시까지
@@ -738,7 +741,8 @@ export function VisitsPanel() {
       </tbody>
     </table>
   );
-  const meBy = (data?.me_sync?.by ?? []).filter((b) => !meServer || b.server === meServer);
+  const meBy = (data?.me_sync?.by ?? []).filter((b) => !meServer || b.server === meServer)
+    .slice().sort((a, b) => meSort === "last" ? String(b.last).localeCompare(String(a.last)) : (b.n - a.n) || String(b.last).localeCompare(String(a.last)));
   const meServers = [...new Set((data?.me_sync?.by ?? []).map((b) => b.server).filter((x): x is string => !!x))];
   const serverLabel = (code: string) => ACCOUNT_SERVERS.find((x) => x.code === code)?.label ?? code;
   const meTable = (n: number) => !data?.me_sync ? null : (
@@ -901,6 +905,9 @@ export function VisitsPanel() {
                       onClick={() => setMeServer(o.value)}>{o.label} <b>{num(cnt)}</b></button>
                   );
                 })}
+                <span className="vz-sort-sep">정렬</span>
+                <button type="button" className={meSort === "n" ? "selected" : ""} onClick={() => setMeSort("n")}>횟수순</button>
+                <button type="button" className={meSort === "last" ? "selected" : ""} onClick={() => setMeSort("last")}>최신순</button>
               </div>
               {meBy.length ? meTable(tops.mesync) : <p className="vz-note">{meServer ? "이 서버의 동기화 기록이 없습니다." : "이 기간에는 동기화 기록이 없습니다."}</p>}
             </div>
@@ -946,7 +953,7 @@ export function VisitsPanel() {
                       {lab(slot.t)}~{lab(slot.t + slot.step * 60)} 만 보는 중 <b aria-hidden>×</b>
                     </button>
                   )}
-                  <span className="vz-step" role="group" aria-label="칸 크기">
+                  <span className="vz-stepsize" role="group" aria-label="칸 크기">
                     {([15, 30, 60] as const).map((v) => (
                       <button key={v} type="button" className={step === v ? "selected" : ""} onClick={() => setStep(v)}>{v === 60 ? "1시간" : `${v}분`}</button>
                     ))}

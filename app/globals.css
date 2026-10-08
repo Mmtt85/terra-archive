@@ -28503,7 +28503,14 @@ html[data-me] .hdr-synced.idle { visibility: hidden; }
 
 
 /* 방문 통계 칸 크기 15·30·60분 (2026-10-08) */
-.vz-step { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
-.vz-step button { padding: 4px 9px; border: 0; background: var(--white); color: var(--ink2); font-size: 12px; cursor: pointer; }
-.vz-step button + button { border-left: 1px solid var(--line); }
-.vz-step button.selected { background: var(--btn-on-bg); color: var(--btn-on-ink); }
+.vz-stepsize { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+.vz-stepsize button { padding: 4px 9px; border: 0; background: var(--white); color: var(--ink2); font-size: 12px; cursor: pointer; }
+.vz-stepsize button + button { border-left: 1px solid var(--line); }
+.vz-stepsize button.selected { background: var(--btn-on-bg); color: var(--btn-on-ink); }
+/* 세션 타임라인 — 화면 이름과 시간을 한 상자에 (사용자 2026-10-08 "하나의 박스 안에 들어온 건 좋은데"), 줄이 바뀌면
+   위아래 상자가 붙지 않게 줄 사이를 띄운다. (위 칸 크기 버튼 이름이 .vz-step 이라 이 상자에 새어 들었던 것을 떼어 내고 정식으로) */
+.vz-trail { display: flex; flex-wrap: wrap; align-items: center; row-gap: 6px; line-height: 1.5; }
+.vz-trail > span { display: inline-flex; align-items: center; }
+.vz-trail .vz-step { display: inline-flex; align-items: baseline; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 2px 7px; }
+.vz-trail .vz-step.exit { border-color: transparent; }
+.vz-srv-chips .vz-sort-sep { margin-left: 10px; }
