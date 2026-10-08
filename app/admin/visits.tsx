@@ -139,8 +139,9 @@ const HASH_KIND_KO: Record<string, string> = {
   flows: "생산 흐름", ep: "에피소드", scene: "리더기", script: "전문", summary: "AI 요약", theme: "테마별", kind: "분류별",
   release: "출시순", chronicle: "연대기", story: "스토리", sprite: "스탠딩", illust: "일러스트", op: "오퍼 상세",
   en: "적 상세", st: "작전 상세", it: "아이템 상세", item: "아이템", ev: "이벤트 상세", ra: "탭", bond: "맹약", band: "전략",
-  misc: "게임 정보", prts: "PRTS 연결 도움말", replay: "리플레이",
+  misc: "게임 정보", prts: "PRTS 연결 도움말", replay: "리플레이", lore: "이벤트 기록", top: "맨 위",
 };
+const STORY_VIEW_KO: Record<string, string> = { summary: "AI 요약", scene: "리더기", script: "전문", lore: "이벤트 기록" };
 function hashLabel(head: string, hash: string): string {
   const h = decodeURIComponent(hash).replace(/^#/, "");
   let m: RegExpExecArray | null;
@@ -153,7 +154,11 @@ function hashLabel(head: string, hash: string): string {
   if ((m = /^st-(.+)$/.exec(h))) return `작전 · ${STAGE_NAME.get(m[1]) ?? m[1]}`;
   if ((m = /^(?:it|item)-(.+)$/.exec(h))) return `아이템 · ${ITEM_NAME.get(m[1]) ?? m[1]}`;
   if ((m = /^ev-(.+)$/.exec(h))) return `이벤트 · ${STORY_NAME.get(m[1]) ?? m[1]}`;
-  if ((m = /^story-([^/]+)(?:\/ep(\d+))?$/.exec(h))) return `스토리 · ${STORY_NAME.get(m[1]) ?? m[1]}${m[2] ? ` ${m[2]}화` : ""}`;
+  // 스토리 뒤 보기 이름(/ep3 · /summary · /scene · /script · /lore)도 한국어로 (사용자 지적 2026-10-08 "#story-act33side/summary")
+  if ((m = /^story-([^/]+)(?:\/(.+))?$/.exec(h))) {
+    const tail = (m[2] ?? "").split("/").filter(Boolean).map((p) => /^ep(\d+)$/.exec(p)?.[1] ? `${Number(p.slice(2))}화` : STORY_VIEW_KO[p] ?? p).join(" · ");
+    return `스토리 · ${STORY_NAME.get(m[1]) ?? m[1]}${tail ? ` · ${tail}` : ""}`;
+  }
   // 방 하나뿐인 곳(제어 센터·응접실·사무실·가공소·훈련실)은 번호가 없다 — 종전엔 '#room-CONTROL' 이 영어로 남았다 (2026-10-08)
   if ((m = /^room-([A-Z]+)(?:-(\d+))?$/.exec(h))) return `방 · ${ROOM_KO[m[1]] ?? m[1]}${m[2] != null ? ` ${Number(m[2]) + 1}` : ""}`;
   if ((m = /^ep(\d+)$/.exec(h))) return `${m[1]}화`;
