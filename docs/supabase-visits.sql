@@ -144,9 +144,34 @@ create policy "admin read visit page day" on public.visit_page_day for select to
 -- ── 분류 함수 ────────────────────────────────────────────────────────────────
 
 -- 유입 도메인 → 유입원 이름. 클라이언트를 고치지 않고 여기서만 늘린다.
--- 유입원 = 리퍼러 호스트 그대로 (사용자 지시 2026-10-08 "굳이 왜 바꿈") — 종전엔 구글·네이버·X 처럼 이름을 붙였다.
--- 리퍼러가 없거나 우리 사이트면 '직접'
 create or replace function public.visit_src(p_host text) returns text
+language sql immutable as $$
+  select case
+    when p_host is null or p_host = '' or p_host ~ '(^|\.)terra-archive\.(net|pages\.dev)$' then '직접'
+    when p_host ~ '(^|\.)(chatgpt\.com|openai\.com|perplexity\.ai|claude\.ai|gemini\.google\.com|copilot\.microsoft\.com)$' then 'AI 검색'
+    when p_host ~ '^(m\.)?blog\.naver\.com$' then '네이버 블로그'
+    when p_host ~ '^(m\.)?cafe\.naver\.com$' then '네이버 카페'
+    when p_host ~ '(^|\.)naver\.com$' then '네이버'
+    when p_host ~ '(^|\.)google\.[a-z.]+$' then '구글'
+    when p_host ~ '(^|\.)daum\.net$' then '다음'
+    when p_host ~ '(^|\.)bing\.com$' then '빙'
+    when p_host ~ '(^|\.)dcinside\.com$' then '디시인사이드'
+    when p_host ~ '(^|\.)arca\.live$' then '아카라이브'
+    when p_host ~ '(^|\.)(twitter\.com|x\.com|t\.co)$' then 'X'
+    when p_host ~ '(^|\.)discord(app)?\.com$' then '디스코드'
+    when p_host ~ '(^|\.)(youtube\.com|youtu\.be)$' then '유튜브'
+    when p_host ~ '(^|\.)namu\.wiki$' then '나무위키'
+    when p_host ~ '(^|\.)ruliweb\.com$' then '루리웹'
+    when p_host ~ '(^|\.)inven\.co\.kr$' then '인벤'
+    when p_host ~ '(^|\.)fmkorea\.com$' then '에펨코리아'
+    when p_host ~ '(^|\.)reddit\.com$' then '레딧'
+    else p_host
+  end
+$$;
+
+-- 유입원 '목록'만 리퍼러 호스트 그대로 묶는다 (사용자 지시 2026-10-08) — 세션 타임라인·내 정보 동기화의
+-- '구글 · www.google.com/' 같은 이름표는 visit_src 그대로 둔다. 리퍼러가 없거나 우리 사이트면 '직접'
+create or replace function public.visit_host(p_host text) returns text
 language sql immutable as $$
   select case
     when p_host is null or p_host = '' or p_host ~ '(^|\.)terra-archive\.(net|pages\.dev)$' then '직접'
@@ -304,7 +329,7 @@ returns json language sql stable as $$
                sum(views) as views, sum(active_ms) as active_ms, sum(visible_ms) as visible_ms
         from s group by 1) d),
     'src', (select coalesce(json_agg(d order by d.sessions desc), '[]') from (
-        select src, count(*) as sessions, sum(views) as views, sum(active_ms) as active_ms, sum(visible_ms) as visible_ms,
+        select public.visit_host(ref_host) as src, count(*) as sessions, sum(views) as views, sum(active_ms) as active_ms, sum(visible_ms) as visible_ms,
                percentile_cont(0.5) within group (order by active_ms)::bigint as med_active,
                percentile_cont(0.5) within group (order by visible_ms)::bigint as med_visible
         from s group by 1) d),
@@ -418,7 +443,7 @@ returns json language sql stable as $$
     left join (select session, bool_or(interacted) as human, sum(visible_ms) as vis from v group by 1) h on h.session = vs.id
     where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
       and public.visit_pick(public.visit_kind(h.human, h.vis, vs.tz), p_kinds, p_human)
-      and (p_src is null or public.visit_src(vs.ref_host) = p_src)
+      and (p_src is null or public.visit_host(vs.ref_host) = p_src or public.visit_src(vs.ref_host) = p_src)
       and (p_landing is null or public.visit_path(split_part(vs.landing, '#', 1)) = p_landing)
     order by vs.started_at desc
     limit least(p_limit, 5000)
