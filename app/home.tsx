@@ -3475,32 +3475,47 @@ const enNameOf = (o: Operator) => {
   for (const a of o.aliases ?? []) if (EN_NAME.test(a) && !EN_CODE.test(a)) return a;
   return "";
 };
+// 같은 인물의 다른 버전 묶기 — id 코드로 먼저 묶고, 어긋나는 짝은 영문 이름으로 잇는다.
+// 알트의 영문 이름은 **원본 이름을 통째로 앞이나 뒤에 달고 있다**:
+//   Ch'en the Dawnstreak ← Ch'en · Kirin R Yato ← Yato · Zinogre S Catapult ← Catapult
+// 실측 34묶음 69명이고 ko/en/ja 세 판이 **같은 결과**를 낸다 (2026-09-18).
+// 관련 오퍼 '다른 버전' 줄과 상세 머리의 원본·이격 링크(2026-10-08)가 같이 쓴다 — 목록마다 한 번만 센다
+const familyCache = new WeakMap<Operator[], Map<string, string>>();
+function familyOf(operators: Operator[]): Map<string, string> {
+  const hit = familyCache.get(operators);
+  if (hit) return hit;
+  const fam = new Map<string, string>();
+  const byEn = new Map<string, Operator>();
+  for (const o of operators) {
+    fam.set(o.id, baseCodeOf(o));
+    const en = enNameOf(o);
+    if (en.length >= 3) byEn.set(en, o);
+  }
+  for (const o of operators) {
+    const w = enNameOf(o).split(" ").filter(Boolean);
+    if (w.length < 2) continue;
+    for (let n = w.length - 1; n >= 1; n--) {
+      const base = byEn.get(w.slice(0, n).join(" ")) ?? byEn.get(w.slice(w.length - n).join(" "));
+      if (base && base.id !== o.id) { fam.set(o.id, fam.get(base.id) ?? baseCodeOf(base)); break; }
+    }
+  }
+  familyCache.set(operators, fam);
+  return fam;
+}
+/** 같은 인물의 다른 버전들 — 원본(영문 이름이 가장 짧은 쪽, 같으면 먼저 나온 id)을 표시해서 */
+function versionsOf(operator: Operator, operators: Operator[]): { op: Operator; original: boolean }[] {
+  const fam = familyOf(operators);
+  const mine = fam.get(operator.id);
+  const all = operators.filter((o) => fam.get(o.id) === mine);
+  if (all.length < 2) return [];
+  const root = [...all].sort((a, b) => (enNameOf(a).length || 99) - (enNameOf(b).length || 99) || a.id.localeCompare(b.id))[0];
+  return all.filter((o) => o.id !== operator.id).map((op) => ({ op, original: op.id === root.id }));
+}
 function RelatedOperators({ operator, operators, onSelect }: {
   operator: Operator; operators: Operator[]; onSelect?: (op: Operator) => void;
 }) {
   const { locale, t } = useI18n();
-  // 같은 인물의 다른 버전 묶기 — id 코드로 먼저 묶고, 어긋나는 짝은 영문 이름으로 잇는다.
-  // 알트의 영문 이름은 **원본 이름을 통째로 앞이나 뒤에 달고 있다**:
-  //   Ch'en the Dawnstreak ← Ch'en · Kirin R Yato ← Yato · Zinogre S Catapult ← Catapult
-  // 실측 34묶음 69명이고 ko/en/ja 세 판이 **같은 결과**를 낸다 (2026-09-18).
-  const family = useMemo(() => {
-    const fam = new Map<string, string>();
-    const byEn = new Map<string, Operator>();
-    for (const o of operators) {
-      fam.set(o.id, baseCodeOf(o));
-      const en = enNameOf(o);
-      if (en.length >= 3) byEn.set(en, o);
-    }
-    for (const o of operators) {
-      const w = enNameOf(o).split(" ").filter(Boolean);
-      if (w.length < 2) continue;
-      for (let n = w.length - 1; n >= 1; n--) {
-        const base = byEn.get(w.slice(0, n).join(" ")) ?? byEn.get(w.slice(w.length - n).join(" "));
-        if (base && base.id !== o.id) { fam.set(o.id, fam.get(base.id) ?? baseCodeOf(base)); break; }
-      }
-    }
-    return fam;
-  }, [operators]);
+  const family = useMemo(() => familyOf(operators), [operators]);
   const groups = useMemo(() => {
     // 미실장(중섭 선행)도 빼지 않는다 — 2026-09-04 규칙(숨기지 말고 흑백 `.fut-dim`)을
     // 여기만 안 따르고 있었다. 페르소나3 콜라보(S.E.E.S.)처럼 **소속이 전원 미실장인 진영**은
@@ -3576,6 +3591,21 @@ function OperatorFile({ operator, includeFuture, operators, onRelated }: { opera
               <div className="class-line">
                 <div><b>{operator.job}</b><small>{operator.subProfession} · {operator.position}</small></div>
               </div>
+              {/* 원본·이격 바로가기 (사용자 지시 2026-10-08) — 이격이면 원본을, 원본이면 이격을 이름 밑에 바로 */}
+              {operators && onRelated && (() => {
+                const vers = versionsOf(operator, operators);
+                if (!vers.length) return null;
+                return (
+                  <div className="modal-versions">
+                    {vers.map(({ op, original }) => (
+                      <a key={op.id} href={operatorHref(locale, op)} className={op.unreleased ? "fut-dim" : undefined}
+                        onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); onRelated(op); }}>
+                        <span>{original ? t("원본") : t("이격")}</span>{op.name}
+                      </a>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
             {/* 헤더 오른쪽 세로단 — 미실장 안내와 바로가기 버튼을 쌓는다. 제목 옆 별도 열이라
                 안내 문장이 길어도 히어로 높이를 밀지 않고, 둘이 겹치지도 않는다

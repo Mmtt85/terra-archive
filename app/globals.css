@@ -28514,3 +28514,14 @@ html[data-me] .hdr-synced.idle { visibility: hidden; }
 .vz-trail .vz-step { display: inline-flex; align-items: baseline; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 2px 7px; }
 .vz-trail .vz-step.exit { border-color: transparent; }
 .vz-srv-chips .vz-sort-sep { margin-left: 10px; }
+
+/* 오퍼 상세 머리 — 원본·이격 바로가기 (2026-10-08) */
+.modal-versions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.modal-versions a {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px 3px 4px; border: 1px solid var(--line); border-radius: var(--r-pill);
+  background: var(--white); color: var(--ink); font-size: 12px; font-weight: 700; text-decoration: none;
+}
+.modal-versions a span { padding: 1px 6px; border-radius: var(--r-pill); background: var(--bg-soft); color: var(--muted); font-size: 10.5px; font-weight: 700; }
+.modal-versions a:hover { border-color: var(--btn-on-bg); background: var(--btn-on-bg); color: var(--btn-on-ink); }
+.modal-versions a:hover span { background: transparent; color: inherit; opacity: .75; }

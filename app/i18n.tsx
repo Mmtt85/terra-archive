@@ -2300,6 +2300,8 @@ const D: Record<string, Pair> = {
   "{ym} 예정": ["{ym} (est.)", "{ym} 予定"],
   "{md} 개방 확정": ["Opens {md} (confirmed)", "{md}開放確定"],
   "이벤트 상세": ["Event details", "イベント詳細"],
+  "원본": ["Original", "原型"],
+  "이격": ["Alter", "異格"],
   "게임 계정 미연동": ["Game account", "ゲームアカウント"],
   "정보 동기화 가능": ["not linked · sync", "未連携・同期可能"],
   "한국 서버 {md} 개방 확정": ["Opens on KR {md} (confirmed)", "韓国サーバー{md}開放確定"],
