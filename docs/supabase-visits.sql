@@ -235,14 +235,17 @@ $$;
 --   skim  = 조작은 없지만 화면에 1초 이상 떠 있었고 시간대가 한국·일본 — 즐겨찾기로 열어 확인만 하고 닫은 사람
 --           (실측: 서울 폰·한 화면 1~4초, 재방문 다수)
 --   bot   = 나머지 — 화면 기록 없음(61%, 상하이·모스크바·LA 크롤러), 화면에 0초(미리보기·프리렌더), 해외 시간대 무조작
-create or replace function public.visit_kind(p_interacted boolean, p_visible_ms bigint, p_tz text)
+-- p_visible_ms 는 numeric — sum() 이 numeric 을 내서 bigint 로 받으면 함수를 못 찾는다(42883, 2026-10-08)
+drop function if exists public.visit_is_human(boolean, bigint, text);
+drop function if exists public.visit_kind(boolean, bigint, text);
+create or replace function public.visit_kind(p_interacted boolean, p_visible_ms numeric, p_tz text)
 returns text language sql immutable as $$
   select case when coalesce(p_interacted, false) then 'human'
               when coalesce(p_visible_ms, 0) >= 1000 and p_tz in ('Asia/Seoul', 'Asia/Tokyo') then 'skim'
               else 'bot' end
 $$;
 -- 매일 정리의 '사람 세션' = human + skim
-create or replace function public.visit_is_human(p_interacted boolean, p_visible_ms bigint, p_tz text)
+create or replace function public.visit_is_human(p_interacted boolean, p_visible_ms numeric, p_tz text)
 returns boolean language sql immutable as $$
   select public.visit_kind(p_interacted, p_visible_ms, p_tz) <> 'bot'
 $$;
@@ -481,7 +484,7 @@ begin
     select * from public.visits_views(d0 - interval '1 day');
   create temp table _s on commit drop as
     select vs.id, vs.visitor, vs.revisit, public.visit_src(vs.ref_host) as src,
-           public.visit_is_human(bool_or(v.interacted), sum(v.visible_ms)::bigint, vs.tz) as human, count(v.seq) as views, coalesce(sum(v.active_ms), 0) as active_ms
+           public.visit_is_human(bool_or(v.interacted), sum(v.visible_ms), vs.tz) as human, count(v.seq) as views, coalesce(sum(v.active_ms), 0) as active_ms
     from public.visit_session vs left join _v v on v.session = vs.id
     where vs.started_at >= d0 and vs.started_at < d1 and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
     group by vs.id, vs.visitor, vs.revisit, vs.ref_host, vs.tz;

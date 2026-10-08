@@ -446,6 +446,8 @@ const SPANS = [7, 30, 90, 365] as const;
 type Kind = "human" | "skim" | "bot";
 const KINDS: Kind[] = ["human", "skim", "bot"];
 const KIND_LABEL: Record<Kind, string> = { human: "사람", skim: "훑고 간 사람", bot: "봇" };
+/** 고를 수 있는 조합 — 하나씩 · 둘씩 · 셋 다 */
+const KIND_COMBOS: Kind[][] = [["human"], ["skim"], ["bot"], ["human", "skim"], ["human", "bot"], ["skim", "bot"], ["human", "skim", "bot"]];
 const KIND_HINT: Record<Kind, string> = {
   human: "스크롤·클릭·터치·키 입력이 한 번이라도 있었던 세션",
   skim: "조작은 없지만 화면에 1초 이상 떠 있었고 한국·일본 시간대 — 열어서 확인만 하고 닫은 사람",
@@ -616,12 +618,10 @@ export function VisitsPanel() {
     try { const v = JSON.parse(localStorage.getItem("ta-admin-visit-kinds") ?? "null") as Kind[] | null; if (Array.isArray(v) && v.length && v.every((k) => KINDS.includes(k))) return v; } catch { /* 무시 */ }
     return ["human", "skim"];
   });
-  const toggleKind = (k: Kind) => setKindsState((cur) => {
-    const next = cur.includes(k) ? cur.filter((x) => x !== k) : KINDS.filter((x) => x === k || cur.includes(x));
-    if (!next.length) return cur;
+  const pickKinds = (next: Kind[]) => {
+    setKindsState(next);
     try { localStorage.setItem("ta-admin-visit-kinds", JSON.stringify(next)); } catch { /* 무시 */ }
-    return next;
-  });
+  };
   const human = kinds.join(",");   // 의존성 키 (아래 effect 들이 이걸 본다)
   const kindArgs = { p_kinds: kinds };
   const whoLabel = kinds.map((k) => KIND_LABEL[k]).join(" + ");
@@ -869,10 +869,14 @@ export function VisitsPanel() {
           <button type="button" className="vz-day" onClick={() => shiftDay(1)} disabled={!canNext} title="하루 뒤로">다음날 ›</button>
           {range && <button type="button" className="vz-range-x" onClick={() => setRange(null)} aria-label="기간 지정 해제">×</button>}
         </span>
-{/* 세션 종류 — 여러 개 골라 조합 (사용자 지시 2026-10-08 "드랍다운으로") */}
-        <Dropdown multi ariaLabel="세션 종류" label={whoLabel} selected={kinds}
-          items={KINDS.map((k) => ({ value: k, label: KIND_LABEL[k], ...(data?.total?.kinds ? { count: data.total.kinds[k] } : {}) }))}
-          onPick={(v) => toggleKind(v as Kind)} disabled={days === 365 && !range} />
+{/* 세션 종류 — 셋의 조합 7가지를 한 항목씩 (사용자 지시 2026-10-08 "경우의 수에 따라 + 로 묶어 하나의 항목으로").
+            숫자는 그 조합의 기간 안 세션 수 */}
+        <Dropdown ariaLabel="세션 종류" label={whoLabel} selected={[kinds.join("+")]}
+          items={KIND_COMBOS.map((c) => {
+            const n = data?.total?.kinds ? c.reduce((a, k) => a + (data.total.kinds?.[k] ?? 0), 0) : undefined;
+            return { value: c.join("+"), label: c.map((k) => KIND_LABEL[k]).join(" + "), ...(n != null ? { count: n } : {}) };
+          })}
+          onPick={(v) => pickKinds(v.split("+") as Kind[])} disabled={days === 365 && !range} />
         <button className={`vz-refresh${busy ? " busy" : ""}`} onClick={() => setTick((n) => n + 1)} disabled={busy} aria-busy={busy}>
           <span>새로고침</span>
           <span role="status"><i className="vz-spin" aria-hidden />불러오는 중</span>
