@@ -184,8 +184,10 @@ export default function ChangelogButton() {
         {/* 모바일은 아이콘만 (1줄 로고 옆 — 폭이 좁다) */}
         <span className="chlog-label">{t("업데이트 내역")}</span>
         {/* '중요' 배지는 뺐다 — NEW 와 같은 자리에 겹쳐 떴다 (사용자 지시 2026-10-07). 목록 안의 중요 표시는 그대로 */}
-        {/* NEW — 올린 지 3일 안의 항목이 있으면, 한 번 열면 그 묶음은 다시 안 뜬다 */}
-        <NewBadge id={`chlog-btn@${newIds.join(",")}`} show={newIds.length > 0} />
+        {/* NEW — 올린 지 3일 안의 항목이 있으면, 한 번 열면 **새 항목이 올라오기 전까지** 다시 안 뜬다.
+            기억 키는 가장 최근 항목 하나(newIds 는 등록 역순) — 종전엔 3일 안 항목 묶음 전체라, 옛 항목이 3일을
+            넘겨 빠질 때마다 키가 바뀌어 새 글 없이도 배지가 또 떴다 (사용자 지적 2026-10-08) */}
+        <NewBadge id={`chlog-btn@${newIds[0] ?? ""}`} show={newIds.length > 0} />
       </button>
       {/* 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로 portal로 body에 렌더.
           제목은 창 크롬 바(label)가 담당 — 종전 내부 header는 제목이 이중으로 떠서 제거하고,

@@ -362,6 +362,7 @@ python3 scripts/build-story-scripts.py --lang ja  # JA 전문 → public/story/s
 python3 scripts/build-story-vn.py act6d5   # 한 이벤트
 python3 scripts/build-story-vn.py          # vn 트랙이 있는 전 이벤트
 python3 scripts/build-story-search.py          # 스샷 레이더 전문 검색 인덱스 → public/story/search.bin (KR 전문 갱신 시 같이 실행)
+python3 scripts/build-story-find.py            # 대사 검색 창 색인 → public/story/find/{ko,en,ja}/ + app/data/story-find-meta.json (전문 ko·en·ja 갱신 뒤, git 미추적·R2 전용)
 python3 scripts/build-records.py               # 오퍼레이터 기록(밀록) 전문 → public/records/{ko,en,ja}/<charId>.json + app/data/record-ids.json
 python3 scripts/build-story-vn.py --records    #   └ 기록 리더기 무대 — 배경·스탠딩 (build-records.py 바로 뒤에)
 

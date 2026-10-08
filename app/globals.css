@@ -9717,6 +9717,10 @@ html.dark .vz {
 .admin-tools .vz-range .vz-day { height: 28px; padding: 0 8px; font-size: 12px; font-weight: 600; }
 .admin-tools .vz-range .vz-day:disabled { opacity: 0.4; cursor: default; }
 .vz-range .vz-range-x { width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 15px; cursor: pointer; }
+/* 폰 — 기간 줄이 화면 밖으로 삐져나갔다(541px). 자기 줄을 통째로 쓰고 칸이 모자라면 다음 줄로 접는다 (2026-10-08) */
+@media (max-width: 620px) {
+  .vz-range { flex-wrap: wrap; max-width: 100%; margin-left: 0; padding: 4px 6px 4px 10px; row-gap: 4px; }
+}
 /* 기간·사람만 버튼 묶음과 떼어 놓는다 · 받아오는 동안은 버튼 글자만 '불러오는 중'으로 (사용자 지시 2026-10-04).
    두 글자를 한 칸에 겹쳐 두고 하나만 보여서 버튼 폭이 바뀌지 않는다 */
 .vz-controls .vz-refresh { margin-left: 14px; display: inline-grid; }
@@ -9855,6 +9859,8 @@ html.dark .vz {
   stroke-linejoin: round;
 }
 .vz-node-n { fill: var(--muted); font: 600 11px var(--mono); }
+/* 표는 칸이 많아 폰 폭에 안 들어간다 — 페이지가 아니라 표 상자 안에서만 옆으로 밀리게 (사용자 지적 2026-10-08) */
+.vz-tablewrap { max-width: 100%; overflow-x: auto; }
 .vz-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .vz-table th {
   text-align: right;
@@ -10421,6 +10427,127 @@ html.dark .vz {
   border-color: var(--btn-line-hover);
   background: var(--btn-bg-hover);
   color: var(--btn-ink-hover);
+}
+/* 대사 검색 (2026-10-08) — 탭 줄 오른쪽 끝, 스샷 레이더 바로 왼쪽. 탭과 같은 중립 버튼이다 */
+.story-viewtabs .story-find-btn {
+  margin-left: auto;
+}
+.story-viewtabs .story-find-btn + .lens-open-wrap {
+  margin-left: 0;
+}
+@media (max-width: 620px) {
+  /* 좁은 화면 — 레이더가 줄을 통째로 쓰던 자리를 둘이 나눠 쓴다 */
+  .story-viewtabs .story-find-btn {
+    margin-left: 0;
+    flex: 1 1 0;
+  }
+  .story-viewtabs .story-find-btn + .lens-open-wrap {
+    width: auto;
+    flex: 1 1 0;
+  }
+}
+.sf-modal {
+  width: min(720px, calc(100vw - 32px));
+}
+.sf-root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+  min-height: 0;
+}
+.sf-status {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.sf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sf-group h4 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 13.5px;
+}
+.sf-group h4 small {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.sf-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.sf-group li button {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  width: 100%;
+  padding: 7px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.55;
+  cursor: pointer;
+}
+.sf-group li button:hover {
+  background: var(--btn-bg-hover);
+}
+.sf-ep {
+  flex: 0 0 auto;
+  min-width: 34px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.sf-group li b {
+  flex: 0 0 auto;
+  max-width: 9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.sf-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sf-text mark {
+  background: color-mix(in srgb, var(--lime) 45%, transparent);
+  color: inherit;
+  padding: 0 1px;
+}
+.sf-more, .sf-more-lines {
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--btn-line);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sf-more:hover, .sf-more-lines:hover {
+  border-color: var(--btn-line-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-ink-hover);
+}
+/* 대사 검색에서 전문으로 연 줄 — 잠깐 칠했다가 빠진다 */
+.sc-hit {
+  animation: sc-hit 2.4s ease-out;
+}
+@keyframes sc-hit {
+  0%, 40% { background: color-mix(in srgb, var(--lime) 35%, transparent); }
+  100% { background: transparent; }
 }
 /* ── 테라 연대기 ── */
 .chron {

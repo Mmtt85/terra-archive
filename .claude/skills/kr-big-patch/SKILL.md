@@ -171,6 +171,7 @@ python3 scripts/build-story-vn.py            # 리더기 무대 — 배경·스�
 python3 scripts/build-records.py             # 오퍼레이터 기록(밀록) — ci 미포함, 여기서만 돈다
 python3 scripts/build-story-vn.py --records  #   └ 기록 리더기 무대 (기록 JSON 의 vn 트랙 → 배경·스탠딩)
 python3 scripts/build-story-audio.py         # 리더기 소리 — 전문·기록 JSON 의 au 트랙 → BGM·효과음 mp3 (없는 것만)
+python3 scripts/build-story-find.py          # 대사 검색 색인 — 전문 ko·en·ja 를 다 구운 뒤 (git 미추적, R2 로만 나간다)
 ```
 > ⚠ `build-story-scripts.py <id>`처럼 **단일 id로 돌리면 `story-script-ids.json`을 갱신하지
 > 않는다**(목록이 잘리는 걸 막으려는 의도적 동작). 새 이벤트가 목록에 안 뜨면 이게 원인이다.

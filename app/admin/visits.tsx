@@ -755,7 +755,7 @@ export function VisitsPanel() {
   } : { src: [], ref: [], landing: [], sections: [], device: [], lang: [], tz: [], out: [] };
   // 화면 순위·내 정보 동기화 표 — 본문(상위 n)과 '전체 보기' 창이 같이 쓴다
   const pageTable = (n: number) => !data ? null : (
-    <table className="vz-table">
+    <div className="vz-tablewrap"><table className="vz-table">
       <thead>
         <tr><th>화면</th><th>조회</th><th>세션</th><th>평균 조작</th><th title="탭이 화면에 떠 있던 시간 · 화면당 1시간 상한">평균 머문</th><th>여기서 이탈</th><th title="평균">스크롤</th></tr>
       </thead>
@@ -775,7 +775,7 @@ export function VisitsPanel() {
           );
         })}
       </tbody>
-    </table>
+    </table></div>
   );
   const meBy = (data?.me_sync?.by ?? []).filter((b) => !meServer || b.server === meServer)
     .slice().sort((a, b) => meSort === "last" ? String(b.last).localeCompare(String(a.last))
@@ -784,7 +784,7 @@ export function VisitsPanel() {
   const meServers = [...new Set((data?.me_sync?.by ?? []).map((b) => b.server).filter((x): x is string => !!x))];
   const serverLabel = (code: string) => ACCOUNT_SERVERS.find((x) => x.code === code)?.label ?? code;
   const meTable = (n: number) => !data?.me_sync ? null : (
-    <table className="vz-table">
+    <div className="vz-tablewrap"><table className="vz-table">
       <thead><tr><th>방문자</th><th>유입</th><th>합계</th><th>로그인</th><th>다시 동기화</th><th>서버</th><th>마지막</th></tr></thead>
       <tbody>
         {meBy.slice(0, n).map((b) => (
@@ -797,7 +797,7 @@ export function VisitsPanel() {
           </tr>
         ))}
       </tbody>
-    </table>
+    </table></div>
   );
   // 전체 보기 창의 내용 · 줄 수
   const allTotal = !allOf || !data ? 0

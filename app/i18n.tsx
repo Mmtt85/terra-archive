@@ -3052,6 +3052,19 @@ const D: Record<string, Pair> = {
   // (사용자 확정 2026-07-23). Phase 1은 KR 클라 전용(kor.traineddata만 호스팅)이라 진입 버튼이
   // ko에서만 보이지만, 키는 미리 등록해 둔다 (EN/JA 클라 지원 시 버튼 게이트만 풀면 됨).
   "스샷 레이더": ["Snap Radar", "スクショレーダー"],
+  // 대사 검색 창 (app/story-find.tsx, 2026-10-08)
+  "대사 검색": ["Search Lines", "セリフ検索"],
+  "대사 한 구절을 입력하세요": ["Type a line of dialogue", "セリフの一節を入力"],
+  "두 글자 이상 입력하세요 (영문은 세 글자)": ["Type at least 3 letters (2 for Korean/Japanese)", "2文字以上入力してください（英字は3文字）"],
+  "스토리 대사 전체에서 찾습니다. 띄어쓰기·문장부호는 무시합니다.": ["Searches every story's dialogue. Spaces and punctuation are ignored.", "全ストーリーのセリフから探します。スペース・句読点は無視します。"],
+  "검색 데이터를 받지 못했습니다 — 잠시 뒤 다시 시도해 주세요.": ["Couldn't load the search data — please try again shortly.", "検索データを取得できませんでした — しばらくしてから再度お試しください。"],
+  "맞는 대사가 없습니다.": ["No matching lines.", "一致するセリフはありません。"],
+  "{stories}편에서 {lines}줄": ["{lines} lines in {stories} stories", "{stories}編から{lines}件"],
+  "아직 다 찾지 않았어요": ["more may remain", "まだ続きがあります"],
+  "{n}줄": ["{n} lines", "{n}件"],
+  "{n}화": ["Ep. {n}", "第{n}話"],
+  "{n}줄 더 보기": ["Show {n} more", "あと{n}件を表示"],
+  "더 찾기": ["Find more", "さらに検索"],
   // 맵 노드 자동 이동 토글 (제보 f1c050b2, 2026-09-05) — 인식이 아니라 이동만 끈다
   "노드 이동": ["Node jump", "ノード移動"],
   "맵 노드(작전·조우·구역)를 인식했을 때 그 상세로 자동으로 이동할지 정합니다. 꺼도 소장품·도구 인식은 그대로 동작합니다": [

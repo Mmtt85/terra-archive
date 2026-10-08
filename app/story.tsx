@@ -167,6 +167,7 @@ function locText(locale: Locale, text: LocText): string {
 const LensHelpModal = lazy(() => import("./lens/help"));
 // 이벤트 기록 — 스토리 상세의 세 번째 보기 (사용자 확정 2026-08-23: 따로 빼지 말고 각 스토리에)
 const EventLoreView = lazy(() => import("./eventlore"));
+const StoryFindWindow = lazy(() => import("./story-find"));
 /** 스토리 상세의 보기 방식 — 전문 / 장면 재생 / AI 요약 / 이벤트 기록.
  *  scene 은 전문과 **같은 본문 위에** 전체 화면 무대를 띄운다 (닫으면 전문으로 내려온다). */
 type DetailMode = "script" | "scene" | "summary" | "lore";
@@ -644,6 +645,21 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   );
   const em = useMemo(() => entMatchOf(railMatchers), [railMatchers]);
   const { ent, peekNode } = useEntityPeek(railEntities, onShowOperator);
+  // 전문(연출 트랙이 없는 이야기)으로 열렸는데 시작 줄이 있으면 — 대사 검색 결과에서 왔다 — 그 줄로 내려가
+  // 잠깐 칠해 둔다 (2026-10-08). 리더기면 SceneMode 가 startLine 으로 그 줄부터 튼다. 한 번만.
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const jumped = useRef(false);
+  useEffect(() => {
+    if (jumped.current || scene || initialLine == null || !script || epIdx !== (initialEp ?? 0)) return;
+    jumped.current = true;
+    const id = requestAnimationFrame(() => {
+      const el = bodyRef.current?.querySelector<HTMLElement>(`[data-idx="${initialLine}"]`);
+      if (!el) return;
+      el.scrollIntoView({ block: "center", behavior: "instant" });
+      el.classList.add("sc-hit");
+    });
+    return () => cancelAnimationFrame(id);
+  }, [scene, script, epIdx, initialEp, initialLine]);
   if (error) return <p className="story-disclaimer">{t("스크립트를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.")}</p>;
   // ⚠ 한 줄짜리 안내만 두면, 스크립트 JSON이 도착하는 순간 장면 블록(에피소드 고르기 +
   //    16:9 무대)이 통째로 344px 생기며 아래 '같은 테마의 다른 이야기'를 밀어낸다 —
@@ -724,7 +740,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
       )}
       <div className="story-detail-grid">
         {peekNode}
-        <div className={`story-body sc-body${scene ? " sc-hidden" : ""}`}>
+        <div ref={bodyRef} className={`story-body sc-body${scene ? " sc-hidden" : ""}`}>
         {lines.map((ln, i) => {
           if (ln.opts) return (
             <div key={i} className="sc-opts" data-idx={i}><i>{t("선택지")}</i>{ln.opts.map((o, j) => <span key={j}>{o}</span>)}</div>
@@ -1782,6 +1798,9 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
   const [showGuide, setShowGuide] = useState(false);
   usePageHelp("story", () => setShowGuide(true)); // 안내 창은 페이지 머리의 '?' 로 연다 (2026-10-07)
   const [lensMsg, setLensMsg] = useState<string | null>(null);
+  // 대사 검색 창 · 그 결과로 연 이야기 창 (검색 창은 그대로 두고 위에 얹는다 — 닫으면 결과로 돌아온다)
+  const [findOpen, setFindOpen] = useState(false);
+  const [findStory, setFindStory] = useState<{ id: string; name: string; ep: number; line: number; k: number } | null>(null);
   const [lensThumb, setLensThumb] = useState<string | null>(null);
   const [lensNav, setLensNav] = useState(0); // 같은 스토리 안 다른 ep 재이동 시 전문 뷰어 리마운트용
   const lensMsgTimer = useRef<number | undefined>(undefined);
@@ -1882,6 +1901,8 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
         <button type="button" role="tab" aria-selected={view === "digest" && group === "theme"} className={view === "digest" && group === "theme" ? "on" : ""} onClick={() => goGroup("theme")}>{t("테마별")}</button>
         <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
 
+        {/* 대사 검색 — 대사 한 구절로 이야기·화·줄을 찾는다 (제안 게시판 요청 2026-10-08). 세 언어 모두 */}
+        <button type="button" className="story-find-btn" onClick={() => setFindOpen(true)}>⌕ {t("대사 검색")}</button>
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 (KR 클라 전용) */}
         {locale === "ko" && (
           <div className="lens-open-wrap">
@@ -1897,6 +1918,18 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
       </div>
       {lensPill}
       {lensHelpModal}
+      {findOpen && (
+        <Suspense fallback={null}>
+          <StoryFindWindow onClose={() => setFindOpen(false)}
+            onOpen={(id, ep, line, name) => setFindStory((cur) => ({ id, name, ep, line, k: (cur?.k ?? 0) + 1 }))} />
+        </Suspense>
+      )}
+      {findStory && (
+        <ModalWindow key={`sf-${findStory.k}`} label={findStory.name} className="operator-modal sy-modal" onClose={() => setFindStory(null)}>
+          <StoryDetailById id={findStory.id} name={findStory.name} onClose={() => setFindStory(null)} onShowOperator={onShowOperator}
+            view="scene" ep={findStory.ep} line={findStory.line} />
+        </ModalWindow>
+      )}
 
       {view === "chronicle" ? (
         <ChronologyView onShowOperator={onShowOperator} />
