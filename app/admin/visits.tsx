@@ -541,7 +541,7 @@ function SessionLine({ s }: { s: SessRow }) {
         <span className="vz-tag">{DEVICE_KO[s.device ?? ""] ?? s.device}</span>
         {s.site_lang && s.site_lang !== "ko" && <span className="vz-tag">{s.site_lang}</span>}
         {s.revisit && <span className="vz-tag">재방문</span>}
-        {!s.human && <span className="vz-tag warn">조작 없음</span>}
+        {!s.human && <span className="vz-tag warn" title="조작이 없고 화면에 1초 넘게 뜨지 않았거나 해외 시간대">봇 추정</span>}
         {s.tz && s.tz !== "Asia/Seoul" && <span className="vz-muted">{s.tz}</span>}
       </header>
       <p className="vz-trail">
@@ -883,7 +883,7 @@ export function VisitsPanel() {
             {t.visible_ms != null && <div title="탭이 화면에 떠 있던 시간 · 화면당 1시간 상한"><b>{fmtDur(t.sessions ? t.visible_ms / t.sessions : 0)}</b><span>세션당 머문 시간</span></div>}
             <div><b>{pct(t.bounce, t.sessions)}</b><span>한 화면만 보고 이탈</span></div>
             <div><b>{pct(t.revisit, t.sessions)}</b><span>재방문</span></div>
-            <div><b>{num(t.bots)}</b><span>거른 세션(조작 없음)</span></div>
+            <div><b>{num(t.bots)}</b><span>거른 세션(봇·미리보기)</span></div>
           </div>
 
           {/* 내 정보 동기화 — 누가(익명 방문자 id) 몇 번 (사용자 요청 2026-10-05) */}

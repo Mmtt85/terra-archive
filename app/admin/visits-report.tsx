@@ -137,7 +137,7 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
         {T.visible_ms != null && <div><span>세션당 머문 시간</span><b>{fmtDur(T.visible_ms / sessions)}</b><em>화면이 떠 있던 시간 · 평균</em></div>}
         <div><span>재방문</span><b>{pct(T.revisit, T.sessions)}</b><em>세션 {n(T.revisit)}개</em></div>
         <div><span>한 화면만 보고 이탈</span><b>{pct(T.bounce, T.sessions)}</b><em>세션 {n(T.bounce)}개</em></div>
-        <div><span>거른 세션</span><b>{n(T.bots)}</b><em>조작이 한 번도 없음</em></div>
+        <div><span>거른 세션</span><b>{n(T.bots)}</b><em>크롤러·미리보기로 보이는 것</em></div>
       </section>
 
       {insights.length > 0 && (
@@ -190,7 +190,7 @@ function ReportCard({ data, from, to, who, onlyHuman, tops }: { data: Summary; f
         )}
       </div>
       <footer className="vzr-foot">
-        <span>{onlyHuman ? "자동화 도구·크롤러로 보이는 세션(조작이 한 번도 없는 세션)은 뺐습니다." : who === "봇만" ? "조작이 한 번도 없는 세션(자동화 도구·크롤러로 보이는 것)만 센 수치입니다." : "사람과 자동화 도구·크롤러로 보이는 세션을 모두 센 수치입니다."}</span>
+        <span>{onlyHuman ? "크롤러·링크 미리보기로 보이는 세션(조작이 없고, 화면에 잠깐도 안 떴거나 해외 시간대)은 뺐습니다." : who === "봇만" ? "크롤러·링크 미리보기로 보이는 세션만 센 수치입니다." : "사람과 자동화 도구·크롤러로 보이는 세션을 모두 센 수치입니다."}</span>
         <span>뽑은 시각 {new Date().toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short", hour12: false })}</span>
       </footer>
     </div>

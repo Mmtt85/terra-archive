@@ -230,6 +230,15 @@ language sql stable as $$
   select * from public.visits_views_range(p_from, 'infinity'::timestamptz)
 $$;
 
+-- 사람 판정 (2026-10-08) — 조작(스크롤·클릭·터치·키)이 있었거나, 조작은 없어도 **화면에 1초 이상 떠 있었고 시간대가
+-- 한국·일본**이면 사람. 후자는 즐겨찾기로 열어 확인만 하고 닫은 '훑고 간 사람'이다(실측: 서울 폰·한 화면 1~4초, 재방문 다수).
+-- 화면 기록이 없거나(61%, 상하이·모스크바·LA 크롤러) 화면에 0초(미리보기·프리렌더)·해외 시간대 무조작은 봇으로 남는다
+create or replace function public.visit_is_human(p_interacted boolean, p_visible_ms bigint, p_tz text)
+returns boolean language sql immutable as $$
+  select coalesce(p_interacted, false)
+      or (coalesce(p_visible_ms, 0) >= 1000 and p_tz in ('Asia/Seoul', 'Asia/Tokyo'))
+$$;
+
 -- 대시보드 한 장 분량 — 세션 시작이 [p_from, p_to) 인 것. p_hourly 면 시간대별(하루 보기)도 채운다.
 -- 조각(view)은 세션 시작 하루 전부터 끝 하루 뒤까지 읽는다 — 자정을 걸친 세션의 조각을 놓치지 않게.
 create or replace function public.visits_summary_range(p_from timestamptz, p_to timestamptz,
@@ -250,12 +259,12 @@ returns json language sql stable as $$
   s as (
     select vs.*, public.visit_src(vs.ref_host) as src,
            (vs.started_at at time zone 'Asia/Seoul') as kst,
-           coalesce(sh.human, false) as human, coalesce(sh.views, 0) as views, coalesce(sh.active_ms, 0) as active_ms,
+           public.visit_is_human(sh.human, sh.visible_ms, vs.tz) as human, coalesce(sh.views, 0) as views, coalesce(sh.active_ms, 0) as active_ms,
            coalesce(sh.visible_ms, 0) as visible_ms
     from public.visit_session vs left join sh on sh.session = vs.id
     where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
       -- p_human: true 사람만 · false 봇만 · null 둘 다 (사용자 지시 2026-10-05 — 종전 false 는 '둘 다'였다)
-      and (p_human is null or coalesce(sh.human, false) = p_human)
+      and (p_human is null or public.visit_is_human(sh.human, sh.visible_ms, vs.tz) = p_human)
   ),
   sv as (select v.* from v join s on s.id = v.session),
   -- 동선 흐름용 — 갈래만(모달·해시 없이) 보고 같은 갈래가 이어지면 한 칸으로 접는다 (사용자 지시 2026-10-04
@@ -275,7 +284,7 @@ returns json language sql stable as $$
         'revisit', count(*) filter (where revisit),
         'bounce', count(*) filter (where views <= 1),
         'bots', (select count(*) from public.visit_session x left join sh on sh.session = x.id
-                 where x.started_at >= p_from and x.started_at < p_to and x.env = 'live' and not coalesce(sh.human, false)
+                 where x.started_at >= p_from and x.started_at < p_to and x.env = 'live' and not public.visit_is_human(sh.human, sh.visible_ms, x.tz)
                    and coalesce(x.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'))
       from s),
     'days', (select coalesce(json_agg(d order by d.day), '[]') from (
@@ -389,11 +398,11 @@ returns json language sql stable as $$
     select * from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day')
   ),
   s as (
-    select vs.*, public.visit_src(vs.ref_host) as src, coalesce(h.human, false) as human
+    select vs.*, public.visit_src(vs.ref_host) as src, public.visit_is_human(h.human, h.vis, vs.tz) as human
     from public.visit_session vs
-    left join (select session, bool_or(interacted) as human from v group by 1) h on h.session = vs.id
+    left join (select session, bool_or(interacted) as human, sum(visible_ms) as vis from v group by 1) h on h.session = vs.id
     where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
-      and (p_human is null or coalesce(h.human, false) = p_human)
+      and (p_human is null or public.visit_is_human(h.human, h.vis, vs.tz) = p_human)
       and (p_src is null or public.visit_src(vs.ref_host) = p_src)
       and (p_landing is null or public.visit_path(split_part(vs.landing, '#', 1)) = p_landing)
     order by vs.started_at desc
@@ -444,10 +453,10 @@ begin
     select * from public.visits_views(d0 - interval '1 day');
   create temp table _s on commit drop as
     select vs.id, vs.visitor, vs.revisit, public.visit_src(vs.ref_host) as src,
-           coalesce(bool_or(v.interacted), false) as human, count(v.seq) as views, coalesce(sum(v.active_ms), 0) as active_ms
+           public.visit_is_human(bool_or(v.interacted), sum(v.visible_ms)::bigint, vs.tz) as human, count(v.seq) as views, coalesce(sum(v.active_ms), 0) as active_ms
     from public.visit_session vs left join _v v on v.session = vs.id
     where vs.started_at >= d0 and vs.started_at < d1 and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
-    group by vs.id, vs.visitor, vs.revisit, vs.ref_host;
+    group by vs.id, vs.visitor, vs.revisit, vs.ref_host, vs.tz;
 
   insert into public.visit_day
     select p_day, count(*), count(*) filter (where human), count(distinct visitor),

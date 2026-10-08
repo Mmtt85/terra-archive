@@ -28513,7 +28513,7 @@ html[data-me] .hdr-synced.idle { visibility: hidden; }
 .vz-trail > span { display: inline-flex; align-items: center; }
 .vz-trail .vz-step { display: inline-flex; align-items: baseline; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 2px 7px; }
 .vz-trail .vz-step.exit { border-color: transparent; }
-.vz-srv-chips .vz-sort-sep { margin-left: 10px; }
+.vz-srv-chips .vz-sort-sep { margin-left: auto; } /* 정렬은 줄 오른쪽 끝으로 (사용자 2026-10-08) */
 
 /* 오퍼 상세 머리 — 원본·이격 바로가기 (2026-10-08) */
 .modal-versions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
