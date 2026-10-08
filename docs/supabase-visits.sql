@@ -230,19 +230,35 @@ language sql stable as $$
   select * from public.visits_views_range(p_from, 'infinity'::timestamptz)
 $$;
 
--- 사람 판정 (2026-10-08) — 조작(스크롤·클릭·터치·키)이 있었거나, 조작은 없어도 **화면에 1초 이상 떠 있었고 시간대가
--- 한국·일본**이면 사람. 후자는 즐겨찾기로 열어 확인만 하고 닫은 '훑고 간 사람'이다(실측: 서울 폰·한 화면 1~4초, 재방문 다수).
--- 화면 기록이 없거나(61%, 상하이·모스크바·LA 크롤러) 화면에 0초(미리보기·프리렌더)·해외 시간대 무조작은 봇으로 남는다
+-- 세션 종류 (2026-10-08, 사용자 지시 "사람·훑고 간 사람·봇 셋으로 나눠 조합으로") —
+--   human = 조작(스크롤·클릭·터치·키)이 있었음
+--   skim  = 조작은 없지만 화면에 1초 이상 떠 있었고 시간대가 한국·일본 — 즐겨찾기로 열어 확인만 하고 닫은 사람
+--           (실측: 서울 폰·한 화면 1~4초, 재방문 다수)
+--   bot   = 나머지 — 화면 기록 없음(61%, 상하이·모스크바·LA 크롤러), 화면에 0초(미리보기·프리렌더), 해외 시간대 무조작
+create or replace function public.visit_kind(p_interacted boolean, p_visible_ms bigint, p_tz text)
+returns text language sql immutable as $$
+  select case when coalesce(p_interacted, false) then 'human'
+              when coalesce(p_visible_ms, 0) >= 1000 and p_tz in ('Asia/Seoul', 'Asia/Tokyo') then 'skim'
+              else 'bot' end
+$$;
+-- 매일 정리의 '사람 세션' = human + skim
 create or replace function public.visit_is_human(p_interacted boolean, p_visible_ms bigint, p_tz text)
 returns boolean language sql immutable as $$
-  select coalesce(p_interacted, false)
-      or (coalesce(p_visible_ms, 0) >= 1000 and p_tz in ('Asia/Seoul', 'Asia/Tokyo'))
+  select public.visit_kind(p_interacted, p_visible_ms, p_tz) <> 'bot'
+$$;
+-- 고른 종류에 드는가 — p_kinds 가 있으면 그걸로(예: '{human,skim}'), 없으면 옛 p_human(true 사람·false 봇·null 전부)
+create or replace function public.visit_pick(p_kind text, p_kinds text[], p_human boolean)
+returns boolean language sql immutable as $$
+  select case when p_kinds is not null then p_kind = any(p_kinds)
+              when p_human is null then true
+              else (p_kind <> 'bot') = p_human end
 $$;
 
 -- 대시보드 한 장 분량 — 세션 시작이 [p_from, p_to) 인 것. p_hourly 면 시간대별(하루 보기)도 채운다.
 -- 조각(view)은 세션 시작 하루 전부터 끝 하루 뒤까지 읽는다 — 자정을 걸친 세션의 조각을 놓치지 않게.
+drop function if exists public.visits_summary_range(timestamptz, timestamptz, boolean, boolean);
 create or replace function public.visits_summary_range(p_from timestamptz, p_to timestamptz,
-  p_human boolean default true, p_hourly boolean default false)
+  p_human boolean default true, p_hourly boolean default false, p_kinds text[] default null)
 returns json language sql stable as $$
   with v as (
     select * from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day')
@@ -259,13 +275,20 @@ returns json language sql stable as $$
   s as (
     select vs.*, public.visit_src(vs.ref_host) as src,
            (vs.started_at at time zone 'Asia/Seoul') as kst,
-           public.visit_is_human(sh.human, sh.visible_ms, vs.tz) as human, coalesce(sh.views, 0) as views, coalesce(sh.active_ms, 0) as active_ms,
+           public.visit_kind(sh.human, sh.visible_ms, vs.tz) as kind, coalesce(sh.views, 0) as views, coalesce(sh.active_ms, 0) as active_ms,
            coalesce(sh.visible_ms, 0) as visible_ms
     from public.visit_session vs left join sh on sh.session = vs.id
     where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
       -- p_human: true 사람만 · false 봇만 · null 둘 다 (사용자 지시 2026-10-05 — 종전 false 는 '둘 다'였다)
-      and (p_human is null or public.visit_is_human(sh.human, sh.visible_ms, vs.tz) = p_human)
+      and public.visit_pick(public.visit_kind(sh.human, sh.visible_ms, vs.tz), p_kinds, p_human)
   ),
+  -- 기간 안 세션 종류별 수 (고른 종류와 무관하게 셋 다)
+  k as (
+    select public.visit_kind(sh.human, sh.visible_ms, x.tz) as kind, count(*) as n
+    from public.visit_session x left join sh on sh.session = x.id
+    where x.started_at >= p_from and x.started_at < p_to and x.env = 'live'
+      and coalesce(x.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'
+    group by 1),
   sv as (select v.* from v join s on s.id = v.session),
   -- 동선 흐름용 — 갈래만(모달·해시 없이) 보고 같은 갈래가 이어지면 한 칸으로 접는다 (사용자 지시 2026-10-04
   -- "인프라는 인프라로 합쳐줘. 모달을 굳이 나눌 필요 없음"). 통합전략은 테마 번호까지가 갈래다.
@@ -283,9 +306,10 @@ returns json language sql stable as $$
         'med_views', coalesce(percentile_cont(0.5) within group (order by views), 0),
         'revisit', count(*) filter (where revisit),
         'bounce', count(*) filter (where views <= 1),
-        'bots', (select count(*) from public.visit_session x left join sh on sh.session = x.id
-                 where x.started_at >= p_from and x.started_at < p_to and x.env = 'live' and not public.visit_is_human(sh.human, sh.visible_ms, x.tz)
-                   and coalesce(x.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'))
+        'bots', coalesce((select n from k where kind = 'bot'), 0),
+        'kinds', (select json_build_object('human', coalesce(sum(n) filter (where kind = 'human'), 0),
+                                           'skim', coalesce(sum(n) filter (where kind = 'skim'), 0),
+                                           'bot', coalesce(sum(n) filter (where kind = 'bot'), 0)) from k))
       from s),
     'days', (select coalesce(json_agg(d order by d.day), '[]') from (
         select kst::date as day, count(*) as sessions, count(distinct visitor) as visitors,
@@ -385,24 +409,27 @@ returns json language sql stable as $$
 $$;
 
 -- 종전 '최근 N일' 판 — 범위판을 그대로 부른다 (0 = 오늘)
-create or replace function public.visits_summary(p_days int default 30, p_human boolean default true)
+drop function if exists public.visits_summary(int, boolean);
+create or replace function public.visits_summary(p_days int default 30, p_human boolean default true, p_kinds text[] default null)
 returns json language sql stable as $$
-  select public.visits_summary_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_days <= 0)
+  select public.visits_summary_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_days <= 0, p_kinds)
 $$;
 
 -- 세션 타임라인 목록 — 한 사람의 동선을 한 줄로
+drop function if exists public.visits_sessions_range(timestamptz, timestamptz, boolean, text, text, int);
 create or replace function public.visits_sessions_range(p_from timestamptz, p_to timestamptz, p_human boolean default true,
-  p_src text default null, p_landing text default null, p_limit int default 100)
+  p_src text default null, p_landing text default null, p_limit int default 100, p_kinds text[] default null)
 returns json language sql stable as $$
   with v as (
     select * from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day')
   ),
   s as (
-    select vs.*, public.visit_src(vs.ref_host) as src, public.visit_is_human(h.human, h.vis, vs.tz) as human
+    select vs.*, public.visit_src(vs.ref_host) as src, public.visit_kind(h.human, h.vis, vs.tz) as kind,
+           public.visit_kind(h.human, h.vis, vs.tz) <> 'bot' as human
     from public.visit_session vs
     left join (select session, bool_or(interacted) as human, sum(visible_ms) as vis from v group by 1) h on h.session = vs.id
     where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
-      and (p_human is null or public.visit_is_human(h.human, h.vis, vs.tz) = p_human)
+      and public.visit_pick(public.visit_kind(h.human, h.vis, vs.tz), p_kinds, p_human)
       and (p_src is null or public.visit_src(vs.ref_host) = p_src)
       and (p_landing is null or public.visit_path(split_part(vs.landing, '#', 1)) = p_landing)
     order by vs.started_at desc
@@ -410,7 +437,7 @@ returns json language sql stable as $$
   )
   select coalesce(json_agg(json_build_object(
       'id', s.id, 'at', s.started_at, 'src', s.src, 'ref', coalesce(s.ref, s.ref_host), 'landing', s.landing,
-      'device', s.device, 'site_lang', s.site_lang, 'tz', s.tz, 'revisit', s.revisit, 'human', s.human,
+      'device', s.device, 'site_lang', s.site_lang, 'tz', s.tz, 'revisit', s.revisit, 'human', s.human, 'kind', s.kind,
       'utm', s.utm_source,
       'views', (select coalesce(json_agg(json_build_object('path', v.path, 'hash', v.hash, 't0', v.t0,
                   'vis', v.visible_ms, 'act', v.active_ms, 'scroll', v.scroll, 'out', v.out_href) order by v.seq), '[]')
@@ -419,10 +446,11 @@ returns json language sql stable as $$
   from s
 $$;
 
+drop function if exists public.visits_sessions(int, boolean, text, text, int);
 create or replace function public.visits_sessions(p_days int default 7, p_human boolean default true,
-  p_src text default null, p_landing text default null, p_limit int default 100)
+  p_src text default null, p_landing text default null, p_limit int default 100, p_kinds text[] default null)
 returns json language sql stable as $$
-  select public.visits_sessions_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_src, p_landing, p_limit)
+  select public.visits_sessions_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_src, p_landing, p_limit, p_kinds)
 $$;
 
 -- 긴 기간 추이 — 원장이 지워진 옛날도 남도록 일별 집계표에서

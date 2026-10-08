@@ -23,6 +23,8 @@ type Bucket = { t: number; sessions: number; visitors: number; views: number };
 export type Summary = {
   /** visible_ms·med_* = 머문 시간(탭이 화면에 떠 있던 시간, 화면당 1시간 상한) — 2026-10-07~ DB 함수 */
   total: { sessions: number; visitors: number; views: number; active_ms: number; revisit: number; bounce: number; bots: number;
+    /** 기간 안 세션 종류별 수 (고른 종류와 무관) — 2026-10-08~ DB 함수 */
+    kinds?: { human: number; skim: number; bot: number };
     visible_ms?: number; med_active?: number; med_visible?: number; med_views?: number };
   days: { day: string; sessions: number; visitors: number; views: number; active_ms: number }[];
   src: { src: string; sessions: number; views: number; active_ms: number; visible_ms?: number; med_active?: number; med_visible?: number }[];
@@ -52,15 +54,23 @@ type TrendRow = { day: string; sessions: number; human_sessions: number; visitor
 type SessView = { path: string; hash: string | null; t0: number | null; vis: number; act: number; scroll: number | null; out: string | null };
 type SessRow = {
   id: string; at: string; src: string; ref: string | null; landing: string; device: string | null; site_lang: string | null;
-  tz: string | null; revisit: boolean | null; human: boolean; utm: string | null; views: SessView[];
+  tz: string | null; revisit: boolean | null; human: boolean; kind?: "human" | "skim" | "bot"; utm: string | null; views: SessView[];
 };
 
 async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
-  const res = await fetch(`/api/visits/rpc/${name}`, {
+  let res = await fetch(`/api/visits/rpc/${name}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(args),
   });
+  // 옛 DB 함수(p_kinds 모름, 2026-10-08 전)면 사람/봇 둘로 물러선다 — 훑고 간 사람은 사람 쪽에 섞인다
+  if (!res.ok && res.status !== 503 && Array.isArray(args.p_kinds)) {
+    const k = args.p_kinds as string[];
+    const { p_kinds: _drop, ...rest } = args;
+    void _drop;
+    const p_human = k.includes("bot") ? (k.length === 1 ? false : null) : true;
+    res = await fetch(`/api/visits/rpc/${name}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...rest, p_human }) });
+  }
   if (res.status === 503) throw new Error("not-configured");
   if (!res.ok) throw new Error(`${name} 조회 실패 (${res.status})`);
   return res.json() as Promise<T>;
@@ -432,9 +442,15 @@ export function Sankey({ flow, nameOf, links = true }: { flow: FlowRow[]; nameOf
 const TOPS = [5, 10, 20, 30];
 const SPANS = [7, 30, 90, 365] as const;
 // 세션 종류 — 사람 = 세션 동안 스크롤·클릭·터치·키 입력이 한 번이라도 있었던 것 (JS 를 도는 위장 크롤러 거르기)
-type Who = "human" | "bot" | "all";
-const WHO_LABEL: Record<Who, string> = { human: "사람만", bot: "봇만", all: "둘 다 포함" };
-const WHO_ARG: Record<Who, boolean | null> = { human: true, bot: false, all: null };
+// 세션 종류 셋 — 골라서 조합 (사용자 지시 2026-10-08). DB visit_kind 와 같은 이름
+type Kind = "human" | "skim" | "bot";
+const KINDS: Kind[] = ["human", "skim", "bot"];
+const KIND_LABEL: Record<Kind, string> = { human: "사람", skim: "훑고 간 사람", bot: "봇" };
+const KIND_HINT: Record<Kind, string> = {
+  human: "스크롤·클릭·터치·키 입력이 한 번이라도 있었던 세션",
+  skim: "조작은 없지만 화면에 1초 이상 떠 있었고 한국·일본 시간대 — 열어서 확인만 하고 닫은 사람",
+  bot: "나머지 — 화면 기록 없음·화면에 0초(미리보기)·해외 시간대 무조작",
+};
 const SPAN_LABEL: Record<number, string> = { 7: "최근 7일", 30: "최근 30일", 90: "최근 90일", 365: "1년(일별 집계)" };
 const SESSIONS_ALL = 5000;                // 세션 타임라인 '전체 보기'의 상한 (visits_sessions 도 5,000 에서 자른다)
 const ALL_STEP = 50;                      // 전체 보기 창에서 한 번에 더 그리는 줄 수
@@ -532,7 +548,7 @@ function SessionLine({ s }: { s: SessRow }) {
   const when = at.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
   const last = s.views[s.views.length - 1];
   return (
-    <li className={s.human ? "" : "bot"}>
+    <li className={(s.kind ?? (s.human ? "human" : "bot")) === "bot" ? "bot" : ""}>
       <header>
         <time>{when}</time>
         <b>{s.src}</b>
@@ -541,7 +557,8 @@ function SessionLine({ s }: { s: SessRow }) {
         <span className="vz-tag">{DEVICE_KO[s.device ?? ""] ?? s.device}</span>
         {s.site_lang && s.site_lang !== "ko" && <span className="vz-tag">{s.site_lang}</span>}
         {s.revisit && <span className="vz-tag">재방문</span>}
-        {!s.human && <span className="vz-tag warn" title="조작이 없고 화면에 1초 넘게 뜨지 않았거나 해외 시간대">봇 추정</span>}
+        {(s.kind ?? (s.human ? "human" : "bot")) === "skim" && <span className="vz-tag" title={KIND_HINT.skim}>훑고 감</span>}
+        {(s.kind ?? (s.human ? "human" : "bot")) === "bot" && <span className="vz-tag warn" title={KIND_HINT.bot}>봇 추정</span>}
         {s.tz && s.tz !== "Asia/Seoul" && <span className="vz-muted">{s.tz}</span>}
       </header>
       <p className="vz-trail">
@@ -566,7 +583,7 @@ export function VisitsPanel() {
   // 내 정보 동기화 — 서버별로 거르기 (사용자 요청 2026-10-06). 통계가 방문자별로 묶여 있어 방문자의 서버(max) 기준이다
   const [meServer, setMeServer] = useState("");
   // 내 정보 동기화 정렬 — 횟수순(기본) · 최신순 (사용자 지시 2026-10-08)
-  const [meSort, setMeSort] = useState<"n" | "last">("n");   // 0 = 오늘 (KST 0시 00분부터) — 기본 (사용자 지시 2026-10-04)
+  const [meSort, setMeSort] = useState<"n" | "last" | "sync">("n");   // 0 = 오늘 (KST 0시 00분부터) — 기본 (사용자 지시 2026-10-04)
   // 기간 지정 (사용자 지시 2026-10-05 "특정 일 혹은 특정 기간 지정도") — KST 날짜. 정해 두면 위 기간 버튼 대신 이것을 본다.
   // DB 쪽 visits_summary_range·visits_sessions_range (docs/supabase-visits.sql) 를 부른다.
   // 기간 — 날짜에 시각(HH:MM, KST)까지 고를 수 있다 (사용자 지시 2026-10-08). 시각을 비우면 그날 0시부터 / 끝날 24시까지
@@ -594,9 +611,20 @@ export function VisitsPanel() {
   const oneDay = !!slot || (!!range && fine);
   // 기간·칸 크기를 바꾸면 고른 칸은 풀린다
   useEffect(() => { setSlot(null); }, [range, days, step]);
-  // 사람만 · 봇만 · 둘 다 (사용자 지시 2026-10-05 드롭다운) — DB 의 p_human 은 true·false·null 로 받는다
-  const [who, setWho] = useState<Who>("human");
-  const human = WHO_ARG[who];
+  // 세션 종류 조합 — 기본 사람 + 훑고 간 사람. 이 브라우저에 남긴다. 하나는 꼭 남는다
+  const [kinds, setKindsState] = useState<Kind[]>(() => {
+    try { const v = JSON.parse(localStorage.getItem("ta-admin-visit-kinds") ?? "null") as Kind[] | null; if (Array.isArray(v) && v.length && v.every((k) => KINDS.includes(k))) return v; } catch { /* 무시 */ }
+    return ["human", "skim"];
+  });
+  const toggleKind = (k: Kind) => setKindsState((cur) => {
+    const next = cur.includes(k) ? cur.filter((x) => x !== k) : KINDS.filter((x) => x === k || cur.includes(x));
+    if (!next.length) return cur;
+    try { localStorage.setItem("ta-admin-visit-kinds", JSON.stringify(next)); } catch { /* 무시 */ }
+    return next;
+  });
+  const human = kinds.join(",");   // 의존성 키 (아래 effect 들이 이걸 본다)
+  const kindArgs = { p_kinds: kinds };
+  const whoLabel = kinds.map((k) => KIND_LABEL[k]).join(" + ");
   const [data, setData] = useState<Summary | null>(null);
   const [, setNamesReady] = useState(false);
   useEffect(() => { void loadDexNames().then(() => setNamesReady(true)); }, []);
@@ -648,13 +676,13 @@ export function VisitsPanel() {
     };
     const done = () => { if (alive) setLoadMain(false); };
     if (rangeArgs) {
-      rpc<Summary>("visits_summary_range", { ...rangeArgs, p_human: human, p_hourly: oneDay })
+      rpc<Summary>("visits_summary_range", { ...rangeArgs, ...kindArgs, p_hourly: oneDay })
         .then((d) => { if (alive) { setData(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
     } else if (days === 365) {
       rpc<TrendRow[]>("visits_trend", { p_days: 365 })
         .then((t) => { if (alive) { setTrend(t); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
     } else {
-      rpc<Summary>("visits_summary", { p_days: days, p_human: human })
+      rpc<Summary>("visits_summary", { p_days: days, ...kindArgs })
         .then((d) => { if (alive) { setData(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
     }
     return () => { alive = false; };
@@ -667,8 +695,8 @@ export function VisitsPanel() {
     let alive = true;
     setLoadSess(true);
     (rangeArgs
-      ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, p_human: human, p_src: srcFilter || null, p_limit: limit })
-      : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), p_human: human, p_src: srcFilter || null, p_limit: limit }))
+      ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, ...kindArgs, p_src: srcFilter || null, p_limit: limit })
+      : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), ...kindArgs, p_src: srcFilter || null, p_limit: limit }))
       .then((s) => { if (alive) setSessions(s); }).catch(() => { if (alive) setSessions(null); })
       .finally(() => { if (alive) setLoadSess(false); });
     return () => { alive = false; };
@@ -682,8 +710,8 @@ export function VisitsPanel() {
     if (!sessAll) return;
     let alive = true;
     (rangeArgs
-      ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, p_human: human, p_src: srcFilter || null, p_limit: SESSIONS_ALL })
-      : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), p_human: human, p_src: srcFilter || null, p_limit: SESSIONS_ALL }))
+      ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, ...kindArgs, p_src: srcFilter || null, p_limit: SESSIONS_ALL })
+      : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), ...kindArgs, p_src: srcFilter || null, p_limit: SESSIONS_ALL }))
       .then((rows) => { if (alive) setAllSessions(rows); }).catch(() => { if (alive) setAllSessions([]); });
     return () => { alive = false; setAllSessions(null); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -742,7 +770,9 @@ export function VisitsPanel() {
     </table>
   );
   const meBy = (data?.me_sync?.by ?? []).filter((b) => !meServer || b.server === meServer)
-    .slice().sort((a, b) => meSort === "last" ? String(b.last).localeCompare(String(a.last)) : (b.n - a.n) || String(b.last).localeCompare(String(a.last)));
+    .slice().sort((a, b) => meSort === "last" ? String(b.last).localeCompare(String(a.last))
+      : meSort === "sync" ? (b.sync - a.sync) || (b.n - a.n) || String(b.last).localeCompare(String(a.last))   // 다시 동기화 많은 순 (사용자 2026-10-08)
+      : (b.n - a.n) || String(b.last).localeCompare(String(a.last)));
   const meServers = [...new Set((data?.me_sync?.by ?? []).map((b) => b.server).filter((x): x is string => !!x))];
   const serverLabel = (code: string) => ACCOUNT_SERVERS.find((x) => x.code === code)?.label ?? code;
   const meTable = (n: number) => !data?.me_sync ? null : (
@@ -839,14 +869,10 @@ export function VisitsPanel() {
           <button type="button" className="vz-day" onClick={() => shiftDay(1)} disabled={!canNext} title="하루 뒤로">다음날 ›</button>
           {range && <button type="button" className="vz-range-x" onClick={() => setRange(null)} aria-label="기간 지정 해제">×</button>}
         </span>
-<Dropdown
-          label={WHO_LABEL[who]}
-          items={(Object.keys(WHO_LABEL) as Who[]).map((k) => ({ value: k, label: WHO_LABEL[k] }))}
-          selected={[who]}
-          onPick={(v) => setWho(v as Who)}
-          ariaLabel="세션 종류"
-          disabled={days === 365 && !range}
-        />
+{/* 세션 종류 — 여러 개 골라 조합 (사용자 지시 2026-10-08 "드랍다운으로") */}
+        <Dropdown multi ariaLabel="세션 종류" label={whoLabel} selected={kinds}
+          items={KINDS.map((k) => ({ value: k, label: KIND_LABEL[k], ...(data?.total?.kinds ? { count: data.total.kinds[k] } : {}) }))}
+          onPick={(v) => toggleKind(v as Kind)} disabled={days === 365 && !range} />
         <button className={`vz-refresh${busy ? " busy" : ""}`} onClick={() => setTick((n) => n + 1)} disabled={busy} aria-busy={busy}>
           <span>새로고침</span>
           <span role="status"><i className="vz-spin" aria-hidden />불러오는 중</span>
@@ -856,7 +882,7 @@ export function VisitsPanel() {
         {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · 1분마다 자동</span>}
       </div>
       {status && <p className="admin-status">{status}</p>}
-      {report && data && <VisitsReport data={data} from={reportSpan.from} to={reportSpan.to} who={WHO_LABEL[who]} onlyHuman={who === "human"} tops={tops} onClose={() => setReport(false)} />}
+      {report && data && <VisitsReport data={data} from={reportSpan.from} to={reportSpan.to} who={whoLabel} onlyHuman={!kinds.includes("bot")} tops={tops} onClose={() => setReport(false)} />}
 
       {days === 365 && !range ? (
         trend && (
@@ -883,7 +909,7 @@ export function VisitsPanel() {
             {t.visible_ms != null && <div title="탭이 화면에 떠 있던 시간 · 화면당 1시간 상한"><b>{fmtDur(t.sessions ? t.visible_ms / t.sessions : 0)}</b><span>세션당 머문 시간</span></div>}
             <div><b>{pct(t.bounce, t.sessions)}</b><span>한 화면만 보고 이탈</span></div>
             <div><b>{pct(t.revisit, t.sessions)}</b><span>재방문</span></div>
-            <div><b>{num(t.bots)}</b><span>거른 세션(봇·미리보기)</span></div>
+            <div title={`고르지 않은 종류: ${KINDS.filter((k) => !kinds.includes(k)).map((k) => KIND_LABEL[k]).join(", ") || "없음"}`}><b>{num(t.kinds ? KINDS.filter((k) => !kinds.includes(k)).reduce((a, k) => a + (t.kinds?.[k] ?? 0), 0) : t.bots)}</b><span>거른 세션</span></div>
           </div>
 
           {/* 내 정보 동기화 — 누가(익명 방문자 id) 몇 번 (사용자 요청 2026-10-05) */}
@@ -891,7 +917,11 @@ export function VisitsPanel() {
             <div className="vz-mesync">
               <Head title="내 정보 동기화" {...top("mesync", "내 정보 동기화")} sub={meServer
                 ? `${serverLabel(meServer)} — 로그인 ${num(meBy.reduce((a, b) => a + b.login, 0))} · 다시 동기화 ${num(meBy.reduce((a, b) => a + b.sync, 0))} · ${num(meBy.length)}명`
-                : `로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · ${num(data.me_sync.people)}명 — 누가 = 방문자 익명 id (닉네임은 받지 않는다) · 유입 = 이 기간 첫 로그인 세션이 들어온 곳`} />
+                : `로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · ${num(data.me_sync.people)}명 — 누가 = 방문자 익명 id (닉네임은 받지 않는다) · 유입 = 이 기간 첫 로그인 세션이 들어온 곳`} >
+                {/* 정렬은 드롭다운으로, '상위 n' 과 같은 줄 오른쪽 (사용자 지시 2026-10-08) */}
+                <Dropdown ariaLabel="정렬" label={meSort === "last" ? "최신순" : meSort === "sync" ? "다시 동기화순" : "횟수순"} selected={[meSort]}
+                  items={[{ value: "n", label: "횟수순" }, { value: "last", label: "최신순" }, { value: "sync", label: "다시 동기화순" }]} onPick={(v) => setMeSort(v as "n" | "last" | "sync")} />
+              </Head>
               {/* 서버별 인원 — 버튼 줄로 늘 보이고 누르면 그 서버만. 중섭은 직영·비리비리를 0명이어도 따로 둔다
                   (사용자 지시 2026-10-07 — 비리비리가 안 보여 합쳐진 줄 알았다. 종전 드롭다운은 기록 있는 서버만 나왔다) */}
               <div className="vz-mesync-filter vz-srv-chips" role="group" aria-label="서버">
@@ -905,9 +935,6 @@ export function VisitsPanel() {
                       onClick={() => setMeServer(o.value)}>{o.label} <b>{num(cnt)}</b></button>
                   );
                 })}
-                <span className="vz-sort-sep">정렬</span>
-                <button type="button" className={meSort === "n" ? "selected" : ""} onClick={() => setMeSort("n")}>횟수순</button>
-                <button type="button" className={meSort === "last" ? "selected" : ""} onClick={() => setMeSort("last")}>최신순</button>
               </div>
               {meBy.length ? meTable(tops.mesync) : <p className="vz-note">{meServer ? "이 서버의 동기화 기록이 없습니다." : "이 기간에는 동기화 기록이 없습니다."}</p>}
             </div>
@@ -953,11 +980,9 @@ export function VisitsPanel() {
                       {lab(slot.t)}~{lab(slot.t + slot.step * 60)} 만 보는 중 <b aria-hidden>×</b>
                     </button>
                   )}
-                  <span className="vz-stepsize" role="group" aria-label="칸 크기">
-                    {([15, 30, 60] as const).map((v) => (
-                      <button key={v} type="button" className={step === v ? "selected" : ""} onClick={() => setStep(v)}>{v === 60 ? "1시간" : `${v}분`}</button>
-                    ))}
-                  </span>
+                  <Dropdown ariaLabel="칸 크기" label={step === 60 ? "1시간 칸" : `${step}분 칸`} selected={[String(step)]}
+                    items={([15, 30, 60] as const).map((v) => ({ value: String(v), label: v === 60 ? "1시간" : `${v}분` }))}
+                    onPick={(v) => setStep(Number(v) as 15 | 30 | 60)} />
                 </Head>
                 <LineChart days={slots.map(String)} every={every}
                   sel={selIdx >= 0 ? selIdx : null}
