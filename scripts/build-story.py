@@ -620,7 +620,7 @@ for act in cn_acts:
         "id": eid,
         "name": trans or {"ko": act["name"]},  # 임시 번역 없으면 중국어 원문
         "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),  # CN 출시월(정렬·시차 기준)
-        "episodes": len(codes),
+        "episodes": len(codes) or len(act["infoUnlockDatas"]),   # 미니는 작전 코드가 없다 — 화 수로
         "thumb": thumb_path,
         "unreleased": True,
         **({"mini": True} if is_mini else {}),

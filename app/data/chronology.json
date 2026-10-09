@@ -858,6 +858,23 @@
    }
   },
   {
+   "id": "main_17",
+   "kind": "main",
+   "title": {
+    "ko": "상전이 임계",
+    "en": "Critical Phase Transition",
+    "ja": "相転移臨界"
+   },
+   "terraYear": 1102,
+   "arc": "rl",
+   "dateNote": "장면 표기 '젤그라드, 1102년 1월 20~21일' (1101년 11~12월 장면이 앞에 깔린다)",
+   "yearWhy": {
+    "ko": "장면 표기 '젤그라드, 1102년 1월 20~21일' (1101년 11~12월 장면이 앞에 깔린다)",
+    "en": "Scene stamps \"Zelgrad, January 20-21, 1102\" (preceded by November-December 1101 scenes)",
+    "ja": "場面表記「ゼルグラード、1102年1月20〜21日」（その前に1101年11〜12月の場面がある）"
+   }
+  },
+  {
    "id": "rogue_1",
    "kind": "roguelike",
    "title": {

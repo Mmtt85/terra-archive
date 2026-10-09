@@ -8,7 +8,7 @@
 // 훈장 아이콘(public/event/medal/)·가구 아이콘(public/event/furni/)은 build-event-art.py --extra 가 받는다(R2 폴더).
 
 import { useEffect, useState, type ReactNode } from "react";
-import { asset } from "./assets";
+import { asset, eventArtUrl } from "./assets";
 import { useI18n } from "./i18n";
 import { itemIcon } from "./items";
 
@@ -104,7 +104,7 @@ const MISSION_FOLD = 24;   // 미션이 이보다 많으면 접어 두고 '모�
 function RewardChip({ r, open }: { r: Reward; open: Open }) {
   const [kind, rid, name, n, icon] = r;
   const img = kind === "item" && icon ? itemIcon(icon)
-    : kind === "furn" ? asset(`/event/furni/${rid}.webp`)
+    : kind === "furn" ? eventArtUrl("furni", rid)
     : kind === "char" ? asset(`/avatars/${rid}.webp`) : null;
   const local = kind === "furn" ? `/event/furni/${rid}.webp` : "";
   const click = kind === "item" ? () => open.onOpenItem(rid) : kind === "char" ? () => open.onShowOperator(rid) : undefined;
@@ -151,7 +151,7 @@ function Medals({ m }: { m: NonNullable<Extra["medals"]> }) {
       <ul className="vb-medals">
         {m.list.map(([mid, name, rarity, how, desc, hidden]) => (
           <li key={mid}>
-            <img src={asset(`/event/medal/${mid}.webp`)} alt="" aria-hidden width={48} height={48}
+            <img src={eventArtUrl("medal", mid)} alt="" aria-hidden width={48} height={48}
               loading="lazy" decoding="async" onError={onImgError(`/event/medal/${mid}.webp`)} />
             <span>
               <b>{name}{rarity && <em className="evx-tier">{rarity}</em>}{hidden ? <em className="evx-hidden">{t("숨김 훈장")}</em> : null}</b>
@@ -172,7 +172,7 @@ function Furniture({ f }: { f: NonNullable<Extra["furn"]> }) {
       <div className="evx-furn">
         {f.list.map(([fid, name]) => (
           <span key={fid} className="evx-rw">
-            <img src={asset(`/event/furni/${fid}.webp`)} alt="" aria-hidden width={32} height={32}
+            <img src={eventArtUrl("furni", fid)} alt="" aria-hidden width={32} height={32}
               loading="lazy" decoding="async" onError={onImgError(`/event/furni/${fid}.webp`)} />
             <span>{name}</span>
           </span>

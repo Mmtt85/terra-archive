@@ -21,6 +21,11 @@ export const ASSET_BASE = __ASSET_BASE__;
  *  ⚠ 올리기 전에 R2 동기화(배포)가 끝나 있어야 한다 — 먼저 열면 옛 그림이 새 키로 30일 박힌다. */
 export const CUT_VER = "20261004";
 export const storyCutUrl = (name: string) => `${asset(`/story/cut/${encodeURIComponent(name)}.webp`)}?v=${CUT_VER}`;
+/** 이벤트 창 훈장·가구 그림(/event/medal·/event/furni) 캐시 키. 그림이 R2 에 올라가기 **전에** 누가 그 주소를 열면
+ *  404 가 엣지에 4시간 박힌다 — 중섭 선행 이벤트는 도감이 먼저 배포되고 그림이 뒤따라 올 때가 있어 그렇게 됐다
+ *  (2026-10-09 어제의 바다 가구 19장). 그림을 새로 받아 올린 뒤 값을 올리면 새 키로 바로 받아진다. */
+export const EVENT_ART_VER = "2026100901";
+export const eventArtUrl = (kind: "medal" | "furni", id: string) => `${asset(`/event/${kind}/${id}.webp`)}?v=${EVENT_ART_VER}`;
 
 /** 루트 상대 에셋 경로 → R2 URL. 이미 절대 URL이면 그대로 돌려준다.
  *  버킷은 assets/(사이트 에셋 — r2-sync 관할)와 uploads/(수동 업로드)로 나뉜다 (2026-07-27). */
