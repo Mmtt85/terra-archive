@@ -29501,3 +29501,49 @@ html.dark .pt-tile:hover:not(.dead) {
 @media (prefers-reduced-motion: reduce) {
   :root .pt-tile:hover:not(.dead) { translate: none; }
 }
+
+/* ── 모달 창 — 테두리 없이 떠 있게 (사용자 지적 2026-10-10 "모달창 전체 보더 때문에 촌스럽다") ──
+   창 틀은 모달마다 자기 클래스로 1px 테두리를 그려서 공용 틀(.mw-window)에서 한 번에 덮는다. 테두리 대신 깊고 넓은
+   그림자 + 위 하이라이트, 제목 줄과 본문 사이 구분선은 바탕 차이로 */
+:root .mw-window {
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 45%, transparent),
+    0 2px 6px color-mix(in srgb, var(--ink) 8%, transparent),
+    0 28px 64px -18px color-mix(in srgb, var(--ink) 40%, transparent);
+}
+html.dark .mw-window {
+  box-shadow: inset 0 1px 0 #ffffff14, 0 28px 70px -18px #000e;
+}
+:root .mw-window .mw-chrome {
+  border-bottom-color: transparent;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+/* 통합전략 모달 안 카드 — 바깥 카드와 같은 결 (작전 카드·노드 종류·우연한 만남 항목). 모달은 섹션 밖(포털)이라
+   테마 색을 html 에 테마별로 둔다(rogue.tsx TOPIC_HUE 와 같은 값) */
+html.rg-theme { --rg-hue: #c23b4e; }
+html.rg-theme.rg2 { --rg-hue: #4a9edd; }
+html.rg-theme.rg3 { --rg-hue: #b7c2d1; }
+html.rg-theme.rg4 { --rg-hue: #8e222f; }
+html.rg-theme.rg5 { --rg-hue: #efa5c1; }
+html.rg-theme.rg6 { --rg-hue: #2fbfa5; }
+.rg-modal :is(.rg-stagecard, .rg-nodetype, .rg-enc-item) {
+  border-color: transparent !important;
+  box-shadow:
+    inset 0 1px 0 #ffffff1c,
+    inset 0 0 0 1px #ffffff08,
+    0 10px 22px -12px #000d;
+  transition: box-shadow 0.25s, background-color 0.25s, translate 0.16s;
+}
+.rg-modal :is(.rg-stagecard, .rg-enc-item):hover {
+  box-shadow:
+    inset 0 1px 0 #ffffff26,
+    inset 0 0 0 1px color-mix(in srgb, var(--rg-hue, var(--rggold)) 40%, transparent),
+    0 0 20px -6px color-mix(in srgb, var(--rg-hue, var(--rggold)) 45%, transparent),
+    0 12px 26px -12px #000e;
+  translate: 0 -2px;
+}
+.rg-modal .rg-enc-thumb {
+  border-color: transparent !important;
+}
