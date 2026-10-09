@@ -16,6 +16,12 @@ export type DropItem = {
   /** 줄 오른쪽 끝의 회색 숫자 (건수 등) */
   count?: number | string;
   disabled?: boolean;
+  /** 이름 앞의 작은 그림 (맹약 아이콘 등) */
+  icon?: React.ReactNode;
+  /** 줄에 덧붙일 클래스 (예: 저장 대기 표시 save-pending) */
+  className?: string;
+  /** 줄에 마우스를 올리면 뜨는 설명 */
+  title?: string;
 };
 
 /** 오른쪽 공간이 이만큼도 없으면 왼쪽으로 펼친다 (.ac-garsel과 같은 규약) */
@@ -51,7 +57,7 @@ function clipBottom(el: HTMLElement): number {
 
 export function Dropdown({
   label, items, selected, onPick, multi, ariaLabel,
-  className, buttonClassName, scroll, disabled,
+  className, buttonClassName, scroll, disabled, actions,
 }: {
   /** 버튼에 보일 현재 상태 */
   label: React.ReactNode;
@@ -66,6 +72,8 @@ export function Dropdown({
   /** 항목이 많은 목록 — 최대 높이를 두고 스크롤 */
   scroll?: boolean;
   disabled?: boolean;
+  /** 값을 고르는 게 아니라 **할 일을 고르는** 메뉴 ('그 외' 등) — 줄이 menuitem 이 되고 고른 표시가 없다 */
+  actions?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [alignRight, setAlignRight] = useState(false);
@@ -93,7 +101,13 @@ export function Dropdown({
     };
   }, [open, float]);
 
+  // 일부 모바일 인앱 브라우저(카카오톡·카페 웹뷰)는 탭 한 번에 click 을 두 번 합성한다 — 열리자마자 닫혀
+  // "안 보임"이 됐다 (플래너 '그 외'에서 2026-07-18 제보, 공용으로 옮기며 가드도 함께 옮김). 350ms 안의 재토글은 무시
+  const toggledAt = useRef(0);
   const toggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const now = Date.now();
+    if (now - toggledAt.current < 350) return;
+    toggledAt.current = now;
     // 열기 직전에 여유를 재서 펼칠 방향을 정한다 — 화면·모달 오른끝 버튼이 잘리던 문제.
     // 오른쪽이 모자라도 왼쪽이 더 좁으면 그대로 둔다 (좁은 창 왼끝 버튼이 반대로 잘리지 않게)
     const rect = event.currentTarget.getBoundingClientRect();
@@ -117,15 +131,17 @@ export function Dropdown({
         <i className="drop-caret" aria-hidden>▾</i>
       </button>
       {open && (
-        <ul className={`drop-menu${alignRight ? " align-right" : ""}${scroll ? " scroll" : ""}`} style={float ?? undefined}
+        <ul className={`drop-menu menu-anim${alignRight ? " align-right" : ""}${scroll ? " scroll" : ""}`} style={float ?? undefined}
           role="menu" aria-label={ariaLabel}>
           {items.map((item) => {
             const on = selected.includes(item.value);
             return (
               <li key={item.value} role="none">
-                <button type="button" role={multi ? "menuitemcheckbox" : "menuitemradio"}
-                  aria-checked={on} disabled={item.disabled} className={on ? "on" : ""}
+                <button type="button" role={actions ? "menuitem" : multi ? "menuitemcheckbox" : "menuitemradio"}
+                  aria-checked={actions ? undefined : on} disabled={item.disabled} title={item.title}
+                  className={["menu-item-bar", on ? "on" : "", item.className ?? ""].filter(Boolean).join(" ")}
                   onClick={() => { onPick(item.value); if (!multi) setOpen(false); }}>
+                  {item.icon}
                   <span>{item.label}</span>
                   {item.count !== undefined && <em>{item.count}</em>}
                 </button>

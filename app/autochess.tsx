@@ -25,6 +25,7 @@ import { computeBoard, MAX_BOARD, MAX_BOARD_ITEM, MAX_DECK, BOARD9_ITEM, type Bo
 import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
+import { Dropdown } from "./dropdown";
 import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import { loadEnemies, loadEnemyStages } from "./dex-cross";
 import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy, type EnemyStages } from "./enemy-detail";
@@ -1628,7 +1629,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     setOpenMenu(openMenu === menuKey ? "" : menuKey);
     setFlyout("");
   };
-  const menuCls = (extra = "") => `ac-garsel-menu${extra}${menuSide === "right" ? " align-right" : ""}`;
+  const menuCls = (extra = "") => `ac-garsel-menu menu-anim${extra}${menuSide === "right" ? " align-right" : ""}`;
   // ── 드롭다운 목록 띄우기 ────────────────────────────────────────────────
   // ⚠ 목록을 **body 로 빼서 화면 좌표(fixed)에 놓는다**. 버튼 옆에 absolute 로 달아 두면
   // 모달·스크롤 상자의 overflow 가 목록을 잘라 먹는다 — 가로로 삐져나가던 걸 align-right
@@ -1688,17 +1689,17 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     const item = (value: string, lab: string) => (
       <li key={value || "all"} role="none">
         <button type="button" role="menuitemradio" aria-checked={cur === value}
-          className={cur === value ? "on" : ""} onClick={() => pick(value)}>
+          className={`menu-item-bar${cur === value ? " on" : ""}`} onClick={() => pick(value)}>
           <span>{lab}</span><em>{facetCount.gar.get(value || "__all") ?? 0}</em>
         </button>
       </li>
     );
     return (
       <div className="ac-garsel">
-        <button type="button" className={`ac-garsel-btn${cur ? " on" : ""}`}
+        <button type="button" className={`drop-btn ac-garsel-btn${cur ? " on" : ""}`}
           aria-haspopup="menu" aria-expanded={openMenu === menuKey}
           onClick={toggleMenu(menuKey)}>
-          {label} <i aria-hidden>▾</i>
+          <span className="drop-label">{label}</span><i className="drop-caret" aria-hidden>▾</i>
         </button>
         {openMenu === menuKey && menuPop(
           <ul className={menuCls()} role="menu" aria-label={t("특질로 거르기")}>
@@ -1710,7 +1711,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 onMouseEnter={() => { if (matchMedia("(hover: hover)").matches) setFlyout("every"); }}
                 onMouseLeave={() => { if (matchMedia("(hover: hover)").matches) setFlyout(""); }}>
                 <button type="button" role="menuitemradio" aria-checked={cur === "every"}
-                  className={cur.startsWith("every") ? "on" : ""} onClick={() => pick("every")}>
+                  className={`menu-item-bar${cur.startsWith("every") ? " on" : ""}`} onClick={() => pick("every")}>
                   <span>{t(GAR_CAT_LABEL.every)}</span><em>{facetCount.gar.get("every") ?? 0}</em>
                 </button>
                 {/* 펼침 버튼 — 행 클릭(=전체 선택)과 역할이 다르다. 데스크탑은 호버로도 열리지만
@@ -1719,7 +1720,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   aria-label={t("맹약별로 보기")}
                   onClick={(e) => { e.stopPropagation(); setFlyout(flyout === "every" ? "" : "every"); }}>▾</button>
                 {flyout === "every" && (
-                  <ul className="ac-garsel-sub" role="menu" aria-label={t(GAR_CAT_LABEL.every)}>
+                  <ul className="ac-garsel-sub menu-anim" role="menu" aria-label={t(GAR_CAT_LABEL.every)}>
                     {item("every", t("전체"))}
                     {everyBonds.map((b) => item(`every:${b}`, evbName(b)))}
                   </ul>
@@ -1728,7 +1729,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             ) : (
               <li key={cat} role="none">
                 <button type="button" role="menuitemradio" aria-checked={cur === cat}
-                  className={cur === cat ? "on" : ""} onClick={() => pick(cat)}>
+                  className={`menu-item-bar${cur === cat ? " on" : ""}`} onClick={() => pick(cat)}>
                   <span>{t(GAR_CAT_LABEL[cat])}</span><em>{facetCount.gar.get(cat) ?? 0}</em>
                 </button>
               </li>
@@ -1740,27 +1741,24 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   };
   // 시뮬레이터의 맹약 선택 드롭다운 (진영/특성 각 1) — 같은 드롭다운 스타일 (사용자 요청 2026-08-23:
   // "맹약 일렬로 주르르륵 하지 말고 전부 다 드랍다운으로")
-  const bondDropdown = (nation: boolean, cur: string, setCur: (v: string) => void, menuKey: string, facetCount: AcFacets) => (
-    <div className="ac-garsel">
-      <button type="button" className={`ac-garsel-btn${cur ? " on" : ""}`}
-        aria-haspopup="menu" aria-expanded={openMenu === menuKey}
-        onClick={toggleMenu(menuKey)}>
-        {cur ? nameOfBond(cur) : t(nation ? "진영 맹약 전체" : "특성 맹약 전체")} <i aria-hidden>▾</i>
-      </button>
-      {openMenu === menuKey && menuPop(
-        <ul className={menuCls(" scroll")} role="menu" aria-label={t(nation ? "진영 맹약" : "특성 맹약")}>
-          <li role="none"><button type="button" role="menuitemradio" aria-checked={!cur}
-            className={!cur ? "on" : ""} onClick={() => { setCur(""); closeMenus(); }}><span>{t(nation ? "진영 맹약 전체" : "특성 맹약 전체")}</span></button></li>
-          {doc.bonds.filter((b) => b.nation === nation).map((b) => (
-            <li key={b.id} role="none"><button type="button" role="menuitemradio" aria-checked={cur === b.id}
-              className={cur === b.id ? "on" : ""} onClick={() => { setCur(b.id); closeMenus(); }}>
-              <img className="ac-garsel-icon" src={bondIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-              <span>{b.n}</span><em>{(nation ? facetCount.nation : facetCount.trait).get(b.id) ?? 0}</em></button></li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+  // ⚠ 하위 메뉴가 없는 맹약·티어는 공용 Dropdown 을 쓴다 (사용자 지시 2026-10-10 "드랍다운 버튼은 전부 공용으로").
+  //   특질·직군(서브메뉴)·전략(타일 그리드)만 아래 자체 메뉴(.ac-garsel)로 남고, 단추 모양은 셋 다 공용 .drop-btn 이다.
+  const bondDropdown = (nation: boolean, cur: string, setCur: (v: string) => void, facetCount: AcFacets) => {
+    const all = t(nation ? "진영 맹약 전체" : "특성 맹약 전체");
+    return (
+      <Dropdown label={cur ? nameOfBond(cur) : all} ariaLabel={t(nation ? "진영 맹약" : "특성 맹약")}
+        buttonClassName="ac-garsel-btn" scroll selected={cur ? [cur] : []}
+        onPick={(v) => { setCur(v); closeMenus(); }}
+        items={[
+          { value: "", label: all },
+          ...doc.bonds.filter((b) => b.nation === nation).map((b) => ({
+            value: b.id, label: b.n,
+            icon: <img className="ac-garsel-icon" src={bondIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />,
+            count: (nation ? facetCount.nation : facetCount.trait).get(b.id) ?? 0,
+          })),
+        ]} />
+    );
+  };
 
   // 직군 드롭다운 — 직군 행에 마우스오버(터치는 ▾)하면 그 직군의 세부직군이 서브메뉴로
   // 열린다 (사용자 확정 2026-08-23: 두 드롭다운 대신 하나로). 행 클릭 = 직군만 선택.
@@ -1770,35 +1768,35 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     const label = jobFilter ? (subFilter ? `${jobFilter} · ${subFilter}` : jobFilter) : t("직군 전체");
     return (
       <div className="ac-garsel">
-        <button type="button" className={`ac-garsel-btn${jobFilter ? " on" : ""}`}
+        <button type="button" className={`drop-btn ac-garsel-btn${jobFilter ? " on" : ""}`}
           aria-haspopup="menu" aria-expanded={openMenu === menuKey}
           onClick={toggleMenu(menuKey)}>
-          {label} <i aria-hidden>▾</i>
+          <span className="drop-label">{label}</span><i className="drop-caret" aria-hidden>▾</i>
         </button>
         {openMenu === menuKey && menuPop(
           <ul className={menuCls()} role="menu" aria-label={t("직군 전체")}>
             <li role="none"><button type="button" role="menuitemradio" aria-checked={!jobFilter}
-              className={!jobFilter ? "on" : ""} onClick={() => pickJob("")}><span>{t("직군 전체")}</span></button></li>
+              className={`menu-item-bar${!jobFilter ? " on" : ""}`} onClick={() => pickJob("")}><span>{t("직군 전체")}</span></button></li>
             {[...jobTree.keys()].map((j) => (
               <li key={j} role="none" className={`has-sub${flyout === j ? " open" : ""}`}
                 onMouseEnter={() => { if (matchMedia("(hover: hover)").matches) setFlyout(j); }}
                 onMouseLeave={() => { if (matchMedia("(hover: hover)").matches) setFlyout(""); }}>
                 <button type="button" role="menuitemradio" aria-checked={jobFilter === j && !subFilter}
-                  className={jobFilter === j ? "on" : ""} onClick={() => pickJob(j)}>
+                  className={`menu-item-bar${jobFilter === j ? " on" : ""}`} onClick={() => pickJob(j)}>
                   <span>{j}</span><em>{jobCount.get(j) ?? 0}</em>
                 </button>
                 <button type="button" className="ac-garsel-more" aria-expanded={flyout === j}
                   aria-label={t("세부직군으로 보기")}
                   onClick={(e) => { e.stopPropagation(); setFlyout(flyout === j ? "" : j); }}>▾</button>
                 {flyout === j && (
-                  <ul className="ac-garsel-sub" role="menu" aria-label={j}>
+                  <ul className="ac-garsel-sub menu-anim" role="menu" aria-label={j}>
                     <li role="none"><button type="button" role="menuitemradio" aria-checked={jobFilter === j && !subFilter}
-                      className={jobFilter === j && !subFilter ? "on" : ""} onClick={() => pickJob(j)}>
+                      className={`menu-item-bar${jobFilter === j && !subFilter ? " on" : ""}`} onClick={() => pickJob(j)}>
                       <span>{t("전체")}</span><em>{jobCount.get(j) ?? 0}</em></button></li>
                     {[...(jobTree.get(j) ?? new Map<string, number>())].map(([sb, n]) => (
                       <li key={sb} role="none"><button type="button" role="menuitemradio"
                         aria-checked={jobFilter === j && subFilter === sb}
-                        className={jobFilter === j && subFilter === sb ? "on" : ""}
+                        className={`menu-item-bar${jobFilter === j && subFilter === sb ? " on" : ""}`}
                         onClick={() => pickJob(j, sb)}>
                         <span>{sb}</span><em>{n}</em></button></li>
                     ))}
@@ -1835,30 +1833,16 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       </div>
       {/* 순서는 사용자 지시 (2026-08-23): 진영 맹약 · 특성 맹약 · 특질 · 티어 · 직군.
           맹약 2축은 옛 시뮬레이터의 선택 축이 필터로 들어온 것. */}
-      {bondDropdown(true, f.bondN, f.setBondN, `${scope}:bondN`, facets)}
-      {bondDropdown(false, f.bondT, f.setBondT, `${scope}:bondT`, facets)}
+      {bondDropdown(true, f.bondN, f.setBondN, facets)}
+      {bondDropdown(false, f.bondT, f.setBondT, facets)}
       {/* 특질·직군(세부직군 서브메뉴) 필터는 오퍼레이터 목록에만 — 아이템에는 없는 개념이다.
           ⚠ 담기 모달은 **언제나 오퍼 목록**이라 탭이 무엇이든 함께 낸다 — view 기본값이
           "bond" 라 모달에서 이 두 필터가 통째로 빠져 있었다 (2026-08-29). */}
       {(view === "op" || scope === "pick") && garDropdown(f.gar, f.setGar, `${scope}:gar`, facets)}
-      <div className="ac-garsel">
-        <button type="button" className={`ac-garsel-btn${f.tier ? " on" : ""}`}
-          aria-haspopup="menu" aria-expanded={openMenu === `${scope}:tier`}
-          onClick={toggleMenu(`${scope}:tier`)}>
-          {f.tier ? `T${f.tier}` : t("티어 전체")} <i aria-hidden>▾</i>
-        </button>
-        {openMenu === `${scope}:tier` && menuPop(
-          <ul className={menuCls()} role="menu" aria-label={t("티어")}>
-            <li role="none"><button type="button" role="menuitemradio" aria-checked={f.tier === 0}
-              className={f.tier === 0 ? "on" : ""} onClick={() => { f.setTier(0); closeMenus(); }}><span>{t("전체")}</span></button></li>
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <li key={n} role="none"><button type="button" role="menuitemradio" aria-checked={f.tier === n}
-                className={f.tier === n ? "on" : ""} onClick={() => { f.setTier(n); closeMenus(); }}>
-                <span>{tierBadge(n)}</span></button></li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <Dropdown label={f.tier ? `T${f.tier}` : t("티어 전체")} ariaLabel={t("티어")}
+        buttonClassName="ac-garsel-btn" selected={f.tier ? [String(f.tier)] : []}
+        onPick={(v) => { f.setTier(Number(v)); closeMenus(); }}
+        items={[{ value: "0", label: t("전체") }, ...[1, 2, 3, 4, 5, 6].map((n) => ({ value: String(n), label: tierBadge(n) }))]} />
       {(view === "op" || scope === "pick") && jobDropdown(f, `${scope}:job`)}
       {f.any && (
         <button type="button" className="ac-filters-clear"
@@ -2954,10 +2938,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   (사용자 지시 2026-09-06 "전략도 자동으로 선택돼야 하니까 드랍다운 버튼도 필요 없겠지"). */}
               {(
               <div className="ac-garsel">
-                <button type="button" className={`ac-garsel-btn${simBand ? " on" : ""}`}
+                <button type="button" className={`drop-btn ac-garsel-btn${simBand ? " on" : ""}`}
                   aria-haspopup="menu" aria-expanded={openMenu === "simband"}
                   onClick={toggleMenu("simband")}>
-                  {simBand ? (doc.bands.find((b) => b.id === simBand)?.n ?? t("전략 고르기")) : t("전략 고르기")} <i aria-hidden>▾</i>
+                  <span className="drop-label">{simBand ? (doc.bands.find((b) => b.id === simBand)?.n ?? t("전략 고르기")) : t("전략 고르기")}</span><i className="drop-caret" aria-hidden>▾</i>
                 </button>
                 {/* 전략 고르기는 **타일 그리드**다 — 게임의 '전략 정보' 화면이 한 줄에 넷씩
                     얼굴을 깔아 주고, 사람도 이름보다 대표 오퍼 얼굴로 먼저 알아본다
@@ -2967,7 +2951,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   <ul className={menuCls(" scroll ac-bandmenu")} role="menu" aria-label={t("전략")}>
                     <li role="none" className="ac-bandmenu-none">
                       <button type="button" role="menuitemradio" aria-checked={!simBand}
-                        className={!simBand ? "on" : ""} onClick={() => { setSimBand(""); closeMenus(); }}>
+                        className={`menu-item-bar${!simBand ? " on" : ""}`} onClick={() => { setSimBand(""); closeMenus(); }}>
                         <span>{t("고르지 않음")}</span></button></li>
                     {doc.bands.slice().sort((a, b) => a.sort - b.sort).map((b) => (
                       <li key={b.id} role="none"><button type="button" role="menuitemradio" aria-checked={simBand === b.id}

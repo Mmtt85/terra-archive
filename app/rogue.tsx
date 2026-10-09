@@ -1282,10 +1282,25 @@ export default function RogueGuide({ initialTopic }: {
   const [grade, setGrade] = useState(0); // -1 = EASY, 0~15
   // 테마 변경 커스텀 드롭다운 — 바깥 클릭·Esc로 닫기
   const [topicMenu, setTopicMenu] = useState(false);
-  const topicSelRef = useRef<HTMLDivElement>(null);
+  // 제목이 곧 테마 변경 버튼이다 (사용자 지시 2026-10-10 "타이틀이랑 테마변경 버튼이 중복") — 목록은 히어로의
+  // overflow:hidden 밖(.rg-head 직속)에 그리므로, 열 때 제목 버튼 자리를 재서 그 바로 아래에 띄운다
+  const titleBtnRef = useRef<HTMLButtonElement>(null);
+  const topicMenuRef = useRef<HTMLUListElement>(null);
+  const [topicMenuPos, setTopicMenuPos] = useState<{ left: number; top: number } | null>(null);
+  const toggleTopicMenu = () => setTopicMenu((open) => {
+    const btn = titleBtnRef.current, head = btn?.closest(".rg-head");
+    if (!open && btn && head) {
+      const b = btn.getBoundingClientRect(), h = head.getBoundingClientRect();
+      setTopicMenuPos({ left: b.left - h.left, top: b.bottom - h.top + 6 });
+    }
+    return !open;
+  });
   useEffect(() => {
     if (!topicMenu) return;
-    const onDown = (e: MouseEvent) => { if (!topicSelRef.current?.contains(e.target as Node)) setTopicMenu(false); };
+    const onDown = (e: MouseEvent) => {
+      const n = e.target as Node;
+      if (!titleBtnRef.current?.contains(n) && !topicMenuRef.current?.contains(n)) setTopicMenu(false);
+    };
     const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setTopicMenu(false); };
     window.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onEsc);
@@ -2654,30 +2669,58 @@ export default function RogueGuide({ initialTopic }: {
   };
 
   return (
-    <section className={`rg${topic === "rogue_1" ? "" : " rg" + topic.split("_")[1]}`} aria-labelledby="rg-title">
+    <section className={`rg${topic === "rogue_1" ? "" : " rg" + topic.split("_")[1]}`} aria-labelledby="rg-title"
+      style={{ ["--rg-hue" as string]: TOPIC_HUE[topic] }}>
       {/* 테마 키비주얼 — 히어로 상자가 아니라 페이지 배경 (위 프리렌더 분기와 같은 그림) */}
       <img className="rg-kv-page" src={asset(`/rogue/kv${topic.split("_")[1]}.webp`)} alt="" aria-hidden decoding="async" />
       <header className="rg-head">
         <div className="rg-hero">
           <div className="rg-hero-text">
-            <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
-            {/* 제목은 현재 테마 이름 — 테마 전환은 햄버거 '통합전략 가이드' 부메뉴/드롭다운 (사용자 확정 2026-07-18) */}
-            <h2 id="rg-title">{t(TOPICS.find((tp) => tp.id === topic)?.name ?? "통합전략 가이드")}{TOPICS.find((tp) => tp.id === topic)?.future && <em className="rg-title-future">{t("미래시")}</em>}{server === "cn" && data.cnName && <span className="rg-title-cn" lang="zh">{data.cnName}</span>}</h2>
-            {/* 중국섭 안내 한 줄 — 한국섭일 때도 같은 자리를 투명하게 예약해 서버 전환 시
-                히어로 높이가 변하지 않게 한다 (사용자 요청 2026-08-04). 눈썹 줄에 넣는 안은
-                도구 버튼 때문에 가용 폭이 160px뿐이라 문구가 잘려 폐기. CN 원제는 제목 오른쪽.
-                블랙플로우도 같은 자리·같은 꼴 — 다만 KR 미출시라 문구가 '비공식 번역'이다. */}
-            <p className="rg-disclaimer" aria-hidden={server !== "cn"}>
-              {/* 한국섭에선 문구 자체를 렌더하지 않고 빈 줄(nbsp)만 남긴다 — CSS로 숨기면
-                  스타일이 늦게 붙는 순간 중국섭 문구가 그대로 노출된다 (실측 2026-08-04) */}
-              {server !== "cn" ? " "
-                : topic === "rogue_6"
+            <div className="rg-eyebrow-row">
+              <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
+              {/* 한섭/중섭 토글 — 눈썹 문구(INTEGRATED STRATEGIES) 오른쪽 (사용자 지시 2026-10-10. 종전엔 테마 변경 버튼 위에
+                  겹쳐 얹었다). 블랙플로우는 KR 미출시라 한국 버튼 비활성 */}
+              <div className="rg-serversel" role="group" aria-label={t("서버 선택")}>
+                <button type="button" className={server === "kr" ? "on" : ""} aria-pressed={server === "kr"}
+                  disabled={topic === "rogue_6"} aria-label={homeServerFull}
+                  title={topic === "rogue_6" ? t("{sv} 미출시 테마 — 중국 서버 데이터만 제공됩니다", { sv: homeServerFull }) : homeServerFull}
+                  onClick={() => goServer("kr")}>{t(homeServer.short)}</button>
+                <button type="button" className={server === "cn" ? "on" : ""} aria-pressed={server === "cn"}
+                  aria-label={t("중국 서버")} title={t("중국 서버")}
+                  onClick={() => goServer("cn")}>{t("중국섭")}</button>
+                {/* 배지는 버튼 안이 아니라 토글 컨테이너 직속 — 버튼 안에 두면 그 좁은 버튼이
+                    기준이 돼 글자가 세로로 깨진다 (실측 2026-08-04) */}
+                <NewBadge id="rogue-cn" show={isNewFeature("rogue-cn")} />
+              </div>
+              {/* 중국섭 안내 — 서버 토글 바로 오른쪽 (사용자 지시 2026-10-10). 종전엔 제목 아래 한 줄을 차지하고 한국섭일 때도
+                  빈 줄로 자리를 예약해 히어로가 그만큼 높았다 — 이 줄 높이는 토글이 정하니 예약이 필요 없다 */}
+              {server === "cn" && (() => {
+                const note = topic === "rogue_6"
                   // EN/JA도 자체 번역판(rogue6.en/.ja.json)이 생겨 전 로케일 같은 문구 (2026-09-24)
                   ? t("CN 선행 데이터 기반 · 명칭은 비공식 번역이며 중국어 원문을 병기합니다.")
                   : (locale === "ko"
                     ? t("중국 서버 데이터 기반 · 한국 서버 공식 번역으로 표기하고 중국어 원문을 병기합니다.")
-                    : t("중국 서버 데이터는 아직 한국어·중국어로만 제공됩니다."))}
-            </p>
+                    : t("중국 서버 데이터는 아직 한국어·중국어로만 제공됩니다."));
+                // 마퀴 — 같은 문구를 두 번 이어 붙여 끊김 없이 흐르게 (사용자 지시 2026-10-10). 두 번째는 읽기 도구에 숨긴다
+                return (
+                  <p className="rg-disclaimer rg-disclaimer-inline" title={note}>
+                    <span className="rg-marquee"><span>{note}</span><span aria-hidden>{note}</span></span>
+                  </p>
+                );
+              })()}
+            </div>
+            {/* 제목은 현재 테마 이름 — 테마 전환은 햄버거 '통합전략 가이드' 부메뉴/드롭다운 (사용자 확정 2026-07-18) */}
+            <div className="rg-title-row">
+            <h2 id="rg-title">
+                <button type="button" ref={titleBtnRef} className="rg-title-btn" aria-haspopup="listbox" aria-expanded={topicMenu}
+                  title={t("테마 변경")} onClick={toggleTopicMenu}
+                  style={{ ["--rg-hue" as string]: TOPIC_HUE[topic] }}>
+                  {t(TOPICS.find((tp) => tp.id === topic)?.name ?? "통합전략 가이드")}
+                  {/* 누르면 테마가 바뀐다는 걸 글로 알린다 — 화살표는 빼라 (사용자 지시 2026-10-10) */}
+                  <span className="rg-title-hint" aria-hidden>{t("테마 변경")}</span>
+                </button>
+                {TOPICS.find((tp) => tp.id === topic)?.future && <em className="rg-title-future">{t("미래시")}</em>}{server === "cn" && data.cnName && <span className="rg-title-cn" lang="zh">{data.cnName}</span>}</h2>
+            </div>
             {data.line && <p className="rg-line">{data.line}</p>}
           </div>
 
@@ -2713,34 +2756,10 @@ export default function RogueGuide({ initialTopic }: {
           <button type="button" className="lens-help-btn" aria-label={t("스샷 레이더 도움말")}
             onClick={() => setLensOpen(true)}>?</button>
         </div>
-        {/* 테마 변경 드롭다운 — 네이티브 select 대신 테마 톤에 맞춘 커스텀 리스트박스 (2026-07-19) */}
-        <div className="rg-topicsel" ref={topicSelRef}>
-          <button type="button" className="rg-topicsel-btn" aria-haspopup="listbox" aria-expanded={topicMenu}
-            onClick={() => setTopicMenu((v) => !v)}>
-            <span className="rg-topicsel-label">{t("테마 변경")}</span>
-            <span className="rg-topicsel-cur">
-              <i className="rg-topicsel-dot" style={{ background: TOPIC_HUE[topic], boxShadow: `0 0 8px ${TOPIC_HUE[topic]}` }} aria-hidden />
-              {t(TOPICS.find((tp) => tp.id === topic)?.name ?? "통합전략 가이드")}
-            </span>
-            <span className={`rg-topicsel-arrow${topicMenu ? " up" : ""}`} aria-hidden>▾</span>
-          </button>
-          {/* 한섭/중섭 미니 토글 — 테마 변경 버튼 우상단에 겹쳐 얹는다 (사용자 요청 2026-08-04:
-              "테마변경 버튼 안에 작게"). 버튼 안에 버튼은 못 넣으므로 형제를 absolute로 올린다.
-              블랙플로우는 KR 미출시라 한국 버튼 비활성 */}
-          <div className="rg-serversel" role="group" aria-label={t("서버 선택")}>
-            <button type="button" className={server === "kr" ? "on" : ""} aria-pressed={server === "kr"}
-              disabled={topic === "rogue_6"} aria-label={homeServerFull}
-              title={topic === "rogue_6" ? t("{sv} 미출시 테마 — 중국 서버 데이터만 제공됩니다", { sv: homeServerFull }) : homeServerFull}
-              onClick={() => goServer("kr")}>{t(homeServer.short)}</button>
-            <button type="button" className={server === "cn" ? "on" : ""} aria-pressed={server === "cn"}
-              aria-label={t("중국 서버")} title={t("중국 서버")}
-              onClick={() => goServer("cn")}>{t("중국섭")}</button>
-            {/* 배지는 버튼 안이 아니라 토글 컨테이너 직속 — 버튼 안에 두면 그 좁은 버튼이
-                기준이 돼 글자가 세로로 깨진다 (실측 2026-08-04) */}
-            <NewBadge id="rogue-cn" show={isNewFeature("rogue-cn")} />
-          </div>
+        </div>
           {topicMenu && (
-            <ul className="rg-topicsel-menu" role="listbox" aria-label={t("테마 변경")}>
+            <ul ref={topicMenuRef} className="rg-topicsel-menu rg-title-menu menu-anim" role="listbox" aria-label={t("테마 변경")}
+              style={topicMenuPos ? { left: topicMenuPos.left, top: topicMenuPos.top } : undefined}>
               {/* 미래시 토픽도 항상 목록에 둔다 — 흑백(.fut-dim) + '미래시' 표식 (2026-09-04 규칙 변경) */}
               {TOPICS.filter((tp) => tp.ready).map((tp) => (
                 <li key={tp.id} role="option" aria-selected={tp.id === topic}>
@@ -2748,7 +2767,7 @@ export default function RogueGuide({ initialTopic }: {
                       클릭은 종전대로 가로채 그 자리에서 전환한다. */}
                   {/* 중국섭 탭에선 전 토픽이 CN 서버 콘텐츠라 흑백 처리하지 않는다 */}
                   <a href={roguePath(LOCALE_BASE[locale] ?? "", tp.id)}
-                    className={`${tp.id === topic ? "on" : ""}${tp.future && server !== "cn" ? " fut-dim" : ""}`}
+                    className={`menu-item-bar${tp.id === topic ? " on" : ""}${tp.future && server !== "cn" ? " fut-dim" : ""}`}
                     onClick={(e) => {
                       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
                       e.preventDefault(); setTopicMenu(false); goTopic(tp.id);
@@ -2761,14 +2780,12 @@ export default function RogueGuide({ initialTopic }: {
               ))}
             </ul>
           )}
-        </div>
-        </div>
       </header>
 
       {loading && <p className="rg-loading">{t("데이터를 불러오는 중...")}</p>}
 
       {!loading && (<>
-      <nav className="rg-tabs" aria-label={t("통합전략 섹션")}>
+      <nav className="rg-tabs" aria-label={t("통합전략 섹션")} style={{ ["--rg-hue" as string]: TOPIC_HUE[topic] }}>
         {/* 탭 단추 묶음 — 밑줄을 이 묶음 밑에 한 줄로 긋는다 (CSS .rg-tabs-views, 2026-10-03) */}
         <div className="rg-tabs-views">
         {VIEWS.map((v) => (

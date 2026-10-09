@@ -187,7 +187,7 @@ var m=''+((e&&e.message)||'');if(isChunk(m)||(hit&&/reading '?default'?|of undef
             미리 비워 두게 한다 (새로고침마다 메뉴 버튼이 밀렸다 돌아오던 것, 2026-10-07). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('ta-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}try{if(localStorage.getItem('ta:me'))document.documentElement.setAttribute('data-me','1');}catch(e){}`,
+            __html: `try{var t=localStorage.getItem('ta-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}try{if(localStorage.getItem('ta:me'))document.documentElement.setAttribute('data-me','1');}catch(e){}try{var rm=location.pathname.match(/^(?:\\/(?:en|ja))?\\/rogue(?:\\/is(\\d+))?\\/?$/);if(rm){var rc=document.documentElement.classList;rc.add('rg-theme');if(rm[1]&&rm[1]!=='1')rc.add('rg'+rm[1]);}}catch(e){}`,
           }}
         />
         {/* 모든 모달 ESC 닫기 (사용자 요청 2026-07-24) — app/esc-close.ts와 동일 로직의 인라인판.

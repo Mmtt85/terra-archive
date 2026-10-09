@@ -385,17 +385,15 @@ button {
   object-fit: cover;
   object-position: center top;
 }
+/* 언어 칩 — 공용 드롭다운 단추(.drop-btn) 위에 고정폭 서체·치수만 얹는다 (2026-10-10 통일, 테두리·바탕은 공용) */
 .server-chip {
-  border: 1px solid var(--border-strong);
   letter-spacing: 1px;
   padding: 8px 11px;
   font: 700 11px var(--mono);
-  background: none;
-  color: var(--ink);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
   white-space: nowrap;
+}
+@media (min-width: 761px) {
+  .server-chip { min-height: 32px; }   /* 종전 높이 — ▾ 줄높이를 줄이며 1px 내려가 헤더 줄이 흔들리지 않게 (모바일은 27px 그대로) */
 }
 /* 다크모드 토글 — 언어 선택 왼쪽의 아이콘 버튼 */
 .theme-toggle {
@@ -422,7 +420,7 @@ button {
     color: var(--chip-ink);
   }
 }
-.server-chip span {
+.server-chip .server-dot {
   background: #59bb55;
   border-radius: 50%;
   width: 7px;
@@ -431,61 +429,9 @@ button {
   display: inline-block;
   box-shadow: 0 0 0 3px var(--ok-ring);
 }
-.server-chip i {
-  font-style: normal;
-  margin-left: 6px;
-  opacity: 0.55;
-}
-/* 언어 드롭다운 — 서버 칩을 누르면 한국어/English/日本語 선택 (경로 이동) */
+/* 언어 드롭다운 — 서버 칩을 누르면 한국어/English/日本語 선택 (경로 이동). 목록은 공용 .drop-menu */
 .lang-wrap {
-  position: relative;
   margin-left: 10px; /* 햄버거 버튼과 간격 */
-}
-.lang-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 60;
-  background: var(--paper);
-  border: 1px solid var(--border-strong);
-  min-width: 150px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 4px 4px 0 #13171926;
-}
-.lang-menu button {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
-  padding: 9px 12px;
-  /* 서체는 본문(SUITE)을 그대로 받는다 — 종전 `font: 700 12.5px/1 sans-serif` 는 서체를
-     바꾼 뒤(2026-09-19)에도 여기만 시스템 글꼴로 남아 있었다 (사용자 지적 2026-09-23).
-     ⚠ 단축 표기에 inherit 을 섞을 수 없어서 낱개 속성으로 쓴다. */
-  font-weight: 700;
-  font-size: 12.5px;
-  line-height: 1;
-  background: none;
-  border: 0;
-  border-bottom: 1px solid #1317191f;
-  cursor: pointer;
-  text-align: left;
-  color: var(--ink);
-}
-.lang-menu button:last-child {
-  border-bottom: 0;
-}
-.lang-menu button:hover {
-  background: var(--btn-ghost-hover);
-  color: var(--btn-ink-hover);
-}
-.lang-menu button.selected {
-  background: var(--btn-on-bg);
-  color: var(--btn-on-ink);
-}
-.lang-menu button small {
-  font: 700 10px var(--mono);
-  opacity: 0.65;
 }
 
 /* 업데이트 내역 — 로고 바로 오른쪽(1줄 소속, 접어도 보임) 버튼 + 모달 (2026-07-27 이동) */
@@ -842,22 +788,14 @@ button {
 /* 확장부의 작은 버튼. 종전엔 배너 섬네일을 통째로 품은 큰 버튼이 헤더 1줄에 누워 있었다
    (사용자 요청 2026-07-30: "확장헤더에 넣자, 누르면 섬네일이랑 이벤트 보이도록").
    치수는 옆에 붙던 '공식 방송' 버튼에 맞춘 것인데, 그 버튼은 2026-09-23에 걷어냈다. */
-.event-trigger {
-  display: inline-flex;
-  align-items: center;
+/* 테두리·바탕·호버는 공용 드롭다운 단추(.drop-btn, 2026-10-10 통일) — 여기는 헤더 치수만.
+   ⚠ .drop-btn 기본 규칙이 파일 뒤쪽에 있어 클래스를 둘 다 걸어 치수를 지킨다 */
+.event-trigger.drop-btn {
   gap: 7px;
-  border: 1px solid var(--line);
-  background: transparent;
   padding: 6px 11px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--ink);
-  cursor: pointer;
-  transition: 0.15s;
   white-space: nowrap;
-}
-.event-trigger:hover {
-  border-color: var(--border-hover);
 }
 .event-trigger .event-mark {
   color: var(--accent, var(--gold));
@@ -1125,10 +1063,7 @@ button {
     align-items: center;
     gap: 4px;
     margin: 0;
-    padding: 4px 8px;
-    border: 1px solid var(--btn-pri-line);
-    background: var(--btn-pri-bg);
-    color: var(--btn-pri-ink);
+    padding: 4px 8px;   /* 바탕·테두리·호버는 파일 끝 ① 공용 단추 결 (2026-10-10) */
     font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
@@ -1256,7 +1191,7 @@ button {
      언어·검색·메뉴는 2줄 오른쪽 정렬을 해야 하는 거 아님?").
      접힘에서 줄을 하나 줄이던 옛 규칙의 잔재다 — 그때는 접히면 로고·햄버거만 남았다. */
   /* 이벤트 칩도 방송 버튼과 같은 크기의 작은 버튼 (2026-07-30 — 배너형 폐기) */
-  .event-trigger {
+  .event-trigger.drop-btn {
     padding: 4px 8px;
     font-size: 12px;
     gap: 6px;
@@ -1469,8 +1404,6 @@ button {
    종전엔 #bbbcb7 하드코딩 4곳(다크에서 테마를 안 따라가 밝은 선이 남았다)·평상시부터
    강조 보더를 쓰던 2곳·포커스에 라임/호버색을 쓰던 3곳이 섞여 있었다. */
 .search-wrap {
-  background: var(--white);
-  border: 1px solid var(--line);
   align-items: center;
   display: flex;
   position: relative;   /* 제안 드롭다운(.suggest-drop) 앵커 (2026-08-10) */
@@ -1682,8 +1615,6 @@ legend {
 }
 .concept-box input {
   color: var(--ink);
-  background: var(--white);
-  border: 1px solid var(--line);
   flex: 1;
   min-width: 0;
   /* 사이트 공통 검색란 높이 32px (2026-09-20) — 옆 '검색' 버튼도 같이 맞춘다 */
@@ -1691,15 +1622,10 @@ legend {
   padding: 0 10px;
   font-size: 12px;
 }
-.concept-box input:focus {
-  border-color: var(--border-strong);
-  outline: 0;
-}
 /* 지금 걸려 있는 컨셉이 입력창에 비쳐 보이는 상태 (2026-08-01) — 방금 친 검색어와
    구분되게 라임 굵은 글씨. 별도 뱃지를 없앤 대신 여기가 유일한 표시라 눈에 띄어야 한다. */
 .concept-box input.has-pick {
   color: var(--lime);
-  border-color: var(--border-strong);
   font-weight: 700;
 }
 .concept-box button {
@@ -1782,40 +1708,20 @@ legend {
   flex-wrap: wrap;
   gap: 6px;
 }
-.attr-cat {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid var(--line);
-  background: 0 0;
+/* 카테고리 단추 모양은 공용 드롭다운 단추(.drop-btn, 2026-10-10 통일) — 열림은 aria-expanded, 값 있음은 .on.
+   여기는 치수만 (⚠ .drop-btn 기본 규칙이 뒤에 있어 클래스를 둘 다 건다) */
+.attr-cat.drop-btn {
   padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.attr-cat:hover:not(:disabled) {
-  border-color: #777;
 }
 /* 상위 조건이 먼저 정해져야 열리는 카테고리 (세부 직군 ← 직군) — 왜 못 누르는지
    칩 안에 한 마디로 적어 둔다 (사용자 요청 2026-08-06) */
 .attr-cat:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
-  border-style: dashed;
 }
 .attr-cat-hint {
   font-size: 10px;
   font-weight: 600;
   color: var(--muted);
-}
-.attr-cat.open {
-  border-color: var(--chip-line);
-  background: var(--chip);
-  color: #fff;
-}
-.attr-cat.has-sel {
-  border-color: var(--border-strong);
 }
 .attr-cat em {
   font-style: normal;
@@ -1829,9 +1735,6 @@ legend {
 .attr-cat .attr-caret {
   color: var(--muted);
   font-size: 9px;
-}
-.attr-cat.open .attr-caret {
-  color: #fff;
 }
 /* 값 목록 = 떠 있는 드롭다운 (2026-08-01). 카테고리 버튼이 여러 줄로 접힐 수 있어
    특정 버튼이 아니라 **행 전체 아래**에 폭을 꽉 채워 띄운다 — 좌우로 삐져나가지 않는다.
@@ -1874,16 +1777,9 @@ legend {
 }
 .attr-drop .attr-search input {
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--white);
   color: var(--ink);
   padding: 6px 8px;
   font-size: 12px;
-  outline: 0;
-}
-.attr-drop .attr-search input:focus {
-  border-color: var(--border-strong);
 }
 .attr-drop .attr-none {
   color: #8b9294;
@@ -2471,8 +2367,6 @@ html.dark .tags-track > span {
   letter-spacing: 1px;
 }
 .sort-wrap select {
-  border: 1px solid var(--line);
-  background: var(--white);
   padding: 6px 8px;
   font-size: 12px;
   cursor: pointer;
@@ -5695,7 +5589,7 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   right: 28px;
 }
 /* '그 외' 드롭다운도 세로 메뉴 — 같은 규칙으로 줄 안 오른쪽에 둔다 (MAA 내보내기 베타 배지) */
-.more-menu button .new-badge {
+.drop-menu button .new-badge {
   top: 50%;
   right: 10px;
   transform: translateY(-50%);
@@ -6446,9 +6340,7 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--btn-pri-line);
-  background: var(--btn-pri-bg);
-  color: var(--btn-pri-ink);
+  /* 바탕·테두리·호버는 파일 끝 ① 공용 단추 결 (2026-10-10 — 종전 진한 btn-pri 덩어리) */
   /* 세로 7px → 높이 34px — 바로 옆 만능검색 칸과 같게 (사용자 지시 2026-09-25 "다른 버튼들이랑 동일한
      세로폭으로"). 종전 9px(38px)는 헤더에서 혼자 컸다. */
   padding: 7px 14px;
@@ -6763,8 +6655,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   position: relative;   /* 검색 제안 드롭다운(.suggest-drop) 앵커 (2026-08-10) */
 }
 .roster-tools input {
-  border: 1px solid #ffffff55;
-  background: #ffffff18;
   color: #fff;
   /* 사이트 공통 검색란 높이 32px (2026-09-20). ⚠ 이 줄은 align-items:stretch 라
      **옆 버튼이 더 크면 입력란이 그만큼 늘어난다** — 아래 버튼 여백도 같이 맞춘 이유다
@@ -6968,9 +6858,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 }
 .import-form input,
 .import-form select {
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm, 6px);
-  background: var(--white);
   color: var(--ink);
   padding: 9px 11px;
   font-size: 13px;
@@ -6985,7 +6872,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 }
 /* 인증코드를 받기 전 상태 — 자리는 잡되 아직 쓸 수 없다는 걸 눈으로도 알게 */
 .import-form input:disabled {
-  background: color-mix(in srgb, var(--line) 22%, var(--white));
   color: var(--muted);
   cursor: not-allowed;
 }
@@ -7134,9 +7020,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   min-width: 0;
   width: 100%;
   padding: 2px 4px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--white);
   color: var(--ink);
   font: 800 10px var(--mono);
   text-align: center;
@@ -7699,18 +7582,12 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   /* ⚠ min-width:0 을 주지 말 것 — 입력란의 고유 최소폭(약 170px)이 좁은 칸에서
      스샷 버튼을 아랫줄로 밀어내는 장치다. 0으로 풀면 입력란이 24px 로 찌그러진다 (실측). */
   flex: 1;
-  border: 1px solid var(--line);
-  background: var(--white);
   /* 44px 짜리 뚱뚱한 칸이었다 → 사이트 공통 32px (사용자 지시 2026-09-20).
      여백이 아니라 높이로 못 박는다 — 이유는 .search-wrap 주석 참조(모바일 16px 강제).
      옆 버튼들은 .quick-wrap 의 align-items:stretch 로 따라온다. */
   height: 32px;
   padding: 0 11px;
   font-size: 12.5px;
-  outline: 0;
-}
-.quick-wrap input:focus {
-  border-color: var(--border-strong);
 }
 /* ── 빠른 입력 안내문 마퀴 (사용자 지시 2026-09-20) ──────────────────────────────
    좌우 분할의 왼쪽 칸에선 입력란이 176px 뿐이라 안내문이 통째로 잘렸다. 네이티브
@@ -7942,38 +7819,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 .more-group {
   position: relative;
   display: inline-flex;
-}
-.more-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 80; /* 30→80 — 기기별 스택 컨텍스트 간섭 대비 (모달 100 미만 유지) */
-  display: flex;
-  flex-direction: column;
-  min-width: 230px;
-  padding: 6px;
-  background: var(--white);
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--sh-2);
-}
-.more-menu button,
-.more-menu .import-label {
-  border: 1px solid transparent !important;
-  background: transparent;
-  width: 100%;
-  padding: 11px 13px;
-  justify-content: flex-start;
-  text-align: left;
-}
-/* ⚠ 배경만 덮어쓰면 안 된다 — color까지 명시 (사용자 지적 2026-07-28: "마우스오버하면
-   글자가 사라져서 안 보임"). 원인은 상위 .planner-buttons button:hover가 라임 배경 전제로
-   color를 --on-lime(#131719 고정)으로 바꾸는데 여기선 배경만 --paper로 갈아, 다크 모드의
-   --paper(#111517)와 --on-lime이 거의 같은 색이라 글자가 배경에 묻힌 것. 상위 규칙도 함께
-   고쳤지만(보조 버튼 호버 톤 다운), 메뉴 항목은 라임을 안 쓰므로 본문색을 못 박아 둔다. */
-.more-menu button:hover,
-.more-menu .import-label:hover {
-  background: var(--btn-ghost-hover);
-  color: var(--btn-ink-hover);
 }
 /* ⚠ 이 줄만 미디어쿼리 **밖**이면 데스크탑까지 샌다 (2026-09-23에 한 번 샜다 —
    데스크탑 버튼이 두 줄로 쌓였다). 모바일 전용 규칙은 아래 @media 안에 둘 것. */
@@ -8466,15 +8311,9 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 .feedback-panel textarea {
   width: calc(100% - 28px);
   margin: 12px 14px 0;
-  border: 1px solid var(--line);
-  background: var(--white);
   padding: 10px;
   font-size: 12px;
   resize: vertical;
-  outline: 0;
-}
-.feedback-panel textarea:focus {
-  border-color: var(--border-strong);
 }
 /* 첨부 줄 — 섬네일 + 추가 버튼 (사용자 요청 2026-08-05: 제안에 이미지 최대 3장) */
 .fb-attach {
@@ -8612,8 +8451,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 }
 .fb-admin-reply-form textarea {
   flex: 1;
-  border: 1px solid var(--line);
-  background: var(--white);
   color: inherit;
   padding: 6px 8px;
   font-size: 12px;
@@ -8977,16 +8814,10 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 .fb-edit-area textarea {
   width: 100%;
   margin: 0;
-  border: 1px solid var(--line);
-  background: var(--white);
   color: inherit;
   padding: 8px;
   font-size: 12px;
   resize: vertical;
-  outline: 0;
-}
-.fb-edit-area textarea:focus {
-  border-color: var(--border-strong);
 }
 .fb-act-err {
   color: var(--danger);
@@ -9064,16 +8895,9 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 .fb-code-entry input {
   flex: 1;
   min-width: 200px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--white);
   color: inherit;
   padding: 5px 8px;
   font-size: 11px;
-  outline: 0;
-}
-.fb-code-entry input:focus {
-  border-color: var(--border-strong);
 }
 .fb-code-err {
   flex-basis: 100%;
@@ -9134,10 +8958,8 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   gap: 8px;
 }
 .admin-gate input {
-  border: 1px solid var(--line);
   padding: 11px 12px;
   font-size: 13px;
-  outline: 0;
 }
 .admin-gate button {
   border: 1px solid var(--btn-pri-line);
@@ -9184,28 +9006,16 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   flex-wrap: wrap;
   gap: 6px;
 }
-.admin-tools button {
-  border: 1px solid var(--btn-line);
-  background: var(--btn-bg);
+/* 관리 페이지 단추 — 모양은 공용 두 가지 (2026-10-10 통일, 사용자 지시 "관리 페이지 버튼들도 탭 버튼처럼"):
+   고르는 단추(상단 탭·필터·기간 칩) = .tab-btn, 그 밖의 실행 단추(새로고침·리포트·저장…) = 공용 드롭다운 단추와 같은 옅은 바탕.
+   여기는 치수만 둔다 — 테두리·바탕·선택 표시는 파일 맨 끝의 공용 규칙이 맡는다 */
+.admin-tools button,
+.admin-tools .admin-site {
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  color: var(--btn-ink);
-}
-.admin-tools .admin-site {
-  border: 1px solid var(--btn-line);
-  background: var(--btn-bg);
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--btn-ink);
   text-decoration: none;
-}
-.admin-tools button.selected {
-  background: var(--btn-on-bg);
-  color: var(--btn-on-ink);
-  border-color: var(--btn-on-line);
 }
 /* 발행 메모 인라인 입력 — prompt() 미지원 웹뷰 대응 (2026-07-22) */
 .admin-tools .publish-note {
@@ -9375,12 +9185,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 }
 .admin-tools .bulk-handling-btn {
   color: #b26a00;
-  border-color: #e0b070;
-}
-.admin-tools .bulk-handling-btn:hover {
-  background: #e08a00;
-  border-color: #e08a00;
-  color: #fff;
 }
 .fb-id {
   font: 800 11px var(--mono);
@@ -9543,8 +9347,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 .rule-editor input,
 .rule-editor select,
 .rule-editor textarea {
-  border: 1px solid var(--line);
-  background: var(--paper);
   padding: 6px 9px;
   font-size: 12px;
   font-family: inherit;
@@ -9745,7 +9547,7 @@ html.dark .vz {
 /* 기간 지정 (2026-10-05) — 날짜 칸 두 개. 지정해 두면 테두리가 진해진다 */
 .vz-range { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; padding: 0 6px 0 10px; border: 1px solid var(--line); border-radius: var(--r-sm); font-size: 12px; color: var(--muted); }
 .vz-range.on { border-color: var(--border-strong); color: var(--ink); }
-.vz-range input[type="date"], .vz-range select { height: 28px; padding: 0 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--ink); font: inherit; font-size: 12px; color-scheme: light dark; }
+.vz-range input[type="date"], .vz-range select { height: 28px; padding: 0 6px; color: var(--ink); font: inherit; font-size: 12px; color-scheme: light dark; }
 .vz-range i { font-style: normal; }
 .admin-tools .vz-range .vz-day { height: 28px; padding: 0 8px; font-size: 12px; font-weight: 600; }
 .admin-tools .vz-range .vz-day:disabled { opacity: 0.4; cursor: default; }
@@ -11535,8 +11337,6 @@ html.dark .story-card:hover .story-thumb img {
 }
 .sc-ep-pick select {
   max-width: min(460px, 72vw);
-  border: 1px solid var(--line);
-  background: var(--white);
   color: var(--ink);
   padding: 6px 8px;
   font-size: 12px;
@@ -12772,9 +12572,6 @@ html.dark .modal-actions .future-note {
   width: 3.6ch;
   margin-left: 4px;
   padding: 3px 4px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--card);
   color: var(--fg);
   font: 800 15px var(--mono);
   text-align: center;
@@ -12784,10 +12581,6 @@ html.dark .modal-actions .future-note {
 .cost-lv-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
-}
-.cost-lv-input:focus {
-  outline: none;
-  border-color: var(--accent, var(--border-strong));
 }
 /* 앞 레벨업이 만렙 미만이라 잠긴 뒤 단계 — 드래그로는 관통되므로 pointer-events는 유지 */
 .cost-step-dot.locked {
@@ -14489,7 +14282,7 @@ html.rg-theme.rg6 .site-header {
   html.rg-theme.rg3 .rg-zone-cards > :first-child:nth-last-child(12) ~ :nth-child(12) { --dy: 307px; }
   /* 묶음 카드가 전부 왼쪽 두 칸이라, 그 폭(290px)에 걸치는 가장 깊은 층까지만 비우면 된다 */
 }
-/* ── 카드는 전부 살짝 비친다 (사용자 지시 2026-09-20) ──────────────────
+/* ── 카드는 전부 살짝 비친다 (사용자 지시 2026-09-20) → 2026-10-10 "덜 투명하게"로 73% → 99% → 90% ──
    페이지 배경에 테마 키비주얼이 깔려 있는데(.rg-kv-page) 카드가 불투명하면 그 위에
    덧댄 종이처럼 뜬다. 모든 탭의 카드를 한 단계 투명하게 해 배경이 은은히 비치게 한다.
    ⚠ 토큰(--rgcard·--rgdeep) 자체를 투명하게 바꾸지 않는다 — 탭·필터 버튼·표 머리까지
@@ -14504,15 +14297,15 @@ html.rg-theme.rg6 .site-header {
 .rg .rg-ending,
 .rg .rg-diff-table,
 .rg .rg-visitor {
-  background: color-mix(in srgb, var(--rgcard) 73%, transparent);
+  background: color-mix(in srgb, var(--rgcard) 90%, transparent);
 }
 /* 적 도감 카드는 종전에 --rgdeep 이라 다른 탭 카드보다 유독 검었다 (사용자 지적
    2026-09-20) — 같은 --rgcard 로 맞춘다. 작전 카드는 모달 안이라 그대로 둔다. */
 .rg .rg-stagecard {
-  background: color-mix(in srgb, var(--rgdeep) 73%, transparent);
+  background: color-mix(in srgb, var(--rgdeep) 90%, transparent);
 }
 .rg .rg-enemy-cell {
-  background: color-mix(in srgb, var(--rgcard) 73%, transparent);
+  background: color-mix(in srgb, var(--rgcard) 90%, transparent);
 }
 /* 모서리도 한 값으로 — 맵·노드 카드(10px = --r-md)가 기준이다 (사용자 지시 2026-09-20).
    종전엔 탭마다 제각각이었다: 소장품 0 · 난이도표 0 · 적 도감 6 · 맵 10. */
@@ -14527,7 +14320,7 @@ html.rg-theme.rg6 .site-header {
   border-radius: var(--r-md);
 }
 .rg .rg-sec-card {
-  background: color-mix(in srgb, var(--rgcard) 73%, transparent);
+  background: color-mix(in srgb, var(--rgcard) 90%, transparent);
 }
 /* 지도 탭 묶음 카드 — 층 카드(.rg-zone-cards)와 같은 결, 누르면 모달이 열린다
    (사용자 요청 2026-09-20: 아코디언 → 카드+모달). */
@@ -14545,7 +14338,7 @@ html.rg-theme.rg6 .site-header {
   padding: 12px;
   border: 1px solid var(--rgline);
   border-radius: var(--r-md);
-  background: color-mix(in srgb, var(--rgcard) 73%, transparent);
+  background: color-mix(in srgb, var(--rgcard) 90%, transparent);
   color: var(--rgink);
   cursor: pointer;
 }
@@ -14782,6 +14575,114 @@ html.rg-theme.rg6 .rg-kv-page {
   letter-spacing: -0.5px;
   color: #f4e7d3;
   text-shadow: 0 2px 14px #000c;
+}
+/* 제목 = 테마 변경 버튼 (사용자 지시 2026-10-10 — 제목과 '테마 변경' 버튼이 같은 이름을 두 번 보여 줬다).
+   겉모습은 종전 제목 그대로(테두리·바탕 없음) — 옆의 옅은 ▾ 하나로 누를 수 있음을 알리고, 올리면 테마 색
+   빛 번짐과 밑줄이 서서히 떠오른다. 목록(.rg-title-menu)은 히어로 밖 .rg-head 에 제목 바로 아래로 띄운다 */
+.rg-title-btn {
+  all: unset;
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  cursor: pointer;
+  color: inherit;
+  text-shadow: inherit;
+  transition: text-shadow 0.25s, color 0.25s;
+}
+.rg-title-btn::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 96px;   /* '테마 변경 ▾' 표식 밑은 비운다 */
+  bottom: -4px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--rg-hue, var(--rggold)), transparent);
+  /* 평소에도 밑줄을 보인다 — 누를 수 있는 제목이라는 표시 (사용자 지시 2026-10-10 "항상 마우스오버한 것처럼") */
+  opacity: 0.9;
+  transform: scaleX(1);
+  transform-origin: left;
+  transition: opacity 0.25s, transform 0.25s;
+}
+.rg-title-btn:hover,
+.rg-title-btn[aria-expanded="true"] {
+  color: #fff6e6;
+  text-shadow: 0 2px 14px #000c, 0 0 22px color-mix(in srgb, var(--rg-hue, var(--rggold)) 55%, transparent);
+}
+.rg-title-btn:hover::after,
+.rg-title-btn[aria-expanded="true"]::after {
+  opacity: 0.9;
+  transform: scaleX(1);
+}
+.rg-title-btn:focus-visible {
+  outline: 2px solid var(--rggold);
+  outline-offset: 4px;
+}
+.rg-title-arrow {
+  font-size: 0.55em;
+  color: var(--rg-hue, var(--rggold));
+  opacity: 0.55;
+  transition: transform 0.2s, opacity 0.25s;
+}
+.rg-title-btn:hover .rg-title-arrow,
+.rg-title-btn[aria-expanded="true"] .rg-title-arrow {
+  opacity: 1;
+}
+.rg-title-arrow.up {
+  transform: rotate(180deg);
+}
+.rg-topicsel-menu.rg-title-menu {
+  right: auto;
+  min-width: 300px;
+  margin: 0;
+  z-index: 40;
+}
+/* 제목 줄 — 제목(테마 변경 버튼) 오른쪽에 한섭/중섭 토글 (사용자 지시 2026-10-10) */
+.rg-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 8px 0 12px;
+}
+.rg-title-row h2 {
+  margin: 0;
+}
+.rg-eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rg-eyebrow-row > .rg-serversel {
+  position: static;
+  transform: none;
+}
+.rg-eyebrow-row > .rg-serversel button {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+/* '테마 변경 ▾' — 누르면 바뀐다는 걸 글로 알리는 작은 표식. 제목과 같은 줄, 테마 색의 옅은 테두리 */
+.rg-title-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: center;
+  padding: 3px 9px 3px 10px;
+  border: 1px solid color-mix(in srgb, var(--rg-hue, var(--rggold)) 45%, transparent);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--rg-hue, var(--rggold)) 10%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+  color: color-mix(in srgb, #f4e7d3 80%, var(--rg-hue, var(--rggold)));
+  text-shadow: none;
+  transition: background 0.25s, border-color 0.25s;
+}
+.rg-title-btn:hover .rg-title-hint,
+.rg-title-btn[aria-expanded="true"] .rg-title-hint {
+  background: color-mix(in srgb, var(--rg-hue, var(--rggold)) 24%, transparent);
+  border-color: var(--rg-hue, var(--rggold));
 }
 .rg-title-future {
   font: 800 12px/1 var(--mono);
@@ -15241,7 +15142,9 @@ html.rg-theme.rg6 .rg-kv-page {
   flex-wrap: wrap;
   gap: 4px;
 }
+/* 묶음 밑 가로줄은 2026-10-10 뺐다 — 탭마다 테마 색 밑줄이 생겨 겹친다 (사용자 지시) */
 .rg-tabs-views::after {
+  display: none;
   content: "";
   position: absolute;
   left: 0;
@@ -15270,6 +15173,56 @@ html.rg-theme.rg6 .rg-kv-page {
   background: var(--rgcrim);
   color: #fff;
   border-color: var(--rgcrim);
+}
+/* 보기 탭 — 제목(테마 변경 버튼)과 같은 결 (사용자 지시 2026-10-10 "록라 타이틀 효과처럼"). 테두리·바탕 없이 배경에
+   녹이고, 올리면 테마 색 밑줄이 왼쪽에서 자라나며 글자에 빛이 번진다. 선택된 탭은 그 상태로 고정.
+   검색란·보유 리스트(.rg-tabs 의 다른 단추)는 종전 모양 그대로 — .rg-tabs-views 안의 탭만 */
+.rg-tabs .rg-tabs-views button {
+  position: relative;
+  border: 0;
+  background: none;
+  padding: 8px 12px 9px;
+  color: color-mix(in srgb, var(--rgink) 72%, transparent);
+  text-shadow: 0 1px 8px #0009;
+  transition: color 0.25s, text-shadow 0.25s;
+}
+.rg-tabs .rg-tabs-views button::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--rg-hue, var(--rggold)), transparent);
+  opacity: 0;
+  transform: scaleX(0.5);
+  transform-origin: left;
+  transition: opacity 0.25s, transform 0.25s;
+}
+.rg-tabs .rg-tabs-views button:hover,
+.rg-tabs .rg-tabs-views button.on {
+  border: 0;
+  background: none;
+  color: #fff6e6;
+  text-shadow: 0 1px 8px #0009, 0 0 16px color-mix(in srgb, var(--rg-hue, var(--rggold)) 60%, transparent);
+}
+.rg-tabs .rg-tabs-views button:hover::after {
+  opacity: 0.8;
+  transform: scaleX(1);
+}
+.rg-tabs .rg-tabs-views button.on::after {
+  opacity: 1;
+  transform: scaleX(1);
+  background: linear-gradient(90deg, var(--rg-hue, var(--rggold)) 60%, transparent);
+}
+/* 사미(rg3)는 탭이 밝은 은색으로 채워지던 시절의 '글자 어둡게' 보정(.rg.rg3 .rg-tabs button.on)이 남아 바탕을 걷은 뒤
+   어두운 배경에 검은 글자가 됐다 (사용자 지적 2026-10-10) — 보기 탭은 다른 테마와 같은 밝은 글자 */
+.rg.rg3 .rg-tabs .rg-tabs-views button.on {
+  color: #fff6e6;
+}
+.rg-tabs .rg-tabs-views button:focus-visible {
+  outline: 2px solid var(--rggold);
+  outline-offset: 2px;
 }
 
 /* 맵·노드 */
@@ -18351,9 +18304,6 @@ main.site-main > .site-header {
   width: 100%;
   box-sizing: border-box;
   padding: 7px 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--bg-panel);
   color: var(--ink);
 }
 .scanner-add-list {
@@ -18534,9 +18484,7 @@ main.site-main > .site-header {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-md);
-  background: var(--bg-soft, var(--white));
+  /* 테두리·바탕은 입력란 공용 규칙(파일 끝 ③) — 트리거는 단추지만 겉모습은 입력란이다 (2026-10-10) */
   color: var(--muted);
   padding: 8px 10px;
   font-size: 12px;
@@ -18545,11 +18493,6 @@ main.site-main > .site-header {
   cursor: pointer;
   white-space: nowrap;
   text-align: left;
-}
-@media (hover: hover) {
-  .omni-trigger:hover {
-    border-color: var(--accent, var(--gold));
-  }
 }
 .omni-trigger > span[aria-hidden] {
   font-size: 16px;
@@ -18925,8 +18868,7 @@ main.site-main > .site-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  border-bottom: 1px solid var(--line);
-  padding: 8px 10px;
+  padding: 8px 10px;   /* 바탕·밑줄은 입력란 공용 규칙(파일 끝 ③) */
 }
 .omni-bar-icon {
   font-size: 20px;
@@ -19274,7 +19216,7 @@ main.site-main > .site-header {
 }
 
 /* 드롭다운 패널들 — 이벤트 현황·햄버거(주요 탭)·언어·테마 선택 (2026-07-26 사용자 지적) */
-:where(.event-menu, .more-menu, .lang-menu, .rg-topicsel-menu) {
+:where(.event-menu, .rg-topicsel-menu) {
   border-radius: var(--r-md);
   overflow: hidden;   /* 내부 행이 모서리를 덮지 않게 */
 }
@@ -19316,27 +19258,12 @@ main.site-main > .site-header {
   align-items: center;
   gap: 6px;
   padding: 7px 10px;
-  border: 1px solid var(--btn-line);
-  background: var(--btn-bg);
-  color: var(--btn-ink);
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
-.drop-btn.on {
-  border-color: var(--border-strong);
-  color: var(--ink);
-}
-.drop-btn:hover:not(:disabled) {
-  border-color: var(--btn-line-hover);
-  background: var(--btn-bg-hover);
-  color: var(--btn-ink-hover);
-}
-.drop-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
+/* 바탕·테두리·호버·열림·골라짐·비활성 모양은 파일 맨 끝 '공용 단추·입력란 결' 블록이 맡는다 (2026-10-10) */
 .drop-label {
   min-width: 0;
   overflow: hidden;
@@ -19427,8 +19354,7 @@ main.site-main > .site-header {
 .event-caret,
 .tab-group-arrow,
 .rg-choice-caret,
-.server-chip > i,
-.ac-garsel-btn > i {
+.server-chip > i {
   display: inline-block;
   width: 1em;
   text-align: center;
@@ -19596,9 +19522,6 @@ main.site-main > .site-header {
 .maa-times input[type="time"] {
   font: inherit;
   padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--bg-panel);
   color: inherit;
 }
 .maa-note {
@@ -19616,7 +19539,7 @@ main.site-main > .site-header {
   position: absolute;
   left: 50%;
   bottom: 2px;
-  height: 92px; /* 77px × 1.2 — 더 키워달라는 사용자 요청 (2026-08-03 2차). 헤더(78px)보다
+  height: 74px; /* 92px 에서 20% 줄임 (사용자 지시 2026-10-10). 종전: 77px × 1.2 — 더 키워달라는 사용자 요청 (2026-08-03 2차). 헤더(78px)보다
                    커서 머리가 위로 삐져나오는데, 마스코트라 오히려 자연스럽다 */
   /* 히트박스를 스프라이트에 맞춤 — 상자(16:9)의 빈 여백 클릭이 반응하던 문제 (사용자 제보).
      전 클립 알파 bbox 합집합(좌24·상25·우28·하0%)에 여유 4%p. clip-path는 렌더와 포인터
@@ -19862,14 +19785,7 @@ main.site-main > .site-header {
   font: inherit;
   font-size: 13px;
   padding: 8px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-pill);
-  background: var(--bg-faint);
   color: inherit;
-}
-.chibi-chat-form input:focus {
-  outline: none;
-  border-color: var(--border-strong);
 }
 .chibi-chat-form button {
   flex: none;
@@ -22304,24 +22220,9 @@ p.sb-trline { margin-top: 2px; }
 .ac-garsel {
   position: relative;
 }
+/* 단추 모양은 공용 .drop-btn (2026-10-10 통일) — 여기는 높이(34px = --ac-bandh)를 지키는 여백만 */
 .ac-garsel-btn {
   padding: 8px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  font-family: inherit;
-  color: var(--btn-ink);
-  background: var(--btn-bg);
-  border: 1px solid var(--btn-line);
-  cursor: pointer;
-}
-.ac-garsel-btn.on {
-  border-color: var(--border-strong);   /* 종전 --ink — 라이트에서 새까만 테두리였다 (2026-09-22) */
-  color: var(--ink);
-}
-.ac-garsel-btn i {
-  font-style: normal;
-  font-size: 9px;
-  opacity: 0.6;
 }
 .ac-garsel-menu {
   position: absolute;
@@ -23964,8 +23865,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-pickmodal .ac-tiersec { margin-bottom: 12px; }
 .ac-stackin { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; font-size: 12px; font-weight: 600; }
 .ac-stackin input {
-  width: 84px; padding: 4px 8px; font-size: 12px;
-  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper); color: var(--ink);
+  width: 84px; padding: 4px 8px; font-size: 12px; color: var(--ink);
 }
 .ac-stackin .sb-dim { flex: 1 1 260px; font-weight: 500; line-height: 1.45; }
 
@@ -26089,11 +25989,9 @@ html[lang="ja"] .vn-box {
 .ac-party-field input {
   width: 100%; box-sizing: border-box; height: 34px;
   padding: 0 10px; font: inherit; font-size: 13px;
-  color: var(--ink); background: var(--white);
-  border: 1px solid var(--line); border-radius: var(--r-sm);
+  color: var(--ink);
 }
 .ac-party-field input::placeholder { color: var(--muted); opacity: 0.7; }
-.ac-party-field input:focus { outline: none; border-color: var(--border-strong); }
 .ac-party-err { margin: 0; color: var(--bad); font-size: 12px; }
 .ac-party-actions { display: flex; align-items: center; gap: 8px; }
 .ac-party-actions .ac-simcta { position: static; transform: none; }
@@ -27500,8 +27398,7 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
 /* ── 생존연산 통합 검색 (app/sandbox.tsx uniHits, 2026-10-06) — 탭 줄 끝, 테크트리 바로 오른쪽. 통합전략(.rg-uni-*)과 같은 동작 ── */
 .sb-uni-box { flex: 0 1 240px; display: flex; min-width: 0; margin-left: 12px; }   /* 테크트리와 살짝 띄운다 (사용자 지시 2026-10-06) */
 .sb-uni-box input[type="search"] {
-  box-sizing: border-box; width: 100%; min-height: 34px; padding: 0 12px;
-  border: 1px solid var(--btn-line); background: var(--white); color: var(--ink);
+  box-sizing: border-box; width: 100%; min-height: 34px; padding: 0 12px; color: var(--ink);
   font: inherit; font-size: 12.5px; font-weight: 500;
 }
 .sb-uni-box input[type="search"]::placeholder { color: var(--muted); }
@@ -28687,3 +28584,885 @@ html[data-me] .hdr-synced.idle { visibility: hidden; }
 .modal-versions a:hover { border-color: var(--btn-on-bg); background: var(--btn-on-bg); color: var(--btn-on-ink); }
 .modal-versions a:hover span { background: transparent; color: inherit; opacity: .75; }
 
+
+/* ── 본문 양옆 장식 일러스트 (사용자 지시 2026-10-10) ───────────────────────────────
+   왼쪽 이격 켈시(켈시·에스페란타 1정예)·오른쪽 클로저(2정예)를 화면에 고정해 본문 뒤에 깐다 — 홈 이격 스카디처럼
+   배경에 녹아들게 옅게. **인물 위주** — 그림마다 인물 둘레만 남기는 타원 마스크로 주위 배경을 지우고(사용자 지시),
+   레이어 전체엔 본문 폭(1344px) 띠를 지우는 마스크를 걸어 본문 뒤로는 비치지 않게 한다.
+   body 배경이 캔버스로 올라가 있어 z-index -1 이면 격자 위·본문 아래다.
+   양옆 여백이 좁은 화면(1600px 미만)·통합전략 테마(자체 배경)에선 감춘다. */
+.side-art {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(50% - 680px), transparent calc(50% - 600px),
+    transparent calc(50% + 600px), #000 calc(50% + 680px));
+  mask-image: linear-gradient(to right, #000 calc(50% - 680px), transparent calc(50% - 600px),
+    transparent calc(50% + 600px), #000 calc(50% + 680px));
+}
+.side-art img {
+  position: absolute;
+  bottom: 4vh;   /* -2vh 에서 위로 (사용자 지시 2026-10-10) */
+  height: 96vh;
+  max-width: none;
+  opacity: 0.44;   /* 라이트 — 0.24 → 0.34 → 0.44 (사용자 지시 2026-10-10 두 번). 다크는 아래 */
+  user-select: none;
+}
+/* 그림 가운데가 양옆 여백 한가운데에 오게 — 여백 폭 (50% - 672px), 그림 폭 = 높이 96vh × 원본 비율.
+   타원 중심·크기는 그림 속 인물 자리에 맞춘 값. (인물 중심 맞춤 안 두 가지는 사용자가 되돌림 2026-10-10) */
+/* 안쪽(본문 쪽)이 너무 지워졌다 (사용자 지적 2026-10-10) — 타원 가로 폭을 넓히고 본문 띠도 40px 물렸다 */
+.side-art-l {
+  width: 92.9vh;   /* 1162×1200 */
+  left: calc((50% - 672px) / 2 - 46.5vh);
+  -webkit-mask-image: radial-gradient(ellipse 46% 52% at 50% 52%, #000 45%, transparent 100%);
+  mask-image: radial-gradient(ellipse 46% 52% at 50% 52%, #000 45%, transparent 100%);
+}
+.side-art-r {
+  width: 131.2vh;  /* 1200×878 */
+  right: calc((50% - 672px) / 2 - 65.6vh);
+  -webkit-mask-image: radial-gradient(ellipse 34% 50% at 46% 52%, #000 45%, transparent 100%);
+  mask-image: radial-gradient(ellipse 34% 50% at 46% 52%, #000 45%, transparent 100%);
+}
+html.dark .side-art img { opacity: 0.34; }   /* 0.18 → 0.26 → 0.34 (사용자 지시 2026-10-10 두 번) */
+html.rg-theme .side-art { display: none; }
+@media (max-width: 1599px) {
+  .side-art { display: none; }
+}
+
+/* ── 탭 버튼 공통 — 통합전략 제목·보기 탭과 같은 결 (사용자 지시 2026-10-10 "다른 탭버튼들도 전부 이렇게") ──
+   상자 테두리·바탕을 걷어 배경에 녹이고, 올리면 강조색 밑줄이 왼쪽에서 자라난다. 선택된 탭은 글자가 진해지고
+   밑줄이 고정된다. 글자 빛 번짐은 다크에서만(라이트에선 뿌옇게 번져 보인다). 선택 표시는 그룹마다 .on / .selected.
+   ⚠ 기존 그룹별 규칙(.story-viewtabs button:not(.on):hover 등 0,3,1)보다 앞서도록 :root + :is() 로 특정도를 맞추고 맨 끝에 둔다.
+   선택 칩(sb-picks)·작전 환경 토글(st-envs)은 탭이 아니라 뺐다. 통합전략 보기 탭은 테마 색 판(.rg-tabs-views)이 따로 있다. */
+:root {
+  --tab-line: color-mix(in srgb, var(--lime) 70%, var(--ink));
+}
+html.dark {
+  --tab-line: var(--lime);
+}
+:root :is(.story-viewtabs, .story-mode-bar, .gl-views, .sb-views, .ac-subtabs, .ed-tabs, .el-subtabs, .skin-tabs) button:not(.story-find-btn, .lens-open-btn, .lens-help-btn) {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--ink) 62%, transparent);
+  transition: color 0.25s, text-shadow 0.25s;
+}
+:root :is(.story-viewtabs, .story-mode-bar, .gl-views, .sb-views, .ac-subtabs, .ed-tabs, .el-subtabs, .skin-tabs) button:not(.story-find-btn, .lens-open-btn, .lens-help-btn)::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--tab-line), transparent);
+  opacity: 0;
+  transform: scaleX(0.5);
+  transform-origin: left;
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+}
+:root :is(.story-viewtabs, .story-mode-bar, .gl-views, .sb-views, .ac-subtabs, .ed-tabs, .el-subtabs, .skin-tabs) button:not(.story-find-btn, .lens-open-btn, .lens-help-btn):is(:hover, .on, .selected) {
+  border: 0;
+  background: none;
+  color: var(--ink);
+}
+html.dark :is(.story-viewtabs, .story-mode-bar, .gl-views, .sb-views, .ac-subtabs, .ed-tabs, .el-subtabs, .skin-tabs) button:not(.story-find-btn, .lens-open-btn, .lens-help-btn):is(:hover, .on, .selected) {
+  text-shadow: 0 0 14px color-mix(in srgb, var(--lime) 45%, transparent);
+}
+:root :is(.story-viewtabs, .story-mode-bar, .gl-views, .sb-views, .ac-subtabs, .ed-tabs, .el-subtabs, .skin-tabs) button:not(.story-find-btn, .lens-open-btn, .lens-help-btn):hover::after {
+  opacity: 0.75;
+  transform: scaleX(1);
+}
+:root :is(.story-viewtabs, .story-mode-bar, .gl-views, .sb-views, .ac-subtabs, .ed-tabs, .el-subtabs, .skin-tabs) button:not(.story-find-btn, .lens-open-btn, .lens-help-btn):is(.on, .selected)::after {
+  opacity: 1;
+  transform: scaleX(1);
+  background: linear-gradient(90deg, var(--tab-line) 60%, transparent);
+}
+:root :is(.story-viewtabs, .story-mode-bar, .gl-views, .sb-views, .ac-subtabs, .ed-tabs, .el-subtabs, .skin-tabs) button:not(.story-find-btn, .lens-open-btn, .lens-help-btn):focus-visible {
+  outline: 2px solid var(--tab-line);
+  outline-offset: 2px;
+}
+
+/* 테라 연대기 연도 칩도 같은 탭 결 (사용자 지시 2026-10-10) — 칩 상자를 걷고 밑줄로 */
+:root .chron-yearchip {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--ink) 62%, transparent);
+  transition: color 0.25s, text-shadow 0.25s;
+}
+:root .chron-yearchip::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--tab-line), transparent);
+  opacity: 0;
+  transform: scaleX(0.5);
+  transform-origin: left;
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+}
+:root .chron-yearchip:is(:hover, .on) {
+  border: 0;
+  background: none;
+  color: var(--ink);
+}
+html.dark .chron-yearchip:is(:hover, .on) {
+  text-shadow: 0 0 14px color-mix(in srgb, var(--lime) 45%, transparent);
+}
+:root .chron-yearchip:hover::after {
+  opacity: 0.75;
+  transform: scaleX(1);
+}
+:root .chron-yearchip.on::after {
+  opacity: 1;
+  transform: scaleX(1);
+  background: linear-gradient(90deg, var(--tab-line) 60%, transparent);
+}
+:root .chron-yearchip.on :is(b, small) {
+  color: inherit;
+}
+
+/* ── 공용 단추·입력란 결 (사용자 지시 2026-10-10, 하루에 걸쳐 확정) ─────────────────────────────────────
+   "드랍다운 버튼은 전부 공용으로" · "살짝 배경색이 필요" · "입력란도 같은 느낌으로" · "입력란은 평소에도 밑줄이 보여야" ·
+   "관리 페이지 버튼도 탭처럼" · "바탕이 반투명이라 격자가 비친다" · 드롭다운 단추 디자인은 맡겨 주셨다("예쁘다 싶게").
+   세 갈래뿐이다 — 단추·입력란마다 테두리·바탕을 따로 주지 말 것 (치수만 각자 얹는다):
+   ① 드롭다운·실행 단추 (.drop-btn · .act-btn · 관리 페이지 .admin-tools 의 실행 단추)
+      = 불투명한 옅은 단색 바탕(--soft-fill) · 상자 테두리 없음 · 모서리 --r-sm. 호버는 바탕 한 단계 + 밑줄이 왼쪽에서 자라남,
+        열림(aria-expanded="true")은 밑줄 고정 + ▾ 뒤집힘, 값이 골라진 상태(.on/.selected)는 라벨 앞 강조색 점 + 밑줄 고정.
+        드롭다운의 ▾ 앞에는 얇은 세로 구분선
+   ② 고르는 탭 단추 (.tab-btn — 관리 페이지 탭·필터) = 바탕 없음, 밑줄만 (탭 그룹·연도 칩과 같은 결)
+   ③ 입력란 (.search-wrap · 유니버셜 서치 트리거·입력줄 · 그 밖의 텍스트·숫자·날짜 입력, textarea, select)
+      = 같은 불투명 바탕(--field-fill) + 평소에도 옅은 1px 밑줄 · 포커스면 바탕 한 단계 + 강조 밑줄이 자라남.
+      체크박스·라디오·range·파일은 제외, 통합전략(.rg-*) 테마 화면은 제 모양 그대로
+   ⚠ 바탕은 **불투명**이어야 한다 — 반투명(잉크 n%)이면 본문 뒤 격자무늬가 비쳤다. 본문 바탕(--paper)에 잉크를 섞는다 */
+:root {
+  --soft-fill: color-mix(in srgb, var(--ink) 6%, var(--paper));
+  --soft-fill-hover: color-mix(in srgb, var(--ink) 10%, var(--paper));
+  --field-fill: color-mix(in srgb, var(--ink) 5%, var(--paper));
+  --field-fill-focus: color-mix(in srgb, var(--ink) 8%, var(--paper));
+  --field-rule: color-mix(in srgb, var(--ink) 25%, var(--paper));
+  --accent-glow: 0 0 10px color-mix(in srgb, var(--lime) 40%, transparent);
+}
+/* ① 드롭다운·실행 단추 — 밑줄(::after)의 기준. ⚠ 특정도 0(:where)으로 둔다: 제안 버튼은 넓은 화면에서 position:fixed 다 */
+:where(.drop-btn, .act-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button) {
+  position: relative;
+}
+:root :is(.drop-btn, .act-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button:not(.tab-btn, .drop-btn, .vz-range-x, .drop-menu *)) {
+  border: 1px solid transparent;   /* 굵기는 남겨 둔다 — 종전 1px 테두리 단추들과 높이가 같게 */
+  background: var(--soft-fill);
+  box-shadow: none;
+  border-radius: var(--r-sm);
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+  transition: color 0.25s, text-shadow 0.25s, background-color 0.2s;
+}
+:root :is(.drop-btn, .act-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button:not(.tab-btn, .drop-btn, .vz-range-x, .drop-menu *)):is(.on, .selected) {
+  border-color: transparent;
+  background: var(--soft-fill);
+  color: var(--ink);
+}
+:root :is(.drop-btn, .act-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button:not(.tab-btn, .drop-btn, .vz-range-x, .drop-menu *)):is(:hover:not(:disabled), [aria-expanded="true"]) {
+  border-color: transparent;
+  background: var(--soft-fill-hover);
+  color: var(--ink);
+}
+:root :is(.drop-btn, .act-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button:not(.tab-btn, .drop-btn, .vz-range-x, .drop-menu *)):disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+/* 값이 골라진 드롭다운 — 라벨 앞 작은 강조색 점 */
+:root .drop-btn:is(.on, .selected)::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tab-line);
+}
+html.dark .drop-btn:is(.on, .selected)::before {
+  box-shadow: var(--accent-glow);
+}
+/* ▾ — 앞에 얇은 세로 구분선, 작게, 열리면 뒤집힌다. 구분선이 같이 돌지 않게 Z 회전 대신 X 축으로 뒤집는다
+   (글리프는 위아래 대칭이 아니라 X 축 180° 가 곧 ▴ 다). 글리프를 ▾/▴ 로 바꿔 끼우지 말 것 — 두 번 뒤집힌다 */
+:root .drop-btn :is(.drop-caret, .attr-caret, .event-caret) {
+  width: auto;
+  margin-left: 2px;
+  padding-left: 7px;
+  border-left: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  font-size: 9.5px;
+  line-height: 12px;
+  opacity: 0.6;
+  color: inherit;
+  transition: transform 0.2s;
+}
+:root .drop-btn[aria-expanded="true"] :is(.drop-caret, .attr-caret, .event-caret) {
+  transform: rotateX(180deg);
+}
+/* ② 탭 단추 — 바탕 없이 밑줄만 */
+:root .tab-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+  transition: color 0.25s, text-shadow 0.25s;
+}
+:root .tab-btn:is(:hover:not(:disabled), .on, .selected) {
+  border-color: transparent;
+  background: none;
+  color: var(--ink);
+}
+/* ①② 공통 밑줄 — 올리면 왼쪽에서 자라나고, 열림·골라짐은 고정 */
+:root :is(.drop-btn, .act-btn, .tab-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button:not(.drop-btn, .vz-range-x, .drop-menu *))::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--tab-line), transparent);
+  opacity: 0;
+  transform: scaleX(0.5);
+  transform-origin: left;
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+}
+:root :is(.drop-btn, .act-btn, .tab-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button:not(.drop-btn, .vz-range-x, .drop-menu *)):hover:not(:disabled)::after {
+  opacity: 0.75;
+  transform: scaleX(1);
+}
+:root :is(.drop-btn, .act-btn, .tab-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button:not(.drop-btn, .vz-range-x, .drop-menu *)):is([aria-expanded="true"], .on, .selected)::after {
+  opacity: 1;
+  transform: scaleX(1);
+  background: linear-gradient(90deg, var(--tab-line) 60%, transparent);
+}
+html.dark :is(.drop-btn, .act-btn, .tab-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button:not(.drop-btn, .vz-range-x, .drop-menu *)):is(:hover:not(:disabled), [aria-expanded="true"], .on, .selected) {
+  text-shadow: 0 0 12px color-mix(in srgb, var(--lime) 40%, transparent);
+}
+html.dark :is(.drop-btn, .act-btn, .tab-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button:not(.drop-btn, .vz-range-x, .drop-menu *)):is([aria-expanded="true"], .on, .selected)::after {
+  box-shadow: var(--accent-glow);
+}
+/* 드롭다운·실행 단추의 밑줄은 **폭 꽉 차게, 고르게** (사용자 지시 2026-10-10) — 탭 단추만 안쪽 10px·끝이 사라지는 그라데이션.
+   자라나는 건 같다(왼쪽 기준 0→1) */
+:root :is(.drop-btn, .act-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button:not(.tab-btn, .drop-btn, .vz-range-x, .drop-menu *))::after {
+  left: 0;
+  right: 0;
+  transform: scaleX(0);
+  background: var(--tab-line);
+}
+:root :is(.drop-btn, .act-btn, .nav-toggle, .feedback-top-btn, .feedback-header-btn, .admin-tools button:not(.tab-btn, .drop-btn, .vz-range-x, .drop-menu *)):is(:hover:not(:disabled), [aria-expanded="true"], .on, .selected)::after {
+  transform: scaleX(1);
+  background: var(--tab-line);
+}
+:root :is(.drop-btn, .act-btn, .tab-btn):focus-visible {
+  outline: 2px solid var(--tab-line);
+  outline-offset: 2px;
+}
+/* 공용 드롭다운 목록 판 — 모서리·그림자. 나타나는 움직임과 줄 막대는 아래 '공용 메뉴 움직임'(.menu-anim · .menu-item-bar) */
+:root .drop-menu {
+  border-radius: var(--r-sm);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+:root .drop-menu li > button:hover:not(:disabled) {
+  box-shadow: none;
+}
+/* ③ 입력란 — 바탕색(불투명 단색) 위에 그림 두 겹: 강조 밑줄(포커스 때 왼쪽에서 폭 끝까지 자라남, 단색) · 평소 밑줄 1px */
+:root :is(.search-wrap, .omni-trigger, .omni-bar, input:is(:not([type]), [type="text"], [type="search"], [type="number"], [type="date"], [type="time"], [type="email"], [type="password"], [type="url"], [type="tel"]), textarea, select):not(.search-wrap *, .omni-bar *, .rg-filterbar *, .rg-uni-box *) {
+  border: 1px solid transparent;
+  border-radius: 0;
+  box-shadow: none;
+  outline: 0;
+  background-color: var(--field-fill);
+  background-image: linear-gradient(var(--tab-line), var(--tab-line)), linear-gradient(var(--field-rule), var(--field-rule));
+  background-size: 0% 2px, 100% 1px;
+  background-position: left bottom, left bottom;
+  background-repeat: no-repeat;
+  transition: background-size 0.25s, background-color 0.25s;
+}
+/* 포커스 — 유니버셜 서치 트리거는 단추라 올렸을 때·키보드 포커스 때 같은 모양 */
+:root :is(.search-wrap, .omni-trigger, .omni-bar, input:is(:not([type]), [type="text"], [type="search"], [type="number"], [type="date"], [type="time"], [type="email"], [type="password"], [type="url"], [type="tel"]), textarea, select):not(.search-wrap *, .omni-bar *, .rg-filterbar *, .rg-uni-box *):is(:focus-within, .omni-trigger:hover, .omni-trigger:focus-visible) {
+  border-color: transparent;
+  outline: 0;
+  background-color: var(--field-fill-focus);
+  background-size: 100% 2px, 100% 1px;
+}
+:root :is(input, textarea, select):not(.search-wrap *, .omni-bar *, .rg-filterbar *, .rg-uni-box *):disabled {
+  opacity: 0.55;
+}
+
+/* 제안 — PC 헤더 1줄 맨 오른쪽 (사용자 지시 2026-10-10). 우하단 떠 있던 버튼(.feedback-fab)은 PC 에서 감춘다 —
+   치비 스카디는 그 버튼이 안 보이면 종전대로 헤더 슬롯에 선다(home.tsx placeOnFab). 폰은 종전 그대로.
+   바탕·테두리·호버는 위 ① 공용 단추 결 (같은 날 "스타일이 적용이 안 된 듯" — 진한 btn-pri 덩어리였다) */
+.feedback-top-btn {
+  display: none;
+}
+@media (min-width: 761px) {
+  .feedback-top-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 14px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .feedback-top-btn .fb-reply-badge {
+    margin-left: 2px;
+  }
+  .feedback-fab {
+    display: none;
+  }
+}
+/* 넓은 화면은 헤더 오른쪽 끝에 — 끝에서 28px 띄워(사용자 지시 2026-10-10 "오른쪽에 붙이되 너무 딱 붙이지는 말고").
+   헤더는 화면 위에 붙어 있어(sticky, 본문은 .site-scroll 이 스크롤) fixed 로 1줄 메뉴 버튼과 같은 높이에 둔다.
+   1280px 미만은 헤더 내용이 오른쪽 끝까지 차서 겹치므로 종전대로 동기화 문구 옆 */
+@media (min-width: 1280px) {
+  .feedback-top-btn {
+    position: fixed;
+    top: 13px;
+    right: 28px;
+    height: 34px;
+    margin-left: 0;
+    z-index: 60;
+  }
+}
+
+/* ── 메뉴(☰) 버튼과 펼쳐지는 메뉴 판 (사용자 지시 2026-10-10 — 메뉴를 예쁘게) ─────────────────────────────
+   버튼은 위 ① 공용 단추 결(옅은 바탕·밑줄). ☰ 는 글리프 대신 세 줄 막대로 그려, 열리면 가운데 줄이 사라지고
+   위아래 줄이 교차해 ✕ 가 된다. 칸은 종전 ☰ 글리프 자리(12×14px)와 같다 — 헤더 폭이 흔들리지 않게 */
+.nav-toggle .nav-burger {
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 14px;
+  flex: none;
+}
+.nav-burger i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  transition: transform 0.2s ease, opacity 0.15s;
+}
+.nav-burger i:nth-child(1) { top: 3px; }
+.nav-burger i:nth-child(2) { top: 6.25px; }
+.nav-burger i:nth-child(3) { top: 9.5px; }
+.nav-toggle[aria-expanded="true"] .nav-burger i:nth-child(1) { transform: translateY(3.25px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] .nav-burger i:nth-child(2) { opacity: 0; transform: scaleX(0.2); }
+.nav-toggle[aria-expanded="true"] .nav-burger i:nth-child(3) { transform: translateY(-3.25px) rotate(-45deg); }
+
+/* 메뉴 판 — 거의 불투명한 면(가독성) + 살짝 흐림, 은은한 그림자, 열릴 때 살짝 떠오른다 */
+/* ⚠ 2단(.tab-flyout2) 부메뉴는 터치·좁은 화면에서 판이 아니라 들여쓴 목록(왼쪽 선만)이다 — 넓은 마우스 화면에서만 판을 씌운다 */
+:root :is(.main-tabs, .tab-flyout:not(.tab-flyout2) > .tab-submenu) {
+  background: color-mix(in srgb, var(--white) 94%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-2);
+}
+/* ⚠ 옆으로 뜨는 부메뉴는 **불투명**으로 — 흐림 판(.main-tabs) 안에 든 요소의 backdrop-filter 는 부모 판 밖의 화면을
+   못 본다(부모가 backdrop 기준이 된다). 그래서 판 밖으로 나간 부메뉴는 흐림 없이 6% 비쳐 뒤 글자가 읽혔다 (2026-10-10 실측) */
+:root .tab-flyout:not(.tab-flyout2) > .tab-submenu {
+  background: var(--white);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+@media (hover: hover) and (min-width: 761px) {
+  :root .tab-flyout2 > .tab-submenu2 {
+    background: var(--white);
+    border-radius: var(--r-md);
+    box-shadow: var(--sh-2);
+  }
+}
+
+/* 항목 — 막대·들여쓰기는 공용 .menu-item-bar. 지금 페이지(.selected)는 막대 고정 + 글자 진하게
+   (메뉴에선 명암 반전 판을 쓰지 않는다 — 막대가 그 표시다) */
+/* 글자 한 단계 키움 (사용자 2026-10-10 "메뉴 글자가 작다") — 12px → 13.5px, 아이콘·여백도 같은 비율.
+   부메뉴 1단(.tab-sub)도 같은 크기, 2단(테마·시즌)은 한 단계 작게. 모바일도 같은 비율(판 폭은 화면에 묶여 있어 넘치지 않는다) */
+:root .main-tabs :is(button, a.tab-sub) {
+  --mi-pad: 13px;
+  padding: 10px 13px;
+  font-size: 13.5px;
+  gap: 7px;
+}
+:root .main-tabs .tab-icon {
+  font-size: 13.5px;
+  margin-right: 7px;
+}
+:root .main-tabs .tab-group-arrow {
+  font-size: 12px;
+}
+:root .main-tabs .tab-submenu2 .tab-sub2 {
+  --mi-pad: 13px;
+  padding: 9px 13px;
+  font-size: 13px;
+}
+:root .main-tabs :is(.tab-sub-future, .tab-sub-past) {
+  font-size: 11.5px;
+}
+:root :is(.main-tabs, .tab-flyout > .tab-submenu) {
+  min-width: 230px;
+}
+@media (hover: none), (max-width: 760px) {
+  :root .main-tabs .tab-submenu2 .tab-sub2 {
+    --mi-pad: 11px;
+    padding: 7px 11px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 760px) {
+  :root .tab-flyout > .tab-submenu { min-width: 0; }
+}
+@media (hover: hover) {
+  :root .main-tabs :is(button, a.tab-sub):hover {
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+    box-shadow: none;
+    color: var(--ink);
+  }
+}
+:root .main-tabs :is(button, a.tab-sub):is(.selected, .selected:hover) {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  box-shadow: none;
+  color: var(--ink);
+  font-weight: 800;
+}
+:root .main-tabs .selected :is(.tab-sub-mark, .tab-icon) {
+  opacity: 0.85;
+}
+/* 지금 보고 있는 지난 시즌 — 반전 판이 없어져 회색 표식을 그대로 둔다 */
+:root .main-tabs .selected .tab-sub-past {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+}
+/* 묶음 화살표 — 펼치면 90° 돈다. 넓은 화면은 부메뉴가 옆(왼쪽)에 열려 ◂ 그대로가 맞으니 진하게만,
+   좁은 화면은 아래로 펼쳐지므로 ▾ 쪽으로 돈다 */
+.tab-group-arrow {
+  display: inline-block;
+  transition: transform 0.2s, opacity 0.2s, color 0.2s;
+}
+:root .tab-flyout.open > :is(button, a) > .tab-group-arrow {
+  opacity: 0.9;
+  color: var(--tab-line);
+}
+@media (hover: hover) and (min-width: 761px) {
+  :root .tab-flyout:hover > :is(button, a) > .tab-group-arrow {
+    opacity: 0.9;
+    color: var(--tab-line);
+  }
+}
+@media (max-width: 760px) {
+  :root .tab-flyout.open > :is(button, a) > .tab-group-arrow {
+    transform: rotate(-90deg);
+  }
+}
+html.dark .tab-flyout:is(.open, :hover) > :is(button, a) > .tab-group-arrow {
+  text-shadow: 0 0 10px color-mix(in srgb, var(--lime) 40%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-burger i, .tab-group-arrow { transition: none; }
+}
+
+
+/* ── 공용 메뉴 움직임 (사용자 지시 2026-10-10 "헤더 메뉴의 열림 애니메이션과 항목 효과를 모든 드롭다운 목록에 똑같이") ──
+   .menu-anim     = 떠 있는 목록·판. 나타날 때(마운트되거나 display 가 켜질 때) 살짝 떠오르며 opacity 0→1.
+   .menu-item-bar = 그 안의 항목. 올리면 왼쪽 강조색 막대가 위아래로 자라고 글자가 4px 들어간다, 고른 항목은 막대 고정.
+   쓰는 곳: 공용 드롭다운(.drop-menu) · 헤더 메뉴(.main-tabs·부메뉴) · 도감 세부 조건(.attr-drop·.attr-sub) ·
+   위수 협의 자체 메뉴(.ac-garsel-menu·.ac-garsel-sub) · 통합전략 테마 목록(.rg-title-menu — 테마 색 판은 그대로) ·
+   검색란 제안 목록(.suggest-drop, 모든 도감 검색란) · 컨셉덱 검색 목록(.concept-drop).
+   ⚠ 새 목록을 만들면 이 두 클래스를 붙일 것 — 목록마다 따로 키프레임·막대를 만들지 말 것.
+   들여쓰기는 항목의 왼쪽 여백(--mi-pad, 목록마다 종전 값)에 4px 를 더하는 방식이라 목록마다 --mi-pad 만 맞춘다 */
+@keyframes menu-in {
+  from { opacity: 0; translate: 0 6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+.menu-anim {
+  animation: menu-in 0.18s ease-out;
+}
+.drop-menu { --mi-pad: 9px; }
+.ac-garsel-menu, .ac-garsel-sub { --mi-pad: 8px; }
+.attr-drop, .attr-sub { --mi-pad: 8px; }
+.rg-topicsel-menu { --mi-pad: 12px; }
+.suggest-drop { --mi-pad: 8px; }
+.concept-drop { --mi-pad: 8px; }
+:root .menu-item-bar {
+  position: relative;
+  transition: padding-left 0.16s, background-color 0.16s, color 0.16s;
+}
+:root .menu-item-bar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--tab-line);
+  transform: scaleY(0);
+  transition: transform 0.16s;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  :root .menu-item-bar:hover:not(:disabled) {
+    padding-left: calc(var(--mi-pad, 10px) + 4px);
+  }
+  :root .menu-item-bar:hover:not(:disabled)::before {
+    transform: scaleY(1);
+  }
+}
+:root .menu-item-bar:is(.on, .selected, [aria-checked="true"], [aria-selected="true"])::before {
+  transform: scaleY(1);
+}
+html.dark .menu-item-bar::before {
+  box-shadow: var(--accent-glow);
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-anim { animation: none; }
+  :root .menu-item-bar, :root .menu-item-bar::before { transition: none; }
+}
+
+/* ── 카드 시안 (사용자 요청 2026-10-10 "보더 없애는 게 좋을까 — 예쁘게 보이려면") — 테라 연대기 카드에 먼저 ──
+   1px 진한 테두리 대신 아주 옅은 테두리 + 넓고 흐린 그림자로 살짝 띄우고, 올리면 그림자가 짙어지며 2px 떠오른다.
+   다크는 그림자가 안 보여 바탕을 한 단계 밝혀 구분. 마음에 들면 다른 카드로 넓힌다 */
+:root .chron-card {
+  border-color: color-mix(in srgb, var(--ink) 7%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent), 0 6px 18px -6px color-mix(in srgb, var(--ink) 14%, transparent);
+  transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s, background 0.25s;
+}
+:root .chron-card:hover {
+  border-color: color-mix(in srgb, var(--ink) 10%, transparent);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--ink) 6%, transparent), 0 14px 30px -10px color-mix(in srgb, var(--ink) 24%, transparent);
+  transform: translateY(-2px);
+}
+html.dark .chron-card {
+  background: color-mix(in srgb, var(--white) 96%, #fff);   /* 92% 는 밝았다 (사용자 지시 2026-10-10) */
+  border-color: color-mix(in srgb, #fff 6%, transparent);
+  box-shadow: 0 8px 22px -8px #0009;
+}
+html.dark .chron-card:hover {
+  background: color-mix(in srgb, var(--white) 92%, #fff);
+  border-color: color-mix(in srgb, #fff 10%, transparent);
+  box-shadow: 0 14px 30px -10px #000c;
+}
+/* 떠오르기는 카드가 아니라 칸(li.chron-row) 통째로 — '이벤트 상세' 버튼(.chron-card-dex)은 카드 안이 아니라 형제로
+   겹쳐 있어서, 카드만 띄우면 버튼이 제자리에 남았다 (사용자 지적 2026-10-10). 카드 자체 transform 은 끈다 */
+:root .chron-card:hover {
+  transform: none;
+}
+:root .chron-row {
+  transition: transform 0.25s;
+}
+:root .chron-row:has(> .chron-card:hover, > .chron-card-dex:hover) {
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root .chron-row:has(> .chron-card:hover, > .chron-card-dex:hover) { transform: none; }
+}
+
+/* ── 카드 공통 — 연대기 카드 시안을 사이트 카드로 넓힘 (사용자 지시 2026-10-10 "마음에 든다 다른 데도 다") ──
+   흰 바탕 + 1px 테두리 구조의 카드만. 진한 테두리 대신 아주 옅은 테두리 + 넓고 흐린 그림자, 올리면 그림자가 짙어지며
+   2px 떠오른다(누르는 카드만). 다크는 바탕을 한 단계 밝혀 구분. 선택·보유 같은 상태 테두리(.selected/.on/.owned 등)는
+   덮지 않는다. 뺀 것: 홈 타일(.pt-tile)·플래너 방(.ship-room, 어두운 판 고유 디자인)·갤러리 CG(테두리 없음)·
+   정보 카드(모듈·육성 추천·보유 목록·소환물 — 바탕이 다르다)·통합전략 카드 */
+:root :is(.operator-card, .en-card, .st-card, .it-card, .ev-card, .sb-card, .ac-card, .me-card, .farm-card, .about-card, .crew-card):not(.selected, .on, .active, .owned, .picked, .sel, .is-on) {
+  border-color: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+:root :is(.operator-card, .en-card, .st-card, .it-card, .ev-card, .sb-card, .ac-card, .me-card, .farm-card, .about-card, .crew-card) {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent), 0 6px 18px -6px color-mix(in srgb, var(--ink) 14%, transparent);
+  transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s, background 0.25s;
+}
+:root :is(.operator-card, .en-card, .st-card, .it-card, .ev-card, .sb-card, .ac-card, .farm-card, .about-card):hover {
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--ink) 6%, transparent), 0 14px 30px -10px color-mix(in srgb, var(--ink) 24%, transparent);
+  transform: translateY(-2px);
+}
+html.dark :is(.operator-card, .en-card, .st-card, .it-card, .ev-card, .sb-card, .ac-card, .me-card, .farm-card, .about-card, .crew-card) {
+  background: color-mix(in srgb, var(--white) 96%, #fff);   /* 92% 는 밝았다 (사용자 지시 2026-10-10) */
+  box-shadow: 0 8px 22px -8px #0009;
+}
+html.dark :is(.operator-card, .en-card, .st-card, .it-card, .ev-card, .sb-card, .ac-card, .farm-card, .about-card):hover {
+  background: color-mix(in srgb, var(--white) 92%, #fff);
+  box-shadow: 0 14px 30px -10px #000c;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root :is(.operator-card, .en-card, .st-card, .it-card, .ev-card, .sb-card, .ac-card, .farm-card, .about-card):hover { transform: none; }
+}
+
+/* ── 카드 안 검은 덩어리 걷기 (사용자 지적 2026-10-10 "카드 안에 버튼들이 너무 새까만 듯") ──
+   ① 등급 칩(T1~T6) — 라이트에선 어두운 판(--chip) 대신 등급 색을 옅게 깐 바탕 + 같은 계열의 진한 글자(색 구분은 유지).
+      다크는 종전 그대로(어두운 판 + 밝은 글자). */
+.farm-tier.tier-1 { --tier: #8d8d86; }
+.farm-tier.tier-2 { --tier: #7fae3c; }
+.farm-tier.tier-3 { --tier: #3d8fd6; }
+.farm-tier.tier-4 { --tier: #a45ce0; }
+.farm-tier.tier-5 { --tier: #d39b1f; }
+.farm-tier.tier-6 { --tier: #e0782a; }
+html:not(.dark) .farm-tier[class*="tier-"] {
+  background: color-mix(in srgb, var(--tier) 18%, var(--paper));
+  border-color: color-mix(in srgb, var(--tier) 45%, transparent);
+  color: color-mix(in srgb, var(--tier) 62%, var(--ink));
+}
+/* ② 카드 안의 선택형 단추(.selected — 사이트 규약은 명암 반전이라 라이트에서 검게 채워졌다) — 공용 드롭다운과 같은
+      옅은 바탕 + 진한 글자 + 밑줄 고정. 카드 밖(페이지 툴바 등)의 선택 단추는 종전 규약 그대로 */
+:root :is(.me-card, .farm-card, .it-card, .ev-card, .st-card, .en-card, .sb-card, .ac-card, .about-card, .crew-card) button.selected {
+  background: var(--soft-fill-hover, color-mix(in srgb, var(--ink) 10%, var(--paper)));
+  color: var(--ink);
+  border-color: transparent;
+  box-shadow: inset 0 -2px 0 var(--tab-line);
+}
+
+/* 헤더 유니버셜 서치(+ 메뉴·언어 버튼도 같은 바탕, 사용자 지시 2026-10-10) — 헤더 바탕과 거의 같은 밝기라 묻혔다(사용자 지적 2026-10-10, 다크는 사실상 같은 색).
+   헤더 안에서만 바탕을 한 단계 더 진하게/밝게 + 평소 밑줄을 조금 진하게 */
+.site-header :is(.omni-trigger, .nav-toggle, .server-chip) {
+  background: color-mix(in srgb, var(--ink) 11%, rgb(246 247 246));
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--ink) 32%, transparent);
+}
+.site-header :is(.omni-trigger, .nav-toggle, .server-chip):hover {
+  background: color-mix(in srgb, var(--ink) 15%, rgb(246 247 246));
+}
+html.dark .site-header :is(.omni-trigger, .nav-toggle, .server-chip) {
+  background: color-mix(in srgb, #fff 9%, rgb(23 28 31));
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, #fff 26%, transparent);
+}
+html.dark .site-header :is(.omni-trigger, .nav-toggle, .server-chip):hover {
+  background: color-mix(in srgb, #fff 13%, rgb(23 28 31));
+}
+
+
+/* ── 통합전략 버튼 — 테두리 걷기 (사용자 제안 2026-10-10 "록라 버튼들도 보더를 없애면") ──
+   도구 열(PRTS·리플레이·스샷 레이더·?)·보유 리스트·맵 옆 필터·난이도 '쉬움' 칩: 테두리 대신 테마 카드색 반투명 바탕 +
+   뒤 흐림으로 배경 그림에 녹이고, 올리면 테마 색 밑줄, 선택(.on)은 밑줄 고정. 테마 색은 보기 탭과 같은 --rg-hue */
+.rg :is(.rg-headtools .lens-open-wrap button, .rg-inv-open, .rg-filterbar button, .rg-diff-chip) {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--rgcard) 72%, transparent);
+  backdrop-filter: blur(4px);
+  box-shadow: none;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+}
+.rg :is(.rg-headtools .lens-open-wrap button, .rg-inv-open, .rg-filterbar button, .rg-diff-chip):hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--rgcard) 92%, transparent);
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--rg-hue, var(--rggold)) 75%, transparent);
+  color: var(--rgink);
+}
+.rg :is(.rg-headtools .lens-open-btn.on, .rg-filterbar button.on, .rg-diff-chip.on) {
+  border-color: transparent;
+  box-shadow: inset 0 -2px 0 var(--rg-hue, var(--rggold));
+}
+
+
+/* ── 통합전략 — 화면 안 테두리 전부 걷기 (1번 테마 시험 → 2026-10-10 전 테마로 넓힘) (사용자 지시 2026-10-10 "록라 1번 한번 보더 전부 걷어내봐" →
+   "방금 전 괜찮았다, 층·기타 카드만 구분이 안 됐다"). rogue_1 은 섹션 클래스가 'rg' 하나뿐이라 다른 테마엔 안 걸린다.
+   창(모달)은 섹션 밖이라 제외 */
+section.rg *,
+section.rg *::before,
+section.rg *::after {
+  border-color: transparent !important;
+}
+/* 도구 열 버튼(PRTS·리플레이·스샷 레이더·?)은 배경 그림과 구분이 안 됐다 — 바탕을 진하게 채운다 */
+.rg .rg-headtools .lens-open-wrap button {
+  background: color-mix(in srgb, var(--rgcard) 94%, transparent);
+}
+.rg .rg-headtools .lens-open-wrap button:hover {
+  background: color-mix(in srgb, var(--rgcard) 100%, #fff 6%);
+}
+
+/* 통합전략에선 헤더 버튼(메뉴·언어·유니버셜 서치·제안)을 테마 헤더색에 맞춘다 (사용자 지시 2026-10-10) — 사이트 기본의
+   푸르스름한 회색이 검붉은 헤더에서 따로 놀았다. 헤더 단색(--header-solid, 테마마다 다르다)에 흰색을 살짝 섞는다 */
+html.rg-theme .site-header :is(.omni-trigger, .nav-toggle, .server-chip, .feedback-top-btn) {
+  background: color-mix(in srgb, #fff 7%, var(--header-solid, #150a0e));
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, #fff 18%, transparent);
+}
+html.rg-theme .site-header :is(.omni-trigger, .nav-toggle, .server-chip, .feedback-top-btn):hover {
+  background: color-mix(in srgb, #fff 12%, var(--header-solid, #150a0e));
+}
+
+/* 통합전략 전체 검색란도 다른 입력란과 같은 결 (사용자 지시 2026-10-10) — 테두리 없이 테마 판색 바탕 + 평소 옅은 밑줄,
+   포커스하면 테마 색 밑줄이 폭 끝까지 자라난다. 색만 테마(--rgdeep·--rgline·--rg-hue)를 따른다 */
+.rg-uni-box input[type="search"] {
+  border: 0;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  background: color-mix(in srgb, var(--rgdeep) 88%, transparent);
+  backdrop-filter: blur(4px);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--rgink) 28%, transparent);
+  transition: background 0.2s, box-shadow 0.25s;
+}
+.rg-uni-box input[type="search"]:hover {
+  background: color-mix(in srgb, var(--rgdeep) 96%, #fff 3%);
+}
+.rg-uni-box input[type="search"]:focus {
+  outline: none;
+  background: color-mix(in srgb, var(--rgdeep) 96%, #fff 4%);
+  box-shadow: inset 0 -2px 0 var(--rg-hue, var(--rggold));
+}
+/* 우연한 만남·기타 노드 카드도 층 카드처럼 올리면 4px 떠오른다 (사용자 지시 2026-10-10). 자리 잡기 transform 과
+   겹치지 않게 별도 속성 translate 로 */
+.rg-sec-card {
+  transition: translate 0.16s, box-shadow 0.25s, background-color 0.25s;
+}
+.rg-sec-card:hover {
+  translate: 0 -4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rg-sec-card:hover { translate: none; }
+}
+
+
+/* ── 통합전략 — 색은 '상태'에만, 덩어리는 입체로 (사용자 확정 2026-10-10 "윗띠·아래띠가 섞여 통일감이 없다") ──
+   테마 색 띠는 "선택됨·마우스 올림·입력 중" 한 가지 뜻으로만, 위치는 아래쪽 하나(탭·드롭다운·입력란·버튼 공통).
+   카드·버튼 덩어리는 색 없이 — 위 가장자리 흰빛 1px 하이라이트(유리판 모서리) + 아래 그림자로 떠 있게.
+   카드에 올리면 둘레에 테마 색이 은은히 번진다(띠가 아니라 빛이라 밑줄과 겹치지 않는다). 전 테마 공통 */
+.rg :is(.rg-zonecard, .rg-sec-card, .rg-zone, .rg-relic, .rg-ending, .rg-diff-table, .rg-enemy-cell, .rg-visitor, .rg-stagecard) {
+  box-shadow:
+    inset 0 1px 0 #ffffff1c,
+    inset 0 0 0 1px #ffffff08,
+    0 12px 26px -12px #000d;
+  transition: box-shadow 0.25s, background-color 0.25s, translate 0.16s;
+}
+.rg :is(.rg-zonecard, .rg-sec-card, .rg-zone, .rg-relic, .rg-ending, .rg-diff-table, .rg-enemy-cell, .rg-visitor, .rg-stagecard):hover {
+  box-shadow:
+    inset 0 1px 0 #ffffff26,
+    inset 0 0 0 1px color-mix(in srgb, var(--rg-hue, var(--rggold)) 40%, transparent),
+    0 0 22px -6px color-mix(in srgb, var(--rg-hue, var(--rggold)) 45%, transparent),
+    0 14px 30px -12px #000e;
+}
+.rg :is(.rg-inv-open, .rg-headtools .lens-open-wrap button) {
+  background: color-mix(in srgb, var(--rgcard) 100%, #fff 3%);
+  box-shadow:
+    inset 0 1px 0 #ffffff1c,
+    0 8px 18px -8px #000c;
+}
+.rg :is(.rg-inv-open, .rg-headtools .lens-open-wrap button):hover {
+  background: color-mix(in srgb, var(--rgcard) 100%, #fff 7%);
+  box-shadow:
+    inset 0 1px 0 #ffffff26,
+    inset 0 -2px 0 var(--rg-hue, var(--rggold)),
+    0 10px 22px -8px #000d;
+}
+/* 중국섭 안내 — 서버 토글 오른쪽 한 줄 (사용자 지시 2026-10-10). 길면 말줄임 */
+.rg-eyebrow-row .rg-disclaimer-inline {
+  margin: 0;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 토글은 줄어들지 않게(안내 문구에 밀려 '한국/섭'으로 꺾이며 히어로가 14px 높아졌다), 안내 문구는 오른쪽 도구 열(최대 340px)
+   앞까지만 — 그 밑으로 파고들어 가렸다 */
+.rg-eyebrow-row > .rg-serversel {
+  flex: none;
+}
+.rg-eyebrow-row > .rg-serversel button {
+  white-space: nowrap;
+}
+/* 눈썹 글자·토글이 겹쳤다 (사용자 캡처 2026-10-10 — 좁은 화면에서 줄 최대 폭이 모자라 눈썹이 쪼그라들며 토글 밑에 깔림).
+   눈썹·토글은 줄지 않고, 남는 폭만 안내 문구가 쓴다(말줄임). 자리가 아예 없으면 줄을 넘겨 다음 줄로 */
+.rg-eyebrow-row {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.rg-eyebrow-row > .rg-eyebrow {
+  flex: none;
+  white-space: nowrap;
+}
+.rg-eyebrow-row > .rg-disclaimer-inline {
+  flex: 1 1 160px;
+}
+/* 안내 문구가 오른쪽 도구 열 밑으로 들어가지 않게 — 도구 열은 머리(.rg-head) 오른쪽 18px 에 폭 340px 로 붙고 제목 칸은
+   머리 왼쪽 20px 에서 시작하므로, 머리 폭(컨테이너 단위 cqw) 기준으로 남는 폭을 잰다. 도구 열과 16px 띄움 */
+@media (min-width: 761px) {
+  .rg-head {
+    container-type: inline-size;
+  }
+  .rg-eyebrow-row {
+    max-width: calc(100cqw - 20px - 340px - 18px - 16px);
+  }
+}
+/* 중국섭 안내 마퀴 (사용자 지시 2026-10-10) — 문구 두 벌을 이어 -50% 만큼 흘려 끊김이 없다. 양 끝은 마스크로 흐리게.
+   움직임 줄이기면 멈추고 말줄임 */
+.rg-eyebrow-row .rg-disclaimer-inline {
+  overflow: hidden;
+  text-overflow: clip;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+}
+.rg-marquee {
+  display: inline-flex;
+  gap: 48px;
+  white-space: nowrap;
+  animation: rg-marquee 22s linear infinite;
+}
+.rg-disclaimer-inline:hover .rg-marquee {
+  animation-play-state: paused;
+}
+@keyframes rg-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-50% - 24px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rg-marquee { animation: none; }
+  .rg-marquee > span + span { display: none; }
+  .rg-eyebrow-row .rg-disclaimer-inline { text-overflow: ellipsis; -webkit-mask-image: none; mask-image: none; }
+}
+/* 도구 열 — 위에서부터 차례로 쌓는다 (사용자 지적 2026-10-10 "난이도가 밑에 딱 달라붙었다"). 종전엔 히어로 높이만큼 늘여
+   space-between 으로 셋(PRTS 줄·테마 변경·난이도)을 벌렸는데, 테마 변경이 제목으로 올라가 둘만 남자 난이도가 바닥에 붙었다 */
+.rg-headtools {
+  bottom: auto;
+  justify-content: flex-start;
+  gap: 14px;
+}
+/* 히어로 띠 낮추기 (사용자 지시 2026-10-10) — 위아래 여백 16/20 → 12/14, 제목 줄 여백 8/12 → 4/8 (설명 줄 간격은 그대로 — 사용자가 되돌림) */
+.rg-hero-text {
+  padding: 12px 20px 14px;
+}
+.rg-title-row {
+  margin: 4px 0 8px;
+}
+/* 층 카드·기타 카드 떠오르기 4px → 2px (사용자 지시 2026-10-10 "너무 많이 올라간다") */
+.rg-zone-cards > :hover {
+  transform: translate(var(--dx, 0px), calc(var(--dy, 0px) - 2px));
+}
+.rg-sec-card:hover {
+  translate: 0 -2px;
+}
+/* 쉐이의 잔식(.rg-skybtn, 쉐이 테마 전용 층 카드꼴 버튼)도 다른 카드와 같은 결 (사용자 지시 2026-10-10) — 공통 목록에서
+   빠져 혼자 따로 놀았다. 바탕 90%·입체감·올리면 테마 색 번짐 */
+section.rg .rg-skybtn {
+  border-color: transparent !important;
+  background: color-mix(in srgb, var(--rgcard) 90%, transparent);
+  box-shadow:
+    inset 0 1px 0 #ffffff1c,
+    inset 0 0 0 1px #ffffff08,
+    0 12px 26px -12px #000d;
+  transition: box-shadow 0.25s, background-color 0.25s, translate 0.16s;
+}
+section.rg .rg-skybtn:is(:hover, :focus-visible) {
+  box-shadow:
+    inset 0 1px 0 #ffffff26,
+    inset 0 0 0 1px color-mix(in srgb, var(--rg-hue, var(--rggold)) 40%, transparent),
+    0 0 22px -6px color-mix(in srgb, var(--rg-hue, var(--rggold)) 45%, transparent),
+    0 14px 30px -12px #000e;
+  translate: 0 -2px;
+}
+/* 쉐이의 잔식 그림(시비경 전환)은 원래 밝은 분홍·보라라 다른 층 카드보다 혼자 환했다 — 그림만 옅게 */
+section.rg .rg-skybtn .rg-zonecard-bg {
+  opacity: 0.2;
+}

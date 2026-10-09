@@ -852,7 +852,7 @@ export function VisitsPanel() {
   return (
     <section className="vz">
       <div className="admin-tools vz-controls">
-        <button className={!range && days === 0 ? "selected" : ""} onClick={() => { setRange(null); setDays(0); }}>오늘</button>
+        <button className={!range && days === 0 ? "tab-btn selected" : "tab-btn"} onClick={() => { setRange(null); setDays(0); }}>오늘</button>
         {/* 7·30·90일·1년은 드롭다운 하나로 (사용자 지시 2026-10-05) */}
         <Dropdown
           label={!range && days !== 0 ? SPAN_LABEL[days] : "최근 기간"}

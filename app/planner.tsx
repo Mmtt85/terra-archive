@@ -182,17 +182,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       openRoomAt(h.startsWith("#room-") && LAYOUT.some((cell) => cell.key === h.slice(6)) ? h.slice(6) : null);
     },
   );
-  const [moreOpen, setMoreOpen] = useState(false); // '그 외' 드롭다운(이미지·파일·도움말)
-  // 일부 모바일 인앱 브라우저(카카오톡·카페 웹뷰 등)는 탭 한 번에 click을 두 번 합성하거나
-  // ~300ms 지연 mousedown을 쏜다 — 토글이 열리자마자 닫혀 "안 보임"이 된다
-  // (사용자 리포트 2026-07-18, 일반 브라우저·에뮬레이터에선 재현 불가). 350ms 가드로 방어.
-  const moreToggledAt = useRef(0);
-  const toggleMore = () => {
-    const now = Date.now();
-    if (now - moreToggledAt.current < 350) return; // 고스트 클릭(중복 합성 click) 무시
-    moreToggledAt.current = now;
-    setMoreOpen((open) => !open);
-  };
+  const importRef = useRef<HTMLInputElement>(null); // '그 외' → 저장된 상태 파일 가져오기
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [showMaa, setShowMaa] = useState(false); // MAA 기반시설 내보내기 모달 (베타)
   // 1~5성은 기본 보유, 6성은 미보유로 시작 — 가진 6성만 직접 체크한다
@@ -1014,20 +1004,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     showToast(t("편성을 전부 비웠습니다 — 방을 눌러 수동 배치하거나 자동편성하세요"));
   };
 
-  // '그 외' 드롭다운: 바깥 클릭·Esc로 닫기.
-  // pointerdown 사용 + 열린 직후 350ms 무시 — 웹뷰의 지연 합성 mousedown이
-  // 메뉴가 열린 뒤 도착해 "바깥 클릭"으로 오판·즉시 닫히는 것을 막는다.
-  useEffect(() => {
-    if (!moreOpen) return;
-    const onDown = (event: PointerEvent) => {
-      if (Date.now() - moreToggledAt.current < 350) return;
-      if (!(event.target as HTMLElement).closest(".more-group")) setMoreOpen(false);
-    };
-    const onEsc = (event: KeyboardEvent) => { if (event.key === "Escape") setMoreOpen(false); };
-    window.addEventListener("pointerdown", onDown);
-    window.addEventListener("keydown", onEsc);
-    return () => { window.removeEventListener("pointerdown", onDown); window.removeEventListener("keydown", onEsc); };
-  }, [moreOpen]);
 
   useEffect(() => {
     try {
@@ -1497,22 +1473,30 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </button>
           )}
           {/* 이미지·파일·도움말은 '그 외' 드롭다운으로 묶는다 (사용자 요청 2026-07) */}
-          <span className="more-group">
-            <button className={`more-toggle${dirty ? " save-pending" : ""}`} aria-expanded={moreOpen} aria-haspopup="menu"
-              onClick={toggleMore}><span className="btn-icon" aria-hidden>⋯</span>{t("그 외")}</button>
-            {moreOpen && (
-              <div className="more-menu" role="menu">
-                <button role="menuitem" onClick={() => { setMoreOpen(false); exportImage(); }} title={t("A조·B조 편성표를 이미지로 확인 (PNG)")}><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</button>
-                <button role="menuitem" className={dirty ? "save-pending" : undefined} onClick={() => { setMoreOpen(false); exportState(); }} title={dirty ? t("저장 후 변경 사항이 있습니다 — 파일로 저장하세요") : t("보유 오퍼와 편성을 JSON 파일로 저장")}><span className="btn-icon" aria-hidden>⤓</span>{t("현재 상태 파일로 저장")}</button>
-                <label className="import-label" role="menuitem">
-                  <span className="btn-icon" aria-hidden>⤒</span>{t("저장된 상태 파일 가져오기")}
-                  <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; setMoreOpen(false); }} />
-                </label>
-                <button role="menuitem" onClick={() => { setMoreOpen(false); setShowMaa(true); }} title={t("현재 편성을 MAA 커스텀 기반시설 JSON으로 내보냅니다")}><span className="btn-icon" aria-hidden>⇥</span>{t("MAA 기반시설 내보내기")}<span className="new-badge">{t("베타")}</span></button>
-                <button role="menuitem" onClick={() => { setMoreOpen(false); setShowHelp(true); }}><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</button>
-              </div>
-            )}
-          </span>
+          {/* 공용 드롭다운 (사용자 지시 2026-10-10 "드랍다운 버튼은 전부 공용으로"). 파일 가져오기는 숨은 input 을 대신 누른다 */}
+          <Dropdown actions className="more-group" ariaLabel={t("그 외")}
+            buttonClassName={`more-toggle${dirty ? " save-pending" : ""}`}
+            label={<><span className="btn-icon" aria-hidden>⋯</span>{t("그 외")}</>}
+            selected={[]}
+            onPick={(v) => {
+              if (v === "image") exportImage();
+              else if (v === "save") exportState();
+              else if (v === "import") importRef.current?.click();
+              else if (v === "maa") setShowMaa(true);
+              else if (v === "help") setShowHelp(true);
+            }}
+            items={[
+              { value: "image", label: <><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</>, title: t("A조·B조 편성표를 이미지로 확인 (PNG)") },
+              { value: "save", label: <><span className="btn-icon" aria-hidden>⤓</span>{t("현재 상태 파일로 저장")}</>,
+                className: dirty ? "save-pending" : undefined,
+                title: dirty ? t("저장 후 변경 사항이 있습니다 — 파일로 저장하세요") : t("보유 오퍼와 편성을 JSON 파일로 저장") },
+              { value: "import", label: <><span className="btn-icon" aria-hidden>⤒</span>{t("저장된 상태 파일 가져오기")}</> },
+              { value: "maa", label: <><span className="btn-icon" aria-hidden>⇥</span>{t("MAA 기반시설 내보내기")}<span className="new-badge">{t("베타")}</span></>,
+                title: t("현재 편성을 MAA 커스텀 기반시설 JSON으로 내보냅니다") },
+              { value: "help", label: <><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</> },
+            ]} />
+          <input ref={importRef} type="file" accept="application/json" hidden
+            onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; }} />
         </div>
       </div>
 
@@ -2667,7 +2651,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     if ((skill.cap ?? 0) !== 0) {
       const converters = roster.filter((member) => member.id !== self.id && member.skills.some((s) => s.capConv != null && skillApplies(s, cell.room, cell.product)));
       if (converters.length) rels.push({
-        note: t("용량 {n}칸 — 변환 오퍼가 생산력으로 되돌립니다", { n: skill.cap! > 0 ? `+${skill.cap}` : skill.cap }),
+        note: t("용량 {n}칸 — 변환 오퍼가 생산력으로 되돌립니다", { n: skill.cap! > 0 ? `+${skill.cap}` : skill.cap! }),
         chips: chipSort(converters.map((member) => ({ op: member, on: teamIds.has(member.id) }))),
       });
     }

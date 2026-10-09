@@ -542,7 +542,7 @@ const eventDday = (event: GameEvent, now: number): number => Math.max(0, Math.ce
    통째로 걸린다. 10px 은 iOS·안드로이드가 탭과 스크롤을 가르는 폭과 같은 값.
    ⚠ 키보드 Enter/Space 로 온 click 은 detail 이 0 이고 앞선 pointerdown 도 없어 그냥 통과한다.
    호버 칠이 손가락 자국처럼 눌어붙던 것은 CSS 쪽(globals.css `@media (hover: none)`)이 맡는다.
-   쓰는 곳: 햄버거 주메뉴(.main-tabs) · 이벤트 목록(.event-menu) · 언어 선택(.lang-menu). */
+   쓰는 곳: 햄버거 주메뉴(.main-tabs) · 이벤트 목록(.event-menu). */
 const TAP_SLOP_PX = 10;
 function useTapOnly() {
   const from = useRef<{ x: number; y: number } | null>(null);
@@ -606,7 +606,7 @@ function EventBadges({ onOpenEvent, includeFuture }: {
     return (
       <>
         {<div className="event-group" aria-hidden>
-          <div className="event-trigger is-skeleton">
+          <div className="drop-btn event-trigger is-skeleton">
             <span className="event-mark" aria-hidden>✦</span>
             <span>{t("이벤트")}</span>
             <span className="event-caret" aria-hidden>▾</span>
@@ -654,7 +654,7 @@ function EventBadges({ onOpenEvent, includeFuture }: {
           라벨은 "이벤트"로 **고정** — 이벤트 이름을 넣으면 이름 길이에 따라 헤더 폭이
           흔들린다(햄버거 '메뉴' 라벨을 고정한 것과 같은 이유). 상태는 짧은 힌트로만 붙이고,
           섬네일·기간·전체 목록은 눌렀을 때 드롭다운에서 보여준다. */}
-      <button type="button" className="event-trigger" aria-expanded={evOpen}
+      <button type="button" className="drop-btn event-trigger" aria-haspopup="dialog" aria-expanded={evOpen}
         onClick={() => setEvOpen((o) => !o)} title={t("진행중·예정 이벤트 보기")}>
         <span className="event-mark" aria-hidden>✦</span>
         <span>{t("이벤트")}</span>
@@ -795,14 +795,6 @@ function EventBadges({ onOpenEvent, includeFuture }: {
 // 언어는 경로(/ /en /ja)로 나뉘므로 전환은 전체 내비게이션 — 해시(탭·오퍼 모달)는 유지
 function LanguageSwitcher() {
   const { locale, t } = useI18n();
-  const tapOnly = useTapOnly();
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (!open) return;
-    const close = () => setOpen(false);
-    window.addEventListener("click", close);
-    return () => window.removeEventListener("click", close);
-  }, [open]);
   const current = LOCALES.find((entry) => entry.code === locale) ?? LOCALES[0];
   // 언어 전환 시 탑페이지로 가지 않고 현재 탭(세그먼트)·해시를 유지한 채 로케일만 바꾼다
   const switchTo = (code: Locale) => {
@@ -812,24 +804,14 @@ function LanguageSwitcher() {
     const target = (LOCALE_BASE[code] + (seg ? `/${seg}` : "")) || "/";
     window.location.assign(target + window.location.hash);
   };
+  // 공용 드롭다운 (사용자 지시 2026-10-10 "드랍다운 버튼은 전부 공용으로") — 종전엔 .lang-menu 를 따로 그렸다.
+  // 단추에 .server-chip 을 남기는 건 초록 점·고정폭 서체·헤더 치수 규칙 때문이다
   return (
-    <div className="lang-wrap">
-      <button type="button" className="server-chip" aria-haspopup="listbox" aria-expanded={open} aria-label={t("언어 선택")}
-        onClick={(event) => { event.stopPropagation(); setOpen((value) => !value); }}>
-        <span /> {current.chip} <i aria-hidden>▾</i>
-      </button>
-      {open && (
-        <div className="lang-menu" role="listbox" aria-label={t("언어 선택")} {...tapOnly}>
-          {LOCALES.map((entry) => (
-            <button key={entry.code} type="button" role="option" aria-selected={entry.code === locale}
-              className={entry.code === locale ? "selected" : ""}
-              onClick={() => switchTo(entry.code)}>
-              {entry.label}<small>{entry.chip}</small>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <Dropdown className="lang-wrap" buttonClassName="server-chip" ariaLabel={t("언어 선택")}
+      label={<><span className="server-dot" aria-hidden />{current.chip}</>}
+      selected={[]} onPick={(code) => switchTo(code as Locale)}
+      items={LOCALES.map((entry) => ({ value: entry.code, label: entry.label, count: entry.chip,
+        className: entry.code === locale ? "on" : undefined }))} />
   );
 }
 
@@ -2335,6 +2317,12 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
 
   return (
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
+      {/* 넓은 화면 본문 양옆 장식 — 왼쪽 이격 켈시(켈시·에스페란타 1정예)·오른쪽 클로저(2정예), 배경에 녹아들게 옅게 (사용자 지시 2026-10-10,
+          홈 이격 스카디 느낌). 본문 뒤(z-index -1)에 고정, 좁은 화면·통합전략 테마에선 CSS 가 감춘다 */}
+      <div className="side-art" aria-hidden>
+        <img className="side-art-l" src={asset("/skin/full/char_1052_kalts2_1.webp")} alt="" decoding="async" />
+        <img className="side-art-r" src={asset("/skin/full/char_4228_closur_2.webp")} alt="" decoding="async" />
+      </div>
       <header ref={headerRef} id="top"
         className={`site-header${headerCls}${drag ? " dragging" : ""}`}
         style={drag ? { maxHeight: `${drag.h}px` } : undefined}>
@@ -2435,7 +2423,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           <button type="button" className="nav-toggle" aria-expanded={navOpen} aria-label={t("메뉴 열기")} onClick={() => { setOpenGroup(""); setNavOpen((open) => !open); }}>
             {/* 라벨은 "메뉴"로 **고정** — 현재 탭 이름을 넣으면 페이지를 옮길 때마다 버튼 폭이
                 늘었다 줄었다 해서 헤더가 흔들린다 (사용자 요청 2026-07-29) */}
-            <span aria-hidden>☰</span>{t("메뉴")}
+            <span className="nav-burger" aria-hidden><i /><i /><i /></span>{t("메뉴")}
           </button>
           {/* 내 정보 동기화 시각 — 메뉴 버튼 밑에 작게, 헤더 높이를 바꾸지 않게 absolute (사용자 요청 2026-10-05) */}
           {/* 메뉴를 열어도 그대로 둔다 — 문구가 버튼 밑에 있던 시절엔 드롭다운에 가려 감췄지만, 이제 버튼 오른쪽이다 (2026-10-07) */}
@@ -2453,32 +2441,44 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
               <span>{t("정보 동기화 가능")}</span>
             </>}
           </a>
+          {/* 제안 — PC 헤더 1줄 맨 오른쪽 (사용자 지시 2026-10-10 "제안버튼을 헤더 맨오른쪽에"). 종전엔 우하단 떠 있는 버튼
+              (.feedback-fab) — PC 에선 그걸 감춘다. 폰은 종전대로 2줄의 .feedback-header-btn */}
+          {feedbackReady && (
+            <button type="button" className="feedback-top-btn" onClick={() => setFeedbackOpen(true)} aria-label={t("제안 게시판")}>
+              <span aria-hidden>💬</span> {t("제안")}
+              {feedbackNew > 0 && (
+                <span className="fb-reply-badge"
+                  title={feedbackNewAdmin ? t("새 제안 {n}개", { n: feedbackNew }) : t("새 답변 {n}개", { n: feedbackNew })}>{feedbackNew}</span>
+              )}
+              <NewBadge id="feedback-board" show={feedbackNew === 0 && isNewFeature("feedback-board")} />
+            </button>
+          )}
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
           {/* 순서 (사용자 확정 2026-08-10): 홈 · 인프라 · 도감▸ · 시뮬레이터▸ ·
               통합전략▸ · 스토리 · 소개. 인프라는 대표 기능이라 묶지 않고 톱레벨 유지(사용자 확정). */}
-          <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")} {...tapOnly}
+          <nav className={`main-tabs menu-anim${navOpen ? " open" : ""}`} aria-label={t("주요 탭")} {...tapOnly}
             onPointerOver={prefetchTabs} onTouchStart={prefetchTabs} onFocus={prefetchTabs}>
-            <button className={`tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
+            <button className={`menu-item-bar tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
             {/* 내 정보 — 게임 로그인으로 받은 내 계정 (사용자 지시 2026-10-04 "메뉴에서 '내 정보' 메뉴를 하나 추가") */}
-            <button className={`tab-me${tab === "me" ? " selected" : ""}`} onClick={() => switchTab("me")}><span className="tab-icon" aria-hidden>◉</span>{t("내 정보")}<NewBadge id={`tab:me@${tabNewSig("me")}`} show={tabHasNewFeature("me")} /></button>
-            <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}<NewBadge id={`tab:planner@${tabNewSig("planner")}`} show={tabHasNewFeature("planner")} /></button>
+            <button className={`menu-item-bar tab-me${tab === "me" ? " selected" : ""}`} onClick={() => switchTab("me")}><span className="tab-icon" aria-hidden>◉</span>{t("내 정보")}<NewBadge id={`tab:me@${tabNewSig("me")}`} show={tabHasNewFeature("me")} /></button>
+            <button className={`menu-item-bar tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}<NewBadge id={`tab:planner@${tabNewSig("planner")}`} show={tabHasNewFeature("planner")} /></button>
             {/* 도감·시뮬레이터 묶음 — 통합전략과 같은 플라이아웃 규격. 하위 항목은 실제 <a>
                 (크롤러용 내부 링크 — 통전 부메뉴와 같은 이유, 2026-08-06). 클릭은 SPA 전환. */}
             {TAB_GROUPS.map((g) => (
               <div key={g.id} className={`tab-flyout${openGroup === g.id || flyoutOpen(g.id) ? " open" : ""}`}
                 onMouseEnter={hoverHold(g.id)} onMouseLeave={hoverRelease()}>
                 <button type="button"
-                  className={`tab-group${g.items.some((it) => it.tab === tab) ? " selected" : ""}`}
+                  className={`menu-item-bar tab-group${g.items.some((it) => it.tab === tab) ? " selected" : ""}`}
                   aria-expanded={openGroup === g.id}
                   onClick={() => setOpenGroup((cur) => (cur === g.id ? "" : g.id))}>
                   <span className="tab-icon" aria-hidden>{g.icon}</span>{g.name}
                   <NewBadge id={`menu:${g.id}@${g.items.map((it) => tabNewSig(it.tab)).join(";")}`} show={g.items.some((it) => tabHasNewFeature(it.tab))} />
                   <span className="tab-group-arrow" aria-hidden>◂</span>
                 </button>
-                <div className="tab-submenu" role="group" aria-label={g.name}>
+                <div className="menu-anim tab-submenu" role="group" aria-label={g.name}>
                   {g.items.map((it) => (
                     <a key={it.tab} href={`${localeBase}/${TAB_SEG[it.tab]}`}
-                      className={`tab-sub tab-${it.tab}${tab === it.tab ? " selected" : ""}`}
+                      className={`menu-item-bar tab-sub tab-${it.tab}${tab === it.tab ? " selected" : ""}`}
                       onClick={(event) => {
                         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                         event.preventDefault(); switchTab(it.tab);
@@ -2502,28 +2502,28 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             <div className={`tab-flyout${guideOpen || flyoutOpen("guide") ? " open" : ""}`}
               onMouseEnter={hoverHold("guide")} onMouseLeave={hoverRelease()}>
               <button type="button"
-                className={`tab-group${GUIDE_TABS.includes(tab) ? " selected" : ""}`}
+                className={`menu-item-bar tab-group${GUIDE_TABS.includes(tab) ? " selected" : ""}`}
                 aria-expanded={guideOpen}
                 onClick={() => setOpenGroup((cur) => (cur === "guide" || cur.startsWith("guide/") ? "" : "guide"))}>
                 <span className="tab-icon" aria-hidden>❖</span>{t("가이드")}
                 <NewBadge id={`menu:guides@${GUIDE_TABS.map((x) => tabNewSig(x)).join(";")}`} show={GUIDE_TABS.some((x) => tabHasNewFeature(x))} />
                 <span className="tab-group-arrow" aria-hidden>◂</span>
               </button>
-              <div className="tab-submenu tab-submenu-guide" role="group" aria-label={t("가이드")}>
+              <div className="menu-anim tab-submenu tab-submenu-guide" role="group" aria-label={t("가이드")}>
                 <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/rogue") || openGroup === "guide/rogue" ? " open" : ""}`}
                   onMouseEnter={hoverHold("guide/rogue")} onMouseLeave={hoverRelease("guide")}>
-                  <a href={`${localeBase}/rogue`} className={`tab-sub tab-rogue${tab === "rogue" ? " selected" : ""}`}
+                  <a href={`${localeBase}/rogue`} className={`menu-item-bar tab-sub tab-rogue${tab === "rogue" ? " selected" : ""}`}
                     aria-expanded={openGroup === "guide/rogue"}
                     onClick={(event) => { if (tapSub(event, "rogue")) switchTab("rogue"); }}>
                     <span className="tab-sub-mark" aria-hidden>›</span>{t("통합전략(로그라이크)")}
                     <NewBadge id={`tab:rogue@${tabNewSig("rogue")}`} show={tabHasNewFeature("rogue")} />
                     <span className="tab-group-arrow" aria-hidden>◂</span>
                   </a>
-                  <div className="tab-submenu tab-submenu2" role="group" aria-label={t("통합전략(로그라이크)")}>
+                  <div className="menu-anim tab-submenu tab-submenu2" role="group" aria-label={t("통합전략(로그라이크)")}>
                     {/* 미래시 토픽도 항상 메뉴에 둔다 — 흑백 + '미래시' 표식 (2026-09-04 규칙 변경) */}
                     {ROGUE_TOPICS.filter((tp) => tp.ready).map((tp) => (
                       <a key={tp.id} href={`${localeBase}/rogue/${rogueSlugOf(tp.id)}`}
-                        className={`tab-sub tab-sub2${tab === "rogue" && rogueSlug === rogueSlugOf(tp.id) ? " selected" : ""}${tp.future ? " fut-dim" : ""}`}
+                        className={`menu-item-bar tab-sub tab-sub2${tab === "rogue" && rogueSlug === rogueSlugOf(tp.id) ? " selected" : ""}${tp.future ? " fut-dim" : ""}`}
                         onClick={(event) => {
                           if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                           event.preventDefault(); switchRogueTopic(tp.id);
@@ -2535,21 +2535,21 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 </div>
                 <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/ra") || openGroup === "guide/ra" ? " open" : ""}`}
                   onMouseEnter={hoverHold("guide/ra")} onMouseLeave={hoverRelease("guide")}>
-                  <a href={`${localeBase}/ra`} className={`tab-sub tab-ra${tab === "ra" ? " selected" : ""}`}
+                  <a href={`${localeBase}/ra`} className={`menu-item-bar tab-sub tab-ra${tab === "ra" ? " selected" : ""}`}
                     aria-expanded={openGroup === "guide/ra"}
                     onClick={(event) => { if (tapSub(event, "ra")) switchTab("ra"); }}>
                     <span className="tab-sub-mark" aria-hidden>›</span>{t("생존연산")}
                     <NewBadge id={`tab:ra@${tabNewSig("ra")}`} show={tabHasNewFeature("ra")} />
                     <span className="tab-group-arrow" aria-hidden>◂</span>
                   </a>
-                  <div className="tab-submenu tab-submenu2" role="group" aria-label={t("생존연산")}>
-                    <a href={`${localeBase}/ra/sand`} className={`tab-sub tab-sub2${tab === "ra" && sandboxSlug === "sand" ? " selected" : ""}`}
+                  <div className="menu-anim tab-submenu tab-submenu2" role="group" aria-label={t("생존연산")}>
+                    <a href={`${localeBase}/ra/sand`} className={`menu-item-bar tab-sub tab-sub2${tab === "ra" && sandboxSlug === "sand" ? " selected" : ""}`}
                       onClick={(event) => {
                         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                         event.preventDefault(); switchSandbox("sand");
                       }}><span className="tab-sub-mark" aria-hidden>·</span>{t("사막 이야기")}</a>
                     {/* 중섭 선행 신시즌도 항상 메뉴에 둔다 (2026-09-04 규칙 변경) */}
-                    <a href={`${localeBase}/ra/anchor`} className={`tab-sub tab-sub2 fut-dim${tab === "ra" && sandboxSlug === "anchor" ? " selected" : ""}`}
+                    <a href={`${localeBase}/ra/anchor`} className={`menu-item-bar tab-sub tab-sub2 fut-dim${tab === "ra" && sandboxSlug === "anchor" ? " selected" : ""}`}
                       onClick={(event) => {
                         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                         event.preventDefault(); switchSandbox("anchor");
@@ -2558,7 +2558,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 </div>
                 <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/autochess") || openGroup === "guide/autochess" ? " open" : ""}`}
                   onMouseEnter={hoverHold("guide/autochess")} onMouseLeave={hoverRelease("guide")}>
-                  <a href={`${localeBase}/autochess`} className={`tab-sub tab-autochess${tab === "autochess" ? " selected" : ""}`}
+                  <a href={`${localeBase}/autochess`} className={`menu-item-bar tab-sub tab-autochess${tab === "autochess" ? " selected" : ""}`}
                     aria-expanded={openGroup === "guide/autochess"}
                     onClick={(event) => { if (tapSub(event, "autochess")) switchTab("autochess"); }}>
                     <span className="tab-sub-mark" aria-hidden>›</span>{t("위수협의(명토체스)")}
@@ -2567,10 +2567,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                   </a>
                   {/* 시즌도 통전 테마·생존연산 시즌과 같이 부메뉴에 둔다 (사용자 요청 2026-09-05).
                       최신 시즌이 위 — 지난 시즌은 수치가 당시 것이라 섞이면 안 된다 */}
-                  <div className="tab-submenu tab-submenu2" role="group" aria-label={t("위수협의(명토체스)")}>
+                  <div className="menu-anim tab-submenu tab-submenu2" role="group" aria-label={t("위수협의(명토체스)")}>
                     {[...AC_SEASONS].reverse().map((n) => (
                       <a key={n} href={`${localeBase}/autochess/s${n}`}
-                        className={`tab-sub tab-sub2${tab === "autochess" && autochessSeason === n ? " selected" : ""}`}
+                        className={`menu-item-bar tab-sub tab-sub2${tab === "autochess" && autochessSeason === n ? " selected" : ""}`}
                         onClick={(event) => {
                           if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                           event.preventDefault(); switchAutochess(n);
@@ -2584,7 +2584,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 {/* 이벤트 도감 — 하위 플라이아웃을 달지 않는다. 이벤트가 150개라 메뉴에
                     풀면 화면을 덮는다(통전 테마 6개·생존연산 2시즌과는 규모가 다르다).
                     고르는 것은 화면 안 검색·필터가 맡는다. */}
-                <a href={`${localeBase}/events`} className={`tab-sub tab-event${tab === "event" ? " selected" : ""}`}
+                <a href={`${localeBase}/events`} className={`menu-item-bar tab-sub tab-event${tab === "event" ? " selected" : ""}`}
                   // ⚠ 부메뉴가 없는 줄이라 그냥 두면 **옆 모드(위수 협의 등)의 부메뉴가 열린
                   //   채로 남는다** (사용자 지적 2026-09-17). 여기에 올라오면 열림 경로를
                   //   'guide' 깊이로 되돌려 더 깊은 플라이아웃을 즉시 접는다.
@@ -2598,8 +2598,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 </a>
               </div>
             </div>
-            <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}<NewBadge id={`tab:story@${tabNewSig("story")}`} show={tabHasNewFeature("story")} /></button>
-            <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("테라 아카이브 소개")}</button>
+            <button className={`menu-item-bar tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}<NewBadge id={`tab:story@${tabNewSig("story")}`} show={tabHasNewFeature("story")} /></button>
+            <button className={`menu-item-bar tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("테라 아카이브 소개")}</button>
           </nav>
         </div>
         </div>
@@ -2607,7 +2607,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             래퍼를 풀어 기존 order 배치(3줄 제안·미래시·다크)가 그대로 동작한다.
             언어 전환은 2026-08-17에 1줄(만능검색 왼쪽)로 올라갔다. */}
         <div className="header-sub">
-          {/* 제안 버튼 — 모바일 전용(2줄 맨 왼쪽). 데스크탑에선 숨기고 우하단 FAB을 쓴다. */}
+          {/* 제안 버튼 — 모바일 전용(2줄 맨 왼쪽). 데스크탑은 1줄 맨 오른쪽 .feedback-top-btn (2026-10-10, 종전 우하단 FAB) */}
           {feedbackReady && (
             <button type="button" className="feedback-header-btn" onClick={() => setFeedbackOpen(true)} aria-label={t("제안 게시판")}>
               <span aria-hidden>💬</span> {t("제안")}
@@ -3100,11 +3100,11 @@ function ConceptSearch({ keys, selected, onSet, countFor }: {
           onChange={(event) => { setText(event.target.value); setMiss(""); setOpen(true); }} />
         <button type="button" onClick={() => run()}><span className="btn-icon" aria-hidden>⌕</span>{t("검색")}</button>
         {open && list.length > 0 && (
-          <ul className="concept-drop" role="listbox" aria-label={t("컨셉덱 검색")}>
+          <ul className="concept-drop menu-anim" role="listbox" aria-label={t("컨셉덱 검색")}>
             {list.map((key, index) => (
               <li key={key}>
                 <button type="button" role="option" aria-selected={index === cursor}
-                  className={index === cursor ? "active" : ""}
+                  className={`menu-item-bar${index === cursor ? " active" : ""}`}
                   onMouseEnter={() => setCursor(index)} onClick={() => pick(key)}>
                   {conceptTitle(locale, key)}<span>{countFor(key)}</span>
                 </button>
@@ -4499,18 +4499,19 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   // 제안 버튼(.feedback-fab)을 착지면으로 잡고 free 모드로 선다 — 그 뒤 탑승·산책·낙하는 기존 free 규칙 그대로
   // (버튼 폭 안에서만 걷는다). 버튼이 안 보이는 화면(폰은 숨긴다)이면 종전대로 헤더 슬롯. 헤더 위에 끌어다 놓으면
   // 헤더 슬롯으로 돌아가는 것도 그대로다.
+  // 2026-10-10: 기본 자리 = **화면 오른쪽 아래 바닥** (사용자 지시 "치비 스카디는 그냥 맨 오른쪽 밑에"). 종전엔 우하단에
+  // 떠 있던 제안 버튼 위였는데, 제안 버튼이 헤더로 올라갔다. 바닥 착지(낙하 끝)와 같은 '화면 바닥' 표면(el: null)에 선다
+  // — 그 뒤 산책·잡기·낙하는 기존 free 규칙 그대로
   const placeOnFab = () => {
-    const fab = document.querySelector(".feedback-fab");
     const el0 = btnRef.current;
-    if (!fab || !el0) return;
-    const r = fab.getBoundingClientRect();
-    if (r.width < 30 || r.height < 4) return;
+    if (!el0) return;
     const w = el0.offsetWidth;
     const h = el0.offsetHeight;
-    const nx = Math.max(-w * 0.4, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w * 0.6));
-    surfRef.current = { top: r.top, left: r.left, right: r.right, el: fab, relX: nx - r.left };
+    const floorY = window.innerHeight - 2 - h;
+    const nx = Math.max(0, window.innerWidth - w * 0.85);
+    surfRef.current = { top: floorY + h, left: 0, right: window.innerWidth, el: null, relX: nx };
     setMoveSec(0);
-    setFreePos(nx, r.top - h);
+    setFreePos(nx, floorY);
     modeRef.current = "free";
     setMode("free");
   };

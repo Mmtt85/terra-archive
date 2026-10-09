@@ -598,20 +598,20 @@ export default function AdminPage() {
         <h1>TERRA ARCHIVE 관리</h1>
         <div className="admin-tools admin-tabs">
           {/* 사이트 바로 가기 — 방문 통계 왼쪽 (사용자 지시 2026-10-05) */}
-          <a className="admin-site" href="https://terra-archive.net" target="_blank" rel="noopener noreferrer">terra-archive.net ↗</a>
-          <button className={tab === "visits" ? "selected" : ""} onClick={() => setTab("visits")}>방문 통계</button>
-          <button className={tab === "feedback" ? "selected" : ""} onClick={() => setTab("feedback")}>피드백 ({rows.length})</button>
-          <button className={tab === "rules" ? "selected" : ""} onClick={() => setTab("rules")}>
+          <a className="admin-site tab-btn" href="https://terra-archive.net" target="_blank" rel="noopener noreferrer">terra-archive.net ↗</a>
+          <button className={tab === "visits" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("visits")}>방문 통계</button>
+          <button className={tab === "feedback" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("feedback")}>피드백 ({rows.length})</button>
+          <button className={tab === "rules" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("rules")}>
             플래너 규칙{release ? ` (v${release.version}${release.version !== bundledRules.version ? " ⚠" : ""})` : ""}
           </button>
-          <button className={tab === "changelog" ? "selected" : ""} onClick={() => setTab("changelog")}>
+          <button className={tab === "changelog" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("changelog")}>
             업데이트 내역{changes ? ` (${changes.length})` : ""}
           </button>
-          <button className={tab === "files" ? "selected" : ""} onClick={() => setTab("files")}>
+          <button className={tab === "files" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("files")}>
             파일{files ? ` (${uploadRows.length})` : ""}
           </button>
           {/* Access 세션 종료 — 다시 들어오려면 구글 로그인 필요 */}
-          <button onClick={() => { window.location.href = "/cdn-cgi/access/logout"; }}>로그아웃</button>
+          <button className="tab-btn" onClick={() => { window.location.href = "/cdn-cgi/access/logout"; }}>로그아웃</button>
         </div>
       </header>
       {status && <p className="admin-status">{status}</p>}
@@ -666,12 +666,12 @@ export default function AdminPage() {
         {/* 'plan'(편성 제안)은 뺐다 — 더는 들어오지 않는 종류다 (사용자 지시 2026-08-29).
             KIND_LABEL 에는 남겨 둔다: 옛 행이 그 kind 로 저장돼 있어 배지 이름이 필요하다. */}
         {["all", "feature", "data_error"].map((kind) => (
-          <button key={kind} className={filter === kind ? "selected" : ""} onClick={() => setFilter(kind)}>
+          <button key={kind} className={filter === kind ? "tab-btn selected" : "tab-btn"} onClick={() => setFilter(kind)}>
             {kind === "all" ? "전체" : KIND_LABEL[kind]} ({kind === "all" ? rows.length : rows.filter((row) => row.kind === kind).length})
           </button>
         ))}
         {([["open", "대응미완료"], ["reviewed", "대응완료"]] as const).map(([key, label]) => (
-          <button key={key} className={statusFilter === key ? "selected" : ""} onClick={() => setStatusFilter(key)}>
+          <button key={key} className={statusFilter === key ? "tab-btn selected" : "tab-btn"} onClick={() => setStatusFilter(key)}>
             {label} ({rows.filter((row) => (key === "reviewed" ? row.reviewed_at : !row.reviewed_at)).length})
           </button>
         ))}
@@ -811,9 +811,9 @@ export default function AdminPage() {
       {fileStatus && <p className="admin-status">{fileStatus}</p>}
       <div className="admin-rules">
         <div className="admin-tools">
-          <button className={fileSub === "uploads" ? "selected" : ""} onClick={() => setFileSub("uploads")}>내 업로드 ({uploadRows.length})</button>
-          <button className={fileSub === "feedback" ? "selected" : ""} onClick={() => setFileSub("feedback")}>제안 이미지 ({feedbackRows.length})</button>
-          <button className={fileSub === "assets" ? "selected" : ""} onClick={() => setFileSub("assets")}>사이트 에셋{Array.isArray(assetFiles) ? ` (${assetRows.length.toLocaleString()})` : ""}</button>
+          <button className={fileSub === "uploads" ? "tab-btn selected" : "tab-btn"} onClick={() => setFileSub("uploads")}>내 업로드 ({uploadRows.length})</button>
+          <button className={fileSub === "feedback" ? "tab-btn selected" : "tab-btn"} onClick={() => setFileSub("feedback")}>제안 이미지 ({feedbackRows.length})</button>
+          <button className={fileSub === "assets" ? "tab-btn selected" : "tab-btn"} onClick={() => setFileSub("assets")}>사이트 에셋{Array.isArray(assetFiles) ? ` (${assetRows.length.toLocaleString()})` : ""}</button>
           <input className="file-search" value={fileQuery} onChange={(e) => setFileQuery(e.target.value)} placeholder="파일 이름 검색…" />
           <button onClick={() => loadFiles()}>새로고침</button>
         </div>

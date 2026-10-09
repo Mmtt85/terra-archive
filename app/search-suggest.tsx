@@ -73,9 +73,9 @@ export function SearchSuggest({ query, items, onPick, max = 10 }: {
   return (
     <span className="suggest-host" ref={hostRef}>
       {show && (
-        <div className="suggest-drop" role="listbox" aria-label={t("검색 제안")}>
+        <div className="suggest-drop menu-anim" role="listbox" aria-label={t("검색 제안")}>
           {items.slice(0, max).map((item) => (
-            <button key={item.key} type="button" role="option" aria-selected={false}
+            <button key={item.key} type="button" role="option" aria-selected={false} className="menu-item-bar"
               // 입력란 blur보다 먼저 실행돼 목록이 닫히며 클릭이 증발하는 것을 막는다
               onPointerDown={(event) => event.preventDefault()}
               onClick={() => { setClosedFor(query); onPick(item.key); }}>

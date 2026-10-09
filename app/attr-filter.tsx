@@ -139,7 +139,7 @@ function AttrRow({ item, path, level, subFor, hoverMode, openPath, openAt, pick 
       {/* ⚠ role="option"에는 aria-expanded를 달 수 없다 (jsx-a11y) — 펼침 상태는 목록
           자체(aria-label 있는 중첩 listbox)와 › / ˅ 표식으로 전달된다 */}
       <button type="button" role="option" aria-selected={isSelected}
-        className={isSelected ? "selected" : ""}
+        className={`menu-item-bar${isSelected ? " selected" : ""}`}
         onClick={() => {
           // 터치: 하위가 있으면 **펼치기**가 우선 (부모만 고르려면 펼쳐진 '전체'를 쓴다).
           // 마우스: 줄을 누르면 종전처럼 그 값으로 확정하고 닫는다.
@@ -157,7 +157,7 @@ function AttrRow({ item, path, level, subFor, hoverMode, openPath, openAt, pick 
       </button>
       {/* 터치 전용 — 마우스 모드의 하위는 AttributeFilter가 portal로 옆에 띄운다 */}
       {!hoverMode && openHere && sub && (
-        <ul className="attr-sub" role="listbox" aria-multiselectable={!sub.single} aria-label={sub.title}>
+        <ul className="attr-sub menu-anim" role="listbox" aria-multiselectable={!sub.single} aria-label={sub.title}>
           <li className="attr-sub-head" aria-hidden>{sub.title}</li>
           {/* 짧은 목록에도 항상 붙인다 — 루트 칸과 같은 규칙 (사용자 재확정 2026-08-10:
               긴 칸에만 얹었더니 "뭐가 바뀐지 모르겠다"는 지적을 받았다) */}
@@ -165,7 +165,7 @@ function AttrRow({ item, path, level, subFor, hoverMode, openPath, openAt, pick 
           {/* 검색 중에는 '전체'를 감춘다 — 찾는 값을 치고 있는데 부모 확정 버튼이 끼면 헷갈린다 */}
           {!subQuery.trim() && (
             <li>
-              <button type="button" role="option" aria-selected={false} className="attr-sub-all"
+              <button type="button" role="option" aria-selected={false} className="attr-sub-all menu-item-bar"
                 onClick={() => pick(level, item)}>
                 <i aria-hidden />{t("{name} 전체", { name: label })}
                 <span>{level.countForItem(item)}</span>
@@ -202,14 +202,14 @@ function AttrFlyout({ sub, parentLevel, parent, place, subFor, openPath, openAt,
   const parentLabel = parentLevel.labelFor ? parentLevel.labelFor(parent) : parent;
   const shown = filterItems(sub.items, query, sub.labelFor);
   return (
-    <ul className="attr-drop attr-fly" style={place}
+    <ul className="attr-drop attr-fly menu-anim" style={place}
       role="listbox" aria-multiselectable={!sub.single} aria-label={sub.title}>
       <li className="attr-sub-head" aria-hidden>{sub.title}</li>
       <SearchRow label={sub.title} value={query} onChange={setQuery} />
       {/* 하위로 좁히지 않고 부모 값만 고른다 — 검색 중에는 감춘다 */}
       {!query.trim() && (
         <li>
-          <button type="button" role="option" aria-selected={false} className="attr-sub-all"
+          <button type="button" role="option" aria-selected={false} className="attr-sub-all menu-item-bar"
             onClick={() => pick(parentLevel, parent)}>
             <i aria-hidden />{t("{name} 전체", { name: parentLabel })}
             <span>{parentLevel.countForItem(parent)}</span>
@@ -298,7 +298,7 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
           <Fragment key={g.title}>
           {g.breakBefore && <span className="attr-cats-break" aria-hidden />}
           <button type="button" disabled={g.disabled} data-title={g.title}
-            className={`attr-cat${open === g.title ? " open" : ""}${g.selected.length ? " has-sel" : ""}`}
+            className={`drop-btn attr-cat${g.selected.length ? " on" : ""}`}
             aria-expanded={open === g.title} title={g.disabled ? g.hint : undefined}
             onClick={() => {
               setQuery(""); setOpenPath([]); setAnchors([]);
@@ -306,7 +306,7 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
             }}>
             {g.title}{g.selected.length > 0 && <em>{g.selected.length}</em>}
             {g.disabled && g.hint && <small className="attr-cat-hint">{g.hint}</small>}
-            <span className="attr-caret" aria-hidden>{open === g.title ? "▴" : "▾"}</span>
+            <span className="attr-caret" aria-hidden>▾</span>
           </button>
           </Fragment>
         ))}
@@ -327,7 +327,7 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
           }
           return (
             <>
-              <ul className="attr-drop" ref={dropRef} style={dropPos ? { left: dropPos.left, top: dropPos.top } : undefined}
+              <ul className="attr-drop menu-anim" ref={dropRef} style={dropPos ? { left: dropPos.left, top: dropPos.top } : undefined}
                 role="listbox" aria-multiselectable={!active.single} aria-label={active.title}>
                 <li className="attr-search">
                   {/* 모바일은 자동 포커스하지 않는다 — 키보드가 바로 솟아 목록을 가린다 */}
