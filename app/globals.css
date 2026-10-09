@@ -29547,3 +29547,36 @@ html.rg-theme.rg6 { --rg-hue: #2fbfa5; }
 .rg-modal .rg-enc-thumb {
   border-color: transparent !important;
 }
+
+/* ── 카드 떠오르기 움직임 통일 (사용자 지시 2026-10-10 "스토리 카드처럼 부드럽게 전부 다") ──
+   카드마다 0.12~0.25s·곡선이 제각각이었다 — 위치(transform/translate)·그림자·바탕을 같은 0.3s 감속 곡선으로 */
+:root :is(.chron-row, .chron-card, .operator-card, .en-card, .st-card, .it-card, .ev-card, .sb-card, .ac-card, .me-card, .farm-card, .about-card, .crew-card, .pt-tile,
+  .rg-zone-cards > *, .rg-sec-card, .rg-skybtn, .rg-zonecard, .rg-zone, .rg-relic, .rg-ending, .rg-enemy-cell, .rg-visitor, .rg-stagecard, .rg-nodetype, .rg-enc-item) {
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
+    translate 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
+    background-color 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root :is(.chron-row, .operator-card, .en-card, .st-card, .it-card, .ev-card, .sb-card, .ac-card, .farm-card, .about-card, .pt-tile,
+    .rg-zone-cards > *, .rg-sec-card, .rg-skybtn, .rg-stagecard, .rg-enc-item) { transition: none; }
+}
+/* 눌리지 않는 카드는 올려도 반응하지 않는다 (사용자 지시 2026-10-10 "클릭 안 되는 카드는 테두리 빛날 필요 없다") —
+   빛 번짐·떠오르기는 누를 수 있는 카드(button·a)에만. 소장품·전시관·엔딩·난이도 표·방문객·노드 종류는 평소 그대로 */
+.rg :is(.rg-zonecard, .rg-sec-card, .rg-zone, .rg-relic, .rg-ending, .rg-diff-table, .rg-enemy-cell, .rg-visitor, .rg-stagecard):not(button, a, [role="button"], .clickable):hover,
+.rg-modal :is(.rg-stagecard, .rg-nodetype, .rg-enc-item):not(button, a, [role="button"], .clickable):hover {
+  box-shadow:
+    inset 0 1px 0 #ffffff1c,
+    inset 0 0 0 1px #ffffff08,
+    0 12px 26px -12px #000d;
+  translate: none;
+}
+/* 누를 수 있는 카드(button·a·role=button·.clickable — 소장품 카드는 article 이지만 눌러서 상세가 열린다)는 2px 떠오른다.
+   층 카드(.rg-zone-cards > *)는 자리 잡기 transform 이 따로 떠오르기를 맡아 뺀다 */
+.rg :is(.rg-relic, .rg-ending, .rg-enemy-cell, .rg-visitor, .rg-stagecard):is(button, a, [role="button"], .clickable):hover,
+.rg-modal :is(.rg-stagecard, .rg-nodetype, .rg-enc-item):is(button, a, [role="button"], .clickable):hover {
+  translate: 0 -2px;
+}
