@@ -10,7 +10,7 @@ import { confirmedDay, fmtMonthDay } from "./kr-confirmed";
 import { usePageHelp } from "./page-help";
 import { NewBadge } from "./new-badge";
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { asset, storyCutUrl } from "./assets";
+import { asset, storyCutUrl, storyThumbUrl } from "./assets";
 import { Dropdown } from "./dropdown";
 import { scrollMainTop } from "./scroll";
 // 스샷 레이더 (/stories 설치, 2026-07-24) — 게임 전문 대사 화면을 인식해 해당 에피소드로 이동
@@ -1262,7 +1262,14 @@ function ChronologyView({ onShowOperator }: { onShowOperator?: (operatorId: stri
       byYear.get(y)!.push(it);
     }
     const placed = new Set(CHRON_ORDER);
-    unplaced.push(...CHRON_ITEMS.filter((it) => !placed.has(it.key)));
+    // 순서에 없어도 연도가 확정된 항목은 그 해 끝으로 — 한섭 스토리라인 표에 아직 없는 중섭 선행 메인 장
+    // (상전이 임계 main_17, 1102년)이 연도를 달고도 '미정'에 떨어졌다 (사용자 지적 2026-10-10)
+    for (const it of CHRON_ITEMS) {
+      if (placed.has(it.key)) continue;
+      if (it.terraYear == null) { unplaced.push(it); continue; }
+      if (!byYear.has(it.terraYear)) byYear.set(it.terraYear, []);
+      byYear.get(it.terraYear)!.push(it);
+    }
     const out: { key: string; year: number | null; items: ChronItem[] }[] = [...byYear.entries()]
       .sort((x, y) => x[0] - y[0])
       .map(([year, items]) => ({ key: `y${year}`, year, items }));
@@ -1345,7 +1352,7 @@ function ChronologyView({ onShowOperator }: { onShowOperator?: (operatorId: stri
                 return (
                   <li key={it.key} className="chron-row" style={{ ["--arc" as string]: it.arc ? arcColor(it.arc) : "#9aa0a3" }}>
                     <button type="button" className={`chron-card k-${it.kind}${it.eventId && inDex(it) ? " has-dex" : ""}`} onClick={() => openIf(it)} disabled={!it.eventId && !inDex(it)}>
-                      <span className="chron-card-thumb">{thumb ? <img src={asset(thumb)} alt="" loading="lazy" decoding="async" /> : null}</span>
+                      <span className="chron-card-thumb">{thumb ? <img src={storyThumbUrl(thumb)} alt="" loading="lazy" decoding="async" /> : null}</span>
                       <span className="chron-card-body">
                         <span className="chron-card-meta">
                           <span className="chron-card-kind">{t(KIND_KO[it.kind])}</span>
@@ -1554,7 +1561,7 @@ function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; gr
       <>
         <div className={`story-thumb${thumb ? "" : " story-thumb-none"}`}>
           {thumb
-            ? <img src={asset(thumb)} alt="" loading="lazy" decoding="async" />
+            ? <img src={storyThumbUrl(thumb)} alt="" loading="lazy" decoding="async" />
             : <span className="story-thumb-kind">{t(KIND_KO[it.kind])}</span>}
           {digest
             ? <em className="story-ready-badge">{t("AI 요약")}</em>
