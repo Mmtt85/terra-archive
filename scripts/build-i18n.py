@@ -462,7 +462,8 @@ def build_locale(prefix):
                     # 텍스트를 수확 사전 + 수동(ko→로케일)으로 번역해 채운다 (미스는 KR 폴백)
                     buffs_out[bid] = {"name": _tr(s.get("name")), "desc": _tr(s.get("description"))}
     recruit_tags = {str(t["tagId"]): t["tagName"] for t in gacha.get("gachaTags") or []}
-    rooms_out = {rid: room_names.get(rid, rid) for rid in infra["rooms"].keys()}
+    # 로케일 테이블에 없는 CN 전용 시설(재활용소 回收站)은 infra.json 한국어 이름을 수동 사전(ko→로케일)으로
+    rooms_out = {rid: room_names.get(rid) or manual2.get(r.get("name") or "") or rid for rid, r in infra["rooms"].items()}
     extra = {"names": names, "recruitTags": recruit_tags, "buffs": buffs_out, "rooms": rooms_out}
     json.dump(extra, open(f"{REPO}/app/data/extra-i18n.{out_suffix}.json", "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))

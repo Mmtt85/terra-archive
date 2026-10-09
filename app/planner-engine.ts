@@ -5,6 +5,7 @@
 // ⚠ 이 파일이나 rules.json을 고치면 반드시 `node scripts/verify-plan.mjs`로 회귀 검증할 것 —
 // 픽스처(검증된 정배)와 스냅샷이 "굼 없는 레토"류 회귀를 커밋 전에 잡는다.
 import infraData from "./data/infra.json";
+import sanityData from "./data/sanity.json";
 import { C, RULES, type SynergySetDef } from "./rules";
 
 export type TokenGen = { token: string; estimate: number; perMember?: { per: number; cap: number; match: string }; perDormLevel?: number };
@@ -176,7 +177,18 @@ export type RoomSpec = {
   // 발전소 +60/+130/+270, 제조·무역 슬롯 1/2/3, 제어센터 슬롯=레벨(1~5), 숙소 Lv1~5 전력만 증가
   // fx 필드 (2026-07-24, 방 상세 레벨 표): 방 종류별 레벨 기능 — 오더 상한·등급(무역),
   // 보관함(제조), 회복·분위기(숙소), 친구 상한(응접), 특화 상한(훈련), 레시피 누적(가공)
-  phases?: { slots: number; electricity: number; orderLimit?: number; orderRarity?: number; capacity?: number; recover?: number; ambience?: number; friendSlots?: number; specLimit?: number; recipes?: number }[];
+  phases?: { slots: number; electricity: number; orderLimit?: number; orderRarity?: number; capacity?: number; recover?: number; ambience?: number; friendSlots?: number; specLimit?: number; recipes?: number; speed?: number }[];
+  /** KR building_data에 없고 CN에서만 온 시설 (재활용소) — 미래시가 켜졌을 때만 레이아웃에 들어간다 */
+  unreleased?: boolean;
+  /** 재활용소 산출 모델 (build-infra.py `_recycle_spec`, INFRA-RULES §11) */
+  recycle?: RecycleSpec;
+};
+export type RecycleSpec = {
+  cycleSec: number;        // 뽑기 1회 기본 소요 (recycleTimeRequirement 172,800초 = 48시간)
+  basicSpeedBuff: number;  // 인당 기본 가속 (recycleData.basicSpeedBuff 0.01 = +1%)
+  speedUpUnlockLevel: number;
+  drawAp: number;          // 뽑기 1회 기대 이성 (기본 풀 + 추가 풀 게이지 기여, sanity.json 단가)
+  baseAp: number; extraAp: number; inputItems: number;
 };
 
 export const infra = infraData as { rooms: Record<string, RoomSpec>; ops: InfraOp[] };
@@ -321,6 +333,10 @@ const SUPPORT_CELLS: LayoutCell[] = [
   { key: "DORM-2", room: "DORMITORY", label: "숙소 3" },
   { key: "DORM-3", room: "DORMITORY", label: "숙소 4" },
 ];
+// 재활용소(回收站) — 중섭 신설 시설 (사용자 규칙 2026-10-09, INFRA-RULES §11). **미래시가 켜졌을
+// 때만** 레이아웃 끝에 붙는다 — 꺼져 있으면 LAYOUT이 종전과 한 글자도 다르지 않다(회귀 보장).
+// 화면 위치는 CSS(.ship.has-recycle)가 훈련실 바로 밑에 잡는다.
+const RECYCLE_CELL: LayoutCell = { key: "RECYCLE", room: "RECYCLE", label: "재활용소" };
 const POWER_CELLS: LayoutCell[] = [
   { key: "POWER-0", room: "POWER", label: "발전소 1" },
   { key: "POWER-1", room: "POWER", label: "발전소 2" },
@@ -403,7 +419,7 @@ const LEVEL_DEFAULTS: Partial<Record<LayoutPreset, Levels>> = {
 };
 // 활성 레이아웃 기준 권장 레벨 전체 맵 (만렙 + 프리셋별 오버라이드. custom = 전부 만렙)
 export function suggestedLevels(preset: LayoutPreset): Levels {
-  const cells = preset === "custom" ? buildCustomDef(CUSTOM_ROOMS).cells : (LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"]).cells;
+  const cells = withRecycleCell(preset === "custom" ? buildCustomDef(CUSTOM_ROOMS).cells : (LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"]).cells);
   const out: Levels = {};
   for (const cell of cells) out[cell.key] = maxLevelOf(cell.room);
   return { ...out, ...(LEVEL_DEFAULTS[preset] ?? {}) };
@@ -462,6 +478,22 @@ function buildCustomDef(rooms: CustomRoom[], products: (CustomProduct | null)[] 
 
 // 활성 레이아웃 상태 — export let 라이브 바인딩이라 setLayoutPreset 후 임포터가 새 값을 본다.
 // ⚠ 기본은 반드시 243 (verify-plan 픽스처·기존 저장 플랜 호환). UI가 저장된 프리셋을 복원한다.
+// ── 재활용소 스위치 (미래시 + 우선도) ───────────────────────────────────────────
+// RECYCLE_MODE null = 미래시 꺼짐 → 칸 자체가 없다. "off" = 칸은 있되 비운다(홈바운드도 다른 데
+// 안 쓴다 — 다른 근무 스킬이 없으니). "normal" = 이성 환산 그대로, "first" = 보유자를 다른 방에서도 빼 온다.
+// 워커는 모듈 인스턴스가 따로라 setLayoutPreset처럼 매 잡마다 동기화한다.
+export type RecycleMode = "off" | "normal" | "first";
+export let RECYCLE_MODE: RecycleMode | null = null;
+export const RECYCLE_SPEC: RecycleSpec | null = infra.rooms.RECYCLE?.recycle ?? null;
+function withRecycleCell(cells: LayoutCell[]): LayoutCell[] {
+  return RECYCLE_MODE && RECYCLE_SPEC ? [...cells, RECYCLE_CELL] : cells;
+}
+/** 미래시 켜짐이면 mode, 꺼짐이면 null. 활성 레이아웃을 다시 짓는다 */
+export function setRecycle(mode: RecycleMode | null) {
+  RECYCLE_MODE = mode;
+  setLayoutPreset(activeLayout);
+}
+
 export let activeLayout: LayoutPreset = "243";
 export let LAYOUT: LayoutCell[] = LAYOUT_DEFS["243"].cells;
 export let cellByKey = new Map(LAYOUT.map((cell) => [cell.key, cell]));
@@ -474,7 +506,7 @@ export function setLayoutPreset(preset: LayoutPreset, customRooms?: CustomRoom[]
   if (customProducts && customProducts.length === 9) CUSTOM_PRODUCTS = [...customProducts];
   const def = preset === "custom" ? buildCustomDef(CUSTOM_ROOMS, CUSTOM_PRODUCTS) : LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"];
   activeLayout = preset === "custom" ? "custom" : def === LAYOUT_DEFS["243"] ? "243" : preset;
-  LAYOUT = def.cells;
+  LAYOUT = withRecycleCell(def.cells);
   cellByKey = new Map(LAYOUT.map((cell) => [cell.key, cell]));
   GOLD_LINES = def.goldLines;
   FACILITY_COUNTS = def.counts;
@@ -581,7 +613,9 @@ const dormOrder = (op: InfraOp, occupantsOf: (key: string) => InfraOp[]): string
       return 0;  // 동률은 LAYOUT 순서(숙소 1→4) — 편성은 결정적이어야 한다
     }).map((c) => c.key);
 };
-const totalLevelSum = () => LAYOUT.reduce((s, c) => s + levelOf(c.key), 0);
+// 재활용소 레벨은 빼고 센다 — 로봇 수의 근거(만렙 합 64)가 KR 기지 기준이고, 신설 시설이 로봇을
+// 늘리는지는 데이터로 확인되지 않았다 (미래시 켜짐만으로 다른 방 점수가 흔들리지 않게)
+const totalLevelSum = () => LAYOUT.reduce((s, c) => s + (c.room === "RECYCLE" ? 0 : levelOf(c.key)), 0);
 // 활성 레이아웃에서 제조소가 가공 중인 품목 **종류 수** (쿼츠 '정확한 스케줄')
 const factoryProductKinds = () =>
   new Set(LAYOUT.filter((c) => c.room === "MANUFACTURE" && c.product).map((c) => c.product)).size;
@@ -605,11 +639,13 @@ export function genEstimate(g: TokenGen): number {
 export const ROOM_ACCENT: Record<string, string> = {
   TRADING: "#4d9dd6", MANUFACTURE: "#e0b13e", POWER: "#b7d940", CONTROL: "#c3d24b",
   MEETING: "#8f7fc0", WORKSHOP: "#c78a54", HIRE: "#6fa08a", TRAINING: "#c05f6e", DORMITORY: "#7f8ea3",
+  RECYCLE: "#6ccbcb", // 게임 버프 색(recycle buffColor)
 };
 
 export const UNIT: Record<string, string> = {
   MANUFACTURE: "생산력", TRADING: "오더 효율·품질", POWER: "드론 회복", MEETING: "단서 속도",
   HIRE: "연락 속도", WORKSHOP: "부산물", TRAINING: "훈련 속도", CONTROL: "지원", DORMITORY: "회복",
+  RECYCLE: "재료 전환",
 };
 
 export const PARK_KEYS = ["WORKSHOP"];
@@ -2912,6 +2948,9 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   // 편성 확정 — 씨앗 주차 중 수혜 오퍼가 결국 배치되지 않은 짝은 숙소에서 빼고(이유 없는
   // 숙소 인원은 편성을 읽을 수 없게 만든다), 새로 필요해진 짝은 이득일 때만 넣는다.
   if (park) parkEnablers();
+  // 재활용소 (미래시 전용, §11) — 감사·백필이 다 끝난 **뒤**에 남은 인원으로만 채운다. 미래시가
+  // 꺼져 있으면 LAYOUT에 칸이 없어 아무것도 안 한다 (종전 편성과 바이트 단위 동일).
+  fillRecycle(assignments, roster, reserved, roomLockOps);
 
   // ledger: 실제 배치 기준으로 원장을 다시 센다 (recountTokens — 손 배치 뒤 UI도 같은 함수를 쓴다)
   const rosterById = new Map(roster.map((op) => [op.id, op]));
@@ -2976,6 +3015,178 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
     }
   }
   return total;
+}
+
+// ── 재활용소(回收站) — 하루 이성 환산과 배치 (사용자 규칙 2026-10-09, INFRA-RULES §11) ─────────
+// 재활용소는 아무도 없어도 48시간마다 재료 한 번(기대 ≈86 이성)을 뽑는다. 오퍼는 그 속도를 올린다.
+// 속도 배수 = 레벨 기본 속도(Lv1·2 1.0 / Lv3 1.2) + 인당 기본 +1%(basicSpeedBuff) + 스킬 %
+// — **더하기로 본다**(추정, §8). 재료 투입(Lv3 가속 연료)은 플레이어 선택이고 이성상 손해라
+// 계산에 넣지 않는다(T3 하나 ≈43 이성으로 ≈3 이성어치 가속).
+// planScore에는 넣지 않는다 — 다른 방과의 비교는 아래 fillRecycle이 **하루 이성**으로 따로 한다.
+const SANITY = sanityData as { lmdPerAp: number; expPerAp: number; goldLmd: number };
+export type RecycleRate = { speed: number; skillPct: number; basePct: number; mult: number; drawsPerDay: number; apPerDay: number };
+/** 재활용소 팀 하나의 하루 산출 (그 팀이 하루 내내 근무한다고 볼 때) */
+export function recycleRate(team: InfraOp[], key = "RECYCLE"): RecycleRate | null {
+  const spec = RECYCLE_SPEC;
+  if (!spec) return null;
+  const speed = infra.rooms.RECYCLE?.phases?.[levelOf(key) - 1]?.speed ?? 1;
+  const skillPct = team.reduce((sum, op) => sum + activeSkills(op, "RECYCLE").reduce((a, sk) => a + Math.max(0, sk.value), 0), 0);
+  const basePct = team.length * spec.basicSpeedBuff * 100;
+  const mult = speed + (skillPct + basePct) / 100;
+  const drawsPerDay = (86400 / spec.cycleSec) * mult;
+  return { speed, skillPct, basePct, mult, drawsPerDay, apPerDay: drawsPerDay * spec.drawAp };
+}
+/** 편성 전체의 재활용소 하루 산출 — A·B조를 교대 시계 비율로 섞는다 (dailyYield·회수일과 같은 하루 모델) */
+export function recycleDaily(plan: Plan, byId: Map<string, InfraOp>): { apPerDay: number; drawsPerDay: number; shifts: RecycleRate[]; weights: number[] } | null {
+  if (!RECYCLE_SPEC || !cellByKey.has("RECYCLE")) return null;
+  const hours = [plan.shiftHours?.[0] ?? 12, plan.shiftHours?.[1] ?? 12];
+  const span = hours[0] + hours[1] || 24;
+  const weights = hours.map((h) => h / span);
+  const shifts: RecycleRate[] = [];
+  let ap = 0, draws = 0;
+  for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+    const ids = plan.assignments.RECYCLE?.[Math.min(shift, (plan.assignments.RECYCLE?.length ?? 1) - 1)] ?? [];
+    const rate = recycleRate(ids.map((id) => byId.get(id)).filter(Boolean) as InfraOp[])!;
+    shifts.push(rate);
+    ap += rate.apPerDay * weights[shift];
+    draws += rate.drawsPerDay * weights[shift];
+  }
+  return { apPerDay: ap, drawsPerDay: draws, shifts, weights };
+}
+// 다른 방 효율 +1%p가 하루 만드는 이성 — 육성 추천 회수일(planner-invest)과 **같은 환산**.
+// 제조소 1포인트/초 기준 1%p·하루 = 864pt, 순금 4,320pt → 용문폐 500(sanity goldLmd), 중급작전기록
+// 10,800pt = 1,000exp. 무역소는 순금 파이프라인이라 순금과 같은 값. 그 밖의 방은 환산 근거가 없어 0.
+const PT_DAY_1PCT = 3600 * 0.01 * 24;
+export function apPerPctDay(key: string): number {
+  const cell = cellByKey.get(key);
+  const room = cell?.room ?? key;
+  const goldAp = (PT_DAY_1PCT / 4320) * SANITY.goldLmd / SANITY.lmdPerAp;
+  const expAp = (PT_DAY_1PCT / 10.8) / SANITY.expPerAp;
+  if (room === "TRADING") return goldAp;
+  if (room === "MANUFACTURE") {
+    if (cell?.product === "exp") return expAp;
+    if (cell?.product === "gold") return goldAp;
+    const cells = LAYOUT.filter((c) => c.room === "MANUFACTURE");
+    const gold = cells.filter((c) => c.product === "gold").length;
+    const total = cells.length || 1;
+    return (goldAp * gold + expAp * (total - gold)) / total;
+  }
+  return 0;
+}
+// 오퍼의 '쓸모' — 재활용소 빈자리 채우기용 (작을수록 먼저 들어간다). 재활용소 밖 스킬의 % 값 합에,
+// %로는 0인 구조 스킬(창고 용량·용량 변환·토큰 생성/소비/전환·증폭·회복·교차 오라)은 한 개당 10으로 친다
+// — 벌컨·버블처럼 혼자선 0%여도 시너지로 쓰이는 오퍼를 '쓸모없음'으로 오인하지 않게.
+const usefulness = (op: InfraOp): number => op.skills.reduce((sum, sk) => {
+  if (sk.room === "RECYCLE") return sum;
+  if (sk.value > 0) return sum + sk.value;
+  const structural = sk.cap || sk.capConv || sk.tokenGen.length || sk.tokenUse.length || sk.convert || sk.amp
+    || sk.recoverRoom || sk.recoverRoomPer || sk.recoverAura || sk.crossBuff || sk.globalAura;
+  return sum + (structural ? 10 : 0);
+}, 0);
+const recycleSkillOf = (op: InfraOp): number =>
+  activeSkills(op, "RECYCLE").reduce((a, sk) => a + Math.max(0, sk.value), 0);
+
+/**
+ * 재활용소 채우기 (buildPlan 마지막). 규칙 (사용자 확정 2026-10-09):
+ *  ① 재활용소 스킬 보유자를 먼저 — 둘 이상이면 이득(스킬 %) 순, A조부터.
+ *  ② 보유자가 다른 방에 앉아 있으면: '우선'은 무조건 빼 온다. '보통'은 재활용소 하루 이성 이득이
+ *     그 방에서 빠지는 하루 이성 손실보다 클 때만 (손실은 빈자리를 벤치로 다시 채운 뒤의 차이,
+ *     환산 근거가 없는 방 — 발전소·제어센터·사무실·응접실 — 은 빼 오지 않는다).
+ *  ③ 남는 자리는 **어느 방에도 배치되지 않은 오퍼 중 쓸모가 가장 적은 오퍼**(기본 +1%)로. 다른 방에서
+ *     이득을 내는 오퍼는 빼 오지 않는다. 남는 오퍼가 없으면 비운다.
+ *  ④ '끔'이면 비운다(사용자 고정만 남긴다). 재활용소는 교대 대기열이 있는 근무 시설이라
+ *     (slotPrequeDatas.RECYCLE.isPreque) A·B 동시 배치 금지를 그대로 따른다.
+ */
+function fillRecycle(
+  assignments: Record<string, string[][]>, roster: InfraOp[], reserved: Map<string, string>,
+  roomLockOps: Record<string, { op: InfraOp; shift: number | null }[]>,
+): void {
+  const KEY = "RECYCLE";
+  if (!RECYCLE_MODE || !RECYCLE_SPEC || !cellByKey.has(KEY)) return;
+  const slots = slotsFor(KEY);
+  const teams: string[][] = [[], []];
+  for (const pin of roomLockOps[KEY] ?? []) {
+    for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+      if (pin.shift != null && pin.shift !== shift) continue;
+      if (teams[shift].length < slots) teams[shift].push(pin.op.id);
+    }
+  }
+  assignments[KEY] = teams;
+  if (RECYCLE_MODE === "off") return;
+  const placed = (): Set<string> => {
+    const ids = new Set<string>();
+    for (const shifts of Object.values(assignments)) for (const team of shifts) for (const id of team) ids.add(id);
+    return ids;
+  };
+  const byId = new Map(roster.map((op) => [op.id, op]));
+  const drawAp = RECYCLE_SPEC.drawAp;
+  const cycleDays = RECYCLE_SPEC.cycleSec / 86400;
+  // 스킬 +v% 를 근무 비율 w 동안 → 하루 이성
+  const recycleGain = (pct: number, w: number) => (pct / 100) / cycleDays * drawAp * w;
+  const holders = roster.filter((op) => recycleSkillOf(op) > 0)
+    .sort((a, b) => recycleSkillOf(b) - recycleSkillOf(a) || a.rarity - b.rarity || a.seq - b.seq);
+  const quickScore = (key: string, ids: string[]) => {
+    const cell = cellByKey.get(key);
+    if (!cell) return 0;
+    return teamScore(ids.map((id) => byId.get(id)).filter(Boolean) as InfraOp[], cell.room, { product: cell.product, tokenPoints: {} });
+  };
+  for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+    const team = teams[shift];
+    for (const h of holders) {
+      if (team.length >= slots) break;
+      const where = placed();
+      if (!where.has(h.id)) { team.push(h.id); continue; }
+      if (reserved.has(h.id)) continue; // 시드·고정·토큰 예약은 건드리지 않는다
+      // 다른 방에 앉은 보유자 — 근무 방이면 이득 비교 후 빼 온다 (숙소·재활용소에 이미 있으면 그대로)
+      let from: { key: string; s: number } | null = null;
+      for (const [key, shifts] of Object.entries(assignments)) {
+        if (key === KEY) continue;
+        shifts.forEach((t, s) => { if (!from && t.includes(h.id)) from = { key, s }; });
+      }
+      if (!from) continue;
+      const { key: fromKey, s: fromShift } = from as { key: string; s: number };
+      const fromRoom = cellByKey.get(fromKey)?.room ?? fromKey;
+      if (fromRoom === "DORMITORY") continue;
+      const before = assignments[fromKey][fromShift];
+      const without = before.filter((id) => id !== h.id);
+      // 빈자리 재충원 — 백필 절대룰(§1)과 같은 방(제조·무역·응접·사무)만, 벤치에서 그 방 점수 최고
+      const BODY = new Set(["MANUFACTURE", "TRADING", "MEETING", "HIRE"]);
+      let refill: string | null = null;
+      if (BODY.has(fromRoom)) {
+        let bestScore = -Infinity;
+        for (const op of roster) {
+          if (op.id === h.id || where.has(op.id) || reserved.has(op.id)) continue;
+          const sc = quickScore(fromKey, [...without, op.id]);
+          if (sc > bestScore + 1e-9) { bestScore = sc; refill = op.id; }
+        }
+      }
+      const after = refill ? [...without, refill] : without;
+      if (RECYCLE_MODE === "normal") {
+        const per = apPerPctDay(fromKey);
+        // 환산 근거가 없는 근무 방(발전·제어·사무·응접)은 손실을 잴 수 없어 빼 오지 않는다.
+        // 가공소·훈련실은 하루 산출(총점)에 안 들어가는 자리라 손실 0으로 본다.
+        if (!per && fromRoom !== "WORKSHOP" && fromRoom !== "TRAINING") continue;
+        const loss = per ? (quickScore(fromKey, before) - quickScore(fromKey, after)) * per * 0.5 : 0;
+        const gain = recycleGain(recycleSkillOf(h), 0.5);
+        if (!(gain > loss + 1e-9)) continue;
+      }
+      assignments[fromKey][fromShift] = after;
+      team.push(h.id);
+    }
+    // 남는 자리 — 아무 데도 안 앉은 오퍼 중 쓸모가 가장 적은 순
+    while (team.length < slots) {
+      const where = placed();
+      let pick: InfraOp | null = null;
+      for (const op of roster) {
+        if (where.has(op.id) || reserved.has(op.id)) continue;
+        if (!pick) { pick = op; continue; }
+        const du = usefulness(op) - usefulness(pick);
+        if (du < -1e-9 || (Math.abs(du) < 1e-9 && (op.rarity < pick.rarity || (op.rarity === pick.rarity && op.seq < pick.seq)))) pick = op;
+      }
+      if (!pick) break;
+      team.push(pick.id);
+    }
+  }
 }
 
 // 자동편성 진행 알림 — UI가 로케일 문구로 포맷해 표시한다 (엔진은 i18n 무의존).

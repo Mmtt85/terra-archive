@@ -26,6 +26,7 @@ import sanityData from "./data/sanity.json";
 import {
   optimizeConfig, buildPlan, planScore, teamScore, opSolo, withElite, maxElite, eliteLocks, setCapCluster, setShiftTiebreak,
   availableSetKeys, synergySetMembers, cellByKey, LAYOUT, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT, AUTO_BENCH_IDS,
+  apPerPctDay,
   type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets, type RoomPin,
 } from "./planner-engine";
 
@@ -95,34 +96,9 @@ export function raiseCost(opId: string, from: Elite, to: Elite, fromLevel?: numb
 //   이득 = 방 %효율 변화 × 그 방 1%p의 하루 산출 × (그 조 근무시간/24)
 const SANITY = sanityData as { lmdPerAp: number; expPerAp: number; goldLmd: number; items: Record<string, number>;
   basis: { lmd: { stage: string; ap: number; drop: number }; exp: { stage: string; ap: number; drop: number } } };
-// 제조소 기본 생산 속도 1포인트/초 = 3600pt/h (building_data manufactFormulas의 costPoint 단위).
-// 1%p가 하루 내내 유지되면 3600×0.01×24 = 864pt.
-const PT_DAY_1PCT = 3600 * 0.01 * 24;
-const GOLD_COST_PT = 4320;   // 순금 1개 = 4320pt (manufactFormulas formula 4)
-const EXP_PT_PER_EXP = 10.8; // 중급작전기록 10800pt / 1000exp (formula 3)
-// ⚠ 유일하게 게임 데이터에 없는 상수 — 무역소 주문 보상이 테이블에 없어 통용값을 쓴다
-// (sanity.json goldLmd, 화면 각주에 그대로 밝힌다)
-const GOLD_LMD = SANITY.goldLmd;
-/** 그 칸(또는 방 종류) 효율 +1%p가 하루 만드는 이성. 환산 근거가 없는 방은 0. */
-function apPerPctDay(key: string): number {
-  const cell = cellByKey.get(key);
-  const room = cell?.room ?? key; // roomDeltas는 여러 칸을 방 종류로 묶기도 한다
-  const goldAp = (PT_DAY_1PCT / GOLD_COST_PT) * GOLD_LMD / SANITY.lmdPerAp;
-  const expAp = (PT_DAY_1PCT / EXP_PT_PER_EXP) / SANITY.expPerAp;
-  // 무역소는 순금을 주문으로 파는 같은 파이프라인이라 순금 1%p와 같은 가치로 본다
-  if (room === "TRADING") return goldAp;
-  if (room === "MANUFACTURE") {
-    if (cell?.product === "exp") return expAp;
-    if (cell?.product === "gold") return goldAp;
-    // 칸이 묶인 경우 — 활성 레이아웃의 순금/작전기록 칸 비율로 가중
-    const cells = LAYOUT.filter((c) => c.room === "MANUFACTURE");
-    const gold = cells.filter((c) => c.product === "gold").length;
-    const total = cells.length || 1;
-    return (goldAp * gold + expAp * (total - gold)) / total;
-  }
-  return 0; // 발전소·사무실·응접실은 이성으로 환산할 근거가 없어 제외한다
-}
-
+// 방 효율 +1%p의 하루 이성 환산은 엔진(apPerPctDay)으로 옮겼다 — 재활용소 배치 비교(§11)가 같은
+// 환산을 써야 해서다. 상수(1포인트/초·순금 4,320pt·중급작전기록 10,800pt/1,000exp·순금 = 용문폐
+// goldLmd(유일한 추정 상수, 화면 각주에 밝힘))와 계산은 종전과 한 글자도 다르지 않다.
 export type Payback = {
   apLmd: number; apExp: number; apMat: number;  // 비용 (이성) — 용문폐 / 경험치 / 재료
   apBase: number;        // 용문폐+경험치 (기본 기준 — 사용자 지정 2026-08-05)

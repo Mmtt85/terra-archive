@@ -4,7 +4,7 @@
 // 옮기는 것만이 근본 해결 (2026-07-22 /infra INP Poor 10% 리포트).
 // 엔진은 React 무의존 순수 계산이라 그대로 임포트한다 (verify-plan.mjs와 같은 성질).
 // 호출부는 planner-offload.ts — 오퍼 객체 대신 id·정예화만 주고받는다 (직렬화 최소화).
-import { ops, withElite, optimize, setLayoutPreset, setLevels, type Elite, type ProdPriority, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct, type RoomPin } from "./planner-engine";
+import { ops, withElite, optimize, setLayoutPreset, setLevels, setRecycle, type RecycleMode, type Elite, type ProdPriority, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct, type RoomPin } from "./planner-engine";
 import { recommendRaises } from "./planner-invest";
 
 export type PlannerJobMsg = {
@@ -21,6 +21,7 @@ export type PlannerJobMsg = {
   customProducts?: (CustomProduct | null)[] | null; // 커스텀 제조소 품목(순금/작전기록) 명시 선택
   dormPins?: Record<string, string[]>; // 사용자가 숙소에 고정한 인원 — 자동편성·육성추천 양쪽에 반영
   roomPins?: Record<string, RoomPin[]>; // 생산방 고정 인원 — 문자열=양조 고정, {id,shift}=조별 고정 (2026-09-12)
+  recycle?: RecycleMode | null; // 재활용소 우선도 (미래시 꺼짐 = null → 칸 없음)
 };
 
 // DOM lib의 Window 타입과 겹치지 않게 postMessage(1인자)만 뽑아 쓴다
@@ -31,6 +32,7 @@ self.addEventListener("message", (event) => {
     const msg = (event as MessageEvent<PlannerJobMsg>).data;
     try {
       // 기지 배치 프리셋·시설 레벨 동기화 — 메인 스레드의 set*은 이 워커 인스턴스에 안 미친다
+      setRecycle(msg.recycle ?? null); // 재활용소 칸 유무·우선도 — setLayoutPreset 앞 (그 안에서 칸을 붙인다)
       setLayoutPreset(msg.layout ?? "243", msg.customRooms ?? null, msg.customProducts ?? null);
       setLevels(msg.levels ?? null);
       // 메인 스레드의 visibleOps와 동일 규칙 — 미래시 OFF면 미실장 제외. 로케일 오버레이는

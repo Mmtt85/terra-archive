@@ -52,7 +52,10 @@ MANUAL = cntr.load(MANUAL_PATH)   # 말줄임표 표기 흔들림 흡수 (cntr.p
 
 ROOM_KO = {"MANUFACTURE": "제조소", "TRADING": "무역소", "POWER": "발전소", "WORKSHOP": "가공소",
            "DORMITORY": "숙소", "MEETING": "응접실", "HIRE": "사무실", "TRAINING": "훈련실",
-           "CONTROL": "제어 센터"}
+           "CONTROL": "제어 센터",
+           # 재활용소(回收站) — 중섭 신설(2026-10, 홈바운드). KR building_data엔 없어 CN에서만 온다
+           # (rooms_out의 CN 폴백·unreleased 플래그). 표기는 KR 공식 명칭 전 임시 (regen-operators.py와 같은 값)
+           "RECYCLE": "재활용소"}
 KO_ROOM = {v: k for k, v in ROOM_KO.items()}  # 한글 방이름 → 방 종류 (교차방 파트너 조건 파싱용)
 
 def strip_tags(s):
@@ -149,6 +152,64 @@ for rid, room in (building.get("rooms") or {}).items():
         "drain": (ph.get("manpowerCost") or 0) / 100,
         "phases": [{"slots": p.get("maxStationedNum", 1), "electricity": p.get("electricity", 0), **_room_fx(rid, i)} for i, p in enumerate(phases)],
     }
+
+# ── CN 전용 시설 (재활용소 回收站, 2026-10-09 사용자 규칙 — INFRA-RULES §11) ──────────────
+# KR building_data엔 없는 방을 CN 테이블에서 가져와 `unreleased: true`로 싣는다. 플래너는
+# 미래시 토글이 켜졌을 때만 이 방을 레이아웃에 넣는다. KR에 정식으로 들어오면 위 루프가
+# KR 값을 먼저 싣고 여기선 건너뛴다(플래그도 자연히 사라진다).
+_SANITY = load(f"{REPO}/app/data/sanity.json").get("items") or {}
+def _tier_avg(tier):
+    v = [x for k, x in _SANITY.items() if len(k) == 5 and k[:2] in ("30", "31") and k[-1] == tier]
+    return sum(v) / len(v) if v else 0.0
+def _item_ap(iid):
+    # 단가 없는 신소재(31103·31113 등)는 같은 등급(아이템 id 끝자리 = 티어) 평균
+    return _SANITY[iid] if iid in _SANITY else _tier_avg(iid[-1])
+def _recycle_spec(b):
+    """재활용소 산출 모델 — 한 번 뽑기(48시간 1회) 기대 이성. 기본 풀 + 추가 풀 게이지 기여."""
+    data = b.get("recycleData") or {}
+    consts = b.get("recycleRoomConsts") or {}
+    pools = b.get("recycleRoomOutputPoolDatas") or {}
+    contents = b.get("recycleRoomOutputPoolContentDatas") or {}
+    if not pools: return None
+    # 현재 열린 풀(종료 시각이 가장 늦은 것) — 지금은 itemPool1 하나뿐
+    pool = max(pools.values(), key=lambda p: p.get("itemPoolEndTime", 0))
+    base = (contents.get(pool["itemPoolId"]) or {}).get("items") or []
+    extra = (contents.get(pool.get("extraPoolId") or "") or {}).get("items") or []
+    def ev(items):
+        w = sum(x["weight"] for x in items)
+        return sum(x["weight"] * _item_ap(x["itemId"]) * x.get("count", 1) for x in items) / w if w else 0.0
+    w = sum(x["weight"] for x in base) or 1
+    gauge = sum(x["weight"] * x.get("extraPoolValueChange", 0) for x in base) / w  # 뽑기 1회당 추가 풀 게이지
+    req = pool.get("extraPoolRequirement") or 0
+    base_ap, extra_ap = ev(base), ev(extra)
+    extra_share = extra_ap * gauge / req if req else 0.0
+    return {
+        "cycleSec": consts.get("recycleTimeRequirement", 172800),
+        "basicSpeedBuff": data.get("basicSpeedBuff", 0.01),
+        "speedUpUnlockLevel": consts.get("recycleSpeedUpUnlockLevel", 3),
+        "drawAp": round(base_ap + extra_share, 2),
+        "baseAp": round(base_ap, 2),
+        "extraAp": round(extra_share, 2),
+        "inputItems": len(b.get("recycleRoomInputItemDatas") or {}),
+    }
+for rid, room in (cn_building.get("rooms") or {}).items():
+    if rid not in ROOM_KO or rid in rooms_out: continue
+    phases = room.get("phases") or [{}]
+    ph = phases[-1]
+    speeds = [p.get("recycleSpeed", 1.0) for p in ((cn_building.get("recycleData") or {}).get("phases") or [])] if rid == "RECYCLE" else []
+    rooms_out[rid] = {
+        "name": ROOM_KO[rid],
+        "slots": ph.get("maxStationedNum", 1),
+        "electricity": ph.get("electricity", 0),
+        "maxCount": room.get("maxCount", 1),
+        "drain": (ph.get("manpowerCost") or 0) / 100,
+        "phases": [{"slots": p.get("maxStationedNum", 1), "electricity": p.get("electricity", 0),
+                    **({"speed": speeds[i]} if i < len(speeds) else {})} for i, p in enumerate(phases)],
+        "unreleased": True,
+    }
+    if rid == "RECYCLE":
+        spec = _recycle_spec(cn_building)
+        if spec: rooms_out[rid]["recycle"] = spec
 
 # all KR operator names for partner detection (longest first so 스카디 doesn't
 # swallow 스카디 더 커럽팅 하트)
@@ -272,6 +333,10 @@ def parse_metric(room, text):
         if v or fac_add: return "output", (v or 0) + fac_add
     if room == "WORKSHOP":
         v = best(r"부산물[^%\d]{0,26}" + PCT)
+        if v: return "output", v
+    if room == "RECYCLE":
+        # 홈바운드 拾荒者/捡海人 "재활용소에 배치 시, 재료 전환 효율 +20/30%" (cn-translations 번역문)
+        v = best(r"재료 전환 효율[^+%\d]{0,12}" + PCT)
         if v: return "output", v
     if room == "TRAINING":
         v = best(r"(?:훈련|특화)[^%\d]{0,22}속도[^%\d]{0,16}" + PCT)

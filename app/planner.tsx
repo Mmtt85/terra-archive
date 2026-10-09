@@ -21,6 +21,7 @@ import {
   ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS, PLANTS_BASE_RT,
   splitPriority, joinPriority, AUTO_BENCH_IDS,
+  setRecycle, RECYCLE_MODE, RECYCLE_SPEC, recycleRate, recycleDaily, type RecycleMode,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type ProdAxis, type DrainMode, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
 } from "./planner-engine";
 import type { RaiseRec, InvestProgress } from "./planner-invest";
@@ -60,6 +61,9 @@ function strategyLabel(plan: Plan, locale: Locale, t: T): string {
 const STORAGE_KEY = "terra-archive-infra-v3";
 // '내 정보' 계정 데이터를 마지막으로 반영한 동기화 시각 (app/me-store.ts)
 const ME_APPLIED_KEY = "terra-archive-infra-me-at";
+// 재활용소 우선도 (끔/보통/우선, 기본 보통 — 사용자 규칙 2026-10-09). 미래시 전용 설정이라 버킷이
+// 아니라 따로 둔다 — 프리셋과 무관하고, 미래시를 껐다 켜도 고른 값이 남아야 한다.
+const RECYCLE_KEY = "terra-archive-infra-recycle";
 // 육성 추천 표시 개수 — 엔진은 정렬 전체를 반환하고, 숨긴 오퍼 자리는 다음 순위가 채운다
 const INVEST_SHOW = 20;
 
@@ -93,6 +97,21 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [priority, setPriorityState] = useState<ProdPriority>("gold"); // 우선 생산 모드
+  const [recycleMode, setRecycleModeState] = useState<RecycleMode>("normal");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(RECYCLE_KEY);
+      if (v === "off" || v === "normal" || v === "first") setRecycleModeState(v);
+    } catch { /* 무시 */ }
+  }, []);
+  const setRecycleChoice = (mode: RecycleMode) => {
+    setRecycleModeState(mode);
+    try { localStorage.setItem(RECYCLE_KEY, mode); } catch { /* 무시 */ }
+  };
+  // 재활용소 칸은 **미래시가 켜졌을 때만** 있다. 엔진의 LAYOUT은 라이브 바인딩이라 렌더 전에 맞춰 둔다
+  // (setRecycle은 멱등 — 값이 같으면 손대지 않는다). 워커 잡에는 recycleJob을 매번 싣는다.
+  const recycleJob: RecycleMode | null = includeFuture && RECYCLE_SPEC ? recycleMode : null;
+  if (RECYCLE_MODE !== recycleJob) setRecycle(recycleJob);
   // 기지 배치 프리셋 (사용자 요청 2026-07-24): 243(기본)·153·252. 엔진 모듈 상태(setLayoutPreset)와
   // 항상 함께 바꾼다 — LAYOUT은 라이브 바인딩이라 상태 변경 리렌더에서 새 값을 읽는다.
   const [layout, setLayoutState] = useState<LayoutPreset>("243");
@@ -327,7 +346,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
 
   const exportState = () => {
-    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), opLevels: Array.from(levelById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, roomPins, buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins, roomPins, basePlan } } }, null, 1);
+    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), opLevels: Array.from(levelById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, roomPins, recycle: recycleMode, buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins, roomPins, basePlan } } }, null, 1);
     const blob = new Blob([payload], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -356,6 +375,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         if (fileCustom) setCustomRooms(fileCustom);
         const fileProducts = restoreCustomProducts(data.customProducts);
         if (fileProducts) setCustomProducts(fileProducts);
+        if (data.recycle === "off" || data.recycle === "normal" || data.recycle === "first") {
+          setRecycleChoice(data.recycle);
+          if (includeFuture && RECYCLE_SPEC) setRecycle(data.recycle); // 아래 sanitizePlan이 재활용소 칸을 보도록 먼저
+        }
         setLayoutPreset(lay, fileCustom, fileProducts);
         setLayoutState(lay);
         const fileBuckets = (data.buckets && typeof data.buckets === "object" ? data.buckets : {}) as Partial<Record<LayoutPreset, LayoutBucket>>;
@@ -608,7 +631,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, priority: prio, layout, levels, customRooms, customProducts, dormPins, roomPins: rpins }, paced);
+      const next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, recycle: recycleJob, priority: prio, layout, levels, customRooms, customProducts, dormPins, roomPins: rpins }, paced);
       setPlan(next);
       rememberBase(next); // 되돌리기 기준 — 미리보기(previewOptimize)는 여기 손대지 않는다
       setActiveShift(0);
@@ -654,7 +677,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setInvesting({ done: 0, total: 0 });
     try {
       let candidates = 0; // 엔진이 정밀 평가한 후보 수 — 0건 안내를 후보 유무로 갈라 쓴다
-      const recs = await investOff({ owned: ownedIds, elite: eliteById, opLevels: levelById, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins, roomPins },
+      const recs = await investOff({ owned: ownedIds, elite: eliteById, opLevels: levelById, includeFuture: !!includeFuture, recycle: recycleJob, priority, layout, levels, customRooms, customProducts, dormPins, roomPins },
         (p) => { if (p.total) candidates = p.total; setInvesting(p); });
       setInvestDiag({ unfinished: unfinishedCount, candidates });
       setInvestRecs(recs);
@@ -689,7 +712,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimizeOff({ owned: ownedIds, elite: effElite, opLevels: levelById, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins, roomPins }, paced);
+      const next = await optimizeOff({ owned: ownedIds, elite: effElite, opLevels: levelById, includeFuture: !!includeFuture, recycle: recycleJob, priority, layout, levels, customRooms, customProducts, dormPins, roomPins }, paced);
       setPlan(next);
       setActiveShift(0);
     } finally { setOptimizing(null); }
@@ -1142,7 +1165,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     let worst = 0;
     let worstKey: string | null = null;
     for (const cell of LAYOUT) {
-      if (PARK_KEYS.includes(cell.key) || cell.key === "TRAINING" || cell.key.startsWith("DORM")) continue;
+      // 재활용소(미래시)는 빼고 잰다 — 교대 시계(엔진 shiftHoursFor)도 안 보는 방이라, 여기 넣으면
+      // 조 탭의 'A조 ~N시간'만 혼자 달라진다
+      if (PARK_KEYS.includes(cell.key) || cell.key === "TRAINING" || cell.key.startsWith("DORM") || cell.room === "RECYCLE") continue;
       const team = teamFor(cell.key, 0);
       if (!team.length) continue;
       const ctx = { ...ctxFor(cell.key, pointsFor(0), plan.factionCounts[0], plantsFor(plan, 0, effectiveOpById), present, amb), shift: 0 };
@@ -1226,6 +1251,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     shiftMix, stockNote,
   ] : [];
 
+  // 재활용소 (미래시 전용, INFRA-RULES §11) — 근거를 숫자 그대로 밝힌다
+  const recycleDay = useMemo(() => (plan && cellByKey.has("RECYCLE") ? recycleDaily(plan, effectiveOpById) : null), [plan, effectiveOpById, recycleJob]); // eslint-disable-line react-hooks/exhaustive-deps
+  const recycleLines = recycleDay && RECYCLE_SPEC ? [
+    t("재활용소는 아무도 없어도 48시간마다 육성 재료를 한 번 뽑습니다. 한 번 뽑기의 기대 가치는 ≈{d} 이성입니다 — 기본 풀 ≈{b} + 추가 풀 게이지 몫 ≈{e}. 단가는 육성 추천 회수일과 같은 재료 이성 단가이고, 단가가 없는 신소재는 같은 등급 평균으로 쳤습니다.",
+      { d: RECYCLE_SPEC.drawAp.toFixed(1), b: RECYCLE_SPEC.baseAp.toFixed(1), e: RECYCLE_SPEC.extraAp.toFixed(1) }),
+    t("속도 = 시설 레벨 기본 속도(Lv1·Lv2 1.0, Lv3 1.2) + 배치 인원 1명당 +1% + 재활용소 스킬(홈바운드 +20%/+30%). 스킬이 기본 속도에 **더해진다**고 본 추정입니다 — 중국 서버 실측으로 확정되지 않았습니다."),
+    t("지금 편성이면 A조 ×{a} · B조 ×{b} 속도로, 하루 ≈{n}회 뽑기 = **하루 ≈{ap} 이성**입니다.",
+      { a: recycleDay.shifts[0]?.mult.toFixed(2) ?? "1.00", b: recycleDay.shifts[1]?.mult.toFixed(2) ?? "1.00", n: recycleDay.drawsPerDay.toFixed(2), ap: num(recycleDay.apPerDay) }),
+    t("Lv3부터 필요 없는 재료를 넣으면 더 빨라지지만 계산에 넣지 않았습니다 — 재료 하나(≈43 이성)로 ≈3 이성어치만 빨라져 이성으로는 손해이고, 넣을지는 플레이어가 고를 일이라서입니다."),
+    t("재활용소 스킬 보유자를 먼저 앉히고, 남는 자리는 다른 방에 배치되지 않은 오퍼 중 쓸모가 가장 적은 오퍼로 채웁니다(기본 +1%) — 다른 방에서 일하는 오퍼는 빼 오지 않습니다. 설정 행의 '재활용소'를 '끔'으로 두면 비워 둡니다."),
+    shiftMix,
+  ] : [];
+
   // 커밋 정예화 기준 op 맵 — 임시 적용 '이전' 편성 점수 계산용(현재 effectiveOpById는 임시 반영본)
   const committedOpById = useMemo(() => new Map(visibleOps.map((op) => [op.id, withElite(op, eliteById.get(op.id), levelById.get(op.id))])), [visibleOps, eliteById, levelById]);
 
@@ -1279,6 +1317,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   }));
   const noteLines: Record<ShiftNoteKind, string[]> = {
     drain: [], policy: [], power: powerLines, gold: yieldGoldLines, lmd: yieldLmdLines, exp: yieldExpLines, drone: yieldDroneLines,
+    recycle: recycleLines,
   };
 
   const exportImage = async () => {
@@ -1541,6 +1580,21 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             ))}
           </>
         )}
+        {/* 재활용소 우선도 — 미래시를 켰을 때만 (사용자 규칙 2026-10-09). 설정만 저장, 편성은 자동편성 버튼으로 */}
+        {recycleJob && (
+          <>
+            <span className="prio-label prio-label-layout" title={t("중국 서버에 새로 생긴 재활용소를 얼마나 챙길지 — 다음 자동편성부터 적용됩니다")}>♻ {t("재활용소")}</span>
+            {(["off", "normal", "first"] as const).map((mode) => (
+              <label key={mode} className={recycleMode === mode ? "on" : ""}
+                title={mode === "off" ? t("재활용소를 비워 둡니다 — 아무도 없어도 48시간마다 재료가 나옵니다")
+                  : mode === "normal" ? t("재활용소 스킬 보유자를 앉히고 빈자리는 남는 오퍼로 채웁니다. 보유자가 다른 방 스킬도 있으면 하루 이성 환산으로 이득이 큰 쪽에 둡니다")
+                  : t("재활용소 스킬 보유자를 다른 방에서 빼서라도 재활용소에 앉힙니다")}>
+                <input type="radio" name="recycle-mode" checked={recycleMode === mode} onChange={() => setRecycleChoice(mode)} />
+                {t(mode === "off" ? "끔" : mode === "normal" ? "보통" : "우선")}
+              </label>
+            ))}
+          </>
+        )}
       </div>
 
       {/* 항상 렌더해 높이를 처음부터 예약 — 계산 전엔 '—'로 채운다. 계산 완료 후 값이 튀어나오며
@@ -1569,7 +1623,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           2026-08-06: "순금 생산/소모 · 벌어들이는 용문폐 · 만들어지는 작전기록 셋이 필요").
           위 줄에 끼워 넣으면 8칸이라 라벨이 다 갈라져서 줄을 나눴다. 근사치라 ≈를 붙이고,
           근거는 ⓘ 모달에 전부 밝힌다 — 툴팁은 스쳐 지나가는 사람용 보조. */}
-      <div className="planner-summary planner-summary-yield">
+      <div className={`planner-summary planner-summary-yield${cellByKey.has("RECYCLE") ? " has-recycle" : ""}`}>
         <div className="yield-cell" title={yieldGoldLines[0]}>
           <span>🪙 {t("순금 생산 / 소모")}</span>
           <b>{yieldDay && yieldRooms.gold > 0
@@ -1602,9 +1656,17 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               g: yieldRooms.gold > 0 ? num(yieldDay.droneGold) : "0" })}</i>}</Marquee></b>
           {yieldDay && <InfoDot onClick={() => setShiftNote("drone")} t={t} />}
         </div>
+        {/* 재활용소 (미래시 전용, 2026-10-09) — 다른 방과 같은 저울(하루 이성)로 본다. 칸이 없으면 줄도 종전 4칸 그대로 */}
+        {cellByKey.has("RECYCLE") && (
+          <div className="yield-cell" title={recycleLines[2]}>
+            <span>♻ {t("재활용소")}</span>
+            <b>{recycleDay ? t("≈{n} 이성/일", { n: num(recycleDay.apPerDay) }) : "—"}</b>
+            {recycleDay && <InfoDot onClick={() => setShiftNote("recycle")} t={t} />}
+          </div>
+        )}
       </div>
 
-      <div className={`ship${layout !== "243" ? ` ship-${layout}` : ""}`}>
+      <div className={`ship${layout !== "243" ? ` ship-${layout}` : ""}${cellByKey.has("RECYCLE") ? " has-recycle" : ""}`}>
         {/* 교대 탭 + 육성 추천을 그리드 첫 행(제어센터·응접실과 같은 행)에 세로로 쌓는다 —
             탭은 행 맨 위, 추천 바는 행 바닥(=무역소 바로 위) (사용자 요청 2026-07-27) */}
         <div className="ship-leftcol">
@@ -1759,7 +1821,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                       실제 문구(두 자리)를 그대로 써서 폭이 저절로 맞게 한다.
                       대상은 시계가 붙는 방과 같다 — drainClock이 도는 방(휴게·훈련·숙소 제외). */}
                   {!plan && activeShift === 0
-                    && !PARK_KEYS.includes(cell.key) && cell.key !== "TRAINING" && !cell.key.startsWith("DORM") && (
+                    && !PARK_KEYS.includes(cell.key) && cell.key !== "TRAINING" && !cell.key.startsWith("DORM") && cell.room !== "RECYCLE" && (
                     <em className="room-clock hold" aria-hidden>{t("{n}시간", { n: 24 })}</em>
                   )}
                   {team.length}/{slotsFor(cell.key)}
@@ -1800,6 +1862,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   +{score}{cell.room === "CONTROL" ? "" : "%"} {cell.room === "CONTROL" ? t("오라 가중 점수") : t(UNIT[cell.room])}
                   {ambientPart !== 0 && cell.room !== "CONTROL" && <em className="ambient-note"> ({t("오라")} {ambientPart > 0 ? "+" : ""}{ambientPart})</em>}
                   {raiseBefore != null && raiseBefore !== score && <em className={`raise-delta ${score >= raiseBefore ? "up" : "down"}`}> · {t("원래 {b}%", { b: raiseBefore })} ({score >= raiseBefore ? "+" : ""}{score - raiseBefore})</em>}
+                  {cell.room === "RECYCLE" && <em className="ambient-note"> · {t("≈{n} 이성/일", { n: Math.round(recycleRate(team, cell.key)?.apPerDay ?? 0) })}</em>}
                 </small>
               )}
               {plan && PARK_KEYS.includes(cell.key) && team.length > 0 && <small>{t("세트 요원 고정 · 효율 무관")}</small>}
@@ -2688,6 +2751,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                   case "TRAINING": return t("특화 훈련 상한: 특화 {n}", { n: p.specLimit ?? 0 });
                   case "WORKSHOP": return t("가공 레시피 누적 {n}종", { n: p.recipes ?? 0 });
                   case "CONTROL": return t("기지 확장 해금 — 제어센터 레벨이 다른 시설의 최대 레벨·개수를 결정합니다");
+                  case "RECYCLE": return t("기본 전환 속도 ×{n}{boost}", { n: (p.speed ?? 1).toFixed(1), boost: i + 1 >= (RECYCLE_SPEC?.speedUpUnlockLevel ?? 3) ? t(" · 재료 투입 가속 해금") : "" });
                   default: return "";
                 }
               })();
@@ -3531,7 +3595,7 @@ function InfoDot({ onClick, t }: { onClick: () => void; t: T }) {
 // ── 교대 탭의 짧은 링크·요약 카드 ⓘ가 여는 상세 모달 (사용자 요청 2026-07-28 / 08-06) ──
 // 왼쪽 칸에 줄글을 깔면 그리드 첫 행(제어센터·응접실) 높이가 밀린다 — 화면엔 한 줄짜리
 // 링크만 두고 설명은 전부 여기로 내린다.
-export type ShiftNoteKind = "drain" | "policy" | "power" | "gold" | "lmd" | "exp" | "drone";
+export type ShiftNoteKind = "drain" | "policy" | "power" | "gold" | "lmd" | "exp" | "drone" | "recycle";
 
 // "왜 표시된 시간이 그대로 안 가는가" — 사용자가 짚은 제어센터 연쇄가 핵심이다.
 // 수치는 INFRA-RULES §1 컨디션 모델 v18(실측 9건 재현) 기준.
@@ -3557,6 +3621,7 @@ const SHIFT_NOTE_SPEC: Record<ShiftNoteKind, { kicker: string; title: string; tl
   lmd: { kicker: "DAILY LMD", title: "하루 평균 용문폐는 이렇게 계산했습니다", items: [] },
   exp: { kicker: "DAILY RECORDS", title: "하루 평균 작전기록은 이렇게 계산했습니다", items: [] },
   drone: { kicker: "DRONES", title: "드론은 이렇게 계산했습니다", tldr: "위 세 숫자에는 안 더했습니다 — 쓰는 곳이 사람마다 달라서", items: [] },
+  recycle: { kicker: "RECYCLING", title: "재활용소는 이렇게 계산했습니다", tldr: "중국 서버 신설 시설 — 미래시 추정치", items: [] },
 };
 
 // lines = 호출부가 실제 수치를 넣어 만든(이미 번역된) 본문, body = 표 같은 추가 블록
@@ -3658,6 +3723,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
   ]},
   { title: "미래시(미실장) 오퍼", items: [
     "헤더의 '미래시 데이터 포함'을 켜면 미출시(중국 서버 선행) 오퍼도 보유 오퍼 설정과 자동편성 계산에 포함됩니다. 스킬 텍스트는 비공식 AI 번역이며, 정식 출시 시 공식 데이터로 대체됩니다.",
+    "미래시를 켜면 중국 서버에 새로 생긴 재활용소가 훈련실 아래에 나타납니다(전력 0, Lv1 1인 · Lv2·Lv3 2인). 아무도 없어도 48시간마다 육성 재료를 뽑고, 오퍼를 앉히면 빨라집니다. 효과는 하루 이성으로 환산해 다른 방과 같은 저울로 비교합니다 — 재활용소 스킬 보유자(지금은 홈바운드)를 먼저 앉히고, 남는 자리는 다른 방에 배치되지 않은 오퍼 중 쓸모가 가장 적은 오퍼로 채웁니다. 설정 행의 재활용소(끔·보통·우선)로 조절하고, Lv3의 재료 투입 가속은 이성상 손해라 계산에 넣지 않습니다.",
     "토글을 바꿔도 현재 편성은 유지됩니다 — 자동편성을 다시 실행해야 반영됩니다.",
   ]},
   { title: "하루 산출 (용문폐·작전기록)", items: [

@@ -5512,6 +5512,10 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.55fr);
   margin-top: 8px;   /* 같은 요약 묶음의 둘째 줄이라 8 */
 }
+/* 미래시 재활용소 칸이 붙으면 5칸 (2026-10-09) */
+.planner-summary-yield.has-recycle {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.55fr) minmax(0, 1fr);
+}
 /* '89 / 106'의 슬래시만 흐리게 — 생산과 소모를 눈으로 가르는 구분자 */
 .yield-cell b em {
   margin: 0 1px;
@@ -5750,6 +5754,21 @@ html[lang="ja"] .potential-detail { word-break: normal; }
     "slot6 slot7 slot8 dorm2 training"
     ". . . dorm3 .";
 }
+/* 재활용소(미래시 전용, 2026-10-09) — 게임 기지와 같은 자리인 **훈련실 바로 밑**. 미래시를 끄면
+   .has-recycle이 빠져 위 템플릿 그대로다. 마지막 줄의 비어 있던 오른쪽 칸을 쓴다 (네 배치 공통) */
+.ship.has-recycle { grid-template-areas:
+    "raisebar raisebar . control meeting" "trading0 trading1 mfg0 dorm0 workshop" "mfg1 mfg2 mfg3 dorm1 hire"
+    "power0 power1 power2 dorm2 training" ". . . dorm3 recycle"; }
+.ship.ship-153.has-recycle { grid-template-areas:
+    "raisebar raisebar . control meeting" "trading0 mfg0 mfg1 dorm0 workshop" "mfg2 mfg3 mfg4 dorm1 hire"
+    "power0 power1 power2 dorm2 training" ". . . dorm3 recycle"; }
+.ship.ship-252.has-recycle { grid-template-areas:
+    "raisebar raisebar . control meeting" "trading0 trading1 mfg0 dorm0 workshop" "mfg1 mfg2 mfg3 dorm1 hire"
+    "mfg4 power0 power1 dorm2 training" ". . . dorm3 recycle"; }
+.ship.ship-custom.has-recycle { grid-template-areas:
+    "raisebar raisebar . control meeting" "slot0 slot1 slot2 dorm0 workshop" "slot3 slot4 slot5 dorm1 hire"
+    "slot6 slot7 slot8 dorm2 training" ". . . dorm3 recycle"; }
+.pos-recycle { grid-area: recycle; }
 .pos-slot-0 { grid-area: slot0; }
 .pos-slot-1 { grid-area: slot1; }
 .pos-slot-2 { grid-area: slot2; }
@@ -6390,7 +6409,21 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   .ship.ship-custom {
     grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "slot0 slot1 workshop" "slot2 slot3 hire" "slot4 slot5 training" "slot6 slot7 slot8" "dorm0 dorm1 dorm2" "dorm3 . .";
   }
-  .planner-summary {
+  /* 재활용소는 좁은 화면에서도 훈련실 바로 밑 — 훈련실 다음에 한 줄을 끼운다 (나머지 칸 순서는 그대로) */
+  .ship.has-recycle {
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" ". . recycle" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . .";
+  }
+  .ship.ship-153.has-recycle {
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 mfg0 workshop" "mfg1 mfg2 hire" "mfg3 mfg4 training" ". . recycle" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . .";
+  }
+  .ship.ship-252.has-recycle {
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" ". . recycle" "mfg4 power0 power1" "dorm0 dorm1 dorm2" "dorm3 . .";
+  }
+  .ship.ship-custom.has-recycle {
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "slot0 slot1 workshop" "slot2 slot3 hire" "slot4 slot5 training" ". . recycle" "slot6 slot7 slot8" "dorm0 dorm1 dorm2" "dorm3 . .";
+  }
+  .planner-summary,
+  .planner-summary-yield.has-recycle {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .planner-controls {
