@@ -128,6 +128,66 @@ def schema_for(table, server):
     return p, open(p, encoding="utf-8").read()
 
 
+# 고정 스키마 — 지금까지 맞던 공개 스키마 사본 (저장소에 커밋, 2026-10-09).
+# 공개 스키마(OpenArknightsFBS)는 **가장 앞선 서버(중섭)** 에 맞춰 고쳐진다. CI 는 캐시가 없어 매번 최신본을
+# 받으므로, 중섭이 표에 필드를 늘린 날 한섭·일섭·글섭 바이너리가 그 스키마로 안 읽혀(슬롯 수 불일치) 레포판으로
+# 물러났다 — 2026-10-09 gamedata_const(friendAddUidLimit·friendUrlFormat 추가)로 CI 가 하루 세 번 죽었다.
+# 그래서 최신본이 안 맞으면 갓 받은 최신본 → 이 고정본 순으로 다시 시도한다. 슬롯 수가 맞는 쪽이 그 서버의 구조다.
+# 한섭이 새 구조로 올라가 고정본도 안 맞게 되면 최신본이 맞으므로 저절로 그쪽을 쓴다 — 고정본 갱신은
+# `python3 scripts/fetch-gamedata-cdn.py --pin-schemas` (지금 캐시에서 이번에 실제로 쓴 것을 고정본으로).
+PIN_DIR = os.path.join(FBS_DIR, "pinned")
+
+
+def schema_candidates(table, server):
+    """디코딩에 시도할 스키마들 — 손본 것(서버 전용·공용) → 캐시된 공개본 → 갓 받은 공개본 → 고정본. 같은 내용은 한 번만."""
+    seen = set()
+
+    def emit(p):
+        if p and os.path.exists(p):
+            txt = open(p, encoding="utf-8").read()
+            if txt not in seen:
+                seen.add(txt)
+                return p, txt
+        return None
+
+    for p in (os.path.join(FBS_DIR, server, table + ".fbs"), os.path.join(FBS_DIR, table + ".fbs")):
+        c = emit(p)
+        if c:
+            yield c
+    cache = os.path.join(FBS_DIR, "_cache", table + ".fbs")
+    had_cache = os.path.exists(cache)
+    p, _ = schema_for(table, server) if not had_cache else (cache, None)
+    c = emit(p)
+    if c:
+        yield c
+    if had_cache:                                   # 캐시가 낡았을 수 있다 — 최신 공개본도 한 번
+        try:
+            data = urlread(FBS_URL % table, timeout=60, ua="terra-archive-cdn/1.0")
+            fresh = os.path.join(FBS_DIR, "_cache", table + ".fresh.fbs")
+            open(fresh, "wb").write(data)
+            c = emit(fresh)
+            if c:
+                yield c
+        except Exception:
+            pass
+    c = emit(os.path.join(PIN_DIR, table + ".fbs"))
+    if c:
+        yield c
+
+
+def decode_any(fb, table, server):
+    """맞는 스키마를 찾을 때까지 차례로 디코딩 — (data, 쓴 스키마 경로) · 전부 안 맞으면 (None, None)"""
+    tried = 0
+    for path, text in schema_candidates(table, server):
+        tried += 1
+        data = decode(fb, path, text, table)
+        if data is not None:
+            if tried > 1:
+                print("(스키마 %s) " % os.path.relpath(path, FBS_DIR), end="", flush=True)
+            return data, path
+    return None, None
+
+
 def decode(fb, fbs_path, fbs_text, table):
     """FlatBuffer 바이트 → 공식 모양 JSON. 스키마가 안 맞으면 None."""
     tables, root = parse_fbs(fbs_text)
@@ -160,6 +220,8 @@ def main():
     ap.add_argument("--tables", help="쉼표 구분. 생략하면 기본 세트")
     ap.add_argument("--cache", default=".gamedata/.cdn", help="번들 캐시 폴더")
     ap.add_argument("--check", action="store_true", help="버전만 찍고 끝")
+    ap.add_argument("--pin-schemas", action="store_true",
+                    help="이번에 각 표를 실제로 읽어 낸 스키마를 scripts/fbs/pinned/ 고정본으로 복사")
     a = ap.parse_args()
 
     # --check 는 **버전 문자열만** 본다 — 번들을 안 열므로 UnityPy·lz4inv·flatc 가 필요 없다.
@@ -178,6 +240,7 @@ def main():
     cdn.manifest()
 
     ok, expected, unexpected, skipped = 0, [], [], 0
+    used_schema = {}
     for t in tables:
         print("  %-24s" % t, end=" ", flush=True)
         dest = os.path.join(a.out, "%s_%s.json" % (a.server, t))
@@ -185,13 +248,11 @@ def main():
         if t not in FALLBACK:
             try:
                 fb, path = cdn.text_asset("gamedata/excel/" + t)
-                fbs_path, fbs_text = schema_for(t, a.server)
-                if fbs_text:
-                    data = decode(fb, fbs_path, fbs_text, t)
-                    if data is None:
-                        why = "디코딩 실패"
+                data, used = decode_any(fb, t, a.server)
+                if data is None:
+                    why = "디코딩 실패(맞는 스키마 없음)"
                 else:
-                    why = "스키마 없음"
+                    used_schema[t] = used
             except KeyError as e:
                 why = str(e)[:40]
         if data is None:                      # CDN에서 못 얻었으면 클뜯 레포로
@@ -230,7 +291,16 @@ def main():
             print("    %-24s %s" % (t, why))
         print("  → python3 scripts/fbs-repair.py <표이름> --server %s  로 스키마를 고친 뒤 다시 받을 것"
               % a.server)
-    return 1 if (skipped or unexpected) else 0
+    if a.pin_schemas:
+        os.makedirs(PIN_DIR, exist_ok=True)
+        for t, p in used_schema.items():
+            if os.path.dirname(os.path.abspath(p)) != os.path.abspath(os.path.join(FBS_DIR, a.server)):
+                shutil.copyfile(p, os.path.join(PIN_DIR, t + ".fbs"))
+        print("고정본 %d개 갱신 → scripts/fbs/pinned/" % len(used_schema))
+    # 종료 코드 — 1: 아예 못 얻은 표가 있다(skipped) · 3: 예정에 없던 레포 폴백만 있다(표는 다 있다, 사람이 볼 것) · 0: 정상.
+    # ⚠ ci-refresh.sh 는 3 이면 **이 서버 데이터를 그대로 쓴다** — 종전엔 1 하나로 묶여서, 표 하나가 물러난 것만으로
+    #   네 서버 전체를 클뜯 레포판으로 다시 받아 멀쩡한 CDN 데이터를 덮었다 (2026-10-09).
+    return 1 if skipped else (3 if unexpected else 0)
 
 
 if __name__ == "__main__":

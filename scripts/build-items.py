@@ -68,7 +68,10 @@ VOUCHER_EXTRA = {"ITEM_PACK", "RENAMING_CARD", "MATERIAL_ISSUE_VOUCHER", "MCARD_
 
 
 def group_of(it):
-    t = it.get("itemType") or ""
+    # 문자열이 아니면 빈 값으로 — 클뜯 레포판은 덤프 도구가 모르는 열거값을 숫자로 찍는다
+    # (2026-10-09 한섭 상품권 giftPackageTicket_* 의 itemType 86 으로 CI 가 하루 세 번 죽었다)
+    t = it.get("itemType")
+    t = t if isinstance(t, str) else ""
     if t in ("ACTIVITY_ITEM", "ACTIVITY_POTENTIAL"):
         return "event"
     if t in RESOURCE:

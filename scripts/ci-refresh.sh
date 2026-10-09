@@ -104,7 +104,15 @@ else
   if python3 -c "import UnityPy, lz4inv" 2>/dev/null && command -v flatc >/dev/null 2>&1; then
     CDN_OK=1
     for srv in kr cn en jp; do
-      run "fetch-cdn($srv)" python3 scripts/fetch-gamedata-cdn.py --server "$srv" --out "$G" || CDN_OK=""
+      # 종료 코드 3 = 표 몇 개만 예정에 없이 레포판으로 물러났다 — 표는 다 받았으니 이 서버 CDN 데이터를 그대로 쓴다.
+      # 종전엔 0 이 아니면 전부 실패로 쳐서, 표 하나 때문에 네 서버 전체를 레포판으로 다시 받아 덮었다
+      # (2026-10-09 한섭 gamedata_const 하나로 CI 가 하루 세 번 죽었다 — 레포판 item_table 의 숫자 itemType 에서).
+      rc=0; run "fetch-cdn($srv)" python3 scripts/fetch-gamedata-cdn.py --server "$srv" --out "$G" || rc=$?
+      if [ "$rc" = 3 ]; then
+        echo "⚠ $srv: 표 일부가 CDN 디코딩에 실패해 그 표만 레포판으로 받았다 — scripts/fbs-repair.py 로 스키마를 볼 것" | tee -a "$WARN" >&2
+      elif [ "$rc" != 0 ]; then
+        CDN_OK=""
+      fi
     done
     [ -n "$CDN_OK" ] || echo "⚠ CDN 수신이 실패해 클뜯 레포판으로 물러났다 — 레포가 밀려 있으면 신규 콘텐츠가 빠진다" | tee -a "$WARN" >&2
   else

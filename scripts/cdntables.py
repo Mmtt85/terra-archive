@@ -78,10 +78,7 @@ def table(name, server="kr"):
             fg.unity_lzham()
             cdn.manifest()
             fb, _ = cdn.text_asset("gamedata/excel/" + name)
-            fbs_path, fbs_text = fg.schema_for(name, server)
-            if not fbs_text:
-                raise RuntimeError("스키마 없음")
-            data = fg.decode(fb, fbs_path, fbs_text, name)
+            data, _ = fg.decode_any(fb, name, server)   # 최신 공개본 → 고정본 순 (fetch-gamedata-cdn.py 와 같은 규칙)
             if data is None:
                 why = "디코딩 실패(스키마 불일치 — python3 scripts/fbs-repair.py %s --server %s)" % (name, server)
                 os.makedirs(TABLE_CACHE, exist_ok=True)
