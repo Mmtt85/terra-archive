@@ -525,11 +525,15 @@ CN_PROVISIONAL_NAMES = {
     # 直到大地变成一颗酸橙 — 予愿安洁莉娜(안젤리나 얼터) 동반 이벤트. 酸橙은 엄밀히는
     # 광귤(사워 오렌지)이지만 스킬명 '酸橙的心事'와 함께 읽히도록 '라임'으로 통일했다
     # (비공식 AI 번역 — 정식 KR 번역이 나오면 클뜯이 대체한다).
+    # 昨日海 — 클레멘티아·홈바운드·데 톨레도 동반 사이드. 공지 이름표(cn-announced.json)와 같은 말.
+    "act52side": {"ko": "어제의 바다", "en": "Yet Another Wave", "ja": "昨日の海"},
     "act53side": {"ko": "대지가 라임 하나가 될 때까지", "en": "Until the Land Becomes a Lime",
                   "ja": "大地が一つのライムになるまで"},
     # 月行水上 (페르소나3 리로드 콜라보) — 4자 시제라 포영창정·사세행처럼 한자 독음으로 읽는다.
     # 번역 전문(scripts/story-cn/act54side/ko)의 편 제목도 '월몰·월출'로 같은 결이다.
     "act54side": {"ko": "월행수상", "en": "The Moon Walks on Water", "ja": "月行水上"},
+    # 丛林症结 — 중섭 선행 미니 스토리. 이벤트 도감(build-events.py)과 같은 이름표.
+    "act21mini": {"ko": "밀림의 응어리", "en": "Crux of the Jungle", "ja": "叢林症結"},
 }
 # 콜라보 등 배너 에셋이 클뜯 레포에 없는(라이선스상 제외) 이벤트용 공용 플레이스홀더 썸네일.
 # 없으면 스킵하던 걸(과거 act50side 泡影苍霆 누락 원인) 폐지하고, 목록엔 반드시 넣는다.
@@ -560,7 +564,11 @@ print("fetching story_review_table (cn) …", file=sys.stderr)
 cn = fetch(f"{GAMEDATA}/cn/gamedata/excel/story_review_table.json")
 cn_dir = os.path.join(thumb_dir, "cn")
 os.makedirs(cn_dir, exist_ok=True)
-cn_acts = sorted((v for v in cn.values() if v["entryType"] == "ACTIVITY" and v["id"] not in kr),
+# 미니 스토리(MINI_ACTIVITY)도 넣는다 — 대사 원문(story-script-ids)이 있는 것만. 종전엔 ACTIVITY 만 봐서
+# 중섭에만 있는 미니(act21mini 밀림의 응어리)가 전문까지 있는데도 스토리 메뉴에 안 떴다 (사용자 지적 2026-10-09).
+cn_acts = sorted((v for v in cn.values() if v["id"] not in kr and (
+                     v["entryType"] == "ACTIVITY"
+                     or (v["entryType"] == "MINI_ACTIVITY" and v["id"] in script_ids))),
                  key=lambda v: -v["startTime"])
 
 # ── 중↔한 출시 시차 자동 산출 → 미실장 이벤트의 KR 추정월(eta) ──
@@ -581,7 +589,15 @@ for act in cn_acts:
     pic = (act.get("storyEntryPicId") or f"storyEntryPic_{eid}").lower()
     dest = os.path.join(cn_dir, f"{eid}.webp")
     thumb_path = f"/story/cn/{eid}.webp"
-    if not os.path.exists(dest):
+    is_mini = act["entryType"] == "MINI_ACTIVITY"
+    if is_mini:
+        # 미니는 리뷰 허브에 배너가 없다(한섭 미니와 같은 사정) — 그 스토리의 첫 컷씬을 섬네일로
+        _sp = os.path.join(REPO, "public", "story", "script", f"{eid}.json")
+        _sc = json.load(open(_sp, encoding="utf-8")) if os.path.exists(_sp) else {}
+        _cut = next((ln["img"] for ep in _sc.get("eps", []) for ln in ep.get("lines", []) if ln.get("img")), None)
+        thumb_path = f"/story/cut/{_cut}.webp" if _cut and os.path.exists(
+            os.path.join(REPO, "public", "story", "cut", f"{_cut}.webp")) else CN_PLACEHOLDER_THUMB
+    elif not os.path.exists(dest):
         try:
             png = fetch(f"{ASSETS}/arts/ui/storyreview/hubs/activity/{pic}.png", binary=True)
             to_jpeg(png, dest)
@@ -607,6 +623,7 @@ for act in cn_acts:
         "episodes": len(codes),
         "thumb": thumb_path,
         "unreleased": True,
+        **({"mini": True} if is_mini else {}),
     }
     if thumb_path == CN_PLACEHOLDER_THUMB:
         ev_obj.update(CN_PLACEHOLDER_THUMB_LOC)
