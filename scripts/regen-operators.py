@@ -46,7 +46,8 @@ JOB_KO = {"PIONEER": "뱅가드", "WARRIOR": "가드", "TANK": "디펜더", "SNI
           "CASTER": "캐스터", "MEDIC": "메딕", "SUPPORT": "서포터", "SPECIAL": "스페셜리스트"}
 ROOM_KO = {"MANUFACTURE": "제조소", "TRADING": "무역소", "POWER": "발전소", "WORKSHOP": "가공소",
            "DORMITORY": "숙소", "MEETING": "응접실", "HIRE": "사무실", "TRAINING": "훈련실",
-           "CONTROL": "제어 센터", "ELEVATOR": "엘리베이터", "CORRIDOR": "복도"}
+           "CONTROL": "제어 센터", "ELEVATOR": "엘리베이터", "CORRIDOR": "복도",
+           "RECYCLE": "재활용소"}  # 回收站 — 중섭 신설(2026-10 홈바운드), KR 공식 명칭 나오기 전 임시
 SP_KO = {1: "자동 회복", 2: "공격 회복", 4: "피격 회복", 8: "패시브",
          "INCREASE_WITH_TIME": "자동 회복", "INCREASE_WHEN_ATTACK": "공격 회복",
          "INCREASE_WHEN_TAKEN_DAMAGE": "피격 회복", "UNCHANGED": "패시브"}
