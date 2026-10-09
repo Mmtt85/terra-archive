@@ -12449,9 +12449,11 @@ html.dark .story-card:hover .story-thumb img {
 /* 미실장 안내 — 헤더 오른쪽 세로단에서 '육성 비용 계산' 버튼 위에 쌓인다.
    제목 블록(왼쪽 열)에 두면 문장이 길어 히어로 높이를 밀어 올렸고, 흐름 밖으로 띄우니
    버튼과 겹쳤다 — 같은 열에 쌓는 게 둘 다 피하는 방법이다 (사용자 지적 2026-08-01). */
+/* 글자색은 라이트가 기본 — 종전엔 다크 히어로 전제로 #e9e2f7 하나뿐이라 라이트모드에서 아예 안 보였다
+   (사용자 지적 2026-10-10). 다크는 아래 html.dark 규칙이 종전 색을 되살린다 */
 .modal-actions .future-note {
-  color: #e9e2f7;
-  background: #ffffff14;
+  color: #6b5b8a;
+  background: #b06dff14;
   border-left: 3px solid #b06dff;
   border-radius: 0 var(--r-sm) var(--r-sm) 0;
   margin: 0;
@@ -12459,6 +12461,10 @@ html.dark .story-card:hover .story-thumb img {
   font-size: 10px;
   line-height: 1.6;
   text-align: left;
+}
+html.dark .modal-actions .future-note {
+  color: #e9e2f7;
+  background: #ffffff14;
 }
 
 /* ── 육성 비용 계산기 (재료 파밍 탭) ──────────────────────────────────────── */
