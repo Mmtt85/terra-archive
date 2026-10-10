@@ -725,7 +725,15 @@ export function VisitsPanel() {
   // 세션 타임라인만 10초마다 조용히 다시 받는다 — '조작 중'·새 세션이 바로 보이게 (사용자 지시 2026-10-10).
   // 위 통계(요약)는 쿼리가 무거워 그대로 수동. 탭이 안 보이면 쉰다. 자동 갱신은 로딩 표시·실패 시 비우기를 하지 않는다
   const [sessBeat, setSessBeat] = useState(0);
-  const [liveOnly, setLiveOnly] = useState(false);
+  // '조작 중만'도 이 브라우저에 기억한다 — 새로고침하면 풀렸다 (사용자 지시 2026-10-10, 정렬 기억과 같은 방식)
+  const [liveOnly, setLiveOnlyState] = useState(() => {
+    try { return localStorage.getItem("ta-admin-visit-liveonly") === "1"; } catch { return false; }
+  });
+  const setLiveOnly = (fn: (v: boolean) => boolean) => setLiveOnlyState((v) => {
+    const nv = fn(v);
+    try { localStorage.setItem("ta-admin-visit-liveonly", nv ? "1" : "0"); } catch { /* 무시 */ }
+    return nv;
+  });
   const sessSilent = useRef(false);
   useEffect(() => {
     const id = setInterval(() => {
