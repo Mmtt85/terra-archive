@@ -29773,3 +29773,25 @@ html.rg-theme.rg6 .header-collapse-toggle { border-color: #1f3a34; color: color-
   .about-stage-d .about-stage-pin,
   .about-stage-m .about-stage-pin { top: calc(50% - (var(--hd) + 30px) / 2); }
 }
+
+/* 통합전략 난이도 바 — 히어로 띠 아래쪽에 붙이고 슬라이더 20% 길게 (사용자 지시 2026-10-10).
+   도구 열을 히어로 아래변까지 늘리고(bottom 16px = .rg-hero margin) 난이도 바만 아래로 밀어 붙인다.
+   슬라이더는 남는 폭을 먹는 칸이라 도구 열 폭 340 → 368px 이면 140 → 168px (→ 402px 로 202px). 좁은 화면(860px↓)은 쌓는 배치라 그대로 */
+@media (min-width: 861px) {
+  /* 폭 = 위 PRTS·리플레이·스샷 레이더 줄 폭 — 난이도 바 왼쪽을 PRTS 버튼 왼쪽에 맞춘다 (사용자 지시 같은 날, 슬라이더는 남는 폭을 먹는다).
+     16px(히어로 아래변)이면 너무 붙었다 — +14px 여유 */
+  .rg-headtools { bottom: 30px; width: auto; max-width: calc(100% - 36px); align-items: stretch; }
+  .rg-headtools > .lens-open-wrap { align-self: flex-end; }
+  .rg-headtools > .rg-diffbar { margin-top: auto; }
+}
+/* 난이도 바가 히어로 배경에 묻혔다 (사용자 지적 같은 날) — 도구 단추보다 한 단계 밝은 테마 카드 바탕 + 위 하이라이트·아래 그림자로
+   띄우고, 슬라이더 길은 테마 색을 더 섞어 바탕과 갈리게 */
+.rg .rg-diffbar {
+  background: color-mix(in srgb, var(--rgcard) 94%, #fff 6%);
+  backdrop-filter: blur(6px);
+  box-shadow: inset 0 1px 0 #ffffff1f, 0 8px 20px -8px #000c;
+}
+.rg .rg-diffbar input[type="range"] {
+  background: color-mix(in srgb, var(--rg-hue, var(--rgcrim)) 45%, #ffffff14);
+  box-shadow: inset 0 0 0 1px #ffffff14;
+}
