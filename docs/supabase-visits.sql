@@ -114,6 +114,9 @@ language sql stable as $$
   select coalesce(current_setting('request.headers', true)::json ->> 'x-admin-key', '') = '__ADMIN_KEY__'
 $$;
 
+-- ⚠ 정책은 `using ((select public.visits_is_admin()))` — 괄호 안 select 로 감싸야 쿼리마다 **한 번만** 판정한다.
+--   맨 함수 호출이면 행마다 요청 헤더 JSON 을 다시 풀어, 4만 8천 행짜리 30일 집계가 27초·시간 초과까지 갔다
+--   (2026-10-11, Supabase RLS 성능 안내의 initPlan 요령)
 alter table public.visit_session enable row level security;
 alter table public.visit_view enable row level security;
 alter table public.visit_event enable row level security;
@@ -129,17 +132,17 @@ create policy "anon insert visit view" on public.visit_view for insert to anon w
 drop policy if exists "anon insert visit event" on public.visit_event;
 create policy "anon insert visit event" on public.visit_event for insert to anon with check (true);
 drop policy if exists "admin read visit event" on public.visit_event;
-create policy "admin read visit event" on public.visit_event for select to anon using (public.visits_is_admin());
+create policy "admin read visit event" on public.visit_event for select to anon using ((select public.visits_is_admin()));
 drop policy if exists "admin read visit session" on public.visit_session;
-create policy "admin read visit session" on public.visit_session for select to anon using (public.visits_is_admin());
+create policy "admin read visit session" on public.visit_session for select to anon using ((select public.visits_is_admin()));
 drop policy if exists "admin read visit view" on public.visit_view;
-create policy "admin read visit view" on public.visit_view for select to anon using (public.visits_is_admin());
+create policy "admin read visit view" on public.visit_view for select to anon using ((select public.visits_is_admin()));
 drop policy if exists "admin read visit day" on public.visit_day;
-create policy "admin read visit day" on public.visit_day for select to anon using (public.visits_is_admin());
+create policy "admin read visit day" on public.visit_day for select to anon using ((select public.visits_is_admin()));
 drop policy if exists "admin read visit src day" on public.visit_src_day;
-create policy "admin read visit src day" on public.visit_src_day for select to anon using (public.visits_is_admin());
+create policy "admin read visit src day" on public.visit_src_day for select to anon using ((select public.visits_is_admin()));
 drop policy if exists "admin read visit page day" on public.visit_page_day;
-create policy "admin read visit page day" on public.visit_page_day for select to anon using (public.visits_is_admin());
+create policy "admin read visit page day" on public.visit_page_day for select to anon using ((select public.visits_is_admin()));
 
 -- ── 분류 함수 ────────────────────────────────────────────────────────────────
 
@@ -523,7 +526,7 @@ create table if not exists public.visit_cap (
 );
 alter table public.visit_cap enable row level security;
 drop policy if exists "admin read visit cap" on public.visit_cap;
-create policy "admin read visit cap" on public.visit_cap for select to anon using (public.visits_is_admin());
+create policy "admin read visit cap" on public.visit_cap for select to anon using ((select public.visits_is_admin()));
 
 drop function if exists public.visits_maintain();   -- 예전(90일 보관) 판 — 인자 없는 판이 남으면 호출이 모호해진다
 create or replace function public.visits_maintain(p_limit_bytes bigint default 500 * 1024 * 1024)
