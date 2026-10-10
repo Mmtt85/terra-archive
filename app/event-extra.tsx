@@ -145,24 +145,54 @@ function Missions({ list, open }: { list: NonNullable<Extra["missions"]>; open: 
   );
 }
 
+/** 훈장 상세 모달 — 목록 칸은 이름·얻는 조건까지만, 누르면 큰 그림·설명문까지 (사용자 지시 2026-10-10
+ *  "훈장도 클릭하면 상세정보, 기본적으로는 얻는 조건까지만"). 벡터 돌파 훈장 탭도 이걸 쓴다 */
+export function MedalModal({ img, name, tags, how, desc, onClose }: {
+  img: ReactNode; name: string; tags?: ReactNode; how?: ReactNode; desc?: ReactNode; onClose: () => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <ModalWindow label={name} className="operator-modal evx-furn-modal evx-medal-modal" onClose={onClose}>
+      <div className="evx-furn-detail">
+        {img}
+        <div>
+          <strong>{name}{tags}</strong>
+          {how && <dl><dt>{t("얻는 조건")}</dt><dd className="evx-medal-how">{how}</dd></dl>}
+          {desc && <p>{desc}</p>}
+        </div>
+      </div>
+    </ModalWindow>
+  );
+}
+
 function Medals({ m }: { m: NonNullable<Extra["medals"]> }) {
   const { t } = useI18n();
+  const [pick, setPick] = useState<string | null>(null);
+  const cur = m.list.find((r) => r[0] === pick);
+  const tagsOf = (rarity: string, hidden: number) => (
+    <>{rarity && <em className="evx-tier">{rarity}</em>}{hidden ? <em className="evx-hidden">{t("숨김 훈장")}</em> : null}</>
+  );
   return (
     <>
       {m.set && <p className="evx-set"><strong>{m.set[0]}</strong>{m.set[1] && <span>{m.set[1]}</span>}</p>}
       <ul className="vb-medals">
-        {m.list.map(([mid, name, rarity, how, desc, hidden]) => (
+        {m.list.map(([mid, name, rarity, how, , hidden]) => (
           <li key={mid}>
-            <img src={eventArtUrl("medal", mid)} alt="" aria-hidden width={48} height={48}
-              loading="lazy" decoding="async" onError={onImgError(`/event/medal/${mid}.webp`)} />
-            <span>
-              <b>{name}{rarity && <em className="evx-tier">{rarity}</em>}{hidden ? <em className="evx-hidden">{t("숨김 훈장")}</em> : null}</b>
-              {how && <i>{how}</i>}
-              {desc && <em className="evx-desc">{desc}</em>}
-            </span>
+            <button type="button" className="vb-medal-btn" onClick={() => setPick(mid)}>
+              <img src={eventArtUrl("medal", mid)} alt="" aria-hidden width={48} height={48}
+                loading="lazy" decoding="async" onError={onImgError(`/event/medal/${mid}.webp`)} />
+              <span>
+                <b>{name}{tagsOf(rarity, hidden)}</b>
+                {how && <i>{how}</i>}
+              </span>
+            </button>
           </li>
         ))}
       </ul>
+      {cur && (
+        <MedalModal name={cur[1]} tags={tagsOf(cur[2], cur[5])} how={cur[3]} desc={cur[4]} onClose={() => setPick(null)}
+          img={<img src={eventArtUrl("medal", cur[0])} alt="" aria-hidden width={128} height={128} onError={onImgError(`/event/medal/${cur[0]}.webp`)} />} />
+      )}
     </>
   );
 }

@@ -29721,3 +29721,23 @@ html.dark .mw-window {
 
 /* 세션 타임라인 '조작 중만' — 드롭다운 단추 결 + 앞에 초록 점(조작 중 표식과 같은 색) */
 .vz-live-btn::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: #2f9e5b; vertical-align: 1px; }
+
+/* 등장 적 카드의 기본 스탯 (사용자 지시 2026-10-10) — 이름 아래 두 칸 격자(이름표 · 수치) */
+.ev-enemies { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); }
+.ev-enemy-st { display: grid; grid-template-columns: auto 1fr; gap: 1px 6px; width: 100%; margin: 3px 0 0; padding-top: 5px; border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent); font-size: 10.5px; text-align: left; }
+.ev-enemy-st dt { color: var(--muted); font-family: var(--mono); }
+.ev-enemy-st dd { margin: 0; text-align: right; font: 600 10.5px var(--mono); color: var(--ink2); }
+
+/* 훈장 칸 = 누르는 단추 (사용자 지시 2026-10-10) — 칸 겉모양은 종전 .vb-medals li 그대로, 안쪽 단추는 투명.
+   얻는 조건까지만 보이고 설명문은 상세 모달(MedalModal)에서 */
+.vb-medals li { padding: 0; }
+.vb-medal-btn { display: flex; align-items: flex-start; gap: 8px; width: 100%; padding: 6px 8px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.vb-medal-btn > span { display: flex; flex-direction: column; min-width: 0; font-size: 12px; }
+.vb-medal-btn i { font-size: 11px; font-style: normal; color: var(--muted); }
+:root .vb-medals li:has(.vb-medal-btn) { transition: box-shadow 0.3s cubic-bezier(.2,.7,.2,1), transform 0.3s cubic-bezier(.2,.7,.2,1); }
+.evx-medal-modal .evx-furn-detail > img, .evx-medal-modal .evx-furn-detail > .ed-noimg { flex: none; width: 128px; height: 128px; object-fit: contain; }
+.evx-medal-modal .evx-medal-how { font-family: inherit; }
+.evx-medal-modal strong em { margin-left: 6px; font-size: 11px; font-style: normal; }
+:root .vb-medals li:has(.vb-medal-btn) { border-color: color-mix(in srgb, var(--ink) 7%, transparent); box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent), 0 6px 18px -6px color-mix(in srgb, var(--ink) 14%, transparent); }
+html.dark .vb-medals li:has(.vb-medal-btn) { background: color-mix(in srgb, var(--white) 96%, #fff); box-shadow: 0 8px 22px -8px #0009; }
+:root .vb-medals li:has(.vb-medal-btn):hover { transform: translateY(-2px); box-shadow: 0 2px 4px color-mix(in srgb, var(--ink) 6%, transparent), 0 14px 30px -10px color-mix(in srgb, var(--ink) 24%, transparent); }

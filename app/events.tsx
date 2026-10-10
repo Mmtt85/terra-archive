@@ -136,6 +136,8 @@ const hasThing = (row: EventRow, key: string) =>
     : key === "fut" ? !!row.fut
       : ((row[key as "stages"] as unknown[] | undefined)?.length ?? 0) > 0;
 
+/** 도면이 없는 작전 — 전투 없는 스토리 작전 (작전 카드 도면 자리를 잡지 않는다) */
+const NO_MAP = /^(st|spst)_|_st\d+$/;
 const OP_KIND: Record<string, string> = { reward: "보상", new: "신규" };
 
 /** 이벤트 오퍼 칸 = **오퍼 카드 세 장 폭으로 고정**, 넷째부터 다음 줄 (사용자 지시 2026-10-10 "세 명 넘어가면 개행,
@@ -160,6 +162,55 @@ function matsFill(nOps: number, nMats: number): boolean {
 const localeBase = (locale: string) => (locale === "ko" ? "" : `/${locale}`);
 // app/story.tsx 의 storyPath 와 같은 규칙 — 거기서 가져오면 요약·리더기 모듈이 딸려 온다
 const storyHref = (locale: string, id: string) => `${localeBase(locale)}/stories/${id}`;
+
+/** 등장 적 탭 — 카드마다 기본 스탯(강화 0단계 HP·공격·방어·마법 저항)을 붙인다 (사용자 지시 2026-10-10).
+ *  수치는 적 도감 색인(enemy-stats.json, 70KB)에서, 거기 없는 미래시 적은 미래시 도감(future-dex)의 첫 단계에서 */
+function EnemyGrid({ list, onOpen }: { list: [string, string][]; onOpen: (id: string) => void }) {
+  const { locale, t } = useI18n();
+  const [stats, setStats] = useState<Record<string, [number, number, number, number]>>({});
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      const idx = await loadEnemyStats();
+      const out: Record<string, [number, number, number, number]> = {};
+      const miss: string[] = [];
+      for (const [id] of list) {
+        const r = idx[id]?.[0];
+        if (r) out[id] = [r[1], r[2], r[3], r[4]]; else miss.push(id);
+      }
+      if (miss.length) {
+        const f = await loadFutureDex(locale).catch(() => null);
+        for (const id of miss) {
+          const lv = f?.enemies.find((e) => e.id === id)?.lv?.[0];
+          if (lv) out[id] = [lv.hp, lv.atk, lv.def, lv.res];
+        }
+      }
+      if (live) setStats(out);
+    })();
+    return () => { live = false; };
+  }, [list, locale]);
+  return (
+    <div className="ev-enemies">
+      {list.map(([id, name]) => {
+        const st = stats[id];
+        return (
+          <button key={id} type="button" className="ev-enemy" onClick={() => onOpen(id)}>
+            <img src={enemyImg(id)} alt="" aria-hidden width={72} height={72}
+              loading="lazy" decoding="async"
+              onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
+            <span>{name}</span>
+            <dl className="ev-enemy-st" aria-label={t("기본 스탯")}>
+              <dt>HP</dt><dd>{st ? st[0].toLocaleString() : "–"}</dd>
+              <dt>{t("공격")}</dt><dd>{st ? st[1].toLocaleString() : "–"}</dd>
+              <dt>{t("방어")}</dt><dd>{st ? st[2].toLocaleString() : "–"}</dd>
+              <dt>{t("마저")}</dt><dd>{st ? st[3] : "–"}</dd>
+            </dl>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function EventCard({ row, onSelect, onGuide, mini }: {
   row: EventRow; onSelect: (r: EventRow) => void; onGuide: (seg: string) => void;
@@ -364,8 +415,12 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
           <div key={id} className="ev-stage">
             <button type="button" className="ev-stage-open"
               onClick={() => (storyOnly ? openStory({ view: "scene", ep: eps[0][0] }) : onOpenStage(id))}>
-              <img className="ev-stage-map" src={asset(`/stage/${id}.webp`)} alt="" aria-hidden width={640} height={360}
-                loading="lazy" decoding="async" onError={(e) => { e.currentTarget.remove(); }} />
+              {/* 전투 없는 스토리 작전(act52side_st01 · st_ · spst_)은 도면이 없다 — 그리지 않는다. 그려 두고 404 에 지우면
+                  16:9 칸이 잡혔다가 접혀 카드 줄이 늘었다 줄었다 했다 (사용자 지적 2026-10-10 어제의 바다 작전 탭) */}
+              {!NO_MAP.test(id) && (
+                <img className="ev-stage-map" src={asset(`/stage/${id}.webp`)} alt="" aria-hidden width={640} height={360}
+                  loading="lazy" decoding="async" onError={(e) => { e.currentTarget.remove(); }} />
+              )}
               <span className="ev-stage-txt"><b>{code}</b><span>{name}</span></span>
             </button>
             {eps.length > 0 && (
@@ -392,16 +447,7 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
   const more: ExtraTab[] = [
     ...(row.enemies && row.enemies.length > 0 ? [{
       key: "enemies", label: t("등장 적 {n}", { n: row.enemies.length }), node: (
-        <div className="ev-enemies">
-          {row.enemies.map(([id, name]) => (
-            <button key={id} type="button" className="ev-enemy" onClick={() => onOpenEnemy(id)}>
-              <img src={enemyImg(id)} alt="" aria-hidden width={72} height={72}
-                loading="lazy" decoding="async"
-                onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
-              <span>{name}</span>
-            </button>
-          ))}
-        </div>
+<EnemyGrid list={row.enemies} onOpen={onOpenEnemy} />
       ),
     }] : []),
     ...extra,
@@ -473,17 +519,16 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
           (사용자 지적 2026-09-17). 좁은 화면에서는 CSS가 한 줄로 되돌린다. */}
       {row.duel ? <DuelDetail id={row.id} onOpenFighter={onOpenFighter} side={side} more={more} />
         : row.vb ? (
-          // 벡터 돌파 — 작전 자리가 탭이 된다(개요 · 작전 · 커널 돌파 · 총력전 …, 사용자 지시 2026-09-29). 썸네일 칸은 그대로 옆에
-          <div className="ev-top">
-            {side}
-            <div className="ev-top-main">
-              {pair}
-              {row.stages && row.stages.length > 0 ? (
-                <VecDetail id={row.id} stages={row.stages} stagesTab={stageList} more={more}
-                  onOpenStage={onOpenStage} onOpenEnemy={onOpenEnemy} />
-              ) : <EventTabs key={row.id} tabs={more} />}
-            </div>
-          </div>
+          // 벡터 돌파 — 작전 자리가 탭이 된다(개요 · 작전 · 커널 돌파 · 총력전 …, 사용자 지시 2026-09-29).
+          // 썸네일·오퍼·재료 칸은 **개요 탭 안에만** — 다른 이벤트·듀얼 채널과 같다. 종전엔 탭 바깥 왼쪽에 고정돼
+          // 어느 탭을 열어도 따라다녔다 (사용자 지적 2026-10-10)
+          row.stages && row.stages.length > 0 ? (
+            <VecDetail id={row.id} stages={row.stages} stagesTab={stageList} more={more}
+              top={(body) => <div className="ev-top">{side}<div className="ev-top-main">{pair}{body}</div></div>}
+              onOpenStage={onOpenStage} onOpenEnemy={onOpenEnemy} />
+          ) : (
+            <div className="ev-top">{side}<div className="ev-top-main">{pair}<EventTabs key={row.id} tabs={more} /></div></div>
+          )
         ) : (
           <EventTabs key={row.id} tabs={[
             { key: "overview", label: t("개요"), node: <div className="ev-top">{side}<div className="ev-top-main">{pair}{schedule}</div></div> },

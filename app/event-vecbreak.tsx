@@ -18,7 +18,7 @@ import { asset } from "./assets";
 import { useI18n } from "./i18n";
 import { GuideZoom } from "./event-duel";
 import { ModalWindow } from "./modal-window";
-import { EventTabs, type ExtraTab } from "./event-extra";
+import { EventTabs, MedalModal, type ExtraTab } from "./event-extra";
 
 type Boss = { e: string; n: string | null; d: string | null; lv?: number; i: string | null };
 /** [완벽 클리어, 일반 클리어, [기간 한정 시작, 끝, 추가 포인트]?] */
@@ -74,7 +74,7 @@ const n0 = (v: number | null | undefined) => (v ?? 0).toLocaleString("en-US");
 type Tab = "overview" | "stages" | "kernel" | "allout" | "front" | "supply" | "mile" | "medal" | "guide";
 const TABS: Tab[] = ["overview", "stages", "kernel", "allout", "front", "supply", "mile", "medal", "guide"];
 
-export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy, more = [] }: {
+export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy, more = [], top }: {
   id: string;
   /** 이벤트 행의 작전 [id, 코드, 이름] — 코드·이름은 여기서 빌린다 (작전 도감·미래시 도감과 같은 표기) */
   stages: [string, string, string][];
@@ -84,6 +84,9 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy, mor
   onOpenEnemy: (id: string) => void;
   /** 이벤트 창 공통 탭(등장 적·일정·미션·가구 …) — 이 탭 막대 뒤에 이어 붙인다 (2026-10-01, app/event-extra.tsx) */
   more?: ExtraTab[];
+  /** 개요 탭 틀 — 왼쪽 썸네일·교환 재화, 오른쪽 오퍼·상위 재료 아래에 body(구성·규칙·진행 일정)를 끼운다
+   *  (이벤트 창 공통 윗칸, 2026-10-10 개요 탭 안으로 → 같은 날 "섬네일 오른쪽이 텅텅 비었다, 구성·규칙·진행 일정을 오른쪽에") */
+  top?: (body: ReactNode) => ReactNode;
 }) {
   const { locale, t } = useI18n();
   const [data, setData] = useState<VecData | null | undefined>(undefined);
@@ -95,14 +98,10 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy, mor
     return () => { live = false; };
   }, [id, locale]);
   const stageOf = useMemo(() => new Map(stages.map(([sid, code, name]) => [sid, { code, name }])), [stages]);
-  // 받는 동안·자료가 없는 회차는 종전처럼 작전 목록만 — 자리가 비었다 차면 모달이 출렁인다
-  const plain = (
-    <section className="ev-sec">
-      <b>{t("작전 {n}", { n: stages.length })}</b>
-      {stagesTab}
-    </section>
-  );
-  if (!data) return more.length ? <EventTabs key={id} tabs={[{ key: "stages", label: t("작전 {n}", { n: stages.length }), node: stagesTab }, ...more]} /> : plain;
+  // 받는 동안·자료가 없는 회차는 개요(윗칸)·작전·공통 탭만 — 자리가 비었다 차면 모달이 출렁인다
+  if (!data) return <EventTabs key={id} tabs={[
+    ...(top ? [{ key: "overview", label: t("개요"), node: top(null) }] : []),
+    { key: "stages", label: t("작전 {n}", { n: stages.length }), node: stagesTab }, ...more]} />;
   const zone = (i: number, fb: string) => data.zones[i]?.[1] ?? fb;
   const label: Record<Tab, string> = {
     overview: t("개요"), stages: t("작전 {n}", { n: stages.length }),
@@ -125,7 +124,7 @@ export function VecDetail({ id, stages, stagesTab, onOpenStage, onOpenEnemy, mor
       </div>
       <div className="ed-panel" role="tabpanel">
         {more.find((x) => x.key === tab)?.node}
-        {tab === "overview" && <Overview {...ctx} />}
+        {tab === "overview" && (top ? top(<Overview {...ctx} />) : <Overview {...ctx} />)}
         {tab === "stages" && stagesTab}
         {tab === "kernel" && <Floors {...ctx} />}
         {tab === "allout" && <AllOut {...ctx} />}
@@ -324,21 +323,33 @@ function Overview({ data, stageOf, onOpenStage }: Ctx) {
 function Medals(ctx: Ctx) {
   const { data } = ctx;
   const { t } = useI18n();
+  // 목록은 이름·얻는 조건까지, 누르면 상세 모달 (사용자 지시 2026-10-10 — 이벤트 창 훈장 탭과 같은 MedalModal)
+  const [pick, setPick] = useState<string | null>(null);
   if (!data.medals.length) return <p className="no-detail">{t("훈장이 없습니다.")}</p>;
+  const cur = data.medals.find((r) => r[0] === pick);
   return (
-    <ul className="vb-medals">
-      {data.medals.map(([mid, name, , how, desc, icon]) => (
-        <li key={mid}>
-          {icon ? <img src={asset(icon)} alt="" aria-hidden width={48} height={48} loading="lazy" decoding="async" />
-            : <span className="ed-noimg" aria-hidden>?</span>}
-          <span>
-            <b>{name}</b>
-            {how && <i><Rich text={how} ctx={ctx} /></i>}
-            {desc && <em><Rich text={desc} ctx={ctx} /></em>}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className="vb-medals">
+        {data.medals.map(([mid, name, , how, , icon]) => (
+          <li key={mid}>
+            <button type="button" className="vb-medal-btn" onClick={() => setPick(mid)}>
+              {icon ? <img src={asset(icon)} alt="" aria-hidden width={48} height={48} loading="lazy" decoding="async" />
+                : <span className="ed-noimg" aria-hidden>?</span>}
+              <span>
+                <b>{name}</b>
+                {how && <i><Rich text={how} ctx={ctx} /></i>}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {cur && (
+        <MedalModal name={cur[1] ?? ""} onClose={() => setPick(null)}
+          how={cur[3] ? <Rich text={cur[3]} ctx={ctx} /> : undefined}
+          desc={cur[4] ? <Rich text={cur[4]} ctx={ctx} /> : undefined}
+          img={cur[5] ? <img src={asset(cur[5])} alt="" aria-hidden width={128} height={128} /> : <span className="ed-noimg" aria-hidden>?</span>} />
+      )}
+    </>
   );
 }
 
