@@ -692,18 +692,24 @@ export function VisitsPanel() {
   // 탭이 가려져 있으면 쉬었다가, 다시 보일 때 10초가 지났으면 곧바로. 자동 갱신은 세션 목록을 조용히(로딩 표시 없이) 받는다
   // 자동 갱신이 부른 세션 목록 재요청은 로딩 표시·실패 시 비우기를 하지 않는다
   const sessSilent = useRef(false);
+  // 진행 중인 요청 수와 마지막 응답 시각 — 자동 갱신이 겹치지 않게 (아래 타이머)
+  const inflight = useRef(0);
+  const doneAt = useRef(0);
   // 다음 자동 갱신까지 남은 초 — 'N초 후 갱신' 표시 (사용자 지시 2026-10-10)
   const [left, setLeft] = useState(AUTO_EVERY / 1000);
   useEffect(() => {
     const EVERY = AUTO_EVERY;
     let last = Date.now();
+    // ⚠ 앞 요청이 아직 돌고 있으면 다음 갱신을 걸지 않고, 시계는 **응답이 온 뒤부터** 센다 — 30일 집계는 10초를 넘기는데
+    // 그 위에 10초마다 같은 쿼리를 새로 쌓아 방문 DB 가 밀렸다(하루치 7초·7일치 60초 시간 초과, 2026-10-11 사용자 "1분째 안 바뀐다")
+    const due = () => !inflight.current && Date.now() - Math.max(last, doneAt.current) >= EVERY;
     const bump = () => { last = Date.now(); sessSilent.current = true; setTick((n) => n + 1); };
     const timer = setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      if (Date.now() - last >= EVERY) bump();
-      setLeft(Math.max(0, Math.ceil((EVERY - (Date.now() - last)) / 1000)));
+      if (due()) bump();
+      setLeft(inflight.current ? -1 : Math.max(0, Math.ceil((EVERY - (Date.now() - Math.max(last, doneAt.current))) / 1000)));
     }, 1_000);
-    const onVis = () => { if (document.visibilityState === "visible" && Date.now() - last >= EVERY) bump(); };
+    const onVis = () => { if (document.visibilityState === "visible" && due()) bump(); };
     document.addEventListener("visibilitychange", onVis);
     return () => { clearInterval(timer); document.removeEventListener("visibilitychange", onVis); };
   }, []);
@@ -711,12 +717,13 @@ export function VisitsPanel() {
   useEffect(() => {
     let alive = true;
     setLoadMain(true);
+    inflight.current += 1;
     const fail = (e: unknown) => {
       if (!alive) return;
       if ((e as Error).message === "not-configured") { setMissing(true); setStatus(""); }
       else setStatus(String((e as Error).message ?? e));
     };
-    const done = () => { if (alive) setLoadMain(false); };
+    const done = () => { inflight.current -= 1; doneAt.current = Date.now(); if (alive) setLoadMain(false); };
     if (rangeArgs) {
       rpc<Summary>("visits_summary_range", { ...rangeArgs, ...kindArgs, p_hourly: oneDay })
         .then((d) => { if (alive) { setData(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
@@ -746,11 +753,12 @@ export function VisitsPanel() {
     const silent = sessSilent.current;
     sessSilent.current = false;
     if (!silent) setLoadSess(true);
+    inflight.current += 1;
     (rangeArgs
       ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, ...kindArgs, p_src: srcFilter || null, p_limit: limit })
       : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), ...kindArgs, p_src: srcFilter || null, p_limit: limit }))
       .then((s) => { if (alive) setSessions(s); }).catch(() => { if (alive && !silent) setSessions(null); })
-      .finally(() => { if (alive && !silent) setLoadSess(false); });
+      .finally(() => { inflight.current -= 1; doneAt.current = Date.now(); if (alive && !silent) setLoadSess(false); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days, human, srcFilter, limit, tick, range, slot]);
@@ -935,7 +943,7 @@ export function VisitsPanel() {
         </button>
         {/* 이미지 리포트 — 지금 고른 기간·사람만/봇 포함 그대로 (사용자 지시 2026-10-05). 1년 보기는 일별 집계라 빠진다 */}
         <button className="vz-report-btn" onClick={() => setReport(true)} disabled={!data || busy || (days === 365 && !range) || !!slot} title={slot ? "칸을 고른 동안은 리포트를 뽑지 않습니다" : undefined}>리포트 이미지</button>
-        {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · {left}초 후 갱신</span>}
+        {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · {left < 0 ? "불러오는 중" : `${left}초 후 갱신`}</span>}
       </div>
       {status && <p className="admin-status">{status}</p>}
       {report && data && <VisitsReport data={data} from={reportSpan.from} to={reportSpan.to} who={whoLabel} onlyHuman={!kinds.includes("bot")} tops={tops} onClose={() => setReport(false)} />}
