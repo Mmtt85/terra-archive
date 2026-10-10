@@ -29610,3 +29610,103 @@ html.rg-theme.rg6 { --rg-hue: #2fbfa5; }
 .story-grid.compact .story-card-info h3 .future-badge {
   display: none;
 }
+
+/* 작전 카드 도면을 카드 폭 가득 16:9 로 (사용자 요청 2026-10-10 "섬네일이 너무 작아서 뭔 맵인지 보이지도 않음").
+   종전 40px 정사각은 640×360 도면의 가운데만 잘라 보였다. 도면 위 · 코드·이름 아래, 스토리 화 칩은 도면 오른쪽 위에 얹는다.
+   도면이 없는 작전(onError 로 img 를 지운다)은 종전 가로 한 줄 그대로. */
+.ev-stages, .ev-stages:has(.ev-stage-sy) { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.ev-stage:has(.ev-stage-map) { position: relative; align-items: stretch; padding: 0; overflow: hidden; }
+.ev-stage:has(.ev-stage-map) .ev-stage-open { flex-direction: column; align-items: stretch; gap: 0; }
+/* 도면 원본 대부분이 16:9 를 512×512 로 눌러 담은 것 — 작전 도감(.st-map, stage-cam PHOTO_ASPECT)처럼 fill 로 편다
+   (cover 는 위아래를 잘랐다 — 사용자 지적 2026-10-10) */
+.ev-stage .ev-stage-map { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: fill; border: 0; display: block; }
+.ev-stage-txt { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.ev-stage-txt > b { flex: none; font: 700 12px var(--mono); color: var(--lime-ink, var(--ink2)); }
+.ev-stage-txt > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev-stage:has(.ev-stage-map) .ev-stage-txt { padding: 6px 9px 7px; }
+.ev-stage:has(.ev-stage-map) .ev-stage-sy { position: absolute; top: 6px; right: 6px; }
+.ev-stage:has(.ev-stage-map) .ev-stage-sy button { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); }
+@media (max-width: 560px) {
+  .ev-stages, .ev-stages:has(.ev-stage-sy) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* 등장 적·이벤트 가구 섬네일 키우기 (사용자 요청 2026-10-10) — 가로 칩(44px·32px)에서 그림 위·이름 아래 세로 카드로 */
+.ev-enemies { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 7px; }
+.ev-enemy { flex-direction: column; gap: 4px; padding: 8px 6px 7px; text-align: center; }
+.ev-enemy img { width: 72px; height: 72px; }
+.ev-enemy > span { font-size: 11.5px; line-height: 1.3; overflow-wrap: anywhere; }
+.evx-furn-big { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 7px; }
+.evx-furn-big .evx-rw { flex-direction: column; justify-content: flex-start; gap: 5px; padding: 8px 6px 7px; text-align: center; font-size: 11.5px; line-height: 1.3; }
+.evx-furn-big .evx-rw img { width: 96px; height: 96px; }
+
+/* 이벤트 상세 모달 안 카드(작전·등장 적·오퍼·재화·맵 상위 재료·가구·보상 칩)도 사이트 카드 공통 디자인으로 (사용자 지시 2026-10-10) —
+   진한 테두리 대신 옅은 테두리 + 흐린 그림자, 누르는 카드만 올리면 그림자가 짙어지며 2px 떠오른다 */
+:root :is(.ev-stage, .ev-mat, .ev-enemy, .ev-op, .ev-item, .evx-rw) {
+  border-color: color-mix(in srgb, var(--ink) 7%, transparent);
+  background: var(--white);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent), 0 6px 18px -6px color-mix(in srgb, var(--ink) 14%, transparent);
+  transition: box-shadow 0.3s cubic-bezier(.2,.7,.2,1), transform 0.3s cubic-bezier(.2,.7,.2,1), background 0.3s cubic-bezier(.2,.7,.2,1);
+}
+:root :is(.ev-stage, .ev-mat, button.ev-enemy, button.ev-op, button.ev-item, button.evx-rw):hover {
+  border-color: color-mix(in srgb, var(--ink) 7%, transparent);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--ink) 6%, transparent), 0 14px 30px -10px color-mix(in srgb, var(--ink) 24%, transparent);
+  transform: translateY(-2px);
+}
+html.dark :is(.ev-stage, .ev-mat, .ev-enemy, .ev-op, .ev-item, .evx-rw) {
+  background: color-mix(in srgb, var(--white) 96%, #fff);
+  box-shadow: 0 8px 22px -8px #0009;
+}
+html.dark :is(.ev-stage, .ev-mat, button.ev-enemy, button.ev-op, button.ev-item, button.evx-rw):hover {
+  background: color-mix(in srgb, var(--white) 92%, #fff);
+  box-shadow: 0 14px 30px -10px #000c;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root :is(.ev-stage, .ev-mat, button.ev-enemy, button.ev-op, button.ev-item, button.evx-rw):hover { transform: none; }
+}
+
+/* 맵 상위 재료가 두 줄 이상이면 재료 칸을 오퍼 칸 높이까지 늘려 밑변을 맞춘다 (events.tsx matsFill, 사용자 요청 2026-10-10).
+   두 칸이 나란할 때만 — 행은 1fr 이라 늘어난 높이를 줄마다 고르게 나눠 갖는다 */
+@media (min-width: 721px) {
+  .ev-pair.fill { align-items: stretch; }
+  .ev-pair.fill > .ev-sec { display: flex; flex-direction: column; }
+  .ev-pair.fill .ev-mats { flex: 1 1 auto; }
+}
+
+/* 이벤트 오퍼 — 한 줄에 세 장까지, 넷째부터 다음 줄 (사용자 지시 2026-10-10). 폭은 events.tsx OPS_W 가 --ev-ops-w 로 준다 */
+.ev-pair .ev-ops { max-width: var(--ev-ops-w, 248px); }
+
+/* 이벤트 가구 상세 (사용자 요청 2026-10-10) — 부분 세트 효과 줄 · 고른 가구의 상세 칸 · 카드 아래 분위기 수치 */
+.evx-furn-sets { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+.evx-furn-sets b { color: var(--ink); font-family: var(--mono); }
+.evx-furn-big .evx-rw small { font: 600 10.5px var(--mono); color: var(--muted); }
+.evx-furn-big .evx-rw.on { box-shadow: inset 0 -2px 0 var(--tab-line), 0 2px 4px color-mix(in srgb, var(--ink) 6%, transparent), 0 14px 30px -10px color-mix(in srgb, var(--ink) 24%, transparent); }
+.evx-furn-detail { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 12px; padding: 12px 14px; background: var(--soft-fill, color-mix(in srgb, var(--ink) 5%, var(--paper))); }
+.evx-furn-detail > img { flex: none; width: 128px; height: 128px; object-fit: contain; }
+.evx-furn-detail > div { min-width: 0; font-size: 12.5px; }
+.evx-furn-detail strong { display: block; font-size: 14px; margin-bottom: 6px; }
+.evx-furn-detail dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0 0 8px; }
+.evx-furn-detail dt { color: var(--muted); }
+.evx-furn-detail dd { margin: 0; font-family: var(--mono); }
+.evx-furn-detail p { margin: 0; white-space: pre-line; line-height: 1.6; color: var(--ink2); }
+@media (max-width: 560px) {
+  .evx-furn-detail > img { width: 84px; height: 84px; }
+}
+/* 가구 상세 모달 — 상세 칸이 모달 본문이 되므로 바탕 칸 대신 여백만, 창 폭은 설명문 두세 줄이 읽히는 정도 */
+.evx-furn-modal { width: min(560px, calc(100vw - 32px)); }
+.evx-furn-modal .evx-furn-detail { margin: 0; padding: 16px 18px; background: none; }
+.evx-furn-modal .evx-furn-detail > img { width: 160px; height: 160px; }
+
+/* 모달 경계 — 그림자만으론 뒤 배경(특히 모달 위 모달·밝은 배경)과 경계가 흐렸다 (사용자 지적 2026-10-10).
+   창 틀의 1px 테두리 자리(투명이던 것)에 옅은 윤곽색을 다시 칠하고 가까운 그림자를 조금 진하게.
+   ⚠ 그림자 고리(0 0 0 1px)로 그리면 투명 테두리 1px 에 창 바탕이 비쳐 다크에서 위 가장자리가 두 줄(밝은 고리 +
+   어두운 띠)로 보였다 — 위 하이라이트(inset 1px)도 같은 이유로 뺀다 (사용자 지적 같은 날) */
+:root .mw-window {
+  border-color: color-mix(in srgb, var(--ink) 16%, transparent);
+  box-shadow:
+    0 4px 12px color-mix(in srgb, var(--ink) 14%, transparent),
+    0 28px 64px -18px color-mix(in srgb, var(--ink) 45%, transparent);
+}
+html.dark .mw-window {
+  border-color: #ffffff24;
+  box-shadow: 0 4px 14px #0008, 0 28px 70px -18px #000e;
+}

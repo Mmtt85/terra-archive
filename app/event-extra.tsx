@@ -11,6 +11,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { asset, eventArtUrl } from "./assets";
 import { useI18n } from "./i18n";
 import { itemIcon } from "./items";
+import { ModalWindow } from "./modal-window";
 
 /** 이벤트 창 탭 하나 — 이벤트 창·듀얼 채널·벡터 돌파 상세가 같은 탭 막대에 이어 붙인다 */
 export type ExtraTab = { key: string; label: string; node: ReactNode };
@@ -26,7 +27,8 @@ type Extra = {
   /** 훈장 — set [세트 이름, 설명] · list [id, 이름, 등급, 획득 조건, 설명, 숨김 1/0] */
   medals?: { set?: [string, string]; list: [string, string, string, string, string, number][] };
   /** 이벤트 가구 — theme [테마 이름, 설명] · list [id, 이름, 등급] */
-  furn?: { theme?: [string, string]; list: [string, string, number][] };
+  /** list: [id, 이름, 희귀도, 분위기, [가로, 깊이, 높이], 상호작용(MUSIC …), 설명문] · sets: 부분 세트 [이름, 가구 수, 분위기 보너스] */
+  furn?: { theme?: [string, string]; list: [string, string, number, number?, [number, number, number]?, string?, string?][]; sets?: [string, number, number][] };
   /** 이벤트 기간 신뢰도 보너스 오퍼 [id, 이름] */
   favor?: [string, string][];
   /** 이 이벤트의 스토리 — id · 전문 화 목록 eps [작전 코드, 구분](배열 순서 = 리더기 화 번호) · AI 요약 sum · 리더기 scene */
@@ -165,19 +167,52 @@ function Medals({ m }: { m: NonNullable<Extra["medals"]> }) {
   );
 }
 
+// 가구 카드를 누르면 그 가구의 상세(분위기·크기·상호작용·설명문)를 모달로 (사용자 지시 2026-10-10 "클릭하면 모달로") (사용자 요청 2026-10-10 "이벤트 가구는
+// 상세 데이터 없어?"). 세트 설명 밑엔 부분 세트 효과(가구 n개 → 분위기 +m)와 가구 분위기 합
 function Furniture({ f }: { f: NonNullable<Extra["furn"]> }) {
+  const { t } = useI18n();
+  const [pick, setPick] = useState<string | null>(null);
+  const cur = f.list.find((r) => r[0] === pick);
+  const total = f.list.reduce((a, r) => a + (r[3] ?? 0), 0);
   return (
     <>
       {f.theme && <p className="evx-set"><strong>{f.theme[0]}</strong>{f.theme[1] && <span>{f.theme[1]}</span>}</p>}
-      <div className="evx-furn">
-        {f.list.map(([fid, name]) => (
-          <span key={fid} className="evx-rw">
-            <img src={eventArtUrl("furni", fid)} alt="" aria-hidden width={32} height={32}
+      {(f.sets?.length || total > 0) && (
+        <p className="evx-furn-sets">
+          {total > 0 && <span>{t("가구 분위기 합")} <b>{total.toLocaleString()}</b></span>}
+          {f.sets?.map(([name, n, c], i) => (
+            <span key={i} title={name || undefined}>{name ? `${name} · ` : ""}{t("{n}개 모으면", { n })} <b>+{c}</b></span>
+          ))}
+        </p>
+      )}
+      <div className="evx-furn evx-furn-big">
+        {f.list.map(([fid, name, , comfort]) => (
+          <button key={fid} type="button" className={`evx-rw${fid === pick ? " on" : ""}`} aria-pressed={fid === pick}
+            onClick={() => setPick((p) => (p === fid ? null : fid))}>
+            <img src={eventArtUrl("furni", fid)} alt="" aria-hidden width={96} height={96}
               loading="lazy" decoding="async" onError={onImgError(`/event/furni/${fid}.webp`)} />
             <span>{name}</span>
-          </span>
+            {comfort ? <small>{t("분위기")} {comfort}</small> : null}
+          </button>
         ))}
       </div>
+      {cur && (
+        <ModalWindow label={cur[1]} className="operator-modal evx-furn-modal" onClose={() => setPick(null)}>
+          <div className="evx-furn-detail">
+            <img src={eventArtUrl("furni", cur[0])} alt="" aria-hidden width={160} height={160}
+              onError={onImgError(`/event/furni/${cur[0]}.webp`)} />
+            <div>
+              <strong>{cur[1]}</strong>
+              <dl>
+                {cur[3] != null && <><dt>{t("분위기")}</dt><dd>{cur[3]}</dd></>}
+                {cur[4] && <><dt>{t("크기")}</dt><dd>{t("가로 {w} · 깊이 {d} · 높이 {h}", { w: cur[4][0], d: cur[4][1], h: cur[4][2] })}</dd></>}
+                {cur[5] && <><dt>{t("상호작용")}</dt><dd>{cur[5] === "MUSIC" ? t("음악 재생") : cur[5]}</dd></>}
+              </dl>
+              {cur[6] && <p>{cur[6]}</p>}
+            </div>
+          </div>
+        </ModalWindow>
+      )}
     </>
   );
 }

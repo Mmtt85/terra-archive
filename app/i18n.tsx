@@ -3530,6 +3530,13 @@ const D: Record<string, Pair> = {
   "모두 보기 ({n})": ["Show all ({n})", "すべて表示 ({n})"],
   "숨김 훈장": ["Hidden", "隠し勲章"],
   "이벤트 가구 {n}": ["Event furniture {n}", "イベント家具 {n}"],
+  "가구 분위기 합": ["Total ambience", "家具の快適度合計"],
+  "{n}개 모으면": ["{n}-piece set", "{n}個セット"],
+  "분위기": ["Ambience", "快適度"],
+  "크기": ["Size", "サイズ"],
+  "가로 {w} · 깊이 {d} · 높이 {h}": ["W {w} · D {d} · H {h}", "幅 {w} · 奥行 {d} · 高さ {h}"],
+  "상호작용": ["Interaction", "インタラクト"],
+  "음악 재생": ["Plays music", "音楽再生"],
   "신뢰도 보너스 오퍼레이터": ["Trust bonus operators", "信頼度ボーナス対象オペレーター"],
   "게임의 맹약 초대 문구로 같은 방에 모여, 고른 전략과 가고 싶은 맹약을 서로 봅니다": [
     "Paste the game's alliance invite to meet in one room and see each other's strategy and target alliances",

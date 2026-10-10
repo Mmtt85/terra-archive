@@ -93,7 +93,7 @@ def tables(srv):
         "act": act, "basic": act.get("basicInfo") or {}, "detail": detail, "missions": missions,
         "medal": {m["medalId"]: m for m in medal.get("medalList") or []},
         "groups": {g["groupId"]: g for t in (medal.get("medalTypeData") or {}).values() for g in (t.get("groupData") or [])},
-        "themes": bld.get("themes") or {}, "furn": bld.get("furnitures") or {},
+        "themes": bld.get("themes") or {}, "furn": bld.get("furnitures") or {}, "fgroups": bld.get("groups") or {},
         "items": opt(srv, "item_table").get("items") or {},
         "chars": opt(srv, "character_table"),
         "skins": opt(srv, "skin_table").get("charSkins") or {},
@@ -152,9 +152,25 @@ def build_event(aid, T, tx, name_of, skip):
     if fids:
         th_id = next((T["furn"][f].get("themeId") for f in fids if T["furn"][f].get("themeId")), None)
         th = T["themes"].get(th_id) or {}
-        rec["furn"] = {"list": [[f, name_of("furn", f, T["furn"][f].get("name")), T["furn"][f].get("rarity") or 0] for f in fids]}
+        # 가구 상세 (사용자 요청 2026-10-10 "이벤트 가구는 상세 데이터 없어?") — [id, 이름, 희귀도, 분위기, [가로, 깊이, 높이],
+        # 상호작용(MUSIC 등, 없으면 ""), 설명문]. 설명문은 그 언어 표에 그 가구가 있을 때만(미실장은 중국어를 싣지 않는다)
+        def furn_row(f):
+            fu = T["furn"][f]
+            ia = fu.get("interactType") or ""
+            return [f, name_of("furn", f, fu.get("name")), fu.get("rarity") or 0, fu.get("comfort") or 0,
+                    [fu.get("width") or 0, fu.get("depth") or 0, fu.get("height") or 0],
+                    "" if ia == "NONE" else ia, name_of("furndesc", f, fu.get("description")) or ""]
+        rec["furn"] = {"list": [furn_row(f) for f in fids]}
         if th.get("name"):
             rec["furn"]["theme"] = [tx(th["name"], f"theme {th_id}"), tx(th.get("desc"), f"theme {th_id}")]
+        # 부분 세트 효과 — 테마의 묶음마다 [묶음 이름, 가구 수, 분위기 보너스]. 이름은 그 언어 표에 있을 때만
+        sets = []
+        for gid in th.get("groups") or []:
+            g = T["fgroups"].get(gid) or {}
+            if g.get("comfort"):
+                sets.append([name_of("fgroup", gid, g.get("name")) or "", len(g.get("furniture") or []) or g.get("count") or 0, g["comfort"]])
+        if sets:
+            rec["furn"]["sets"] = sets
     if not skip:
         g = T["groups"].get(info.get("medalGroupId") or "")
         mrows = []
@@ -304,6 +320,9 @@ def make_name_of(loc, T, tx, fut):
             return clean(cn_name) or None          # 한섭 이벤트 — 그 서버 표의 이름 그대로
         if kind == "char":
             return ops.get(rid) or (tx(cn_name, f"char {rid}") if cn_name else None)
+        if kind in ("furndesc", "fgroup"):         # 설명문·세트 이름 — 그 언어 표의 공식 문구만 (중국어 원문·비공식 번역은 안 싣는다)
+            own = (T["furn"].get(rid) or {}).get("description") if kind == "furndesc" else (T["fgroups"].get(rid) or {}).get("name")
+            return clean(own) or None
         own = {"furn": (T["furn"].get(rid) or {}).get("name"),
                "item": (T["items"].get(rid) or {}).get("name"),
                "skin": ((T["skins"].get(rid) or {}).get("displaySkin") or {}).get("skinName")}.get(kind)

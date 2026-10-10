@@ -138,26 +138,23 @@ const hasThing = (row: EventRow, key: string) =>
 
 const OP_KIND: Record<string, string> = { reward: "보상", new: "신규" };
 
-/** 이벤트 오퍼 ↔ 맵 상위 재료 두 칸의 **높이 맞추기** — 오퍼 카드를 한 줄에 몇 장 둘지를 개수로 고른다
- *  (사용자 요청 2026-10-01 "상위재료가 세로로 너무 길다. 이벤트오퍼를 두줄로 하는 한이 있어도 높이 좀 맞춰줘").
- *  왼쪽 칸은 오퍼 카드 폭만큼(auto)이라 오퍼 다섯이면 한 줄로 418px 을 먹고, 재료는 남은 230px 에 한 열로
- *  12칸 — 841px 까지 내려갔다(상전이 임계). 데스크톱 쌍 폭(666px)과 카드 크기 실측값으로, 두 칸 중 높은 쪽이
- *  가장 낮아지는 장수를 고른다. 그대로가 가장 나으면 null(종전 배치 그대로). 측정 없이 개수만 보므로 첫 페인트부터 같다. */
-const OP_CARD = 78, OP_CARD_H = 139, OP_GAP = 7, PAIR_W = 666, PAIR_GAP = 18, MAT_MIN = 180, MAT_H = 63, MAT_GAP = 6;
-function opsPerRow(nOps: number, nMats: number): number | null {
-  if (!nOps || !nMats) return null;
-  const tallest = (r: number) => {
-    const opRows = Math.ceil(nOps / r);
-    const opsW = r * OP_CARD + (r - 1) * OP_GAP;
-    const cols = Math.max(1, Math.floor((PAIR_W - opsW - PAIR_GAP + MAT_GAP) / (MAT_MIN + MAT_GAP)));
-    const matRows = Math.ceil(nMats / cols);
-    return Math.max(opRows * OP_CARD_H + (opRows - 1) * OP_GAP, matRows * MAT_H + (matRows - 1) * MAT_GAP);
-  };
-  // 오퍼는 **두 줄까지만** ("두줄로 하는 한이 있어도") — 세 줄 넘게 세로로 쌓이면 오히려 어색하다.
-  // 바꿔도 15% 넘게 낮아지지 않으면 종전 배치를 둔다 (오퍼 셋·재료 열셋인 메인 사이드는 477→431 이라 그대로)
-  let best = nOps;
-  for (let r = nOps - 1; r >= 1 && Math.ceil(nOps / r) <= 2; r--) if (tallest(r) < tallest(best)) best = r;
-  return best < nOps && tallest(best) <= tallest(nOps) * 0.85 ? best : null;
+/** 이벤트 오퍼 칸 = **오퍼 카드 세 장 폭으로 고정**, 넷째부터 다음 줄 (사용자 지시 2026-10-10 "세 명 넘어가면 개행,
+ *  한 명이라도 세 명 폭으로 고정"). 종전엔 개수로 한 줄 장수를 고르는 함수(2026-10-01)라 이벤트마다 칸 폭이 달랐다.
+ *  CSS .ev-ops 가 OPS_W 폭에서 줄을 바꾸고, .ev-pair 왼쪽 칸이 OPS_W. 재료 열 수는 남은 폭(PAIR_W − OPS_W)으로 센다(실측값). */
+const OP_CARD = 78, OP_GAP = 7, OPS_PER_ROW = 3, PAIR_W = 666, PAIR_GAP = 18, MAT_MIN = 180, MAT_GAP = 6;
+const OPS_W = OPS_PER_ROW * OP_CARD + (OPS_PER_ROW - 1) * OP_GAP;
+
+/** 재료 칸이 오퍼 칸보다 **조금만** 짧은 쌍 — 재료 칸을 오퍼 칸 높이까지 늘려 밑변을 맞춘다 (사용자 요청 2026-10-10
+ *  "두 줄일 때 오퍼 카드랑 높이 딱 맞게"). 오퍼 셋·재료 셋이면 재료 2줄 132px ↔ 오퍼 139px 로 7px 어긋났다.
+ *  차이가 크면(재료 한 줄, 오퍼가 두 줄로 넘어감) 늘리지 않는다 — 재료 카드가 뚱뚱해진다 (사용자 지적 같은 날
+ *  "오퍼가 두 줄째로 넘어갔다고 상위 재료도 뚱뚱해질 필요는 없지"). 높이는 카드 실측값으로 센다 */
+const OP_CARD_H = 139, MAT_H = 63;
+function matsFill(nOps: number, nMats: number): boolean {
+  if (!nOps || !nMats) return false;
+  const cols = Math.max(1, Math.floor((PAIR_W - OPS_W - PAIR_GAP + MAT_GAP) / (MAT_MIN + MAT_GAP)));
+  const opRows = Math.ceil(nOps / OPS_PER_ROW), matRows = Math.ceil(nMats / cols);
+  const opH = opRows * OP_CARD_H + (opRows - 1) * OP_GAP, matH = matRows * MAT_H + (matRows - 1) * MAT_GAP;
+  return matH < opH && matH >= opH * 0.85;
 }
 
 const localeBase = (locale: string) => (locale === "ko" ? "" : `/${locale}`);
@@ -311,11 +308,10 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
     </div>
   );
   // 개요 오른쪽 — 이벤트 오퍼레이터 ↔ 맵에서 나오는 상위 재료를 나란히 (사용자 요청 2026-09-17). 한쪽만 있으면 그쪽이
-  // 폭을 다 쓰고, 둘 다 있으면 높이를 맞춘다(opsPerRow).
-  const perRow = opsPerRow(row.ops?.length ?? 0, row.mats?.length ?? 0);
+  // 폭을 다 쓰고, 둘 다 있으면 오퍼 칸은 세 장 폭(OPS_W) 고정·재료가 두 줄 이상이면 밑변을 맞춘다(matsFill).
   const pair = (
-    <div className={perRow ? "ev-pair bal" : "ev-pair"}
-      style={perRow ? ({ "--ev-ops-w": `${perRow * OP_CARD + (perRow - 1) * OP_GAP}px` } as React.CSSProperties) : undefined}>
+    <div className={`ev-pair${row.ops?.length && row.mats?.length ? " bal" : ""}${matsFill(row.ops?.length ?? 0, row.mats?.length ?? 0) ? " fill" : ""}`}
+      style={{ "--ev-ops-w": `${OPS_W}px` } as React.CSSProperties}>
       {row.ops && row.ops.length > 0 && (
         <section className="ev-sec">
           <b>{t("이벤트 오퍼레이터")}</b>
@@ -355,8 +351,8 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
       )}
     </div>
   );
-  // 작전 — 코드 앞머리로 묶고(PA · PA-EX …), 카드마다 작은 실사 도면 (사용자 요청 2026-10-01 "작전카드에 쪼그만하게
-  // 실사도면 섬네일"). 도면은 작전 도감과 같은 파일(public/stage/<작전 id>.webp) — 없는 작전(46/2545)은 자리를 접는다.
+  // 작전 — 코드 앞머리로 묶고(PA · PA-EX …), 카드마다 실사 도면 (사용자 요청 2026-10-01 "작전카드에 쪼그만하게
+  // 실사도면 섬네일" → 10-10 "너무 작아서 뭔 맵인지 안 보인다" — 카드 폭 가득 16:9 로 키웠다). 도면은 작전 도감과 같은 파일(public/stage/<작전 id>.webp) — 없는 작전(46/2545)은 자리를 접는다.
   // 카드 오른쪽 칩 = 그 작전의 스토리 화(작전 전·작전 후·브릿지) — 누르면 리더기가 그 화부터. 전투 없는 스토리 작전
   // (st_/spst_ — 17-1 같은 것)은 카드 자체가 그 화를 연다(작전 상세엔 볼 게 없다).
   const stageCards = (items: [string, string, string][]) => (
@@ -368,9 +364,9 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
           <div key={id} className="ev-stage">
             <button type="button" className="ev-stage-open"
               onClick={() => (storyOnly ? openStory({ view: "scene", ep: eps[0][0] }) : onOpenStage(id))}>
-              <img className="ev-stage-map" src={asset(`/stage/${id}.webp`)} alt="" aria-hidden width={56} height={56}
+              <img className="ev-stage-map" src={asset(`/stage/${id}.webp`)} alt="" aria-hidden width={640} height={360}
                 loading="lazy" decoding="async" onError={(e) => { e.currentTarget.remove(); }} />
-              <b>{code}</b><span>{name}</span>
+              <span className="ev-stage-txt"><b>{code}</b><span>{name}</span></span>
             </button>
             {eps.length > 0 && (
               <span className="ev-stage-sy">
@@ -385,24 +381,6 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
       })}
     </div>
   );
-  // 작전 탭 맨 위 — 스토리 보기 세 가지 + 작전 카드가 없는 스토리 화(브릿지 PA-ST-1 등)
-  const codes = new Set((row.stages ?? []).map((s) => s[1]));
-  const looseEps = (story?.eps ?? []).map(([code, tag], i) => [i, code, epKind(tag)] as const).filter(([, code]) => !codes.has(code));
-  const storyBar = storyId ? (
-    <div className="ev-story-bar">
-      <b>{t("스토리")}</b>
-      {(story?.eps?.length ?? 0) > 0 && <button type="button" onClick={() => openStory({ view: "scene" })}>{t("리더기")}</button>}
-      {(story?.eps?.length ?? 0) > 0 && <button type="button" onClick={() => openStory({ view: "script" })}>{t("전문 보기 (풀 스크립트)")}</button>}
-      {(story?.sum || (!story && row.story)) && <button type="button" onClick={() => openStory({ view: "summary" })}>{t("AI 요약")}</button>}
-      {looseEps.length > 0 && (
-        <span className="ev-story-loose">
-          {looseEps.map(([i, code, kind]) => (
-            <button key={i} type="button" onClick={() => openStory({ view: "scene", ep: i })}>{code} {t(kind)}</button>
-          ))}
-        </span>
-      )}
-    </div>
-  ) : null;
   const stageGroups = row.stages && row.stages.length > 0 ? groupStages(row.stages) : [];
   const stageList = !row.stages?.length ? null : stageGroups.length < 2 ? stageCards(stageGroups[0].items) : stageGroups.map((g) => (
     <div key={g.key} className="ev-stage-group">
@@ -417,7 +395,7 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
         <div className="ev-enemies">
           {row.enemies.map(([id, name]) => (
             <button key={id} type="button" className="ev-enemy" onClick={() => onOpenEnemy(id)}>
-              <img src={enemyImg(id)} alt="" aria-hidden width={44} height={44}
+              <img src={enemyImg(id)} alt="" aria-hidden width={72} height={72}
                 loading="lazy" decoding="async"
                 onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
               <span>{name}</span>
@@ -501,7 +479,7 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
             <div className="ev-top-main">
               {pair}
               {row.stages && row.stages.length > 0 ? (
-                <VecDetail id={row.id} stages={row.stages} stagesTab={<>{storyBar}{stageList}</>} more={more}
+                <VecDetail id={row.id} stages={row.stages} stagesTab={stageList} more={more}
                   onOpenStage={onOpenStage} onOpenEnemy={onOpenEnemy} />
               ) : <EventTabs key={row.id} tabs={more} />}
             </div>
@@ -509,7 +487,7 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
         ) : (
           <EventTabs key={row.id} tabs={[
             { key: "overview", label: t("개요"), node: <div className="ev-top">{side}<div className="ev-top-main">{pair}{schedule}</div></div> },
-            ...(stageList ? [{ key: "stages", label: t("작전 {n}", { n: row.stages?.length ?? 0 }), node: <>{storyBar}{stageList}</> }] : []),
+            ...(stageList ? [{ key: "stages", label: t("작전 {n}", { n: row.stages?.length ?? 0 }), node: stageList }] : []),
             ...more,
           ]} />
         )}
