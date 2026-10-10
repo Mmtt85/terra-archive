@@ -464,6 +464,7 @@ const KIND_HINT: Record<Kind, string> = {
   bot: "나머지 — 화면 기록 없음·화면에 0초(미리보기)·해외 시간대 무조작",
 };
 const SPAN_LABEL: Record<number, string> = { 7: "최근 7일", 30: "최근 30일", 90: "최근 90일", 365: "1년(일별 집계)" };
+const AUTO_EVERY = 10_000;              // 방문 통계 자동 갱신 주기 (2026-10-10 1분 → 10초)
 const SESSIONS_ALL = 5000;                // 세션 타임라인 '전체 보기'의 상한 (visits_sessions 도 5,000 에서 자른다)
 const ALL_STEP = 50;                      // 전체 보기 창에서 한 번에 더 그리는 줄 수
 
@@ -687,12 +688,21 @@ export function VisitsPanel() {
   const [loadSess, setLoadSess] = useState(false);
   const busy = loadMain || loadSess;
 
-  // 켜 둔 동안 1분마다 새로고침 (사용자 지시 2026-10-04, 5분 → 1분). 탭이 가려져 있으면 쉬었다가, 다시 보일 때 1분이 지났으면 곧바로.
+  // 켜 둔 동안 10초마다 새로고침 (사용자 지시 2026-10-04 5분 → 1분, 2026-10-10 1분 → 10초 "방문 통계 10초마다").
+  // 탭이 가려져 있으면 쉬었다가, 다시 보일 때 10초가 지났으면 곧바로. 자동 갱신은 세션 목록을 조용히(로딩 표시 없이) 받는다
+  // 자동 갱신이 부른 세션 목록 재요청은 로딩 표시·실패 시 비우기를 하지 않는다
+  const sessSilent = useRef(false);
+  // 다음 자동 갱신까지 남은 초 — 'N초 후 갱신' 표시 (사용자 지시 2026-10-10)
+  const [left, setLeft] = useState(AUTO_EVERY / 1000);
   useEffect(() => {
-    const EVERY = 60_000;
+    const EVERY = AUTO_EVERY;
     let last = Date.now();
-    const bump = () => { last = Date.now(); setTick((n) => n + 1); };
-    const timer = setInterval(() => { if (document.visibilityState === "visible" && Date.now() - last >= EVERY) bump(); }, 5_000);
+    const bump = () => { last = Date.now(); sessSilent.current = true; setTick((n) => n + 1); };
+    const timer = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - last >= EVERY) bump();
+      setLeft(Math.max(0, Math.ceil((EVERY - (Date.now() - last)) / 1000)));
+    }, 1_000);
     const onVis = () => { if (document.visibilityState === "visible" && Date.now() - last >= EVERY) bump(); };
     document.addEventListener("visibilitychange", onVis);
     return () => { clearInterval(timer); document.removeEventListener("visibilitychange", onVis); };
@@ -722,10 +732,6 @@ export function VisitsPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days, human, tick, range, slot]);
 
-  // 세션 타임라인만 10초마다 조용히 다시 받는다 — '조작 중'·새 세션이 바로 보이게 (사용자 지시 2026-10-10).
-  // 위 통계(요약)는 쿼리가 무거워 그대로 수동. 탭이 안 보이면 쉰다. 자동 갱신은 로딩 표시·실패 시 비우기를 하지 않는다
-  const [sessBeat, setSessBeat] = useState(0);
-  // '조작 중만'도 이 브라우저에 기억한다 — 새로고침하면 풀렸다 (사용자 지시 2026-10-10, 정렬 기억과 같은 방식)
   const [liveOnly, setLiveOnlyState] = useState(() => {
     try { return localStorage.getItem("ta-admin-visit-liveonly") === "1"; } catch { return false; }
   });
@@ -734,15 +740,6 @@ export function VisitsPanel() {
     try { localStorage.setItem("ta-admin-visit-liveonly", nv ? "1" : "0"); } catch { /* 무시 */ }
     return nv;
   });
-  const sessSilent = useRef(false);
-  useEffect(() => {
-    const id = setInterval(() => {
-      if (document.visibilityState !== "visible") return;
-      sessSilent.current = true;
-      setSessBeat((n) => n + 1);
-    }, 10_000);
-    return () => clearInterval(id);
-  }, []);
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
     let alive = true;
@@ -756,7 +753,7 @@ export function VisitsPanel() {
       .finally(() => { if (alive && !silent) setLoadSess(false); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, human, srcFilter, limit, tick, range, slot, sessBeat]);
+  }, [days, human, srcFilter, limit, tick, range, slot]);
 
   // 세션 타임라인 '전체 보기' — 창을 열 때 상한(5,000)까지 따로 받는다
   const [allSessions, setAllSessions] = useState<SessRow[] | null>(null);
@@ -938,7 +935,7 @@ export function VisitsPanel() {
         </button>
         {/* 이미지 리포트 — 지금 고른 기간·사람만/봇 포함 그대로 (사용자 지시 2026-10-05). 1년 보기는 일별 집계라 빠진다 */}
         <button className="vz-report-btn" onClick={() => setReport(true)} disabled={!data || busy || (days === 365 && !range) || !!slot} title={slot ? "칸을 고른 동안은 리포트를 뽑지 않습니다" : undefined}>리포트 이미지</button>
-        {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · 1분마다 자동</span>}
+        {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · {left}초 후 갱신</span>}
       </div>
       {status && <p className="admin-status">{status}</p>}
       {report && data && <VisitsReport data={data} from={reportSpan.from} to={reportSpan.to} who={whoLabel} onlyHuman={!kinds.includes("bot")} tops={tops} onClose={() => setReport(false)} />}
