@@ -713,18 +713,32 @@ export function VisitsPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days, human, tick, range, slot]);
 
+  // 세션 타임라인만 10초마다 조용히 다시 받는다 — '조작 중'·새 세션이 바로 보이게 (사용자 지시 2026-10-10).
+  // 위 통계(요약)는 쿼리가 무거워 그대로 수동. 탭이 안 보이면 쉰다. 자동 갱신은 로딩 표시·실패 시 비우기를 하지 않는다
+  const [sessBeat, setSessBeat] = useState(0);
+  const sessSilent = useRef(false);
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      sessSilent.current = true;
+      setSessBeat((n) => n + 1);
+    }, 10_000);
+    return () => clearInterval(id);
+  }, []);
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
     let alive = true;
-    setLoadSess(true);
+    const silent = sessSilent.current;
+    sessSilent.current = false;
+    if (!silent) setLoadSess(true);
     (rangeArgs
       ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, ...kindArgs, p_src: srcFilter || null, p_limit: limit })
       : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), ...kindArgs, p_src: srcFilter || null, p_limit: limit }))
-      .then((s) => { if (alive) setSessions(s); }).catch(() => { if (alive) setSessions(null); })
-      .finally(() => { if (alive) setLoadSess(false); });
+      .then((s) => { if (alive) setSessions(s); }).catch(() => { if (alive && !silent) setSessions(null); })
+      .finally(() => { if (alive && !silent) setLoadSess(false); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, human, srcFilter, limit, tick, range, slot]);
+  }, [days, human, srcFilter, limit, tick, range, slot, sessBeat]);
 
   // 세션 타임라인 '전체 보기' — 창을 열 때 상한(5,000)까지 따로 받는다
   const [allSessions, setAllSessions] = useState<SessRow[] | null>(null);
