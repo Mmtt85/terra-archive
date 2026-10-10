@@ -1483,7 +1483,11 @@ function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; gr
     const map = new Map<string, { key: string; label: string; color?: string; sort: number; items: ChronItem[] }>();
     for (const it of leftover) {
       let k: string, label: string, color: string | undefined, sort: number;
-      if (group === "theme") {
+      // 미실장(중섭 선행)은 어느 보기에서든 맨 위 '미실장' 묶음 하나로 — 오퍼 도감처럼 작은 카드로 따로 (사용자 지시 2026-10-10)
+      const evU = it.eventId ? eventById.get(it.eventId) : undefined;
+      if (evU?.unreleased) {
+        k = "__future"; label = t("미실장"); color = undefined; sort = -1e9;
+      } else if (group === "theme") {
         k = it.arc ?? "__none"; label = it.arc ? arcNameOf(locale, it.arc) : t("테마 미분류");
         color = it.arc ? arcColor(it.arc) : undefined;
         // 잔여 테마 그룹은 arcs 배열 순서대로, 미분류는 맨 끝
@@ -1516,7 +1520,9 @@ function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; gr
           : group === "release" && (g.key === "main" || g.key === "roguelike")
             ? t("출시월 정보가 없어 맨 뒤에 모았습니다") : undefined,
         items: sortItems(g.items).map((it) => ({ it })) })));
-    return out.filter((g) => g.items.length);
+    // '미실장' 묶음은 어느 보기에서든 맨 위 — 테마별은 스토리라인 묶음을 먼저 채워 넣어 뒤로 밀렸다 (2026-10-10)
+    const fut = out.filter((g) => g.key === "__future");
+    return [...fut, ...out.filter((g) => g.key !== "__future")].filter((g) => g.items.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group, filtered, keyword, locale, t]);
 
@@ -1668,7 +1674,7 @@ function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; gr
                     <>{g.label} <em>{g.items.length}</em>{g.sub && <small className="digest-group-kind">{g.sub}</small>}</>
                   )}
                 </h3>
-                <div className="story-grid">{g.items.map(renderCard)}</div>
+                <div className={`story-grid${g.key === "__future" ? " compact" : ""}`}>{g.items.map(renderCard)}</div>
               </section>
             );
           })}

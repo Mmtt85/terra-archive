@@ -29580,3 +29580,33 @@ html.rg-theme.rg6 { --rg-hue: #2fbfa5; }
 .rg-modal :is(.rg-stagecard, .rg-nodetype, .rg-enc-item):is(button, a, [role="button"], .clickable):hover {
   translate: 0 -2px;
 }
+
+/* 스토리 목록의 미실장 묶음 — 오퍼 도감 미실장 줄처럼 작은 카드로 촘촘하게 (사용자 지시 2026-10-10) */
+.story-grid.compact {
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 10px;
+}
+.story-grid.compact .story-card-info {
+  padding: 6px 8px 8px;
+}
+.story-grid.compact .story-card-info h3 {
+  font-size: 12px;
+  line-height: 1.35;
+}
+.story-grid.compact .story-card-info > span {
+  font-size: 10.5px;
+}
+.story-grid.compact :is(.story-ready-badge, .story-pending-badge, .story-lore-mark) {
+  font-size: 9.5px;
+  padding: 1px 5px;
+}
+/* 작은 카드 — 설명 줄은 한 줄 말줄임('사 / 이드 이벤트'로 끊겼다), '미실장' 묶음 안이라 카드의 미실장 배지는 뺀다 */
+.story-grid.compact .story-card-info > span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.story-grid.compact .story-card-info h3 .future-badge {
+  display: none;
+}
