@@ -1124,6 +1124,10 @@ function ZoneModal({ zone, badge, pairs, bosses, onOpenStage, onClose }: {
       </header>
       <p className="rg-zone-desc">{zone.desc}</p>
       {zone.buff && <p className="rg-modal-elite">{zone.buff}</p>}
+      {/* 층만 먼저 들어온 구역 — 작전·보스가 아직 게임 데이터에 없다 (2026-10-10 흑류수해 7층, 사용자 지시 "층 데이터만 들어와 있다고 써 줘") */}
+      {!zone.variant && pairs.length === 0 && bosses.length === 0 && (
+        <p className="rg-zone-empty">{t("층 정보만 먼저 공개됐습니다 — 작전·보스는 아직 게임 데이터에 없습니다")}</p>
+      )}
       {pairs.length > 0 && (
         <div className="rg-stage-group">
           <h4>{t("작전")} <em>{pairs.length}</em> <span className="rg-stage-hint">{t("카드를 열면 일반/긴급 탭으로 전환할 수 있습니다")}</span></h4>
@@ -2938,6 +2942,7 @@ export default function RogueGuide({ initialTopic }: {
                   {pairs.length > 0 && t("작전 {n}개", { n: pairs.length })}
                   {/* 일반 작전 없이 보스만 있는 층(쉐이 왕래처)은 앞 구분점 없이 — 종전엔 '· 보스 8개'로 나왔다 */}
                   {zoneBosses.length > 0 && `${pairs.length > 0 ? " · " : ""}${t("보스 {n}개", { n: zoneBosses.length })}`}
+                  {!z.variant && pairs.length === 0 && zoneBosses.length === 0 && t("층 정보만 공개")}
                 </span>
               </button>
             );

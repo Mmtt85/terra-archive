@@ -38,6 +38,8 @@ const VISITOR_KEY = "ta-visitor";      // localStorage — 재방문 판정용 �
 const DEBUG_KEY = "ta-visit-debug";    // localStorage 에 '1' 이면 localhost 에서도 env='dev' 로 보낸다(주소가 비면 콘솔에만)
 const IDLE_MS = 30_000;                // 마지막 입력 뒤 이만큼 지나면 '조작 시간'에서 뺀다
 const TICK_MS = 1_000;
+const BEAT_MS = 60_000;   // 열린 탭의 중간 전송 주기 (어드민 '조작 중' 판정)
+let lastBeat = Date.now();
 export const NO_TRACK_COOKIE = "ta-no-track";   // 어드민 페이지가 거는 '운영자 브라우저' 표식
 
 /** 운영자 본인 브라우저인가 — 그러면 아무것도 보내지 않는다 */
@@ -251,6 +253,9 @@ function tick(): void {
   view.vis += dt;
   if (held || now - lastInput < IDLE_MS) view.act += dt;
   if (held && now - lastHoldFlush >= 60_000) { lastHoldFlush = now; view.touched = true; flush(); }
+  // 열려 있는 탭은 1분마다 그사이 몫을 보낸다 — 떠날 때만 보내면 지금 보고 있는 화면이 기록에 없어 어드민 세션
+  // 타임라인이 앞 화면 뒤에 '이탈'을 찍었다 (사용자 지시 2026-10-10 "이탈 안 했을 때는 조작 중으로")
+  else if (document.visibilityState === "visible" && now - lastBeat >= BEAT_MS) { lastBeat = now; flush(); }
 }
 
 function onInput(): void {

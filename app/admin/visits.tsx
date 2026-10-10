@@ -55,6 +55,8 @@ type SessView = { path: string; hash: string | null; t0: number | null; vis: num
 type SessRow = {
   id: string; at: string; src: string; ref: string | null; landing: string; device: string | null; site_lang: string | null;
   tz: string | null; revisit: boolean | null; human: boolean; kind?: "human" | "skim" | "bot"; utm: string | null; views: SessView[];
+  /** 마지막으로 받은 시각 (DB visits_sessions_range — 옛 함수면 없다) */
+  last_at?: string | null;
 };
 
 async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
@@ -559,6 +561,10 @@ function SessionLine({ s }: { s: SessRow }) {
   const last = s.views[s.views.length - 1];
   // 세션 합계 — 화면마다 찍힌 시간(조작, 없으면 보인 시간)을 더한 값. 동선의 작은 숫자들의 합이다 (사용자 요청 2026-10-10)
   const total = s.views.reduce((a, v) => a + (v.act || v.vis || 0), 0);
+  // 아직 안 나간 세션 — 열린 탭은 1분마다 기록을 보내므로(visit-track.ts BEAT_MS) 마지막 수신이 3분 안이면 '조작 중'.
+  // DB 함수가 옛판이라 last_at 이 없으면 시작 시각 + 마지막 화면의 시작·보인 시간으로 어림한다 (사용자 지시 2026-10-10)
+  const lastAt = s.last_at ? Date.parse(s.last_at) : last ? at.getTime() + (last.t0 ?? 0) * 1000 + last.vis : at.getTime();
+  const live = Date.now() - lastAt < 3 * 60_000;
   return (
     <li className={(s.kind ?? (s.human ? "human" : "bot")) === "bot" ? "bot" : ""}>
       <header>
@@ -585,7 +591,9 @@ function SessionLine({ s }: { s: SessRow }) {
             {v.out && <><i>↗</i><Go className="vz-step out" href={/^https?:\/\//.test(v.out) ? v.out : null}>{v.out.replace(/^https?:\/\//, "").slice(0, 40)}</Go></>}
           </span>
         ))}
-        {last && !last.out && <><i>→</i><span className="vz-step exit">이탈</span></>}
+        {last && !last.out && (live
+          ? <><i>→</i><span className="vz-step live" title="마지막 기록이 3분 안 — 탭이 열려 있다">조작 중</span></>
+          : <><i>→</i><span className="vz-step exit">이탈</span></>)}
       </p>
     </li>
   );

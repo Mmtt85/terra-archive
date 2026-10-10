@@ -3530,6 +3530,8 @@ const D: Record<string, Pair> = {
   "모두 보기 ({n})": ["Show all ({n})", "すべて表示 ({n})"],
   "숨김 훈장": ["Hidden", "隠し勲章"],
   "이벤트 가구 {n}": ["Event furniture {n}", "イベント家具 {n}"],
+  "층 정보만 공개": ["Floor info only", "階層情報のみ公開"],
+  "층 정보만 먼저 공개됐습니다 — 작전·보스는 아직 게임 데이터에 없습니다": ["Only this floor's info has been added so far — its operations and bosses aren't in the game data yet.", "この階層は情報だけが先に追加されています — 作戦・ボスはまだゲームデータにありません。"],
   "가구 분위기 합": ["Total ambience", "家具の快適度合計"],
   "{n}개 모으면": ["{n}-piece set", "{n}個セット"],
   "분위기": ["Ambience", "快適度"],

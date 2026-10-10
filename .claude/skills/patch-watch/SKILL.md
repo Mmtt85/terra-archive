@@ -20,6 +20,7 @@ description: 점검일 자동 감시(예약 작업·배경 폴러·하위 에이
 | ③ | 새 시설·새 기반시설 스킬 | `build-infra.py` · INFRA-RULES §10 점검 목록 | 인프라 플래너(미래시 켬)에 새 방·스킬이 계산된다 (예: 재활용소) |
 | ④ | 이벤트 도감 미실장 줄 + 이벤트 창 상세 | `cn-future-events` | 이름·섬네일·작전·적·재화·상위 재료·신규 오퍼가 뜬다 |
 | ⑤ | 훈장·가구 그림 | `python3 scripts/build-event-art.py --extra` → `node scripts/r2-sync.mjs` → `EVENT_ART_VER` 올림 | 이벤트 창 훈장·가구 탭에 그림이 뜬다 (DNS 오류면 재실행, #12) |
+| ⑤′ | **최신 통합전략(중섭 선행 토픽 — 지금은 흑류수해 rogue_6)** — 층·엔딩·방문객·조우·적이 점검마다 몰래 는다 | `python3 scripts/build-rogue.py rogue6` (+ 한섭 토픽 중섭 변형은 `build-rogue.py cn`) → 재생성 전후 `zones`·`endings`·`visitors`·`encounters`·`stages` id 차이를 찍어 본다 → 미번역(`scripts/rogue6-untranslated*.json`)을 `rogue6-{ko,en,ja}.json` 에 채워 **ko·en 0건**(ja 는 종전 수 이하) → `build-stages-rogue.py` | /rogue/is6(미래시 켬)에 새 층·엔딩이 중국어 원명 + 한국어 병기로 뜬다. 새 층 배경(`rogue_6_map_N`)은 미러에 늦게 올라와 `img:false` 일 수 있다 — 다음 점검에 다시 본다 (#16) |
 | ⑥ | 스토리 목록 | `python3 scripts/build-story.py` | 스토리 메뉴(출시순)에 미실장 카드 — **미니 스토리·메인 장도** (#8). 메인 장은 섬네일 직접(#14) |
 | ⑦ | 스토리 원문 파싱 | `python3 scripts/build-story-scripts.py --cn <id>` → `scripts/story-cn/<id>/ep_*.json` | 편 수·화자 수·컷 수가 찍힌다 |
 | ⑧ | 번역 준비 — 화자표(ko/en/ja)·용어집·인물 말투 메모·이름 참고표 | 하위 에이전트 1 (`scripts/story-cn/_TRANSLATE.md` §4) | `speakers*.json`·`glossary*.json`·`characters.md`·`names.ref.json` |
@@ -52,6 +53,12 @@ description: 점검일 자동 감시(예약 작업·배경 폴러·하위 에이
 | 13 | 하위 에이전트가 커밋·푸시했는데 배포가 `BLOCKED_DIRTY` | 부모가 고쳐 둔 미커밋 파일(`build-story.py`)이 트리에 있었다 | 부모 쪽 변경을 먼저 커밋·푸시하거나, 깨끗한 워크트리에서 배포(기억 `worktree-deploy`) |
 | 14 | 메인 17장 섬네일이 'END' 화면 | 15장부터 게임 그림 `avg_epNN` 이 타이틀이 아니라 끝 화면이다(EN/JA main_15·16 도 새까맸다) | 그 장의 고유 첫 컷씬을 세로로 잘라 쓴다 (체크리스트 ⑥) |
 | 15 | 상전이 임계가 연대기 '미정'에 들어감 | 연대기는 한섭 스토리라인 순서(`storylines.json`)에 없는 항목을 연도와 무관하게 미정으로 보냈다 | ✅ 순서에 없어도 연도가 있으면 그 해로 (story.tsx) |
+
+**16. 흑류수해 7층이 하루 늦게 발견됐다 (2026-10-10, 사용자 지적 "흑류수해 엔딩 더 생긴 거 같으니 확인")** — 10/8 중섭 데이터에
+`zone_7`「盲目者所见」이 들어왔는데 체크리스트에 통합전략 단계가 없어 아무도 `build-rogue.py rogue6` 을 돌리지 않았다
+(사이트 rogue6.json 은 10/3 판). 로컬 `.gamedata/cn_roguelike_topic_table.json` 도 9/17 판이라 거기만 보면 "변화 없음"으로
+읽힌다 — **빌더가 cdntables 로 받은 `.gamedata/.cdn/tables/cn_<resVersion>_roguelike_topic_table.json` 을 본다.**
+엔딩은 그날 표에 아직 3개(ro6_ending_1~3) — 새 층이 먼저 오고 엔딩·보스는 다음 갱신에 붙는 경우가 있으니 ⑤′ 를 점검마다 돈다.
 
 ### 규칙 C — "남은 단계"는 끝난 게 아니다
 

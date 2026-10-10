@@ -696,22 +696,25 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
             [last[0] + Math.cos(ang - 2.5) * a, last[1] + Math.sin(ang - 2.5) * a],
           ];
           return (
-            <g key={`${rep}-${owner ?? "•"}`} opacity={obPick ? 0.12 : hl && !em ? 0.07 : 0.92}>
+            <g key={`${rep}-${owner ?? "•"}`} opacity={obPick ? 0.12 : hl && !em ? 0.07 : hl ? 0.92 : 0.72}>
               {/* 대시가 진행 방향으로 흐른다(CSS 애니메이션) — 방향 표시 겸 움직임 (사용자 요청).
                   지상은 긴 대시, 비행은 점선, **통로 순간이동(hop)은 가늘고 성긴 점선**.
                   패턴 길이는 keyframe 오프셋(-0.64)의 약수라 끊김 없이 순환한다. */}
-              {/* 실사 모드 밑선 — 흰 고지대·밝은 바닥 위에서 노랑·연두 선이 묻히지 않게
+              {/* 아무 적도 고정하지 않은 전체 보기(!hl)는 선을 가늘고(0.042→0.03) 옅게(0.92→0.72), 밑선은 얇게(0.092→0.064) 하되 진하기는 남긴다(0.7 —
+                  옅게 했더니 나란한 가닥끼리 구분이 안 됐다, 같은 날 사용자 지적) —
+                  경로 여러 가닥이 나란히 겹치면 원색 굵은 띠가 돼 맵이 안 보였다 (사용자 지적 2026-10-10). 고정하면 종전 굵기.
+                  실사 모드 밑선 — 흰 고지대·밝은 바닥 위에서 노랑·연두 선이 묻히지 않게
                   어두운 테두리를 한 겹 깐다 (격자 모드는 바탕이 어두워 필요 없다) */}
               {photo && P.segs.map((sgm, si) => !sgm.hop && (
                 <polyline key={`c${si}`} points={sgm.pts.map(mapPt).map((p) => p.join(",")).join(" ")}
-                  fill="none" stroke="#0b0e12" strokeOpacity={0.6}
-                  strokeWidth={(em ? 0.12 : 0.042) + 0.05}
+                  fill="none" stroke="#0b0e12" strokeOpacity={hl ? 0.6 : 0.7}
+                  strokeWidth={em ? 0.17 : hl ? 0.092 : 0.064}
                   strokeLinejoin="round" strokeLinecap="round" style={{ animation: "none" }} />
               ))}
               {P.segs.map((sgm, si) => (
                 <polyline key={si} points={sgm.pts.map(mapPt).map((p) => p.join(",")).join(" ")}
                   fill="none" stroke={color}
-                  strokeWidth={sgm.hop ? (em ? 0.07 : 0.03) : em ? 0.12 : 0.042}
+                  strokeWidth={sgm.hop ? (em ? 0.07 : 0.03) : em ? 0.12 : hl ? 0.042 : 0.03}
                   strokeLinejoin="round" strokeLinecap="round" opacity={sgm.hop ? 0.55 : 1}
                   strokeDasharray={sgm.hop ? "0.04 0.12" : f[best] ? "0.12 0.2" : "0.5 0.14"} />
               ))}

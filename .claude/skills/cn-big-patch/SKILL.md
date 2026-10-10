@@ -148,8 +148,11 @@ node scripts/r2-sync.mjs                       # ⚠ 새 이미지가 생겼으�
 ```bash
 rm -f .gamedata/rogue/*roguelike_topic_table.json    # 캐시를 지워야 새 표를 받는다
 python3 scripts/build-rogue.py cn                    # 중섭 변형 일괄 (미래시)
+python3 scripts/build-rogue.py rogue6                # ⚠ 최신 중섭 선행 토픽(흑류수해)은 `cn` 에 안 들어 있다 — 따로
 python3 scripts/build-stages-rogue.py                # 작전 도감의 록라 색인도 따라가야 한다
 ```
+**새 토픽·확장이 없어 보여도 매 점검 돌린다** — 층·엔딩·방문객이 조용히 는다(2026-10-10 흑류수해 7층을 하루 늦게 발견).
+확인 기준·미번역 채우기는 `patch-watch` §0 ⑤′.
 
 **벡터 돌파 새 회차** (`activity.VEC_BREAK_V2` 에 새 id — 미래시 이벤트 창의 벡터 돌파 탭):
 ```bash

@@ -452,6 +452,8 @@ returns json language sql stable as $$
       'id', s.id, 'at', s.started_at, 'src', s.src, 'ref', coalesce(s.ref, s.ref_host), 'landing', s.landing,
       'device', s.device, 'site_lang', s.site_lang, 'tz', s.tz, 'revisit', s.revisit, 'human', s.human, 'kind', s.kind,
       'utm', s.utm_source,
+      -- 마지막으로 받은 시각 — 열려 있는 탭은 1분마다 보내므로(visit-track.ts BEAT_MS) 몇 분 안이면 '조작 중' (2026-10-10)
+      'last_at', (select max(vv.at) from public.visit_view vv where vv.session = s.id),
       'views', (select coalesce(json_agg(json_build_object('path', v.path, 'hash', v.hash, 't0', v.t0,
                   'vis', v.visible_ms, 'act', v.active_ms, 'scroll', v.scroll, 'out', v.out_href) order by v.seq), '[]')
                 from v where v.session = s.id)
