@@ -29741,3 +29741,35 @@ html.dark .mw-window {
 :root .vb-medals li:has(.vb-medal-btn) { border-color: color-mix(in srgb, var(--ink) 7%, transparent); box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent), 0 6px 18px -6px color-mix(in srgb, var(--ink) 14%, transparent); }
 html.dark .vb-medals li:has(.vb-medal-btn) { background: color-mix(in srgb, var(--white) 96%, #fff); box-shadow: 0 8px 22px -8px #0009; }
 :root .vb-medals li:has(.vb-medal-btn):hover { transform: translateY(-2px); box-shadow: 0 2px 4px color-mix(in srgb, var(--ink) 6%, transparent), 0 14px 30px -10px color-mix(in srgb, var(--ink) 24%, transparent); }
+
+/* 통합전략 테마 × 헤더 접기 핸들 — 바탕은 이미 테마 헤더색(--header-solid)인데 테두리가 공용 회색(--line)이라 따로 놀았다
+   (사용자 지적 2026-10-10). 테두리는 그 테마 헤더의 아래 선 색, 화살표는 헤더 글자색 쪽으로 */
+html.rg-theme .header-collapse-toggle { border-color: #3c2129; color: color-mix(in srgb, var(--ink) 70%, #3c2129); }
+html.rg-theme.rg2 .header-collapse-toggle { border-color: #213858; color: color-mix(in srgb, var(--ink) 70%, #213858); }
+html.rg-theme.rg3 .header-collapse-toggle { border-color: #3e434e; color: color-mix(in srgb, var(--ink) 70%, #3e434e); }
+html.rg-theme.rg4 .header-collapse-toggle { border-color: #3d1815; color: color-mix(in srgb, var(--ink) 70%, #3d1815); }
+html.rg-theme.rg5 .header-collapse-toggle { border-color: #573448; color: color-mix(in srgb, var(--ink) 70%, #573448); }
+html.rg-theme.rg6 .header-collapse-toggle { border-color: #1f3a34; color: color-mix(in srgb, var(--ink) 70%, #1f3a34); }
+
+/* 소개 페이지 스크롤 칸 — 오른쪽 여백 0 은 테두리 없는 글 기둥일 때의 값이었다. 카드 공통 결(그림자·바탕, 2026-10-10)이
+   씌워져 상자로 보이니 글이 오른쪽 끝에 붙어 보였다 (사용자 지적 같은 날) — 왼쪽과 같은 22px */
+@media (min-width: 901px) {
+  .about-scrolly .about-card,
+  .about-scrolly .about-card.featured { padding-right: 22px; }
+}
+
+/* 소개 페이지 두 캡처 — 높이를 같게, 윗변도 같게 (사용자 지시 2026-10-10).
+   ① 높이: 모바일 칸은 종전 190px 그대로(줄이지 않는다), 데스크탑 칸 상한을 모바일과 높이가 같아지는 폭
+      190 × (952/440) ÷ (760/1200) = 649px 로. 화면이 좁아 그 폭이 안 나오면 데스크탑만 줄어든다.
+   ② 윗변: 종전엔 칸마다 자기 높이로 화면 가운데에 고정해서(데스크탑은 캡처+번호 줄, 모바일은 캡처만) 위 끝이 어긋났다 —
+      두 칸 모두 데스크탑 묶음 높이(--hd + 번호 줄 30px) 기준으로 같은 top 에 고정한다 */
+@media (min-width: 901px) {
+  .about-scrolly {
+    --sc-w: min(1249px, calc(100vw - 64px));
+    --hd: calc(min(649px, var(--sc-w) - 600px) * 760 / 1200);
+    grid-template-columns: minmax(0, 649px) minmax(0, 330px) minmax(0, 190px);
+    justify-content: center;
+  }
+  .about-stage-d .about-stage-pin,
+  .about-stage-m .about-stage-pin { top: calc(50% - (var(--hd) + 30px) / 2); }
+}
