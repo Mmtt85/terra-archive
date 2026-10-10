@@ -733,6 +733,27 @@ def sprite_op_name(spr):
             return OP_NAME_BY_ID[cand]
     return None
 
+# 화자 얼굴 수동 교정 — {이야기 id: {원문 화자 이름(CN 이야기는 중국어, 한섭은 한국어): 스프라이트 | None(얼굴 없음)}}.
+# 다수결(resolve_faces)은 '무대에 한 명만 서 있고 두 사람이 번갈아 말하는' 장면에서 더 많이 말한 쪽에 그 스프라이트를 준다 —
+# 상전이 임계 1화: 젊은 켈시(avg_npc_2224)가 선 채 일리아가 30줄을 말해 일리아 얼굴이 켈시가 됐고, 어머니(avg_npc_2172)가
+# 선 채 아들(조용한 소년)이 더 말해 아들 얼굴이 어머니가 됐다 (사용자 제보 2026-10-10). 규칙을 바꾸면 전 이야기 얼굴이
+# 흔들리므로 걸린 것만 여기서 바로잡는다
+FACE_FIX = {
+    "main_17": {"伊利亚": None, "沉默的男孩": None, "恍惚的女性": "avg_npc_2172_1"},
+}
+
+
+def apply_face_fix(eid, faces, names=None):
+    """FACE_FIX 적용 — names 는 원문 화자 이름 → 출력 화자 이름 (CN 이야기의 화자표)."""
+    for raw, spr in FACE_FIX.get(eid, {}).items():
+        who = (names or {}).get(raw, raw)
+        if spr is None:
+            faces.pop(who, None)
+        else:
+            faces[who] = spr
+    return faces
+
+
 def resolve_faces(votes):
     """화자 ↔ 스탠딩을 **1:1**로 배정한다 (전수조사 후 전면 교체, 2026-07-25).
 
@@ -849,7 +870,7 @@ def build_event(eid, entry):
             **({"au": au} if has_audio(au) else {}),
         })
     # 화자 → 스탠딩 스프라이트 얼굴 (오퍼가 아닌 인물도 썸네일 연결, 사용자 요청 2026-07-18)
-    faces = resolve_faces(votes)
+    faces = apply_face_fix(eid, resolve_faces(votes))
     failed = download_sprites(sorted(set(faces.values())))
     if failed:
         bad = set(failed)
@@ -1037,7 +1058,7 @@ def cn_stage(eid, base, spk):
             votes[spk.get(who, who)].update(cnt)
     if skipped:
         print(f"  ! {eid}: 원문 재파싱이 저장본과 달라 연출을 뺀 편 {skipped}")
-    faces = resolve_faces(votes)
+    faces = apply_face_fix(eid, resolve_faces(votes), spk)
     failed = set(download_sprites(sorted(set(faces.values()))))
     return vns, aus, {w: s for w, s in faces.items() if s not in failed}
 
