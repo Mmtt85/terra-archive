@@ -430,6 +430,37 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 로그인 유지 — Cloudflare Access 세션이 끝나면 /api 요청이 Access 로그인 쪽으로 돌려보내져(교차 출처 리다이렉트) 조용히
+  // 실패했다. 그러면 화면은 남아 있는데 숫자가 안 바뀌고, 결국 손으로 새로고침해 구글 로그인을 다시 거쳐야 했다
+  // (사용자 지시 2026-10-10 "방문 통계 로그인 절대 안 풀리게"). 2분마다·탭이 다시 보일 때 /api/me 를 리다이렉트 없이 찔러 보고,
+  // 끊겼으면 페이지를 다시 연다 — 문서 이동이라 Access → 구글로 가고, 구글 로그인이 살아 있으면 클릭 없이 돌아온다
+  // (Access 앱 'Instant Auth' 가 켜져 있어야 로그인 방식 고르는 화면 없이 바로). 새로고침은 1분에 한 번까지(무한 반복 방지).
+  useEffect(() => {
+    if (!me || location.hostname === "localhost") return;
+    let busy = false;
+    const check = async () => {
+      if (busy || document.visibilityState !== "visible" || !navigator.onLine) return;
+      busy = true;
+      try {
+        const res = await fetch("/api/me", { redirect: "manual", cache: "no-store" });
+        const gone = res.type === "opaqueredirect" || res.status === 401 || res.status === 403;
+        if (gone) {
+          let last = 0;
+          try { last = Number(sessionStorage.getItem("ta-admin-reauth") ?? 0); } catch { /* 무시 */ }
+          if (Date.now() - last > 60_000) {
+            try { sessionStorage.setItem("ta-admin-reauth", String(Date.now())); } catch { /* 무시 */ }
+            location.reload();
+          }
+        }
+      } catch { /* 네트워크 오류 — 다음 차례에 다시 본다 */ }
+      busy = false;
+    };
+    const id = setInterval(check, 120_000);
+    const onVis = () => { if (document.visibilityState === "visible") void check(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVis); };
+  }, [me]);
+
   const toggleReviewed = async (row: FeedbackRow) => {
     const next = !row.reviewed_at;
     try {
