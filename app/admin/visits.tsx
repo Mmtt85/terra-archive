@@ -555,6 +555,16 @@ const kstToday = () => new Date(Date.now() + 9 * 3600_000).toISOString().slice(0
 const nextDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86400_000).toISOString().slice(0, 10);
 const prevDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) - 86400_000).toISOString().slice(0, 10);
 
+/** 아직 안 나간 세션 — 열린 탭은 1분마다 기록을 보내므로(visit-track.ts BEAT_MS) 마지막 수신이 3분 안이고 마지막 화면에서
+ *  바깥 링크로 나가지 않았으면 '조작 중'. DB 함수가 옛판이라 last_at 이 없으면 시작 시각 + 마지막 화면의 시작·보인 시간으로 어림 */
+function sessLive(s: SessRow): boolean {
+  const last = s.views[s.views.length - 1];
+  if (!last || last.out) return false;
+  const start = Date.parse(s.at);
+  const lastAt = s.last_at ? Date.parse(s.last_at) : start + (last.t0 ?? 0) * 1000 + last.vis;
+  return Date.now() - lastAt < 3 * 60_000;
+}
+
 function SessionLine({ s }: { s: SessRow }) {
   const at = new Date(s.at);
   const when = at.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -563,8 +573,7 @@ function SessionLine({ s }: { s: SessRow }) {
   const total = s.views.reduce((a, v) => a + (v.act || v.vis || 0), 0);
   // 아직 안 나간 세션 — 열린 탭은 1분마다 기록을 보내므로(visit-track.ts BEAT_MS) 마지막 수신이 3분 안이면 '조작 중'.
   // DB 함수가 옛판이라 last_at 이 없으면 시작 시각 + 마지막 화면의 시작·보인 시간으로 어림한다 (사용자 지시 2026-10-10)
-  const lastAt = s.last_at ? Date.parse(s.last_at) : last ? at.getTime() + (last.t0 ?? 0) * 1000 + last.vis : at.getTime();
-  const live = Date.now() - lastAt < 3 * 60_000;
+  const live = sessLive(s);
   return (
     <li className={(s.kind ?? (s.human ? "human" : "bot")) === "bot" ? "bot" : ""}>
       <header>
@@ -716,6 +725,7 @@ export function VisitsPanel() {
   // 세션 타임라인만 10초마다 조용히 다시 받는다 — '조작 중'·새 세션이 바로 보이게 (사용자 지시 2026-10-10).
   // 위 통계(요약)는 쿼리가 무거워 그대로 수동. 탭이 안 보이면 쉰다. 자동 갱신은 로딩 표시·실패 시 비우기를 하지 않는다
   const [sessBeat, setSessBeat] = useState(0);
+  const [liveOnly, setLiveOnly] = useState(false);
   const sessSilent = useRef(false);
   useEffect(() => {
     const id = setInterval(() => {
@@ -1046,6 +1056,33 @@ export function VisitsPanel() {
             </>
           )}
 
+          {/* 순서 — 내 정보 동기화 · 오늘 N분별 · 세션 타임라인 · 화면 순위 · 나머지 (사용자 지시 2026-10-10 "세션 타임라인이 더 궁금하다") */}
+          <Head title="세션 타임라인" sub="한 줄이 한 사람의 동선 · 최근 순. 시간은 조작 시간(없으면 보인 시간)" {...top("sessions", "세션 타임라인")}>
+            <Dropdown
+              label={srcFilter || "유입원 전체"}
+              items={[{ value: "", label: "유입원 전체" }, ...data.src.map((r) => ({ value: r.src, label: r.src, count: r.sessions }))]}
+              selected={[srcFilter]}
+              onPick={setSrcFilter}
+              ariaLabel="세션 타임라인 유입원"
+              scroll
+            />
+            {/* 조작 중인 세션만 (사용자 요청 2026-10-10) — 받아 온 목록 안에서 거른다 */}
+            <button type="button" className={liveOnly ? "tab-btn selected" : "tab-btn"} aria-pressed={liveOnly}
+              onClick={() => setLiveOnly((v) => !v)}>
+              조작 중만{sessions ? ` ${sessions.filter(sessLive).length}` : ""}
+            </button>
+          </Head>
+          {sessions == null ? <p className="vz-empty">불러오는 중…</p> : (
+            <>
+              {liveOnly && !sessions.some(sessLive) && <p className="vz-empty">지금 조작 중인 세션이 없습니다.</p>}
+              <ol className="vz-sessions">{(liveOnly ? sessions.filter(sessLive) : sessions).map((s) => <SessionLine key={s.id} s={s} />)}</ol>
+              
+            </>
+          )}
+
+          <Head title="화면 순위" sub={`${data.pages.length}개 화면`} {...top("pages", "화면 순위")} />
+          {pageTable(tops.pages)}
+
           <div className="vz-cols">
             <div>
               <Head title="유입원" {...top("src", "유입원")} />
@@ -1066,8 +1103,6 @@ export function VisitsPanel() {
           <Head title="동선 흐름" sub="띠 굵기 = 세션 수. 갈래 단위라 모달·같은 갈래 안의 이동은 한 칸으로 친다. 줄에 올리면 수가 나온다" />
           <Sankey flow={data.flow} />
 
-          <Head title="화면 순위" sub={`${data.pages.length}개 화면`} {...top("pages", "화면 순위")} />
-          {pageTable(tops.pages)}
 
           <div className="vz-cols">
             <div>
@@ -1103,22 +1138,6 @@ export function VisitsPanel() {
             </div>
           </div>
 
-          <Head title="세션 타임라인" sub="한 줄이 한 사람의 동선 · 최근 순. 시간은 조작 시간(없으면 보인 시간)" {...top("sessions", "세션 타임라인")}>
-            <Dropdown
-              label={srcFilter || "유입원 전체"}
-              items={[{ value: "", label: "유입원 전체" }, ...data.src.map((r) => ({ value: r.src, label: r.src, count: r.sessions }))]}
-              selected={[srcFilter]}
-              onPick={setSrcFilter}
-              ariaLabel="세션 타임라인 유입원"
-              scroll
-            />
-          </Head>
-          {sessions == null ? <p className="vz-empty">불러오는 중…</p> : (
-            <>
-              <ol className="vz-sessions">{sessions.map((s) => <SessionLine key={s.id} s={s} />)}</ol>
-              
-            </>
-          )}
         </>
       )}
       {allOf && (
