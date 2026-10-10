@@ -557,10 +557,13 @@ function SessionLine({ s }: { s: SessRow }) {
   const at = new Date(s.at);
   const when = at.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
   const last = s.views[s.views.length - 1];
+  // 세션 합계 — 화면마다 찍힌 시간(조작, 없으면 보인 시간)을 더한 값. 동선의 작은 숫자들의 합이다 (사용자 요청 2026-10-10)
+  const total = s.views.reduce((a, v) => a + (v.act || v.vis || 0), 0);
   return (
     <li className={(s.kind ?? (s.human ? "human" : "bot")) === "bot" ? "bot" : ""}>
       <header>
         <time>{when}</time>
+        <span className="vz-tag vz-total" title="화면마다 조작 시간(없으면 보인 시간)의 합">합계 {fmtDur(total)}</span>
         <b>{s.src}</b>
         {s.ref && s.ref !== s.src && <span className="vz-muted" title={s.ref}><Go href={/^https?:\/\//.test(s.ref) ? s.ref : null}>{s.ref.replace(/^https?:\/\//, "").slice(0, 60)}</Go></span>}
         {s.utm && <span className="vz-tag" title="utm_source">유입 태그 {s.utm}</span>}
