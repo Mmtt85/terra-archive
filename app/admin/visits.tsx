@@ -1066,8 +1066,9 @@ export function VisitsPanel() {
               ariaLabel="세션 타임라인 유입원"
               scroll
             />
-            {/* 조작 중인 세션만 (사용자 요청 2026-10-10) — 받아 온 목록 안에서 거른다 */}
-            <button type="button" className={liveOnly ? "tab-btn selected" : "tab-btn"} aria-pressed={liveOnly}
+            {/* 조작 중인 세션만 (사용자 요청 2026-10-10) — 받아 온 목록 안에서 거른다. 옆 드롭다운과 같은 단추 결(.drop-btn) —
+                .tab-btn 은 바탕 없이 밑줄만이라 제목 줄에서 단추로 안 보였다 (같은 날 사용자 지적) */}
+            <button type="button" className={liveOnly ? "drop-btn vz-live-btn on" : "drop-btn vz-live-btn"} aria-pressed={liveOnly}
               onClick={() => setLiveOnly((v) => !v)}>
               조작 중만{sessions ? ` ${sessions.filter(sessLive).length}` : ""}
             </button>
