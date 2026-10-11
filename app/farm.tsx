@@ -349,6 +349,10 @@ export default function FarmGuide() {
             const craftable = !item.farmable && (meta?.craft?.length ?? 0) > 0;
             return (
               <article key={item.id} className={`farm-card${item.farmable ? "" : " nonfarm"}${item.unreleased ? " fut-dim" : ""}`} style={{ "--tier": item.rarity } as React.CSSProperties}>
+                {/* 내 창고 수량 — 카드 정보와 섞지 않고 오른쪽 위 모서리에 (사용자 지시 2026-10-11) */}
+                {inv && ((inv[item.id] ?? 0) > 0
+                  ? <span className="own-corner" title={t("내 창고")}>{t("보유")} {(inv[item.id] ?? 0).toLocaleString()}</span>
+                  : <span className="own-corner no" title={t("내 창고")}>{t("미보유")}</span>)}
                 <header>
                   <button type="button" className="farm-item-btn" onClick={() => openItem(item.id)} title={t("{name} 상세 정보 열기", { name: locText(locale, item.name) })}>
                     <img src={asset(item.image)} alt={locText(locale, item.name)} width={183} height={183} loading="lazy" decoding="async" />
@@ -357,7 +361,6 @@ export default function FarmGuide() {
                     <h3>{locText(locale, item.name)}</h3>
                     <span className={`farm-tier tier-${item.rarity}`}>T{item.rarity}</span>
                     {item.unreleased && <em className="future-badge">{t("미실장")}</em>}
-                    {inv && <em className="farm-have" title={t("내 창고")}>{t("보유")} {(inv[item.id] ?? 0).toLocaleString()}</em>}
                   </div>
                 </header>
                 {item.farmable ? (
@@ -952,6 +955,9 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
   return (
     <ModalWindow label={name} className="item-modal" onClose={onClose}>
         <header>
+          {inv && ((inv[id] ?? 0) > 0
+            ? <span className="own-corner" title={t("내 창고")}>{t("보유")} {(inv[id] ?? 0).toLocaleString()}</span>
+            : <span className="own-corner no" title={t("내 창고")}>{t("미보유")}</span>)}
           <span className="item-modal-icon" data-tier={rarity}><img src={image} alt={name} width={183} height={183} /></span>
           <div>
             <h3>{name}</h3>
@@ -960,7 +966,6 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
             {meta?.gainExp && <em className="exp-badge">{t("경험치 +{n}", { n: meta.gainExp.toLocaleString() })}</em>}
             {farmItem && <em className="item-farmable-badge">{t("파밍 가능")}</em>}
             {meta?.unreleased && <em className="future-badge">{t("미실장")}</em>}
-            {inv && <p className="it-have-line">{t("내 창고")} <b>{(inv[id] ?? 0).toLocaleString()}</b></p>}
           </div>
         </header>
         {meta?.unreleased && <p className="item-usage">{t("미실장 재료입니다 — 이름·설명은 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}

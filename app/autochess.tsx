@@ -2227,6 +2227,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   <button key={b.id} type="button"
                     className={`ac-card ac-bandcard${acLocked && (acMyBand === b.id || acOtherBands.some((x) => x.band === b.id)) ? " picked" : ""}`}
                     onClick={() => setBand(b)}>
+                    {myBands && (myBands.has(b.id) ? <span className="own-corner" title={t("내 계정에서 얻은 전략")}>{t("해금")}</span>
+                      : <span className="own-corner no" title={t("내 계정에서 아직 얻지 못한 전략")}>{t("미해금")}</span>)}
                     <header>
                       <img className="ac-thumb" src={bandIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                       <div>
@@ -2238,7 +2240,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                           {acLocked && acOtherBands.filter((x) => x.band === b.id).map((x) => (
                             <i key={x.seat} className="sb-chip ac-nowchip other">{t("참가자 {n}", { n: x.seat + 1 })}</i>
                           ))}
-                          {myBands?.has(b.id) && <i className="sb-chip ac-mine" title={t("내 계정에서 얻은 전략")}>{t("해금")}</i>}
                           <i className="sb-chip ac-hp">HP {b.hp}</i>
                           {b.modes.map((m) => <i key={m} className="sb-chip">{t(MODE_TYPE_LABEL[m] ?? m)}</i>)}
                         </span>
@@ -3588,6 +3589,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <ModalWindow key={band.id} label={band.by ? `${band.n} (${band.by})` : band.n} className="operator-modal ac-modal" onClose={() => setBand(null)}>
           <div className="ac-dt">
             <header className="ac-dt-head">
+              {myBands && (myBands.has(band.id) ? <span className="own-corner" title={t("내 계정에서 얻은 전략")}>{t("해금")}</span>
+                : <span className="own-corner no" title={t("내 계정에서 아직 얻지 못한 전략")}>{t("미해금")}</span>)}
               <img src={bandIcon(band.id)} alt="" aria-hidden onError={hideErr} />
               <div>
                 {/* 대표 오퍼 이름을 제목에 붙인다 — 커뮤니티는 '집중 케어'가 아니라

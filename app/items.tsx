@@ -127,6 +127,10 @@ export function ItemFile({ item, doc, onOpenStage }: {
   return (
     <>
       <header>
+        {/* 보유 표시는 사이트 공통 모서리 칩 — '보유 N' / '미보유' (사용자 지시 2026-10-11 "다 통일") */}
+        {have !== undefined && (have > 0
+          ? <span className="own-corner" title={t("내 창고")}>{t("보유")} {have.toLocaleString()}</span>
+          : <span className="own-corner no" title={t("내 창고")}>{t("미보유")}</span>)}
         <span className="item-modal-icon" data-tier={item.r}>
           {item.i && <img src={itemIcon(item.i)} alt={item.n} width={183} height={183} />}
         </span>
@@ -134,7 +138,6 @@ export function ItemFile({ item, doc, onOpenStage }: {
           <h3>{item.n}</h3>
           <span className={`farm-tier tier-${item.r}`}>T{item.r}</span>
           <em className="it-group-badge">{t(GROUP_LABEL[item.g])}</em>
-          {have !== undefined && <p className="it-have-line">{t("내 창고")} <b>{have.toLocaleString()}</b></p>}
         </div>
       </header>
       {item.d && <p className="item-desc">{item.d}</p>}

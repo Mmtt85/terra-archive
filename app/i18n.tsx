@@ -765,6 +765,9 @@ const D: Record<string, Pair> = {
     "Open roster settings and tick {name}",
     "所持オペレーター設定を開いて{name}を有効にしてください"],
   "미보유": ["Not owned", "未所持"],
+  "내 계정에서 얻은 전략": ["Strategy obtained on your account", "アカウントで入手済みの戦略"],
+  "내 계정에서 아직 얻지 못한 전략": ["Strategy not yet obtained on your account", "アカウントで未入手の戦略"],
+  "내 계정": ["My account", "マイアカウント"],
   "이 시설 스킬이 아직 안 열렸습니다 — 정예화를 실제 보유대로 올려 주세요:": [
     "Their skill for this facility isn't unlocked yet — set the promotion to match what you actually own:",
     "この施設のスキルがまだ解放されていません — 昇進を実際の所持状況に合わせてください："],

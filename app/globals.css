@@ -29846,3 +29846,63 @@ header > div > .it-have-line b { margin: 0; font: 700 18px var(--mono); color: v
 
 /* 내 계정 기록 칩 — 사막 이야기 보유 수량·위수협의 해금 전략 (사용자 요청 2026-10-11) */
 .sb-chip.sb-have, .sb-chip.ac-mine { color: var(--lime-ink, #4f7f17); background: color-mix(in srgb, var(--lime, #b5e24a) 20%, transparent); font-weight: 700; }
+
+/* 갤러리 일러스트 상세 — 좌우 단추가 정사각 일러스트 칸 **안** 가장자리에 붙어 그림을 가렸고, 40px 로 좁아 누르기도 어려웠다
+   (사용자 지적 2026-10-11). 칸 밖 양옆 여백으로 빼고 크게. 모달 폭이 모자라는 좁은 화면은 종전처럼 안쪽 */
+@media (min-width: 761px) {
+  .gl-view:is(.illust, .sprite) { overflow: visible; width: min(calc(100% - 128px), calc(var(--gl-maxh) * (var(--gl-ratio)))); }
+  .gl-view:is(.illust, .sprite) .gl-nav { width: 48px; height: 120px; font-size: 30px; }
+  .gl-view:is(.illust, .sprite) .gl-nav.prev { left: -60px; }
+  .gl-view:is(.illust, .sprite) .gl-nav.next { right: -60px; }
+  /* 일러스트 창은 그림 폭에 맞춘 창이라 양옆 단추 자리(64px×2)만큼 넓혀 그림 크기는 종전대로 */
+  .operator-modal.gl-modal.gl-fit-sq { width: min(calc(58vh + 40px + 128px), 100%); }
+}
+
+/* 내 계정 표시(보유 N·보유 중·해금)는 카드·상세 모두 **오른쪽 위 모서리** 한 자리 (사용자 지시 2026-10-11 "카드 내 정보와 혼재시키지 말고") */
+:is(.sb-card, .ac-card, .sb-dt-head, .ac-dt-head, .skin-view) { position: relative; }
+.own-corner {
+  position: absolute; top: 6px; right: 6px; z-index: 3;
+  padding: 2px 8px; font: 700 11px/1.5 var(--mono); font-style: normal; letter-spacing: 0.2px;
+  color: #fff; background: #4f7f17; box-shadow: 0 2px 6px #0004; pointer-events: none;
+}
+:is(.sb-dt-head, .ac-dt-head) > .own-corner { top: 0; right: 0; font-size: 12px; padding: 3px 10px; }
+
+/* 스탠딩 창 그림 높이 맞추기 (사용자 지시 2026-10-11 "크기가 뒤죽박죽") — 스탠딩은 전부 높이 760px 인데 폭이 제각각(비율 0.3~1.2)이라
+   2:3 칸에 contain 으로 넣으면 넓은 그림(비율 0.67 초과, 약 30%)만 키가 줄었다. 칸을 정사각으로 넓히고 그림은 칸 높이에 맞춘다 —
+   비율 1 이하(99%)는 전부 같은 높이. 그보다 넓은 몇 장만 폭에 맞춰 줄어든다. 좌우 단추는 일러스트 창과 같은 자리(칸 밖) */
+.gl-view.sprite { --gl-ratio: 1 / 1; }
+.gl-view.sprite img { position: absolute; inset: 0; margin: auto; width: auto; max-width: 100%; height: 100%; object-fit: contain; }
+@media (min-width: 761px) {
+  .operator-modal.gl-modal.gl-fit-tall { width: min(calc(58vh + 40px + 128px), 100%); }
+}
+
+/* 갤러리 확대 창 — 원본 크기 그대로라 화면보다 커서 아래가 잘렸다 (사용자 지적 2026-10-11). 화면 높이 안에 통째로 맞춘다
+   (창 머리줄·여백을 뺀 높이). 정사각 일러스트도 이 높이에 맞춰 폭이 정해진다 */
+.operator-modal.gl-zoom { width: auto; max-width: min(1600px, calc(100vw - 32px)); }
+.gl-zoom-body { max-height: none; overflow: hidden; display: grid; place-items: center; }
+.gl-zoom-body img, .gl-zoom-body video { display: block; width: auto; height: auto; max-width: 100%; max-height: calc(85vh - 110px); margin: 0 auto; object-fit: contain; }
+
+/* 갤러리 일러스트 창 그림 높이 맞추기 (사용자 지시 2026-10-11 "일러스트도 높이 제각각") — 원본 비율이 0.65~1.5 로 제각각이라
+   정사각 칸에 contain 이면 가로가 넓은 그림(절반 남짓)만 키가 줄었다. 칸을 6:5 로 넓히고 그림은 칸 높이에 맞춘다 —
+   비율 1.2 이하(약 93%)는 전부 같은 높이, 그보다 넓은 몇 장만 폭에 맞춰 줄어든다 */
+.gl-view.illust { --gl-ratio: 6 / 5; }
+.gl-view.illust img, .gl-view.illust video { position: absolute; inset: 0; margin: auto; width: auto; max-width: 100%; height: 100%; object-fit: contain; }
+.operator-modal.gl-modal.gl-fit-sq { width: min(calc(58vh * 1.2 + 40px), 100%); }
+@media (min-width: 761px) {
+  .operator-modal.gl-modal.gl-fit-sq { width: min(calc(58vh * 1.2 + 40px + 128px), 100%); }
+}
+/* 보유 표시를 ✓ 대신 글자로 + 미보유도 (사용자 지시 2026-10-11 "체크로는 뭔 체크인지 알 수 없다") */
+.skin-owned { display: inline-block; margin-left: 6px; padding: 0 5px; font: 700 10px/1.6 var(--mono); font-style: normal; color: #fff; background: #4f7f17; vertical-align: middle; }
+.skin-owned.no, .own-corner.no { color: var(--ink2, #555); background: color-mix(in srgb, var(--ink) 14%, var(--paper)); box-shadow: none; }
+.gl-strip.illust .skin-owned { position: absolute; left: 2px; right: 2px; bottom: 2px; margin: 0; padding: 0; text-align: center; font-size: 9.5px; line-height: 15px; }
+.farm-card { position: relative; }
+/* 아이템 상세 머리 — 보유 모서리 칩 기준 (종전 '내 창고 N' 줄 대체, 2026-10-11) */
+header:has(> .own-corner) { position: relative; }
+header:has(> .own-corner) > div { padding-right: 90px; }
+header > .own-corner { top: 0; right: 0; font-size: 12px; padding: 3px 10px; }
+/* 미보유·미해금은 무채색 테두리 칩 — 보유(초록 바탕)와 한눈에 갈리게 (사용자 지적 2026-10-11 "색이 같아 구분이 힘들다") */
+:root :is(.own-corner, .skin-owned).no {
+  color: var(--muted); background: color-mix(in srgb, var(--paper, #fff) 88%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 30%, transparent);
+}
+html.dark :is(.own-corner, .skin-owned).no { background: color-mix(in srgb, #000 55%, transparent); }

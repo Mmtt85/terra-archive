@@ -4039,9 +4039,25 @@ function SkinSection({ operator }: { operator: Operator }) {
   const [picked, setPicked] = useState(0);
   const [zoom, setZoom] = useState<SkinEntry | null>(null); // 전체 일러스트 확대 보기
   // 내 계정에 있는 스킨 — '보유 중' 표시 (사용자 요청 2026-10-11). 옛 동기화(skinIds 없음)·비로그인이면 표시 안 함
-  const mySkins = useMe()?.profile?.skinIds;
+  const me = useMe();
+  const mySkins = me?.profile?.skinIds;
   const ownedSkin = useMemo(() => new Set(mySkins ?? []), [mySkins]);
-  const isOwnedSkin = (skin: SkinEntry) => !!mySkins && !isDefaultSkin(skin) && ownedSkin.has(skin.id);
+  // 기본 일러는 오퍼 보유·정예화로 판정 — 기본(#1)은 보유만, 1정(#1+)은 정예화 1 이상, 2정(#2)은 정예화 2 (사용자 지시 같은 날)
+  const myElite = me?.chars?.find((c) => c.id === operator.id)?.elite;
+  // true 보유 · false 미보유 · null 모름(내 정보 없음, 또는 스킨 목록이 없는 옛 동기화) — 모르면 아무것도 안 띄운다
+  const isOwnedSkin = (skin: SkinEntry): boolean | null => {
+    if (!me) return null;
+    if (isDefaultSkin(skin)) {
+      if (myElite == null) return false;
+      const need = /#2$/.test(skin.id) ? 2 : /#1\+$/.test(skin.id) ? 1 : 0;
+      return myElite >= need;
+    }
+    return mySkins ? ownedSkin.has(skin.id) : null;
+  };
+  const ownTag = (skin: SkinEntry, cls: string) => {
+    const o = isOwnedSkin(skin);
+    return o == null ? null : <span className={`${cls}${o ? "" : " no"}`}>{o ? t("보유 중") : t("미보유")}</span>;
+  };
 
   useEffect(() => { setPicked(0); setZoom(null); }, [operator.id]);
   useEffect(() => {
@@ -4074,7 +4090,6 @@ function SkinSection({ operator }: { operator: Operator }) {
               <button key={skin.id} type="button" role="tab" aria-selected={index === picked}
                 className={index === picked ? "selected" : ""} onClick={() => setPicked(index)}>
                 {isDefaultSkin(skin) ? t("기본 스킨") : skin.name}
-                {isOwnedSkin(skin) && <em className="skin-owned" title={t("보유 중")}>✓</em>}
                 {/* 기본 스킨은 전부 이름이 같다 — 정예화 단계로 구분 (사용자 요청 2026-07-28) */}
                 {skin.stage && <i>{t(skin.stage)}</i>}
               </button>
@@ -4082,11 +4097,12 @@ function SkinSection({ operator }: { operator: Operator }) {
           </div>
           {current && (
             <article className="skin-view">
+              {ownTag(current, "own-corner")}
               {/* 공개 미러에 아직 안 올라온 최신 스킨이 있다 (2026-07-28 기준 1,265종 중 41종) —
                   깨진 이미지 아이콘 대신 자리표시자로 대체한다 */}
               <SkinPortrait skin={current} fallbackAlt={operator.name} onZoom={() => setZoom(current)} />
               <div className="skin-meta">
-                <h4>{isDefaultSkin(current) ? t("기본 스킨") : current.name}{current.stage && <em className="skin-stage">{t(current.stage)}</em>}{isOwnedSkin(current) && <em className="skin-owned-badge">{t("보유 중")}</em>}</h4>
+                <h4>{isDefaultSkin(current) ? t("기본 스킨") : current.name}{current.stage && <em className="skin-stage">{t(current.stage)}</em>}</h4>
                 <dl>
                   {current.group && <div><dt>{t("시리즈")}</dt><dd>{current.default ? t("기본 스킨") : current.group}</dd></div>}
                   {current.artists.length > 0 && <div><dt>{t("일러스트")}</dt><dd>{current.artists.join(" · ")}</dd></div>}

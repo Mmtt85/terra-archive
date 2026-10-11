@@ -450,6 +450,13 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
     }
     return m;
   }, [mySb]);
+  // 보유 표시는 카드·상세 모두 **오른쪽 위 모서리**에 — 카드 안 정보 칩과 섞지 않는다 (사용자 지시 2026-10-11)
+  const haveCorner = (id: string) => {
+    if (!myHave) return null;
+    const n = myHave.get(id) ?? 0;
+    return n > 0 ? <span className="own-corner" title={t("내 계정")}>{t("보유")} {n.toLocaleString()}</span>
+      : <span className="own-corner no" title={t("내 계정")}>{t("미보유")}</span>;
+  };
   const v2ItemTypes = useMemo(() => V2_ITEM_TYPE.map(([k, label]) => [k, label, Object.values(v2.items).filter((it) => it[3] === k).length] as const)
     .filter(([, , n]) => n > 0), [v2]);
   const v2Items = useMemo(() => {
@@ -553,6 +560,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
         onClose={() => (slot === "a" ? setMatA(null) : setMatB(null))}>
         <div className="sb-dt">
           <header className="sb-dt-head">
+            {haveCorner(id)}
             <img src={itemIcon(id)} alt="" aria-hidden onError={hideErr} />
             <div>
               <h2>{nameOf(id)}</h2>
@@ -663,8 +671,8 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
               <>
                 <img className="sb-thumb" src={itemIcon(id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                 <b className="sb-cname">{it[0]}</b>
-                <span className="sb-cmeta"><i className="sb-chip">{t(V2_ITEM_TYPE.find(([k]) => k === it[3])?.[1] ?? it[3])}</i>
-                  {myHave && (myHave.get(id) ?? 0) > 0 && <i className="sb-chip sb-have" title={t("내 계정")}>{t("보유")} {myHave.get(id)!.toLocaleString()}</i>}</span>
+                {haveCorner(id)}
+                <span className="sb-cmeta"><i className="sb-chip">{t(V2_ITEM_TYPE.find(([k]) => k === it[3])?.[1] ?? it[3])}</i></span>
                 <span className="sb-cdesc">{it[1]}</span>
               </>
             ));
@@ -1431,6 +1439,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
             <ModalWindow label={f.variants[0]?.[1] ?? f.id} className="operator-modal sb-modal" onClose={close}>
               <div className="sb-dt">
                 <header className="sb-dt-head">
+                  {haveCorner(f.id)}
                   <img src={itemIcon(f.id)} alt="" aria-hidden onError={hideErr} />
                   <div>
                     <h2>{f.variants[0]?.[1] ?? f.id}</h2>
@@ -1469,6 +1478,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
             <ModalWindow label={nameOf(c.id)} className="operator-modal sb-modal" onClose={close}>
               <div className="sb-dt">
                 <header className="sb-dt-head">
+                  {haveCorner(c.id)}
                   <img src={itemIcon(c.id)} alt="" aria-hidden onError={hideErr} />
                   <div>
                     <h2>{nameOf(c.id)}</h2>
