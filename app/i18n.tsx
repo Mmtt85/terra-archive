@@ -3530,6 +3530,7 @@ const D: Record<string, Pair> = {
   "모두 보기 ({n})": ["Show all ({n})", "すべて表示 ({n})"],
   "숨김 훈장": ["Hidden", "隠し勲章"],
   "이벤트 가구 {n}": ["Event furniture {n}", "イベント家具 {n}"],
+  "보유 중": ["Owned", "所持中"],
   "유토피아 {n}종": ["{n} Utopia rules", "ユートピア{n}種"],
   "히든 구역": ["Hidden zone", "隠しエリア"],
   "유토피아 규칙": ["Utopia rules", "ユートピアのルール"],

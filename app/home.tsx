@@ -4038,6 +4038,10 @@ function SkinSection({ operator }: { operator: Operator }) {
   const [doc, setDoc] = useState<SkinDoc | null | undefined>(() => skinCache.get(key));
   const [picked, setPicked] = useState(0);
   const [zoom, setZoom] = useState<SkinEntry | null>(null); // 전체 일러스트 확대 보기
+  // 내 계정에 있는 스킨 — '보유 중' 표시 (사용자 요청 2026-10-11). 옛 동기화(skinIds 없음)·비로그인이면 표시 안 함
+  const mySkins = useMe()?.profile?.skinIds;
+  const ownedSkin = useMemo(() => new Set(mySkins ?? []), [mySkins]);
+  const isOwnedSkin = (skin: SkinEntry) => !!mySkins && !isDefaultSkin(skin) && ownedSkin.has(skin.id);
 
   useEffect(() => { setPicked(0); setZoom(null); }, [operator.id]);
   useEffect(() => {
@@ -4070,6 +4074,7 @@ function SkinSection({ operator }: { operator: Operator }) {
               <button key={skin.id} type="button" role="tab" aria-selected={index === picked}
                 className={index === picked ? "selected" : ""} onClick={() => setPicked(index)}>
                 {isDefaultSkin(skin) ? t("기본 스킨") : skin.name}
+                {isOwnedSkin(skin) && <em className="skin-owned" title={t("보유 중")}>✓</em>}
                 {/* 기본 스킨은 전부 이름이 같다 — 정예화 단계로 구분 (사용자 요청 2026-07-28) */}
                 {skin.stage && <i>{t(skin.stage)}</i>}
               </button>
@@ -4081,7 +4086,7 @@ function SkinSection({ operator }: { operator: Operator }) {
                   깨진 이미지 아이콘 대신 자리표시자로 대체한다 */}
               <SkinPortrait skin={current} fallbackAlt={operator.name} onZoom={() => setZoom(current)} />
               <div className="skin-meta">
-                <h4>{isDefaultSkin(current) ? t("기본 스킨") : current.name}{current.stage && <em className="skin-stage">{t(current.stage)}</em>}</h4>
+                <h4>{isDefaultSkin(current) ? t("기본 스킨") : current.name}{current.stage && <em className="skin-stage">{t(current.stage)}</em>}{isOwnedSkin(current) && <em className="skin-owned-badge">{t("보유 중")}</em>}</h4>
                 <dl>
                   {current.group && <div><dt>{t("시리즈")}</dt><dd>{current.default ? t("기본 스킨") : current.group}</dd></div>}
                   {current.artists.length > 0 && <div><dt>{t("일러스트")}</dt><dd>{current.artists.join(" · ")}</dd></div>}

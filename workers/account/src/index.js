@@ -533,6 +533,24 @@ function storiesDigest(user) {
 // 브라우저 localStorage 에 그대로 남으므로 **토큰·기기 id 같은 접근 권한 값은 넣지 않는다.**
 const num = (value) => (typeof value === "number" && Number.isFinite(value) ? value : 0);
 
+// 생존연산 '사막 이야기'(SANDBOX_V2 sandbox_1) 보유 수량 — 재료 가방·조리한 음식·제작물 (사용자 요청 2026-10-11).
+// 원본 구조는 2026-10-11 실계정 점검으로 확인: bag.material{id:수}, cook.food{f_n:{id,count}}, build.{building,tactical,animal}{id:수}
+function sandboxDigest(user) {
+  const sb = user?.sandboxPerm?.template?.SANDBOX_V2?.sandbox_1;
+  if (!sb) return null;
+  const nums = (o) => Object.fromEntries(Object.entries(o ?? {}).filter(([, v]) => typeof v === "number" && v > 0));
+  const food = {};
+  for (const f of Object.values(sb.cook?.food ?? {})) if (f?.id && f.count > 0) food[f.id] = (food[f.id] ?? 0) + f.count;
+  return { material: nums(sb.bag?.material), food, building: nums(sb.build?.building), tactical: nums(sb.build?.tactical), animal: nums(sb.build?.animal) };
+}
+// 위수협의 전략(band) — 원본 autochessSeason.band{band_*: 1}. 실계정 41개가 전부 1 이라 '해금(얻음)' 표시로 본다.
+// 전략별 클리어 횟수는 계정 원본에 없다 (2026-10-11 점검)
+function autochessDigest(user) {
+  const a = user?.autochessSeason;
+  if (!a) return null;
+  return { bands: Object.keys(a.band ?? {}).filter((k) => num(a.band[k]) > 0), training: num(a.trainingModeFin?.mode_training_1) };
+}
+
 function profile(user, friends, shop) {
   const status = user?.status ?? {};
   const troop = user?.troop?.chars ?? {};
@@ -624,6 +642,8 @@ function profile(user, friends, shop) {
     assist,
     rooms,
     skins: Object.keys(user?.skin?.characterSkins ?? {}).length,
+    // 보유 스킨 id 목록 — 오퍼 상세·갤러리에 '보유 중' 표시 (사용자 요청 2026-10-11). 기본 복장(#1·#1+·#2)은 원래 다 갖고 있어 뺀다
+    skinIds: Object.keys(user?.skin?.characterSkins ?? {}).filter((id) => id.includes("@")),
     // 훈장 — 원본엔 아직 못 얻은 훈장의 진행 기록도 같이 있다(실계정 1,516개). 처음 얻은 시각(fts)이 있는 것만 센다
     // (숨김·금장 훈장은 게임 '수집' 수처럼 뺀다 — countedMedal)
     medals: Object.entries(user?.medal?.medals ?? {}).filter(([id, m]) => countedMedal(id) && num(m?.fts) > 0).length,
@@ -635,6 +655,8 @@ function profile(user, friends, shop) {
     // costSocialPoint 다 (실계정 1,804,976 대조, 2026-10-05)
     creditSpent: typeof shop?.costSocialPoint === "number" ? shop.costSocialPoint : null,
     rogue: rogueDigest(user),
+    sandbox: sandboxDigest(user),
+    autochess: autochessDigest(user),
     // 연 스토리 — 게임 '스토리 회상'이 기록한 것(storyreview.groups[스토리].stories[].id). 끝난 이벤트는 작전 기록이 지워져
     // 작전 조건만으론 '한 적 있음'을 알 수 없다 — 갤러리 스포 방지가 쓴다 (2026-10-06). '<스토리>_' 접두는 떼고 싣는다
     stories: storiesDigest(user),

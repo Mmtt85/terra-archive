@@ -583,6 +583,9 @@ function IllustWindow({ op, opHref, onOp, onClose }: { op: GalleryOp; opHref: st
   const fullSrc = (sk: SkinEntry) => hasDyn(sk.portrait) ? dynPoster(sk.portrait) : asset(`/skin/full/${encodeURIComponent(sk.portrait)}.webp`);
   const dynOf = (sk: SkinEntry) => (hasDyn(sk.portrait) ? sk.portrait : undefined);
   const label = (s: SkinEntry) => (s.default ? (s.stage ?? s.name) : s.name);
+  // 내 계정 보유 스킨 — '보유 중' 표시 (사용자 요청 2026-10-11, 오퍼 상세 스킨 탭과 같은 기준: 기본 복장 제외)
+  const mySkins = useMe()?.profile?.skinIds;
+  const owned = (s: SkinEntry) => !!mySkins && !s.default && mySkins.includes(s.id);
   return (
     <ModalWindow label={op.name} className="operator-modal gl-modal gl-fit-sq" onClose={onClose}>
       {skins === undefined && <p className="no-detail">{t("불러오는 중…")}</p>}
@@ -596,7 +599,7 @@ function IllustWindow({ op, opHref, onOp, onClose }: { op: GalleryOp; opHref: st
           </>}
         </div>
         <div className="gl-caption">
-          <span><b>{label(cur)}</b>{cur.artists.length > 0 && <> · {cur.artists.join(" · ")}</>}</span>
+          <span><b>{label(cur)}</b>{owned(cur) && <em className="skin-owned-badge">{t("보유 중")}</em>}{cur.artists.length > 0 && <> · {cur.artists.join(" · ")}</>}</span>
           <span>{i + 1} / {n} · <a href={opHref} onClick={(event) => { if (onOp && plainClick(event)) { event.preventDefault(); onOp(); } }}>{t("오퍼 도감에서 보기")} →</a></span>
         </div>
         <div className="gl-strip illust">
@@ -604,6 +607,7 @@ function IllustWindow({ op, opHref, onOp, onClose }: { op: GalleryOp; opHref: st
             <button key={s.id} type="button" className={k === i ? "selected" : ""} onClick={() => setI(k)} title={label(s)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={asset(`/skin/portrait/${encodeURIComponent(s.portrait)}.webp`)} alt="" loading="lazy" />
+              {owned(s) && <em className="skin-owned" aria-label={t("보유 중")}>✓</em>}
             </button>
           ))}
         </div>

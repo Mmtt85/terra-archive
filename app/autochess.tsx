@@ -39,6 +39,7 @@ import { warmBondTemplates } from "./lens/acbond-load";
 import { useAcRun, acRun, setAcStack, setAcStacks, mergeAcRun, resetAcRun, isAcLock, acModeOf, AC_LOCK, BAN_VOTE_SURE } from "./autochess-run";
 import { solveAcBans } from "./lens/acsolve";
 import { AcPartyModal, AcRoomsModal, ROOM_ID_RE, usePartyRoomCount } from "./autochess-party";
+import { useMe } from "./me-store";
 
 /** 파티 공유를 여는가 — 위수 협의가 게임에서 도는 동안만 true. 시즌 밖에선 게임이 맹약 초대 문구를 안 주니
  *  버튼을 끄고(회색·눌리지 않음), 예전 방 링크(#…?p=)로 들어와도 창을 열지 않는다
@@ -1372,6 +1373,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
 
   // 대표 오퍼 이름으로도 찾을 수 있어야 한다 — 커뮤니티는 '집중 케어'가 아니라
   // '와파린 전략'으로 부른다 (사용자 확정 2026-08-24)
+  // 내 계정에서 얻은 전략 — '내 정보' 동기화에 위수협의 기록이 있을 때만 (사용자 요청 2026-10-11).
+  // 계정 원본엔 전략별 클리어 횟수가 없어(2026-10-11 실계정 점검) 해금 여부만 표시한다
+  const myAc = useMe()?.profile?.autochess;
+  const myBands = useMemo(() => (myAc ? new Set(myAc.bands) : null), [myAc]);
   const bandRows = useMemo(() => doc.bands.filter((b) =>
     !q || normSearch(`${b.n} ${b.by ?? ""} ${b.d}`).includes(q)), [doc, q]);
   const equipRows = useMemo(() => doc.equips.filter((e) =>
@@ -2233,6 +2238,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                           {acLocked && acOtherBands.filter((x) => x.band === b.id).map((x) => (
                             <i key={x.seat} className="sb-chip ac-nowchip other">{t("참가자 {n}", { n: x.seat + 1 })}</i>
                           ))}
+                          {myBands?.has(b.id) && <i className="sb-chip ac-mine" title={t("내 계정에서 얻은 전략")}>{t("해금")}</i>}
                           <i className="sb-chip ac-hp">HP {b.hp}</i>
                           {b.modes.map((m) => <i key={m} className="sb-chip">{t(MODE_TYPE_LABEL[m] ?? m)}</i>)}
                         </span>

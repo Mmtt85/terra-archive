@@ -88,6 +88,8 @@ export type AccountProfile = {
   assist: { id: string; skillIndex: number; equip: string | null }[];
   rooms: { slot: string; room: string; level: number }[];
   skins: number;
+  /** 보유 스킨 id (skin_table charSkins 키, 기본 복장 제외 — 2026-10-11~ 워커. 옛 동기화엔 없다) */
+  skinIds?: string[];
   medals: number;
   /** 전체 훈장 수 (2026-10-05~ 워커) */
   medalTotal?: number;
@@ -99,6 +101,10 @@ export type AccountProfile = {
   /** 누적 소비 크레딧 — 크레딧 상점 '오퍼레이터 언락'의 숫자 (2026-10-05~ 워커) */
   creditSpent?: number | null;
   /** 통합전략 테마별 진행 — collect: 갈래 → 얻은 id 들, record: 원본(작으면) (2026-10-05) */
+  /** 생존연산 '사막 이야기' 보유 수량 — 재료·조리 음식·제작물 (2026-10-11~ 워커) */
+  sandbox?: { material: Record<string, number>; food: Record<string, number>; building: Record<string, number>; tactical: Record<string, number>; animal: Record<string, number> } | null;
+  /** 위수협의 — 얻은(해금된) 전략 id (2026-10-11~ 워커. 전략별 클리어 횟수는 계정 원본에 없다) */
+  autochess?: { bands: string[]; training: number } | null;
   rogue?: Record<string, { collect: Record<string, string[]>; chat?: { chat?: Record<string, number>; chatV2?: Record<string, string[]> }; record: Record<string, unknown> | null }>;
   /** 연 스토리 — 스토리 id → 그 안의 storyId('<스토리>_' 접두를 뗀 것, 접두가 다르면 '=' + 전체) (2026-10-06~ 워커, 갤러리 스포 방지) */
   stories?: Record<string, string[]>;

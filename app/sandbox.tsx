@@ -16,6 +16,7 @@
 // 로케일 래퍼(sandbox-ko/en/ja.tsx)가 자기 것만 정적 임포트하고 home이 lazy로 문다.
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useMe } from "./me-store";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
@@ -439,6 +440,16 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   //    카드는 각 탭 것 그대로라 누르면 같은 상세가 뜬다. 탭마다 있던 검색란은 없앴다. 결과 판은 탭의 보조 필터
   //    (아이템 종류·지역 자원)를 무시한다 — 검색어만으로 찾는다.
   // 사막 이야기 아이템 탭 — 종류 필터 (상태는 위 view 옆에 둔다 — 옛 #ra-food 주소가 이걸 고른다)
+  // 내 계정 보유 수량 — '내 정보' 동기화에 사막 이야기 기록이 있을 때만 (사용자 요청 2026-10-11)
+  const mySb = useMe()?.profile?.sandbox;
+  const myHave = useMemo(() => {
+    if (!mySb) return null;
+    const m = new Map<string, number>();
+    for (const part of [mySb.material, mySb.food, mySb.building, mySb.tactical, mySb.animal]) {
+      for (const [id, n] of Object.entries(part ?? {})) m.set(id, (m.get(id) ?? 0) + n);
+    }
+    return m;
+  }, [mySb]);
   const v2ItemTypes = useMemo(() => V2_ITEM_TYPE.map(([k, label]) => [k, label, Object.values(v2.items).filter((it) => it[3] === k).length] as const)
     .filter(([, , n]) => n > 0), [v2]);
   const v2Items = useMemo(() => {
@@ -652,7 +663,8 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
               <>
                 <img className="sb-thumb" src={itemIcon(id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                 <b className="sb-cname">{it[0]}</b>
-                <span className="sb-cmeta"><i className="sb-chip">{t(V2_ITEM_TYPE.find(([k]) => k === it[3])?.[1] ?? it[3])}</i></span>
+                <span className="sb-cmeta"><i className="sb-chip">{t(V2_ITEM_TYPE.find(([k]) => k === it[3])?.[1] ?? it[3])}</i>
+                  {myHave && (myHave.get(id) ?? 0) > 0 && <i className="sb-chip sb-have" title={t("내 계정")}>{t("보유")} {myHave.get(id)!.toLocaleString()}</i>}</span>
                 <span className="sb-cdesc">{it[1]}</span>
               </>
             ));
