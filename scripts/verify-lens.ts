@@ -13,7 +13,7 @@ import sharp from "sharp";
 import { createWorker } from "tesseract.js";
 import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "../app/lens/preprocess";
 import { DIFF_REGION, parseDifficulty } from "../app/lens/ocr";
-import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass } from "../app/lens/match";
+import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, type LensOutcome } from "../app/lens/match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "../app/lens/storymatch";
 
 const ROOT = resolve(import.meta.dirname ?? __dirname, "..");
@@ -118,7 +118,7 @@ async function main() {
       return (r.data.lines ?? []).map((l) => l.text.trim()).filter(Boolean);
     };
     // 모드별 흐름 — lens.tsx와 동일하게
-    let oc;
+    let oc: LensOutcome;
     if (exp.mode === "recruit") {
       // 태그는 어두운 버튼 칩이 본체 — 칩 + 전체 프레임 보조
       const lines = (await chipPass()).concat(await fullPass("11"));

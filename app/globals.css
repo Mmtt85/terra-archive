@@ -30096,3 +30096,21 @@ html.dark .me-pf-art { opacity: .3; }
 .me-pulls > b { font-size: 20px; color: var(--ink); text-align: right; }
 .me-pulls > small { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); }
 .me-pulls > .me-pulls-prime { color: var(--ink3); }
+/* 세션 동선 — 같은 대상 묶음 (2026-10-11) · 누르면 드롭다운 목록 */
+.vz-grp-head { border: 1px solid var(--border-hover, var(--line)); font: inherit; font-weight: 700; color: inherit; cursor: pointer; }
+.vz-grp-head em { font-style: normal; font-weight: 600; font-size: 11px; color: var(--muted); }
+.vz-grp-head b { font-size: 10px; color: var(--muted); }
+.vz-grp-head em, .vz-grp-head b { margin-left: 5px; }
+.vz-grp.open .vz-grp-head { border-color: var(--ink3); }
+.vz-grp-pop { position: fixed; z-index: 1000; min-width: 220px; max-width: 340px; max-height: 60vh; overflow: auto; padding: 4px 0;
+  background: var(--white, var(--paper)); border: 1px solid var(--line); box-shadow: 0 10px 28px -10px #0007; font-size: 12.5px; }
+.vz-grp-pop header { padding: 6px 10px 5px; font-weight: 700; border-bottom: 1px solid var(--line); }
+.vz-grp-pop header small { margin-left: 4px; font-weight: 500; color: var(--muted); }
+.vz-grp-pop ol { list-style: none; margin: 0; padding: 2px 0; }
+.vz-grp-pop li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 0; }
+.vz-grp-pop li .vz-step { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 5px 10px; background: none; font-weight: 600; white-space: normal; }
+.vz-grp-pop li .vz-step:hover { background: var(--bg-soft); }
+.vz-grp-pop li .vz-step.out { width: auto; margin: 0 10px 4px; padding: 1px 6px; }
+.vz-grp-pop li i { display: none; }
+/* PRTS 링크 — '어디서' 표와 연결 기록 표 사이를 띄운다 (사용자 지시 2026-10-11) */
+.vz-prts-log { margin-top: 18px; }

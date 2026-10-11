@@ -25,6 +25,11 @@ import { useEffect, useRef, useState } from "react";
 import type { LensOutcome } from "./match";
 import { holdVisitActive, notePrtsStart, notePrtsEnd } from "../visit-track";
 
+// 크롬 전용 API 라 TS 기본 DOM 타입에 없다 — 쓰는 만큼만 선언
+declare const MediaStreamTrackProcessor: {
+  new (init: { track: MediaStreamTrack }): { readable: ReadableStream<VideoFrame> };
+};
+
 // 변화 감지용 축소본. 전투노드 화면끼리는 맵·패널이 그대로고 **오른쪽 패널 글자만**
 // 바뀌므로, 너무 거칠면 그 차이가 전체 평균에 묻힌다 (2026-07-26 제보: 전투노드 →
 // 전투노드 전환을 못 잡음). 조금 키우고, 아래 tileMax로 국소 변화를 따로 본다.

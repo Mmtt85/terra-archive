@@ -3,7 +3,7 @@ import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } fr
 import handler from "vinext/server/app-router-entry";
 
 interface Env {
-  ASSETS: Fetcher;
+  ASSETS: { fetch(req: Request): Promise<Response> }; // Cloudflare Fetcher — workers-types 없이 쓰는 만큼만
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {

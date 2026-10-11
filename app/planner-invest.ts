@@ -33,7 +33,7 @@ import {
 type CostPhase = { lmd: number; items: [string, number][] };
 type LevelPhase = { lmd: number; items: [string, number][]; maxLv: number; exp: number };
 type OpCost = { elite?: (CostPhase | null)[]; levels?: LevelPhase[] };
-const OPS_COST = (costsData as { ops: Record<string, OpCost> }).ops;
+const OPS_COST = (costsData as unknown as { ops: Record<string, OpCost> }).ops;
 
 // 보고 대상 방 (설명용 %효율 변화). 제조소·무역소·발전소·사무실·응접실. 제어센터 변화는
 // 버프받는 방 델타로 자연히 드러나므로 뺀다. 가공소·숙소·훈련실은 planScore 무관/무의미.

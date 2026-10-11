@@ -9,7 +9,8 @@
 // 기간 7·30·90일은 원장에서, '1년'은 매일 밤 말아 둔 일별 집계표에서 읽는다. 원장은 기간으로 자르지 않고
 // DB 가 80% 차면 오래된 것부터 지운다(docs/supabase-visits.sql visits_maintain).
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
 import { ACCOUNT_SERVERS } from "../account";
 import { ModalWindow } from "../modal-window";
@@ -235,6 +236,57 @@ export function pathLabel(path: string, hash?: string | null): string {
     : decodeURIComponent(p);
   return name + (hash ? ` · ${hashLabel(head, hash)}` : "");
 }
+/** 같은 계열 화면 — 세션 동선에서 이어 붙은 것끼리 한 덩어리로 묶는 기준 (사용자 지시 2026-10-11 "통합전략2에서 이 화면 저 화면
+ *  둘러보면 통합전략 2 그룹으로"). 묶는 단위는 '한 가지 대상' — 통합전략 테마 하나, 스토리 한 편, 오퍼 한 명처럼.
+ *  기능 전체(스토리 전부)로 묶으면 서로 다른 스토리가 한 덩어리가 돼 너무 뭉뚱그려졌다 (같은 날 지적).
+ *  대상이 없는 화면은 도구형 기능(인프라·생존연산 등)만 기능째 묶고, 목록 화면은 묶지 않는다 */
+const FAMILY_TOOL = new Set(["infra", "ra", "autochess", "sim", "recruit", "farm", "upgrade", "me"]);
+function familyOf(path: string, hash?: string | null): { key: string; label: string } | null {
+  const p = path.replace(/^\/(en|ja)(?=\/|$)/, "") || "/";
+  const [, head = "", id = ""] = p.split("/");
+  if (head === "rogue") return { key: `rogue/${id || "is1"}`, label: rogueLabel(id) };
+  // 창(모달)으로 연 대상 — #story-<id>/… · #op-<id> · #en- · #st- · #it- · #ev-
+  const h = hash ? decodeURIComponent(hash).replace(/^#/, "") : "";
+  const m = /^(story|op|en|st|it|item|ev)-([^/]+)/.exec(h);
+  if (m) return { key: `#${m[1]}-${m[2]}`, label: hashLabel(head, `#${m[1]}-${m[2]}`) };
+  if (id) return { key: `${head}/${id}`, label: pathLabel(`/${head}/${id}`) };
+  if (FAMILY_TOOL.has(head)) return { key: head, label: SECTION_KO[head] ?? head };
+  return null;
+}
+/** 이 세션에서 눌러 나간 바깥 링크 중 그 호스트가 있나 — 통계의 '나간 링크' 호스트와 같은 꼴(스킴·경로 뗀 것)로 맞춘다 */
+const outHost = (u: string) => u.replace(/^https?:\/\//, "").split(/[/?#]/)[0].toLowerCase();
+function sessOutHit(s: SessRow, host: string): boolean {
+  const h = host.replace(/^https?:\/\//, "").toLowerCase();
+  return s.views.some((v) => !!v.out && outHost(v.out) === h);
+}
+type TrailItem = { kind: "one"; i: number } | { kind: "group"; start: number; end: number; label: string };
+/** 동선을 계열 덩어리로 — 같은 대상이 2개 이상 이어질 때만 묶는다 */
+function groupTrail(views: SessRow["views"]): TrailItem[] {
+  const out: TrailItem[] = [];
+  let i = 0;
+  while (i < views.length) {
+    const f = familyOf(views[i].path, views[i].hash);
+    let j = i + 1;
+    while (f && j < views.length && !views[j - 1].out && familyOf(views[j].path, views[j].hash)?.key === f.key) j += 1;
+    out.push(f && j - i >= 2 ? { kind: "group", start: i, end: j, label: f.label } : { kind: "one", i });
+    i = j;
+  }
+  return out;
+}
+
+/** 같은 화면(주소·해시 같음)이 연달아 찍힌 것은 한 칸으로 — 시간(보인·조작)은 더한다 (사용자 지시 2026-10-11 "세 번 연속 내보낼 필요 없다") */
+function mergeRepeats(views: SessRow["views"]): SessRow["views"] {
+  const out: SessRow["views"] = [];
+  for (const v of views) {
+    const prev = out[out.length - 1];
+    if (prev && !prev.out && prev.path === v.path && (prev.hash ?? "") === (v.hash ?? "")) {
+      out[out.length - 1] = { ...prev, vis: (prev.vis ?? 0) + (v.vis ?? 0), act: (prev.act ?? 0) + (v.act ?? 0),
+        scroll: Math.max(prev.scroll ?? 0, v.scroll ?? 0), out: v.out };
+    } else out.push(v);
+  }
+  return out;
+}
+
 // 화면 이름을 누르면 라이브 사이트의 그 화면을 새 탭으로 (사용자 지시 2026-10-04). 운영자 브라우저는 어드민이
 // ta-no-track 쿠키를 걸어 두어서 이렇게 열어 봐도 통계에 안 잡힌다.
 const SITE = "https://terra-archive.net";
@@ -631,6 +683,32 @@ function SessionLine({ s }: { s: SessRow }) {
   const [clampH, setClampH] = useState<number | null>(null);
   const [rows, setRows] = useState(0);
   const [open, setOpen] = useState(false);
+  // 계열 묶음을 누르면 그 아래로 드롭다운 목록 (사용자 지시 2026-10-11 "열었다 닫았다 말고 드롭다운 리스트처럼").
+  // 동선 칸은 접힘(overflow)이 걸려 있어 목록을 body 로 띄우고 화면 좌표로 놓는다
+  const [pop, setPop] = useState<{ start: number; x: number; y: number } | null>(null);
+  const popHead = useRef<HTMLElement | null>(null);
+  const popAt = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    return { x: Math.min(r.left, window.innerWidth - 340), y: r.bottom + 4 };
+  };
+  const popOpen = pop != null;
+  useEffect(() => {
+    if (!popOpen) return;
+    const close = (e: Event) => { if (!(e.target as Element)?.closest?.(".vz-grp-pop, .vz-grp-head")) setPop(null); };
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setPop(null); };
+    // 휠로 화면이 굴러도 닫지 않고 묶음 단추를 따라간다 (사용자 지시 2026-10-11 "스크롤하면 그냥 꺼져버림")
+    const follow = () => { const el = popHead.current; if (el) setPop((p) => p && { ...p, ...popAt(el) }); };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", key);
+    window.addEventListener("scroll", follow, true);
+    window.addEventListener("resize", follow);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", key);
+      window.removeEventListener("scroll", follow, true);
+      window.removeEventListener("resize", follow);
+    };
+  }, [popOpen]);
   useEffect(() => {
     const el = trailRef.current;
     if (!el) return;
@@ -664,6 +742,7 @@ function SessionLine({ s }: { s: SessRow }) {
   // 아직 안 나간 세션 — 열린 탭은 1분마다 기록을 보내므로(visit-track.ts BEAT_MS) 마지막 수신이 2분 안이면 '조작 중'.
   // DB 함수가 옛판이라 last_at 이 없으면 시작 시각 + 마지막 화면의 시작·보인 시간으로 어림한다 (사용자 지시 2026-10-10)
   const live = sessLive(s);
+  const trail = mergeRepeats(s.views);
   return (
     <li className={(s.kind ?? (s.human ? "human" : "bot")) === "bot" ? "bot" : ""}>
       <header>
@@ -685,23 +764,53 @@ function SessionLine({ s }: { s: SessRow }) {
       </header>
       <p className={`vz-trail${clampH && !open ? " clamped" : ""}`} ref={trailRef}
         style={clampH && !open ? { maxHeight: clampH } : undefined}>
-        {s.views.map((v, i) => (
-          <span key={i}>
-            {i > 0 && <i>→</i>}
-            <a className="vz-step vz-go" href={siteUrl(v.path, v.hash)} target="_blank" rel="noopener noreferrer"
-               title={`${v.path}${v.hash ?? ""} · 보인 ${fmtDur(v.vis)} · 조작 ${fmtDur(v.act)}${v.scroll != null ? ` · 스크롤 ${v.scroll}%` : ""}`}>
-              {pathLabel(v.path, v.hash)} <small>{fmtDur(v.act || v.vis)}</small>
-            </a>
-            {v.out && <><i>↗</i><Go className="vz-step out" href={/^https?:\/\//.test(v.out) ? v.out : null}>{v.out.replace(/^https?:\/\//, "").slice(0, 40)}</Go></>}
-          </span>
-        ))}
+        {groupTrail(trail).map((it, k) => {
+          // 화면 한 칸 — 묶음 안에서는 계열 이름(앞머리)을 떼고 뒤쪽만
+          const step = (i: number, strip?: string) => {
+            const v = trail[i];
+            const full = pathLabel(v.path, v.hash);
+            // 묶음 이름 뒤쪽만 — '오퍼레이터 · 스토리 · X · 19화' 처럼 앞에 다른 화면 이름이 붙어 있어도 찾아서 뗀다
+            const at = strip ? full.indexOf(`${strip} · `) : -1;
+            const label = at >= 0 ? full.slice(at + strip!.length + 3) : strip && full.endsWith(strip) ? "첫 화면" : full;
+            return (
+              <Fragment key={i}>
+                <a className="vz-step vz-go" href={siteUrl(v.path, v.hash)} target="_blank" rel="noopener noreferrer"
+                   title={`${v.path}${v.hash ?? ""} · 보인 ${fmtDur(v.vis)} · 조작 ${fmtDur(v.act)}${v.scroll != null ? ` · 스크롤 ${v.scroll}%` : ""}`}>
+                  {label} <small>{fmtDur(v.act || v.vis)}</small>
+                </a>
+                {v.out && <><i>↗</i><Go className="vz-step out" href={/^https?:\/\//.test(v.out) ? v.out : null}>{v.out.replace(/^https?:\/\//, "").slice(0, 40)}</Go></>}
+              </Fragment>
+            );
+          };
+          if (it.kind === "one") return <span key={k}>{k > 0 && <i>→</i>}{step(it.i)}</span>;
+          const vs = trail.slice(it.start, it.end);
+          const sum = vs.reduce((a, v) => a + (v.act || v.vis || 0), 0);
+          const isOpen = pop?.start === it.start;
+          return (
+            <span key={k} className={`vz-grp${isOpen ? " open" : ""}`}>
+              {k > 0 && <i>→</i>}
+              <button type="button" className="vz-step vz-grp-head" aria-expanded={isOpen} aria-haspopup="listbox"
+                onClick={(e) => {
+                  popHead.current = e.currentTarget;
+                  setPop(isOpen ? null : { start: it.start, ...popAt(e.currentTarget) });
+                }}>
+                {it.label} <em>화면 {vs.length}</em> <small>{fmtDur(sum)}</small> <b aria-hidden>▾</b>
+              </button>
+              {isOpen && createPortal(
+                <div className="vz-grp-pop" role="listbox" aria-label={it.label} style={{ left: pop!.x, top: pop!.y }}>
+                  <header>{it.label} <small>화면 {vs.length} · {fmtDur(sum)}</small></header>
+                  <ol>{vs.map((_, n) => <li key={n}>{step(it.start + n, it.label)}</li>)}</ol>
+                </div>, document.body)}
+            </span>
+          );
+        })}
         {last && !last.out && (live
           ? <><i>→</i><span className="vz-step live" title="마지막 기록이 2분 안 — 최근에 조작했다">조작 중</span></>
           : <><i>→</i><span className="vz-step exit">이탈</span></>)}
       </p>
       {clampH != null && (
         <button type="button" className="vz-trail-more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-          {open ? "접기 ▲" : `펼치기 ▼ · 화면 ${s.views.length}개 · ${rows}줄`}
+          {open ? "접기 ▲" : `펼치기 ▼ · 화면 ${trail.length}개 · ${rows}줄`}
         </button>
       )}
     </li>
@@ -764,6 +873,8 @@ export function VisitsPanel() {
   const [trend, setTrend] = useState<TrendRow[] | null>(null);
   const [sessions, setSessions] = useState<SessRow[] | null>(null);
   const [srcFilter, setSrcFilter] = useState<string>("");
+  // 눌러서 나간 바깥 링크로 거르기 (사용자 지시 2026-10-11 "유입원처럼") — DB 함수에 거르는 인자가 없어 받아 온 세션 안에서 거른다
+  const [outFilter, setOutFilter] = useState<string>("");
   const [tops, setTops] = useState(TOP_DEFAULT);
   useEffect(() => { setTops(loadTops()); }, []);   // 하이드레이션 뒤에 저장값을 읽는다
   // 전체 보기 창 — 어느 목록인지
@@ -848,7 +959,7 @@ export function VisitsPanel() {
   });
   // '조작 중만'이면 상위 N 과 무관하게 조작 중인 세션 전부 — 최근 세션을 넉넉히(500) 받아 그 안에서 거른다
   // (사용자 지시 2026-10-11). 조작 중은 마지막 기록이 2분 안인 세션이라 최근 500 안에 다 든다
-  const fetchN = liveOnly ? Math.max(limit, 500) : limit;
+  const fetchN = liveOnly || outFilter ? Math.max(limit, 500) : limit;
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
     let alive = true;
@@ -1177,8 +1288,17 @@ export function VisitsPanel() {
               label={srcFilter || "유입원 전체"}
               items={[{ value: "", label: "유입원 전체" }, ...data.src.map((r) => ({ value: r.src, label: r.src, count: r.sessions }))]}
               selected={[srcFilter]}
-              onPick={setSrcFilter}
+              // 유입원·나간 링크로 거르면 '조작 중만'은 풀린다 (사용자 지시 2026-10-11)
+              onPick={(v) => { setSrcFilter(v); if (v) setLiveOnly(() => false); }}
               ariaLabel="세션 타임라인 유입원"
+              scroll
+            />
+            <Dropdown
+              label={outFilter ? `↗ ${outFilter}` : "나간 링크 전체"}
+              items={[{ value: "", label: "나간 링크 전체" }, ...data.out.map((r) => ({ value: r.host, label: r.host, count: r.n }))]}
+              selected={[outFilter]}
+              onPick={(v) => { setOutFilter(v); if (v) setLiveOnly(() => false); }}
+              ariaLabel="세션 타임라인 나간 링크"
               scroll
             />
             {/* 조작 중인 세션만 (사용자 요청 2026-10-10) — 받아 온 목록 안에서 거른다. 옆 드롭다운과 같은 단추 결(.drop-btn) —
@@ -1191,7 +1311,9 @@ export function VisitsPanel() {
           {sessions == null ? <p className="vz-empty">불러오는 중…</p> : (
             <>
               {liveOnly && !sessions.some(sessLive) && <p className="vz-empty">지금 조작 중인 세션이 없습니다.</p>}
-              <ol className="vz-sessions">{(liveOnly ? sessions.filter(sessLive) : sessions).map((s) => <SessionLine key={s.id} s={s} />)}</ol>
+              {outFilter && !sessions.some((x) => sessOutHit(x, outFilter)) && <p className="vz-empty">최근 세션 중 {outFilter} 로 나간 세션이 없습니다.</p>}
+              <ol className="vz-sessions">{sessions.filter((x) => (!liveOnly || sessLive(x)) && (!outFilter || sessOutHit(x, outFilter)))
+                .slice(0, outFilter && !liveOnly ? limit : undefined).map((s) => <SessionLine key={s.id} s={s} />)}</ol>
               
             </>
           )}
@@ -1209,7 +1331,7 @@ export function VisitsPanel() {
                     <thead><tr><th>어디서</th><th>연결</th><th>연결 시간 합</th></tr></thead>
                     <tbody>{data.prts.by.map((b) => <tr key={b.k}><td><code>{b.k}</code></td><td>{num(b.n)}</td><td>{fmtDur(b.ms)}</td></tr>)}</tbody>
                   </table></div>
-                  <div className="vz-tablewrap"><table className="vz-table">
+                  <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
                     <thead><tr><th>연결</th><th>해제</th><th>어디서</th><th>연결 시간</th><th>방문자</th><th>유입</th></tr></thead>
                     <tbody>{prtsPairs(data.prts.recent).slice(0, 50).map((r, i) => (
                       <tr key={i}>

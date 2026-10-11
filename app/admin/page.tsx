@@ -366,9 +366,9 @@ export default function AdminPage() {
   };
 
   // ── 플래너 규칙 (docs/PLANNER-RULES-DB.md Phase 2) ────────────────────────────
-  const loadRules = async (pw: string) => {
+  const loadRules = async () => {
     try {
-      const [rows, latest] = await Promise.all([adminListRules(pw), fetchLatestRelease()]);
+      const [rows, latest] = await Promise.all([adminListRules(), fetchLatestRelease()]);
       setRules(rows);
       setRelease(latest);
       setRulesStatus("");

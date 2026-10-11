@@ -60,7 +60,7 @@ import type { AuSnap } from "./story-audio";
 
 // CG·삽화의 실측 크기 (scripts/measure-story-images.py) — width/height를 박아 로딩 중
 // 레이아웃 밀림(CLS)을 없앤다. 브라우저가 렌더 폭에 맞춰 높이를 미리 예약한다.
-const imageDims = imageDimsData as Record<string, [number, number]>;
+const imageDims = imageDimsData as unknown as Record<string, [number, number]>;
 
 type LocText = { ko: string; en?: string; ja?: string };
 // eta = 미실장(중섭 선행) 이벤트의 KR 추정 출시월("2026-11") — 헤더 이벤트 드롭다운에서만 쓴다.
@@ -1474,7 +1474,7 @@ function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; gr
           // 인게임 그대로 과거→미래를 유지하고 표시만 뒤집는다.
           items: line.items
             .map((i) => ({ it: CHRON_BY_KEY.get(i.id), guest: i.guest }))
-            .filter((x): x is GroupItem => Boolean(x.it && matches(x.it)))
+            .filter((x): x is { it: ChronItem; guest: boolean | undefined } => Boolean(x.it && matches(x.it)))
             .reverse(),
         });
       }

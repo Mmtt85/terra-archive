@@ -43,7 +43,7 @@ async function relay(req: IncomingMessage, res: ServerResponse, target: string, 
   }
   const method = req.method ?? "GET";
   const body = method === "GET" || method === "HEAD" ? undefined : await readBody(req);
-  const upstream = await fetch(target, { method, headers, body });
+  const upstream = await fetch(target, { method, headers, body: body ? new Uint8Array(body) : undefined });
   res.statusCode = upstream.status;
   for (const name of ["content-type", "content-range", "etag"]) {
     const value = upstream.headers.get(name);
