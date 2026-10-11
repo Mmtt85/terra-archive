@@ -487,7 +487,8 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
 const rogueFloor = (r: { zone: number; zoneId?: string | null }): number | null =>
   r.zone >= 1000 ? Math.floor(r.zone / 1000) : r.zone >= 100 ? null : r.zone + 1;
 
-const fmtWhen = (sec: number) => (sec ? new Date(sec * 1000).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }) : "—");
+// 시작 시각은 연도까지 글로 — '10. 11.' 만으로는 못 알아본다 (사용자 지시 2026-10-11). 예: 2026년 10월 11일 21:43
+const fmtWhen = (sec: number) => (sec ? new Date(sec * 1000).toLocaleString("ko-KR", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }) : "—");
 
 /** 생존연산 '사막 이야기' 상세 (사용자 요청 2026-10-11 "생존연산도 아주 자세하게") — 이름·아이콘은 생존연산 도감 데이터(sandbox.json v2)를
  *  모달을 열 때 받아 붙인다. 가방 수량은 profile.sandbox(재료·요리·제작물), 진행 상태는 profile.progress.sandbox */
