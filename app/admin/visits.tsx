@@ -1364,6 +1364,9 @@ export function VisitsPanel() {
             </>
           )}
 
+          {/* PRTS 링크 인식 기록 (사용자 지시 2026-10-12) — 인식 1번마다 걸린 시간·결과, 틀렸어요·손으로 바로잡음 */}
+          <PrtsScans from={rangeArgs?.p_from ?? isoAt(spanStart ?? Math.floor(Date.now() / 60_000) * 60_000 - days * 86400_000)} to={rangeArgs?.p_to ?? "infinity"} tick={tick} />
+
           <div className="vz-cols">
             <div>
               <Head title="유입원" {...top("src", "유입원")} />
@@ -1426,5 +1429,70 @@ export function VisitsPanel() {
           render={allRender} onClose={() => setAllOf(null)} />
       )}
     </section>
+  );
+}
+
+// ── PRTS 인식 기록 표 (2026-10-12) ──────────────────────────────────────────────────────────────
+type PrtsScanRec = { at: string; visitor: string | null; topic: string | null; page: string | null; result: string | null; section: string | null;
+  target: string | null; note: string | null; ms: number | null; ocr_ms: number | null; cached: boolean | null; w: number | null; h: number | null;
+  crop: number | null; wrong: boolean; fixed_to: string | null };
+type PrtsGroup = { k: string; n: number; wrong: number; fixed: number; ms: number | null };
+type PrtsScanSum = { n: number; people: number; cached: number; wrong: number; fixed: number; ms_avg: number | null; ms_p50: number | null;
+  ms_p90: number | null; by_result: PrtsGroup[]; by_section: PrtsGroup[]; recent: PrtsScanRec[] };
+const RESULT_KO: Record<string, string> = { goto: "바로 이동", tie: "후보 여럿", none: "못 읽음", battle: "전투 화면", unreported: "결과 안 옴" };
+const msText = (v: number | null | undefined) => (v == null ? "—" : v < 1000 ? `${Math.round(v)}ms` : `${(v / 1000).toFixed(1)}초`);
+
+function PrtsScans({ from, to, tick }: { from: string; to: string; tick: number }) {
+  const [d, setD] = useState<PrtsScanSum | null | "missing">(null);
+  useEffect(() => {
+    let alive = true;
+    rpc<PrtsScanSum | null>("visits_prts_scans", { p_from: from, p_to: to })
+      .then((r) => { if (alive) setD(r ?? "missing"); })
+      .catch(() => { if (alive) setD("missing"); });
+    return () => { alive = false; };
+  }, [from, to, tick]);
+  if (d === null) return null;
+  if (d === "missing") return (
+    <>
+      <Head title="PRTS 인식" sub="인식 1번마다 걸린 시간·결과" />
+      <p className="vz-note">아직 DB 에 표가 없습니다 — <code>node scripts/make-visits-sql.mjs</code> 로 만든 SQL 을 방문 기록 프로젝트 SQL Editor 에서 다시 돌리면 그때부터 쌓입니다.</p>
+    </>
+  );
+  const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
+  const group = (rows: PrtsGroup[], label: (k: string) => string) => (
+    <div className="vz-tablewrap"><table className="vz-table">
+      <thead><tr><th></th><th>인식</th><th title="OCR 을 돈 인식의 평균 (캐시 재적용 제외)">평균 시간</th><th>틀렸어요</th><th title="자동 이동 뒤 15초 안에 사람이 직접 다른 데로 옮김">바로잡음</th></tr></thead>
+      <tbody>{rows.map((r) => (
+        <tr key={r.k}><td>{label(r.k)}</td><td>{num(r.n)}</td><td>{msText(r.ms)}</td><td>{r.wrong ? <b>{num(r.wrong)}</b> : 0}</td><td>{r.fixed ? <b>{num(r.fixed)}</b> : 0}</td></tr>
+      ))}</tbody>
+    </table></div>
+  );
+  return (
+    <>
+      <Head title="PRTS 인식" sub={`인식 ${num(d.n)}번 · ${num(d.people)}명 · 걸린 시간 중앙 ${msText(d.ms_p50)} · 90% ${msText(d.ms_p90)} · 캐시 재적용 ${num(d.cached)} · 틀렸어요 ${num(d.wrong)}(${pct(d.wrong, d.n)}) · 바로잡음 ${num(d.fixed)}(${pct(d.fixed, d.n)})`} />
+      {d.n === 0 ? <p className="vz-note">이 기간에는 인식 기록이 없습니다 (2026-10-12부터 기록).</p> : (
+        <>
+          <div className="vz-cols">
+            <div>{group(d.by_result, (k) => RESULT_KO[k] ?? k)}</div>
+            <div>{group(d.by_section, (k) => k)}</div>
+          </div>
+          <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
+            <thead><tr><th>시각</th><th>결과</th><th>구역</th><th>이동 대상 / 상태줄</th><th>걸린 시간</th><th>화면</th><th>표시</th><th>방문자</th></tr></thead>
+            <tbody>{d.recent.slice(0, 80).map((r, i) => (
+              <tr key={i}>
+                <td>{whenShort(r.at)}</td>
+                <td>{RESULT_KO[r.result ?? ""] ?? r.result ?? "—"}{r.cached ? <span className="vz-note"> · 캐시</span> : null}</td>
+                <td><code>{r.section ?? "—"}</code></td>
+                <td title={r.target ?? ""}><code>{(r.target ?? "—").slice(0, 48)}</code>{r.note ? <span className="vz-note"> · {r.note}</span> : null}</td>
+                <td title={`인식 ${msText(r.ocr_ms)}`}>{msText(r.ms)}</td>
+                <td>{r.w && r.h ? `${r.w}×${r.h}` : "—"}{r.crop != null && r.crop < 0.98 ? <span className="vz-note"> · 여백 뗌 {Math.round(r.crop * 100)}%</span> : null}</td>
+                <td>{r.wrong ? <b>틀렸어요</b> : null}{r.wrong && r.fixed_to ? " · " : null}{r.fixed_to ? <span title={r.fixed_to}><b>바로잡음</b> → <code>{r.fixed_to.slice(0, 32)}</code></span> : null}{!r.wrong && !r.fixed_to ? "—" : null}</td>
+                <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+        </>
+      )}
+    </>
   );
 }

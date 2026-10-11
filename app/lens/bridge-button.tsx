@@ -8,7 +8,7 @@
 import { NewBadge } from "../new-badge";
 import { lazy, Suspense, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump } from "./bridge";
+import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -41,6 +41,17 @@ export default function BridgeButton({ t }: { t: T }) {
         {gate ? ` · ${t("인식")} ${gate.emitted} · ${t("기록")} ${bridgeLogCount()}` : ""}
         {note ? ` · ${note}` : ""}
       </span>
+      {/* 틀렸어요 — 마지막 인식을 틀렸다고 남긴다 (사용자 지시 2026-10-12). 인식이 한 번이라도 끝난 뒤에만 보인다 */}
+      {(() => {
+        const last = bridgeLastScan();
+        if (!last) return null;
+        return last.wrong
+          ? <span className="bridge-toast-thanks">{t("알려 주셔서 고마워요")}</span>
+          : <button type="button" className="bridge-toast-off bridge-toast-wrong" onClick={markBridgeWrong}
+              title={t("방금 인식이 틀렸다고 알려 주세요 — 인식을 고치는 데 씁니다 (화면 그림은 보내지 않습니다)")}>
+              {t("틀렸어요")}
+            </button>;
+      })()}
       {/* 맵 노드 자동 이동 (제보 f1c050b2) — 연결 중에만 보이면 되는 설정이라 여기 둔다.
           인식을 끄는 게 아니라 **이동만** 끈다: 소장품·도구 인식은 그대로 동작한다.
           ⚠ 위수 협의(PRTS 시뮬레이션)에는 맵 노드가 없다 — 거기선 아예 안 그린다
@@ -55,6 +66,8 @@ export default function BridgeButton({ t }: { t: T }) {
       <button type="button" className="bridge-toast-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>
         {t("연결 끊기")}
       </button>
+      {/* 기록 수집 안내 (사용자 지시 2026-10-12) — 토스트 둘째 줄 */}
+      <small className="bridge-toast-hint">{t("인식률·속도 개선을 위해 인식 기록을 모으고 있어요. 잘못 인식했다면 '틀렸어요'를 눌러 주세요 (화면 그림은 보내지 않아요).")}</small>
     </div>,
     document.body,
   );

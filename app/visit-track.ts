@@ -105,7 +105,7 @@ function saveSess(): void {
 
 let muted = false;
 
-function post(table: "visit_session" | "visit_view" | "visit_event", rows: object[]): void {
+function post(table: "visit_session" | "visit_view" | "visit_event" | "prts_scan", rows: object[]): void {
   if (!rows.length || muted) return;
   if (isOwner()) { muted = true; return; }   // 도중에 관리자 모드를 켰다
   if (!VISITS_URL) {
@@ -181,6 +181,27 @@ export function noteVisitEvent(kind: "me_login" | "me_sync" | "prts_start" | "pr
   post("visit_event", [{ session: sess?.id ?? uuid(), visitor: clip(visitor, 64), kind, server: clip(server ?? null, 8), env,
     ...(extra?.detail ? { detail: clip(extra.detail, 40) } : {}),
     ...(extra?.dur != null ? { dur_ms: Math.max(0, Math.min(86_400_000, Math.round(extra.dur))) } : {}) }]);
+}
+
+// PRTS 링크 인식 기록 (2026-10-12, 사용자 지시 "얼마나 걸렸나 제대로 인식이 됐나") — 인식 1번 = scan 한 줄,
+// '틀렸어요'(wrong)·손으로 바로잡음(fix)은 그 scan 을 ref 로 가리키는 줄. 그림·OCR 원문은 보내지 않는다 (lens/bridge.ts).
+export type PrtsScanRow = {
+  id: string; kind: "scan" | "wrong" | "fix"; ref?: string; page?: string; topic?: string; result?: string;
+  section?: string; target?: string; note?: string; ms?: number; ocr_ms?: number; cached?: boolean; w?: number; h?: number; crop?: number;
+};
+export const prtsScanId = () => uuid();
+export function notePrtsScan(r: PrtsScanRow): void {
+  if (!started) return;
+  let visitor = "";
+  try { visitor = localStorage.getItem(VISITOR_KEY) ?? ""; } catch { /* 프라이빗 모드 */ }
+  const ms = (v?: number) => (v == null ? null : Math.max(0, Math.min(600_000, Math.round(v))));
+  const px = (v?: number) => (v == null ? null : Math.max(0, Math.min(20_000, Math.round(v))));
+  post("prts_scan", [{
+    id: r.id, session: sess?.id ?? uuid(), visitor: clip(visitor, 64), env, kind: r.kind, ref: r.ref ?? null,
+    page: clip(r.page, 60), topic: clip(r.topic, 40), result: clip(r.result, 16), section: clip(r.section, 24),
+    target: clip(r.target, 80), note: clip(r.note, 40), ms: ms(r.ms), ocr_ms: ms(r.ocr_ms), cached: r.cached ?? null,
+    w: px(r.w), h: px(r.h), crop: r.crop == null ? null : Math.max(0, Math.min(1, Math.round(r.crop * 1000) / 1000)),
+  }]);
 }
 
 // PRTS 링크(게임 연결) 사용 기록 — 연결·해제 한 번씩, 해제 때 연결 시간 (사용자 요청 2026-10-11 "PRTS 링크 사용 기록").

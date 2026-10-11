@@ -604,3 +604,67 @@ select cron.schedule('visits-maintain', '10 15 * * *', $$select public.visits_ma
 -- 지운 자리를 재사용 가능으로 — VACUUM 은 트랜잭션 안에서 못 돌아서 함수가 아니라 따로 둔다 (한 문장이어야 한다)
 select cron.unschedule('visits-vacuum') where exists (select 1 from cron.job where jobname = 'visits-vacuum');
 select cron.schedule('visits-vacuum', '30 15 * * *', $$vacuum (analyze) public.visit_view, public.visit_session$$);   -- 00:30 KST
+
+-- ── PRTS 링크 인식 기록 (2026-10-12, 사용자 지시 "얼마나 걸렸나 제대로 인식이 됐나") ─────────────────
+-- 인식 1번 = scan 한 줄. 사용자가 '틀렸어요'를 누르면 wrong, 자동 이동 뒤 15초 안에 손으로 다른 데로 옮기면 fix 가
+-- 그 scan 의 id(ref)를 가리키는 줄로 따로 쌓인다 (익명 쓰기는 insert 만 되므로 고치지 않고 덧붙인다).
+-- ⚠ 게임 화면 그림·OCR 원문은 받지 않는다 — 화면에 닉네임·UID 가 찍힐 수 있다. 판정 이름표와 숫자만.
+create table if not exists public.prts_scan (
+  id uuid primary key,
+  session uuid not null,
+  visitor text check (char_length(visitor) <= 64),
+  at timestamptz not null default now(),
+  kind text not null check (kind in ('scan', 'wrong', 'fix')),
+  ref uuid,                                                   -- wrong·fix 가 가리키는 scan
+  page text check (char_length(page) <= 60),                  -- 인식한 화면(사이트 경로)
+  topic text check (char_length(topic) <= 40),                -- 고정 연결한 테마(rogue_5 등)
+  result text check (char_length(result) <= 16),              -- goto·tie·none·battle·unreported
+  section text check (char_length(section) <= 24),            -- 판정 구역(stage·relic·enc…)
+  target text check (char_length(target) <= 80),              -- 이동 대상 (fix 면 사람이 옮겨 간 경로)
+  note text check (char_length(note) <= 40),                  -- 상태줄에 보인 결과 한 줄
+  ms int check (ms between 0 and 600000),                     -- 화면을 넘긴 순간부터 판정 끝까지
+  ocr_ms int check (ocr_ms between 0 and 600000),             -- 그중 인식(OCR·매칭) 시간
+  cached boolean,                                             -- 화면 판정 캐시 재적용(OCR 없음)
+  w int check (w between 0 and 20000), h int check (h between 0 and 20000),   -- 캡처 프레임 크기
+  crop real check (crop between 0 and 1),                     -- 여백을 떼고 남은 넓이 비율
+  env text not null default 'live' check (env in ('live', 'dev'))
+);
+create index if not exists prts_scan_at_idx on public.prts_scan (at desc);
+alter table public.prts_scan enable row level security;
+drop policy if exists "anon insert prts scan" on public.prts_scan;
+create policy "anon insert prts scan" on public.prts_scan for insert to anon with check (true);
+drop policy if exists "admin read prts scan" on public.prts_scan;
+create policy "admin read prts scan" on public.prts_scan for select to anon using ((select public.visits_is_admin()));
+
+-- 어드민 'PRTS 인식' 표 — 합계·결과별·구역별·최근 기록(틀렸어요·바로잡음 표시)
+create or replace function public.visits_prts_scans(p_from timestamptz, p_to timestamptz)
+returns json language sql stable security definer set search_path = public as $$
+  with s as (
+    select x.*, exists (select 1 from public.prts_scan w where w.ref = x.id and w.kind = 'wrong') as wrong,
+           (select f.target from public.prts_scan f where f.ref = x.id and f.kind = 'fix' order by f.at limit 1) as fixed_to
+    from public.prts_scan x
+    where x.kind = 'scan' and x.at >= p_from and x.at < p_to and x.env = 'live'
+  )
+  select json_build_object(
+    'n', (select count(*) from s),
+    'people', (select count(distinct visitor) from s),
+    'cached', (select count(*) from s where cached),
+    'wrong', (select count(*) from s where wrong),
+    'fixed', (select count(*) from s where fixed_to is not null),
+    'ms_avg', (select round(avg(ms)) from s where not coalesce(cached, false)),
+    'ms_p50', (select percentile_cont(0.5) within group (order by ms) from s where not coalesce(cached, false)),
+    'ms_p90', (select percentile_cont(0.9) within group (order by ms) from s where not coalesce(cached, false)),
+    'by_result', (select coalesce(json_agg(d order by d.n desc), '[]') from (
+        select coalesce(result, '?') as k, count(*) as n, count(*) filter (where wrong) as wrong,
+               count(*) filter (where fixed_to is not null) as fixed, round(avg(ms) filter (where not coalesce(cached, false))) as ms
+        from s group by 1) d),
+    'by_section', (select coalesce(json_agg(d order by d.n desc), '[]') from (
+        select coalesce(section, '?') as k, count(*) as n, count(*) filter (where wrong) as wrong,
+               count(*) filter (where fixed_to is not null) as fixed, round(avg(ms) filter (where not coalesce(cached, false))) as ms
+        from s group by 1) d),
+    'recent', (select coalesce(json_agg(r order by r.at desc), '[]') from (
+        select at, visitor, topic, page, result, section, target, note, ms, ocr_ms, cached, w, h, crop, wrong, fixed_to
+        from s order by at desc limit 200) r)
+  )
+  where (select public.visits_is_admin())
+$$;

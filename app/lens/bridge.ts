@@ -23,7 +23,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { LensOutcome } from "./match";
-import { holdVisitActive, notePrtsStart, notePrtsEnd } from "../visit-track";
+import { holdVisitActive, notePrtsStart, notePrtsEnd, notePrtsScan, prtsScanId } from "../visit-track";
 
 // 크롬 전용 API 라 TS 기본 DOM 타입에 없다 — 쓰는 만큼만 선언
 declare const MediaStreamTrackProcessor: {
@@ -136,6 +136,73 @@ let lastEmitGray: Uint8Array | null = null;
 let sceneMemos: { gray: Uint8Array; outcome: LensOutcome }[] = [];
 let battleHold = false, battleHoldAt = 0;
 
+// ── 인식 기록 (2026-10-12, 사용자 지시 "얼마나 걸렸나 제대로 인식이 됐나") ─────────────────────────────
+// 화면을 넘기는 순간(emit) scan 을 열고, 소비자(탭)의 판정이 끝나면(useBridgeWatch finally) 한 줄 보낸다.
+// 판정 내용은 탭이 부르는 memoBridgeScene(outcome)·noteBridge(text)에서 주워 담는다 — 탭 코드는 그대로다.
+// ⚠ 그림·OCR 원문은 보내지 않는다(화면에 닉네임·UID). 이름표(결과·구역·이동 대상)와 숫자만.
+type ScanCtx = { id: string; emitAt: number; w: number; h: number; crop: number; cached: boolean; href: string;
+  oc?: LensOutcome; note?: string };
+let scan: ScanCtx | null = null;
+/** 마지막으로 끝난 인식 — 토스트의 '틀렸어요'가 가리킨다 */
+let lastScan: { id: string; at: number; wrong: boolean } | null = null;
+let fixTimer: number | undefined;
+let userActAt = 0;
+const markUserAct = () => { userActAt = Date.now(); };
+
+function gotoKey(oc: LensOutcome): string | undefined {
+  const tg = oc.target;
+  if (tg.kind === "tie") return `tie:${tg.options.map((o) => o.topic).join(",")}`;
+  if (tg.kind !== "goto") return undefined;
+  const g = tg.goto as Record<string, unknown> & { page: string };
+  const modal = g.modal as { type?: string; id?: string } | undefined;
+  const parts = [g.page, g.topic, g.view, modal ? `${modal.type}=${modal.id}` : g.id, g.ep, Array.isArray(g.tags) ? (g.tags as string[]).join("+") : undefined,
+    Array.isArray(g.highlight) ? `hl${(g.highlight as string[]).length}` : undefined];
+  return parts.filter((x) => x != null && x !== "").join(":");
+}
+
+function finishScan(ocrStart?: number): void {
+  const sc = scan;
+  scan = null;
+  if (!sc) return;
+  const now = Date.now();
+  const oc = sc.oc;
+  const result = !oc ? "unreported" : oc.battle ? "battle" : oc.target.kind;
+  notePrtsScan({
+    id: sc.id, kind: "scan", page: location.pathname.replace(/^\/(en|ja)(?=\/|$)/, "") || "/", topic: lock?.topic,
+    result, section: oc?.section ?? undefined, target: oc ? gotoKey(oc) : undefined, note: sc.note,
+    ms: now - sc.emitAt, ocr_ms: ocrStart != null ? now - ocrStart : 0, cached: sc.cached, w: sc.w, h: sc.h, crop: sc.crop,
+  });
+  lastScan = { id: sc.id, at: now, wrong: false };
+  notify();
+  // 손으로 바로잡음 — 자동 이동이 **실제로 일어났으면**(주소가 바뀌었으면) 15초 동안, 사람이 직접 눌러
+  // 다른 데로 옮기는지 본다. 새 인식이 시작되면 그만 본다 (그 이동은 브리지 몫이다).
+  if (fixTimer !== undefined) { window.clearInterval(fixTimer); fixTimer = undefined; }
+  if (result !== "goto") return;
+  window.setTimeout(() => {
+    const snap = location.href;
+    if (snap === sc.href || lastScan?.id !== sc.id) return;   // 이동하지 않았다(노드 이동 꺼짐 등)·이미 다음 인식
+    const armedAt = Date.now();
+    fixTimer = window.setInterval(() => {
+      const done = () => { window.clearInterval(fixTimer); fixTimer = undefined; };
+      if (scan || lastScan?.id !== sc.id || Date.now() - armedAt > 15_000) return done();
+      if (location.href !== snap && userActAt > armedAt) {
+        notePrtsScan({ id: prtsScanId(), kind: "fix", ref: sc.id, topic: lock?.topic,
+          target: (location.pathname.replace(/^\/(en|ja)(?=\/|$)/, "") || "/") + location.hash });
+        done();
+      }
+    }, 500);
+  }, 800);
+}
+
+/** 토스트의 '틀렸어요' — 마지막 인식을 틀렸다고 표시한다 (같은 인식엔 한 번만) */
+export function markBridgeWrong(): void {
+  if (!lastScan || lastScan.wrong) return;
+  lastScan.wrong = true;
+  notePrtsScan({ id: prtsScanId(), kind: "wrong", ref: lastScan.id, topic: lock?.topic });
+  notify();
+}
+export const bridgeLastScan = () => lastScan;
+
 const frameSubs = new Set<(f: File) => void>();
 const replaySubs = new Set<(oc: LensOutcome) => void>();
 const statusSubs = new Set<() => void>();
@@ -175,7 +242,7 @@ export const bridgeOn = () => !!settings;
 export const bridgeNote = () => note;
 /** 각 탭의 handleLensShot이 판정 결과를 한 줄로 알려준다 — "잘 안된다"의 원인을
  *  헤더에서 바로 보기 위한 것이다 (사용자 요청 2026-07-26). */
-export function noteBridge(text: string): void { note = text; notify(); }
+export function noteBridge(text: string): void { note = text; if (scan) scan.note = text; notify(); }
 /** 플레이 로그 적재 — rogue 탭이 라이브 인식 1건마다 부른다. 연결 중에만 쌓는다. */
 export function logBridgeEvent(ev: BridgeLogEvent): void {
   if (!settings) return;
@@ -187,6 +254,7 @@ export const bridgeLogCount = () => runLog.length;
 /** 각 탭이 라이브 인식 결과를 알려준다 — ① 전투 화면이면 전투 홀드에 들어가고(큰 전환까지
  *  인식 중단), ② 확신 이동(goto)이면 화면 판정 캐시에 남겨 같은 화면 복귀 시 OCR을 생략한다. */
 export function memoBridgeScene(outcome: LensOutcome): void {
+  if (scan) scan.oc = outcome;   // 인식 기록에 판정을 싣는다
   if (outcome.battle) { battleHold = true; battleHoldAt = Date.now(); return; }
   if (!lastEmitGray || outcome.target.kind !== "goto") return;
   const g = lastEmitGray;
@@ -254,6 +322,9 @@ export async function connectBridge(withLock?: BridgeLock): Promise<void> {
   disconnectBridge();
   lock = withLock ?? null;
   runLog = []; logMeta = null; startedAt = new Date().toISOString();
+  scan = null; lastScan = null;
+  document.addEventListener("pointerdown", markUserAct, true);
+  document.addEventListener("keydown", markUserAct, true);
   sceneMemos = []; lastEmitGray = null; battleHold = false;
   error = ""; notify();
   try {
@@ -314,6 +385,10 @@ export function disconnectBridge(): void {
   running = false;
   if (visitHeld) { visitHeld = false; holdVisitActive(false); }
   notePrtsEnd();
+  scan = null;
+  if (fixTimer !== undefined) { window.clearInterval(fixTimer); fixTimer = undefined; }
+  document.removeEventListener("pointerdown", markUserAct, true);
+  document.removeEventListener("keydown", markUserAct, true);
   if (timer !== undefined) { window.clearInterval(timer); timer = undefined; }
   if (lockRelease) { lockRelease(); lockRelease = null; }
   if (reader) { void reader.cancel().catch(() => { /* 이미 닫힘 */ }); reader = null; }
@@ -410,7 +485,9 @@ function tick(): void {
       emitted++;
       console.debug(`[bridge] 이미 본 화면 → 판정 재적용 #${emitted} (OCR 생략)`);
       say("replay");
+      scan = { id: prtsScanId(), emitAt: now, w: latestW, h: latestH, crop: 1, cached: true, href: location.href, oc: m.outcome };
       for (const cb of replaySubs) cb(m.outcome);
+      finishScan();
       return;
     }
   }
@@ -435,6 +512,7 @@ function tick(): void {
   const cropped = c.w < w || c.h < h ? ` (여백 잘라 ${c.w}×${c.h})` : "";
   console.debug(`[bridge] 새 화면 → 인식 #${emitted} · ${w}×${h}${cropped} → ${outW}×${outH} (틱 ${ticks} · 수신 ${framesIn})`);
   say("emit");
+  scan = { id: prtsScanId(), emitAt: Date.now(), w, h, crop: (c.w * c.h) / (w * h), cached: false, href: location.href };
   void outCv.convertToBlob({ type: "image/jpeg", quality: 0.9 }).then((blob) => {
     const file = new File([blob], "bridge.jpg", { type: "image/jpeg" });
     for (const cb of frameSubs) cb(file);
@@ -520,9 +598,10 @@ export function useBridgeWatch(enabled: boolean, onImage: (file: File) => Promis
     const onFrame = (file: File) => {
       if (busyLocal) return;
       busyLocal = true; busy = true; notify();
+      const ocrStart = Date.now();
       void (async () => {
         try { await cb.current(file); } catch { /* 한 장 실패는 넘긴다 */ }
-        finally { busyLocal = false; busy = false; notify(); }
+        finally { busyLocal = false; busy = false; finishScan(ocrStart); notify(); }
       })();
     };
     // 화면 판정 캐시 재적용 — OCR이 없어 빠르므로 busy 없이 바로 넘긴다
