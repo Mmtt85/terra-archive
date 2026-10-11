@@ -413,8 +413,12 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
 /** 이어하기 — 마지막 동기화 때 진행 중이던 통합전략·보안파견·생존연산 (사용자 요청 2026-10-11).
  *  카드는 콘텐츠마다 한 줄 칸만(편성이 늘면 카드가 길어지므로), 누르면 상세 모달. 게임 중 동기화는 클라를 튕기므로
  *  '멈춘 상태를 기록'하는 용도다. 통합전략 이름(층·엔딩·소장품·난이도)은 그 테마 데이터를 모달 열 때 받아 붙인다 */
+type RogueItem = { id: string; name: string; usage?: string | null; func?: string | null; iconId?: string };
 type RogueDoc = { zones: { id: string; num: number; name: string }[]; endings: { id: string; name: string }[];
-  relics: { id: string; name: string; usage?: string | null; iconId?: string }[]; difficulties: { mode: string; grade: number; name: string }[] };
+  relics: RogueItem[]; difficulties: { mode: string; grade: number; name: string }[];
+  // 계정의 '소장품' 칸에는 분대·능동 도구·부품·사고 등도 같이 들어 있다 — 이름은 이 목록들에서도 찾는다 (2026-10-11 '키 이름으로 나온다')
+  bands?: RogueItem[]; tools?: RogueItem[]; capsules?: RogueItem[]; exploreTools?: RogueItem[]; legacies?: RogueItem[]; buoys?: RogueItem[]; scraps?: RogueItem[];
+  mechanics?: { label: string; items: RogueItem[] }[] };
 const ROGUE_DOCS: Record<string, Record<string, () => Promise<{ default: unknown }>>> = {
   ko: { rogue_1: () => import("./data/rogue1.json"), rogue_2: () => import("./data/rogue2.json"), rogue_3: () => import("./data/rogue3.json"),
     rogue_4: () => import("./data/rogue4.json"), rogue_5: () => import("./data/rogue5.json"), rogue_6: () => import("./data/rogue6.json") },
@@ -503,7 +507,12 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
   const zone = doc?.zones.find((z) => z.id === r.zoneId);
   const ending = r.toEnding ? doc?.endings.find((e) => e.id === r.toEnding) : null;
   const diff = doc?.difficulties.find((d) => d.grade === r.grade && (!r.mode || d.mode === r.mode)) ?? doc?.difficulties.find((d) => d.grade === r.grade);
-  const relicById = new Map((doc?.relics ?? []).map((x) => [x.id, x]));
+  const relicById = new Map<string, RogueItem>();
+  if (doc) {
+    for (const list of [doc.relics, doc.bands, doc.tools, doc.capsules, doc.exploreTools, doc.legacies, doc.buoys, doc.scraps, ...(doc.mechanics ?? []).map((m) => m.items)]) {
+      for (const x of list ?? []) if (x?.id && !relicById.has(x.id)) relicById.set(x.id, x);
+    }
+  }
   return (
     <ModalWindow label={`${t("통합전략")} · ${topic}`} className="operator-modal me-resume-modal" onClose={onClose}>
       <div className="me-resume-body">
@@ -534,9 +543,9 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
           {r.relics.map((id, i) => {
             const rel = relicById.get(id);
             return (
-              <li key={i} title={rel?.usage ?? undefined}>
+              <li key={i} title={rel?.usage ?? rel?.func ?? undefined}>
                 <img src={asset(`/rogue/relic/${rel?.iconId ?? id}.webp`)} alt="" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
-                <span><b>{rel?.name ?? id}</b>{rel?.usage && <small>{rel.usage}</small>}</span>
+                <span><b>{rel?.name ?? id}</b>{(rel?.usage ?? rel?.func) && <small>{rel?.usage ?? rel?.func}</small>}</span>
               </li>
             );
           })}
