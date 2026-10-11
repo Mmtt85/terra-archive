@@ -24,6 +24,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { LensOutcome } from "./match";
 import { holdVisitActive, notePrtsStart, notePrtsEnd, notePrtsScan, prtsScanId } from "../visit-track";
+import { uploadFeedbackFile } from "../feedback";
 
 // 크롬 전용 API 라 TS 기본 DOM 타입에 없다 — 쓰는 만큼만 선언
 declare const MediaStreamTrackProcessor: {
@@ -141,10 +142,11 @@ let battleHold = false, battleHoldAt = 0;
 // 판정 내용은 탭이 부르는 memoBridgeScene(outcome)·noteBridge(text)에서 주워 담는다 — 탭 코드는 그대로다.
 // ⚠ 그림·OCR 원문은 보내지 않는다(화면에 닉네임·UID). 이름표(결과·구역·이동 대상)와 숫자만.
 type ScanCtx = { id: string; emitAt: number; w: number; h: number; crop: number; cached: boolean; href: string;
-  oc?: LensOutcome; note?: string };
+  oc?: LensOutcome; note?: string; blob?: Blob };
 let scan: ScanCtx | null = null;
 /** 마지막으로 끝난 인식 — 토스트의 '틀렸어요'가 가리킨다 */
-let lastScan: { id: string; at: number; wrong: boolean } | null = null;
+/** shot = '틀렸어요'와 함께 보낸 화면 — 보내는 중·보냄·실패 (화면이 없으면 none: 캐시 재적용은 새 화면을 안 만든다) */
+let lastScan: { id: string; at: number; wrong: boolean; blob?: Blob; shot?: "sending" | "sent" | "fail" | "none" } | null = null;
 let fixTimer: number | undefined;
 let userActAt = 0;
 const markUserAct = () => { userActAt = Date.now(); };
@@ -167,12 +169,14 @@ function finishScan(ocrStart?: number): void {
   const now = Date.now();
   const oc = sc.oc;
   const result = !oc ? "unreported" : oc.battle ? "battle" : oc.target.kind;
+  // 판정 근거 — 맞춘 게임 항목 이름(최대 5)·화면 종류(최대 3). 게임 데이터 이름표뿐이다
+  const seen = oc ? [...oc.entities.slice(0, 5).map((e) => e.name), ...oc.screens.slice(0, 3).map((x) => `#${x}`)].join("|") : undefined;
   notePrtsScan({
-    id: sc.id, kind: "scan", page: location.pathname.replace(/^\/(en|ja)(?=\/|$)/, "") || "/", topic: lock?.topic,
+    id: sc.id, kind: "scan", seen, page: location.pathname.replace(/^\/(en|ja)(?=\/|$)/, "") || "/", topic: lock?.topic,
     result, section: oc?.section ?? undefined, target: oc ? gotoKey(oc) : undefined, note: sc.note,
     ms: now - sc.emitAt, ocr_ms: ocrStart != null ? now - ocrStart : 0, cached: sc.cached, w: sc.w, h: sc.h, crop: sc.crop,
   });
-  lastScan = { id: sc.id, at: now, wrong: false };
+  lastScan = { id: sc.id, at: now, wrong: false, blob: sc.blob };
   notify();
   // 손으로 바로잡음 — 자동 이동이 **실제로 일어났으면**(주소가 바뀌었으면) 15초 동안, 사람이 직접 눌러
   // 다른 데로 옮기는지 본다. 새 인식이 시작되면 그만 본다 (그 이동은 브리지 몫이다).
@@ -194,12 +198,23 @@ function finishScan(ocrStart?: number): void {
   }, 800);
 }
 
-/** 토스트의 '틀렸어요' — 마지막 인식을 틀렸다고 표시한다 (같은 인식엔 한 번만) */
+/** 토스트의 '틀렸어요' — 마지막 인식을 틀렸다고 표시하고, **그 인식에 쓴 화면 한 장**을 같이 올린다
+ *  (사용자 지시 2026-10-12 "인식된 화면을 받아보는 게 낫다"). 평소 기록엔 그림이 없고 이 단추를 누를 때만 간다 —
+ *  토스트 안내문이 그렇게 말한다. 올리는 곳은 제안 게시판 첨부와 같은 익명 업로드(workers/upload, feedback/…). 같은 인식엔 한 번만 */
 export function markBridgeWrong(): void {
-  if (!lastScan || lastScan.wrong) return;
-  lastScan.wrong = true;
-  notePrtsScan({ id: prtsScanId(), kind: "wrong", ref: lastScan.id, topic: lock?.topic });
+  const ls = lastScan;
+  if (!ls || ls.wrong) return;
+  ls.wrong = true;
+  const wrongId = prtsScanId();
+  notePrtsScan({ id: wrongId, kind: "wrong", ref: ls.id, topic: lock?.topic });
+  if (!ls.blob) { ls.shot = "none"; notify(); return; }
+  ls.shot = "sending";
   notify();
+  const file = new File([ls.blob], `prts-wrong-${ls.id.slice(0, 8)}.jpg`, { type: "image/jpeg" });
+  void uploadFeedbackFile(file)
+    .then((up) => { notePrtsScan({ id: prtsScanId(), kind: "shot", ref: ls.id, img: up.url }); ls.shot = "sent"; })
+    .catch(() => { ls.shot = "fail"; })
+    .finally(() => { ls.blob = undefined; notify(); });
 }
 export const bridgeLastScan = () => lastScan;
 
@@ -512,8 +527,10 @@ function tick(): void {
   const cropped = c.w < w || c.h < h ? ` (여백 잘라 ${c.w}×${c.h})` : "";
   console.debug(`[bridge] 새 화면 → 인식 #${emitted} · ${w}×${h}${cropped} → ${outW}×${outH} (틱 ${ticks} · 수신 ${framesIn})`);
   say("emit");
-  scan = { id: prtsScanId(), emitAt: Date.now(), w, h, crop: (c.w * c.h) / (w * h), cached: false, href: location.href };
+  const ctx: ScanCtx = { id: prtsScanId(), emitAt: Date.now(), w, h, crop: (c.w * c.h) / (w * h), cached: false, href: location.href };
+  scan = ctx;
   void outCv.convertToBlob({ type: "image/jpeg", quality: 0.9 }).then((blob) => {
+    ctx.blob = blob;   // '틀렸어요' 때만 올린다 — 그 전엔 메모리에만 (다음 인식이 오면 버린다)
     const file = new File([blob], "bridge.jpg", { type: "image/jpeg" });
     for (const cb of frameSubs) cb(file);
   });

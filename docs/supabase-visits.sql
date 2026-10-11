@@ -570,6 +570,11 @@ declare
   keep bigint;
   cutoff timestamptz;
 begin
+  -- PRTS 인식 기록은 90일만 둔다 (2026-10-12 사용자 승인) — 인식 1번 = 1줄이라 사용자가 몰리면 계속 늘기만 한다.
+  -- 표가 아직 없는 프로젝트(이 SQL 을 처음 돌리는 중)에서도 깨지지 않게 to_regclass 로 확인한다
+  if to_regclass('public.prts_scan') is not null then
+    delete from public.prts_scan where at < now() - interval '90 days';
+  end if;
   -- 자정 넘어 도착한 조각도 담기게 그전날까지 다시 만다 (집계는 매번 지우고 새로 넣어 멱등)
   perform public.visits_rollup(d - 2);
   perform public.visits_rollup(d - 1);
@@ -630,6 +635,13 @@ create table if not exists public.prts_scan (
   env text not null default 'live' check (env in ('live', 'dev'))
 );
 create index if not exists prts_scan_at_idx on public.prts_scan (at desc);
+-- 판정 근거(seen) — 그 화면에서 맞춘 게임 항목 이름·화면 종류 (게임 데이터 이름표라 개인 정보가 아니다).
+-- 화면(shot) — '틀렸어요'를 누를 때만 그 인식에 쓴 화면 한 장을 올리고 그 주소(img)를 wrong 을 가리키는 줄로 남긴다
+-- (사용자 지시 2026-10-12 "틀렸어요 눌렀을 때 인식된 화면을 받아보는 게 낫다" — 토스트에 그렇게 안내한다)
+alter table public.prts_scan add column if not exists seen text check (char_length(seen) <= 200);
+alter table public.prts_scan add column if not exists img text check (char_length(img) <= 300);
+alter table public.prts_scan drop constraint if exists prts_scan_kind_check;
+alter table public.prts_scan add constraint prts_scan_kind_check check (kind in ('scan', 'wrong', 'fix', 'shot'));
 alter table public.prts_scan enable row level security;
 drop policy if exists "anon insert prts scan" on public.prts_scan;
 create policy "anon insert prts scan" on public.prts_scan for insert to anon with check (true);
@@ -641,7 +653,8 @@ create or replace function public.visits_prts_scans(p_from timestamptz, p_to tim
 returns json language sql stable security definer set search_path = public as $$
   with s as (
     select x.*, exists (select 1 from public.prts_scan w where w.ref = x.id and w.kind = 'wrong') as wrong,
-           (select f.target from public.prts_scan f where f.ref = x.id and f.kind = 'fix' order by f.at limit 1) as fixed_to
+           (select f.target from public.prts_scan f where f.ref = x.id and f.kind = 'fix' order by f.at limit 1) as fixed_to,
+           (select i.img from public.prts_scan i where i.ref = x.id and i.kind = 'shot' order by i.at limit 1) as shot
     from public.prts_scan x
     where x.kind = 'scan' and x.at >= p_from and x.at < p_to and x.env = 'live'
   )
@@ -663,8 +676,12 @@ returns json language sql stable security definer set search_path = public as $$
                count(*) filter (where fixed_to is not null) as fixed, round(avg(ms) filter (where not coalesce(cached, false))) as ms
         from s group by 1) d),
     'recent', (select coalesce(json_agg(r order by r.at desc), '[]') from (
-        select at, visitor, topic, page, result, section, target, note, ms, ocr_ms, cached, w, h, crop, wrong, fixed_to
-        from s order by at desc limit 200) r)
+        select at, visitor, topic, page, result, section, target, note, seen, ms, ocr_ms, cached, w, h, crop, wrong, fixed_to, shot
+        from s order by at desc limit 200) r),
+    -- 틀렸어요만 따로 — 최근 목록(10줄)에 묻히지 않게 (화면 주소 포함)
+    'wrong_list', (select coalesce(json_agg(r order by r.at desc), '[]') from (
+        select at, visitor, topic, result, section, target, note, seen, ms, cached, shot
+        from s where wrong order by at desc limit 50) r)
   )
   where (select public.visits_is_admin())
 $$;

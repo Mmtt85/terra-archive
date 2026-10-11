@@ -1436,10 +1436,11 @@ export function VisitsPanel() {
 // ── PRTS 인식 기록 표 (2026-10-12) ──────────────────────────────────────────────────────────────
 type PrtsScanRec = { at: string; visitor: string | null; topic: string | null; page: string | null; result: string | null; section: string | null;
   target: string | null; note: string | null; ms: number | null; ocr_ms: number | null; cached: boolean | null; w: number | null; h: number | null;
-  crop: number | null; wrong: boolean; fixed_to: string | null };
+  crop: number | null; wrong: boolean; fixed_to: string | null; seen?: string | null; shot?: string | null };
 type PrtsGroup = { k: string; n: number; wrong: number; fixed: number; ms: number | null };
 type PrtsScanSum = { n: number; people: number; cached: number; wrong: number; fixed: number; ms_avg: number | null; ms_p50: number | null;
-  ms_p90: number | null; by_result: PrtsGroup[]; by_section: PrtsGroup[]; recent: PrtsScanRec[] };
+  ms_p90: number | null; by_result: PrtsGroup[]; by_section: PrtsGroup[]; recent: PrtsScanRec[];
+  wrong_list?: Omit<PrtsScanRec, "page" | "ocr_ms" | "w" | "h" | "crop" | "wrong" | "fixed_to">[] };
 const RESULT_KO: Record<string, string> = { goto: "바로 이동", tie: "후보 여럿", none: "못 읽음", battle: "전투 화면", unreported: "결과 안 옴" };
 const msText = (v: number | null | undefined) => (v == null ? "—" : v < 1000 ? `${Math.round(v)}ms` : `${(v / 1000).toFixed(1)}초`);
 
@@ -1477,6 +1478,21 @@ function PrtsScans({ from, to, tick }: { from: string; to: string; tick: number 
             <div>{group(d.by_result, (k) => RESULT_KO[k] ?? k)}</div>
             <div>{group(d.by_section, (k) => k)}</div>
           </div>
+          {/* 틀렸어요 — 판정 근거(seen)와 그때 보내온 화면 (사용자 지시 2026-10-12 "어디서 틀렸는지 확인할 수 없으면 답이 안 나온다") */}
+          {!!d.wrong_list?.length && (
+            <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
+              <thead><tr><th>틀렸어요</th><th>판정</th><th>이동 대상 / 상태줄</th><th title="그 화면에서 맞춘 게임 항목 이름 · #화면 종류">판정 근거</th><th>화면</th></tr></thead>
+              <tbody>{d.wrong_list.slice(0, 10).map((r, i) => (
+                <tr key={i}>
+                  <td>{whenShort(r.at)}{r.topic ? <span className="vz-note"> · {r.topic}</span> : null}</td>
+                  <td>{RESULT_KO[r.result ?? ""] ?? r.result ?? "—"} <code>{r.section ?? ""}</code>{r.cached ? <span className="vz-note"> · 캐시</span> : null}</td>
+                  <td title={r.target ?? ""}><code>{(r.target ?? "—").slice(0, 40)}</code>{r.note ? <span className="vz-note"> · {r.note}</span> : null}</td>
+                  <td>{r.seen ? r.seen.split("|").join(" · ") : "—"}</td>
+                  <td>{r.shot ? <a href={r.shot} target="_blank" rel="noopener noreferrer"><img src={r.shot} alt="" style={{ width: 120, height: "auto", display: "block" }} loading="lazy" /></a> : <span className="vz-note">없음</span>}</td>
+                </tr>
+              ))}</tbody>
+            </table></div>
+          )}
           <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
             <thead><tr><th>시각</th><th>결과</th><th>구역</th><th>이동 대상 / 상태줄</th><th>걸린 시간</th><th>화면</th><th>표시</th><th>방문자</th></tr></thead>
             <tbody>{d.recent.slice(0, 10).map((r, i) => (

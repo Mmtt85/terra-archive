@@ -46,9 +46,9 @@ export default function BridgeButton({ t }: { t: T }) {
         const last = bridgeLastScan();
         if (!last) return null;
         return last.wrong
-          ? <span className="bridge-toast-thanks">{t("알려 주셔서 고마워요")}</span>
+          ? <span className="bridge-toast-thanks">{t(last.shot === "sending" ? "화면 보내는 중…" : last.shot === "fail" ? "화면 전송 실패 — 기록만 남겼어요" : "알려 주셔서 고마워요")}</span>
           : <button type="button" className="bridge-toast-off bridge-toast-wrong" onClick={markBridgeWrong}
-              title={t("방금 인식이 틀렸다고 알려 주세요 — 인식을 고치는 데 씁니다 (화면 그림은 보내지 않습니다)")}>
+              title={t("방금 인식이 틀렸다고 알려 주세요 — 그 인식에 쓴 게임 화면 한 장이 함께 전송되어 인식을 고치는 데 쓰입니다")}>
               {t("틀렸어요")}
             </button>;
       })()}
@@ -67,7 +67,7 @@ export default function BridgeButton({ t }: { t: T }) {
         {t("연결 끊기")}
       </button>
       {/* 기록 수집 안내 (사용자 지시 2026-10-12) — 토스트 둘째 줄 */}
-      <small className="bridge-toast-hint">{t("인식률·속도 개선을 위해 인식 기록을 모으고 있어요. 잘못 인식했다면 '틀렸어요'를 눌러 주세요 (화면 그림은 보내지 않아요).")}</small>
+      <small className="bridge-toast-hint">{t("인식률·속도 개선을 위해 인식 기록(그림 없이 결과만)을 모으고 있어요. 잘못 인식했다면 '틀렸어요'를 눌러 주세요 — 그때만 그 화면 한 장이 함께 전송돼요.")}</small>
     </div>,
     document.body,
   );
