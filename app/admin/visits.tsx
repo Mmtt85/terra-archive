@@ -871,7 +871,7 @@ export function VisitsPanel() {
   useEffect(() => { void loadDexNames().then(() => setNamesReady(true)); }, []);
   const [report, setReport] = useState(false);   // 이미지 리포트 창 (visits-report.tsx)
   const [trend, setTrend] = useState<TrendRow[] | null>(null);
-  const [sessions, setSessions] = useState<SessRow[] | null>(null);
+  const [sessFetched, setSessions] = useState<SessRow[] | null>(null);
   const [srcFilter, setSrcFilter] = useState<string>("");
   // 눌러서 나간 바깥 링크로 거르기 (사용자 지시 2026-10-11 "유입원처럼") — DB 함수에 거르는 인자가 없어 받아 온 세션 안에서 거른다
   const [outFilter, setOutFilter] = useState<string>("");
@@ -975,6 +975,21 @@ export function VisitsPanel() {
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days, human, srcFilter, fetchN, tick, range, slot]);
+
+  // 구간 시작 전에 들어와 **지금도 조작 중인** 세션 — '오늘'처럼 지금이 든 구간이면 자정을 넘겨도 계속 보여야 한다
+  // (사용자 지시 2026-10-12 "날짜가 바껴도 지금도 조작중일테니 보여야"). DB 는 시작 시각으로만 거르므로 시작 전 하루치를 따로 받아
+  // 조작 중인 것만 목록 뒤에 붙인다 (시작 순으로는 가장 오래된 쪽이다)
+  const carryFrom = !slot && spanStart != null && spanEnd != null && spanEnd >= Date.now() - 120_000 ? spanStart : null;
+  const [carry, setCarry] = useState<SessRow[]>([]);
+  useEffect(() => {
+    if (carryFrom == null) { setCarry([]); return; }
+    let alive = true;
+    rpc<SessRow[]>("visits_sessions_range", { p_from: isoAt(carryFrom - 86400_000), p_to: isoAt(carryFrom), ...kindArgs, p_src: srcFilter || null, p_limit: 300 })
+      .then((rows) => { if (alive) setCarry(rows.filter(sessLive)); }).catch(() => { if (alive) setCarry([]); });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carryFrom, human, srcFilter, tick]);
+  const sessions = sessFetched && (carry.length ? [...sessFetched, ...carry.filter((c) => !sessFetched.some((x) => x.id === c.id))] : sessFetched);
 
   // 세션 타임라인 '전체 보기' — 창을 열 때 상한(5,000)까지 따로 받는다
   const [allSessions, setAllSessions] = useState<SessRow[] | null>(null);
