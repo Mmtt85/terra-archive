@@ -565,7 +565,9 @@ function progressDigest(user) {
     const relics = cur.inventory?.relic ?? {};
     out.rogue = {
       state: st, theme: cur.game?.theme ?? null, mode: cur.game?.mode ?? null, grade: num(cur.game?.modeGrade), start: num(cur.game?.start),
-      zone: num(cur.player?.cursor?.zone), level: num(p.level), hp: num(p.hp?.current), maxHp: num(p.hp?.max), gold: num(p.gold), shield: num(p.shield),
+      // cursor.zone 은 지도 구역 키(1000 등)라 그대로 보이면 안 된다 — 그 구역의 순번(index)·id(zone_3)를 꺼낸다 (2026-10-11 '1000층' 지적)
+      zone: num(cur.map?.zones?.[cur.player?.cursor?.zone]?.index), zoneId: cur.map?.zones?.[cur.player?.cursor?.zone]?.id ?? null,
+      level: num(p.level), hp: num(p.hp?.current), maxHp: num(p.hp?.max), gold: num(p.gold), shield: num(p.shield),
       popCost: num(p.population?.cost), popMax: num(p.population?.max), toEnding: cur.player?.toEnding ?? null,
       relics: Object.values(relics).map((r) => r?.id).filter(Boolean),
       troop: Object.values(cur.troop?.chars ?? {}).map((c) => ({ id: c?.charId, elite: num(c?.evolvePhase), level: num(c?.level) })).filter((c) => c.id),

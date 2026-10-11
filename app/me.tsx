@@ -19,7 +19,7 @@ import { ModalWindow } from "./modal-window";
 import { useConfirm } from "./confirm";
 import { AccountLoginForm, AccountSteps } from "./roster-import";
 import { MeVerify } from "./me-verify";
-import { AccountError, accountErrorText, syncAccount, ACCOUNT_SERVERS, type AccountChar, type AccountStep } from "./account";
+import { AccountError, accountErrorText, syncAccount, ACCOUNT_SERVERS, type AccountChar, type AccountProfile, type AccountStep } from "./account";
 import { cnErrorText } from "./account-cn";
 import { clearMe, dropMeToken, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages } from "./dex-cross";
@@ -160,10 +160,10 @@ function sampleMe(operators: MeOp[]): MeData {
         ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["MEETING", 3], ["HIRE", 3], ["WORKSHOP", 3], ["TRAINING", 3]]
         .map(([room, level], i) => ({ slot: String(i), room: String(room), level: Number(level) })),
       skins: 87, medals: 140, medalTotal: 1402, furniture: 620,
-      // 예시 화면의 '멈춰 둔 판' (2026-10-11) — 흑류수해 3층 진행 중 + 생존연산 12일째
+      // 예시 화면의 '이어하기' (2026-10-11) — 흑류수해 3층 진행 중 + 생존연산 12일째
       progress: {
-        rogue: { state: "PENDING", theme: "rogue_6", mode: "NORMAL", grade: 8, start: SAMPLE_TS - 5400, zone: 3, level: 7, hp: 4, maxHp: 6,
-          gold: 37, shield: 1, popCost: 22, popMax: 30, toEnding: null, relics: ["a", "b", "c", "d", "e", "f", "g", "h", "i"],
+        rogue: { state: "PENDING", theme: "rogue_6", mode: "NORMAL", grade: 8, start: SAMPLE_TS - 5400, zone: 2, zoneId: "zone_3", level: 7, hp: 4, maxHp: 6,
+          gold: 37, shield: 1, popCost: 22, popMax: 30, toEnding: "ro6_ending_1", relics: ["rogue_6_relic_legacy_43", "rogue_6_relic_legacy_44", "rogue_6_relic_legacy_48", "rogue_6_relic_legacy_49", "rogue_6_relic_legacy_59", "rogue_6_relic_legacy_92", "rogue_6_relic_legacy_93", "rogue_6_relic_legacy_107", "rogue_6_relic_legacy_108"],
           troop: [0, 1, 2, 3, 4, 5].map((i) => { const c = pick(`rt${i}`); return { id: c.id, elite: 2, level: 70 }; }) },
         sandbox: { state: 1, day: 12, maxDay: 0, ap: 18, maxAp: 30, challenge: false },
       },
@@ -410,60 +410,139 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
   );
 }
 
-/** 멈춰 둔 판 — 동기화한 순간 진행 중이던 통합전략·보안파견·생존연산 (사용자 요청 2026-10-11).
- *  게임 중 동기화는 클라를 튕기므로 '멈춘 상태를 기록해 두는' 카드다. 진행 중인 게 없으면 카드를 그리지 않는다 */
+/** 이어하기 — 마지막 동기화 때 진행 중이던 통합전략·보안파견·생존연산 (사용자 요청 2026-10-11).
+ *  카드는 콘텐츠마다 한 줄 칸만(편성이 늘면 카드가 길어지므로), 누르면 상세 모달. 게임 중 동기화는 클라를 튕기므로
+ *  '멈춘 상태를 기록'하는 용도다. 통합전략 이름(층·엔딩·소장품·난이도)은 그 테마 데이터를 모달 열 때 받아 붙인다 */
+type RogueDoc = { zones: { id: string; num: number; name: string }[]; endings: { id: string; name: string }[];
+  relics: { id: string; name: string; usage?: string | null; iconId?: string }[]; difficulties: { mode: string; grade: number; name: string }[] };
+const ROGUE_DOCS: Record<string, Record<string, () => Promise<{ default: unknown }>>> = {
+  ko: { rogue_1: () => import("./data/rogue1.json"), rogue_2: () => import("./data/rogue2.json"), rogue_3: () => import("./data/rogue3.json"),
+    rogue_4: () => import("./data/rogue4.json"), rogue_5: () => import("./data/rogue5.json"), rogue_6: () => import("./data/rogue6.json") },
+  en: { rogue_1: () => import("./data/rogue1.en.json"), rogue_2: () => import("./data/rogue2.en.json"), rogue_3: () => import("./data/rogue3.en.json"),
+    rogue_4: () => import("./data/rogue4.en.json"), rogue_5: () => import("./data/rogue5.en.json"), rogue_6: () => import("./data/rogue6.en.json") },
+  ja: { rogue_1: () => import("./data/rogue1.ja.json"), rogue_2: () => import("./data/rogue2.ja.json"), rogue_3: () => import("./data/rogue3.ja.json"),
+    rogue_4: () => import("./data/rogue4.ja.json"), rogue_5: () => import("./data/rogue5.ja.json"), rogue_6: () => import("./data/rogue6.ja.json") },
+};
+
 function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
+  const [open, setOpen] = useState<"rogue" | "tower" | "sandbox" | null>(null);
   const pg = me.profile?.progress;
   if (!pg || (!pg.rogue && !pg.tower && !pg.sandbox)) return null;
-  const when = (sec: number) => (sec ? new Date(sec * 1000).toLocaleString(locale === "ko" ? "ko-KR" : locale, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }) : "—");
-  const fmt = (n: number) => n.toLocaleString();
   const r = pg.rogue, tw = pg.tower, sb = pg.sandbox;
+  const topic = r ? t(TOPICS.find((x) => x.id === r.theme)?.name ?? r.theme ?? "?") : "";
   return (
-    <Card no="PAUSED" title={t("멈춰 둔 판")} aside={<small>{t("동기화한 순간 기준")}</small>}>
-      <div className="me-paused">
+    <Card no="RESUME" title={t("이어하기")} aside={<small>{t("마지막 동기화 때 진행 중이던 콘텐츠")}</small>}>
+      <div className="me-resume">
         {r && (
-          <section>
-            <h4>{t("통합전략")} · {t(TOPICS.find((x) => x.id === r.theme)?.name ?? r.theme ?? "?")}</h4>
-            <dl>
-              <dt>{t("위치")}</dt><dd>{t("{n}층", { n: r.zone })}{r.toEnding ? ` · ${r.toEnding}` : ""}</dd>
-              <dt>HP</dt><dd>{fmt(r.hp)} / {fmt(r.maxHp)}{r.shield ? ` · ${t("실드")} ${fmt(r.shield)}` : ""}</dd>
-              <dt>{t("오리지늄각뿔")}</dt><dd>{fmt(r.gold)}</dd>
-              <dt>{t("분대 레벨")}</dt><dd>{r.level}{r.popMax ? ` · ${t("인원")} ${r.popCost}/${r.popMax}` : ""}</dd>
-              <dt>{t("소장품")}</dt><dd>{t("{n}개", { n: r.relics.length })}</dd>
-              <dt>{t("시작")}</dt><dd>{when(r.start)}</dd>
-            </dl>
-            {r.troop.length > 0 && (
-              <div className="me-paused-troop">
-                {r.troop.map((c, i) => (
-                  <button key={i} type="button" onClick={() => onShowOperator?.(c.id)} title={`${opById.get(c.id)?.name ?? c.id} · ${t("정예화 {n}", { n: c.elite })} Lv.${c.level}`}>
-                    <img src={asset(`/avatars/${c.id}.webp`)} alt="" loading="lazy" decoding="async" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
+          <button type="button" onClick={() => setOpen("rogue")}>
+            <b>{t("통합전략")}</b><span>{topic}</span>
+            <em>{rogueFloor(r) != null ? `${t("{n}층", { n: rogueFloor(r)! })} · ` : ""}{t("난이도 {n}", { n: r.grade })} · HP {r.hp}/{r.maxHp}</em>
+          </button>
         )}
         {tw && (
-          <section>
-            <h4>{t("보안파견")}{tw.hard ? ` · ${t("하드")}` : ""}</h4>
-            <dl>
-              <dt>{t("위치")}</dt><dd><code>{tw.tower ?? "?"}</code> · {t("{n}층", { n: tw.coord + 1 })}</dd>
-              <dt>{t("시작")}</dt><dd>{when(tw.start)}</dd>
-            </dl>
-          </section>
+          <button type="button" onClick={() => setOpen("tower")}>
+            <b>{t("보안파견")}</b><span>{tw.hard ? t("하드") : t("일반")}</span>
+            <em>{t("{n}층", { n: tw.coord + 1 })}</em>
+          </button>
         )}
         {sb && (
-          <section>
-            <h4>{t("생존연산")} · {t("사막 이야기")}{sb.challenge ? ` · ${t("도전")}` : ""}</h4>
-            <dl>
+          <button type="button" onClick={() => setOpen("sandbox")}>
+            <b>{t("생존연산")}</b><span>{t("사막 이야기")}</span>
+            <em>{t("{n}일째", { n: sb.day })} · {t("행동력")} {sb.ap}/{sb.maxAp}</em>
+          </button>
+        )}
+      </div>
+      {open === "rogue" && r && <ResumeRogue r={r} topic={topic} opById={opById} onShowOperator={onShowOperator} onClose={() => setOpen(null)} />}
+      {open === "tower" && tw && (
+        <ModalWindow label={t("보안파견")} className="operator-modal me-resume-modal" onClose={() => setOpen(null)}>
+          <div className="me-resume-body">
+            <h3>{t("보안파견")}{tw.hard ? ` · ${t("하드")}` : ""}</h3>
+            <dl className="me-resume-facts">
+              <dt>{t("진행")}</dt><dd>{t("{n}층", { n: tw.coord + 1 })}</dd>
+              <dt>{t("시작")}</dt><dd>{fmtWhen(tw.start)}</dd>
+            </dl>
+          </div>
+        </ModalWindow>
+      )}
+      {open === "sandbox" && sb && (
+        <ModalWindow label={t("생존연산")} className="operator-modal me-resume-modal" onClose={() => setOpen(null)}>
+          <div className="me-resume-body">
+            <h3>{t("생존연산")} · {t("사막 이야기")}{sb.challenge ? ` · ${t("도전")}` : ""}</h3>
+            <dl className="me-resume-facts">
               <dt>{t("날짜")}</dt><dd>{t("{n}일째", { n: sb.day })}{sb.maxDay ? ` / ${sb.maxDay}` : ""}</dd>
               <dt>{t("행동력")}</dt><dd>{sb.ap} / {sb.maxAp}</dd>
             </dl>
-          </section>
-        )}
-      </div>
+          </div>
+        </ModalWindow>
+      )}
     </Card>
+  );
+}
+
+/** 통합전략 층 — 워커가 구역 순번(0부터)을 보낸다. 2026-10-11 첫 판 워커는 지도 구역 키(1000 등)를 보내 '1001층'으로 보였다 —
+ *  그런 옛 기록(zoneId 없음·100 이상)은 층을 모르는 것으로 둔다(다시 동기화하면 채워진다) */
+const rogueFloor = (r: { zone: number; zoneId?: string | null }): number | null =>
+  r.zoneId === undefined && r.zone >= 100 ? null : r.zone + 1;
+
+const fmtWhen = (sec: number) => (sec ? new Date(sec * 1000).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }) : "—");
+
+function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
+  r: NonNullable<NonNullable<AccountProfile["progress"]>["rogue"]>; topic: string; opById: Map<string, MeOp>;
+  onShowOperator?: (id: string) => void; onClose: () => void;
+}) {
+  const { t, locale } = useI18n();
+  const [doc, setDoc] = useState<RogueDoc | null>(null);
+  useEffect(() => {
+    const load = r.theme ? (ROGUE_DOCS[locale] ?? ROGUE_DOCS.ko)[r.theme] : undefined;
+    if (!load) return;
+    let alive = true;
+    load().then((m) => { if (alive) setDoc(((m as { default?: unknown }).default ?? m) as RogueDoc); }).catch(() => {});
+    return () => { alive = false; };
+  }, [r.theme, locale]);
+  const zone = doc?.zones.find((z) => z.id === r.zoneId);
+  const ending = r.toEnding ? doc?.endings.find((e) => e.id === r.toEnding) : null;
+  const diff = doc?.difficulties.find((d) => d.grade === r.grade && (!r.mode || d.mode === r.mode)) ?? doc?.difficulties.find((d) => d.grade === r.grade);
+  const relicById = new Map((doc?.relics ?? []).map((x) => [x.id, x]));
+  return (
+    <ModalWindow label={`${t("통합전략")} · ${topic}`} className="operator-modal me-resume-modal" onClose={onClose}>
+      <div className="me-resume-body">
+        <h3>{topic}</h3>
+        <dl className="me-resume-facts">
+          <dt>{t("위치")}</dt><dd>{zone ? `${t("{n}층", { n: zone.num })} · ${zone.name}` : rogueFloor(r) != null ? t("{n}층", { n: rogueFloor(r)! }) : t("다시 동기화하면 보입니다")}</dd>
+          {/* 난이도는 숫자가 먼저 (사용자 지시 2026-10-11) — 이름은 곁들임 */}
+          <dt>{t("난이도")}</dt><dd><b>{r.grade}</b>{diff ? ` · ${diff.name}` : ""}</dd>
+          <dt>{t("목표 엔딩")}</dt><dd>{ending ? ending.name : r.toEnding ? "—" : t("정하지 않음")}</dd>
+          <dt>HP</dt><dd>{r.hp} / {r.maxHp}{r.shield ? ` · ${t("실드")} ${r.shield}` : ""}</dd>
+          <dt>{t("오리지늄각뿔")}</dt><dd>{r.gold}</dd>
+          <dt>{t("분대 레벨")}</dt><dd>{r.level}</dd>
+          {r.popMax > 0 && <><dt>{t("인원")}</dt><dd>{r.popCost} / {r.popMax}</dd></>}
+          <dt>{t("시작")}</dt><dd>{fmtWhen(r.start)}</dd>
+        </dl>
+        <h4>{t("편성")} <em>{r.troop.length}</em></h4>
+        <div className="me-resume-troop">
+          {r.troop.map((c, i) => (
+            <button key={i} type="button" onClick={() => onShowOperator?.(c.id)}>
+              <img src={asset(`/avatars/${c.id}.webp`)} alt="" loading="lazy" decoding="async" />
+              <b>{opById.get(c.id)?.name ?? c.id}</b>
+              <small>{t("정예화 {n}", { n: c.elite })} · Lv.{c.level}</small>
+            </button>
+          ))}
+        </div>
+        <h4>{t("소장품")} <em>{r.relics.length}</em></h4>
+        <ul className="me-resume-relics">
+          {r.relics.map((id, i) => {
+            const rel = relicById.get(id);
+            return (
+              <li key={i} title={rel?.usage ?? undefined}>
+                <img src={asset(`/rogue/relic/${rel?.iconId ?? id}.webp`)} alt="" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
+                <span><b>{rel?.name ?? id}</b>{rel?.usage && <small>{rel.usage}</small>}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </ModalWindow>
   );
 }
 
