@@ -273,8 +273,10 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
     if (!open) return;
     const onDown = (event: PointerEvent) => {
       const target = event.target as Node;
-      // 서브메뉴는 body로 portal돼 wrapRef 바깥이다 — 그것도 '안'으로 쳐야 클릭이 안 끊긴다
-      if (!wrapRef.current?.contains(target) && !(target as Element)?.closest?.(".attr-fly")) close();
+      // 서브메뉴는 body로 portal돼 wrapRef 바깥이다 — 그것도 '안'으로 쳐야 클릭이 안 끊긴다.
+      // '안'은 버튼·목록·서브메뉴뿐 — 버튼 줄(wrapRef)의 빈 자리(버튼 바로 오른쪽)를 눌러도 닫혀야 한다 (사용자 지적 2026-10-11)
+      const el = (target as Element)?.closest?.(".attr-cat, .attr-drop, .attr-fly");
+      if (!el || (!wrapRef.current?.contains(el) && !el.classList.contains("attr-fly"))) close();
     };
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };
     document.addEventListener("pointerdown", onDown);

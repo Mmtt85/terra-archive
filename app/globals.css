@@ -30029,3 +30029,64 @@ html.dark .me-resume > button.has-bg::before { opacity: .26; }
 .me-rx-stat.hp .bar > i { background: #d9534f; }
 .me-rx-stat.ap .bar > i { background: #2f9bd6; }
 .me-rx-stat.gold > b { color: #c08a1e; }
+/* 내 정보 — 접어 둔 칸(진행 상황·친구·최근 영입·창고): 그림 깔린 버튼 → 누르면 창 (2026-10-11) */
+.me-drawers { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.me-drawers > button { position: relative; overflow: hidden; isolation: isolate; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 2px;
+  min-height: 112px; padding: 12px 14px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; text-align: left; cursor: pointer;
+  box-shadow: inset 0 -2px 0 transparent; transition: box-shadow .2s, border-color .2s; }
+.me-drawers > button:hover { box-shadow: inset 0 -2px 0 var(--tab-line, var(--lime)); border-color: var(--btn-line-hover, var(--line)); }
+.me-drawers > button .section-no { font-size: 10.5px; }
+.me-drawers > button b { font-size: 15px; }
+.me-drawers > button em { font-style: normal; font-size: 12px; color: var(--muted); }
+.me-drawers > button.has-bg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--bg) center / cover no-repeat;
+  opacity: .34; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 75%); mask-image: linear-gradient(90deg, transparent 0%, #000 75%); transition: opacity .3s; }
+/* 일러는 얼굴이 위쪽 — 오른쪽 위로 당겨 크게 */
+.me-drawers > button.art::before { background-size: 150% auto; background-position: 85% 12%; }
+.me-drawers > button.has-bg:hover::before { opacity: .5; }
+html.dark .me-drawers > button.has-bg::before { opacity: .28; }
+html.dark .me-drawers > button.has-bg:hover::before { opacity: .42; }
+.me-drawer-icons { position: absolute; z-index: -1; right: 8px; top: 8px; display: flex; opacity: .5; transition: opacity .3s; }
+.me-drawer-icons img { width: 56px; height: 56px; object-fit: contain; margin-left: -18px; }
+.me-drawers > button:hover .me-drawer-icons { opacity: .75; }
+.me-drawer-modal { width: min(980px, calc(100vw - 32px)); }
+/* 창 안의 카드는 껍데기를 벗긴다 — 카드 그림자·여백이 창 안에 또 한 겹 테두리처럼 보였다. 제목은 창 머리와 겹쳐 빼고 도구만 남긴다 */
+.me-drawer-body > .me-card, html.dark .me-drawer-body > .me-card { border: 0; padding: 0; background: transparent; box-shadow: none; }
+.me-drawer-body > .me-card::before, .me-drawer-body > .me-card::after { content: none; }
+.me-drawer-body > .me-card > .me-card-head > div:first-child { display: none; }
+.me-drawer-body > .me-card > .me-card-head { justify-content: flex-end; }
+/* 친구 거르기·정렬 */
+.me-friend-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 10px; }
+/* 기반시설 → 인프라 자동 편성 */
+.me-rooms-go { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 10px; padding: 7px 10px; border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); font-size: 13px; text-decoration: none; }
+.me-rooms-go:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); color: var(--btn-ink-hover); }
+/* 박사 카드 다시 꾸미기 (2026-10-11 "예쁘게") — 머리 배너에 비서 일러, 숫자는 막대 붙은 칸, UID 는 눌러서 복사 */
+.me-profile { position: relative; overflow: hidden; isolation: isolate; padding: 0; }
+.me-pf-hero { position: relative; padding: 14px 16px 14px; min-height: 128px; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px;
+  border-bottom: 1px solid var(--line); }
+.me-pf-art { position: absolute; z-index: -1; right: -12%; top: -12%; width: 76%; height: auto; max-width: none; opacity: .4; pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 50%), linear-gradient(180deg, #000 55%, transparent 92%); -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 50%), linear-gradient(180deg, #000 55%, transparent 92%); mask-composite: intersect; }
+html.dark .me-pf-art { opacity: .3; }
+.me-pf-server { align-self: flex-start; padding: 2px 8px; font-size: 11px; letter-spacing: .4px; color: var(--ink2); background: color-mix(in srgb, var(--white) 80%, transparent); border: 1px solid var(--line); }
+.me-profile .me-avatar { width: 64px; height: 64px; background: var(--white); box-shadow: 0 4px 12px -6px #0006; }
+.me-profile .me-profile-name h3 { font-size: 20px; }
+.me-profile .me-profile-name p { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.me-pf-lv { display: inline-flex; align-items: baseline; gap: 2px; padding: 1px 7px; font-size: 11.5px; color: var(--ink2); background: color-mix(in srgb, var(--ink) 7%, transparent); }
+.me-pf-lv b { font-size: 14px; color: var(--ink); }
+.me-pf-uid { display: inline-flex; align-items: center; gap: 5px; padding: 1px 7px; border: 1px solid transparent; background: transparent; color: var(--muted); font: inherit; font-size: 11.5px; cursor: pointer; }
+.me-pf-uid code { font-size: 12px; color: var(--ink2); letter-spacing: .3px; }
+.me-pf-uid:hover { border-color: var(--btn-line); background: var(--btn-bg); }
+.me-pf-quote { margin: 12px 16px 0; padding: 2px 0 2px 10px; border-left: 2px solid var(--line); font-size: 12.5px; line-height: 1.6; color: var(--ink2); font-style: italic; overflow-wrap: anywhere; }
+.me-pf-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 12px 16px 0; }
+.me-pf-stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 10px; background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.me-pf-stat > span { font-size: 11px; color: var(--muted); }
+.me-pf-stat > b { font-size: 17px; color: var(--ink); line-height: 1.25; }
+.me-pf-stat > b small { margin-left: 1px; font-size: 12px; font-weight: 500; color: var(--muted); }
+.me-pf-stat > small { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.me-pf-bar { display: block; height: 3px; margin: 3px 0 1px; background: color-mix(in srgb, var(--ink) 10%, transparent); }
+.me-pf-bar > i { display: block; height: 100%; background: var(--ink3); }
+.me-pf-stat.warn .me-pf-bar > i { background: #c0603c; }
+.me-pf-sync { margin: 10px 16px 14px; font-size: 11px; color: var(--muted); }
+.me-profile > .me-note { margin: 10px 16px 14px; }
+/* 친구 칸 — 비서 얼굴이 '친구' 글자와 겹쳐 오른쪽으로 (사용자 지시 2026-10-11) */
+.me-drawers > button.art-r::before { background-position: 0% 12%; }

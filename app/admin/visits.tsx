@@ -58,6 +58,28 @@ export type Summary = {
 };
 type TrendRow = { day: string; sessions: number; human_sessions: number; visitors: number; new_visitors: number; views: number; active_ms: number };
 type SessView = { path: string; hash: string | null; t0: number | null; vis: number; act: number; scroll: number | null; out: string | null };
+const whenShort = (at: string) => new Date(at).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+/** PRTS 링크 기록을 연결·해제 한 쌍으로 묶는다 (사용자 지시 2026-10-11 — 따로 한 줄씩 나와 읽기 어려웠다).
+ *  방문자마다 시간순으로 훑어 연결 뒤 처음 오는 해제를 짝으로 삼는다. 기간 앞에서 잘린 해제는 연결 시각이 비고,
+ *  해제 없이 다음 연결이 오면 '기록 없음', 마지막 연결이 열려 있으면 '연결 중'. 최신이 위 */
+function prtsPairs(rows: NonNullable<Summary["prts"]>["recent"]) {
+  type Pair = { start: string | null; end: string | null; detail: string | null; dur: number | null; visitor: string | null; src: string | null; dangling?: boolean };
+  const out: Pair[] = [];
+  const open = new Map<string, Pair>();
+  for (const r of [...rows].sort((a, b) => a.at.localeCompare(b.at))) {
+    const k = r.visitor ?? "?";
+    const cur = open.get(k);
+    if (r.kind === "prts_start") {
+      if (cur) cur.dangling = true;
+      const pr: Pair = { start: r.at, end: null, detail: r.detail, dur: null, visitor: r.visitor, src: r.src };
+      out.push(pr); open.set(k, pr);
+    } else if (cur) {
+      cur.end = r.at; cur.dur = r.dur_ms; cur.detail ??= r.detail; open.delete(k);
+    } else out.push({ start: null, end: r.at, detail: r.detail, dur: r.dur_ms, visitor: r.visitor, src: r.src });
+  }
+  return out.sort((a, b) => (b.start ?? b.end ?? "").localeCompare(a.start ?? a.end ?? ""));
+}
+
 type SessRow = {
   id: string; at: string; src: string; ref: string | null; landing: string; device: string | null; site_lang: string | null;
   tz: string | null; revisit: boolean | null; human: boolean; kind?: "human" | "skim" | "bot"; utm: string | null; views: SessView[];
@@ -1188,13 +1210,13 @@ export function VisitsPanel() {
                     <tbody>{data.prts.by.map((b) => <tr key={b.k}><td><code>{b.k}</code></td><td>{num(b.n)}</td><td>{fmtDur(b.ms)}</td></tr>)}</tbody>
                   </table></div>
                   <div className="vz-tablewrap"><table className="vz-table">
-                    <thead><tr><th>시각</th><th>종류</th><th>어디서</th><th>연결 시간</th><th>방문자</th><th>유입</th></tr></thead>
-                    <tbody>{data.prts.recent.slice(0, 50).map((r, i) => (
+                    <thead><tr><th>연결</th><th>해제</th><th>어디서</th><th>연결 시간</th><th>방문자</th><th>유입</th></tr></thead>
+                    <tbody>{prtsPairs(data.prts.recent).slice(0, 50).map((r, i) => (
                       <tr key={i}>
-                        <td>{new Date(r.at).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</td>
-                        <td>{r.kind === "prts_start" ? "연결" : "해제"}</td>
+                        <td>{r.start ? whenShort(r.start) : "—"}</td>
+                        <td>{r.end ? whenShort(r.end) : r.dangling ? <span className="vz-note" title="다음 연결 전에 해제 기록이 오지 않음 — 탭을 닫았거나 기록 전에 끊겼다">기록 없음</span> : <b>연결 중</b>}</td>
                         <td><code>{r.detail ?? "—"}</code></td>
-                        <td>{r.kind === "prts_end" && r.dur_ms != null ? fmtDur(r.dur_ms) : "—"}</td>
+                        <td>{r.dur != null ? fmtDur(r.dur) : "—"}</td>
                         <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
                         <td>{r.src ?? "—"}</td>
                       </tr>

@@ -19,7 +19,7 @@ import { ModalWindow } from "./modal-window";
 import { useConfirm } from "./confirm";
 import { AccountLoginForm, AccountSteps } from "./roster-import";
 import { MeVerify } from "./me-verify";
-import { AccountError, accountErrorText, syncAccount, ACCOUNT_SERVERS, type AccountChar, type AccountProfile, type AccountStep } from "./account";
+import { AccountError, accountErrorText, syncAccount, ACCOUNT_SERVERS, type AccountChar, type AccountFriend, type AccountProfile, type AccountStep } from "./account";
 import { cnErrorText } from "./account-cn";
 import { clearMe, dropMeToken, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages } from "./dex-cross";
@@ -378,12 +378,11 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
           <RarityTable owned={owned} released={released} opById={opById} onList={openList} />
           {/* 공개모집으로 채울 오퍼를 진행 상황 위로 (사용자 지시 2026-10-05) */}
           <RecruitPool mine={mine} opById={opById} onShowOperator={onShowOperator} />
-          <Progress me={me} stages={stages} onOpenStage={openStage} />
-          <Friends me={me} now={now} opById={opById} onShowOperator={onShowOperator} />
-          <Recent owned={owned} opById={opById} onShowOperator={onShowOperator} />
+          {/* 진행 상황·친구·최근 영입·창고는 바로 볼 일이 적어 버튼으로 접고 누르면 창으로 (사용자 지시 2026-10-11) */}
+          <Drawers me={me} now={now} owned={owned} opById={opById} stages={stages} items={items}
+            onOpenStage={openStage} onOpenItem={(i) => setOpenItem(i)} onShowOperator={onShowOperator} />
         </div>
       </div>
-      <Depot me={me} items={items} onOpen={(i) => setOpenItem(i)} />
 
       {share && onShareClose && <MeShare me={me} owned={owned} released={released} opById={opById} stages={stages} items={items} onClose={onShareClose} />}
       {list && (
@@ -774,26 +773,59 @@ function ProfileCard({ me, now, opById, demo }: { me: MeData; now: number; opByI
   // 이성 — 동기화 뒤 6분마다 1씩 찬다 (상한까지)
   const apNow = st ? (st.ap >= st.maxAp ? st.ap : Math.min(st.maxAp, st.ap + Math.floor((now / 1000 - st.apTs) / 360))) : 0;
   const server = ACCOUNT_SERVERS.find((s) => s.code === me.server)?.label ?? me.server;
+  // 비서 스킨 일러 — 게임 스킨 id(char_002_amiya@epoque#4 · char_002_amiya#2)를 일러 파일명으로. 못 찾으면 정예화 일러로 물러난다
+  const skinArt = st?.secretarySkin ? (st.secretarySkin.includes("@") ? st.secretarySkin.replace("@", "_") : st.secretarySkin.replace("#", "_")) : null;
+  const art = secretary ? asset(`/skin/full/${encodeURIComponent(skinArt ?? `${secretary}_2`)}.webp`) : null;
+  const [copied, setCopied] = useState(false);
+  const copyUid = () => {
+    void navigator.clipboard?.writeText(me.player.uid).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); });
+  };
+  const monthLeft = st?.monthlyEnd ? Math.ceil((st.monthlyEnd * 1000 - now) / 86400000) : null;
   return (
     <section className="me-card me-profile">
-      <div className="me-profile-top">
-        <span className="me-avatar">{secretary ? <img src={avatarOf(secretary)} alt="" width={96} height={96} /> : <b aria-hidden>Dr.</b>}</span>
-        <div className="me-profile-name">
-          <span className="modal-kicker keep">{t(server)}</span>
-          <h3>{me.player.nickName}<small>#{me.player.nickNumber}</small></h3>
-          <p>Lv.<b>{me.player.level}</b> · UID {me.player.uid}</p>
+      {/* 배경 — 부관(비서)과 그 스킨의 일러를 카드 전체에 은은하게. 배너 안에만 두니 그림 아래가 배너 선에서 잘렸다 (사용자 지적 2026-10-11) */}
+      {art && <img className="me-pf-art" src={art} alt="" aria-hidden decoding="async"
+          onError={(e) => { const el = e.currentTarget; const fb = asset(`/skin/full/${secretary}_2.webp`); if (el.src !== new URL(fb, location.href).href) el.src = fb; else el.remove(); }} />}
+      {/* 머리 배너 — 비서 일러를 오른쪽에 은은하게 (사용자 지시 2026-10-11 "예쁘게") */}
+      <div className="me-pf-hero">
+        <span className="me-pf-server">{t(server)}</span>
+        <div className="me-profile-top">
+          <span className="me-avatar">{secretary ? <img src={avatarOf(secretary)} alt="" width={96} height={96} /> : <b aria-hidden>Dr.</b>}</span>
+          <div className="me-profile-name">
+            <h3>{me.player.nickName}<small>#{me.player.nickNumber}</small></h3>
+            <p>
+              <span className="me-pf-lv">Lv.<b>{me.player.level}</b></span>
+              <button type="button" className="me-pf-uid" onClick={copyUid} title={t("UID 복사")}>
+                UID <code>{me.player.uid}</code><span aria-hidden>{copied ? "✓" : "⧉"}</span>
+              </button>
+            </p>
+          </div>
         </div>
       </div>
-      {st?.resume && <p className="me-resume">{st.resume}</p>}
-      <dl className="me-facts">
-        {st && <div><dt>{t("이성")}</dt><dd><b>{fmt(apNow)}</b> / {fmt(st.maxAp)}<small>{apNow < st.maxAp ? t("{time} 가득", { time: dt((st.apTs + (st.maxAp - st.ap) * 360) * 1000) }) : t("가득 참")}</small></dd></div>}
-        {days > 0 && <div><dt>{t("박사 경력")}</dt><dd><b>D+{fmt(days)}</b><small>{t("{date} 입사", { date: day(st!.register * 1000) })}</small></dd></div>}
-        {me.profile?.creditSpent != null && <div><dt>{t("누적 소비 크레딧")}</dt><dd><b>{fmt(me.profile.creditSpent)}</b></dd></div>}
-        {st?.monthlyEnd ? <div><dt>{t("월정액")}</dt><dd>{st.monthlyEnd * 1000 > now ? t("{n}일 남음", { n: fmt(Math.ceil((st.monthlyEnd * 1000 - now) / 86400000)) }) : t("만료")}</dd></div> : null}
-        {!demo && <div><dt>{t("동기화")}</dt><dd>{dt(me.syncedAt)}</dd></div>}
-      </dl>
+      {st?.resume && <p className="me-pf-quote">{st.resume}</p>}
+      <div className="me-pf-stats">
+        {st && <ProfileStat label={t("이성")} value={fmt(apNow)} max={fmt(st.maxAp)} ratio={apNow / Math.max(1, st.maxAp)}
+          note={apNow < st.maxAp ? t("{time} 가득", { time: dt((st.apTs + (st.maxAp - st.ap) * 360) * 1000) }) : t("가득 참")} />}
+        {days > 0 && <ProfileStat label={t("박사 경력")} value={`D+${fmt(days)}`} note={t("{date} 입사", { date: day(st!.register * 1000) })} />}
+        {monthLeft != null && <ProfileStat label={t("월정액")} value={monthLeft > 0 ? t("{n}일 남음", { n: fmt(monthLeft) }) : t("만료")}
+          ratio={monthLeft > 0 ? Math.min(1, monthLeft / 30) : 0} warn={monthLeft <= 3} />}
+        {me.profile?.creditSpent != null && <ProfileStat label={t("누적 소비 크레딧")} value={fmt(me.profile.creditSpent)} />}
+      </div>
+      {!demo && <p className="me-pf-sync">{t("동기화")} · {dt(me.syncedAt)}</p>}
       {!me.profile && <p className="me-note">{t("이 데이터는 오퍼 목록만 들어 있는 예전 형식입니다 — 다시 동기화하면 창고·진행 상황·친구까지 채워집니다.")}</p>}
     </section>
+  );
+}
+
+/** 프로필 카드의 숫자 칸 — 이름 · 큰 숫자(/상한) · 막대 · 보조 문구 */
+function ProfileStat({ label, value, max, ratio, note, warn }: { label: string; value: string; max?: string; ratio?: number; note?: string; warn?: boolean }) {
+  return (
+    <div className={`me-pf-stat${warn ? " warn" : ""}`}>
+      <span>{label}</span>
+      <b>{value}{max && <small>/{max}</small>}</b>
+      {ratio != null && <i className="me-pf-bar" aria-hidden><i style={{ width: `${Math.round(ratio * 100)}%` }} /></i>}
+      {note && <small>{note}</small>}
+    </div>
   );
 }
 
@@ -885,6 +917,8 @@ function Rooms({ me }: { me: MeData }) {
           );
         })}
       </ul>
+      {/* 인프라 자동 편성으로 바로 (사용자 지시 2026-10-11) */}
+      <a className="me-rooms-go" href={`${locale === "ko" ? "" : `/${locale}`}/infra`}>{t("인프라 자동 편성")} <span aria-hidden>→</span></a>
     </Card>
   );
 }
@@ -1040,7 +1074,7 @@ function RarityTable({ owned, released, opById, onList }: { owned: AccountChar[]
 type ProgCat = "main" | "event" | "camp";
 type ProgGroup = { key: string; cat: ProgCat; name: string; order: number; total: number; clear: number; perfect: number; left: string[]; star: string[]; tough: number; toughClear: number; open: number };
 
-function Progress({ me, stages, onOpenStage }: { me: MeData; stages: StageDoc | null; onOpenStage: (id: string) => void }) {
+function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: StageDoc | null; onOpenStage: (id: string) => void; full?: boolean }) {
   const { locale, t } = useI18n();
   const fmt = fmtOf(locale);
   const [withStars, setWithStars] = useState(false);
@@ -1102,7 +1136,7 @@ function Progress({ me, stages, onOpenStage }: { me: MeData; stages: StageDoc | 
   const starTotal = inCat.reduce((n, g) => n + g.star.length, 0);
   const camp = data.list.find((g) => g.cat === "camp");
   const ordered = pendingFirst ? [...inCat].sort((a, b) => pendingOf(b).length - pendingOf(a).length || a.order - b.order) : inCat;
-  const shown = ordered.slice(0, EP_FOLD);
+  const shown = full ? ordered : ordered.slice(0, EP_FOLD);
   // 묶음별로 나눠 띄운다 — 지금 고른 분류 안에서
   const openStages = (title: string, pick: (g: ProgGroup) => string[]) => setStageList((cur) => ({
     title, key: (cur?.key ?? 0) + 1,
@@ -1177,7 +1211,7 @@ function Progress({ me, stages, onOpenStage }: { me: MeData; stages: StageDoc | 
         ))}
       </div>
       {epList(shown, true)}
-      {ordered.length > EP_FOLD && <MoreButton open={false} total={ordered.length} onToggle={() => setAll(true)} />}
+      {!full && ordered.length > EP_FOLD && <MoreButton open={false} total={ordered.length} onToggle={() => setAll(true)} />}
       {all && <MoreModal title={t("진행 상황")} onClose={() => setAll(false)}>{epList(ordered, false)}</MoreModal>}
       {stageList && (
         <ModalWindow key={`sl-${stageList.key}`} label={stageList.title} className="operator-modal me-list-modal" onClose={() => setStageList(null)}>
@@ -1286,15 +1320,30 @@ function OpChip({ op, c, skillIndex, onShowOperator }: {
 }
 
 // ── 친구 ────────────────────────────────────────────────────
-function Friends({ me, now, opById, onShowOperator }: { me: MeData; now: number; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void }) {
+function Friends({ me, now, opById, onShowOperator, full }: { me: MeData; now: number; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void; full?: boolean }) {
   const { locale, t } = useI18n();
   const fmt = fmtOf(locale);
   const [all, setAll] = useState(false);
+  // 미접속 일수로 거르기 — '{n}일 전'이 보이기 시작한 친구들을 1일·2일·3일 이상으로 (사용자 지시 2026-10-11)
+  const [away, setAway] = useState<FriendAway>("all");
+  // 정렬 — 접속·이름·레벨, 방향 뒤집기 (사용자 지시 2026-10-11). 친구가 된 날은 게임이 주지 않아 정렬 기준에 없다
+  const [sortKey, setSortKey] = useState<FriendSort>("online");
+  const [rev, setRev] = useState(false);
   const list = me.profile?.friends;
   if (!me.profile) return null;
-  const sorted = [...(list ?? [])].sort((a, b) => b.lastOnline - a.lastOnline);
+  const daysOff = (f: AccountFriend) => (f.lastOnline ? Math.floor((now / 1000 - f.lastOnline) / 86400) : -1);
+  const awayOk = (f: AccountFriend, a: FriendAway) => {
+    const d = daysOff(f);
+    return a === "all" || (a === "3" ? d >= 3 : d === Number(a));
+  };
+  const cmp: Record<FriendSort, (a: AccountFriend, b: AccountFriend) => number> = {
+    online: (a, b) => b.lastOnline - a.lastOnline,
+    name: (a, b) => a.nickName.localeCompare(b.nickName, DT_LOCALE[locale]) || a.nickNumber.localeCompare(b.nickNumber),
+    level: (a, b) => b.level - a.level || b.lastOnline - a.lastOnline,
+  };
+  const sorted = [...(list ?? [])].filter((f) => awayOk(f, away)).sort((a, b) => (rev ? -1 : 1) * cmp[sortKey](a, b));
   // 목록 그리기 — 본문(앞 몇 줄)과 '전부 보기' 창(전체)이 같이 쓴다 (사용자 2026-10-07 "페이지가 너무 길어진다")
-  const friendList = (items: typeof sorted, withRef: boolean) => (
+  const friendList = (items: typeof sorted) => (
     <ul className="me-friends">
       {items.map((f) => (
         <li key={`${f.nickName}#${f.nickNumber}`}>
@@ -1313,20 +1362,103 @@ function Friends({ me, now, opById, onShowOperator }: { me: MeData; now: number;
       ))}
     </ul>
   );
+  const awayCount = (a: FriendAway) => (list ?? []).filter((f) => awayOk(f, a)).length;
   return (
-    <Card no="FRIENDS" title={t("친구")} aside={list ? <small>{fmt(list.length)} / {me.profile.status.friendLimit ? fmt(me.profile.status.friendLimit) : "—"}</small> : null}>
-      {list === null ? <p className="me-note">{t("친구 목록을 받아 오지 못했습니다 — 다시 동기화해 보세요.")}</p>
-        : !sorted.length ? <p className="me-note">{t("친구가 없습니다.")}</p> : (
-        friendList(sorted.slice(0, FRIEND_FOLD), true)
+    <Card no="FRIENDS" title={t("친구")} className="me-friends-card" aside={list ? <small>{fmt(list.length)} / {me.profile.status.friendLimit ? fmt(me.profile.status.friendLimit) : "—"}</small> : null}>
+      {!!list?.length && (
+        <div className="me-friend-tools">
+          <div className="me-seg" role="group" aria-label={t("미접속")}>
+            {([["all", t("전체")], ["1", t("1일 미접")], ["2", t("2일 미접")], ["3", t("3일 이상 미접")]] as [FriendAway, string][]).map(([k, label]) => (
+              <button key={k} type="button" className={away === k ? "selected" : ""} onClick={() => setAway(k)}>{label} {fmt(awayCount(k))}</button>
+            ))}
+          </div>
+          <div className="me-seg" role="group" aria-label={t("정렬")}>
+            {([["online", t("접속 순")], ["name", t("이름 순")], ["level", t("레벨 순")]] as [FriendSort, string][]).map(([k, label]) => (
+              <button key={k} type="button" className={sortKey === k ? "selected" : ""} onClick={() => setSortKey(k)}>{label}</button>
+            ))}
+          </div>
+          <button type="button" className={`me-sort${rev ? " selected" : ""}`} onClick={() => setRev((v) => !v)} title={t("정렬 뒤집기")}>
+            <span aria-hidden>⇅</span>{t("뒤집기")}
+          </button>
+        </div>
       )}
-      {sorted.length > FRIEND_FOLD && <MoreButton open={false} total={sorted.length} onToggle={() => setAll(true)} />}
-      {all && <MoreModal title={t("친구")} onClose={() => setAll(false)}>{friendList(sorted, false)}</MoreModal>}
+      {list === null ? <p className="me-note">{t("친구 목록을 받아 오지 못했습니다 — 다시 동기화해 보세요.")}</p>
+        : !list?.length ? <p className="me-note">{t("친구가 없습니다.")}</p>
+        : !sorted.length ? <p className="me-note">{t("조건에 맞는 친구가 없어요.")}</p> : (
+        friendList(full ? sorted : sorted.slice(0, FRIEND_FOLD))
+      )}
+      {!full && sorted.length > FRIEND_FOLD && <MoreButton open={false} total={sorted.length} onToggle={() => setAll(true)} />}
+      {all && <MoreModal title={t("친구")} onClose={() => setAll(false)}>{friendList(sorted)}</MoreModal>}
     </Card>
+  );
+}
+type FriendAway = "all" | "1" | "2" | "3";
+type FriendSort = "online" | "name" | "level";
+
+// ── 접어 둔 칸 — 진행 상황·친구·최근 영입·창고 ──────────────────
+// 바로 볼 일이 적어 그림 깔린 버튼으로 접고, 누르면 창에 그 카드를 통째로 띄운다 (사용자 지시 2026-10-11)
+type DrawerKey = "progress" | "friends" | "recent" | "depot";
+function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenItem, onShowOperator }: {
+  me: MeData; now: number; owned: AccountChar[]; opById: Map<string, MeOp>; stages: StageDoc | null; items: ItemDoc | null;
+  onOpenStage: (id: string) => void; onOpenItem: (i: DexItem) => void; onShowOperator?: (id: string) => void;
+}) {
+  const { locale, t } = useI18n();
+  const fmt = fmtOf(locale);
+  const [open, setOpen] = useState<DrawerKey | null>(null);
+  const p = me.profile;
+  // 진행 상황 — 지금 메인 스토리 장의 대표 그림 (main_15-08 → 15장)
+  const chap = /^main_(\d+)-/.exec(p?.status.progress ?? "")?.[1];
+  const cleared = Object.values(p?.stages ?? {}).filter((v) => v >= 2).length;
+  // 친구 — 가장 최근에 들어온 친구의 비서 오퍼 정예화 일러
+  const friends = [...(p?.friends ?? [])].sort((a, b) => b.lastOnline - a.lastOnline);
+  const fSec = friends.find((f) => f.secretary && opById.has(f.secretary))?.secretary;
+  // 최근 영입 — 맨 마지막에 들인 오퍼의 일러
+  const latest = owned.filter((c) => c.gain).sort((a, b) => (b.gain ?? 0) - (a.gain ?? 0))[0];
+  // 창고 — 가장 귀한 재료 몇 개의 아이콘을 겹쳐 깐다
+  const inv = p?.inventory;
+  const depotIcons = useMemo(() => {
+    if (!inv || !items) return [];
+    return items.items.filter((i) => i.i && (inv[i.id] ?? 0) > 0 && i.g === "material").sort((a, b) => b.r - a.r || (inv[b.id] ?? 0) - (inv[a.id] ?? 0)).slice(0, 3).map((i) => itemIcon(i.i!));
+  }, [inv, items]);
+  const bg = (url: string) => ({ ["--bg" as string]: `url(${url})` });
+  const tiles: { key: DrawerKey; label: string; head: string; sub: string; style?: React.CSSProperties; cls?: string; icons?: string[] }[] = [];
+  if (p?.stages) tiles.push({ key: "progress", label: "PROGRESS", head: t("진행 상황"), sub: t("클리어한 작전 {n}개", { n: fmt(cleared) }),
+    style: bg(asset(`/story/main_${chap && Number(chap) <= 17 ? chap : 17}.webp`)) });
+  if (p) tiles.push({ key: "friends", label: "FRIENDS", head: t("친구"), sub: p.friends ? t("{n}명", { n: fmt(p.friends.length) }) : "—",
+    style: fSec ? bg(asset(`/skin/full/${fSec}_1.webp`)) : undefined, cls: "art art-r" });
+  if (latest) tiles.push({ key: "recent", label: "RECENT", head: t("최근 영입"), sub: opById.get(latest.id)?.name ?? "",
+    style: bg(asset(`/skin/full/${latest.id}_1.webp`)), cls: "art" });
+  if (inv) tiles.push({ key: "depot", label: "DEPOT", head: t("창고"), sub: t("{n}종", { n: fmt(Object.values(inv).filter((n) => n > 0).length) }), icons: depotIcons });
+  if (!tiles.length) return null;
+  const title = (k: DrawerKey) => tiles.find((x) => x.key === k)?.head ?? "";
+  return (
+    <>
+      <div className="me-drawers">
+        {tiles.map((x) => (
+          <button key={x.key} type="button" className={`${x.style ? "has-bg" : ""}${x.cls ? ` ${x.cls}` : ""}`} style={x.style} onClick={() => setOpen(x.key)}>
+            {x.icons && <span className="me-drawer-icons" aria-hidden>{x.icons.map((src) => <img key={src} src={src} alt="" width={64} height={64} loading="lazy" />)}</span>}
+            <small className="section-no">{x.label}</small>
+            <b>{x.head}</b>
+            <em>{x.sub}</em>
+          </button>
+        ))}
+      </div>
+      {open && (
+        <ModalWindow label={title(open)} className={`operator-modal me-drawer-modal me-drawer-${open}`} onClose={() => setOpen(null)}>
+          <div className="me-drawer-body">
+            {open === "progress" && <Progress me={me} stages={stages} onOpenStage={onOpenStage} full />}
+            {open === "friends" && <Friends me={me} now={now} opById={opById} onShowOperator={onShowOperator} full />}
+            {open === "recent" && <Recent owned={owned} opById={opById} onShowOperator={onShowOperator} full />}
+            {open === "depot" && <Depot me={me} items={items} onOpen={onOpenItem} full />}
+          </div>
+        </ModalWindow>
+      )}
+    </>
   );
 }
 
 // ── 최근 영입 ────────────────────────────────────────────────
-function Recent({ owned, opById, onShowOperator }: { owned: AccountChar[]; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void }) {
+function Recent({ owned, opById, onShowOperator, full }: { owned: AccountChar[]; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void; full?: boolean }) {
   const { locale, t } = useI18n();
   const [all, setAll] = useState(false);
   // 성급·직군으로 거르기 (사용자 요청 2026-10-06) — 오퍼 도감과 같은 드롭다운(AttributeFilter), 여러 개 고를 수 있다
@@ -1379,15 +1511,15 @@ function Recent({ owned, opById, onShowOperator }: { owned: AccountChar[]; opByI
         </div>
       )}>
       {!list.length && <p className="me-note">{t("조건에 맞는 오퍼가 없어요.")}</p>}
-      {recentList(list.slice(0, fold), true)}
-      {list.length > fold && <MoreButton open={false} total={list.length} onToggle={() => setAll(true)} />}
+      {recentList(full ? list : list.slice(0, fold), true)}
+      {!full && list.length > fold && <MoreButton open={false} total={list.length} onToggle={() => setAll(true)} />}
       {all && <MoreModal title={t("최근 영입")} onClose={() => setAll(false)}>{recentList(list, false)}</MoreModal>}
     </Card>
   );
 }
 
 // ── 창고 ────────────────────────────────────────────────────
-function Depot({ me, items, onOpen }: { me: MeData; items: ItemDoc | null; onOpen: (i: DexItem) => void }) {
+function Depot({ me, items, onOpen, full }: { me: MeData; items: ItemDoc | null; onOpen: (i: DexItem) => void; full?: boolean }) {
   const { locale, t } = useI18n();
   const fmt = fmtOf(locale);
   const [group, setGroup] = useState<ItemGroup | "all">("all");
@@ -1439,9 +1571,9 @@ function Depot({ me, items, onOpen }: { me: MeData; items: ItemDoc | null; onOpe
         </div>
       )}>
       {!rows ? <p className="me-note">{t("불러오는 중…")}</p> : (
-        depotList((nq ? shown : shown.slice(0, fold)), true)
+        depotList((nq || full ? shown : shown.slice(0, fold)), true)
       )}
-      {rows && !nq && shown.length > fold && <MoreButton open={false} total={shown.length} onToggle={() => setAll(true)} />}
+      {rows && !nq && !full && shown.length > fold && <MoreButton open={false} total={shown.length} onToggle={() => setAll(true)} />}
       {all && <MoreModal title={t("창고")} onClose={() => setAll(false)}>{depotList(shown, false)}</MoreModal>}
     </Card>
   );
