@@ -1857,46 +1857,53 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     // 하이드레이션 직후 목록 제목으로 뭉개지지 않는다 (app/seo-operator.ts TITLE과 같은 키)
     const op = selected ?? pageOperator;
     document.title = op
-      ? t("{name} - 명일방주 오퍼레이터 | 테라 아카이브", { name: op.name })
+      ? t("{name} - 명방(명일방주) 오퍼레이터 | 테라 아카이브", { name: op.name })
       : tab === "planner"
-        ? t("인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브")
+        ? t("인프라 자동편성기 - 명방(명일방주) 기반시설 편성 | 테라 아카이브")
         : tab === "recruit"
-          ? t("공개채용 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브")
+          ? t("공개채용 도우미 - 명방 공채 계산기 (명일방주 공개모집) | 테라 아카이브")
           : tab === "enemy"
             ? (pageEnemy && enemyPageOpen
-              ? t("{name} - 명일방주 적 도감 | 테라 아카이브", { name: pageEnemy.name })
-              : t("적 도감 - 명일방주 적 정보 | 테라 아카이브"))
+              ? t("{name} - 명방(명일방주) 적 도감 | 테라 아카이브", { name: pageEnemy.name })
+              : t("적 도감 - 명방(명일방주) 적 정보 | 테라 아카이브"))
           : tab === "stage"
             ? (pageStage && stagePageOpen
-              ? t("{code} {name} - 명일방주 작전 | 테라 아카이브", { code: pageStage.stage.code, name: pageStage.stage.name })
-              : t("작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브"))
+              ? t("{code} {name} - 명방(명일방주) 작전 | 테라 아카이브", { code: pageStage.stage.code, name: pageStage.stage.name })
+              : t("작전 도감 - 명방(명일방주) 스테이지 지형·드랍 | 테라 아카이브"))
           : tab === "item"
-            ? t("아이템 도감 - 명일방주 아이템 정보 | 테라 아카이브")
+            ? t("아이템 도감 - 명방(명일방주) 아이템 정보 | 테라 아카이브")
           : tab === "event"
-            ? t("이벤트 가이드 - 명일방주 이벤트 정보 | 테라 아카이브")
+            ? t("이벤트 가이드 - 명방(명일방주) 이벤트 정보 | 테라 아카이브")
           : tab === "farm"
-            ? t("재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브")
+            ? t("재료파밍 도우미 - 명방(명일방주) 재료 파밍 효율표 | 테라 아카이브")
             : tab === "sim"
-            ? t("작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브")
+            ? t("작전 시뮬레이터 - 명방(명일방주) 적 스폰 타임라인 | 테라 아카이브")
             : tab === "upgrade"
-            ? t("육성 비용 계산기 - 명일방주 오퍼 육성 재료 계산 | 테라 아카이브")
+            ? t("육성 비용 계산기 - 명방(명일방주) 오퍼 육성 재료 계산 | 테라 아카이브")
             : tab === "story"
               // 상세가 열려 있으면 스토리별 제목 — 상세 라우트의 <title>(app/seo-story.ts)과 같은 문구
               ? (storyTitle
-                ? t("{name} 스토리 요약 - 명일방주 | 테라 아카이브", { name: storyTitle })
-                : t("스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브"))
+                ? t("{name} 스토리 요약 - 명방(명일방주) | 테라 아카이브", { name: storyTitle })
+                : t("스토리 - 명방(명일방주) 스토리 요약·전문 | 테라 아카이브"))
               : tab === "gallery"
-                ? t("갤러리 - 명일방주 스토리 CG·스탠딩·일러스트 | 테라 아카이브")
+                ? t("갤러리 - 명방(명일방주) 스토리 CG·스탠딩·일러스트 | 테라 아카이브")
               : tab === "me"
-                ? t("내 정보 - 명일방주 계정 육성 통계·창고 | 테라 아카이브")
+                ? t("내 정보 - 명방(명일방주) 계정 육성 통계·창고 | 테라 아카이브")
               : tab === "rogue"
-                ? t("통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브")
+                // 테마 페이지(/rogue/is6)는 라우트 <title>(app/seo-rogue.ts)과 같은 테마 제목 — 예전엔 하이드레이션 뒤
+                // 일반 제목으로 덮여 검색에 테마 이름이 안 걸렸다 (2026-10-12)
+                ? (() => {
+                  const tp = ROGUE_TOPICS.find((x) => rogueSlugOf(x.id) === /\/rogue\/(is\d+)/.exec(window.location.pathname)?.[1]);
+                  return tp
+                    ? t("{name} - 명방 록라(명일방주 통합전략) 공략 | 테라 아카이브", { name: t(tp.name) })
+                    : t("통합전략 가이드 - 명방 록라(명일방주 통합전략) 공략 | 테라 아카이브");
+                })()
                 : tab === "ra"
-                ? t("생존연산 가이드 - 명일방주 생존연산 공략 | 테라 아카이브")
+                ? t("생존연산 가이드 - 명방(명일방주) 생존연산 공략 | 테라 아카이브")
                 : tab === "archive"
-                ? t("오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브")
-                : t("테라 아카이브 | 명일방주(Arknights) 팬사이트");
-  }, [tab, selected, pageOperator, storyTitle, t]);
+                ? t("오퍼레이터 백과사전 - 명방(명일방주) 오퍼 도감 | 테라 아카이브")
+                : t("테라 아카이브 | 명방(명일방주) 팬사이트 · 공채 계산기·인프라 편성·록라 공략");
+  }, [tab, selected, pageOperator, storyTitle, rogueSlug, t]);
 
   // 오퍼 모달은 히스토리 엔트리를 쌓지 않고 해시만 교체한다(공유용 딥링크).
   // 예전엔 열 때 pushState, 닫을 때 history.back()으로 URL을 복원했는데, 인앱 브라우저

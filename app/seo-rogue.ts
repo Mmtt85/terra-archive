@@ -26,7 +26,7 @@ const metaOf = (locale: SeoLocale, slug: string): TopicMeta | null => {
 };
 
 const TITLE: Record<SeoLocale, (name: string) => string> = {
-  ko: (name) => `${name} - 명일방주 통합전략 공략 | 테라 아카이브`,
+  ko: (name) => `${name} - 명방 록라(명일방주 통합전략) 공략 | 테라 아카이브`,
   en: (name) => `${name} - Arknights Integrated Strategies Guide | Terra Archive`,
   ja: (name) => `${name} - アークナイツ統合戦略攻略 | テラアーカイブ`,
 };
@@ -41,7 +41,8 @@ function descOf(locale: SeoLocale, slug: string): string {
     : locale === "ja"
       ? `階層${m.zones}・敵図鑑${m.enemies}種・収蔵品${m.relics}種をまとめています。`
       : `${m.zones} floors, ${m.enemies} enemies, and ${m.relics} collectibles, all catalogued.`;
-  const full = `${m.name} — ${m.line} ${stat}`;
+  // 한국어는 검색어('명방 록라')를 앞에 — 테마 도입문만으론 명일방주라는 말조차 없었다 (사용자 지시 2026-10-12)
+  const full = locale === "ko" ? `${m.name} — 명일방주(명방) 록라·통합전략 공략. ${m.line} ${stat}` : `${m.name} — ${m.line} ${stat}`;
   return full.length > 158 ? `${full.slice(0, 157).trimEnd()}…` : full;
 }
 

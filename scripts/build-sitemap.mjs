@@ -148,11 +148,40 @@ for (const route of routes) {
   }
 }
 
-// 포탈 루트 먼저, 나머지는 세그먼트 알파벳순 (기존 sitemap과 유사한 순서)
-const segs = [...bySeg.keys()].sort((a, b) => (a === "" ? -1 : b === "" ? 1 : a.localeCompare(b)));
+// ── 순서·우선순위 (2026-10-12) ──────────────────────────────────────────────
+// 종전엔 알파벳순이라 앞 4,700줄이 적 도감(enemy_1000_gopro_2 같은 변형)이었고, 네이버(Yeti)가 사이트맵을
+// 앞에서부터 긁어 색인된 상세가 슬라임 변형·훈련 작전뿐이었다 — 오퍼 상세는 0개 (사용자 지시 "검색 빡세게").
+// 그래서 **사람이 검색하는 순서**로 싣는다: 포탈 → 도구 화면 → 오퍼 상세 → 스토리 → 작전(메인 먼저) → 적(기본형 먼저,
+// _2·_3 변형은 맨 끝). 언어도 **한국어 전부 → 영어 → 일본어** (국내 검색엔진이 한국어부터 만나게).
+// priority 는 구글은 무시하지만 네이버는 참고할 수 있어 단계별로 차등을 둔다.
+const TOP = ["infra", "recruit", "operators", "rogue", "ra", "autochess", "upgrade", "farm", "stories", "stages", "enemies", "events", "items", "sim", "gallery", "me", "about"];
+const STAGE_RANK = (() => {
+  const doc = JSON.parse(readFileSync(join(ROOT, "app/data/stages.json"), "utf8"));
+  const typeRank = { MAIN: 0, SUB: 1, CAMPAIGN: 2, CLIMB_TOWER: 3, SPECIAL_STORY: 4, DAILY: 5 };
+  return new Map(doc.stages.map((st, i) => [st.id, (typeRank[st.t] ?? 6) * 100000 + i]));
+})();
+const order = new Map([...bySeg.keys()].map((seg, i) => [seg, i])); // 데이터 순서(오퍼 출시순 등)를 단계 안에서 유지
+function tierOf(seg) {
+  if (seg === "") return { tier: 0, sub: 0, pri: 1.0 };
+  const head = seg.split("/")[0];
+  const top = TOP.indexOf(head);
+  if (!seg.includes("/") || head === "rogue" || head === "ra" || head === "autochess") return { tier: 1, sub: (top < 0 ? 99 : top) * 100 + (seg.includes("/") ? 1 : 0), pri: 0.9 };
+  if (head === "operators") return { tier: 2, sub: order.get(seg), pri: 0.8 };
+  if (head === "stories") return { tier: 3, sub: order.get(seg), pri: 0.7 };
+  if (head === "stages") return { tier: 4, sub: STAGE_RANK.get(seg.split("/")[1]) ?? 1e9, pri: 0.6 };
+  if (head === "enemies") {
+    const variant = /_\d+$/.test(seg);
+    return { tier: variant ? 6 : 5, sub: order.get(seg), pri: variant ? 0.3 : 0.5 };
+  }
+  return { tier: 7, sub: order.get(seg), pri: 0.5 };
+}
+const segs = [...bySeg.keys()].sort((a, b) => {
+  const x = tierOf(a), y = tierOf(b);
+  return x.tier - y.tier || x.sub - y.sub;
+});
 
 const urls = [];
-for (const seg of segs) {
+for (const l of LOCALES) for (const seg of segs) {
   const variants = bySeg.get(seg);
   if (!variants.ko) {
     console.warn(`⚠ 한국어(기본) 라우트 없음: ${seg} — x-default를 만들 수 없어 건너뜀`);
@@ -163,10 +192,11 @@ for (const seg of segs) {
     .concat(`    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE_URL}${variants.ko === "/" ? "/" : variants.ko}"/>`)
     .join("\n");
   const lastmod = lastmodFor(seg);
-  for (const l of LOCALES) {
+  {
     if (!variants[l]) continue;
     const loc = variants[l] === "/" ? "/" : variants[l];
-    const priority = seg === "" ? (l === "ko" ? "1.0" : "0.9") : seg.includes("/") ? "0.7" : "0.8";
+    // 영어·일본어는 같은 단계에서 0.1 낮게
+    const priority = Math.max(0.1, tierOf(seg).pri - (l === "ko" ? 0 : 0.1)).toFixed(1);
     urls.push(`  <url>
     <loc>${SITE_URL}${loc}</loc>
 ${lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : ""}    <changefreq>weekly</changefreq>

@@ -38,7 +38,7 @@ const opOf = (locale: SeoLocale, id: string) => BY_ID[locale].get(id) ?? BY_ID.k
 
 const TITLE: Record<SeoLocale, (name: string) => string> = {
   // ⚠ 하이드레이션 후 app/home.tsx의 document.title도 같은 문구로 맞춘다 (i18n 사전 같은 키)
-  ko: (name) => `${name} - 명일방주 오퍼레이터 | 테라 아카이브`,
+  ko: (name) => `${name} - 명방(명일방주) 오퍼레이터 | 테라 아카이브`,
   en: (name) => `${name} - Arknights Operator | Terra Archive`,
   ja: (name) => `${name} - アークナイツ オペレーター | テラアーカイブ`,
 };

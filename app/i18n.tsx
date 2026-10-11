@@ -256,7 +256,7 @@ const D: Record<string, Pair> = {
   "재료 파밍 효율표와 오퍼 육성 비용 시뮬레이션": ["Material farming efficiency table and operator upgrade-cost simulator.", "素材周回効率表とオペレーター育成コストシミュレーション。"],
   "이벤트 스토리를 컷씬과 함께 10분 분량으로 요약": ["Event stories summarized with cutscenes in a 10-minute read.", "イベントストーリーをカットシーンと共に10分で要約。"],
   "각 기능이 무엇이고 언제 쓰는지 안내": ["What each tool is and when to use it.", "各機能が何で、いつ使うのかを案内。"],
-  "오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브": ["Operator Archive - Arknights Operator Database | Terra Archive", "オペレーター図鑑 - アークナイツ オペレーター一覧 | テラアーカイブ"],
+  "오퍼레이터 백과사전 - 명방(명일방주) 오퍼 도감 | 테라 아카이브": ["Operator Archive - Arknights Operator Database | Terra Archive", "オペレーター図鑑 - アークナイツ オペレーター一覧 | テラアーカイブ"],
 
   // 업데이트 내역 (헤더 🛠 버튼 + 모달) — 항목 본문은 코드가 아니라 Supabase changelog
   // 테이블에 ko/en/ja가 함께 들어 있다 (docs/supabase-changelog.sql). 여기엔 UI 라벨만.
@@ -619,10 +619,10 @@ const D: Record<string, Pair> = {
     "Unofficial Arknights fan project. All in-game names and data belong to Hypergryph / Yostar and their respective right holders.",
     "アークナイツ非公式ファンプロジェクト · ゲーム内の名称およびデータの権利は Hypergryph / Yostar など各権利者に帰属します。",
   ],
-  "테라 아카이브 | 명일방주(Arknights) 팬사이트": ["Terra Archive | Arknights Fansite", "テラアーカイブ | アークナイツのファンサイト"],
-  "{name} - 명일방주 오퍼레이터 | 테라 아카이브": ["{name} - Arknights Operator | Terra Archive", "{name} - アークナイツ オペレーター | テラアーカイブ"],
-  "인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브": ["Base Auto-Planner - Arknights RIIC Base | Terra Archive", "基地自動編成 - アークナイツ基地編成 | テラアーカイブ"],
-  "공개채용 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브": ["Public Recruitment Helper - Arknights Recruitment Calculator | Terra Archive", "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ"],
+  "테라 아카이브 | 명방(명일방주) 팬사이트 · 공채 계산기·인프라 편성·록라 공략": ["Terra Archive | Arknights Fansite", "テラアーカイブ | アークナイツのファンサイト"],
+  "{name} - 명방(명일방주) 오퍼레이터 | 테라 아카이브": ["{name} - Arknights Operator | Terra Archive", "{name} - アークナイツ オペレーター | テラアーカイブ"],
+  "인프라 자동편성기 - 명방(명일방주) 기반시설 편성 | 테라 아카이브": ["Base Auto-Planner - Arknights RIIC Base | Terra Archive", "基地自動編成 - アークナイツ基地編成 | テラアーカイブ"],
+  "공개채용 도우미 - 명방 공채 계산기 (명일방주 공개모집) | 테라 아카이브": ["Public Recruitment Helper - Arknights Recruitment Calculator | Terra Archive", "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ"],
 
   // ── 인프라 플래너 ──────────────────────────────────────────────────────────
   // 기지 배치 프리셋 153 (사용자 요청 2026-07-24)
@@ -1562,7 +1562,7 @@ const D: Record<string, Pair> = {
   "이벤트 가이드": ["Event Guide", "イベントガイド"],
   "미실장 이벤트 {n}개": ["{n} unreleased events", "未実装イベント{n}件"],
   "이벤트 가이드에서 보기": ["View in the Event Guide", "イベントガイドで見る"],
-  "이벤트 가이드 - 명일방주 이벤트 정보 | 테라 아카이브": [
+  "이벤트 가이드 - 명방(명일방주) 이벤트 정보 | 테라 아카이브": [
     "Event Guide - Arknights Event Database | Terra Archive",
     "イベントガイド - アークナイツ イベント情報 | テラアーカイブ",
   ],
@@ -1598,7 +1598,7 @@ const D: Record<string, Pair> = {
   "재화 {n}": ["{n} currencies", "素材{n}種"],
   // ── 아이템 도감 (/items, 2026-09-16) ────────────────────────────────────────
   "아이템 도감": ["Item Handbook", "アイテム図鑑"],
-  "아이템 도감 - 명일방주 아이템 정보 | 테라 아카이브": [
+  "아이템 도감 - 명방(명일방주) 아이템 정보 | 테라 아카이브": [
     "Item Handbook - Arknights Item Database | Terra Archive",
     "アイテム図鑑 - アークナイツ アイテム情報 | テラアーカイブ",
   ],
@@ -1821,8 +1821,8 @@ const D: Record<string, Pair> = {
   "같은 적이라도 작전에 따라 더 강한 스탯으로 나옵니다 — 아래는 그 단계별 수치입니다.": ["The same enemy appears with stronger stats in some operations — the tiers below are those variants.", "同じ敵でも作戦によって強いステータスで出現します — 以下はその段階ごとの数値です。"],
   "이동 속도": ["Move speed", "移動速度"],
   "라이프 감소": ["Life cost", "ライフ減少"],
-  "적 도감 - 명일방주 적 정보 | 테라 아카이브": ["Enemy Handbook - Arknights Enemy Database | Terra Archive", "敵図鑑 - アークナイツ敵情報 | テラアーカイブ"],
-  "{name} - 명일방주 적 도감 | 테라 아카이브": ["{name} - Arknights Enemy | Terra Archive", "{name} - アークナイツ 敵図鑑 | テラアーカイブ"],
+  "적 도감 - 명방(명일방주) 적 정보 | 테라 아카이브": ["Enemy Handbook - Arknights Enemy Database | Terra Archive", "敵図鑑 - アークナイツ敵情報 | テラアーカイブ"],
+  "{name} - 명방(명일방주) 적 도감 | 테라 아카이브": ["{name} - Arknights Enemy | Terra Archive", "{name} - アークナイツ 敵図鑑 | テラアーカイブ"],
   "적 1,500여 종의 스탯·능력·면역과 등장 작전을 한 곳에": ["Stats, abilities, immunities and appearances for 1,500+ enemies", "1,500種以上の敵のステータス・能力・耐性と出現作戦を一箇所に"],
 
 
@@ -1884,7 +1884,7 @@ const D: Record<string, Pair> = {
     "撃破数など条件分岐の増援は再生に含まれません。"],
   // 작전 시뮬레이터 런처 /sim (사용자 확정 2026-08-10 B안)
   "작전 시뮬레이터": ["Stage Simulator", "作戦シミュレーター"],
-  "작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브": [
+  "작전 시뮬레이터 - 명방(명일방주) 적 스폰 타임라인 | 테라 아카이브": [
     "Stage Simulator - Arknights Enemy Spawn Timeline | Terra Archive",
     "作戦シミュレーター - アークナイツ敵出現タイムライン | テラアーカイブ"],
   "작전 시뮬레이터 읽는 법": ["How to read this simulator", "作戦シミュレーターの読み方"],
@@ -1904,7 +1904,7 @@ const D: Record<string, Pair> = {
     "敵がいつどこから現れどこへ向かうか、作戦の流れを再生"],
   // 생존연산 가이드 /ra (사용자 확정 2026-08-12)
   "생존연산 가이드": ["Reclamation Algorithm Guide", "生息演算ガイド"],
-  "생존연산 가이드 - 명일방주 생존연산 공략 | 테라 아카이브": [
+  "생존연산 가이드 - 명방(명일방주) 생존연산 공략 | 테라 아카이브": [
     "Reclamation Algorithm Guide - Arknights RA Guide | Terra Archive",
     "生息演算ガイド - アークナイツ生息演算攻略 | テラアーカイブ"],
   "생존연산 상설 「사막 이야기」의 요리 조합, 제작·설치물 재료, 지역과 날씨, 조우 선택지, 균열 목표를 게임 데이터에서 그대로 정리했습니다.": [
@@ -2218,8 +2218,8 @@ const D: Record<string, Pair> = {
   "고난 환경": ["Adverse", "厄難"],
   "긴급 환경": ["Challenge", "強襲"],
   "게임에 표기된 빈도입니다. 실측 드랍률과 이성 효율은 재료파밍 도우미에서 봅니다.": ["These are the in-game frequency labels. For measured drop rates and sanity efficiency, see the Material Farming Helper.", "ゲーム内表記の頻度です。実測ドロップ率と理性効率は素材周回ヘルパーで確認できます。"],
-  "작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브": ["Stage Handbook - Arknights Stage Maps & Drops | Terra Archive", "作戦図鑑 - アークナイツ ステージ地形・ドロップ | テラアーカイブ"],
-  "{code} {name} - 명일방주 작전 | 테라 아카이브": ["{code} {name} - Arknights Stage | Terra Archive", "{code} {name} - アークナイツ 作戦 | テラアーカイブ"],
+  "작전 도감 - 명방(명일방주) 스테이지 지형·드랍 | 테라 아카이브": ["Stage Handbook - Arknights Stage Maps & Drops | Terra Archive", "作戦図鑑 - アークナイツ ステージ地形・ドロップ | テラアーカイブ"],
+  "{code} {name} - 명방(명일방주) 작전 | 테라 아카이브": ["{code} {name} - Arknights Stage | Terra Archive", "{code} {name} - アークナイツ 作戦 | テラアーカイブ"],
   "작전 2,200여 개의 도면과 등장 적·드랍": ["Layouts, enemies and drops for 2,200+ stages", "2,200以上の作戦の地形図と敵・ドロップ"],
 
   // ── 공개채용 도우미 ────────────────────────────────────────────────────────────
@@ -2295,15 +2295,15 @@ const D: Record<string, Pair> = {
   "육성 비용 계산": ["Upgrade cost", "育成コスト"],
   "정예화 재료의 최적 파밍지와 이성 효율표": ["Best farming stages and sanity efficiency", "昇進素材の最適ステージと理性効率表"],
   "육성에 필요한 용문폐·재료 총량을 단계별로 계산": ["LMD and materials to reach your upgrade goals", "育成に必要な龍門幣・素材の合計を段階ごとに計算"],
-  "재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브": ["Material Farming Helper - Arknights Material Farming Efficiency | Terra Archive", "素材周回ヘルパー - アークナイツ素材周回効率表 | テラアーカイブ"],
-  "육성 비용 계산기 - 명일방주 오퍼 육성 재료 계산 | 테라 아카이브": ["Upgrade Cost Calculator - Arknights Operator Material Calculator | Terra Archive", "育成コスト計算機 - アークナイツ オペレーター育成素材計算 | テラアーカイブ"],
+  "재료파밍 도우미 - 명방(명일방주) 재료 파밍 효율표 | 테라 아카이브": ["Material Farming Helper - Arknights Material Farming Efficiency | Terra Archive", "素材周回ヘルパー - アークナイツ素材周回効率表 | テラアーカイブ"],
+  "육성 비용 계산기 - 명방(명일방주) 오퍼 육성 재료 계산 | 테라 아카이브": ["Upgrade Cost Calculator - Arknights Operator Material Calculator | Terra Archive", "育成コスト計算機 - アークナイツ オペレーター育成素材計算 | テラアーカイブ"],
   "재료 파밍 & 오퍼 육성 시뮬레이션": ["Material Farming & Operator Upgrade Simulator", "素材周回＆オペレーター育成シミュレーター"],
   "오퍼레이터 육성에 필요한 용문폐·재료 총량을 단계별로 계산하고, 각 재료를 어느 스테이지에서 파밍하는 게 가장 효율적인지 실측 드랍 통계로 확인합니다.": [
     "Calculate the LMD and materials needed to upgrade operators step by step, and check the most efficient farming stage for each material with measured drop statistics.",
     "オペレーター育成に必要な龍門幣・素材の合計を段階ごとに計算し、各素材をどのステージで周回するのが最も効率的かを実測ドロップ統計で確認します。",
   ],
   "재료 파밍 효율표": ["Material Farming Efficiency", "素材周回効率表"],
-  "재료 파밍 & 오퍼 육성 시뮬레이션 - 명일방주 파밍·육성 계산기 | 테라 아카이브": ["Material Farming & Operator Upgrade Simulator - Arknights Farming/Upgrade Calculator | Terra Archive", "素材周回＆オペレーター育成シミュレーター - アークナイツ周回・育成計算機 | テラアーカイブ"],
+  "재료 파밍 & 오퍼 육성 시뮬레이션 - 명방(명일방주) 파밍·육성 계산기 | 테라 아카이브": ["Material Farming & Operator Upgrade Simulator - Arknights Farming/Upgrade Calculator | Terra Archive", "素材周回＆オペレーター育成シミュレーター - アークナイツ周回・育成計算機 | テラアーカイブ"],
   "정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 드랍률을 표시하고, 개당 기대 이성(이성 소모 ÷ 드랍률)이 낮은 순서 — 이성 효율이 좋은 순서로 늘어놓습니다. 맨 위 스테이지가 가장 효율이 좋습니다.": [
     "Measured drop statistics for {count} elite materials. Each material lists the stages it drops from with their drop rates, ordered by expected sanity per drop (sanity cost ÷ drop rate) — most sanity-efficient first. The top stage is the most efficient.",
     "昇進素材{count}種の実測ドロップ統計です。素材ごとにドロップするステージとドロップ率を表示し、1個あたりの期待理性（理性消費 ÷ ドロップ率）が低い順＝理性効率の良い順に並べます。一番上のステージが最も効率的です。",
@@ -2368,7 +2368,7 @@ const D: Record<string, Pair> = {
   "몬스터 헌터": ["Monster Hunter", "モンスターハンター"],
   "같은 테마의 다른 이야기": ["More from this theme", "同じテーマの他の物語"],
   // 상세 라우트가 내보내는 <title>과 같은 문구 (app/seo-story.ts TITLE)
-  "{name} 스토리 요약 - 명일방주 | 테라 아카이브": ["{name} Story Summary - Arknights | Terra Archive", "{name} ストーリー要約 - アークナイツ | テラアーカイブ"],
+  "{name} 스토리 요약 - 명방(명일방주) | 테라 아카이브": ["{name} Story Summary - Arknights | Terra Archive", "{name} ストーリー要約 - アークナイツ | テラアーカイブ"],
   "미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
     "This operator is not yet released — data comes from the CN server, and skill/talent text is an unofficial AI translation that may differ from the official localization.",
     "未実装のオペレーターです — 中国サーバーのデータ基準であり、スキル・素質などのテキストは非公式のAI翻訳のため、正式実装時の公式翻訳と異なる場合があります。",
@@ -2471,7 +2471,7 @@ const D: Record<string, Pair> = {
   "내 보유": ["My roster", "所持状況"],
   "내 육성 현황": ["My progress", "自分の育成状況"],
   "내 정보": ["My Account", "マイページ"],
-  "내 정보 - 명일방주 계정 육성 통계·창고 | 테라 아카이브": ["My Account - Arknights Roster Stats & Depot | Terra Archive", "マイページ - アークナイツ アカウント育成統計・倉庫 | テラアーカイブ"],
+  "내 정보 - 명방(명일방주) 계정 육성 통계·창고 | 테라 아카이브": ["My Account - Arknights Roster Stats & Depot | Terra Archive", "マイページ - アークナイツ アカウント育成統計・倉庫 | テラアーカイブ"],
   "내 정보의 계정 데이터로 보유 오퍼를 맞췄습니다 — {name} 박사 · 보유 {n}명": ["Roster synced from My Account — Dr. {name} · {n} owned", "マイページのアカウントデータで所持オペレーターを合わせました — {name} ドクター · 所持 {n}人"],
   "내 지원 유닛": ["My support units", "自分のサポートユニット"],
   "내 창고": ["In depot", "倉庫"],
@@ -2547,7 +2547,7 @@ const D: Record<string, Pair> = {
   "조건에 맞는 그림이 없어요.": ["No images match these filters.", "条件に合う画像がありません。"],
   "스토리에서 보기": ["View in story", "ストーリーで見る"],
   "일러스트가 아직 없습니다.": ["No artwork yet.", "イラストはまだありません。"],
-  "갤러리 - 명일방주 스토리 CG·스탠딩·일러스트 | 테라 아카이브": ["Gallery - Arknights Story CGs, Sprites & Artwork | Terra Archive", "ギャラリー - アークナイツ ストーリーCG・立ち絵・イラスト | テラアーカイブ"],
+  "갤러리 - 명방(명일방주) 스토리 CG·스탠딩·일러스트 | 테라 아카이브": ["Gallery - Arknights Story CGs, Sprites & Artwork | Terra Archive", "ギャラリー - アークナイツ ストーリーCG・立ち絵・イラスト | テラアーカイブ"],
   "중섭": ["CN", "中国版"],
   "중국 서버 선행 이벤트예요. 한국 출시일은 미정이며, 표시 월은 중↔한 시차로 추정한 대략적 시점입니다.": [
     "These run on the CN server first. There is no Global release date yet; the months shown are rough estimates based on how far ahead the CN server usually runs.",
@@ -2657,7 +2657,7 @@ const D: Record<string, Pair> = {
   "AI 스토리 요약": ["AI Story Digest", "AIストーリー要約"],
   "스토리": ["Story", "ストーリー"],
   "이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로": ["Event stories as AI digests and full scripts.", "イベントストーリーをAI要約と全文（フルスクリプト）で。"],
-  "스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브": ["Story - Arknights Story Digests & Full Scripts | Terra Archive", "ストーリー - アークナイツストーリー要約・全文 | テラアーカイブ"],
+  "스토리 - 명방(명일방주) 스토리 요약·전문 | 테라 아카이브": ["Story - Arknights Story Digests & Full Scripts | Terra Archive", "ストーリー - アークナイツストーリー要約・全文 | テラアーカイブ"],
   "아직 정식 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 텍스트입니다.": [
     "This event has not been released yet — this is an unofficial AI translation of the CN server text.",
     "未実装のイベントのため、中国サーバー原文をAIが翻訳した非公式テキストです。",
@@ -2703,7 +2703,7 @@ const D: Record<string, Pair> = {
   "없음": ["none", "なし"],
   "이야기 {n}편": ["{n} stories", "物語{n}編"],
   "연도 미정 — 스토리라인 순서상 이 무렵": ["Year unknown — around this time by storyline order", "年未詳 — ストーリーライン順でこの頃"],
-  "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브": ["AI Story Digest - Arknights Story Summaries | Terra Archive", "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ"],
+  "AI 스토리 요약 - 명방(명일방주) 스토리 요약 | 테라 아카이브": ["AI Story Digest - Arknights Story Summaries | Terra Archive", "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ"],
   "출시된 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.": [
     "An archive of all {count} stories released. AI reads the full story scripts and condenses each into a 10-minute digest with cutscenes. {done} available now — more on the way.",
     "公開されたストーリー{count}件のアーカイブです。AIがストーリースクリプト全文を読み込み、カットシーン付きの10分ダイジェストにまとめます。現在{done}件収録 — 順次追加されます。",
@@ -2820,7 +2820,8 @@ const D: Record<string, Pair> = {
   "주사위": ["Dice", "サイコロ"],
   "거부반응": ["Rejection", "拒絶反応"],
   "계시": ["Revelation", "啓示"],
-  "통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브": ["Integrated Strategies Guide - Arknights IS Guide | Terra Archive", "統合戦略ガイド - アークナイツ統合戦略攻略 | テラアーカイブ"],
+  "{name} - 명방 록라(명일방주 통합전략) 공략 | 테라 아카이브": ["{name} - Arknights Integrated Strategies Guide | Terra Archive", "{name} - アークナイツ統合戦略攻略 | テラアーカイブ"],
+  "통합전략 가이드 - 명방 록라(명일방주 통합전략) 공략 | 테라 아카이브": ["Integrated Strategies Guide - Arknights IS Guide | Terra Archive", "統合戦略ガイド - アークナイツ統合戦略攻略 | テラアーカイブ"],
   "층별 노드·유물·엔딩 조건을 난이도별로 정리": ["Floor nodes, relics and endings by difficulty", "階層ノード・秘宝・エンディング条件を難易度別に"],
   "다른 테마는 준비 중": ["Other themes coming soon", "他のテーマは準備中"],
   "준비 중": ["Coming soon", "準備中"],

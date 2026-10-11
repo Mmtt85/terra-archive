@@ -18,7 +18,7 @@ const META: Record<SandboxSlug, Record<SeoLocale, { name: string; title: string;
   sand: {
     ko: {
       name: "사막 이야기",
-      title: "사막 이야기 - 명일방주 생존연산 공략 | 테라 아카이브",
+      title: "사막 이야기 - 명방(명일방주) 생존연산 공략 | 테라 아카이브",
       desc: "명일방주 생존연산 상설 「사막 이야기」 — 요리 53종 조합과 α·β·γ 변형, 제작·설치물 96종, 지역 106곳의 도면·등장 적·이동 경로, 조우 선택지, 균열 목표와 보상까지 정리했습니다.",
     },
     en: {
@@ -35,7 +35,7 @@ const META: Record<SandboxSlug, Record<SeoLocale, { name: string; title: string;
   anchor: {
     ko: {
       name: "재기동 앵커",
-      title: "재기동 앵커(重启锚点) - 명일방주 생존연산 신시즌 | 테라 아카이브",
+      title: "재기동 앵커(重启锚点) - 명방(명일방주) 생존연산 신시즌 | 테라 아카이브",
       desc: "중국 서버 선행 생존연산 신시즌 「重启锚点」 — 아이템 381종, 가공·건설 레시피, 지역과 날씨, 조우를 중국어 원문과 비공식 한국어 번역으로 미리 봅니다.",
     },
     en: {
