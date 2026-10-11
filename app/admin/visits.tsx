@@ -573,6 +573,37 @@ function sessLive(s: SessRow): boolean {
 }
 
 function SessionLine({ s }: { s: SessRow }) {
+  // 동선이 3줄을 넘으면 최근 3줄만 보이고 펼치기 단추 (사용자 요청 2026-10-11 "조작을 너무 많이 해 4줄 이상이면 아코디언").
+  // 줄 수는 화면 폭에 따라 달라 실제 배치를 잰다 — 칸들의 윗변이 몇 가지인지가 줄 수다. 10초 갱신에도 펼침 상태는 유지(key=s.id)
+  const trailRef = useRef<HTMLParagraphElement>(null);
+  const [clampH, setClampH] = useState<number | null>(null);
+  const [rows, setRows] = useState(0);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const el = trailRef.current;
+    if (!el) return;
+    const measure = () => {
+      const kids = [...el.children] as HTMLElement[];
+      if (!kids.length) return;
+      const tops = [...new Set(kids.map((k) => k.offsetTop))].sort((a, b) => a - b);
+      setRows(tops.length);
+      // 접으면 3줄 (사용자 지시 같은 날 — 처음엔 4줄). 높이 = 끝에서 세 줄치 (맨 아래로 내려 두므로 줄 높이 합만 맞으면 된다)
+      if (tops.length > 3) {
+        const third = kids.filter((k) => k.offsetTop === tops[2]);
+        setClampH(Math.max(...third.map((k) => k.offsetTop + k.offsetHeight)) - tops[0] + 2);
+      } else setClampH(null);
+    };
+    measure();
+    // 접힌 동안은 **끝(최근 동작)** 4줄이 보이게 — 맨 아래로 내려 둔다 (사용자 지시 같은 날)
+    requestAnimationFrame(() => { if (el.classList.contains("clamped")) el.scrollTop = el.scrollHeight; });
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [s.views.length]);
+  useEffect(() => {
+    const el = trailRef.current;
+    if (el && clampH && !open) el.scrollTop = el.scrollHeight;
+  }, [clampH, open, s.views.length]);
   const at = new Date(s.at);
   const when = at.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
   const last = s.views[s.views.length - 1];
@@ -596,7 +627,8 @@ function SessionLine({ s }: { s: SessRow }) {
         {(s.kind ?? (s.human ? "human" : "bot")) === "bot" && <span className="vz-tag warn" title={KIND_HINT.bot}>봇 추정</span>}
         {s.tz && s.tz !== "Asia/Seoul" && <span className="vz-muted">{s.tz}</span>}
       </header>
-      <p className="vz-trail">
+      <p className={`vz-trail${clampH && !open ? " clamped" : ""}`} ref={trailRef}
+        style={clampH && !open ? { maxHeight: clampH } : undefined}>
         {s.views.map((v, i) => (
           <span key={i}>
             {i > 0 && <i>→</i>}
@@ -611,6 +643,11 @@ function SessionLine({ s }: { s: SessRow }) {
           ? <><i>→</i><span className="vz-step live" title="마지막 기록이 3분 안 — 탭이 열려 있다">조작 중</span></>
           : <><i>→</i><span className="vz-step exit">이탈</span></>)}
       </p>
+      {clampH != null && (
+        <button type="button" className="vz-trail-more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          {open ? "접기 ▲" : `펼치기 ▼ · 화면 ${s.views.length}개 · ${rows}줄`}
+        </button>
+      )}
     </li>
   );
 }
