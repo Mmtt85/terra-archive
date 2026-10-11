@@ -204,6 +204,9 @@ language sql immutable as $$
   end
 $$;
 
+-- ⚠ 집계 함수(visits_summary_range·visits_sessions_range)는 **security definer** — RLS 를 건너뛰고 소유자 권한으로 돌며,
+--   관리자 확인은 함수 끝 where 절에서 한 번만 한다. invoker 일 때는 표의 행마다 RLS(헤더 JSON 풀기)가 붙어 30일 집계가
+--   관리자 화면에서 26초, SQL Editor(RLS 없음)에서 2.8초였다 (2026-10-11 실측). 정책을 (select …) 로 감싸도 줄지 않았다.
 -- ── 어드민 조회 (security invoker — RLS 가 관리자 키를 본다. 키가 없으면 빈 결과) ─────────────
 -- 목록은 **자르지 않고 전부** 보낸다 — 어드민이 상위 5·10·20·50·100·전체를 고른다 (사용자 지시 2026-10-04).
 -- 세션 타임라인만 한 번에 최대 5,000개.
@@ -275,7 +278,7 @@ $$;
 drop function if exists public.visits_summary_range(timestamptz, timestamptz, boolean, boolean);
 create or replace function public.visits_summary_range(p_from timestamptz, p_to timestamptz,
   p_human boolean default true, p_hourly boolean default false, p_kinds text[] default null)
-returns json language sql stable as $$
+returns json language sql stable security definer set search_path = public as $$
   with v as (
     select * from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day')
   ),
@@ -422,6 +425,7 @@ returns json language sql stable as $$
           where a.k between 1 and 3
         ) e group by 1, 2, 3) d)
   )
+  where (select public.visits_is_admin())   -- 소유자 권한으로 돌므로 관리자 확인은 여기서 한 번
 $$;
 
 -- 종전 '최근 N일' 판 — 범위판을 그대로 부른다 (0 = 오늘)
@@ -435,7 +439,7 @@ $$;
 drop function if exists public.visits_sessions_range(timestamptz, timestamptz, boolean, text, text, int);
 create or replace function public.visits_sessions_range(p_from timestamptz, p_to timestamptz, p_human boolean default true,
   p_src text default null, p_landing text default null, p_limit int default 100, p_kinds text[] default null)
-returns json language sql stable as $$
+returns json language sql stable security definer set search_path = public as $$
   with v as (
     select * from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day')
   ),
@@ -462,6 +466,7 @@ returns json language sql stable as $$
                 from v where v.session = s.id)
     ) order by s.started_at desc), '[]')
   from s
+  where (select public.visits_is_admin())   -- 소유자 권한으로 돌므로 관리자 확인은 여기서 한 번
 $$;
 
 drop function if exists public.visits_sessions(int, boolean, text, text, int);

@@ -126,6 +126,8 @@ type RogueData = {
   scraps?: Scrap[]; legacies?: Simple[]; buoys?: Simple[];
   weathers?: Weather[]; subweathers?: SubWeather[];
   variations: Variation[]; endings: Ending[]; encounters: Encounter[]; visitors?: Visitor[];
+  /** 원더랜드(PORTAL 노드)로 들어가는 히든 구역 — 흑류수해 '싹트지 않은 요람' (build-rogue.py, 2026-10-11) */
+  portal?: { name: string; desc: string; cn?: string };
   // 토픽 고유 시스템 갤러리 (거부반응·암호판·붕괴 패러다임·사고·시대·주화·분노 등) — 전시관 서브탭.
   // kind=하위 분류(사고: 염원/영감/구상), usage의 개행은 단계 효과(심화·형성기 등) 줄바꿈.
   mechanics?: { label: string; items: { id: string; name: string; kind?: string; usage?: string | null; desc?: string | null; img?: boolean; iconId?: string; stages?: InvStage[] }[] }[];
@@ -1328,6 +1330,8 @@ export default function RogueGuide({ initialTopic }: {
   // 쉐이의 잔식 창 — 계원 지도판 위쪽(4층·5층 사이) 단추로 연다 (사용자 지시 2026-10-03 "탭으로 나누지 말고 … 살짝 작은 버튼,
   // 클릭하면 모달"). 종전(2026-10-02)엔 맵·노드 안을 계원 / 쉐이의 잔식 두 탭으로 나눴다.
   const [skyOpen, setSkyOpen] = useState(false);
+  // 흑류수해 원더랜드 창 — 들어가는 법·히든 구역·유토피아 규칙을 한 창에 (사용자 질문 2026-10-11 "원더랜드 들어가는 데 어딨노")
+  const [wonderOpen, setWonderOpen] = useState(false);
   // 잔식 소란 모달 — 시비경 / 금석경 탭 (사용자 지시 2026-10-02 "소란 노드는 시비경 / 금석경 탭으로 나눠줘")
   const [skyBattleTab, setSkyBattleTab] = useState<"shi" | "kin">("shi");
   const [enemyRank, setEnemyRank] = useState<string>("");
@@ -1549,6 +1553,7 @@ export default function RogueGuide({ initialTopic }: {
   // 외나무다리(DUEL) — 결투 작전이 있는 테마는 기타 노드에서 따로 빼 **자기 카드**로 둔다. 누르면 결투
   // 작전 지도들이 모달로 뜬다 (사용자 요청 2026-09-25). 종전엔 기타 노드 모달 속 한 칸이었다.
   const duelNode = useMemo(() => data.nodeTypes.find((nt) => nt.id === "DUEL") ?? null, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  const portalNode = data.nodeTypes.find((nt) => nt.id === "PORTAL") ?? null;
   // 엔딩 조건의 「이름」 링크가 짚는 대상 — 기타 노드 모달 속 그 노드(ntFocus), 엔딩 목록 속 그 카드(endFlash).
   // ⚠ 아래 mapSections 본문이 렌더 중에 ntFocus 를 읽으므로 그보다 **앞에서** 선언해야 한다.
   const [ntFocus, setNtFocus] = useState("");
@@ -2994,6 +2999,17 @@ export default function RogueGuide({ initialTopic }: {
                 </button>
               );
             })}
+            {/* 흑류수해 원더랜드 — 노드 설명은 '기타 노드' 창 맨 끝에 한 줄뿐이고 들어가는 히든 구역·유토피아 규칙은 전시관에
+                흩어져 있어 찾을 수가 없었다 (사용자 지적 2026-10-11). 미즈키 원더랜드처럼 지도판에 따로 카드 */}
+            {data.portal && portalNode && (
+              <button type="button" className="rg-sec-card rg-wonder-card" onClick={() => setWonderOpen(true)}>
+                {SQUARE_ICO_BG.has(data.id) && hasNodeIcon(data.id, "PORTAL") && (
+                  <img className="rg-zonecard-bg rg-sec-icobg" src={asset(`/rogue/node/${data.id}/PORTAL.webp?v=2`)} alt="" aria-hidden loading="lazy" decoding="async" />
+                )}
+                <h3>{portalNode.name}</h3>
+                <span className="rg-zone-counts">{t("유토피아 {n}종", { n: data.variations.length })}</span>
+              </button>
+            )}
           </div>
           </div>
 
@@ -3501,6 +3517,34 @@ export default function RogueGuide({ initialTopic }: {
               </div>
             )}
             </div>
+        </ModalWindow>
+      )}
+      {wonderOpen && data.portal && portalNode && (
+        <ModalWindow label={portalNode.name} className="rg-modal rg-secmodal" onClose={() => setWonderOpen(false)}>
+          <header className="rg-modal-head">
+            <div><h3><Nm name={portalNode.name} cn={portalNode.cn} /></h3></div>
+          </header>
+          {portalNode.desc && <p className="rg-zone-desc">{portalNode.desc}</p>}
+          {portalNode.func && <p className="rg-modal-elite">{portalNode.func}</p>}
+          <div className="rg-stage-group">
+            <h4>{t("히든 구역")}</h4>
+            <p className="rg-wonder-zone"><b><Nm name={data.portal.name} cn={data.portal.cn} /></b><span>{data.portal.desc}</span></p>
+          </div>
+          <div className="rg-stage-group">
+            <h4>{t("유토피아 규칙")} <em>{data.variations.length}</em> <span className="rg-stage-hint">{t("히든 구역 안에서 적용됩니다")}</span></h4>
+            <ul className="rg-wonder-vars">
+              {data.variations.map((v) => (
+                <li key={v.id}>
+                  {v.img && <img src={asset(`/rogue/misc/rogue_6_${v.id}.webp`)} alt="" aria-hidden width={44} height={44} loading="lazy" decoding="async" />}
+                  <span>
+                    <b><Nm name={v.name} cn={v.cn} /></b>
+                    {v.func && <i>{v.func}</i>}
+                    {v.desc && <em>{v.desc}</em>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </ModalWindow>
       )}
       {/* 쉐이의 잔식 창 — 노드를 누르면 그 노드 창(secOpen)이 위에 겹쳐 뜬다 */}

@@ -2745,6 +2745,10 @@ def build_rogue6():
         "endings": endings,
         "encounters": encounters,
         **({"visitors": visitors} if visitors else {}),
+        # 원더랜드(PORTAL 노드)로 들어가는 히든 구역 — zone_portal_normal_* 열아홉 칸이 전부 같은 이름·설명이라 하나만
+        # (사용자 질문 2026-10-11 "흑류수해 원더랜드 들어가는 데 어딨노" — 지도판 '원더랜드' 카드가 이걸 보여 준다)
+        **({"portal": {"name": pz["name"], "desc": (pz.get("description") or "").strip()}}
+           if (pz := next((v for k, v in r["zones"].items() if k.startswith("zone_portal")), None)) else {}),
     }
     def sanitize(v):
         if isinstance(v, str):
@@ -2764,6 +2768,8 @@ def build_rogue6():
             ent["cn"] = ent[field]
     for z in out["zones"]:
         keep_cn(z)
+    if out.get("portal"):
+        keep_cn(out["portal"])
     for s in out["stages"]:
         keep_cn(s)
     for e in out["enemies"].values():

@@ -1210,6 +1210,21 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
           if (member && isMember(member)) tradeSeated += 1;
         }
       }
+      // 제어센터 단서 수집 인원 오라(지마 이격 '응접실에 배치된 우르수스 학생자치단 1명당 +10%')도 같은 원칙 —
+      // **응접실에 앉은** 진영원만 센다. 종전엔 기지 전체 인원이라 응접실이 비어도 본인(학생자치단)까지 세어
+      // +10% 로 평가돼 0% 인 지마가 제어센터를 차지했다 (제보 845edc5b, 2026-10-11). 배치 지도 전엔 본인만 뺀다
+      const clueAura = room === "CONTROL" && skill.kind === "ctrl_clue" && skill.perScope !== "mfg";
+      if (clueAura) {
+        let n = 0;
+        if (ctx.roomOf) {
+          for (const [id, r] of ctx.roomOf) {
+            if (r !== "MEETING" || id === op.id) continue;
+            const member = opById.get(id);
+            if (member && isMember(member)) n += 1;
+          }
+        } else n = Math.max(0, baseCount - (isMember(op) ? 1 : 0));
+        tradeSeated = n;
+      }
       // "자신을 제외한 <진영> 1명당"(뮤엘시스): 본인이 그 진영이면 카운트에서 자신을 뺀다
       const selfEx = skill.perExclSelf && isMember(op) ? 1 : 0;
       const count = Math.max(0, (skill.perScope === "room"
