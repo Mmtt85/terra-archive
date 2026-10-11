@@ -483,6 +483,9 @@ returns json language sql stable security definer set search_path = public as $$
       'utm', s.utm_source,
       -- 마지막으로 받은 시각 — 열려 있는 탭은 1분마다 보내므로(visit-track.ts BEAT_MS) 몇 분 안이면 '조작 중' (2026-10-10)
       'last_at', (select max(vv.at) from public.visit_view vv where vv.session = s.id),
+      -- 그 세션의 일 기록 — PRTS 링크 연결·해제, 내 정보 로그인·동기화 (2026-10-11 "세션 타임라인에 PRTS 가 안 보인다")
+      'events', (select coalesce(json_agg(json_build_object('at', ev.at, 'kind', ev.kind, 'detail', ev.detail, 'dur', ev.dur_ms, 'server', ev.server) order by ev.at), '[]')
+                 from public.visit_event ev where ev.session = s.id),
       'views', (select coalesce(json_agg(json_build_object('path', v.path, 'hash', v.hash, 't0', v.t0,
                   'vis', v.visible_ms, 'act', v.active_ms, 'scroll', v.scroll, 'out', v.out_href) order by v.seq), '[]')
                 from v where v.session = s.id)

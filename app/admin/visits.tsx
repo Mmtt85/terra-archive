@@ -63,6 +63,8 @@ type SessRow = {
   tz: string | null; revisit: boolean | null; human: boolean; kind?: "human" | "skim" | "bot"; utm: string | null; views: SessView[];
   /** 마지막으로 받은 시각 (DB visits_sessions_range — 옛 함수면 없다) */
   last_at?: string | null;
+  /** 그 세션의 일 기록 — PRTS 연결·해제, 내 정보 로그인·동기화 (2026-10-11~ DB 함수) */
+  events?: { at: string; kind: string; detail: string | null; dur: number | null; server: string | null }[];
 };
 
 async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
@@ -572,6 +574,24 @@ function sessLive(s: SessRow): boolean {
   return Date.now() - lastAt < 3 * 60_000;
 }
 
+/** 세션 머리줄에 붙일 일 기록 칩 — PRTS 는 연결·해제를 한 칸으로 묶는다(해제가 없으면 '연결 중') */
+function sessEvents(s: SessRow): { label: string; title: string; cls: string }[] {
+  const out: { label: string; title: string; cls: string }[] = [];
+  const hm = (iso: string) => new Date(iso).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
+  let open: { at: string; detail: string | null } | null = null;
+  for (const e of s.events ?? []) {
+    if (e.kind === "prts_start") open = { at: e.at, detail: e.detail };
+    else if (e.kind === "prts_end") {
+      out.push({ label: `PRTS ${e.detail ?? ""} ${fmtDur(e.dur ?? 0)}`.replace(/\s+/g, " "), title: `PRTS 링크 ${open ? hm(open.at) : "?"} ~ ${hm(e.at)} 연결`, cls: "prts" });
+      open = null;
+    } else if (e.kind === "me_login" || e.kind === "me_sync") {
+      out.push({ label: e.kind === "me_login" ? "내 정보 로그인" : "내 정보 동기화", title: `${hm(e.at)}${e.server ? ` · ${e.server}` : ""}`, cls: "me" });
+    }
+  }
+  if (open) out.push({ label: `PRTS ${open.detail ?? ""} 연결 중`.replace(/\s+/g, " "), title: `PRTS 링크 ${hm(open.at)}부터 연결 중`, cls: "prts on" });
+  return out;
+}
+
 function SessionLine({ s }: { s: SessRow }) {
   // 동선이 3줄을 넘으면 최근 3줄만 보이고 펼치기 단추 (사용자 요청 2026-10-11 "조작을 너무 많이 해 4줄 이상이면 아코디언").
   // 줄 수는 화면 폭에 따라 달라 실제 배치를 잰다 — 칸들의 윗변이 몇 가지인지가 줄 수다. 10초 갱신에도 펼침 상태는 유지(key=s.id)
@@ -626,6 +646,10 @@ function SessionLine({ s }: { s: SessRow }) {
         {(s.kind ?? (s.human ? "human" : "bot")) === "skim" && <span className="vz-tag" title={KIND_HINT.skim}>훑고 감</span>}
         {(s.kind ?? (s.human ? "human" : "bot")) === "bot" && <span className="vz-tag warn" title={KIND_HINT.bot}>봇 추정</span>}
         {s.tz && s.tz !== "Asia/Seoul" && <span className="vz-muted">{s.tz}</span>}
+        {/* 일 기록 — PRTS 링크(연결된 시간)·내 정보 로그인·동기화 (사용자 지시 2026-10-11 "세션 타임라인에 PRTS 관련이 안 보인다") */}
+        {sessEvents(s).map((e, i) => (
+          <span key={i} className={`vz-tag vz-ev ${e.cls}`} title={e.title}>{e.label}</span>
+        ))}
       </header>
       <p className={`vz-trail${clampH && !open ? " clamped" : ""}`} ref={trailRef}
         style={clampH && !open ? { maxHeight: clampH } : undefined}>

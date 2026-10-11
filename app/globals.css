@@ -29911,3 +29911,9 @@ html.dark :is(.own-corner, .skin-owned).no { background: color-mix(in srgb, #000
 .vz-trail.clamped { overflow: hidden; -webkit-mask-image: linear-gradient(transparent, #000 18px); mask-image: linear-gradient(transparent, #000 18px); }   /* 최근 동작(끝)이 보이도록 맨 아래로 내려 두고 위쪽을 흐린다 */
 .vz-trail-more { margin: 4px 0 0; padding: 2px 10px; border: 0; background: var(--soft-fill, var(--bg-soft)); color: var(--ink2); font: 600 11.5px var(--mono); cursor: pointer; }
 .vz-trail-more:hover { color: var(--ink); }
+/* 세션 머리줄의 일 기록 칩 (2026-10-11) — PRTS 링크는 청록, 내 정보는 보라 계열로 화면 칩과 구분 */
+.vz-tag.vz-ev.prts { color: #0b6e66; background: color-mix(in srgb, #2fbfa5 18%, transparent); border-color: transparent; font-weight: 700; }
+.vz-tag.vz-ev.prts.on { color: #fff; background: #1d8f7e; }
+.vz-tag.vz-ev.me { color: #6a4fb0; background: color-mix(in srgb, #8e6ad8 15%, transparent); border-color: transparent; }
+html.dark .vz-tag.vz-ev.prts { color: #6fe3cf; }
+html.dark .vz-tag.vz-ev.me { color: #c3aef5; }
