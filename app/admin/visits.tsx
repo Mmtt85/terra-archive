@@ -753,6 +753,9 @@ export function VisitsPanel() {
     try { localStorage.setItem("ta-admin-visit-liveonly", nv ? "1" : "0"); } catch { /* 무시 */ }
     return nv;
   });
+  // '조작 중만'이면 상위 N 과 무관하게 조작 중인 세션 전부 — 최근 세션을 넉넉히(500) 받아 그 안에서 거른다
+  // (사용자 지시 2026-10-11). 조작 중은 마지막 기록이 3분 안인 세션이라 최근 500 안에 다 든다
+  const fetchN = liveOnly ? Math.max(limit, 500) : limit;
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
     let alive = true;
@@ -761,13 +764,13 @@ export function VisitsPanel() {
     if (!silent) setLoadSess(true);
     inflight.current += 1;
     (rangeArgs
-      ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, ...kindArgs, p_src: srcFilter || null, p_limit: limit })
-      : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), ...kindArgs, p_src: srcFilter || null, p_limit: limit }))
+      ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, ...kindArgs, p_src: srcFilter || null, p_limit: fetchN })
+      : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), ...kindArgs, p_src: srcFilter || null, p_limit: fetchN }))
       .then((s) => { if (alive) setSessions(s); }).catch(() => { if (alive && !silent) setSessions(null); })
       .finally(() => { inflight.current -= 1; doneAt.current = Date.now(); if (alive && !silent) setLoadSess(false); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, human, srcFilter, limit, tick, range, slot]);
+  }, [days, human, srcFilter, fetchN, tick, range, slot]);
 
   // 세션 타임라인 '전체 보기' — 창을 열 때 상한(5,000)까지 따로 받는다
   const [allSessions, setAllSessions] = useState<SessRow[] | null>(null);
