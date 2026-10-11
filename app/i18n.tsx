@@ -765,6 +765,8 @@ const D: Record<string, Pair> = {
     "Open roster settings and tick {name}",
     "所持オペレーター設定を開いて{name}を有効にしてください"],
   "미보유": ["Not owned", "未所持"],
+  "획득": ["Obtain", "入手"],
+  "이 테마 데이터에서 찾지 못한 항목입니다.": ["This item was not found in the theme data.", "このテーマのデータに見つからない項目です。"],
   "탐험": ["Exploration", "探索"],
   "계절": ["Season", "季節"],
   "남은 {n}일": ["{n} days left", "残り{n}日"],

@@ -417,7 +417,7 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
 /** 이어하기 — 마지막 동기화 때 진행 중이던 통합전략·보안파견·생존연산 (사용자 요청 2026-10-11).
  *  카드는 콘텐츠마다 한 줄 칸만(편성이 늘면 카드가 길어지므로), 누르면 상세 모달. 게임 중 동기화는 클라를 튕기므로
  *  '멈춘 상태를 기록'하는 용도다. 통합전략 이름(층·엔딩·소장품·난이도)은 그 테마 데이터를 모달 열 때 받아 붙인다 */
-type RogueItem = { id: string; name: string; usage?: string | null; func?: string | null; iconId?: string };
+type RogueItem = { id: string; name: string; usage?: string | null; func?: string | null; desc?: string | null; obtain?: string | null; iconId?: string; cn?: string };
 type RogueDoc = { zones: { id: string; num: number; name: string }[]; endings: { id: string; name: string }[];
   relics: RogueItem[]; difficulties: { mode: string; grade: number; name: string }[];
   // 계정의 '소장품' 칸에는 분대·능동 도구·부품·사고 등도 같이 들어 있다 — 이름은 이 목록들에서도 찾는다 (2026-10-11 '키 이름으로 나온다')
@@ -443,7 +443,9 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
     <Card no="RESUME" title={t("이어하기")} aside={<small>{t("마지막 동기화 때 진행 중이던 콘텐츠")}</small>}>
       <div className="me-resume">
         {r && (
-          <button type="button" onClick={() => setOpen("rogue")}>
+          // 카드 바탕에 그 테마의 대표 그림을 은은하게 (사용자 지시 2026-10-11) — 통합전략 페이지 배경과 같은 kvN
+          <button type="button" className="has-bg" onClick={() => setOpen("rogue")}
+            style={r.theme ? { ["--bg" as string]: `url(${asset(`/rogue/kv${r.theme.split("_")[1]}.webp`)})` } : undefined}>
             <b>{t("통합전략")}</b><span>{topic}</span>
             <em>{rogueFloor(r) != null ? `${t("{n}층", { n: rogueFloor(r)! })} · ` : ""}{t("난이도 {n}", { n: r.grade })} · HP {r.hp}/{r.maxHp}</em>
           </button>
@@ -455,7 +457,8 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
           </button>
         )}
         {sb && (
-          <button type="button" onClick={() => setOpen("sandbox")}>
+          <button type="button" className="has-bg" onClick={() => setOpen("sandbox")}
+            style={{ ["--bg" as string]: `url(${asset("/sandbox/world/sandbox_1.webp")})` }}>
             <b>{t("생존연산")}</b><span>{t("사막 이야기")}</span>
             <em>{t("{n}일째", { n: sb.day })} · {t("행동력")} {sb.ap}/{sb.maxAp}</em>
           </button>
@@ -510,8 +513,8 @@ function ResumeSandbox({ sb, me, opById, onShowOperator, onClose }: {
     const rows = Object.entries(rec ?? {}).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
     if (!rows.length) return null;
     return (
-      <>
-        <h4>{title} <em>{rows.length}</em></h4>
+      <details className="me-resume-fold" open>
+        <summary>{title} <em>{rows.length}</em></summary>
         <ul className="me-resume-items">
           {rows.map(([id, n]) => (
             <li key={id} title={doc?.items[id]?.[1] ?? undefined}>
@@ -520,7 +523,7 @@ function ResumeSandbox({ sb, me, opById, onShowOperator, onClose }: {
             </li>
           ))}
         </ul>
-      </>
+      </details>
     );
   };
   const modeLabel = sb.challenge ? t("도전") : sb.explore ? t("탐험") : t("일반");
@@ -555,9 +558,9 @@ function ResumeSandbox({ sb, me, opById, onShowOperator, onClose }: {
           </>
         )}
         {squads.map((q, qi) => (
-          <div key={qi}>
-            <h4>{t("분대 {n}", { n: qi + 1 })} <em>{q.chars.length}</em></h4>
-            <div className="me-resume-troop">
+          <details key={qi} className="me-resume-fold" open>
+            <summary>{t("분대 {n}", { n: qi + 1 })} <em>{q.chars.length}</em></summary>
+            <div className="me-resume-troop sm">
               {q.chars.map((id, i) => (
                 <button key={i} type="button" onClick={() => onShowOperator?.(id)}>
                   <img src={asset(`/avatars/${id}.webp`)} alt="" loading="lazy" decoding="async" />
@@ -566,7 +569,7 @@ function ResumeSandbox({ sb, me, opById, onShowOperator, onClose }: {
               ))}
             </div>
             {q.tools.length > 0 && <p className="me-resume-tags">{q.tools.map((id, i) => <span key={i}>{nameOf(id)}</span>)}</p>}
-          </div>
+          </details>
         ))}
         {itemGrid(t("가방 재료"), bag?.material)}
         {itemGrid(t("만들어 둔 요리"), bag?.food)}
@@ -594,6 +597,7 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
   const zone = doc?.zones.find((z) => z.id === r.zoneId);
   const ending = r.toEnding ? doc?.endings.find((e) => e.id === r.toEnding) : null;
   const diff = doc?.difficulties.find((d) => d.grade === r.grade && (!r.mode || d.mode === r.mode)) ?? doc?.difficulties.find((d) => d.grade === r.grade);
+  const [pickRelic, setPickRelic] = useState<number | null>(null);
   const relicById = new Map<string, RogueItem>();
   if (doc) {
     for (const list of [doc.relics, doc.bands, doc.tools, doc.capsules, doc.exploreTools, doc.legacies, doc.buoys, doc.scraps, ...(doc.mechanics ?? []).map((m) => m.items)]) {
@@ -615,28 +619,55 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
           {r.popMax > 0 && <><dt>{t("인원")}</dt><dd>{r.popCost} / {r.popMax}</dd></>}
           <dt>{t("시작")}</dt><dd>{fmtWhen(r.start)}</dd>
         </dl>
-        <h4>{t("편성")} <em>{r.troop.length}</em></h4>
-        <div className="me-resume-troop">
+        {/* 편성·소장품은 접었다 펼 수 있게 — 몇십 개면 모달이 길어진다 (사용자 지시 2026-10-11). 위 요약은 늘 보인다 */}
+        <details className="me-resume-fold" open>
+        <summary>{t("편성")} <em>{r.troop.length}</em></summary>
+        <div className="me-resume-troop sm">
           {r.troop.map((c, i) => (
             <button key={i} type="button" onClick={() => onShowOperator?.(c.id)}>
               <img src={asset(`/avatars/${c.id}.webp`)} alt="" loading="lazy" decoding="async" />
               <b>{opById.get(c.id)?.name ?? c.id}</b>
-              <small>{t("정예화 {n}", { n: c.elite })} · Lv.{c.level}</small>
+              <small>E{c.elite} · Lv.{c.level}</small>
             </button>
           ))}
         </div>
-        <h4>{t("소장품")} <em>{r.relics.length}</em></h4>
-        <ul className="me-resume-relics">
+        </details>
+        {/* 소장품 — 아이콘 + 이름 격자(그림만으론 모른다), 누르면 상세 모달 (사용자 지시 2026-10-11) */}
+        <details className="me-resume-fold" open>
+        <summary>{t("소장품")} <em>{r.relics.length}</em></summary>
+        <ul className="me-resume-relic-grid">
           {r.relics.map((id, i) => {
             const rel = relicById.get(id);
             return (
-              <li key={i} title={rel?.usage ?? rel?.func ?? undefined}>
-                <img src={asset(`/rogue/relic/${rel?.iconId ?? id}.webp`)} alt="" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
-                <span><b>{rel?.name ?? id}</b>{(rel?.usage ?? rel?.func) && <small>{rel?.usage ?? rel?.func}</small>}</span>
+              <li key={i}>
+                <button type="button" title={rel?.usage ?? rel?.func ?? undefined} onClick={() => setPickRelic(i)}>
+                  <span className="ico"><img src={asset(`/rogue/relic/${rel?.iconId ?? id}.webp`)} alt="" loading="lazy" decoding="async"
+                    onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} /></span>
+                  <span className="nm">{rel?.name ?? id}</span>
+                </button>
               </li>
             );
           })}
         </ul>
+        </details>
+        {pickRelic != null && r.relics[pickRelic] && (() => {
+          const id = r.relics[pickRelic];
+          const rel = relicById.get(id);
+          return (
+            <ModalWindow label={rel?.name ?? id} className="operator-modal me-relic-modal" onClose={() => setPickRelic(null)}>
+              <div className="me-relic-detail">
+                <img src={asset(`/rogue/relic/${rel?.iconId ?? id}.webp`)} alt="" />
+                <div>
+                  <h3>{rel?.name ?? id}{rel?.cn && rel.cn !== rel.name && <small lang="zh">{rel.cn}</small>}</h3>
+                  {(rel?.usage ?? rel?.func) && <p className="use">{rel?.usage ?? rel?.func}</p>}
+                  {rel?.desc && <p className="desc">{rel.desc}</p>}
+                  {rel?.obtain && <p className="obt">{t("획득")}: {rel.obtain}</p>}
+                  {!rel && <p className="desc">{t("이 테마 데이터에서 찾지 못한 항목입니다.")}</p>}
+                </div>
+              </div>
+            </ModalWindow>
+          );
+        })()}
       </div>
     </ModalWindow>
   );

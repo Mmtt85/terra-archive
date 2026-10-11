@@ -29957,3 +29957,50 @@ html.dark .vz-tag.vz-ev.me { color: #c3aef5; }
 .me-resume-zones small { color: var(--muted); font-size: 11px; }
 .me-resume-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 0; }
 .me-resume-tags span { padding: 2px 8px; font-size: 11.5px; background: var(--soft-fill, transparent); }
+/* 이어하기 모달 — 편성·소장품 접기, 편성 작게, 소장품 아이콘 격자 (사용자 지시 2026-10-11 "몇십 개면 어떻게") */
+.me-resume-fold { margin-top: 16px; }
+.me-resume-fold > summary { cursor: pointer; font-size: 13px; font-weight: 700; margin-bottom: 8px; list-style: none; }
+.me-resume-fold > summary::-webkit-details-marker { display: none; }
+.me-resume-fold > summary::before { content: "▸"; display: inline-block; margin-right: 6px; color: var(--muted); transition: transform .2s; }
+.me-resume-fold[open] > summary::before { transform: rotate(90deg); }
+.me-resume-fold > summary em { font-style: normal; color: var(--muted); font-weight: 400; margin-left: 4px; }
+.me-resume-troop.sm { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; }
+.me-resume-troop.sm img { width: 44px; height: 44px; }
+.me-resume-troop.sm b { font-size: 10.5px; }
+.me-resume-troop.sm small { font-size: 9.5px; }
+.me-resume-relic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.me-resume-relic-grid button { display: grid; place-items: center; width: 100%; aspect-ratio: 1; padding: 4px; border: 0; cursor: pointer; background: var(--soft-fill, transparent); }
+.me-resume-relic-grid button.on, .me-resume-relic-grid button:hover { box-shadow: inset 0 -2px 0 var(--tab-line, var(--lime)); }
+.me-resume-relic-grid img { width: 100%; height: 100%; object-fit: contain; }
+.me-resume-relic-grid .noimg { font-size: 11px; color: var(--muted); }
+.me-resume-relic-pick { display: flex; gap: 10px; align-items: flex-start; margin-top: 8px; padding: 8px 10px; background: var(--soft-fill, transparent); }
+.me-resume-relic-pick img { flex: none; width: 44px; height: 44px; object-fit: contain; }
+.me-resume-relic-pick span { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+.me-resume-relic-pick small { color: var(--muted); line-height: 1.5; }
+/* 소장품 칸 크기 고정 — 그림 원래 비율이 제각각이라 몇 칸만 커졌다 */
+.me-resume-relic-grid { grid-template-columns: repeat(auto-fill, 52px); }
+.me-resume-relic-grid button { width: 52px; height: 52px; overflow: hidden; }
+.me-resume-relic-grid img { max-width: 100%; max-height: 100%; width: auto; height: auto; }
+.me-resume-troop.sm b { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+/* 이어하기 칸 바탕 그림 — 은은하게(오른쪽에서 왼쪽으로 사라지게), 글자는 그 위 */
+.me-resume > button.has-bg { position: relative; overflow: hidden; isolation: isolate; min-height: 76px; }
+.me-resume > button.has-bg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--bg) center / cover no-repeat;
+  opacity: .32; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 70%); mask-image: linear-gradient(90deg, transparent 0%, #000 70%); transition: opacity .3s; }
+.me-resume > button.has-bg:hover::before { opacity: .45; }
+html.dark .me-resume > button.has-bg::before { opacity: .26; }
+/* 소장품 격자 — 아이콘 + 이름 (2026-10-11 "그림만 보곤 모른다") · 상세는 모달 */
+.me-resume-relic-grid { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 5px; }
+.me-resume-relic-grid button { width: 100%; height: auto; aspect-ratio: auto; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; overflow: visible; color: inherit; font: inherit; }
+.me-resume-relic-grid .ico { display: grid; place-items: center; width: 44px; height: 44px; }
+.me-resume-relic-grid .ico img { max-width: 100%; max-height: 100%; }
+.me-resume-relic-grid .nm { font-size: 10.5px; line-height: 1.3; text-align: center; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.me-relic-modal { width: min(520px, calc(100vw - 32px)); }
+.me-relic-detail { display: flex; gap: 16px; padding: 8px 4px 12px; align-items: flex-start; }
+.me-relic-detail > img { flex: none; width: 96px; height: 96px; object-fit: contain; }
+.me-relic-detail h3 { margin: 0 0 8px; font-size: 17px; }
+.me-relic-detail h3 small { display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+.me-relic-detail .use { margin: 0 0 8px; font-size: 13.5px; line-height: 1.6; }
+.me-relic-detail .desc { margin: 0 0 8px; font-size: 12.5px; line-height: 1.6; color: var(--muted); white-space: pre-line; }
+.me-relic-detail .obt { margin: 0; font-size: 12px; color: var(--ink2); }
+.me-resume-relic-grid .ico { overflow: hidden; }
+.me-resume-relic-grid .ico img { width: 44px; height: 44px; object-fit: contain; }
