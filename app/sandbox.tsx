@@ -746,9 +746,9 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
     <section className="sb-guide" aria-labelledby="sb-title">
       <header className="sim-head">
         <span className="section-no">RECLAMATION ALGORITHM</span>
-        <h2 id="sb-title">{season === "v3" ? v3.cnName : v2.name}
+        <h1 id="sb-title">{season === "v3" ? v3.cnName : v2.name}
           <span className="sb-season-sub">{season === "v3" ? t("중국 서버 선행") : t("한국 서버 상설")}</span>
-        </h2>
+        </h1>
       </header>
       {season === "v2" ? (
         <>

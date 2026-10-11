@@ -152,6 +152,13 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel, target }: { resu
   };
   const lowOnly = result.ops.length === 0;
   const odds = opOdds(result);
+  // 칩 전체가 상세 열기 — 예전엔 24px 초상화만 눌렸다 (사용자 승인 2026-10-12 "공채 → 오퍼 상세 연결").
+  // ⚠ 여기서 연 모달은 주소 해시를 안 바꿔 방문 통계에 안 잡힌다 — 효과는 공채 뒤 동선으로만 어림한다
+  const opLinkProps = (op: RecruitOp) => onShowOperator ? {
+    role: "button", tabIndex: 0, title: t("{name} 상세 정보", { name: opLabel(op) }),
+    onClick: () => onShowOperator(op.id),
+    onKeyDown: (e: { key: string; preventDefault: () => void }) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onShowOperator(op.id); } },
+  } : {};
   return (
     <article className={`recruit-combo${result.floor >= 4 ? " prized" : ""}`} style={{ ["--rar" as string]: RARITY_COLORS[result.floor] }}>
       <header>
@@ -162,18 +169,18 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel, target }: { resu
       </header>
       <ul>
         {targetFirst(result.ops, target).map((op) => (
-          <li key={op.id} className={[op.pending ? "pending" : "", op.id === target ? "target" : ""].filter(Boolean).join(" ") || undefined} style={{ ["--rar" as string]: RARITY_COLORS[op.rarity] }}>
-            <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
-              title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
+          <li key={op.id} className={[op.pending ? "pending" : "", op.id === target ? "target" : "", onShowOperator ? "op-link" : ""].filter(Boolean).join(" ") || undefined} style={{ ["--rar" as string]: RARITY_COLORS[op.rarity] }}
+            {...opLinkProps(op)}>
+            <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" />
             <span>{opLabel(op)}{op.pending && <em className="pending-tag">{t("추가 예정")}</em>}{own(op.id)}</span>
             <em className="op-pct" title={t("이 조합을 골랐을 때 대략의 등장 확률 (9시간 기준)")}>{pctText(odds.get(op.id) ?? 0)}</em>
             <i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>
           </li>
         ))}
         {targetFirst(result.lowOps, target).map((op) => (
-          <li key={op.id} className={`low-time${op.id === target ? " target" : ""}`} style={{ ["--rar" as string]: RARITY_COLORS[op.rarity] }}>
-            <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
-              title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
+          <li key={op.id} className={`low-time${op.id === target ? " target" : ""}${onShowOperator ? " op-link" : ""}`} style={{ ["--rar" as string]: RARITY_COLORS[op.rarity] }}
+            {...opLinkProps(op)}>
+            <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" decoding="async" />
             <span>{opLabel(op)}<em className="time-req">{t(LOW_TIME_HINT[op.rarity])}</em>{own(op.id)}</span>
             <i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>
           </li>

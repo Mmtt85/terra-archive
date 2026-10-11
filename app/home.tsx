@@ -3592,7 +3592,7 @@ function OperatorFile({ operator, includeFuture, operators, onRelated }: { opera
             <div className="modal-title-main">
               <span className="modal-kicker keep">{operator.code}</span>
               <div className="modal-name-row">
-                <h2 id="operator-modal-title">{operator.name}</h2>
+                <h1 id="operator-modal-title">{operator.name}</h1>
               </div>
               <div className="modal-rarity">{"★".repeat(operator.rarity)} <span>{t("{n}성", { n: operator.rarity })}</span>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
               <div className="class-line">

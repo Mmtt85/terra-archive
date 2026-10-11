@@ -2546,7 +2546,7 @@ export default function RogueGuide({ initialTopic }: {
             <div className="rg-hero">
               <div className="rg-hero-text">
                 <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
-                <h2 id="rg-title">{seed.name}</h2>
+                <h1 id="rg-title">{seed.name}</h1>
                 <p className="rg-line">{seed.line}</p>
               </div>
             </div>
@@ -2720,7 +2720,7 @@ export default function RogueGuide({ initialTopic }: {
             </div>
             {/* 제목은 현재 테마 이름 — 테마 전환은 햄버거 '통합전략 가이드' 부메뉴/드롭다운 (사용자 확정 2026-07-18) */}
             <div className="rg-title-row">
-            <h2 id="rg-title">
+            <h1 id="rg-title">
                 <button type="button" ref={titleBtnRef} className="rg-title-btn" aria-haspopup="listbox" aria-expanded={topicMenu}
                   title={t("테마 변경")} onClick={toggleTopicMenu}
                   style={{ ["--rg-hue" as string]: TOPIC_HUE[topic] }}>
@@ -2728,7 +2728,7 @@ export default function RogueGuide({ initialTopic }: {
                   {/* 누르면 테마가 바뀐다는 걸 글로 알린다 — 화살표는 빼라 (사용자 지시 2026-10-10) */}
                   <span className="rg-title-hint" aria-hidden>{t("테마 변경")}</span>
                 </button>
-                {TOPICS.find((tp) => tp.id === topic)?.future && <em className="rg-title-future">{t("미래시")}</em>}{server === "cn" && data.cnName && <span className="rg-title-cn" lang="zh">{data.cnName}</span>}</h2>
+                {TOPICS.find((tp) => tp.id === topic)?.future && <em className="rg-title-future">{t("미래시")}</em>}{server === "cn" && data.cnName && <span className="rg-title-cn" lang="zh">{data.cnName}</span>}</h1>
             </div>
             {data.line && <p className="rg-line">{data.line}</p>}
           </div>

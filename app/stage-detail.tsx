@@ -278,7 +278,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
       <header className="st-head">
         <div className="st-head-main">
           <span className="st-code">{s.code}</span>
-          <h2>{s.name}</h2>
+          <h1>{s.name}</h1>
           <div className="st-badges">
             <span className="st-tag">{view.typeName}</span>
             {view.zone && view.zone !== view.typeName && <span className="st-tag">{view.zone}</span>}

@@ -2799,7 +2799,7 @@ html.dark .tags-track > span {
   letter-spacing: 1px;
   font: 700 11px var(--mono);
 }
-.modal-title-block h2 {
+.modal-title-block :is(h1, h2) {
   letter-spacing: -0.06em;
   margin: 2px 0 1px;
   font-size: clamp(18px, 2vw, 23px);
@@ -4865,7 +4865,7 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   .modal-title-block {
     padding: 8px 46px 8px 14px;
   }
-  .modal-title-block h2 {
+  .modal-title-block :is(h1, h2) {
     font-size: 20px;
   }
   .class-line {
@@ -14569,7 +14569,7 @@ html.rg-theme.rg6 .rg-kv-page {
   letter-spacing: 2px;
   color: var(--rggold);
 }
-.rg-head h2 {
+.rg-head :is(h1, h2) {
   margin: 8px 0 12px;
   font-size: 30px;
   letter-spacing: -0.5px;
@@ -14645,7 +14645,7 @@ html.rg-theme.rg6 .rg-kv-page {
   gap: 6px 16px;
   margin: 8px 0 12px;
 }
-.rg-title-row h2 {
+.rg-title-row :is(h1, h2) {
   margin: 0;
 }
 .rg-eyebrow-row {
@@ -20267,7 +20267,7 @@ main.site-main > .site-header {
   letter-spacing: 0.12em;
   color: var(--muted);
 }
-.en-head-main h2 {
+.en-head-main :is(h1, h2) {
   margin: 0;
   font-size: 22px;
   line-height: 1.25;
@@ -20583,7 +20583,7 @@ main.site-main > .site-header {
   letter-spacing: 0.1em;
   color: var(--muted);
 }
-.st-head-main h2 {
+.st-head-main :is(h1, h2) {
   margin: 0;
   font-size: 22px;
   line-height: 1.25;
@@ -21262,7 +21262,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
      ⚠ .tab-loading과 같은 규약이다 — 이유는 그쪽 주석 참조. */
   min-height: 100vh;
 }
-.sim-head h2 {
+.sim-head :is(h1, h2) {
   margin: 0;   /* 세로 여백은 .head-row 가 가진다 (2026-09-20) */
   font-size: 22px;
 }
@@ -25799,7 +25799,7 @@ html[lang="ja"] .vn-box {
 .ed-comments span { margin-right: 4px; font-weight: 700; color: var(--muted); }
 .ed-comments em { padding: 1px 8px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--bg-faint); font-style: normal; }
 /* 선수로 연 적 모달 — 제목 둘째 줄의 원본 이름 */
-.en-head h2 .ed-sub { display: block; margin-top: 2px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.en-head :is(h1, h2) .ed-sub { display: block; margin-top: 2px; font-size: 13px; font-weight: 500; color: var(--muted); }
 @media (max-width: 720px) {
   .ed-when { min-width: 0; }
   .ed-sort { margin-left: 0; }
@@ -28102,7 +28102,7 @@ html:not(.dark):not(.rg-theme) .ship-room:hover,
   letter-spacing: -0.025em;
   line-height: 1.3;
 }
-.modal-title-block h2,
+.modal-title-block :is(h1, h2),
 .room-modal .room-modal-head h2 {
   font-size: 24px;
   font-weight: 800;
@@ -28120,7 +28120,7 @@ html:not(.dark):not(.rg-theme) .ship-room:hover,
   .rh-title h2,
   .detail-section > h3,
   .detail-section > div > h3 { font-size: 18px; }
-  .modal-title-block h2,
+  .modal-title-block :is(h1, h2),
   .room-modal .room-modal-head h2 { font-size: 21px; }
 }
 /* 잠재능력 칸 머리(P2~P6) — 라이트에선 검은 띠 대신 밝은 판 + 진한 올리브 글자 ('흰검' 대비 줄이기 연장) */

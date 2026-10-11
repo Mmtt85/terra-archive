@@ -186,7 +186,7 @@ export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy, onOpenStage, 
         <Portrait enemy={enemy} size={132} src={portrait} />
         <div className="en-head-main">
           <span className="en-code">{enemy.idx ?? "—"}</span>
-          <h2>{title ?? enemy.name}</h2>
+          <h1>{title ?? enemy.name}</h1>
           <div className="en-badges">
             {enemy.rank && <span className={`en-rank r-${enemy.rank.toLowerCase()}`}>{t(RANK_KEY[enemy.rank] ?? enemy.rank)}</span>}
             {enemy.race.map((r) => <span className="en-tag" key={r}>{r}</span>)}
