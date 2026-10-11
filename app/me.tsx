@@ -494,6 +494,19 @@ type SbDoc = { v2: { items: Record<string, [string, string, number, string, stri
 const SB_DOCS: Record<string, () => Promise<{ default: unknown }>> = {
   ko: () => import("./data/sandbox.json"), en: () => import("./data/sandbox.en.json"), ja: () => import("./data/sandbox.ja.json"),
 };
+/** 이어하기 모달의 수치 칸 — 이름표 · 큰 숫자 · (최대값이 있으면) 막대 */
+function StatTile({ label, value, max, tone, extra }: { label: string; value: string; max?: number; tone?: string; extra?: string }) {
+  const n = Number(value);
+  return (
+    <div className={`me-rx-stat${tone ? ` ${tone}` : ""}`}>
+      <span className="lb">{label}</span>
+      <b>{value}{max ? <small> / {max}</small> : null}</b>
+      {max ? <i className="bar"><i style={{ width: `${Math.max(0, Math.min(100, (n / max) * 100))}%` }} /></i> : null}
+      {extra && <em>{extra}</em>}
+    </div>
+  );
+}
+
 function ResumeSandbox({ sb, me, opById, onShowOperator, onClose }: {
   sb: NonNullable<NonNullable<AccountProfile["progress"]>["sandbox"]>; me: MeData; opById: Map<string, MeOp>;
   onShowOperator?: (id: string) => void; onClose: () => void;
@@ -531,16 +544,22 @@ function ResumeSandbox({ sb, me, opById, onShowOperator, onClose }: {
   return (
     <ModalWindow label={`${t("생존연산")} · ${t("사막 이야기")}`} className="operator-modal me-resume-modal" onClose={onClose}>
       <div className="me-resume-body">
-        <h3>{t("사막 이야기")} · {modeLabel}{sb.rift ? ` · ${t("균열")}` : ""}</h3>
-        <dl className="me-resume-facts">
-          <dt>{t("날짜")}</dt><dd>{t("{n}일째", { n: sb.day })}{sb.maxDay ? ` / ${sb.maxDay}` : ""}</dd>
-          <dt>{t("행동력")}</dt><dd>{sb.ap} / {sb.maxAp}</dd>
-          {sb.season && <><dt>{t("계절")}</dt><dd>{t("남은 {n}일", { n: sb.season.remain })} / {sb.season.total}</dd></>}
-          {sb.baseLv != null && <><dt>{t("거점 레벨")}</dt><dd>{sb.baseLv}{sb.portable ? ` · ${t("휴대 거점")}` : ""}{sb.outpost ? ` · ${t("전초기지")}` : ""}</dd></>}
-          {sb.techUnlock != null && <><dt>{t("기술")}</dt><dd>{t("해금 {n}개", { n: sb.techUnlock })} · {t("기술 점수")} {sb.techToken}</dd></>}
-          {sb.drink != null && <><dt>{t("음료")}</dt><dd>{sb.drink}</dd></>}
-          {sb.best ? <><dt>{t("도전 최고 기록")}</dt><dd>{t("{n}일", { n: sb.best })}</dd></> : null}
-        </dl>
+        <header className="me-rx-hero" style={{ ["--bg" as string]: `url(${asset("/sandbox/world/sandbox_1.webp")})` }}>
+          <small>{t("생존연산")}</small>
+          <h3>{t("사막 이야기")}</h3>
+          <p className="loc"><b>{t("{n}일째", { n: sb.day })}</b>{sb.maxDay ? ` / ${sb.maxDay}` : ""}</p>
+          <p className="chips">
+            <span className="diff">{modeLabel}{sb.rift ? <em>{t("균열")}</em> : null}</span>
+            {sb.season && <span>{t("계절")} <b>{t("남은 {n}일", { n: sb.season.remain })}</b></span>}
+            {sb.best ? <span>{t("도전 최고 기록")} <b>{t("{n}일", { n: sb.best })}</b></span> : null}
+          </p>
+        </header>
+        <div className="me-rx-stats">
+          <StatTile label={t("행동력")} value={`${sb.ap}`} max={sb.maxAp} tone="ap" />
+          {sb.baseLv != null && <StatTile label={t("거점 레벨")} value={`${sb.baseLv}`} extra={[sb.portable ? t("휴대 거점") : "", sb.outpost ? t("전초기지") : ""].filter(Boolean).join(" · ") || undefined} />}
+          {sb.techUnlock != null && <StatTile label={t("기술")} value={`${sb.techUnlock}`} extra={`${t("기술 점수")} ${sb.techToken ?? 0}`} />}
+          {sb.drink != null && <StatTile label={t("음료")} value={`${sb.drink}`} />}
+        </div>
         {sb.zones && Object.keys(sb.zones).length > 0 && (
           <>
             <h4>{t("지역")}</h4>
@@ -607,18 +626,22 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
   return (
     <ModalWindow label={`${t("통합전략")} · ${topic}`} className="operator-modal me-resume-modal" onClose={onClose}>
       <div className="me-resume-body">
-        <h3>{topic}</h3>
-        <dl className="me-resume-facts">
-          <dt>{t("위치")}</dt><dd>{zone ? `${t("{n}층", { n: zone.num })} · ${zone.name}` : rogueFloor(r) != null ? t("{n}층", { n: rogueFloor(r)! }) : t("다시 동기화하면 보입니다")}</dd>
-          {/* 난이도는 숫자가 먼저 (사용자 지시 2026-10-11) — 이름은 곁들임 */}
-          <dt>{t("난이도")}</dt><dd><b>{r.grade}</b>{diff ? ` · ${diff.name}` : ""}</dd>
-          <dt>{t("목표 엔딩")}</dt><dd>{ending ? ending.name : r.toEnding ? "—" : t("정하지 않음")}</dd>
-          <dt>HP</dt><dd>{r.hp} / {r.maxHp}{r.shield ? ` · ${t("실드")} ${r.shield}` : ""}</dd>
-          <dt>{t("오리지늄각뿔")}</dt><dd>{r.gold}</dd>
-          <dt>{t("분대 레벨")}</dt><dd>{r.level}</dd>
-          {r.popMax > 0 && <><dt>{t("인원")}</dt><dd>{r.popCost} / {r.popMax}</dd></>}
-          <dt>{t("시작")}</dt><dd>{fmtWhen(r.start)}</dd>
-        </dl>
+        {/* 머리 — 테마 그림 위에 이름·위치·난이도·목표 엔딩, 아래 수치는 칸마다 큰 숫자 + 막대 (사용자 지시 2026-10-11 "못생겼다, 예쁘게") */}
+        <header className="me-rx-hero" style={r.theme ? { ["--bg" as string]: `url(${asset(`/rogue/kv${r.theme.split("_")[1]}.webp`)})` } : undefined}>
+          <small>{t("통합전략")} · {t("시작")} {fmtWhen(r.start)}</small>
+          <h3>{topic}</h3>
+          <p className="loc">{zone ? <><b>{t("{n}층", { n: zone.num })}</b> {zone.name}</> : rogueFloor(r) != null ? <b>{t("{n}층", { n: rogueFloor(r)! })}</b> : t("다시 동기화하면 보입니다")}</p>
+          <p className="chips">
+            <span className="diff">{t("난이도")} <b>{r.grade}</b>{diff ? <em>{diff.name}</em> : null}</span>
+            <span>{t("목표 엔딩")} <b>{ending ? ending.name : r.toEnding ? "—" : t("정하지 않음")}</b></span>
+          </p>
+        </header>
+        <div className="me-rx-stats">
+          <StatTile label="HP" value={`${r.hp}`} max={r.maxHp} tone="hp" extra={r.shield ? `${t("실드")} +${r.shield}` : undefined} />
+          <StatTile label={t("오리지늄각뿔")} value={`${r.gold}`} tone="gold" />
+          <StatTile label={t("분대 레벨")} value={`${r.level}`} />
+          {r.popMax > 0 && <StatTile label={t("인원")} value={`${r.popCost}`} max={r.popMax} />}
+        </div>
         {/* 편성·소장품은 접었다 펼 수 있게 — 몇십 개면 모달이 길어진다 (사용자 지시 2026-10-11). 위 요약은 늘 보인다 */}
         <details className="me-resume-fold" open>
         <summary>{t("편성")} <em>{r.troop.length}</em></summary>

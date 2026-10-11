@@ -30004,3 +30004,28 @@ html.dark .me-resume > button.has-bg::before { opacity: .26; }
 .me-relic-detail .obt { margin: 0; font-size: 12px; color: var(--ink2); }
 .me-resume-relic-grid .ico { overflow: hidden; }
 .me-resume-relic-grid .ico img { width: 44px; height: 44px; object-fit: contain; }
+
+/* 이어하기 모달 머리·수치 칸 (2026-10-11 "못생겼다, 예쁘게") — 테마 그림 위 제목 블록 + 큰 숫자 칸 */
+.me-rx-hero { position: relative; isolation: isolate; overflow: hidden; margin: -4px -4px 14px; padding: 18px 20px 16px; color: #fff; background: #1b1f22; }
+.me-rx-hero::before { content: ""; position: absolute; inset: 0; z-index: -2; background: var(--bg) center 30% / cover no-repeat; opacity: .55; }
+.me-rx-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #0b0e10e6 0%, #0b0e10b0 45%, #0b0e1030 100%); }
+.me-rx-hero small { font: 600 11px var(--mono); letter-spacing: .4px; opacity: .75; }
+.me-rx-hero h3 { margin: 4px 0 6px; font-size: 22px; color: #fff; }
+.me-rx-hero .loc { margin: 0 0 10px; font-size: 14px; opacity: .92; }
+.me-rx-hero .loc b { font-size: 17px; margin-right: 6px; }
+.me-rx-hero .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.me-rx-hero .chips span { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; font-size: 12px; background: #ffffff1f; backdrop-filter: blur(4px); }
+.me-rx-hero .chips b { font-size: 13px; }
+.me-rx-hero .chips .diff b { font: 800 16px var(--mono); color: #ffd36b; }
+.me-rx-hero .chips em { font-style: normal; opacity: .85; }
+.me-rx-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 4px; }
+.me-rx-stat { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; background: var(--soft-fill, color-mix(in srgb, var(--ink) 5%, var(--paper))); }
+.me-rx-stat .lb { font-size: 11px; color: var(--muted); }
+.me-rx-stat > b { font: 800 22px/1.1 var(--mono); }
+.me-rx-stat > b small { font-size: 13px; font-weight: 600; color: var(--muted); }
+.me-rx-stat em { font-style: normal; font-size: 11px; color: var(--ink2); }
+.me-rx-stat .bar { display: block; height: 4px; background: color-mix(in srgb, var(--ink) 12%, transparent); }
+.me-rx-stat .bar > i { display: block; height: 100%; background: var(--lime-ink, #6a8f1f); }
+.me-rx-stat.hp .bar > i { background: #d9534f; }
+.me-rx-stat.ap .bar > i { background: #2f9bd6; }
+.me-rx-stat.gold > b { color: #c08a1e; }
