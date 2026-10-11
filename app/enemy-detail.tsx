@@ -12,6 +12,7 @@
 
 import { useEffect, useState } from "react";
 import { useI18n } from "./i18n";
+import { enemySummary, DATA_DATE, dataDateLabel } from "./op-summary";
 import { enemyImg, enemyImgBase, enemyPath, enemyListPath, stageListPath } from "./dex-paths";
 
 // 다른 모듈이 종전처럼 여기서 가져다 쓰던 것들 — 정본은 app/dex-paths.ts다
@@ -271,6 +272,12 @@ export function EnemyPage({ enemy, stagesDoc, onBack }: {
           if (!onBack || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
           e.preventDefault(); onBack();
         }}>← {t("적 목록으로")}</a>
+      {/* 요약 한 단락 + 데이터 확인일 — AI 검색이 인용할 사실 문장 (2026-10-12). 페이지에만 (app/op-summary.ts) */}
+      <p className="op-summary">
+        {enemySummary(locale, enemy, enemy.rank ? t(RANK_KEY[enemy.rank] ?? enemy.rank) : "",
+          (stagesDoc?.byEnemy[enemy.id] ?? []).map((r) => stagesDoc!.stages[r[0]]?.[0]).filter((c): c is string => !!c))}
+        {DATA_DATE && <span className="op-summary-date"> {t("게임 데이터 확인 {date}", { date: dataDateLabel(locale) })}</span>}
+      </p>
       <section className="operator-modal operator-page en-page" aria-label={enemy.name}>
         <EnemyFile enemy={enemy} stagesDoc={stagesDoc} nameOf={(id) => links?.get(id)?.name} />
       </section>

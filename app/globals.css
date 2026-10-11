@@ -2545,6 +2545,9 @@ html.dark .tags-track > span {
   align-items: flex-start;
   padding: 20px 24px 40px;
 }
+/* 요약 한 단락 (2026-10-12 AI 검색) — 상세 창 위, 옅게. 창과 같은 폭에서 줄바꿈 */
+.op-summary { align-self: center; width: min(960px, 100%); margin: 0; font-size: 12.5px; line-height: 1.7; color: var(--muted); }   /* 아래 창(.operator-modal)과 같은 폭·같은 왼쪽 선 */
+.op-summary-date { white-space: nowrap; color: var(--ink3); }
 .operator-page {
   --modal-pad: 0px;
   margin: 0 auto;

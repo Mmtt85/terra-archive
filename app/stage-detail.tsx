@@ -8,6 +8,7 @@
 
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
+import { stageSummary, DATA_DATE, dataDateLabel } from "./op-summary";
 import { asset } from "./assets";
 import { enemyPath, enemyImg, enemyImgBase, itemDexPath, stageMap, stageMapOf, stagePath, stageListPath } from "./dex-paths";
 import { ModalWindow } from "./modal-window";
@@ -441,6 +442,11 @@ export function StagePage({ view, onBack }: { view: StageView; onBack?: () => vo
           if (!onBack || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
           e.preventDefault(); onBack();
         }}>← {t("작전 목록으로")}</a>
+      {/* 요약 한 단락 + 데이터 확인일 — AI 검색이 인용할 사실 문장 (2026-10-12). 페이지에만 (app/op-summary.ts) */}
+      <p className="op-summary">
+        {stageSummary(locale, view)}
+        {DATA_DATE && <span className="op-summary-date"> {t("게임 데이터 확인 {date}", { date: dataDateLabel(locale) })}</span>}
+      </p>
       <section className="operator-modal operator-page st-page" aria-label={`${view.stage.code} ${view.stage.name}`}>
         <StageFile view={view} onOpenEnemy={openEnemy} />
       </section>

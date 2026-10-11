@@ -95,6 +95,7 @@ import { ChibiChatPanel, chibiChatStatus, type ChibiActionRequest, type ChibiCha
 // 공용 창형 모달 — 이동·리사이즈·고정·z순서 (2026-08-03)
 import { ModalWindow } from "./modal-window";
 import { ZoomWindow } from "./zoom-window";
+import { opSummary, DATA_DATE, dataDateLabel } from "./op-summary";
 import {} from "./hash-modal";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
@@ -3769,7 +3770,7 @@ function OperatorPage({ operator, includeFuture, listHref, onBack, operators, on
   operator: Operator; includeFuture?: boolean;
   listHref: string; onBack: () => void; operators?: Operator[]; onRelated?: (op: Operator) => void;
 }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   return (
     <div className="operator-page-wrap">
       <a className="story-back" href={listHref}
@@ -3777,6 +3778,12 @@ function OperatorPage({ operator, includeFuture, listHref, onBack, operators, on
           if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
           e.preventDefault(); onBack();
         }}>← {t("오퍼 목록으로")}</a>
+      {/* 요약 한 단락 + 데이터 확인일 — AI 검색이 인용할 사실 문장 (사용자 승인 2026-10-12). 페이지에만, 목록의 모달엔 없다.
+          같은 문장이 구조화 데이터(app/seo-operator.ts abstract)에도 들어간다 */}
+      <p className="op-summary">
+        {opSummary(locale, operator)}
+        {DATA_DATE && <span className="op-summary-date"> {t("게임 데이터 확인 {date}", { date: dataDateLabel(locale) })}</span>}
+      </p>
       <section className="operator-modal operator-page" aria-label={`${operator.name} · ${operator.code}`}
         style={{ "--accent": accentOf(operator) } as React.CSSProperties}>
         <OperatorFile operator={operator} includeFuture={includeFuture} operators={operators} onRelated={onRelated} />

@@ -1336,7 +1336,8 @@ export function VisitsPanel() {
           <Head title="화면 순위" sub={`${data.pages.length}개 화면`} {...top("pages", "화면 순위")} />
           {pageTable(tops.pages)}
 
-          {/* PRTS 링크(게임 연결) 사용 기록 (사용자 요청 2026-10-11) — 연결·해제 이벤트. 2026-10-11 전에는 기록하지 않았다 */}
+          {/* PRTS 링크(게임 연결) 사용 기록 (사용자 요청 2026-10-11) — 연결·해제 이벤트. 2026-10-11 전에는 기록하지 않았다.
+              목록은 최신 10줄만 (사용자 지시 2026-10-12 "세로로 너무 길다") */}
           {data.prts && (
             <>
               <Head title="PRTS 링크" sub={`연결 ${num(data.prts.n)}회 · ${num(data.prts.people)}명 · 연결 시간 합 ${fmtDur(data.prts.ms)}${data.prts.ended ? ` (해제 ${num(data.prts.ended)}회 평균 ${fmtDur(data.prts.ms / data.prts.ended)})` : ""}`} />
@@ -1348,7 +1349,7 @@ export function VisitsPanel() {
                   </table></div>
                   <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
                     <thead><tr><th>연결</th><th>해제</th><th>어디서</th><th>연결 시간</th><th>방문자</th><th>유입</th></tr></thead>
-                    <tbody>{prtsPairs(data.prts.recent).slice(0, 50).map((r, i) => (
+                    <tbody>{prtsPairs(data.prts.recent).slice(0, 10).map((r, i) => (
                       <tr key={i}>
                         <td>{r.start ? whenShort(r.start) : "—"}</td>
                         <td>{r.end ? whenShort(r.end) : r.dangling ? <span className="vz-note" title="다음 연결 전에 해제 기록이 오지 않음 — 탭을 닫았거나 기록 전에 끊겼다">기록 없음</span> : <b>연결 중</b>}</td>
@@ -1478,7 +1479,7 @@ function PrtsScans({ from, to, tick }: { from: string; to: string; tick: number 
           </div>
           <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
             <thead><tr><th>시각</th><th>결과</th><th>구역</th><th>이동 대상 / 상태줄</th><th>걸린 시간</th><th>화면</th><th>표시</th><th>방문자</th></tr></thead>
-            <tbody>{d.recent.slice(0, 80).map((r, i) => (
+            <tbody>{d.recent.slice(0, 10).map((r, i) => (
               <tr key={i}>
                 <td>{whenShort(r.at)}</td>
                 <td>{RESULT_KO[r.result ?? ""] ?? r.result ?? "—"}{r.cached ? <span className="vz-note"> · 캐시</span> : null}</td>

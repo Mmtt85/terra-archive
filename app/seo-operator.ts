@@ -19,6 +19,7 @@ type OpMeta = {
   position: string; faction?: string; factions?: string[]; trait?: string; unreleased?: boolean; image?: string;
 };
 
+import { opSummary, DATA_DATE, type SummaryOp } from "./op-summary";
 const LOCALE_BASE: Record<SeoLocale, string> = { ko: "", en: "/en", ja: "/ja" };
 const ROSTER: Record<SeoLocale, OpMeta[]> = {
   ko: operatorsKo as unknown as OpMeta[],
@@ -116,6 +117,9 @@ export function operatorJsonLd(locale: SeoLocale, id: string) {
         "@type": "Article",
         headline: TITLE[locale](name).split(" | ")[0],
         description: descOf(locale, id),
+        // 요약 한 단락 — 상세 페이지 맨 위에 보이는 문장과 같다 (app/op-summary.ts, 2026-10-12 AI 검색)
+        ...(op ? { abstract: opSummary(locale, op as unknown as SummaryOp) } : {}),
+        ...(DATA_DATE ? { dateModified: DATA_DATE } : {}),
         inLanguage: locale,
         url: urlOf(locale, id),
         mainEntityOfPage: urlOf(locale, id),

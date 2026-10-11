@@ -1,0 +1,38 @@
+# Terra Archive (테라 아카이브)
+
+> Terra Archive is a free, independent fan site for the mobile game Arknights (Korean: 명일방주, often shortened to 명방; Japanese: アークナイツ). It turns the game's own data into searchable references and tools: an operator encyclopedia, a base (RIIC) auto-planner, a public recruitment tag calculator, Integrated Strategies (roguelike, 록라) guides, material farming tables and AI-written story summaries. Data is pulled directly from the game's distribution servers and refreshed around every in-game update, so pages follow the current Korean (KR) server, with China-server (CN) content marked as future/unreleased.
+
+Languages: Korean is the default (`/`), English under `/en`, Japanese under `/ja`. Every page links its other-language versions with hreflang.
+Not affiliated with Hypergryph or Yostar. Game names and artwork belong to their owners.
+
+## Tools
+
+- [Base Auto-Planner (인프라 자동편성기)](https://terra-archive.net/infra): enter the operators you own and it assigns factory, trading post, power plant and other RIIC rooms automatically, including synergy teams.
+- [Public Recruitment Calculator (공채 계산기)](https://terra-archive.net/recruit): pick recruitment tags and see which combinations guarantee 4★/5★/6★ operators.
+- [Material Farming Table (재료 파밍 효율표)](https://terra-archive.net/farm): best stage and expected sanity per material, from Penguin Statistics drop rates.
+- [Upgrade Cost Calculator (육성 비용 계산기)](https://terra-archive.net/upgrade): LMD, EXP and materials needed for levels, promotions, skills, masteries and modules.
+- [Stage Simulator (작전 시뮬레이터)](https://terra-archive.net/sim): replays when and where each enemy spawns in a stage.
+- [My Account (내 정보)](https://terra-archive.net/me): log in with a Yostar account to see your roster statistics and depot.
+
+## Encyclopedias
+
+- [Operators (오퍼레이터 백과사전)](https://terra-archive.net/operators): every released operator with stats, skills by level, talents, potentials, modules, base skills, skins, profile and voice lines. Each operator has its own page at `/operators/<id>` that starts with a one-paragraph summary.
+- [Enemies (적 도감)](https://terra-archive.net/enemies): 1,500+ enemies with stats, abilities, status resistances and the stages they appear in.
+- [Stages (작전 도감)](https://terra-archive.net/stages): permanent stages with terrain maps, sanity cost, enemies and drops.
+- [Items (아이템 도감)](https://terra-archive.net/items) and [Events (이벤트 가이드)](https://terra-archive.net/events).
+- [Gallery (갤러리)](https://terra-archive.net/gallery): story CGs, character sprites and operator artwork.
+
+## Game-mode guides
+
+- Integrated Strategies (통합전략, roguelike): [Phantom & Crimson Solitaire](https://terra-archive.net/rogue/is1), [Mizuki & Caerula Arbor](https://terra-archive.net/rogue/is2), [Expeditioner's Jǫklumarkar](https://terra-archive.net/rogue/is3), [Sarkaz's Furnaceside Fables](https://terra-archive.net/rogue/is4), [Sui's Garden of Grotesqueries](https://terra-archive.net/rogue/is5), [Blackflow Forest of the Sunken](https://terra-archive.net/rogue/is6) — floor nodes, enemies per difficulty, relics, endings.
+- [Reclamation Algorithm (생존연산)](https://terra-archive.net/ra): recipes, crafting, areas and weather, encounter choices.
+- [Stronghold Protocol (위수 협의, auto chess)](https://terra-archive.net/autochess): alliances, units, items and strategies per season.
+
+## Stories
+
+- [AI Story Summaries (AI 스토리 요약)](https://terra-archive.net/stories): event and main stories read in full by AI and summarized with cutscenes in about ten minutes of reading. Feed: https://terra-archive.net/feed.xml
+
+## Optional
+
+- [About / feature guide](https://terra-archive.net/about)
+- [Sitemap](https://terra-archive.net/sitemap.xml)

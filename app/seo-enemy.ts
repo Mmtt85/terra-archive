@@ -20,6 +20,7 @@ import stagesJa from "./data/enemy-stages.ja.json";
 
 type SeoLocale = "ko" | "en" | "ja";
 
+import { enemySummary, DATA_DATE } from "./op-summary";
 const LOCALE_BASE: Record<SeoLocale, string> = { ko: "", en: "/en", ja: "/ja" };
 const ROSTER: Record<SeoLocale, Enemy[]> = {
   ko: enemiesKo as unknown as Enemy[],
@@ -160,6 +161,10 @@ export function enemyJsonLd(locale: SeoLocale, id: string) {
         "@type": "Article",
         headline: TITLE[locale](name).split(" | ")[0],
         description: descOf(locale, id),
+        // 요약 한 단락 — 상세 페이지 맨 위에 보이는 문장과 같다 (app/op-summary.ts, 2026-10-12 AI 검색)
+        ...(e ? { abstract: enemySummary(locale, e, RANK_WORD[locale][e.rank ?? ""] ?? "",
+          (STAGES[locale].byEnemy[id] ?? []).map((r) => STAGES[locale].stages[r[0]]?.[0]).filter((c): c is string => !!c)) } : {}),
+        ...(DATA_DATE ? { dateModified: DATA_DATE } : {}),
         inLanguage: locale,
         url: urlOf(locale, id),
         mainEntityOfPage: urlOf(locale, id),

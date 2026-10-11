@@ -24,6 +24,7 @@ import enemyStats from "./data/enemy-stats.json";
 
 type SeoLocale = "ko" | "en" | "ja";
 
+import { stageSummary, DATA_DATE } from "./op-summary";
 const LOCALE_BASE: Record<SeoLocale, string> = { ko: "", en: "/en", ja: "/ja" };
 const DOC: Record<SeoLocale, StageDoc> = {
   ko: stagesKo as unknown as StageDoc,
@@ -133,6 +134,9 @@ export function stageJsonLd(locale: SeoLocale, id: string) {
         "@type": "Article",
         headline: TITLE[locale](code, name).split(" | ")[0],
         description: descOf(locale, id),
+        // 요약 한 단락 — 상세 페이지 맨 위에 보이는 문장과 같다 (app/op-summary.ts, 2026-10-12 AI 검색)
+        ...(v ? { abstract: stageSummary(locale, v) } : {}),
+        ...(DATA_DATE ? { dateModified: DATA_DATE } : {}),
         inLanguage: locale,
         url: urlOf(locale, cid),
         mainEntityOfPage: urlOf(locale, cid),
