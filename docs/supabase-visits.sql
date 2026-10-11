@@ -92,7 +92,8 @@ create index if not exists visit_event_at_idx on public.visit_event (at desc);
 alter table public.visit_event add column if not exists detail text check (char_length(detail) <= 40);
 alter table public.visit_event add column if not exists dur_ms int check (dur_ms between 0 and 86400000);
 alter table public.visit_event drop constraint if exists visit_event_kind_check;
-alter table public.visit_event add constraint visit_event_kind_check check (kind in ('me_login', 'me_sync', 'prts_start', 'prts_end'));
+-- leave(2026-10-11) = 탭을 닫거나 페이지를 떠날 때 — 뒤에 같은 세션의 화면 기록이 이어지면 사이트 안 이동이라 무시(어드민 '조작 중' 판정)
+alter table public.visit_event add constraint visit_event_kind_check check (kind in ('me_login', 'me_sync', 'prts_start', 'prts_end', 'leave'));
 
 -- ── 일별 집계 (영구 보관) ─────────────────────────────────────────────────────
 

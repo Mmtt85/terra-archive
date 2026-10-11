@@ -174,7 +174,7 @@ function sendSession(locale: string): void {
 
 /** 일이 있었다고 한 줄 남긴다 — 지금은 '내 정보' 로그인·다시 동기화 (사용자 요청 2026-10-05 "누가, 몇 번 했는지").
  *  누가 = 방문 기록과 같은 익명 방문자 id. 닉네임·계정 정보는 보내지 않는다. */
-export function noteVisitEvent(kind: "me_login" | "me_sync" | "prts_start" | "prts_end", server?: string, extra?: { detail?: string; dur?: number }): void {
+export function noteVisitEvent(kind: "me_login" | "me_sync" | "prts_start" | "prts_end" | "leave", server?: string, extra?: { detail?: string; dur?: number }): void {
   if (!started) return;
   let visitor = "";
   try { visitor = localStorage.getItem(VISITOR_KEY) ?? ""; } catch { /* 프라이빗 모드 */ }
@@ -272,7 +272,9 @@ function tick(): void {
   if (held && now - lastHoldFlush >= 60_000) { lastHoldFlush = now; view.touched = true; flush(); }
   // 열려 있는 탭은 1분마다 그사이 몫을 보낸다 — 떠날 때만 보내면 지금 보고 있는 화면이 기록에 없어 어드민 세션
   // 타임라인이 앞 화면 뒤에 '이탈'을 찍었다 (사용자 지시 2026-10-10 "이탈 안 했을 때는 조작 중으로")
-  else if (document.visibilityState === "visible" && now - lastBeat >= BEAT_MS) { lastBeat = now; flush(); }
+  // ⚠ '보이기만' 하면 보내던 것을 **최근 입력이 있을 때만**으로 (2026-10-11) — 창 뒤에 깔린 채 켜 둔 탭까지 1분마다 보내
+  //   어드민 '조작 중'이 2~5개에서 10~20개로 부풀었다(사용자 지적 "나간 걸 검출 못 한다"). 손을 떼면 3분 안에 '이탈'로 바뀐다
+  else if (document.visibilityState === "visible" && now - lastInput < IDLE_MS && now - lastBeat >= BEAT_MS) { lastBeat = now; flush(); }
 }
 
 function onInput(): void {
@@ -325,6 +327,9 @@ export function startVisitTrack(locale: string): void {
   });
   addEventListener("pagehide", flush);
   addEventListener("pagehide", notePrtsEnd);
+  // 떠남 표시 — 탭을 닫으면 마지막 화면 기록이 그 순간에 찍혀 어드민 '조작 중'이 몇 분 남았다 (사용자 지적 2026-10-11).
+  // 사이트 안 이동(새 문서)도 pagehide 가 나지만, 뒤이어 새 화면 기록이 오므로 어드민이 그걸 보고 무시한다
+  addEventListener("pagehide", () => noteVisitEvent("leave"));
   // 뒤로가기 캐시(bfcache)에서 되살아난 문서 — 그사이 같은 탭의 다른 문서가 순번을 올렸을 수 있다
   addEventListener("pageshow", (e) => {
     if (!(e as PageTransitionEvent).persisted) return;

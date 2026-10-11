@@ -1164,6 +1164,9 @@ CRUD가 늘며 위험해진 /admin을 본사이트에서 떼어냈다. **비밀�
   - ⚠ Access는 **커스텀 도메인에만** 걸린다 — Pages 프로젝트 기본 주소
     (`terra-archive-admin.pages.dev`)는 덮이지 않는다. `/api/*` 라우트가 안 걸려 데이터는
     못 보지만 UI 껍데기는 열리므로, Access 앱의 도메인 목록에 함께 넣어 두는 게 깔끔하다.
+  **빌드도 분리 (2026-10-11 사용자 지시)**: 관리자는 `admin-app/`(단독 진입점, app/admin/page.tsx 를 그대로 띄움)을
+  `vite.admin.config.ts` 로 따로 빌드한다(→ `dist-admin/`, 몇 초). 본사이트 빌드(프리렌더 8,600장)를 타지 않는다.
+  로컬 개발은 종전대로 dev 서버의 localhost:3000/admin.
   **배포는 본사이트와 완전히 분리 (2026-07-28 사용자 확정 — 한때 deploy.sh 끝에서 함께
   돌렸으나 되돌림)**: `bash scripts/deploy-admin.sh`는 스스로 빌드하는 단독 명령이고
   (방금 빌드했으면 `SKIP_BUILD=1`), **관리자 UI를 고쳤을 때만** 돌린다. 데이터 갱신·본사이트

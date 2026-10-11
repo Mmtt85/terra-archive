@@ -564,14 +564,18 @@ const kstToday = () => new Date(Date.now() + 9 * 3600_000).toISOString().slice(0
 const nextDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86400_000).toISOString().slice(0, 10);
 const prevDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) - 86400_000).toISOString().slice(0, 10);
 
-/** 아직 안 나간 세션 — 열린 탭은 1분마다 기록을 보내므로(visit-track.ts BEAT_MS) 마지막 수신이 3분 안이고 마지막 화면에서
+/** 아직 안 나간 세션 — 열린 탭은 1분마다 기록을 보내므로(visit-track.ts BEAT_MS) 마지막 수신이 2분 안이고 마지막 화면에서
  *  바깥 링크로 나가지 않았으면 '조작 중'. DB 함수가 옛판이라 last_at 이 없으면 시작 시각 + 마지막 화면의 시작·보인 시간으로 어림 */
 function sessLive(s: SessRow): boolean {
   const last = s.views[s.views.length - 1];
   if (!last || last.out) return false;
   const start = Date.parse(s.at);
   const lastAt = s.last_at ? Date.parse(s.last_at) : start + (last.t0 ?? 0) * 1000 + last.vis;
-  return Date.now() - lastAt < 3 * 60_000;
+  // 떠남(leave) 기록이 마지막 화면 기록과 같은 순간(±5초) 이후면 탭을 닫은 것 — 바로 '이탈'.
+  // 그 뒤에 화면 기록이 더 왔으면 사이트 안 이동이었으니 무시 (2026-10-11 "시크릿 창을 껐는데 1분 넘게 살아 있다")
+  const leftAt = Math.max(0, ...(s.events ?? []).filter((e) => e.kind === "leave").map((e) => Date.parse(e.at)));
+  if (leftAt && leftAt >= lastAt - 5000) return false;
+  return Date.now() - lastAt < 2 * 60_000;   // 1분 전송(입력이 있을 때만) 한 번 놓친 정도까지 — 3분이면 닫은 탭이 오래 남았다 (2026-10-11)
 }
 
 /** 세션 머리줄에 붙일 일 기록 칩 — PRTS 는 연결·해제를 한 칸으로 묶는다(해제가 없으면 '연결 중') */
@@ -579,13 +583,19 @@ function sessEvents(s: SessRow): { label: string; title: string; cls: string }[]
   const out: { label: string; title: string; cls: string }[] = [];
   const hm = (iso: string) => new Date(iso).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
   let open: { at: string; detail: string | null } | null = null;
+  const me: Record<string, { label: string; title: string; cls: string; n: number } | undefined> = {};
   for (const e of s.events ?? []) {
     if (e.kind === "prts_start") open = { at: e.at, detail: e.detail };
     else if (e.kind === "prts_end") {
       out.push({ label: `PRTS ${e.detail ?? ""} ${fmtDur(e.dur ?? 0)}`.replace(/\s+/g, " "), title: `PRTS 링크 ${open ? hm(open.at) : "?"} ~ ${hm(e.at)} 연결`, cls: "prts" });
       open = null;
     } else if (e.kind === "me_login" || e.kind === "me_sync") {
-      out.push({ label: e.kind === "me_login" ? "내 정보 로그인" : "내 정보 동기화", title: `${hm(e.at)}${e.server ? ` · ${e.server}` : ""}`, cls: "me" });
+      // 같은 종류는 칩 하나로 합치고 횟수만 (사용자 지시 2026-10-11 "로그인 두 번이면 뱃지 두 개 → 하나로")
+      const label = e.kind === "me_login" ? "내 정보 로그인" : "내 정보 동기화";
+      const at = `${hm(e.at)}${e.server ? ` · ${e.server}` : ""}`;
+      const prev = me[e.kind];
+      if (prev) { prev.n += 1; prev.title += `, ${at}`; prev.label = `${label} ×${prev.n}`; }
+      else { me[e.kind] = { label, title: at, cls: "me", n: 1 }; out.push(me[e.kind]!); }
     }
   }
   if (open) out.push({ label: `PRTS ${open.detail ?? ""} 연결 중`.replace(/\s+/g, " "), title: `PRTS 링크 ${hm(open.at)}부터 연결 중`, cls: "prts on" });
@@ -629,7 +639,7 @@ function SessionLine({ s }: { s: SessRow }) {
   const last = s.views[s.views.length - 1];
   // 세션 합계 — 화면마다 찍힌 시간(조작, 없으면 보인 시간)을 더한 값. 동선의 작은 숫자들의 합이다 (사용자 요청 2026-10-10)
   const total = s.views.reduce((a, v) => a + (v.act || v.vis || 0), 0);
-  // 아직 안 나간 세션 — 열린 탭은 1분마다 기록을 보내므로(visit-track.ts BEAT_MS) 마지막 수신이 3분 안이면 '조작 중'.
+  // 아직 안 나간 세션 — 열린 탭은 1분마다 기록을 보내므로(visit-track.ts BEAT_MS) 마지막 수신이 2분 안이면 '조작 중'.
   // DB 함수가 옛판이라 last_at 이 없으면 시작 시각 + 마지막 화면의 시작·보인 시간으로 어림한다 (사용자 지시 2026-10-10)
   const live = sessLive(s);
   return (
@@ -664,7 +674,7 @@ function SessionLine({ s }: { s: SessRow }) {
           </span>
         ))}
         {last && !last.out && (live
-          ? <><i>→</i><span className="vz-step live" title="마지막 기록이 3분 안 — 탭이 열려 있다">조작 중</span></>
+          ? <><i>→</i><span className="vz-step live" title="마지막 기록이 2분 안 — 최근에 조작했다">조작 중</span></>
           : <><i>→</i><span className="vz-step exit">이탈</span></>)}
       </p>
       {clampH != null && (
@@ -815,7 +825,7 @@ export function VisitsPanel() {
     return nv;
   });
   // '조작 중만'이면 상위 N 과 무관하게 조작 중인 세션 전부 — 최근 세션을 넉넉히(500) 받아 그 안에서 거른다
-  // (사용자 지시 2026-10-11). 조작 중은 마지막 기록이 3분 안인 세션이라 최근 500 안에 다 든다
+  // (사용자 지시 2026-10-11). 조작 중은 마지막 기록이 2분 안인 세션이라 최근 500 안에 다 든다
   const fetchN = liveOnly ? Math.max(limit, 500) : limit;
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
