@@ -174,11 +174,28 @@ function sendSession(locale: string): void {
 
 /** 일이 있었다고 한 줄 남긴다 — 지금은 '내 정보' 로그인·다시 동기화 (사용자 요청 2026-10-05 "누가, 몇 번 했는지").
  *  누가 = 방문 기록과 같은 익명 방문자 id. 닉네임·계정 정보는 보내지 않는다. */
-export function noteVisitEvent(kind: "me_login" | "me_sync", server?: string): void {
+export function noteVisitEvent(kind: "me_login" | "me_sync" | "prts_start" | "prts_end", server?: string, extra?: { detail?: string; dur?: number }): void {
   if (!started) return;
   let visitor = "";
   try { visitor = localStorage.getItem(VISITOR_KEY) ?? ""; } catch { /* 프라이빗 모드 */ }
-  post("visit_event", [{ session: sess?.id ?? uuid(), visitor: clip(visitor, 64), kind, server: clip(server ?? null, 8), env }]);
+  post("visit_event", [{ session: sess?.id ?? uuid(), visitor: clip(visitor, 64), kind, server: clip(server ?? null, 8), env,
+    ...(extra?.detail ? { detail: clip(extra.detail, 40) } : {}),
+    ...(extra?.dur != null ? { dur_ms: Math.max(0, Math.min(86_400_000, Math.round(extra.dur))) } : {}) }]);
+}
+
+// PRTS 링크(게임 연결) 사용 기록 — 연결·해제 한 번씩, 해제 때 연결 시간 (사용자 요청 2026-10-11 "PRTS 링크 사용 기록").
+// 탭을 닫아 해제 단추를 못 누른 경우도 pagehide 에서 해제로 남긴다 (keepalive 전송)
+let prts: { t0: number; detail: string } | null = null;
+export function notePrtsStart(detail: string): void {
+  if (prts) return;
+  prts = { t0: Date.now(), detail };
+  noteVisitEvent("prts_start", undefined, { detail });
+}
+export function notePrtsEnd(): void {
+  if (!prts) return;
+  const p = prts;
+  prts = null;
+  noteVisitEvent("prts_end", undefined, { detail: p.detail, dur: Date.now() - p.t0 });
 }
 
 /** 지금 화면에서 그사이 늘어난 몫을 한 행으로 보낸다 */
@@ -307,6 +324,7 @@ export function startVisitTrack(locale: string): void {
     lastTick = Date.now();
   });
   addEventListener("pagehide", flush);
+  addEventListener("pagehide", notePrtsEnd);
   // 뒤로가기 캐시(bfcache)에서 되살아난 문서 — 그사이 같은 탭의 다른 문서가 순번을 올렸을 수 있다
   addEventListener("pageshow", (e) => {
     if (!(e as PageTransitionEvent).persisted) return;

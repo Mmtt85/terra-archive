@@ -23,7 +23,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { LensOutcome } from "./match";
-import { holdVisitActive } from "../visit-track";
+import { holdVisitActive, notePrtsStart, notePrtsEnd } from "../visit-track";
 
 // 변화 감지용 축소본. 전투노드 화면끼리는 맵·패널이 그대로고 **오른쪽 패널 글자만**
 // 바뀌므로, 너무 거칠면 그 차이가 전체 평균에 묻힌다 (2026-07-26 제보: 전투노드 →
@@ -294,6 +294,8 @@ export async function connectBridge(withLock?: BridgeLock): Promise<void> {
   holdLock();
   // 연결해 둔 동안은 방문 통계의 조작 시간으로 센다 (게임이 화면을 덮고 있어도 쓰는 중이다)
   if (!visitHeld) { visitHeld = true; holdVisitActive(true); }
+  // 방문 통계 PRTS 링크 기록 — 어디서 연결했나(테마 고정이면 그 테마, 아니면 지금 화면 경로)
+  notePrtsStart(lock?.topic ?? (location.pathname.replace(/^\/(en|ja)(?=\/|$)/, "") || "/"));
   notify();
 }
 
@@ -306,6 +308,7 @@ export function disconnectBridge(): void {
   }
   running = false;
   if (visitHeld) { visitHeld = false; holdVisitActive(false); }
+  notePrtsEnd();
   if (timer !== undefined) { window.clearInterval(timer); timer = undefined; }
   if (lockRelease) { lockRelease(); lockRelease = null; }
   if (reader) { void reader.cancel().catch(() => { /* 이미 닫힘 */ }); reader = null; }

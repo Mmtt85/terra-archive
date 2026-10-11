@@ -87,6 +87,12 @@ create table if not exists public.visit_event (
   env text not null default 'live' check (env in ('live', 'dev'))
 );
 create index if not exists visit_event_at_idx on public.visit_event (at desc);
+-- PRTS 링크(게임 연결) 사용 기록 (2026-10-11) — 연결(prts_start)·해제(prts_end). detail = 어디서 연결했나(통합전략 테마 등),
+-- dur_ms = 해제 때 연결돼 있던 시간
+alter table public.visit_event add column if not exists detail text check (char_length(detail) <= 40);
+alter table public.visit_event add column if not exists dur_ms int check (dur_ms between 0 and 86400000);
+alter table public.visit_event drop constraint if exists visit_event_kind_check;
+alter table public.visit_event add constraint visit_event_kind_check check (kind in ('me_login', 'me_sync', 'prts_start', 'prts_end'));
 
 -- ── 일별 집계 (영구 보관) ─────────────────────────────────────────────────────
 
@@ -372,17 +378,33 @@ returns json language sql stable security definer set search_path = public as $$
             select g.*, f.src, f.ref from (
               select x.visitor, count(*) as n, count(*) filter (where x.kind = 'me_login') as login,
                      count(*) filter (where x.kind = 'me_sync') as sync, max(x.at) as last, max(x.server) as server
-              from public.visit_event x where x.at >= p_from and x.at < p_to and x.env = 'live' group by 1) g
+              from public.visit_event x where x.at >= p_from and x.at < p_to and x.env = 'live' and x.kind in ('me_login', 'me_sync') group by 1) g
             left join lateral (
               select public.visit_src(vs.ref_host) as src, coalesce(vs.ref, vs.ref_host) as ref
               from public.visit_event y join public.visit_session vs on vs.id = y.session
-              where y.visitor is not distinct from g.visitor and y.at >= p_from and y.at < p_to and y.env = 'live'
+              where y.visitor is not distinct from g.visitor and y.at >= p_from and y.at < p_to and y.env = 'live' and y.kind in ('me_login', 'me_sync')
               order by (y.kind = 'me_login') desc, y.at asc limit 1) f on true) b),
         'recent', (select coalesce(json_agg(r order by r.at desc), '[]') from (
             select x.at, x.visitor, x.kind, x.server, public.visit_src(vs.ref_host) as src, coalesce(vs.ref, vs.ref_host) as ref
             from public.visit_event x left join public.visit_session vs on vs.id = x.session
-            where x.at >= p_from and x.at < p_to and x.env = 'live' order by x.at desc limit 100) r))
-      from public.visit_event e where e.at >= p_from and e.at < p_to and e.env = 'live'),
+            where x.at >= p_from and x.at < p_to and x.env = 'live' and x.kind in ('me_login', 'me_sync') order by x.at desc limit 100) r))
+      from public.visit_event e where e.at >= p_from and e.at < p_to and e.env = 'live' and e.kind in ('me_login', 'me_sync')),
+    -- PRTS 링크 사용 (2026-10-11) — 연결 횟수·쓴 사람·연결 시간 합(해제 기록의 dur_ms)·어디서(detail)별·최근 기록
+    'prts', (select json_build_object(
+        'n', count(*) filter (where e.kind = 'prts_start'), 'people', count(distinct e.visitor) filter (where e.kind = 'prts_start'),
+        'ms', coalesce(sum(e.dur_ms) filter (where e.kind = 'prts_end'), 0),
+        'ended', count(*) filter (where e.kind = 'prts_end'),
+        'by', (select coalesce(json_agg(d order by d.n desc), '[]') from (
+            select coalesce(x.detail, '?') as k, count(*) filter (where x.kind = 'prts_start') as n,
+                   coalesce(sum(x.dur_ms) filter (where x.kind = 'prts_end'), 0) as ms
+            from public.visit_event x where x.at >= p_from and x.at < p_to and x.env = 'live' and x.kind in ('prts_start', 'prts_end')
+            group by 1) d),
+        'recent', (select coalesce(json_agg(r order by r.at desc), '[]') from (
+            select x.at, x.visitor, x.kind, x.detail, x.dur_ms, public.visit_src(vs.ref_host) as src
+            from public.visit_event x left join public.visit_session vs on vs.id = x.session
+            where x.at >= p_from and x.at < p_to and x.env = 'live' and x.kind in ('prts_start', 'prts_end')
+            order by x.at desc limit 200) r))
+      from public.visit_event e where e.at >= p_from and e.at < p_to and e.env = 'live' and e.kind in ('prts_start', 'prts_end')),
     'hourly', (select coalesce(json_agg(d order by d.hr), '[]') from (
         select extract(hour from kst)::int as hr, count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
         from s where p_hourly group by 1) d),

@@ -43,6 +43,12 @@ export type Summary = {
   out: { host: string; n: number }[];
   flow: FlowRow[];
   /** '내 정보' 로그인·다시 동기화 기록 (2026-10-05~ DB 함수) — 누가 = 익명 방문자 id */
+  /** PRTS 링크 사용 (2026-10-11~ DB 함수) */
+  prts?: {
+    n: number; people: number; ms: number; ended: number;
+    by: { k: string; n: number; ms: number }[];
+    recent: { at: string; visitor: string | null; kind: "prts_start" | "prts_end"; detail: string | null; dur_ms: number | null; src: string | null }[];
+  };
   me_sync?: {
     n: number; people: number; login: number; sync: number;
     /** src·ref = 이 기간 첫 로그인(없으면 첫 동기화) 세션의 유입 (2026-10-05~) */
@@ -1096,6 +1102,34 @@ export function VisitsPanel() {
 
           <Head title="화면 순위" sub={`${data.pages.length}개 화면`} {...top("pages", "화면 순위")} />
           {pageTable(tops.pages)}
+
+          {/* PRTS 링크(게임 연결) 사용 기록 (사용자 요청 2026-10-11) — 연결·해제 이벤트. 2026-10-11 전에는 기록하지 않았다 */}
+          {data.prts && (
+            <>
+              <Head title="PRTS 링크" sub={`연결 ${num(data.prts.n)}회 · ${num(data.prts.people)}명 · 연결 시간 합 ${fmtDur(data.prts.ms)}${data.prts.ended ? ` (해제 ${num(data.prts.ended)}회 평균 ${fmtDur(data.prts.ms / data.prts.ended)})` : ""}`} />
+              {data.prts.n === 0 ? <p className="vz-note">이 기간에는 PRTS 링크 기록이 없습니다 (2026-10-11부터 기록).</p> : (
+                <>
+                  <div className="vz-tablewrap"><table className="vz-table">
+                    <thead><tr><th>어디서</th><th>연결</th><th>연결 시간 합</th></tr></thead>
+                    <tbody>{data.prts.by.map((b) => <tr key={b.k}><td><code>{b.k}</code></td><td>{num(b.n)}</td><td>{fmtDur(b.ms)}</td></tr>)}</tbody>
+                  </table></div>
+                  <div className="vz-tablewrap"><table className="vz-table">
+                    <thead><tr><th>시각</th><th>종류</th><th>어디서</th><th>연결 시간</th><th>방문자</th><th>유입</th></tr></thead>
+                    <tbody>{data.prts.recent.slice(0, 50).map((r, i) => (
+                      <tr key={i}>
+                        <td>{new Date(r.at).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</td>
+                        <td>{r.kind === "prts_start" ? "연결" : "해제"}</td>
+                        <td><code>{r.detail ?? "—"}</code></td>
+                        <td>{r.kind === "prts_end" && r.dur_ms != null ? fmtDur(r.dur_ms) : "—"}</td>
+                        <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
+                        <td>{r.src ?? "—"}</td>
+                      </tr>
+                    ))}</tbody>
+                  </table></div>
+                </>
+              )}
+            </>
+          )}
 
           <div className="vz-cols">
             <div>
