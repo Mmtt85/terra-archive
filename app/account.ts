@@ -105,6 +105,13 @@ export type AccountProfile = {
   sandbox?: { material: Record<string, number>; food: Record<string, number>; building: Record<string, number>; tactical: Record<string, number>; animal: Record<string, number> } | null;
   /** 위수협의 — 얻은(해금된) 전략 id (2026-10-11~ 워커. 전략별 클리어 횟수는 계정 원본에 없다) */
   autochess?: { bands: string[]; training: number } | null;
+  /** 멈춰 둔 진행 상황 — 통합전략 판·보안파견·생존연산 (2026-10-11~ 워커) */
+  progress?: {
+    rogue?: { state: string; theme: string | null; mode: string | null; grade: number; start: number; zone: number; level: number; hp: number; maxHp: number;
+      gold: number; shield: number; popCost: number; popMax: number; toEnding: string | null; relics: string[]; troop: { id: string; elite: number; level: number }[] };
+    tower?: { state: string; tower: string | null; coord: number; hard: boolean; start: number; strategy: string | null };
+    sandbox?: { state: number; day: number; maxDay: number; ap: number; maxAp: number; challenge: boolean };
+  } | null;
   rogue?: Record<string, { collect: Record<string, string[]>; chat?: { chat?: Record<string, number>; chatV2?: Record<string, string[]> }; record: Record<string, unknown> | null }>;
   /** 연 스토리 — 스토리 id → 그 안의 storyId('<스토리>_' 접두를 뗀 것, 접두가 다르면 '=' + 전체) (2026-10-06~ 워커, 갤러리 스포 방지) */
   stories?: Record<string, string[]>;

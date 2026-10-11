@@ -551,6 +551,37 @@ function autochessDigest(user) {
   return { bands: Object.keys(a.band ?? {}).filter((k) => num(a.band[k]) > 0), training: num(a.trainingModeFin?.mode_training_1) };
 }
 
+// 멈춰 둔 진행 상황 — 통합전략 진행 중인 판·보안파견·생존연산 (사용자 요청 2026-10-11 "동기화할 때 진행 중인 록라 상황,
+// 보안파견 등 진행하다 멈춘 모든 것"). 원본 구조는 같은 날 실계정 점검으로 확인했다:
+//   rlv2.current{player{state,property{level,hp,gold,shield,population},cursor{zone},toEnding},troop{chars},game{theme,mode,modeGrade,start},inventory{relic}}
+//   tower.current.status{state,tower,coord,isHard,start,strategy}, sandbox_1.status/main.game
+// 게임 중 동기화는 클라를 튕기므로(사용자 확인) '멈춘 상태를 기록'하는 용도다.
+function progressDigest(user) {
+  const out = {};
+  const cur = user?.rlv2?.current;
+  const st = cur?.player?.state;
+  if (cur && st && st !== "NONE") {
+    const p = cur.player?.property ?? {};
+    const relics = cur.inventory?.relic ?? {};
+    out.rogue = {
+      state: st, theme: cur.game?.theme ?? null, mode: cur.game?.mode ?? null, grade: num(cur.game?.modeGrade), start: num(cur.game?.start),
+      zone: num(cur.player?.cursor?.zone), level: num(p.level), hp: num(p.hp?.current), maxHp: num(p.hp?.max), gold: num(p.gold), shield: num(p.shield),
+      popCost: num(p.population?.cost), popMax: num(p.population?.max), toEnding: cur.player?.toEnding ?? null,
+      relics: Object.values(relics).map((r) => r?.id).filter(Boolean),
+      troop: Object.values(cur.troop?.chars ?? {}).map((c) => ({ id: c?.charId, elite: num(c?.evolvePhase), level: num(c?.level) })).filter((c) => c.id),
+    };
+  }
+  const tw = user?.tower?.current?.status;
+  if (tw && tw.state && tw.state !== "NONE") {
+    out.tower = { state: tw.state, tower: tw.tower ?? null, coord: num(tw.coord), hard: !!tw.isHard, start: num(tw.start), strategy: tw.strategy ?? null };
+  }
+  const sb = user?.sandboxPerm?.template?.SANDBOX_V2?.sandbox_1;
+  if (sb?.status && sb.main?.game) {
+    out.sandbox = { state: num(sb.status.state), day: num(sb.main.game.day), maxDay: num(sb.main.game.maxDay), ap: num(sb.main.game.ap), maxAp: num(sb.main.game.maxAp), challenge: !!sb.status.isChallenge };
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 function profile(user, friends, shop) {
   const status = user?.status ?? {};
   const troop = user?.troop?.chars ?? {};
@@ -657,6 +688,8 @@ function profile(user, friends, shop) {
     rogue: rogueDigest(user),
     sandbox: sandboxDigest(user),
     autochess: autochessDigest(user),
+    // 진행 중(멈춘) 판 — 통합전략·보안파견·생존연산 (2026-10-11)
+    progress: progressDigest(user),
     // 연 스토리 — 게임 '스토리 회상'이 기록한 것(storyreview.groups[스토리].stories[].id). 끝난 이벤트는 작전 기록이 지워져
     // 작전 조건만으론 '한 적 있음'을 알 수 없다 — 갤러리 스포 방지가 쓴다 (2026-10-06). '<스토리>_' 접두는 떼고 싣는다
     stories: storiesDigest(user),

@@ -29917,3 +29917,13 @@ html.dark :is(.own-corner, .skin-owned).no { background: color-mix(in srgb, #000
 .vz-tag.vz-ev.me { color: #6a4fb0; background: color-mix(in srgb, #8e6ad8 15%, transparent); border-color: transparent; }
 html.dark .vz-tag.vz-ev.prts { color: #6fe3cf; }
 html.dark .vz-tag.vz-ev.me { color: #c3aef5; }
+
+/* 내 정보 '멈춰 둔 판' 카드 (2026-10-11) */
+.me-paused { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.me-paused h4 { margin: 0 0 6px; font-size: 13.5px; }
+.me-paused dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: 12.5px; }
+.me-paused dt { color: var(--muted); }
+.me-paused dd { margin: 0; font-family: var(--mono); }
+.me-paused-troop { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.me-paused-troop button { padding: 0; border: 0; background: none; cursor: pointer; }
+.me-paused-troop img { width: 40px; height: 40px; object-fit: cover; display: block; }

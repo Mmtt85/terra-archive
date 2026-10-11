@@ -13,6 +13,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { asset } from "./assets";
+import { TOPICS } from "./rogue-topics";
 import { useI18n, rich, DT_LOCALE, type ExtraI18n, type Locale } from "./i18n";
 import { ModalWindow } from "./modal-window";
 import { useConfirm } from "./confirm";
@@ -159,6 +160,13 @@ function sampleMe(operators: MeOp[]): MeData {
         ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["MEETING", 3], ["HIRE", 3], ["WORKSHOP", 3], ["TRAINING", 3]]
         .map(([room, level], i) => ({ slot: String(i), room: String(room), level: Number(level) })),
       skins: 87, medals: 140, medalTotal: 1402, furniture: 620,
+      // 예시 화면의 '멈춰 둔 판' (2026-10-11) — 흑류수해 3층 진행 중 + 생존연산 12일째
+      progress: {
+        rogue: { state: "PENDING", theme: "rogue_6", mode: "NORMAL", grade: 8, start: SAMPLE_TS - 5400, zone: 3, level: 7, hp: 4, maxHp: 6,
+          gold: 37, shield: 1, popCost: 22, popMax: 30, toEnding: null, relics: ["a", "b", "c", "d", "e", "f", "g", "h", "i"],
+          troop: [0, 1, 2, 3, 4, 5].map((i) => { const c = pick(`rt${i}`); return { id: c.id, elite: 2, level: 70 }; }) },
+        sandbox: { state: 1, day: 12, maxDay: 0, ap: 18, maxAp: 30, challenge: false },
+      },
       friends: Array.from({ length: 6 }, (_, i) => ({
         nickName: `Doctor${String.fromCharCode(65 + i)}`, nickNumber: String(1000 + i * 37), level: 80 + i * 7,
         avatar: null, secretary: pick(`fs${i}`).id, secretarySkin: null, lastOnline: SAMPLE_TS - i * 86400 * 2, resume: "",
@@ -362,6 +370,7 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
         </div>
         <div className="me-col me-col-main">
           <Kpis owned={owned} released={released} opById={opById} me={me} onList={openList} demo={demo} />
+          <Paused me={me} opById={opById} onShowOperator={onShowOperator} />
           <RarityTable owned={owned} released={released} opById={opById} onList={openList} />
           {/* 공개모집으로 채울 오퍼를 진행 상황 위로 (사용자 지시 2026-10-05) */}
           <RecruitPool mine={mine} opById={opById} onShowOperator={onShowOperator} />
@@ -398,6 +407,63 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
         </ModalWindow>
       )}
     </>
+  );
+}
+
+/** 멈춰 둔 판 — 동기화한 순간 진행 중이던 통합전략·보안파견·생존연산 (사용자 요청 2026-10-11).
+ *  게임 중 동기화는 클라를 튕기므로 '멈춘 상태를 기록해 두는' 카드다. 진행 중인 게 없으면 카드를 그리지 않는다 */
+function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void }) {
+  const { t, locale } = useI18n();
+  const pg = me.profile?.progress;
+  if (!pg || (!pg.rogue && !pg.tower && !pg.sandbox)) return null;
+  const when = (sec: number) => (sec ? new Date(sec * 1000).toLocaleString(locale === "ko" ? "ko-KR" : locale, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }) : "—");
+  const fmt = (n: number) => n.toLocaleString();
+  const r = pg.rogue, tw = pg.tower, sb = pg.sandbox;
+  return (
+    <Card no="PAUSED" title={t("멈춰 둔 판")} aside={<small>{t("동기화한 순간 기준")}</small>}>
+      <div className="me-paused">
+        {r && (
+          <section>
+            <h4>{t("통합전략")} · {t(TOPICS.find((x) => x.id === r.theme)?.name ?? r.theme ?? "?")}</h4>
+            <dl>
+              <dt>{t("위치")}</dt><dd>{t("{n}층", { n: r.zone })}{r.toEnding ? ` · ${r.toEnding}` : ""}</dd>
+              <dt>HP</dt><dd>{fmt(r.hp)} / {fmt(r.maxHp)}{r.shield ? ` · ${t("실드")} ${fmt(r.shield)}` : ""}</dd>
+              <dt>{t("오리지늄각뿔")}</dt><dd>{fmt(r.gold)}</dd>
+              <dt>{t("분대 레벨")}</dt><dd>{r.level}{r.popMax ? ` · ${t("인원")} ${r.popCost}/${r.popMax}` : ""}</dd>
+              <dt>{t("소장품")}</dt><dd>{t("{n}개", { n: r.relics.length })}</dd>
+              <dt>{t("시작")}</dt><dd>{when(r.start)}</dd>
+            </dl>
+            {r.troop.length > 0 && (
+              <div className="me-paused-troop">
+                {r.troop.map((c, i) => (
+                  <button key={i} type="button" onClick={() => onShowOperator?.(c.id)} title={`${opById.get(c.id)?.name ?? c.id} · ${t("정예화 {n}", { n: c.elite })} Lv.${c.level}`}>
+                    <img src={asset(`/avatars/${c.id}.webp`)} alt="" loading="lazy" decoding="async" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+        {tw && (
+          <section>
+            <h4>{t("보안파견")}{tw.hard ? ` · ${t("하드")}` : ""}</h4>
+            <dl>
+              <dt>{t("위치")}</dt><dd><code>{tw.tower ?? "?"}</code> · {t("{n}층", { n: tw.coord + 1 })}</dd>
+              <dt>{t("시작")}</dt><dd>{when(tw.start)}</dd>
+            </dl>
+          </section>
+        )}
+        {sb && (
+          <section>
+            <h4>{t("생존연산")} · {t("사막 이야기")}{sb.challenge ? ` · ${t("도전")}` : ""}</h4>
+            <dl>
+              <dt>{t("날짜")}</dt><dd>{t("{n}일째", { n: sb.day })}{sb.maxDay ? ` / ${sb.maxDay}` : ""}</dd>
+              <dt>{t("행동력")}</dt><dd>{sb.ap} / {sb.maxAp}</dd>
+            </dl>
+          </section>
+        )}
+      </div>
+    </Card>
   );
 }
 
