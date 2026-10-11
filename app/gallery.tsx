@@ -13,6 +13,7 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, 
 import { asset, storyCutUrl } from "./assets";
 import { useI18n } from "./i18n";
 import { ModalWindow } from "./modal-window";
+import { ViewImg, ZoomWindow } from "./zoom-window";
 import { normSearch, useSearchInput } from "./search";
 import { AttributeFilter } from "./attr-filter";
 import eventIdsData from "./data/event-ids.json";
@@ -412,26 +413,6 @@ export default function Gallery({ doc, operators, includeFuture, onShowOperator,
 
 /** 큰 그림 — 받는 동안 '불러오는 중…', 실패하면 안내 (사용자 요청 2026-10-04). 그림이 바뀌면 key 로 다시 마운트돼
  *  상태가 처음부터 시작한다. 이미 캐시에 있으면 onLoad 가 곧바로 와서 표시가 거의 안 보인다. */
-function ViewImg({ src, alt, onClick, dyn }: { src: string; alt: string; onClick?: () => void; dyn?: string }) {
-  const { t } = useI18n();
-  const [state, setState] = useState<"load" | "ok" | "err">("load");
-  const [live, setLive] = useState(false);
-  return (
-    <>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} onClick={onClick} className={state === "ok" ? (live ? "dyn-off" : undefined) : "gl-img-wait"}
-        onLoad={() => setState("ok")} onError={() => setState("err")} />
-      {/* 움직이는 일러스트 — 정지 그림(첫 프레임)과 같은 칸에 겹친다 */}
-      {dyn && state === "ok" && <DynVideo portrait={dyn} className="gl-dyn" onLive={setLive} />}
-      {state !== "ok" && (
-        <span className="gl-loading" role="status">
-          {state === "load" ? <><i aria-hidden />{t("불러오는 중…")}</> : t("이미지를 불러오지 못했습니다.")}
-        </span>
-      )}
-    </>
-  );
-}
-
 /** 좌우 화살표로 넘긴다 — 입력란에 초점이 있으면 건드리지 않는다 */
 function useArrows(onStep: (d: number) => void) {
   useEffect(() => {
@@ -539,17 +520,6 @@ function CharWindow({ c, stories, opHref, onOp, onStory, onClose }: {
         </div>
       </div>
       {zoom && <ZoomWindow src={spriteSrc(c, c.f[i])} alt={c.n} onClose={() => setZoom(false)} />}
-    </ModalWindow>
-  );
-}
-
-/** 큰 그림을 누르면 뜨는 확대 창 — 원본 크기로, 넘치면 창 안에서 스크롤 (사용자 요청 2026-10-04) */
-function ZoomWindow({ src, alt, onClose, dyn }: { src: string; alt: string; onClose: () => void; dyn?: string }) {
-  return (
-    <ModalWindow label={alt} className="operator-modal gl-modal gl-zoom" onClose={onClose}>
-      <div className="gl-zoom-body">
-        <ViewImg src={src} alt={alt} dyn={dyn} />
-      </div>
     </ModalWindow>
   );
 }

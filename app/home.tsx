@@ -94,6 +94,7 @@ import FutureTip, { FUTURE_BLOCKED } from "./future-tip";
 import { ChibiChatPanel, chibiChatStatus, type ChibiActionRequest, type ChibiChatStatus } from "./chibi-chat";
 // 공용 창형 모달 — 이동·리사이즈·고정·z순서 (2026-08-03)
 import { ModalWindow } from "./modal-window";
+import { ZoomWindow } from "./zoom-window";
 import {} from "./hash-modal";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
@@ -4123,7 +4124,11 @@ function SkinSection({ operator }: { operator: Operator }) {
           )}
         </div>
       )}
-      {zoom && <SkinLightbox skin={zoom} alt={operator.name} onClose={() => setZoom(null)} />}
+      {/* 확대는 갤러리와 같은 창 모달 (사용자 지시 2026-10-12 — 화면 전체를 덮던 라이트박스였다). 창 제목에 스킨 이름·작가 */}
+      {zoom && <ZoomWindow onClose={() => setZoom(null)}
+        src={hasDyn(zoom.portrait) ? dynPoster(zoom.portrait) : asset(`/skin/full/${encodeURIComponent(zoom.portrait)}.webp`)}
+        dyn={hasDyn(zoom.portrait) ? zoom.portrait : undefined}
+        alt={`${operator.name} · ${isDefaultSkin(zoom) ? t("기본 스킨") : zoom.name}${zoom.artists.length ? ` · ${zoom.artists.join(" · ")}` : ""}`} />}
     </section>
   );
 }
@@ -4750,44 +4755,6 @@ function PortalArt() {
           그림 위에만 옅게 깔리고, 몇 초에 한 번 화면이 튄다(CSS). 장식이라 동작 줄이기면 CSS 가 끈다 */}
       <span className="pt-art pt-art-dyn pt-art-noise" aria-hidden style={{ ["--pt-mask" as string]: `url("${PORTAL_DYN.poster}")` }} />
     </>
-  );
-}
-
-// 전체 일러스트 확대 — 원본 2500px를 1200px로 줄여 받아 둔 것을 화면에 맞춰 띄운다.
-// 모달 위에 겹치므로 z-index는 .modal-backdrop(100)보다 위.
-function SkinLightbox({ skin, alt, onClose }: { skin: SkinEntry; alt: string; onClose: () => void }) {
-  const { t } = useI18n();
-  const [broken, setBroken] = useState(false);
-  const [dynLive, setDynLive] = useState(false);
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
-  return (
-    // 확대 상태에서는 **어디를 눌러도** 닫힌다 (사용자 요청 2026-07-28) — 배경만 받으면
-    // 그림 위를 눌렀을 때 아무 일도 안 일어나 갇힌 느낌이 든다
-    <div className="skin-lightbox" role="dialog" aria-modal="true" onMouseDown={onClose}>
-      <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
-      {broken ? (
-        <p className="skin-lightbox-empty">{t("전체 일러스트가 아직 없습니다.")}</p>
-      ) : (
-        hasDyn(skin.portrait) ? (
-          // 움직이는 일러스트 — 정지 그림(영상 첫 프레임)과 영상을 한 칸에 겹친다
-          <div className="skin-lightbox-dyn">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={dynPoster(skin.portrait)} className={dynLive ? "dyn-off" : undefined}
-              alt={isDefaultSkin(skin) ? alt : skin.name} onError={() => setBroken(true)} />
-            <DynVideo portrait={skin.portrait} onLive={setDynLive} />
-          </div>
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={asset(`/skin/full/${encodeURIComponent(skin.portrait)}.webp`)}
-            alt={isDefaultSkin(skin) ? alt : skin.name} onError={() => setBroken(true)} />
-        )
-      )}
-      <figcaption>{isDefaultSkin(skin) ? t("기본 스킨") : skin.name}{skin.artists.length > 0 && <em> · {skin.artists.join(" · ")}</em>}</figcaption>
-    </div>
   );
 }
 
