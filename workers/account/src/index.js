@@ -828,6 +828,10 @@ async function socialShop(call) {
   }
 }
 
+// 위수협의 전략별 클리어·보스 처치 수 — syncData 엔 없다(autochessSeason 은 band·trainingModeFin 뿐). 게임이 위수협의 메뉴를
+// 열 때 보내는 읽기 요청 /activity/autochessSeason/syncInfo {actId} 에 있을 것으로 보이나, 2026-10-11 시험에서 한섭 시즌 2
+// (act2autochess)가 끝나 "activity is not available" 로 거절됐다. 다음 시즌이 열리면 그 actId 로 응답 모양부터 확인할 것.
+
 async function fetchUser(cred, deviceId, network, step = noStep, server = "kr") {
   step("game");
   const u8 = await getU8Token(cred, deviceId, network, server);
