@@ -483,8 +483,9 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
 
 /** 통합전략 층 — 워커가 구역 순번(0부터)을 보낸다. 2026-10-11 첫 판 워커는 지도 구역 키(1000 등)를 보내 '1001층'으로 보였다 —
  *  그런 옛 기록(zoneId 없음·100 이상)은 층을 모르는 것으로 둔다(다시 동기화하면 채워진다) */
+// ⚠ 실계정에서 구역 순번(index)도 1000 단위로 왔다(1층 = 1000, 사용자 화면 '1001층' 2026-10-11) — 1000 이상이면 천의 자리가 층이다
 const rogueFloor = (r: { zone: number; zoneId?: string | null }): number | null =>
-  r.zoneId === undefined && r.zone >= 100 ? null : r.zone + 1;
+  r.zone >= 1000 ? Math.floor(r.zone / 1000) : r.zone >= 100 ? null : r.zone + 1;
 
 const fmtWhen = (sec: number) => (sec ? new Date(sec * 1000).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }) : "—");
 
@@ -613,7 +614,7 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
     load().then((m) => { if (alive) setDoc(((m as { default?: unknown }).default ?? m) as RogueDoc); }).catch(() => {});
     return () => { alive = false; };
   }, [r.theme, locale]);
-  const zone = doc?.zones.find((z) => z.id === r.zoneId);
+  const zone = doc?.zones.find((z) => z.id === r.zoneId) ?? doc?.zones.find((z) => z.num === rogueFloor(r) && !("variant" in z && (z as { variant?: boolean }).variant));
   const ending = r.toEnding ? doc?.endings.find((e) => e.id === r.toEnding) : null;
   const diff = doc?.difficulties.find((d) => d.grade === r.grade && (!r.mode || d.mode === r.mode)) ?? doc?.difficulties.find((d) => d.grade === r.grade);
   const [pickRelic, setPickRelic] = useState<number | null>(null);
