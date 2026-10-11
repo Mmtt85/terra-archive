@@ -837,8 +837,19 @@ function Wallet({ me, items, onOpen }: { me: MeData; items: ItemDoc | null; onOp
   if (!inv) return null;
   const byId = new Map((items?.items ?? []).map((i) => [i.id, i]));
   const fmt = fmtOf(locale);
+  // 가진 재화로 헤드헌팅을 몇 번 돌릴 수 있나 (사용자 지시 2026-10-11) — 합성옥 600 = 1회, 허가증 1장 = 1회, 10회 허가증 = 10회.
+  // 순오리지늄은 1개 = 합성옥 180 으로 바꿔 남은 합성옥과 합쳐 다시 600 단위로 센다 — 큰 숫자는 이 값
+  const orundum = inv["4003"] ?? 0, prime = inv["4002"] ?? 0, permit = inv["7003"] ?? 0, permit10 = inv["7004"] ?? 0;
+  const pulls = Math.floor(orundum / 600) + permit + permit10 * 10;
+  const pullsAll = Math.floor((orundum + prime * 180) / 600) + permit + permit10 * 10;
   return (
     <Card no="WALLET" title={t("재화")}>
+      <div className="me-pulls" title={t("합성옥 600개 = 1회 · 헤드헌팅 허가증 1장 = 1회 · 10회 허가증 1장 = 10회 · 순오리지늄 1개 = 합성옥 180개")}>
+        <span>{t("헤드헌팅 가능")}</span>
+        {/* 큰 숫자는 순오리지늄까지 바꾼 값 (사용자 지시 2026-10-11) — 안 바꾼 값 줄은 필요 없다고 해 뺐다 */}
+        <b>{t("{n}회", { n: fmt(pullsAll) })}</b>
+        <small>{t("합성옥 {a} · 허가증 {b} · 10회 허가증 {c}", { a: fmt(Math.floor(orundum / 600)), b: fmt(permit), c: fmt(permit10 * 10) })}{prime > 0 && ` · ${t("순오리지늄 {n}", { n: fmt(pullsAll - pulls) })}`}</small>
+      </div>
       {/* 묶음은 한 줄씩 칸으로, 나머지는 목록 (사용자 지시 2026-10-05) */}
       {WALLET_ROWS.map((row) => (
         <ul key={row[0]} className="me-wallet-top" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>

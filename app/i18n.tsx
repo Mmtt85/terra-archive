@@ -142,6 +142,10 @@ const D: Record<string, Pair> = {
   "정렬 뒤집기": ["Reverse order", "並び順を逆にする"],
   "클리어한 작전 {n}개": ["{n} stages cleared", "クリア済み作戦 {n}"],
   "인프라 자동 편성": ["Base auto-assign", "基地自動配置"],
+  "헤드헌팅 가능": ["Headhunting pulls", "スカウト可能回数"],
+  "합성옥 {a} · 허가증 {b} · 10회 허가증 {c}": ["Orundum {a} · Permits {b} · 10-roll permits {c}", "合成玉 {a} · 求人票 {b} · 10回求人票 {c}"],
+  "순오리지늄 {n}": ["Originite Prime {n}", "純正源石 {n}"],
+  "합성옥 600개 = 1회 · 헤드헌팅 허가증 1장 = 1회 · 10회 허가증 1장 = 10회 · 순오리지늄 1개 = 합성옥 180개": ["600 Orundum = 1 pull · 1 Permit = 1 pull · 1 10-roll Permit = 10 pulls · 1 Originite Prime = 180 Orundum", "合成玉600 = 1回 · 求人票1枚 = 1回 · 10回求人票1枚 = 10回 · 純正源石1個 = 合成玉180"],
   // 재료 파밍 효율표 정렬 (2026-10-06)
   "효율순": ["By efficiency", "効率順"],
   "드랍률순": ["By drop rate", "ドロップ率順"],
