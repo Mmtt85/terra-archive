@@ -29945,3 +29945,15 @@ html.dark .vz-tag.vz-ev.me { color: #c3aef5; }
 .me-resume-relics img { flex: none; width: 36px; height: 36px; object-fit: contain; }
 .me-resume-relics span { display: flex; flex-direction: column; min-width: 0; font-size: 12px; }
 .me-resume-relics small { color: var(--muted); font-size: 11px; line-height: 1.45; }
+/* 이어하기 — 생존연산 상세 (2026-10-11) */
+.me-resume-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 5px; margin: 0; padding: 0; list-style: none; }
+.me-resume-items li { display: flex; align-items: center; gap: 6px; padding: 4px 8px 4px 4px; background: var(--soft-fill, transparent); font-size: 12px; }
+.me-resume-items img { flex: none; width: 30px; height: 30px; object-fit: contain; }
+.me-resume-items span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me-resume-items b { font: 700 12px var(--mono); }
+.me-resume-zones { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 5px; margin: 0; padding: 0; list-style: none; }
+.me-resume-zones li { display: flex; flex-direction: column; padding: 6px 8px; background: var(--soft-fill, transparent); font-size: 12px; }
+.me-resume-zones li.dim { opacity: .45; }
+.me-resume-zones small { color: var(--muted); font-size: 11px; }
+.me-resume-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 0; }
+.me-resume-tags span { padding: 2px 8px; font-size: 11.5px; background: var(--soft-fill, transparent); }

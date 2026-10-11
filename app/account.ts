@@ -110,7 +110,11 @@ export type AccountProfile = {
     rogue?: { state: string; theme: string | null; mode: string | null; grade: number; start: number; zone: number; zoneId?: string | null; level: number; hp: number; maxHp: number;
       gold: number; shield: number; popCost: number; popMax: number; toEnding: string | null; relics: string[]; troop: { id: string; elite: number; level: number }[] };
     tower?: { state: string; tower: string | null; coord: number; hard: boolean; start: number; strategy: string | null };
-    sandbox?: { state: number; day: number; maxDay: number; ap: number; maxAp: number; challenge: boolean };
+    sandbox?: { state: number; day: number; maxDay: number; ap: number; maxAp: number; challenge: boolean;
+      /** 아래는 2026-10-11 상세판 워커부터 */
+      mode?: number; explore?: boolean; rift?: boolean; mapId?: string | null; season?: { type: number; remain: number; total: number } | null;
+      zones?: Record<string, { state: number; weather: number }>; baseLv?: number; bossKill?: string[]; portable?: boolean; outpost?: boolean;
+      techToken?: number; techUnlock?: number; drink?: number; squads?: { chars: string[]; tools: string[] }[]; usedChars?: string[]; best?: number };
   } | null;
   rogue?: Record<string, { collect: Record<string, string[]>; chat?: { chat?: Record<string, number>; chatV2?: Record<string, string[]> }; record: Record<string, unknown> | null }>;
   /** 연 스토리 — 스토리 id → 그 안의 storyId('<스토리>_' 접두를 뗀 것, 접두가 다르면 '=' + 전체) (2026-10-06~ 워커, 갤러리 스포 방지) */

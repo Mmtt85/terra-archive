@@ -165,8 +165,12 @@ function sampleMe(operators: MeOp[]): MeData {
         rogue: { state: "PENDING", theme: "rogue_6", mode: "NORMAL", grade: 8, start: SAMPLE_TS - 5400, zone: 2, zoneId: "zone_3", level: 7, hp: 4, maxHp: 6,
           gold: 37, shield: 1, popCost: 22, popMax: 30, toEnding: "ro6_ending_1", relics: ["rogue_6_relic_legacy_43", "rogue_6_relic_legacy_44", "rogue_6_relic_legacy_48", "rogue_6_relic_legacy_49", "rogue_6_relic_legacy_59", "rogue_6_relic_legacy_92", "rogue_6_relic_legacy_93", "rogue_6_relic_legacy_107", "rogue_6_relic_legacy_108"],
           troop: [0, 1, 2, 3, 4, 5].map((i) => { const c = pick(`rt${i}`); return { id: c.id, elite: 2, level: 70 }; }) },
-        sandbox: { state: 1, day: 12, maxDay: 0, ap: 18, maxAp: 30, challenge: false },
+        sandbox: { state: 1, day: 12, maxDay: 0, ap: 18, maxAp: 30, challenge: false, mode: 0, explore: false, rift: false,
+          season: { type: 1, remain: 4, total: 9 }, zones: { z_1_0: { state: 1, weather: 0 }, z_1_1: { state: 1, weather: 1 }, z_1_2: { state: 1, weather: 2 }, z_1_3: { state: 0, weather: 0 } },
+          baseLv: 4, bossKill: ["enemy_1001_bigbo", "enemy_1001_bigbo_2"], portable: true, outpost: false, techToken: 3, techUnlock: 21, drink: 2,
+          squads: [{ chars: [0, 1, 2, 3].map((i) => pick(`sq${i}`).id), tools: [] }], usedChars: [], best: 0 },
       },
+      sandbox: { material: { sandbox_1_wood: 41, sandbox_1_stone: 23, sandbox_1_iron: 8, sandbox_1_water: 15 }, food: { sandbox_1_food_4: 2 }, building: {}, tactical: {}, animal: {} },
       friends: Array.from({ length: 6 }, (_, i) => ({
         nickName: `Doctor${String.fromCharCode(65 + i)}`, nickNumber: String(1000 + i * 37), level: 80 + i * 7,
         avatar: null, secretary: pick(`fs${i}`).id, secretarySkin: null, lastOnline: SAMPLE_TS - i * 86400 * 2, resume: "",
@@ -469,17 +473,7 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
           </div>
         </ModalWindow>
       )}
-      {open === "sandbox" && sb && (
-        <ModalWindow label={t("생존연산")} className="operator-modal me-resume-modal" onClose={() => setOpen(null)}>
-          <div className="me-resume-body">
-            <h3>{t("생존연산")} · {t("사막 이야기")}{sb.challenge ? ` · ${t("도전")}` : ""}</h3>
-            <dl className="me-resume-facts">
-              <dt>{t("날짜")}</dt><dd>{t("{n}일째", { n: sb.day })}{sb.maxDay ? ` / ${sb.maxDay}` : ""}</dd>
-              <dt>{t("행동력")}</dt><dd>{sb.ap} / {sb.maxAp}</dd>
-            </dl>
-          </div>
-        </ModalWindow>
-      )}
+      {open === "sandbox" && sb && <ResumeSandbox sb={sb} me={me} opById={opById} onShowOperator={onShowOperator} onClose={() => setOpen(null)} />}
     </Card>
   );
 }
@@ -490,6 +484,99 @@ const rogueFloor = (r: { zone: number; zoneId?: string | null }): number | null 
   r.zoneId === undefined && r.zone >= 100 ? null : r.zone + 1;
 
 const fmtWhen = (sec: number) => (sec ? new Date(sec * 1000).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }) : "—");
+
+/** 생존연산 '사막 이야기' 상세 (사용자 요청 2026-10-11 "생존연산도 아주 자세하게") — 이름·아이콘은 생존연산 도감 데이터(sandbox.json v2)를
+ *  모달을 열 때 받아 붙인다. 가방 수량은 profile.sandbox(재료·요리·제작물), 진행 상태는 profile.progress.sandbox */
+type SbDoc = { v2: { items: Record<string, [string, string, number, string, string?]>; zones: Record<string, string>; enemyNames: Record<string, string> } };
+const SB_DOCS: Record<string, () => Promise<{ default: unknown }>> = {
+  ko: () => import("./data/sandbox.json"), en: () => import("./data/sandbox.en.json"), ja: () => import("./data/sandbox.ja.json"),
+};
+function ResumeSandbox({ sb, me, opById, onShowOperator, onClose }: {
+  sb: NonNullable<NonNullable<AccountProfile["progress"]>["sandbox"]>; me: MeData; opById: Map<string, MeOp>;
+  onShowOperator?: (id: string) => void; onClose: () => void;
+}) {
+  const { t, locale } = useI18n();
+  const [doc, setDoc] = useState<SbDoc["v2"] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (SB_DOCS[locale] ?? SB_DOCS.ko)().then((m) => { if (alive) setDoc((((m as { default?: unknown }).default ?? m) as SbDoc).v2); }).catch(() => {});
+    return () => { alive = false; };
+  }, [locale]);
+  const nameOf = (id: string) => doc?.items[id]?.[0] ?? id;
+  const icon = (id: string) => asset(`/sandbox/item/${id}.webp`);
+  const bag = me.profile?.sandbox;
+  const hide = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.visibility = "hidden"; };
+  const itemGrid = (title: string, rec: Record<string, number> | undefined) => {
+    const rows = Object.entries(rec ?? {}).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+    if (!rows.length) return null;
+    return (
+      <>
+        <h4>{title} <em>{rows.length}</em></h4>
+        <ul className="me-resume-items">
+          {rows.map(([id, n]) => (
+            <li key={id} title={doc?.items[id]?.[1] ?? undefined}>
+              <img src={icon(id)} alt="" loading="lazy" decoding="async" onError={hide} />
+              <span>{nameOf(id)}</span><b>{n.toLocaleString()}</b>
+            </li>
+          ))}
+        </ul>
+      </>
+    );
+  };
+  const modeLabel = sb.challenge ? t("도전") : sb.explore ? t("탐험") : t("일반");
+  const squads = sb.squads ?? [];
+  return (
+    <ModalWindow label={`${t("생존연산")} · ${t("사막 이야기")}`} className="operator-modal me-resume-modal" onClose={onClose}>
+      <div className="me-resume-body">
+        <h3>{t("사막 이야기")} · {modeLabel}{sb.rift ? ` · ${t("균열")}` : ""}</h3>
+        <dl className="me-resume-facts">
+          <dt>{t("날짜")}</dt><dd>{t("{n}일째", { n: sb.day })}{sb.maxDay ? ` / ${sb.maxDay}` : ""}</dd>
+          <dt>{t("행동력")}</dt><dd>{sb.ap} / {sb.maxAp}</dd>
+          {sb.season && <><dt>{t("계절")}</dt><dd>{t("남은 {n}일", { n: sb.season.remain })} / {sb.season.total}</dd></>}
+          {sb.baseLv != null && <><dt>{t("거점 레벨")}</dt><dd>{sb.baseLv}{sb.portable ? ` · ${t("휴대 거점")}` : ""}{sb.outpost ? ` · ${t("전초기지")}` : ""}</dd></>}
+          {sb.techUnlock != null && <><dt>{t("기술")}</dt><dd>{t("해금 {n}개", { n: sb.techUnlock })} · {t("기술 점수")} {sb.techToken}</dd></>}
+          {sb.drink != null && <><dt>{t("음료")}</dt><dd>{sb.drink}</dd></>}
+          {sb.best ? <><dt>{t("도전 최고 기록")}</dt><dd>{t("{n}일", { n: sb.best })}</dd></> : null}
+        </dl>
+        {sb.zones && Object.keys(sb.zones).length > 0 && (
+          <>
+            <h4>{t("지역")}</h4>
+            <ul className="me-resume-zones">
+              {Object.entries(sb.zones).sort().map(([id, z]) => (
+                <li key={id} className={z.state ? "" : "dim"}><b>{doc?.zones[id] ?? id}</b><small>{z.weather ? t("날씨 {n}단계", { n: z.weather }) : t("맑음")}</small></li>
+              ))}
+            </ul>
+          </>
+        )}
+        {(sb.bossKill?.length ?? 0) > 0 && (
+          <>
+            <h4>{t("처치한 보스")} <em>{sb.bossKill!.length}</em></h4>
+            <p className="me-resume-tags">{sb.bossKill!.map((id) => <span key={id}>{doc?.enemyNames[id] ?? id}</span>)}</p>
+          </>
+        )}
+        {squads.map((q, qi) => (
+          <div key={qi}>
+            <h4>{t("분대 {n}", { n: qi + 1 })} <em>{q.chars.length}</em></h4>
+            <div className="me-resume-troop">
+              {q.chars.map((id, i) => (
+                <button key={i} type="button" onClick={() => onShowOperator?.(id)}>
+                  <img src={asset(`/avatars/${id}.webp`)} alt="" loading="lazy" decoding="async" />
+                  <b>{opById.get(id)?.name ?? id}</b>
+                </button>
+              ))}
+            </div>
+            {q.tools.length > 0 && <p className="me-resume-tags">{q.tools.map((id, i) => <span key={i}>{nameOf(id)}</span>)}</p>}
+          </div>
+        ))}
+        {itemGrid(t("가방 재료"), bag?.material)}
+        {itemGrid(t("만들어 둔 요리"), bag?.food)}
+        {itemGrid(t("건물"), bag?.building)}
+        {itemGrid(t("전술 설치물"), bag?.tactical)}
+        {itemGrid(t("동물"), bag?.animal)}
+      </div>
+    </ModalWindow>
+  );
+}
 
 function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
   r: NonNullable<NonNullable<AccountProfile["progress"]>["rogue"]>; topic: string; opById: Map<string, MeOp>;

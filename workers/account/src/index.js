@@ -579,7 +579,30 @@ function progressDigest(user) {
   }
   const sb = user?.sandboxPerm?.template?.SANDBOX_V2?.sandbox_1;
   if (sb?.status && sb.main?.game) {
-    out.sandbox = { state: num(sb.status.state), day: num(sb.main.game.day), maxDay: num(sb.main.game.maxDay), ap: num(sb.main.game.ap), maxAp: num(sb.main.game.maxAp), challenge: !!sb.status.isChallenge };
+    // 생존연산 상세 (사용자 요청 2026-10-11 "생존연산도 아주 자세하게") — 분대 슬롯은 오퍼 '인스턴스 번호'라 계정 오퍼 목록으로 charId 를 찾는다.
+    // 슬롯 안 키 이름은 아직 실계정으로 못 봤다 — 숫자 칸 중 인스턴스 번호와 맞는 것을 쓴다
+    const instToChar = {};
+    for (const c of Object.values(user?.troop?.chars ?? {})) if (c?.instId != null) instToChar[String(c.instId)] = c.charId;
+    const slotChar = (slot) => {
+      if (!slot || typeof slot !== "object") return null;
+      for (const v of Object.values(slot)) if ((typeof v === "number" || typeof v === "string") && instToChar[String(v)]) return instToChar[String(v)];
+      return null;
+    };
+    const squads = (sb.troop?.squad ?? []).map((q) => ({ chars: (q?.slots ?? []).map(slotChar).filter(Boolean), tools: (q?.tools ?? []).filter(Boolean) }))
+      .filter((q) => q.chars.length || q.tools.length);
+    const season = sb.main?.map?.season;
+    out.sandbox = {
+      state: num(sb.status.state), mode: num(sb.status.mode), challenge: !!sb.status.isChallenge, explore: !!sb.status.exploreMode, rift: !!sb.status.isRift,
+      day: num(sb.main.game.day), maxDay: num(sb.main.game.maxDay), ap: num(sb.main.game.ap), maxAp: num(sb.main.game.maxAp), mapId: sb.main.game.mapId ?? null,
+      season: season ? { type: num(season.type), remain: num(season.remain), total: num(season.total) } : null,
+      zones: Object.fromEntries(Object.entries(sb.main?.map?.zone ?? {}).map(([k, z]) => [k, { state: num(z?.state), weather: num(z?.weather) }])),
+      baseLv: num(sb.base?.baseLv), bossKill: Array.isArray(sb.base?.bossKill) ? sb.base.bossKill : [],
+      portable: !!sb.base?.portableUnlock, outpost: !!sb.base?.outpostUnlock,
+      techToken: num(sb.tech?.token), techUnlock: Array.isArray(sb.tech?.unlock) ? sb.tech.unlock.length : 0,
+      drink: num(sb.cook?.drink), squads,
+      usedChars: (sb.troop?.usedChar ?? []).map((i) => instToChar[String(i)]).filter(Boolean),
+      best: sb.challenge?.best?.day ? num(sb.challenge.best.day) : 0,
+    };
   }
   return Object.keys(out).length ? out : null;
 }
