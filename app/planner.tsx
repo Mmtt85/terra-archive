@@ -20,7 +20,7 @@ import {
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, orderFixFor, roomMaxNetDrain,
   ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS, PLANTS_BASE_RT,
-  splitPriority, joinPriority, AUTO_BENCH_IDS,
+  splitPriority, joinPriority, AUTO_BENCH_IDS, genEstimate,
   setRecycle, RECYCLE_MODE, RECYCLE_SPEC, recycleRate, recycleDaily, type RecycleMode,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type ProdAxis, type DrainMode, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
 } from "./planner-engine";
@@ -2913,9 +2913,14 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                         );
                       }) : <p>{t("이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).")}</p>}
                       {parts.map((part) => <small key={part}>{part}</small>)}
-                      {op.skills.flatMap((skill) => skill.tokenGen).map((gen) => (
-                        <small key={`${op.id}-${gen.token}`} className="token-chip">{t("{token} +{n}점 생성", { token: tokenName(locale, gen.token), n: Math.round(gen.estimate) })}</small>
-                      ))}
+                      {/* 생성량은 **편성이 실제로 센 값**(토큰 원장)으로 — 스킬의 고정 추정치는 '쉐이 5명'·'숙소 만렙' 같은
+                          상한 가정이라 실제 배치와 달랐다 (제보 6d498924, 2026-10-12: 쉐이 2명인데 총웨 +25, 시너지 트리는 +10).
+                          원장에 없으면(편성 밖에서 보는 경우) 숙소 레벨만 반영한 추정치 */}
+                      {op.skills.flatMap((skill) => skill.tokenGen).map((gen) => {
+                        const gens = plan.flows.find((flow) => flow.token === gen.token)?.generators.filter((g) => g.opId === op.id && !g.via) ?? [];
+                        const n = gens.length ? gens.reduce((a, g) => a + g.amount, 0) : genEstimate(gen);
+                        return <small key={`${op.id}-${gen.token}`} className="token-chip">{t("{token} +{n}점 생성", { token: tokenName(locale, gen.token), n: Math.round(n) })}</small>;
+                      })}
                       {isCore(op) ? (
                         <div className="slot-subs"><small className="core-chip">{t("대체 불가 · 시너지 코어")}</small></div>
                       ) : (
