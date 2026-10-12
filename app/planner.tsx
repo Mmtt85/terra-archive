@@ -1087,7 +1087,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         // 만든 편성은 **저장해 둔다** — 안 그러면 들어올 때마다 새로 짜서, 보유가 그대로인데도 편성이 바뀐다
         // ('내 정보' 동기화로 편성을 비운 뒤 매번 자동편성이 돌던 문제, 사용자 지적 2026-10-05).
         // 이 시점의 상태값은 아직 복원 전이라 persist() 대신 저장분에 편성만 끼워 넣는다
-        void optimizeOff({ owned: ids, elite, opLevels: restoreOpLevels(data.opLevels), includeFuture: false, priority: "gold", layout: savedLayout, levels: savedLevels, customRooms: savedCustom, customProducts: savedProducts }).then((made) => {
+        // 버튼으로 돌릴 때와 같은 진행 토스트 — '내 정보' 동기화 뒤 들어오면 여기서 다시 짜는데, 문구가 없어
+        // 화면이 아무 반응 없이 멈춘 것처럼 보였다 (사용자 지적 2026-10-12)
+        setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
+        void optimizeOff({ owned: ids, elite, opLevels: restoreOpLevels(data.opLevels), includeFuture: false, priority: "gold", layout: savedLayout, levels: savedLevels, customRooms: savedCustom, customProducts: savedProducts },
+          (step: OptimizeStep) => { setOptimizing(stepMessage(step)); }).finally(() => setOptimizing(null)).then((made) => {
           setPlan(made);
           syncBucket(savedLayout, { plan: made });
           try {

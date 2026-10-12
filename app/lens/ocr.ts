@@ -102,6 +102,9 @@ export type OcrSession = {
   sparse(): Promise<string[]>;
   /** 어두운 버튼 칩 개별 PSM7 — 공개모집 태그 등 (호출 측이 키워드로 게이트) */
   chips(): Promise<string[]>;
+  /** 칩 재독 — 흑백으로 또렷하게 + 2배 확대해 다시 읽는다. 공채 태그가 다섯 개 다 안 나왔을 때만 (run.ts).
+   *  브라우저 확대가 짧은 두 글자 칸을 뭉개 '가드'를 '리도'로 읽은 실측 (틀렸어요 2026-10-12, 오프라인 sharp 는 읽음) */
+  chipsAlt(cut?: number): Promise<string[]>;
   /** PSM3(auto) 전체 프레임 — 1차로 판정 안 될 때만 폴백 */
   auto(): Promise<string[]>;
   /** 중국어(chi_sim) PSM11 전체 프레임 — kor 매칭이 무신호일 때만 (블랙플로우 CN 스크린샷) */
@@ -391,6 +394,32 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
         if (!r) continue;
         cc.width = r.w; cc.height = r.h;
         cctx.drawImage(c, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+        const r7 = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+        const txt = (r7.data.text ?? "").trim();
+        if (txt) out.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean));
+      }
+      return out;
+    },
+    async chipsAlt(cut = 0.5) {
+      const boxes = findDarkChips(img.data, W, H);
+      if (!boxes.length) return [];
+      await setPsm(worker, "7");
+      const out: string[] = [];
+      const src = document.createElement("canvas");
+      const sctx = src.getContext("2d", { willReadFrequently: true })!;
+      const cc = document.createElement("canvas");
+      const cctx = cc.getContext("2d")!;
+      for (const b of boxes) {
+        const r = chipCropRect(b, W, H);
+        if (!r) continue;
+        src.width = r.w; src.height = r.h;
+        sctx.drawImage(c, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+        const d = sctx.getImageData(0, 0, r.w, r.h);
+        binarizeGlyph(d.data, cut);           // 밝은 글자 → 검정, 어두운 칩 바탕 → 흰색
+        sctx.putImageData(d, 0, 0);
+        cc.width = r.w * 2; cc.height = r.h * 2;
+        cctx.imageSmoothingEnabled = false;   // 이진화 뒤라 nearest 가 획을 덜 뭉갠다
+        cctx.drawImage(src, 0, 0, r.w * 2, r.h * 2);
         const r7 = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
         const txt = (r7.data.text ?? "").trim();
         if (txt) out.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean));

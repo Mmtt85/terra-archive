@@ -226,6 +226,13 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       lines = (await session.chips()).concat(await session.sparse());
       oc = analyzeRecruit(lines, tags);
     }
+    // 그래도 다섯 개가 안 되면 칩을 다른 방식(흑백 + 2배)으로 한 번 더 — 브라우저 확대가 '가드'를 '리도'로 뭉갠 실측
+    // (틀렸어요 화면 2026-10-12: 이 재독으로 '가드'가 읽혔다)
+    const nTags = () => (oc.target.kind === "goto" && oc.target.goto.page === "recruit" ? oc.target.goto.tags.length : 0);
+    if (nTags() > 0 && nTags() < 5) {
+      lines = lines.concat(await session.chipsAlt());
+      oc = analyzeRecruit(lines, tags);
+    }
   } else if (mode === "autochess") {
     // 위수 협의 — 이동이 아니라 **한 판 상태 갱신**이다. 화면이 계속 들어오며 값만 바뀐다 (2026-09-07 재가동).
     // 순서: ① 원색 픽셀로 밴 격자를 먼저 본다 — 밴 화면이면 얼굴로 기물을 확정하고 **OCR 은 건너뛴다**
