@@ -3266,7 +3266,7 @@ const D: Record<string, Pair> = {
     "PRTSリンクはPCブラウザでのみ利用できます",
   ],
   "PRTS 링크 연결됨": ["PRTS Link on", "PRTSリンク接続中"],
-  "인식률·속도 개선을 위해 인식 기록(그림 없이 결과만)을 모으고 있어요. 잘못 인식했다면 '틀렸어요'를 눌러 주세요 — 그때만 그 화면 한 장이 함께 전송돼요.": ["We're collecting recognition logs (results only, no images) to improve accuracy and speed. If something was recognized wrong, press 'Wrong' — only then is that one screen sent along.", "認識精度と速度の改善のため、認識ログ（画像なし・結果のみ）を集めています。誤認識のときは「違います」を押してください — そのときだけ、その画面1枚が一緒に送信されます。"],
+  "잘못 인식했다면 '틀렸어요'를 눌러 주세요 — 그때만 그 인식 결과와 화면 한 장이 전송돼요. 평소 인식은 따로 보내지 않아요.": ["If something was recognized wrong, press 'Wrong' — only then are that result and one screen sent. Regular recognitions aren't sent.", "誤認識のときは「違います」を押してください — そのときだけ、その認識結果と画面1枚が送信されます。普段の認識は送信しません。"],
   "화면 보내는 중…": ["Sending screen…", "画面を送信中…"],
   "화면 전송 실패 — 기록만 남겼어요": ["Couldn't send the screen — the report was saved", "画面の送信に失敗 — 記録だけ残しました"],
   "게임 데이터 확인 {date}": ["Game data checked {date}", "ゲームデータ確認 {date}"],

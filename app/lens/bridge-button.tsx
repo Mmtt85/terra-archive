@@ -209,7 +209,7 @@ export default function BridgeButton({ t }: { t: T }) {
       </button>
       {/* 기록 수집 안내 (사용자 지시 2026-10-12) — 토스트 둘째 줄 */}
       {pipPortal}
-      <small className="bridge-toast-hint">{t("인식률·속도 개선을 위해 인식 기록(그림 없이 결과만)을 모으고 있어요. 잘못 인식했다면 '틀렸어요'를 눌러 주세요 — 그때만 그 화면 한 장이 함께 전송돼요.")}</small>
+      <small className="bridge-toast-hint">{t("잘못 인식했다면 '틀렸어요'를 눌러 주세요 — 그때만 그 인식 결과와 화면 한 장이 전송돼요. 평소 인식은 따로 보내지 않아요.")}</small>
     </div>,
     document.body,
   );

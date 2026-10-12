@@ -650,43 +650,18 @@ create policy "anon insert prts scan" on public.prts_scan for insert to anon wit
 drop policy if exists "admin read prts scan" on public.prts_scan;
 create policy "admin read prts scan" on public.prts_scan for select to anon using ((select public.visits_is_admin()));
 
--- 어드민 'PRTS 인식' 표 — 합계·결과별·구역별·최근 기록(틀렸어요·바로잡음 표시)
-create or replace function public.visits_prts_scans(p_from timestamptz, p_to timestamptz)
+-- 어드민 'PRTS 틀렸어요' — 틀렸어요 줄에서 출발해 그 인식(id, 기본 키)과 화면 한 장을 붙인다 (2026-10-12).
+-- 종전 visits_prts_scans(인식 표)는 인식 줄마다 표 전체를 훑어 하루 3천 줄에서 5초가 걸렸다 — 표째 걷어냈다
+-- (사용자 지시 "인식표 그건 걍 지우자. 받지도 말자"). 인식 기록도 이제 틀렸어요를 누를 때만 온다
+drop function if exists public.visits_prts_scans(timestamptz, timestamptz);
+create index if not exists prts_scan_ref_idx on public.prts_scan (ref, kind, at) where ref is not null;
+create or replace function public.visits_prts_wrong(p_from timestamptz, p_to timestamptz)
 returns json language sql stable security definer set search_path = public as $$
-  -- 모든 곳(라이브·dev)의 인식 — '틀렸어요' 목록은 어디서 누가 눌렀든 다 보인다 (2026-10-12 "언제 재현될지 모르니까")
-  with s_all as (
-    select x.*, exists (select 1 from public.prts_scan w where w.ref = x.id and w.kind = 'wrong') as wrong,
-           (select f.target from public.prts_scan f where f.ref = x.id and f.kind = 'fix' order by f.at limit 1) as fixed_to,
+  select coalesce(json_agg(r order by r.at desc), '[]') from (
+    select w.at, x.visitor, x.topic, x.result, x.section, x.target, x.note, x.seen, x.cached, x.env,
            (select i.img from public.prts_scan i where i.ref = x.id and i.kind = 'shot' order by i.at limit 1) as shot
-    from public.prts_scan x
-    where x.kind = 'scan' and x.at >= p_from and x.at < p_to
-  ),
-  -- 통계·최근 기록은 종전처럼 라이브만
-  s as (select * from s_all where env = 'live')
-  select json_build_object(
-    'n', (select count(*) from s),
-    'people', (select count(distinct visitor) from s),
-    'cached', (select count(*) from s where cached),
-    'wrong', (select count(*) from s where wrong),
-    'fixed', (select count(*) from s where fixed_to is not null),
-    'ms_avg', (select round(avg(ms)) from s where not coalesce(cached, false)),
-    'ms_p50', (select percentile_cont(0.5) within group (order by ms) from s where not coalesce(cached, false)),
-    'ms_p90', (select percentile_cont(0.9) within group (order by ms) from s where not coalesce(cached, false)),
-    'by_result', (select coalesce(json_agg(d order by d.n desc), '[]') from (
-        select coalesce(result, '?') as k, count(*) as n, count(*) filter (where wrong) as wrong,
-               count(*) filter (where fixed_to is not null) as fixed, round(avg(ms) filter (where not coalesce(cached, false))) as ms
-        from s group by 1) d),
-    'by_section', (select coalesce(json_agg(d order by d.n desc), '[]') from (
-        select coalesce(section, '?') as k, count(*) as n, count(*) filter (where wrong) as wrong,
-               count(*) filter (where fixed_to is not null) as fixed, round(avg(ms) filter (where not coalesce(cached, false))) as ms
-        from s group by 1) d),
-    'recent', (select coalesce(json_agg(r order by r.at desc), '[]') from (
-        select at, visitor, topic, page, result, section, target, note, seen, ms, ocr_ms, cached, w, h, crop, wrong, fixed_to, shot
-        from s order by at desc limit 200) r),
-    -- 틀렸어요만 따로 — 최근 목록(10줄)에 묻히지 않게 (화면 주소 포함)
-    'wrong_list', (select coalesce(json_agg(r order by r.at desc), '[]') from (
-        select at, visitor, topic, page, result, section, target, note, seen, ms, cached, shot, env
-        from s_all where wrong order by at desc limit 50) r)
-  )
-  where (select public.visits_is_admin())
+    from public.prts_scan w join public.prts_scan x on x.id = w.ref and x.kind = 'scan'
+    where w.kind = 'wrong' and w.at >= p_from and w.at < p_to and (select public.visits_is_admin())
+    order by w.at desc limit 50
+  ) r
 $$;

@@ -24,7 +24,7 @@
 import { forgetModalPos, PRTS_MODAL_KEY } from "../modal-geo";
 import { useEffect, useRef, useState } from "react";
 import type { LensOutcome } from "./match";
-import { holdVisitActive, notePrtsStart, notePrtsEnd, notePrtsScan, prtsScanId } from "../visit-track";
+import { holdVisitActive, notePrtsStart, notePrtsEnd, notePrtsScan, prtsScanId, type PrtsScanRow } from "../visit-track";
 import { uploadFeedbackFile } from "../feedback";
 
 // 크롬 전용 API 라 TS 기본 DOM 타입에 없다 — 쓰는 만큼만 선언
@@ -150,14 +150,13 @@ type ScanCtx = { id: string; emitAt: number; w: number; h: number; crop: number;
 let scan: ScanCtx | null = null;
 /** 마지막으로 끝난 인식 — 토스트의 '틀렸어요'가 가리킨다 */
 /** shot = '틀렸어요'와 함께 보낸 화면 — 보내는 중·보냄·실패 (화면이 없으면 none: 캐시 재적용은 새 화면을 안 만든다) */
-let lastScan: { id: string; at: number; wrong: boolean; blob?: Blob; shot?: "sending" | "sent" | "fail" | "none" } | null = null;
-let fixTimer: number | undefined;
+// row = 그 인식의 기록 한 줄 — 평소엔 보내지 않고 '틀렸어요'를 누를 때만 보낸다 (사용자 지시 2026-10-12 "인식표는 지우자. 받지도 말자" —
+// 인식마다 보내니 하루 3천 줄이 쌓여 관리자 화면이 느려졌다). 같은 까닭으로 '바로잡음'(fix) 추적도 걷어냈다
+let lastScan: { id: string; at: number; wrong: boolean; row?: PrtsScanRow; blob?: Blob; shot?: "sending" | "sent" | "fail" | "none" } | null = null;
 /** '못 찾음'이면 화면이 그대로여도 한 번 다시 읽는다 — 보상 화면처럼 서서히 나타나는 화면을 다 뜨기 전에 읽은 경우
  *  (사용자 제보 2026-10-12 "하나 받고 나서야 리스트에 뜬다" — 화면이 '같은 화면'으로 묶여 다시 안 읽혔다) */
 let retryAt = 0;
 let retryNext = false;   // 다음 인식이 그 재시도다 — 재시도에서 또 못 찾으면 더는 다시 읽지 않는다 (메뉴 화면 무한 OCR 방지)
-let userActAt = 0;
-const markUserAct = () => { userActAt = Date.now(); };
 
 function gotoKey(oc: LensOutcome): string | undefined {
   const tg = oc.target;
@@ -179,32 +178,14 @@ function finishScan(ocrStart?: number): void {
   const result = !oc ? "unreported" : oc.battle ? "battle" : oc.target.kind;
   // 판정 근거 — 맞춘 게임 항목 이름(최대 5)·화면 종류(최대 3). 게임 데이터 이름표뿐이다
   const seen = oc ? [...oc.entities.slice(0, 5).map((e) => e.name), ...oc.screens.slice(0, 3).map((x) => `#${x}`)].join("|") : undefined;
-  notePrtsScan({
+  const row: PrtsScanRow = {
     id: sc.id, kind: "scan", seen, page: location.pathname.replace(/^\/(en|ja)(?=\/|$)/, "") || "/", topic: lock?.topic,
     result, section: oc?.section ?? undefined, target: oc ? gotoKey(oc) : undefined, note: sc.note,
     ms: now - sc.emitAt, ocr_ms: ocrStart != null ? now - ocrStart : 0, cached: sc.cached, w: sc.w, h: sc.h, crop: sc.crop,
-  });
-  lastScan = { id: sc.id, at: now, wrong: false, blob: sc.blob };
+  };
+  lastScan = { id: sc.id, at: now, wrong: false, row, blob: sc.blob };
   retryAt = result === "none" && !sc.cached && !sc.retry ? now + 1500 : 0;
   notify();
-  // 손으로 바로잡음 — 자동 이동이 **실제로 일어났으면**(주소가 바뀌었으면) 15초 동안, 사람이 직접 눌러
-  // 다른 데로 옮기는지 본다. 새 인식이 시작되면 그만 본다 (그 이동은 브리지 몫이다).
-  if (fixTimer !== undefined) { window.clearInterval(fixTimer); fixTimer = undefined; }
-  if (result !== "goto") return;
-  window.setTimeout(() => {
-    const snap = location.href;
-    if (snap === sc.href || lastScan?.id !== sc.id) return;   // 이동하지 않았다(노드 이동 꺼짐 등)·이미 다음 인식
-    const armedAt = Date.now();
-    fixTimer = window.setInterval(() => {
-      const done = () => { window.clearInterval(fixTimer); fixTimer = undefined; };
-      if (scan || lastScan?.id !== sc.id || Date.now() - armedAt > 15_000) return done();
-      if (location.href !== snap && userActAt > armedAt) {
-        notePrtsScan({ id: prtsScanId(), kind: "fix", ref: sc.id, topic: lock?.topic,
-          target: (location.pathname.replace(/^\/(en|ja)(?=\/|$)/, "") || "/") + location.hash });
-        done();
-      }
-    }, 500);
-  }, 800);
 }
 
 /** 토스트의 '틀렸어요' — 마지막 인식을 틀렸다고 표시하고, **그 인식에 쓴 화면 한 장**을 같이 올린다
@@ -215,6 +196,7 @@ export function markBridgeWrong(): void {
   if (!ls || ls.wrong) return;
   ls.wrong = true;
   const wrongId = prtsScanId();
+  if (ls.row) notePrtsScan(ls.row);   // 그 인식 한 줄 — 이때 처음 보낸다
   notePrtsScan({ id: wrongId, kind: "wrong", ref: ls.id, topic: lock?.topic });
   if (!ls.blob) { ls.shot = "none"; notify(); return; }
   ls.shot = "sending";
@@ -368,8 +350,6 @@ export async function connectBridge(withLock?: BridgeLock, via?: Window): Promis
   lock = withLock ?? null;
   runLog = []; logMeta = null; startedAt = new Date().toISOString();
   scan = null; lastScan = null; pipNode = null; pipRelics = [];
-  document.addEventListener("pointerdown", markUserAct, true);
-  document.addEventListener("keydown", markUserAct, true);
   sceneMemos = []; lastEmitGray = null; battleHold = false;
   error = ""; notify();
   const opts = {
@@ -440,9 +420,6 @@ export function disconnectBridge(): void {
   if (visitHeld) { visitHeld = false; holdVisitActive(false); }
   notePrtsEnd();
   scan = null;
-  if (fixTimer !== undefined) { window.clearInterval(fixTimer); fixTimer = undefined; }
-  document.removeEventListener("pointerdown", markUserAct, true);
-  document.removeEventListener("keydown", markUserAct, true);
   if (timer !== undefined) { window.clearInterval(timer); timer = undefined; }
   if (lockRelease) { lockRelease(); lockRelease = null; }
   if (reader) { void reader.cancel().catch(() => { /* 이미 닫힘 */ }); reader = null; }
