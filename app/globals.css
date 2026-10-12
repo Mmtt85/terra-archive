@@ -18628,6 +18628,22 @@ main.site-main > .site-header {
 }
 /* 틀렸어요 — '연결 끊기'와 같은 결 (2026-10-12) · 누른 뒤엔 고맙다는 글자만 */
 .bridge-toast-thanks { flex: none; font-size: 10px; font-weight: 600; color: var(--muted); }
+/* 작은 창(문서 PiP, 2026-10-12 시험판) — 게임 위에 떠 있는 창. 그 창 문서의 body 에 그린다 */
+.bridge-pip-body { margin: 0; background: var(--header-solid, var(--white));   /* 통합전략 테마는 --paper 를 투명으로 덮는다 — 불투명한 토스트 색 */ color: var(--ink); font-family: var(--sans, system-ui, sans-serif); }
+.bridge-pip { display: flex; flex-direction: column; min-height: 100vh; font-size: 12.5px; line-height: 1.55; }
+.bridge-pip-head { position: sticky; top: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; padding: 8px 10px;
+  background: var(--header-solid, var(--white)); border-bottom: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+.bridge-pip-head b { color: var(--ink2); font-weight: 600; }
+.bridge-pip-empty { margin: 24px 12px; color: var(--muted); text-align: center; }
+.bridge-pip-cards { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+.bridge-pip-card { display: flex; flex-direction: column; gap: 3px; padding: 9px 10px; border: 1px solid var(--line); background: var(--white); }
+.bridge-pip-card small { font-size: 10px; color: var(--muted); letter-spacing: .02em; }
+.bridge-pip-card b { font-size: 14px; color: var(--ink); }
+.bridge-pip-card p { margin: 2px 0 0; color: var(--ink2); white-space: pre-line; }
+.bridge-pip-list { display: flex; gap: 6px; align-items: baseline; margin-top: 3px; font-size: 11.5px; color: var(--muted); }
+.bridge-pip-list span { flex: none; }
+.bridge-pip-list ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 2px 8px; color: var(--ink2); }
+.bridge-pip-foot { margin-top: auto; padding: 8px 10px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; }
 /* 기록 수집 안내 — 토스트 둘째 줄 (2026-10-12). 토스트를 줄바꿈 가능하게 하고 이 줄만 한 줄을 다 쓴다 */
 .bridge-toast:has(.bridge-toast-hint) { flex-wrap: wrap; row-gap: 4px; }
 /* 줄바꿈을 허용하면 단추가 아랫줄로 밀린다 — 종전처럼 글자 칸이 먼저 줄어들어 말줄임되게 */

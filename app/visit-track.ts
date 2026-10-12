@@ -56,6 +56,14 @@ function isOwner(): boolean {
   try { return document.cookie.split("; ").some((c) => c === `${NO_TRACK_COOKIE}=1`); } catch { return false; }
 }
 
+/** 운영자 브라우저인가 (밖에서 쓰는 판정) — 시험 중인 기능을 운영자에게만 보일 때 쓴다 (PRTS 작은 창, 2026-10-12).
+ *  로컬 dev 도 운영자다 */
+export function isOwnerBrowser(): boolean {
+  if (typeof window === "undefined") return false;
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return true;
+  return isOwner();
+}
+
 /** 어드민 페이지가 부른다 — terra-archive.net 과 그 아래 모든 주소에 '운영자' 표식을 1년 건다 */
 export function markOwnerBrowser(): void {
   if (!/(^|\.)terra-archive\.net$/.test(location.hostname)) return;   // localhost 에선 도메인 쿠키를 못 건다

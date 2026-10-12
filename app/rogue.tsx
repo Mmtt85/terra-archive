@@ -25,7 +25,7 @@ import { LENS_ITEM_SECTIONS, type LensGoto, type LensOutcome } from "./lens/matc
 import { recognizeShot, warmData, ocrLangFor, resetGradeCache } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
-import { useBridgeWatch, noteBridge, bridgeLock, bridgeNodeJump, logBridgeEvent, memoBridgeScene, type BridgeLogEvent } from "./lens/bridge";
+import { useBridgeWatch, noteBridge, bridgeLock, bridgeNodeJump, logBridgeEvent, memoBridgeScene, setBridgePip, type BridgeLogEvent, type BridgePipCard } from "./lens/bridge";
 import { BridgeTopicButton } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
 import { asset } from "./assets";
@@ -2135,6 +2135,28 @@ export default function RogueGuide({ initialTopic }: {
   };
   /** PRTS 링크 인식 적용 — 이동 없이 모달만. 모달이 있는 항목(작전·조우·구역·소장품)은 그 모달, 목록으로 가던 것
    *  (분대·도구·캡슐·시스템 항목 등)은 모아보기 모달. 지금 보는 테마가 아니면 띄울 데이터가 없어 상태줄에만 남긴다 */
+  /** 작은 창(PiP) 카드 — 방금 인식한 작전·조우·구역·항목을 이름 + 효과로 (2026-10-12 시험판) */
+  const pipItem = (r: LensItem): BridgePipCard => ({
+    kind: relicById.has(r.id) ? t("소장품") : data.bands.some((b) => b.id === r.id) ? t("분대") : t("항목"),
+    name: r.name, text: r.usage ?? r.desc ?? null,
+  });
+  const pipFor = (modal: { type: string; id: string } | undefined, items: LensItem[]): BridgePipCard[] => {
+    const out: BridgePipCard[] = [];
+    if (modal?.type === "stage") {
+      const st = stageById.get(modal.id);
+      if (st) out.push({ kind: t("작전"), name: `${st.code ? `${st.code} ` : ""}${st.name}`, text: st.desc,
+        listLabel: t("등장 적"), list: st.enemies.map((e) => data.enemies[e.key]?.name).filter((n): n is string => !!n).slice(0, 6) });
+    } else if (modal?.type === "enc") {
+      const e = encByScene.get(modal.id);
+      if (e) out.push({ kind: t("조우"), name: e.title, text: e.desc, listLabel: t("선택지"), list: e.choices.map((c) => c.title) });
+    } else if (modal?.type === "zone") {
+      const z = zoneById.get(modal.id);
+      if (z) out.push({ kind: t("구역"), name: z.name, text: z.buff ?? z.desc });
+    }
+    for (const r of items) if (!(modal?.type === "relic" && modal.id === r.id)) out.push(pipItem(r));
+    if (modal?.type === "relic") { const r = relicById.get(modal.id) ?? lensItemById.get(modal.id); if (r) out.unshift(pipItem(r)); }
+    return out;
+  };
   const applyLensLive = (g: Extract<LensGoto, { page: "rogue" }>) => {
     if (g.topic !== topicRef.current) { noteBridge(t("다른 테마 화면 — 이동하지 않음")); return; }
     if (typeof g.grade === "number" && g.grade >= 0) {
@@ -2152,6 +2174,8 @@ export default function RogueGuide({ initialTopic }: {
     }
     const ids = [...(g.highlight ?? []), ...(g.items ?? [])];
     const rs = ids.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
+    const cards = pipFor(g.modal, rs);
+    if (cards.length) setBridgePip(cards);
     // 모달을 이미 띄웠으면 같이 떠 있던 소장품만(items), 아니면 인식한 항목 전부를 모아보기로
     if (!opened && rs.length === 1 && relicById.has(rs[0].id)) setRelicOpen(relicById.get(rs[0].id)!);
     else setLensMulti(rs.length ? rs : null);
@@ -2223,7 +2247,7 @@ export default function RogueGuide({ initialTopic }: {
   const showLensItems = (ids: string[], topic: string): number => {
     if (!ids.length || topic !== topicRef.current) return 0;
     const rs = ids.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
-    if (rs.length) setLensMulti(rs);
+    if (rs.length) { setLensMulti(rs); setBridgePip(rs.map(pipItem)); }
     return rs.length;
   };
   const [lensMsg, setLensMsg] = useState<string | null>(null);

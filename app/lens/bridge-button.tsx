@@ -6,13 +6,14 @@
 // 연결 전에는 아무것도 그리지 않는다.
 
 import { NewBadge } from "../new-badge";
-import { lazy, Suspense, useState, useSyncExternalStore } from "react";
+import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong } from "./bridge";
+import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong, bridgePipCards } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
 import { isAcLock } from "../autochess-run";
+import { isOwnerBrowser } from "../visit-track";
 import type { T } from "../i18n";
 
 // 지원 여부는 navigator를 봐야 알 수 있어 서버에선 판단할 수 없다. 그냥 호출하면
@@ -25,12 +26,93 @@ const PHASE: Record<string, string> = {
   battle: "전투 중", replay: "본 화면 재적용",
 };
 
+// ── 작은 창(문서 PiP, 2026-10-12 시험판) ─────────────────────────────────────────────
+// 크롬·엣지(116+)의 Document Picture-in-Picture — 다른 프로그램(게임) 위에 **항상 떠 있는** 작은 창에 우리 화면을 그린다.
+// 게임을 크게 띄운 채 방금 인식한 소장품 효과·작전 이름을 볼 수 있다. 창은 사용자 클릭으로만 열린다(브라우저 규칙).
+// 같은 React 트리에서 createPortal 로 그 창 문서에 그린다 — 스타일시트는 열 때 복사한다.
+type DocPip = { requestWindow: (o: { width: number; height: number }) => Promise<Window>; window: Window | null };
+const docPip = (): DocPip | undefined => (typeof window !== "undefined" ? (window as unknown as { documentPictureInPicture?: DocPip }).documentPictureInPicture : undefined);
+
+async function openPipWindow(): Promise<Window | null> {
+  const dp = docPip();
+  if (!dp) return null;
+  const w = await dp.requestWindow({ width: 360, height: 460 });
+  for (const sh of [...document.styleSheets]) {
+    try {
+      const st = w.document.createElement("style");
+      st.textContent = [...sh.cssRules].map((r) => r.cssText).join("\n");
+      w.document.head.append(st);
+    } catch {
+      if (sh.href) { const l = w.document.createElement("link"); l.rel = "stylesheet"; l.href = sh.href; w.document.head.append(l); }
+    }
+  }
+  // 라이트·다크 테마만 — 통합전략 테마 클래스(rg-theme·rgN)는 본문에 테마 그라데이션을 깔아 작은 창 배경을 덮는다
+  w.document.documentElement.className = document.documentElement.className.split(/\s+/).filter((c) => c && !/^rg/.test(c)).join(" ");
+  const theme = document.documentElement.getAttribute("data-theme");
+  if (theme) w.document.documentElement.setAttribute("data-theme", theme);
+  w.document.title = "PRTS";
+  w.document.body.className = "bridge-pip-body";
+  return w;
+}
+
+function PipView({ t, phase, note, lockName }: { t: T; phase: string; note: string; lockName: string }) {
+  const cards = bridgePipCards();
+  const last = bridgeLastScan();
+  return (
+    <div className="bridge-pip">
+      <header className="bridge-pip-head">
+        <span className="bridge-dot" aria-hidden>◉</span>
+        <b>{lockName}</b>
+        <span>{phase}{note ? ` · ${note}` : ""}</span>
+      </header>
+      {cards.length === 0 ? (
+        <p className="bridge-pip-empty">{t("게임 화면을 인식하면 여기에 나옵니다")}</p>
+      ) : (
+        <div className="bridge-pip-cards">
+          {cards.map((c, i) => (
+            <article key={i} className="bridge-pip-card">
+              <small>{c.kind}</small>
+              <b>{c.name}</b>
+              {c.text && <p>{c.text}</p>}
+              {c.list && c.list.length > 0 && (
+                <div className="bridge-pip-list">{c.listLabel && <span>{c.listLabel}</span>}<ul>{c.list.map((x, k) => <li key={k}>{x}</li>)}</ul></div>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+      {last && (
+        <footer className="bridge-pip-foot">
+          {last.wrong
+            ? <span className="bridge-toast-thanks">{t(last.shot === "sending" ? "화면 보내는 중…" : last.shot === "fail" ? "화면 전송 실패 — 기록만 남겼어요" : "알려 주셔서 고마워요")}</span>
+            : <button type="button" className="bridge-toast-off bridge-toast-wrong" onClick={markBridgeWrong}>{t("틀렸어요")}</button>}
+        </footer>
+      )}
+    </div>
+  );
+}
+
 /** 연결 상태 토스트 — 문서 최상위에 포털로 그려 모달 백드롭 위에도 항상 보인다. */
 export default function BridgeButton({ t }: { t: T }) {
   const { settings, gate, busy, note, lock, nodeJump } = useBridgeStatus();
+  const [pip, setPip] = useState<Window | null>(null);
+  // ⚠ 시험판 — **운영자 브라우저에서만** 보인다 (사용자 지시 2026-10-12 "사용자들이 안 보이게 몰래 숨겨 놓고 나만 써 보고 싶음").
+  //   공개할 때 isOwnerBrowser() 조건만 빼면 된다
+  const pipOk = useSyncExternalStore(noSubscribe, () => !!docPip() && isOwnerBrowser(), () => false);
+  // 연결을 끊으면 작은 창도 닫는다
+  useEffect(() => { if (!settings && pip) { pip.close(); setPip(null); } }, [settings, pip]);
   if (!settings) return null;   // 연결 전·미지원 — 아무것도 그리지 않는다
 
   const phase = busy ? t("인식 중…") : t(PHASE[gate?.phase ?? ""] ?? "연결됨");
+  const togglePip = async () => {
+    if (pip) { pip.close(); setPip(null); return; }
+    try {
+      const w = await openPipWindow();
+      if (!w) return;
+      w.addEventListener("pagehide", () => setPip(null), { once: true });
+      setPip(w);
+    } catch { /* 사용자가 막았거나 미지원 */ }
+  };
 
   return createPortal(
     <div className={`bridge-toast${busy ? " busy" : ""}`} aria-live="polite" role="status">
@@ -63,10 +145,17 @@ export default function BridgeButton({ t }: { t: T }) {
           <span className="bridge-node-knob" aria-hidden />🗺 {t("노드 이동")}
         </button>
       )}
+      {pipOk && (
+        <button type="button" className={`bridge-toast-node${pip ? " on" : ""}`} aria-pressed={!!pip} onClick={() => void togglePip()}
+          title={t("게임 위에 항상 떠 있는 작은 창에 인식 결과를 띄웁니다 (크롬·엣지)")}>
+          ⧉ {t("작은 창")}
+        </button>
+      )}
       <button type="button" className="bridge-toast-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>
         {t("연결 끊기")}
       </button>
       {/* 기록 수집 안내 (사용자 지시 2026-10-12) — 토스트 둘째 줄 */}
+      {pip && createPortal(<PipView t={t} phase={phase} note={note} lockName={lock ? t(lock.name) : t("PRTS 링크 연결됨")} />, pip.document.body)}
       <small className="bridge-toast-hint">{t("인식률·속도 개선을 위해 인식 기록(그림 없이 결과만)을 모으고 있어요. 잘못 인식했다면 '틀렸어요'를 눌러 주세요 — 그때만 그 화면 한 장이 함께 전송돼요.")}</small>
     </div>,
     document.body,

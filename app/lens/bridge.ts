@@ -218,6 +218,13 @@ export function markBridgeWrong(): void {
 }
 export const bridgeLastScan = () => lastScan;
 
+// ── 작은 창(문서 PiP) 카드 (2026-10-12 시험판) — 게임 위에 떠 있는 창에 '방금 인식한 것'을 보여 준다.
+// 탭(rogue.tsx)이 인식할 때마다 채우고, 토스트(bridge-button.tsx)가 PiP 창에 그린다.
+export type BridgePipCard = { kind: string; name: string; text?: string | null; list?: string[]; listLabel?: string };
+let pipCards: BridgePipCard[] = [];
+export function setBridgePip(cards: BridgePipCard[]): void { pipCards = cards; notify(); }
+export const bridgePipCards = () => pipCards;
+
 const frameSubs = new Set<(f: File) => void>();
 const replaySubs = new Set<(oc: LensOutcome) => void>();
 const statusSubs = new Set<() => void>();
@@ -337,7 +344,7 @@ export async function connectBridge(withLock?: BridgeLock): Promise<void> {
   disconnectBridge();
   lock = withLock ?? null;
   runLog = []; logMeta = null; startedAt = new Date().toISOString();
-  scan = null; lastScan = null;
+  scan = null; lastScan = null; pipCards = [];
   document.addEventListener("pointerdown", markUserAct, true);
   document.addEventListener("keydown", markUserAct, true);
   sceneMemos = []; lastEmitGray = null; battleHold = false;
