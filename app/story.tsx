@@ -9,7 +9,7 @@
 import { confirmedDay, fmtMonthDay } from "./kr-confirmed";
 import { usePageHelp } from "./page-help";
 import { NewBadge } from "./new-badge";
-import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { asset, storyCutUrl, storyThumbUrl } from "./assets";
 import { Dropdown } from "./dropdown";
 import { scrollMainTop } from "./scroll";
@@ -48,7 +48,7 @@ import imageDimsData from "./data/story-image-dims.json";
 import loreIndexData from "./data/eventlore-index.json";
 import { rich, useI18n, type Locale } from "./i18n";
 import { ModalWindow } from "./modal-window";
-import { saveStoryPos, storyPos, type StoryPos } from "./story-bookmark";
+import { clearStoryPos, saveStoryPos, storyPos, storyPosServer, storyPosSnapshot, subscribeStoryPos, type StoryPos } from "./story-bookmark";
 const SceneMode = lazy(() => import("./story-vn"));
 // 요약 본문 그림 — 스토리 CG(/story/cut/)는 캐시 키를 붙인다 (assets.ts CUT_VER — 같은 이름으로 내용이 바뀐 CG)
 const summaryImg = (src: string) => {
@@ -745,19 +745,28 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
           {/* key: 에피소드가 바뀌면 새로 마운트해 첫 줄부터 — 안에서 이펙트로 되감으면
               연쇄 렌더가 된다 (react-compiler 규칙) */}
           {!resume && readPos && (readPos.ep > 0 || readPos.line > 0) && (
-            <p className="sc-resume sc-progress">📖 {t("{ep}화 {line}번째 줄까지 읽음", { ep: readPos.ep + 1, line: readPos.line + 1 })}</p>
+            <p className="sc-resume sc-progress">
+              <span>📖 {t("{ep}화 {line}번째 줄까지 읽음", { ep: readPos.ep + 1, line: readPos.line + 1 })}</span>
+              {/* 읽은 기록 리셋 (사용자 요청 2026-10-13) — 책갈피·'다 읽음'을 지운다. 계속 넘기면 그 자리부터 다시 쌓인다 */}
+              <button type="button" className="sc-resume-clear" onClick={() => { if (eventId) clearStoryPos(eventId); setReadPos(null); }}>{t("읽은 기록 지우기")}</button>
+            </p>
           )}
           {resume && (
             <p className="sc-resume">
               <span>📖 {t("지난번 읽던 곳부터 — {ep}화 {line}번째 줄", { ep: resume.ep + 1, line: resume.line + 1 })}</span>
               <button type="button" onClick={() => { setResume(null); setRestartK((k) => k + 1); goEp(0); }}>{t("처음부터 읽기")}</button>
+              <button type="button" className="sc-resume-clear" onClick={() => { if (eventId) clearStoryPos(eventId); setResume(null); setReadPos(null); }}>{t("읽은 기록 지우기")}</button>
               <button type="button" className="sc-resume-x" aria-label={t("닫기")} onClick={() => setResume(null)}>×</button>
             </p>
           )}
           <SceneMode key={`${epIdx}:${restartK}`} ep={ep} title={`${ep.code} ${ep.name}`.trim()}
             startLine={initialLine != null && epIdx === (initialEp ?? 0) ? initialLine
               : resume && restartK === 0 && epIdx === resume.ep ? Math.min(resume.line, ep.lines.length - 1) : undefined}
-            onLine={eventId ? (i) => { saveStoryPos(eventId, epIdx, i); setReadPos({ ep: epIdx, line: i }); } : undefined}
+            onLine={eventId ? (i) => {
+              // 마지막 화의 끝(마지막 두 줄 안)에 닿으면 '다 읽음' — 끝 줄이 연출 표식이라 화면에 안 서는 화가 있다
+              saveStoryPos(eventId, epIdx, i, epIdx === script.eps.length - 1 && i >= ep.lines.length - 2);
+              setReadPos({ ep: epIdx, line: i });
+            } : undefined}
             hasPrev={epIdx > 0} hasNext={epIdx < script.eps.length - 1}
             onEp={(d) => goEp(epIdx + d)} />
         </Suspense>
@@ -1270,7 +1279,19 @@ const arcNameOf = (locale: Locale, id: string) => {
 
 // 테라 연대기 뷰 — 테라력 연도별 세로 타임라인 (사용자 요청 2026-10-07: 메인 에피소드 구간 → 테라력 구간, UI 개편).
 // 위: 연도 칩 한 줄(누르면 그 해로) · 본문: 왼쪽 큰 연도 + 세로 선 위 카드(썸네일·종류·테마·근거 한 줄).
+/** 목록 카드의 읽기 진행 뱃지 — 리더기 책갈피(story-bookmark.ts). 다 읽음이 우선, 첫 화 첫 줄에 머문 건 안 친다 (2026-10-13) */
+function ReadBadge({ p }: { p?: StoryPos }) {
+  const { t } = useI18n();
+  if (!p) return null;
+  if (p.done) return <em className="story-read-badge done">{t("다 읽음")}</em>;
+  if (!(p.ep > 0 || p.line > 0)) return null;
+  // 어디까지 — 화 번호는 뱃지에, 줄까지는 마우스를 올리면 (사용자 요청 2026-10-13 "어디까지인지도")
+  return <em className="story-read-badge" title={t("{ep}화 {line}번째 줄까지 읽음", { ep: p.ep + 1, line: p.line + 1 })}>{t("{ep}화 읽던 중", { ep: p.ep + 1 })}</em>;
+}
+
 function ChronologyView({ onShowOperator }: { onShowOperator?: (operatorId: string) => void }) {
+  // 이 브라우저의 책갈피 — 카드에 '읽던 중'·'다 읽음' (사용자 요청 2026-10-13, DigestView 와 같다)
+  const readMap = useSyncExternalStore(subscribeStoryPos, storyPosSnapshot, storyPosServer);
   const { locale, t } = useI18n();
   // 누르면 그 이야기의 **스토리 창**을 겹쳐 띄운다 (사용자 2026-10-07 "스토리니까 스토리가 뜨는 게 맞다").
   // 스토리가 없는 이벤트만 이벤트 도감 상세로. 닫으면 연대기 해시로 되돌린다
@@ -1392,7 +1413,7 @@ function ChronologyView({ onShowOperator }: { onShowOperator?: (operatorId: stri
                           <span className="chron-card-kind">{t(KIND_KO[it.kind])}</span>
                           {it.arc && <span className="chron-card-arc">{arcName(it.arc)}</span>}
                         </span>
-                        <span className="chron-card-name">{it.ep ? <em>{locText(locale, it.ep)}</em> : null}{locText(locale, it.name)}</span>
+                        <span className="chron-card-name"><ReadBadge p={it.eventId ? readMap[it.eventId] : undefined} />{it.ep ? <em>{locText(locale, it.ep)}</em> : null}{locText(locale, it.name)}</span>
                         {why
                           ? <span className="chron-card-why" title={why}>{why}</span>
                           : g.year != null && <span className="chron-card-why approx">{t("연도 미정 — 스토리라인 순서상 이 무렵")}</span>}
@@ -1425,6 +1446,8 @@ type GroupMode = "theme" | "kind" | "release";
 // 요약 뷰 — 이벤트·메인스토리·로그라이크 카드 그리드 + 검색 + 종류별/테마별 그룹핑(기본 종류별).
 // 각 그룹은 최신순(이벤트=출시월, 메인=에피소드 번호). 요약이 있는 이벤트만 열린다.
 function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; group: GroupMode }) {
+  // 이 브라우저의 책갈피 — 카드에 '읽는 중'·'다 읽음' (사용자 요청 2026-10-13)
+  const readMap = useSyncExternalStore(subscribeStoryPos, storyPosSnapshot, storyPosServer);
   const { locale, t } = useI18n();
   // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 목록 갱신 (search.ts)
   const { term: searchTerm, inputProps: searchProps } = useSearchInput();
@@ -1547,6 +1570,13 @@ function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; gr
       if (!map.has(k)) map.set(k, { key: k, label, color, sort, items: [] });
       map.get(k)!.items.push(it);
     }
+    // ⚠ 테마별: 스토리라인 묶음에 안 든 이야기의 테마가 **이미 있는 스토리라인 묶음과 같은 key**(통합 전략 'rl' 등)면
+    //   그 묶음 뒤에 합친다. 따로 두면 같은 key 의 묶음이 둘이 되어 React 가 보기를 바꿀 때 옛 카드를 못 지우고 쌓았다
+    //   (사용자 제보 2026-10-13 "테마별·종류별 몇 번 왔다 갔다 하니 변경이 안 된다" — 전환마다 카드가 9장씩 늘었다)
+    for (const [k, g] of Array.from(map)) {
+      const same = out.find((o) => o.key === k);
+      if (same) { same.items.push(...sortItems(g.items).map((it) => ({ it }))); map.delete(k); }
+    }
     out.push(...Array.from(map.values()).sort((a, b) => a.sort - b.sort)
       .map((g) => ({ key: g.key, label: g.label, color: g.color,
         // 미니 그룹엔 게임 내 명칭을 부제로 — 사이트의 '미니 이벤트'가 게임 어디인지 (2026-07-29)
@@ -1611,6 +1641,8 @@ function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; gr
           {digest && lore > 0 && <em className="story-lore-mark" title={t("이 이벤트에는 미니게임·수집으로 풀리던 이벤트 기록이 함께 있습니다")}>{t("＋기록 {n}", { n: lore })}</em>}
           {/* 시계열 참조(인게임 괄호 항목) — 이 테마 소속은 아니지만 테라력상 이 위치 */}
           {guest && <em className="story-guest-badge" title={t("이 테마에 속하는 이야기는 아니지만, 테라력 시계열로는 이 위치에 있어요.")}>{t("시계열 참조용")}</em>}
+          {/* 읽기 진행 — 리더기 책갈피(story-bookmark.ts). 다 읽음이 우선, 첫 화 첫 줄에 머문 건 안 친다 */}
+          {!guest && ev && <ReadBadge p={readMap[ev.id]} />}
         </div>
         <div className="story-card-info">
           <h3>{guest ? <>({locText(locale, it.name)})</> : locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</h3>

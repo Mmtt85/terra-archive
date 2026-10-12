@@ -10883,6 +10883,12 @@ html.dark .story-card:hover .story-thumb img {
   font: 800 10px var(--mono);
   font-style: normal;
 }
+/* 읽기 진행 — 썸네일 우상단 (2026-10-13). 읽는 중 = 파랑, 다 읽음 = 초록 */
+.story-read-badge { position: absolute; right: 8px; top: 8px; padding: 3px 7px; font: 800 11px var(--mono); font-style: normal; white-space: nowrap; background: #3d6fb5; color: #fff; }
+.story-read-badge.done { background: #2e7d4f; }
+/* 테라력 카드에서는 이름 줄 오른쪽 끝에 (사용자 지시 2026-10-13 — 종류 줄 끝이면 이벤트 상세 단추에 밀려 한 줄을 따로 먹었다).
+   맨 앞에 두고 float 로 오른쪽에 띄운다 — 이름이 길면 뱃지를 피해 감긴다 */
+.chron-card-name .story-read-badge { position: static; float: right; margin: 2px 0 0 8px; padding: 1px 6px; font-size: 10px; font-weight: 800; line-height: 1.4; color: #fff; }   /* ⚠ color — .chron-card-name em(에피소드 번호, 회색)이 덮었다 */
 /* 시계열 참조(인게임 괄호 항목) — 다른 테마 소속이지만 테라력상 이 위치.
    클릭하면 상세 대신 원래 소속 그룹의 실제 카드로 점프 + 스포트라이트 */
 .story-guest-badge {
@@ -22176,6 +22182,8 @@ p.sb-trline { margin-top: 2px; }
 .sc-resume button:hover { border-color: var(--border-hover); }
 .sc-resume .sc-resume-x { margin-left: auto; border: 0; background: none; color: var(--muted); }
 .sc-resume.sc-progress { color: var(--muted); background: none; border-style: dashed; }
+.sc-resume .sc-resume-clear { margin-left: auto; color: var(--muted); }
+.sc-resume .sc-resume-clear + .sc-resume-x { margin-left: 0; }
 .op-record-modal .vn-stage {
   /* 창 높이 − 제목·보기전환·안내문·조작안내·여백 ≈ 220px (실측 1440×700에서 딱 안 넘침) */
   width: min(100%, calc((min(82dvh, 900px) - 220px) * 16 / 9));
