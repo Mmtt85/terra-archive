@@ -142,12 +142,16 @@ let battleHold = false, battleHoldAt = 0;
 // 판정 내용은 탭이 부르는 memoBridgeScene(outcome)·noteBridge(text)에서 주워 담는다 — 탭 코드는 그대로다.
 // ⚠ 그림·OCR 원문은 보내지 않는다(화면에 닉네임·UID). 이름표(결과·구역·이동 대상)와 숫자만.
 type ScanCtx = { id: string; emitAt: number; w: number; h: number; crop: number; cached: boolean; href: string;
-  oc?: LensOutcome; note?: string; blob?: Blob };
+  oc?: LensOutcome; note?: string; blob?: Blob; retry?: boolean };
 let scan: ScanCtx | null = null;
 /** 마지막으로 끝난 인식 — 토스트의 '틀렸어요'가 가리킨다 */
 /** shot = '틀렸어요'와 함께 보낸 화면 — 보내는 중·보냄·실패 (화면이 없으면 none: 캐시 재적용은 새 화면을 안 만든다) */
 let lastScan: { id: string; at: number; wrong: boolean; blob?: Blob; shot?: "sending" | "sent" | "fail" | "none" } | null = null;
 let fixTimer: number | undefined;
+/** '못 찾음'이면 화면이 그대로여도 한 번 다시 읽는다 — 보상 화면처럼 서서히 나타나는 화면을 다 뜨기 전에 읽은 경우
+ *  (사용자 제보 2026-10-12 "하나 받고 나서야 리스트에 뜬다" — 화면이 '같은 화면'으로 묶여 다시 안 읽혔다) */
+let retryAt = 0;
+let retryNext = false;   // 다음 인식이 그 재시도다 — 재시도에서 또 못 찾으면 더는 다시 읽지 않는다 (메뉴 화면 무한 OCR 방지)
 let userActAt = 0;
 const markUserAct = () => { userActAt = Date.now(); };
 
@@ -177,6 +181,7 @@ function finishScan(ocrStart?: number): void {
     ms: now - sc.emitAt, ocr_ms: ocrStart != null ? now - ocrStart : 0, cached: sc.cached, w: sc.w, h: sc.h, crop: sc.crop,
   });
   lastScan = { id: sc.id, at: now, wrong: false, blob: sc.blob };
+  retryAt = result === "none" && !sc.cached && !sc.retry ? now + 1500 : 0;
   notify();
   // 손으로 바로잡음 — 자동 이동이 **실제로 일어났으면**(주소가 바뀌었으면) 15초 동안, 사람이 직접 눌러
   // 다른 데로 옮기는지 본다. 새 인식이 시작되면 그만 본다 (그 이동은 브리지 몫이다).
@@ -220,8 +225,15 @@ export const bridgeLastScan = () => lastScan;
 
 // ── 작은 창(문서 PiP) 카드 (2026-10-12 시험판) — 게임 위에 떠 있는 창에 '방금 인식한 것'을 보여 준다.
 // 탭(rogue.tsx)이 인식할 때마다 채우고, 토스트(bridge-button.tsx)가 PiP 창에 그린다.
-export type BridgePipCard = { kind: string; name: string; text?: string | null; list?: string[]; listLabel?: string };
+export type BridgePipCard = { kind: string; name: string; text?: string | null; list?: string[]; listLabel?: string;
+  /** 섬네일 (절대 주소 — 작은 창 문서는 about:blank 라 상대 주소가 안 풀린다) */ img?: string;
+  /** 눌러 펼치면 보이는 큰 그림 (작전 지도) */ detailImg?: string;
+  /** list 와 같은 순서의 작은 그림 (등장 적 얼굴) */ listImgs?: (string | undefined)[] };
 let pipCards: BridgePipCard[] = [];
+/** 작은 창이 열려 있나 — 열려 있으면 탭은 본 화면에 모달을 띄우지 않고 작은 창에만 싣는다 (사용자 지시 2026-10-12) */
+let pipActive = false;
+export function setBridgePipActive(v: boolean): void { pipActive = v; }
+export const bridgePipActive = () => pipActive;
 export function setBridgePip(cards: BridgePipCard[]): void { pipCards = cards; notify(); }
 export const bridgePipCards = () => pipCards;
 
@@ -495,6 +507,8 @@ function tick(): void {
     }
     battleHold = false;
   }
+  // '못 찾음' 한 번 재시도 — 그 사이 화면이 멈춰 있었으면 새 화면처럼 다시 넘긴다 (한 번만)
+  if (retryAt && now >= retryAt && !busy) { retryAt = 0; sentGray = null; retryNext = true; }
   // 새 화면 판정 — 전체 평균 **또는** 한 타일의 국소 변화. 전투노드끼리는 맵이 그대로고
   // 패널 글자만 바뀌어 평균으로는 절대 안 잡히므로 tileMax가 실질적인 판정자다.
   if (diff(latestGray, sentGray) < NEW_SCENE && tileMax(latestGray, sentGray) < NEW_TILE) {
@@ -542,7 +556,8 @@ function tick(): void {
   const cropped = c.w < w || c.h < h ? ` (여백 잘라 ${c.w}×${c.h})` : "";
   console.debug(`[bridge] 새 화면 → 인식 #${emitted} · ${w}×${h}${cropped} → ${outW}×${outH} (틱 ${ticks} · 수신 ${framesIn})`);
   say("emit");
-  const ctx: ScanCtx = { id: prtsScanId(), emitAt: Date.now(), w, h, crop: (c.w * c.h) / (w * h), cached: false, href: location.href };
+  const ctx: ScanCtx = { id: prtsScanId(), emitAt: Date.now(), w, h, crop: (c.w * c.h) / (w * h), cached: false, href: location.href, retry: retryNext };
+  retryNext = false;
   scan = ctx;
   void outCv.convertToBlob({ type: "image/jpeg", quality: 0.9 }).then((blob) => {
     ctx.blob = blob;   // '틀렸어요' 때만 올린다 — 그 전엔 메모리에만 (다음 인식이 오면 버린다)

@@ -8,7 +8,7 @@
 import { NewBadge } from "../new-badge";
 import { lazy, Suspense, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong, bridgePipCards, type BridgeLock } from "./bridge";
+import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong, bridgePipCards, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -64,19 +64,44 @@ const pipNotify = () => { for (const cb of pipSubs) cb(); };
 const pipSubscribe = (cb: () => void) => { pipSubs.add(cb); return () => { pipSubs.delete(cb); }; };
 const usePipWin = () => useSyncExternalStore(pipSubscribe, () => pipWin, () => null);
 async function togglePipWindow(lockFor?: BridgeLock | null): Promise<void> {
-  if (pipWin) { pipWin.close(); pipWin = null; pipNotify(); return; }
+  if (pipWin) { pipWin.close(); pipWin = null; setBridgePipActive(false); pipNotify(); return; }
   try {
     const w = await openPipWindow();
     if (!w) return;
     if (lockFor) pipLock = lockFor;
-    w.addEventListener("pagehide", () => { if (pipWin === w) { pipWin = null; pipNotify(); } }, { once: true });
+    w.addEventListener("pagehide", () => { if (pipWin === w) { pipWin = null; setBridgePipActive(false); pipNotify(); } }, { once: true });
     pipWin = w;
+    setBridgePipActive(true);
     pipNotify();
   } catch { /* 사용자가 막았거나 미지원 */ }
 }
 // ⚠ 시험판 — **운영자 브라우저에서만** 보인다 (사용자 지시 2026-10-12 "사용자들이 안 보이게 몰래 숨겨 놓고 나만 써 보고 싶음").
 //   공개할 때 isOwnerBrowser() 조건만 빼면 된다
 const usePipOk = () => useSyncExternalStore(noSubscribe, () => !!docPip() && isOwnerBrowser(), () => false);
+
+/** 카드 하나 — 섬네일 + 이름 + 효과. 펼칠 게 있으면(작전 지도·등장 적·선택지) 눌러서 펼친다 (사용자 지시 2026-10-12
+ *  "작전이 인식돼서 떴고 그걸 클릭하면 작전맵이 떴으면") */
+function PipCard({ c }: { c: BridgePipCard }) {
+  const [open, setOpen] = useState(false);
+  const more = !!c.detailImg || (c.list?.length ?? 0) > 0;
+  return (
+    <article className={`bridge-pip-card${more ? " more" : ""}${open ? " open" : ""}`}
+      onClick={more ? () => setOpen((v) => !v) : undefined}>
+      <div className="bridge-pip-card-head">
+        {c.img && <img src={c.img} alt="" width={36} height={36} />}
+        <div><small>{c.kind}</small><b>{c.name}</b></div>
+        {more && <i aria-hidden>{open ? "▴" : "▾"}</i>}
+      </div>
+      {c.text && <p>{c.text}</p>}
+      {open && c.detailImg && <img className="bridge-pip-map" src={c.detailImg} alt="" />}
+      {open && c.list && c.list.length > 0 && (
+        <div className="bridge-pip-list">{c.listLabel && <span>{c.listLabel}</span>}
+          <ul>{c.list.map((x, k) => <li key={k}>{c.listImgs?.[k] && <img src={c.listImgs[k]} alt="" width={22} height={22} />}{x}</li>)}</ul>
+        </div>
+      )}
+    </article>
+  );
+}
 
 function PipView({ t, connected, phase, note, lockName, error }: { t: T; connected: boolean; phase: string; note: string; lockName: string; error: string }) {
   const cards = bridgePipCards();
@@ -108,16 +133,7 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
         <p className="bridge-pip-empty">{t("게임 화면을 인식하면 여기에 나옵니다")}</p>
       ) : (
         <div className="bridge-pip-cards">
-          {cards.map((c, i) => (
-            <article key={i} className="bridge-pip-card">
-              <small>{c.kind}</small>
-              <b>{c.name}</b>
-              {c.text && <p>{c.text}</p>}
-              {c.list && c.list.length > 0 && (
-                <div className="bridge-pip-list">{c.listLabel && <span>{c.listLabel}</span>}<ul>{c.list.map((x, k) => <li key={k}>{x}</li>)}</ul></div>
-              )}
-            </article>
-          ))}
+          {cards.map((c, i) => <PipCard key={`${c.kind}:${c.name}:${i}`} c={c} />)}
         </div>
       )}
       {last && (
