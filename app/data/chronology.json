@@ -861,9 +861,9 @@
    "id": "main_17",
    "kind": "main",
    "title": {
-    "ko": "상전이 임계",
+    "ko": "임계 상전이",
     "en": "Critical Phase Transition",
-    "ja": "相転移臨界"
+    "ja": "相変臨界"
    },
    "terraYear": 1102,
    "arc": "rl",

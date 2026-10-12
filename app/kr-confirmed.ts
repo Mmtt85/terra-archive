@@ -5,7 +5,7 @@
 import type { Locale } from "./i18n";
 
 export const KR_CONFIRMED: Record<string, string> = {
-  act4mainss: "2026-10-14", // 상전이 임계 (사용자 2026-10-07)
+  act4mainss: "2026-10-14", // 임계 상전이 (사용자 2026-10-07)
 };
 
 /** 확정 개방일(YYYY-MM-DD) — 없거나 이미 지났으면 undefined */

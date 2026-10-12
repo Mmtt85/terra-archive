@@ -650,7 +650,7 @@ CN_ONLY_NAMES = {
     "act3break": {"ko": "벡터 돌파#3 유사 생태", "en": "Vector Breakthrough #3: Pseudo-Ecology",
                   "ja": "鋒矢突破#3 擬似生態"},
     # 이하 2026-10-01 — 비공식 번역. 메인 사이드(actNmainss)는 해리성 결합·비정상 스펙트럼처럼 낱말을 옮긴다
-    "act4mainss": {"ko": "상전이 임계", "en": "Critical Phase Transition", "ja": "相転移臨界"},   # 相变临界 (17장 · 7주년)
+    "act4mainss": {"ko": "임계 상전이", "en": "Critical Phase Transition", "ja": "相変臨界"},   # 相变临界 (17장 · 7주년)
     "act1football": {"ko": "진지 축구 토너먼트", "en": "Positional Football Championship",
                      "ja": "ポジションサッカー選手権"},   # 阵地足球锦标 — 재화 설명 번역(cn-translations)과 같은 말
     "act21mini": {"ko": "밀림의 응어리", "en": "Crux of the Jungle", "ja": "叢林症結"},          # 丛林症结
