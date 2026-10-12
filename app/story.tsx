@@ -48,6 +48,7 @@ import imageDimsData from "./data/story-image-dims.json";
 import loreIndexData from "./data/eventlore-index.json";
 import { rich, useI18n, type Locale } from "./i18n";
 import { ModalWindow } from "./modal-window";
+import { saveStoryPos, storyPos, type StoryPos } from "./story-bookmark";
 const SceneMode = lazy(() => import("./story-vn"));
 // 요약 본문 그림 — 스토리 CG(/story/cut/)는 캐시 키를 붙인다 (assets.ts CUT_VER — 같은 이름으로 내용이 바뀐 CG)
 const summaryImg = (src: string) => {
@@ -540,11 +541,22 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   const allEntities = useMemo(() => [...entities, ...autoEntities], [entities, autoEntities]);
   // 에피소드 딥링크(#story-<id>/ep<N>) — 첫 마운트에 해시에서 읽고, 탭 전환 시 URL에 남긴다
   // (사용자 요청 2026-07-22). replaceState라 뒤로가기 히스토리는 안 쌓인다.
+  // 책갈피 — 화·줄을 따로 정해 들어온 게 아니면(이벤트 창 작전 카드·갤러리 CG·해시 ep) 지난번 읽던 곳부터 (2026-10-12)
+  const [resume, setResume] = useState<StoryPos | null>(() => {
+    if (!eventId || initialEp != null || typeof window === "undefined") return null;
+    if (/(?:^#|\/)ep\d+$/.test(decodeURIComponent(window.location.hash))) return null;
+    const p = storyPos(eventId);
+    return p && (p.ep > 0 || p.line > 0) ? p : null;
+  });
+  const [restartK, setRestartK] = useState(0);
+  // 지금 읽는 자리 — 읽는 도중에도 'N화 M번째 줄까지 읽음'을 띄운다 (사용자 지시 2026-10-12)
+  const [readPos, setReadPos] = useState<{ ep: number; line: number } | null>(null);
   const [epIdx, setEpIdx] = useState(() => {
     if (initialEp != null) return Math.max(0, initialEp);
     if (typeof window === "undefined") return 0;
     const m = decodeURIComponent(window.location.hash).match(/(?:^#|\/)ep(\d+)$/);
-    return m ? Math.max(0, parseInt(m[1], 10) - 1) : 0;
+    if (m) return Math.max(0, parseInt(m[1], 10) - 1);
+    return resume ? resume.ep : 0;
   });
   const topRef = useRef<HTMLDivElement>(null);
   // 에피소드 탭 클릭은 화면을 움직이지 않는다(사용자 확정 2026-07-22). 단, 하단 이전/다음
@@ -732,8 +744,20 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
         }>
           {/* key: 에피소드가 바뀌면 새로 마운트해 첫 줄부터 — 안에서 이펙트로 되감으면
               연쇄 렌더가 된다 (react-compiler 규칙) */}
-          <SceneMode key={epIdx} ep={ep} title={`${ep.code} ${ep.name}`.trim()}
-            startLine={initialLine != null && epIdx === (initialEp ?? 0) ? initialLine : undefined}
+          {!resume && readPos && (readPos.ep > 0 || readPos.line > 0) && (
+            <p className="sc-resume sc-progress">📖 {t("{ep}화 {line}번째 줄까지 읽음", { ep: readPos.ep + 1, line: readPos.line + 1 })}</p>
+          )}
+          {resume && (
+            <p className="sc-resume">
+              <span>📖 {t("지난번 읽던 곳부터 — {ep}화 {line}번째 줄", { ep: resume.ep + 1, line: resume.line + 1 })}</span>
+              <button type="button" onClick={() => { setResume(null); setRestartK((k) => k + 1); goEp(0); }}>{t("처음부터 읽기")}</button>
+              <button type="button" className="sc-resume-x" aria-label={t("닫기")} onClick={() => setResume(null)}>×</button>
+            </p>
+          )}
+          <SceneMode key={`${epIdx}:${restartK}`} ep={ep} title={`${ep.code} ${ep.name}`.trim()}
+            startLine={initialLine != null && epIdx === (initialEp ?? 0) ? initialLine
+              : resume && restartK === 0 && epIdx === resume.ep ? Math.min(resume.line, ep.lines.length - 1) : undefined}
+            onLine={eventId ? (i) => { saveStoryPos(eventId, epIdx, i); setReadPos({ ep: epIdx, line: i }); } : undefined}
             hasPrev={epIdx > 0} hasNext={epIdx < script.eps.length - 1}
             onEp={(d) => goEp(epIdx + d)} />
         </Suspense>
@@ -814,7 +838,14 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
 // 필요해지므로 그때 받는다.
 // ⚠ 캐시를 **렌더 중에 읽는다** — 이펙트에서 동기 setState 하면 연쇄 렌더가 난다
 //   (react-hooks/set-state-in-effect, app/enemies.tsx useStagesDoc 과 같은 처방).
-let _summaryCache: StorySummaries | null = null;
+// 요약 모음 — **로케일별** 캐시. 종전엔 한국어 파일만 받아, 연대기·이벤트 창에서 연 스토리는 /ja·/en 에서도 한 줄 소개·AI 요약이
+// 한국어로 나왔다 (제안 934ec868, 2026-10-12 — 종류별·테마별은 Home 이 로케일 것을 내려줘 멀쩡했다)
+const _summaryCache: Partial<Record<string, StorySummaries>> = {};
+const SUMMARY_LOAD: Record<string, () => Promise<{ default?: unknown }>> = {
+  ko: () => import("./data/story-summaries.json"),
+  en: () => import("./data/story-summaries.en.json"),
+  ja: () => import("./data/story-summaries.ja.json"),
+};
 
 export function StoryDetailById({ id, onClose, onShowOperator, view, ep, line, name }: {
   id: string; onClose: () => void; onShowOperator?: (operatorId: string) => void;
@@ -827,27 +858,30 @@ export function StoryDetailById({ id, onClose, onShowOperator, view, ep, line, n
   /** 스토리 목록에 없는 스토리(요약 없이 전문만 있는 중섭 선행 메인 스토리 main_17 …)의 제목 */
   name?: string;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [, bump] = useState(0);
   useEffect(() => {
-    if (_summaryCache) return;
+    // 그 언어 요약 + (없는 편의 폴백용) 한국어 요약
+    const need = [...new Set([locale, "ko"])].filter((l) => !_summaryCache[l]);
+    if (!need.length) return;
     let live = true;
-    void import("./data/story-summaries.json").then((m) => {
-      _summaryCache = (m.default ?? m) as StorySummaries;
-      if (live) bump((n) => n + 1);
-    }).catch(() => { /* 요약이 없어도 전문·기록은 읽힌다 */ });
+    void Promise.all(need.map((l) => (SUMMARY_LOAD[l] ?? SUMMARY_LOAD.ko)().then((m) => {
+      _summaryCache[l] = ((m as { default?: unknown }).default ?? m) as StorySummaries;
+    }))).then(() => { if (live) bump((n) => n + 1); })
+      .catch(() => { /* 요약이 없어도 전문·기록은 읽힌다 */ });
     return () => { live = false; };
-  }, []);
+  }, [locale]);
   // 스토리 목록·연대기에 없는 스토리라도 전문이 있으면 연다 — 상전이 임계의 main_17(중섭 선행 메인 17장)처럼
   // 요약이 아직 없어 연대기 합성 항목(CHRON_SYNTH)에서 빠진 것 (사용자 요청 2026-10-01 "모든 이벤트에 싹 다")
   const event = eventById.get(id)
     ?? (scriptIds.has(id) ? { id, name: { ko: name ?? id }, start: "", episodes: 0, thumb: "" } as StoryEvent : undefined);
   if (!event) return null;
-  if (!_summaryCache) return <p className="no-detail">{t("불러오는 중…")}</p>;
+  const sums = _summaryCache[locale], sumsKo = _summaryCache.ko;
+  if (!sums || !sumsKo) return <p className="no-detail">{t("불러오는 중…")}</p>;
   // 기본 보기는 **리더기** (사용자 지시 2026-09-17). defaultView="scene" 은 StoryDetail 의
   // fallbackMode(리더기 > 전문 > 요약 > 기록)를 그대로 타라는 뜻이다.
   return (
-    <StoryDetail event={event} summary={_summaryCache[id]} onClose={onClose}
+    <StoryDetail event={event} summary={sums[id] ?? sumsKo[id]} onClose={onClose}
       onShowOperator={onShowOperator} defaultView={view ?? "scene"} initialEp={ep} initialLine={line} embedded />
   );
 }

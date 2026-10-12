@@ -86,6 +86,8 @@ type SessRow = {
   tz: string | null; revisit: boolean | null; human: boolean; kind?: "human" | "skim" | "bot"; utm: string | null; views: SessView[];
   /** 마지막으로 받은 시각 (DB visits_sessions_range — 옛 함수면 없다) */
   last_at?: string | null;
+  /** 브라우저 익명 방문자 id (2026-10-12~ DB 함수 — 옛 함수면 없다). 화면엔 앞 8자 */
+  visitor?: string | null;
   /** 그 세션의 일 기록 — PRTS 연결·해제, 내 정보 로그인·동기화 (2026-10-11~ DB 함수) */
   events?: { at: string; kind: string; detail: string | null; dur: number | null; server: string | null }[];
 };
@@ -747,6 +749,8 @@ function SessionLine({ s }: { s: SessRow }) {
     <li className={(s.kind ?? (s.human ? "human" : "bot")) === "bot" ? "bot" : ""}>
       <header>
         <time>{when}</time>
+        {/* 방문자 코드 — PRTS·틀렸어요 표의 방문자와 맞춰 볼 수 있게 (사용자 지시 2026-10-12) */}
+        {s.visitor && <code className="vz-visitor" title={s.visitor}>{s.visitor.slice(0, 8)}</code>}
         <span className="vz-tag vz-total" title="화면마다 조작 시간(없으면 보인 시간)의 합">합계 {fmtDur(total)}</span>
         <b>{s.src}</b>
         {s.ref && s.ref !== s.src && <span className="vz-muted" title={s.ref}><Go href={/^https?:\/\//.test(s.ref) ? s.ref : null}>{s.ref.replace(/^https?:\/\//, "").slice(0, 60)}</Go></span>}
@@ -1348,14 +1352,14 @@ export function VisitsPanel() {
                     <tbody>{data.prts.by.map((b) => <tr key={b.k}><td><code>{b.k}</code></td><td>{num(b.n)}</td><td>{fmtDur(b.ms)}</td></tr>)}</tbody>
                   </table></div>
                   <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
-                    <thead><tr><th>연결</th><th>해제</th><th>어디서</th><th>연결 시간</th><th>방문자</th><th>유입</th></tr></thead>
+                    <thead><tr><th>방문자</th><th>연결</th><th>해제</th><th>어디서</th><th>연결 시간</th><th>유입</th></tr></thead>
                     <tbody>{prtsPairs(data.prts.recent).slice(0, 10).map((r, i) => (
                       <tr key={i}>
+                        <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
                         <td>{r.start ? whenShort(r.start) : "—"}</td>
                         <td>{r.end ? whenShort(r.end) : r.dangling ? <span className="vz-note" title="다음 연결 전에 해제 기록이 오지 않음 — 탭을 닫았거나 기록 전에 끊겼다">기록 없음</span> : <b>연결 중</b>}</td>
                         <td><code>{r.detail ?? "—"}</code></td>
                         <td>{r.dur != null ? fmtDur(r.dur) : "—"}</td>
-                        <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
                         <td>{r.src ?? "—"}</td>
                       </tr>
                     ))}</tbody>
@@ -1434,7 +1438,7 @@ export function VisitsPanel() {
 }
 
 // ── PRTS 인식 기록 표 (2026-10-12) ──────────────────────────────────────────────────────────────
-type PrtsScanRec = { at: string; visitor: string | null; topic: string | null; page: string | null; result: string | null; section: string | null;
+type PrtsScanRec = { at: string; visitor: string | null; /** dev = localhost 등 라이브 밖에서 누른 틀렸어요 (2026-10-12~) */ env?: string | null; topic: string | null; page: string | null; result: string | null; section: string | null;
   target: string | null; note: string | null; ms: number | null; ocr_ms: number | null; cached: boolean | null; w: number | null; h: number | null;
   crop: number | null; wrong: boolean; fixed_to: string | null; seen?: string | null; shot?: string | null };
 type PrtsGroup = { k: string; n: number; wrong: number; fixed: number; ms: number | null };
@@ -1481,10 +1485,11 @@ function PrtsScans({ from, to, tick }: { from: string; to: string; tick: number 
           {/* 틀렸어요 — 판정 근거(seen)와 그때 보내온 화면 (사용자 지시 2026-10-12 "어디서 틀렸는지 확인할 수 없으면 답이 안 나온다") */}
           {!!d.wrong_list?.length && (
             <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
-              <thead><tr><th>틀렸어요</th><th>판정</th><th>이동 대상 / 상태줄</th><th title="그 화면에서 맞춘 게임 항목 이름 · #화면 종류">판정 근거</th><th>화면</th></tr></thead>
+              <thead><tr><th>방문자</th><th>틀렸어요</th><th>판정</th><th>이동 대상 / 상태줄</th><th title="그 화면에서 맞춘 게임 항목 이름 · #화면 종류">판정 근거</th><th>화면</th></tr></thead>
               <tbody>{d.wrong_list.slice(0, 10).map((r, i) => (
                 <tr key={i}>
-                  <td>{whenShort(r.at)}{r.topic ? <span className="vz-note"> · {r.topic}</span> : null}</td>
+                  <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
+                  <td>{whenShort(r.at)}{r.topic ? <span className="vz-note"> · {r.topic}</span> : null}{r.env === "dev" ? <span className="vz-tag" title="라이브가 아닌 곳(localhost 등)에서 누름">dev</span> : null}</td>
                   <td>{RESULT_KO[r.result ?? ""] ?? r.result ?? "—"} <code>{r.section ?? ""}</code>{r.cached ? <span className="vz-note"> · 캐시</span> : null}</td>
                   <td title={r.target ?? ""}><code>{(r.target ?? "—").slice(0, 40)}</code>{r.note ? <span className="vz-note"> · {r.note}</span> : null}</td>
                   <td>{r.seen ? r.seen.split("|").join(" · ") : "—"}</td>
@@ -1494,9 +1499,10 @@ function PrtsScans({ from, to, tick }: { from: string; to: string; tick: number 
             </table></div>
           )}
           <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
-            <thead><tr><th>시각</th><th>결과</th><th>구역</th><th>이동 대상 / 상태줄</th><th>걸린 시간</th><th>화면</th><th>표시</th><th>방문자</th></tr></thead>
+            <thead><tr><th>방문자</th><th>시각</th><th>결과</th><th>구역</th><th>이동 대상 / 상태줄</th><th>걸린 시간</th><th>화면</th><th>표시</th></tr></thead>
             <tbody>{d.recent.slice(0, 10).map((r, i) => (
               <tr key={i}>
+                <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
                 <td>{whenShort(r.at)}</td>
                 <td>{RESULT_KO[r.result ?? ""] ?? r.result ?? "—"}{r.cached ? <span className="vz-note"> · 캐시</span> : null}</td>
                 <td><code>{r.section ?? "—"}</code></td>
@@ -1504,7 +1510,6 @@ function PrtsScans({ from, to, tick }: { from: string; to: string; tick: number 
                 <td title={`인식 ${msText(r.ocr_ms)}`}>{msText(r.ms)}</td>
                 <td>{r.w && r.h ? `${r.w}×${r.h}` : "—"}{r.crop != null && r.crop < 0.98 ? <span className="vz-note"> · 여백 뗌 {Math.round(r.crop * 100)}%</span> : null}</td>
                 <td>{r.wrong ? <b>틀렸어요</b> : null}{r.wrong && r.fixed_to ? " · " : null}{r.fixed_to ? <span title={r.fixed_to}><b>바로잡음</b> → <code>{r.fixed_to.slice(0, 32)}</code></span> : null}{!r.wrong && !r.fixed_to ? "—" : null}</td>
-                <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
               </tr>
             ))}</tbody>
           </table></div>

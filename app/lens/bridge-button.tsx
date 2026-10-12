@@ -8,7 +8,7 @@
 import { NewBadge } from "../new-badge";
 import { lazy, Suspense, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong, bridgePipCards, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
+import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -36,7 +36,7 @@ const docPip = (): DocPip | undefined => (typeof window !== "undefined" ? (windo
 async function openPipWindow(): Promise<Window | null> {
   const dp = docPip();
   if (!dp) return null;
-  const w = await dp.requestWindow({ width: 360, height: 460 });
+  const w = await dp.requestWindow({ width: 380, height: 640 }); // 두 칸(노드·소장품)이라 종전 460 보다 높게
   for (const sh of [...document.styleSheets]) {
     try {
       const st = w.document.createElement("style");
@@ -104,7 +104,8 @@ function PipCard({ c }: { c: BridgePipCard }) {
 }
 
 function PipView({ t, connected, phase, note, lockName, error }: { t: T; connected: boolean; phase: string; note: string; lockName: string; error: string }) {
-  const cards = bridgePipCards();
+  const node = bridgePipNode();
+  const relics = bridgePipRelics();
   const last = bridgeLastScan();
   if (!connected) {
     const target = pipLock;
@@ -129,13 +130,19 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
         <span>{phase}{note ? ` · ${note}` : ""}</span>
         <button type="button" className="bridge-toast-off bridge-pip-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>{t("연결 끊기")}</button>
       </header>
-      {cards.length === 0 ? (
-        <p className="bridge-pip-empty">{t("게임 화면을 인식하면 여기에 나옵니다")}</p>
-      ) : (
-        <div className="bridge-pip-cards">
-          {cards.map((c, i) => <PipCard key={`${c.kind}:${c.name}:${i}`} c={c} />)}
-        </div>
-      )}
+      {/* 두 칸 — 노드(층·작전·조우) 한 장 · 소장품 여러 장, 각자 새로 인식될 때만 바뀐다 */}
+      <section className="bridge-pip-pane">
+        <h4>{t("노드")}</h4>
+        {node
+          ? <div className="bridge-pip-cards"><PipCard key={`${node.kind}:${node.name}`} c={node} /></div>
+          : <p className="bridge-pip-empty">{t("층·작전·조우 화면을 인식하면 여기에 표시됩니다")}</p>}
+      </section>
+      <section className="bridge-pip-pane">
+        <h4>{t("소장품")}{relics.length > 0 && <em>{relics.length}</em>}</h4>
+        {relics.length
+          ? <div className="bridge-pip-cards">{relics.map((c, i) => <PipCard key={`${c.kind}:${c.name}:${i}`} c={c} />)}</div>
+          : <p className="bridge-pip-empty">{t("소장품을 인식하면 여기에 표시됩니다")}</p>}
+      </section>
       {last && (
         <footer className="bridge-pip-foot">
           {last.wrong
@@ -214,7 +221,12 @@ const BridgeHelpModal = lazy(() => import("./bridge-help"));
 /** 테마별 PRTS 링크 — /rogue 툴바용 (사용자 확정 2026-07-26: "사미록라의 연결 버튼은
  *  무조건 사미록라만"). 여기서 연결하면 인식이 그 테마 밖을 아예 보지 않는다.
  *  리플레이 버튼은 프리뷰 모달을 연다 (즉시 다운로드 아님 — JSON 가져오기/내보내기는 모달 안). */
-export function BridgeTopicButton({ topic, name, t }: { topic: string; name: string; t: T }) {
+/** noReplay — 여정 기록(리플레이)이 없는 화면(공채)은 리플레이 단추를 뺀다.
+ *  noPip — 작은 창을 쓰지 않는다: 단추도 없고 연결해도 안 연다. 공채는 본 화면 태그 판이 자동으로 골라지는 것으로 충분하다
+ *  (사용자 지시 2026-10-12 "PiP 띄우지 말고 뒤에서 조건이 자동으로 선택되도록") */
+/** compact — 좁은 칸(공채)용: 폭이 상태와 무관하게 늘 같다. 동그라미 대신 스샷 단추와 같은 점(켜지면 라임), 이름은 늘 'PRTS 링크',
+ *  모바일 'PC 전용'은 마우스를 올린 설명으로만 — 프리렌더(모바일 가정)·연결됨 문구로 폭이 바뀌어 줄이 넘어가던 것 (사용자 지적 2026-10-12) */
+export function BridgeTopicButton({ topic, name, t, noReplay, noPip, compact }: { topic: string; name: string; t: T; noReplay?: boolean; noPip?: boolean; compact?: boolean }) {
   const { settings, lock } = useBridgeStatus();
   const supported = useSyncExternalStore(noSubscribe, bridgeSupported, () => false);
   // 모바일 판정은 화면 크기가 아니라 기기 특성(UA-CH·hover/pointer)이다 — bridge.ts 주석 참조.
@@ -239,7 +251,19 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
   const other = !!settings && !mine;                  // 다른 테마에서 연결됨
   return (
     <>
-      {mobile ? (
+      {compact ? (
+        <button type="button" className={`lens-open-btn bridge-topic-btn${mine ? " on" : ""}`} disabled={mobile}
+          aria-pressed={mine}
+          title={mobile ? t("PRTS 링크는 PC 브라우저에서만 사용할 수 있습니다") : mine ? t("PRTS 링크 끊기") : t("게임 창을 골라 이 테마로만 인식하도록 연결합니다")}
+          onClick={() => {
+            if (mine) { disconnectBridge(); return; }
+            void connectBridge({ topic, name });
+            if (pipOk && !pip && !noPip) void togglePipWindow({ topic, name }).catch(() => { /* 사용자 동작 없음 */ });
+          }}>
+          <span className="lens-auto-knob" aria-hidden />{t("PRTS 링크")}
+          <span className="beta-badge">BETA</span>
+        </button>
+      ) : mobile ? (
         <button type="button" className="lens-open-btn bridge-topic-btn" disabled
           title={t("PRTS 링크는 PC 브라우저에서만 사용할 수 있습니다")}>
           <span aria-hidden>○</span> {t("PRTS 링크")}
@@ -254,7 +278,13 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
           : other
             ? t("다시 연결하면 이 테마로만 인식하도록 고정됩니다")
             : t("게임 창을 골라 이 테마로만 인식하도록 연결합니다")}
-        onClick={() => (mine ? disconnectBridge() : void connectBridge({ topic, name }))}
+        onClick={() => {
+          if (mine) { disconnectBridge(); return; }
+          // 연결하면 작은 창도 같이 연다 (사용자 지시 2026-10-12 "PRTS 연결되면 자동으로 PiP"). 화면 공유를 **먼저** 청하고
+          // 같은 클릭으로 작은 창을 연다 — 브라우저가 한 클릭에 둘 다 안 받아 주면 작은 창만 안 뜨고, 토스트의 '작은 창'으로 열면 된다
+          void connectBridge({ topic, name });
+          if (pipOk && !pip && !noPip) void togglePipWindow({ topic, name }).catch(() => { /* 사용자 동작 없음 — 토스트 단추로 */ });
+        }}
       >
         <span aria-hidden>{mine ? "◉" : "○"}</span> {mine ? t("PRTS 링크 연결됨") : t("PRTS 링크")}
         {/* 아직 다듬는 중이라 BETA 표시 (사용자 지시 2026-07-26) — 새기능 배지와 달리 상시 */}
@@ -263,7 +293,7 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
       </button>
       )}
       {/* 작은 창 — 먼저 띄우고 그 안에서 연결 (운영자 시험판, 2026-10-12) */}
-      {pipOk && !mobile && (
+      {pipOk && !mobile && !noPip && (
         <button type="button" className={`lens-open-btn bridge-log-btn${pip ? " on" : ""}`} aria-pressed={!!pip}
           onClick={() => void togglePipWindow({ topic, name })}
           title={t("게임 위에 항상 떠 있는 작은 창을 엽니다 — 그 창에서 PRTS 링크를 연결할 수 있습니다 (크롬·엣지)")}>
@@ -274,6 +304,7 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
           도움말처럼 보인다 (사용자 지적 2026-07-26) */}
       <button type="button" className="lens-help-btn bridge-help-btn" aria-label={t("PRTS 링크 도움말")}
         onClick={() => setHelpOpen(true)}>?</button>
+      {!noReplay && (
       <button
         type="button"
         className="lens-open-btn bridge-log-btn"
@@ -282,11 +313,12 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
       >
         <span aria-hidden>▤</span> {t("리플레이")}
       </button>
+      )}
       {replayOpen && <BridgeReplayModal t={t} onClose={() => setReplayOpen(false)} />}
       {/* 도움말은 공용 창(ModalWindow)이라 백드롭·포털을 스스로 만든다 — 여기서 감싸지 않는다 */}
       {helpOpen && (
         <Suspense fallback={null}>
-          <BridgeHelpModal onClose={() => setHelpOpen(false)} />
+          <BridgeHelpModal where={topic === "recruit" ? "recruit" : "rogue"} onClose={() => setHelpOpen(false)} />
         </Suspense>
       )}
     </>

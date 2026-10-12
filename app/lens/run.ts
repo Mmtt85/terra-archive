@@ -213,8 +213,19 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
   if (mode === "recruit") {
     // 태그는 어두운 버튼 칩이 본체 — 칩 패스 필수, 전체 프레임은 보조 (선택된 파란 태그 등)
     const [tags, session] = await Promise.all([getRecruitTags(), createOcrSession(file)]);
-    lines = (await session.chips()).concat(await session.sparse());
-    oc = analyzeRecruit(lines, tags);
+    if (opts?.live) {
+      // PRTS 링크 — 칩 패스만으로 태그 다섯 개가 다 읽히면 전체 프레임 패스는 건너뛴다. 슬롯을 빨리 넘기면
+      // OCR 두 번이 다음 화면을 붙잡아 못 따라왔다 (사용자 지적 2026-10-12). 덜 읽혔을 때만 보조 패스를 더한다
+      lines = await session.chips();
+      oc = analyzeRecruit(lines, tags);
+      if (oc.target.kind !== "goto" || oc.target.goto.page !== "recruit" || oc.target.goto.tags.length < 5) {
+        lines = lines.concat(await session.sparse());
+        oc = analyzeRecruit(lines, tags);
+      }
+    } else {
+      lines = (await session.chips()).concat(await session.sparse());
+      oc = analyzeRecruit(lines, tags);
+    }
   } else if (mode === "autochess") {
     // 위수 협의 — 이동이 아니라 **한 판 상태 갱신**이다. 화면이 계속 들어오며 값만 바뀐다 (2026-09-07 재가동).
     // 순서: ① 원색 픽셀로 밴 격자를 먼저 본다 — 밴 화면이면 얼굴로 기물을 확정하고 **OCR 은 건너뛴다**
@@ -516,6 +527,23 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
           && !oc.entities.some((x) => x.id === e.id));
         console.debug(`[lens] 색 글씨 밴드: ${cLines.length}줄 → 소장품 ${add.length}개`, cLines);
         if (add.length) { oc.entities = [...oc.entities, ...add]; lines = lines.concat(cLines); }
+      }
+    }
+    // 화면 순서 — 모아보기가 점수순(뒤죽박죽)이 아니라 화면에 놓인 순서로 나오게, 아이템마다 이름이 찍힌 줄 상자의
+    // 자리를 싣는다 (사용자 지시 2026-10-12 "실제 화면 순서대로"). 상자는 마지막 OCR 패스의 것이라 못 찾은 항목은 뒤로 간다
+    {
+      const boxes = session.boxes().map((b) => ({ t: norm(b.text), y: b.y0, x: b.x0 }));
+      const order: Record<string, [number, number]> = {};
+      for (const e of oc.entities) {
+        if (!LENS_ITEM_SECTIONS.has(e.section)) continue;
+        const n = norm(e.name);
+        if (n.length < 2) continue;
+        const b = boxes.find((bx) => bx.t.includes(n) || (bx.t.length >= 4 && n.includes(bx.t)));
+        if (b) order[e.id] = [b.y, b.x];
+      }
+      if (Object.keys(order).length) {
+        if (oc.target.kind === "goto" && oc.target.goto.page === "rogue") oc.target.goto.order = order;
+        else if (oc.target.kind === "tie") for (const o of oc.target.options) { if (o.goto.page === "rogue") o.goto.order = order; }
       }
     }
     // 전투 입장 암전 — 화면이 검게 덮이고 전투 이름만 뜨는 로딩 화면 (사용자 확정 2026-07-26).

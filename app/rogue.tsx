@@ -25,11 +25,12 @@ import { LENS_ITEM_SECTIONS, type LensGoto, type LensOutcome } from "./lens/matc
 import { recognizeShot, warmData, ocrLangFor, resetGradeCache } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
-import { useBridgeWatch, noteBridge, bridgeLock, bridgeNodeJump, logBridgeEvent, memoBridgeScene, setBridgePip, bridgePipActive, type BridgeLogEvent, type BridgePipCard } from "./lens/bridge";
+import { useBridgeWatch, noteBridge, bridgeLock, bridgeSession, bridgeNodeJump, logBridgeEvent, memoBridgeScene, setBridgePipNode, setBridgePipRelics, type BridgeLogEvent, type BridgePipCard } from "./lens/bridge";
 import { BridgeTopicButton } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
+import { PRTS_MODAL_KEY } from "./modal-geo";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
 import type { StageCam } from "./stage-cam";
 // 전투 노드의 등장 적 칸·적 상세 본문은 작전 도감 것을 그대로 쓴다 (사용자 요청 2026-09-23
@@ -413,8 +414,13 @@ function StageCardGroups({ pairs, onOpen, boss }: { pairs: StagePair[]; onOpen: 
       ))}
   </>);
 }
-function StageModal({ pair, grade, onClose, onOpenEnemy }: {
-  pair: StagePair; grade: number; onClose: () => void; onOpenEnemy: (key: string, ctx: StatCtx) => void;
+/** 상세 창 틀 — inline 이면 창 없이 본문만 (PRTS 연결 중 상시 창이 안에 끼워 그린다, 2026-10-12) */
+function RgWin({ inline, label, className, onClose, children }: { inline?: boolean; label: string; className: string; onClose: () => void; children: React.ReactNode }) {
+  if (inline) return <>{children}</>;
+  return <ModalWindow label={label} className={className} onClose={onClose}>{children}</ModalWindow>;
+}
+function StageModal({ pair, grade, onClose, onOpenEnemy, inline }: {
+  pair: StagePair; grade: number; onClose: () => void; onOpenEnemy: (key: string, ctx: StatCtx) => void; inline?: boolean;
 }) {
   // 겹쳐 뜰 때의 앞뒤는 공용 창(ModalWindow)의 z 카운터가 맡는다 — 종전엔 stack 플래그로
   // 백드롭 z를 80↔90으로 올렸다 (2026-08-24 공통 모달 이관).
@@ -486,7 +492,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
   const guards = new Map<number, string[]>();
   for (const r of rows) if (r.s.guard > 0) guards.set(r.s.guard, [...(guards.get(r.s.guard) ?? []), nmText(r.e.name, r.e.cn)]);
   return (
-    <ModalWindow label={nmText(stage.name, stage.cn)} className="rg-modal" onClose={onClose}>
+    <RgWin inline={inline} label={nmText(stage.name, stage.cn)} className="rg-modal" onClose={onClose}>
       <header className="rg-modal-head">
         <div>
           <span className={`rg-kind k-${stage.kind}`}>{t(KIND_LABEL[stage.kind] ?? stage.kind)}</span>
@@ -588,7 +594,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
           )}
         </div>
       </div>
-    </ModalWindow>
+    </RgWin>
   );
 }
 
@@ -817,9 +823,9 @@ function RecordModal({ rid, title, sub, onClose }: { rid: string; title: string;
 // ── 조우 상세 모달 — 엔딩 조건 등에서 조우를 참조할 때 연다 ──────────────────
 const ENC_CHOICE_FOLD = 8;   // 씬 트리 없는 조우의 선택지가 이보다 많으면 접어 둔다
 
-function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
+function EncounterModal({ enc, onClose, link, battles, onOpenStage, inline }: {
   enc: Encounter; onClose: () => void; link?: (t: string | null) => React.ReactNode;
-  battles?: StagePair[]; onOpenStage?: (p: StagePair) => void;
+  battles?: StagePair[]; onOpenStage?: (p: StagePair) => void; inline?: boolean;
 }) {
   // battlesRandom: 전투 선택지는 있지만 고정 맵이 없는 조우 — '힘든 전투 직면' 류는
   // 그 층의 일반 전투 맵에서 무작위로 벌어진다 (사용자 지시 2026-08-16 "랜덤전투라고 적어줘")
@@ -830,7 +836,7 @@ function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
   const fold = !enc.scenes && enc.choices.length > ENC_CHOICE_FOLD;
   const shownChoices = fold && !allChoices ? enc.choices.slice(0, ENC_CHOICE_FOLD) : enc.choices;
   return (
-    <ModalWindow label={nmText(enc.title, enc.cn)} className="rg-modal" onClose={onClose}>
+    <RgWin inline={inline} label={nmText(enc.title, enc.cn)} className="rg-modal" onClose={onClose}>
       <header className="rg-modal-head">
         <div>
           <span className="rg-kind">{t("우연한 만남")}</span>
@@ -880,7 +886,7 @@ function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
           </div>
         </div>
       )}
-    </ModalWindow>
+    </RgWin>
   );
 }
 
@@ -1108,13 +1114,13 @@ function EffectTotals({ items, label, onClose }: { items: { eff?: Eff[] }[]; lab
 }
 
 // ── 층 상세 모달 — 층 카드 클릭 시 (설명 + 작전/보스 카드) ───────────────────
-function ZoneModal({ zone, badge, pairs, bosses, onOpenStage, onClose }: {
+function ZoneModal({ zone, badge, pairs, bosses, onOpenStage, onClose, inline }: {
   zone: Zone; badge: string; pairs: StagePair[]; bosses: Stage[];
-  onOpenStage: (p: StagePair) => void; onClose: () => void;
+  onOpenStage: (p: StagePair) => void; onClose: () => void; inline?: boolean;
 }) {
   const { t } = useI18n();
   return (
-    <ModalWindow label={nmText(zone.name, zone.cn)} className="rg-modal rg-zmodal" onClose={onClose}>
+    <RgWin inline={inline} label={nmText(zone.name, zone.cn)} className="rg-modal rg-zmodal" onClose={onClose}>
       <header className="rg-modal-head">
         <div>
           <span className="rg-zone-num">{badge}</span>
@@ -1146,7 +1152,7 @@ function ZoneModal({ zone, badge, pairs, bosses, onOpenStage, onClose }: {
           </div>
         </div>
       )}
-    </ModalWindow>
+    </RgWin>
   );
 }
 
@@ -1318,6 +1324,23 @@ export default function RogueGuide({ initialTopic }: {
   // 다중 인식 아이템 모아보기 — 유물·도구·음반·시스템 항목 공통 필드 (2026-07-23)
   type LensItem = { id: string; name: string; usage?: string | null; desc?: string | null; img?: boolean; iconId?: string; order?: string | null; cn?: string };
   const [lensMulti, setLensMulti] = useState<LensItem[] | null>(null);
+  // PRTS 링크 연결 중에 뜨는 상세 창은 마지막으로 옮긴 자리·크기로 (끊으면 잊는다 — app/modal-geo.ts, 사용자 지시 2026-10-12)
+  // PRTS 링크 상시 창 두 개 — 연결되면 노드(층·작전·조우) 창과 소장품 창을 📌 고정으로 띄워 두고, 인식될 때마다 안의 내용만
+  // 갈아 끼운다 (사용자 지시 2026-10-12 "유물용 모달, 노드 인식용 모달 두 개를 따로 띄워 놓고 계속 갈아 끼우는 방식").
+  // 값마다 연결 회차(sess)를 달아, 다시 연결하면 지난 회차 내용·닫힘 상태는 없는 것으로 본다 (끊으면 자리도 잊는다 — modal-geo)
+  type LiveNode = { sess: string } & ({ kind: "zone"; zone: Zone } | { kind: "stage"; pair: StagePair } | { kind: "enc"; enc: Encounter });
+  const [liveNode, setLiveNode] = useState<LiveNode | null>(null);
+  const [liveRelics, setLiveRelics] = useState<{ sess: string; items: LensItem[] } | null>(null);
+  const [liveHidden, setLiveHidden] = useState<{ node?: string; relic?: string }>({});
+  /** 인식한 아이템을 화면 순서대로 — 윗줄부터, 같은 줄(높이 차 4% 안)은 왼쪽부터. 자리를 못 찾은 것은 뒤로 (run.ts order) */
+  const byScreen = <T extends { id: string }>(rs: T[], order?: Record<string, [number, number]>): T[] => {
+    if (!order) return rs;
+    return [...rs].sort((a, b) => {
+      const pa = order[a.id], pb = order[b.id];
+      if (!pa || !pb) return pa ? -1 : pb ? 1 : 0;
+      return Math.abs(pa[0] - pb[0]) < 0.04 ? pa[1] - pb[1] : pa[0] - pb[0];
+    });
+  };
   const [stageOpen, setStageOpen] = useState<StagePair | null>(null);
   const [enemyOpen, setEnemyOpen] = useState<{ key: string; ctx: StatCtx } | null>(null);
   const [encOpen, setEncOpen] = useState<Encounter | null>(null);
@@ -2028,6 +2051,41 @@ export default function RogueGuide({ initialTopic }: {
     } catch { /* 프라이빗 모드 등 */ }
   };
 
+  /** 인식한 소장품 목록 본문 — 모아보기 창과 PRTS 소장품 창이 같이 쓴다 */
+  const relicListBody = (items: LensItem[]) => {
+    // 전체 보유 토글 — 담기 가능한 항목만 대상 (사용자 요청 2026-07-24)
+    const multiIds = items.filter((r) => invSection(r.id)).map((r) => r.id);
+    const multiAllOwned = multiIds.length > 0 && multiIds.every((id) => inv.has(id));
+    return (<>
+      <header className="rg-modal-head">
+        <div>
+          <h3>📷 {t("인식된 항목 {n}개", { n: items.length })}</h3>
+          {multiIds.length > 0 && (
+            <button type="button" className={`rg-inv-btn rg-inv-all${multiAllOwned ? " on" : ""}`}
+              title={multiAllOwned ? t("인식된 항목을 모두 보유 리스트에서 뺍니다") : t("인식된 항목을 모두 보유 리스트에 담습니다")}
+              onClick={() => toggleInvAll(multiIds, !multiAllOwned)}>
+              {multiAllOwned ? t("✓ 전체 보유중") : t("＋ 전체 보유")}
+            </button>
+          )}
+        </div>
+      </header>
+      <div className="rg-rmulti-wrap"><div className="rg-rmulti-list">
+        {items.map((r) => (
+          <article key={r.id} className="rg-rmulti-item">
+            <header>
+              {r.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
+              {r.order && <span className="rg-relic-no">{r.order}</span>}
+              <h4><Nm name={r.name} cn={r.cn} /></h4>
+              {/* 스샷 인식 → 바로 보유 담기 (피드백 반영 2026-07-24) */}
+              {invSection(r.id) && <InvPill owned={inv.has(r.id)} onToggle={() => toggleInv(r.id)} />}
+            </header>
+            {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
+            {r.desc && <p className="rg-relic-desc">{r.desc}</p>}
+          </article>
+        ))}
+      </div></div>
+    </>);
+  };
   const ownedRelics = useMemo(() => relicsAll.filter((r) => inv.has(r.id)), [relicsAll, inv]);
   const ownedRes = useMemo(() => resItems.filter((i) => inv.has(i.id)), [resItems, inv]); // eslint-disable-line react-hooks/exhaustive-deps
   // 비우기 확인은 사이트 공용 확인 모달(useConfirm) — window.confirm 금지 (사용자 확정 2026-07-24)
@@ -2097,7 +2155,7 @@ export default function RogueGuide({ initialTopic }: {
     let raw: string | null = null;
     try { raw = sessionStorage.getItem("ta:lens-handoff"); } catch { return; }
     if (!raw) return;
-    let g: { page?: string; topic?: string; view?: string; arcTab?: string; modal?: { type: string; id: string }; highlight?: string[]; gather?: boolean; grade?: number; emergency?: boolean; items?: string[] };
+    let g: { page?: string; topic?: string; view?: string; arcTab?: string; modal?: { type: string; id: string }; highlight?: string[]; gather?: boolean; grade?: number; emergency?: boolean; items?: string[]; order?: Record<string, [number, number]> };
     try { g = JSON.parse(raw); } catch { sessionStorage.removeItem("ta:lens-handoff"); return; }
     if (g.page && g.page !== "rogue") return; // 공채 등 다른 페이지 핸드오프는 해당 페이지가 소비
     if (g.topic !== topicRef.current) return; // 토픽 전환 완료 후 데이터 로드 effect에서 다시 불린다
@@ -2122,12 +2180,12 @@ export default function RogueGuide({ initialTopic }: {
     setLensHits(g.highlight?.length ? new Set(g.highlight) : null);
     // 아이템(유물·도구·음반·시스템)이 여러 개 인식되면 모아보기 모달로 띄운다 (gather 플래그)
     if (g.gather && (g.highlight?.length ?? 0) >= 2) {
-      const rs = g.highlight!.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
+      const rs = byScreen(g.highlight!.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r), g.order);
       setLensMulti(rs.length >= 2 ? rs : null);
     } else if (g.items?.length) {
       // 조우·작전 화면에 같이 떠 있던 소장품 — **한 개여도** 띄운다 (제보 16138722).
       // 조우 선택지는 보통 소장품을 하나씩 준다.
-      const rs = g.items.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
+      const rs = byScreen(g.items.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r), g.order);
       setLensMulti(rs.length ? rs : null);
     } else {
       setLensMulti(null);
@@ -2143,7 +2201,8 @@ export default function RogueGuide({ initialTopic }: {
     name: r.name, text: r.usage ?? r.desc ?? null,
     img: r.img ? absUrl(asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)) : undefined,
   });
-  const pipFor = (modal: { type: string; id: string } | undefined, items: LensItem[]): BridgePipCard[] => {
+  /** 작은 창 노드 칸 카드 — 작전·조우·구역 (소장품은 소장품 칸으로 따로) */
+  const pipNodeFor = (modal: { type: string; id: string } | undefined): BridgePipCard | null => {
     const out: BridgePipCard[] = [];
     if (modal?.type === "stage") {
       const st = stageById.get(modal.id);
@@ -2161,9 +2220,7 @@ export default function RogueGuide({ initialTopic }: {
       const z = zoneById.get(modal.id);
       if (z) out.push({ kind: t("구역"), name: z.name, text: z.buff ?? z.desc });
     }
-    for (const r of items) if (!(modal?.type === "relic" && modal.id === r.id)) out.push(pipItem(r));
-    if (modal?.type === "relic") { const r = relicById.get(modal.id) ?? lensItemById.get(modal.id); if (r) out.unshift(pipItem(r)); }
-    return out;
+    return out[0] ?? null;
   };
   const applyLensLive = (g: Extract<LensGoto, { page: "rogue" }>) => {
     if (g.topic !== topicRef.current) { noteBridge(t("다른 테마 화면 — 이동하지 않음")); return; }
@@ -2171,24 +2228,28 @@ export default function RogueGuide({ initialTopic }: {
       const gmax = Math.max(15, ...data.difficulties.filter((df) => df.mode === "NORMAL").map((df) => df.grade));
       if (g.grade <= gmax) setGrade(g.grade);
     }
-    const ids = [...(g.highlight ?? []), ...(g.items ?? [])];
-    const rs = ids.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
-    const cards = pipFor(g.modal, rs);
-    if (cards.length) setBridgePip(cards);
-    // 작은 창이 열려 있으면 본 화면은 그대로 둔다 — 결과는 작은 창에만 (사용자 지시 2026-10-12 "pip 동작 중엔 본 화면은 바뀔 필요 없다")
-    if (bridgePipActive()) return;
-    setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
-    let opened = false;
+    const ids = [...new Set([...(g.highlight ?? []), ...(g.items ?? [])])];
+    const rs = byScreen(ids.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r), g.order);
+    if (g.modal?.type === "relic") { const r = relicById.get(g.modal.id) ?? lensItemById.get(g.modal.id); if (r && !rs.some((x) => x.id === r.id)) rs.unshift(r as LensItem); }
+    // 작은 창 두 칸 — 새로 인식된 칸만 바꾼다
+    const nodeCard = pipNodeFor(g.modal);
+    if (nodeCard) setBridgePipNode(nodeCard);
+    if (rs.length) setBridgePipRelics(rs.map(pipItem));
+    // 본 화면 상시 창도 작은 창과 **같이** 바꾼다 — 종전엔 작은 창이 떠 있으면 본 화면을 그대로 뒀다 (사용자 지시 2026-10-12 "pip 떠 있어도 같이 움직이게")
+    // 층(구역) 창과 유물 창은 **따로** 떠 있고, 새로 인식되면 그 창의 내용만 바뀐다 — 닫았다 다시 열지 않는다
+    // (사용자 지시 2026-10-12 "층 모달이랑 유물인식 모달은 서로 다른 모달로 · 📌 고정된 채로 · 안에 내용만 바뀌게").
+    // 작전·조우 창만 서로 갈아 끼운다. 소장품은 하나여도 같은 유물 창(모아보기)에 띄운다
+    const sess = bridgeSession();
+    let node: LiveNode | null = null;
     if (g.modal) {
       const { type, id } = g.modal;
-      if (type === "relic") { const r = relicById.get(id) ?? lensItemById.get(id); if (r) { setRelicOpen(r as Relic); opened = true; } }
-      else if (type === "enc") { const e = encByScene.get(id); if (e) { setEncOpen(e); opened = true; } }
-      else if (type === "stage") { const st = stageById.get(id); if (st) { setStageOpen({ ...pairOf(st), init: g.emergency ? "e" : undefined }); opened = true; } }
-      else if (type === "zone") { const z = zoneById.get(id); if (z) { setZoneOpen(z); opened = true; } }
+      if (type === "enc") { const e = encByScene.get(id); if (e) node = { sess, kind: "enc", enc: e }; }
+      else if (type === "stage") { const st = stageById.get(id); if (st) node = { sess, kind: "stage", pair: { ...pairOf(st), init: g.emergency ? "e" : undefined } }; }
+      else if (type === "zone") { const z = zoneById.get(id); if (z) node = { sess, kind: "zone", zone: z }; }
     }
-    // 모달을 이미 띄웠으면 같이 떠 있던 소장품만(items), 아니면 인식한 항목 전부를 모아보기로
-    if (!opened && rs.length === 1 && relicById.has(rs[0].id)) setRelicOpen(relicById.get(rs[0].id)!);
-    else setLensMulti(rs.length ? rs : null);
+    // 새 내용이 들어온 창은 닫아 뒀어도 다시 보인다
+    if (node) { setLiveNode(node); setLiveHidden((h) => ({ ...h, node: undefined })); }
+    if (rs.length) { setLiveRelics({ sess, items: rs }); setLiveHidden((h) => ({ ...h, relic: undefined })); }
   };
   const applyLensRef = useRef(applyLensHandoff);
   useEffect(() => { applyLensRef.current = applyLensHandoff; });
@@ -2265,7 +2326,10 @@ export default function RogueGuide({ initialTopic }: {
   const showLensItems = (ids: string[], topic: string): number => {
     if (!ids.length || topic !== topicRef.current) return 0;
     const rs = ids.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
-    if (rs.length) { setBridgePip(rs.map(pipItem)); if (!bridgePipActive()) setLensMulti(rs); }
+    if (rs.length) {
+      if (bridgeSession()) { setBridgePipRelics(rs.map(pipItem)); setLiveRelics({ sess: bridgeSession(), items: rs }); setLiveHidden((h) => ({ ...h, relic: undefined })); }
+      else setLensMulti(rs);
+    }
     return rs.length;
   };
   const [lensMsg, setLensMsg] = useState<string | null>(null);
@@ -3666,40 +3730,42 @@ export default function RogueGuide({ initialTopic }: {
         </Suspense>
       )}
       {/* 소장품 다중 인식 모아보기 — 인식된 유물들을 상세 카드로 한 화면에 (사용자 요청 2026-07-23) */}
-      {lensMulti && (() => {
-        // 전체 보유 토글 — 담기 가능한 항목만 대상 (사용자 요청 2026-07-24)
-        const multiIds = lensMulti.filter((r) => invSection(r.id)).map((r) => r.id);
-        const multiAllOwned = multiIds.length > 0 && multiIds.every((id) => inv.has(id));
-        return (
+      {lensMulti && (
         <ModalWindow label={t("인식된 항목 {n}개", { n: lensMulti.length })} className="rg-modal rg-rmodal rg-rmulti" onClose={() => setLensMulti(null)}>
-          <header className="rg-modal-head">
-            <div>
-              <h3>📷 {t("인식된 항목 {n}개", { n: lensMulti.length })}</h3>
-              {multiIds.length > 0 && (
-                <button type="button" className={`rg-inv-btn rg-inv-all${multiAllOwned ? " on" : ""}`}
-                  title={multiAllOwned ? t("인식된 항목을 모두 보유 리스트에서 뺍니다") : t("인식된 항목을 모두 보유 리스트에 담습니다")}
-                  onClick={() => toggleInvAll(multiIds, !multiAllOwned)}>
-                  {multiAllOwned ? t("✓ 전체 보유중") : t("＋ 전체 보유")}
-                </button>
-              )}
-            </div>
-          </header>
-          <div className="rg-rmulti-list">
-            {lensMulti.map((r) => (
-              <article key={r.id} className="rg-rmulti-item">
-                <header>
-                  {r.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
-                  {r.order && <span className="rg-relic-no">{r.order}</span>}
-                  <h4><Nm name={r.name} cn={r.cn} /></h4>
-                  {/* 스샷 인식 → 바로 보유 담기 (피드백 반영 2026-07-24) */}
-                  {invSection(r.id) && <InvPill owned={inv.has(r.id)} onToggle={() => toggleInv(r.id)} />}
-                </header>
-                {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
-                {r.desc && <p className="rg-relic-desc">{r.desc}</p>}
-              </article>
-            ))}
-          </div>
+          {relicListBody(lensMulti)}
         </ModalWindow>
+      )}
+      {/* PRTS 링크 상시 창 — 노드(층·작전·조우) · 소장품. 연결돼 있는 동안만, 📌 고정으로 (2026-10-12) */}
+      {bridgeOn && liveHidden.node !== bridgeSession() && (() => {
+        const n = liveNode?.sess === bridgeSession() ? liveNode : null;
+        return (
+          <ModalWindow label={`◉ PRTS · ${n?.kind === "zone" ? nmText(n.zone.name, n.zone.cn) : n?.kind === "stage" ? nmText(n.pair.n.name, n.pair.n.cn) : n?.kind === "enc" ? nmText(n.enc.title, n.enc.cn) : t("노드")}`}
+            className={`rg-modal rg-prts-win${n?.kind === "zone" ? " rg-zmodal" : ""}`} defaultPinned geoKey={`${PRTS_MODAL_KEY}:node`}
+            defaultPos={{ x: 24, y: 96 }} onClose={() => setLiveHidden((h) => ({ ...h, node: bridgeSession() }))}>
+            {n?.kind === "zone" ? (
+              <ZoneModal inline zone={n.zone} badge={zoneBadge(n.zone)}
+                pairs={n.zone.variant ? [] : (pairsByZone.get(n.zone.num) ?? []).concat(trialPairsFor(n.zone))}
+                bosses={n.zone.variant ? [] : bossStages.filter((x) => x.zone === n.zone.num)}
+                onOpenStage={setStageOpen} onClose={() => {}} />
+            ) : n?.kind === "stage" ? (
+              <StageModal inline key={n.pair.n.id} pair={n.pair} grade={grade} onClose={() => {}}
+                onOpenEnemy={(key, ctx) => setEnemyOpen({ key, ctx })} />
+            ) : n?.kind === "enc" ? (
+              <EncounterModal inline key={n.enc.scene ?? n.enc.title} enc={n.enc} onClose={() => {}} link={linkRelic}
+                battles={(n.enc.battles ?? []).map((id) => stageById.get(id)).filter(Boolean).map((x) => pairOf(x!))}
+                onOpenStage={setStageOpen} />
+            ) : <p className="rg-prts-empty">{t("층·작전·조우 화면을 인식하면 여기에 표시됩니다")}</p>}
+          </ModalWindow>
+        );
+      })()}
+      {bridgeOn && liveHidden.relic !== bridgeSession() && (() => {
+        const items = liveRelics?.sess === bridgeSession() ? liveRelics.items : [];
+        return (
+          <ModalWindow label={`◉ PRTS · ${t("소장품")}`} className="rg-modal rg-rmodal rg-rmulti rg-prts-win" defaultPinned
+            geoKey={`${PRTS_MODAL_KEY}:relic`} defaultPos={{ x: Math.max(24, (typeof window === "undefined" ? 1280 : window.innerWidth) - 664), y: 96 }}
+            onClose={() => setLiveHidden((h) => ({ ...h, relic: bridgeSession() }))}>
+            {items.length ? relicListBody(items) : <p className="rg-prts-empty">{t("소장품을 인식하면 여기에 표시됩니다")}</p>}
+          </ModalWindow>
         );
       })()}
       {/* 자동인식이 테마를 특정 못 한 경우(분대 이름은 테마 공통) — 테마 선택 전용 미니 창 */}

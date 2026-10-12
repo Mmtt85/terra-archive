@@ -2897,6 +2897,10 @@ html.dark .tags-track > span {
 /* 공식 소속·출신지·종족·전투 태그·컨셉 — 다섯 칸짜리 3열 격자(두 줄, 약 150px)였던 것을
    **한 줄 띠**로 압축했다 (사용자 요청 2026-09-18). 값이 길면 어절 단위로 다음 줄로
    흘러가되 칸이 아니라 글줄이라 훨씬 얕다. */
+/* 획득 경로의 이벤트 이름 — 누르면 그 이벤트 창 (2026-10-12) */
+.modal-facts .fact-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;
+  text-decoration: underline dotted; text-underline-offset: 3px; }
+.modal-facts .fact-link:hover { text-decoration-style: solid; }
 .modal-facts {
   display: flex;
   flex-wrap: wrap;
@@ -9740,6 +9744,8 @@ html.dark .vz {
 .vz-sessions header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; font-size: 12px; margin-bottom: 5px; }
 .vz-sessions time { font: 700 12px var(--mono); color: var(--ink3); }
 .vz-tag { border: 1px solid var(--line); padding: 0 5px; font-size: 11px; color: var(--ink3); }
+/* 세션 머리의 방문자 코드 (익명 id 앞 8자, 2026-10-12) */
+.vz-visitor { font-size: 11px; color: var(--ink3); }
 .vz-tag.warn { border-color: var(--border-strong); }
 .vz-trail { margin: 0; font-size: 12.5px; line-height: 1.9; }
 .vz-trail i { font-style: normal; color: var(--muted); margin: 0 5px; }
@@ -14447,10 +14453,21 @@ html.rg-theme.rg6 .site-header {
   margin-top: 0;
 }
 /* 층 모달 안 스테이지 카드는 한 줄 4개 — 미니맵 약 30% 축소 효과 (사용자 확정 2026-07-18) */
-.rg-zmodal .rg-stage-cards {
-  grid-template-columns: repeat(4, 1fr);
+/* ⚠ .rg-modal.rg-zmodal — 뒤에 나오는 '.rg-modal .rg-stage-cards { repeat(4, 1fr) }'를 이겨야 한다 */
+.rg-modal.rg-zmodal .rg-stage-cards {
+  grid-template-columns: repeat(var(--cols), 227px);
   --cols: 4;
 }
+/* 창을 좁히면 카드(섬네일)는 그대로 두고 한 줄 칸 수만 4 → 3 → 2 → 1 (사용자 지시 2026-10-12 — 종전엔 1fr 이라 카드가 같이 줄었다).
+   칸 수는 창 본문 폭으로 정한다: n칸 = n×227 + (n−1)×간격 (반올림 여유 1px). 묶음 카드(.rg-stage-vgroup)의 칸 차지도 같은 --cols 를 따른다 */
+.rg-zmodal .mw-body { container-type: inline-size; }
+@container (max-width: 935.98px) { .rg-modal.rg-zmodal .rg-stage-cards { --cols: 3; } }
+@container (max-width: 699.98px) { .rg-modal.rg-zmodal .rg-stage-cards { --cols: 2; } }
+@container (max-width: 463.98px) { .rg-modal.rg-zmodal .rg-stage-cards { --cols: 1; } }
+/* 묶음 카드가 있으면 간격이 18px 라 문턱이 조금 넓다 */
+@container (max-width: 965.98px) { .rg-modal.rg-zmodal .rg-stage-cards:has(> .rg-stage-vgroup) { --cols: 3; } }
+@container (max-width: 719.98px) { .rg-modal.rg-zmodal .rg-stage-cards:has(> .rg-stage-vgroup) { --cols: 2; } }
+@container (max-width: 473.98px) { .rg-modal.rg-zmodal .rg-stage-cards:has(> .rg-stage-vgroup) { --cols: 1; } }
 /* 전투맵 미리보기 확대 토글 — 클릭 시 2배 (레이아웃 밀지 않게 transform, 우측 열 위로 겹침) */
 .rg-map-zoom {
   display: block;
@@ -17462,6 +17479,12 @@ main.site-main > .site-header {
   opacity: 1;
   box-shadow: 0 0 6px var(--lime);
 }
+/* 공채 — 좁은 왼쪽 칸이라 스샷·PRTS 단추를 작게 해 한 줄에 (사용자 지시 2026-10-12 "버튼을 작게") */
+.quick-wrap .lens-open-btn { padding: 4px 5px; font-size: 10px; gap: 3px; letter-spacing: -0.01em; }
+.quick-wrap .lens-help-btn { min-width: 18px; padding: 0; font-size: 10px; }
+.quick-wrap .beta-badge { margin-left: 2px; padding: 0 3px; font-size: 8.5px; }
+.quick-wrap .lens-auto-knob { width: 6px; height: 6px; }
+.quick-wrap .bridge-open-wrap { margin-left: 0; }
 /* ? 도움말 — 오른쪽 세그먼트, 설명 모달을 연다 */
 .lens-help-btn {
   display: inline-flex;
@@ -17739,6 +17762,17 @@ main.site-main > .site-header {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+/* 창을 넓히면 한 줄에 두 개까지 (사용자 지시 2026-10-12) — 칸 하나가 360px 은 돼야 효과 글이 읽힌다.
+   폭은 감싸개(.rg-rmulti-wrap)로 잰다 — 목록이 자기 폭을 스스로 잴 수는 없다 */
+.rg-rmulti-wrap { container-type: inline-size; }
+/* PRTS 링크 상시 창 — 빈 상태에서도 제 높이를 갖게 (안내 한 줄만 있으면 가느다란 띠가 됐다, 사용자 지적 2026-10-12) */
+.mw-window.rg-prts-win { min-height: min(420px, 70svh); }
+.mw-window.rg-prts-win .mw-body:has(> .rg-prts-empty) { flex: 1 1 auto; display: flex; flex-direction: column; }
+.mw-window.rg-prts-win .mw-body > .rg-prts-empty { margin: auto; padding: 24px; text-align: center; color: var(--rgink2, var(--muted)); font-size: 13px; }
+@container (min-width: 740px) {
+  .rg-rmulti-list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; }
+  .rg-rmulti-list > .rg-rmulti-item:nth-child(2) { border-top: none; padding-top: 0; }
 }
 .rg-rmulti-item header {
   display: flex;
@@ -18644,6 +18678,11 @@ main.site-main > .site-header {
 .bridge-pip-head b { color: var(--ink2); font-weight: 600; }
 .bridge-pip-empty { margin: 24px 12px; color: var(--muted); text-align: center; }
 .bridge-pip-cards { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+/* 두 칸(노드·소장품) — 칸 제목 줄 (2026-10-12) */
+.bridge-pip-pane + .bridge-pip-pane { border-top: 1px solid var(--line); }
+.bridge-pip-pane > h4 { margin: 0; padding: 8px 10px 0; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
+.bridge-pip-pane > h4 em { margin-left: 6px; font-style: normal; color: var(--ink2); }
+.bridge-pip-pane > .bridge-pip-empty { margin: 14px 12px 18px; }
 .bridge-pip-card { display: flex; flex-direction: column; gap: 3px; padding: 9px 10px; border: 1px solid var(--line); background: var(--white); }
 .bridge-pip-card.more { cursor: pointer; }
 .bridge-pip-card.more:hover, .bridge-pip-card.open { border-color: var(--border-strong); }
@@ -22124,6 +22163,13 @@ p.sb-trline { margin-top: 2px; }
    낮을 때 넘치지 않게 높이 예산으로도 묶는다 (.vn-root.full 과 같은 방식). */
 .op-record-modal:has(.vn-root) { height: auto; max-height: min(82dvh, 900px); }
 .op-record-modal .vn-root { margin-top: 10px; }
+/* 책갈피 — 지난번 읽던 곳부터 이어 읽는 중 (2026-10-12) */
+.sc-resume { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; padding: 6px 10px; border: 1px solid var(--line);
+  background: var(--bg-faint); font-size: 12.5px; color: var(--ink2); }
+.sc-resume button { padding: 2px 8px; border: 1px solid var(--line); background: var(--white); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
+.sc-resume button:hover { border-color: var(--border-hover); }
+.sc-resume .sc-resume-x { margin-left: auto; border: 0; background: none; color: var(--muted); }
+.sc-resume.sc-progress { color: var(--muted); background: none; border-style: dashed; }
 .op-record-modal .vn-stage {
   /* 창 높이 − 제목·보기전환·안내문·조작안내·여백 ≈ 220px (실측 1440×700에서 딱 안 넘침) */
   width: min(100%, calc((min(82dvh, 900px) - 220px) * 16 / 9));

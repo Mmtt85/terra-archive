@@ -16,6 +16,7 @@ import { recognizeShot, warmData } from "./lens/run";
 import { warmOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
 import { useBridgeWatch } from "./lens/bridge";
+import { BridgeTopicButton } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
 
 // 스샷 인식 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
@@ -313,13 +314,13 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   };
   // 자동인식·필 드롭 공용 인식 흐름
   const lensBusy = useRef(false);
-  const handleLensShot = async (file: File) => {
+  const handleLensShot = async (file: File, live = false) => {
     if (lensBusy.current) return;
     lensBusy.current = true;
     setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
     flashLensMsg(t("스캔 중…"));
     try {
-      const oc = await recognizeShot("recruit", file);
+      const oc = await recognizeShot("recruit", file, undefined, "ko", { live });
       if (oc.target.kind === "goto") {
         onLensGoto(oc.target.goto);
         flashLensMsg(t("태그를 인식해 선택했습니다."), 2000);
@@ -333,7 +334,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     }
   };
   const lensClip = useClipboardWatch(lensAuto && !lensOpen, handleLensShot);
-  useBridgeWatch(!lensOpen, handleLensShot);   // 게임 브리지 — 같은 프레임 공급원
+  useBridgeWatch(!lensOpen, (file) => handleLensShot(file, true));   // 게임 브리지 — 같은 프레임 공급원 (라이브 = 빠른 경로)
   // 자동인식 동안 창 전체가 드롭존 — 드래그 중이면 필을 드롭 가능 상태로 강조
   const lensDragging = useDropWatch(lensAuto && !lensOpen, handleLensShot);
 
@@ -444,6 +445,13 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
               </button>
               <button type="button" className="lens-help-btn" aria-label={t("스샷 인식 도움말")}
                 onClick={() => setLensOpen(true)}>?</button>
+            </div>
+          )}
+          {/* PRTS 링크 — 게임 창을 연결하면 모집 화면이 바뀔 때마다 태그를 자동 선택 (사용자 지시 2026-10-12).
+              작은 창은 쓰지 않는다 — 태그 판이 뒤에서 골라진다. 좁은 칸이라 스샷 단추와 따로 묶었다 */}
+          {locale === "ko" && (
+            <div className="lens-open-wrap bridge-open-wrap">
+              <BridgeTopicButton topic="recruit" name={t("공개모집")} t={t} noReplay noPip compact />
             </div>
           )}
         </div>

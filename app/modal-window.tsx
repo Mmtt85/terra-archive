@@ -36,6 +36,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "./i18n";
+import { modalPosOf, modalSizeOf, rememberModalGeo } from "./modal-geo";
 
 let zTop = 200; // .modal-backdrop 기본 z(100)보다 위에서 시작 — 창끼리는 이 카운터로 앞뒤 결정
 
@@ -67,7 +68,7 @@ const MIN_H = 200;
 type Pos = { x: number; y: number };
 type Size = { w: number; h: number };
 
-export function ModalWindow({ label, className, style, onClose, permanent, defaultPinned, defaultPos, initialSize, chrome, onPinChange, onGeometry, children }: {
+export function ModalWindow({ label, className, style, onClose, permanent, defaultPinned, defaultPos, initialSize, chrome, onPinChange, onGeometry, geoKey, children }: {
   label: string;
   className?: string;
   style?: React.CSSProperties;
@@ -87,13 +88,22 @@ export function ModalWindow({ label, className, style, onClose, permanent, defau
   /** 끌기·크기 조절이 **끝났을 때** 위치·크기 통지 — 창 자리를 저장하는 화면용
    *  (통합전략 보유 리스트). 저장한 값은 다음에 defaultPos·initialSize 로 돌려주면 된다. */
   onGeometry?: (g: { pos: Pos | null; size: Size | null }) => void;
+  /** 같은 열쇠를 가진 창끼리 마지막으로 옮긴 자리를 이어 받는다 (app/modal-geo.ts — PRTS 링크 창) */
+  geoKey?: string;
   children: React.ReactNode;
 }) {
   const { t } = useI18n();
   const [z, setZ] = useState(() => ++zTop);
   const [pinned, setPinned] = useState(!!permanent || !!defaultPinned);
-  const [pos, setPos] = useState<Pos | null>(defaultPos ?? null);
-  const [size, setSize] = useState<Size | null>(initialSize ?? null);
+  const [size, setSize] = useState<Size | null>(() => initialSize ?? (geoKey ? modalSizeOf(geoKey, className ?? "") : undefined) ?? null);
+  // 기억한 자리는 처음 그릴 때 화면 안으로 넣는다 — 크기를 모르면 기본 창 크기(420×320)로 어림 (창 크기가 바뀐 뒤 다시 열 때)
+  const [pos, setPos] = useState<Pos | null>(() => {
+    // 기억한 자리(geoKey)가 먼저, 없으면 화면이 준 시작 자리
+    const p = (geoKey ? modalPosOf(geoKey) : undefined) ?? defaultPos;
+    if (!p || typeof window === "undefined") return p ?? null;
+    const w = size?.w ?? 420, h = size?.h ?? 320;
+    return { x: Math.max(8, Math.min(p.x, window.innerWidth - w - 8)), y: Math.max(8, Math.min(p.y, Math.max(8, window.innerHeight - h - 8))) };
+  });
   const panelRef = useRef<HTMLElement>(null);
   const dragRef = useRef<{ dx: number; dy: number } | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -149,6 +159,7 @@ export function ModalWindow({ label, className, style, onClose, permanent, defau
     setDragging(false);
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     onGeometry?.({ pos, size });
+    if (geoKey) rememberModalGeo(geoKey, className ?? "", pos, size);
   };
 
   const onResizeStart = (e: React.PointerEvent, dir: string) => {
@@ -186,6 +197,7 @@ export function ModalWindow({ label, className, style, onClose, permanent, defau
     rsRef.current = null;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     onGeometry?.({ pos, size });
+    if (geoKey) rememberModalGeo(geoKey, className ?? "", pos, size);
   };
 
   // 화면 크기가 바뀌면 창을 다시 안쪽으로

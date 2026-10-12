@@ -82,12 +82,49 @@ function AcBridgeHelp({ t, onClose }: { t: T; onClose: () => void }) {
   );
 }
 
+/** 공채 PRTS — 모집 화면의 태그를 읽어 태그 판을 대신 눌러 준다 (2026-10-12). 록라용 설명(따라가서 여는 기능·리플레이)은 맞지 않는다 */
+function RecruitBridgeHelp({ t, onClose }: { t: T; onClose: () => void }) {
+  return (
+    <ModalWindow className="operator-modal lens-modal" onClose={onClose} label={`◉ ${t("PRTS 링크")}`}
+      chrome={<span className="beta-badge">BETA</span>}>
+      <div className="lens-body lens-help">
+        <p className="lens-help-intro">{t("게임 창을 사이트에 물려 두면, 공개모집 화면이 보일 때마다 모집 요건 태그를 읽어 태그 판을 대신 눌러 줍니다. '스샷으로 태그 입력'이 캡처 한 장을 읽는다면, PRTS 링크는 보고 있는 화면을 계속 읽습니다.")}</p>
+        <section className="lens-usage" aria-label={t("사용법")}>
+          <h3>{t("사용법")}</h3>
+          <ol className="lens-usage-steps">
+            <li>
+              <strong>{t("PRTS 링크 버튼 누르기")}</strong>
+              <span>{t("공개채용 도우미의 태그 입력란 아래에 있습니다.")}</span>
+            </li>
+            <li>
+              <strong>{t("공유할 창 고르기")}</strong>
+              <span>{t("브라우저가 공유 대상을 물어봅니다. 게임이 돌아가는 에뮬레이터(또는 PC 클라이언트) 창을 고르세요. '창' 단위로 고르면 그 창만 읽으므로 다른 작업이 새지 않습니다.")}</span>
+            </li>
+            <li>
+              <strong>{t("게임에서 모집 화면 열기")}</strong>
+              <span>{t("공개모집에서 빈 슬롯을 눌러 태그 다섯 개가 보이는 화면을 띄우면, 그 태그가 자동으로 선택되고 조합 결과가 바로 나옵니다. 슬롯을 옮길 때마다 새로 읽습니다.")}</span>
+            </li>
+          </ol>
+        </section>
+        <h3>{t("참고")}</h3>
+        <ul>
+          <li>{rich(t("**아직 BETA입니다.** 화면 인식이 늘 완벽하지는 않습니다 — 태그를 하나 덜 읽거나 못 읽고 지나갈 수 있습니다. 결과를 고르기 전에 선택된 태그가 게임과 같은지 한 번 봐 주세요."))}</li>
+          <li>{t("한국 서버(한국어) 게임 화면의 태그를 읽습니다.")}</li>
+          <li>{t("화면 공유를 지원하는 데스크톱 브라우저(크롬·엣지 등)에서만 버튼이 보입니다. 모바일에서는 스샷 레이더를 쓰세요.")}</li>
+          <li>{t("게임 창이 너무 작거나 가려져 있으면 글자를 못 읽습니다 — 창을 다른 창으로 덮지 마세요.")}</li>
+        </ul>
+      </div>
+    </ModalWindow>
+  );
+}
+
 /** where — 어느 화면의 PRTS인가. 록라는 '따라가서 여는' 기능이고, 위수 협의는 '한 판을
  *  받아 적는' 기능이라 설명이 아예 다르다 (껍데기·클래스만 공유한다, 2026-09-06). */
 export default function BridgeHelpModal({ onClose, where = "rogue" }:
-  { onClose: () => void; where?: "rogue" | "autochess" }) {
+  { onClose: () => void; where?: "rogue" | "autochess" | "recruit" }) {
   const { t } = useI18n();
   if (where === "autochess") return <AcBridgeHelp t={t} onClose={onClose} />;
+  if (where === "recruit") return <RecruitBridgeHelp t={t} onClose={onClose} />;
   // 공용 창(ModalWindow) — 스샷 레이더 도움말(help.tsx)과 같은 껍데기 (2026-09-05 일괄 전환)
   return (
     <ModalWindow className="operator-modal lens-modal" onClose={onClose} label={`◉ ${t("PRTS 링크")}`}

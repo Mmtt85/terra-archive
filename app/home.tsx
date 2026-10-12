@@ -8,6 +8,8 @@ import { NewBadge } from "./new-badge";
 import { PAGE_HELP_TABS, openPageHelp } from "./page-help";
 import { lazy, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import storyEventsData from "./data/stories.json";
+import obtainData from "./data/op-obtain.json";
+import { openEvent } from "./event-open";
 // 탭 본문은 전부 지연 로드한다 (INP 조사 2026-08-09). 종전엔 정적 import라 **어느 탭을
 // 열든 모든 탭의 코드와 데이터를 받아서 파싱**했다 — /stories가 오퍼 DB 1.8MB를, /infra가
 // 스토리 요약 1.8MB를 받는 식이라 페이지당 초기 JS가 6.4MB였고, 그 파싱이 하이드레이션
@@ -1135,6 +1137,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
   // 보유 필터 — '내 정보'에 계정 데이터가 있을 때만 나온다 (2026-10-04)
   const [selectedOwn, setSelectedOwn] = useState<string[]>([]);
+  const [selectedObtain, setSelectedObtain] = useState<string[]>([]);
   const me = useMe();
   const myChars = meChars(me);
   // 중섭 계정이 연동돼 있으면 미래시를 켠 채로 잠근다 — 그 계정의 오퍼·재료 상당수가 한섭엔 아직 없다
@@ -1475,7 +1478,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const chipCount = useMemo(() => {
     const concept = new Map<string, number>(), faction = new Map<string, number>(), tag = new Map<string, number>();
     const job = new Map<string, number>(), sub = new Map<string, number>(), rarity = new Map<string, number>();
-    const method = new Map<string, number>();
+    const method = new Map<string, number>(), obtain = new Map<string, number>();
     const bump = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
     for (const operator of roster) {
       for (const concept0 of operator.concepts) bump(concept, concept0);
@@ -1487,8 +1490,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       bump(rarity, String(operator.rarity));
       bump(method, operator.position);            // 근거리/원거리
       bump(method, damageTypeOf(operator));       // 물리/마법
+      const ob = obtainOf(operator.id);
+      if (ob) bump(obtain, ob);
     }
-    return { concept, faction, tag, job, sub, rarity, method };
+    return { concept, faction, tag, job, sub, rarity, method, obtain };
     // damageTypeOf는 locale·t 클로저 (로케일이 바뀌면 라벨도 바뀐다)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roster, locale, t]);
@@ -2237,10 +2242,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       const conceptNames = operator.concepts.map((concept) => conceptName(locale, concept));
       const matchesQuery = !keyword || normSearch([operator.name, operator.code, operator.job, operator.subProfession, operator.position, ...operator.combatTags, ...operator.factions, operator.reason, ...operator.aliases, ...operator.concepts, ...conceptNames].join(" ")).includes(keyword);
       const matchesOwn = !myChars || selectedOwn.length === 0 || selectedOwn.some((key) => ownMatch(key, operator, myChars.get(operator.id)));
-      return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesRarity && matchesQuery && matchesOwn;
+      const matchesObtain = selectedObtain.length === 0 || selectedObtain.includes(obtainOf(operator.id) ?? "");
+      return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesRarity && matchesQuery && matchesOwn && matchesObtain;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, searchTerm, locale, myChars, selectedOwn]);
+  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, searchTerm, locale, myChars, selectedOwn, selectedObtain]);
 
   // 백과사전 검색이 0건이면 그것도 "실패한 검색"이다 (뱅제 → 은재 → … 연쇄를 잇기 위해)
   useEffect(() => {
@@ -2257,6 +2263,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     setSelectedSubProfessions([]);
     setSelectedRarities([]);
     setSelectedOwn([]);
+    setSelectedObtain([]);
     clearSearch();
   };
 
@@ -2272,7 +2279,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     setSelectedSubProfessions((subs) => (subs.every((sub) => allowed.has(sub)) ? subs : subs.filter((sub) => allowed.has(sub))));
   };
 
-  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || selectedRarities.length > 0 || (!!myChars && selectedOwn.length > 0) || searchTerm.trim().length > 0;
+  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || selectedRarities.length > 0 || (!!myChars && selectedOwn.length > 0) || selectedObtain.length > 0 || searchTerm.trim().length > 0;
 
   const sorted = useMemo(() => {
     if (sortKey === "기본") {
@@ -2775,6 +2782,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             { title: t("전투 태그"), items: combatTags, selected: tags, onToggle: toggleTag, countForItem: (item) => chipCount.tag.get(item) ?? 0 },
             { title: t("공격 방식"), items: attackMethods, selected: selectedMethods, onToggle: toggleIn(setSelectedMethods), countForItem: (item) => chipCount.method.get(item) ?? 0 },
             { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => chipCount.faction.get(item) ?? 0 },
+            { title: t("획득 경로"), items: OBTAIN_CODES.filter((c) => chipCount.obtain.has(c)), selected: selectedObtain, onToggle: toggleIn(setSelectedObtain), labelFor: (item) => t(OBTAIN_LABEL[item]), countForItem: (item) => chipCount.obtain.get(item) ?? 0 },
             // 내 계정 — '내 정보'에서 로그인했을 때만 (보유·육성 상태로 거르기)
             ...(myChars ? [{ title: t("내 보유"), breakBefore: true, items: [...OWN_KEYS], selected: selectedOwn, onToggle: toggleIn(setSelectedOwn), labelFor: (item: string) => t(item), countForItem: (item: string) => ownCount.get(item) ?? 0 }] : []),
           ]} />
@@ -2807,6 +2815,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             {selectedJobs.map((item) => <button key={`j-${item}`} onClick={() => toggleJob(item)}>{item} ×</button>)}
             {selectedSubProfessions.map((item) => <button key={`s-${item}`} onClick={() => toggleIn(setSelectedSubProfessions)(item)}>{item} ×</button>)}
             {myChars && selectedOwn.map((item) => <button key={`o-${item}`} onClick={() => toggleIn(setSelectedOwn)(item)}>{t(item)} ×</button>)}
+            {selectedObtain.map((item) => <button key={`b-${item}`} onClick={() => toggleIn(setSelectedObtain)(item)}>{t(OBTAIN_LABEL[item])} ×</button>)}
             {searchTerm && <button onClick={() => clearSearch()}>“{searchTerm}” ×</button>}
           </div>
 
@@ -3182,6 +3191,21 @@ function FilterGroup({ title, items, selected, onToggle, rows = 1, countForItem,
 
 // 내 보유 필터 (오퍼 백과사전) — 값이 곧 사전 키다
 const OWN_KEYS = ["보유", "미보유", "만렙", "육성 중", "풀잠", "3마스터 보유"] as const;
+// 획득 경로 — scripts/build-op-obtain.py (게임 itemObtainApproach + 가챠 풀 한정·콜라보 + 이벤트 보상). 제안 934ec868 (2026-10-12)
+// "미보유 배포 오퍼의 입수 방법을 목록에서 걸러 보기" — '내 보유: 미보유'와 같이 걸면 안 가진 배포 오퍼만 남는다
+const OBTAIN = obtainData as { ops: Record<string, string[]>; events: Record<string, { ko: string; en: string; ja: string }> };
+const OBTAIN_LABEL: Record<string, string> = {
+  gacha: "헤드헌팅", limited: "한정 헤드헌팅", collab: "콜라보", event: "이벤트 배포", cert: "증명서 교역소",
+  credit: "크레딧 교역소", rogue: "통합전략", main: "메인 스토리", anniv: "기념 보상", package: "패키지",
+};
+const OBTAIN_CODES = Object.keys(OBTAIN_LABEL);
+const obtainOf = (id: string): string | undefined => OBTAIN.ops[id]?.[0];
+/** 이벤트 배포 오퍼의 원 이벤트 — [id, 이름] */
+const obtainEventOf = (id: string, locale: Locale): [string, string] | null => {
+  const ev = OBTAIN.ops[id]?.[1];
+  const n = ev ? OBTAIN.events[ev] : undefined;
+  return ev && n ? [ev, n[locale] ?? n.ko] : null;
+};
 function ownMatch(key: string, operator: Operator, c: AccountChar | undefined): boolean {
   switch (key) {
     case "보유": return !!c;
@@ -3304,6 +3328,7 @@ function OperatorCard({ operator, index, onSelect, mine }: { operator: Operator;
               <span><i>{t("소속")}</i>{operator.faction}</span>
               <span><i>{t("출신")}</i>{operator.birthplace ?? t("불명")}</span>
               <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
+              {obtainOf(operator.id) && <span><i>{t("획득")}</i>{obtainEventOf(operator.id, locale)?.[1] ?? t(OBTAIN_LABEL[obtainOf(operator.id)!])}</span>}
             </span></small>
             {/* 태그도 한 줄 — 넘치면 줄바꿈이 아니라 흐른다(사용자 정정 2026-09-18) */}
             <div className="tags"><span className="tags-track">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</span></div>
@@ -3644,6 +3669,12 @@ function OperatorFile({ operator, includeFuture, operators, onRelated }: { opera
             <div><span>{t("공식 소속")}</span><b>{operator.factions.join(" · ")}</b></div>
             <div><span>{t("출신지")}</span><b>{operator.birthplace ?? t("불명")}</b></div>
             <div><span>{t("종족")}</span><b>{operator.race ?? t("불명")}</b></div>
+            {obtainOf(operator.id) && (() => {
+              const ev = obtainEventOf(operator.id, locale);
+              return (
+                <div><span>{t("획득 경로")}</span><b>{t(OBTAIN_LABEL[obtainOf(operator.id)!])}{ev && <> · <button type="button" className="fact-link" onClick={() => openEvent(ev[0])}>{`「${ev[1]}」`}</button></>}</b></div>
+              );
+            })()}
             <div><span>{t("전투 태그")}</span><b>{operator.combatTags.length ? operator.combatTags.join(" · ") : t("태그 없음")}</b></div>
             <div><span>{t("컨셉")}</span><b>{operator.concepts.length ? operator.concepts.map((concept) => conceptName(locale, concept)).join(" · ") : t("분류 없음")}</b></div>
           </div>

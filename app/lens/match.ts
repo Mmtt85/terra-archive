@@ -29,6 +29,8 @@ export type LensGoto =
     items?: string[];
     gather?: boolean; // 아이템 다중 인식 — 모아보기 모달로 표시
     grade?: number;   // 좌하단 난이도 배지 인식값 — 난이도 셀렉터에 자동 적용
+    /** 아이템 id → 화면에서 이름이 찍힌 자리 [위, 왼쪽] (0~1) — 모아보기를 화면 순서대로 세운다 (run.ts, 2026-10-12) */
+    order?: Record<string, [number, number]>;
   }
   | { page: "recruit"; tags: string[] }
   | { page: "story"; id: string; ep: number | null; hits: number }; // 전문 뷰어 딥링크 (ep는 0기준)

@@ -95,7 +95,7 @@ function upcoming(au: AuSnap[], idx: number, cur: AuSnap | null): string[] {
   return [...ids];
 }
 
-export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine }: {
+export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine, onLine }: {
   ep: ScriptEp;
   /** 처음 보여 줄 줄(0부터) — 갤러리 CG '스토리에서 보기' (2026-10-04). 화가 바뀌면 key 로 다시 마운트돼 0부터 */
   startLine?: number;
@@ -104,6 +104,8 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine
   hasNext?: boolean;
   /** 에피소드 이동 (-1 이전 / +1 다음) */
   onEp?: (delta: number) => void;
+  /** 보고 있는 줄이 바뀔 때마다 — 책갈피 저장 (story-bookmark.ts, 2026-10-12) */
+  onLine?: (line: number) => void;
 }) {
   const { t } = useI18n();
   const [idx, setIdx] = useState(() => Math.max(0, Math.min(startLine ?? 0, ep.lines.length - 1)));
@@ -145,6 +147,10 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine
   const line = ep.lines[idx];
   const stage = stages[idx] ?? {};
   const chars = stage.ch ?? [];
+
+  const onLineRef = useRef(onLine);
+  useEffect(() => { onLineRef.current = onLine; });
+  useEffect(() => { onLineRef.current?.(idx); }, [idx]);
 
   const go = useCallback((delta: number) => {
     setIdx((i) => Math.min(last, Math.max(0, i + delta)));

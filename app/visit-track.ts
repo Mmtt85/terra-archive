@@ -340,11 +340,12 @@ export function startVisitTrack(locale: string): void {
   if (navigator.webdriver) return;
   let debug = false;
   try { debug = localStorage.getItem(DEBUG_KEY) === "1"; } catch { /* ignore */ }
-  if (location.hostname === LIVE_HOST) env = "live";
-  else if (debug) env = "dev";
-  else return;
-  if (!VISITS_URL && env === "live") return;
+  // PRTS 인식·'틀렸어요'는 **어디서 누가 눌러도** 남긴다 — 언제 재현될지 모른다 (사용자 지시 2026-10-12).
+  // 라이브가 아니면(localhost·미리보기) env='dev' 로 표시만 다르게 — 어드민 통계는 라이브만 세고, 틀렸어요 목록엔 다 나온다
+  env = location.hostname === LIVE_HOST ? "live" : "dev";
   prtsReady = true;   // PRTS 인식 기록은 관리자도 (notePrtsScan)
+  if (env === "dev" && !debug) return;   // 방문 기록 자체는 종전처럼 라이브(또는 디버그 켠 dev)만
+  if (!VISITS_URL && env === "live") return;
   if (isOwner()) return;
   started = true;
 

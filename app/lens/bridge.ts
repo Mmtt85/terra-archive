@@ -21,6 +21,7 @@
 //   그래서 수신은 MediaStreamTrackProcessor(렌더링과 무관), 판정은 setInterval(프레임이
 //   안 와도 틱은 돈다)로 나눴다. 5분 뒤의 '집중 스로틀'은 Web Lock을 쥐어 면제받는다.
 
+import { forgetModalPos, PRTS_MODAL_KEY } from "../modal-geo";
 import { useEffect, useRef, useState } from "react";
 import type { LensOutcome } from "./match";
 import { holdVisitActive, notePrtsStart, notePrtsEnd, notePrtsScan, prtsScanId } from "../visit-track";
@@ -45,6 +46,9 @@ const NEW_SCENE = 6.0;     // 마지막 전송본과 **전체 평균**이 이 �
 // 한 타일이라도 이만큼 바뀌면 새 화면으로 본다 — 화면 대부분이 같고 글자만 바뀌는
 // 경우(전투노드 → 전투노드)를 잡는 조건이다. 전체 평균만 보면 절대 못 넘는다.
 const NEW_TILE = 11.0;  // 15→11 (영상5: 작전노드→작전노드 전환 누락 — 패널 글자 변화가 15를 못 넘는 케이스)
+// 공채 — 슬롯끼리는 배경·틀이 같고 **태그 글자 몇 개만** 달라 11 을 못 넘어 늘 '같은 화면'이었다 (사용자 지적 2026-10-12).
+// 공채로 연결했을 때만 낮춘다 (떠다니는 반짝이로 같은 태그를 한 번 더 읽는 일은 있어도 결과는 같다)
+const NEW_TILE_RECRUIT = 4.0;
 // 전투 홀드 — 전투 화면으로 판정된 뒤에는 이만큼 **전체**가 바뀔 때만 인식을 재개한다
 // (승리/실패·일시정지처럼 화면이 통째로 바뀌는 전환). 전투 중 타이머·이펙트의 국소
 // 변화가 매번 tileMax를 넘어 헛 OCR을 돌리던 낭비 제거 (2026-07-26 "무시가능한 건 무시").
@@ -229,13 +233,18 @@ export type BridgePipCard = { kind: string; name: string; text?: string | null; 
   /** 섬네일 (절대 주소 — 작은 창 문서는 about:blank 라 상대 주소가 안 풀린다) */ img?: string;
   /** 눌러 펼치면 보이는 큰 그림 (작전 지도) */ detailImg?: string;
   /** list 와 같은 순서의 작은 그림 (등장 적 얼굴) */ listImgs?: (string | undefined)[] };
-let pipCards: BridgePipCard[] = [];
-/** 작은 창이 열려 있나 — 열려 있으면 탭은 본 화면에 모달을 띄우지 않고 작은 창에만 싣는다 (사용자 지시 2026-10-12) */
+// 작은 창은 두 칸 — 노드(층·작전·조우) 카드 한 장 · 소장품 카드 여러 장. 각자 새로 인식될 때만 갈아 끼운다
+// (사용자 지시 2026-10-12 "PiP 창 하나를 둘로 나눠서")
+let pipNode: BridgePipCard | null = null;
+let pipRelics: BridgePipCard[] = [];
+/** 작은 창이 열려 있나 — 종전엔 열려 있으면 본 화면을 안 바꿨는데, 이제 본 화면 상시 창도 같이 바뀐다 (사용자 지시 2026-10-12) */
 let pipActive = false;
 export function setBridgePipActive(v: boolean): void { pipActive = v; }
 export const bridgePipActive = () => pipActive;
-export function setBridgePip(cards: BridgePipCard[]): void { pipCards = cards; notify(); }
-export const bridgePipCards = () => pipCards;
+export function setBridgePipNode(card: BridgePipCard): void { pipNode = card; notify(); }
+export function setBridgePipRelics(cards: BridgePipCard[]): void { pipRelics = cards; notify(); }
+export const bridgePipNode = () => pipNode;
+export const bridgePipRelics = () => pipRelics;
 
 const frameSubs = new Set<(f: File) => void>();
 const replaySubs = new Set<(oc: LensOutcome) => void>();
@@ -270,6 +279,8 @@ export const bridgeGate = () => gate;
 export const bridgeError = () => error;
 export const bridgeBusy = () => busy;
 export const bridgeLock = () => lock;
+/** 이번 연결 회차 — 연결할 때마다 바뀐다 (rogue.tsx 상시 창이 지난 회차 내용을 버리는 데 쓴다). 끊긴 동안은 "" */
+export const bridgeSession = () => (running ? startedAt : "");
 /** 지금 연결돼 있나 — connectBridge 는 실패해도 throw 하지 않고 조용히 돌아오므로
  *  (창 선택 취소 등) 호출한 쪽이 성사 여부를 이걸로 확인한다. */
 export const bridgeOn = () => !!settings;
@@ -356,7 +367,7 @@ export async function connectBridge(withLock?: BridgeLock, via?: Window): Promis
   disconnectBridge();
   lock = withLock ?? null;
   runLog = []; logMeta = null; startedAt = new Date().toISOString();
-  scan = null; lastScan = null; pipCards = [];
+  scan = null; lastScan = null; pipNode = null; pipRelics = [];
   document.addEventListener("pointerdown", markUserAct, true);
   document.addEventListener("keydown", markUserAct, true);
   sceneMemos = []; lastEmitGray = null; battleHold = false;
@@ -425,6 +436,7 @@ export function disconnectBridge(): void {
       endedAt: new Date().toISOString(), width: settings.width, height: settings.height };
   }
   running = false;
+  forgetModalPos(PRTS_MODAL_KEY); // 끊으면 PRTS 창 자리·크기를 잊는다 — 다음 연결은 기본 자리부터 (사용자 지시 2026-10-12)
   if (visitHeld) { visitHeld = false; holdVisitActive(false); }
   notePrtsEnd();
   scan = null;
@@ -511,7 +523,7 @@ function tick(): void {
   if (retryAt && now >= retryAt && !busy) { retryAt = 0; sentGray = null; retryNext = true; }
   // 새 화면 판정 — 전체 평균 **또는** 한 타일의 국소 변화. 전투노드끼리는 맵이 그대로고
   // 패널 글자만 바뀌어 평균으로는 절대 안 잡히므로 tileMax가 실질적인 판정자다.
-  if (diff(latestGray, sentGray) < NEW_SCENE && tileMax(latestGray, sentGray) < NEW_TILE) {
+  if (diff(latestGray, sentGray) < NEW_SCENE && tileMax(latestGray, sentGray) < (lock?.topic === "recruit" ? NEW_TILE_RECRUIT : NEW_TILE)) {
     say("same"); return;
   }
   if (!heldFrame) return;
@@ -520,6 +532,9 @@ function tick(): void {
   //   다음 틱에 다시 시도하면 되므로 그냥 기다린다 (사용자 지적 2026-07-26:
   //   "너무 빠르게 인식 시도해서 오히려 느려지는 건 없나" — 정확히 이 문제였다).
   if (busy) { say("emit"); return; }
+  // ⚠ 받을 화면이 없으면(공채 화면을 떠나 다른 화면에 가 있음) 보내지 않는다 — 보내면 '보냈다'로 기록돼, 돌아와도
+  //   게임 화면이 그대로면 '같은 화면'으로 보고 다시 안 보내 멈춘 것처럼 됐다 (사용자 지적 2026-10-12)
+  if (!frameSubs.size && !replaySubs.size) { say("same"); return; }
 
   // 화면 판정 캐시 — 최근에 본 화면과 같으면(같은 판정 기준: 평균+타일) OCR을 통째로
   // 생략하고 지난 판정을 재적용한다. 맵↔노드 모달 왕복이 즉시(~0.5초) 반응하게 된다.
@@ -655,6 +670,8 @@ export function useBridgeWatch(enabled: boolean, onImage: (file: File) => Promis
     const onCached = (oc: LensOutcome) => { try { rp.current?.(oc); } catch { /* 한 건 실패는 넘긴다 */ } };
     frameSubs.add(onFrame);
     replaySubs.add(onCached);
+    // 화면이 새로 붙으면 지금 게임 화면을 한 번 다시 읽는다 — 떠나 있던 사이 본 화면은 이 화면에 안 들어왔다
+    sentGray = null;
     return () => { frameSubs.delete(onFrame); replaySubs.delete(onCached); };
   }, [enabled]);
 

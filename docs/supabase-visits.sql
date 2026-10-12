@@ -482,6 +482,8 @@ returns json language sql stable security definer set search_path = public as $$
       'id', s.id, 'at', s.started_at, 'src', s.src, 'ref', coalesce(s.ref, s.ref_host), 'landing', s.landing,
       'device', s.device, 'site_lang', s.site_lang, 'tz', s.tz, 'revisit', s.revisit, 'human', s.human, 'kind', s.kind,
       'utm', s.utm_source,
+      -- 방문자 익명 id — 세션 타임라인에 코드(앞 8자)로 보여 PRTS·틀렸어요 표와 맞춰 본다 (2026-10-12)
+      'visitor', s.visitor,
       -- 마지막으로 받은 시각 — 열려 있는 탭은 1분마다 보내므로(visit-track.ts BEAT_MS) 몇 분 안이면 '조작 중' (2026-10-10)
       'last_at', (select max(vv.at) from public.visit_view vv where vv.session = s.id),
       -- 그 세션의 일 기록 — PRTS 링크 연결·해제, 내 정보 로그인·동기화 (2026-10-11 "세션 타임라인에 PRTS 가 안 보인다")
@@ -651,13 +653,16 @@ create policy "admin read prts scan" on public.prts_scan for select to anon usin
 -- 어드민 'PRTS 인식' 표 — 합계·결과별·구역별·최근 기록(틀렸어요·바로잡음 표시)
 create or replace function public.visits_prts_scans(p_from timestamptz, p_to timestamptz)
 returns json language sql stable security definer set search_path = public as $$
-  with s as (
+  -- 모든 곳(라이브·dev)의 인식 — '틀렸어요' 목록은 어디서 누가 눌렀든 다 보인다 (2026-10-12 "언제 재현될지 모르니까")
+  with s_all as (
     select x.*, exists (select 1 from public.prts_scan w where w.ref = x.id and w.kind = 'wrong') as wrong,
            (select f.target from public.prts_scan f where f.ref = x.id and f.kind = 'fix' order by f.at limit 1) as fixed_to,
            (select i.img from public.prts_scan i where i.ref = x.id and i.kind = 'shot' order by i.at limit 1) as shot
     from public.prts_scan x
-    where x.kind = 'scan' and x.at >= p_from and x.at < p_to and x.env = 'live'
-  )
+    where x.kind = 'scan' and x.at >= p_from and x.at < p_to
+  ),
+  -- 통계·최근 기록은 종전처럼 라이브만
+  s as (select * from s_all where env = 'live')
   select json_build_object(
     'n', (select count(*) from s),
     'people', (select count(distinct visitor) from s),
@@ -680,8 +685,8 @@ returns json language sql stable security definer set search_path = public as $$
         from s order by at desc limit 200) r),
     -- 틀렸어요만 따로 — 최근 목록(10줄)에 묻히지 않게 (화면 주소 포함)
     'wrong_list', (select coalesce(json_agg(r order by r.at desc), '[]') from (
-        select at, visitor, topic, result, section, target, note, seen, ms, cached, shot
-        from s where wrong order by at desc limit 50) r)
+        select at, visitor, topic, page, result, section, target, note, seen, ms, cached, shot, env
+        from s_all where wrong order by at desc limit 50) r)
   )
   where (select public.visits_is_admin())
 $$;
