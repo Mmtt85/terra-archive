@@ -144,6 +144,7 @@ import { EnemyPage, type Enemy as EnemyEntry, type EnemyStages } from "./enemy-d
 import { StagePage } from "./stage-detail";
 import type { StageView } from "./stage-data";
 import { startVisitTrack } from "./visit-track";
+import { reloadIfStale, startVersionCheck } from "./version-check";
 import { I18nProvider, useI18n, conceptName, makeT, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n, type T } from "./i18n";
 import { SPECIAL_CONCEPTS, conceptTitle, conceptMatches, resolveConcepts, suggestConcepts } from "./concepts";
 
@@ -1073,6 +1074,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const { locale, t } = useI18n();
   // 방문 동선 기록 (app/visit-track.ts — 라이브 도메인에서만, 한 번만 켜진다)
   useEffect(() => { startVisitTrack(locale); }, [locale]);
+  // 새 버전 확인 — 새 버전이 있으면 다음 화면 이동 때 새로고침 (app/version-check.ts, 아래 pushState·popstate 에서 부른다)
+  useEffect(() => { startVersionCheck(t("새 버전이 나와 자동으로 업데이트했어요")); }, [t]);
   // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
   // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
   const [includeFuture, setIncludeFuture] = useState(false);
@@ -1638,16 +1641,22 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     history.replaceState = ((state: unknown, ...rest: [string, (string | URL | null)?]) => {
       origReplace({ ...(state as object || {}), __k: keyOf() ?? curKey }, ...rest);
     }) as typeof history.replaceState;
+    let lastPath = window.location.pathname;
     history.pushState = ((state: unknown, title: string, url?: string | URL | null) => {
       const fromPage = pageId(window.location.href);
       save();
       const k = freshKey();
       origPush({ ...(state as object || {}), __k: k }, title, url as string);
       curKey = k;
+      // 새 버전이 나와 있으면 다른 화면으로 옮기는 이 순간에 새로고침 (app/version-check.ts)
+      if (reloadIfStale(lastPath)) return;
+      lastPath = window.location.pathname;
       if (pageId(window.location.href) !== fromPage) { store.set(k, 0); scroller.scrollTo(0, 0); }
       else store.set(k, scroller.scrollTop);
     }) as typeof history.pushState;
     const onPop = () => {
+      if (reloadIfStale(lastPath)) return;
+      lastPath = window.location.pathname;
       const k = keyOf();
       curKey = k ?? freshKey();
       if (k === null) origReplace({ ...(history.state as object || {}), __k: curKey }, "");

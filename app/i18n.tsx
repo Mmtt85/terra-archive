@@ -3272,6 +3272,7 @@ const D: Record<string, Pair> = {
   "챌린지·고난 모드 첫 클리어": ["Challenge / Adverse mode first clear", "強襲・磨難モード初回クリア"],
   "챌린지 ×{n}": ["Challenge ×{n}", "強襲 ×{n}"],
   "고난 ×{n}": ["Adverse ×{n}", "磨難 ×{n}"],
+  "새 버전이 나와 자동으로 업데이트했어요": ["A new version was out — updated automatically", "新しいバージョンが出たので自動で更新しました"],
   "코팅 가능": ["Trimmable", "メッキ可能"],
   "코팅 조건": ["Trim condition", "メッキ条件"],
   "얻을 수 있는 순오리지늄": ["Originite Prime available", "入手できる純正源石"],

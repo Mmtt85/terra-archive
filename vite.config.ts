@@ -11,6 +11,9 @@ export default defineConfig(async () => {
 
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import("@cloudflare/vite-plugin");
+  // 빌드 시각 — 번들(__BUILD_TIME__)과 /version.json 에 같은 값을 쓴다. 열린 탭이 1분마다 version.json 을 받아
+  // 자기 값과 다르면 '새 버전이 나왔다'고 알고, 다음 화면 이동 때 새로고침한다 (app/version-check.ts, 2026-10-12)
+  const BUILD_TIME = new Date().toISOString();
 
   return {
     // 빌드(=배포) 시각을 번들에 박아 푸터에 아주 작게 표시한다. 데이터 JSON은 빌드 시점에
@@ -24,7 +27,7 @@ export default defineConfig(async () => {
     //   전 페이지가 참조하는 해시 자산 하나라 globals.css 한 줄만 고쳐도 어차피 전량 재업로드다.
     //   자세한 실측은 scripts/deploy.sh 첫머리 주석.
     define: {
-      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+      __BUILD_TIME__: JSON.stringify(BUILD_TIME),
       // 에셋 출처 — 기본은 R2(files.terra-archive.net). TA_LOCAL_ASSETS=1 로 빌드하면
       // public/ 의 파일을 그대로 보게 해 **아직 R2 에 안 올린 새 에셋을 로컬에서 확인**할 수 있다
       // (2026-08-25). 컴파일 타임 상수라 프리렌더와 클라이언트 값이 같아 하이드레이션이 갈라지지 않는다.
@@ -41,6 +44,15 @@ export default defineConfig(async () => {
     plugins: [
       // dev 전용: localhost /api/* → 키 파일로 Supabase·업로드 워커 중계 (관리자 로컬 개발용)
       adminDevProxy(),
+      // 클라이언트 빌드 산출물에 version.json 을 같이 낸다 (dist/client → Pages). dev 에는 없다 — 그래서 dev 에선 검사가 쉰다
+      {
+        name: "ta-version-json",
+        apply: "build",
+        generateBundle() {
+          if ((this as unknown as { environment?: { name?: string } }).environment?.name !== "client") return;
+          this.emitFile({ type: "asset", fileName: "version.json", source: JSON.stringify({ build: BUILD_TIME }) });
+        },
+      },
       vinext(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },

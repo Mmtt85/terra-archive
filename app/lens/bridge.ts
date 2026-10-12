@@ -386,6 +386,7 @@ export async function connectBridge(withLock?: BridgeLock, via?: Window): Promis
   lastMoveAt = Date.now();
 
   running = true;
+  document.documentElement.dataset.prtsLive = "1";   // 새 버전 새로고침을 미룬다 (app/version-check.ts)
   reader = new MediaStreamTrackProcessor({ track }).readable.getReader();
   void pump();
   for (let i = 0; i < 50 && !latestW; i++) await new Promise((r) => setTimeout(r, 100));
@@ -416,6 +417,7 @@ export function disconnectBridge(): void {
       endedAt: new Date().toISOString(), width: settings.width, height: settings.height };
   }
   running = false;
+  delete document.documentElement.dataset.prtsLive;
   forgetModalPos(PRTS_MODAL_KEY); // 끊으면 PRTS 창 자리·크기를 잊는다 — 다음 연결은 기본 자리부터 (사용자 지시 2026-10-12)
   if (visitHeld) { visitHeld = false; holdVisitActive(false); }
   notePrtsEnd();
