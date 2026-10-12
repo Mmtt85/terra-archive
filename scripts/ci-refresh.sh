@@ -164,8 +164,6 @@ run "build-recruit"    python3 scripts/build-recruit.py "$G"
 run "build-farm"       python3 scripts/build-farm.py "$G" \
   || echo "[build-farm] 펭귄 통계 fetch 실패 — 기존 farm.json 유지, 다음 실행 때 재시도" | tee -a "$WARN" >&2
 run "build-costs"      python3 scripts/build-costs.py "$G"
-# 가챠 시뮬레이터 풀 (/gacha) — 인재 채용 오퍼·한정·콜라보, 확률·5성 보장 (2026-10-12)
-run "build-gacha-pool" python3 scripts/build-gacha-pool.py
 run "build-story"      python3 scripts/build-story.py
 # 인게임 스토리라인(테마 시계열) — stories.json을 참조하므로 build-story 뒤에
 run "build-storylines" python3 scripts/build-storylines.py "$G"
@@ -204,6 +202,8 @@ run "build-op-debut"     python3 scripts/build-operator-debut.py
 #     (새 미래시 이벤트가 열리면 `--cn-events` 를 한 번).
 # 이벤트 도감 — **맨 뒤**. 작전·아이템·스토리·오퍼 데뷔 장부를 전부 읽어 이벤트 단위로 접는다.
 run "build-events"       python3 scripts/build-events.py "$G"
+# 가챠 시뮬레이터 풀 (/gacha) — 인재 채용 오퍼·한정·콜라보, 확률·5성 보장 + 이벤트 배너 목록(events*.json 을 읽으므로 build-events 뒤) (2026-10-12)
+run "build-gacha-pool"   python3 scripts/build-gacha-pool.py
 # 지금 들어갈 수 있는 작전 기준표 (내 정보 '진행 상황') — build-events 산출물을 읽으므로 바로 뒤
 run "build-stage-open"   python3 scripts/build-stage-open.py "$G"
 # 내 정보 '현재 / 전체' 칸의 전체 수 (스킨)

@@ -21,6 +21,7 @@
 import { confirmedDay, fmtMonthDay } from "./kr-confirmed";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { asset } from "./assets";
+import gachaPool from "./data/gacha-pool.json";
 import { Marquee } from "./marquee";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
@@ -139,6 +140,18 @@ const hasThing = (row: EventRow, key: string) =>
 /** 도면이 없는 작전 — 전투 없는 스토리 작전 (작전 카드 도면 자리를 잡지 않는다) */
 const NO_MAP = /^(st|spst)_|_st\d+$/;
 const OP_KIND: Record<string, string> = { reward: "보상", new: "신규" };
+const GACHA_LIMITED = new Set((gachaPool as { limited: string[] }).limited);
+const GACHA_EVENTS = new Set((gachaPool as { events: { id: string }[] }).events.map((e) => e.id));
+/** 이벤트와 함께 나온 신규 5·6성을 픽업으로 채운 가챠 시뮬레이터 주소 — 한정이 끼면 한정 배너, 미래시 이벤트면 미래시 켜고 (사용자 지시 2026-10-12) */
+function gachaHref(locale: string, row: { id: string; ops?: [string, string, number, string][]; fut?: number }): string | null {
+  const picks = (row.ops ?? []).filter(([, , r, how]) => how === "new" && r >= 5).map(([id]) => id);
+  if (!picks.length) return null;
+  // 가챠 시뮬레이터의 이벤트 배너에 있으면 그 이벤트로(배너 이름까지 보인다), 없으면 오퍼만
+  const q = new URLSearchParams(GACHA_EVENTS.has(row.id) ? { event: row.id } : { pick: picks.join(",") });
+  if (!GACHA_EVENTS.has(row.id) && picks.some((id) => GACHA_LIMITED.has(id))) q.set("kind", "limited");
+  if (row.fut) q.set("future", "1");
+  return `${locale === "ko" ? "" : `/${locale}`}/gacha?${q.toString().replace(/%2C/g, ",")}`;
+}
 
 /** 이벤트 오퍼 칸 = **오퍼 카드 세 장 폭으로 고정**, 넷째부터 다음 줄 (사용자 지시 2026-10-10 "세 명 넘어가면 개행,
  *  한 명이라도 세 명 폭으로 고정"). 종전엔 개수로 한 줄 장수를 고르는 함수(2026-10-01)라 이벤트마다 칸 폭이 달랐다.
@@ -365,7 +378,10 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
       style={{ "--ev-ops-w": `${OPS_W}px` } as React.CSSProperties}>
       {row.ops && row.ops.length > 0 && (
         <section className="ev-sec">
-          <b>{t("이벤트 오퍼레이터")}</b>
+          <div className="ev-sec-head">
+            <b>{t("이벤트 오퍼레이터")}</b>
+            {gachaHref(locale, row) && <a className="ev-gacha" href={gachaHref(locale, row)!}>{t("가챠 돌려 보기")} <span aria-hidden>→</span></a>}
+          </div>
           {/* 보상(무료 배포)과 신규 데뷔를 구분해 적는다 — 성격이 다르다.
               신규는 게임 데이터가 이벤트와 묶어 주지 않아 데뷔 장부로 붙인 것이라,
               사이트 개설(2026-07) 이전 이벤트에는 보상 오퍼만 있다. */}

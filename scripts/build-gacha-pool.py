@@ -86,6 +86,27 @@ for np in gt.get("newbeeGachaPoolClient", []):
 assert set(rates) >= {"3", "4", "5", "6"}, f"성급별 확률을 못 읽었다: {rates}"
 g5 = [p.get("guarantee5Count") for p in gt["gachaPoolClient"] if p.get("guarantee5Avail") and p.get("guarantee5Count")]
 guarantee5 = max(set(g5), key=g5.count) if g5 else 0
+# 이벤트 배너 — 이벤트와 함께 나온 신규 5·6성(events.json ops 'new'), 최신(미실장 포함)부터. 고르면 그 오퍼로 픽업을 채운다
+# (사용자 지시 2026-10-12 "오퍼 뽑을 수 있는 이벤트 리스트를 다 만들어 줘"). 이름은 세 언어 — events.en/ja.json 의 같은 id
+def load_events(suffix):
+    p = ROOT / "app" / "data" / f"events{suffix}.json"
+    return json.loads(p.read_text(encoding="utf-8"))["events"] if p.exists() else []
+ev_ko = load_events("")
+names = {loc: {e["id"]: e.get("n") for e in load_events(f".{loc}")} for loc in ("en", "ja")}
+events = []
+for e in ev_ko:
+    picks = [o[0] for o in e.get("ops", []) if o[3] == "new" and o[2] >= 5]
+    if not picks:
+        continue
+    row = {"id": e["id"], "n": {"ko": e["n"], **{loc: names[loc].get(e["id"]) or e["n"] for loc in ("en", "ja")}}, "ops": picks}
+    if e.get("fut"):
+        row["fut"] = 1
+        if e.get("eta"):
+            row["eta"] = e["eta"]
+    elif e.get("start"):
+        row["start"] = e["start"]
+    events.append(row)
+
 out = {
     "updated": time.strftime("%Y-%m-%d"),
     "rates": rates,
@@ -93,7 +114,9 @@ out = {
     "pool": pool,
     "limited": sorted(i for i in limited if i in ct or i in cn_ct),
     "collab": sorted(collab),
+    "events": events,
 }
 OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
 print(f"확률 {rates} · 5성 보장 {guarantee5}회")
+print(f"이벤트 배너 {len(events)}개 (미실장 {sum(1 for e in events if e.get('fut'))})")
 print(f"gacha-pool.json: 6성 {len(pool['6'])} · 5성 {len(pool['5'])} · 4성 {len(pool['4'])} · 3성 {len(pool['3'])} · 한정 {len(out['limited'])} · 콜라보 {len(collab)}")

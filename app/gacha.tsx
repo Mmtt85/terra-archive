@@ -21,7 +21,9 @@ import poolData from "./data/gacha-pool.json";
 type Rarity = 3 | 4 | 5 | 6;
 // 배너는 통상·한정 둘 (사용자 지시 2026-10-12 — 단일 픽업은 통상에 6성 하나만 넣으면 된다)
 type BannerKind = "standard" | "limited";
-const POOL = poolData as { rates: Record<"3" | "4" | "5" | "6", number>; guarantee5: number; pool: Record<"3" | "4" | "5" | "6", string[]>; limited: string[]; collab: string[] };
+const POOL = poolData as { rates: Record<"3" | "4" | "5" | "6", number>; guarantee5: number; pool: Record<"3" | "4" | "5" | "6", string[]>; limited: string[]; collab: string[];
+  /** 이벤트 배너 — 이벤트와 함께 나온 신규 5·6성, 최신(미실장 포함)부터 (build-gacha-pool.py) */
+  events: { id: string; n: Record<"ko" | "en" | "ja", string>; ops: string[]; fut?: 1; eta?: string; start?: string }[] };
 const BASE: Record<Rarity, number> = { 6: POOL.rates["6"], 5: POOL.rates["5"], 4: POOL.rates["4"], 3: POOL.rates["3"] };
 // 게임 안 배너 상세 정보의 규칙 (게임 표에 없는 값)
 const PITY_FROM = 50;    // 6성 없이 이만큼 뽑은 뒤부터
@@ -45,7 +47,7 @@ function rates(since6: number): Record<Rarity, number> {
 }
 
 export function GachaSim({ operators, onShowOperator, includeFuture }: { operators: Operator[]; onShowOperator?: (id: string) => void; includeFuture?: boolean }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const byId = useMemo(() => new Map(operators.map((o) => [o.id, o])), [operators]);
   const [kind, setKind] = useState<BannerKind>("standard");
   const [six, setSix] = useState<string[]>([]);
@@ -55,6 +57,31 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
   const [n5, setN5] = useState(1);
   // '자리 추가'로 막 생긴 자리 — 그려진 뒤 그 자리 단추를 눌러 목록을 바로 연다 (사용자 지시 2026-10-12)
   const [openSlot, setOpenSlot] = useState<{ r: 5 | 6; i: number } | null>(null);
+  // 이벤트 상세 '가챠 돌려 보기'에서 왔으면(?pick=id,id&kind=limited) 그 픽업으로 채워 둔다 (사용자 지시 2026-10-12)
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const ev = POOL.events.find((e) => e.id === q.get("event"));
+    if (ev) { pickEvent(ev.id); return; }
+    applyPicks((q.get("pick") ?? "").split(","), q.get("kind") === "limited" ? "limited" : "standard");
+  }, [byId]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** 픽업을 통째로 채운다 — 이벤트 배너·이벤트 상세의 '가챠 돌려 보기' */
+  const applyPicks = (raw: string[], k: BannerKind) => {
+    const ids = raw.filter((id) => byId.has(id));
+    if (!ids.length) return;
+    const s6 = ids.filter((id) => byId.get(id)!.rarity === 6), s5 = ids.filter((id) => byId.get(id)!.rarity === 5);
+    setKind(k); reset();
+    setSix(s6); setFive(s5);
+    setN6(Math.min(SIX_SLOTS[k], Math.max(1, s6.length))); setN5(Math.min(FIVE_SLOTS[k], Math.max(1, s5.length)));
+  };
+  // 이벤트 배너 — 고르면 그 이벤트의 신규 5·6성으로 픽업을 채운다. 한정이 끼면 한정 배너 (사용자 지시 2026-10-12)
+  const [eventId, setEventId] = useState("");
+  const pickEvent = (id: string) => {
+    const ev = POOL.events.find((e) => e.id === id);
+    if (!ev) return;
+    applyPicks(ev.ops, ev.ops.some((x) => POOL.limited.includes(x)) ? "limited" : "standard");
+    setEventId(id);
+  };
+  const evDate = (e: (typeof POOL.events)[number]) => (e.fut ? `${t("미실장")}${e.eta ? ` · ${e.eta}` : ""}` : e.start ?? "");
   useEffect(() => {
     if (!openSlot) return;
     const row = [...document.querySelectorAll<HTMLElement>(`.gacha-slots[data-r="${openSlot.r}"]`)].find((el) => el.offsetParent);
@@ -95,7 +122,7 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
   };
   const pickKind = (k: BannerKind) => {
     // 배너를 바꾸면 고른 픽업도 비운다 (사용자 지시 2026-10-12 "배너를 바꾸면 입력해 둔 조건을 리셋")
-    setKind(k); reset(); setSix([]); setFive([]); setN6(1); setN5(1);
+    setKind(k); reset(); setSix([]); setFive([]); setN6(1); setN5(1); setEventId("");
   };
   const KIND_LABEL = (k: BannerKind) => t(k === "standard" ? "통상 (6성 픽업 50%)" : "한정 (6성 픽업 70%)");
   // 확률 안내는 페이지 머리 '?' 로 여는 창 (사용자 지시 2026-10-12 — 다른 시뮬레이터와 같은 자리)
@@ -162,6 +189,16 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
           <Dropdown ariaLabel={t("배너 종류")} label={<><small>{t("배너")}</small> {KIND_LABEL(kind)}</>}
             items={(["standard", "limited"] as BannerKind[]).map((k) => ({ value: k, label: KIND_LABEL(k) }))}
             selected={[kind]} onPick={(v) => pickKind(v as BannerKind)} />
+          {/* 이벤트 배너 — 이벤트와 함께 나온 신규 오퍼로 픽업을 한 번에 (최신 미실장 이벤트부터) */}
+          <Dropdown ariaLabel={t("이벤트 배너")} scroll search={t("이벤트·오퍼 이름 검색")} className="gacha-event-drop"
+            label={<><small>{t("이벤트")}</small> {POOL.events.find((e) => e.id === eventId)?.n[locale] ?? t("이벤트 배너에서 고르기")}</>}
+            items={POOL.events.map((e) => ({
+              value: e.id, searchText: `${e.n[locale]} ${e.n.ko} ${e.ops.map((x) => byId.get(x)?.name ?? "").join(" ")}`,
+              icon: byId.get(e.ops.find((x) => byId.get(x)?.rarity === 6) ?? e.ops[0]) ? <img src={asset(byId.get(e.ops.find((x) => byId.get(x)?.rarity === 6) ?? e.ops[0])!.image)} alt="" width={22} height={22} /> : undefined,
+              label: <>{e.n[locale]}<small className="gacha-ev-sub">{evDate(e)} · {e.ops.map((x) => byId.get(x)?.name).filter(Boolean).join("·")}</small></>,
+              className: e.fut ? "gacha-ev-fut" : undefined,
+            }))}
+            selected={eventId ? [eventId] : []} onPick={pickEvent} />
           {/* 픽업 자리 — 배너에 맞춰 6성·5성 빈 자리를 미리 깔고, 누르면 그 성급 목록 (사용자 지시 2026-10-12 "드롭다운 박스 말고 자리를 만들어 놓고").
               채운 자리는 가챠 결과 카드와 같은 모양 (같은 날 지시) — 위 색띠·섬네일·이름·성급, 한정은 왼쪽 위 뱃지.
               목록은 공용 Dropdown 의 목록을 그대로 — 단추만 자리 카드로 그린다. 맨 위 '비우기' 로 자리를 비운다 */}
