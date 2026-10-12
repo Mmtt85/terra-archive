@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminEditReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, filesOf, flagOf, fmtFileSize, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
+import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminEditReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, visitorOf, filesOf, flagOf, fmtFileSize, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKey, type StoredFile } from "../files-api";
@@ -727,6 +727,8 @@ export default function AdminPage() {
               {row.reviewed_at && <i className="reviewed-badge" title={new Date(row.reviewed_at).toLocaleString("ko-KR")}>✓ 확인됨</i>}
               <time>{new Date(row.created_at).toLocaleString("ko-KR")}</time>
               {countryOf(row.payload) && <i className="fb-geo-chip">{flagOf(countryOf(row.payload)!)} {countryOf(row.payload)}</i>}
+              {/* 방문자 코드 — 방문 통계 세션 타임라인·PRTS 표의 방문자와 같은 값 (2026-10-12~ 보낸 제안부터) */}
+              {visitorOf(row.payload) && <i className="fb-geo-chip" title="방문 통계의 방문자 코드">👤 <code>{visitorOf(row.payload)}</code></i>}
               <button className="handling-btn" onClick={() => toggleHandling(row)}>{handlingAt(row.payload) ? "대응 해제" : "대응중"}</button>
               <button className="review-btn" onClick={() => toggleReviewed(row)}>{row.reviewed_at ? "대응 취소" : "대응완료"}</button>
               <button onClick={() => remove(row)}>삭제</button>

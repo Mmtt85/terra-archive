@@ -17766,6 +17766,12 @@ main.site-main > .site-header {
 /* 창을 넓히면 한 줄에 두 개까지 (사용자 지시 2026-10-12) — 칸 하나가 360px 은 돼야 효과 글이 읽힌다.
    폭은 감싸개(.rg-rmulti-wrap)로 잰다 — 목록이 자기 폭을 스스로 잴 수는 없다 */
 .rg-rmulti-wrap { container-type: inline-size; }
+/* PRTS 링크 상시 창(하나로 합침) — 화면 왼쪽에 세로로 길게, 위 노드 · 아래 소장품 (2026-10-12) */
+.mw-window.rg-modal.rg-prts-dock { width: min(600px, calc(100vw - 32px)); max-width: none; height: calc(100svh - 88px); max-height: calc(100svh - 88px); }
+.rg-prts-pane + .rg-prts-pane { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--rgmodalline, var(--line)); }
+.rg-prts-pane-h { margin: 0 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--rgink2, var(--muted)); }
+.rg-prts-pane-h em { margin-left: 6px; font-style: normal; }
+.rg-prts-pane > .rg-prts-empty { margin: 18px 0; text-align: center; color: var(--rgink2, var(--muted)); font-size: 13px; }
 /* PRTS 링크 상시 창 — 빈 상태에서도 제 높이를 갖게 (안내 한 줄만 있으면 가느다란 띠가 됐다, 사용자 지적 2026-10-12) */
 .mw-window.rg-prts-win { min-height: min(420px, 70svh); }
 .mw-window.rg-prts-win .mw-body:has(> .rg-prts-empty) { flex: 1 1 auto; display: flex; flex-direction: column; }

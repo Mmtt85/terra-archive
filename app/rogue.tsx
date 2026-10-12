@@ -1331,7 +1331,7 @@ export default function RogueGuide({ initialTopic }: {
   type LiveNode = { sess: string } & ({ kind: "zone"; zone: Zone } | { kind: "stage"; pair: StagePair } | { kind: "enc"; enc: Encounter });
   const [liveNode, setLiveNode] = useState<LiveNode | null>(null);
   const [liveRelics, setLiveRelics] = useState<{ sess: string; items: LensItem[] } | null>(null);
-  const [liveHidden, setLiveHidden] = useState<{ node?: string; relic?: string }>({});
+  const [liveHidden, setLiveHidden] = useState<{ dock?: string }>({});
   /** 인식한 아이템을 화면 순서대로 — 윗줄부터, 같은 줄(높이 차 4% 안)은 왼쪽부터. 자리를 못 찾은 것은 뒤로 (run.ts order) */
   const byScreen = <T extends { id: string }>(rs: T[], order?: Record<string, [number, number]>): T[] => {
     if (!order) return rs;
@@ -2248,8 +2248,8 @@ export default function RogueGuide({ initialTopic }: {
       else if (type === "zone") { const z = zoneById.get(id); if (z) node = { sess, kind: "zone", zone: z }; }
     }
     // 새 내용이 들어온 창은 닫아 뒀어도 다시 보인다
-    if (node) { setLiveNode(node); setLiveHidden((h) => ({ ...h, node: undefined })); }
-    if (rs.length) { setLiveRelics({ sess, items: rs }); setLiveHidden((h) => ({ ...h, relic: undefined })); }
+    if (node) { setLiveNode(node); setLiveHidden({}); }
+    if (rs.length) { setLiveRelics({ sess, items: rs }); setLiveHidden({}); }
   };
   const applyLensRef = useRef(applyLensHandoff);
   useEffect(() => { applyLensRef.current = applyLensHandoff; });
@@ -2327,7 +2327,7 @@ export default function RogueGuide({ initialTopic }: {
     if (!ids.length || topic !== topicRef.current) return 0;
     const rs = ids.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
     if (rs.length) {
-      if (bridgeSession()) { setBridgePipRelics(rs.map(pipItem)); setLiveRelics({ sess: bridgeSession(), items: rs }); setLiveHidden((h) => ({ ...h, relic: undefined })); }
+      if (bridgeSession()) { setBridgePipRelics(rs.map(pipItem)); setLiveRelics({ sess: bridgeSession(), items: rs }); setLiveHidden({}); }
       else setLensMulti(rs);
     }
     return rs.length;
@@ -3735,36 +3735,36 @@ export default function RogueGuide({ initialTopic }: {
           {relicListBody(lensMulti)}
         </ModalWindow>
       )}
-      {/* PRTS 링크 상시 창 — 노드(층·작전·조우) · 소장품. 연결돼 있는 동안만, 📌 고정으로 (2026-10-12) */}
-      {bridgeOn && liveHidden.node !== bridgeSession() && (() => {
+      {/* PRTS 링크 상시 창 — **하나**로, 화면 왼쪽에 세로로 길게: 위 노드(층·작전·조우) · 아래 소장품 (사용자 지시 2026-10-12
+          "작은 창처럼 둘로 나눠 모달 하나만"). 연결돼 있는 동안만, 📌 고정으로. 칸마다 새로 인식될 때만 바뀐다 */}
+      {bridgeOn && liveHidden.dock !== bridgeSession() && (() => {
         const n = liveNode?.sess === bridgeSession() ? liveNode : null;
-        return (
-          <ModalWindow label={`◉ PRTS · ${n?.kind === "zone" ? nmText(n.zone.name, n.zone.cn) : n?.kind === "stage" ? nmText(n.pair.n.name, n.pair.n.cn) : n?.kind === "enc" ? nmText(n.enc.title, n.enc.cn) : t("노드")}`}
-            className={`rg-modal rg-prts-win${n?.kind === "zone" ? " rg-zmodal" : ""}`} defaultPinned geoKey={`${PRTS_MODAL_KEY}:node`}
-            defaultPos={{ x: 24, y: 96 }} onClose={() => setLiveHidden((h) => ({ ...h, node: bridgeSession() }))}>
-            {n?.kind === "zone" ? (
-              <ZoneModal inline zone={n.zone} badge={zoneBadge(n.zone)}
-                pairs={n.zone.variant ? [] : (pairsByZone.get(n.zone.num) ?? []).concat(trialPairsFor(n.zone))}
-                bosses={n.zone.variant ? [] : bossStages.filter((x) => x.zone === n.zone.num)}
-                onOpenStage={setStageOpen} onClose={() => {}} />
-            ) : n?.kind === "stage" ? (
-              <StageModal inline key={n.pair.n.id} pair={n.pair} grade={grade} onClose={() => {}}
-                onOpenEnemy={(key, ctx) => setEnemyOpen({ key, ctx })} />
-            ) : n?.kind === "enc" ? (
-              <EncounterModal inline key={n.enc.scene ?? n.enc.title} enc={n.enc} onClose={() => {}} link={linkRelic}
-                battles={(n.enc.battles ?? []).map((id) => stageById.get(id)).filter(Boolean).map((x) => pairOf(x!))}
-                onOpenStage={setStageOpen} />
-            ) : <p className="rg-prts-empty">{t("층·작전·조우 화면을 인식하면 여기에 표시됩니다")}</p>}
-          </ModalWindow>
-        );
-      })()}
-      {bridgeOn && liveHidden.relic !== bridgeSession() && (() => {
         const items = liveRelics?.sess === bridgeSession() ? liveRelics.items : [];
+        const nodeName = n?.kind === "zone" ? nmText(n.zone.name, n.zone.cn) : n?.kind === "stage" ? nmText(n.pair.n.name, n.pair.n.cn) : n?.kind === "enc" ? nmText(n.enc.title, n.enc.cn) : "";
         return (
-          <ModalWindow label={`◉ PRTS · ${t("소장품")}`} className="rg-modal rg-rmodal rg-rmulti rg-prts-win" defaultPinned
-            geoKey={`${PRTS_MODAL_KEY}:relic`} defaultPos={{ x: Math.max(24, (typeof window === "undefined" ? 1280 : window.innerWidth) - 664), y: 96 }}
-            onClose={() => setLiveHidden((h) => ({ ...h, relic: bridgeSession() }))}>
-            {items.length ? relicListBody(items) : <p className="rg-prts-empty">{t("소장품을 인식하면 여기에 표시됩니다")}</p>}
+          <ModalWindow label={`◉ PRTS${nodeName ? ` · ${nodeName}` : ""}`}
+            className={`rg-modal rg-prts-win rg-prts-dock${n?.kind === "zone" ? " rg-zmodal" : ""}`} defaultPinned geoKey={`${PRTS_MODAL_KEY}:dock`}
+            defaultPos={{ x: 16, y: 72 }} onClose={() => setLiveHidden((h) => ({ ...h, dock: bridgeSession() }))}>
+            <section className="rg-prts-pane">
+              <h4 className="rg-prts-pane-h">{t("노드")}</h4>
+              {n?.kind === "zone" ? (
+                <ZoneModal inline zone={n.zone} badge={zoneBadge(n.zone)}
+                  pairs={n.zone.variant ? [] : (pairsByZone.get(n.zone.num) ?? []).concat(trialPairsFor(n.zone))}
+                  bosses={n.zone.variant ? [] : bossStages.filter((x) => x.zone === n.zone.num)}
+                  onOpenStage={setStageOpen} onClose={() => {}} />
+              ) : n?.kind === "stage" ? (
+                <StageModal inline key={n.pair.n.id} pair={n.pair} grade={grade} onClose={() => {}}
+                  onOpenEnemy={(key, ctx) => setEnemyOpen({ key, ctx })} />
+              ) : n?.kind === "enc" ? (
+                <EncounterModal inline key={n.enc.scene ?? n.enc.title} enc={n.enc} onClose={() => {}} link={linkRelic}
+                  battles={(n.enc.battles ?? []).map((id) => stageById.get(id)).filter(Boolean).map((x) => pairOf(x!))}
+                  onOpenStage={setStageOpen} />
+              ) : <p className="rg-prts-empty">{t("층·작전·조우 화면을 인식하면 여기에 표시됩니다")}</p>}
+            </section>
+            <section className="rg-prts-pane">
+              <h4 className="rg-prts-pane-h">{t("소장품")}{items.length > 0 && <em>{items.length}</em>}</h4>
+              {items.length ? relicListBody(items) : <p className="rg-prts-empty">{t("소장품을 인식하면 여기에 표시됩니다")}</p>}
+            </section>
           </ModalWindow>
         );
       })()}

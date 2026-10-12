@@ -10,7 +10,7 @@ import {
   updateMyFeedback, deleteMyFeedback,
   getBoardAdminKey, setBoardAdminKey, probeBoardAdminKey, fetchAllFeedbackBoard,
   boardAdminAddReply, boardAdminDeleteReply, boardAdminEditReply, boardAdminDeleteFeedback, boardAdminSetReviewed,
-  countryOf, flagOf,
+  countryOf, visitorOf, flagOf,
   type FeedbackKind, type BoardRow,
 } from "./feedback";
 import { ModalWindow } from "./modal-window";
@@ -480,6 +480,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
                   {!!adminKey && countryOf(row.payload) && (
                     <span className="fb-geo-chip" title={countryOf(row.payload)!}>{flagOf(countryOf(row.payload)!)} {countryOf(row.payload)}</span>
                   )}
+                  {!!adminKey && visitorOf(row.payload) && <span className="fb-geo-chip" title="방문 통계의 방문자 코드">👤 {visitorOf(row.payload)}</span>}
                   <span className="fb-board-preview">{row.message}</span>
                 </button>
               </li>
@@ -601,6 +602,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
               {!!adminKey && countryOf(threadRow.payload) && (
                 <span className="fb-geo-chip">{flagOf(countryOf(threadRow.payload)!)} {countryOf(threadRow.payload)}</span>
               )}
+              {!!adminKey && visitorOf(threadRow.payload) && <span className="fb-geo-chip" title="방문 통계의 방문자 코드">👤 {visitorOf(threadRow.payload)}</span>}
             </time>
             {editingId === threadRow.id ? (
               <div className="fb-edit-area">

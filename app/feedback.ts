@@ -312,6 +312,18 @@ export function countryOf(payload: unknown): string | null {
   return typeof v === "string" && /^[A-Z]{2}$/.test(v) ? v : null;
 }
 
+/** payload.visitor — 방문 통계의 방문자 코드(익명 id 앞 8자). 관리자가 그 사람의 세션 동선과 맞춰 본다 (2026-10-12~).
+ *  ⚠ payload 는 공개 게시판도 읽는 칸이라 전체 id 가 아니라 앞 8자만 싣는다 (무작위 값 — 사람을 알아볼 수는 없다) */
+export function visitorOf(payload: unknown): string | null {
+  const v = payload && typeof payload === "object" ? (payload as { visitor?: unknown }).visitor : null;
+  return typeof v === "string" && /^[0-9a-f]{8}$/.test(v) ? v : null;
+}
+// visit-track.ts 의 VISITOR_KEY 와 같은 칸 — 그 파일이 이 파일을 불러오므로 거꾸로 import 하지 않고 직접 읽는다
+const VISITOR_STORE = "ta-visitor";
+function visitorCode(): string | null {
+  try { const v = localStorage.getItem(VISITOR_STORE); return v && /^[0-9a-f-]{8,}/.test(v) ? v.slice(0, 8) : null; } catch { return null; }
+}
+
 /** "KR" → 🇰🇷 (지역 지시 문자 합성) */
 export function flagOf(cc: string): string {
   return String.fromCodePoint(...[...cc].map((c) => 0x1f1a5 + c.charCodeAt(0)));
@@ -328,7 +340,8 @@ export async function sendFeedback(kind: FeedbackKind, message: string, payload?
     "Content-Type": "application/json",
     Prefer: "return=minimal",
   };
-  const body = { kind, message: message.slice(0, 4000), payload: { ...(payload && typeof payload === "object" ? payload : {}), page, ...(country ? { country } : {}) } };
+  const visitor = typeof window === "undefined" ? null : visitorCode();
+  const body = { kind, message: message.slice(0, 4000), payload: { ...(payload && typeof payload === "object" ? payload : {}), page, ...(country ? { country } : {}), ...(visitor ? { visitor } : {}) } };
   const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback`, {
     method: "POST", headers,
     body: JSON.stringify({ ...body, author_token: ensureFeedbackToken() }),
