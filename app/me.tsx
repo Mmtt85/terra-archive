@@ -21,7 +21,7 @@ import { AccountLoginForm, AccountSteps } from "./roster-import";
 import { MeVerify } from "./me-verify";
 import { AccountError, accountErrorText, syncAccount, ACCOUNT_SERVERS, type AccountChar, type AccountFriend, type AccountProfile, type AccountStep } from "./account";
 import { cnErrorText } from "./account-cn";
-import { clearMe, dropMeToken, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
+import { clearMe, dropMeToken, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, mePulls, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages } from "./dex-cross";
 import { GROUPS, GROUP_LABEL, ItemFile, itemIcon, type DexItem, type ItemDoc, type ItemGroup } from "./items";
 import { StageFile } from "./stage-detail";
@@ -839,9 +839,7 @@ function Wallet({ me, items, onOpen }: { me: MeData; items: ItemDoc | null; onOp
   const fmt = fmtOf(locale);
   // 가진 재화로 헤드헌팅을 몇 번 돌릴 수 있나 (사용자 지시 2026-10-11) — 합성옥 600 = 1회, 허가증 1장 = 1회, 10회 허가증 = 10회.
   // 순오리지늄은 1개 = 합성옥 180 으로 바꿔 남은 합성옥과 합쳐 다시 600 단위로 센다 — 큰 숫자는 이 값
-  const orundum = inv["4003"] ?? 0, prime = inv["4002"] ?? 0, permit = inv["7003"] ?? 0, permit10 = inv["7004"] ?? 0;
-  const pulls = Math.floor(orundum / 600) + permit + permit10 * 10;
-  const pullsAll = Math.floor((orundum + prime * 180) / 600) + permit + permit10 * 10;
+  const { pulls, all: pullsAll, orundum, prime, permit, permit10 } = mePulls(inv)!;
   return (
     <Card no="WALLET" title={t("재화")}>
       <div className="me-pulls" title={t("합성옥 600개 = 1회 · 헤드헌팅 허가증 1장 = 1회 · 10회 허가증 1장 = 10회 · 순오리지늄 1개 = 합성옥 180개")}>
@@ -1322,6 +1320,8 @@ function OpChip({ op, c, skillIndex, onShowOperator }: {
         <span className={`me-op-face r${op.rarity}`}>
           <img src={avatarOf(op.id)} alt="" width={56} height={56} loading="lazy" />
           {sk && <img className="me-op-skill" src={asset(`/skills/icon/${sk.icon ?? sk.id}.webp`)} alt="" width={22} height={22} loading="lazy" />}
+          {/* 잠재 — 지원 유닛·친구 오퍼 (사용자 지시 2026-10-12). 게임 잠재 아이콘은 에셋에 없어 글자 뱃지로 */}
+          {c.potential > 0 && <i className={`me-op-pot${c.potential >= 6 ? " max" : ""}`}>{potText(locale, c.potential)}</i>}
         </span>
         <span className="me-op-name">{op.name}</span>
         <em>{eliteText(locale, c.elite, c.level)}{sk ? ` · ${m ? masteryText(locale, m) : t("스킬 {n}", { n: c.skill })}` : ""}</em>

@@ -26998,6 +26998,9 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .me-op-face.r5 { border-bottom-color: #a58b52; }
 .me-op-face.r4 { border-bottom-color: #8c7f9e; }
 .me-op-face.r3 { border-bottom-color: #6f8ea0; }
+.me-op-pot { position: absolute; left: -4px; top: -4px; padding: 0 4px; font-style: normal; font-size: 9.5px; font-weight: 800; line-height: 15px;
+  color: var(--ink); background: var(--white); border: 1px solid var(--line); white-space: nowrap; }
+.me-op-pot.max { color: #fff; background: #b98a3a; border-color: #b98a3a; }
 .me-op-skill { position: absolute; right: -4px; bottom: -4px; width: 22px; height: 22px; border: 1px solid var(--line); background: var(--white); }
 .me-op-name { max-width: 100%; font-size: 12px; line-height: 1.3; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .me-ops em { font-style: normal; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -30196,8 +30199,14 @@ html.dark .me-pf-art { opacity: .3; }
 .gacha-setup .drop-btn.gacha-slot small { margin: 0; color: var(--rc); }
 .gacha .gacha-slot img { width: 58px; height: 58px; object-fit: cover; }
 .gacha .gacha-slot b { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; line-height: 1.25; }
-.gacha-slot-wrap .drop-menu { min-width: 290px; }
-.gacha-slot-wrap .drop-menu li > button { white-space: nowrap; }
+/* 자리 목록은 단추가 아니라 픽업 줄(.gacha-slots) 왼쪽 끝 기준으로 패널 폭만큼 — 오른쪽 자리에서 단추 기준으로 290px 를 펴면
+   패널(가로 스크롤 상자) 밖으로 80px 넘쳐 패널이 통째로 옆으로 밀렸다 (사용자 지적 2026-10-12). 긴 이름은 줄을 바꾸고 한정 뱃지는 한 덩어리 */
+.gacha-slots { position: relative; }
+.gacha .gacha-slot-wrap { position: static; }
+.gacha-slot-wrap .drop-menu, .gacha-slot-wrap .drop-menu.align-right { left: 0; right: 0; min-width: 0; width: auto; }
+.gacha-slot-wrap .drop-menu li > button { white-space: normal; text-align: left; }
+.gacha .drop-menu em.gacha-future { display: inline-block; white-space: nowrap; margin-left: 6px; padding: 1px 6px; font-size: 10px; font-weight: 700; font-style: normal; line-height: 1.4;
+  color: var(--muted); border: 1px solid var(--line); opacity: 1; vertical-align: 1px; }
 /* 공용 드롭다운 검색란 (search) — 목록 맨 첫 줄 */
 .drop-menu .drop-search { position: sticky; top: -5px; z-index: 1; margin: -5px -5px 4px; padding: 5px; background: var(--bg-panel); border-bottom: 1px solid var(--line); }
 .drop-menu .drop-search input { width: 100%; box-sizing: border-box; height: 30px; padding: 0 9px; font-size: 13px; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: var(--r-sm); outline: none; }
@@ -30236,7 +30245,16 @@ html.dark .me-pf-art { opacity: .3; }
 .gacha-pull { padding: 10px 22px; border: 1px solid var(--border-strong); background: var(--white); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
 .gacha-pull:hover { border-color: var(--ink3); }
 .gacha-pull.ten { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.gacha-stats { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* 내 재화로 N회 — 한 줄 전체, 아래에 내역 */
+.gacha-panel .gacha-pull.mine { flex-basis: 100%; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.gacha-pull.mine small { font-size: 10.5px; font-weight: 500; color: var(--muted); }
+.gacha .gacha-slot.add { cursor: pointer; border-style: dashed; border-top-style: solid; color: var(--muted); }
+/* 자리 카드 크기 통일 — 채운 자리·비어있음·자리 추가가 들쭉날쭉했다 (사용자 지적 2026-10-12) */
+.gacha .gacha-slot, .gacha .drop-btn.gacha-slot { box-sizing: border-box; width: 84px; height: 112px; min-height: 0; }
+.gacha-slots-row { align-items: flex-start; }
+.gacha .gacha-slot.add b { font-size: 22px; line-height: 1; font-weight: 400; }
+.gacha .gacha-slot.add:hover { color: var(--ink); border-color: var(--border-hover); }
+.gacha-stats { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .gacha-stats .r6 { color: var(--r6); font-weight: 700; } .gacha-stats .r5 { color: var(--r5); font-weight: 700; }
 .gacha-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(77px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
 .gacha-card { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px 7px; border: 1px solid var(--line); border-top: 3px solid var(--rc, var(--line)); background: var(--white); text-align: center; }

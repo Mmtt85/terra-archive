@@ -890,7 +890,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                   title={t("내 정보의 육성 상태(정예화·레벨·스킬·특화·모듈)부터 목표까지만 계산합니다 — 보유한 오퍼에만 적용")}>
                   <small>{t("계산 기준")}</small>
                   <button type="button" role="radio" aria-checked={fromMine} className={fromMine ? "on" : ""} onClick={() => setFromMine(true)}>{t("내 육성 상태부터")}</button>
-                  <button type="button" role="radio" aria-checked={!fromMine} className={!fromMine ? "on" : ""} onClick={() => setFromMine(false)}>{t("처음부터")}</button>
+                  <button type="button" role="radio" aria-checked={!fromMine} className={!fromMine ? "on" : ""} onClick={() => setFromMine(false)}>{t("처음부터{basis}", { basis: "" })}</button>
                 </span>
               )}
               <button type="button" className="cost-op-all" onClick={() => presetAll("lv60")}

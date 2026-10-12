@@ -41,6 +41,12 @@ const SHOTS = [
   { name: "recruit", path: "/recruit" },
   { name: "farm", path: "/farm" },
   { name: "upgrade", path: "/upgrade?ops=char_113_cqbw,char_456_ash" },
+  // 2026-10-12 추가 — 가챠 시뮬레이터 (빈 화면이 아니라 10회를 두 번 돌린 결과를 찍는다)
+  { name: "gacha", path: "/gacha", prep: async (page) => {
+    const ten = page.locator(".gacha-pull.ten");
+    for (let i = 0; i < 2 && await ten.count(); i++) { await ten.first().click(); await page.waitForTimeout(300); }
+    await page.waitForTimeout(600);
+  } },
   { name: "story", path: "/stories" },
   { name: "rogue", path: "/rogue" },
   { name: "ra", path: "/ra" },
@@ -74,6 +80,7 @@ for (const loc of LOCALES) {
       // 제안 버튼(모바일 헤더 버튼 · PC FAB · 패널)은 소개 스샷에서 감춘다 (사용자 요청 2026-07-22)
       // + NEW·중요 배지, 헤더 치비 스카디(대화 창 포함)도 뺀다 (사용자 요청 2026-10-07 — 시점 따라 바뀌는 장식)
       await ctx.addInitScript(() => {
+        // PC 헤더 1줄 오른끝의 제안 단추(.feedback-top-btn, 2026-10-10~)는 찍혀도 된다 (사용자 확인 2026-10-12)
         const css = ".feedback-header-btn,.feedback-fab,.feedback-widget,"
           + ".new-badge,.chlog-imp-dot,.chlog-imp,"
           + ".header-chibi,.chibi-chat{display:none !important}";

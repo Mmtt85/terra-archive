@@ -94,9 +94,9 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
   },
   // 헤드헌팅 시뮬레이터 (2026-10-12)
   gacha: {
-    ko: { title: "가챠 시뮬레이터 - 명방(명일방주) 헤드헌팅 시뮬 | 테라 아카이브", description: "명일방주(명방) 가챠(헤드헌팅) 시뮬레이터 — 표준·단일·한정 배너에 픽업 오퍼를 골라 1회·10회 헤드헌팅을 돌려 봅니다. 6성 2%·50회 이후 천장·첫 10회 5성 보장을 게임 규칙 그대로." },
-    en: { title: "Gacha Simulator - Arknights Headhunting Simulator | Terra Archive", description: "Arknights headhunting (gacha) simulator — pick rate-up operators for standard, single or limited banners and roll single or 10x pulls, with the in-game 2% 6★ rate, pity after 50 pulls and the first-10 5★ guarantee." },
-    ja: { title: "ガチャシミュレーター - アークナイツ ヘッドハンティング | テラアーカイブ", description: "アークナイツのヘッドハンティング（ガチャ）シミュレーター — 通常・単独・限定スカウトでピックアップを選び、単発・10連を回せます。★6 2%・50回以降の天井・初回10連★5保証はゲームの規則どおり。" },
+    ko: { title: "가챠 시뮬레이터 - 명방(명일방주) 헤드헌팅 시뮬 | 테라 아카이브", description: "명일방주(명방) 가챠(헤드헌팅) 시뮬레이터 — 통상·한정 배너에 픽업 오퍼를 골라 1회·10회·100회·300회 헤드헌팅을 돌려 봅니다. 6성 2%·50회 이후 천장·첫 10회 5성 보장을 게임 규칙 그대로." },
+    en: { title: "Gacha Simulator - Arknights Headhunting Simulator | Terra Archive", description: "Arknights headhunting (gacha) simulator — pick rate-up operators for standard or limited banners and roll 1, 10, 100 or 300 pulls, with the in-game 2% 6★ rate, pity after 50 pulls and the first-10 5★ guarantee." },
+    ja: { title: "ガチャシミュレーター - アークナイツ ヘッドハンティング | テラアーカイブ", description: "アークナイツのヘッドハンティング（ガチャ）シミュレーター — 通常・限定スカウトでピックアップを選び、単発・10連・100回・300回を回せます。★6 2%・50回以降の天井・初回10連★5保証はゲームの規則どおり。" },
   },
   story: {
     ko: { title: "AI 스토리 요약 - 명방(명일방주) 스토리 요약 | 테라 아카이브", description: "명일방주(명방) 이벤트 스토리 AI 요약 아카이브 — 사이드 스토리를 컷씬과 함께 10분 분량으로 요약합니다." },
@@ -217,8 +217,8 @@ function tabName(locale: SeoLocale, tab: Exclude<SeoTab, "portal">): string {
 
 // 계산기·시뮬레이터 성격의 탭 — 브라우저에서 바로 돌아가는 무료 웹 도구임을 밝힌다.
 // (평점·설치수 같은 건 없으므로 지어내지 않는다 — aggregateRating 없이 엔티티만 준다.)
-const OG_PENDING = new Set<SeoTab>(["gacha"]);   // 2026-10-12 — 이 PC 에 Pillow 가 없어 build-og.py 를 못 돌렸다
-const TOOL_TABS: SeoTab[] = ["planner", "recruit", "upgrade", "farm", "sim"];
+const OG_PENDING = new Set<SeoTab>([]);   // 지금은 비어 있다 (가챠는 2026-10-12 build-og.py 로 채웠다)
+const TOOL_TABS: SeoTab[] = ["planner", "recruit", "upgrade", "gacha", "farm", "sim"];
 const APP_CATEGORY: Record<SeoLocale, string> = {
   ko: "게임 유틸리티", en: "GameApplication", ja: "ゲームユーティリティ",
 };

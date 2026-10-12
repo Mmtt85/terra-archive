@@ -5,18 +5,21 @@
   · 풀 = 획득 경로(itemObtainApproach)에 '인재 채용'이 든 3~6성 오퍼
   · 한정 = 한정 배너(gachaRuleType LIMITED)의 limitParam.limitedCharId — 표준 배너 일반 출현에서 뺀다
   · 콜라보 = 팀 rainbow(레인보우 식스)·laios(던전밥)·mujica(BanG Dream) · 도감 번호 MH(몬스터 헌터) — 역시 뺀다
+  · 미래시 — 중섭(cn_gacha_table·cn_character_table)의 한정·콜라보도 같이 싣는다. 미래시를 켜면 미실장 오퍼를 픽업에
+    넣어 앞으로 올 배너를 미리 돌려 보는데, 그때 미실장 한정이 표준 배너 후보에 섞이지 않게 (사용자 지시 2026-10-12)
 ⚠ 픽업 오퍼는 게임 데이터에 없다 (일반·한정 배너 픽업은 공지로만 나온다) — 시뮬레이터에서 사용자가 고른다.
 
   python3 scripts/build-gacha-pool.py
 """
 import base64
+import os
 import json
 import re
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GD = ROOT / ".gamedata"
+GD = Path(os.environ.get("GAMEDATA_DIR") or ROOT / ".gamedata")
 OUT = ROOT / "app" / "data" / "gacha-pool.json"
 
 COLLAB_TEAMS = {"rainbow", "laios", "mujica"}
@@ -35,6 +38,13 @@ limited = set()
 for pool in gt["gachaPoolClient"]:
     if pool.get("gachaRuleType") == "LIMITED":
         limited.update(ids_in(pool.get("limitParam")))
+# 미래시 — 중섭 표가 있으면 (gamedata-pull 이 받는다. 없으면 한섭만으로)
+cn_gt_path, cn_ct_path = GD / "cn_gacha_table.json", GD / "cn_character_table.json"
+cn_ct = json.loads(cn_ct_path.read_text(encoding="utf-8")) if cn_ct_path.exists() else {}
+if cn_gt_path.exists():
+    for pool in json.loads(cn_gt_path.read_text(encoding="utf-8"))["gachaPoolClient"]:
+        if pool.get("gachaRuleType") == "LIMITED":
+            limited.update(ids_in(pool.get("limitParam")))
 
 pool = {"6": [], "5": [], "4": [], "3": []}
 collab = []
@@ -53,6 +63,13 @@ for cid, c in ct.items():
     if cid in limited:
         continue
     pool[r].append(cid)
+
+# 미실장 콜라보 (중섭에만 있는 오퍼)
+for cid, c in cn_ct.items():
+    if cid in ct or not cid.startswith("char_"):
+        continue
+    if c.get("teamId") in COLLAB_TEAMS or (c.get("displayNumber") or "").startswith(COLLAB_NO):
+        collab.append(cid)
 
 for k in pool:
     pool[k].sort()
@@ -74,7 +91,7 @@ out = {
     "rates": rates,
     "guarantee5": guarantee5,
     "pool": pool,
-    "limited": sorted(i for i in limited if i in ct),
+    "limited": sorted(i for i in limited if i in ct or i in cn_ct),
     "collab": sorted(collab),
 }
 OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")

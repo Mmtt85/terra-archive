@@ -26,7 +26,7 @@ type ShotPair = { d: string; m: string };
 // 옛 캡처가 남는데, 쿼리가 바뀌면 새 캐시 키라 전부 즉시 새로 받는다 (2026-08-02).
 // ⚠ 순서 주의: 이 값을 올린 뒤 r2-sync 전에 /about을 열면, 새 쿼리 키에 옛 이미지가
 // 엣지 캐시(max-age 14400)로 4시간 박힌다. r2-sync를 먼저 돌리고 나서 올릴 것 (2026-08-13).
-const SHOT_VER = "2026100702";
+const SHOT_VER = "2026101201";
 const PORTAL_SHOT: ShotPair = { d: "/about/portal.webp", m: "/about/portal-m.webp" };
 const HOME_NAME: Record<Locale, string> = { ko: "홈 화면", en: "Home", ja: "ホーム" };
 const CHRONICLE_SHOT: ShotPair = { d: "/about/chronicle.webp", m: "/about/chronicle-m.webp" };
@@ -41,6 +41,7 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   recruit: { d: "/about/recruit.webp", m: "/about/recruit-m.webp" },
   farm: { d: "/about/farm.webp", m: "/about/farm-m.webp" },
   upgrade: { d: "/about/upgrade.webp", m: "/about/upgrade-m.webp" },
+  gacha: { d: "/about/gacha.webp", m: "/about/gacha-m.webp" },
   story: { d: "/about/story.webp", m: "/about/story-m.webp" },
   rogue: { d: "/about/rogue.webp", m: "/about/rogue-m.webp" },
   ra: { d: "/about/ra.webp", m: "/about/ra-m.webp" },
@@ -222,6 +223,16 @@ const CONTENT: Record<Locale, Content> = {
           "레벨·정예화가 게임 순서(E0 만렙→정예화1→E1 만렙→…)대로 한 줄에 이어지고, 올릴 목표 레벨을 직접 입력",
           "스킬 레벨 2~7·스킬별 특화 1~3·모듈별 1~3단계를 그룹마다 목표까지 누적 선택",
           "여러 오퍼를 담아 한 번에 계획 — 합계를 공유 링크로 저장, 무엇을 얼마나 파밍할지 바로 확인",
+          "내 정보로 로그인하면 지금 육성 상태부터 목표까지 남은 양만 — 끝난 단계는 ✓ 달성",
+        ],
+      },
+      {
+        tab: "gacha", icon: "✶", name: "가챠 시뮬레이터",
+        summary: "배너와 픽업 오퍼를 골라 1회·10회·100회·300회 가챠를 재미로 돌려 봅니다.",
+        bullets: [
+          "통상·한정 배너에 6성·5성 픽업 자리를 늘려 가며 — 눌러서 오퍼를 검색해 넣기, 미래시를 켜면 미실장 오퍼도",
+          "성급별 확률·첫 10회 5성 보장은 게임 데이터 그대로, 50회부터 6성 +2% 천장과 픽업 비율(한정 70%)은 게임 안 공지대로",
+          "나온 6성은 오른쪽 기록에 장수와 함께 모이고, 누르면 오퍼 상세",
         ],
       },
       {
@@ -412,6 +423,16 @@ const CONTENT: Record<Locale, Content> = {
           "Level and Elite chain in game order (E0 max → Elite 1 → E1 max → …), and you type the exact target level",
           "Skill levels 2–7, masteries 1–3 per skill, and module stages 1–3 accumulate to a target per group",
           "Queue several operators, save the totals as a share link — see exactly what and how much to farm",
+          "Log in via My Account to count only what's left from your current progress — finished steps show ✓ Achieved",
+        ],
+      },
+      {
+        tab: "gacha", icon: "✶", name: "Gacha Simulator",
+        summary: "Pick a banner and rate-up operators, then roll 1, 10, 100 or 300 pulls just for fun.",
+        bullets: [
+          "Add as many 6★/5★ rate-up slots as a standard or limited banner needs — click one to search for an operator; with future data on, unreleased operators too",
+          "Per-rarity rates and the first-10 5★ guarantee come straight from game data; pity (+2% 6★ from pull 50) and rate-up shares (70% on limited) follow the in-game notice",
+          "6★ results collect in the log on the right with their counts — click one for the operator's details",
         ],
       },
       {
@@ -602,6 +623,16 @@ const CONTENT: Record<Locale, Content> = {
           "レベルと昇進がゲーム順（E0カンスト→昇進1→E1カンスト→…）に一列に並び、目標レベルを直接入力",
           "スキルLv.2～7・スキル別特化1～3・モジュール別1～3段階をグループごとに目標まで累積選択",
           "複数のオペレーターをまとめて計画し、合計を共有リンクで保存 — 何をどれだけ周回すべきかが一目で分かります",
+          "マイページでログインすると、今の育成状況から目標までの残りだけを集計 — 済んだ段階は ✓ 達成",
+        ],
+      },
+      {
+        tab: "gacha", icon: "✶", name: "ガチャシミュレーター",
+        summary: "バナーとピックアップを選んで、1回・10回・100回・300回のガチャをお遊びで回せます。",
+        bullets: [
+          "通常・限定バナーに★6・★5のピックアップ枠を必要なだけ追加 — 押してオペレーターを検索、「未実装データを含む」をオンにすれば未実装オペレーターも",
+          "レアリティ別確率と最初の10回の★5保証はゲームデータそのまま、50回目からの★6 +2%天井とピックアップ割合（限定70%）はゲーム内告知どおり",
+          "出た★6は右の記録に枚数つきで集まり、押すとオペレーター詳細",
         ],
       },
       {

@@ -106,6 +106,18 @@ export function meChars(me: MeData | null): Map<string, AccountChar> | null {
   return map;
 }
 
+/** 가진 재화로 헤드헌팅을 몇 번 돌릴 수 있나 — 내 정보 '재화'와 가챠 시뮬레이터 '내 재화로'가 같이 쓴다 (2026-10-12 공용화).
+ *  합성옥 600 = 1회, 허가증 1장 = 1회, 10회 허가증 = 10회. all 은 순오리지늄 1개 = 합성옥 180 으로 바꿔 남은 합성옥과 합친 값 */
+export function mePulls(inv: Record<string, number> | undefined | null): { pulls: number; all: number; orundum: number; prime: number; permit: number; permit10: number } | null {
+  if (!inv) return null;
+  const orundum = inv["4003"] ?? 0, prime = inv["4002"] ?? 0, permit = inv["7003"] ?? 0, permit10 = inv["7004"] ?? 0;
+  return {
+    pulls: Math.floor(orundum / 600) + permit + permit10 * 10,
+    all: Math.floor((orundum + prime * 180) / 600) + permit + permit10 * 10,
+    orundum, prime, permit, permit10,
+  };
+}
+
 /** 성급별 만렙 (정예화 단계별) — character_table maxLevel 과 같다 */
 export const MAX_LEVEL: Record<number, number[]> = {
   1: [30], 2: [30], 3: [40, 55], 4: [45, 60, 70], 5: [50, 70, 80], 6: [50, 80, 90],

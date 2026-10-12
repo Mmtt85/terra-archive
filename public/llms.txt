@@ -11,6 +11,7 @@ Not affiliated with Hypergryph or Yostar. Game names and artwork belong to their
 - [Public Recruitment Calculator (공채 계산기)](https://terra-archive.net/recruit): pick recruitment tags and see which combinations guarantee 4★/5★/6★ operators.
 - [Material Farming Table (재료 파밍 효율표)](https://terra-archive.net/farm): best stage and expected sanity per material, from Penguin Statistics drop rates.
 - [Upgrade Cost Calculator (육성 비용 계산기)](https://terra-archive.net/upgrade): LMD, EXP and materials needed for levels, promotions, skills, masteries and modules.
+- [Gacha Simulator (가챠 시뮬레이터)](https://terra-archive.net/gacha): pick a standard or limited banner and any number of rate-up operators (including unreleased CN operators with future data on), then roll 1/10/100/300 pulls with the game's own rates, pity and 5★ guarantee.
 - [Stage Simulator (작전 시뮬레이터)](https://terra-archive.net/sim): replays when and where each enemy spawns in a stage.
 - [My Account (내 정보)](https://terra-archive.net/me): log in with a Yostar account to see your roster statistics and depot.
 

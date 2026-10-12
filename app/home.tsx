@@ -2844,7 +2844,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
         {tab === "farm" && <FarmGuide />}
         {tab === "upgrade" && <UpgradeSim operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
-        {tab === "gacha" && <GachaSim operators={operators} onShowOperator={showOperatorById} />}
+        {tab === "gacha" && <GachaSim operators={operators} onShowOperator={showOperatorById} includeFuture={includeFuture} />}
         {/* 요약 JSON은 Suspense가 아니라 상태로 받으므로(summariesLoader), 도착 전에는
             Suspense 자리표시가 뜨지 않는다 — 그냥 아무것도 안 그리면 푸터가 헤더 바로 밑에
             붙었다가 밀려나며 CLS가 된다 (실측 모바일 0.281, 2026-08-13). 같은 자리표시를 쓴다. */}

@@ -164,6 +164,8 @@ run "build-recruit"    python3 scripts/build-recruit.py "$G"
 run "build-farm"       python3 scripts/build-farm.py "$G" \
   || echo "[build-farm] 펭귄 통계 fetch 실패 — 기존 farm.json 유지, 다음 실행 때 재시도" | tee -a "$WARN" >&2
 run "build-costs"      python3 scripts/build-costs.py "$G"
+# 가챠 시뮬레이터 풀 (/gacha) — 인재 채용 오퍼·한정·콜라보, 확률·5성 보장 (2026-10-12)
+run "build-gacha-pool" python3 scripts/build-gacha-pool.py
 run "build-story"      python3 scripts/build-story.py
 # 인게임 스토리라인(테마 시계열) — stories.json을 참조하므로 build-story 뒤에
 run "build-storylines" python3 scripts/build-storylines.py "$G"

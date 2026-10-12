@@ -60,7 +60,7 @@ function clipBottom(el: HTMLElement): number {
 
 export function Dropdown({
   label, items, selected, onPick, multi, ariaLabel,
-  className, buttonClassName, scroll, disabled, actions, search,
+  className, buttonClassName, scroll, disabled, actions, search, anchor,
 }: {
   /** 버튼에 보일 현재 상태 */
   label: React.ReactNode;
@@ -79,6 +79,8 @@ export function Dropdown({
   actions?: boolean;
   /** 목록 맨 첫 줄에 검색란 — 자리표시 글자. 줄마다 searchText 로 거른다 (가챠 픽업 자리, 2026-10-12) */
   search?: string;
+  /** 목록을 단추 대신 이 조상(closest 선택자)의 왼끝·폭에 맞춘다 — 좁은 패널 안의 작은 단추 (가챠 픽업 자리, 2026-10-12) */
+  anchor?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [alignRight, setAlignRight] = useState(false);
@@ -123,9 +125,11 @@ export function Dropdown({
     const alignRightNow = right - rect.left < MENU_MIN_SPACE && rect.right - left > right - rect.left;
     setAlignRight(alignRightNow);
     // 목록 높이는 줄 수로 어림한다(줄 ≈30px, scroll 이면 최대 440)
-    const need = Math.min(items.length * 30 + 14, scroll ? 440 : Infinity);
+    const need = Math.min(items.length * 30 + 14 + (search ? 44 : 0), scroll ? 440 : Infinity);
     const clipped = clipBottom(event.currentTarget) - rect.bottom < need + 4 && clipBottom(event.currentTarget) < window.innerHeight;
-    setFloat(clipped ? { position: "fixed", top: rect.bottom + 4, ...(alignRightNow ? { right: window.innerWidth - rect.right, left: "auto" } : { left: rect.left }) } : null);
+    const box = anchor ? (event.currentTarget.closest(anchor) as HTMLElement | null)?.getBoundingClientRect() : undefined;
+    setFloat(!clipped ? null : box ? { position: "fixed", top: rect.bottom + 4, left: box.left, right: "auto", width: box.width }
+      : { position: "fixed", top: rect.bottom + 4, ...(alignRightNow ? { right: window.innerWidth - rect.right, left: "auto" } : { left: rect.left }) });
     setQuery("");
     setOpen((value) => !value);
   };
