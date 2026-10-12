@@ -18643,6 +18643,10 @@ main.site-main > .site-header {
 .bridge-pip-list { display: flex; gap: 6px; align-items: baseline; margin-top: 3px; font-size: 11.5px; color: var(--muted); }
 .bridge-pip-list span { flex: none; }
 .bridge-pip-list ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 2px 8px; color: var(--ink2); }
+.bridge-pip-connect { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 16px; text-align: center; color: var(--muted); }
+.bridge-pip-connect p { margin: 0; font-size: 12px; }
+.bridge-pip-err { color: var(--danger) !important; }
+.bridge-pip-off { margin-left: auto; }
 .bridge-pip-foot { margin-top: auto; padding: 8px 10px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; }
 /* 기록 수집 안내 — 토스트 둘째 줄 (2026-10-12). 토스트를 줄바꿈 가능하게 하고 이 줄만 한 줄을 다 쓴다 */
 .bridge-toast:has(.bridge-toast-hint) { flex-wrap: wrap; row-gap: 4px; }

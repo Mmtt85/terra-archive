@@ -340,7 +340,7 @@ let visitHeld = false;
 
 /** 창 선택 → 캡처 시작. 사용자 제스처(버튼 클릭) 안에서만 부를 수 있다.
  *  withLock을 주면 그 테마로 하드 고정 — 인식이 다른 테마로 절대 넘어가지 않는다. */
-export async function connectBridge(withLock?: BridgeLock): Promise<void> {
+export async function connectBridge(withLock?: BridgeLock, via?: Window): Promise<void> {
   disconnectBridge();
   lock = withLock ?? null;
   runLog = []; logMeta = null; startedAt = new Date().toISOString();
@@ -349,14 +349,22 @@ export async function connectBridge(withLock?: BridgeLock): Promise<void> {
   document.addEventListener("keydown", markUserAct, true);
   sceneMemos = []; lastEmitGray = null; battleHold = false;
   error = ""; notify();
+  const opts = {
+    audio: false,
+    video: { frameRate: { ideal: FPS_IDEAL, max: 8 } },
+    // 자기 탭은 피커에서 숨긴다(무한거울 방지). 공유 중 창을 바꿔도 다시 안 골라도 된다.
+    selfBrowserSurface: "exclude",
+    surfaceSwitching: "include",
+  } as DisplayMediaStreamOptions;
   try {
-    stream = await navigator.mediaDevices.getDisplayMedia({
-      audio: false,
-      video: { frameRate: { ideal: FPS_IDEAL, max: 8 } },
-      // 자기 탭은 피커에서 숨긴다(무한거울 방지). 공유 중 창을 바꿔도 다시 안 골라도 된다.
-      selfBrowserSurface: "exclude",
-      surfaceSwitching: "include",
-    } as DisplayMediaStreamOptions);
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia(opts);
+    } catch (e) {
+      // 작은 창(PiP)에서 누른 연결 — 클릭이 그 창에서 일어나 본창엔 '방금 사용자 동작'이 없을 수 있다.
+      // 그때는 그 창에서 다시 청한다 (2026-10-12). ⚠ 그 경우 작은 창을 닫으면 캡처도 끊길 수 있다 — 트랙 ended 로 정리된다
+      if (!via || !(e instanceof Error) || e.name !== "InvalidStateError") throw e;
+      stream = await via.navigator.mediaDevices.getDisplayMedia(opts);
+    }
   } catch (e) {
     error = e instanceof Error && e.name === "NotAllowedError"
       ? "창 선택이 취소되었습니다" : `연결 실패: ${e instanceof Error ? e.message : String(e)}`;

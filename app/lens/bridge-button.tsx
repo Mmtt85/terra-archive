@@ -6,9 +6,9 @@
 // 연결 전에는 아무것도 그리지 않는다.
 
 import { NewBadge } from "../new-badge";
-import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from "react";
+import { lazy, Suspense, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong, bridgePipCards } from "./bridge";
+import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong, bridgePipCards, type BridgeLock } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -55,15 +55,54 @@ async function openPipWindow(): Promise<Window | null> {
   return w;
 }
 
-function PipView({ t, phase, note, lockName }: { t: T; phase: string; note: string; lockName: string }) {
+// 작은 창은 **연결과 따로** 산다 — 먼저 띄우고 그 안에서 연결할 수 있게 (사용자 지시 2026-10-12 "창부터 띄우고 거기서 연결").
+// 그래서 창 상태를 컴포넌트가 아니라 모듈에 두고, 툴바(BridgeTopicButton)·토스트(BridgeButton) 어디서든 연다.
+let pipWin: Window | null = null;
+let pipLock: BridgeLock | null = null;   // 작은 창에서 '연결'을 누르면 이 테마로 고정 연결
+const pipSubs = new Set<() => void>();
+const pipNotify = () => { for (const cb of pipSubs) cb(); };
+const pipSubscribe = (cb: () => void) => { pipSubs.add(cb); return () => { pipSubs.delete(cb); }; };
+const usePipWin = () => useSyncExternalStore(pipSubscribe, () => pipWin, () => null);
+async function togglePipWindow(lockFor?: BridgeLock | null): Promise<void> {
+  if (pipWin) { pipWin.close(); pipWin = null; pipNotify(); return; }
+  try {
+    const w = await openPipWindow();
+    if (!w) return;
+    if (lockFor) pipLock = lockFor;
+    w.addEventListener("pagehide", () => { if (pipWin === w) { pipWin = null; pipNotify(); } }, { once: true });
+    pipWin = w;
+    pipNotify();
+  } catch { /* 사용자가 막았거나 미지원 */ }
+}
+// ⚠ 시험판 — **운영자 브라우저에서만** 보인다 (사용자 지시 2026-10-12 "사용자들이 안 보이게 몰래 숨겨 놓고 나만 써 보고 싶음").
+//   공개할 때 isOwnerBrowser() 조건만 빼면 된다
+const usePipOk = () => useSyncExternalStore(noSubscribe, () => !!docPip() && isOwnerBrowser(), () => false);
+
+function PipView({ t, connected, phase, note, lockName, error }: { t: T; connected: boolean; phase: string; note: string; lockName: string; error: string }) {
   const cards = bridgePipCards();
   const last = bridgeLastScan();
+  if (!connected) {
+    const target = pipLock;
+    return (
+      <div className="bridge-pip">
+        <header className="bridge-pip-head"><span className="bridge-dot off" aria-hidden>○</span><b>{target ? t(target.name) : "PRTS"}</b><span>{t("연결 안 됨")}</span></header>
+        <div className="bridge-pip-connect">
+          <button type="button" className="lens-open-btn bridge-topic-btn" onClick={() => void connectBridge(target ?? undefined, pipWin ?? undefined)}>
+            <span aria-hidden>○</span> {t("PRTS 링크 연결")}
+          </button>
+          <p>{t("게임 창을 고르면 이 작은 창에 인식 결과가 나옵니다.")}</p>
+          {error && <p className="bridge-pip-err">{error}</p>}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="bridge-pip">
       <header className="bridge-pip-head">
         <span className="bridge-dot" aria-hidden>◉</span>
         <b>{lockName}</b>
         <span>{phase}{note ? ` · ${note}` : ""}</span>
+        <button type="button" className="bridge-toast-off bridge-pip-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>{t("연결 끊기")}</button>
       </header>
       {cards.length === 0 ? (
         <p className="bridge-pip-empty">{t("게임 화면을 인식하면 여기에 나옵니다")}</p>
@@ -94,25 +133,16 @@ function PipView({ t, phase, note, lockName }: { t: T; phase: string; note: stri
 
 /** 연결 상태 토스트 — 문서 최상위에 포털로 그려 모달 백드롭 위에도 항상 보인다. */
 export default function BridgeButton({ t }: { t: T }) {
-  const { settings, gate, busy, note, lock, nodeJump } = useBridgeStatus();
-  const [pip, setPip] = useState<Window | null>(null);
-  // ⚠ 시험판 — **운영자 브라우저에서만** 보인다 (사용자 지시 2026-10-12 "사용자들이 안 보이게 몰래 숨겨 놓고 나만 써 보고 싶음").
-  //   공개할 때 isOwnerBrowser() 조건만 빼면 된다
-  const pipOk = useSyncExternalStore(noSubscribe, () => !!docPip() && isOwnerBrowser(), () => false);
-  // 연결을 끊으면 작은 창도 닫는다
-  useEffect(() => { if (!settings && pip) { pip.close(); setPip(null); } }, [settings, pip]);
-  if (!settings) return null;   // 연결 전·미지원 — 아무것도 그리지 않는다
-
+  const { settings, gate, busy, note, lock, nodeJump, error } = useBridgeStatus();
+  const pip = usePipWin();
+  const pipOk = usePipOk();
   const phase = busy ? t("인식 중…") : t(PHASE[gate?.phase ?? ""] ?? "연결됨");
-  const togglePip = async () => {
-    if (pip) { pip.close(); setPip(null); return; }
-    try {
-      const w = await openPipWindow();
-      if (!w) return;
-      w.addEventListener("pagehide", () => setPip(null), { once: true });
-      setPip(w);
-    } catch { /* 사용자가 막았거나 미지원 */ }
-  };
+  // 작은 창은 연결 전에도 떠 있을 수 있다 — 연결 단추를 그 창에서 누른다
+  const pipPortal = pip ? createPortal(
+    <PipView t={t} connected={!!settings} phase={phase} note={note} error={error}
+      lockName={lock ? t(lock.name) : t("PRTS 링크 연결됨")} />, pip.document.body) : null;
+  if (!settings) return pipPortal;   // 연결 전·미지원 — 토스트는 그리지 않는다
+  const togglePip = () => togglePipWindow(lock);
 
   return createPortal(
     <div className={`bridge-toast${busy ? " busy" : ""}`} aria-live="polite" role="status">
@@ -155,7 +185,7 @@ export default function BridgeButton({ t }: { t: T }) {
         {t("연결 끊기")}
       </button>
       {/* 기록 수집 안내 (사용자 지시 2026-10-12) — 토스트 둘째 줄 */}
-      {pip && createPortal(<PipView t={t} phase={phase} note={note} lockName={lock ? t(lock.name) : t("PRTS 링크 연결됨")} />, pip.document.body)}
+      {pipPortal}
       <small className="bridge-toast-hint">{t("인식률·속도 개선을 위해 인식 기록(그림 없이 결과만)을 모으고 있어요. 잘못 인식했다면 '틀렸어요'를 눌러 주세요 — 그때만 그 화면 한 장이 함께 전송돼요.")}</small>
     </div>,
     document.body,
@@ -176,6 +206,8 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
   // 때 활성으로 바뀐다 (종전엔 SSR에서 아예 안 그렸으니 어느 쪽이든 깜빡임은 새로 안 생긴다).
   const mobile = useSyncExternalStore(noSubscribe, bridgeOnMobile, () => true);
   const [replayOpen, setReplayOpen] = useState(false);
+  const pip = usePipWin();
+  const pipOk = usePipOk();
   const [helpOpen, setHelpOpen] = useState(false);
   // 딥링크: #replay(리플레이 프리뷰)·#prts-help(도움말) — /rogue 툴바엔 활성 테마의
   // 버튼 인스턴스 하나만 마운트되므로 여기서 동기화해도 중복이 없다 (2026-07-27)
@@ -213,6 +245,14 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
         <span className="beta-badge">BETA</span>
         <NewBadge id="bridge" show={!settings && isNewFeature("bridge")} />
       </button>
+      )}
+      {/* 작은 창 — 먼저 띄우고 그 안에서 연결 (운영자 시험판, 2026-10-12) */}
+      {pipOk && !mobile && (
+        <button type="button" className={`lens-open-btn bridge-log-btn${pip ? " on" : ""}`} aria-pressed={!!pip}
+          onClick={() => void togglePipWindow({ topic, name })}
+          title={t("게임 위에 항상 떠 있는 작은 창을 엽니다 — 그 창에서 PRTS 링크를 연결할 수 있습니다 (크롬·엣지)")}>
+          <span aria-hidden>⧉</span> {t("작은 창")}
+        </button>
       )}
       {/* ?는 **PRTS 링크 버튼 바로 오른쪽**에 붙는 세그먼트다 — 리플레이 뒤에 두면 리플레이
           도움말처럼 보인다 (사용자 지적 2026-07-26) */}
