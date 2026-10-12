@@ -30027,6 +30027,15 @@ html.dark :is(.own-corner, .skin-owned).no { background: color-mix(in srgb, #000
 .vz-tag.vz-ev.me { color: #6a4fb0; background: color-mix(in srgb, #8e6ad8 15%, transparent); border-color: transparent; }
 html.dark .vz-tag.vz-ev.prts { color: #6fe3cf; }
 html.dark .vz-tag.vz-ev.me { color: #c3aef5; }
+/* 세션에서 보낸 제안 — 누르면 피드백 탭의 그 제안으로 (2026-10-12) */
+.vz-tag.vz-ev.fb { color: #9a5b00; background: color-mix(in srgb, #f0a020 18%, transparent); border-color: transparent; font-weight: 700; cursor: pointer; font-family: inherit; }
+.vz-tag.vz-ev.fb:hover { background: color-mix(in srgb, #f0a020 32%, transparent); }
+html.dark .vz-tag.vz-ev.fb { color: #ffc56b; }
+.vz-sessions > li.vz-fb-hit { outline: 2px solid color-mix(in srgb, #f0a020 60%, transparent); outline-offset: 2px; }
+.fb-visitor-btn { cursor: pointer; font-family: inherit; color: #9a5b00; background: color-mix(in srgb, #f0a020 14%, transparent); font-weight: 700; }
+.fb-visitor-btn:hover { background: color-mix(in srgb, #f0a020 28%, transparent); }
+html.dark .fb-visitor-btn { color: #ffc56b; }
+.admin-row.fb-flash { outline: 3px solid #f0a020; outline-offset: 2px; transition: outline-color .3s; }
 
 
 /* 내 정보 '이어하기' (2026-10-11, 종전 '멈춰 둔 판' 대체) — 카드는 콘텐츠마다 한 칸, 누르면 상세 모달 */

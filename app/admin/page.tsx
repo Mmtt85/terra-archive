@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminEditReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, visitorOf, filesOf, flagOf, fmtFileSize, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKey, type StoredFile } from "../files-api";
 import { useConfirm } from "../confirm";
 import { markOwnerBrowser } from "../visit-track";
-import { VisitsPanel } from "./visits";
+import { FbLinkCtx, VisitorSessions, VisitsPanel } from "./visits";
 import { buildPromoHtml } from "./promo-html";
 import { ModalWindow } from "../modal-window";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
@@ -568,6 +568,26 @@ export default function AdminPage() {
   const statusRank = (row: FeedbackRow) => (row.reviewed_at ? 2 : handlingAt(row.payload) ? 0 : 1);
   const matchStatus = (row: FeedbackRow) =>
     statusFilter === "reviewed" ? Boolean(row.reviewed_at) : !row.reviewed_at;
+  // 제안 ↔ 세션 잇기 (사용자 지시 2026-10-12) — 세션 타임라인의 '✉ 제안' 을 누르면 이 탭의 그 제안으로, 제안의 👤 를 누르면 그 사람 세션 창
+  const [flashId, setFlashId] = useState("");
+  const [visitorWin, setVisitorWin] = useState<{ visitor: string; at: string } | null>(null);
+  const fbLink = useMemo(() => ({
+    list: rows.flatMap((r) => { const v = visitorOf(r.payload); return v ? [{ id: r.id, at: r.created_at, visitor: v }] : []; }),
+    open: (id: string) => {
+      const r = rows.find((x) => x.id === id);
+      setFilter("all");
+      setStatusFilter(r?.reviewed_at ? "reviewed" : "open");
+      setTab("feedback");
+      setFlashId(id);
+    },
+  }), [rows]);
+  useEffect(() => {
+    if (!flashId || tab !== "feedback") return;
+    requestAnimationFrame(() => document.getElementById(`fb-${flashId}`)?.scrollIntoView({ block: "center", behavior: "smooth" }));
+    const t = setTimeout(() => setFlashId(""), 2400);
+    return () => clearTimeout(t);
+  }, [flashId, tab]);
+
   const shown = rows
     .filter((row) => (filter === "all" || row.kind === filter) && matchStatus(row))
     .sort((a, b) => statusRank(a) - statusRank(b) || Date.parse(b.created_at) - Date.parse(a.created_at));
@@ -690,7 +710,7 @@ export default function AdminPage() {
       </section>
       )}
 
-      {tab === "visits" && <VisitsPanel />}
+      {tab === "visits" && <FbLinkCtx.Provider value={fbLink}><VisitsPanel /></FbLinkCtx.Provider>}
 
       {tab === "feedback" && (<>
       <div className="admin-tools admin-status-tools">
@@ -711,7 +731,7 @@ export default function AdminPage() {
       </div>
       <div className="admin-list">
         {shown.map((row) => (
-          <article key={row.id} className={`admin-row kind-${row.kind}${row.reviewed_at ? " reviewed" : ""}${handlingAt(row.payload) && !row.reviewed_at ? " handling" : ""}`}>
+          <article key={row.id} id={`fb-${row.id}`} className={`admin-row kind-${row.kind}${row.reviewed_at ? " reviewed" : ""}${handlingAt(row.payload) && !row.reviewed_at ? " handling" : ""}${flashId === row.id ? " fb-flash" : ""}`}>
             <header>
               <code className="fb-id" title={`${row.id} — 클릭하면 전체 ID 복사`}
                 onClick={() => { navigator.clipboard?.writeText(row.id).then(() => setStatus(`ID 복사됨: ${row.id}`)).catch(() => {}); }}>
@@ -728,7 +748,10 @@ export default function AdminPage() {
               <time>{new Date(row.created_at).toLocaleString("ko-KR")}</time>
               {countryOf(row.payload) && <i className="fb-geo-chip">{flagOf(countryOf(row.payload)!)} {countryOf(row.payload)}</i>}
               {/* 방문자 코드 — 방문 통계 세션 타임라인·PRTS 표의 방문자와 같은 값 (2026-10-12~ 보낸 제안부터) */}
-              {visitorOf(row.payload) && <i className="fb-geo-chip" title="방문 통계의 방문자 코드">👤 <code>{visitorOf(row.payload)}</code></i>}
+              {visitorOf(row.payload) && (
+                <button type="button" className="fb-geo-chip fb-visitor-btn" title="방문 통계의 방문자 코드 — 눌러서 이 사람의 세션 보기"
+                  onClick={() => setVisitorWin({ visitor: visitorOf(row.payload)!, at: row.created_at })}>👤 <code>{visitorOf(row.payload)}</code> · 세션 보기 ▸</button>
+              )}
               <button className="handling-btn" onClick={() => toggleHandling(row)}>{handlingAt(row.payload) ? "대응 해제" : "대응중"}</button>
               <button className="review-btn" onClick={() => toggleReviewed(row)}>{row.reviewed_at ? "대응 취소" : "대응완료"}</button>
               <button onClick={() => remove(row)}>삭제</button>
@@ -791,6 +814,12 @@ export default function AdminPage() {
         {shown.length === 0 && <p className="admin-status">표시할 항목이 없습니다.</p>}
       </div>
       </>)}
+
+      {visitorWin && (
+        <FbLinkCtx.Provider value={fbLink}>
+          <VisitorSessions visitor={visitorWin.visitor} at={visitorWin.at} onClose={() => setVisitorWin(null)} />
+        </FbLinkCtx.Provider>
+      )}
 
       {tab === "changelog" && (<>
       <p className="admin-status">

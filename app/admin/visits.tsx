@@ -10,7 +10,7 @@
 // DB 가 80% 차면 오래된 것부터 지운다(docs/supabase-visits.sql visits_maintain).
 
 import { createPortal } from "react-dom";
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
 import { ACCOUNT_SERVERS } from "../account";
 import { ModalWindow } from "../modal-window";
@@ -91,6 +91,18 @@ type SessRow = {
   /** 그 세션의 일 기록 — PRTS 연결·해제, 내 정보 로그인·동기화 (2026-10-11~ DB 함수) */
   events?: { at: string; kind: string; detail: string | null; dur: number | null; server: string | null }[];
 };
+
+// 제안 ↔ 세션 잇기 (사용자 지시 2026-10-12) — 관리자 페이지가 받아 둔 제안 목록(방문자 코드가 실린 것만)을 넣어 준다.
+// 제안의 방문자 코드(익명 id 앞 8자)가 세션 방문자와 같고, 보낸 시각이 그 세션 동안(시작 1분 전 ~ 마지막 기록 10분 뒤)이면 그 세션에서 보낸 것
+export type FbLink = { id: string; at: string; visitor: string };
+export const FbLinkCtx = createContext<{ list: FbLink[]; open: (id: string) => void } | null>(null);
+function sessFeedback(s: SessRow, list: FbLink[]): FbLink[] {
+  if (!s.visitor || !list.length) return [];
+  const v = s.visitor.slice(0, 8);
+  const t0 = Date.parse(s.at) - 60_000;
+  const t1 = Date.parse(s.last_at ?? s.at) + (s.last_at ? 10 : 30) * 60_000;
+  return list.filter((f) => { const t = Date.parse(f.at); return f.visitor === v && t >= t0 && t <= t1; });
+}
 
 async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
   let res = await fetch(`/api/visits/rpc/${name}`, {
@@ -678,7 +690,7 @@ function sessEvents(s: SessRow): { label: string; title: string; cls: string }[]
   return out;
 }
 
-function SessionLine({ s }: { s: SessRow }) {
+function SessionLine({ s, hit }: { s: SessRow; hit?: boolean }) {
   // 동선이 3줄을 넘으면 최근 3줄만 보이고 펼치기 단추 (사용자 요청 2026-10-11 "조작을 너무 많이 해 4줄 이상이면 아코디언").
   // 줄 수는 화면 폭에 따라 달라 실제 배치를 잰다 — 칸들의 윗변이 몇 가지인지가 줄 수다. 10초 갱신에도 펼침 상태는 유지(key=s.id)
   const trailRef = useRef<HTMLParagraphElement>(null);
@@ -745,8 +757,9 @@ function SessionLine({ s }: { s: SessRow }) {
   // DB 함수가 옛판이라 last_at 이 없으면 시작 시각 + 마지막 화면의 시작·보인 시간으로 어림한다 (사용자 지시 2026-10-10)
   const live = sessLive(s);
   const trail = mergeRepeats(s.views);
+  const fbLink = useContext(FbLinkCtx);
   return (
-    <li className={(s.kind ?? (s.human ? "human" : "bot")) === "bot" ? "bot" : ""}>
+    <li className={`${(s.kind ?? (s.human ? "human" : "bot")) === "bot" ? "bot" : ""}${hit ? " vz-fb-hit" : ""}`}>
       <header>
         <time>{when}</time>
         {/* 방문자 코드 — PRTS·틀렸어요 표의 방문자와 맞춰 볼 수 있게 (사용자 지시 2026-10-12) */}
@@ -764,6 +777,11 @@ function SessionLine({ s }: { s: SessRow }) {
         {/* 일 기록 — PRTS 링크(연결된 시간)·내 정보 로그인·동기화 (사용자 지시 2026-10-11 "세션 타임라인에 PRTS 관련이 안 보인다") */}
         {sessEvents(s).map((e, i) => (
           <span key={i} className={`vz-tag vz-ev ${e.cls}`} title={e.title}>{e.label}</span>
+        ))}
+        {/* 이 세션에서 보낸 제안 — 누르면 피드백 탭의 그 제안으로 */}
+        {fbLink && sessFeedback(s, fbLink.list).map((f) => (
+          <button key={f.id} type="button" className="vz-tag vz-ev fb" onClick={() => fbLink.open(f.id)}
+            title={`${new Date(f.at).toLocaleString("ko-KR")} 에 보낸 제안 — 눌러서 보기`}>✉ 제안 #{f.id.slice(0, 8)}</button>
         ))}
       </header>
       <p className={`vz-trail${clampH && !open ? " clamped" : ""}`} ref={trailRef}
@@ -818,6 +836,34 @@ function SessionLine({ s }: { s: SessRow }) {
         </button>
       )}
     </li>
+  );
+}
+
+// 제안 카드의 👤 방문자 코드를 누르면 — 그 사람의 세션 타임라인 (사용자 지시 2026-10-12).
+// 보낸 시각 앞 3일 ~ 뒤 1시간의 세션을 받아 방문자 코드로 거른다. 제안을 보낸 세션은 강조
+export function VisitorSessions({ visitor, at, onClose }: { visitor: string; at: string; onClose: () => void }) {
+  const [rows, setRows] = useState<SessRow[] | null | "err">(null);
+  useEffect(() => {
+    let alive = true;
+    const t = Date.parse(at);
+    rpc<SessRow[]>("visits_sessions_range", { p_from: new Date(t - 3 * 86400_000).toISOString(), p_to: new Date(t + 3600_000).toISOString(),
+      p_kinds: KINDS, p_src: null, p_limit: SESSIONS_ALL })
+      .then((r) => { if (alive) setRows(r.filter((x) => x.visitor?.startsWith(visitor))); })
+      .catch(() => { if (alive) setRows("err"); });
+    return () => { alive = false; };
+  }, [visitor, at]);
+  const sent = Date.parse(at);
+  const isHit = (s: SessRow) => sessFeedback(s, [{ id: "", at, visitor }]).length > 0;
+  return (
+    <ModalWindow label={`방문자 ${visitor} — 세션`} className="operator-modal vz-all-modal" onClose={onClose}>
+      <div className="vz vz-all">
+        <p className="vz-muted">제안 보낸 시각 {new Date(sent).toLocaleString("ko-KR")} · 앞 3일 ~ 뒤 1시간 · 강조된 줄이 제안을 보낸 세션</p>
+        {rows === null ? <p className="vz-empty">불러오는 중…</p>
+          : rows === "err" ? <p className="vz-empty">세션을 받지 못했습니다.</p>
+          : !rows.length ? <p className="vz-empty">이 방문자의 세션이 없습니다 (기록 거부·시크릿 창이면 안 남는다).</p>
+          : <ol className="vz-sessions">{rows.map((s) => <SessionLine key={s.id} s={s} hit={isHit(s)} />)}</ol>}
+      </div>
+    </ModalWindow>
   );
 }
 
