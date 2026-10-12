@@ -20,7 +20,7 @@
 
 import { confirmedDay, fmtMonthDay } from "./kr-confirmed";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { asset } from "./assets";
+import { asset, storyCutUrl } from "./assets";
 import gachaPool from "./data/gacha-pool.json";
 import { Marquee } from "./marquee";
 import { useI18n } from "./i18n";
@@ -60,6 +60,8 @@ export type EventRow = {
   mats?: [string, string, string, number, string[]][];
   /** 작전 첫 클리어(★3)로 얻는 순오리지늄 합계 — 작전마다 1개 (build-events.py prime_count) */
   prime?: number;
+  /** 그 내역 [작전 코드, 일반 첫 클리어, 챌린지·고난 모드 첫 클리어] — 게임 안 작전 순서 */
+  primeBy?: [string, number, number][];
   /** [id, 이름, 성급, 종류] — reward=이벤트 보상(무료 배포) · new=이 이벤트와 함께 데뷔 */
   ops?: [string, string, number, "reward" | "new"][];
   /** 사이트에 전용 가이드가 있는 모드 — 카드를 누르면 모달 대신 그리로 간다 */
@@ -337,6 +339,8 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
 }) {
   const { locale, t } = useI18n();
   const cafe = useCafeUrl(row.id);
+  // 순오리지늄 카드를 누르면 작전별 내역 창 (사용자 요청 2026-10-12 "정확하게 어디서 몇 개 얻는지" — 펼침이 아니라 모달로)
+  const [primeOpen, setPrimeOpen] = useState(false);
   // 일정·미션·훈장·가구·신뢰도 보너스 탭 — 이벤트마다 따로 받는다 (app/event-extra.tsx)
   const { tabs: extra, schedule, story } = useExtraTabs(row.id, { onOpenItem, onShowOperator }, !!(row.vb || row.duel));
   // 스토리 — 작전 카드에서 그 작전의 화를 리더기로 바로 (사용자 요청 2026-10-01 "17-1같은경우는 스토리인데, 이것도 다
@@ -376,11 +380,33 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
         <section className="ev-sec ev-sec-side">
           <b>{t("얻을 수 있는 순오리지늄")}</b>
           <div className="ev-items">
-            <button type="button" className="ev-item ev-prime" onClick={() => onOpenItem("4002")}
+            <button type="button" className="ev-item ev-prime" aria-haspopup="dialog" onClick={() => setPrimeOpen(true)}
               title={t("작전마다 첫 클리어(★3) 1개 · 챌린지 모드 첫 클리어 1개 더 — 복각에서는 처음 깨는 작전만")}>
               <img src={itemIcon("DIAMOND")} alt="" aria-hidden width={40} height={40} loading="lazy" decoding="async" />
               <span>{t("순오리지늄 {n}", { n: `×${row.prime}` })}</span>
             </button>
+            {primeOpen && row.primeBy && (() => {
+              const base = row.primeBy.reduce((a, r) => a + r[1], 0);
+              const hard = row.primeBy.reduce((a, r) => a + r[2], 0);
+              return (
+                <ModalWindow label={`${row.n} — ${t("얻을 수 있는 순오리지늄")} ×${row.prime}`} className="operator-modal ev-prime-modal" onClose={() => setPrimeOpen(false)}>
+                <div className="ev-prime-list">
+                  <p>
+                    {t("작전 첫 클리어 {n}", { n: base })}
+                    {hard > 0 && <> · {t("챌린지·고난 모드 첫 클리어 {n}", { n: hard })}</>}
+                  </p>
+                  <ul>
+                    {row.primeBy.map(([code, n, h]) => (
+                      <li key={code}>
+                        <code>{code}</code>
+                        <span>{n > 0 && `×${n}`}{h > 0 && <em title={t("챌린지·고난 모드 첫 클리어")}>{n > 0 ? " + " : ""}{/^H?\d/.test(code) ? t("고난 ×{n}", { n: h }) : t("챌린지 ×{n}", { n: h })}</em>}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                </ModalWindow>
+              );
+            })()}
           </div>
         </section>
       )}
@@ -443,7 +469,9 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
         const eps = storyId ? epMap.get(code) ?? [] : [];
         const storyOnly = eps.length > 0 && /^(st|spst)_/.test(id);
         return (
-          <div key={id} className="ev-stage">
+          <div key={id} className={storyOnly ? "ev-stage ev-stage-story" : "ev-stage"}>
+            {/* 스토리 작전은 **카드 전체가 한 단추** — 화 칩까지 단추 안에 든다 (사용자 지적 2026-10-12 "글자를 눌러야만 스토리가
+                뜬다, 카드 전체로"). 그림은 그 화의 첫 컷 CG + '스토리' 표 (build-event-extra.py story.cut) */}
             <button type="button" className="ev-stage-open"
               onClick={() => (storyOnly ? openStory({ view: "scene", ep: eps[0][0] }) : onOpenStage(id))}>
               {/* 전투 없는 스토리 작전(act52side_st01 · st_ · spst_)은 도면이 없다 — 그리지 않는다. 그려 두고 404 에 지우면
@@ -452,9 +480,19 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
                 <img className="ev-stage-map" src={asset(`/stage/${id}.webp`)} alt="" aria-hidden width={640} height={360}
                   loading="lazy" decoding="async" onError={(e) => { e.currentTarget.remove(); }} />
               )}
+              {storyOnly && story?.cut?.[code] && (
+                <img className="ev-stage-map ev-stage-cut" src={storyCutUrl(story.cut[code])} alt="" aria-hidden width={640} height={360}
+                  loading="lazy" decoding="async" />
+              )}
               <span className="ev-stage-txt"><b>{code}</b><span>{name}</span></span>
+              {storyOnly && (
+                <span className="ev-stage-sy">
+                  <span className="ev-stage-storytag">{t("스토리")}</span>
+                  {eps.map(([i, kind]) => <span key={i}>{t(kind)}</span>)}
+                </span>
+              )}
             </button>
-            {eps.length > 0 && (
+            {!storyOnly && eps.length > 0 && (
               <span className="ev-stage-sy">
                 {eps.map(([i, kind]) => (
                   <button key={i} type="button" title={t("{code} {kind} 스토리 — 리더기로 읽기", { code, kind: t(kind) })}

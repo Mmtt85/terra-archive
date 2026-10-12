@@ -177,9 +177,13 @@ def build_event(aid, T, tx, name_of, skip):
         for mid in (g or {}).get("medalId") or info.get("ungroupedMedalIds") or []:
             md = T["medal"].get(mid)
             if md and md.get("medalName"):
+                # 코팅(镀层) — 조건을 하나 더 채우면 같은 훈장이 코팅판(advancedMedal)으로 바뀐다. 그 조건을 7번째 칸에
+                # (사용자 요청 2026-10-12 "코팅 조건이 추가로 있는 훈장은 코팅 가능하다고 따로 표시")
+                adv = T["medal"].get(md.get("advancedMedal") or "") or {}
                 mrows.append([mid, tx(md["medalName"], f"medal {mid}"), md.get("rarity") or "",
                               tx(md.get("getMethod"), f"medal {mid}"), tx(md.get("description"), f"medal {mid}"),
-                              1 if md.get("isHidden") else 0])
+                              1 if md.get("isHidden") else 0]
+                             + ([tx(adv.get("getMethod"), f"medal {adv.get('medalId')}") or "?"] if adv else []))
         if mrows:
             rec["medals"] = {"list": mrows}
             if g and g.get("groupName"):
@@ -211,7 +215,20 @@ def story_of(row, loc):
         path = os.path.join(REPO, "public", "story", "script",
                             *([loc] if loc != "ko" and sid in SCRIPT_IDS[loc] else []), f"{sid}.json")
         try:
-            out["eps"] = [[e.get("code") or "", e.get("tag") or ""] for e in load(path)["eps"]]
+            eps = load(path)["eps"]
+            out["eps"] = [[e.get("code") or "", e.get("tag") or ""] for e in eps]
+            # 전투 없는 스토리 작전(17-1 같은 st_·spst_·_stNN) 카드의 그림 — 그 화의 첫 컷 CG {작전 코드: 컷 이름}
+            # (사용자 요청 2026-10-12 "스토리 모드라는 의미로 섬네일 하나"). 그림은 /story/cut/<이름>.webp
+            st_codes = {st[1] for st in row.get("stages") or [] if re.search(r"^(st|spst)_|_st\d+$", st[0])}
+            cut = {}
+            for e in eps:
+                c = e.get("code") or ""
+                if c in st_codes and c not in cut:
+                    img = next((ln["img"] for ln in e.get("lines") or [] if ln.get("img")), None)
+                    if img and os.path.exists(os.path.join(REPO, "public", "story", "cut", f"{img}.webp")):
+                        cut[c] = img
+            if cut:
+                out["cut"] = cut
         except (OSError, KeyError, ValueError):
             pass
     if sid in SUMMARY_IDS:

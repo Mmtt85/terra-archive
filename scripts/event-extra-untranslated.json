@@ -1,5 +1,23 @@
 {
- "ko": {},
- "en": {},
- "ja": {}
+ "ko": {
+  "以3星评价通关YW-8，且圣徒瓦列里奥使用【绝罚】不多于2次": "medal medal_activity_52side_105",
+  "收录10种不同的奇象生物数据，并且至少收录1只亚种版本奇象生物数据": "medal medal_activity_1arkhub_025",
+  "直到大地变成一颗酸橙活动期间，累计投递50封浮空信件": "medal medal_activity_53side_105",
+  "阵地足球锦标活动期间，累计8关的净胜球数达到3（不包含教学关）": "medal medal_activity_act1football_055",
+  "在第十七章的沙盘推演中累计获得15分": "medal medal_stage_sixstarpoint_035"
+ },
+ "en": {
+  "以3星评价通关YW-8，且圣徒瓦列里奥使用【绝罚】不多于2次": "medal medal_activity_52side_105",
+  "收录10种不同的奇象生物数据，并且至少收录1只亚种版本奇象生物数据": "medal medal_activity_1arkhub_025",
+  "直到大地变成一颗酸橙活动期间，累计投递50封浮空信件": "medal medal_activity_53side_105",
+  "阵地足球锦标活动期间，累计8关的净胜球数达到3（不包含教学关）": "medal medal_activity_act1football_055",
+  "在第十七章的沙盘推演中累计获得15分": "medal medal_stage_sixstarpoint_035"
+ },
+ "ja": {
+  "以3星评价通关YW-8，且圣徒瓦列里奥使用【绝罚】不多于2次": "medal medal_activity_52side_105",
+  "收录10种不同的奇象生物数据，并且至少收录1只亚种版本奇象生物数据": "medal medal_activity_1arkhub_025",
+  "直到大地变成一颗酸橙活动期间，累计投递50封浮空信件": "medal medal_activity_53side_105",
+  "阵地足球锦标活动期间，累计8关的净胜球数达到3（不包含教学关）": "medal medal_activity_act1football_055",
+  "在第十七章的沙盘推演中累计获得15分": "medal medal_stage_sixstarpoint_035"
+ }
 }

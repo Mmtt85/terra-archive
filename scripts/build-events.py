@@ -260,9 +260,22 @@ n_stage = n_enemy = n_item = n_op = 0
 def prime_count(stage_tab, sids):
     """그 이벤트 작전에서 얻는 순오리지늄 (사용자 요청 2026-10-12 "총 얻을 수 있는 오리지늄 수도") — 작전마다 첫 클리어(★3)
     보상 `diamondOnceDrop`(늘 1)의 합. ST(스토리)·TR(훈련)·S 작전도 1개씩 준다.
-    ⚠ 챌린지 모드(`#f#`, FOUR_STAR)는 **따로 1개를 더 준다** — 같은 작전이라고 빼면 EX 처럼 챌린지가 있는 작전이
-    1개로 셈된다 (사용자 지적 같은 날 "하드모드 있는 스테이지는 한 스테당 2개"). 복각은 원본과 작전을 나눠 쓰므로 같은 수."""
-    return sum(int((stage_tab.get(k) or {}).get("diamondOnceDrop") or 0) for k in sids)
+    ⚠ 챌린지 모드(`#f#`, FOUR_STAR)·메인 고난 모드(`#s`, SIX_STAR)는 **따로 1개를 더 준다** — 같은 작전이라고 빼면 EX 처럼 챌린지가 있는 작전이
+    1개로 셈된다 (사용자 지적 같은 날 "하드모드 있는 스테이지는 한 스테당 2개"). 복각은 원본과 작전을 나눠 쓰므로 같은 수.
+    돌려주는 값: (합계, 내역 [[작전 코드, 일반 첫 클리어 개수, 챌린지 개수], …] — 원본 표 순서). 내역은 모달에서
+    카드를 누르면 펼쳐진다 (사용자 요청 같은 날 "정확하게 어디서 몇 개 얻는지")."""
+    have = set(sids)
+    rows = []
+    for k in stage_tab:           # 원본 표 순서 = 게임 안 작전 순서
+        if k not in have or "#" in k:
+            continue
+        v = stage_tab[k]
+        n = int(v.get("diamondOnceDrop") or 0)
+        # 난이도 짝 — 이벤트 챌린지 모드 `#f#`(FOUR_STAR), 메인 스토리 고난 모드 `#s`(SIX_STAR). 둘 다 1개씩 더 준다
+        c = sum(int((stage_tab.get(k + suf) or {}).get("diamondOnceDrop") or 0) for suf in ("#f#", "#s") if (k + suf) in have)
+        if n or c:
+            rows.append([v.get("code") or k, n, c])
+    return sum(r[1] + r[2] for r in rows), rows
 
 
 for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime") or 0)):
@@ -373,9 +386,10 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
             row["rerun"] = rerun_of[aid]
         if stages:
             row["stages"] = stages
-            prime = prime_count(kr_stages, sorted(have))
+            prime, prime_by = prime_count(kr_stages, have)
             if prime:
                 row["prime"] = prime
+                row["primeBy"] = prime_by
         if seen_enemy:
             row["enemies"] = [[k, v] for k, v in seen_enemy.items()]
         if items:
@@ -486,7 +500,7 @@ def cn_event_body(aid):
         return {}
     z2a = cn_act.get("zoneToActivity") or {}
     sids = [k for k, v in cn_stage.items() if z2a.get(v.get("zoneId")) == aid]
-    prime = prime_count(cn_stage, sids)   # 챌린지(#f#)까지 — 아래에서 표준판만 남기기 전에 센다
+    prime, prime_by = prime_count(cn_stage, sids)   # 챌린지(#f#)까지 — 아래에서 표준판만 남기기 전에 센다
     # ⚠ 같은 작전이 난이도별로 두 벌씩 들어 있다 (`act50side_ex01` 과 `act50side_ex01#f#`,
     #   difficulty NORMAL/FOUR_STAR). 코드가 같아 목록에 TD-EX-1 이 두 번 찍힌다
     #   (2026-09-17 실측). 한섭 쪽은 build-stages 가 접미를 붙여 가르지만 여기선 미래시
@@ -538,6 +552,7 @@ def cn_event_body(aid):
     out = {}
     if prime:
         out["prime"] = prime
+        out["primeBy"] = prime_by
     if mats:
         out["mats"] = mats          # {재료 id: 작전 코드 집합} — 로케일별 모양은 fut_localize 가 만든다
     if stages:

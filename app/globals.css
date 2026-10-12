@@ -25518,6 +25518,14 @@ html[lang="ja"] .vn-box {
   padding: 6px 4px;
   text-align: center;
 }
+/* 순오리지늄 내역 창 — 카드를 누르면 작전별로 (2026-10-12) */
+.ev-prime-modal { width: min(420px, calc(100vw - 32px)); }
+.ev-prime-list { padding: 4px 2px; font-size: 13px; }
+.ev-prime-list p { margin: 0 0 10px; color: var(--muted); }
+.ev-prime-list ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+.ev-prime-list li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.ev-prime-list em { font-style: normal; color: #b85c00; }
+html.dark .ev-prime-list em { color: #ffb36b; }
 .ev-op img,
 .ev-enemy img,
 .ev-item img {
@@ -26339,6 +26347,9 @@ button.evx-rw:hover { border-color: var(--border-strong); }
 .evx-set { display: flex; flex-direction: column; gap: 2px; margin: 0 0 8px; font-size: 12px; }
 .evx-set span { color: var(--muted); white-space: pre-line; line-height: 1.5; }
 .evx-tier, .evx-hidden { margin-left: 6px; padding: 0 5px; font: 700 10px var(--mono); font-style: normal; border: 1px solid var(--line); color: var(--muted); }
+/* 코팅 가능 훈장 — 금빛 테두리 (2026-10-12) */
+.evx-trim { display: inline-block; white-space: nowrap; margin-left: 6px; padding: 0 5px; font: 700 10px var(--mono); font-style: normal; border: 1px solid #c9a227; color: #9a7a10; }
+html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 .vb-medals .evx-desc { font-size: 11px; font-style: normal; line-height: 1.5; color: var(--ink2); white-space: pre-line; }
 .evx-furn { display: flex; flex-wrap: wrap; gap: 5px; }
 .evx-furn .evx-rw { font-size: 12px; padding: 3px 8px 3px 3px; }
@@ -29736,6 +29747,13 @@ html.rg-theme.rg6 { --rg-hue: #2fbfa5; }
 .ev-stage:has(.ev-stage-map) .ev-stage-txt { padding: 6px 9px 7px; }
 .ev-stage:has(.ev-stage-map) .ev-stage-sy { position: absolute; top: 6px; right: 6px; }
 .ev-stage:has(.ev-stage-map) .ev-stage-sy button { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); }
+/* 스토리 작전 — 카드 전체가 단추, 그림은 그 화 첫 컷(채워 자른다), 화 표는 단추 아닌 글자표 (2026-10-12) */
+.ev-stage.ev-stage-story { cursor: pointer; }
+.ev-stage-story .ev-stage-open { width: 100%; }
+.ev-stage .ev-stage-map.ev-stage-cut { object-fit: cover; }
+.ev-stage-story .ev-stage-sy > span { padding: 1px 6px; border: 1px solid var(--line); background: var(--white); color: var(--ink2); font: 600 10.5px var(--mono); }
+.ev-stage-story .ev-stage-sy > .ev-stage-storytag { border-color: transparent; background: #3d6fb5; color: #fff; }
+.ev-stage-story:has(.ev-stage-map) .ev-stage-sy > span { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); }
 @media (max-width: 560px) {
   .ev-stages, .ev-stages:has(.ev-stage-sy) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

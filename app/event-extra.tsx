@@ -25,7 +25,8 @@ type Extra = {
   /** 이벤트 미션 [목표, 보상들] — 게임 정렬 순 */
   missions?: [string, Reward[]][];
   /** 훈장 — set [세트 이름, 설명] · list [id, 이름, 등급, 획득 조건, 설명, 숨김 1/0] */
-  medals?: { set?: [string, string]; list: [string, string, string, string, string, number][] };
+  /** [id, 이름, 등급, 얻는 조건, 설명, 숨김, 코팅 조건?] — 코팅 조건이 있으면 조건을 더 채워 코팅판으로 바꿀 수 있다 */
+  medals?: { set?: [string, string]; list: [string, string, string, string, string, number, string?][] };
   /** 이벤트 가구 — theme [테마 이름, 설명] · list [id, 이름, 등급] */
   /** list: [id, 이름, 희귀도, 분위기, [가로, 깊이, 높이], 상호작용(MUSIC …), 설명문] · sets: 부분 세트 [이름, 가구 수, 분위기 보너스] */
   furn?: { theme?: [string, string]; list: [string, string, number, number?, [number, number, number]?, string?, string?][]; sets?: [string, number, number][] };
@@ -34,7 +35,8 @@ type Extra = {
   /** 이 이벤트의 스토리 — id · 전문 화 목록 eps [작전 코드, 구분](배열 순서 = 리더기 화 번호) · AI 요약 sum · 리더기 scene */
   story?: EventStory;
 };
-export type EventStory = { id: string; eps?: [string, string][]; sum?: 1; scene?: 1 };
+/** cut = 전투 없는 스토리 작전 카드의 그림 {작전 코드: 그 화 첫 컷 CG 이름} */
+export type EventStory = { id: string; eps?: [string, string][]; sum?: 1; scene?: 1; cut?: Record<string, string> };
 
 const FILES = import.meta.glob<{ default: Extra }>("./data/event-extra/*/*.json");
 
@@ -147,8 +149,10 @@ function Missions({ list, open }: { list: NonNullable<Extra["missions"]>; open: 
 
 /** 훈장 상세 모달 — 목록 칸은 이름·얻는 조건까지만, 누르면 큰 그림·설명문까지 (사용자 지시 2026-10-10
  *  "훈장도 클릭하면 상세정보, 기본적으로는 얻는 조건까지만"). 벡터 돌파 훈장 탭도 이걸 쓴다 */
-export function MedalModal({ img, name, tags, how, desc, onClose }: {
-  img: ReactNode; name: string; tags?: ReactNode; how?: ReactNode; desc?: ReactNode; onClose: () => void;
+export function MedalModal({ img, name, tags, how, trim, desc, onClose }: {
+  img: ReactNode; name: string; tags?: ReactNode; how?: ReactNode;
+  /** 코팅 조건 — 이것까지 채우면 코팅판 훈장이 된다 */ trim?: ReactNode;
+  desc?: ReactNode; onClose: () => void;
 }) {
   const { t } = useI18n();
   return (
@@ -158,6 +162,7 @@ export function MedalModal({ img, name, tags, how, desc, onClose }: {
         <div>
           <strong>{name}{tags}</strong>
           {how && <dl><dt>{t("얻는 조건")}</dt><dd className="evx-medal-how">{how}</dd></dl>}
+          {trim && <dl><dt>{t("코팅 조건")}</dt><dd className="evx-medal-how">{trim}</dd></dl>}
           {desc && <p>{desc}</p>}
         </div>
       </div>
@@ -169,20 +174,22 @@ function Medals({ m }: { m: NonNullable<Extra["medals"]> }) {
   const { t } = useI18n();
   const [pick, setPick] = useState<string | null>(null);
   const cur = m.list.find((r) => r[0] === pick);
-  const tagsOf = (rarity: string, hidden: number) => (
-    <>{rarity && <em className="evx-tier">{rarity}</em>}{hidden ? <em className="evx-hidden">{t("숨김 훈장")}</em> : null}</>
+  // 코팅 가능 — 조건을 더 채우면 코팅판으로 바뀌는 훈장 (사용자 요청 2026-10-12)
+  const tagsOf = (rarity: string, hidden: number, trim?: string) => (
+    <>{rarity && <em className="evx-tier">{rarity}</em>}{hidden ? <em className="evx-hidden">{t("숨김 훈장")}</em> : null}
+      {trim ? <em className="evx-trim" title={trim}>{t("코팅 가능")}</em> : null}</>
   );
   return (
     <>
       {m.set && <p className="evx-set"><strong>{m.set[0]}</strong>{m.set[1] && <span>{m.set[1]}</span>}</p>}
       <ul className="vb-medals">
-        {m.list.map(([mid, name, rarity, how, , hidden]) => (
+        {m.list.map(([mid, name, rarity, how, , hidden, trim]) => (
           <li key={mid}>
             <button type="button" className="vb-medal-btn" onClick={() => setPick(mid)}>
               <img src={eventArtUrl("medal", mid)} alt="" aria-hidden width={48} height={48}
                 loading="lazy" decoding="async" onError={onImgError(`/event/medal/${mid}.webp`)} />
               <span>
-                <b>{name}{tagsOf(rarity, hidden)}</b>
+                <b>{name}{tagsOf(rarity, hidden, trim)}</b>
                 {how && <i>{how}</i>}
               </span>
             </button>
@@ -190,7 +197,7 @@ function Medals({ m }: { m: NonNullable<Extra["medals"]> }) {
         ))}
       </ul>
       {cur && (
-        <MedalModal name={cur[1]} tags={tagsOf(cur[2], cur[5])} how={cur[3]} desc={cur[4]} onClose={() => setPick(null)}
+        <MedalModal name={cur[1]} tags={tagsOf(cur[2], cur[5], cur[6])} how={cur[3]} trim={cur[6]} desc={cur[4]} onClose={() => setPick(null)}
           img={<img src={eventArtUrl("medal", cur[0])} alt="" aria-hidden width={128} height={128} onError={onImgError(`/event/medal/${cur[0]}.webp`)} />} />
       )}
     </>
