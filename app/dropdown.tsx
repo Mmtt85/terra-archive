@@ -88,6 +88,9 @@ export function Dropdown({
   // (사용자 지시 2026-10-06 "위로 나오면 안 돼, 밑으로 나오면서 모달 밖으로 삐져나가도 보이도록"). 모달 조상엔 transform 이 없어
   // fixed 가 창 기준으로 잡힌다. 스크롤하면 버튼과 어긋나므로 그때는 닫는다
   const [float, setFloat] = useState<React.CSSProperties | null>(null);
+  // anchor 를 준 목록의 세로 자리 — 기준 상자(anchor) 안에서 **누른 단추 바로 밑**. CSS 의 top:100% 는 기준 상자 바닥이라
+  // 단추가 여러 줄로 넘어가면 윗줄 단추의 목록이 아랫줄 밑에 붙었다 (가챠 픽업 자리, 사용자 지적 2026-10-12)
+  const [anchorTop, setAnchorTop] = useState<number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
   const q = normSearch(query);
@@ -128,6 +131,7 @@ export function Dropdown({
     const need = Math.min(items.length * 30 + 14 + (search ? 44 : 0), scroll ? 440 : Infinity);
     const clipped = clipBottom(event.currentTarget) - rect.bottom < need + 4 && clipBottom(event.currentTarget) < window.innerHeight;
     const box = anchor ? (event.currentTarget.closest(anchor) as HTMLElement | null)?.getBoundingClientRect() : undefined;
+    setAnchorTop(box ? rect.bottom - box.top + 4 : null);
     setFloat(!clipped ? null : box ? { position: "fixed", top: rect.bottom + 4, left: box.left, right: "auto", width: box.width }
       : { position: "fixed", top: rect.bottom + 4, ...(alignRightNow ? { right: window.innerWidth - rect.right, left: "auto" } : { left: rect.left }) });
     setQuery("");
@@ -144,7 +148,7 @@ export function Dropdown({
         <i className="drop-caret" aria-hidden>▾</i>
       </button>
       {open && (
-        <ul className={`drop-menu menu-anim${alignRight ? " align-right" : ""}${scroll ? " scroll" : ""}`} style={float ?? undefined}
+        <ul className={`drop-menu menu-anim${alignRight ? " align-right" : ""}${scroll ? " scroll" : ""}`} style={float ?? (anchorTop != null ? { top: anchorTop } : undefined)}
           role="menu" aria-label={ariaLabel}>
           {search && (
             <li role="none" className="drop-search">

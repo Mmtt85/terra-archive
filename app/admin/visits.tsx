@@ -137,7 +137,7 @@ function loadDexNames(): Promise<void> {
 const STORY_NAME = new Map((storiesData as unknown as { events: { id: string; name: { ko: string } }[] }).events.map((e) => [e.id, e.name.ko]));
 export const SECTION_KO: Record<string, string> = {
   홈: "홈", operators: "오퍼레이터", stories: "스토리", enemies: "적 도감", stages: "작전", events: "이벤트",
-  infra: "인프라", recruit: "공채", farm: "파밍", upgrade: "육성", items: "아이템", rogue: "통합전략",
+  infra: "인프라", recruit: "공채", farm: "파밍", upgrade: "육성", gacha: "가챠", items: "아이템", rogue: "통합전략",
   ra: "생존연산", autochess: "위수 협의", gallery: "갤러리", sim: "시뮬레이터", about: "소개", me: "내 정보",
 };
 const DEVICE_KO: Record<string, string> = { mobile: "폰", tablet: "태블릿", desktop: "PC" };
@@ -240,7 +240,7 @@ export function pathLabel(path: string, hash?: string | null): string {
  *  둘러보면 통합전략 2 그룹으로"). 묶는 단위는 '한 가지 대상' — 통합전략 테마 하나, 스토리 한 편, 오퍼 한 명처럼.
  *  기능 전체(스토리 전부)로 묶으면 서로 다른 스토리가 한 덩어리가 돼 너무 뭉뚱그려졌다 (같은 날 지적).
  *  대상이 없는 화면은 도구형 기능(인프라·생존연산 등)만 기능째 묶고, 목록 화면은 묶지 않는다 */
-const FAMILY_TOOL = new Set(["infra", "ra", "autochess", "sim", "recruit", "farm", "upgrade", "me"]);
+const FAMILY_TOOL = new Set(["infra", "ra", "autochess", "sim", "recruit", "farm", "upgrade", "gacha", "me"]);
 function familyOf(path: string, hash?: string | null): { key: string; label: string } | null {
   const p = path.replace(/^\/(en|ja)(?=\/|$)/, "") || "/";
   const [, head = "", id = ""] = p.split("/");

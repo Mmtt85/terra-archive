@@ -153,6 +153,8 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
       <div className="filter-panel gacha-panel">
         <div className="panel-heading">
           <div><span className="section-no">BANNER / 01</span><h2>{t("배너 설정")}</h2></div>
+          {/* 배너·픽업 초기화 — 다른 화면 패널 머리의 '↻ 초기화'와 같은 자리 (사용자 지시 2026-10-12) */}
+          <button type="button" className="reset" onClick={() => pickKind("standard")}>↻ {t("초기화")}</button>
         </div>
         {/* 배너·픽업은 드롭다운 단추로 (사용자 지시 2026-10-12 "버튼 누르고 찾기 또 누르지 말고 드롭다운으로") — 공용 Dropdown.
             픽업도 하나 고를 때마다 목록을 닫는다 (같은 날 "클릭하면 리스트가 사라져야지") — multi 를 쓰지 않는다 */}
@@ -208,7 +210,6 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
             <small>{t("합성옥 {a} · 허가증 {b} · 10회 허가증 {c}", { a: Math.floor(mine.orundum / 600), b: mine.permit, c: mine.permit10 * 10 })}{mine.prime > 0 && ` · ${t("순오리지늄 {n}", { n: mine.all - mine.pulls })}`}</small>
           </button>
         )}
-        <button type="button" className="gacha-reset" onClick={reset} disabled={!pulls.length}>{t("처음부터")}</button>
       </div>
       </div>
       <div className="results">
@@ -221,6 +222,8 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
               <span className="r6">6★ {count(6)}</span>
               <span className="r5">5★ {count(5)}</span>
               <span>{t("6성 없이 {n}회 · 다음 6성 확률 {p}%", { n: since6, p: (nextSix * 100).toFixed(0) })}</span>
+              {/* 결과만 처음부터 — 통계 줄 오른끝이라야 '무엇의 처음부터'인지 보인다 (사용자 지시 2026-10-12) */}
+              <button type="button" className="gacha-reset" onClick={reset} disabled={!pulls.length}>↻ {t("가챠 결과 리셋")}</button>
             </p>
           </div></div>
         </div>
