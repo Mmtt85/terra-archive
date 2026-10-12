@@ -3307,6 +3307,8 @@ const D: Record<string, Pair> = {
   "한정 (6성 픽업 2~3명 · 70%)": ["Limited (two or three 6★ rate-ups · 70%)", "限定（★6ピックアップ2～3名・70%）"],
   "자리 추가": ["Add slot", "枠を追加"],
   "가챠 돌려 보기": ["Try the gacha", "ガチャを回してみる"],
+  "이미지를 만들지 못했습니다 — 잠시 뒤 다시 시도해 주세요.": ["Couldn't make the image — please try again in a moment.", "画像を作成できませんでした — 少し待ってからもう一度お試しください。"],
+  "만드는 중…": ["Making…", "作成中…"],
   "이벤트 배너": ["Event banner", "イベントバナー"],
   "이벤트·오퍼 이름 검색": ["Search events or operators", "イベント・オペレーター名で検索"],
   "이벤트 배너에서 고르기": ["Pick from event banners", "イベントバナーから選ぶ"],

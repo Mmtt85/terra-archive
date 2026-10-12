@@ -30267,7 +30267,20 @@ html.dark .me-pf-art { opacity: .3; }
 .gacha .results-heading > div { flex: 1; min-width: 0; }
 .gacha .rh-title { flex: 1; }
 .gacha .rh-title .gacha-stats { flex: 1; align-items: center; }
-.gacha-stats .gacha-reset { margin-left: auto; padding: 4px 10px; }
+.gacha-stats .gacha-reset { padding: 4px 10px; }
+.gacha-stats .gacha-export { margin-left: auto; }
+/* 이미지로 저장하는 동안만 — 스크롤 상자를 펼쳐 잘리지 않게, 맨 밑 사이트 이름 */
+.gacha-shot-foot, .gacha-shot-head { display: none; }
+.gacha .gacha-shooting .gacha-shot-head { display: flex; flex-direction: column; gap: 3px; margin: 0 0 12px; padding: 0 0 10px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink2); }
+.gacha .gacha-shooting .gacha-shot-head b { font-size: 14px; color: var(--ink); }
+.gacha-shot-head em { font-style: normal; font-weight: 800; margin-right: 4px; }
+.gacha-shot-head em.r6 { color: var(--r6); } .gacha-shot-head em.r5 { color: var(--r5); }
+.gacha .results.gacha-shooting { height: auto; max-height: none; overflow: visible; align-self: start; padding: 12px 0 10px; }
+.gacha .gacha-shooting .results-heading h2 { white-space: nowrap; }
+/* 변환기 안에선 글꼴 폭이 조금 넓게 잡혀 "크랙본"이 "크랙/본"으로 끊겼다 — 낱말 단위로만 끊는다 */
+.gacha .gacha-shooting .gacha-card b, .gacha .gacha-shooting .gacha-log li b { word-break: keep-all; overflow-wrap: normal; }
+.gacha .gacha-shooting .results-scroll, .gacha .gacha-shooting .gacha-side .gacha-log ul { max-height: none; height: auto; overflow: visible; }
+.gacha .gacha-shooting .gacha-shot-foot { display: block; margin: 10px 0 0; font: 500 11px var(--mono); color: var(--muted); text-align: right; }
 .gacha-stats { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .gacha-stats .r6 { color: var(--r6); font-weight: 700; } .gacha-stats .r5 { color: var(--r5); font-weight: 700; }
 .gacha-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(77px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }

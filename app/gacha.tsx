@@ -8,7 +8,9 @@
 //    게임 표에 **없다** — 게임 안 배너 '상세 정보'(서버가 내려 주는 공지)의 규칙이라 아래 상수로 둔다.
 // 풀(app/data/gacha-pool.json, scripts/build-gacha-pool.py): '인재 채용' 오퍼에서 한정·콜라보를 뺀 것.
 // ⚠ 게임 데이터에 일반·한정 배너의 픽업이 없어 픽업은 사용자가 고른다. 한정 배너의 '지난 한정 5배 가중'은 넣지 않았다.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { usedFontCss } from "./font-css";
 import { asset } from "./assets";
 import { type Operator } from "./home";
 import { useI18n } from "./i18n";
@@ -35,7 +37,6 @@ const SIX_SHARE: Record<BannerKind, number> = { standard: 0.5, limited: 0.7 };
 const SIX_SLOTS: Record<BannerKind, number> = { standard: 8, limited: 8 };
 const FIVE_SLOTS: Record<BannerKind, number> = { standard: 8, limited: 8 };
 const DROP_SLOT = "__drop";
-const PULL_COST = 600;   // 합성옥
 
 type Pull = { id: string; rarity: Rarity; pickup: boolean; n: number };
 
@@ -56,14 +57,7 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
   const [n6, setN6] = useState(1);
   const [n5, setN5] = useState(1);
   // '자리 추가'로 막 생긴 자리 — 그려진 뒤 그 자리 단추를 눌러 목록을 바로 연다 (사용자 지시 2026-10-12)
-  const [openSlot, setOpenSlot] = useState<{ r: 5 | 6; i: number } | null>(null);
-  // 이벤트 상세 '가챠 돌려 보기'에서 왔으면(?pick=id,id&kind=limited) 그 픽업으로 채워 둔다 (사용자 지시 2026-10-12)
-  useEffect(() => {
-    const q = new URLSearchParams(window.location.search);
-    const ev = POOL.events.find((e) => e.id === q.get("event"));
-    if (ev) { pickEvent(ev.id); return; }
-    applyPicks((q.get("pick") ?? "").split(","), q.get("kind") === "limited" ? "limited" : "standard");
-  }, [byId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const openSlot = useRef<{ r: 5 | 6; i: number } | null>(null);
   /** 픽업을 통째로 채운다 — 이벤트 배너·이벤트 상세의 '가챠 돌려 보기' */
   const applyPicks = (raw: string[], k: BannerKind) => {
     const ids = raw.filter((id) => byId.has(id));
@@ -81,14 +75,81 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
     applyPicks(ev.ops, ev.ops.some((x) => POOL.limited.includes(x)) ? "limited" : "standard");
     setEventId(id);
   };
-  const evDate = (e: (typeof POOL.events)[number]) => (e.fut ? `${t("미실장")}${e.eta ? ` · ${e.eta}` : ""}` : e.start ?? "");
+  // 결과를 이미지로 (사용자 지시 2026-10-12) — 내 정보 공유 카드와 같은 변환기. 찍는 동안만 스크롤 상자를 펼쳐(.gacha-shooting)
+  // 6성 기록·카드가 잘리지 않게 하고, 리셋·저장 단추는 빼고, 맨 밑에 사이트 이름 한 줄
+  // 바로 내려받지 않고 미리보기 창 → 복사·PNG 저장 (같은 날 지시 — 내 정보 '이미지로 내보내기'와 같은 창)
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const [shooting, setShooting] = useState(false);
+  const [shot, setShot] = useState<{ url: string; blob: Blob } | null>(null);
+  const [shotOpen, setShotOpen] = useState(false);
+  const [shotFailed, setShotFailed] = useState(false);
+  const [shotMsg, setShotMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ text: string; key: number } | null>(null);
   useEffect(() => {
-    if (!openSlot) return;
-    const row = [...document.querySelectorAll<HTMLElement>(`.gacha-slots[data-r="${openSlot.r}"]`)].find((el) => el.offsetParent);
-    const btn = row?.querySelectorAll<HTMLButtonElement>(".drop .gacha-slot")[openSlot.i];
-    setOpenSlot(null);
-    btn?.click();
-  }, [openSlot]);
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2400);
+    return () => clearTimeout(timer);
+  }, [toast]);
+  const closeShot = () => { if (shot) URL.revokeObjectURL(shot.url); setShot(null); setShotOpen(false); setShotFailed(false); setShotMsg(null); };
+  const saveShot = () => {
+    if (!shot) return;
+    const a = document.createElement("a");
+    a.href = shot.url;
+    a.download = `terra-archive-gacha-${new Date().toISOString().slice(0, 10)}.png`;
+    a.click();
+  };
+  const copyShot = async () => {
+    try {
+      if (!shot) throw new Error("blob");
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": shot.blob })]);
+      setShotMsg(null);
+      setToast({ text: t("이미지를 클립보드에 복사했습니다."), key: Date.now() });
+    } catch { setShotMsg(t("이 브라우저에서는 복사할 수 없습니다 — PNG로 저장해 주세요.")); }
+  };
+  const exportImage = async () => {
+    const el = resultsRef.current;
+    if (!el || shooting) return;
+    setShooting(true);
+    setShotOpen(true); setShotFailed(false); setShotMsg(null);
+    el.classList.add("gacha-shooting");
+    try {
+      await Promise.all(Array.from(el.querySelectorAll("img")).map((img) => (img.complete ? null : img.decode().catch(() => null))));
+      const { domToBlob } = await import("modern-screenshot");
+      const blob = await domToBlob(el, {
+        scale: 2, type: "image/png", timeout: 1500,
+        font: { cssText: usedFontCss(el) },
+        // 그리드 <img> 가 남긴 CORS 없는 캐시 응답을 다시 쓰지 않게 ?cors 로 따로 받는다 (me-share·편성표 이미지와 같은 규약).
+        // ⚠ R2 는 사이트 도메인에만 CORS 를 열어 두어 localhost(dev)에선 그림이 빈 칸으로 찍힌다 — 라이브에서 확인
+        fetchFn: async (u) => {
+          if (!/^https:\/\/files\.terra-archive\.net\//.test(u)) return false;
+          try {
+            const r = await fetch(`${u}${u.includes("?") ? "&" : "?"}cors`, { mode: "cors" });
+            if (!r.ok) return false;
+            const b = await r.blob();
+            return await new Promise<string>((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.onerror = rej; fr.readAsDataURL(b); });
+          } catch { return false; }
+        },
+        fetch: { requestInit: { mode: "cors" } },
+        backgroundColor: getComputedStyle(document.body).backgroundColor,
+        filter: (n) => !(n instanceof HTMLElement && n.classList.contains("gacha-noshot")),
+      });
+      setShot({ url: URL.createObjectURL(blob), blob });
+    } catch { setShotFailed(true); } finally {
+      el.classList.remove("gacha-shooting");
+      setShooting(false);
+    }
+  };
+  const evDate = (e: (typeof POOL.events)[number]) => (e.fut ? `${t("미실장")}${e.eta ? ` · ${e.eta}` : ""}` : e.start ?? "");
+  // 렌더가 끝난 뒤 — 막 늘린 자리가 그려졌으면 그 단추를 누른다 (상태가 아니라 ref: 이펙트 안 setState 를 피하는 하우스 규칙)
+  useEffect(() => {
+    const want = openSlot.current;
+    if (!want) return;
+    const row = [...document.querySelectorAll<HTMLElement>(`.gacha-slots[data-r="${want.r}"]`)].find((el) => el.offsetParent);
+    const btn = row?.querySelectorAll<HTMLButtonElement>(".drop .gacha-slot")[want.i];
+    if (!btn) return;
+    openSlot.current = null;
+    btn.click();
+  });
   const [pulls, setPulls] = useState<Pull[]>([]);
   const [since6, setSince6] = useState(0);
   const [last, setLast] = useState<Pull[]>([]);
@@ -127,7 +188,7 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
   const KIND_LABEL = (k: BannerKind) => t(k === "standard" ? "통상 (6성 픽업 50%)" : "한정 (6성 픽업 70%)");
   // 확률 안내는 페이지 머리 '?' 로 여는 창 (사용자 지시 2026-10-12 — 다른 시뮬레이터와 같은 자리)
   const [showGuide, setShowGuide] = useState(false);
-  usePageHelp("gacha", useCallback(() => setShowGuide(true), []));
+  usePageHelp("gacha", () => setShowGuide(true)); // 다른 시뮬레이터와 같은 꼴 (farm·sim)
   const me = useMe();
   const mine = mePulls(me?.profile?.inventory);
   const sixPick = six.slice(0, Math.min(n6, SIX_SLOTS[kind])).filter(Boolean);
@@ -174,6 +235,15 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
     onKeyDown: (e: { key: string; preventDefault: () => void }) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onShowOperator(id); } },
   } : {};
 
+  // 이벤트 상세 '가챠 돌려 보기'에서 왔으면(?pick=id,id&kind=limited) 그 픽업으로 채워 둔다 (사용자 지시 2026-10-12)
+  // 주소창은 프리렌더 때 못 읽으니 마운트 뒤에 한 번 채운다 — 이 한 번의 setState 만 규칙을 지정 억제한다
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const ev = POOL.events.find((e) => e.id === q.get("event"));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (ev) { pickEvent(ev.id); return; }
+    applyPicks((q.get("pick") ?? "").split(","), q.get("kind") === "limited" ? "limited" : "standard");
+  }, [byId]); // eslint-disable-line react-hooks/exhaustive-deps
   // 다른 시뮬레이터와 같은 틀 — 왼쪽 설정 칸(.filter-panel), 오른쪽 결과(.results) (사용자 지시 2026-10-12)
   return (
     <section className="explorer tool-explorer gacha" aria-label={t("가챠 시뮬레이터")}>
@@ -223,7 +293,7 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
                   );
                 })}
                 {(r === 6 ? n6 : n5) < (r === 6 ? SIX_SLOTS[kind] : FIVE_SLOTS[kind]) && (
-                  <button type="button" className={`gacha-slot add r${r}`} onClick={() => { const n = r === 6 ? n6 : n5; (r === 6 ? setN6 : setN5)(n + 1); setOpenSlot({ r, i: n }); }}
+                  <button type="button" className={`gacha-slot add r${r}`} onClick={() => { const n = r === 6 ? n6 : n5; (r === 6 ? setN6 : setN5)(n + 1); openSlot.current = { r, i: n }; }}
                     aria-label={t("{r}성 픽업 자리 추가", { r })}>
                     <b aria-hidden>+</b><span>{t("자리 추가")}</span>
                   </button>
@@ -249,18 +319,25 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
         )}
       </div>
       </div>
-      <div className="results">
+      <div className="results" ref={resultsRef}>
+        {/* 이미지에만 — 무슨 배너·이벤트·픽업으로 돌렸는지 (사용자 지시 2026-10-12) */}
+        <div className="gacha-shot-head" aria-hidden>
+          <b>{KIND_LABEL(kind)}{eventId && POOL.events.find((e) => e.id === eventId) && <> · {POOL.events.find((e) => e.id === eventId)!.n[locale]}</>}</b>
+          {sixPick.length > 0 && <span><em className="r6">6★ {t("픽업")}</em> {sixPick.map((id) => byId.get(id)?.name ?? id).join(" · ")}</span>}
+          {fivePick.length > 0 && <span><em className="r5">5★ {t("픽업")}</em> {fivePick.map((id) => byId.get(id)?.name ?? id).join(" · ")}</span>}
+          {!sixPick.length && !fivePick.length && <span>{t("픽업 없음")}</span>}
+        </div>
         <div className="results-heading">
           <div><span className="section-no">RESULT / 02</span><div className="rh-title"><h2>{t("가챠 결과")}</h2>
             {/* 누적 통계 — 제목 오른쪽 한 줄 (사용자 지시 2026-10-12) */}
             <p className="gacha-stats">
               <span>{t("누적 {n}회", { n: pulls.length })}</span>
-              <span>{t("합성옥 {n}", { n: (pulls.length * PULL_COST).toLocaleString() })}</span>
               <span className="r6">6★ {count(6)}</span>
               <span className="r5">5★ {count(5)}</span>
               <span>{t("6성 없이 {n}회 · 다음 6성 확률 {p}%", { n: since6, p: (nextSix * 100).toFixed(0) })}</span>
               {/* 결과만 처음부터 — 통계 줄 오른끝이라야 '무엇의 처음부터'인지 보인다 (사용자 지시 2026-10-12) */}
-              <button type="button" className="gacha-reset" onClick={reset} disabled={!pulls.length}>↻ {t("가챠 결과 리셋")}</button>
+              <button type="button" className="gacha-reset gacha-export gacha-noshot" onClick={() => void exportImage()} disabled={!pulls.length || shooting}>⤓ {t("이미지로 내보내기")}</button>
+              <button type="button" className="gacha-reset gacha-noshot" onClick={reset} disabled={!pulls.length}>↻ {t("가챠 결과 리셋")}</button>
             </p>
           </div></div>
         </div>
@@ -313,6 +390,27 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
         </div>
 
         </div>
+        <p className="gacha-shot-foot" aria-hidden>terra-archive.net · {t("가챠 시뮬레이터")}</p>
+        {/* 결과 이미지에 담는 미리보기 창 */}
+        {shotOpen && (
+          <ModalWindow label={t("이미지로 내보내기")} className="operator-modal me-share-modal" onClose={closeShot}>
+            <div className="me-share-wrap">
+              <header className="me-share-bar">
+                <div className="me-share-actions">
+                  <button type="button" className="import-action" disabled={!shot} onClick={() => void copyShot()}><span className="btn-icon" aria-hidden>⧉</span>{t("복사")}</button>
+                  <button type="button" className="import-action apply" disabled={!shot} onClick={saveShot}><span className="btn-icon" aria-hidden>⤓</span>{t("PNG 저장")}</button>
+                </div>
+              </header>
+              {shotMsg && <p className="me-note">{shotMsg}</p>}
+              <div className="me-share-stage">
+                {shot && <img className="me-share-img" src={shot.url} alt={t("가챠 결과")} />}
+                {!shot && !shotFailed && <p className="me-note">{t("이미지 만드는 중…")}</p>}
+                {shotFailed && <p className="me-note">{t("이미지를 만들지 못했습니다 — 잠시 뒤 다시 시도해 주세요.")}</p>}
+              </div>
+            </div>
+          </ModalWindow>
+        )}
+        {toast && createPortal(<div key={toast.key} className="toast me-share-toast" role="status">{toast.text}</div>, document.body)}
       </div>
       {showGuide && (
         <ModalWindow label={t("가챠 시뮬레이터 확률·규칙")} className="farm-guide-modal" onClose={() => setShowGuide(false)}>

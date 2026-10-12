@@ -20,38 +20,13 @@ import qrcode from "qrcode-generator";
 
 // 카드 안 그림 — R2 아바타는 CORS 로 받아야 이미지에 들어간다. ?cors 는 캐시 키를 갈라 그리드 <img> 가 남긴
 // 무-CORS 응답을 재사용하지 않게 한다 (planner.tsx 편성표 이미지와 같은 규약)
+export { usedFontCss } from "./font-css";
+import { usedFontCss } from "./font-css";
 const corsAvatar = (id: string) => `${asset(`/avatars/${id}.webp`)}?cors`;
 const corsItem = (icon: string) => `${asset(`/items/icon/${icon}.webp`)}?cors`;
 // 재화 칸은 늘 넣는다 (사용자 지시 2026-10-05 "재화도 내보낼 수 있게" → "켜건말건 보여줘" — '재화 포함' 체크는 걷어냈다)
 
 type ShareOp = { id: string; name: string; rarity: number; modules: { id: string; type?: string }[] };
-
-/** 카드에 실제로 쓰인 글자가 든 @font-face 만 — 한글 서체가 유니코드 범위별 조각 수십 개라 전부 넣으면 수십 초가 걸린다 */
-export function usedFontCss(el: HTMLElement): string {
-  const cps = new Set<number>();
-  for (const ch of el.innerText) cps.add(ch.codePointAt(0)!);
-  const hits = (range: string) => range.split(",").some((part) => {
-    const m = /U\+([0-9A-F?]+)(?:-([0-9A-F]+))?/i.exec(part.trim());
-    if (!m) return true;
-    const lo = parseInt(m[1].replace(/\?/g, "0"), 16);
-    const hi = m[2] ? parseInt(m[2], 16) : m[1].includes("?") ? parseInt(m[1].replace(/\?/g, "F"), 16) : lo;
-    for (const cp of cps) if (cp >= lo && cp <= hi) return true;
-    return false;
-  });
-  let css = "";
-  for (const sheet of Array.from(document.styleSheets)) {
-    let rules: CSSRuleList;
-    try { rules = sheet.cssRules; } catch { continue; }
-    for (const rule of Array.from(rules)) {
-      if (!(rule instanceof CSSFontFaceRule)) continue;
-      const range = rule.style.getPropertyValue("unicode-range");
-      if (range && !hits(range)) continue;
-      const base = sheet.href ?? location.href;
-      css += rule.cssText.replace(/url\(\s*["']?([^"')]+)["']?\s*\)/g, (_, u: string) => `url("${new URL(u, base).href}")`) + "\n";
-    }
-  }
-  return css;
-}
 
 /** 정품 인증 QR — 검증 창 주소를 담는다. 이미지로 찍혀야 해서 <svg> 로 그린다 */
 function QrSvg({ text, size }: { text: string; size: number }) {
