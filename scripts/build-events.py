@@ -256,6 +256,15 @@ for cid, d in DEBUT.items():
         debut_of_act.setdefault(_best(same), []).append(cid)
 n_stage = n_enemy = n_item = n_op = 0
 
+
+def prime_count(stage_tab, sids):
+    """그 이벤트 작전에서 얻는 순오리지늄 (사용자 요청 2026-10-12 "총 얻을 수 있는 오리지늄 수도") — 작전마다 첫 클리어(★3)
+    보상 `diamondOnceDrop`(늘 1)의 합. ST(스토리)·TR(훈련)·S 작전도 1개씩 준다.
+    ⚠ 챌린지 모드(`#f#`, FOUR_STAR)는 **따로 1개를 더 준다** — 같은 작전이라고 빼면 EX 처럼 챌린지가 있는 작전이
+    1개로 셈된다 (사용자 지적 같은 날 "하드모드 있는 스테이지는 한 스테당 2개"). 복각은 원본과 작전을 나눠 쓰므로 같은 수."""
+    return sum(int((stage_tab.get(k) or {}).get("diamondOnceDrop") or 0) for k in sids)
+
+
 for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime") or 0)):
     ko_doc = per_loc["ko"]["stages"]
     have = set(stages_of_act.get(aid) or [])
@@ -364,6 +373,9 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
             row["rerun"] = rerun_of[aid]
         if stages:
             row["stages"] = stages
+            prime = prime_count(kr_stages, sorted(have))
+            if prime:
+                row["prime"] = prime
         if seen_enemy:
             row["enemies"] = [[k, v] for k, v in seen_enemy.items()]
         if items:
@@ -474,6 +486,7 @@ def cn_event_body(aid):
         return {}
     z2a = cn_act.get("zoneToActivity") or {}
     sids = [k for k, v in cn_stage.items() if z2a.get(v.get("zoneId")) == aid]
+    prime = prime_count(cn_stage, sids)   # 챌린지(#f#)까지 — 아래에서 표준판만 남기기 전에 센다
     # ⚠ 같은 작전이 난이도별로 두 벌씩 들어 있다 (`act50side_ex01` 과 `act50side_ex01#f#`,
     #   difficulty NORMAL/FOUR_STAR). 코드가 같아 목록에 TD-EX-1 이 두 번 찍힌다
     #   (2026-09-17 실측). 한섭 쪽은 build-stages 가 접미를 붙여 가르지만 여기선 미래시
@@ -523,6 +536,8 @@ def cn_event_body(aid):
         if rid not in [o[0] for o in ops]:
             ops.append([rid, rid, 0, "new"])
     out = {}
+    if prime:
+        out["prime"] = prime
     if mats:
         out["mats"] = mats          # {재료 id: 작전 코드 집합} — 로케일별 모양은 fut_localize 가 만든다
     if stages:

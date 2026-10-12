@@ -3267,6 +3267,8 @@ const D: Record<string, Pair> = {
   ],
   "PRTS 링크 연결됨": ["PRTS Link on", "PRTSリンク接続中"],
   "잘못 인식했다면 '틀렸어요'를 눌러 주세요 — 그때만 그 인식 결과와 화면 한 장이 전송돼요. 평소 인식은 따로 보내지 않아요.": ["If something was recognized wrong, press 'Wrong' — only then are that result and one screen sent. Regular recognitions aren't sent.", "誤認識のときは「違います」を押してください — そのときだけ、その認識結果と画面1枚が送信されます。普段の認識は送信しません。"],
+  "얻을 수 있는 순오리지늄": ["Originite Prime available", "入手できる純正源石"],
+  "작전마다 첫 클리어(★3) 1개 · 챌린지 모드 첫 클리어 1개 더 — 복각에서는 처음 깨는 작전만": ["1 per stage for the first 3★ clear, plus 1 more for the first Challenge Mode clear — in reruns, only stages you haven't cleared", "各作戦の初回クリア（★3）で1個・強襲（チャレンジ）初回クリアでさらに1個 — 復刻では未クリアの作戦のみ"],
   "화면 보내는 중…": ["Sending screen…", "画面を送信中…"],
   "화면 전송 실패 — 기록만 남겼어요": ["Couldn't send the screen — the report was saved", "画面の送信に失敗 — 記録だけ残しました"],
   "게임 데이터 확인 {date}": ["Game data checked {date}", "ゲームデータ確認 {date}"],

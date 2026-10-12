@@ -560,8 +560,10 @@ const KIND_HINT: Record<Kind, string> = {
   bot: "나머지 — 화면 기록 없음·화면에 0초(미리보기)·해외 시간대 무조작",
 };
 const SPAN_LABEL: Record<number, string> = { 7: "최근 7일", 30: "최근 30일", 90: "최근 90일", 365: "1년(일별 집계)" };
-const AUTO_EVERY = 10_000;              // 방문 통계 자동 갱신 주기 (2026-10-10 1분 → 10초)
-const SESSIONS_ALL = 5000;                // 세션 타임라인 '전체 보기'의 상한 (visits_sessions 도 5,000 에서 자른다)
+// 방문 통계 자동 갱신 주기 (2026-10-10 1분 → 10초). 2026-10-12 IO 예산 메일 때 30초로 늘렸다가 10초로 되돌렸다 —
+// 탭이 가려져 있으면 아예 안 받으니 켜 두고 보는 동안만이다 (사용자 지시). 대신 관리 창은 하나만 켠다
+const AUTO_EVERY = 10_000;
+const SESSIONS_ALL = 1000;                // 세션 타임라인 '전체 보기'의 상한 (2026-10-12 5,000 → 1,000 — 위와 같은 까닭, 한 번에 만드는 JSON 이 컸다)
 const ALL_STEP = 50;                      // 전체 보기 창에서 한 번에 더 그리는 줄 수
 
 function TopPick({ value, onChange, onAll, what }: { value: number; onChange: (n: number) => void; onAll?: () => void; what: string }) {
@@ -840,14 +842,14 @@ function SessionLine({ s, hit }: { s: SessRow; hit?: boolean }) {
 }
 
 // 제안 카드의 👤 방문자 코드를 누르면 — 그 사람의 세션 타임라인 (사용자 지시 2026-10-12).
-// 보낸 시각 앞 3일 ~ 뒤 1시간의 세션을 받아 방문자 코드로 거른다. 제안을 보낸 세션은 강조
+// 보낸 시각 앞 하루 ~ 뒤 1시간의 세션(최대 300)을 받아 방문자 코드로 거른다 — 같은 날 메모리 절약으로 3일·5,000 에서 줄였다. 제안을 보낸 세션은 강조
 export function VisitorSessions({ visitor, at, onClose }: { visitor: string; at: string; onClose: () => void }) {
   const [rows, setRows] = useState<SessRow[] | null | "err">(null);
   useEffect(() => {
     let alive = true;
     const t = Date.parse(at);
-    rpc<SessRow[]>("visits_sessions_range", { p_from: new Date(t - 3 * 86400_000).toISOString(), p_to: new Date(t + 3600_000).toISOString(),
-      p_kinds: KINDS, p_src: null, p_limit: SESSIONS_ALL })
+    rpc<SessRow[]>("visits_sessions_range", { p_from: new Date(t - 86400_000).toISOString(), p_to: new Date(t + 3600_000).toISOString(),
+      p_kinds: KINDS, p_src: null, p_limit: 300 })
       .then((r) => { if (alive) setRows(r.filter((x) => x.visitor?.startsWith(visitor))); })
       .catch(() => { if (alive) setRows("err"); });
     return () => { alive = false; };
@@ -857,7 +859,7 @@ export function VisitorSessions({ visitor, at, onClose }: { visitor: string; at:
   return (
     <ModalWindow label={`방문자 ${visitor} — 세션`} className="operator-modal vz-all-modal" onClose={onClose}>
       <div className="vz vz-all">
-        <p className="vz-muted">제안 보낸 시각 {new Date(sent).toLocaleString("ko-KR")} · 앞 3일 ~ 뒤 1시간 · 강조된 줄이 제안을 보낸 세션</p>
+        <p className="vz-muted">제안 보낸 시각 {new Date(sent).toLocaleString("ko-KR")} · 앞 하루 ~ 뒤 1시간 · 강조된 줄이 제안을 보낸 세션</p>
         {rows === null ? <p className="vz-empty">불러오는 중…</p>
           : rows === "err" ? <p className="vz-empty">세션을 받지 못했습니다.</p>
           : !rows.length ? <p className="vz-empty">이 방문자의 세션이 없습니다 (기록 거부·시크릿 창이면 안 남는다).</p>
@@ -949,7 +951,7 @@ export function VisitsPanel() {
   const busy = loadMain || loadSess;
 
   // 켜 둔 동안 10초마다 새로고침 (사용자 지시 2026-10-04 5분 → 1분, 2026-10-10 1분 → 10초 "방문 통계 10초마다").
-  // 탭이 가려져 있으면 쉬었다가, 다시 보일 때 10초가 지났으면 곧바로. 자동 갱신은 세션 목록을 조용히(로딩 표시 없이) 받는다
+  // 탭이 가려져 있으면 쉬었다가, 다시 보일 때 주기가 지났으면 곧바로. 자동 갱신은 세션 목록을 조용히(로딩 표시 없이) 받는다
   // 자동 갱신이 부른 세션 목록 재요청은 로딩 표시·실패 시 비우기를 하지 않는다
   const sessSilent = useRef(false);
   // 진행 중인 요청 수와 마지막 응답 시각 — 자동 갱신이 겹치지 않게 (아래 타이머)
@@ -1009,7 +1011,7 @@ export function VisitsPanel() {
   });
   // '조작 중만'이면 상위 N 과 무관하게 조작 중인 세션 전부 — 최근 세션을 넉넉히(500) 받아 그 안에서 거른다
   // (사용자 지시 2026-10-11). 조작 중은 마지막 기록이 2분 안인 세션이라 최근 500 안에 다 든다
-  const fetchN = liveOnly || outFilter ? Math.max(limit, 500) : limit;
+  const fetchN = liveOnly || outFilter ? Math.max(limit, 200) : limit;   // 2026-10-12 500 → 200 (메모리 절약)
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
     let alive = true;
@@ -1041,7 +1043,7 @@ export function VisitsPanel() {
   }, [carryFrom, human, srcFilter, tick]);
   const sessions = sessFetched && (carry.length ? [...sessFetched, ...carry.filter((c) => !sessFetched.some((x) => x.id === c.id))] : sessFetched);
 
-  // 세션 타임라인 '전체 보기' — 창을 열 때 상한(5,000)까지 따로 받는다
+  // 세션 타임라인 '전체 보기' — 창을 열 때 상한(SESSIONS_ALL)까지 따로 받는다
   const [allSessions, setAllSessions] = useState<SessRow[] | null>(null);
   const sessAll = allOf?.key === "sessions";
   useEffect(() => {

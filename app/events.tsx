@@ -58,6 +58,8 @@ export type EventRow = {
   items?: ([string, string] | [string, string, string])[];
   /** 맵에서 파밍되는 상위 재료 [id, 이름, 아이콘, 등급, 작전 코드들] — T3 이상 */
   mats?: [string, string, string, number, string[]][];
+  /** 작전 첫 클리어(★3)로 얻는 순오리지늄 합계 — 작전마다 1개 (build-events.py prime_count) */
+  prime?: number;
   /** [id, 이름, 성급, 종류] — reward=이벤트 보상(무료 배포) · new=이 이벤트와 함께 데뷔 */
   ops?: [string, string, number, "reward" | "new"][];
   /** 사이트에 전용 가이드가 있는 모드 — 카드를 누르면 모달 대신 그리로 간다 */
@@ -366,6 +368,19 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
                 <span>{it[1]}</span>
               </button>
             ))}
+          </div>
+        </section>
+      )}
+      {/* 이 이벤트에서 얻을 수 있는 순오리지늄 (사용자 요청 2026-10-12) — 작전마다 첫 클리어 보상 1개씩의 합 */}
+      {!!row.prime && (
+        <section className="ev-sec ev-sec-side">
+          <b>{t("얻을 수 있는 순오리지늄")}</b>
+          <div className="ev-items">
+            <button type="button" className="ev-item ev-prime" onClick={() => onOpenItem("4002")}
+              title={t("작전마다 첫 클리어(★3) 1개 · 챌린지 모드 첫 클리어 1개 더 — 복각에서는 처음 깨는 작전만")}>
+              <img src={itemIcon("DIAMOND")} alt="" aria-hidden width={40} height={40} loading="lazy" decoding="async" />
+              <span>{t("순오리지늄 {n}", { n: `×${row.prime}` })}</span>
+            </button>
           </div>
         </section>
       )}
