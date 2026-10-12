@@ -292,14 +292,7 @@ export function BridgeTopicButton({ topic, name, t, noReplay, noPip, compact }: 
         <NewBadge id="bridge" show={!settings && isNewFeature("bridge")} />
       </button>
       )}
-      {/* 작은 창 — 먼저 띄우고 그 안에서 연결 (운영자 시험판, 2026-10-12) */}
-      {pipOk && !mobile && !noPip && (
-        <button type="button" className={`lens-open-btn bridge-log-btn${pip ? " on" : ""}`} aria-pressed={!!pip}
-          onClick={() => void togglePipWindow({ topic, name })}
-          title={t("게임 위에 항상 떠 있는 작은 창을 엽니다 — 그 창에서 PRTS 링크를 연결할 수 있습니다 (크롬·엣지)")}>
-          <span aria-hidden>⧉</span> {t("작은 창")}
-        </button>
-      )}
+      {/* 툴바의 '작은 창' 단추는 걷어냈다 — 연결하면 저절로 열린다. 안 열리면 연결 토스트의 '작은 창'으로 (사용자 지시 2026-10-12) */}
       {/* ?는 **PRTS 링크 버튼 바로 오른쪽**에 붙는 세그먼트다 — 리플레이 뒤에 두면 리플레이
           도움말처럼 보인다 (사용자 지적 2026-07-26) */}
       <button type="button" className="lens-help-btn bridge-help-btn" aria-label={t("PRTS 링크 도움말")}

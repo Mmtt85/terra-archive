@@ -2241,7 +2241,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       const matchesRarity = selectedRarities.length === 0 || selectedRarities.includes(String(operator.rarity));
       const conceptNames = operator.concepts.map((concept) => conceptName(locale, concept));
       const matchesQuery = !keyword || normSearch([operator.name, operator.code, operator.job, operator.subProfession, operator.position, ...operator.combatTags, ...operator.factions, operator.reason, ...operator.aliases, ...operator.concepts, ...conceptNames].join(" ")).includes(keyword);
-      const matchesOwn = !myChars || selectedOwn.length === 0 || selectedOwn.some((key) => ownMatch(key, operator, myChars.get(operator.id)));
+      // 조합은 모두 만족 — 종전 OR 이라 만렙+풀잠이 '둘 중 하나'로 넓어졌다
+      const matchesOwn = !myChars || selectedOwn.length === 0 || selectedOwn.every((key) => ownMatch(key, operator, myChars.get(operator.id)));
       const matchesObtain = selectedObtain.length === 0 || selectedObtain.includes(obtainOf(operator.id) ?? "");
       return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesRarity && matchesQuery && matchesOwn && matchesObtain;
     });
@@ -2784,7 +2785,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => chipCount.faction.get(item) ?? 0 },
             { title: t("획득 경로"), items: OBTAIN_CODES.filter((c) => chipCount.obtain.has(c)), selected: selectedObtain, onToggle: toggleIn(setSelectedObtain), labelFor: (item) => t(OBTAIN_LABEL[item]), countForItem: (item) => chipCount.obtain.get(item) ?? 0 },
             // 내 계정 — '내 정보'에서 로그인했을 때만 (보유·육성 상태로 거르기)
-            ...(myChars ? [{ title: t("내 보유"), breakBefore: true, items: [...OWN_KEYS], selected: selectedOwn, onToggle: toggleIn(setSelectedOwn), labelFor: (item: string) => t(item), countForItem: (item: string) => ownCount.get(item) ?? 0 }] : []),
+            ...(myChars ? [{ title: t("내 보유"), breakBefore: true, items: [...OWN_KEYS], selected: selectedOwn, onToggle: (item: string) => setSelectedOwn((cur) => toggleOwnKey(cur, item)), labelFor: (item: string) => t(item), countForItem: (item: string) => ownCount.get(item) ?? 0 }] : []),
           ]} />
           {/* (2026-08-01 삭제) DATA NOTE — 사용자 판단 "의미가 없어보임" */}
         </div>
@@ -3206,6 +3207,17 @@ const obtainEventOf = (id: string, locale: Locale): [string, string] | null => {
   const n = ev ? OBTAIN.events[ev] : undefined;
   return ev && n ? [ev, n[locale] ?? n.ko] : null;
 };
+/** '내 보유' 고르기 — 서로 배타인 것끼리는 하나만 (사용자 지적 2026-10-12 "보유랑 미보유가 같이 선택되는 건 이상하다").
+ *  보유 ↔ 미보유 · 만렙 ↔ 육성 중, 그리고 미보유는 '가진 오퍼' 조건(만렙·육성 중·풀잠·3마스터) 전부와 배타. 조합은 모두 만족(AND) */
+function toggleOwnKey(cur: string[], key: string): string[] {
+  if (cur.includes(key)) return cur.filter((k) => k !== key);
+  const clash: Record<string, string[]> = {
+    "보유": ["미보유"], "미보유": ["보유", "만렙", "육성 중", "풀잠", "3마스터 보유"],
+    "만렙": ["육성 중", "미보유"], "육성 중": ["만렙", "미보유"], "풀잠": ["미보유"], "3마스터 보유": ["미보유"],
+  };
+  const drop = clash[key] ?? [];
+  return [...cur.filter((k) => !drop.includes(k)), key];
+}
 function ownMatch(key: string, operator: Operator, c: AccountChar | undefined): boolean {
   switch (key) {
     case "보유": return !!c;
