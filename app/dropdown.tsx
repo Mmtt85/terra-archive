@@ -9,6 +9,7 @@
 // ⚠ 여러 **축**을 한 컨트롤에 묶는 속성 필터는 attr-filter.tsx(AttributeFilter)가 따로 있다.
 //   여기는 축이 하나인 자리 전용이다. multi로 그 축 안에서 여러 값을 고를 수는 있다.
 import { useEffect, useRef, useState } from "react";
+import { normSearch } from "./search";
 
 export type DropItem = {
   value: string;
@@ -22,6 +23,8 @@ export type DropItem = {
   className?: string;
   /** 줄에 마우스를 올리면 뜨는 설명 */
   title?: string;
+  /** search 목록에서 찾을 글자 (이름 등) — 없으면 검색어와 무관하게 늘 보인다 ('비우기' 같은 줄) */
+  searchText?: string;
 };
 
 /** 오른쪽 공간이 이만큼도 없으면 왼쪽으로 펼친다 (.ac-garsel과 같은 규약) */
@@ -57,7 +60,7 @@ function clipBottom(el: HTMLElement): number {
 
 export function Dropdown({
   label, items, selected, onPick, multi, ariaLabel,
-  className, buttonClassName, scroll, disabled, actions,
+  className, buttonClassName, scroll, disabled, actions, search,
 }: {
   /** 버튼에 보일 현재 상태 */
   label: React.ReactNode;
@@ -74,6 +77,8 @@ export function Dropdown({
   disabled?: boolean;
   /** 값을 고르는 게 아니라 **할 일을 고르는** 메뉴 ('그 외' 등) — 줄이 menuitem 이 되고 고른 표시가 없다 */
   actions?: boolean;
+  /** 목록 맨 첫 줄에 검색란 — 자리표시 글자. 줄마다 searchText 로 거른다 (가챠 픽업 자리, 2026-10-12) */
+  search?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [alignRight, setAlignRight] = useState(false);
@@ -82,6 +87,9 @@ export function Dropdown({
   // fixed 가 창 기준으로 잡힌다. 스크롤하면 버튼과 어긋나므로 그때는 닫는다
   const [float, setFloat] = useState<React.CSSProperties | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState("");
+  const q = normSearch(query);
+  const shown = search && q ? items.filter((item) => item.searchText === undefined || normSearch(item.searchText).includes(q)) : items;
 
   useEffect(() => {
     if (!open) return;
@@ -118,6 +126,7 @@ export function Dropdown({
     const need = Math.min(items.length * 30 + 14, scroll ? 440 : Infinity);
     const clipped = clipBottom(event.currentTarget) - rect.bottom < need + 4 && clipBottom(event.currentTarget) < window.innerHeight;
     setFloat(clipped ? { position: "fixed", top: rect.bottom + 4, ...(alignRightNow ? { right: window.innerWidth - rect.right, left: "auto" } : { left: rect.left }) } : null);
+    setQuery("");
     setOpen((value) => !value);
   };
 
@@ -133,7 +142,19 @@ export function Dropdown({
       {open && (
         <ul className={`drop-menu menu-anim${alignRight ? " align-right" : ""}${scroll ? " scroll" : ""}`} style={float ?? undefined}
           role="menu" aria-label={ariaLabel}>
-          {items.map((item) => {
+          {search && (
+            <li role="none" className="drop-search">
+              <input type="search" autoFocus value={query} placeholder={search} aria-label={search}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  // 엔터 = 걸러진 첫 줄 고르기
+                  if (event.key !== "Enter") return;
+                  const first = shown.find((item) => !item.disabled && item.searchText !== undefined);
+                  if (first) { onPick(first.value); if (!multi) setOpen(false); }
+                }} />
+            </li>
+          )}
+          {shown.map((item) => {
             const on = selected.includes(item.value);
             return (
               <li key={item.value} role="none">

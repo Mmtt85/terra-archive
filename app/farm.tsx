@@ -28,7 +28,7 @@ import { loadEnemies, loadEnemyStages, loadEnemyStats, loadStages } from "./dex-
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
-import { useMe } from "./me-store";
+import { useMe, meChars } from "./me-store";
 import { Dropdown } from "./dropdown";
 
 type LocText = { ko: string; en?: string; ja?: string };
@@ -508,6 +508,33 @@ type CostStep = { step: string; lmd: number; items: CostList; kind?: "lv" | "e";
 // label2가 있으면 라벨을 두 줄로 표시한다 (예: "S1" / "적소·분야", 모듈 "타입" / "이름")
 type CostGroup = { key: string; label: string; label2?: string; steps: CostStep[] };
 
+/** 목표 레벨 입력칸 — 치는 동안은 빈칸·범위 밖 값도 그대로 둔다 (제보 0a84bd2f, 2026-10-12: 종전엔 글자마다 1~만렙으로
+ *  고정해 '90'을 지우면 1이 되고, 이어 6·0을 치면 16→160→90 으로 튕겨 60을 칠 수 없었다 — 모바일에선 거의 못 씀).
+ *  1~만렙 사이 숫자면 바로 반영, 칸을 떠나거나 Enter 면 범위로 맞추고, 비워 두면 원래 값으로 돌아간다 */
+function LevelInput({ value, max, label, onCommit }: { value: number; max: number; label: string; onCommit: (n: number) => void }) {
+  const [text, setText] = useState<string | null>(null);   // null = 편집 중 아님 (value 를 그대로 보인다)
+  const commit = () => {
+    if (text == null) return;
+    const n = parseInt(text, 10);
+    if (Number.isFinite(n)) onCommit(Math.max(1, Math.min(max, n)));
+    setText(null);
+  };
+  return (
+    <input type="text" inputMode="numeric" pattern="[0-9]*" className="cost-lv-input" maxLength={2}
+      value={text ?? String(value)} aria-label={label}
+      onClick={(e) => e.stopPropagation()}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => {
+        const v = e.target.value.replace(/\D/g, "").slice(0, 2);
+        setText(v);
+        const n = parseInt(v, 10);
+        if (Number.isFinite(n) && n >= 1 && n <= max) onCommit(n);
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} />
+  );
+}
+
 function buildGroups(operator: Operator, entry: CostEntry, t: (key: string, params?: Record<string, string | number>) => string): CostGroup[] {
   const groups: CostGroup[] = [];
   // 레벨업과 정예화는 게임 실제 순서(E0 만렙 → 정예화1 → E1 만렙 → 정예화2 → E2 만렙)대로
@@ -570,7 +597,34 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
 
   // 내 창고로 모자라는 것 — '내 정보'에 계정 데이터가 있을 때만 (사용자 요청 2026-10-06).
   // 작전기록은 계산기가 고급작전기록(2004) 장수로 환산해 세므로, 창고의 네 등급(2001~2004) 경험치를 합쳐 같은 단위로 바꾼다.
-  const inv = useMe()?.profile?.inventory;
+  const me = useMe();
+  const inv = me?.profile?.inventory;
+  // 내 육성 상태부터 (사용자 지시 2026-10-12 "내 정보로 로그인 시 현재 내 오퍼 상태부터 목표치까지 얼마 필요한지") —
+  // 이미 넘긴 정예화·레벨·스킬·특화·모듈 단계는 빼고, 지금 단계의 레벨업은 현재 레벨부터만 센다. 보유한 오퍼에만 적용
+  const mine = meChars(me);
+  const [fromMine, setFromMine] = useState(true);
+  const curOf = (id: string) => (fromMine ? mine?.get(id) ?? null : null);
+  /** 그 단계가 이미 끝났나 — true 면 비용에서 빼고 줄을 흐리게. 지금 정예화 단계의 레벨업이면 현재 레벨(from)을 준다 */
+  const doneOf = (id: string, entry: CostEntry, group: CostGroup, pos: number): { done: boolean; from?: number } => {
+    const c = curOf(id);
+    if (!c) return { done: false };
+    const step = group.steps[pos];
+    if (group.key === "grow") {
+      if (step.kind === "e") return { done: c.elite >= (step.phase ?? 0) + 1 };
+      if (step.kind === "lv") {
+        const p = step.phase ?? 0;
+        if (c.elite > p) return { done: true };
+        if (c.elite === p) return c.level >= (step.maxLv ?? 0) ? { done: true } : { done: false, from: c.level };
+      }
+      return { done: false };
+    }
+    if (group.key === "s") return { done: c.skill >= pos + 2 };
+    const m = /^m(\d+)$/.exec(group.key);
+    if (m) return { done: (c.mastery[Number(m[1])] ?? 0) >= pos + 1 };
+    const d = /^d(\d+)$/.exec(group.key);
+    if (d) { const modId = entry.modules?.[Number(d[1])]?.id; return { done: !!modId && (c.modules[modId] ?? 0) >= pos + 1 }; }
+    return { done: false };
+  };
   const haveOf = (id: string): number => {
     if (!inv) return 0;
     if (id !== EXP_CARD_ID) return inv[id] ?? 0;
@@ -673,11 +727,16 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
         const target = targets[`${id}/${group.key}`] ?? group.steps.length;
         for (let pos = 0; pos < target; pos += 1) {
           const step = group.steps[pos];
+          const st = doneOf(id, entry, group, pos);
+          if (st.done) continue;   // 내 육성 상태에서 이미 끝난 단계
           // '레벨·정예화' 그룹의 최상위 선택 단계가 레벨업이면 목표 레벨까지만 부분 계산.
-          if (step.kind === "lv" && pos === target - 1 && step.phase != null && step.maxLv != null) {
-            const lvl = levelLv[`${id}/p${step.phase}`] ?? step.maxLv;
-            if (lvl < step.maxLv) {
-              const c = levelCostTo(step.phase, lvl);
+          // 지금 정예화 단계의 레벨업이면 현재 레벨부터만 (st.from)
+          if (step.kind === "lv" && step.phase != null && step.maxLv != null && (pos === target - 1 || st.from != null)) {
+            const lvl = pos === target - 1 ? levelLv[`${id}/p${step.phase}`] ?? step.maxLv : step.maxLv;
+            if (lvl < step.maxLv || st.from != null) {
+              const to = levelCostTo(step.phase, lvl);
+              const from = st.from != null ? levelCostTo(step.phase, st.from) : { lmd: 0, records: 0 };
+              const c = { lmd: Math.max(0, to.lmd - from.lmd), records: Math.max(0, to.records - from.records) };
               lmd += c.lmd;
               if (c.records > 0) addCost(map, [[EXP_CARD_ID, c.records]]);
               continue;
@@ -693,7 +752,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       .filter((row) => row.meta)
       .sort((a, b) => b.meta.rarity - a.meta.rarity || a.meta.sortId - b.meta.sortId);
     return { lmd, rows };
-  }, [picked, targets, levelLv, byId, t]);
+  }, [picked, targets, levelLv, byId, t, fromMine, mine]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 레벨업 단계의 목표 레벨 변경 — [1, maxLv]로 클램프. maxLv면 상태에서 지워 기본(만렙)으로.
   const setLevel = (opId: string, phase: number, maxLv: number, raw: number) =>
@@ -704,6 +763,32 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       if (n >= maxLv) delete next[key]; else next[key] = n;
       return next;
     });
+
+  // 빠른 단추 (제보 0a84bd2f, 2026-10-12 "60 먼저 키우고 차근차근 90으로") — 담은 오퍼 전체에 한 번에.
+  // '2정 Lv.60·특화 없음' = 레벨·정예화는 마지막 정예화 단계의 Lv.60까지(만렙이 60 이하면 만렙), 스킬 7레벨까지, 특화·모듈 제외
+  const presetAll = (mode: "lv60" | "max") => {
+    const nextTargets: Record<string, number> = {};
+    const nextLv: Record<string, number> = {};
+    for (const id of picked) {
+      const operator = byId.get(id);
+      const entry = costs.ops[id];
+      if (!operator || !entry) continue;
+      for (const group of buildGroups(operator, entry, t)) {
+        const full = group.steps.length;
+        nextTargets[`${id}/${group.key}`] = mode === "max" || group.key === "grow" || group.key === "s" ? full : 0;
+        if (mode === "lv60" && group.key === "grow") {
+          const last = group.steps[full - 1];
+          if (last?.kind === "lv" && last.phase != null && last.maxLv != null && last.maxLv > 60) nextLv[`${id}/p${last.phase}`] = 60;
+        }
+      }
+    }
+    setTargets((current) => ({ ...current, ...nextTargets }));
+    setLevelLv((current) => {
+      const next = { ...current };
+      for (const key of Object.keys(next)) if (picked.some((id) => key.startsWith(`${id}/p`))) delete next[key];
+      return { ...next, ...nextLv };
+    });
+  };
 
   // 오퍼를 담으면 드롭다운을 닫고 검색란 포커스도 뺀다 — 포커스가 남아 있으면 다시 눌러도 onFocus 가 안 떠서
   // 목록이 안 열렸다 (사용자 지적 2026-09-28). ⚠ 입력란의 ref 는 useSearchInput 이 물고 있다(inputProps.ref) —
@@ -797,6 +882,23 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
             <div className="rh-title"><h2>{t("육성 비용 계산기")}</h2>
             </div>
           </div>
+          {picked.length > 0 && (
+            <div className="cost-presets">
+              {/* 계산 기준 — 내 정보 육성 상태부터 / 처음부터 (사용자 지시 2026-10-12 "내 오퍼 기준이 강제로 돼 버리니 임시로 끌 수 있게") */}
+              {mine && (
+                <span className="cost-basis" role="radiogroup" aria-label={t("계산 기준")}
+                  title={t("내 정보의 육성 상태(정예화·레벨·스킬·특화·모듈)부터 목표까지만 계산합니다 — 보유한 오퍼에만 적용")}>
+                  <small>{t("계산 기준")}</small>
+                  <button type="button" role="radio" aria-checked={fromMine} className={fromMine ? "on" : ""} onClick={() => setFromMine(true)}>{t("내 육성 상태부터")}</button>
+                  <button type="button" role="radio" aria-checked={!fromMine} className={!fromMine ? "on" : ""} onClick={() => setFromMine(false)}>{t("처음부터")}</button>
+                </span>
+              )}
+              <button type="button" className="cost-op-all" onClick={() => presetAll("lv60")}
+                title={t("담은 오퍼 전체 — 2정예 Lv.60·스킬 7레벨까지, 특화·모듈은 빼고")}>{t("전체 2정 Lv.60 · 특화 없음")}</button>
+              <button type="button" className="cost-op-all" onClick={() => presetAll("max")}
+                title={t("담은 오퍼 전체 — 레벨·스킬·특화·모듈 모두 끝까지")}>{t("전체 최대 육성")}</button>
+            </div>
+          )}
         </div>
         <div className="results-scroll">
           {picked.length === 0 ? (
@@ -841,12 +943,15 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                           // 지정할 수 있고(하위 단계는 승급 강제라 만렙 고정), 그만큼만 부분 비용으로 표시.
                           const isTopLevel = row.kind === "lv" && pos === target - 1 && row.phase != null && row.maxLv != null;
                           const lvl = isTopLevel ? (levelLv[`${id}/p${row.phase}`] ?? row.maxLv!) : row.maxLv;
-                          const part = isTopLevel && lvl! < row.maxLv! ? levelCostTo(row.phase!, lvl!) : null;
+                          const st = doneOf(id, entry, group, pos);
+                          const partTo = (isTopLevel && lvl! < row.maxLv!) || (row.kind === "lv" && st.from != null) ? levelCostTo(row.phase!, isTopLevel ? lvl! : row.maxLv!) : null;
+                          const partFrom = partTo && st.from != null ? levelCostTo(row.phase!, st.from) : null;
+                          const part = partTo ? { lmd: Math.max(0, partTo.lmd - (partFrom?.lmd ?? 0)), records: Math.max(0, partTo.records - (partFrom?.records ?? 0)) } : null;
                           const showLmd = part ? part.lmd : row.lmd;
                           const showItems: CostList = part ? (part.records > 0 ? [[EXP_CARD_ID, part.records]] : []) : row.items;
                           const stepLabel = isTopLevel ? t("E{p}·Lv.{n}", { p: row.phase!, n: lvl! }) : row.step;
                           return (
-                            <div key={group.key + pos} className={`cost-row${first ? " group-start" : ""}${on ? "" : " off"}`}>
+                            <div key={group.key + pos} className={`cost-row${first ? " group-start" : ""}${on ? "" : " off"}${st.done ? " mine-done" : ""}`}>
                               <button
                                 type="button"
                                 className={`cost-step-dot ${railClass}${first ? " first" : ""}${pos === group.steps.length - 1 ? " last" : ""}${blocked ? " locked" : ""}`}
@@ -863,16 +968,15 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                               <span className="cost-row-step">
                                 {isTopLevel ? (
                                   <span className="cost-lv-pick">E{row.phase}·Lv.
-                                    <input type="number" className="cost-lv-input" min={1} max={row.maxLv}
-                                      value={lvl} aria-label={t("올릴 레벨")}
-                                      onClick={(e) => e.stopPropagation()}
-                                      onChange={(e) => setLevel(id, row.phase!, row.maxLv!, Number(e.target.value))} />
+                                    <LevelInput value={lvl ?? row.maxLv!} max={row.maxLv!} label={t("올릴 레벨")}
+                                      onCommit={(n) => setLevel(id, row.phase!, row.maxLv!, n)} />
                                   </span>
                                 ) : row.step}
                               </span>
                               <span className="cost-row-items">
-                                {showLmd > 0 && <ItemChip id="4001" count={showLmd} onShowItem={onShowItem} locale={locale} />}
-                                {showItems.map(([itemId, count]) => (
+                                {st.done ? <small className="cost-mine-done">✓ {t("달성")}</small> : st.from != null && <small className="cost-mine-from">{t("현재 Lv.{n}부터", { n: st.from })}</small>}
+                                {!st.done && showLmd > 0 && <ItemChip id="4001" count={showLmd} onShowItem={onShowItem} locale={locale} />}
+                                {!st.done && showItems.map(([itemId, count]) => (
                                   <ItemChip key={itemId} id={itemId} count={count} onShowItem={onShowItem} locale={locale} />
                                 ))}
                               </span>

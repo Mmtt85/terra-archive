@@ -11,14 +11,14 @@ import { CONTACT_EMAIL } from "./contact";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "about";
+export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "gacha" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "about";
 
 // 탭 → URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators로 분리 — 사용자 확정
 // 2026-07-17: 루트 진입 시 오퍼 이미지 강제 로딩을 없애기 위해 포탈 첫화면 도입). 라우트 폴더명과 반드시 일치.
 // ⚠ 적 도감 세그먼트는 "enemies"(복수) — 초상 자산 폴더 public/enemy/(단수)와 일부러 다르다.
 //    deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만 떼어내기 때문(서빙은 R2).
 export const TAB_SEG: Record<SeoTab, string> = {
-  portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about",
+  portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -91,6 +91,12 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ko: { title: "육성 비용 계산기 - 명방(명일방주) 오퍼 육성 재료 계산 | 테라 아카이브", description: "명일방주(명방) 오퍼레이터 육성 비용 계산기 — 레벨·정예화·스킬·특화·모듈 목표 단계까지 필요한 용문폐·경험치·재료 총량을 합산합니다." },
     en: { title: "Upgrade Cost Calculator - Arknights Operator Material Calculator | Terra Archive", description: "Arknights operator upgrade cost calculator — total LMD, EXP, and materials needed to reach your target level, Elite, skills, masteries, and modules." },
     ja: { title: "育成コスト計算機 - アークナイツ オペレーター育成素材計算 | テラアーカイブ", description: "アークナイツ育成コスト計算機 — レベル・昇進・スキル・特化・モジュールの目標段階までに必要な龍門幣・経験値・素材の合計を集計します。" },
+  },
+  // 헤드헌팅 시뮬레이터 (2026-10-12)
+  gacha: {
+    ko: { title: "가챠 시뮬레이터 - 명방(명일방주) 헤드헌팅 시뮬 | 테라 아카이브", description: "명일방주(명방) 가챠(헤드헌팅) 시뮬레이터 — 표준·단일·한정 배너에 픽업 오퍼를 골라 1회·10회 헤드헌팅을 돌려 봅니다. 6성 2%·50회 이후 천장·첫 10회 5성 보장을 게임 규칙 그대로." },
+    en: { title: "Gacha Simulator - Arknights Headhunting Simulator | Terra Archive", description: "Arknights headhunting (gacha) simulator — pick rate-up operators for standard, single or limited banners and roll single or 10x pulls, with the in-game 2% 6★ rate, pity after 50 pulls and the first-10 5★ guarantee." },
+    ja: { title: "ガチャシミュレーター - アークナイツ ヘッドハンティング | テラアーカイブ", description: "アークナイツのヘッドハンティング（ガチャ）シミュレーター — 通常・単独・限定スカウトでピックアップを選び、単発・10連を回せます。★6 2%・50回以降の天井・初回10連★5保証はゲームの規則どおり。" },
   },
   story: {
     ko: { title: "AI 스토리 요약 - 명방(명일방주) 스토리 요약 | 테라 아카이브", description: "명일방주(명방) 이벤트 스토리 AI 요약 아카이브 — 사이드 스토리를 컷씬과 함께 10분 분량으로 요약합니다." },
@@ -179,7 +185,9 @@ export function pageMetadata(locale: SeoLocale, tab: SeoTab = "portal"): Metadat
   const description = tabMeta?.description ?? meta.description;
   const url = `${SITE_URL}${pathFor(locale, tab)}`;
   // 로케일×탭별 전용 OG 이미지 (scripts/build-og.py 생성) — '모든 페이지 동일' 문제 해결.
-  const ogImage = asset(`/og/${locale}/${tab}.jpg`);
+  // ⚠ OG_PENDING — 전용 이미지를 아직 못 만든 탭은 포탈 이미지로 (공유 카드가 404 로 깨지지 않게).
+  //   scripts/build-og.py 를 돌려 /og/<locale>/<tab>.jpg 가 R2 에 올라가면 여기서 지운다
+  const ogImage = asset(`/og/${locale}/${OG_PENDING.has(tab) ? "portal" : tab}.jpg`);
   return {
     title,
     description,
@@ -209,6 +217,7 @@ function tabName(locale: SeoLocale, tab: Exclude<SeoTab, "portal">): string {
 
 // 계산기·시뮬레이터 성격의 탭 — 브라우저에서 바로 돌아가는 무료 웹 도구임을 밝힌다.
 // (평점·설치수 같은 건 없으므로 지어내지 않는다 — aggregateRating 없이 엔티티만 준다.)
+const OG_PENDING = new Set<SeoTab>(["gacha"]);   // 2026-10-12 — 이 PC 에 Pillow 가 없어 build-og.py 를 못 돌렸다
 const TOOL_TABS: SeoTab[] = ["planner", "recruit", "upgrade", "farm", "sim"];
 const APP_CATEGORY: Record<SeoLocale, string> = {
   ko: "게임 유틸리티", en: "GameApplication", ja: "ゲームユーティリティ",

@@ -12571,6 +12571,14 @@ html.dark .modal-actions .future-note {
   gap: 1px;
   font-size: 13px;
 }
+/* 계산 기준 두 칸 선택 (2026-10-12) — 공용 단추 색 역할 */
+.cost-basis { display: inline-flex; align-items: center; gap: 0; margin-right: 6px; }
+.cost-basis small { margin-right: 6px; font-size: 11px; color: var(--muted); }
+.cost-basis button { padding: 4px 9px; font: inherit; font-size: 11px; font-weight: 600; color: var(--btn-ink); background: var(--btn-bg); border: 1px solid var(--btn-line); cursor: pointer; }
+.cost-basis button + button { border-left: 0; }
+.cost-basis button.on { color: var(--btn-on-ink); background: var(--btn-on-bg); border-color: var(--btn-on-line); }
+/* 육성 계산기 빠른 단추 (2026-10-12) — 결과 머리 오른쪽 */
+.cost-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; align-self: center; }
 .cost-lv-input {
   width: 3.6ch;
   margin-left: 4px;
@@ -30153,3 +30161,129 @@ html.dark .me-pf-art { opacity: .3; }
 .vz-grp-pop li i { display: none; }
 /* PRTS 링크 — '어디서' 표와 연결 기록 표 사이를 띄운다 (사용자 지시 2026-10-11) */
 .vz-prts-log { margin-top: 18px; }
+
+/* ── 헤드헌팅 시뮬레이터 /gacha (2026-10-12) — 성급 색은 공채 화면과 같은 값 (app/recruit.tsx RARITY_COLORS) ── */
+.gacha { --r6: #c2571f; --r5: #b8860b; --r4: #7c5cbf; --r3: #3a7ca5; }   /* 틀은 .explorer(왼쪽 설정 · 오른쪽 결과) */
+.gacha-panel { display: flex; flex-direction: column; gap: 12px; }
+.gacha-panel .gacha-pull { flex: 1 1 calc(50% - 4px); padding: 9px 10px; }
+.gacha-reset { border: 1px solid var(--line); background: none; padding: 8px 12px; color: var(--ink2); font: inherit; font-size: 12px; cursor: pointer; }
+.gacha-reset:hover:not(:disabled) { border-color: var(--border-hover); }
+.gacha-reset:disabled { opacity: .45; cursor: default; }
+.gacha-setup { display: flex; flex-direction: column; gap: 8px; }
+/* 드롭다운은 왼쪽 칸 폭에 맞춰 — 단추 안 글자는 '배너 · 표준…'처럼 작은 이름표 + 현재 값, 길면 말줄임 */
+.gacha-setup > .drop, .gacha-setup > .drop > .drop-btn { width: 100%; }
+/* 픽업 자리 카드 (2026-10-12) — 빈 자리는 점선 '+', 채우면 섬네일·이름. 목록은 공용 드롭다운 */
+.gacha-slots { display: flex; flex-direction: column; gap: 4px; }
+.gacha-slots-label { font-size: 11px; color: var(--muted); }
+.gacha-slots-row { display: flex; flex-wrap: wrap; gap: 6px; }
+/* 자리 카드 — 결과 카드(.gacha-card)와 같은 틀: 위 3px 색띠 · 섬네일 58 · 이름 · 성급 (사용자 지시 2026-10-12) */
+.gacha .gacha-slot { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; width: 84px; min-height: 102px; padding: 6px 4px 7px;
+  border: 1px dashed var(--btn-line); border-top: 3px solid var(--rc); background: var(--btn-bg); color: var(--muted); text-align: center; }
+.gacha .gacha-slot.r6 { --rc: var(--r6); } .gacha .gacha-slot.r5 { --rc: var(--r5); }
+.gacha .gacha-slot .drop-caret { display: none; }
+.gacha .gacha-slot .drop-label { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; width: 100%; }
+.gacha .gacha-slot span { font-size: 11px; }
+.gacha .gacha-slot small { font-size: 10.5px; font-weight: 700; color: var(--rc); }
+.gacha .gacha-slot:not(.filled) small { font-size: 12px; }
+.gacha .gacha-slot.filled { border-style: solid; color: var(--ink); }
+/* 공용 단추 규칙(:root :is(.drop-btn…) — 테두리 투명·연한 채움, 열림·호버 때 0,6,1)을 이겨야 카드 모양이 산다 */
+:root .gacha .drop-btn.gacha-slot, :root .gacha .drop-btn.gacha-slot:is(.on, :hover, [aria-expanded="true"]) {
+  border: 1px dashed var(--btn-line) !important; border-top: 3px solid var(--rc) !important; background: var(--btn-bg) !important; border-radius: 0; }
+:root .gacha .drop-btn.gacha-slot.filled, :root .gacha .drop-btn.gacha-slot.filled:is(.on, :hover, [aria-expanded="true"]) {
+  border: 1px solid var(--line) !important; border-top: 3px solid var(--rc) !important; background: var(--white) !important; }
+:root .gacha .drop-btn.gacha-slot:is(:hover, [aria-expanded="true"]) { border-color: var(--border-hover) !important; border-top-color: var(--rc) !important; }
+:root .gacha .drop-btn.gacha-slot::before, :root .gacha .drop-btn.gacha-slot::after { content: none !important; }
+.gacha-setup .drop-btn.gacha-slot small { margin: 0; color: var(--rc); }
+.gacha .gacha-slot img { width: 58px; height: 58px; object-fit: cover; }
+.gacha .gacha-slot b { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; line-height: 1.25; }
+.gacha-slot-wrap .drop-menu { min-width: 290px; }
+.gacha-slot-wrap .drop-menu li > button { white-space: nowrap; }
+/* 공용 드롭다운 검색란 (search) — 목록 맨 첫 줄 */
+.drop-menu .drop-search { position: sticky; top: -5px; z-index: 1; margin: -5px -5px 4px; padding: 5px; background: var(--bg-panel); border-bottom: 1px solid var(--line); }
+.drop-menu .drop-search input { width: 100%; box-sizing: border-box; height: 30px; padding: 0 9px; font-size: 13px; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: var(--r-sm); outline: none; }
+.drop-menu .drop-search input:focus { border-color: var(--ink); }
+.gacha-pick-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; }
+.gacha-pick-row > .drop, .gacha-pick-row > .drop > .drop-btn { width: 100%; min-width: 0; }
+/* 목록은 단추(반 칸)보다 넓게 — 긴 이름과 한정 배지가 한 줄에 들어가게 */
+.gacha-pick-row .drop-menu { min-width: 290px; }
+.gacha-pick-row .drop-menu li > button { white-space: nowrap; }
+.gacha-setup .drop-btn { display: flex; align-items: center; }
+.gacha-setup .drop-label { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left; }
+.gacha-setup .drop-btn small { margin-right: 6px; font-size: 10.5px; color: var(--muted); }
+.gacha-kinds { display: flex; flex-wrap: wrap; gap: 4px; }
+/* 배너 종류 — 사이트 탭 단추(위수 협의 하위 탭 .ac-subtabs · 이벤트 탭 .ed-tabs)와 같은 결: 공용 단추 색 + 마우스 올림 + 12px */
+.gacha-kinds button { padding: 4px 12px; font: inherit; font-size: 12px; font-weight: 600; color: var(--btn-ink); background: var(--btn-bg); border: 1px solid var(--btn-line); border-radius: var(--r-pill); cursor: pointer; transition: 0.12s; }
+.gacha-kinds button:hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover); color: var(--btn-ink-hover); }
+.gacha-kinds button.on { color: var(--btn-on-ink); background: var(--btn-on-bg); border-color: var(--btn-on-line); }
+.gacha-pick { position: relative; display: flex; flex-direction: column; gap: 8px; }
+.gacha-pick input { box-sizing: border-box; height: 32px; padding: 0 10px; border: 1px solid var(--line); background: var(--white); color: var(--ink); font: inherit; font-size: 12.5px; }   /* 공용 검색칸(.search-wrap)과 같은 높이·글자 */
+.gacha-suggest { position: absolute; top: 34px; left: 0; right: 0; z-index: 20; margin: 0; padding: 4px 0; list-style: none;
+  background: var(--white); border: 1px solid var(--border-strong); box-shadow: var(--sh-2); max-height: 320px; overflow: auto; }
+.gacha-suggest button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 10px; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.gacha-suggest button:hover { background: var(--bg-soft); }
+.gacha-suggest img { width: 28px; height: 28px; object-fit: cover; }
+.gacha-suggest small { margin-left: auto; color: var(--muted); }
+.gacha-limited { flex: none; white-space: nowrap; padding: 0 5px; font-style: normal; font-size: 10px; font-weight: 800; color: #fff; background: var(--r6); }
+/* 드롭다운 목록 안에서는 줄 기본 글자 스타일이 배지를 덮어 회색·딱 붙음이 됐다 (사용자 지적 2026-10-12) — 더 구체적으로 */
+.gacha .drop-menu em.gacha-limited { display: inline-block; flex: none; white-space: nowrap; margin-left: 8px; padding: 1px 6px; color: #fff; background: var(--r6); font-size: 10px; font-weight: 800; font-style: normal; line-height: 1.4; opacity: 1; vertical-align: 1px; }
+.gacha-picked { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.gacha-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px 2px 2px; border: 1px solid var(--line); background: var(--white); font-size: 12.5px; font-weight: 600; }
+.gacha-chip.r6 { border-color: var(--r6); } .gacha-chip.r5 { border-color: var(--r5); }
+.gacha-chip img { width: 24px; height: 24px; object-fit: cover; }
+.gacha-chip button { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 14px; }
+.gacha-hint { color: var(--muted); }
+.gacha-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.gacha-pull { padding: 10px 22px; border: 1px solid var(--border-strong); background: var(--white); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+.gacha-pull:hover { border-color: var(--ink3); }
+.gacha-pull.ten { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.gacha-stats { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.gacha-stats .r6 { color: var(--r6); font-weight: 700; } .gacha-stats .r5 { color: var(--r5); font-weight: 700; }
+.gacha-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(77px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.gacha-card { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px 7px; border: 1px solid var(--line); border-top: 3px solid var(--rc, var(--line)); background: var(--white); text-align: center; }
+.gacha-card.r6 { --rc: var(--r6); } .gacha-card.r5 { --rc: var(--r5); } .gacha-card.r4 { --rc: var(--r4); } .gacha-card.r3 { --rc: var(--r3); }
+.gacha-card img { width: 58px; height: 58px; object-fit: cover; }   /* 2026-10-12 20% 작게 (72→58) */
+.gacha-card b { font-size: 11px; line-height: 1.25; }
+.gacha-card small { font-size: 10.5px; color: var(--rc); font-weight: 700; }
+.gacha-card { position: relative; }
+.gacha-badge { position: absolute; top: 4px; left: 4px; z-index: 4; padding: 1px 5px; font-style: normal; font-size: 9.5px; font-weight: 800;
+  letter-spacing: .02em; color: #fff; background: var(--rc, var(--ink)); box-shadow: 0 1px 4px rgba(0, 0, 0, .35); }
+.gacha-log h3 { margin: 0 0 6px; font-size: 13px; }
+.gacha-log ul { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; font-size: 12.5px; }
+.gacha-log small { color: var(--muted); }
+.gacha-log li { display: inline-flex; align-items: center; gap: 5px; }
+/* 오른쪽 칸 한 줄 — 이름만 말줄임, 배지(한정·× N·픽업)는 끝에 붙어 줄바꿈되지 않게 (사용자 지적 2026-10-12) */
+.gacha-side .gacha-log li { display: flex; width: 100%; min-width: 0; white-space: nowrap; }
+.gacha-side .gacha-log li b { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.gacha-side .gacha-log li > em, .gacha-side .gacha-log li > small, .gacha-side .gacha-log li > img { flex: none; }
+.gacha-times { font-style: normal; font-weight: 800; color: var(--r6); }
+.gacha-log li img { width: 28px; height: 28px; object-fit: cover; border: 1px solid var(--r6); }
+/* 6성 — **테두리만** 무지개로 돌고, 그 띠를 따라 하얀 반짝임이 돈다. 카드 몸은 빛나지 않는다
+   (사용자 지시 2026-10-12 "무지개빛으로" → "배경 말고 테두리" → "카드 자체 말고 테두리만 빤짝").
+   두 겹 다 같은 2px 띠(안쪽은 마스크로 도려냄). 동작 줄이기면 돌지 않고 반짝임은 끈다 */
+@property --gacha-a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@property --gacha-b { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.gacha-card.r6 { position: relative; border-color: transparent; overflow: visible; }
+.gacha-card.r6::before, .gacha-card.r6::after { content: ""; position: absolute; inset: -3px; padding: 3px; pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.gacha-card.r6::before { z-index: 2; animation: gacha-spin 3s linear infinite;
+  background: conic-gradient(from var(--gacha-a), #ff5f6d, #ffb347, #ffe66d, #6dffb0, #6ddcff, #8f7dff, #ff7de1, #ff5f6d); }
+.gacha-card.r6::after { z-index: 3; animation: gacha-twinkle 1.6s linear infinite;
+  background: conic-gradient(from var(--gacha-b), transparent 0deg, transparent 300deg, rgba(255, 255, 255, .95) 340deg, #fff 350deg, transparent 360deg); }
+@keyframes gacha-spin { to { --gacha-a: 360deg; } }
+@keyframes gacha-twinkle { to { --gacha-b: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .gacha-card.r6::before { animation: none; } .gacha-card.r6::after { display: none; } }
+.gacha-bulk { margin: 0; font-size: 13px; font-variant-numeric: tabular-nums; }
+.gacha-bulk .r6 { color: var(--r6); font-weight: 700; } .gacha-bulk .r5 { color: var(--r5); font-weight: 700; }
+.gacha-bulk small { color: var(--muted); }
+.gacha-card.link, .gacha-log li.link, .gacha-chip img[role=button] { cursor: pointer; }
+.gacha-card.link:hover { border-color: var(--border-hover); }
+.gacha-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.gacha-out { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 20px; align-items: start; }
+@media (min-width: 1000px) { .gacha-out { grid-template-columns: minmax(0, 1fr) 240px; } .gacha-side { position: sticky; top: 0; border-top: 0; border-left: 1px solid var(--line); padding: 0 0 0 16px; } }
+.gacha-side { padding-top: 10px; border-top: 1px solid var(--line); min-height: 0; }
+.gacha-side .gacha-log ul { flex-direction: column; flex-wrap: nowrap; gap: 6px; max-height: min(60vh, 520px); overflow-y: auto; padding-right: 4px; }
+.gacha-side-empty { margin: 0; font-size: 12px; color: var(--muted); }
+.gacha-suggest-sep { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 4px; }
+.gacha-suggest-sep::before { content: attr(data-sep); display: block; padding: 2px 10px; font-size: 10.5px; color: var(--muted); }
+.gacha-note { margin: 0; font-size: 11.5px; line-height: 1.6; color: var(--muted); }
