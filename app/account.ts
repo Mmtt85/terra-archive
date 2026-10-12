@@ -94,6 +94,8 @@ export type AccountProfile = {
   /** 전체 훈장 수 (2026-10-05~ 워커) */
   medalTotal?: number;
   furniture: number;
+  /** 기반시설 드론 — 동기화 시점 값 (2026-10-12~ 워커. 옛 동기화엔 없다) */
+  labor?: { value: number; max: number; ts: number; speed: number; point: number } | null;
   /** 친구 목록 — 받아 오지 못했으면 null */
   friends: AccountFriend[] | null;
   /** 정품 인증 서명 — 공유 카드의 QR 이 담는다 ("숫자.서명", 2026-10-05~ 워커) */

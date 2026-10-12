@@ -706,6 +706,12 @@ function profile(user, friends, shop) {
     // 전체 훈장 수 — 계정 원본은 훈장마다 기록을 하나씩 갖고 있다(medal_table 1,516개와 같다). '현재 / 최대' 표시용
     medalTotal: Object.keys(user?.medal?.medals ?? {}).filter(countedMedal).length,
     furniture: Object.keys(user?.building?.furniture ?? {}).length,
+    // 기반시설 드론 — 동기화 시점 값·상한·마지막 갱신 시각·회복 가속(발전소). 지금 값은 화면이 360초당 1개(×가속)로 어림한다 (사용자 요청 2026-10-12)
+    labor: user?.building?.status?.labor ? {
+      value: num(user.building.status.labor.value), max: num(user.building.status.labor.maxValue),
+      ts: num(user.building.status.labor.lastUpdateTime), speed: Number(user.building.status.labor.buffSpeed) || 0,
+      point: Number(user.building.status.labor.processPoint) || 0,
+    } : null,
     friends: friendRows,
     // 누적 소비 크레딧 — 구매센터 → 크레딧 → '오퍼레이터 언락'의 숫자. 상점을 열 때 받는 정보(getSocialGoodList)의
     // costSocialPoint 다 (실계정 1,804,976 대조, 2026-10-05)

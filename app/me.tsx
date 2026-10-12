@@ -160,6 +160,7 @@ function sampleMe(operators: MeOp[]): MeData {
         ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["MEETING", 3], ["HIRE", 3], ["WORKSHOP", 3], ["TRAINING", 3]]
         .map(([room, level], i) => ({ slot: String(i), room: String(room), level: Number(level) })),
       skins: 87, medals: 140, medalTotal: 1402, furniture: 620,
+      labor: { value: 132, max: 192, ts: SAMPLE_TS, speed: 0.3, point: 0 },
       // 예시 화면의 '이어하기' (2026-10-11) — 흑류수해 3층 진행 중 + 생존연산 12일째
       progress: {
         rogue: { state: "PENDING", theme: "rogue_6", mode: "NORMAL", grade: 8, start: SAMPLE_TS - 5400, zone: 2, zoneId: "zone_3", level: 7, hp: 4, maxHp: 6,
@@ -772,6 +773,9 @@ function ProfileCard({ me, now, opById, demo }: { me: MeData; now: number; opByI
   const days = st?.register ? Math.floor((now / 1000 - st.register) / 86400) + 1 : 0;
   // 이성 — 동기화 뒤 6분마다 1씩 찬다 (상한까지)
   const apNow = st ? (st.ap >= st.maxAp ? st.ap : Math.min(st.maxAp, st.ap + Math.floor((now / 1000 - st.apTs) / 360))) : 0;
+  // 드론 — 기본 360초에 1개(building_data laborRecoverTime), 발전소 가속(buffSpeed)만큼 빨라진다. 동기화 뒤 흐른 시간으로 어림 (상한까지)
+  const lb = me.profile?.labor;
+  const laborNow = lb ? (lb.value >= lb.max ? lb.value : Math.min(lb.max, lb.value + Math.floor((now / 1000 - lb.ts) * (1 + (lb.speed > 5 ? lb.speed / 100 : lb.speed)) / 360))) : 0;
   const server = ACCOUNT_SERVERS.find((s) => s.code === me.server)?.label ?? me.server;
   // 비서 스킨 일러 — 게임 스킨 id(char_002_amiya@epoque#4 · char_002_amiya#2)를 일러 파일명으로. 못 찾으면 정예화 일러로 물러난다
   const skinArt = st?.secretarySkin ? (st.secretarySkin.includes("@") ? st.secretarySkin.replace("@", "_") : st.secretarySkin.replace("#", "_")) : null;
@@ -806,6 +810,8 @@ function ProfileCard({ me, now, opById, demo }: { me: MeData; now: number; opByI
       <div className="me-pf-stats">
         {st && <ProfileStat label={t("이성")} value={fmt(apNow)} max={fmt(st.maxAp)} ratio={apNow / Math.max(1, st.maxAp)}
           note={apNow < st.maxAp ? t("{time} 가득", { time: dt((st.apTs + (st.maxAp - st.ap) * 360) * 1000) }) : t("가득 참")} />}
+        {lb && lb.max > 0 && <ProfileStat label={t("드론")} value={fmt(laborNow)} max={fmt(lb.max)} ratio={laborNow / lb.max}
+          note={laborNow < lb.max ? t("{time} 가득", { time: dt((lb.ts + ((lb.max - lb.value) * 360) / (1 + (lb.speed > 5 ? lb.speed / 100 : lb.speed))) * 1000) }) : t("가득 참")} />}
         {days > 0 && <ProfileStat label={t("박사 경력")} value={`D+${fmt(days)}`} note={t("{date} 입사", { date: day(st!.register * 1000) })} />}
         {monthLeft != null && <ProfileStat label={t("월정액")} value={monthLeft > 0 ? t("{n}일 남음", { n: fmt(monthLeft) }) : t("만료")}
           ratio={monthLeft > 0 ? Math.min(1, monthLeft / 30) : 0} warn={monthLeft <= 3} />}
