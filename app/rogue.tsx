@@ -1922,6 +1922,7 @@ export default function RogueGuide({ initialTopic }: {
     for (const c of data.tools) m.set(c.id, c);
     for (const c of data.capsules ?? []) m.set(c.id, c);
     for (const c of data.exploreTools ?? []) m.set(c.id, c);
+    for (const b of data.bands) m.set(b.id, b);   // 분대 — PRTS 인식은 탭 이동 대신 모아보기 모달로 띄운다 (2026-10-12)
     for (const s of data.scraps ?? []) m.set(s.id, s); // 블랙플로우 부품 — CN 상인 판매 화면 모아보기
     for (const mech of data.mechanics ?? []) for (const it of mech.items) m.set(it.id, it);
     return m;
@@ -2132,6 +2133,29 @@ export default function RogueGuide({ initialTopic }: {
       setLensMulti(null);
     }
   };
+  /** PRTS 링크 인식 적용 — 이동 없이 모달만. 모달이 있는 항목(작전·조우·구역·소장품)은 그 모달, 목록으로 가던 것
+   *  (분대·도구·캡슐·시스템 항목 등)은 모아보기 모달. 지금 보는 테마가 아니면 띄울 데이터가 없어 상태줄에만 남긴다 */
+  const applyLensLive = (g: Extract<LensGoto, { page: "rogue" }>) => {
+    if (g.topic !== topicRef.current) { noteBridge(t("다른 테마 화면 — 이동하지 않음")); return; }
+    if (typeof g.grade === "number" && g.grade >= 0) {
+      const gmax = Math.max(15, ...data.difficulties.filter((df) => df.mode === "NORMAL").map((df) => df.grade));
+      if (g.grade <= gmax) setGrade(g.grade);
+    }
+    setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
+    let opened = false;
+    if (g.modal) {
+      const { type, id } = g.modal;
+      if (type === "relic") { const r = relicById.get(id) ?? lensItemById.get(id); if (r) { setRelicOpen(r as Relic); opened = true; } }
+      else if (type === "enc") { const e = encByScene.get(id); if (e) { setEncOpen(e); opened = true; } }
+      else if (type === "stage") { const st = stageById.get(id); if (st) { setStageOpen({ ...pairOf(st), init: g.emergency ? "e" : undefined }); opened = true; } }
+      else if (type === "zone") { const z = zoneById.get(id); if (z) { setZoneOpen(z); opened = true; } }
+    }
+    const ids = [...(g.highlight ?? []), ...(g.items ?? [])];
+    const rs = ids.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
+    // 모달을 이미 띄웠으면 같이 떠 있던 소장품만(items), 아니면 인식한 항목 전부를 모아보기로
+    if (!opened && rs.length === 1 && relicById.has(rs[0].id)) setRelicOpen(relicById.get(rs[0].id)!);
+    else setLensMulti(rs.length ? rs : null);
+  };
   const applyLensRef = useRef(applyLensHandoff);
   useEffect(() => { applyLensRef.current = applyLensHandoff; });
   // 데이터 로드 후(토픽 전환 포함) 적용 — 다른 토픽 인식 시 goTopic 후 이 effect가 마저 처리
@@ -2140,10 +2164,14 @@ export default function RogueGuide({ initialTopic }: {
     applyLensRef.current();
   }, [mounted, active, topic, navTick]);
   // 모달의 인식 결과 적용 — 같은 토픽이면 즉시, 다른 토픽이면 전환 후 위 effect가 처리
-  const onLensGoto = (g: LensGoto) => {
+  const onLensGoto = (g: LensGoto, live = false) => {
     if (g.page !== "rogue") return;
     setLensOpen(false);
     setLensInitial(null);
+    // PRTS 링크(live)는 **화면을 옮기지 않는다** — 테마·탭·뷰는 그대로 두고, 인식한 것을 모달로만 띄운다
+    // (사용자 지시 2026-10-12 "분대 고르는 부분에서 분대 탭으로 이동해버린다… 인식된 것은 반드시 모달에, 페이지는 이동하면 안 돼").
+    // 사람이 한 장씩 붙여 넣는 스샷 레이더는 종전처럼 그 화면으로 간다.
+    if (live) { applyLensLive(g); return; }
     try { sessionStorage.setItem("ta:lens-handoff", JSON.stringify(g)); } catch { return; }
     if (g.topic !== topicRef.current) goTopic(g.topic);
     else applyLensRef.current();
@@ -2291,7 +2319,7 @@ export default function RogueGuide({ initialTopic }: {
       } else if (oc.target.kind === "goto") {
         const items = lensSideItems(oc);
         const rg = rogueGoto(oc.target.goto);
-        onLensGoto(rg && items.length ? { ...rg, items } : oc.target.goto);
+        onLensGoto(rg && items.length ? { ...rg, items } : oc.target.goto, live);
         noteBridge(oc.entities[0]?.name ?? t("이동"));
         flashLensMsg(t("인식 완료 — 해당 정보로 이동했습니다."), 2000);
       } else if (oc.target.kind === "tie") {
@@ -2324,7 +2352,7 @@ export default function RogueGuide({ initialTopic }: {
       noteBridge(n ? t("소장품 {n}개", { n }) : t("노드 이동 꺼짐"));
       return;
     }
-    onLensGoto(rg && side.length ? { ...rg, items: side } : oc.target.goto);
+    onLensGoto(rg && side.length ? { ...rg, items: side } : oc.target.goto, true);
     noteBridge(oc.entities[0]?.name ?? t("이동"));
   });
   useEffect(() => {

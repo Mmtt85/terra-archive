@@ -3269,6 +3269,7 @@ const D: Record<string, Pair> = {
   "화면 보내는 중…": ["Sending screen…", "画面を送信中…"],
   "화면 전송 실패 — 기록만 남겼어요": ["Couldn't send the screen — the report was saved", "画面の送信に失敗 — 記録だけ残しました"],
   "게임 데이터 확인 {date}": ["Game data checked {date}", "ゲームデータ確認 {date}"],
+  "다른 테마 화면 — 이동하지 않음": ["Different theme on screen — not moving", "別テーマの画面 — 移動しません"],
   "틀렸어요": ["Wrong", "違います"],
   "알려 주셔서 고마워요": ["Thanks for letting us know", "お知らせありがとうございます"],
   "방금 인식이 틀렸다고 알려 주세요 — 그 인식에 쓴 게임 화면 한 장이 함께 전송되어 인식을 고치는 데 쓰입니다": ["Tell us the last recognition was wrong — the one game screen it used is sent along to help fix recognition", "直前の認識が間違っていたら教えてください — その認識に使ったゲーム画面1枚が一緒に送信され、認識の改善に使われます"],

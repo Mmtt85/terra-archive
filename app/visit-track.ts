@@ -106,8 +106,13 @@ function saveSess(): void {
 let muted = false;
 
 function post(table: "visit_session" | "visit_view" | "visit_event" | "prts_scan", rows: object[]): void {
-  if (!rows.length || muted) return;
-  if (isOwner()) { muted = true; return; }   // 도중에 관리자 모드를 켰다
+  if (!rows.length) return;
+  // PRTS 인식 기록은 관리자 브라우저에서도 보낸다 — 운영자가 직접 테스트하며 '틀렸어요'를 누르기 때문
+  // (사용자 지시 2026-10-12 "내가 보낸 거라도 받을 수 있게"). 방문자 칸이 'owner' 라 어드민에서 구분된다
+  if (table !== "prts_scan") {
+    if (muted) return;
+    if (isOwner()) { muted = true; return; }   // 도중에 관리자 모드를 켰다
+  }
   if (!VISITS_URL) {
     if (env === "dev") console.debug(`[visit] ${table} ${JSON.stringify(rows)}`);   // 프로젝트 연결 전 시험 — 콘솔에만
     return;
@@ -190,14 +195,19 @@ export type PrtsScanRow = {
   section?: string; target?: string; note?: string; seen?: string; img?: string; ms?: number; ocr_ms?: number; cached?: boolean; w?: number; h?: number; crop?: number;
 };
 export const prtsScanId = () => uuid();
+let prtsReady = false;
+let prtsSession = "";
 export function notePrtsScan(r: PrtsScanRow): void {
-  if (!started) return;
+  if (!started && !prtsReady) return;
   let visitor = "";
-  try { visitor = localStorage.getItem(VISITOR_KEY) ?? ""; } catch { /* 프라이빗 모드 */ }
+  if (isOwner()) visitor = "owner";
+  else try { visitor = localStorage.getItem(VISITOR_KEY) ?? ""; } catch { /* 프라이빗 모드 */ }
+  // 관리자는 방문 세션이 없다 — 이 탭 동안 쓰는 세션 id 를 따로 만든다
+  if (!sess && !prtsSession) prtsSession = uuid();
   const ms = (v?: number) => (v == null ? null : Math.max(0, Math.min(600_000, Math.round(v))));
   const px = (v?: number) => (v == null ? null : Math.max(0, Math.min(20_000, Math.round(v))));
   post("prts_scan", [{
-    id: r.id, session: sess?.id ?? uuid(), visitor: clip(visitor, 64), env, kind: r.kind, ref: r.ref ?? null,
+    id: r.id, session: sess?.id ?? prtsSession, visitor: clip(visitor, 64), env, kind: r.kind, ref: r.ref ?? null,
     page: clip(r.page, 60), topic: clip(r.topic, 40), result: clip(r.result, 16), section: clip(r.section, 24),
     target: clip(r.target, 80), note: clip(r.note, 40), seen: clip(r.seen, 200), img: clip(r.img, 300), ms: ms(r.ms), ocr_ms: ms(r.ocr_ms), cached: r.cached ?? null,
     w: px(r.w), h: px(r.h), crop: r.crop == null ? null : Math.max(0, Math.min(1, Math.round(r.crop * 1000) / 1000)),
@@ -326,6 +336,7 @@ export function startVisitTrack(locale: string): void {
   else if (debug) env = "dev";
   else return;
   if (!VISITS_URL && env === "live") return;
+  prtsReady = true;   // PRTS 인식 기록은 관리자도 (notePrtsScan)
   if (isOwner()) return;
   started = true;
 
