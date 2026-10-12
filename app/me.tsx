@@ -853,6 +853,8 @@ function Wallet({ me, items, onOpen }: { me: MeData; items: ItemDoc | null; onOp
         {/* 큰 숫자는 순오리지늄까지 바꾼 값 (사용자 지시 2026-10-11) — 안 바꾼 값 줄은 필요 없다고 해 뺐다 */}
         <b>{t("{n}회", { n: fmt(pullsAll) })}</b>
         <small>{t("합성옥 {a} · 허가증 {b} · 10회 허가증 {c}", { a: fmt(Math.floor(orundum / 600)), b: fmt(permit), c: fmt(permit10 * 10) })}{prime > 0 && ` · ${t("순오리지늄 {n}", { n: fmt(pullsAll - pulls) })}`}</small>
+        {/* 가챠 시뮬레이터로 — 거기 '내 재화로 N회' 단추가 이 재화를 그대로 쓴다 (사용자 요청 2026-10-12) */}
+        {pullsAll > 0 && <a className="me-pulls-go" href={`${locale === "ko" ? "" : `/${locale}`}/gacha`}>{t("가챠하러 가기")} <span aria-hidden>→</span></a>}
       </div>
       {/* 묶음은 한 줄씩 칸으로, 나머지는 목록 (사용자 지시 2026-10-05) */}
       {WALLET_ROWS.map((row) => (

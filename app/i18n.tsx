@@ -143,6 +143,7 @@ const D: Record<string, Pair> = {
   "클리어한 작전 {n}개": ["{n} stages cleared", "クリア済み作戦 {n}"],
   "인프라 자동 편성": ["Base auto-assign", "基地自動配置"],
   "헤드헌팅 가능": ["Headhunting pulls", "スカウト可能回数"],
+  "가챠하러 가기": ["Go to the gacha", "ガチャへ"],
   "합성옥 {a} · 허가증 {b} · 10회 허가증 {c}": ["Orundum {a} · Permits {b} · 10-roll permits {c}", "合成玉 {a} · 求人票 {b} · 10回求人票 {c}"],
   "순오리지늄 {n}": ["Originite Prime {n}", "純正源石 {n}"],
   "내 재화로 {n}회": ["{n} pulls with my resources", "手持ちで{n}回"],
