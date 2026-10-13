@@ -1325,6 +1325,19 @@ function ChronologyView({ onShowOperator }: { onShowOperator?: (operatorId: stri
       if (!byYear.has(it.terraYear)) byYear.set(it.terraYear, []);
       byYear.get(it.terraYear)!.push(it);
     }
+    // 같은 해 안에서 날짜가 적힌 항목은 월·일 순으로 (사용자 지시 2026-10-13 "월 혹은 일까지 나와 있으면 월 일까지도 정렬") —
+    // 근거 글(dateNote)에 **그 해의** 'N년 M월(D일)' 이 있을 때만. 날짜 없는 항목은 제자리에 두고, 날짜 있는 항목끼리만
+    // 그 자리들 안에서 순서를 바꾼다 (출시·스토리라인 순서를 최대한 지킨다)
+    const dateKey = (it: ChronItem, year: number): number | null => {
+      const m = new RegExp(`${year}년\\s*(\\d{1,2})월(?:\\s*(\\d{1,2})일)?`).exec(it.dateNote ?? "");
+      return m ? Number(m[1]) * 100 + (m[2] ? Number(m[2]) : 0) : null;
+    };
+    for (const [year, items] of byYear) {
+      const slots = items.map((it, i) => ({ it, i, k: dateKey(it, year) })).filter((x) => x.k != null);
+      if (slots.length < 2) continue;
+      const sorted = [...slots].sort((a2, b2) => a2.k! - b2.k! || a2.i - b2.i);
+      slots.forEach((sl, j) => { items[sl.i] = sorted[j].it; });
+    }
     const out: { key: string; year: number | null; items: ChronItem[] }[] = [...byYear.entries()]
       .sort((x, y) => x[0] - y[0])
       .map(([year, items]) => ({ key: `y${year}`, year, items }));
