@@ -37,8 +37,8 @@
   네 서버를 CDN에서 다시 받는데, 하나라도 실패하면 `fetch-gamedata.py`(클뜯 레포판)로 물러나
   **방금 받은 최신 데이터를 덮어쓴다** — 레포는 며칠씩 밀려서(실측 11일) 조용히 옛 데이터로
   사이트가 만들어진다. 무인 CI는 기본값(CDN 우선 수신) 그대로 둔다.
-- **색·반경·그림자를 건드리기 전에 [디자인 시스템](https://claude.ai/artifact/RVm5mCb7xq5L3JQpWiusJx)
-  (Artifact `read` 로 `project/README.md`)과 PROJECT-GUIDE §8 '색 토큰 규칙'을 읽는다.** 값은 직접 적지 말고 토큰을 고른다.
+- **색·반경·그림자를 건드리기 전에 [docs/design-system/](docs/design-system/README.md)(디자인 시스템 — README·tokens.json)과
+  PROJECT-GUIDE §8 '색 토큰 규칙'을 읽는다.** 규칙을 바꾸면 그 폴더도 같이 고친다. 값은 직접 적지 말고 토큰을 고른다.
   특히 밝은 바탕 위 라임 글자는 `--lime-ink`, 라임 선·테두리·포커스 링은 `--lime-line` — `var(--lime)` 그대로 쓰면
   라이트에서 안 보인다. 토큰 값은 `globals.css` 맨 위 `:root`·`html.dark` 한 곳에만 둔다(뒤에서 덮지 않는다).
   `node scripts/check-css.mjs` 가 글자 크기 단계·밝은 바탕 위 라임을 경고한다.

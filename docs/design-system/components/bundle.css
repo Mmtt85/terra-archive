@@ -1,0 +1,64 @@
+/* 테라 아카이브 — app/globals.css 의 공용 버튼·입력·칩 규칙을 토큰만으로 옮겨 적은 것 (손으로 옮김, 2026-10-14 main@849e716) */
+body{font-family:var(--font-sans);color:var(--ink);background:var(--paper);margin:0}
+.ta-btn{font:600 12px/1.45 var(--font-sans);padding:7px 12px;border:1px solid var(--btn-line);background:var(--btn-bg);color:var(--btn-ink);border-radius:var(--r-sm);cursor:pointer;transition:background-color .2s,border-color .2s,color .2s}
+.ta-btn:hover{background:var(--btn-bg-hover);border-color:var(--btn-line-hover);color:var(--btn-ink-hover)}
+.ta-btn.on{background:var(--btn-on-bg);border-color:var(--btn-on-line);color:var(--btn-on-ink)}
+.ta-btn.on small{color:var(--btn-on-dim);font-weight:700;margin-left:4px}
+.ta-btn.pri{background:var(--btn-pri-bg);border-color:var(--btn-pri-line);color:var(--btn-pri-ink)}
+.ta-btn.pri:hover{background:var(--btn-pri-bg-hover);color:var(--btn-pri-ink-hover)}
+.ta-btn.danger{color:var(--danger)}
+.ta-btn:disabled{opacity:.5;cursor:default}
+.ta-btn:focus-visible,.ta-drop:focus-visible,.ta-tab:focus-visible{outline:2px solid var(--tab-line);outline-offset:2px}
+/* ① 드롭다운·실행 단추 */
+.ta-drop{position:relative;display:inline-flex;align-items:center;gap:6px;padding:7px 10px;font:600 12px var(--font-sans);border:1px solid transparent;background:var(--soft-fill);color:var(--ink2);border-radius:var(--r-sm);cursor:pointer;transition:color .25s,background-color .2s}
+.ta-drop::after,.ta-tab::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--tab-line);opacity:0;transform:scaleX(0);transform-origin:left;transition:opacity .25s,transform .25s;pointer-events:none}
+.ta-drop:hover{background:var(--soft-fill-hover);color:var(--ink)}
+.ta-drop:hover::after{opacity:.75;transform:scaleX(1)}
+.ta-drop[aria-expanded="true"]::after,.ta-drop.on::after{opacity:1;transform:scaleX(1)}
+.ta-drop.on{color:var(--ink)}
+.ta-drop.on::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--tab-line);flex:none}
+.ta-drop .caret{margin-left:2px;padding-left:7px;border-left:1px solid var(--line);font-size:9.5px;line-height:12px;opacity:.6;transition:transform .2s}
+.ta-drop[aria-expanded="true"] .caret{transform:rotateX(180deg)}
+.ta-menu{margin:4px 0 0;padding:5px;list-style:none;background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:var(--sh-2);min-width:200px}
+.ta-menu li{padding:7px 10px;border-radius:var(--r-sm);font-size:12px;color:var(--ink2)}
+.ta-menu li:hover{background:var(--btn-ghost-hover);color:var(--ink)}
+.ta-menu li.selected{background:var(--btn-on-bg);color:var(--btn-on-ink)}
+/* ② 탭 단추 — 밑줄만, 안쪽 10px 그라데이션 */
+.ta-tabs{display:flex;gap:2px;border-bottom:1px solid var(--line)}
+.ta-tab{position:relative;padding:8px 12px;font:600 13px var(--font-sans);border:0;background:none;color:var(--ink3);cursor:pointer;transition:color .25s}
+.ta-tab::after{left:10px;right:10px;background:linear-gradient(90deg,var(--tab-line),transparent);transform:scaleX(.5)}
+.ta-tab:hover{color:var(--ink)}
+.ta-tab:hover::after{opacity:.75;transform:scaleX(1)}
+.ta-tab.on{color:var(--ink)}
+.ta-tab.on::after{opacity:1;transform:scaleX(1);background:linear-gradient(90deg,var(--tab-line) 60%,transparent)}
+/* ③ 입력란 */
+.ta-field{font:400 13px var(--font-sans);color:var(--ink);padding:8px 10px;border:1px solid transparent;border-radius:0;outline:0;background-color:var(--field-fill);background-image:linear-gradient(var(--tab-line),var(--tab-line)),linear-gradient(var(--field-rule),var(--field-rule));background-size:0% 2px,100% 1px;background-position:left bottom,left bottom;background-repeat:no-repeat;transition:background-size .25s,background-color .25s;width:100%;box-sizing:border-box}
+.ta-field::placeholder{color:var(--muted)}
+.ta-field:focus,.ta-field.focus{background-color:var(--field-fill-focus);background-size:100% 2px,100% 1px}
+/* 파스텔 칩 */
+.ta-chip{display:inline-flex;align-items:center;padding:3px 8px;border-radius:var(--r-sm);font:600 11px/1.45 var(--font-sans)}
+.ta-chip.lime{background:var(--tint-lime);color:var(--tint-lime-ink)}
+.ta-chip.warm{background:var(--tint-warm);color:var(--tint-warm-ink)}
+.ta-chip.warm2{background:var(--tint-warm2);color:var(--tint-warm2-ink)}
+.ta-chip.gold{background:var(--tint-gold);color:var(--gold-ink)}
+.ta-chip.red{background:var(--tint-red);color:var(--danger)}
+.ta-chip.cream{background:var(--tint-cream);color:var(--ink)}
+/* 브랜드 */
+.ta-brand{display:flex;align-items:center;gap:12px;font:800 16px var(--font-sans);letter-spacing:-.5px;color:var(--ink);text-decoration:none}
+.ta-brand small{display:block;margin-top:3px;font:600 10px/1 var(--font-mono);letter-spacing:1px;color:var(--muted)}
+.ta-brand-mark{width:39px;height:39px;overflow:hidden;background:var(--chip);clip-path:polygon(0 0,100% 0,100% 72%,72% 100%,0 100%);display:grid;place-items:center;flex:none}
+.ta-brand-mark img{width:100%;height:100%;object-fit:cover;object-position:center top}
+/* 미리보기 전용 — 라이트·다크를 나란히 (각 판이 data-theme 으로 토큰을 다시 받는다) */
+.ta-pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));min-height:100%}
+.ta-pane{background:var(--paper);color:var(--ink);padding:16px 20px 20px}
+.ta-pane > .ta-pane-label{display:block;margin-bottom:10px;font:600 10px/1 var(--font-mono);letter-spacing:1px;color:var(--muted)}
+.ta-pane[data-theme="rogue"]{background:var(--rgbg);color:var(--rgink)}
+/* 통합전략 판 */
+.ta-rg{background:var(--rgcard);border:1px solid var(--rgline);border-radius:var(--r-md);padding:14px 16px;color:var(--rgink);font:400 13px/1.6 var(--font-sans)}
+.ta-rg h4{margin:0 0 4px;font:700 16px/1.25 var(--font-sans);color:var(--rggold)}
+.ta-rg p{margin:0 0 10px;color:var(--rgtext2)}
+.ta-rg .rg-meta{font-size:11px;color:var(--rgmut)}
+.ta-rg .rg-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ta-rg .rg-tag{padding:3px 8px;border-radius:var(--r-sm);border:1px solid var(--rgline);font:600 11px/1.45 var(--font-sans);color:var(--rgtext2);background:var(--rgdeep)}
+.ta-rg .rg-tag.on{background:var(--rgsel);border-color:var(--rgcrim);color:var(--rgink)}
+.ta-rg .rg-up{padding:3px 8px;border-radius:var(--r-sm);background:var(--rgupbg);color:var(--rgup);font:700 11px/1.45 var(--font-mono)}

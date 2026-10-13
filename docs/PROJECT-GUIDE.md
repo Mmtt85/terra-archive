@@ -1996,9 +1996,10 @@ Cloudflare가 봇으로 분류해 이미 걸러낸 뒤다. 건별 확인은 Secu
 
 ## 8. 디자인 시스템
 
-**토큰·컴포넌트 정본: [테라 아카이브 디자인 시스템](https://claude.ai/artifact/RVm5mCb7xq5L3JQpWiusJx)**
-(Artifact — 다른 세션은 Artifact `read` 로 `project/README.md`·`project/tokens.json` 을 읽는다.
-라이트·다크·통합전략 주제 6개, 8테마). 색·반경·그림자를 바꾸면 그 문서도 같이 고친다.
+**토큰·컴포넌트 문서: [docs/design-system/](design-system/README.md)** (README·`tokens.json`·컴포넌트 규칙 —
+라이트·다크·통합전략 주제 6개, 8테마). 원본은 작성 계정 전용 Artifact
+(https://claude.ai/artifact/RVm5mCb7xq5L3JQpWiusJx)이고, 다른 계정도 읽도록 저장소에 사본을 둔다.
+색·반경·그림자를 바꾸면 `app/globals.css` 맨 위 토큰과 이 폴더를 함께 고친다.
 
 ### 색 토큰 규칙 (2026-10-14 정리 — 어기면 라이트에서 또 안 보인다)
 
