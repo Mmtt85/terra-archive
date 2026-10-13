@@ -11,6 +11,10 @@
 // 한국어 화면만 — 영·일 공채는 tesseract 그대로. 로드·실행이 실패하면 null 을 돌려 부르는 쪽이 tesseract 로 물러난다.
 
 type Out = { text: string; conf: number }[] | null;
+/** 인식 모델 언어 — kor(한국어) · ch(중국어·일본어·영어). 테서랙트 언어 코드에서 고른다 */
+export type RecLang = "kor" | "ch";
+export const recLangOf = (tessLang: string): RecLang | null =>
+  tessLang === "kor" ? "kor" : tessLang === "chi_sim" || tessLang === "jpn" || tessLang === "eng" ? "ch" : null;
 type DetBox = [number, number, number, number, number];
 let worker: Worker | null = null;
 let broken = false;
@@ -41,7 +45,7 @@ function getWorker(): Worker | null {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ask(msg: { warm?: boolean; chips?: { w: number; data: Float32Array }[]; detImg?: { w: number; h: number; data: Float32Array } }, transfer: Transferable[] = []): Promise<any> {
+function ask(msg: { lang?: RecLang; warm?: boolean; chips?: { w: number; data: Float32Array }[]; detImg?: { w: number; h: number; data: Float32Array } }, transfer: Transferable[] = []): Promise<any> {
   const w = getWorker();
   if (!w) return Promise.resolve(null);
   const id = ++seq;
@@ -52,12 +56,12 @@ function ask(msg: { warm?: boolean; chips?: { w: number; data: Float32Array }[];
 }
 
 /** 공채 화면에 들어올 때·PRTS 공채 연결 때 미리 받아 둔다 (첫 인식이 모델 받는 시간을 기다리지 않게) */
-export function warmPaddle(): void { void ask({ warm: true }); }
+export function warmPaddle(lang: RecLang = "kor"): void { void ask({ warm: true, lang }); }
 
 const H = 48;
 
 /** 캔버스의 칩 상자들을 읽는다 — [글자, 가장 낮은 글자 확률] 배열. 모델을 못 쓰면 null */
-export async function paddleReadBoxes(src: CanvasImageSource, boxes: { x: number; y: number; w: number; h: number }[], maxW = 640): Promise<Out> {
+export async function paddleReadBoxes(src: CanvasImageSource, boxes: { x: number; y: number; w: number; h: number }[], maxW = 640, lang: RecLang = "kor"): Promise<Out> {
   if (!boxes.length) return [];
   if (!getWorker()) return null;
   const cc = document.createElement("canvas");
@@ -79,12 +83,12 @@ export async function paddleReadBoxes(src: CanvasImageSource, boxes: { x: number
     }
     return { w, data };
   });
-  return ask({ chips }, chips.map((c) => c.data.buffer));
+  return ask({ chips, lang }, chips.map((c) => c.data.buffer));
 }
 
 /** 화면 전체 읽기 (통합전략 1차 판독, 2026-10-13 — tesseract PSM11 자리) — 검출로 글자 줄 상자를 찾고 줄마다 인식.
  *  돌려주는 줄은 위→아래, 같은 줄은 왼→오 순서이고 좌표는 src 기준. 검출 모델을 못 쓰면 null */
-export async function paddleReadFrame(src: HTMLCanvasElement): Promise<{ text: string; conf: number; x0: number; y0: number; x1: number; y1: number }[] | null> {
+export async function paddleReadFrame(src: HTMLCanvasElement, lang: RecLang = "kor"): Promise<{ text: string; conf: number; x0: number; y0: number; x1: number; y1: number }[] | null> {
   if (!getWorker()) return null;
   const SW = src.width, SH = src.height;
   // 긴 변 960 (모델 설정 DetResizeForTest resize_long), 32 의 배수
@@ -105,7 +109,7 @@ export async function paddleReadFrame(src: HTMLCanvasElement): Promise<{ text: s
     data[plane + i] = (px[p + 1] / 255 - 0.456) / 0.224;
     data[2 * plane + i] = (px[p] / 255 - 0.406) / 0.225;
   }
-  const boxes: DetBox[] | null = await ask({ detImg: { w: dw, h: dh, data } }, [data.buffer]);
+  const boxes: DetBox[] | null = await ask({ detImg: { w: dw, h: dh, data }, lang }, [data.buffer]);
   if (!boxes) return null;
   const sx = SW / dw, sy = SH / dh;
   const rects = boxes.map(([x, y, w, h]) => ({
@@ -118,7 +122,7 @@ export async function paddleReadFrame(src: HTMLCanvasElement): Promise<{ text: s
     const ca = a.y + a.h / 2, cb = b.y + b.h / 2;
     return Math.abs(ca - cb) < Math.min(a.h, b.h) / 2 ? a.x - b.x : ca - cb;
   });
-  const got = await paddleReadBoxes(src, rects, 2000);
+  const got = await paddleReadBoxes(src, rects, 2000, lang);
   if (!got) return null;
   return got.map((g, i) => ({ ...g, x0: rects[i].x, y0: rects[i].y, x1: rects[i].x + rects[i].w, y1: rects[i].y + rects[i].h }))
     .filter((l) => l.text);

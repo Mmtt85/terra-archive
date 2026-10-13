@@ -414,7 +414,12 @@ export async function connectBridge(withLock?: BridgeLock, via?: Window): Promis
   lock = withLock ?? null;
   // 공채·통합전략 — PaddleOCR(모델·엔진)을 연결과 함께 받아 둔다. 첫 인식이 받는 시간을 기다리지 않게
   // 통합전략(한국어)도 화면 전체 읽기를 PaddleOCR 로 한다 (2026-10-13) — 같이 미리 받는다
-  if (lock?.topic === "recruit" || lock?.topic?.startsWith("rogue_")) void import("./paddle").then((m) => m.warmPaddle());
+  if (lock?.topic === "recruit" || lock?.topic?.startsWith("rogue_")) void import("./paddle").then((m) => {
+    // 받을 인식 모델 — 한국어 화면이면 kor, 영어·일본어면 ch. 흑류수해(중국어 선행)·중섭 테마는 중국어 패스용 ch 도
+    const ko = (document.documentElement.lang || "ko").startsWith("ko") || lock?.topic === "recruit";   // 공채는 언제나 한국어
+    m.warmPaddle(ko ? "kor" : "ch");
+    if (lock?.topic === "rogue_6" && ko) m.warmPaddle("ch");
+  });
   runLog = []; logMeta = null; startedAt = new Date().toISOString();
   scan = null; lastScan = null; pipNode = null; pipRelics = []; pipRecruit = null; pipFloor = {};
   sceneMemos = []; lastEmitGray = null; battleHold = false;

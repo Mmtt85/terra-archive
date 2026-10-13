@@ -12,7 +12,6 @@ import { useBridgeStatus, connectBridge, disconnectBridge, bridgeLock, bridgeSup
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
-import { isOwnerBrowser } from "../visit-track";
 import type { T } from "../i18n";
 
 // 지원 여부는 navigator를 봐야 알 수 있어 서버에선 판단할 수 없다. 그냥 호출하면
@@ -80,9 +79,8 @@ async function togglePipWindow(lockFor?: BridgeLock | null): Promise<void> {
     pipNotify();
   } catch { /* 사용자가 막았거나 미지원 */ }
 }
-// ⚠ 시험판 — **운영자 브라우저에서만** 보인다 (사용자 지시 2026-10-12 "사용자들이 안 보이게 몰래 숨겨 놓고 나만 써 보고 싶음").
-//   공개할 때 isOwnerBrowser() 조건만 빼면 된다
-const usePipOk = () => useSyncExternalStore(noSubscribe, () => !!docPip() && isOwnerBrowser(), () => false);
+// 문서 PiP 를 지원하는 브라우저(크롬·엣지 116+)면 누구나 — 운영자 전용 시험판(2026-10-12)을 2026-10-13 공개 (사용자 지시 "공개해 얼른")
+const usePipOk = () => useSyncExternalStore(noSubscribe, () => !!docPip(), () => false);
 
 /** 카드 하나 — 섬네일 + 이름 + 효과. 펼칠 게 있으면(작전 지도·등장 적·선택지) 눌러서 펼친다 (사용자 지시 2026-10-12
  *  "작전이 인식돼서 떴고 그걸 클릭하면 작전맵이 떴으면") */

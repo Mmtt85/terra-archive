@@ -7,12 +7,20 @@ import { asset } from "../assets";
 
 type Ort = typeof import("onnxruntime-web");
 type Rec = { ort: Ort; sess: InferenceSession; dict: string[]; det: InferenceSession | null };
-let recP: Promise<Rec | null> | null = null;
+/** 인식 모델 — 언어별 (2026-10-13). kor = 한국어(+영문), ch = 중국어 간체·번체 + 일본어 + 영어 (PP-OCRv5 mobile, webnn/PP-OCRv5-ONNX 변환본).
+ *  검출 모델(det)은 언어와 무관해 하나를 같이 쓴다 */
+export type RecLang = "kor" | "ch";
+const REC_FILES: Record<RecLang, [string, string]> = {
+  kor: ["/lens/paddle/kor_rec.onnx", "/lens/paddle/kor_dict.txt"],
+  ch: ["/lens/paddle/ch_rec.onnx", "/lens/paddle/ch_dict.txt"],
+};
+let baseP: Promise<{ ort: Ort; eps: string[]; det: InferenceSession | null } | null> | null = null;
+const recByLang = new Map<RecLang, Promise<Rec | null>>();
 let lastErr = "";
 let gpuOn = false;   // WebGPU 로 돈다 — 묶음을 크게(그래픽 카드는 크게 묶을수록 빠르다)   // 실패 이유 — 화면 쪽 콘솔로 돌려보낸다 (작업 스레드 콘솔은 페이지 콘솔에 안 잡힌다)
 
-function loadRec(): Promise<Rec | null> {
-  recP ??= (async () => {
+function loadBase() {
+  baseP ??= (async () => {
     try {
       // 그래픽 카드(WebGPU)가 있으면 그쪽 판으로 — CPU 1스레드로는 화면 전체 읽기(줄 100여 개)가 3초였다. 없으면 CPU 판
       const gpu = !!(self.navigator as unknown as { gpu?: unknown }).gpu;
@@ -22,29 +30,50 @@ function loadRec(): Promise<Rec | null> {
       // 스레드 판은 crossOriginIsolated(SharedArrayBuffer)가 있어야 해서 1스레드로. 파일은 우리 R2 에서
       ort.env.wasm.numThreads = 1;
       ort.env.wasm.wasmPaths = asset("/lens/ort/");
-      const [model, dictTxt] = await Promise.all([
-        fetch(asset("/lens/paddle/kor_rec.onnx")).then((r) => { if (!r.ok) throw new Error(`model ${r.status}`); return r.arrayBuffer(); }),
-        fetch(asset("/lens/paddle/kor_dict.txt")).then((r) => { if (!r.ok) throw new Error(`dict ${r.status}`); return r.text(); }),
-      ]);
-      const sess = await ort.InferenceSession.create(new Uint8Array(model), { executionProviders: eps });
       // 검출 모델(PP-OCRv5 mobile det, 4.8MB) — 화면 전체 읽기(통합전략)에만 쓴다. 못 받으면 인식(칩)만 된다
       let det: InferenceSession | null = null;
       try {
         const dm = await fetch(asset("/lens/paddle/det.onnx")).then((r) => { if (!r.ok) throw new Error(`det ${r.status}`); return r.arrayBuffer(); });
         det = await ort.InferenceSession.create(new Uint8Array(dm), { executionProviders: eps });
       } catch (e) { console.warn("[lens] PaddleOCR 검출 모델 로드 실패", e); lastErr = `검출 모델 로드 실패: ${String((e as Error)?.message ?? e)}`; }
-      // 출력 0번 = CTC 빈칸, 1..N = 글자 목록 줄, 맨 끝 = 공백
-      const lines = dictTxt.split("\n");
-      if (lines[lines.length - 1] === "") lines.pop();
-      return { ort, sess, dict: ["", ...lines, " "], det };
+      return { ort, eps, det };
     } catch (e) {
       console.warn("[lens] PaddleOCR 로드 실패", e);
       lastErr = `로드 실패: ${String((e as Error)?.message ?? e)}`;
-      recP = null;   // 다음 요청에서 다시 시도
+      baseP = null;
       return null;
     }
   })();
-  return recP;
+  return baseP;
+}
+
+function loadRec(lang: RecLang = "kor"): Promise<Rec | null> {
+  let p = recByLang.get(lang);
+  if (!p) {
+    p = (async () => {
+      const base = await loadBase();
+      if (!base) return null;
+      try {
+        const [mf, df] = REC_FILES[lang];
+        const [model, dictTxt] = await Promise.all([
+          fetch(asset(mf)).then((r) => { if (!r.ok) throw new Error(`model ${r.status}`); return r.arrayBuffer(); }),
+          fetch(asset(df)).then((r) => { if (!r.ok) throw new Error(`dict ${r.status}`); return r.text(); }),
+        ]);
+        const sess = await base.ort.InferenceSession.create(new Uint8Array(model), { executionProviders: base.eps });
+        // 출력 0번 = CTC 빈칸, 1..N = 글자 목록 줄, 맨 끝 = 공백
+        const lines = dictTxt.split("\n");
+        if (lines[lines.length - 1] === "") lines.pop();
+        return { ort: base.ort, sess, dict: ["", ...lines, " "], det: base.det };
+      } catch (e) {
+        console.warn(`[lens] PaddleOCR ${lang} 인식 모델 로드 실패`, e);
+        lastErr = `${lang} 인식 모델 로드 실패: ${String((e as Error)?.message ?? e)}`;
+        recByLang.delete(lang);   // 다음 요청에서 다시 시도
+        return null;
+      }
+    })();
+    recByLang.set(lang, p);
+  }
+  return p;
 }
 
 const H = 48;
@@ -78,9 +107,9 @@ function detBoxes(prob: Float32Array, w: number, h: number): [number, number, nu
   return out;
 }
 
-self.onmessage = async (ev: MessageEvent<{ id: number; warm?: boolean; chips?: { w: number; data: Float32Array }[]; detImg?: { w: number; h: number; data: Float32Array } }>) => {
-  const { id, warm, chips, detImg } = ev.data;
-  const rec = await loadRec();
+self.onmessage = async (ev: MessageEvent<{ id: number; lang?: RecLang; warm?: boolean; chips?: { w: number; data: Float32Array }[]; detImg?: { w: number; h: number; data: Float32Array } }>) => {
+  const { id, lang, warm, chips, detImg } = ev.data;
+  const rec = await loadRec(lang ?? "kor");
   if (detImg) {
     if (!rec?.det) { self.postMessage({ id, out: null, err: lastErr }); return; }
     try {

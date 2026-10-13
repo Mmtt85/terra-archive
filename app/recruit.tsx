@@ -303,7 +303,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   const [lensAuto, setLensAuto] = useState(false);
   const toggleLensAuto = () => setLensAuto((v) => {
     const next = !v;
-    if (next) { void warmOcr(); warmPaddle(); warmData("recruit"); }
+    if (next) { void warmOcr(); warmPaddle("kor"); warmData("recruit"); }   // 공채는 한국 서버 화면만 읽는다 (run.ts recruit — 언제나 kor)
     return next;
   });
   const [lensMsg, setLensMsg] = useState<string | null>(null);

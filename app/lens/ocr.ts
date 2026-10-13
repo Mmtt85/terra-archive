@@ -7,7 +7,7 @@
 
 import { grayNormalize, colorNormalize, maxChannelNormalize, invertRgb, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "./preprocess";
 import { asset } from "../assets";
-import { paddleReadBoxes, paddleReadFrame } from "./paddle";
+import { paddleReadBoxes, paddleReadFrame, recLangOf } from "./paddle";
 import type { Worker } from "tesseract.js";
 
 // 프라이머리 OCR 워커 — 화면 언어별로 다른 traineddata를 쓴다: KR=kor, EN=eng, JA=jpn.
@@ -120,6 +120,8 @@ export type OcrSession = {
   colorBand(test: (text: string) => boolean, zh?: boolean): Promise<string[]>;
   /** 좌하단 난이도 배지(육각형 숫자) — 있으면 0~18 반환, 없으면 null */
   difficulty(): Promise<number | null>;
+  /** 왼쪽 아래 난이도 배지를 잘라 PaddleOCR 로 — 화면 전체 읽기의 검출이 작은 빨간 육각형 숫자를 놓친다 (2026-10-13). 못 읽으면 null */
+  gradeBadge(): Promise<number | null>;
   /** 직전 전체프레임 패스의 줄 상자 — **0~1 정규화 좌표**. 호출 측이 화면 배치를 읽어
    *  "이 글자 위/옆"을 짚을 때 쓴다 (위수 협의 맹약 원형의 중첩 숫자 등). */
   boxes(): OcrBox[];
@@ -194,7 +196,9 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
   const luma = redN ? lumSum / redN : 255;
   // 한국어 화면은 공채 칩을 PaddleOCR 로 읽는다 — 그 모델은 원래 색 그대로가 낫다(학습이 컬러) → 흑백화 전에 한 벌 떠 둔다
   let colorC: HTMLCanvasElement | null = null;
-  if (lang === "kor" && (opts?.paddle || opts?.paddleFull)) {
+  // 2026-10-13~ 한국어(kor 모델)뿐 아니라 영어·일본어 화면도 PaddleOCR(ch 모델 — 중·일·영 한 벌)로
+  const pl = recLangOf(lang);
+  if (pl && (opts?.paddle || opts?.paddleFull)) {
     colorC = document.createElement("canvas");
     colorC.width = W; colorC.height = H;
     colorC.getContext("2d")!.drawImage(c, 0, 0);
@@ -341,7 +345,7 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
     async sparse() {
       // 통합전략(한국어): PaddleOCR 화면 전체 읽기 — 줄 글자 + 줄 상자를 tesseract 와 같은 모양으로 (colorBand 가 상자를 쓴다)
       if (colorC && opts?.paddleFull) {
-        const got = await paddleReadFrame(colorC);
+        const got = await paddleReadFrame(colorC, pl ?? "kor");
         if (got) {
           paddleFullOk = true;
           lastBoxes = got.map((g) => ({ text: g.text, x0: g.x0, y0: g.y0, x1: g.x1, y1: g.y1 }));
@@ -360,6 +364,17 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
       return takeLines(r.data.lines ?? []);
     },
     async zh() {
+      // 중국어 화면(흑류수해·중섭) — 색 사본이 있으면 PaddleOCR 중국어 모델로 (2026-10-13). 못 쓰면 tesseract chi_sim
+      if (colorC) {
+        // 화면 전체 읽기를 이미 했으면 그때 찾은 줄 상자를 그대로 중국어 모델에 — 검출을 두 번 돌리지 않는다
+        if (paddleFullOk && lastBoxes.length) {
+          const rects = lastBoxes.map((l) => ({ x: l.x0, y: l.y0, w: l.x1 - l.x0, h: l.y1 - l.y0 })).filter((r) => r.w >= 6 && r.h >= 6);
+          const got = await paddleReadBoxes(colorC, rects, 2000, "ch");
+          if (got) return got.map((g) => g.text).filter(Boolean);
+        }
+        const got = await paddleReadFrame(colorC, "ch");
+        if (got) return got.map((g) => g.text);
+      }
       const zw = await getChiWorker();
       const r = await zw.recognize(c, {}, OUT);
       return takeLines(r.data.lines ?? []);
@@ -387,7 +402,7 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
           const x = Math.max(0, Math.round((b.x0 - lh * 0.6) / scale)), y = Math.max(0, Math.round((b.y1 - lh * 0.15) / scale));
           return { x, y, w: Math.min(bc.width - x, Math.round((b.x1 - b.x0 + lh * 3) / scale)), h: Math.min(bc.height - y, Math.round((lh * 1.9) / scale)) };
         }).filter((r) => r.w >= 8 && r.h >= 6);
-        const got = await paddleReadBoxes(bc, rects, 2000);
+        const got = await paddleReadBoxes(bc, rects, 2000, pl ?? "kor");
         return (got ?? []).map((g) => g.text).filter(Boolean);
       }
       const zw = zh ? await getChiWorker() : await tw();
@@ -432,7 +447,7 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
       // 한국어: PaddleOCR 인식 모델 (app/lens/paddle.ts — 칩 하나 수 ms~수십 ms). 못 쓰면 아래 tesseract
       if (colorC) {
         const rects = boxes.map((b) => chipCropRect(b, W, H)).filter((r): r is NonNullable<typeof r> => !!r);
-        const got = await paddleReadBoxes(colorC, rects);
+        const got = await paddleReadBoxes(colorC, rects, 640, pl ?? "kor");
         if (got) {
           paddleOk = true;
           got.forEach((g, i) => { if (g.text) chipSeen.push({ text: g.text, ...rects[i] }); });
@@ -459,6 +474,36 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
     },
     chipBoxes() { return chipSeen; },
     paddleUsed() { return paddleFullOk; },
+    async gradeBadge() {
+      if (!colorC) return null;
+      // 배지 자리만 6배로 키우고 **흰 숫자만** 남겨(빨간 육각형 바탕을 지움) 읽는다 — 그대로 읽으면 '12' 의 '1' 이 사라져 2 가 됐다
+      // (사용자 제보 2026-10-13 "난이도 12인데 2"). 자르는 범위 둘 × 문턱 둘로 읽어 표가 많은 값, 같으면 두 자리를 고른다
+      const votes = new Map<number, number>();
+      for (const [rx, ry, rw, rh] of [[0.012, 0.95, 0.032, 0.05], [0.008, 0.94, 0.04, 0.06]] as const) {
+        for (const th of [150, 130]) {
+          const sx = Math.round(W * rx), sy = Math.round(H * ry), sw = Math.round(W * rw), sh = Math.min(Math.round(H * rh), H - sy);
+          if (sw < 4 || sh < 4) continue;
+          const k = Math.max(2, Math.round(160 / sh));
+          const bc = document.createElement("canvas");
+          bc.width = sw * k; bc.height = sh * k;
+          const bx = bc.getContext("2d", { willReadFrequently: true })!;
+          bx.imageSmoothingQuality = "high";
+          bx.drawImage(colorC, sx, sy, sw, sh, 0, 0, bc.width, bc.height);
+          const d = bx.getImageData(0, 0, bc.width, bc.height);
+          for (let i = 0; i < d.data.length; i += 4) {
+            const v = d.data[i] > th && d.data[i + 1] > th && d.data[i + 2] > th ? 0 : 255;
+            d.data[i] = d.data[i + 1] = d.data[i + 2] = v;
+          }
+          bx.putImageData(d, 0, 0);
+          const got = await paddleReadBoxes(bc, [{ x: 0, y: 0, w: bc.width, h: bc.height }], 400, pl ?? "kor");
+          const m = /^\D*(\d{1,2})\D*$/.exec(got?.[0]?.text ?? "");
+          const g = m ? Number(m[1]) : NaN;
+          if (Number.isFinite(g) && g <= 18) votes.set(g, (votes.get(g) ?? 0) + 1);
+        }
+      }
+      const best = [...votes].sort((a, b) => b[1] - a[1] || String(b[0]).length - String(a[0]).length)[0];
+      return best ? best[0] : null;
+    },
     async chipsAlt(cut = 0.5) {
       if (paddleOk) return [];   // PaddleOCR 로 읽었으면 tesseract 흑백 재시도는 하지 않는다 (느리고, 뭉갬 땜질용이었다)
       const boxes = findDarkChips(img.data, W, H);

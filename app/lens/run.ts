@@ -456,14 +456,15 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
   } else {
     // 화면 언어(로케일)로 OCR 모델·인덱스·정규화를 맞춘다 — KR=kor, EN=eng, JA=jpn.
     const norm = normFor(locale);
-    // 한국어 화면은 화면 전체 읽기를 PaddleOCR 로 (2026-10-13 시험 — app/lens/paddle.ts paddleReadFrame). 못 쓰면 tesseract
+    // 화면 전체 읽기를 PaddleOCR 로 — 한국어는 kor 모델, 영어·일본어는 ch 모델(중·일·영) (2026-10-13, app/lens/paddle.ts). 못 쓰면 tesseract
     const [index, session] = await Promise.all([getRogueIndex(locale, opts?.cnTopic), createOcrSession(file, OCR_LANG[locale] ?? "kor", { paddleFull: true })]);
     // 난이도 배지 — 전용 eng 워커라 본 패스와 **병렬**로 미리 돌린다 (직렬 ~0.3초 제거).
     // 라이브(게임 연결)는 세션 캐시가 유효하거나 미검출 쿨다운 중이면 아예 생략한다.
     const gradeFresh = !!gradeCache && Date.now() - gradeCache.at < 10 * 60_000;
     // 한국어는 PaddleOCR 화면 전체 읽기의 왼쪽 아래 숫자로 난이도를 정하므로 tesseract 숫자 판독을 아예 돌리지 않는다 (2026-10-13 —
     // 결과를 안 쓰는데도 돌아 영어 숫자 모델을 받고 CPU 를 썼다). PaddleOCR 이 실패해 tesseract 로 물러난 화면은 난이도를 건너뛴다
-    const skipGradeOcr = (OCR_LANG[locale] ?? "kor") === "kor" || (!!opts?.live && (gradeFresh || Date.now() - gradeMissAt < 10_000));
+    // 2026-10-13~ 영어·일본어도 PaddleOCR(ch 모델)로 읽으므로 같은 규칙
+    const skipGradeOcr = ["kor", "eng", "jpn"].includes(OCR_LANG[locale] ?? "kor") || (!!opts?.live && (gradeFresh || Date.now() - gradeMissAt < 10_000));
     const gradeP = skipGradeOcr ? null : session.difficulty()
       .then((g) => {
         if (g === null) { gradeMissAt = Date.now(); return null; }
@@ -528,6 +529,9 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
         for (const b of digs) { if (txt && b.x0 - digs[digs.indexOf(b) - 1].x1 > 0.02) txt = ""; txt += b.text.trim(); }
         const g = Number(txt.slice(-2));
         if (txt && g <= 18) hudGrade = g;
+        // 화면 전체 읽기의 검출은 작은 빨간 육각형 숫자를 자주 놓치고('12' → 없음·'2'), 배지만 잘라 키워 읽으면 맞게 나온다 —
+        // 배지 판독을 우선한다. 판 난이도가 두 자리로 정해진 뒤에는 건너뛴다 (2026-10-13)
+        if (!(runGrade !== null && runGrade >= 10)) { const bg = await session.gradeBadge(); if (bg !== null) hudGrade = bg; }
       }
       // 판 시작 화면의 배지를 판 난이도로 — 단 이미 두 자리(12)로 잡혔는데 끝자리만('2') 읽힌 건 무시한다
       const tailOf = (big: number, small: number) => big >= 10 && small < 10 && String(big).endsWith(String(small));
