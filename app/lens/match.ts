@@ -208,6 +208,19 @@ function detectRecruitTags(linesN: string[], recruitTags: string[]): string[] {
       found.push(tag.name);
     }
   }
+  // 한 글자만 틀린 칩 — 칩 한 줄이 **태그와 길이가 같고 딱 한 글자만 다르며, 그런 태그가 하나뿐**이면 그 태그로
+  // (2026-10-13 PaddleOCR 이 '메딕'을 '메덕'으로 — 태그가 넷만 잡혀 느린 전체 읽기로 빠졌다). 칩 길이(2~8자) 줄만,
+  // 정확히 맞은 것을 다 고른 뒤 다섯 개가 안 될 때만 본다
+  if (found.length < 5) {
+    for (const line of linesN) {
+      if (found.length >= 5 || line.length < 2 || line.length > 8) continue;
+      if (tagsN.some((t) => t.n === line)) continue;
+      // ⚠ 이미 잡힌 태그도 후보에 둔다 — 근거리·원거리, 제어형·방어형은 서로 한 글자 차이라, '윈거리'(원거리를 잘못 읽음)가
+      //   원거리를 빼고 보면 근거리로 둔갑한다. 가까운 태그가 둘이면 버리고, 하나인데 이미 잡혔으면 같은 칩을 또 읽은 것
+      const near = tagsN.filter((t) => t.n.length === line.length && [...t.n].filter((ch, i) => ch !== line[i]).length === 1);
+      if (near.length === 1 && !found.includes(near[0].name)) found.push(near[0].name);
+    }
+  }
   // 게임 규칙상 태그는 최대 5개 — 초과분은 OCR 오탐이므로 버린다
   return found.slice(0, 5);
 }

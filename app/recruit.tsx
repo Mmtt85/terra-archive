@@ -14,6 +14,7 @@ import { isNewFeature } from "./whats-new";
 import type { LensGoto } from "./lens/match";
 import { recognizeShot, warmData } from "./lens/run";
 import { warmOcr } from "./lens/ocr";
+import { warmPaddle } from "./lens/paddle";
 import { useClipboardWatch } from "./lens/clipwatch";
 import { useBridgeWatch } from "./lens/bridge";
 import { BridgeTopicButton } from "./lens/bridge-button";
@@ -301,7 +302,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   const [lensAuto, setLensAuto] = useState(false);
   const toggleLensAuto = () => setLensAuto((v) => {
     const next = !v;
-    if (next) { void warmOcr(); warmData("recruit"); }
+    if (next) { void warmOcr(); warmPaddle(); warmData("recruit"); }
     return next;
   });
   const [lensMsg, setLensMsg] = useState<string | null>(null);

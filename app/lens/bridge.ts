@@ -348,6 +348,8 @@ let visitHeld = false;
 export async function connectBridge(withLock?: BridgeLock, via?: Window): Promise<void> {
   disconnectBridge();
   lock = withLock ?? null;
+  // 공채 — 칩을 읽는 PaddleOCR(모델·엔진 약 27MB)을 연결과 함께 받아 둔다. 첫 인식이 받는 시간을 기다리지 않게
+  if (lock?.topic === "recruit") void import("./paddle").then((m) => m.warmPaddle());
   runLog = []; logMeta = null; startedAt = new Date().toISOString();
   scan = null; lastScan = null; pipNode = null; pipRelics = [];
   sceneMemos = []; lastEmitGray = null; battleHold = false;

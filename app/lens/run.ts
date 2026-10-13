@@ -212,7 +212,8 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
   let oc: LensOutcome;
   if (mode === "recruit") {
     // 태그는 어두운 버튼 칩이 본체 — 칩 패스 필수, 전체 프레임은 보조 (선택된 파란 태그 등)
-    const [tags, session] = await Promise.all([getRecruitTags(), createOcrSession(file)]);
+    // 칩은 PaddleOCR 로 (한국어, 2026-10-13 — app/lens/paddle.ts). 못 쓰면 ocr.ts 가 tesseract 로 물러난다
+    const [tags, session] = await Promise.all([getRecruitTags(), createOcrSession(file, "kor", { paddle: true })]);
     if (opts?.live) {
       // PRTS 링크 — 칩 패스만으로 태그 다섯 개가 다 읽히면 전체 프레임 패스는 건너뛴다. 슬롯을 빨리 넘기면
       // OCR 두 번이 다음 화면을 붙잡아 못 따라왔다 (사용자 지적 2026-10-12). 덜 읽혔을 때만 보조 패스를 더한다

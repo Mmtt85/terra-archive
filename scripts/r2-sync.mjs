@@ -89,6 +89,8 @@ const MIME = {
   // 브라우저가 페이지로 안 그리고 **내려받아 버린다** (2026-09-17 실측: 주소를 열 수 없었다).
   ".md": "text/markdown; charset=utf-8",
   ".js": "text/javascript", ".wasm": "application/wasm",
+  // PaddleOCR(공채 칩) — ONNX Runtime Web 의 wasm 로더(.mjs, 모듈이라 JS 형식이어야 import 된다)·모델(.onnx) (2026-10-13)
+  ".mjs": "text/javascript", ".onnx": "application/octet-stream",
   ".bin": "application/octet-stream", ".traineddata": "application/octet-stream",
   // 리더기 소리 — scripts/build-story-audio.py (2026-09-27)
   ".mp3": "audio/mpeg",

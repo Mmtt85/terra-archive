@@ -7,6 +7,7 @@
 
 import { grayNormalize, colorNormalize, maxChannelNormalize, invertRgb, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "./preprocess";
 import { asset } from "../assets";
+import { paddleReadBoxes } from "./paddle";
 import type { Worker } from "tesseract.js";
 
 // 프라이머리 OCR 워커 — 화면 언어별로 다른 traineddata를 쓴다: KR=kor, EN=eng, JA=jpn.
@@ -160,7 +161,8 @@ async function setPsm(worker: Worker, psm: string): Promise<void> {
 }
 
 /** 스크린샷 Blob → 전처리 캔버스를 쥔 단계형 OCR 세션. lang = 화면 언어(kor|eng|jpn). */
-export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSession> {
+/** paddle = 칩을 PaddleOCR 로 읽는다 (공채만, 한국어 화면만 — app/lens/paddle.ts) */
+export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle?: boolean }): Promise<OcrSession> {
   const bmp = await createImageBitmap(blob);
   const scale = upscaleFactor(bmp.width);
   const W = bmp.width * scale, H = bmp.height * scale;
@@ -186,6 +188,14 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
   }
   const redness = redN ? redPx / redN : 0;
   const luma = redN ? lumSum / redN : 255;
+  // 한국어 화면은 공채 칩을 PaddleOCR 로 읽는다 — 그 모델은 원래 색 그대로가 낫다(학습이 컬러) → 흑백화 전에 한 벌 떠 둔다
+  let colorC: HTMLCanvasElement | null = null;
+  if (lang === "kor" && opts?.paddle) {
+    colorC = document.createElement("canvas");
+    colorC.width = W; colorC.height = H;
+    colorC.getContext("2d")!.drawImage(c, 0, 0);
+  }
+  let paddleOk = false;   // 이 세션에서 칩을 PaddleOCR 로 읽었다 — chipsAlt(tesseract 재시도)를 건너뛴다
   grayNormalize(img.data);
   ctx.putImageData(img, 0, 0);
   const worker = await getWorker(lang);
@@ -384,6 +394,17 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
     async chips() {
       const boxes = findDarkChips(img.data, W, H);
       if (!boxes.length) return [];
+      // 한국어: PaddleOCR 인식 모델 (app/lens/paddle.ts — 칩 하나 수 ms~수십 ms). 못 쓰면 아래 tesseract
+      if (colorC) {
+        const rects = boxes.map((b) => chipCropRect(b, W, H)).filter((r): r is NonNullable<typeof r> => !!r);
+        const got = await paddleReadBoxes(colorC, rects);
+        if (got) {
+          paddleOk = true;
+          const lines = got.filter((g) => g.text).map((g) => g.text);
+          console.debug(`[lens] 칩 PaddleOCR ${rects.length}개:`, got.map((g) => `${g.text}(${Math.round(g.conf * 100)})`).join(" "));
+          return lines;
+        }
+      }
       await setPsm(worker, "7");
       const out: string[] = [];
       const cc = document.createElement("canvas");
@@ -401,6 +422,7 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
       return out;
     },
     async chipsAlt(cut = 0.5) {
+      if (paddleOk) return [];   // PaddleOCR 로 읽었으면 tesseract 흑백 재시도는 하지 않는다 (느리고, 뭉갬 땜질용이었다)
       const boxes = findDarkChips(img.data, W, H);
       if (!boxes.length) return [];
       await setPsm(worker, "7");
