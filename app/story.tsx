@@ -86,7 +86,9 @@ type Chronology = { note: string; updated?: string; arcs: Arc[]; entries: RawEnt
 // 연대기 항목 하나(이벤트 ref는 stories.json에서 이름·썸네일·출시월을 끌어온다)
 type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; thumbEn?: string; thumbJa?: string; terraYear: number | null; arc: string | null; eventId?: string; dateNote?: string; yearWhy?: LocText; epNo?: number; ep?: LocText };
 
-const data = storiesData as { updated: string; events: StoryEvent[] };
+const data = storiesData as { updated: string; events: StoryEvent[]; mainStart?: Record<string, string> };
+/** 메인 장 한섭 공개월(YYYY-MM) — build-story.py 가 story_review_table 에서 뽑는다 (출시순 보기, 2026-10-13) */
+const MAIN_START: Record<string, string> = data.mainStart ?? {};
 const summaryIds = new Set(summaryIdsData as string[]);
 const scriptIds = new Set(scriptIdsData as string[]);
 // 장면 모드(무대 재생)를 켤 수 있는 이벤트 — scripts/build-story-vn.py 산출.
@@ -1507,7 +1509,8 @@ function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; gr
   }, [keyword, allItems]);
 
   // 최신순 정렬: 이벤트는 출시월 내림차순(최신 위), 메인스토리는 에피소드 번호 내림차순
-  const recency = (it: ChronItem) => (it.eventId ? eventById.get(it.eventId)?.start : undefined) ?? "";
+  // 메인 장은 stories.json 이벤트가 아니라 출시월을 MAIN_START 에서 (사용자 지시 2026-10-13 "메인스토리라도 출시순에 맞춰")
+  const recency = (it: ChronItem) => (it.eventId ? eventById.get(it.eventId)?.start : undefined) || (it.kind === "main" ? MAIN_START[it.key] : undefined) || "";   // ⚠ || — 메인 합성 이벤트의 start 는 빈 문자열이다
   const sortItems = (items: ChronItem[]) => [...items].sort((a, b) => {
     // 중섭 선행(미실장)은 아직 KR에 없는 미래분 — CN 출시월이 KR 최신작보다 과거라도 맨 위에 둔다
     const fa = a.eventId && eventById.get(a.eventId)?.unreleased ? 1 : 0;
@@ -1566,14 +1569,15 @@ function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; gr
         // 출시순 = 나온 순서 (사용자 요청 2026-08-01). 출시월(YYYY-MM)의 연도로 묶고 최신 해가 위.
         const ev = it.eventId ? eventById.get(it.eventId) : undefined;
         const year = ev?.unreleased ? "" : recency(it).slice(0, 4);
-        if (ev?.unreleased) {
-          // 중섭 선행분은 CN 출시월이 KR 최신작보다 과거일 수 있어 연도에 섞지 않고 맨 위에 둔다
+        if (ev?.unreleased || (it.kind === "main" && !MAIN_START[it.key] && Object.keys(MAIN_START).length > 0)) {
+          // 중섭 선행분은 CN 출시월이 KR 최신작보다 과거일 수 있어 연도에 섞지 않고 맨 위에 둔다.
+          // 한섭 공개월이 없는 메인 장(중섭 선행 17장 등)도 미실장으로 (2026-10-13)
           k = "__future"; label = t("미실장"); sort = -1e9;
         } else if (year) {
           k = year; label = t("{y}년", { y: year }); sort = -Number(year);
         } else {
-          // ⚠ 메인스토리·통합전략은 데이터에 출시월이 없다 (chronology.json에 terraYear만 있고
-          // stories.json의 합성 이벤트에도 start가 없다) — 지어내지 않고 종류별로 맨 뒤에 모은다.
+          // ⚠ 통합전략(과 출시월을 못 얻은 메인 장)은 데이터에 출시월이 없다 — 지어내지 않고 종류별로 맨 뒤에 모은다.
+          //   메인 장은 2026-10-13 부터 MAIN_START(한섭 story_review_table)로 해마다 섞인다
           k = it.kind; label = t(KIND_KO[it.kind]);
           sort = 1e9 + ["main", "roguelike", "event", "mini"].indexOf(it.kind);
         }

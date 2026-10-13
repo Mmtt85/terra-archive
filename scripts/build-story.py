@@ -644,7 +644,20 @@ for act in cn_acts:
         ev_obj["eta"] = time.strftime("%Y-%m", time.gmtime(act["startTime"] + _gap_sec))
     events.append(ev_obj)
 
-out = {"updated": time.strftime("%Y-%m-%d"), "events": events}
+# 메인 장 한섭 공개월 — 출시순 보기에서 메인 스토리도 나온 해에 섞는다 (사용자 지시 2026-10-13 "메인스토리라도 출시순에 맞춰").
+# story_review_table 의 MAINLINE startShowTime. CDN 으로 받은 로컬 표가 있으면 그쪽이 최신이다(레포판은 며칠 밀린다).
+# ⚠ 0~7장은 회상 목록에 한꺼번에 오른 날(2020-06)이 찍혀 있다 — 실제 출시보다 늦을 수 있다
+def _main_start():
+    src = kr
+    try:
+        with open(f"{REPO}/.gamedata/kr_story_review_table.json", encoding="utf-8") as fp:
+            src = json.load(fp)
+    except (OSError, ValueError):
+        pass
+    return {k: time.strftime("%Y-%m", time.gmtime(v["startShowTime"])) for k, v in (src or {}).items()
+            if isinstance(v, dict) and v.get("entryType") == "MAINLINE" and (v.get("startShowTime") or 0) > 0}
+
+out = {"updated": time.strftime("%Y-%m-%d"), "events": events, "mainStart": _main_start()}
 json.dump(out, open(f"{REPO}/app/data/stories.json", "w", encoding="utf-8"),
           ensure_ascii=False, separators=(",", ":"))
 print(f"stories.json: {len(events)} events "
