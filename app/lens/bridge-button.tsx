@@ -89,25 +89,28 @@ const usePipOk = () => useSyncExternalStore(noSubscribe, () => !!docPip() && isO
 /** 틀렸어요 — 누르면 작은 모달이 떠서 뭐가 틀렸는지 한 줄 적어 보낸다(비워도 된다). 화면·OCR 기록과 함께 간다 (2026-10-13).
  *  모달은 이 버튼이 그려진 창(본 화면 또는 작은 창) 안에 고정 위치로 — 공용 ModalWindow 는 본 화면 body 로 포털돼 작은 창에선 안 보인다 */
 function WrongButton({ t, cls }: { t: T; cls: string }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<HTMLElement | null>(null);   // 열려 있으면 모달을 그릴 자리
   const [memo, setMemo] = useState("");
-  const send = () => { markBridgeWrong(memo); setOpen(false); setMemo(""); };
+  const send = () => { markBridgeWrong(memo); setOpen(null); setMemo(""); };
+  // ⚠ 모달은 버튼 옆이 아니라 그 창의 맨 바깥에 그린다 — 머리줄(backdrop-filter)·알림창(transform) 안에서 position:fixed 는
+  //   화면이 아니라 그 상자를 기준으로 붙어 위쪽에 반쯤 걸렸다 (사용자 지적 2026-10-13). 작은 창이면 그 창의 테마 상자, 아니면 body
+  const where = (el: HTMLElement) => (el.closest(".bridge-pip") as HTMLElement | null) ?? el.ownerDocument.body;
   return (<>
-    <button type="button" className={`bridge-toast-off bridge-toast-wrong ${cls}`} onClick={() => setOpen(true)}
+    <button type="button" className={`bridge-toast-off bridge-toast-wrong ${cls}`} onClick={(e) => setOpen(where(e.currentTarget))}
       title={t("방금 인식이 틀렸다고 알려 주세요 — 그 인식에 쓴 게임 화면 한 장이 함께 전송되어 인식을 고치는 데 쓰입니다")}>{t("틀렸어요")}</button>
-    {open && (
-      <div className="bridge-wrong-back" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+    {open && createPortal(
+      <div className="bridge-wrong-back" onClick={(e) => { if (e.target === e.currentTarget) setOpen(null); }}>
         <div className="bridge-wrong-modal" role="dialog" aria-modal="true" aria-label={t("틀렸어요")}>
           <b>{t("틀렸어요")}</b>
           <input type="text" value={memo} autoFocus maxLength={200} placeholder={t("뭐가 틀렸나요? (한 줄, 비워도 돼요)")}
             onChange={(e) => setMemo(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") send(); else if (e.key === "Escape") setOpen(false); }} />
+            onKeyDown={(e) => { if (e.key === "Enter") send(); else if (e.key === "Escape") setOpen(null); }} />
           <div className="bridge-wrong-acts">
-            <button type="button" className="bridge-toast-off" onClick={() => setOpen(false)}>{t("닫기")}</button>
+            <button type="button" className="bridge-toast-off" onClick={() => setOpen(null)}>{t("닫기")}</button>
             <button type="button" className="bridge-toast-off bridge-wrong-send" onClick={send}>{t("보내기")}</button>
           </div>
         </div>
-      </div>
+      </div>, open,
     )}
   </>);
 }
