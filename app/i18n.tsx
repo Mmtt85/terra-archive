@@ -149,6 +149,7 @@ const D: Record<string, Pair> = {
   "눌러서 작전 상세(지도·등장 적)를 엽니다": ["Click to open stage details (map, enemies)", "クリックで作戦の詳細（マップ・出現敵）を開きます"],
   "▴ 접기": ["▴ Collapse", "▴ 閉じる"],
   "뭐가 틀렸나요? (한 줄, 비워도 돼요)": ["What was wrong? (one line, optional)", "何が違いましたか？（一行・空欄でもOK）"],
+  "{n}가지": ["{n} variants", "{n}通り"],
   "강제 인식": ["Force rescan", "強制認識"],
   "다시 인식": ["Rescan", "再認識"],
   "지금 화면을 바로 다시 인식합니다": ["Re-read the current screen right now", "今の画面をすぐ再認識します"],

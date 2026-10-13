@@ -505,14 +505,35 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
         if (opts?.live) setBridgePipFloor(/^zone_sky_/.test(z.id) ? { floor: 0, place: z.name, name: z.name }
           : { floor: Number(z.id.replace(/\D/g, "")) || undefined, place: "", name: z.name });
       }
+      // 층 이름이 글자 조각으로 쪼개져 읽힌 프레임 — '산수각'이 '산수'·'각' 두 상자로 와서 지도 화면 판별이 안 됐고, 그 바람에 지도 이름표
+      // '무차별 교육'이 작전으로 잡혔다 (틀렸어요 2026-10-13). 위쪽 띠의 상자를 왼→오로 이어 붙여 층 이름을 다시 찾는다
+      if (!drop.size) {
+        const top = bx.filter((b) => b.y1 <= 0.14).sort((a, b) => a.x0 - b.x0);
+        const joined = top.map((b) => normText(b.text)).join("");
+        const z = zoneEntries.find((e) => e.nameN.length >= 3 && joined.includes(e.nameN));
+        if (z) {
+          for (const b of top) { const n = normText(b.text); if (n && z.nameN.includes(n)) drop.add(b.text); }
+          if (opts?.live) setBridgePipFloor(/^zone_sky_/.test(z.id) ? { floor: 0, place: z.name, name: z.name }
+            : { floor: Number(z.id.replace(/\D/g, "")) || undefined, place: "", name: z.name });
+        }
+      }
       // ⚠ 위쪽 HUD 에 층 이름이 보이는 화면(지도·노드)에서만 — 난이도 배지는 그 화면에만 있다. 분대·오퍼 선택 화면 왼쪽 아래의
       //   다른 숫자('1')를 난이도로 읽어 난이도 1 로 고정됐다 (사용자 제보 2026-10-13)
       if (drop.size && !rogueScreen) rogueScreen = "map";
       if (rogueScreen === "squadSelect") runGrade = null;
-      if (drop.size || rogueScreen === "runStart") for (const b of bx) {
-        if (b.x1 < 0.12 && b.y0 > 0.82 && /^\d{1,2}$/.test(b.text.trim())) { const g = Number(b.text.trim()); if (g <= 18) hudGrade = g; }
+      if (drop.size || rogueScreen === "runStart") {
+        // 배지 숫자가 '1'·'2' 두 상자로 쪼개져 오기도 해서 같은 줄의 숫자 상자는 왼→오로 이어 붙인다
+        const digs = bx.filter((b) => b.x1 < 0.12 && b.y0 > 0.82 && /^\d{1,2}$/.test(b.text.trim())).sort((a, b) => a.x0 - b.x0);
+        let txt = "";
+        for (const b of digs) { if (txt && b.x0 - digs[digs.indexOf(b) - 1].x1 > 0.02) txt = ""; txt += b.text.trim(); }
+        const g = Number(txt.slice(-2));
+        if (txt && g <= 18) hudGrade = g;
       }
-      if (rogueScreen === "runStart" && hudGrade !== null) runGrade = hudGrade;
+      // 판 시작 화면의 배지를 판 난이도로 — 단 이미 두 자리(12)로 잡혔는데 끝자리만('2') 읽힌 건 무시한다
+      const tailOf = (big: number, small: number) => big >= 10 && small < 10 && String(big).endsWith(String(small));
+      if (rogueScreen === "runStart" && hudGrade !== null && !(runGrade !== null && tailOf(runGrade, hudGrade))) runGrade = hudGrade;
+      // 거꾸로 판 난이도가 끝자리만 잡혔는데('2') 지도에서 두 자리('12')가 읽히면 두 자리로 바로잡는다 (사용자 제보 2026-10-13 "난이도 12인데 2")
+      if (runGrade !== null && hudGrade !== null && tailOf(hudGrade, runGrade)) runGrade = hudGrade;
       if (runGrade !== null) hudGrade = runGrade;   // 판 안에서는 고정값 — 지도에서 다른 숫자를 읽어도 흔들리지 않게
       if (opts?.live && hudGrade !== null) setBridgePipFloor({ grade: hudGrade });
       // 지도 화면에 **늘 떠 있는** HUD 표 글자 — 줄 전체가 이것뿐이면 판정에서 뺀다. PaddleOCR 은 이것들을 매번 읽어서
@@ -539,8 +560,15 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       for (const c of (index.nodes ?? []).filter((x) => !topic || x.topic === topic)) {
         const iName = ns.findIndex((n) => n === c.nameN);
         if (iName < 0) continue;
-        const descIdx = ns.flatMap((n, i) => (i !== iName && n.length >= 6 && near(n, c.descN) ? [i] : []));
-        if (descIdx.reduce((a, i) => a + ns[i].length, 0) < 10) continue;
+        let descIdx = ns.flatMap((n, i) => (i !== iName && n.length >= 6 && near(n, c.descN) ? [i] : []));
+        if (descIdx.reduce((a, i) => a + ns[i].length, 0) < 10) {
+          // 설명 글을 못 읽은 프레임 — 패널 제목 바로 밑의 'INFO.' 표식(OCR 은 'ENFD.'·'EINFD.' 로 읽는다)이 붙어 있으면 고른 노드다
+          // (틀렸어요 2026-10-13 '득과 실': 작은 설명 글이 통째로 안 읽혔다)
+          const INFO = /^e?[il1]?nf[od0]$/;
+          const k = ns.findIndex((n, i) => n === c.nameN && (INFO.test(ns[i + 1] ?? "") || INFO.test(ns[i + 2] ?? "")));
+          if (k < 0) continue;
+          descIdx = [k];
+        }
         rogueNodeOut = c.id;
         const drop = new Set([iName, ...descIdx]);
         lines = lines.filter((_, i) => !drop.has(i));

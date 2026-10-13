@@ -198,6 +198,33 @@ function SceneChoices({ scenes, idx, path, link }: {
   const [open, setOpen] = useState<Set<number>>(() => new Set());
   const sc = scenes[idx];
   if (!sc) return null;
+  // 같은 이름의 선택지 묶기 — 조건·보상만 다른 같은 이름이 랜덤 출현 그룹마다 되풀이돼 목록이 길었다(쉐이 「존형실의」 17줄,
+  // 사용자 지시 2026-10-13 "같은 이름의 선택지에 보상만 다른 경우는 같은 이름으로 그루핑"). 묶이면 이름 한 줄 밑에 조건·보상을 갈래로
+  const byTitle = new Map<string, number[]>();
+  sc.choices.forEach((c, i) => { if (c.note === undefined && c.branch === undefined && c.title) byTitle.set(c.title, [...(byTitle.get(c.title) ?? []), i]); });
+  const grouped = [...byTitle.values()].some((v) => v.length > 1);
+  if (grouped) {
+    const seen = new Set<string>();
+    return (
+      <ul className={`rg-enc-choices${idx > 0 || path.length > 1 ? " nested" : ""}`}>
+        {sc.choices.map((c, i) => {
+          if (c.note !== undefined) return <li key={i} className="rg-choice rg-choice-note-row"><span className="rg-choice-note">{L(c.note)}</span></li>;
+          const ids = c.title ? byTitle.get(c.title) : undefined;
+          if (!ids || ids.length < 2) return <SceneChoiceRow key={i} scenes={scenes} c={c} i={i} path={path} link={link} open={open} setOpen={setOpen} />;
+          if (seen.has(c.title!)) return null;
+          seen.add(c.title!);
+          return (
+            <li key={i} className="rg-choice rg-choice-group">
+              <div className="rg-choice-head"><strong>{c.title}</strong><span className="rg-choice-loop">{t("{n}가지", { n: ids.length })}</span></div>
+              <ul className="rg-choice-variants">
+                {ids.map((j) => <SceneChoiceRow key={j} scenes={scenes} c={sc.choices[j]} i={j} path={path} link={link} open={open} setOpen={setOpen} variant />)}
+              </ul>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
   return (
     <ul className={`rg-enc-choices${idx > 0 || path.length > 1 ? " nested" : ""}`}>
       {sc.choices.map((c, i) => {
@@ -259,6 +286,51 @@ function SceneChoices({ scenes, idx, path, link }: {
         );
       })}
     </ul>
+  );
+}
+
+/** 장면 선택지 한 줄 — 묶인 갈래(variant)면 이름을 빼고 조건·보상만 */
+function SceneChoiceRow({ scenes, c, i, path, link, open, setOpen, variant }: {
+  scenes: EncScene[]; c: EncSceneChoice; i: number; path: number[]; link?: (t: string | null) => React.ReactNode;
+  open: Set<number>; setOpen: React.Dispatch<React.SetStateAction<Set<number>>>; variant?: boolean;
+}) {
+  const { t } = useI18n();
+  const L = link ?? ((x: string | null) => x);
+  const dest = c.dest;
+  const cyclic = dest !== undefined && path.includes(dest);
+  const expandable = dest !== undefined && !cyclic;
+  const expanded = expandable && open.has(i);
+  const head = variant ? null : c.cn
+    ? <><strong lang="zh">{c.cn}</strong><span className="rg-choice-kr">{c.title ?? c.cnTitle}</span></>
+    : c.cnTitle ? <strong lang="zh">{c.cnTitle}</strong> : <strong>{c.title}</strong>;
+  const descTxt = c.desc ?? c.cnDesc ?? null;
+  return (
+    <li className="rg-choice">
+      {expandable ? (
+        <button type="button" className="rg-choice-head rg-choice-btn" aria-expanded={expanded}
+          onClick={() => setOpen((cur) => { const nx = new Set(cur); if (nx.has(i)) nx.delete(i); else nx.add(i); return nx; })}>
+          {head}
+          {descTxt ? <span className="rg-choice-desc">{L(descTxt)}</span> : variant ? <span className="rg-choice-desc">—</span> : null}
+          <span className="rg-choice-caret" aria-hidden>{expanded ? "▾" : "▸"}</span>
+        </button>
+      ) : (
+        <div className="rg-choice-head">
+          {head}
+          {descTxt ? <span className="rg-choice-desc">{L(descTxt)}</span> : variant ? <span className="rg-choice-desc">—</span> : null}
+          {cyclic && <span className="rg-choice-loop">{t("↻ 앞의 단계로 돌아갑니다")}</span>}
+        </div>
+      )}
+      {expanded && dest !== undefined && (
+        <div className="rg-choice-next">
+          {(scenes[dest]?.desc || scenes[dest]?.cn) && (
+            <p className={`rg-choice-result${scenes[dest]?.cn ? " zh" : ""}`} lang={scenes[dest]?.cn ? "zh" : undefined}>
+              {L(scenes[dest]?.desc ?? scenes[dest]?.cn ?? null)}
+            </p>
+          )}
+          <SceneChoices scenes={scenes} idx={dest} path={[...path, dest]} link={link} />
+        </div>
+      )}
+    </li>
   );
 }
 

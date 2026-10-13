@@ -18710,6 +18710,10 @@ main.site-main > .site-header {
 .rg-prts-stagecard-body small { font-size: 11px; color: var(--rgmut, var(--muted)); }
 .rg-prts-stagecard-body small em { font-style: normal; margin-left: 2px; }
 .rg-prts-stagecard-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; line-height: 1.45; color: var(--rgink2, var(--muted)); }
+/* 같은 이름으로 묶인 조우 선택지 — 이름 한 줄 밑에 조건·보상 갈래 (2026-10-13) */
+.rg-choice-group > .rg-choice-head strong { margin-right: 6px; }
+.rg-choice-variants { list-style: none; margin: 4px 0 0; padding: 0 0 0 12px; border-left: 2px solid var(--rgline, var(--line)); display: flex; flex-direction: column; gap: 2px; }
+.rg-choice-variants > .rg-choice { margin: 0; }
 .rg-prts-encbattles { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .rg-prts-encbattles > h5 { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--rgink2, var(--muted)); }
 .rg-prts-stagefold { display: block; margin: 0 0 6px auto; padding: 2px 8px; border: 1px solid var(--rgline, var(--line)); background: none; color: var(--rgmut, var(--muted)); font: inherit; font-size: 11px; cursor: pointer; }
