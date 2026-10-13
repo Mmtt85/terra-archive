@@ -12,6 +12,7 @@
 import { createPortal } from "react-dom";
 import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
+import { DatePicker } from "../date-picker";
 import { ACCOUNT_SERVERS } from "../account";
 import { ModalWindow } from "../modal-window";
 import { VisitsReport } from "./visits-report";
@@ -1224,18 +1225,17 @@ export function VisitsPanel() {
         <span className={`vz-range${range ? " on" : ""}`}>
           <span>기간</span>
           <button type="button" className="vz-day" onClick={() => shiftDay(-1)} title="하루 앞으로">‹ 전날</button>
-          <input type="date" max={today} value={range?.from ?? ""} onChange={(e) => pickDate("from", e.target.value)} aria-label="시작일" />
+          {/* 날짜는 공용 달력, 시각은 공용 Dropdown (사용자 지시 2026-10-13 "공용 카렌다 컴포넌트") */}
+          <DatePicker max={today} value={range?.from} onChange={(v) => pickDate("from", v)} ariaLabel="시작일" placeholder="시작일" />
           {/* 시각은 시 단위만 (사용자 지시 2026-10-08 "분까지는 필요없고 시간대까지만") */}
-          <select value={range?.fromT ?? ""} onChange={(e) => pickTime("fromT", e.target.value)} aria-label="시작 시각">
-            <option value="">0시</option>
-            {Array.from({ length: 23 }, (_, i) => i + 1).map((h) => <option key={h} value={`${String(h).padStart(2, "0")}:00`}>{h}시</option>)}
-          </select>
+          <Dropdown ariaLabel="시작 시각" scroll label={range?.fromT ? `${Number(range.fromT.slice(0, 2))}시` : "0시"}
+            items={[{ value: "", label: "0시" }, ...Array.from({ length: 23 }, (_, i) => ({ value: `${String(i + 1).padStart(2, "0")}:00`, label: `${i + 1}시` }))]}
+            selected={[range?.fromT ?? ""]} onPick={(v) => pickTime("fromT", v)} />
           <i>~</i>
-          <input type="date" max={today} value={range?.to ?? ""} onChange={(e) => pickDate("to", e.target.value)} aria-label="끝일" />
-          <select value={range?.toT ?? ""} onChange={(e) => pickTime("toT", e.target.value)} aria-label="끝 시각">
-            {Array.from({ length: 23 }, (_, i) => i + 1).map((h) => <option key={h} value={`${String(h).padStart(2, "0")}:00`}>{h}시</option>)}
-            <option value="">24시</option>
-          </select>
+          <DatePicker max={today} value={range?.to} onChange={(v) => pickDate("to", v)} ariaLabel="끝일" placeholder="끝일" />
+          <Dropdown ariaLabel="끝 시각" scroll label={range?.toT ? `${Number(range.toT.slice(0, 2))}시` : "24시"}
+            items={[...Array.from({ length: 23 }, (_, i) => ({ value: `${String(i + 1).padStart(2, "0")}:00`, label: `${i + 1}시` })), { value: "", label: "24시" }]}
+            selected={[range?.toT ?? ""]} onPick={(v) => pickTime("toT", v)} />
           <button type="button" className="vz-day" onClick={() => shiftDay(1)} disabled={!canNext} title="하루 뒤로">다음날 ›</button>
           {range && <button type="button" className="vz-range-x" onClick={() => setRange(null)} aria-label="기간 지정 해제">×</button>}
         </span>

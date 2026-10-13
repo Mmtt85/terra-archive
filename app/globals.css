@@ -19476,6 +19476,23 @@ main.site-main > .site-header {
   box-shadow: var(--sh-2);
 }
 /* 화면·모달 오른끝 버튼만 — 열 때 목록을 자르는 경계(창·모달 본문)까지 실측해서 왼쪽으로 펼친다 */
+/* 공용 달력(app/date-picker.tsx) — 판은 .drop-menu 그대로, 안쪽만 (2026-10-13) */
+.date-menu { min-width: 0; width: 248px; padding: 8px; }
+.date-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.date-head b { font-size: 13px; }
+.date-head button, .date-foot button { padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: transparent; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+.date-head button:hover, .date-foot button:hover:not(:disabled) { background: var(--bg-faint); }
+.date-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }   /* minmax(0) — 버튼 기본 여백에 칸이 밀려 토요일이 판 밖으로 나갔다 */
+.date-wd { padding: 2px 0; text-align: center; font-size: 11px; color: var(--muted); }
+.date-menu .date-day { min-width: 0; width: 100%; padding: 5px 0; border: 1px solid transparent; border-radius: var(--r-sm); background: transparent; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
+.date-menu .date-day:hover:not(:disabled) { background: var(--bg-faint); }
+.date-wd.sun, .date-day.sun { color: #d9534f; }
+.date-wd.sat, .date-day.sat { color: #4a7fd6; }
+.date-day.today { border-color: var(--line); font-weight: 700; }
+.date-day.on { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.date-day:disabled { opacity: .3; cursor: default; }
+.date-foot { display: flex; justify-content: flex-end; margin-top: 6px; }
+.date-foot button:disabled { opacity: .4; cursor: default; }
 .drop-menu.align-right {
   left: auto;
   right: 0;

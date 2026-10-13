@@ -12,6 +12,7 @@ import { buildPromoHtml } from "./promo-html";
 import { ModalWindow } from "../modal-window";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
 import { RULES as bundledRules } from "../rules";
+import { DatePicker } from "../date-picker";
 import operatorsData from "../data/operators.json";
 import recruitData from "../data/recruit.json";
 import farmData from "../data/farm.json";
@@ -124,7 +125,7 @@ function ChangeEditor({ row, onSave, onCancel }: { row: ChangeDraft; onSave: (ne
     <div className="rule-editor chlog-editor">
       <header>
         <b>{row.id ? "항목 편집" : "새 항목"}</b>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} title="표시·정렬 기준일" />
+        <DatePicker value={date} onChange={setDate} ariaLabel="표시·정렬 기준일" />
         <select value={area} onChange={(e) => setArea(e.target.value as ChangeArea)} title="어느 기능 이야기인가 — 배지에 '인프라 개선'처럼 붙는다">
           {CHANGE_AREAS.map((a) => <option key={a} value={a}>{CHANGE_AREA_LABEL[a]}</option>)}
         </select>
