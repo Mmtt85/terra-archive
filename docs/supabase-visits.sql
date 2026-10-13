@@ -658,8 +658,8 @@ create index if not exists prts_scan_ref_idx on public.prts_scan (ref, kind, at)
 create or replace function public.visits_prts_wrong(p_from timestamptz, p_to timestamptz)
 returns json language sql stable security definer set search_path = public as $$
   select coalesce(json_agg(r order by r.at desc), '[]') from (
-    -- w.note = 누른 사람이 적은 한 줄 메모 (틀렸어요 모달, 2026-10-13~)
-    select w.at, w.note as memo, x.visitor, x.topic, x.result, x.section, x.target, x.note, x.seen, x.cached, x.env,
+    -- w.note = 누른 사람이 적은 한 줄 메모 (틀렸어요 모달, 2026-10-13~) · w.id = 지우기 단추가 가리킬 줄 (2026-10-13~)
+    select w.id, w.at, w.note as memo, x.visitor, x.topic, x.result, x.section, x.target, x.note, x.seen, x.cached, x.env,
            (select i.img from public.prts_scan i where i.ref = x.id and i.kind = 'shot' and i.img not like '%.json' order by i.at limit 1) as shot,
            -- 그 인식의 판정 + OCR 이 읽은 줄 전체 (JSON 파일, 2026-10-13~) — 화면만으로는 왜 틀렸는지 알 수 없다
            (select i.img from public.prts_scan i where i.ref = x.id and i.kind = 'shot' and i.img like '%.json' order by i.at limit 1) as ocr
@@ -668,3 +668,18 @@ returns json language sql stable security definer set search_path = public as $$
     order by w.at desc limit 50
   ) r
 $$;
+-- 관리자 'PRTS 틀렸어요' 지우기 (2026-10-13) — 대응을 마친 틀렸어요 한 줄과, 같은 인식을 가리키는 다른 틀렸어요·첨부(화면·OCR 기록) 줄을 함께.
+-- 인식 줄(scan) 자체는 남긴다 — 방문 통계의 인식 수가 달라지지 않게. 관리자 키가 없으면 0 을 돌려준다
+create or replace function public.visits_prts_wrong_delete(p_id uuid)
+returns integer language plpgsql volatile security definer set search_path = public as $$
+declare v_ref uuid; n integer := 0;
+begin
+  if not (select public.visits_is_admin()) then return 0; end if;
+  select ref into v_ref from public.prts_scan where id = p_id and kind = 'wrong';
+  if v_ref is null then return 0; end if;
+  delete from public.prts_scan where ref = v_ref and kind in ('wrong', 'shot');
+  get diagnostics n = row_count;
+  return n;
+end $$;
+grant execute on function public.visits_prts_wrong_delete(uuid) to anon;
+
