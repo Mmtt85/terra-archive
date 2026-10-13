@@ -26,6 +26,7 @@ import { useEffect, useRef, useState } from "react";
 import type { LensOutcome } from "./match";
 import { holdVisitActive, notePrtsStart, notePrtsEnd, notePrtsScan, prtsScanId, type PrtsScanRow } from "../visit-track";
 import { uploadFeedbackFile } from "../feedback";
+import { lastOcrLines } from "./ocr-trace";
 
 // 크롬 전용 API 라 TS 기본 DOM 타입에 없다 — 쓰는 만큼만 선언
 declare const MediaStreamTrackProcessor: {
@@ -152,7 +153,7 @@ let scan: ScanCtx | null = null;
 /** shot = '틀렸어요'와 함께 보낸 화면 — 보내는 중·보냄·실패 (화면이 없으면 none: 캐시 재적용은 새 화면을 안 만든다) */
 // row = 그 인식의 기록 한 줄 — 평소엔 보내지 않고 '틀렸어요'를 누를 때만 보낸다 (사용자 지시 2026-10-12 "인식표는 지우자. 받지도 말자" —
 // 인식마다 보내니 하루 3천 줄이 쌓여 관리자 화면이 느려졌다). 같은 까닭으로 '바로잡음'(fix) 추적도 걷어냈다
-let lastScan: { id: string; at: number; wrong: boolean; row?: PrtsScanRow; blob?: Blob; shot?: "sending" | "sent" | "fail" | "none" } | null = null;
+let lastScan: { id: string; at: number; wrong: boolean; row?: PrtsScanRow; ocr?: string[]; blob?: Blob; shot?: "sending" | "sent" | "fail" | "none" } | null = null;
 /** '못 찾음'이면 화면이 그대로여도 한 번 다시 읽는다 — 보상 화면처럼 서서히 나타나는 화면을 다 뜨기 전에 읽은 경우
  *  (사용자 제보 2026-10-12 "하나 받고 나서야 리스트에 뜬다" — 화면이 '같은 화면'으로 묶여 다시 안 읽혔다) */
 let retryAt = 0;
@@ -183,7 +184,9 @@ function finishScan(ocrStart?: number): void {
     result, section: oc?.section ?? undefined, target: oc ? gotoKey(oc) : undefined, note: sc.note,
     ms: now - sc.emitAt, ocr_ms: ocrStart != null ? now - ocrStart : 0, cached: sc.cached, w: sc.w, h: sc.h, crop: sc.crop,
   };
-  lastScan = { id: sc.id, at: now, wrong: false, row, blob: sc.blob };
+  lastScan = { id: sc.id, at: now, wrong: false, row, ocr: sc.cached ? undefined : lastOcrLines(), blob: sc.blob };
+  // 화면 모으기 — 그 화면의 판정을 옆에 남긴다 (결과·구역·대상·상태줄·판정 근거·걸린 시간)
+  if (collectDir && !sc.cached) void collectWrite(`${sc.id}.txt`, JSON.stringify({ topic: row.topic, page: row.page, result, section: row.section, target: row.target, note: row.note, seen: row.seen, ms: row.ms, ocr_ms: row.ocr_ms, w: sc.w, h: sc.h, ocr: lastOcrLines() }, null, 1));
   retryAt = result === "none" && !sc.cached && !sc.retry ? now + 1500 : 0;
   notify();
 }
@@ -191,20 +194,27 @@ function finishScan(ocrStart?: number): void {
 /** 토스트의 '틀렸어요' — 마지막 인식을 틀렸다고 표시하고, **그 인식에 쓴 화면 한 장**을 같이 올린다
  *  (사용자 지시 2026-10-12 "인식된 화면을 받아보는 게 낫다"). 평소 기록엔 그림이 없고 이 단추를 누를 때만 간다 —
  *  토스트 안내문이 그렇게 말한다. 올리는 곳은 제안 게시판 첨부와 같은 익명 업로드(workers/upload, feedback/…). 같은 인식엔 한 번만 */
-export function markBridgeWrong(): void {
+export function markBridgeWrong(memo?: string): void {
   const ls = lastScan;
   if (!ls || ls.wrong) return;
   ls.wrong = true;
   const wrongId = prtsScanId();
   if (ls.row) notePrtsScan(ls.row);   // 그 인식 한 줄 — 이때 처음 보낸다
-  notePrtsScan({ id: wrongId, kind: "wrong", ref: ls.id, topic: lock?.topic });
+  // 메모 — 뭐가 틀렸는지 한 줄 (사용자 지시 2026-10-13 "틀렸어요 누를 때 한 줄 써서 보낼 수 있게"). 비워도 된다
+  const note = memo?.trim().slice(0, 200) || undefined;
+  notePrtsScan({ id: wrongId, kind: "wrong", ref: ls.id, topic: lock?.topic, ...(note ? { note } : {}) });
   if (!ls.blob) { ls.shot = "none"; notify(); return; }
   ls.shot = "sending";
   notify();
   const file = new File([ls.blob], `prts-wrong-${ls.id.slice(0, 8)}.jpg`, { type: "image/jpeg" });
+  // 화면에 더해 **그 인식의 판정 + OCR 이 읽은 줄 전체**를 JSON 으로 (사용자 지시 2026-10-13 "패들 OCR 이 인식한 내용 json 도 받아야") —
+  // 화면만으로는 왜 틀렸는지(무엇을 어떻게 읽었는지) 알 수 없다. 둘 다 'shot' 줄로 남고 관리자 목록이 화면·OCR 기록으로 나눠 보인다
+  const ocrFile = new File([JSON.stringify({ id: ls.id, ...(ls.row ?? {}), ...(note ? { memo: note } : {}), ocr: ls.ocr ?? [] }, null, 1)], `prts-wrong-${ls.id.slice(0, 8)}.json`, { type: "application/json" });
   void uploadFeedbackFile(file)
     .then((up) => { notePrtsScan({ id: prtsScanId(), kind: "shot", ref: ls.id, img: up.url }); ls.shot = "sent"; })
-    .catch(() => { ls.shot = "fail"; })
+    .then(() => uploadFeedbackFile(ocrFile))
+    .then((up) => { if (up) notePrtsScan({ id: prtsScanId(), kind: "shot", ref: ls.id, img: up.url }); })
+    .catch(() => { if (ls.shot !== "sent") ls.shot = "fail"; })
     .finally(() => { ls.blob = undefined; notify(); });
 }
 export const bridgeLastScan = () => lastScan;
@@ -223,7 +233,7 @@ let pipRelics: BridgePipCard[] = [];
 let pipActive = false;
 export function setBridgePipActive(v: boolean): void { pipActive = v; }
 export const bridgePipActive = () => pipActive;
-export function setBridgePipNode(card: BridgePipCard): void { pipNode = card; notify(); }
+export function setBridgePipNode(card: BridgePipCard | null): void { pipNode = card; notify(); }
 export function setBridgePipRelics(cards: BridgePipCard[]): void { pipRelics = cards; notify(); }
 export const bridgePipNode = () => pipNode;
 export const bridgePipRelics = () => pipRelics;
@@ -235,6 +245,52 @@ export type BridgePipRecruit = { tags: string[]; rows: { combo: string[]; floor:
 let pipRecruit: BridgePipRecruit | null = null;
 export function setBridgePipRecruit(v: BridgePipRecruit | null): void { pipRecruit = v; notify(); }
 export const bridgePipRecruit = () => pipRecruit;
+/** 통합전략 공통 정보 — 노드·소장품 칸 위 한 줄: 층(번호·이름)·난이도 (사용자 지시 2026-10-13 "1층, 영혼 융합의 시작 · 난이도").
+ *  구역·작전이 인식되면 층을, 좌하단 난이도 배지가 읽히면 난이도를 갈아 끼운다 — 다른 값은 그대로 둔다 */
+/** era — 통합전략 4 의 '시대'(재앙 시대 등)가 일어났을 때. 공통 정보 띠의 칩을 누르면 효과가 펼쳐진다 (2026-10-13) */
+export type BridgePipFloor = { floor?: number; name?: string;
+  /** 층이 아닌 구역(쉐이의 잔식)의 이름 — 있으면 'N층' 대신 '쉐이의 잔식 - 이름' */
+  place?: string; grade?: number; squad?: string; era?: { name: string; text: string } | null };
+let pipFloor: BridgePipFloor = {};
+export function setBridgePipFloor(v: BridgePipFloor): void {
+  const next = { ...pipFloor, ...Object.fromEntries(Object.entries(v).filter(([, x]) => x !== undefined)) };
+  if (next.floor === pipFloor.floor && next.name === pipFloor.name && next.place === pipFloor.place && next.grade === pipFloor.grade && next.squad === pipFloor.squad && next.era === pipFloor.era) return;
+  pipFloor = next; notify();
+}
+export const bridgePipFloor = () => pipFloor;
+
+/** 강제 인식 (사용자 지시 2026-10-13 "인식이 이상할 때 대비해 강제 인식 버튼") — '같은 화면'·판정 캐시·전투 홀드를 무시하고
+ *  지금 화면을 다음 틱에 바로 다시 읽는다 */
+export function forceBridgeRescan(): void {
+  if (!running) return;
+  sentGray = null; sceneMemos = []; battleHold = false; retryAt = 0; retryNext = false;
+  lastMoveAt = Date.now() - 10_000;   // 안착 대기 없이
+  console.debug("[bridge] 강제 인식");
+  notify();
+}
+
+// ── 화면 모으기 (관리자 시험 기능, 2026-10-13) — 록라 OCR 을 PaddleOCR 로 바꾸기 전에 tesseract 와 나란히 비교할 화면을 모은다.
+// 사용자가 고른 PC 폴더(크롬 showDirectoryPicker)에 인식에 쓴 화면(jpg)과 그 판정(txt)을 바로 쓴다 — **서버로는 아무것도 안 간다**
+type DirHandle = { getFileHandle: (n: string, o: { create: boolean }) => Promise<{ createWritable: () => Promise<{ write: (d: Blob | string) => Promise<void>; close: () => Promise<void> }> }> };
+let collectDir: DirHandle | null = null;
+let collectN = 0;
+export const bridgeCollecting = () => (collectDir ? collectN : -1);
+export async function startBridgeCollect(): Promise<boolean> {
+  const pick = (window as unknown as { showDirectoryPicker?: (o: { mode: string }) => Promise<DirHandle> }).showDirectoryPicker;
+  if (!pick) return false;
+  try { collectDir = await pick({ mode: "readwrite" }); collectN = 0; notify(); return true; } catch { return false; }
+}
+export function stopBridgeCollect(): void { collectDir = null; notify(); }
+async function collectWrite(name: string, data: Blob | string): Promise<void> {
+  const dir = collectDir;
+  if (!dir) return;
+  try {
+    const fh = await dir.getFileHandle(name, { create: true });
+    const w = await fh.createWritable();
+    await w.write(data);
+    await w.close();
+  } catch (e) { console.warn("[bridge] 화면 모으기 저장 실패", e); }
+}
 
 const frameSubs = new Set<(f: File) => void>();
 const replaySubs = new Set<(oc: LensOutcome) => void>();
@@ -356,10 +412,11 @@ let visitHeld = false;
 export async function connectBridge(withLock?: BridgeLock, via?: Window): Promise<void> {
   disconnectBridge();
   lock = withLock ?? null;
-  // 공채 — 칩을 읽는 PaddleOCR(모델·엔진 약 27MB)을 연결과 함께 받아 둔다. 첫 인식이 받는 시간을 기다리지 않게
-  if (lock?.topic === "recruit") void import("./paddle").then((m) => m.warmPaddle());
+  // 공채·통합전략 — PaddleOCR(모델·엔진)을 연결과 함께 받아 둔다. 첫 인식이 받는 시간을 기다리지 않게
+  // 통합전략(한국어)도 화면 전체 읽기를 PaddleOCR 로 한다 (2026-10-13) — 같이 미리 받는다
+  if (lock?.topic === "recruit" || lock?.topic?.startsWith("rogue_")) void import("./paddle").then((m) => m.warmPaddle());
   runLog = []; logMeta = null; startedAt = new Date().toISOString();
-  scan = null; lastScan = null; pipNode = null; pipRelics = []; pipRecruit = null;
+  scan = null; lastScan = null; pipNode = null; pipRelics = []; pipRecruit = null; pipFloor = {};
   sceneMemos = []; lastEmitGray = null; battleHold = false;
   error = ""; notify();
   const opts = {
@@ -565,6 +622,7 @@ function tick(): void {
   scan = ctx;
   void outCv.convertToBlob({ type: "image/jpeg", quality: 0.9 }).then((blob) => {
     ctx.blob = blob;   // '틀렸어요' 때만 올린다 — 그 전엔 메모리에만 (다음 인식이 오면 버린다)
+    if (collectDir) { collectN++; notify(); void collectWrite(`${ctx.id}.jpg`, blob); }
     const file = new File([blob], "bridge.jpg", { type: "image/jpeg" });
     for (const cb of frameSubs) cb(file);
   });

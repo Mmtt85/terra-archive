@@ -7,7 +7,7 @@
 
 import { grayNormalize, colorNormalize, maxChannelNormalize, invertRgb, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "./preprocess";
 import { asset } from "../assets";
-import { paddleReadBoxes } from "./paddle";
+import { paddleReadBoxes, paddleReadFrame } from "./paddle";
 import type { Worker } from "tesseract.js";
 
 // 프라이머리 OCR 워커 — 화면 언어별로 다른 traineddata를 쓴다: KR=kor, EN=eng, JA=jpn.
@@ -106,6 +106,8 @@ export type OcrSession = {
   /** 칩 재독 — 흑백으로 또렷하게 + 2배 확대해 다시 읽는다. 공채 태그가 다섯 개 다 안 나왔을 때만 (run.ts).
    *  브라우저 확대가 짧은 두 글자 칸을 뭉개 '가드'를 '리도'로 읽은 실측 (틀렸어요 2026-10-12, 오프라인 sharp 는 읽음) */
   chipsAlt(cut?: number): Promise<string[]>;
+  /** 화면 전체를 PaddleOCR 로 읽었나 (sparse 뒤) — 그러면 난이도는 그 결과의 왼쪽 아래 숫자로 정한다 (run.ts) */
+  paddleUsed(): boolean;
   /** 마지막 chips()/chipsAlt() 가 읽은 칩의 글자와 자리(캔버스 좌표) — 공채 화면 배치 판정용 (match.ts recruitLayoutOk) */
   chipBoxes(): { text: string; x: number; y: number; w: number; h: number }[];
   /** PSM3(auto) 전체 프레임 — 1차로 판정 안 될 때만 폴백 */
@@ -164,7 +166,7 @@ async function setPsm(worker: Worker, psm: string): Promise<void> {
 
 /** 스크린샷 Blob → 전처리 캔버스를 쥔 단계형 OCR 세션. lang = 화면 언어(kor|eng|jpn). */
 /** paddle = 칩을 PaddleOCR 로 읽는다 (공채만, 한국어 화면만 — app/lens/paddle.ts) */
-export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle?: boolean }): Promise<OcrSession> {
+export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle?: boolean; paddleFull?: boolean }): Promise<OcrSession> {
   const bmp = await createImageBitmap(blob);
   const scale = upscaleFactor(bmp.width);
   const W = bmp.width * scale, H = bmp.height * scale;
@@ -192,16 +194,21 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
   const luma = redN ? lumSum / redN : 255;
   // 한국어 화면은 공채 칩을 PaddleOCR 로 읽는다 — 그 모델은 원래 색 그대로가 낫다(학습이 컬러) → 흑백화 전에 한 벌 떠 둔다
   let colorC: HTMLCanvasElement | null = null;
-  if (lang === "kor" && opts?.paddle) {
+  if (lang === "kor" && (opts?.paddle || opts?.paddleFull)) {
     colorC = document.createElement("canvas");
     colorC.width = W; colorC.height = H;
     colorC.getContext("2d")!.drawImage(c, 0, 0);
   }
-  let paddleOk = false;   // 이 세션에서 칩을 PaddleOCR 로 읽었다 — chipsAlt(tesseract 재시도)를 건너뛴다
+  let paddleOk = false;
+  let paddleFullOk = false;   // 이 세션에서 화면 전체를 PaddleOCR 로 읽었다   // 이 세션에서 칩을 PaddleOCR 로 읽었다 — chipsAlt(tesseract 재시도)를 건너뛴다
   const chipSeen: { text: string; x: number; y: number; w: number; h: number }[] = [];
   grayNormalize(img.data);
   ctx.putImageData(img, 0, 0);
-  const worker = await getWorker(lang);
+  // tesseract 는 **필요할 때만** 받는다 — PaddleOCR 경로(공채 칩·통합전략 전체 읽기)에선 숫자 배지 같은 특수 판독이나
+  // PaddleOCR 실패 때만 쓰인다 (2026-10-13 "테서랙트를 걷어내고 패들 OCR 로")
+  let workerP: Promise<Worker> | null = null;
+  const tw = () => (workerP ??= getWorker(lang));
+  if (!colorC) void tw();   // 종전 경로는 지금처럼 바로 받아 둔다
 
   // 출력은 blocks(→lines)만 생성 — 기본값의 hocr·tsv 생성 비용을 끈다 (속도)
   const OUT = { blocks: true, text: false, hocr: false, tsv: false } as const;
@@ -280,8 +287,8 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
       const bimg = cctx.getImageData(0, 0, cc.width, cc.height);
       maxChannelNormalize(bimg.data);
       cctx.putImageData(bimg, 0, 0);
-      await setPsm(worker, "7");
-      const r = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+      await setPsm(await tw(), "7");
+      const r = await (await tw()).recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
       return (r.data.text ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
     },
     async cropInverted(rect) {
@@ -303,8 +310,8 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
       const bimg = cctx.getImageData(0, 0, cc.width, cc.height);
       invertRgb(bimg.data);
       cctx.putImageData(bimg, 0, 0);
-      await setPsm(worker, "7");
-      const r = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+      await setPsm(await tw(), "7");
+      const r = await (await tw()).recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
       return (r.data.text ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
     },
     async crop(rect) {
@@ -327,18 +334,29 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
       const cctx = cc.getContext("2d")!;
       cctx.imageSmoothingEnabled = false;   // nearest
       cctx.drawImage(c1, 0, 0, cc.width, cc.height);
-      await setPsm(worker, "7");
-      const r = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+      await setPsm(await tw(), "7");
+      const r = await (await tw()).recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
       return (r.data.text ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
     },
     async sparse() {
-      await setPsm(worker, "11");
-      const r = await worker.recognize(c, {}, OUT);
+      // 통합전략(한국어): PaddleOCR 화면 전체 읽기 — 줄 글자 + 줄 상자를 tesseract 와 같은 모양으로 (colorBand 가 상자를 쓴다)
+      if (colorC && opts?.paddleFull) {
+        const got = await paddleReadFrame(colorC);
+        if (got) {
+          paddleFullOk = true;
+          lastBoxes = got.map((g) => ({ text: g.text, x0: g.x0, y0: g.y0, x1: g.x1, y1: g.y1 }));
+          console.debug(`[lens] 전체 PaddleOCR ${got.length}줄:`, got.map((g) => g.text).join(" | ").slice(0, 400));
+          return lastBoxes.map((l) => l.text);
+        }
+      }
+      await setPsm(await tw(), "11");
+      const r = await (await tw()).recognize(c, {}, OUT);
       return takeLines(r.data.lines ?? []);
     },
     async auto() {
-      await setPsm(worker, "3");
-      const r = await worker.recognize(c, {}, OUT);
+      if (paddleFullOk) return [];   // PaddleOCR 로 이미 화면 전체를 읽었다 — tesseract 2차 판독은 하지 않는다
+      await setPsm(await tw(), "3");
+      const r = await (await tw()).recognize(c, {}, OUT);
       return takeLines(r.data.lines ?? []);
     },
     async zh() {
@@ -358,8 +376,22 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
       cctx.imageSmoothingEnabled = true;
       cctx.imageSmoothingQuality = "high";
       const out: string[] = [];
-      const zw = zh ? await getChiWorker() : worker;
-      if (!zh) await setPsm(worker, "7");
+      if (paddleFullOk && !zh) {
+        // 줄 상자 바로 아래 밴드를 원본 색 그대로 PaddleOCR 인식에 — 상자 좌표는 업스케일 캔버스(c) 기준이라 scale 로 나눈다
+        const bc = document.createElement("canvas");
+        bc.width = bmp2.width; bc.height = bmp2.height;
+        bc.getContext("2d")!.drawImage(bmp2, 0, 0);
+        bmp2.close();
+        const rects = hits.slice(0, 4).map((b) => {
+          const lh = b.y1 - b.y0;
+          const x = Math.max(0, Math.round((b.x0 - lh * 0.6) / scale)), y = Math.max(0, Math.round((b.y1 - lh * 0.15) / scale));
+          return { x, y, w: Math.min(bc.width - x, Math.round((b.x1 - b.x0 + lh * 3) / scale)), h: Math.min(bc.height - y, Math.round((lh * 1.9) / scale)) };
+        }).filter((r) => r.w >= 8 && r.h >= 6);
+        const got = await paddleReadBoxes(bc, rects, 2000);
+        return (got ?? []).map((g) => g.text).filter(Boolean);
+      }
+      const zw = zh ? await getChiWorker() : await tw();
+      if (!zh) await setPsm(zw, "7");
       for (const b of hits.slice(0, 4)) {          // 한 화면에 선택지가 넷을 넘지 않는다
         const lh = b.y1 - b.y0;
         // 이름 줄은 바로 아래 한 줄. 좌우로는 넉넉히 — 이름 길이가 윗줄과 다르다.
@@ -409,7 +441,7 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
           return lines;
         }
       }
-      await setPsm(worker, "7");
+      await setPsm(await tw(), "7");
       const out: string[] = [];
       const cc = document.createElement("canvas");
       const cctx = cc.getContext("2d", { willReadFrequently: true })!;
@@ -419,18 +451,19 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
         if (!r) continue;
         cc.width = r.w; cc.height = r.h;
         cctx.drawImage(c, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
-        const r7 = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+        const r7 = await (await tw()).recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
         const txt = (r7.data.text ?? "").trim();
         if (txt) { out.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean)); chipSeen.push({ text: txt.replace(/\n/g, " "), ...r }); }
       }
       return out;
     },
     chipBoxes() { return chipSeen; },
+    paddleUsed() { return paddleFullOk; },
     async chipsAlt(cut = 0.5) {
       if (paddleOk) return [];   // PaddleOCR 로 읽었으면 tesseract 흑백 재시도는 하지 않는다 (느리고, 뭉갬 땜질용이었다)
       const boxes = findDarkChips(img.data, W, H);
       if (!boxes.length) return [];
-      await setPsm(worker, "7");
+      await setPsm(await tw(), "7");
       const out: string[] = [];
       const src = document.createElement("canvas");
       const sctx = src.getContext("2d", { willReadFrequently: true })!;
@@ -447,7 +480,7 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
         cc.width = r.w * 2; cc.height = r.h * 2;
         cctx.imageSmoothingEnabled = false;   // 이진화 뒤라 nearest 가 획을 덜 뭉갠다
         cctx.drawImage(src, 0, 0, r.w * 2, r.h * 2);
-        const r7 = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+        const r7 = await (await tw()).recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
         const txt = (r7.data.text ?? "").trim();
         if (txt) { out.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean)); chipSeen.push({ text: txt.replace(/\n/g, " "), ...r }); }
       }

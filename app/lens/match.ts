@@ -78,6 +78,11 @@ export type LensOutcome = {
   hud?: LensHud;
   // 전투 중 화면 (배치 UI 문구 검출) — 브리지가 전투 홀드(큰 전환까지 인식 중단)에 쓴다
   battle?: boolean;
+  /** 통합전략 화면 종류 (PaddleOCR HUD 판독, run.ts) — map: 위쪽 HUD 에 층 이름이 보이는 지도·노드 화면 · runStart: '초기 모집'
+   *  (분대·난이도가 왼쪽 아래에 이미 정해져 있다) · squadSelect: '분대 선택' (새 판). 상시 창이 노드 비우기·분대 확정에 쓴다 */
+  rogueScreen?: "map" | "runStart" | "squadSelect";
+  /** 지도에서 고른 기타 노드(nodeTypes id) — 교활한 상인·앞서 출발 등 (run.ts) */
+  rogueNode?: string;
   // 전투 입장 암전 화면 (평균 밝기가 낮다) — 리플레이가 "노드를 눌러 봤다"와
   // "실제로 전투에 들어갔다"를 가르는 신호 (run.ts가 얹는다, 2026-07-26)
   dark?: boolean;
@@ -93,6 +98,8 @@ type Entry = {
   topic: string; topicName: string; section: string;
   id: string; name: string; nameN: string; bodyN: string; bodyTG: Set<string>;
   shortLatin: boolean; // 짧은 순라틴 이름(2~5자) — 부분문자열 오탐이 심해 정확 일치만 허용
+  /** 같은 테마 다른 항목의 설명에 따옴표로 인용되는 이름 — 줄 전체가 이름일 때만 (쉐이 주화 효과문의 "'대염통보'로 변경", 2026-10-13) */
+  quoted?: boolean;
   arc?: string;
   cnN?: string; // 중국어 원문 이름 정규화 — CN 선행 토픽(블랙플로우) + 중섭 탭을 켠 토픽
   // 그 항목을 가리키는 **다른** 중국어 문자열 — 지금은 조우 선택지 제목이다.
@@ -101,7 +108,9 @@ type Entry = {
   // 데이터에는 원래부터 들어 있었는데(choices[].cn) 인덱스가 안 쓰고 있었다.
   cnAltN?: string[];
 };
-export type LensIndex = { entries: Entry[] };
+/** 기타 노드(교활한 상인·앞서 출발 등, nodeTypes) — 일반 매칭엔 안 넣고 run.ts 가 '이름 줄 + 설명 줄'이 같이 보일 때만 쓴다 (2026-10-13) */
+export type LensNodeType = { topic: string; id: string; name: string; nameN: string; descN: string };
+export type LensIndex = { entries: Entry[]; nodes?: LensNodeType[] };
 
 // ── 텍스트 정규화 ────────────────────────────────────────────────────────────
 export const normText = (s: string | null | undefined): string =>
@@ -285,9 +294,11 @@ export function analyzeRecruit(rawLines: string[], recruitTags: string[]): LensO
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function buildIndex(topics: any[], norm: Normalizer = normText, cnOnlyTopics: any[] = []): LensIndex {
   const entries: Entry[] = [];
+  const nodes: LensNodeType[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ingest = (d: any, forceCnOnly: boolean) => {
     if (!d?.id) return;
+    const from = entries.length;
     const topic: string = d.id, topicName: string = d.name;
     const add = (section: string, id: string, name: string, body: string, arc?: string, cn?: string,
                  cnAlt?: (string | undefined)[]) => {
@@ -326,14 +337,36 @@ export function buildIndex(topics: any[], norm: Normalizer = normText, cnOnlyTop
       add("enc", e.scene, e.title, `${e.desc || ""} ${choices}`, undefined, e.cn, cnAlt);
     }
     for (const e of d.endings ?? []) add("ending", e.id, e.name, e.desc || "", undefined, e.cn);
+    // 기타 노드 — 작전 노드(작전·긴급 작전·험난한 길)는 작전 이름으로 잡히고, STORY_HIDDEN 은 STORY 와 이름·설명이 같다
+    if (!forceCnOnly) for (const n of d.nodeTypes ?? []) {
+      if (/^BATTLE_(NORMAL|ELITE|BOSS)$/.test(n.id) || n.id === "STORY_HIDDEN") continue;   // 상점은 BATTLE_SHOP 이라 남긴다
+      const nameN = norm(n.name), descN = norm(n.desc || "");
+      if (nameN.length >= 3 && descN.length >= 10) nodes.push({ topic, id: n.id, name: n.name, nameN, descN });
+    }
+    // 쉐이의 잔식(정사각형 지도) 노드 — 이름이 전부 두 글자(회수·전설·소란…)라 설명 줄 조건이 더 중요하다. 회수·여흥은 갈래 설명(subs)도 설명으로.
+    // id 는 계원 노드와 겹쳐서(INCIDENT 등) 'sky:' 를 붙인다 (사용자 제보 2026-10-13 "잔식 안에서 회수·전설 노드 아무것도 인식 못 함")
+    if (!forceCnOnly) for (const n of d.skyNodes ?? []) {
+      const nameN = norm(n.name), descN = norm([n.desc || "", ...(n.subs ?? [])].join(" "));
+      if (nameN.length >= 2 && descN.length >= 10) nodes.push({ topic, id: `sky:${n.id}`, name: n.name, nameN, descN });
+    }
     // 토픽 고유 시스템 (사고=염원/영감/구상, 암호판, 붕괴 패러다임, 시대 등) — 전시관 탭 라벨을 arc로
     for (const m of d.mechanics ?? []) {
       for (const it of m.items ?? []) add("mech", it.id, it.name, `${it.usage || ""} ${it.desc || ""}`, m.label);
     }
+    // 인용되는 이름 표시 — 설명문 속 '이름'·‘이름’·<이름> 은 그 항목이 화면에 있다는 뜻이 아니다
+    {
+      const raw: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const k of ["relics", "tools", "capsules", "bands", "scraps"]) for (const x of (d[k] ?? []) as any[]) raw.push(x.usage || "", x.desc || "");
+      for (const m of d.mechanics ?? []) for (const it of m.items ?? []) raw.push(it.usage || "", it.desc || "");
+      const quotedNames = new Set<string>();
+      for (const r of raw) for (const m of r.matchAll(/['‘’"“”<「]([^'‘’"“”<>「」]{2,20})['‘’"“”>」]/g)) quotedNames.add(m[1].trim());
+      for (let i = from; i < entries.length; i++) if (quotedNames.has(entries[i].name)) entries[i].quoted = true;
+    }
   };
   for (const d of topics) ingest(d, false);
   for (const d of cnOnlyTopics) ingest(d, true);
-  return { entries };
+  return { entries, nodes };
 }
 
 // ── 매칭 + 타깃 해석 ────────────────────────────────────────────────────────
@@ -663,7 +696,7 @@ export function analyzeChinese(rawLines: string[], index: LensIndex,
 }
 
 // 라인 ↔ 엔트리 매칭 (IDF는 "전달된 엔트리 집합" 안에서 분산된다)
-type Hit = { score: number; nameHit: boolean };
+type Hit = { score: number; nameHit: boolean; exact2?: boolean; body?: boolean };
 function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, Hit> {
   const hits = new Map<Entry, Hit>();
   for (const line of linesN) {
@@ -674,15 +707,16 @@ function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, Hit> {
     for (const e of entries) {
       const n = e.nameN;
       let nm = false;
-      if (e.shortLatin || (n.length === 2)) {
+      if (e.shortLatin || (n.length === 2) || e.quoted) {
         // 짧은 라틴 이름 + 2글자 이름("구상" 등)은 라인 전체가 정확히 일치할 때만 (부분일치 오탐 차단)
         nm = line === n;
       } else if (n.length >= 3) {
         // 부분일치 — 역포함(라인이 이름의 조각)은 라틴 라인이면 6자 이상만 허용(저엔트로피 오탐 방지)
         // 정포함은 라인이 이름+12자 이내일 때만 — 스토리 문단이 '오리지늄' 같은 짧은 이름을
         // 품어 가짜 nameHit를 만드는 것을 막는다 (2026-07-26 영상3: 조우 본문 → 오리지늄 모아보기)
+        // ⚠ 'OO의 …' 이름의 'OO' 만 읽힌 줄은 역포함으로 안 받는다 — 오퍼 모집 화면의 '라이디언'이 소장품 '라이디언의 게임기'로 잡혔다 (2026-10-13)
         nm = (line.includes(n) && line.length <= n.length + 12)
-          || (n.includes(line) && line.length >= (lineLatin ? 6 : 4));
+          || (n.includes(line) && line.length >= (lineLatin ? 6 : 4) && !n.startsWith(`${line}의`));
       }
       if (nm) nameHits.push(e);
       else if (line.length >= 6 && e.bodyN.length >= 6 && contain(lineTG, e.bodyTG) >= 0.7) bodyHits.push(e);
@@ -712,13 +746,17 @@ function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, Hit> {
       // OCR이 룬 문양·장식을 2글자 낱말로 환각해("배척") 잠금 모드 확정·테마 전환의
       // 근거가 되는 사고를 막는다 (2026-07-26 영상3 f140). 라틴 약어(ISW 등)는 유지.
       if (e.nameN.length >= 3 || e.shortLatin) h.nameHit = true;
+      else h.exact2 = true;
       hits.set(e, h);
     }
     for (const e of bodyHits) {
       const h = hits.get(e) ?? { score: 0, nameHit: false };
-      h.score += idfBody; hits.set(e, h);
+      h.score += idfBody; h.body = true; hits.set(e, h);
     }
   }
+  // 2글자 이름이 줄 전체로 정확히 맞고 **같은 화면에서 그 항목의 설명도 맞았으면** 이름 확정으로 친다 — 둘 다 맞는 환각은 없다.
+  // 작전 '공해'(2글자)는 이름·설명이 다 읽혀도 이름 확정이 아니라서 작전 판정이 안 났다 (틀렸어요 2026-10-13, PaddleOCR)
+  for (const h of hits.values()) if (h.exact2 && h.body) h.nameHit = true;
   return hits;
 }
 
@@ -779,7 +817,9 @@ function gotoFor(topic: string, section: string, entities: LensEntity[]): LensGo
   const nav = SECTION_NAV[section];
   if (!nav) return null;
   const mine = entities.filter((e) => e.topic === topic && e.section === section);
-  const cohort = mine.filter((e) => e.score >= (mine[0]?.score ?? 0) * 0.5);
+  // 목록으로 강조하는 칸(분대 등, 상세 창 없음)은 이름이 정확히 읽힌 항목도 넣는다 — 아이템류 cohort 와 같은 규칙.
+  // 분대 화면의 '지휘 분대'가 설명문까지 대조된 다른 분대들(7점)의 절반에 살짝 못 미쳐(3.33) 빠졌다 (2026-10-13 모은 화면)
+  const cohort = mine.filter((e) => e.score >= (mine[0]?.score ?? 0) * 0.5 || (!nav.modalType && e.nameHit && e.score >= 1.4));
   const g: LensGoto = { page: "rogue", topic, view: nav.view };
   if (nav.arcTab) g.arcTab = nav.arcTab;
   if (nav.modalType && cohort.length === 1) g.modal = { type: nav.modalType, id: cohort[0].id };

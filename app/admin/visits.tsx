@@ -1490,7 +1490,9 @@ export function VisitsPanel() {
 // 인식마다 한 줄씩 쌓여 하루 3천 줄, 그 표 하나가 5초씩 걸려 관리자 화면이 느려졌다). 이제 인식 기록은 '틀렸어요'를 누를 때만
 // 오고(bridge.ts markBridgeWrong), 여기는 그 목록만 가벼운 함수(visits_prts_wrong — 틀렸어요 줄에서 출발)로 받는다
 type PrtsWrongRec = { at: string; visitor: string | null; topic: string | null; result: string | null; section: string | null;
-  target: string | null; note: string | null; seen: string | null; cached: boolean | null; shot: string | null; env: string | null };
+  target: string | null; note: string | null; seen: string | null; cached: boolean | null; shot: string | null; env: string | null;
+  /** 그 인식의 판정 + OCR 이 읽은 줄 (JSON 파일 주소, 2026-10-13~) */ ocr?: string | null;
+  /** 누른 사람이 적은 한 줄 메모 (틀렸어요 모달, 2026-10-13~) */ memo?: string | null };
 const RESULT_KO: Record<string, string> = { goto: "바로 이동", tie: "후보 여럿", none: "못 읽음", battle: "전투 화면", unreported: "결과 안 옴" };
 
 function PrtsWrong({ from, to }: { from: string; to: string }) {
@@ -1512,11 +1514,13 @@ function PrtsWrong({ from, to }: { from: string; to: string }) {
           <tbody>{d.slice(0, 20).map((r, i) => (
             <tr key={i}>
               <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
-              <td>{whenShort(r.at)}{r.topic ? <span className="vz-note"> · {r.topic}</span> : null}{r.env === "dev" ? <span className="vz-tag" title="라이브가 아닌 곳(localhost 등)에서 누름">dev</span> : null}</td>
+              <td>{whenShort(r.at)}{r.topic ? <span className="vz-note"> · {r.topic}</span> : null}{r.env === "dev" ? <span className="vz-tag" title="라이브가 아닌 곳(localhost 등)에서 누름">dev</span> : null}
+                {r.memo ? <div title="누른 사람이 적은 메모">💬 {r.memo}</div> : null}</td>
               <td>{RESULT_KO[r.result ?? ""] ?? r.result ?? "—"} <code>{r.section ?? ""}</code>{r.cached ? <span className="vz-note"> · 캐시</span> : null}</td>
               <td title={r.target ?? ""}><code>{(r.target ?? "—").slice(0, 40)}</code>{r.note ? <span className="vz-note"> · {r.note}</span> : null}</td>
               <td>{r.seen ? r.seen.split("|").join(" · ") : "—"}</td>
-              <td>{r.shot ? <a href={r.shot} target="_blank" rel="noopener noreferrer"><img src={r.shot} alt="" style={{ width: 120, height: "auto", display: "block" }} loading="lazy" /></a> : <span className="vz-note">없음</span>}</td>
+              <td>{r.shot ? <a href={r.shot} target="_blank" rel="noopener noreferrer"><img src={r.shot} alt="" style={{ width: 120, height: "auto", display: "block" }} loading="lazy" /></a> : <span className="vz-note">없음</span>}
+                {r.ocr && <a className="vz-note" href={r.ocr} target="_blank" rel="noopener noreferrer">OCR 기록</a>}</td>
             </tr>
           ))}</tbody>
         </table></div>

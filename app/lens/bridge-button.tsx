@@ -6,13 +6,12 @@
 // 연결 전에는 아무것도 그리지 않는다.
 
 import { NewBadge } from "../new-badge";
-import { lazy, Suspense, useState, useSyncExternalStore } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgeSession, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
+import { useBridgeStatus, connectBridge, disconnectBridge, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
-import { isAcLock } from "../autochess-run";
 import { isOwnerBrowser } from "../visit-track";
 import type { T } from "../i18n";
 
@@ -63,6 +62,12 @@ const pipSubs = new Set<() => void>();
 const pipNotify = () => { for (const cb of pipSubs) cb(); };
 const pipSubscribe = (cb: () => void) => { pipSubs.add(cb); return () => { pipSubs.delete(cb); }; };
 const usePipWin = () => useSyncExternalStore(pipSubscribe, () => pipWin, () => null);
+/** 작은 창 창(Window) — 통합전략 페이지가 본 화면 상시 창 내용을 작은 창의 자리(#ta-pip-slot)에 그대로 그린다 (rogue.tsx) */
+export const useBridgePipWindow = usePipWin;
+// 작은 창 내용을 바깥(통합전략 페이지)이 그린다 — 켜져 있으면 작은 창은 머리·자리만 그린다 (사용자 지시 2026-10-13 "본 화면 노드 레이아웃이랑 pip 레이아웃이 다르다 — 본 화면으로 맞춰")
+let pipExternal = false;
+export function setBridgePipExternal(v: boolean): void { if (pipExternal !== v) { pipExternal = v; pipNotify(); } }
+const usePipExternal = () => useSyncExternalStore(pipSubscribe, () => pipExternal, () => false);
 async function togglePipWindow(lockFor?: BridgeLock | null): Promise<void> {
   if (pipWin) { pipWin.close(); pipWin = null; setBridgePipActive(false); pipNotify(); return; }
   try {
@@ -81,6 +86,32 @@ const usePipOk = () => useSyncExternalStore(noSubscribe, () => !!docPip() && isO
 
 /** 카드 하나 — 섬네일 + 이름 + 효과. 펼칠 게 있으면(작전 지도·등장 적·선택지) 눌러서 펼친다 (사용자 지시 2026-10-12
  *  "작전이 인식돼서 떴고 그걸 클릭하면 작전맵이 떴으면") */
+/** 틀렸어요 — 누르면 작은 모달이 떠서 뭐가 틀렸는지 한 줄 적어 보낸다(비워도 된다). 화면·OCR 기록과 함께 간다 (2026-10-13).
+ *  모달은 이 버튼이 그려진 창(본 화면 또는 작은 창) 안에 고정 위치로 — 공용 ModalWindow 는 본 화면 body 로 포털돼 작은 창에선 안 보인다 */
+function WrongButton({ t, cls }: { t: T; cls: string }) {
+  const [open, setOpen] = useState(false);
+  const [memo, setMemo] = useState("");
+  const send = () => { markBridgeWrong(memo); setOpen(false); setMemo(""); };
+  return (<>
+    <button type="button" className={`bridge-toast-off bridge-toast-wrong ${cls}`} onClick={() => setOpen(true)}
+      title={t("방금 인식이 틀렸다고 알려 주세요 — 그 인식에 쓴 게임 화면 한 장이 함께 전송되어 인식을 고치는 데 쓰입니다")}>{t("틀렸어요")}</button>
+    {open && (
+      <div className="bridge-wrong-back" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+        <div className="bridge-wrong-modal" role="dialog" aria-modal="true" aria-label={t("틀렸어요")}>
+          <b>{t("틀렸어요")}</b>
+          <input type="text" value={memo} autoFocus maxLength={200} placeholder={t("뭐가 틀렸나요? (한 줄, 비워도 돼요)")}
+            onChange={(e) => setMemo(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") send(); else if (e.key === "Escape") setOpen(false); }} />
+          <div className="bridge-wrong-acts">
+            <button type="button" className="bridge-toast-off" onClick={() => setOpen(false)}>{t("닫기")}</button>
+            <button type="button" className="bridge-toast-off bridge-wrong-send" onClick={send}>{t("보내기")}</button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>);
+}
+
 function PipCard({ c }: { c: BridgePipCard }) {
   const [open, setOpen] = useState(false);
   const more = !!c.detailImg || (c.list?.length ?? 0) > 0;
@@ -141,6 +172,9 @@ function RecruitPanes({ t }: { t: T }) {
 }
 
 function PipView({ t, connected, phase, note, lockName, error }: { t: T; connected: boolean; phase: string; note: string; lockName: string; error: string }) {
+  const external = usePipExternal();
+  const rgTopic = (bridgeLock() ?? pipLock)?.topic ?? "";
+  const rgN = external && /^rogue_\d+$/.test(rgTopic) ? rgTopic.split("_")[1] : "";
   const node = bridgePipNode();
   const relics = bridgePipRelics();
   const last = bridgeLastScan();
@@ -160,14 +194,27 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
     );
   }
   return (
-    <div className="bridge-pip">
+    // 통합전략 — 작은 창 전체를 그 테마 색으로 (사용자 지시 2026-10-13 "록라 테마로 예쁘게"). 테마 변수는 .rg.rgN 에, 테마 색(--rg-hue)은 본 화면 html 에서 읽는다
+    <div className={`bridge-pip${rgN ? ` rg rg${rgN} bridge-pip-rg` : ""}`}
+      style={rgN ? ({ "--rg-hue": getComputedStyle(document.documentElement).getPropertyValue("--rg-hue") } as React.CSSProperties) : undefined}>
       <header className="bridge-pip-head">
         <span className="bridge-dot" aria-hidden>◉</span>
         <b>{lockName}</b>
-        <span>{phase}{note ? ` · ${note}` : ""}</span>
+        {/* 인식 상태 문구는 작은 창에 싣지 않는다 — 길이가 바뀔 때마다 창 배치가 늘었다 줄었다 했다 (사용자 지시 2026-10-13) */}
+        <button type="button" className="bridge-toast-off bridge-pip-off" onClick={forceBridgeRescan} title={t("지금 화면을 바로 다시 인식합니다")}>{t("강제 인식")}</button>
+        {/* 틀렸어요는 연결 끊기 왼쪽 — 바닥줄에 두면 내용이 길 때 스크롤해 내려가야 보였다 (사용자 지시 2026-10-13) */}
+        {last && (last.wrong
+          ? <span className="bridge-toast-thanks bridge-pip-thanks">{t(last.shot === "sending" ? "화면 보내는 중…" : last.shot === "fail" ? "화면 전송 실패 — 기록만 남겼어요" : "알려 주셔서 고마워요")}</span>
+          : <WrongButton t={t} cls="bridge-pip-wrong" />)}
         <button type="button" className="bridge-toast-off bridge-pip-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>{t("연결 끊기")}</button>
       </header>
-      {pipLock?.topic === "recruit" || bridgePipRecruit() ? <RecruitPanes t={t} /> : (<>
+      {pipLock?.topic === "recruit" || bridgePipRecruit() ? <RecruitPanes t={t} /> : external ? <div id="ta-pip-slot" className="bridge-pip-slot" /> : (<>
+      {(() => {
+        // 공통 정보 — 층 · 난이도 · 분대 세 칸만 (사용자 지시 2026-10-13 "N층, 난이도N, XX분대 이렇게 세 개만")
+        const f = bridgePipFloor();
+        const bits = [f.floor ? t("{n}층", { n: f.floor }) : "", typeof f.grade === "number" ? t("난이도 {n}", { n: f.grade }) : "", f.squad ?? ""].filter(Boolean);
+        return bits.length ? <p className="bridge-pip-floor">{bits.map((b) => <span key={b}>{b}</span>)}</p> : null;
+      })()}
       {/* 두 칸 — 노드(층·작전·조우) 한 장 · 소장품 여러 장, 각자 새로 인식될 때만 바뀐다 */}
       <section className="bridge-pip-pane">
         <h4>{t("노드")}</h4>
@@ -182,21 +229,21 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
           : <p className="bridge-pip-empty">{t("소장품을 인식하면 여기에 표시됩니다")}</p>}
       </section>
       </>)}
-      {last && (
-        <footer className="bridge-pip-foot">
-          {last.wrong
-            ? <span className="bridge-toast-thanks">{t(last.shot === "sending" ? "화면 보내는 중…" : last.shot === "fail" ? "화면 전송 실패 — 기록만 남겼어요" : "알려 주셔서 고마워요")}</span>
-            : <button type="button" className="bridge-toast-off bridge-toast-wrong" onClick={markBridgeWrong}>{t("틀렸어요")}</button>}
-        </footer>
-      )}
     </div>
   );
 }
 
 /** 연결 상태 토스트 — 문서 최상위에 포털로 그려 모달 백드롭 위에도 항상 보인다. */
 export default function BridgeButton({ t }: { t: T }) {
-  const { settings, gate, busy, note, lock, nodeJump, error } = useBridgeStatus();
+  const { settings, gate, busy, note, lock, error } = useBridgeStatus();
   const pip = usePipWin();
+  // 연결이 끊기면 작은 창도 닫는다 (사용자 지시 2026-10-13) — 연결돼 있다가 끊긴 순간에만 (작은 창에서 '연결'을 누르기 전 상태는 그대로)
+  const wasOn = useRef(false);
+  useEffect(() => {
+    if (settings) { wasOn.current = true; return; }
+    if (wasOn.current && pipWin) void togglePipWindow();
+    wasOn.current = false;
+  }, [settings]);
   const pipOk = usePipOk();
   const phase = busy ? t("인식 중…") : t(PHASE[gate?.phase ?? ""] ?? "연결됨");
   // 작은 창은 연결 전에도 떠 있을 수 있다 — 연결 단추를 그 창에서 누른다
@@ -221,28 +268,15 @@ export default function BridgeButton({ t }: { t: T }) {
         if (!last) return null;
         return last.wrong
           ? <span className="bridge-toast-thanks">{t(last.shot === "sending" ? "화면 보내는 중…" : last.shot === "fail" ? "화면 전송 실패 — 기록만 남겼어요" : "알려 주셔서 고마워요")}</span>
-          : <button type="button" className="bridge-toast-off bridge-toast-wrong" onClick={markBridgeWrong}
-              title={t("방금 인식이 틀렸다고 알려 주세요 — 그 인식에 쓴 게임 화면 한 장이 함께 전송되어 인식을 고치는 데 쓰입니다")}>
-              {t("틀렸어요")}
-            </button>;
+          : <WrongButton t={t} cls="" />;
       })()}
-      {/* 맵 노드 자동 이동 (제보 f1c050b2) — 연결 중에만 보이면 되는 설정이라 여기 둔다.
-          인식을 끄는 게 아니라 **이동만** 끈다: 소장품·도구 인식은 그대로 동작한다.
-          ⚠ 위수 협의(PRTS 시뮬레이션)에는 맵 노드가 없다 — 거기선 아예 안 그린다
-          (사용자 지시 2026-09-06 "명토체스의 경우는 노드이동 이거 없애줘야지"). */}
-      {!isAcLock(lock?.topic) && (
-        <button type="button" className={`bridge-toast-node${nodeJump ? " on" : ""}`}
-          aria-pressed={nodeJump} onClick={() => setBridgeNodeJump(!nodeJump)}
-          title={t("맵 노드(작전·조우·구역)를 인식했을 때 그 상세로 자동으로 이동할지 정합니다. 꺼도 소장품·도구 인식은 그대로 동작합니다")}>
-          <span className="bridge-node-knob" aria-hidden />🗺 {t("노드 이동")}
-        </button>
-      )}
       {pipOk && (
         <button type="button" className={`bridge-toast-node${pip ? " on" : ""}`} aria-pressed={!!pip} onClick={() => void togglePip()}
           title={t("게임 위에 항상 떠 있는 작은 창에 인식 결과를 띄웁니다 (크롬·엣지)")}>
           ⧉ {t("작은 창")}
         </button>
       )}
+      <button type="button" className="bridge-toast-node" onClick={forceBridgeRescan} title={t("지금 화면을 바로 다시 인식합니다")}>↻ {t("강제 인식")}</button>
       <button type="button" className="bridge-toast-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>
         {t("연결 끊기")}
       </button>
@@ -323,10 +357,12 @@ export function BridgeTopicButton({ topic, name, t, noReplay, noPip, compact }: 
             : t("게임 창을 골라 이 테마로만 인식하도록 연결합니다")}
         onClick={() => {
           if (mine) { disconnectBridge(); return; }
-          // 연결하면 작은 창도 같이 연다 (사용자 지시 2026-10-12 "PRTS 연결되면 자동으로 PiP"). 화면 공유를 **먼저** 청하고
-          // 같은 클릭으로 작은 창을 연다 — 브라우저가 한 클릭에 둘 다 안 받아 주면 작은 창만 안 뜨고, 토스트의 '작은 창'으로 열면 된다
-          void connectBridge({ topic, name });
-          if (pipOk && !pip && !noPip) void togglePipWindow({ topic, name }).catch(() => { /* 사용자 동작 없음 — 토스트 단추로 */ });
+          // 작은 창은 **게임 창을 고른 뒤에** 연다 (사용자 지시 2026-10-13 "록라도 연결해야 PiP 화면 뜨게" — 공채와 같다).
+          // 고르기를 취소하면 안 뜬다. ⚠ 작은 창은 클릭 직후(수 초)에만 열린다 — 고르기가 오래 걸리면 토스트의 '작은 창'으로
+          void connectBridge({ topic, name }).then(() => {
+            if (!bridgeSession() || !pipOk || pipWin || noPip) return;
+            void togglePipWindow({ topic, name }).catch(() => { /* 클릭 직후가 아님 — 토스트 단추로 */ });
+          });
         }}
       >
         <span aria-hidden>{mine ? "◉" : "○"}</span> {mine ? t("PRTS 링크 연결됨") : t("PRTS 링크")}

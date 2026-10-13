@@ -3,8 +3,10 @@
 // 모드별 단계형 OCR + 매칭: 판정이 나면 나머지 패스를 생략한다 (속도).
 
 import { createOcrSession } from "./ocr";
+import { traceOcr } from "./ocr-trace";
+import { setBridgePipFloor } from "./bridge";
 import { asset } from "../assets";
-import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, recruitLayoutOk, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
+import { buildIndex, normText, analyzeLines, analyzeChinese, analyzeRecruit, recruitLayoutOk, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
 import { buildAcIndex, bondOfLine, parseSeats, isAcInfoScreen, classifyAcScreen, parseAcMode, badgeRectFromTitle,
   parseAcBand, parseDeployLeft, parseAcHud, findAcRings, ringNameRect, ringNumRect, RING_DIGITS, parseRingStack,
@@ -29,7 +31,10 @@ let gradeCache: { grade: number; at: number } | null = null;
 let gradePend: number | null = null;
 let gradeMissAt = 0;
 /** 게임 연결 시작 시 호출 — 지난 판의 난이도가 새 판에 새지 않게 캐시를 비운다. */
-export function resetGradeCache(): void { gradeCache = null; gradePend = null; gradeMissAt = 0; }
+export function resetGradeCache(): void { gradeCache = null; gradePend = null; gradeMissAt = 0; runGrade = null; }
+// 한 판의 난이도 — '초기 모집' 화면 왼쪽 아래 배지에서 읽어 그 판 동안 고정한다 (사용자 지시 2026-10-13 "시작 전 오퍼 고르기 화면에서
+// 이미 분대·난이도가 정해져 있다 — 이 시점에서 고정"). 다음 판의 '분대 선택' 화면이 보이면 푼다
+let runGrade: number | null = null;
 
 // 전투 입장 암전 화면의 평균 밝기 상한. 사미 지도·모달은 아트가 깔려 훨씬 밝고, 입장
 // 로딩은 검은 배경에 작전 이름만 뜬다 (2026-07-26). 여유를 두되 지도가 걸리지 않는 값.
@@ -209,6 +214,8 @@ export function warmData(mode: LensMode, locale = "ko", cnTopic?: string): void 
 export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, locale = "ko",
   opts?: { lock?: boolean; live?: boolean; cnTopic?: string }): Promise<LensOutcome> {
   let lines: string[];
+  let rogueScreenOut: "map" | "runStart" | "squadSelect" | undefined;
+  let rogueNodeOut: string | undefined;
   let oc: LensOutcome;
   if (mode === "recruit") {
     // 태그는 어두운 버튼 칩이 본체 — 칩 패스 필수, 전체 프레임은 보조 (선택된 파란 태그 등)
@@ -449,11 +456,14 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
   } else {
     // 화면 언어(로케일)로 OCR 모델·인덱스·정규화를 맞춘다 — KR=kor, EN=eng, JA=jpn.
     const norm = normFor(locale);
-    const [index, session] = await Promise.all([getRogueIndex(locale, opts?.cnTopic), createOcrSession(file, OCR_LANG[locale] ?? "kor")]);
+    // 한국어 화면은 화면 전체 읽기를 PaddleOCR 로 (2026-10-13 시험 — app/lens/paddle.ts paddleReadFrame). 못 쓰면 tesseract
+    const [index, session] = await Promise.all([getRogueIndex(locale, opts?.cnTopic), createOcrSession(file, OCR_LANG[locale] ?? "kor", { paddleFull: true })]);
     // 난이도 배지 — 전용 eng 워커라 본 패스와 **병렬**로 미리 돌린다 (직렬 ~0.3초 제거).
     // 라이브(게임 연결)는 세션 캐시가 유효하거나 미검출 쿨다운 중이면 아예 생략한다.
     const gradeFresh = !!gradeCache && Date.now() - gradeCache.at < 10 * 60_000;
-    const skipGradeOcr = !!opts?.live && (gradeFresh || Date.now() - gradeMissAt < 10_000);
+    // 한국어는 PaddleOCR 화면 전체 읽기의 왼쪽 아래 숫자로 난이도를 정하므로 tesseract 숫자 판독을 아예 돌리지 않는다 (2026-10-13 —
+    // 결과를 안 쓰는데도 돌아 영어 숫자 모델을 받고 CPU 를 썼다). PaddleOCR 이 실패해 tesseract 로 물러난 화면은 난이도를 건너뛴다
+    const skipGradeOcr = (OCR_LANG[locale] ?? "kor") === "kor" || (!!opts?.live && (gradeFresh || Date.now() - gradeMissAt < 10_000));
     const gradeP = skipGradeOcr ? null : session.difficulty()
       .then((g) => {
         if (g === null) { gradeMissAt = Date.now(); return null; }
@@ -466,6 +476,92 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       .catch(() => null);
     // 단계형 인식 — PSM11만으로 판정이 나면 나머지 패스를 생략한다 (속도)
     lines = await session.sparse();
+    // ── 위쪽 HUD 의 층 이름 · 왼쪽 아래 난이도 배지 (2026-10-13, PaddleOCR 로 바꾼 뒤) — PaddleOCR 은 화면 위 가운데 HUD 의
+    // 'Ⅰ 영혼 융합의 시작' 을 매번 또렷하게 읽어서, 그 구역(층)이 노드(작전·조우) 판정을 덮었다(지도 화면 거의 전부가 '1층'으로).
+    // 그 줄은 판정에서 빼고 **층 정보로만** 쓴다. 난이도는 고정 자리 잘라 읽기가 창 제목 표시줄만큼 밀리면 놓쳐서,
+    // 화면 전체 읽기에 이미 잡힌 왼쪽 아래 구석 숫자를 쓴다. 좌표는 0~1 정규화 (session.boxes)
+    let hudGrade: number | null = null;
+    let comboScreen = false;
+    let rogueScreen: "map" | "runStart" | "squadSelect" | undefined;
+    {
+      const bx = session.boxes();
+      const topN = bx.filter((b) => b.y1 < 0.2).map((b) => normText(b.text));
+      // 모집 조합 선택(쉐이 초기 모집 전 단계) — 카드 이름 '차근차근'이 작전 '차근차근 유도'로, 잘린 '디펜더, 캐…'가 소장품 '디펜더-2'로 잡혔다
+      // (틀렸어요 2026-10-13). 이 화면엔 알아볼 항목이 없어 판정을 통째로 비운다 — 판 시작 화면이라 분대·난이도는 초기 모집처럼 다룬다
+      if (topN.some((x) => x.includes("모집조합선택"))) { rogueScreen = "runStart"; comboScreen = true; }
+      else if (topN.some((x) => x.includes("초기모집"))) rogueScreen = "runStart";
+      else if (topN.some((x) => x.includes("분대선택"))) rogueScreen = "squadSelect";
+      const zoneEntries = index.entries.filter((e) => e.section === "zone" && (!topic || e.topic === topic));
+      const drop = new Set<string>();
+      for (const b of bx) {
+        if (b.y1 > 0.14) continue;
+        const rest = normText(b.text.replace(/^[\sIⅠⅡⅢⅣⅤⅥⅦⅧlㅣ|1-9]+/, ""));
+        if (rest.length < 3) continue;
+        const z = zoneEntries.find((e) => e.nameN === rest || (rest.length >= 4 && e.nameN.length >= 4
+          && (rest.includes(e.nameN) || e.nameN.includes(rest)) && Math.min(rest.length, e.nameN.length) / Math.max(rest.length, e.nameN.length) >= 0.8));
+        if (!z) continue;
+        drop.add(b.text);
+        // 쉐이의 잔식(zone_sky_N, 구역 번호 90·91)은 층이 아니다 — '90층' 대신 '쉐이의 잔식 - 시비경' (사용자 지시 2026-10-13)
+        if (opts?.live) setBridgePipFloor(/^zone_sky_/.test(z.id) ? { floor: 0, place: z.name, name: z.name }
+          : { floor: Number(z.id.replace(/\D/g, "")) || undefined, place: "", name: z.name });
+      }
+      // ⚠ 위쪽 HUD 에 층 이름이 보이는 화면(지도·노드)에서만 — 난이도 배지는 그 화면에만 있다. 분대·오퍼 선택 화면 왼쪽 아래의
+      //   다른 숫자('1')를 난이도로 읽어 난이도 1 로 고정됐다 (사용자 제보 2026-10-13)
+      if (drop.size && !rogueScreen) rogueScreen = "map";
+      if (rogueScreen === "squadSelect") runGrade = null;
+      if (drop.size || rogueScreen === "runStart") for (const b of bx) {
+        if (b.x1 < 0.12 && b.y0 > 0.82 && /^\d{1,2}$/.test(b.text.trim())) { const g = Number(b.text.trim()); if (g <= 18) hudGrade = g; }
+      }
+      if (rogueScreen === "runStart" && hudGrade !== null) runGrade = hudGrade;
+      if (runGrade !== null) hudGrade = runGrade;   // 판 안에서는 고정값 — 지도에서 다른 숫자를 읽어도 흔들리지 않게
+      if (opts?.live && hudGrade !== null) setBridgePipFloor({ grade: hudGrade });
+      // 지도 화면에 **늘 떠 있는** HUD 표 글자 — 줄 전체가 이것뿐이면 판정에서 뺀다. PaddleOCR 은 이것들을 매번 읽어서
+      // '부하 오퍼레이터'가 효과 문구 '부하 오퍼레이터의 공격력 -30%'의 '미완의 마왕 이야기'로 지도 화면마다 잡혔다 (2026-10-13 모은 화면)
+      // 직군 이름만 있는 줄도 뺀다 — 초기 모집의 '스페셜리스트'가 역포함으로 '논단: 스페셜리스트'(소장품)로 잡혔다 (틀렸어요 2026-10-13)
+      // '주화상자' — 쉐이 아래 단추. '균형-주화 상자'(주화 항목)로 오퍼 모집 화면마다 잡혔다 (틀렸어요 2026-10-13)
+      const HUD_LABELS = new Set(["목표HP", "지휘레벨", "부하오퍼레이터", "생각의부하", "소장품", "오퍼레이터", "편성", "생각", "명일방주", "주화상자",
+        "뱅가드", "가드", "디펜더", "스나이퍼", "캐스터", "메딕", "서포터", "스페셜리스트"]);
+      lines = lines.filter((l) => !drop.has(l) && !HUD_LABELS.has(normText(l)));
+      rogueScreenOut = rogueScreen;
+    }
+    // 기타 노드 — 지도에서 노드를 누르면 오른쪽에 노드 이름과 설명 글이 뜬다. **이름 줄과 설명 줄이 같이** 보일 때만 그 노드로
+    // (지도 위 노드 아이콘 밑에도 이름표가 붙어 있어서 이름만으로는 안 된다). 설명 줄은 판정에서 뺀다 — '교활한 상인'이 들어간
+    // 소장품 효과문으로 새지 않게 (사용자 지시 2026-10-13 "교활한 상인·앞서 출발 같은 기타 노드도 인식")
+    {
+      const ns = lines.map((l) => normText(l));
+      const near = (n: string, d: string) => {
+        if (d.includes(n)) return true;
+        if (n.length < 8) return false;
+        const bg = new Set<string>(); for (let i = 0; i + 1 < d.length; i++) bg.add(d.slice(i, i + 2));
+        let hit = 0; for (let i = 0; i + 1 < n.length; i++) if (bg.has(n.slice(i, i + 2))) hit++;
+        return hit / (n.length - 1) >= 0.8;   // 받침 한두 개 틀린 줄까지
+      };
+      for (const c of (index.nodes ?? []).filter((x) => !topic || x.topic === topic)) {
+        const iName = ns.findIndex((n) => n === c.nameN);
+        if (iName < 0) continue;
+        const descIdx = ns.flatMap((n, i) => (i !== iName && n.length >= 6 && near(n, c.descN) ? [i] : []));
+        if (descIdx.reduce((a, i) => a + ns[i].length, 0) < 10) continue;
+        rogueNodeOut = c.id;
+        const drop = new Set([iName, ...descIdx]);
+        lines = lines.filter((_, i) => !drop.has(i));
+        break;
+      }
+    }
+    // 한 글자만 틀린 이름 바로잡기 — 줄 전체가 그 테마 항목 이름(4~12자)과 길이가 같고 한 글자만 다르며, 그런 항목이 **하나뿐**이면
+    // 그 이름으로 (2026-10-13 상점의 '먹다만사랑' → 먹다 만 사탕. PaddleOCR 이 작은 글씨에서 받침 하나를 틀린다)
+    {
+      const names = index.entries.filter((e) => (!topic || e.topic === topic) && e.nameN.length >= 4 && e.nameN.length <= 12);
+      const byLen = new Map<number, typeof names>();
+      for (const e of names) { const a = byLen.get(e.nameN.length) ?? []; a.push(e); byLen.set(e.nameN.length, a); }
+      const exact = new Set(names.map((e) => e.nameN));
+      lines = lines.map((l) => {
+        const n = normText(l);
+        if (n.length < 4 || n.length > 12 || exact.has(n)) return l;
+        const near = (byLen.get(n.length) ?? []).filter((e) => { let d = 0; for (let i = 0; i < n.length && d < 2; i++) if (e.nameN[i] !== n[i]) d++; return d === 1; });
+        const uniq = [...new Set(near.map((e) => e.name))];
+        return uniq.length === 1 ? uniq[0] : l;
+      });
+    }
     let chipsRan = false;
     if (wantsChipPass(lines)) { chipsRan = true; lines = lines.concat(await session.chips()); }
     const ctx = { context: { topic, lock: opts?.lock }, norm };
@@ -542,6 +638,44 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
         if (add.length) { oc.entities = [...oc.entities, ...add]; lines = lines.concat(cLines); }
       }
     }
+    // 지도 화면의 작전 — 지도 아이콘 밑에 작전 이름표가 늘 붙어 있어서, 작전 노드가 하나뿐이면 다른 노드를 골라도 그 작전으로
+    // 고정됐다 (틀렸어요 2026-10-13 "작전 노드가 셋 중 하나밖에 없으면 고정"). 작전을 **골랐을 때만** 오른쪽 패널에 작전 설명 글이
+    // 뜨므로, 지도 화면에서는 설명 글이 읽힌 작전만 노드로 친다. 셋이 다 이름표로 보여도 고른 하나로 정해진다
+    if (rogueScreenOut === "map") {
+      const ns = lines.map((l) => normText(l));
+      const descHit = (d: string) => ns.reduce((a, n) => {
+        if (n.length < 6) return a;
+        if (d.includes(n)) return a + n.length;
+        if (n.length < 8) return a;
+        let hit = 0; for (let i = 0; i + 1 < n.length; i++) if (d.includes(n.slice(i, i + 2))) hit++;
+        return hit / (n.length - 1) >= 0.8 ? a + n.length : a;
+      }, 0);
+      let best: { id: string; v: number } | null = null;
+      for (const e of index.entries) {
+        if (e.section !== "stage" || (topic && e.topic !== topic) || e.bodyN.length < 10) continue;
+        if (!ns.some((n) => n === e.nameN || (n.length >= 3 && n.includes(e.nameN) && e.nameN.length >= 3))) continue;
+        const v = descHit(e.bodyN);
+        if (v >= 10 && (!best || v > best.v)) best = { id: e.id, v };
+      }
+      const g = oc.target.kind === "goto" && oc.target.goto.page === "rogue" ? oc.target.goto : null;
+      const stageish = !g || g.modal?.type === "stage" || g.modal?.type === "zone" || (g.view === "map" && !g.modal);
+      if (best && (oc.target.kind !== "goto" || stageish) && !(g?.modal?.type === "enc")) {
+        const tp = topic ?? index.entries.find((e) => e.id === best!.id)?.topic ?? "";
+        oc.target = { kind: "goto", goto: { page: "rogue", topic: tp, view: "map", modal: { type: "stage", id: best.id },
+          ...(ns.includes("긴급작전") ? { emergency: true } : {}) } };
+        oc.section = "stage";
+      } else if (!best && g?.modal?.type === "stage") {
+        // 이름표만 보이는 지도 — 작전을 고른 게 아니다
+        oc.target = { kind: "none" }; oc.section = null;
+      }
+    }
+    // 분대 선택·초기 모집 화면에는 고를 노드가 없다 — 거기서 잡힌 작전·조우는 버린다
+    // (틀렸어요 2026-10-13 쉐이 분대 선택 화면에 '차근차근 유도' 작전이 떴다)
+    if (comboScreen) { oc.target = { kind: "none" }; oc.section = null; oc.entities = []; }
+    if ((rogueScreenOut === "squadSelect" || rogueScreenOut === "runStart")
+      && oc.target.kind === "goto" && oc.target.goto.page === "rogue" && (oc.target.goto.modal?.type === "stage" || oc.target.goto.modal?.type === "enc")) {
+      oc.target = { kind: "none" }; oc.section = null;
+    }
     // 화면 순서 — 모아보기가 점수순(뒤죽박죽)이 아니라 화면에 놓인 순서로 나오게, 아이템마다 이름이 찍힌 줄 상자의
     // 자리를 싣는다 (사용자 지시 2026-10-12 "실제 화면 순서대로"). 상자는 마지막 OCR 패스의 것이라 못 찾은 항목은 뒤로 간다
     {
@@ -576,7 +710,9 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // ⚠ 배지는 **좌하단 육각형**이다 — 화면 상단 중앙의 숫자는 난이도가 아니라 별개
     // 게임 수치(간섭 방지 지수, 사용자 교정 2026-07-26)이므로 절대 읽지 않는다.
     if (oc.target.kind !== "none") {
-      const grade = gradeP ? await gradeP : gradeFresh ? gradeCache!.grade : null;
+      // PaddleOCR 로 화면 전체를 읽었으면 난이도는 그 결과(HUD 화면의 왼쪽 아래 숫자)로만 — 고정 자리 tesseract 판독은 창 제목 표시줄만큼
+      // 밀려 다른 숫자를 읽었다(분대 선택 화면에서 난이도 1 고정, 2026-10-13)
+      const grade = session.paddleUsed() ? hudGrade : hudGrade ?? (gradeP ? await gradeP : gradeFresh ? gradeCache!.grade : null);
       console.debug(`[lens] 난이도 배지: ${grade ?? "(없음)"}${gradeP ? "" : " (캐시)"}`);
       if (grade !== null) {
         if (oc.target.kind === "goto" && oc.target.goto.page === "rogue") oc.target.goto.grade = grade;
@@ -586,5 +722,8 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
   }
   // 필드 진단용 — 오인식 리포트를 받으면 콘솔에서 OCR 라인·판정을 바로 확인한다
   console.debug(`[lens:${mode}] OCR ${lines.length}줄 → ${oc.target.kind}/${oc.section ?? "-"} · 엔티티 ${oc.entities.length}`, { lines, outcome: oc });
+  traceOcr(lines);   // 화면 모으기가 판정 옆에 읽은 줄을 남긴다 (ocr-trace.ts)
+  if (rogueScreenOut) oc.rogueScreen = rogueScreenOut;
+  if (rogueNodeOut) oc.rogueNode = rogueNodeOut;
   return oc;
 }

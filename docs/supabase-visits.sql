@@ -658,8 +658,11 @@ create index if not exists prts_scan_ref_idx on public.prts_scan (ref, kind, at)
 create or replace function public.visits_prts_wrong(p_from timestamptz, p_to timestamptz)
 returns json language sql stable security definer set search_path = public as $$
   select coalesce(json_agg(r order by r.at desc), '[]') from (
-    select w.at, x.visitor, x.topic, x.result, x.section, x.target, x.note, x.seen, x.cached, x.env,
-           (select i.img from public.prts_scan i where i.ref = x.id and i.kind = 'shot' order by i.at limit 1) as shot
+    -- w.note = 누른 사람이 적은 한 줄 메모 (틀렸어요 모달, 2026-10-13~)
+    select w.at, w.note as memo, x.visitor, x.topic, x.result, x.section, x.target, x.note, x.seen, x.cached, x.env,
+           (select i.img from public.prts_scan i where i.ref = x.id and i.kind = 'shot' and i.img not like '%.json' order by i.at limit 1) as shot,
+           -- 그 인식의 판정 + OCR 이 읽은 줄 전체 (JSON 파일, 2026-10-13~) — 화면만으로는 왜 틀렸는지 알 수 없다
+           (select i.img from public.prts_scan i where i.ref = x.id and i.kind = 'shot' and i.img like '%.json' order by i.at limit 1) as ocr
     from public.prts_scan w join public.prts_scan x on x.id = w.ref and x.kind = 'scan'
     where w.kind = 'wrong' and w.at >= p_from and w.at < p_to and (select public.visits_is_admin())
     order by w.at desc limit 50

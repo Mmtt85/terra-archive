@@ -25,8 +25,9 @@ import { LENS_ITEM_SECTIONS, type LensGoto, type LensOutcome } from "./lens/matc
 import { recognizeShot, warmData, ocrLangFor, resetGradeCache } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
-import { useBridgeWatch, noteBridge, bridgeLock, bridgeSession, bridgeNodeJump, logBridgeEvent, memoBridgeScene, setBridgePipNode, setBridgePipRelics, type BridgeLogEvent, type BridgePipCard } from "./lens/bridge";
-import { BridgeTopicButton } from "./lens/bridge-button";
+import { useBridgeWatch, noteBridge, bridgeLock, bridgeSession, logBridgeEvent, memoBridgeScene, setBridgePipNode, setBridgePipRelics, setBridgePipFloor, bridgePipFloor, bridgePipRelics, type BridgeLogEvent, type BridgePipCard } from "./lens/bridge";
+import { createPortal } from "react-dom";
+import { BridgeTopicButton, useBridgePipWindow, setBridgePipExternal } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
@@ -491,6 +492,8 @@ function StageModal({ pair, grade, onClose, onOpenEnemy, inline }: {
   // 받는 대미지 감소(guard)는 수치에 못 넣는 효과라 칸 대신 제목 밑 한 줄로 — 같은 값끼리 묶는다
   const guards = new Map<number, string[]>();
   for (const r of rows) if (r.s.guard > 0) guards.set(r.s.guard, [...(guards.get(r.s.guard) ?? []), nmText(r.e.name, r.e.cn)]);
+  // PRTS 창(inline)에서는 등장 적을 접어 둔다 — 적 칸이 길어 밑의 소장품이 묻혔다 (사용자 지시 2026-10-13 "열어야 열리게")
+  const [foesOpen, setFoesOpen] = useState(!inline);
   return (
     <RgWin inline={inline} label={nmText(stage.name, stage.cn)} className="rg-modal" onClose={onClose}>
       <header className="rg-modal-head">
@@ -571,12 +574,16 @@ function StageModal({ pair, grade, onClose, onOpenEnemy, inline }: {
           {rows.length > 0 && (
             <section className="st-block">
               <h3>
-                <span className="section-no">ENEMY</span>{t("등장 적")} <em>{rows.length}</em>
-                {rows.some((r) => r.up.some(Boolean)) && <span className="st-envnote">{t("강조된 수치는 난이도·긴급 배율이 반영된 값입니다.")}</span>}
+                {inline ? (
+                  <button type="button" className="rg-foes-toggle" aria-expanded={foesOpen} onClick={() => setFoesOpen((o) => !o)}>
+                    <span className="section-no">ENEMY</span>{t("등장 적")} <em>{rows.length}</em> <b aria-hidden>{foesOpen ? "▴" : "▾"}</b>
+                  </button>
+                ) : <><span className="section-no">ENEMY</span>{t("등장 적")} <em>{rows.length}</em></>}
+                {foesOpen && rows.some((r) => r.up.some(Boolean)) && <span className="st-envnote">{t("강조된 수치는 난이도·긴급 배율이 반영된 값입니다.")}</span>}
               </h3>
-              {rows.some((r) => r.s.burst14) && <p className="st-note">{t("난이도 14 이상: 정예·리더가 등장 후 20초간 공격력 +30%, 받는 물리·마법 대미지 -50%")}</p>}
-              {[...guards].map(([g, names]) => <p key={g} className="st-note">{t("받는 대미지")} -{g}% — {names.join(", ")}</p>)}
-              <div className="st-enemies">
+              {foesOpen && rows.some((r) => r.s.burst14) && <p className="st-note">{t("난이도 14 이상: 정예·리더가 등장 후 20초간 공격력 +30%, 받는 물리·마법 대미지 -50%")}</p>}
+              {foesOpen && [...guards].map(([g, names]) => <p key={g} className="st-note">{t("받는 대미지")} -{g}% — {names.join(", ")}</p>)}
+              {foesOpen && <div className="st-enemies">
                 {rows.map(({ se, key, e, s, up }) => (
                   <EnemyChip key={se.key}
                     e={{ id: key, name: e.name, cnt: se.cnt, lv: 0, st: [s.hp, s.atk, s.def, s.res], ...(e.img ? { img: `/rogue/enemy/${e.img}.webp` } : {}) }}
@@ -589,7 +596,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy, inline }: {
                     pinned={pinned.has(se.key)}
                     onTogglePin={rd ? () => togglePin(se.key) : undefined} />
                 ))}
-              </div>
+              </div>}
             </section>
           )}
         </div>
@@ -1328,10 +1335,27 @@ export default function RogueGuide({ initialTopic }: {
   // PRTS 링크 상시 창 두 개 — 연결되면 노드(층·작전·조우) 창과 소장품 창을 📌 고정으로 띄워 두고, 인식될 때마다 안의 내용만
   // 갈아 끼운다 (사용자 지시 2026-10-12 "유물용 모달, 노드 인식용 모달 두 개를 따로 띄워 놓고 계속 갈아 끼우는 방식").
   // 값마다 연결 회차(sess)를 달아, 다시 연결하면 지난 회차 내용·닫힘 상태는 없는 것으로 본다 (끊으면 자리도 잊는다 — modal-geo)
-  type LiveNode = { sess: string } & ({ kind: "zone"; zone: Zone } | { kind: "stage"; pair: StagePair } | { kind: "enc"; enc: Encounter });
+  type LiveNode = { sess: string } & ({ kind: "zone"; zone: Zone } | { kind: "stage"; pair: StagePair } | { kind: "enc"; enc: Encounter }
+    | { kind: "nodetype"; nt: RogueData["nodeTypes"][number] });
   const [liveNode, setLiveNode] = useState<LiveNode | null>(null);
   const [liveRelics, setLiveRelics] = useState<{ sess: string; items: LensItem[] } | null>(null);
   const [liveHidden, setLiveHidden] = useState<{ dock?: string }>({});
+  const squadCand = useRef<string | null>(null);   // 분대 선택 화면에서 본 분대 — '초기 모집'·층이 인식되면 공통 정보로 정한다
+  const squadLocked = useRef(false);
+  // PRTS 창의 작전 노드 — 처음엔 접힌 카드(섬네일 + 짧은 설명), 눌러야 상세(시뮬레이터·지도·등장 적)가 펼쳐진다. 다른 작전이 인식되면 다시 접힌다
+  // (사용자 지시 2026-10-13 "작전 노드 자체를 열어야 열리게 · 바로 시뮬레이터부터 튀어나오니 빡세다")
+  const [prtsStageOpen, setPrtsStageOpen] = useState<string | null>(null);
+  const [eraOpen, setEraOpen] = useState(false);   // 공통 정보 띠의 시대 칩 펼침
+  /** 분대 확정 — 후보를 공통 정보로 올리고 소장품 칸의 분대 카드들을 지운다 */
+  const fixSquad = () => {
+    if (!squadCand.current) return;
+    const bandIds = new Set(data.bands.map((b) => b.id));
+    setBridgePipFloor({ squad: squadCand.current });
+    squadLocked.current = true;
+    squadCand.current = null;
+    setBridgePipRelics(bridgePipRelics().filter((c) => c.kind !== t("분대")));
+    setLiveRelics((lr) => (lr ? { ...lr, items: lr.items.filter((it) => !bandIds.has(it.id)) } : lr));
+  };
   /** 인식한 아이템을 화면 순서대로 — 윗줄부터, 같은 줄(높이 차 4% 안)은 왼쪽부터. 자리를 못 찾은 것은 뒤로 (run.ts order) */
   const byScreen = <T extends { id: string }>(rs: T[], order?: Record<string, [number, number]>): T[] => {
     if (!order) return rs;
@@ -2166,7 +2190,7 @@ export default function RogueGuide({ initialTopic }: {
     // maxGrade memo는 이 함수보다 뒤에 선언되므로 여기서 직접 계산 (토픽별 15 또는 승천 18)
     if (typeof g.grade === "number" && g.grade >= 0) {
       const gmax = Math.max(15, ...data.difficulties.filter((df) => df.mode === "NORMAL").map((df) => df.grade));
-      if (g.grade <= gmax) setGrade(g.grade);
+      if (g.grade <= gmax) { setGrade(g.grade); setBridgePipFloor({ grade: g.grade }); }
     }
     setUniTerm("", false); // 검색 결과 판이 하이라이트 대상(탭 본문)을 가리지 않게
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
@@ -2228,11 +2252,23 @@ export default function RogueGuide({ initialTopic }: {
       const gmax = Math.max(15, ...data.difficulties.filter((df) => df.mode === "NORMAL").map((df) => df.grade));
       if (g.grade <= gmax) setGrade(g.grade);
     }
-    const ids = [...new Set([...(g.highlight ?? []), ...(g.items ?? [])])];
+    // 분대 — 분대 선택 화면에서 가장 점수 높은 분대(지금 펼쳐 본 분대)를 후보로 들고 있다가, **층이 인식되면** 그 분대로 정하고
+    // 소장품 칸에 남은 분대 카드들을 지운다. 한 판 동안 분대는 안 바뀐다 (사용자 지시 2026-10-13 "XX분대는 공통 정보로 따로 ·
+    // 층이 인식되면 분대 선택 전에 인식된 4개는 없애")
+    const bandIds = new Set(data.bands.map((b) => b.id));
+    const hlBands = (g.highlight ?? []).filter((id) => bandIds.has(id));
+    if (hlBands.length && !squadLocked.current) squadCand.current = data.bands.find((b) => b.id === hlBands[0])?.name ?? squadCand.current;
+    else if (!hlBands.length && !squadLocked.current && squadCand.current && bridgePipFloor().floor) fixSquad();
+    // 시대(재앙 시대 등) — 소장품 칸이 아니라 공통 정보 띠에 (사용자 지시 2026-10-13)
+    const eras = new Map(((data.mechanics ?? []).find((m) => m.label === "시대")?.items ?? []).map((it) => [it.id, it]));
+    let ids = [...new Set([...(g.highlight ?? []), ...(g.items ?? [])])];
+    const era = ids.map((id) => eras.get(id)).find(Boolean);
+    if (era) setBridgePipFloor({ era: { name: era.name, text: [era.usage, era.desc].filter(Boolean).join("\n") } });
+    ids = ids.filter((id) => !eras.has(id) && !(squadLocked.current && bandIds.has(id)));
     const rs = byScreen(ids.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r), g.order);
     if (g.modal?.type === "relic") { const r = relicById.get(g.modal.id) ?? lensItemById.get(g.modal.id); if (r && !rs.some((x) => x.id === r.id)) rs.unshift(r as LensItem); }
     // 작은 창 두 칸 — 새로 인식된 칸만 바꾼다
-    const nodeCard = pipNodeFor(g.modal);
+    const nodeCard = g.modal?.type === "zone" ? null : pipNodeFor(g.modal);   // 구역은 노드 칸에 안 넣는다
     if (nodeCard) setBridgePipNode(nodeCard);
     if (rs.length) setBridgePipRelics(rs.map(pipItem));
     // 본 화면 상시 창도 작은 창과 **같이** 바꾼다 — 종전엔 작은 창이 떠 있으면 본 화면을 그대로 뒀다 (사용자 지시 2026-10-12 "pip 떠 있어도 같이 움직이게")
@@ -2245,11 +2281,96 @@ export default function RogueGuide({ initialTopic }: {
       const { type, id } = g.modal;
       if (type === "enc") { const e = encByScene.get(id); if (e) node = { sess, kind: "enc", enc: e }; }
       else if (type === "stage") { const st = stageById.get(id); if (st) node = { sess, kind: "stage", pair: { ...pairOf(st), init: g.emergency ? "e" : undefined } }; }
-      else if (type === "zone") { const z = zoneById.get(id); if (z) node = { sess, kind: "zone", zone: z }; }
+      // 구역(층)은 노드 칸에 넣지 않는다 — 공통 정보 띠에 층이 나온다 (사용자 지시 2026-10-13)
     }
+    // 공통 정보 — 층 번호·이름 (구역이면 그 구역, 작전이면 그 작전이 속한 층). 조우는 여러 층에 나와서 층을 정하지 않는다
+    const zOf = (num: string | number | null | undefined) => data.zones.find((z) => String(z.num) === String(num));
+    const fz = g.modal?.type === "zone" ? zoneById.get(g.modal.id) : node?.kind === "stage" ? zOf(node.pair.n.zone) : undefined;
+    if (fz) setBridgePipFloor(/^zone_sky_/.test(fz.id) ? { floor: 0, place: nmText(fz.name, fz.cn), name: nmText(fz.name, fz.cn) }
+      : { floor: Number(fz.num) || undefined, place: "", name: nmText(fz.name, fz.cn) });
     // 새 내용이 들어온 창은 닫아 뒀어도 다시 보인다
     if (node) { setLiveNode(node); setLiveHidden({}); }
     if (rs.length) { setLiveRelics({ sess, items: rs }); setLiveHidden({}); }
+  };
+  // PRTS 링크 상시 창 내용 — 공통 정보 띠(층·난이도·분대·시대) · 노드 · 소장품. 본 화면 상시 창과 작은 창이 같이 쓴다 (2026-10-13)
+  // PRTS 창의 작전 한 장 — 접힌 카드(섬네일 + 이름·층·설명 두 줄), 누르면 상세가 펼쳐지고 '접기'로 다시 접는다 (작전 노드·조우 전투 공용)
+  const prtsStage = (pair: StagePair) => {
+    if (prtsStageOpen === pair.n.id) return (
+      <>
+        <button type="button" className="rg-prts-stagefold" onClick={() => setPrtsStageOpen(null)}>{t("▴ 접기")}</button>
+        <StageModal inline key={pair.n.id} pair={pair} grade={grade} onClose={() => {}}
+          onOpenEnemy={(key, ctx) => setEnemyOpen({ key, ctx })} />
+      </>
+    );
+    const st = pair.init === "e" && pair.e ? pair.e : pair.n;
+    return (
+      <button type="button" className="rg-prts-stagecard" onClick={() => setPrtsStageOpen(pair.n.id)}
+        title={t("눌러서 작전 상세(지도·등장 적)를 엽니다")}>
+        {st.map ? <img src={asset(`/rogue/map/${st.map}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" /> : <span className="rg-prts-stagecard-noimg" aria-hidden />}
+        <span className="rg-prts-stagecard-body">
+          <b><Nm name={st.name} cn={st.cn} /></b>
+          <small>{[st.zone != null ? t("{n}층", { n: st.zone }) : "", pair.init === "e" ? t("긴급 작전") : t("작전")].filter(Boolean).join(" · ")} <em aria-hidden>▾</em></small>
+          {st.desc && <span className="rg-prts-stagecard-desc">{st.desc}</span>}
+        </span>
+      </button>
+    );
+  };
+  const prtsBody = () => {
+    const n = liveNode?.sess === bridgeSession() ? liveNode : null;
+    const items = liveRelics?.sess === bridgeSession() ? liveRelics.items : [];
+    return (
+      <>
+            {(() => {
+              const f = bridgePipFloor();
+              const bits = [f.place ? `${t("쉐이의 잔식")} - ${f.place}` : f.floor ? t("{n}층", { n: f.floor }) : "", typeof f.grade === "number" ? t("난이도 {n}", { n: f.grade }) : "", f.squad ?? ""].filter(Boolean);
+              if (!bits.length && !f.era) return null;
+              return (
+                <div className="rg-prts-floor">
+                  {bits.map((b) => <span key={b}>{b}</span>)}
+                  {/* 시대 — 누르면 효과가 칩 밑에 말풍선으로 잠깐 뜬다, 다른 데를 누르면 닫힌다 (사용자 지시 2026-10-13 "재앙 시대 발생 시
+                      공통 정보 띠에, 클릭하면 내용도" · 같은 날 "밑으로 열리는 게 아니라 툴팁처럼 잠깐 띄워") */}
+                  {f.era && (
+                    <span className="rg-prts-era-wrap">
+                      <button type="button" className={`rg-prts-era${eraOpen ? " on" : ""}`} aria-expanded={eraOpen}
+                        onClick={() => setEraOpen((o) => !o)} onBlur={() => setEraOpen(false)}>{f.era.name} <b aria-hidden>ⓘ</b></button>
+                      {eraOpen && <span className="rg-prts-era-pop" role="tooltip">{f.era.text}</span>}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+            <section className="rg-prts-pane">
+              <h4 className="rg-prts-pane-h">{t("노드")}</h4>
+              {n?.kind === "zone" ? (
+                <ZoneModal inline zone={n.zone} badge={zoneBadge(n.zone)}
+                  pairs={n.zone.variant ? [] : (pairsByZone.get(n.zone.num) ?? []).concat(trialPairsFor(n.zone))}
+                  bosses={n.zone.variant ? [] : bossStages.filter((x) => x.zone === n.zone.num)}
+                  onOpenStage={setStageOpen} onClose={() => {}} />
+              ) : n?.kind === "stage" ? prtsStage(n.pair) : n?.kind === "enc" ? (
+                <>
+                  <EncounterModal inline key={n.enc.scene ?? n.enc.title} enc={n.enc} onClose={() => {}} link={linkRelic} />
+                  {/* 조우의 전투 작전도 작전 노드처럼 접힌 카드로 (사용자 지시 2026-10-13 "우연한 만남에서 만나는 스테이지도 접힘 상태로") */}
+                  {(n.enc.battles ?? []).length > 0 && (
+                    <div className="rg-prts-encbattles">
+                      <h5>{t("전투")}</h5>
+                      {(n.enc.battles ?? []).map((id) => stageById.get(id)).filter(Boolean).map((x) => <Fragment key={x!.id}>{prtsStage(pairOf(x!))}</Fragment>)}
+                    </div>
+                  )}
+                </>
+              ) : n?.kind === "nodetype" ? (
+                <div className="rg-prts-nodetype">
+                  <h3>{n.nt.name}</h3>
+                  {n.nt.func && <p className="rg-prts-nodetype-func">{n.nt.func}</p>}
+                  {n.nt.desc && <p className="rg-prts-nodetype-desc">{n.nt.desc}</p>}
+                </div>
+              ) : <p className="rg-prts-empty">{t("층·작전·조우 화면을 인식하면 여기에 표시됩니다")}</p>}
+            </section>
+            <section className="rg-prts-pane">
+              <h4 className="rg-prts-pane-h">{t("소장품")}{items.length > 0 && <em>{items.length}</em>}</h4>
+              {items.length ? <div className="rg-prts-relics">{relicListBody(items)}</div> : <p className="rg-prts-empty">{t("소장품을 인식하면 여기에 표시됩니다")}</p>}
+            </section>
+      </>
+    );
   };
   const applyLensRef = useRef(applyLensHandoff);
   useEffect(() => { applyLensRef.current = applyLensHandoff; });
@@ -2279,22 +2400,7 @@ export default function RogueGuide({ initialTopic }: {
     const next = !v;
     if (next) { void warmOcr(ocrLangFor(locale)); warmData("rogue", locale, cnTopicNow()); } // 켜는 순간 화면 언어의 OCR·데이터 예열
     return next;
-  });
-  // ── 맵 노드 자동 이동 게이트 (제보 f1c050b2, 2026-09-04: "노드인식이 방해되는 경우가
-  //    조금 있네요") ────────────────────────────────────────────────────────────
-  // 인식 자체를 끄는 게 아니다 — **맵 노드(작전·조우·구역)로 튀는 이동만** 막고 소장품·
-  // 도구·분대 인식은 그대로 둔다. 맵을 훑으며 노드를 하나씩 눌러 보는 동안 사이트가 계속
-  // 그 작전 상세로 넘어가는 게 방해였다는 제보다.
-  // ⚠ **PRTS 링크(live) 에만** 건다 — 스샷 레이더는 사람이 한 장씩 일부러 붙여넣는 것이라
-  //   그 화면으로 가는 게 목적이다 (사용자 확정 2026-09-05 "prts에서만 켜고끄고").
-  //   토글은 연결 중에만 떠 있는 브리지 토스트에 있다 (lens/bridge-button.tsx).
-  // ⚠ 판정은 goto.view 로 한다 — SECTION_NAV(match.ts)에서 맵으로 가는 섹션이 stage·enc·zone
-  //   셋이고 전부 view:"map" 이다. 섹션 이름을 여기 복제해 두면 새 섹션이 늘 때 어긋난다.
-  // ⚠ journeyEvents 는 이 게이트보다 **먼저** 돈다 — 이동만 막히고 리플레이 기록(작전 입장·
-  //   조우·구역)은 그대로 남는다.
-  const lensGotoBlocked = (g: LensGoto, live: boolean) =>
-    live && !bridgeNodeJump() && g.page === "rogue" && g.view === "map";
-  // ── 화면에 같이 떠 있던 소장품 (제보 16138722, 2026-09-05) ─────────────────────
+  });  // ── 화면에 같이 떠 있던 소장품 (제보 16138722, 2026-09-05) ─────────────────────
   // 조우 선택지가 주는 소장품은 **판마다 랜덤**이라 우리 조우 데이터엔 "소장품 1개 획득"
   // 으로만 적혀 있다 — 무엇인지는 화면에서 읽어야만 안다. 게임이 효과를 안 적어 주는
   // 것도 있어서(뱀파이어의 침대) 사이트가 채울 값이 실제로 있다.
@@ -2408,21 +2514,28 @@ export default function RogueGuide({ initialTopic }: {
       const oc = await recognizeShot("rogue", file, lock?.topic ?? lensAnchor.current ?? topicRef.current,
         locale, { lock: !!lock, live, cnTopic: cnTopicNow() });
       if (oc.anchor) lensAnchor.current = oc.anchor;
+      // 통합전략 화면 종류 (run.ts rogueScreen) — 분대 확정·노드 비우기 (사용자 지시 2026-10-13)
+      if (live && oc.rogueScreen === "squadSelect") { squadLocked.current = false; setBridgePipFloor({ squad: "", era: null }); }
+      if (live && oc.rogueScreen === "runStart" && !squadLocked.current) fixSquad();
+      // 판 시작 화면(분대 선택·모집 조합 선택·초기 모집)엔 노드가 없다 — 지난 판·잘못 잡힌 노드를 비운다 (2026-10-13)
+      if (live && (oc.rogueScreen === "runStart" || oc.rogueScreen === "squadSelect")) { setLiveNode(null); setBridgePipNode(null); }
+      // 노드를 고르지 않은 지도 화면 — 지나간 노드(작전·조우)를 비운다
+      if (live && oc.rogueScreen === "map" && oc.target.kind === "none" && !oc.battle && !oc.rogueNode) { setLiveNode(null); setBridgePipNode(null); }
+      // 기타 노드(교활한 상인·앞서 출발 등)를 고른 지도 화면 — 노드 칸에 그 노드 (사용자 지시 2026-10-13)
+      const sky = live && oc.rogueNode?.startsWith("sky:") ? data.skyNodes?.find((x) => `sky:${x.id}` === oc.rogueNode) : undefined;
+      const nt = sky ? { id: sky.id, name: sky.name, desc: sky.desc, func: sky.subs?.length ? sky.subs.join("\n") : null }
+        : live && oc.rogueNode ? data.nodeTypes.find((x) => x.id === oc.rogueNode) : undefined;
+      if (nt) {
+        setLiveNode({ sess: bridgeSession(), kind: "nodetype", nt }); setLiveHidden({});
+        setBridgePipNode({ kind: t("노드"), name: nt.name, text: nt.func ?? nt.desc });
+      }
       // 플레이 로그 — 라이브(게임 연결) 인식은 전부 기록한다. '리플레이 다운받기'로 내려간다.
       if (live) {
         // 브리지에 판정을 알려준다 — 전투면 전투 홀드, 확신 이동이면 화면 판정 캐시
         memoBridgeScene(oc);
         for (const ev of journeyEvents(oc, false)) logBridgeEvent(ev);
       }
-      if (oc.target.kind === "goto" && lensGotoBlocked(oc.target.goto, live)) {
-        // 맵 노드 이동을 꺼 뒀다 — 인식·기록은 이미 위에서 끝났고 이동만 건너뛴다.
-        // 다만 화면에 소장품이 같이 떠 있었으면 그 효과는 띄운다 (토글과 무관, 위 주석).
-        const side = showLensItems(lensSideItems(oc, live), rogueGoto(oc.target.goto)?.topic ?? "");
-        noteBridge(side ? t("소장품 {n}개", { n: side }) : t("노드 이동 꺼짐"));
-        flashLensMsg(side
-          ? t("화면에서 소장품을 찾았습니다 — 노드 이동은 꺼져 있어 그대로 둡니다.")
-          : t("맵 노드를 인식했지만 '노드 이동'이 꺼져 있어 이동하지 않았습니다."), 2000);
-      } else if (oc.target.kind === "goto") {
+      if (oc.target.kind === "goto") {
         const items = lensSideItems(oc, live);
         const rg = rogueGoto(oc.target.goto);
         onLensGoto(rg && items.length ? { ...rg, items } : oc.target.goto, live);
@@ -2453,14 +2566,24 @@ export default function RogueGuide({ initialTopic }: {
     for (const ev of journeyEvents(oc, true)) logBridgeEvent(ev);
     const side = lensSideItems(oc, true);
     const rg = rogueGoto(oc.target.goto);
-    if (lensGotoBlocked(oc.target.goto, true)) {
-      const n = showLensItems(side, rg?.topic ?? "");
-      noteBridge(n ? t("소장품 {n}개", { n }) : t("노드 이동 꺼짐"));
-      return;
-    }
     onLensGoto(rg && side.length ? { ...rg, items: side } : oc.target.goto, true);
     noteBridge(oc.entities[0]?.name ?? t("이동"));
   });
+  // 작은 창 자리 — 작은 창이 열려 있고 연결 중이면 작은 창은 머리만 그리고 내용은 여기서 포털로 (prtsBody)
+  const pipW = useBridgePipWindow();
+  const [pipSlot, setPipSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!pipW || !bridgeOn) { setBridgePipExternal(false); return; }   // 자리는 그릴 때 pipW·bridgeOn 으로 다시 거른다
+    setBridgePipExternal(true);
+    let tries = 0, raf = 0;
+    const find = () => {
+      const el = pipW.document.getElementById("ta-pip-slot");
+      if (el) { setPipSlot(el); return; }
+      if (++tries < 60) raf = requestAnimationFrame(find);
+    };
+    find();
+    return () => { cancelAnimationFrame(raf); setBridgePipExternal(false); setPipSlot(null); };
+  }, [pipW, bridgeOn]);
   useEffect(() => {
     if (!bridgeOn) return;
     // 첫 인식에서 wasm·traineddata(~9MB) 로드로 수 초를 잃지 않게 연결 즉시 예열.
@@ -3739,35 +3862,19 @@ export default function RogueGuide({ initialTopic }: {
           "작은 창처럼 둘로 나눠 모달 하나만"). 연결돼 있는 동안만, 📌 고정으로. 칸마다 새로 인식될 때만 바뀐다 */}
       {bridgeOn && liveHidden.dock !== bridgeSession() && (() => {
         const n = liveNode?.sess === bridgeSession() ? liveNode : null;
-        const items = liveRelics?.sess === bridgeSession() ? liveRelics.items : [];
         const nodeName = n?.kind === "zone" ? nmText(n.zone.name, n.zone.cn) : n?.kind === "stage" ? nmText(n.pair.n.name, n.pair.n.cn) : n?.kind === "enc" ? nmText(n.enc.title, n.enc.cn) : "";
         return (
           <ModalWindow label={`◉ PRTS${nodeName ? ` · ${nodeName}` : ""}`}
             className={`rg-modal rg-prts-win rg-prts-dock${n?.kind === "zone" ? " rg-zmodal" : ""}`} defaultPinned geoKey={`${PRTS_MODAL_KEY}:dock`}
             defaultPos={{ x: 16, y: 72 }} onClose={() => setLiveHidden((h) => ({ ...h, dock: bridgeSession() }))}>
-            <section className="rg-prts-pane">
-              <h4 className="rg-prts-pane-h">{t("노드")}</h4>
-              {n?.kind === "zone" ? (
-                <ZoneModal inline zone={n.zone} badge={zoneBadge(n.zone)}
-                  pairs={n.zone.variant ? [] : (pairsByZone.get(n.zone.num) ?? []).concat(trialPairsFor(n.zone))}
-                  bosses={n.zone.variant ? [] : bossStages.filter((x) => x.zone === n.zone.num)}
-                  onOpenStage={setStageOpen} onClose={() => {}} />
-              ) : n?.kind === "stage" ? (
-                <StageModal inline key={n.pair.n.id} pair={n.pair} grade={grade} onClose={() => {}}
-                  onOpenEnemy={(key, ctx) => setEnemyOpen({ key, ctx })} />
-              ) : n?.kind === "enc" ? (
-                <EncounterModal inline key={n.enc.scene ?? n.enc.title} enc={n.enc} onClose={() => {}} link={linkRelic}
-                  battles={(n.enc.battles ?? []).map((id) => stageById.get(id)).filter(Boolean).map((x) => pairOf(x!))}
-                  onOpenStage={setStageOpen} />
-              ) : <p className="rg-prts-empty">{t("층·작전·조우 화면을 인식하면 여기에 표시됩니다")}</p>}
-            </section>
-            <section className="rg-prts-pane">
-              <h4 className="rg-prts-pane-h">{t("소장품")}{items.length > 0 && <em>{items.length}</em>}</h4>
-              {items.length ? relicListBody(items) : <p className="rg-prts-empty">{t("소장품을 인식하면 여기에 표시됩니다")}</p>}
-            </section>
+            {prtsBody()}
           </ModalWindow>
         );
       })()}
+      {/* 작은 창(PiP)에도 **같은 내용**을 그린다 — 작은 창 자리(#ta-pip-slot)로 포털. 테마 변수는 .rg.rgN 감싸개로 (작은 창 html 엔 테마 클래스가 없다) */}
+      {bridgeOn && pipW && pipSlot?.isConnected && createPortal(
+        <div className={`rg rg${topic.split("_")[1]} rg-pip-wrap`}
+          style={{ "--rg-hue": getComputedStyle(document.documentElement).getPropertyValue("--rg-hue") } as React.CSSProperties}>{prtsBody()}</div>, pipSlot)}
       {/* 자동인식이 테마를 특정 못 한 경우(분대 이름은 테마 공통) — 테마 선택 전용 미니 창 */}
       {lensInitial?.target.kind === "tie" && (
         <ModalWindow label={`📷 ${t("테마 선택")}`} className="operator-modal lens-modal lens-tie"

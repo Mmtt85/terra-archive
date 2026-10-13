@@ -16,7 +16,7 @@
 //
 // ⚠ vinext build **바로 뒤, fix-html-lang 앞**에서 돈다 (package.json) — 종전 순서(vite 가 빌드 첫머리에
 //   복사)와 뒤 단계가 보는 파일이 같아야 한다 (public 의 사이트 인증용 .html 두 개 등).
-import { cpSync, existsSync, readdirSync } from "node:fs";
+import { cpSync, existsSync, readdirSync, rmSync } from "node:fs";
 import { constants } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,3 +48,14 @@ for (const name of readdirSync(SRC)) {
   n++;
 }
 console.log(`copy-public: public/ ${n}개 항목 → dist/client${ALL ? " (TA_LOCAL_ASSETS — 전부)" : " (R2 전용 폴더 제외)"}`);
+
+// ONNX Runtime Web 의 wasm 복사본 지우기 (2026-10-13) — onnxruntime-web 의 ESM 이 `new URL("ort-wasm-….wasm", import.meta.url)` 를
+// 품고 있어서 vite 가 그 wasm 을 assets/ 로 끼워 넣는다. 우리는 ort.env.wasm.wasmPaths 로 R2(/lens/ort/)에서 받으므로 **안 쓰는 파일**이다.
+// 그런데 CPU 판이 14MB, 그래픽 카드판(asyncify)이 26.8MB 라 ① Pages 파일 하나 25MiB 한도를 넘어 배포가 거부되고 ② 배포 뒤
+// 청크 예열(warm-assets)이 14MB 를 20초 안에 못 받아 50회차를 돌았다 (CI 2026-10-13). 여기서 빼면 둘 다 없어진다
+let dropped = 0;
+for (const dir of [join(OUT, "assets"), join(OUT, "..", "server", "ssr", "assets")]) {
+  if (!existsSync(dir)) continue;
+  for (const f of readdirSync(dir)) if (/^ort-wasm.*\.wasm$/.test(f)) { rmSync(join(dir, f)); dropped++; }
+}
+if (dropped) console.log(`copy-public: 안 쓰는 ONNX Runtime wasm ${dropped}개 지움 (R2 /lens/ort/ 에서 받는다)`);

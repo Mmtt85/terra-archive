@@ -11,17 +11,20 @@
 // 한국어 화면만 — 영·일 공채는 tesseract 그대로. 로드·실행이 실패하면 null 을 돌려 부르는 쪽이 tesseract 로 물러난다.
 
 type Out = { text: string; conf: number }[] | null;
+type DetBox = [number, number, number, number, number];
 let worker: Worker | null = null;
 let broken = false;
 let seq = 0;
-const waiting = new Map<number, (o: Out) => void>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const waiting = new Map<number, (o: any) => void>();
 
 function getWorker(): Worker | null {
   if (worker || broken) return worker;
   try {
     worker = new Worker(new URL("./paddle-worker.ts", import.meta.url), { type: "module" });
-    worker.onmessage = (ev: MessageEvent<{ id: number; out: Out }>) => {
-      waiting.get(ev.data.id)?.(ev.data.out);
+    worker.onmessage = (ev: MessageEvent<{ id: number; out?: Out; boxes?: DetBox[]; err?: string }>) => {
+      if (ev.data.err) console.warn(`[lens] PaddleOCR ${ev.data.err}`);
+      waiting.get(ev.data.id)?.(ev.data.boxes ?? ev.data.out ?? null);
       waiting.delete(ev.data.id);
     };
     worker.onerror = (e) => {
@@ -37,7 +40,8 @@ function getWorker(): Worker | null {
   return worker;
 }
 
-function ask(msg: { warm?: boolean; chips?: { w: number; data: Float32Array }[] }, transfer: Transferable[] = []): Promise<Out> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ask(msg: { warm?: boolean; chips?: { w: number; data: Float32Array }[]; detImg?: { w: number; h: number; data: Float32Array } }, transfer: Transferable[] = []): Promise<any> {
   const w = getWorker();
   if (!w) return Promise.resolve(null);
   const id = ++seq;
@@ -53,7 +57,7 @@ export function warmPaddle(): void { void ask({ warm: true }); }
 const H = 48;
 
 /** 캔버스의 칩 상자들을 읽는다 — [글자, 가장 낮은 글자 확률] 배열. 모델을 못 쓰면 null */
-export async function paddleReadBoxes(src: CanvasImageSource, boxes: { x: number; y: number; w: number; h: number }[]): Promise<Out> {
+export async function paddleReadBoxes(src: CanvasImageSource, boxes: { x: number; y: number; w: number; h: number }[], maxW = 640): Promise<Out> {
   if (!boxes.length) return [];
   if (!getWorker()) return null;
   const cc = document.createElement("canvas");
@@ -61,18 +65,61 @@ export async function paddleReadBoxes(src: CanvasImageSource, boxes: { x: number
   cx.imageSmoothingEnabled = true;
   cx.imageSmoothingQuality = "high";
   const chips = boxes.map((b) => {
-    const w = Math.max(16, Math.min(640, Math.round((b.w * H) / b.h)));
+    const w = Math.max(16, Math.min(maxW, Math.round((b.w * H) / b.h)));
     cc.width = w; cc.height = H;
     cx.drawImage(src, b.x, b.y, b.w, b.h, 0, 0, w, H);
     const px = cx.getImageData(0, 0, w, H).data;
     const plane = H * w;
-    const data = new Float32Array(3 * plane);   // RGB 평면 순서(NCHW), (값 / 127.5) − 1
+    // ⚠ **BGR** 평면 순서(NCHW), (값 / 127.5) − 1 — PaddleOCR 은 OpenCV 로 읽은 BGR 로 학습했다 (모델 설정 inference.yml)
+    const data = new Float32Array(3 * plane);
     for (let i = 0, p = 0; i < plane; i++, p += 4) {
-      data[i] = px[p] / 127.5 - 1;
+      data[i] = px[p + 2] / 127.5 - 1;
       data[plane + i] = px[p + 1] / 127.5 - 1;
-      data[2 * plane + i] = px[p + 2] / 127.5 - 1;
+      data[2 * plane + i] = px[p] / 127.5 - 1;
     }
     return { w, data };
   });
   return ask({ chips }, chips.map((c) => c.data.buffer));
+}
+
+/** 화면 전체 읽기 (통합전략 1차 판독, 2026-10-13 — tesseract PSM11 자리) — 검출로 글자 줄 상자를 찾고 줄마다 인식.
+ *  돌려주는 줄은 위→아래, 같은 줄은 왼→오 순서이고 좌표는 src 기준. 검출 모델을 못 쓰면 null */
+export async function paddleReadFrame(src: HTMLCanvasElement): Promise<{ text: string; conf: number; x0: number; y0: number; x1: number; y1: number }[] | null> {
+  if (!getWorker()) return null;
+  const SW = src.width, SH = src.height;
+  // 긴 변 960 (모델 설정 DetResizeForTest resize_long), 32 의 배수
+  const r = 960 / Math.max(SW, SH);
+  const dw = Math.max(32, Math.round((SW * r) / 32) * 32), dh = Math.max(32, Math.round((SH * r) / 32) * 32);
+  const cc = document.createElement("canvas");
+  cc.width = dw; cc.height = dh;
+  const cx = cc.getContext("2d", { willReadFrequently: true })!;
+  cx.imageSmoothingEnabled = true;
+  cx.imageSmoothingQuality = "high";
+  cx.drawImage(src, 0, 0, dw, dh);
+  const px = cx.getImageData(0, 0, dw, dh).data;
+  const plane = dw * dh;
+  // BGR, ImageNet 평균·편차 (inference.yml NormalizeImage — 채널 순서가 BGR 이라 mean[0] 이 B 몫)
+  const data = new Float32Array(3 * plane);
+  for (let i = 0, p = 0; i < plane; i++, p += 4) {
+    data[i] = (px[p + 2] / 255 - 0.485) / 0.229;
+    data[plane + i] = (px[p + 1] / 255 - 0.456) / 0.224;
+    data[2 * plane + i] = (px[p] / 255 - 0.406) / 0.225;
+  }
+  const boxes: DetBox[] | null = await ask({ detImg: { w: dw, h: dh, data } }, [data.buffer]);
+  if (!boxes) return null;
+  const sx = SW / dw, sy = SH / dh;
+  const rects = boxes.map(([x, y, w, h]) => ({
+    x: Math.max(0, Math.round(x * sx)), y: Math.max(0, Math.round(y * sy)),
+    w: Math.max(1, Math.min(SW - Math.round(x * sx), Math.round(w * sx))), h: Math.max(1, Math.min(SH - Math.round(y * sy), Math.round(h * sy))),
+  })).filter((b) => b.w >= 6 && b.h >= 6);
+  if (!rects.length) return [];
+  // 줄 순서 — 세로 가운데가 가까우면(줄 높이 반 안) 같은 줄로 보고 왼→오
+  rects.sort((a, b) => {
+    const ca = a.y + a.h / 2, cb = b.y + b.h / 2;
+    return Math.abs(ca - cb) < Math.min(a.h, b.h) / 2 ? a.x - b.x : ca - cb;
+  });
+  const got = await paddleReadBoxes(src, rects, 2000);
+  if (!got) return null;
+  return got.map((g, i) => ({ ...g, x0: rects[i].x, y0: rects[i].y, x1: rects[i].x + rects[i].w, y1: rects[i].y + rects[i].h }))
+    .filter((l) => l.text);
 }
