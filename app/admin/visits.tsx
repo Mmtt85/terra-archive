@@ -258,11 +258,12 @@ const FAMILY_TOOL = new Set(["infra", "ra", "autochess", "sim", "recruit", "farm
 function familyOf(path: string, hash?: string | null): { key: string; label: string } | null {
   const p = path.replace(/^\/(en|ja)(?=\/|$)/, "") || "/";
   const [, head = "", id = ""] = p.split("/");
-  if (head === "rogue") return { key: `rogue/${id || "is1"}`, label: rogueLabel(id) };
-  // 창(모달)으로 연 대상 — #story-<id>/… · #op-<id> · #en- · #st- · #it- · #ev-
+  // 창(모달)으로 연 대상 — #story-<id>/… · #op-<id> · #en- · #st- · #it- · #ev-. **주소보다 먼저** 본다 — 스토리 리더기는 어느 화면에서나
+  // 창으로 열려서, 통합전략 6 화면에 둔 채 이벤트 스토리를 세 시간 읽은 세션이 통째로 '통합전략 6' 묶음이 됐다 (사용자 지적 2026-10-13)
   const h = hash ? decodeURIComponent(hash).replace(/^#/, "") : "";
   const m = /^(story|op|en|st|it|item|ev)-([^/]+)/.exec(h);
   if (m) return { key: `#${m[1]}-${m[2]}`, label: hashLabel(head, `#${m[1]}-${m[2]}`) };
+  if (head === "rogue") return { key: `rogue/${id || "is1"}`, label: rogueLabel(id) };
   if (id) return { key: `${head}/${id}`, label: pathLabel(`/${head}/${id}`) };
   if (FAMILY_TOOL.has(head)) return { key: head, label: SECTION_KO[head] ?? head };
   return null;
