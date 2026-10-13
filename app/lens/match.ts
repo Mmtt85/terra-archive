@@ -204,8 +204,12 @@ export function wantsChipPass(rawLines: string[]): boolean {
   return RECRUIT_KEYWORDS.some((k) => allN.includes(k));
 }
 
-function detectRecruitTags(linesN: string[], recruitTags: string[]): string[] {
-  const tagsN = recruitTags.map((t) => ({ name: t, n: normText(t) })).filter((t) => t.n.length >= 2);
+/** 공채 인식 언어 옵션 (2026-10-13~ 영어·일본어 게임 화면) — norm = 그 언어 정규화기, alias = 한국어 태그 → 그 언어 태그 이름.
+ *  돌려주는 태그는 늘 **한국어 이름**(공채 판이 한국어 태그 기준) */
+export type RecruitLang = { norm: Normalizer; alias: Record<string, string> };
+function detectRecruitTags(linesN: string[], recruitTags: string[], lang?: RecruitLang): string[] {
+  const norm = lang?.norm ?? normText;
+  const tagsN = recruitTags.map((t) => ({ name: t, n: norm(lang?.alias[t] ?? t) })).filter((t) => t.n.length >= 2);
   const found: string[] = [];
   for (const line of linesN) {
     for (const tag of tagsN) {
@@ -240,11 +244,12 @@ function detectRecruitTags(linesN: string[], recruitTags: string[]): string[] {
  *   ① 칩 글자에 '모집설명'이 있다
  *   ② 태그로 읽힌 칩(정확히 또는 한 글자 틀림)이 3개 이상, 높이·폭이 서로 ±20% 안, 줄 2개 이하·칸 3개 이하로 정렬
  *  칩 자리를 모르는 경로(칩 패스가 없던 옛 세션)는 판정하지 않고 통과시킨다 — 그땐 boxes 가 비어 있다 */
-export function recruitLayoutOk(boxes: { text: string; x: number; y: number; w: number; h: number }[], recruitTags: string[]): boolean {
+export function recruitLayoutOk(boxes: { text: string; x: number; y: number; w: number; h: number }[], recruitTags: string[], lang?: RecruitLang): boolean {
   if (!boxes.length) return true;
-  const norm = (t: string) => normText(t);
-  if (!boxes.some((b) => norm(b.text).includes("모집설명"))) return false;
-  const tagsN = recruitTags.map(norm).filter((t) => t.length >= 2);
+  const norm = (t: string) => (lang?.norm ?? normText)(t);
+  // ① '모집 설명' 칩 — 한국어 화면만. 영어·일본어 게임의 같은 칩 글자는 실측 전이라 ②(칩 격자)만 본다 (2026-10-13)
+  if (!lang && !boxes.some((b) => norm(b.text).includes("모집설명"))) return false;
+  const tagsN = recruitTags.map((t) => norm(lang?.alias[t] ?? t)).filter((t) => t.length >= 2);
   const isTag = (t: string) => tagsN.some((g) => g === t || (g.length === t.length && [...g].filter((ch, i) => ch !== t[i]).length === 1));
   const tb = boxes.filter((b) => isTag(norm(b.text)));
   if (tb.length < 3) return false;
@@ -264,11 +269,11 @@ export function recruitLayoutOk(boxes: { text: string; x: number; y: number; w: 
 }
 
 /** 공개채용 도우미 전용 판정 — 페이지별 설치라 화면 분류가 불필요, 태그만 추출한다. */
-export function analyzeRecruit(rawLines: string[], recruitTags: string[]): LensOutcome {
-  const linesN = rawLines.map((l) => normText(l)).filter((l) => l.length >= 2);
+export function analyzeRecruit(rawLines: string[], recruitTags: string[], lang?: RecruitLang): LensOutcome {
+  const linesN = rawLines.map((l) => (lang?.norm ?? normText)(l)).filter((l) => l.length >= 2);
   const allN = linesN.join("");
   const screens = RECRUIT_KEYWORDS.some((k) => allN.includes(k)) ? ["공개모집 화면"] : [];
-  const tags = detectRecruitTags(linesN, recruitTags);
+  const tags = detectRecruitTags(linesN, recruitTags, lang);
   if (!tags.length) {
     return { screens, entities: [], topics: [], section: null, target: { kind: "none" } };
   }

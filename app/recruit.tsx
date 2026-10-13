@@ -303,7 +303,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   const [lensAuto, setLensAuto] = useState(false);
   const toggleLensAuto = () => setLensAuto((v) => {
     const next = !v;
-    if (next) { void warmOcr(); warmPaddle("kor"); warmData("recruit"); }   // 공채는 한국 서버 화면만 읽는다 (run.ts recruit — 언제나 kor)
+    if (next) { void warmOcr(); warmPaddle(locale === "ko" ? "kor" : "ch"); warmData("recruit"); }   // 영어·일본어 게임 화면은 중·일·영 모델
     return next;
   });
   const [lensMsg, setLensMsg] = useState<string | null>(null);
@@ -470,8 +470,8 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
             </div>
           )}
           {/* PRTS 링크 — 게임 창을 연결하면 모집 화면이 바뀔 때마다 태그를 자동 선택 (사용자 지시 2026-10-12).
-              작은 창은 쓰지 않는다 — 태그 판이 뒤에서 골라진다. 좁은 칸이라 스샷 단추와 따로 묶었다 */}
-          {locale === "ko" && (
+              좁은 칸이라 스샷 단추와 따로 묶었다. 2026-10-13~ 영어·일본어 페이지도 — 그 언어 게임 화면(글섭·일섭)을 읽는다 */}
+          {(locale === "ko" || locale === "en" || locale === "ja") && (
             <div className="lens-open-wrap bridge-open-wrap">
               <BridgeTopicButton topic="recruit" name={t("공개모집")} t={t} noReplay compact />
             </div>

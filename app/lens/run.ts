@@ -6,7 +6,7 @@ import { createOcrSession } from "./ocr";
 import { traceOcr } from "./ocr-trace";
 import { setBridgePipFloor } from "./bridge";
 import { asset } from "../assets";
-import { buildIndex, normText, analyzeLines, analyzeChinese, analyzeRecruit, recruitLayoutOk, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
+import { buildIndex, normText, analyzeLines, analyzeChinese, analyzeRecruit, recruitLayoutOk, type RecruitLang, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
 import { buildAcIndex, bondOfLine, parseSeats, isAcInfoScreen, classifyAcScreen, parseAcMode, badgeRectFromTitle,
   parseAcBand, parseDeployLeft, parseAcHud, findAcRings, ringNameRect, ringNumRect, RING_DIGITS, parseRingStack,
@@ -114,6 +114,24 @@ export function getRogueIndex(locale = "ko", cnTopic?: string): Promise<LensInde
   return p;
 }
 let recruitTagsP: Promise<string[]> | null = null;
+/** 영어·일본어 공채 — 한국어 태그 → 그 언어 태그 이름 (extra-i18n.{en,ja}.json recruitTags, 태그 id 로 잇는다). 한국어면 undefined */
+const recruitLangP = new Map<string, Promise<RecruitLang | undefined>>();
+export function getRecruitLang(locale = "ko"): Promise<RecruitLang | undefined> {
+  if (locale !== "en" && locale !== "ja") return Promise.resolve(undefined);
+  let p = recruitLangP.get(locale);
+  if (!p) {
+    p = Promise.all([import("../data/recruit.json"), locale === "en" ? import("../data/extra-i18n.en.json") : import("../data/extra-i18n.ja.json")])
+      .then(([r, x]) => {
+        const loc = (x.default as { recruitTags?: Record<string, string> }).recruitTags ?? {};
+        const alias: Record<string, string> = {};
+        for (const tg of (r.default as { tags: { id: number; name: string }[] }).tags) if (loc[String(tg.id)]) alias[tg.name] = loc[String(tg.id)];
+        return { norm: normFor(locale), alias };
+      });
+    p.catch(() => recruitLangP.delete(locale));
+    recruitLangP.set(locale, p);
+  }
+  return p;
+}
 export function getRecruitTags(): Promise<string[]> {
   if (!recruitTagsP) {
     recruitTagsP = import("../data/recruit.json")
@@ -220,29 +238,32 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
   if (mode === "recruit") {
     // 태그는 어두운 버튼 칩이 본체 — 칩 패스 필수, 전체 프레임은 보조 (선택된 파란 태그 등)
     // 칩은 PaddleOCR 로 (한국어, 2026-10-13 — app/lens/paddle.ts). 못 쓰면 ocr.ts 가 tesseract 로 물러난다
-    const [tags, session] = await Promise.all([getRecruitTags(), createOcrSession(file, "kor", { paddle: true })]);
+    // 2026-10-13~ 영어·일본어 사이트는 그 언어 게임 화면을 읽는다 — 글섭·일섭 공채 화면(PaddleOCR 중·일·영 모델) →
+    // 그 언어 태그 이름을 한국어 태그로 맞춰 공채 판에 넣는다 (사용자 지시 "공채 시뮬 영어·일본어 페이지에 PRTS 링크가 없네")
+    const [tags, rl, session] = await Promise.all([getRecruitTags(), getRecruitLang(locale),
+      createOcrSession(file, OCR_LANG[locale] ?? "kor", { paddle: true })]);
     if (opts?.live) {
       // PRTS 링크 — 칩 패스만으로 태그 다섯 개가 다 읽히면 전체 프레임 패스는 건너뛴다. 슬롯을 빨리 넘기면
       // OCR 두 번이 다음 화면을 붙잡아 못 따라왔다 (사용자 지적 2026-10-12). 덜 읽혔을 때만 보조 패스를 더한다
       lines = await session.chips();
-      oc = analyzeRecruit(lines, tags);
+      oc = analyzeRecruit(lines, tags, rl);
       if (oc.target.kind !== "goto" || oc.target.goto.page !== "recruit" || oc.target.goto.tags.length < 5) {
         lines = lines.concat(await session.sparse());
-        oc = analyzeRecruit(lines, tags);
+        oc = analyzeRecruit(lines, tags, rl);
       }
     } else {
       lines = (await session.chips()).concat(await session.sparse());
-      oc = analyzeRecruit(lines, tags);
+      oc = analyzeRecruit(lines, tags, rl);
     }
     // 그래도 다섯 개가 안 되면 칩을 다른 방식(흑백 + 2배)으로 한 번 더 — 브라우저 확대가 '가드'를 '리도'로 뭉갠 실측
     // (틀렸어요 화면 2026-10-12: 이 재독으로 '가드'가 읽혔다)
     const nTags = () => (oc.target.kind === "goto" && oc.target.goto.page === "recruit" ? oc.target.goto.tags.length : 0);
     if (nTags() > 0 && nTags() < 5) {
       lines = lines.concat(await session.chipsAlt());
-      oc = analyzeRecruit(lines, tags);
+      oc = analyzeRecruit(lines, tags, rl);
     }
     // 공채 화면 모양이 아니면 버린다 — 다른 화면의 '로봇'·'가드' 같은 글자가 태그로 잡혔다 (match.ts recruitLayoutOk)
-    if (nTags() > 0 && !recruitLayoutOk(session.chipBoxes(), tags)) {
+    if (nTags() > 0 && !recruitLayoutOk(session.chipBoxes(), tags, rl)) {
       console.debug("[lens] 공채 화면 모양이 아님 — 태그 무시", session.chipBoxes().map((b) => b.text).join(" "));
       oc = { screens: [], entities: [], topics: [], section: null, target: { kind: "none" } };
     }
