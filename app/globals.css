@@ -18741,7 +18741,7 @@ main.site-main > .site-header {
 /* 통합전략 공통 정보 줄 — 층·난이도 (작은 창·본 화면 상시 창, 2026-10-13) */
 .bridge-pip-floor, .rg-prts-floor { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 8px 10px; border-bottom: 1px solid var(--rgline, var(--line)); background: color-mix(in srgb, var(--rg-hue, var(--ink)) 14%, var(--rgbg, var(--bg-faint))); }
 .bridge-pip-floor > span, .rg-prts-floor > span:not(.rg-prts-era-wrap), .rg-prts-floor .rg-prts-era { padding: 3px 10px; border: 0; background: var(--rg-hue, var(--ink)); color: #fff; font: inherit; font-size: 13px; font-weight: 700; line-height: 1.4; white-space: nowrap; }
-.rg-prts-floor .rg-prts-era { cursor: pointer; background: #7a2020; }
+.rg-prts-floor .rg-prts-era { cursor: pointer; background: var(--rgcrim, var(--crimson)); }
 .rg-prts-floor .rg-prts-era b { font-weight: 400; margin-left: 3px; opacity: .8; }
 /* 시대 효과 말풍선 — 칩 밑에 떠서 아래 노드·소장품을 밀어내지 않는다 */
 /* 말풍선은 칩이 아니라 띠 전체 폭에 맞춘다 — 오른쪽 칩의 말풍선이 창 밖으로 삐져나갔다 (2026-10-13) */
@@ -18750,7 +18750,7 @@ main.site-main > .site-header {
 /* PRTS 창의 작전 노드 접힌 카드 — 한 줄에 하나, 왼쪽 지도 섬네일 · 오른쪽 이름·층·설명 두 줄 */
 .rg-prts-stagecard { display: flex; gap: 10px; align-items: stretch; width: 100%; padding: 6px; border: 1px solid var(--rgline, var(--line)); background: color-mix(in srgb, var(--rgcard, var(--white)) 85%, transparent); color: var(--rgink, var(--ink)); font: inherit; text-align: left; cursor: pointer; }
 .rg-prts-stagecard:hover { border-color: var(--rg-hue, var(--rggold, var(--ink))); }
-.rg-prts-stagecard > img, .rg-prts-stagecard-noimg { flex: none; width: 120px; aspect-ratio: 16 / 9; object-fit: cover; background: var(--rgbg, var(--bg-faint)); }
+.rg-prts-stagecard > img, .rg-prts-stagecard-noimg { flex: none; width: 120px; aspect-ratio: 16 / 9; object-fit: cover; background: var(--rgbg, var(--bg-soft)); }
 .rg-prts-stagecard-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .rg-prts-stagecard-body b { font-size: 14px; font-weight: 700; }
 .rg-prts-stagecard-body small { font-size: 11px; color: var(--rgmut, var(--muted)); }
@@ -18772,7 +18772,7 @@ main.site-main > .site-header {
 .rg-prts-nodetype-desc { white-space: pre-line; margin: 0; font-size: 12px; line-height: 1.5; color: var(--rgmut, var(--muted)); font-style: italic; }
 .rg-prts-era-pop { position: absolute; z-index: 20; top: calc(100% - 2px); left: 8px; right: 8px; width: auto; max-width: none; padding: 8px 10px;
   border: 1px solid var(--rgmodalline, var(--line)); background: var(--rgmodal, var(--white)); color: var(--rgink, var(--ink));
-  box-shadow: 0 6px 18px rgba(0,0,0,.35); font-size: 12px; font-weight: 400; line-height: 1.5; white-space: pre-line; }
+  box-shadow: var(--sh-2); font-size: 12px; font-weight: 400; line-height: 1.5; white-space: pre-line; }
 /* PRTS 창의 소장품 — 다중 인식 모달 틀을 그대로 쓰되 촘촘하게: 아이콘 작게, 배경 글(desc) 빼고, 폭이 되면 여러 칸
    (사용자 지적 2026-10-13 "카드가 너무 커서 한 줄에 한 개씩, 밑으로 계속 내려야 함") */
 .rg-prts-relics .rg-rmulti-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; column-gap: 8px; }
@@ -18842,9 +18842,9 @@ main.site-main > .site-header {
 .bridge-pip-head > .bridge-pip-off ~ .bridge-pip-off, .bridge-pip-head > .bridge-pip-off ~ .bridge-pip-wrong, .bridge-pip-head > .bridge-pip-off ~ .bridge-pip-thanks { margin-left: 0; }
 .bridge-pip-head .bridge-pip-thanks { font-size: 11px; }
 /* 틀렸어요 메모 모달 — 그 창(본 화면·작은 창) 안에 고정 (2026-10-13) */
-.bridge-wrong-back { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.45); }
-.bridge-wrong-modal { display: flex; flex-direction: column; gap: 10px; width: min(420px, 100%); padding: 14px; border: 1px solid var(--rgmodalline, var(--line)); background: var(--rgmodal, var(--white)); color: var(--rgink, var(--ink)); box-shadow: 0 10px 30px rgba(0,0,0,.4); font-size: 13px; }
-.bridge-wrong-modal input { padding: 7px 9px; border: 1px solid var(--rgline, var(--line)); background: var(--rgbg, var(--bg-faint)); color: inherit; font: inherit; }
+.bridge-wrong-back { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; background: color-mix(in srgb, var(--ink) 45%, transparent); }
+.bridge-wrong-modal { display: flex; flex-direction: column; gap: 10px; width: min(420px, 100%); padding: 14px; border: 1px solid var(--rgmodalline, var(--line)); background: var(--rgmodal, var(--white)); color: var(--rgink, var(--ink)); box-shadow: var(--sh-3); font-size: 13px; }
+.bridge-wrong-modal input { padding: 7px 9px; border: 1px solid var(--rgline, var(--line)); background: var(--rgbg, var(--bg-soft)); color: inherit; font: inherit; }
 .bridge-wrong-acts { display: flex; justify-content: flex-end; gap: 6px; }
 .bridge-wrong-acts .bridge-wrong-send { font-weight: 700; }
 .bridge-pip-foot { margin-top: auto; padding: 8px 10px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; }
@@ -19524,15 +19524,15 @@ main.site-main > .site-header {
 .date-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .date-head b { font-size: 13px; }
 .date-head button, .date-foot button { padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: transparent; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
-.date-head button:hover, .date-foot button:hover:not(:disabled) { background: var(--bg-faint); }
+.date-head button:hover, .date-foot button:hover:not(:disabled) { background: var(--bg-press); }
 .date-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }   /* minmax(0) — 버튼 기본 여백에 칸이 밀려 토요일이 판 밖으로 나갔다 */
 .date-wd { padding: 2px 0; text-align: center; font-size: 11px; color: var(--muted); }
 .date-menu .date-day { min-width: 0; width: 100%; padding: 5px 0; border: 1px solid transparent; border-radius: var(--r-sm); background: transparent; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
-.date-menu .date-day:hover:not(:disabled) { background: var(--bg-faint); }
-.date-wd.sun, .date-day.sun { color: #d9534f; }
-.date-wd.sat, .date-day.sat { color: #4a7fd6; }
+.date-menu .date-day:hover:not(:disabled) { background: var(--bg-press); }
+.date-wd.sun, .date-day.sun { color: var(--danger); }
+.date-wd.sat, .date-day.sat { color: var(--blue-ink); }
 .date-day.today { border-color: var(--line); font-weight: 700; }
-.date-day.on { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.date-day.on { background: var(--btn-on-bg); color: var(--btn-on-ink); border-color: var(--btn-on-bg); }
 .date-day:disabled { opacity: .3; cursor: default; }
 .date-foot { display: flex; justify-content: flex-end; margin-top: 6px; }
 .date-foot button:disabled { opacity: .4; cursor: default; }
