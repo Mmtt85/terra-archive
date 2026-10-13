@@ -9596,6 +9596,8 @@ html.dark .vz {
 .vz-head-tools { display: flex; gap: 6px; align-items: center; }
 /* 한 칸 안의 둘째 표 머리(PRTS 링크 — 연결 기록) — 작게 (2026-10-13) */
 .vz-subhead { margin-top: 12px; }
+/* PRTS 틀렸어요 줄의 지우기 — 공용 실행 단추(.act-btn) 결, 표 안이라 작게 (2026-10-13) */
+.vz-del-btn { height: 26px; padding: 0 9px; font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .vz-subhead .vz-h { font-size: 13px; }
 .vz-note, .vz-empty { color: var(--muted); font-size: 12.5px; margin: 6px 0; }
 .vz-muted { color: var(--muted); font-size: 12px; }

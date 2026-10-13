@@ -1520,11 +1520,18 @@ function PrtsWrong({ from, to, top, setTop }: { from: string; to: string; top: n
   const [delMsg, setDelMsg] = useState("");
   const del = async (r: PrtsWrongRec) => {
     if (!r.id) return;
-    const ok = await confirm({ message: `${whenShort(r.at)} 틀렸어요를 지웁니다 — 그 화면·OCR 기록 줄도 같이 지워집니다. 계속할까요?`, danger: true });
+    const ok = await confirm({ message: `${whenShort(r.at)} 틀렸어요를 지웁니다 — 첨부한 화면·OCR 기록 파일도 같이 지워집니다. 계속할까요?`, danger: true });
     if (ok !== true) return;
     try {
       const n = await rpc<number>("visits_prts_wrong_delete", { p_id: r.id });
-      if (n > 0) { setD((cur) => (cur ?? []).filter((x) => x.id !== r.id)); setDelMsg(""); }
+      if (n > 0) {
+        // 첨부 파일(R2 feedback/… 의 화면 jpg·OCR json)도 지운다 — 업로드 워커는 관리자에게 feedback/ 삭제만 열어 둔다 (사용자 지적 2026-10-13 "첨부 이미지도 지워야")
+        for (const u of [r.shot, r.ocr]) {
+          const key = u?.match(/^https?:\/\/[^/]+\/(feedback\/.+)$/)?.[1];
+          if (key) await fetch(`/api/files/${key}`, { method: "DELETE" }).catch(() => null);
+        }
+        setD((cur) => (cur ?? []).filter((x) => x.id !== r.id)); setDelMsg("");
+      }
       else setDelMsg("지우지 못했습니다 (관리자 키·SQL 확인)");
     } catch { setDelMsg("지우지 못했습니다 — visits_prts_wrong_delete SQL 을 아직 안 돌렸을 수 있습니다"); }
   };
@@ -1559,7 +1566,7 @@ function PrtsWrong({ from, to, top, setTop }: { from: string; to: string; top: n
               <td>{r.seen ? r.seen.split("|").join(" · ") : "—"}</td>
               <td>{r.shot ? <a href={r.shot} target="_blank" rel="noopener noreferrer"><img src={r.shot} alt="" style={{ width: 120, height: "auto", display: "block" }} loading="lazy" /></a> : <span className="vz-note">없음</span>}
                 {r.ocr && <a className="vz-note" href={r.ocr} target="_blank" rel="noopener noreferrer">OCR 기록</a>}</td>
-              <td>{r.id && <button type="button" className="vz-day" onClick={() => void del(r)} title="대응을 마쳤으면 이 틀렸어요를 지운다">지우기</button>}</td>
+              <td>{r.id && <button type="button" className="act-btn vz-del-btn" onClick={() => void del(r)} title="대응을 마쳤으면 이 틀렸어요를 지운다">지우기</button>}</td>
             </tr>
           ))}</tbody>
         </table></div>
