@@ -52,6 +52,46 @@ for (const file of files) {
   }
 }
 
+// ── 경고 (빌드를 멈추지 않는다) — 디자인 규칙이 조용히 무너지는 것을 알린다 (2026-10-14) ──────────────
+// 2026-09-19 에 글자 크기를 12단계로 정리했는데 한 달 만에 반값(10.5·11.5·12.5px)이 110곳 넘게 다시 쌓였고,
+// 라이트 바탕 위 라임 글자·선(종이 위 1.5:1 — 안 보인다)도 고칠 때마다 빠진 곳이 남았다.
+// 규칙 정본: docs/PROJECT-GUIDE.md §8 '색 토큰 규칙' · 디자인 시스템 Artifact.
+const FONT_STEPS = new Set([8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 26, 30, 34, 64, 92, 190]);   // 8 미니 배지 · 34 연대기 연도 · 64 404 코드 · 92 포탈 숫자 · 190 홈 워터마크
+const FONT_EXEMPT = /\.me-share|\.vzr|\.admin|@keyframes/;                          // 이미지 내보내기·관리자 리포트
+// 어두운 바탕이 확실한 규칙 — 다크·통합전략·리더기·공유 이미지
+const DARK_SCOPE = /html\.dark|^\.dark|\.dark |rg-theme|^\.rg\b|\.rg-|\.rg\d|\.vn-|\.me-share|lens-hit/;
+const warns = [];
+for (const file of files) {
+  const src = readFileSync(file, "utf8");
+  const stripped = src.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "));
+  const rule = /([^{}]+)\{([^{}]*)\}/g;
+  let r;
+  while ((r = rule.exec(stripped)) !== null) {
+    const sel = r[1].replace(/\s+/g, " ").trim();
+    const body = r[2];
+    const line = stripped.slice(0, r.index + r[1].length).split("\n").length;
+    // ① 글자 크기 단계
+    if (!FONT_EXEMPT.test(sel)) {
+      for (const d of body.matchAll(/(?:^|;)\s*(font-size|font)\s*:\s*([^;]+)/g)) {
+        const px = d[1] === "font-size" ? /^([\d.]+)px/.exec(d[2].trim()) : /(?:^|\s)([\d.]+)px/.exec(d[2]);
+        if (px && !FONT_STEPS.has(Number(px[1]))) warns.push(`${file}:${line}  글자 크기 ${px[1]}px — 단계(9·10·11·12·13·14·16·18·20·22·26·30) 밖  (${sel.slice(0, 60)})`);
+      }
+    }
+    // ② 밝은 바탕 위 라임 글자·선
+    if (DARK_SCOPE.test(sel.replace(/:not\(\.(dark|rg-theme)\)/g, ""))) continue;
+    if (src.slice(r.index, r.index + r[0].length).includes("lime-ok")) continue;   // 어두운 칩 위 등 일부러 쓴 곳
+    for (const d of body.matchAll(/(?:^|;)\s*(color|border[a-z-]*|outline[a-z-]*|box-shadow)\s*:\s*([^;]+)/g)) {
+      // 다른 토큰의 대체값 자리(var(--lime-ink, var(--lime)))는 빼고 본다
+      if (/var\(--lime[,)]/.test(d[2].replace(/var\(--(lime-ink|lime-line|tab-line)\s*,[^)]*\)\)?/g, ""))) warns.push(`${file}:${line}  밝은 바탕 위 var(--lime) ${d[1]} — 글자는 --lime-ink, 선은 --lime-line (어두운 칩 위면 규칙에 /* lime-ok */)  (${sel.slice(0, 50)})`);
+    }
+  }
+}
+if (warns.length) {
+  console.warn(`\n⚠ 디자인 규칙 경고 ${warns.length}건 (빌드는 계속):`);
+  for (const w of warns) console.warn("  " + w);
+  console.warn("");
+}
+
 if (bad.length) {
   console.error(`\n✖ 무효 CSS 선언 ${bad.length}건 — 단축 속성에 전역 키워드(inherit 등)를 섞었습니다.`);
   console.error("  브라우저가 이 선언을 조용히 버려서, 지정한 값이 아니라 기본값이 나옵니다.");

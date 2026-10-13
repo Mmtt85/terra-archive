@@ -3291,6 +3291,21 @@ function OperatorCard({ operator, index, onSelect, mine }: { operator: Operator;
         el.style.setProperty("--flow-y", ok ? `${-Math.round(over)}px` : "0px");
         flow(el, ok ? over : 0);
       }
+      // 펼침 — 패널이 올라갈 거리(소속·태그 칸 높이)와 얼굴 축소 비율 (2026-10-14, globals.css .card-reveal 주석).
+      // 얼굴은 object-fit:contain 이라 그려지는 크기 = min(내용 폭, 내용 높이). 펼치면 내용 높이가 m 만큼
+      // 줄어든 것처럼 보여야 하므로 비율 = min(폭, 높이-m) / min(폭, 높이). 높이 0(건너뛴 레이아웃)이면 심지 않는다.
+      const img = root.querySelector<HTMLElement>(":scope > img");
+      const more = root.querySelector<HTMLElement>(".card-more");
+      if (img && more && img.clientHeight > 0) {
+        const ic = getComputedStyle(img);
+        const w = img.clientWidth - parseFloat(ic.paddingLeft) - parseFloat(ic.paddingRight);
+        const h = img.clientHeight - parseFloat(ic.paddingTop) - parseFloat(ic.paddingBottom);
+        const m = Math.max(0, more.offsetHeight - parseFloat(getComputedStyle(more).paddingBottom));
+        const f0 = Math.min(w, h);
+        const s = f0 > 0 ? Math.max(0, Math.min(w, h - m)) / f0 : 1;
+        root.style.setProperty("--reveal-m", `${m.toFixed(1)}px`);
+        root.style.setProperty("--reveal-s", s.toFixed(4));
+      }
     };
     measure();
     remeasureRef.current = measure;   // 호버할 때 다시 — 그때가 레이아웃이 확실한 순간이다
