@@ -9594,6 +9594,9 @@ html.dark .vz {
 }
 .vz-head .vz-h { margin: 0; }
 .vz-head-tools { display: flex; gap: 6px; align-items: center; }
+/* 한 칸 안의 둘째 표 머리(PRTS 링크 — 연결 기록) — 작게 (2026-10-13) */
+.vz-subhead { margin-top: 12px; }
+.vz-subhead .vz-h { font-size: 13px; }
 .vz-note, .vz-empty { color: var(--muted); font-size: 12.5px; margin: 6px 0; }
 .vz-muted { color: var(--muted); font-size: 12px; }
 /* 지표 칸 — 한 줄에 전부, 이름이 숫자 위 (사용자 지시 2026-10-07). 좁은 화면만 줄바꿈 */

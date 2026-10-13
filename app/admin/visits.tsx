@@ -615,8 +615,9 @@ function Head({ title, sub, top, setTop, onAll, children }: { title: string; sub
   );
 }
 
-type TopKey = "src" | "ref" | "landing" | "pages" | "sections" | "device" | "lang" | "tz" | "out" | "sessions" | "mesync";
-const TOP_DEFAULT: Record<TopKey, number> = { src: 5, ref: 5, landing: 5, pages: 5, sections: 5, device: 5, lang: 5, tz: 5, out: 5, sessions: 5, mesync: 5 };
+// prtsBy·prtsLog·prtsWrong — PRTS 링크 표 셋도 다른 목록처럼 개수 고르기·전체 보기 (사용자 지시 2026-10-13)
+type TopKey = "src" | "ref" | "landing" | "pages" | "sections" | "device" | "lang" | "tz" | "out" | "sessions" | "mesync" | "prtsBy" | "prtsLog" | "prtsWrong";
+const TOP_DEFAULT: Record<TopKey, number> = { src: 5, ref: 5, landing: 5, pages: 5, sections: 5, device: 5, lang: 5, tz: 5, out: 5, sessions: 5, mesync: 5, prtsBy: 5, prtsLog: 10, prtsWrong: 10 };
 const TOPS_KEY = "ta-admin-visit-tops";   // localStorage — 목록마다 고른 개수
 
 function loadTops(): Record<TopKey, number> {
@@ -1133,15 +1134,43 @@ export function VisitsPanel() {
     </table></div>
   );
   // 전체 보기 창의 내용 · 줄 수
+  const prtsByTable = (n: number) => (
+    <div className="vz-tablewrap"><table className="vz-table">
+      <thead><tr><th>어디서</th><th>연결</th><th>연결 시간 합</th></tr></thead>
+      <tbody>{(data?.prts?.by ?? []).slice(0, n).map((b) => <tr key={b.k}><td><code>{b.k}</code></td><td>{num(b.n)}</td><td>{fmtDur(b.ms)}</td></tr>)}</tbody>
+    </table></div>
+  );
+  const prtsLog = data?.prts ? prtsPairs(data.prts.recent) : [];
+  const prtsLogTable = (n: number) => (
+    <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
+      <thead><tr><th>방문자</th><th>연결</th><th>해제</th><th>어디서</th><th>연결 시간</th><th>유입</th></tr></thead>
+      <tbody>{prtsLog.slice(0, n).map((r, i) => (
+                      <tr key={i}>
+                        <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
+                        <td>{r.start ? whenShort(r.start) : "—"}</td>
+                        <td>{r.end ? whenShort(r.end) : r.dangling ? <span className="vz-note" title="다음 연결 전에 해제 기록이 오지 않음 — 탭을 닫았거나 기록 전에 끊겼다">기록 없음</span> : <b>연결 중</b>}</td>
+                        <td><code>{r.detail ?? "—"}</code></td>
+                        <td>{r.dur != null ? fmtDur(r.dur) : "—"}</td>
+                        <td>{r.src ?? "—"}</td>
+                      </tr>
+      ))}</tbody>
+    </table></div>
+  );
   const allTotal = !allOf || !data ? 0
     : allOf.key === "pages" ? data.pages.length
     : allOf.key === "mesync" ? meBy.length
     : allOf.key === "sessions" ? allSessions?.length ?? 0
+    : allOf.key === "prtsBy" ? data.prts?.by.length ?? 0
+    : allOf.key === "prtsLog" ? prtsLog.length
+    : allOf.key === "prtsWrong" ? 0
     : barRows[allOf.key].length;
   const allRender = (n: number) => !allOf ? null
     : allOf.key === "pages" ? pageTable(n)
     : allOf.key === "mesync" ? meTable(n)
     : allOf.key === "sessions" ? <ol className="vz-sessions">{(allSessions ?? []).slice(0, n).map((x) => <SessionLine key={x.id} s={x} />)}</ol>
+    : allOf.key === "prtsBy" ? prtsByTable(n)
+    : allOf.key === "prtsLog" ? prtsLogTable(n)
+    : allOf.key === "prtsWrong" ? null
     : <BarList top={n} rows={barRows[allOf.key]} />;
   const filled = data ? (range ? fillRange(data.days, range.from, range.to) : fillDays(data.days, days)) : [];
   const today = kstToday();
@@ -1393,33 +1422,19 @@ export function VisitsPanel() {
               목록은 최신 10줄만 (사용자 지시 2026-10-12 "세로로 너무 길다") */}
           {data.prts && (
             <>
-              <Head title="PRTS 링크" sub={`연결 ${num(data.prts.n)}회 · ${num(data.prts.people)}명 · 연결 시간 합 ${fmtDur(data.prts.ms)}${data.prts.ended ? ` (해제 ${num(data.prts.ended)}회 평균 ${fmtDur(data.prts.ms / data.prts.ended)})` : ""}`} />
+              <Head title="PRTS 링크" {...top("prtsBy", "PRTS 링크 — 어디서")} sub={`연결 ${num(data.prts.n)}회 · ${num(data.prts.people)}명 · 연결 시간 합 ${fmtDur(data.prts.ms)}${data.prts.ended ? ` (해제 ${num(data.prts.ended)}회 평균 ${fmtDur(data.prts.ms / data.prts.ended)})` : ""}`} />
               {data.prts.n === 0 ? <p className="vz-note">이 기간에는 PRTS 링크 기록이 없습니다 (2026-10-11부터 기록).</p> : (
                 <>
-                  <div className="vz-tablewrap"><table className="vz-table">
-                    <thead><tr><th>어디서</th><th>연결</th><th>연결 시간 합</th></tr></thead>
-                    <tbody>{data.prts.by.map((b) => <tr key={b.k}><td><code>{b.k}</code></td><td>{num(b.n)}</td><td>{fmtDur(b.ms)}</td></tr>)}</tbody>
-                  </table></div>
-                  <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
-                    <thead><tr><th>방문자</th><th>연결</th><th>해제</th><th>어디서</th><th>연결 시간</th><th>유입</th></tr></thead>
-                    <tbody>{prtsPairs(data.prts.recent).slice(0, 10).map((r, i) => (
-                      <tr key={i}>
-                        <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
-                        <td>{r.start ? whenShort(r.start) : "—"}</td>
-                        <td>{r.end ? whenShort(r.end) : r.dangling ? <span className="vz-note" title="다음 연결 전에 해제 기록이 오지 않음 — 탭을 닫았거나 기록 전에 끊겼다">기록 없음</span> : <b>연결 중</b>}</td>
-                        <td><code>{r.detail ?? "—"}</code></td>
-                        <td>{r.dur != null ? fmtDur(r.dur) : "—"}</td>
-                        <td>{r.src ?? "—"}</td>
-                      </tr>
-                    ))}</tbody>
-                  </table></div>
+                  {prtsByTable(tops.prtsBy)}
+                  <div className="vz-head vz-subhead"><h4 className="vz-h">연결 기록</h4><div className="vz-head-tools"><TopPick value={tops.prtsLog} onChange={top("prtsLog").setTop} onAll={top("prtsLog", "PRTS 링크 — 연결 기록").onAll} what="PRTS 연결 기록" /></div></div>
+                  {prtsLogTable(tops.prtsLog)}
                 </>
               )}
             </>
           )}
 
           {/* PRTS 틀렸어요 (2026-10-12) — 인식 표는 걷어냈다 (아래 PrtsWrong) */}
-          <PrtsWrong from={rangeArgs?.p_from ?? isoAt(spanStart ?? Math.floor(Date.now() / 60_000) * 60_000 - days * 86400_000)} to={rangeArgs?.p_to ?? "infinity"} />
+          <PrtsWrong {...top("prtsWrong")} from={rangeArgs?.p_from ?? isoAt(spanStart ?? Math.floor(Date.now() / 60_000) * 60_000 - days * 86400_000)} to={rangeArgs?.p_to ?? "infinity"} />
 
           <div className="vz-cols">
             <div>
@@ -1496,8 +1511,9 @@ type PrtsWrongRec = { at: string; visitor: string | null; topic: string | null; 
   /** 누른 사람이 적은 한 줄 메모 (틀렸어요 모달, 2026-10-13~) */ memo?: string | null };
 const RESULT_KO: Record<string, string> = { goto: "바로 이동", tie: "후보 여럿", none: "못 읽음", battle: "전투 화면", unreported: "결과 안 옴" };
 
-function PrtsWrong({ from, to }: { from: string; to: string }) {
+function PrtsWrong({ from, to, top, setTop }: { from: string; to: string; top: number; setTop: (n: number) => void; onAll?: () => void }) {
   const [d, setD] = useState<PrtsWrongRec[] | null>(null);
+  const [all, setAll] = useState(false);   // 전체 보기 창 — 받아 온 목록이 여기 있어 창도 여기서 연다
   useEffect(() => {
     let alive = true;
     rpc<PrtsWrongRec[] | null>("visits_prts_wrong", { p_from: from, p_to: to })
@@ -1508,11 +1524,16 @@ function PrtsWrong({ from, to }: { from: string; to: string }) {
   if (!d) return null;   // 함수가 아직 없거나(SQL 미적용) 받기 실패 — 칸을 그리지 않는다
   return (
     <>
-      <Head title="PRTS 틀렸어요" sub={`${num(d.length)}건 · 라이브·dev 모두 (누를 때 그 인식과 화면 한 장이 온다)`} />
-      {!d.length ? <p className="vz-note">이 기간에는 틀렸어요가 없습니다.</p> : (
+      <Head title="PRTS 틀렸어요" sub={`${num(d.length)}건 · 라이브·dev 모두 (누를 때 그 인식과 화면 한 장이 온다)`}
+        top={top} setTop={setTop} onAll={() => setAll(true)} />
+      {all && <AllWindow title="PRTS 틀렸어요" total={d.length} onClose={() => setAll(false)} render={(n) => wrongTable(n)} />}
+      {!d.length ? <p className="vz-note">이 기간에는 틀렸어요가 없습니다.</p> : wrongTable(top)}
+    </>
+  );
+  function wrongTable(n: number) { return (
         <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
           <thead><tr><th>방문자</th><th>틀렸어요</th><th>판정</th><th>이동 대상 / 상태줄</th><th title="그 화면에서 맞춘 게임 항목 이름 · #화면 종류">판정 근거</th><th>화면</th></tr></thead>
-          <tbody>{d.slice(0, 20).map((r, i) => (
+          <tbody>{d!.slice(0, n).map((r, i) => (
             <tr key={i}>
               <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
               <td>{whenShort(r.at)}{r.topic ? <span className="vz-note"> · {r.topic}</span> : null}{r.env === "dev" ? <span className="vz-tag" title="라이브가 아닌 곳(localhost 등)에서 누름">dev</span> : null}
@@ -1525,7 +1546,5 @@ function PrtsWrong({ from, to }: { from: string; to: string }) {
             </tr>
           ))}</tbody>
         </table></div>
-      )}
-    </>
-  );
+  ); }
 }
