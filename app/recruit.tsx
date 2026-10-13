@@ -324,7 +324,8 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
     flashLensMsg(t("스캔 중…"));
     try {
-      const oc = await recognizeShot("recruit", file, undefined, "ko", { live });
+      // 화면 언어로 — 영어·일본어 페이지는 그 언어 게임 화면을 읽는다 (2026-10-13, 종전엔 "ko" 고정)
+      const oc = await recognizeShot("recruit", file, undefined, locale, { live });
       if (live) offRecruit.current = oc.target.kind === "goto" ? 0 : offRecruit.current + 1;
       if (live && offRecruit.current === 2) { setQuickTerm(""); setManualOff([]); setManualOn([]); }
       if (oc.target.kind === "goto") {
@@ -457,8 +458,8 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
             </span>
           </div>
           <button type="button" className="clear-btn" onClick={clearAll}><span className="btn-icon" aria-hidden>↻</span>{t("클리어")}</button>
-          {/* 스샷으로 태그 입력 — 버튼 자체가 자동인식 토글, ?는 도움말 모달 (KR 클라 전용) */}
-          {locale === "ko" && (
+          {/* 스샷으로 태그 입력 — 버튼 자체가 자동인식 토글, ?는 도움말 모달. 2026-10-13~ 영어·일본어 페이지도(그 언어 게임 화면) */}
+          {(locale === "ko" || locale === "en" || locale === "ja") && (
             <div className="lens-open-wrap">
               <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
                 title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}
@@ -479,7 +480,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
         </div>
         {/* 자동인식 상태 필 — fixed 오버레이(레이아웃 안 밀음) + 인식 이미지 미니 썸네일.
             드롭은 창 전체가 받고(useDropWatch), 드래그 중이면 필이 드롭 가능 상태로 강조된다 */}
-        {locale === "ko" && lensAuto && (
+        {(locale === "ko" || locale === "en" || locale === "ja") && lensAuto && (
           <div className={`lens-auto-pill${lensMsg ? " busy" : ""}${lensDragging ? " drop" : ""}`} role="status">
             {lensThumb && !lensDragging && <img className="lens-auto-thumb" src={lensThumb} alt={t("인식한 스크린샷")} />}
             <span>{lensDragging ? t("여기든 어디든, 놓으면 바로 인식합니다") : lensMsg ?? (lensClip === "off"

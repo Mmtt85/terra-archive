@@ -61,6 +61,7 @@ export default function LensHelpModal({ mode, onClose }: { mode: LensMode; onClo
             <h3>{t("인식 대상")}</h3>
             <ul>
               <li>{t("공개모집의 '모집 요건' 태그 화면 — 태그 버튼이 보이도록 캡처하세요.")}</li>
+              <li>{t("사이트 언어와 같은 언어의 게임 화면 태그를 읽습니다 — 한국어 사이트는 한섭, 영어는 글로벌 서버, 일본어는 일본 서버 화면.")}</li>
             </ul>
           </>
         ) : mode === "story" ? (
