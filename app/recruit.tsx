@@ -18,6 +18,7 @@ import { warmPaddle } from "./lens/paddle";
 import { useClipboardWatch } from "./lens/clipwatch";
 import { useBridgeWatch } from "./lens/bridge";
 import { BridgeTopicButton } from "./lens/bridge-button";
+import { setBridgePipRecruit, useBridgeStatus } from "./lens/bridge";
 import { useDropWatch } from "./lens/dropwatch";
 
 // 스샷 인식 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
@@ -315,6 +316,8 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   };
   // 자동인식·필 드롭 공용 인식 흐름
   const lensBusy = useRef(false);
+  // PRTS 링크 — 공채 화면을 벗어나면 인식된 태그를 비운다 (사용자 지시 2026-10-13). 한 장 잘못 읽힌 것으로 지우지 않게 **연속 두 번**
+  const offRecruit = useRef(0);
   const handleLensShot = async (file: File, live = false) => {
     if (lensBusy.current) return;
     lensBusy.current = true;
@@ -322,6 +325,8 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     flashLensMsg(t("스캔 중…"));
     try {
       const oc = await recognizeShot("recruit", file, undefined, "ko", { live });
+      if (live) offRecruit.current = oc.target.kind === "goto" ? 0 : offRecruit.current + 1;
+      if (live && offRecruit.current === 2) { setQuickTerm(""); setManualOff([]); setManualOn([]); }
       if (oc.target.kind === "goto") {
         onLensGoto(oc.target.goto);
         flashLensMsg(t("태그를 인식해 선택했습니다."), 2000);
@@ -366,6 +371,22 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     try { localStorage.setItem(PRIZED_KEY, next ? "1" : "0"); } catch { /* ignore */ }
   };
   const shownResults = prizedOnly ? results.filter((result) => result.floor >= 4) : results;
+  // PRTS 링크(공채) 작은 창 — 고른 태그와 조합 결과를 실어 보낸다 (사용자 지시 2026-10-13). 그림은 절대 주소여야 한다(작은 창은 about:blank)
+  const bridge = useBridgeStatus();
+  const bridgeLive = !!bridge.settings && bridge.lock?.topic === "recruit";
+  useEffect(() => {
+    if (!bridgeLive) return;
+    setBridgePipRecruit({
+      tags: picked.map(tagLabel),
+      rows: (prizedOnly ? results.filter((r) => r.floor >= 4) : results).filter((r) => r.ops.length).slice(0, 12).map((r) => ({
+        combo: r.combo.map(tagLabel), floor: r.floor, ceil: r.ceil,
+        ops: r.ops.slice(0, 14).map((op) => ({ id: op.id, name: opLabel(op), rarity: op.rarity, img: new URL(asset(op.image), location.href).href })),
+      })),
+      prized: prizedOnly, onPrized: togglePrizedOnly,
+    });
+    // tagLabel·opLabel 은 로케일 사전에서 나온다 — picked·results 가 바뀔 때만 보낸다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bridgeLive, picked, results, prizedOnly]);
   /* 성급이 다른 카드가 한 줄에 섞이면 등급이 읽히지 않는다 (사용자 지적 2026-09-20:
      "3성 이상이랑 5성 이상이 같은 줄에 있는 게 이상하지 않음?") — 배지가 같은 것끼리
      묶어 소제목을 달고 묶음마다 따로 격자를 깐다. results 가 이미 성급 내림차순이라
@@ -452,7 +473,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
               작은 창은 쓰지 않는다 — 태그 판이 뒤에서 골라진다. 좁은 칸이라 스샷 단추와 따로 묶었다 */}
           {locale === "ko" && (
             <div className="lens-open-wrap bridge-open-wrap">
-              <BridgeTopicButton topic="recruit" name={t("공개모집")} t={t} noReplay noPip compact />
+              <BridgeTopicButton topic="recruit" name={t("공개모집")} t={t} noReplay compact />
             </div>
           )}
         </div>

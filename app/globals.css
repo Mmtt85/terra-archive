@@ -18689,6 +18689,20 @@ main.site-main > .site-header {
   background: var(--header-solid, var(--white)); border-bottom: 1px solid var(--line); font-size: 11px; color: var(--muted); }
 .bridge-pip-head b { color: var(--ink2); font-weight: 600; }
 .bridge-pip-empty { margin: 24px 12px; color: var(--muted); text-align: center; }
+/* 공채 작은 창 — 인식된 태그 칩 · 태그 조합 결과(조합 · 성급 · 오퍼 얼굴) (2026-10-13) */
+.bridge-pip-pane > h4 .bridge-pip-prized { float: right; margin-top: -2px; padding: 1px 7px; border: 1px solid var(--line); background: var(--white); color: var(--ink2); font: inherit; font-size: 11px; cursor: pointer; }
+.bridge-pip-pane > h4 .bridge-pip-prized.on { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.bridge-pip-tags { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; }
+.bridge-pip-tags span { padding: 4px 10px; background: #2b2f33; color: #fff; font-size: 13px; font-weight: 700; }
+.bridge-pip-combos { display: flex; flex-direction: column; gap: 6px; padding: 10px; }
+.bridge-pip-combo { padding: 7px 8px; border: 1px solid var(--line); background: var(--white); }
+.bridge-pip-combo-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+.bridge-pip-combo-tags { flex: 1; min-width: 0; font-size: 12px; font-weight: 700; color: var(--ink); }
+.bridge-pip-combo-head b { flex: none; font-size: 12px; color: var(--ink2); }
+.bridge-pip-combo-head b[data-r="6"] { color: #c2571f; } .bridge-pip-combo-head b[data-r="5"] { color: #b8860b; } .bridge-pip-combo-head b[data-r="4"] { color: #7c5cbf; }
+.bridge-pip-combo-ops { display: flex; flex-wrap: wrap; gap: 4px; }
+.bridge-pip-combo-ops img { width: 34px; height: 34px; object-fit: cover; border-bottom: 3px solid #3a7ca5; background: var(--bg-faint); }
+.bridge-pip-combo-ops img[data-r="6"] { border-color: #c2571f; } .bridge-pip-combo-ops img[data-r="5"] { border-color: #b8860b; } .bridge-pip-combo-ops img[data-r="4"] { border-color: #7c5cbf; }
 .bridge-pip-cards { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
 /* 두 칸(노드·소장품) — 칸 제목 줄 (2026-10-12) */
 .bridge-pip-pane + .bridge-pip-pane { border-top: 1px solid var(--line); }

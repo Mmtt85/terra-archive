@@ -4,7 +4,7 @@
 
 import { createOcrSession } from "./ocr";
 import { asset } from "../assets";
-import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
+import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, recruitLayoutOk, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
 import { buildAcIndex, bondOfLine, parseSeats, isAcInfoScreen, classifyAcScreen, parseAcMode, badgeRectFromTitle,
   parseAcBand, parseDeployLeft, parseAcHud, findAcRings, ringNameRect, ringNumRect, RING_DIGITS, parseRingStack,
@@ -233,6 +233,11 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     if (nTags() > 0 && nTags() < 5) {
       lines = lines.concat(await session.chipsAlt());
       oc = analyzeRecruit(lines, tags);
+    }
+    // 공채 화면 모양이 아니면 버린다 — 다른 화면의 '로봇'·'가드' 같은 글자가 태그로 잡혔다 (match.ts recruitLayoutOk)
+    if (nTags() > 0 && !recruitLayoutOk(session.chipBoxes(), tags)) {
+      console.debug("[lens] 공채 화면 모양이 아님 — 태그 무시", session.chipBoxes().map((b) => b.text).join(" "));
+      oc = { screens: [], entities: [], topics: [], section: null, target: { kind: "none" } };
     }
   } else if (mode === "autochess") {
     // 위수 협의 — 이동이 아니라 **한 판 상태 갱신**이다. 화면이 계속 들어오며 값만 바뀐다 (2026-09-07 재가동).

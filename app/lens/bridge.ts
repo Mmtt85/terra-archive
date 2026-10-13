@@ -227,6 +227,14 @@ export function setBridgePipNode(card: BridgePipCard): void { pipNode = card; no
 export function setBridgePipRelics(cards: BridgePipCard[]): void { pipRelics = cards; notify(); }
 export const bridgePipNode = () => pipNode;
 export const bridgePipRelics = () => pipRelics;
+/** 공채 작은 창 — 인식된 태그 · 태그 조합 결과(오퍼 목록). 공채 화면(recruit.tsx)이 고른 태그가 바뀔 때마다 채운다
+ *  (사용자 지시 2026-10-13 "공채야말로 PiP 에 — 노드가 아니라 인식된 태그, 소장품이 아니라 태그 조합 결과 오퍼 리스트") */
+export type BridgePipRecruit = { tags: string[]; rows: { combo: string[]; floor: number; ceil: number; ops: { id: string; name: string; rarity: number; img: string }[] }[];
+  /** 본 화면 '4★ 이상만' 토글과 같은 값 — 작은 창에서 바꾸면 onPrized 로 본 화면도 바뀐다 (사용자 지시 2026-10-13 "본사이트랑 동일하게 동기화") */
+  prized: boolean; onPrized?: () => void };
+let pipRecruit: BridgePipRecruit | null = null;
+export function setBridgePipRecruit(v: BridgePipRecruit | null): void { pipRecruit = v; notify(); }
+export const bridgePipRecruit = () => pipRecruit;
 
 const frameSubs = new Set<(f: File) => void>();
 const replaySubs = new Set<(oc: LensOutcome) => void>();
@@ -351,7 +359,7 @@ export async function connectBridge(withLock?: BridgeLock, via?: Window): Promis
   // 공채 — 칩을 읽는 PaddleOCR(모델·엔진 약 27MB)을 연결과 함께 받아 둔다. 첫 인식이 받는 시간을 기다리지 않게
   if (lock?.topic === "recruit") void import("./paddle").then((m) => m.warmPaddle());
   runLog = []; logMeta = null; startedAt = new Date().toISOString();
-  scan = null; lastScan = null; pipNode = null; pipRelics = [];
+  scan = null; lastScan = null; pipNode = null; pipRelics = []; pipRecruit = null;
   sceneMemos = []; lastEmitGray = null; battleHold = false;
   error = ""; notify();
   const opts = {

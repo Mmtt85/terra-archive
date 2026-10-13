@@ -106,6 +106,8 @@ export type OcrSession = {
   /** 칩 재독 — 흑백으로 또렷하게 + 2배 확대해 다시 읽는다. 공채 태그가 다섯 개 다 안 나왔을 때만 (run.ts).
    *  브라우저 확대가 짧은 두 글자 칸을 뭉개 '가드'를 '리도'로 읽은 실측 (틀렸어요 2026-10-12, 오프라인 sharp 는 읽음) */
   chipsAlt(cut?: number): Promise<string[]>;
+  /** 마지막 chips()/chipsAlt() 가 읽은 칩의 글자와 자리(캔버스 좌표) — 공채 화면 배치 판정용 (match.ts recruitLayoutOk) */
+  chipBoxes(): { text: string; x: number; y: number; w: number; h: number }[];
   /** PSM3(auto) 전체 프레임 — 1차로 판정 안 될 때만 폴백 */
   auto(): Promise<string[]>;
   /** 중국어(chi_sim) PSM11 전체 프레임 — kor 매칭이 무신호일 때만 (블랙플로우 CN 스크린샷) */
@@ -196,6 +198,7 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
     colorC.getContext("2d")!.drawImage(c, 0, 0);
   }
   let paddleOk = false;   // 이 세션에서 칩을 PaddleOCR 로 읽었다 — chipsAlt(tesseract 재시도)를 건너뛴다
+  const chipSeen: { text: string; x: number; y: number; w: number; h: number }[] = [];
   grayNormalize(img.data);
   ctx.putImageData(img, 0, 0);
   const worker = await getWorker(lang);
@@ -400,6 +403,7 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
         const got = await paddleReadBoxes(colorC, rects);
         if (got) {
           paddleOk = true;
+          got.forEach((g, i) => { if (g.text) chipSeen.push({ text: g.text, ...rects[i] }); });
           const lines = got.filter((g) => g.text).map((g) => g.text);
           console.debug(`[lens] 칩 PaddleOCR ${rects.length}개:`, got.map((g) => `${g.text}(${Math.round(g.conf * 100)})`).join(" "));
           return lines;
@@ -417,10 +421,11 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
         cctx.drawImage(c, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
         const r7 = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
         const txt = (r7.data.text ?? "").trim();
-        if (txt) out.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean));
+        if (txt) { out.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean)); chipSeen.push({ text: txt.replace(/\n/g, " "), ...r }); }
       }
       return out;
     },
+    chipBoxes() { return chipSeen; },
     async chipsAlt(cut = 0.5) {
       if (paddleOk) return [];   // PaddleOCR 로 읽었으면 tesseract 흑백 재시도는 하지 않는다 (느리고, 뭉갬 땜질용이었다)
       const boxes = findDarkChips(img.data, W, H);
@@ -444,7 +449,7 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
         cctx.drawImage(src, 0, 0, r.w * 2, r.h * 2);
         const r7 = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
         const txt = (r7.data.text ?? "").trim();
-        if (txt) out.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean));
+        if (txt) { out.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean)); chipSeen.push({ text: txt.replace(/\n/g, " "), ...r }); }
       }
       return out;
     },

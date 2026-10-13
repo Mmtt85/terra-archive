@@ -225,6 +225,35 @@ function detectRecruitTags(linesN: string[], recruitTags: string[]): string[] {
   return found.slice(0, 5);
 }
 
+/** 공채 화면 모양 판정 (사용자 지시 2026-10-13 "이 레이아웃일 때만 공채 인식 — 다른 화면에서 로봇·가드 이상한 게 인식되더라").
+ *  공채 화면은 늘 같다: 왼쪽 위 어두운 **'모집 설명' 칩** + '모집 요건' 옆 **같은 크기 태그 칩 2줄 × 3칸**. 화면 크기·해상도가
+ *  달라도 칩끼리의 상대 배치는 같으므로 그것만 본다:
+ *   ① 칩 글자에 '모집설명'이 있다
+ *   ② 태그로 읽힌 칩(정확히 또는 한 글자 틀림)이 3개 이상, 높이·폭이 서로 ±20% 안, 줄 2개 이하·칸 3개 이하로 정렬
+ *  칩 자리를 모르는 경로(칩 패스가 없던 옛 세션)는 판정하지 않고 통과시킨다 — 그땐 boxes 가 비어 있다 */
+export function recruitLayoutOk(boxes: { text: string; x: number; y: number; w: number; h: number }[], recruitTags: string[]): boolean {
+  if (!boxes.length) return true;
+  const norm = (t: string) => normText(t);
+  if (!boxes.some((b) => norm(b.text).includes("모집설명"))) return false;
+  const tagsN = recruitTags.map(norm).filter((t) => t.length >= 2);
+  const isTag = (t: string) => tagsN.some((g) => g === t || (g.length === t.length && [...g].filter((ch, i) => ch !== t[i]).length === 1));
+  const tb = boxes.filter((b) => isTag(norm(b.text)));
+  if (tb.length < 3) return false;
+  const med = (a: number[]) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
+  const mw = med(tb.map((b) => b.w)), mh = med(tb.map((b) => b.h));
+  const same = tb.filter((b) => Math.abs(b.w - mw) <= mw * 0.2 && Math.abs(b.h - mh) <= mh * 0.2);
+  if (same.length < 3) return false;
+  // 줄(세로 가운데)·칸(가로 가운데) 무리 짓기 — 칩 반 높이·반 폭 안이면 같은 줄·칸
+  const groups = (vals: number[], tol: number) => {
+    const g: number[] = [];
+    for (const v of [...vals].sort((x, y) => x - y)) if (!g.length || v - g[g.length - 1] > tol) g.push(v); else g[g.length - 1] = v;
+    return g.length;
+  };
+  const rows = groups(same.map((b) => b.y + b.h / 2), mh / 2);
+  const cols = groups(same.map((b) => b.x + b.w / 2), mw / 2);
+  return rows <= 2 && cols <= 3;
+}
+
 /** 공개채용 도우미 전용 판정 — 페이지별 설치라 화면 분류가 불필요, 태그만 추출한다. */
 export function analyzeRecruit(rawLines: string[], recruitTags: string[]): LensOutcome {
   const linesN = rawLines.map((l) => normText(l)).filter((l) => l.length >= 2);

@@ -8,7 +8,7 @@
 import { NewBadge } from "../new-badge";
 import { lazy, Suspense, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
+import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgeSession, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -103,6 +103,43 @@ function PipCard({ c }: { c: BridgePipCard }) {
   );
 }
 
+/** 공채 작은 창 두 칸 — 인식된 태그 · 태그 조합 결과 (recruit.tsx 가 bridge.setBridgePipRecruit 로 채운다) */
+function RecruitPanes({ t }: { t: T }) {
+  const r = bridgePipRecruit();
+  return (
+    <>
+      <section className="bridge-pip-pane">
+        <h4>{t("인식된 태그")}{r && r.tags.length > 0 && <em>{r.tags.length}</em>}</h4>
+        {r && r.tags.length
+          ? <div className="bridge-pip-tags">{r.tags.map((g) => <span key={g}>{g}</span>)}</div>
+          : <p className="bridge-pip-empty">{t("공개모집 화면을 인식하면 여기에 태그가 표시됩니다")}</p>}
+      </section>
+      <section className="bridge-pip-pane">
+        <h4>{t("태그 조합 결과")}{r && r.rows.length > 0 && <em>{r.rows.length}</em>}
+          {r?.onPrized && (
+            <button type="button" className={`bridge-pip-prized${r.prized ? " on" : ""}`} aria-pressed={r.prized} onClick={r.onPrized}>{t("4★ 이상만")}</button>
+          )}
+        </h4>
+        {r && r.rows.length
+          ? <div className="bridge-pip-combos">{r.rows.map((row) => (
+            <div key={row.combo.join("+")} className="bridge-pip-combo">
+              <div className="bridge-pip-combo-head">
+                <span className="bridge-pip-combo-tags">{row.combo.join(" + ")}</span>
+                <b data-r={row.floor}>{row.floor === row.ceil ? `${row.floor}★` : `${row.floor}~${row.ceil}★`}</b>
+              </div>
+              <div className="bridge-pip-combo-ops">
+                {row.ops.map((op) => (
+                  <img key={op.id} src={op.img} alt={op.name} title={`${"★".repeat(op.rarity)} ${op.name}`} data-r={op.rarity} width={34} height={34} />
+                ))}
+              </div>
+            </div>
+          ))}</div>
+          : <p className="bridge-pip-empty">{t("태그가 골라지면 나올 수 있는 오퍼레이터가 여기에 표시됩니다")}</p>}
+      </section>
+    </>
+  );
+}
+
 function PipView({ t, connected, phase, note, lockName, error }: { t: T; connected: boolean; phase: string; note: string; lockName: string; error: string }) {
   const node = bridgePipNode();
   const relics = bridgePipRelics();
@@ -130,6 +167,7 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
         <span>{phase}{note ? ` · ${note}` : ""}</span>
         <button type="button" className="bridge-toast-off bridge-pip-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>{t("연결 끊기")}</button>
       </header>
+      {pipLock?.topic === "recruit" || bridgePipRecruit() ? <RecruitPanes t={t} /> : (<>
       {/* 두 칸 — 노드(층·작전·조우) 한 장 · 소장품 여러 장, 각자 새로 인식될 때만 바뀐다 */}
       <section className="bridge-pip-pane">
         <h4>{t("노드")}</h4>
@@ -143,6 +181,7 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
           ? <div className="bridge-pip-cards">{relics.map((c, i) => <PipCard key={`${c.kind}:${c.name}:${i}`} c={c} />)}</div>
           : <p className="bridge-pip-empty">{t("소장품을 인식하면 여기에 표시됩니다")}</p>}
       </section>
+      </>)}
       {last && (
         <footer className="bridge-pip-foot">
           {last.wrong
@@ -257,8 +296,12 @@ export function BridgeTopicButton({ topic, name, t, noReplay, noPip, compact }: 
           title={mobile ? t("PRTS 링크는 PC 브라우저에서만 사용할 수 있습니다") : mine ? t("PRTS 링크 끊기") : t("게임 창을 골라 이 테마로만 인식하도록 연결합니다")}
           onClick={() => {
             if (mine) { disconnectBridge(); return; }
-            void connectBridge({ topic, name });
-            if (pipOk && !pip && !noPip) void togglePipWindow({ topic, name }).catch(() => { /* 사용자 동작 없음 */ });
+            // 작은 창은 **게임 창을 고른 뒤에** 연다 (사용자 지시 2026-10-13 "PRTS 링크를 누르고 창을 선택해야 PiP 가") — 고르기를
+            // 취소하면 안 뜬다. ⚠ 작은 창은 사용자 클릭 직후(수 초)에만 열린다 — 창 고르기가 오래 걸리면 못 열고, 그땐 토스트의 '작은 창'으로
+            void connectBridge({ topic, name }).then(() => {
+              if (!bridgeSession() || !pipOk || pipWin || noPip) return;
+              void togglePipWindow({ topic, name }).catch(() => { /* 클릭 직후가 아님 — 토스트 단추로 */ });
+            });
           }}>
           <span className="lens-auto-knob" aria-hidden />{t("PRTS 링크")}
           <span className="beta-badge">BETA</span>
