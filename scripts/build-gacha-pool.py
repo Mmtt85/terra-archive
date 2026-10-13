@@ -5,6 +5,10 @@
   · 풀 = 획득 경로(itemObtainApproach)에 '인재 채용'이 든 3~6성 오퍼
   · 한정 = 한정 배너(gachaRuleType LIMITED)의 limitParam.limitedCharId — 표준 배너 일반 출현에서 뺀다
   · 콜라보 = 팀 rainbow(레인보우 식스)·laios(던전밥)·mujica(BanG Dream) · 도감 번호 MH(몬스터 헌터) — 역시 뺀다
+  · 커널 = 커널 헤드헌팅(gachaRuleType CLASSIC·CLASSIC_DOUBLE·FESCLASSIC·CLASSIC_ATTAIN) 배너에 실린 오퍼 — 일반·한정 배너에는
+    **안 나온다** (중섭이 커널 도입 때 팬텀 이전 6성·샤마르 이전 5성을 일반·한정 헤드헌팅에서 뺐다, 한섭 같음). 역시 뺀다
+    (제안 75286c14, 2026-10-13 "스카디(기본)가 한정 배너에서 나온다")
+  · 미실장 헤드헌팅 오퍼 = 한섭 표에 없고 중섭 획득 경로가 '招募寻访'인 3~6성 — 미래시를 켜면 픽업 후보에 든다(future)
   · 미래시 — 중섭(cn_gacha_table·cn_character_table)의 한정·콜라보도 같이 싣는다. 미래시를 켜면 미실장 오퍼를 픽업에
     넣어 앞으로 올 배너를 미리 돌려 보는데, 그때 미실장 한정이 표준 배너 후보에 섞이지 않게 (사용자 지시 2026-10-12)
 ⚠ 픽업 오퍼는 게임 데이터에 없다 (일반·한정 배너 픽업은 공지로만 나온다) — 시뮬레이터에서 사용자가 고른다.
@@ -22,7 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 GD = Path(os.environ.get("GAMEDATA_DIR") or ROOT / ".gamedata")
 OUT = ROOT / "app" / "data" / "gacha-pool.json"
 
-COLLAB_TEAMS = {"rainbow", "laios", "mujica"}
+COLLAB_TEAMS = {"rainbow", "laios", "mujica", "sees"}   # sees = 페르소나 3 (S.E.E.S.) — 2026-10-13 아이기스·유카리·마코토가 헤드헌팅으로 잡혔다
 COLLAB_NO = ("MH",)   # 도감 번호 접두 — 몬스터 헌터는 팀 표식이 없다
 
 ct = json.loads((GD / "kr_character_table.json").read_text(encoding="utf-8"))
@@ -46,6 +50,17 @@ if cn_gt_path.exists():
         if pool.get("gachaRuleType") == "LIMITED":
             limited.update(ids_in(pool.get("limitParam")))
 
+# 커널 — 커널 배너 dynMeta 의 오퍼 (한섭 + 중섭)
+kernel = set()
+def add_kernel(table):
+    for p in table["gachaPoolClient"]:
+        if p.get("gachaRuleType") in ("CLASSIC", "CLASSIC_DOUBLE", "FESCLASSIC", "CLASSIC_ATTAIN"):
+            for k in ("dynMeta", "limitParam"):
+                kernel.update(ids_in(p.get(k)))
+add_kernel(gt)
+if cn_gt_path.exists():
+    add_kernel(json.loads(cn_gt_path.read_text(encoding="utf-8")))
+
 pool = {"6": [], "5": [], "4": [], "3": []}
 collab = []
 for cid, c in ct.items():
@@ -60,16 +75,21 @@ for cid, c in ct.items():
     if is_collab:
         collab.append(cid)
         continue
-    if cid in limited:
+    if cid in limited or cid in kernel:
         continue
     pool[r].append(cid)
 
-# 미실장 콜라보 (중섭에만 있는 오퍼)
+# 미실장 콜라보 (중섭에만 있는 오퍼) · 미실장 헤드헌팅 오퍼
+future = []
 for cid, c in cn_ct.items():
     if cid in ct or not cid.startswith("char_"):
         continue
     if c.get("teamId") in COLLAB_TEAMS or (c.get("displayNumber") or "").startswith(COLLAB_NO):
         collab.append(cid)
+        continue
+    if (c.get("itemObtainApproach") or "").strip() == "招募寻访" and c.get("rarity") in ("TIER_3", "TIER_4", "TIER_5", "TIER_6") and cid not in kernel:
+        future.append(cid)
+future.sort()
 
 for k in pool:
     pool[k].sort()
@@ -95,7 +115,9 @@ ev_ko = load_events("")
 names = {loc: {e["id"]: e.get("n") for e in load_events(f".{loc}")} for loc in ("en", "ja")}
 events = []
 for e in ev_ko:
-    picks = [o[0] for o in e.get("ops", []) if o[3] == "new" and o[2] >= 5]
+    # 헤드헌팅으로 얻는 오퍼만 — 이벤트와 같이 데뷔해도 배포 오퍼(획득 경로 '이벤트')는 픽업이 아니다 (제안 75286c14)
+    gachaable = lambda cid: ("인재 채용" in ((ct.get(cid) or {}).get("itemObtainApproach") or "")) or cid in future or cid in limited
+    picks = [o[0] for o in e.get("ops", []) if o[3] == "new" and o[2] >= 5 and gachaable(o[0]) and o[0] not in kernel]
     if not picks:
         continue
     row = {"id": e["id"], "n": {"ko": e["n"], **{loc: names[loc].get(e["id"]) or e["n"] for loc in ("en", "ja")}}, "ops": picks}
@@ -113,10 +135,12 @@ out = {
     "guarantee5": guarantee5,
     "pool": pool,
     "limited": sorted(i for i in limited if i in ct or i in cn_ct),
+    "kernel": sorted(i for i in kernel if i in ct or i in cn_ct),
+    "future": future,
     "collab": sorted(collab),
     "events": events,
 }
 OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
 print(f"확률 {rates} · 5성 보장 {guarantee5}회")
 print(f"이벤트 배너 {len(events)}개 (미실장 {sum(1 for e in events if e.get('fut'))})")
-print(f"gacha-pool.json: 6성 {len(pool['6'])} · 5성 {len(pool['5'])} · 4성 {len(pool['4'])} · 3성 {len(pool['3'])} · 한정 {len(out['limited'])} · 콜라보 {len(collab)}")
+print(f"gacha-pool.json: 6성 {len(pool['6'])} · 5성 {len(pool['5'])} · 4성 {len(pool['4'])} · 3성 {len(pool['3'])} · 한정 {len(out['limited'])} · 커널 {len(out['kernel'])} · 미실장 {len(future)} · 콜라보 {len(collab)}")

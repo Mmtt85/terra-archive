@@ -494,6 +494,20 @@ def cn_repo_level(level_id):
     return json.loads(raw)
 
 
+_cn_chars = None
+
+
+def cn_chars():
+    """중섭 character_table (획득 경로 판정용) — 없으면 빈 표"""
+    global _cn_chars
+    if _cn_chars is None:
+        try:
+            _cn_chars = load(os.path.join(G, "cn_character_table.json"))
+        except (OSError, ValueError):
+            _cn_chars = {}
+    return _cn_chars
+
+
 def cn_event_body(aid):
     """중섭 표에서 그 이벤트의 작전·등장 적·재화·보상 오퍼를 뽑는다."""
     if not cn_act or not cn_stage:
@@ -545,10 +559,13 @@ def cn_event_body(aid):
             rid = str(r.get("id") or "")
             if rid.startswith("char_") and rid not in [o[0] for o in ops]:
                 ops.append([rid, rid, 0, "reward"])
-    # 그 이벤트와 함께 중섭에 데뷔한 오퍼 (build-operator-debut.py --cn-events)
+    # 그 이벤트와 함께 중섭에 데뷔한 오퍼 (build-operator-debut.py --cn-events). ⚠ 데뷔 날짜만 보고 붙이므로 **이벤트 배포 오퍼**도
+    # 끼어든다 — 중섭 획득 경로가 '活动获得'(이벤트 획득)이면 'reward' 로 (제안 75286c14, 2026-10-13: 배포 오퍼 Вий 가
+    # '신규'로 실려 가챠 시뮬 이벤트 배너 픽업에 들어갔다)
     for rid in CN_EVENT_OPS.get(aid, []):
         if rid not in [o[0] for o in ops]:
-            ops.append([rid, rid, 0, "new"])
+            how = "reward" if ((cn_chars().get(rid) or {}).get("itemObtainApproach") or "").strip() == "活动获得" else "new"
+            ops.append([rid, rid, 0, how])
     out = {}
     if prime:
         out["prime"] = prime

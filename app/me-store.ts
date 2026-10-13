@@ -108,9 +108,11 @@ export function meChars(me: MeData | null): Map<string, AccountChar> | null {
 
 /** 가진 재화로 헤드헌팅을 몇 번 돌릴 수 있나 — 내 정보 '재화'와 가챠 시뮬레이터 '내 재화로'가 같이 쓴다 (2026-10-12 공용화).
  *  합성옥 600 = 1회, 허가증 1장 = 1회, 10회 허가증 = 10회. all 은 순오리지늄 1개 = 합성옥 180 으로 바꿔 남은 합성옥과 합친 값 */
-export function mePulls(inv: Record<string, number> | undefined | null): { pulls: number; all: number; orundum: number; prime: number; permit: number; permit10: number } | null {
+export function mePulls(inv: Record<string, number> | undefined | null, kernel = false): { pulls: number; all: number; orundum: number; prime: number; permit: number; permit10: number } | null {
   if (!inv) return null;
-  const orundum = inv["4003"] ?? 0, prime = inv["4002"] ?? 0, permit = inv["7003"] ?? 0, permit10 = inv["7004"] ?? 0;
+  // 커널 헤드헌팅은 일반 허가증을 못 쓰고 커널 헤드헌팅 허가증(classic_gacha·classic_gacha_10)만 — 합성옥은 둘 다 된다
+  const orundum = inv["4003"] ?? 0, prime = inv["4002"] ?? 0;
+  const permit = inv[kernel ? "classic_gacha" : "7003"] ?? 0, permit10 = inv[kernel ? "classic_gacha_10" : "7004"] ?? 0;
   return {
     pulls: Math.floor(orundum / 600) + permit + permit10 * 10,
     all: Math.floor((orundum + prime * 180) / 600) + permit + permit10 * 10,

@@ -7,7 +7,8 @@
       rogue 통합전략 · main 메인 스토리 · anniv 기념 보상 · package 패키지
   · 이벤트 — 이벤트 배포 오퍼는 이벤트 데이터(events*.json)의 ops 'reward' 로 어느 이벤트인지 잇는다 (원 이벤트 = 가장 먼저 열린 것).
       사이트 개설 전 옛 이벤트는 그 기록이 없어 코드만 남는다
-미실장(중섭 선행) 오퍼는 싣지 않는다 — 한섭 획득 경로가 아직 없다.
+미실장(중섭 선행) 오퍼는 **중섭 character_table 의 획득 경로**로 채운다 (제안 75286c14, 2026-10-13 — 22명이 통째로 빠져 가챠 시뮬이
+배포 오퍼 Вий 를 가려내지 못했고, 획득 경로 필터에도 안 걸렸다). 코드 표는 CODE_CN.
 
   python3 scripts/build-op-obtain.py      (build-events · build-gacha-pool 뒤 — 둘의 산출물을 읽는다)
 """
@@ -25,7 +26,16 @@ CODE = {
     "통합 전략 획득": "rogue", "메인 스토리": "main", "애니버서리 보상": "anniv", "기간 한정 패키지": "package",
 }
 
+# 중섭 획득 경로 문구 → 같은 코드
+CODE_CN = {
+    "招募寻访": "gacha", "招募寻访、见习任务": "gacha",
+    "活动获得": "event", "凭证交易所": "cert", "信用交易所": "credit",
+    "集成战略获得": "rogue", "主线剧情": "main", "周年奖励": "anniv", "限时礼包": "package",
+}
+
 ct = json.loads((GD / "kr_character_table.json").read_text(encoding="utf-8"))
+cn_path = GD / "cn_character_table.json"
+cn_ct = json.loads(cn_path.read_text(encoding="utf-8")) if cn_path.exists() else {}
 pool = json.loads((DATA / "gacha-pool.json").read_text(encoding="utf-8"))
 limited, collab = set(pool.get("limited", [])), set(pool.get("collab", []))
 
@@ -47,11 +57,13 @@ for e in ev_ko:
             reward[o[0]] = (e["id"], key)
 
 ops, used_ev, unknown = {}, {}, {}
-for cid, c in ct.items():
+# 한섭 표 + 한섭에 없는 중섭 오퍼(미실장)
+rows_src = [(cid, c, CODE) for cid, c in ct.items()] + [(cid, c, CODE_CN) for cid, c in cn_ct.items() if cid not in ct]
+for cid, c, table in rows_src:
     if not cid.startswith("char_") or c.get("isNotObtainable"):
         continue
     raw = (c.get("itemObtainApproach") or "").strip()
-    code = CODE.get(raw)
+    code = table.get(raw)
     if not code:
         if raw:
             unknown[raw] = unknown.get(raw, 0) + 1

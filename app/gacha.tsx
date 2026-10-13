@@ -21,21 +21,24 @@ import { mePulls, useMe } from "./me-store";
 import poolData from "./data/gacha-pool.json";
 
 type Rarity = 3 | 4 | 5 | 6;
-// 배너는 통상·한정 둘 (사용자 지시 2026-10-12 — 단일 픽업은 통상에 6성 하나만 넣으면 된다)
-type BannerKind = "standard" | "limited";
+// 배너는 통상·한정·커널 (사용자 지시 2026-10-12 — 단일 픽업은 통상에 6성 하나만 넣으면 된다 · 2026-10-13 "커널 오퍼는 커널 헤드헌팅
+// 배너 따로"). 커널 배너는 5·6성을 커널 오퍼에서만, 4·3성은 일반 풀에서 — 커널 오퍼는 통상·한정 배너에 안 나온다 (제안 75286c14)
+type BannerKind = "standard" | "limited" | "kernel";
 const POOL = poolData as { rates: Record<"3" | "4" | "5" | "6", number>; guarantee5: number; pool: Record<"3" | "4" | "5" | "6", string[]>; limited: string[]; collab: string[];
+  /** 커널 헤드헌팅 오퍼 · 미실장 헤드헌팅 오퍼(중섭 획득 경로 '招募寻访') — build-gacha-pool.py */
+  kernel: string[]; future: string[];
   /** 이벤트 배너 — 이벤트와 함께 나온 신규 5·6성, 최신(미실장 포함)부터 (build-gacha-pool.py) */
   events: { id: string; n: Record<"ko" | "en" | "ja", string>; ops: string[]; fut?: 1; eta?: string; start?: string }[] };
 const BASE: Record<Rarity, number> = { 6: POOL.rates["6"], 5: POOL.rates["5"], 4: POOL.rates["4"], 3: POOL.rates["3"] };
 // 게임 안 배너 상세 정보의 규칙 (게임 표에 없는 값)
 const PITY_FROM = 50;    // 6성 없이 이만큼 뽑은 뒤부터
 const PITY_STEP = 0.02;  // 1회마다 6성 확률 +2%
-const SIX_SHARE: Record<BannerKind, number> = { standard: 0.5, limited: 0.7 };
+const SIX_SHARE: Record<BannerKind, number> = { standard: 0.5, limited: 0.7, kernel: 0.5 };
 // 픽업 자리 최대 수 — 처음엔 한 자리씩 깔고 '+'로 늘린다 (사용자 지시 2026-10-12 "한정 둘에 통상 하나 · 4중 픽업 특별 배너도 있다").
 // 사실상 제한 없이(패널이 넘치지 않게 8) — 6성 픽업 몫(50%·한정 70%)은 고른 오퍼끼리 똑같이 나눈다.
 // 비워 둔 픽업은 그만큼 일반 출현
-const SIX_SLOTS: Record<BannerKind, number> = { standard: 8, limited: 8 };
-const FIVE_SLOTS: Record<BannerKind, number> = { standard: 8, limited: 8 };
+const SIX_SLOTS: Record<BannerKind, number> = { standard: 8, limited: 8, kernel: 8 };
+const FIVE_SLOTS: Record<BannerKind, number> = { standard: 8, limited: 8, kernel: 8 };
 const DROP_SLOT = "__drop";
 
 type Pull = { id: string; rarity: Rarity; pickup: boolean; n: number };
@@ -154,7 +157,10 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
   const [since6, setSince6] = useState(0);
   const [last, setLast] = useState<Pull[]>([]);
 
-  const poolOf = (r: Rarity) => POOL.pool[String(r) as "3"].filter((id) => byId.has(id));
+  // 커널 배너의 5·6성은 커널 오퍼에서 (미래시를 켜야 미실장 커널 오퍼도)
+  const poolOf = (r: Rarity) => (kind === "kernel" && r >= 5
+    ? POOL.kernel.filter((id) => byId.get(id)?.rarity === r && (includeFuture || !byId.get(id)?.unreleased))
+    : POOL.pool[String(r) as "3"].filter((id) => byId.has(id)));
   const reset = () => { setPulls([]); setSince6(0); setLast([]); };
 
   // 픽업 후보 — 6성·5성 전부(한정·콜라보 포함: 한정 배너의 픽업은 한정 오퍼다)
@@ -162,7 +168,12 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
   const special = useMemo(() => new Set([...POOL.limited, ...POOL.collab]), []);
   const lim = useMemo(() => new Set(POOL.limited), []);
   // 미래시를 켜면 미실장(중섭 선행) 오퍼도 픽업 후보에 — 앞으로 올 배너를 미리 돌려 보기 (사용자 지시 2026-10-12)
-  const live = operators.filter((o) => (includeFuture || !o.unreleased) && (kind === "limited" || !special.has(o.id)));
+  // 픽업 후보는 **헤드헌팅으로 얻는 오퍼만** — 이벤트 배포·통합전략 오퍼는 빠진다 (제안 75286c14: 배포 오퍼 Вий 가 픽업에 있었다).
+  // 커널 오퍼는 커널 배너에서만, 통상·한정 배너엔 안 나온다
+  const kern = useMemo(() => new Set(POOL.kernel), []);
+  const gachaable = useMemo(() => new Set([...Object.values(POOL.pool).flat(), ...POOL.limited, ...POOL.future, ...POOL.kernel]), []);
+  const live = operators.filter((o) => (includeFuture || !o.unreleased) && gachaable.has(o.id)
+    && (kind === "kernel" ? kern.has(o.id) : !kern.has(o.id) && (kind === "limited" || !special.has(o.id))));
   const sixList = live.filter((o) => o.rarity === 6).sort((a, b) => (kind === "limited" ? Number(lim.has(b.id)) - Number(lim.has(a.id)) : 0) || b.seq - a.seq);
   const fiveList = live.filter((o) => o.rarity === 5).sort((a, b) => b.seq - a.seq);
   /** 픽업 자리 i 에 넣기 — id 가 "" 면 비우기. 같은 오퍼가 다른 자리에 있으면 그 자리는 비운다 */
@@ -185,12 +196,12 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
     // 배너를 바꾸면 고른 픽업도 비운다 (사용자 지시 2026-10-12 "배너를 바꾸면 입력해 둔 조건을 리셋")
     setKind(k); reset(); setSix([]); setFive([]); setN6(1); setN5(1); setEventId("");
   };
-  const KIND_LABEL = (k: BannerKind) => t(k === "standard" ? "통상 (6성 픽업 50%)" : "한정 (6성 픽업 70%)");
+  const KIND_LABEL = (k: BannerKind) => t(k === "standard" ? "통상 (6성 픽업 50%)" : k === "limited" ? "한정 (6성 픽업 70%)" : "커널 (6성 픽업 50%)");
   // 확률 안내는 페이지 머리 '?' 로 여는 창 (사용자 지시 2026-10-12 — 다른 시뮬레이터와 같은 자리)
   const [showGuide, setShowGuide] = useState(false);
   usePageHelp("gacha", () => setShowGuide(true)); // 다른 시뮬레이터와 같은 꼴 (farm·sim)
   const me = useMe();
-  const mine = mePulls(me?.profile?.inventory);
+  const mine = mePulls(me?.profile?.inventory, kind === "kernel");
   const sixPick = six.slice(0, Math.min(n6, SIX_SLOTS[kind])).filter(Boolean);
   const fivePick = five.slice(0, Math.min(n5, FIVE_SLOTS[kind])).filter(Boolean);
 
@@ -242,7 +253,7 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
     const ev = POOL.events.find((e) => e.id === q.get("event"));
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (ev) { pickEvent(ev.id); return; }
-    applyPicks((q.get("pick") ?? "").split(","), q.get("kind") === "limited" ? "limited" : "standard");
+    applyPicks((q.get("pick") ?? "").split(","), q.get("kind") === "limited" ? "limited" : q.get("kind") === "kernel" ? "kernel" : "standard");
   }, [byId]); // eslint-disable-line react-hooks/exhaustive-deps
   // 다른 시뮬레이터와 같은 틀 — 왼쪽 설정 칸(.filter-panel), 오른쪽 결과(.results) (사용자 지시 2026-10-12)
   return (
@@ -257,7 +268,7 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
             픽업도 하나 고를 때마다 목록을 닫는다 (같은 날 "클릭하면 리스트가 사라져야지") — multi 를 쓰지 않는다 */}
         <div className="gacha-setup">
           <Dropdown ariaLabel={t("배너 종류")} label={<><small>{t("배너")}</small> {KIND_LABEL(kind)}</>}
-            items={(["standard", "limited"] as BannerKind[]).map((k) => ({ value: k, label: KIND_LABEL(k) }))}
+            items={(["standard", "limited", "kernel"] as BannerKind[]).map((k) => ({ value: k, label: KIND_LABEL(k) }))}
             selected={[kind]} onPick={(v) => pickKind(v as BannerKind)} />
           {/* 이벤트 배너 — 이벤트와 함께 나온 신규 오퍼로 픽업을 한 번에 (최신 미실장 이벤트부터) */}
           <Dropdown ariaLabel={t("이벤트 배너")} scroll search={t("이벤트·오퍼 이름 검색")} className="gacha-event-drop"
@@ -312,9 +323,9 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
         {/* 내 정보를 동기화해 두었으면 가진 재화만큼 한 번에 (사용자 지시 2026-10-12) — 순오리지늄까지 합성옥으로 바꾼 횟수 */}
         {mine && mine.all > 0 && (
           <button type="button" className="gacha-pull mine" onClick={() => pull(mine.all)}
-            title={t("합성옥 600개 = 1회 · 헤드헌팅 허가증 1장 = 1회 · 10회 허가증 1장 = 10회 · 순오리지늄 1개 = 합성옥 180개")}>
+            title={t(kind === "kernel" ? "합성옥 600개 = 1회 · 커널 헤드헌팅 허가증 1장 = 1회 · 커널 10회 허가증 1장 = 10회 · 순오리지늄 1개 = 합성옥 180개" : "합성옥 600개 = 1회 · 헤드헌팅 허가증 1장 = 1회 · 10회 허가증 1장 = 10회 · 순오리지늄 1개 = 합성옥 180개")}>
             {t("내 재화로 {n}회", { n: mine.all.toLocaleString() })}
-            <small>{t("합성옥 {a} · 허가증 {b} · 10회 허가증 {c}", { a: Math.floor(mine.orundum / 600), b: mine.permit, c: mine.permit10 * 10 })}{mine.prime > 0 && ` · ${t("순오리지늄 {n}", { n: mine.all - mine.pulls })}`}</small>
+            <small>{t(kind === "kernel" ? "합성옥 {a} · 커널 허가증 {b} · 커널 10회 허가증 {c}" : "합성옥 {a} · 허가증 {b} · 10회 허가증 {c}", { a: Math.floor(mine.orundum / 600), b: mine.permit, c: mine.permit10 * 10 })}{mine.prime > 0 && ` · ${t("순오리지늄 {n}", { n: mine.all - mine.pulls })}`}</small>
           </button>
         )}
       </div>
