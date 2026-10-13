@@ -2587,6 +2587,13 @@ export default function RogueGuide({ initialTopic }: {
         locale, { lock: !!lock, live, cnTopic: cnTopicNow() });
       if (oc.anchor) lensAnchor.current = oc.anchor;
       // 통합전략 화면 종류 (run.ts rogueScreen) — 분대 확정·노드 비우기 (사용자 지시 2026-10-13)
+      // 공통 정보 띠에 잡힌 난이도(왼쪽 아래 배지)를 가이드 난이도에도 — 종전엔 작전 노드일 때만 따라와서, 득과 실 같은 노드나
+      // 빈 지도에선 띠는 '난이도 12'인데 가이드는 0 이었다 (2026-10-13)
+      if (live) {
+        const fg = bridgePipFloor().grade;
+        const gmax = Math.max(15, ...data.difficulties.filter((df) => df.mode === "NORMAL").map((df) => df.grade));
+        if (typeof fg === "number" && fg >= 0 && fg <= gmax) setGrade(fg);
+      }
       if (live && oc.rogueScreen === "squadSelect") { squadLocked.current = false; setBridgePipFloor({ squad: "", era: null }); }
       if (live && oc.rogueScreen === "runStart" && !squadLocked.current) fixSquad();
       // 판 시작 화면(분대 선택·모집 조합 선택·초기 모집)엔 노드가 없다 — 지난 판·잘못 잡힌 노드를 비운다 (2026-10-13)

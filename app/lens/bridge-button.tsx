@@ -9,7 +9,6 @@ import { NewBadge } from "../new-badge";
 import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useBridgeStatus, connectBridge, disconnectBridge, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
-import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
 import type { T } from "../i18n";
@@ -300,23 +299,19 @@ const BridgeHelpModal = lazy(() => import("./bridge-help"));
  *  (사용자 지시 2026-10-12 "PiP 띄우지 말고 뒤에서 조건이 자동으로 선택되도록") */
 /** compact — 좁은 칸(공채)용: 폭이 상태와 무관하게 늘 같다. 동그라미 대신 스샷 단추와 같은 점(켜지면 라임), 이름은 늘 'PRTS 링크',
  *  모바일 'PC 전용'은 마우스를 올린 설명으로만 — 프리렌더(모바일 가정)·연결됨 문구로 폭이 바뀌어 줄이 넘어가던 것 (사용자 지적 2026-10-12) */
-export function BridgeTopicButton({ topic, name, t, noReplay, noPip, compact }: { topic: string; name: string; t: T; noReplay?: boolean; noPip?: boolean; compact?: boolean }) {
+// 리플레이(여정 기록 미리보기·JSON) 단추는 2026-10-13 뺐다 (사용자 지시 "아무도 안 쓰는 거 같은데 그냥 빼자"). noReplay 는 옛 호출 자리 호환으로만 받는다
+export function BridgeTopicButton({ topic, name, t, noPip, compact }: { topic: string; name: string; t: T; noReplay?: boolean; noPip?: boolean; compact?: boolean }) {
   const { settings, lock } = useBridgeStatus();
   const supported = useSyncExternalStore(noSubscribe, bridgeSupported, () => false);
   // 모바일 판정은 화면 크기가 아니라 기기 특성(UA-CH·hover/pointer)이다 — bridge.ts 주석 참조.
   // SSR 스냅샷은 true(비활성) — 프리렌더 HTML엔 'PC 전용'으로 실리고 데스크탑이 하이드레이션
   // 때 활성으로 바뀐다 (종전엔 SSR에서 아예 안 그렸으니 어느 쪽이든 깜빡임은 새로 안 생긴다).
   const mobile = useSyncExternalStore(noSubscribe, bridgeOnMobile, () => true);
-  const [replayOpen, setReplayOpen] = useState(false);
   const pip = usePipWin();
   const pipOk = usePipOk();
   const [helpOpen, setHelpOpen] = useState(false);
-  // 딥링크: #replay(리플레이 프리뷰)·#prts-help(도움말) — /rogue 툴바엔 활성 테마의
-  // 버튼 인스턴스 하나만 마운트되므로 여기서 동기화해도 중복이 없다 (2026-07-27)
-  useHashSync(replayOpen ? "#replay" : helpOpen ? "#prts-help" : null, (h) => {
-    setReplayOpen(h === "#replay");
-    setHelpOpen(h === "#prts-help");
-  });
+  // 딥링크: #prts-help(도움말) — /rogue 툴바엔 활성 테마의 버튼 인스턴스 하나만 마운트되므로 여기서 동기화해도 중복이 없다 (2026-07-27)
+  useHashSync(helpOpen ? "#prts-help" : null, (h) => setHelpOpen(h === "#prts-help"));
   // API 없는 **데스크탑**(파이어폭스 등 비크로뮴)만 통째로 숨긴다 — 모바일은 숨기지 않고
   // 아래에서 비활성 + 'PC 전용' 표기로 남긴다 (사용자 확정 2026-08-09: "버튼은 있어야").
   if (!supported && !mobile) return null;
@@ -373,21 +368,9 @@ export function BridgeTopicButton({ topic, name, t, noReplay, noPip, compact }: 
       </button>
       )}
       {/* 툴바의 '작은 창' 단추는 걷어냈다 — 연결하면 저절로 열린다. 안 열리면 연결 토스트의 '작은 창'으로 (사용자 지시 2026-10-12) */}
-      {/* ?는 **PRTS 링크 버튼 바로 오른쪽**에 붙는 세그먼트다 — 리플레이 뒤에 두면 리플레이
-          도움말처럼 보인다 (사용자 지적 2026-07-26) */}
+      {/* ?는 **PRTS 링크 버튼 바로 오른쪽**에 붙는 세그먼트다 (사용자 지적 2026-07-26) */}
       <button type="button" className="lens-help-btn bridge-help-btn" aria-label={t("PRTS 링크 도움말")}
         onClick={() => setHelpOpen(true)}>?</button>
-      {!noReplay && (
-      <button
-        type="button"
-        className="lens-open-btn bridge-log-btn"
-        title={t("플레이 기록을 미리 보고 JSON으로 가져오거나 내보냅니다")}
-        onClick={() => setReplayOpen(true)}
-      >
-        <span aria-hidden>▤</span> {t("리플레이")}
-      </button>
-      )}
-      {replayOpen && <BridgeReplayModal t={t} onClose={() => setReplayOpen(false)} />}
       {/* 도움말은 공용 창(ModalWindow)이라 백드롭·포털을 스스로 만든다 — 여기서 감싸지 않는다 */}
       {helpOpen && (
         <Suspense fallback={null}>
