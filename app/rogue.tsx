@@ -2599,8 +2599,10 @@ export default function RogueGuide({ initialTopic }: {
       // 판 시작 화면(분대 선택·모집 조합 선택·초기 모집)엔 노드가 없다 — 지난 판·잘못 잡힌 노드를 비운다 (2026-10-13)
       if (live && (oc.rogueScreen === "runStart" || oc.rogueScreen === "squadSelect")) { setLiveNode(null); setBridgePipNode(null); }
       // 탐험 로비 — 판 밖이라 알아볼 게 없다. 작은 창 노드 칸에 '탐험을 시작하면 인식됩니다' 안내 (사용자 지시 2026-10-14)
+      // 노드 칸은 prtsBody 가 liveNode 로 그린다(본 화면 상시 창·작은 창 공용) — 기타 노드와 같은 모양(제목+설명)으로 채운다
       if (live && oc.rogueScreen === "lobby") {
-        setLiveNode(null);
+        setLiveNode({ sess: bridgeSession(), kind: "nodetype", nt: { id: "lobby", name: t("탐험 로비"), desc: "", func: t("탐험을 시작하면 그때부터 화면을 인식합니다.") } });
+        setLiveHidden({});
         setBridgePipNode({ kind: t("안내"), name: t("탐험 로비"), text: t("탐험을 시작하면 그때부터 화면을 인식합니다.") });
       }
       // 노드를 고르지 않은 지도 화면 — 지나간 노드(작전·조우)를 비운다
