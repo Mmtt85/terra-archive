@@ -1,6 +1,6 @@
 # 테라 아카이브 계정 연동 워커 (사이트 배포와 별개)
 # Yostar(KR/JP/EN) 이메일 인증코드 → 게임 서버 syncData → 보유 오퍼 목록.
-# 이메일·코드·토큰은 저장하지 않는다. KV 는 PREFS 하나 — 게임 UID 별 사이트 설정(내 정보 맞춤 칸·스토리 읽은 위치, 2026-10-14)만 둔다.
+# 이메일·코드·토큰은 저장하지 않는다. 저장하는 건 게임 UID 별 사이트 설정뿐 — D1 terra-archive-prefs (2026-10-15~, 표는 schema.sql).
 # 시크릿: SIGN_KEY — 공유 카드 정품 인증 서명 키 (2026-10-05, `npx wrangler secret put SIGN_KEY`). 바꾸면 이전 QR이 전부 무효가 된다.
 #         ADMIN_KEY — 관리자 UID(ADMIN_UIDS)로 로그인하면 내주는 Supabase 관리자 키 = .supabase-admin-key (2026-10-14)
 # 배포: `bash deploy.sh`  ·  점검: curl "https://terra-archive-account.nzkonaru.workers.dev/probe?server=kr"
@@ -8,7 +8,13 @@ name = "terra-archive-account"
 main = "src/index.js"
 compatibility_date = "2026-07-01"
 
-# 사이트 설정 동기화 (2026-10-14) — 키 "p:<서버>:<UID>" → { keys: { <localStorage 키>: { t, d } } }. /prefs/get · /prefs/put
+# 사이트 설정 동기화 — 2026-10-15 D1 로 옮김 (KV 무료 쓰기 하루 1,000번이 모자랐다. D1 무료 하루 10만 줄).
+# 옛 KV(PREFS)는 옮기기 전에 저장한 계정을 처음 읽을 때 D1 으로 옮겨 오는 데만 쓴다 — 키 "p:<서버>:<UID>" → { keys: { <localStorage 키>: { t, d } } }
+[[d1_databases]]
+binding = "DB"
+database_name = "terra-archive-prefs"
+database_id = "b92f64f9-ceb5-4751-818f-b4ca72483757"
+
 [[kv_namespaces]]
 binding = "PREFS"
 id = "638c79d1dc7b4c31be39d12136e418e4"

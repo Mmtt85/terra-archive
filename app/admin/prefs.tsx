@@ -1,7 +1,7 @@
 "use client";
 
 // 관리 — UID 로 사이트 설정 보기 (사용자 지시 2026-10-14 "어드민 페이지에서 UID 로 검색하면 설정 어떻게 돼 있는지 다").
-// 내 정보로 로그인한 계정의 설정(app/cloud-prefs.tsx 가 올린 것)을 계정 워커 KV 에서 읽는다 — /api/prefs (admin-api 워커·dev 중계가 관리자 키를 붙인다)
+// 내 정보로 로그인한 계정의 설정(app/cloud-prefs.tsx 가 올린 것)을 계정 워커 D1 에서 읽는다 — /api/prefs (admin-api 워커·dev 중계가 관리자 키를 붙인다)
 import { useEffect, useState } from "react";
 import { Dropdown } from "../dropdown";
 import findMeta from "../data/story-find-meta.json";
@@ -42,25 +42,24 @@ function Body({ k, d }: { k: string; d: string | null }) {
   return <pre className="ap-pre">{JSON.stringify(v, null, 1)}</pre>;
 }
 
-// KV 쓰기 횟수 — 무료 플랜 하루(UTC, 한국 9시에 풀림) 1,000번. 계정 워커가 쓸 때마다 방문 기록 DB(kv_write)에 남긴 줄을 센다 (2026-10-15).
-// 방문 통계의 내 정보 동기화 서버 단추 줄 오른쪽 끝에 붙는다 (사용자 지시 2026-10-15) — 지난 14일은 마우스를 올리면 보인다
-const KV_DAILY = 1000;
+// 설정 저장소 쓰기 — D1 무료 하루(UTC, 한국 9시에 풀림) 쓴 줄 10만. 계정 워커가 하루치를 센다(표 usage) — /api/prefs {usage}.
+// 방문 통계의 내 정보 동기화 서버 단추 줄 오른쪽 끝에 붙는다 (사용자 지시 2026-10-15) — 지난 14일은 마우스를 올리면 보인다.
+// 2026-10-15 KV(하루 1,000번)에서 D1 으로 옮겼다
 export function KvWrites() {
-  const [rows, setRows] = useState<{ day: string; puts: number; deletes: number }[] | null>(null);
+  const [res, setRes] = useState<{ limit: number; days: { day: string; puts: number; deletes: number; rows: number }[] } | null>(null);
   const [err, setErr] = useState(false);
   useEffect(() => {
-    fetch("/api/visits/rpc/visits_kv_writes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ p_days: 14 }) })
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status))).then(setRows).catch(() => setErr(true));
+    fetch("/api/prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usage: 14 }) })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status))).then((j) => (j?.ok ? setRes(j) : setErr(true))).catch(() => setErr(true));
   }, []);
   if (err) return <span className="ap-kv">설정 저장소 쓰기 — 못 읽음</span>;
-  if (!rows) return null;
+  if (!res) return null;
   const today = new Date().toISOString().slice(0, 10);
-  const now = rows.find((r) => r.day === today);
-  const used = (now?.puts ?? 0) + (now?.deletes ?? 0);
-  const tip = [`KV 무료 플랜 하루 ${KV_DAILY.toLocaleString()}번 (UTC 기준, 한국 9시에 풀림)`, "",
-    ...rows.map((r) => `${r.day}  저장 ${r.puts} · 초기화 ${r.deletes} · 합계 ${r.puts + r.deletes}`)].join("\n");
+  const used = res.days.find((r) => r.day === today)?.rows ?? 0;
+  const tip = [`D1 무료 플랜 하루 쓴 줄 ${res.limit.toLocaleString()} (UTC 기준, 한국 9시에 풀림)`, "",
+    ...res.days.map((r) => `${r.day}  ${r.rows.toLocaleString()}줄 · 저장 ${r.puts} · 초기화 ${r.deletes}`)].join("\n");
   return (
-    <span className="ap-kv" title={tip}>설정 저장소 쓰기 오늘 <b className={used >= KV_DAILY * 0.8 ? "warn" : ""}>{used.toLocaleString()}</b> / {KV_DAILY.toLocaleString()}</span>
+    <span className="ap-kv" title={tip}>설정 저장소 쓰기 오늘 <b className={used >= res.limit * 0.8 ? "warn" : ""}>{used.toLocaleString()}</b> / {res.limit.toLocaleString()}줄</span>
   );
 }
 

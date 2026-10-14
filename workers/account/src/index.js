@@ -786,11 +786,13 @@ async function hmac(text) {
   return new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(text))).slice(0, 16);
 }
 // ── 사이트 설정 동기화 (2026-10-14) ─────────────────────────
-// 게임 UID 는 계정마다 평생 안 바뀐다 — 그걸 열쇠로 사이트 설정(내 정보 맞춤 칸·스토리 읽은 위치)을 KV(PREFS)에 둔다.
+// 게임 UID 는 계정마다 평생 안 바뀐다 — 그걸 열쇠로 사이트 설정(내 정보 맞춤 칸·스토리 읽은 위치…)을 D1(DB, 표 prefs)에 둔다.
+// 2026-10-15 KV 에서 옮김 — KV 무료 쓰기 하루 1,000번은 리더기 읽는 사람 열댓 명이면 찼다. D1 무료는 하루 10만 줄
 // 쓰기·읽기는 **설정용 표**로만: 로그인·동기화 때 [2, 서버, UID] 를 SIGN_KEY 로 서명해 내준다. 정품 인증 seal 은 공유 이미지 QR 로
 // 남에게 보이는 값이라 이 용도로 쓰지 않는다. UID 를 그냥 받으면 누구나 남의 설정을 고칠 수 있다.
-let PREFS = null;
-const PREF_MAX = 2_000_000;        // 계정당 설정 전체 상한 (바이트) — 인프라 편성기 상태가 커서 넉넉히 (KV 한도 25MB)
+let PREFS = null;   // 옛 KV — 옮기기 전에 저장한 계정을 처음 읽을 때 D1 으로 옮겨 오는 데만
+let DB = null;
+const PREF_MAX = 2_000_000;        // 계정당 설정 전체 상한 (바이트) — 인프라 편성기 상태가 커서 넉넉히 (D1 한 줄 한도도 2MB)
 const PREF_KEYS = new Set(["ta:me-layout", "ta:story-pos", "ta-feedback-token", "ta-feedback-extra",
   "ta-theme", "ta-locale", "ta-include-future", "story-reader-prefs", "story-reader-sound", "ta:gallery-spoiler",
   "ta-recruit-prized", "ta:new-seen", "terra-archive-infra-v3", "terra-archive-infra-recycle"]);   // 받아 주는 설정 키 — 사이트 app/cloud-prefs.ts SYNC 와 같게
@@ -824,50 +826,64 @@ async function adminKeyFor(token) {
   if (!ADMIN_KEY) throw new HttpError(503, "admin-key-missing");
   return { ok: true, key: ADMIN_KEY };
 }
-// KV 쓰기 횟수 — KV 무료 플랜은 하루(UTC) 쓰기 1,000번. 횟수를 KV 에 세면 그게 또 쓰기라, 방문 기록 DB(kv_write)에 한 줄씩 남긴다.
-// 관리 화면 'UID 설정' 탭이 하루치를 센다 (사용자 지시 2026-10-15). 공개(anon) 키·주소는 사이트 app/visit-track.ts 와 같다
-const VISITS_URL = "https://ytulglqiwcwufeyguvrj.supabase.co";
-const VISITS_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0dWxnbHFpd2N3dWZleWd1dnJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwODgxMDMsImV4cCI6MjEwNjY2NDEwM30.N0bLhSrTtqoP3xOcYcnZfa32grznXN7LBcbp26OqX7E";
-function noteKvWrite(kind) {
-  return fetch(`${VISITS_URL}/rest/v1/kv_write`, {
-    method: "POST",
-    headers: { apikey: VISITS_ANON_KEY, Authorization: `Bearer ${VISITS_ANON_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
-    body: JSON.stringify([{ kind }]),
-  }).catch(() => null);   // 기록이 실패해도 설정 저장은 그대로
+// 하루(UTC) 쓰기 기록 — 관리 화면 방문 통계 '설정 저장소 쓰기' (2026-10-15). D1 무료는 하루 쓴 줄 10만이라 줄 수(rows)를 센다
+const D1_DAILY_ROWS = 100_000;
+function noteWrite(kind, rows) {
+  const day = new Date().toISOString().slice(0, 10);
+  return DB.prepare(`insert into usage (day, puts, deletes, rows) values (?1, ?2, ?3, ?4)
+    on conflict(day) do update set puts = puts + ?2, deletes = deletes + ?3, rows = rows + ?4`)
+    .bind(day, kind === "put" ? 1 : 0, kind === "delete" ? 1 : 0, rows + 1).run().catch(() => null);   // 기록이 실패해도 설정 저장은 그대로
+}
+/** 이 계정의 설정 전부 — { 키: {t, d} }. D1 에 없으면 옛 KV 에서 한 번 옮겨 온다 */
+async function loadPrefs(owner) {
+  const { results } = await DB.prepare("select k, t, d from prefs where owner = ?1").bind(owner).all();
+  const out = {};
+  for (const r of results) out[r.k] = { t: r.t, d: r.d };
+  if (results.length || !PREFS) return out;
+  const old = await PREFS.get(owner, "json").catch(() => null);
+  const keys = Object.entries(old?.keys ?? {}).filter(([k, v]) => PREF_KEYS.has(k) && v && Number.isFinite(v.t));
+  if (!keys.length) return out;
+  await DB.batch(keys.map(([k, v]) => DB.prepare("insert or ignore into prefs (owner, k, t, d) values (?1, ?2, ?3, ?4)").bind(owner, k, v.t, v.d ?? null)));
+  await PREFS.delete(owner).catch(() => null);   // 옮겼으면 KV 쪽은 지운다 (KV 지우기도 하루 1,000번 안에 든다 — 한 계정 한 번뿐)
+  for (const [k, v] of keys) out[k] = { t: v.t, d: v.d ?? null };
+  return out;
 }
 async function prefsGet(token) {
   const key = await prefOwner(token);
   if (!key) throw new HttpError(401, "pref-token");
-  if (!PREFS) throw new HttpError(503, "pref-store");
-  const doc = (await PREFS.get(key, "json")) ?? { keys: {} };
-  return { ok: true, keys: doc.keys ?? {} };
+  if (!DB) throw new HttpError(503, "pref-store");
+  return { ok: true, keys: await loadPrefs(key) };
 }
 /** 이 계정에 저장된 설정을 통째로 지운다 — 내 정보 '저장된 설정 완전 초기화' (2026-10-14) */
 async function prefsDelete(token) {
   const key = await prefOwner(token);
   if (!key) throw new HttpError(401, "pref-token");
-  if (!PREFS) throw new HttpError(503, "pref-store");
-  await PREFS.delete(key);
-  await noteKvWrite("delete");
+  if (!DB) throw new HttpError(503, "pref-store");
+  const r = await DB.prepare("delete from prefs where owner = ?1").bind(key).run();
+  if (PREFS) await PREFS.delete(key).catch(() => null);   // 옛 KV 에 남은 게 있으면 그것도 (안 지우면 다음 읽기에 되살아난다)
+  await noteWrite("delete", r.meta?.changes ?? 0);
   return { ok: true };
 }
-/** 키마다 더 나중(t)인 것을 남긴다 — 다른 기기에서 동시에 고쳐도 그 키 단위로 최신이 이긴다 */
+/** 키마다 더 나중(t)인 것을 남긴다 — 다른 기기에서 동시에 고쳐도 그 키 단위로 최신이 이긴다. 바뀐 키만 그 줄을 쓴다 */
 async function prefsPut(token, keys) {
   const key = await prefOwner(token);
   if (!key) throw new HttpError(401, "pref-token");
-  if (!PREFS) throw new HttpError(503, "pref-store");
+  if (!DB) throw new HttpError(503, "pref-store");
   if (!keys || typeof keys !== "object") throw new HttpError(400, "bad-request");
-  const doc = (await PREFS.get(key, "json")) ?? { keys: {} };
-  const cur = doc.keys ?? {};
+  const cur = await loadPrefs(key);
+  const changed = [];
   for (const [k, v] of Object.entries(keys)) {
     if (!PREF_KEYS.has(k) || !v || typeof v !== "object" || !Number.isFinite(v.t)) continue;
     if (v.d !== null && typeof v.d !== "string") continue;
-    if (!cur[k] || v.t > cur[k].t) cur[k] = { t: v.t, d: v.d };
+    if (!cur[k] || v.t > cur[k].t) { cur[k] = { t: v.t, d: v.d }; changed.push(k); }
   }
-  const text = JSON.stringify({ keys: cur, at: Date.now() });
-  if (text.length > PREF_MAX) throw new HttpError(413, "pref-too-big");
-  await PREFS.put(key, text);
-  await noteKvWrite("put");
+  const size = Object.entries(cur).reduce((a, [k, v]) => a + k.length + (v.d?.length ?? 0) + 20, 0);
+  if (size > PREF_MAX) throw new HttpError(413, "pref-too-big");
+  if (changed.length) {
+    await DB.batch(changed.map((k) => DB.prepare(`insert into prefs (owner, k, t, d) values (?1, ?2, ?3, ?4)
+      on conflict(owner, k) do update set t = excluded.t, d = excluded.d where excluded.t > prefs.t`).bind(key, k, cur[k].t, cur[k].d)));
+    await noteWrite("put", changed.length);
+  }
   return { ok: true, keys: cur };
 }
 
@@ -1041,6 +1057,7 @@ export default {
   async fetch(request, env) {
     SIGN_KEY = env?.SIGN_KEY ?? null;
     PREFS = env?.PREFS ?? null;
+    DB = env?.DB ?? null;
     ADMIN_KEY = env?.ADMIN_KEY ?? null;
     const origin = request.headers.get("Origin") ?? "";
     const url = new URL(request.url);
@@ -1073,12 +1090,18 @@ export default {
     if (url.pathname === "/admin/prefs") {
       const given = request.headers.get("x-admin-key") ?? "";
       if (!ADMIN_KEY || given !== ADMIN_KEY) return json({ ok: false, error: "not-admin" }, origin, 403);
-      if (!PREFS) return json({ ok: false, error: "pref-store" }, origin, 503);
+      if (!DB) return json({ ok: false, error: "pref-store" }, origin, 503);
       const q = await request.json().catch(() => null);
+      // {usage: 14} — 하루(UTC)별 쓰기 기록, 방문 통계의 '설정 저장소 쓰기' (2026-10-15)
+      if (q?.usage) {
+        const { results } = await DB.prepare("select day, puts, deletes, rows from usage order by day desc limit ?1").bind(Math.min(60, Number(q.usage) || 14)).all();
+        return json({ ok: true, limit: D1_DAILY_ROWS, days: results }, origin);
+      }
       const server = String(q?.server ?? ""), uid = String(q?.uid ?? "").replace(/\D/g, "");
       if (!validServer(server) || !uid) return json({ ok: false, error: "bad-request" }, origin, 400);
-      const doc = await PREFS.get(`p:${server}:${uid}`, "json");
-      return json({ ok: true, server, uid, found: !!doc, keys: doc?.keys ?? {}, at: doc?.at ?? null }, origin);
+      const keys = await loadPrefs(`p:${server}:${uid}`);
+      const at = Math.max(0, ...Object.values(keys).map((v) => v.t));
+      return json({ ok: true, server, uid, found: Object.keys(keys).length > 0, keys, at: at || null }, origin);
     }
     // 브라우저 외부(다른 사이트·스크립트)에서의 호출은 받지 않는다
     if (!ORIGIN_OK(origin)) return json({ ok: false, error: "origin" }, origin, 403);
