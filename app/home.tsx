@@ -486,22 +486,25 @@ const LOC_IX: Record<Locale, 0 | 1 | 2> = { ko: 0, en: 1, ja: 2 };
 function useRunningEvents(): GameEvent[] {
   // 첫 값 = 빌드 때 구운 사본(scripts/snap-events.mjs)을 **빌드 시각**으로 거른 것 — 서버·클라가 같은 답이라
   // 하이드레이션이 어긋나지 않고, 칩이 첫 화면부터 서 있다. 뜬 뒤 실제 피드(지금 시각)로 갈아 끼운다 (2026-10-07)
-  const [evts, setEvts] = useState<GameEvent[]>(() => sortRunning((krRunningData as { events: GameEvent[] }).events, BUILD_NOW));
+  const [evts, setEvts] = useState<GameEvent[]>(() => sortRunning((krRunningData as { events: GameEvent[] }).events, BUILD_NOW, CHIP_SOON_MS));
   useEffect(() => {
     let live = true;
     void fetchEventPayload().then((data) => {
       if (!live || !data) return;
-      setEvts(sortRunning(data.events, Date.now()));
+      setEvts(sortRunning(data.events, Date.now(), CHIP_SOON_MS));
     });
     return () => { live = false; };
   }, []);
   return evts;
 }
 
-// 진행중 이벤트 공용 헬퍼 — 배지·스트립이 같은 규칙으로 정렬·표기한다
-function sortRunning(events: GameEvent[], now: number): GameEvent[] {
+// 헤더 칩은 **곧 열릴** 이벤트도 띄운다 — 점검 날 데이터상 개방(11:00)과 실제 개방(16:00)이 달라 칩이 몇 시간
+// 사라졌다 (사용자 지적 2026-10-14 "헤더에는 좀 보여줘"). 그 사이엔 남은 기간 대신 'HH:MM 개방'.
+const CHIP_SOON_MS = 12 * 3_600_000;
+// 진행중 이벤트 공용 헬퍼 — 배지·스트립이 같은 규칙으로 정렬·표기한다. soonMs — 그 안에 시작할 이벤트도 넣는다
+function sortRunning(events: GameEvent[], now: number, soonMs = 0): GameEvent[] {
   return events
-    .filter((event) => Date.parse(event.start) <= now && now <= Date.parse(event.end))
+    .filter((event) => Date.parse(event.start) <= now + soonMs && now <= Date.parse(event.end))
     .filter((event) => !MINOR_EVENT_TYPES.has(event.type ?? ""))
     .sort((a, b) => {
       const majorA = MAJOR_EVENT_TYPES.has(a.displayType ?? "") ? 0 : 1;
@@ -2414,7 +2417,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 {/* 이름 길이로 헤더 폭이 흔들리지 않게 CSS 가 최대 폭을 잡고 넘치면 말줄임한다 */}
                 <b className="ev-promo-name">{eventName(locale, ev)}</b>
                 {/* 남은 기간 표기는 위수 협의 칩과 같은 문구로 (사용자 지시 2026-09-17) */}
-                <span className="promo-hint">{promoLeftLabel(chipNow, t, Date.parse(ev.end)) ?? t("진행중")}</span>
+                <span className="promo-hint">{Date.parse(ev.start) > chipNow
+                  ? ((hm) => locale === "en" ? `${t("개방")} ${hm}` : `${hm} ${t("개방")}`)(
+                    new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(ev.start)))
+                  : promoLeftLabel(chipNow, t, Date.parse(ev.end)) ?? t("진행중")}</span>
               </a>
             ))}
             {cnGroupEvents.map((ev) => (

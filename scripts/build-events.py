@@ -209,6 +209,19 @@ for loc in LOCALES:
 # 대체하므로 자연 소멸). 스토리가 있는 이벤트는 build-story.py CN_PROVISIONAL_NAMES 가 맡는다.
 # 없으면 한국어가 그대로 나간다 (사용자 지적 2026-09-23 "영어판은 듀얼채널 이벤트 이름이 한글").
 # 듀얼 채널 경기장 이름은 한국어가 영문판을 따른다 (그린 그래스빌 = Green Grassville, 허니듀 = Honeydew).
+# 중섭 선행 이벤트 비공식 이름 — 설명은 아래 '중섭 전용 이벤트' 블록 주석
+CN_ONLY_NAMES = {
+    "act3break": {"ko": "벡터 돌파#3 유사 생태", "en": "Vector Breakthrough #3: Pseudo-Ecology",
+                  "ja": "鋒矢突破#3 擬似生態"},
+    # 이하 2026-10-01 — 비공식 번역. 메인 사이드(actNmainss)는 해리성 결합·비정상 스펙트럼처럼 낱말을 옮긴다
+    "act4mainss": {"ko": "임계 상전이", "en": "Critical Phase Transition", "ja": "相変臨界"},   # 相变临界 (17장 · 7주년)
+    "act1football": {"ko": "진지 축구 토너먼트", "en": "Positional Football Championship",
+                     "ja": "ポジションサッカー選手権"},   # 阵地足球锦标 — 재화 설명 번역(cn-translations)과 같은 말
+    "act21mini": {"ko": "밀림의 응어리", "en": "Crux of the Jungle", "ja": "叢林症結"},          # 丛林症结
+    "act1arkhub": {"ko": "기상 순회전", "en": "Wondrous Exhibition", "ja": "奇象巡回展"},       # 奇象巡展 — 재화 설명과 같은 말
+    "act1dp": {"ko": "그림자를 좇는 즐거움", "en": "Chasing Shadows for Fun", "ja": "逐影集趣"},  # 逐影集趣
+}
+
 PROVISIONAL_NAMES = {
     "act3enemyduel": {"en": "Duel Channel: Ivyvine"},     # 듀얼 채널: 아이비바인 (일섭: アイビーヴァインシティ)
 }
@@ -220,7 +233,10 @@ def _loc_name(loc, info_loc, sname, aid):
     kr_nm = ((kr_basic_all.get(aid) or {}).get("name") or "").strip()
     nm = ((info_loc or {}).get("name") or "").strip()
     if loc != "ko" and (not nm or nm == kr_nm):
-        nm = (sname.get(loc) or "").strip() or (PROVISIONAL_NAMES.get(aid) or {}).get(loc) or nm
+        # 중섭 선행 때 붙인 이름(CN_ONLY_NAMES)도 본다:
+        # 한섭에 먼저 오면 글섭 표엔 아직 없어 EN 헤더에 '임계 상전이'가 한국어로 떴다 (2026-10-14)
+        nm = ((sname.get(loc) or "").strip() or (PROVISIONAL_NAMES.get(aid) or {}).get(loc)
+              or (CN_ONLY_NAMES.get(aid) or {}).get(loc) or nm)
     return (nm or kr_nm or aid).strip()
 
 
@@ -693,17 +709,7 @@ for eid, st in stories.items():
 #   이격 켈시·클로저가 오는 7주년 「相变临界」(4월 말 중섭, 2주)와 진지 축구·丛林症结·奇象巡展·逐影集趣가 빠져 있었다
 #   (사용자 제보 2026-10-01 "이격켈시랑 클로저 오는 이벤트는 어디간거야?"). 한섭이 건너뛴 중섭 전용 이벤트는
 #   한섭이 그 뒤 이벤트를 따라오는 순간 기준선 앞으로 밀려 저절로 빠진다.
-CN_ONLY_NAMES = {
-    "act3break": {"ko": "벡터 돌파#3 유사 생태", "en": "Vector Breakthrough #3: Pseudo-Ecology",
-                  "ja": "鋒矢突破#3 擬似生態"},
-    # 이하 2026-10-01 — 비공식 번역. 메인 사이드(actNmainss)는 해리성 결합·비정상 스펙트럼처럼 낱말을 옮긴다
-    "act4mainss": {"ko": "임계 상전이", "en": "Critical Phase Transition", "ja": "相変臨界"},   # 相变临界 (17장 · 7주년)
-    "act1football": {"ko": "진지 축구 토너먼트", "en": "Positional Football Championship",
-                     "ja": "ポジションサッカー選手権"},   # 阵地足球锦标 — 재화 설명 번역(cn-translations)과 같은 말
-    "act21mini": {"ko": "밀림의 응어리", "en": "Crux of the Jungle", "ja": "叢林症結"},          # 丛林症结
-    "act1arkhub": {"ko": "기상 순회전", "en": "Wondrous Exhibition", "ja": "奇象巡回展"},       # 奇象巡展 — 재화 설명과 같은 말
-    "act1dp": {"ko": "그림자를 좇는 즐거움", "en": "Chasing Shadows for Fun", "ja": "逐影集趣"},  # 逐影集趣
-}
+# CN_ONLY_NAMES 는 위로 옮겼다 (_loc_name 이 EN·JA 폴백으로 쓴다 — 행 루프보다 먼저 있어야 한다)
 if cn_act and cn_stage:
     import time as _time
     _now = _time.time()
