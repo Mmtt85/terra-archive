@@ -40,6 +40,7 @@ import { EnemyChip } from "./stage-detail";
 import { EnemyFile, type Enemy as DexEnemy, type EnemyLevel, type EnemyStages, type StatOverride } from "./enemy-detail";
 import { loadEnemies } from "./dex-cross";
 import { rogueProgress, useMe } from "./me-store";
+import { useFreeDrag } from "./free-drag";
 // 전투 노드 도면의 전투 카메라 (scripts/stagecams.py → rogue-cams.json, ~20KB) — 있으면 모달이
 // 도면·이동 경로를 한 화면으로 합친다 (사용자 요청 2026-09-23 "통합전략도 마찬가지로", 작전 도감과 같은 형식).
 import rogueCamsJson from "./data/rogue-cams.json";
@@ -1398,6 +1399,8 @@ export default function RogueGuide({ initialTopic }: {
     return () => { window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc); };
   }, [topicMenu]);
   const [zoneOpen, setZoneOpen] = useState<Zone | null>(null);
+  // 지도판 카드 끌어 옮기기 — 테마마다 따로, 판이 한 판으로 보이는 넓은 화면(1101px~, CSS .rg-mapfield)에서만 (사용자 지시 2026-10-15)
+  const free = useFreeDrag(topic, 1101);
   // 스크린샷 렌즈 도착 하이라이트 (전시관 카드) — applyTopic이 리셋하므로 여기(앞)에 선언
   const [lensHits, setLensHits] = useState<Set<string> | null>(null);
   // 다중 인식 아이템 모아보기 — 유물·도구·음반·시스템 항목 공통 필드 (2026-07-23)
@@ -3275,14 +3278,14 @@ export default function RogueGuide({ initialTopic }: {
           {/* 지도판 — 층 카드가 가운데에서 **역아치(∪)**를 그리고, 묶음 카드(조우 전투·기타
               노드·우연한 만남)가 그 왼쪽·오른쪽에 끼어든다 (사용자 지시 2026-09-20).
               좁은 화면에서는 이 판이 풀려 위아래 두 줄로 돌아간다 — CSS 쪽에 조건. */}
-          <div className="rg-mapfield">
+          <div className="rg-mapfield" ref={free.field}>
           {/* 층 카드 — 가로 일렬, 클릭하면 층 상세 모달 (사용자 확정 2026-07) */}
           <div className="rg-zone-cards">
           {archZones.map((z) => {
             const pairs = z.variant ? [] : (pairsByZone.get(z.num) ?? []).concat(trialPairsFor(z));
             const zoneBosses = z.variant ? [] : bossStages.filter((s) => s.zone === z.num);
             return (
-              <button type="button" key={z.id} className={`rg-zonecard${z.hidden ? " hidden-zone" : ""}`}
+              <button type="button" key={z.id} {...free.bind(z.id)} className={`rg-zonecard${z.hidden ? " hidden-zone" : ""}${free.bind(z.id).className}`}
                 onClick={() => setZoneOpen(z)}>
                 {z.img && <img className="rg-zonecard-bg" src={asset(`/rogue/zone/${z.bg ?? `${data.id}_map_${z.num}`}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                 <span className="rg-zone-num">{zoneBadge(z)}</span>
@@ -3302,7 +3305,7 @@ export default function RogueGuide({ initialTopic }: {
 
           {/* 쉐이의 잔식 — 역아치가 파인 위쪽 가운데(4층·5층 사이)에 작은 단추, 누르면 3×3 잔식 지도 창 */}
           {hasSky && (
-            <button type="button" className="rg-skybtn" onClick={() => setSkyOpen(true)}>
+            <button type="button" {...free.bind("sky")} className={`rg-skybtn${free.bind("sky").className}`} onClick={() => setSkyOpen(true)}>
               {/* 층 카드와 같은 배지 + 이름 (사용자 지시 2026-10-03 "비경을 N층이랑 똑같은 배지로, 밑에다가 쉐이의 잔식").
                   배경은 층 카드처럼 그림을 옅게 — 시비경에 들어갈 때의 전환 그림 (build-rogue.py --node-icons) */}
               <img className="rg-zonecard-bg" src={asset(`/rogue/zone/${data.id}_bg_zone_sky_1.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
@@ -3316,7 +3319,7 @@ export default function RogueGuide({ initialTopic }: {
           <div className="rg-sec-cards">
             {mapSections.filter((sec) => sec.show && !sec.side).map((sec) => (
               // '▸' 표시는 뺐다 — 지도판 카드에서 오른쪽 아래 개수와 겹쳐 보였다 (사용자 지시 2026-09-25 "필요 없을듯")
-              <button key={sec.id} type="button" className={`rg-sec-card${sec.bg && hasNodePlate(data.id, sec.bg) ? " plate" : ""}`}
+              <button key={sec.id} type="button" {...free.bind(`sec:${sec.id}`)} className={`rg-sec-card${sec.bg && hasNodePlate(data.id, sec.bg) ? " plate" : ""}${free.bind(`sec:${sec.id}`).className}`}
                 onClick={() => { setNtFocus(""); setSecOpen(sec.id); }}>
                 {/* 그 묶음의 노드에 게임 컬러 판이 있으면 층 카드처럼 옅게 깐다 — 4·5번째 테마 (사용자 지시 2026-10-03
                     "우연한 만남이나 외나무다리 버튼도 컬러 노드 있으면 그걸로 배경" → "정사각형이라 이상해짐, 직사각형으로" —
@@ -3338,7 +3341,7 @@ export default function RogueGuide({ initialTopic }: {
               const nb = bossStages.filter((s) => s.zone === z.num).length;
               const np = (pairsByZone.get(z.num) ?? []).length;
               return (
-                <button key={z.id} type="button" className="rg-sec-card" onClick={() => setZoneOpen(z)}>
+                <button key={z.id} type="button" {...free.bind(z.id)} className={`rg-sec-card${free.bind(z.id).className}`} onClick={() => setZoneOpen(z)}>
                   <h3>{zoneBadge(z)}</h3>
                   <span className="rg-zone-counts"><Nm name={z.name} cn={z.cn} /><br />
                     {[np > 0 && t("작전 {n}개", { n: np }), nb > 0 && t("보스 {n}개", { n: nb })].filter(Boolean).join(" · ")}</span>
@@ -3348,7 +3351,7 @@ export default function RogueGuide({ initialTopic }: {
             {/* 흑류수해 원더랜드 — 노드 설명은 '기타 노드' 창 맨 끝에 한 줄뿐이고 들어가는 히든 구역·유토피아 규칙은 전시관에
                 흩어져 있어 찾을 수가 없었다 (사용자 지적 2026-10-11). 미즈키 원더랜드처럼 지도판에 따로 카드 */}
             {data.portal && portalNode && (
-              <button type="button" className="rg-sec-card rg-wonder-card" onClick={() => setWonderOpen(true)}>
+              <button type="button" {...free.bind("wonder")} className={`rg-sec-card rg-wonder-card${free.bind("wonder").className}`} onClick={() => setWonderOpen(true)}>
                 {SQUARE_ICO_BG.has(data.id) && hasNodeIcon(data.id, "PORTAL") && (
                   <img className="rg-zonecard-bg rg-sec-icobg" src={asset(`/rogue/node/${data.id}/PORTAL.webp?v=2`)} alt="" aria-hidden loading="lazy" decoding="async" />
                 )}
@@ -3358,11 +3361,15 @@ export default function RogueGuide({ initialTopic }: {
             )}
           </div>
           </div>
-
-
-
-
-
+          {/* 지도판 카드는 끌어서 아무 데나 옮길 수 있다 (app/free-drag.tsx). 단추는 판 오른쪽 바깥(끌 수 없는 곳) — 사용자 지시 2026-10-15 */}
+          {/* 안 옮겼을 땐 '카드 이동 가능' 안내, 옮기면 '카드 배치 기본으로' 단추 (사용자 지시 2026-10-15) */}
+          {free.wide && (
+            <div className="rg-free-tools">
+              {free.custom
+                ? <button type="button" onClick={free.reset}>{t("카드 배치 기본으로")}</button>
+                : <span>{t("카드를 끌어 원하는 자리에 둘 수 있습니다")}</span>}
+            </div>
+          )}
 
           {/* 기타 노드 — 전투·우연한 만남 외 노드 타입 설명. 외나무다리 상세에 결투 전투 포함 (사용자 요청 2026-07-18) */}
           </>

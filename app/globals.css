@@ -27259,7 +27259,7 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 .me-seg button:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); color: var(--btn-ink-hover); }
 .me-seg button.selected { background: var(--btn-on-bg); border-color: var(--btn-on-line); color: var(--btn-on-ink); }
 
-/* 오퍼 목록 (공개모집·지원·친구·최근 영입) */
+/* 오퍼 목록 (공개모집·지원·친구·최근 얻은 오퍼) */
 .me-ops { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px 6px; }
 .me-ops button { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 2px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
 .me-ops button:hover .me-op-face { border-color: var(--border-strong); }
@@ -27714,7 +27714,7 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
 
 /* 스포 가리기 '내 진행 기준' 표시 (갤러리, 2026-10-06) — 카드마다 .spoil 이 붙는다(종전엔 격자 전체) */
 .gl-spoil-mine { margin-left: 6px; padding: 1px 6px; border-radius: var(--r-xs); background: var(--tint-lime); color: var(--tint-lime-ink); font-style: normal; font-size: 11px; font-weight: 700; }
-/* 내 정보 최근 영입 — 성급·직군 거르기 (오퍼 도감과 같은 AttributeFilter 드롭다운, 2026-10-06) */
+/* 내 정보 최근 얻은 오퍼 — 성급·직군 거르기 (오퍼 도감과 같은 AttributeFilter 드롭다운, 2026-10-06) */
 .me-recent-tools { display: flex; justify-content: flex-end; min-width: 0; }
 
 /* ── 생존연산 통합 검색 (app/sandbox.tsx uniHits, 2026-10-06) — 탭 줄 끝, 테크트리 바로 오른쪽. 통합전략(.rg-uni-*)과 같은 동작 ── */
@@ -30339,7 +30339,7 @@ html.dark .me-resume > button.has-bg::before { opacity: .26; }
 .me-rx-stat.hp .bar > i { background: #d9534f; }
 .me-rx-stat.ap .bar > i { background: #2f9bd6; }
 .me-rx-stat.gold > b { color: #c08a1e; }
-/* 내 정보 — 접어 둔 칸(진행 상황·친구·최근 영입·창고): 그림 깔린 버튼 → 누르면 창 (2026-10-11) */
+/* 내 정보 — 접어 둔 칸(진행 상황·친구·최근 얻은 오퍼·창고): 그림 깔린 버튼 → 누르면 창 (2026-10-11) */
 .me-drawers { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
 .me-drawers > button { position: relative; overflow: hidden; isolation: isolate; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 2px;
   min-height: 112px; padding: 12px 14px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; text-align: left; cursor: pointer;
@@ -30602,3 +30602,36 @@ html.dark .me-pf-art { opacity: .3; }
 .ap-kv { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; cursor: help; }
 .ap-kv b { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 .ap-kv b.warn { color: var(--danger); }
+
+/* 내 정보 — 오른쪽 열 카드 순서 끌어 바꾸기 (app/me-order.tsx, 2026-10-15) */
+.me-sortable { position: relative; min-width: 0; }
+.me-sortable:empty { display: none; }   /* 그릴 게 없는 칸(이어하기 없음 등)은 grid 틈을 만들지 않게 */
+.me-sort-handle { border: 0; background: none; padding: 0; margin: 0; color: inherit; font: inherit; line-height: inherit; letter-spacing: inherit;
+  text-align: left; cursor: grab; touch-action: none; }
+.me-sort-grip { margin-right: 6px; color: var(--muted); font-size: 14px; }
+.me-sort-handle:hover .me-sort-grip, .me-sort-handle:focus-visible .me-sort-grip { color: var(--ink); }
+.me-sort-handle:focus-visible { outline: 2px solid var(--lime-line); outline-offset: 2px; }
+.me-sorting, .me-sorting * { cursor: grabbing !important; user-select: none; }
+.me-sort-reset { justify-self: end; border: 0; background: none; padding: 2px 0; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.me-sort-reset:hover { color: var(--ink); }
+/* 끄는 동안 — 원래 칸은 놓일 자리에 반투명(미리 보기), 포인터를 따라오는 건 복사본(.me-drag-avatar) (app/me-order.tsx useLiveSort) */
+.me-sortable.dragging, .me-drawers > button.dragging { opacity: .32; }
+.me-drag-avatar { box-shadow: 0 12px 32px rgb(0 0 0 / .3); opacity: .96; }
+.me-sortable.me-drag-avatar > * { outline: 1px solid var(--lime-line); }
+.me-drawers > button.me-drag-avatar { border-color: var(--lime-line); }
+@media (prefers-reduced-motion: reduce) { .me-sortable, .me-drawers > button { transition: none !important; } }
+
+/* 통합전략 지도판 — 카드 끌어 옮기기 (app/free-drag.tsx, 2026-10-15). 정해진 칸 없이 놓은 곳에 그대로, 겹쳐도 둔다 */
+@media (min-width: 1101px) {
+  .rg-mapfield [data-free] { touch-action: none; }
+  .rg-mapfield [data-free].free-moved { z-index: 2; }
+  .rg-mapfield [data-free].free-dragging { z-index: 30; cursor: grabbing; box-shadow: 0 12px 32px rgb(0 0 0 / .35); transition: none !important; }
+}
+/* 판 오른쪽 바깥 — 끌 수 있는 판(.rg-mapfield) 밖 여백에 세로로 (사용자 지시 2026-10-15). .rg-map 기준 */
+.rg-map { position: relative; }
+.rg-free-tools { position: absolute; left: calc(100% + 14px); bottom: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.rg-free-tools button { border: 0; background: none; padding: 2px 0; color: var(--muted); font: inherit; font-size: 12px; white-space: nowrap; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px; }
+.rg-free-tools button:hover { color: var(--ink); }
+.rg-free-tools span { width: 9.5em; padding: 2px 0; color: var(--muted); font-size: 12px; line-height: 1.5; word-break: keep-all; }
+

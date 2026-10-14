@@ -31,6 +31,8 @@ const SYNC: { key: string; merge: "lww" | "entries" | "token" | "union" }[] = [
   { key: "terra-archive-infra-v3", merge: "lww" },      // 인프라 편성기 — 보유 오퍼 설정·편성·우선순위·배치
   { key: "terra-archive-infra-recycle", merge: "lww" }, // 인프라 재활용소 우선도
   { key: "ta:me-layout", merge: "lww" },
+  { key: "ta:me-order", merge: "lww" },
+  { key: "ta:rogue-map-pos", merge: "lww" },            // 통합전략 지도판 카드 자리 (app/free-drag.tsx, 2026-10-15)                 // 내 정보 카드 순서 (app/me-order.tsx, 2026-10-15)
   { key: "ta:story-pos", merge: "entries" },
   { key: "ta-feedback-token", merge: "token" },
   { key: "ta-feedback-extra", merge: "union" },

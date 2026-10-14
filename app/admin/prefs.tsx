@@ -11,7 +11,7 @@ type Result = { ok: boolean; found?: boolean; server?: string; uid?: string; key
 
 const SERVERS = [["kr", "한섭"], ["jp", "일섭"], ["en", "글섭"], ["cn", "중섭 직영"], ["bili", "중섭 B"]] as const;
 const LABEL: Record<string, string> = {
-  "ta:me-layout": "내 정보 맞춤 칸", "ta:story-pos": "스토리 읽은 위치", "ta-feedback-token": "제안 열람 코드", "ta-feedback-extra": "예전 열람 코드",
+  "ta:me-layout": "내 정보 맞춤 칸", "ta:me-order": "내 정보 카드 순서", "ta:rogue-map-pos": "통합전략 지도판 카드 자리", "ta:story-pos": "스토리 읽은 위치", "ta-feedback-token": "제안 열람 코드", "ta-feedback-extra": "예전 열람 코드",
   "ta-theme": "라이트·다크 모드", "ta-locale": "사이트 언어", "ta-include-future": "미래시 보기", "story-reader-prefs": "리더기 글자·삽화 크기",
   "story-reader-sound": "리더기 소리", "ta:gallery-spoiler": "갤러리 스포일러 가리기", "ta-recruit-prized": "공채 4★ 확정만", "ta:new-seen": "NEW 배지 본 기록",
   "terra-archive-infra-v3": "인프라 편성기 상태", "terra-archive-infra-recycle": "인프라 재활용소 우선도",

@@ -5,7 +5,7 @@
 //
 // 화면 구성 (넓은 화면 2단):
 //   왼쪽  — 박사 카드 · 재화 · 지원 유닛 · 기반시설
-//   오른쪽 — 한눈에 보기 · 성급별 육성 · 진행 상황(미클리어 작전) · 공개모집으로 채울 오퍼 · 친구 · 최근 영입
+//   오른쪽 — 한눈에 보기 · 공개모집으로 채울 오퍼 · 접은 칸(진행 상황·친구·최근 얻은 오퍼·창고) · 성급별 육성
 //   맨 아래 — 창고 전체
 // 로그인 폼은 제목 오른쪽 버튼 → 모달 (사용자 지시 같은 날). 로그인 전에는 가상의 계정으로 채운 예시 화면을 보여 준다.
 // 숫자 칸(한눈에 보기·성급별 육성)은 누르면 해당 오퍼 목록이 모달로 뜬다. 긴 목록은 몇 줄만 보이고 '전부 보기'로 편다.
@@ -35,6 +35,7 @@ import { MeShare } from "./me-share";
 import { openChecker, runningChecker } from "./stage-open";
 import { resetCloudPrefs } from "./cloud-prefs";
 import { Dropdown } from "./dropdown";
+import { NoSortHandle, SortColumn, SortHandle, useDrawerDrag, useMeOrder, type DrawerKey } from "./me-order";
 import { ACQUIRE_KEYS, ACQUIRE_LABEL, acquireOf, type AcquireKey } from "./op-acquire";
 import { CustomTileEditor, DEFAULT_LAYOUT, MAX_CUSTOM, evalTile, saveCustomTiles, tileLabel, useCustomTiles, useLayoutCustomized, type Cond, type CustomTile, type TileValue } from "./me-custom";
 
@@ -280,7 +281,7 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
 
 // 저장된 설정 완전 초기화가 지우는 것 — app/cloud-prefs.tsx SYNC 와 같은 목록 (제안 열람 코드는 남긴다)
 const RESET_ITEMS = [
-  "라이트·다크 모드", "사이트 언어", "미래시 보기", "내 정보 맞춤 칸", "스토리 읽은 위치",
+  "라이트·다크 모드", "사이트 언어", "미래시 보기", "내 정보 맞춤 칸", "내 정보 카드 순서", "통합전략 지도판 카드 자리", "스토리 읽은 위치",
   "리더기 글자·삽화 크기·소리", "인프라 자동편성기 — 보유 오퍼 설정·편성·우선순위·배치·재활용소",
   "공채 '4★ 이상 확정 조합만'", "갤러리 스포일러 가리기", "NEW 배지 본 기록",
 ];
@@ -440,16 +441,17 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
           <Support me={me} opById={opById} onShowOperator={onShowOperator} />
           <Rooms me={me} />
         </div>
-        <div className="me-col me-col-main">
-          <Kpis owned={owned} released={released} opById={opById} me={me} onList={openList} demo={demo} />
-          <Paused me={me} opById={opById} onShowOperator={onShowOperator} />
-          <RarityTable owned={owned} released={released} opById={opById} onList={openList} />
-          {/* 공개모집으로 채울 오퍼를 진행 상황 위로 (사용자 지시 2026-10-05) */}
-          <RecruitPool mine={mine} opById={opById} onShowOperator={onShowOperator} />
-          {/* 진행 상황·친구·최근 영입·창고는 바로 볼 일이 적어 버튼으로 접고 누르면 창으로 (사용자 지시 2026-10-11) */}
-          <Drawers me={me} now={now} owned={owned} opById={opById} stages={stages} items={items}
-            onOpenStage={openStage} onOpenItem={(i) => setOpenItem(i)} onShowOperator={onShowOperator} />
-        </div>
+        {/* 오른쪽 열 — 카드 머리의 손잡이(⠿)로 끌어 순서를 바꾼다, 순서는 설정 동기화로 이어진다 (사용자 지시 2026-10-15, app/me-order.tsx) */}
+        <SortColumn className="me-col me-col-main" blocks={{
+          summary: <Kpis owned={owned} released={released} opById={opById} me={me} onList={openList} demo={demo} />,
+          resume: <Paused me={me} opById={opById} onShowOperator={onShowOperator} />,
+          recruit: <RecruitPool mine={mine} opById={opById} onShowOperator={onShowOperator} />,
+          // 진행 상황·친구·최근 얻은 오퍼·창고는 바로 볼 일이 적어 버튼으로 접고 누르면 창으로 (사용자 지시 2026-10-11) — 묶음 안에서 좌우로도 옮긴다
+          drawers: <Drawers me={me} now={now} owned={owned} opById={opById} stages={stages} items={items}
+            onOpenStage={openStage} onOpenItem={(i) => setOpenItem(i)} onShowOperator={onShowOperator} />,
+          // 성급별 육성은 기본 순서에서 맨 밑 (사용자 지시 2026-10-15)
+          rarity: <RarityTable owned={owned} released={released} opById={opById} onList={openList} />,
+        }} />
       </div>
 
       {share && onShareClose && <MeShare me={me} owned={owned} released={released} opById={opById} stages={stages} items={items} onClose={onShareClose} />}
@@ -769,10 +771,11 @@ function Card({ no, title, aside, className, children }: { no: string; title: st
   return (
     <section className={`me-card${className ? ` ${className}` : ""}`}>
       <header className="me-card-head">
-        <div><span className="section-no">{no}</span><h3>{title}</h3></div>
+        <div><span className="section-no">{no}</span><h3><SortHandle>{title}</SortHandle></h3></div>
         {aside && <div className="me-card-aside">{aside}</div>}
       </header>
-      {children}
+      {/* 손잡이는 이 카드 머리에만 — 안쪽 카드(창 안 등)엔 안 생기게 끊는다 */}
+      <NoSortHandle>{children}</NoSortHandle>
     </section>
   );
 }
@@ -799,7 +802,7 @@ function MoreButton({ open, total, onToggle }: { open: boolean; total: number; o
 // ── 오퍼 목록 모달 본문 ──────────────────────────────────────
 // 거르기·정렬 — 오퍼 도감처럼 (사용자 지시 2026-10-14 "내 정보 보유 오퍼도 오퍼 도감처럼 필터링 및 정렬"):
 // 이름 검색 · 성급 · 직군 · 획득 구분(한정·통상·보상·공채·커널, op-acquire.ts) — 같은 줄 안은 하나라도(OR), 줄끼리는 모두(AND).
-// 정렬 기본은 들어온 순서(칸마다 정한 성급·레벨 순)이고, 계정 오퍼가 있는 목록만 레벨·잠재·최근 영입으로 바꿀 수 있다
+// 정렬 기본은 들어온 순서(칸마다 정한 성급·레벨 순)이고, 계정 오퍼가 있는 목록만 레벨·잠재·최근 얻은 순으로 바꿀 수 있다
 type OpSort = "base" | "level" | "potential" | "name" | "gain";
 const dropLabel = (name: string, picked: string | null) => (picked ? <>{name} · <b>{picked}</b></> : name);
 function OpListBody({ title, entries, opById, chars, onShowOperator }: { title: string; entries: ListEntry[]; opById: Map<string, MeOp>; chars?: Map<string, AccountChar>; onShowOperator?: (id: string) => void }) {
@@ -836,7 +839,7 @@ function OpListBody({ title, entries, opById, chars, onShowOperator }: { title: 
   if (rev) shown.reverse();
   const filtered = !!(nq || rar != null || jobs != null || acq != null);
   // '기본'은 목록에 두지 않는다 — 아무것도 안 고른 상태가 기본이고, 초기화로 돌아간다 (사용자 지시 2026-10-14)
-  const SORTS: [OpSort, string][] = [...(hasChars ? [["level", "레벨"], ["potential", "잠재"], ["gain", "최근 영입"]] as [OpSort, string][] : []), ["name", "이름"]];
+  const SORTS: [OpSort, string][] = [...(hasChars ? [["level", "레벨"], ["potential", "잠재"], ["gain", "최근 얻은 순"]] as [OpSort, string][] : []), ["name", "이름"]];
   return (
     <div className="me-list">
       <header className="me-list-head">
@@ -1567,9 +1570,8 @@ function Friends({ me, now, opById, onShowOperator, full }: { me: MeData; now: n
 type FriendAway = "all" | "1" | "2" | "3";
 type FriendSort = "online" | "name" | "level";
 
-// ── 접어 둔 칸 — 진행 상황·친구·최근 영입·창고 ──────────────────
+// ── 접어 둔 칸 — 진행 상황·친구·최근 얻은 오퍼·창고 ──────────────────
 // 바로 볼 일이 적어 그림 깔린 버튼으로 접고, 누르면 창에 그 카드를 통째로 띄운다 (사용자 지시 2026-10-11)
-type DrawerKey = "progress" | "friends" | "recent" | "depot";
 function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenItem, onShowOperator }: {
   me: MeData; now: number; owned: AccountChar[]; opById: Map<string, MeOp>; stages: StageDoc | null; items: ItemDoc | null;
   onOpenStage: (id: string) => void; onOpenItem: (i: DexItem) => void; onShowOperator?: (id: string) => void;
@@ -1577,6 +1579,7 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
   const { locale, t } = useI18n();
   const fmt = fmtOf(locale);
   const [open, setOpen] = useState<DrawerKey | null>(null);
+  const { drawers: drawerOrder } = useMeOrder();
   const p = me.profile;
   // 진행 상황 — 지금 메인 스토리 장의 대표 그림 (main_15-08 → 15장)
   const chap = /^main_(\d+)-/.exec(p?.status.progress ?? "")?.[1];
@@ -1588,7 +1591,7 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
   // 친구 — 가장 최근에 들어온 친구의 비서 오퍼 정예화 일러
   const friends = [...(p?.friends ?? [])].sort((a, b) => b.lastOnline - a.lastOnline);
   const fSec = friends.find((f) => f.secretary && opById.has(f.secretary))?.secretary;
-  // 최근 영입 — 맨 마지막에 들인 오퍼의 일러
+  // 최근 얻은 오퍼 — 맨 마지막에 들인 오퍼의 일러
   const latest = owned.filter((c) => c.gain).sort((a, b) => (b.gain ?? 0) - (a.gain ?? 0))[0];
   // 창고 — 가장 귀한 재료 몇 개의 아이콘을 겹쳐 깐다
   const inv = p?.inventory;
@@ -1605,16 +1608,22 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
     style: bg(asset(`/story/main_${chap && Number(chap) <= 17 ? chap : 17}.webp`)) });
   if (p) tiles.push({ key: "friends", label: "FRIENDS", head: t("친구"), sub: p.friends ? t("{n}명", { n: fmt(p.friends.length) }) : "—",
     style: fSec ? bg(asset(`/skin/full/${fSec}_1.webp`)) : undefined, cls: "art art-r" });
-  if (latest) tiles.push({ key: "recent", label: "RECENT", head: t("최근 영입"), sub: opById.get(latest.id)?.name ?? "",
+  if (latest) tiles.push({ key: "recent", label: "RECENT", head: t("최근 얻은 오퍼"), sub: opById.get(latest.id)?.name ?? "",
     style: bg(asset(`/skin/full/${latest.id}_1.webp`)), cls: "art" });
   if (inv) tiles.push({ key: "depot", label: "DEPOT", head: t("창고"), sub: t("{n}종", { n: fmt(Object.values(inv).filter((n) => n > 0).length) }), icons: depotIcons });
+  // 묶음 안 순서 — 끌어 옮긴 순서(app/me-order.tsx)
+  tiles.sort((a, b) => drawerOrder.indexOf(a.key) - drawerOrder.indexOf(b.key));
+  const dd = useDrawerDrag(tiles.map((x) => x.key), drawerOrder);
+  tiles.sort((a, b) => dd.display.indexOf(a.key) - dd.display.indexOf(b.key));   // 끄는 동안은 놓았을 때의 순서로 미리
   if (!tiles.length) return null;
   const title = (k: DrawerKey) => tiles.find((x) => x.key === k)?.head ?? "";
   return (
     <>
-      <div className="me-drawers">
+      {/* 다른 칸처럼 카드로 묶는다 — 제목을 잡으면 묶음째 옮겨진다 (사용자 지시 2026-10-15) */}
+      <Card no="MORE" title={t("더 보기")} className="me-drawers-card">
+      <div className={`me-drawers${dd.dragging ? " me-sorting" : ""}`} ref={dd.ref}>
         {tiles.map((x) => (
-          <button key={x.key} type="button" className={`${x.style ? "has-bg" : ""}${x.cls ? ` ${x.cls}` : ""}`} style={x.style} onClick={() => setOpen(x.key)}>
+          <button key={x.key} type="button" className={`${x.style ? "has-bg" : ""}${x.cls ? ` ${x.cls}` : ""}${dd.cls(x.key)}`} style={x.style} onClick={() => setOpen(x.key)} {...dd.bind(x.key)}>
             {x.icons && <span className="me-drawer-icons" aria-hidden>{x.icons.map((src) => <img key={src} src={src} alt="" width={64} height={64} loading="lazy" />)}</span>}
             <small className="section-no">{x.label}</small>
             {x.top && <span className="me-drawer-top">{x.top}</span>}
@@ -1623,7 +1632,9 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
           </button>
         ))}
       </div>
+      </Card>
       {open && (
+        <NoSortHandle>
         <ModalWindow label={title(open)} className={`operator-modal me-drawer-modal me-drawer-${open}`} onClose={() => setOpen(null)}>
           <div className="me-drawer-body">
             {open === "progress" && <Progress me={me} stages={stages} onOpenStage={onOpenStage} full />}
@@ -1632,12 +1643,13 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
             {open === "depot" && <Depot me={me} items={items} onOpen={onOpenItem} full />}
           </div>
         </ModalWindow>
+        </NoSortHandle>
       )}
     </>
   );
 }
 
-// ── 최근 영입 ────────────────────────────────────────────────
+// ── 최근 얻은 오퍼 ────────────────────────────────────────────────
 function Recent({ owned, opById, onShowOperator, full }: { owned: AccountChar[]; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void; full?: boolean }) {
   const { locale, t } = useI18n();
   const [all, setAll] = useState(false);
@@ -1679,7 +1691,7 @@ function Recent({ owned, opById, onShowOperator, full }: { owned: AccountChar[];
     </ul>
   );
   return (
-    <Card no="RECENT" title={t("최근 영입")} className="me-recent"
+    <Card no="RECENT" title={t("최근 얻은 오퍼")} className="me-recent"
       aside={(
         <div className="me-recent-tools">
           <AttributeFilter groups={[
@@ -1693,7 +1705,7 @@ function Recent({ owned, opById, onShowOperator, full }: { owned: AccountChar[];
       {!list.length && <p className="me-note">{t("조건에 맞는 오퍼가 없어요.")}</p>}
       {recentList(full ? list : list.slice(0, fold), true)}
       {!full && list.length > fold && <MoreButton open={false} total={list.length} onToggle={() => setAll(true)} />}
-      {all && <MoreModal title={t("최근 영입")} onClose={() => setAll(false)}>{recentList(list, false)}</MoreModal>}
+      {all && <MoreModal title={t("최근 얻은 오퍼")} onClose={() => setAll(false)}>{recentList(list, false)}</MoreModal>}
     </Card>
   );
 }
