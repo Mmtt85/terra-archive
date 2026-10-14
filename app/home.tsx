@@ -1500,8 +1500,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       bump(rarity, String(operator.rarity));
       bump(method, operator.position);            // 근거리/원거리
       bump(method, damageTypeOf(operator));       // 물리/마법
-      const ob = obtainOf(operator.id);
-      if (ob) bump(obtain, ob);
+      for (const ob of obtainCodesOf(operator.id)) bump(obtain, ob);
       for (const k of acquireOf(operator.id)) bump(acquire, k);
     }
     return { concept, faction, tag, job, sub, rarity, method, obtain, acquire };
@@ -2260,7 +2259,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       const matchesQuery = !keyword || normSearch([operator.name, operator.code, operator.job, operator.subProfession, operator.position, ...operator.combatTags, ...operator.factions, operator.reason, ...operator.aliases, ...operator.concepts, ...conceptNames].join(" ")).includes(keyword);
       // 조합은 모두 만족 — 종전 OR 이라 만렙+풀잠이 '둘 중 하나'로 넓어졌다
       const matchesOwn = !myChars || selectedOwn.length === 0 || selectedOwn.every((key) => ownMatch(key, operator, myChars.get(operator.id)));
-      const matchesObtain = selectedObtain.length === 0 || selectedObtain.includes(obtainOf(operator.id) ?? "");
+      const matchesObtain = selectedObtain.length === 0 || obtainCodesOf(operator.id).some((c) => selectedObtain.includes(c));
       const matchesAcquire = selectedAcquire.length === 0 || acquireOf(operator.id).some((k) => selectedAcquire.includes(k));
       return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesRarity && matchesQuery && matchesOwn && matchesObtain && matchesAcquire;
     });
@@ -3228,6 +3227,12 @@ const OBTAIN_LABEL: Record<string, string> = {
 };
 const OBTAIN_CODES = Object.keys(OBTAIN_LABEL);
 const obtainOf = (id: string): string | undefined => OBTAIN.ops[id]?.[0];
+/** 대표 경로 + 공개모집에도 나오면 공개모집 (사용자 지시 2026-10-14 "헤드헌팅·공개모집 둘 다 나오는 데는 두 개 다") */
+const obtainCodesOf = (id: string): string[] => {
+  const p = obtainOf(id);
+  if (!p) return [];
+  return p !== "recruit" && acquireOf(id).includes("recruit") ? [p, "recruit"] : [p];
+};
 /** 이벤트 배포 오퍼의 원 이벤트 — [id, 이름] */
 const obtainEventOf = (id: string, locale: Locale): [string, string] | null => {
   const ev = OBTAIN.ops[id]?.[1];
@@ -3383,7 +3388,7 @@ function OperatorCard({ operator, index, onSelect, mine }: { operator: Operator;
               <span><i>{t("소속")}</i>{operator.faction}</span>
               <span><i>{t("출신")}</i>{operator.birthplace ?? t("불명")}</span>
               <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
-              {obtainOf(operator.id) && <span><i>{t("획득")}</i>{obtainEventOf(operator.id, locale)?.[1] ?? t(OBTAIN_LABEL[obtainOf(operator.id)!])}</span>}
+              {obtainOf(operator.id) && <span><i>{t("획득")}</i>{obtainEventOf(operator.id, locale)?.[1] ?? obtainCodesOf(operator.id).map((c) => t(OBTAIN_LABEL[c])).join(" · ")}</span>}
             </span></small>
             {/* 태그도 한 줄 — 넘치면 줄바꿈이 아니라 흐른다(사용자 정정 2026-09-18) */}
             <div className="tags"><span className="tags-track">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</span></div>
@@ -3727,7 +3732,7 @@ function OperatorFile({ operator, includeFuture, operators, onRelated }: { opera
             {obtainOf(operator.id) && (() => {
               const ev = obtainEventOf(operator.id, locale);
               return (
-                <div><span>{t("획득 경로")}</span><b>{t(OBTAIN_LABEL[obtainOf(operator.id)!])}{ev && <> · <button type="button" className="fact-link" onClick={() => openEvent(ev[0])}>{`「${ev[1]}」`}</button></>}</b></div>
+                <div><span>{t("획득 경로")}</span><b>{obtainCodesOf(operator.id).map((c) => t(OBTAIN_LABEL[c])).join(" · ")}{ev && <> · <button type="button" className="fact-link" onClick={() => openEvent(ev[0])}>{`「${ev[1]}」`}</button></>}</b></div>
               );
             })()}
             <div><span>{t("전투 태그")}</span><b>{operator.combatTags.length ? operator.combatTags.join(" · ") : t("태그 없음")}</b></div>
