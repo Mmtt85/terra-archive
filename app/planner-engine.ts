@@ -3431,13 +3431,34 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   // 못 건드린다. 결과적으로 사무실은 **원시 레퍼런스 속도**(페넌스 50·하루카 45)로만 줄 세워진다.
   // 누가 나은지는 방 점수가 아니라 기지 총점이 판정할 문제이므로, buildPlan이 남긴 밀려난
   // 명단(crowdedOut)을 시드로 넣은 변형을 만들어 planScore로 고른다.
+  // ⚠ 미니 토큰 조합도 시드와 **함께** 다시 잰다 (2026-10-14, 크랙본 실장 뒤 검출): 미니 조합
+  // (tokenChoice)은 맨 앞 기초안 — 세트·시드 없음 — 에서 한 번 정해 고정되는데, 그 판정과
+  // 이 시드는 서로 얽혀 있다. 주술 결정(지에윈)이 들어오면 시드 단계의 지에윈이 로즈몬티스
+  // 방에 앉아 위스퍼레인 시드안이 지고(2139.33 < 2142.85), 빠지면 반대로 위스퍼레인이 이긴다.
+  // 고정된 조합으로 시드만 바꿔 보던 종전 탐색은 "주술 결정 포함 + 멀베리"(마무리 후 2146.25)를
+  // 못 보고 "주술 결정 제외 + 위스퍼레인"(2146.10)에 머물렀다 — 국소해였다. 그래서 시드마다
+  // (그리고 시드 없이도) 미니 토큰을 **하나씩 넣고 뺀** 조합을 같이 지어 planScore로 고른다.
+  // 멱집합 대신 한 개씩 뒤집기만 — 미니 ≤3개라 시드 2명 × 4안 + 시드 없음 3안 = 최대 11회.
+  // 밀려난 생성원이 없으면 이 블록은 아예 안 돈다 (기존 편성 불변).
   {
     const tried = new Set<string>(bestSeeds.map((s) => s.opId));
-    for (const ex of (best.crowdedOut ?? []).filter((c) => !tried.has(c.opId)).slice(0, 2)) {
-      await breathe();
-      const plan = buildPlan(tokenChoice, effRoster, bestSets, priority, [...bestSeeds, ex], false, false, pinnedDorms, roomPins);
-      const score = planScore(plan, byId);
-      if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [...bestSeeds, ex]; }
+    const crowded = (best.crowdedOut ?? []).filter((c) => !tried.has(c.opId)).slice(0, 2);
+    if (crowded.length) {
+      const baseTokens = tokenChoice;
+      const baseSeeds = bestSeeds;
+      const toggled = minis.map((mini) => (baseTokens.includes(mini)
+        ? baseTokens.filter((token) => token !== mini)
+        : open.filter((token) => token === mini || baseTokens.includes(token))));
+      const trials: { tokens: string[]; seeds: { opId: string; room: string }[] }[] = [
+        ...toggled.map((tokens) => ({ tokens, seeds: baseSeeds })),
+        ...crowded.flatMap((ex) => [baseTokens, ...toggled].map((tokens) => ({ tokens, seeds: [...baseSeeds, ex] }))),
+      ];
+      for (const trial of trials) {
+        await breathe();
+        const plan = buildPlan(trial.tokens, effRoster, bestSets, priority, trial.seeds, false, false, pinnedDorms, roomPins);
+        const score = planScore(plan, byId);
+        if (score > bestScore) { best = plan; bestScore = score; bestSeeds = trial.seeds; tokenChoice = trial.tokens; }
+      }
     }
   }
   // ── 자기 소비 사슬 전환자 제외 변형 (사용자 지적 2026-07-29: "슈 지에윈 빼고 더 효율 좋은

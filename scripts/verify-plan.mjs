@@ -322,17 +322,45 @@ console.log("");
 // 로즈몬티스가 생각의 사슬로 바꿔 생산력으로 쓴다. 한 홉만 따라가던 종전 엔진은 감지 정보를
 // **직접** 만들지 않는 위스퍼레인을 사슬에서 통째로 빠뜨려, 사무실을 원시 레퍼런스 속도로만
 // 줄 세웠다(멀베리). 여러 홉 추적 + 밀려난 생성원 시드 변형으로 총점 2049.7 → 2060.7.
+// 2026-10-14 변경: 종전엔 "풀 로스터 사무실 = 위스퍼레인"을 봤는데, 크랙본 실장 뒤 멀베리안
+// (주술 결정 포함)이 엔진 총점으로 0.15점 높다(2146.25 > 2146.10). 그 멀베리안은 크랙본이
+// 없어도 2146.25였다 — 예전 채택안(위스퍼레인)은 미니 토큰 조합을 시드와 따로 정하던 탐색의
+// 국소해였다. 누가 사무실에 앉는지는 총점이 정할 일이므로, 이제 ⓐ 위스퍼레인을 시드하면
+// 사슬 원장이 제대로 실리는지(여러 홉 추적) ⓑ 채택안이 위스퍼레인 시드안보다 낮지 않은지
+// (밀려난 생성원 시드 변형이 제 몫을 하는지)를 본다.
 console.log("");
 {
+  const WHISPR = "char_436_whispr";
   const plan = await planFor("full", "gold");
-  const hire = plan.assignments.HIRE?.[0] ?? [];
-  const chain = plan.flows.find((f) => f.token === "생각의 사슬");
-  const gen = chain?.generators.find((g) => g.opId === "char_436_whispr");
+  const res = await engine.optimizeConfig(rosters.full, "gold");
+  const effRoster = engine.autoRoster(rosters.full).filter((op) => !res.excluded.includes(op.id));
+  const byIdFull = new Map(engine.autoRoster(rosters.full).map((op) => [op.id, op]));
+  // 위스퍼레인 시드안 — 채택안과 같은 전략에 사무실 시드만 더하고, 미니 토큰(참가자 ≤4)을
+  // 하나씩 넣고 뺀 조합까지 지어 그중 최고점을 비교 상대로 삼는다 (엔진 탐색과 같은 범위)
+  const seed = { opId: WHISPR, room: "HIRE" };
+  const minis = [...new Set(rosters.full.flatMap((op) => op.skills.flatMap((sk) => sk.tokenUse.filter((u) => u.percent).map((u) => u.token))))]
+    .filter((token) => rosters.full.filter((op) => op.skills.some((sk) =>
+      sk.tokenGen.some((g) => g.token === token) || sk.tokenUse.some((u) => u.token === token))).length <= 4);
+  const tokenSets = [res.tokenChoice, ...minis.map((mini) => (res.tokenChoice.includes(mini)
+    ? res.tokenChoice.filter((t) => t !== mini) : [...res.tokenChoice, mini]))];
+  engine.setPriorityMode("gold");
+  engine.setCapCluster(res.capCluster);
+  engine.setShiftTiebreak(res.shiftTiebreak);
+  const seeded = tokenSets.map((tokens) => engine.buildPlan(tokens, effRoster, res.factionSets, "gold",
+    [...res.seeds.filter((s) => s.opId !== WHISPR), seed], true, res.park));
+  engine.setCapCluster(true);
+  engine.setShiftTiebreak(true);
+  const seededScores = seeded.map((p) => engine.planScore(p, byIdFull));
+  const adoptedScore = engine.planScore(plan, byIdFull);
+  const bestSeeded = Math.max(...seededScores);
+  const sp = seeded[0];
+  const gen = sp.flows.find((f) => f.token === "생각의 사슬")?.generators.find((g) => g.opId === WHISPR);
   const checks = [
-    ["여러 홉 사슬 — 위스퍼레인이 사무실 (풀 로스터)", hire.includes("char_436_whispr")],
-    ["위스퍼레인의 기억 조각이 생각의 사슬로 계상", !!gen && gen.via === "기억 조각" && gen.amount > 0],
+    ["위스퍼레인 시드안 — 사무실에 앉음", (sp.assignments.HIRE?.[0] ?? []).includes(WHISPR)],
+    ["위스퍼레인의 기억 조각이 생각의 사슬로 계상 (시드안)", !!gen && gen.via === "기억 조각" && gen.amount > 0],
     // 경로 전환자 명단(위스퍼레인 자신 + 로즈몬티스)이 실려야 원장 재집계가 사슬 생사를 판정한다
-    ["경로 전환자 명단(need) 기록", !!gen?.need?.includes("char_391_rosmon") && !!gen?.need?.includes("char_436_whispr")],
+    ["경로 전환자 명단(need) 기록 (시드안)", !!gen?.need?.includes("char_391_rosmon") && !!gen?.need?.includes(WHISPR)],
+    [`채택안 총점 ≥ 위스퍼레인 시드안 (${adoptedScore.toFixed(2)} ≥ ${bestSeeded.toFixed(2)})`, adoptedScore >= bestSeeded - 1e-6],
   ];
   for (const [name, ok] of checks) { console.log(`${ok ? "✓" : "✗"} ${name}`); if (!ok) failed += 1; }
 }
@@ -426,4 +454,4 @@ console.log("");
 }
 
 if (failed) { console.error(`\n✗ 검사 ${failed}건 실패`); process.exit(1); }
-console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 반사실 전략 재현 3건 + 노시스 오라 2건 + 용량 변환 비중첩·자동화 7건 + 여러 홉 사슬 3건 + 자동편성 제외 2건 + 교차방 오라 7건 + 발전소 간주 7건 전부 통과`);
+console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 반사실 전략 재현 3건 + 노시스 오라 2건 + 용량 변환 비중첩·자동화 7건 + 여러 홉 사슬 4건 + 자동편성 제외 2건 + 교차방 오라 7건 + 발전소 간주 7건 전부 통과`);
