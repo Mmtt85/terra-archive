@@ -32,16 +32,18 @@ function ConfirmDialog({
 }: ConfirmOptions & { onConfirm: () => void; onCancel: () => void; onAlt: () => void }) {
   const { t } = useI18n();
   const okRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    okRef.current?.focus();
+    // 되돌릴 수 없는 동작(danger)은 '취소'에 초점을 두고 Enter 로 실행하지 않는다 — '저장된 설정 완전 초기화'가 Enter 한 번에 지워질 뻔했다 (2026-10-14)
+    (danger ? cancelRef : okRef).current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onCancel();
-      else if (event.key === "Enter") onConfirm();
+      else if (event.key === "Enter" && !danger) onConfirm();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onConfirm, onCancel]);
+  }, [onConfirm, onCancel, danger]);
 
   return (
     <div className="modal-backdrop confirm-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onCancel(); }}>
@@ -49,7 +51,7 @@ function ConfirmDialog({
         {title && <h3 className="confirm-title">{title}</h3>}
         <p className="confirm-message">{message}</p>
         <div className="confirm-actions">
-          {!alert && <button type="button" className="confirm-cancel" onClick={onCancel}>{cancelLabel ?? t("취소")}</button>}
+          {!alert && <button type="button" ref={cancelRef} className="confirm-cancel" onClick={onCancel}>{cancelLabel ?? t("취소")}</button>}
           {altLabel && <button type="button" className="confirm-cancel" onClick={onAlt}>{altLabel}</button>}
           <button type="button" ref={okRef} className={`confirm-ok${danger ? " danger" : ""}`} onClick={onConfirm}>{confirmLabel ?? t("확인")}</button>
         </div>

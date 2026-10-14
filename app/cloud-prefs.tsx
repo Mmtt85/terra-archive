@@ -38,6 +38,9 @@ const SYNC: { key: string; merge: "lww" | "entries" | "token" | "union" }[] = [
 const asList = (raw: string | null): string[] => { try { const v = JSON.parse(raw ?? "[]"); return Array.isArray(v) ? v.filter((x) => typeof x === "string") : []; } catch { return []; } };
 const META = "ta:pref-meta";   // { 키: 마지막으로 고친 시각 } — 이 브라우저 기준
 const POLL_MS = 4000;
+// 올리기는 모아서 — 바뀐 걸 찾는 건 4초마다(로컬 문자열 비교라 공짜)지만, 계정 저장소(KV)에 쓰는 건 1분에 한 번 + 탭을 닫거나 다른 창으로
+// 갈 때만. KV 무료 플랜은 하루 쓰기 1,000번이라, 4초마다 쓰면 하루 로그인 160명(2026-10-14 실측)이 스토리만 읽어도 넘었다 (사용자 지적 2026-10-15)
+const PUSH_EVERY_MS = 60_000;
 
 type Meta = Record<string, number>;
 const readMeta = (): Meta => { try { return JSON.parse(localStorage.getItem(META) ?? "{}") as Meta; } catch { return {}; } };
@@ -121,8 +124,11 @@ export default function CloudPrefs() {
       pulled = true;
     };
 
+    let lastPush = 0;
     const push = async (keepalive = false) => {
       if (!token || !pulled || !dirty.size) return;
+      if (!keepalive && Date.now() - lastPush < PUSH_EVERY_MS) return;   // 1분 안에 또 바뀐 건 모았다가 다음 번에
+      lastPush = Date.now();
       const meta = readMeta();
       const keys: Record<string, PrefEntry> = {};
       for (const k of dirty) keys[k] = { t: meta[k] ?? Date.now(), d: get(k) };
