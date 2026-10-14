@@ -9,7 +9,7 @@
 // 기간 7·30·90일은 원장에서, '1년'은 매일 밤 말아 둔 일별 집계표에서 읽는다. 원장은 기간으로 자르지 않고
 // DB 가 80% 차면 오래된 것부터 지운다(docs/supabase-visits.sql visits_maintain).
 
-import { Who } from "./who";
+import { Who, refreshPlayers } from "./who";
 import { createPortal } from "react-dom";
 import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
@@ -982,6 +982,7 @@ export function VisitsPanel() {
   const [status, setStatus] = useState("");
   const [missing, setMissing] = useState(false);
   const [tick, setTick] = useState(0);
+  useEffect(() => { if (tick) refreshPlayers(); }, [tick]);   // 방문자 ↔ 게임 계정 표도 같이 다시 받는다
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   // 받아오는 중 표시 (사용자 지시 2026-10-04) — 요약·세션 두 갈래 중 하나라도 돌면 새로고침 버튼이 '불러오는 중'으로 바뀐다
   const [loadMain, setLoadMain] = useState(false);

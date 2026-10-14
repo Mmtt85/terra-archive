@@ -4,7 +4,7 @@
 // 내 정보로 로그인한 계정의 설정(app/cloud-prefs.tsx 가 올린 것)을 계정 워커 KV 에서 읽는다 — /api/prefs (admin-api 워커·dev 중계가 관리자 키를 붙인다)
 import { useState } from "react";
 import { Dropdown } from "../dropdown";
-import storiesData from "../data/stories.json";
+import findMeta from "../data/story-find-meta.json";
 
 type Entry = { t: number; d: string | null };
 type Result = { ok: boolean; found?: boolean; server?: string; uid?: string; keys?: Record<string, Entry>; at?: number | null; error?: string };
@@ -12,8 +12,14 @@ type Result = { ok: boolean; found?: boolean; server?: string; uid?: string; key
 const SERVERS = [["kr", "한섭"], ["jp", "일섭"], ["en", "글섭"], ["cn", "중섭 직영"], ["bili", "중섭 B"]] as const;
 const LABEL: Record<string, string> = {
   "ta:me-layout": "내 정보 맞춤 칸", "ta:story-pos": "스토리 읽은 위치", "ta-feedback-token": "제안 열람 코드", "ta-feedback-extra": "예전 열람 코드",
+  "ta-theme": "라이트·다크 모드", "ta-locale": "사이트 언어", "ta-include-future": "미래시 보기", "story-reader-prefs": "리더기 글자·삽화 크기",
+  "story-reader-sound": "리더기 소리", "ta:gallery-spoiler": "갤러리 스포일러 가리기", "ta-recruit-prized": "공채 4★ 확정만", "ta:new-seen": "NEW 배지 본 기록",
+  "terra-archive-infra-v3": "인프라 편성기 상태", "terra-archive-infra-recycle": "인프라 재활용소 우선도",
 };
-const STORY_NAME = new Map((storiesData as unknown as { events: { id: string; name: { ko: string } }[] }).events.map((e) => [e.id, e.name.ko]));
+// 큰 값은 접어 둔다 — 열면 보인다
+const BIG = new Set(["terra-archive-infra-v3", "ta:new-seen", "ta-feedback-token", "ta-feedback-extra"]);
+// 이야기 이름 — 메인 스토리(main_N)까지 다 있는 대사 검색 목록에서 (stories.json 에는 메인 장이 없다)
+const STORY_NAME = new Map((findMeta as unknown as { ko: { id: string; name: { ko: string } }[] }).ko.map((e) => [e.id, e.name.ko]));
 const when = (ms: number) => new Date(ms).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
 
 function Body({ k, d }: { k: string; d: string | null }) {
@@ -30,7 +36,8 @@ function Body({ k, d }: { k: string; d: string | null }) {
     );
   }
   if (k === "ta:me-layout" && Array.isArray(v)) {
-    return <ol className="ap-list">{v.map((x: { id?: string; label?: string; key?: string; kind?: string }, i) => <li key={x.id ?? i}>{x.label ?? x.key ?? x.id} <span className="vz-note">({x.kind})</span></li>)}</ol>;
+    return <ol className="ap-list">{v.map((x: { id?: string; label?: string; labelKey?: string; key?: string; kind?: string }, i) => (
+      <li key={x.id ?? i}>{x.label || x.labelKey || x.key || x.id}{x.kind && <span className="vz-note"> · {x.kind === "builtin" ? "기본 칸" : "직접 만든 칸"}</span>}</li>))}</ol>;
   }
   return <pre className="ap-pre">{JSON.stringify(v, null, 1)}</pre>;
 }
@@ -52,13 +59,12 @@ export default function PrefsPanel() {
   };
   return (
     <section className="vz">
-      <h2>UID 로 사이트 설정 보기</h2>
-      <p className="vz-note">내 정보로 로그인한 계정이 이 사이트에 저장해 둔 설정 — 맞춤 칸·스토리 읽은 위치·제안 열람 코드 (app/cloud-prefs.tsx)</p>
-      <div className="ap-search">
+      <div className="vz-head"><h3 className="vz-h">UID 로 사이트 설정 보기<small> — 내 정보로 로그인한 계정이 저장해 둔 설정 (app/cloud-prefs.tsx)</small></h3></div>
+      <div className="admin-tools ap-search">
         <Dropdown ariaLabel="서버" label={SERVERS.find(([v]) => v === server)?.[1] ?? server} selected={[server]}
           items={SERVERS.map(([v, l]) => ({ value: v, label: l }))} onPick={setServer} />
         <input value={uid} onChange={(e) => setUid(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void search(); }} placeholder="UID (예: 07799010)" inputMode="numeric" />
-        <button type="button" className="vz-refresh" onClick={() => void search()} disabled={busy}>{busy ? "찾는 중…" : "찾기"}</button>
+        <button type="button" onClick={() => void search()} disabled={busy}>{busy ? "찾는 중…" : "찾기"}</button>
       </div>
       {res && !res.ok && <p className="vz-note">못 읽었습니다 — {res.error}</p>}
       {res?.ok && !res.found && <p className="vz-note">{res.server}:{res.uid} — 저장된 설정이 없습니다 (아직 이 기능이 생긴 뒤 로그인·동기화를 안 했다).</p>}
@@ -66,7 +72,7 @@ export default function PrefsPanel() {
         <>
           <p className="vz-note">{res.server}:{res.uid}{res.at ? ` · 마지막 저장 ${when(res.at)}` : ""}</p>
           {Object.entries(res.keys ?? {}).map(([k, e]) => (
-            <details key={k} className="ap-item" open={k !== "ta-feedback-token"}>
+            <details key={k} className="ap-item" open={!BIG.has(k)}>
               <summary><b>{LABEL[k] ?? k}</b> <span className="vz-note">{k} · {when(e.t)} · {(e.d ?? "").length}자</span></summary>
               <Body k={k} d={e.d} />
             </details>

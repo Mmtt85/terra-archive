@@ -11,8 +11,11 @@ let byCode: Map<string, Player> | null = null;
 let loading: Promise<void> | null = null;
 const subs = new Set<() => void>();
 
-function load(): void {
-  if (loading) return;
+let loadedAt = 0;
+function load(force = false): void {
+  if (loading && !force) return;
+  if (force && Date.now() - loadedAt < 5_000) return;   // 같은 순간 여러 번 불려도 한 번만
+  loadedAt = Date.now();
   loading = fetch("/api/visits/visit_player?select=visitor,server,uid,at&order=at.desc&limit=10000")
     .then((r) => (r.ok ? r.json() : []))
     .then((rows: { visitor: string; server: string; uid: string }[]) => {
@@ -24,6 +27,8 @@ function load(): void {
     .finally(() => { subs.forEach((f) => f()); });
 }
 const subscribe = (f: () => void) => { subs.add(f); load(); return () => { subs.delete(f); }; };
+/** 다시 받기 — 방문 통계 새로고침(단추·10초 자동)과 함께. 처음 한 번만 받으면 그 뒤에 로그인한 사람이 계속 방문자 코드로 남았다 (2026-10-14) */
+export function refreshPlayers(): void { load(true); }
 
 /** 방문자 코드(전체 또는 앞 8자) → 로그인한 게임 계정, 모르면 null */
 export function usePlayerOf(visitor: string | null | undefined): Player | null {
