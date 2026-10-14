@@ -6,6 +6,7 @@
 // 요약이 있는 이벤트만 카드가 열리고, 상세는 #story-<id> 해시로 공유·뒤로가기 가능.
 // 본문의 인물·용어는 점선 밑줄로 표시하고, 마우스오버(데스크탑)·탭(모바일)하면 설명 카드가
 // 뜬다 (`useEntityPeek` — 2026-07-25에 종전 오른쪽 참조 레일을 대체).
+import { nickifyDeep, useNick } from "./nickname";
 import { confirmedDay, fmtMonthDay } from "./kr-confirmed";
 import { usePageHelp } from "./page-help";
 import { NewBadge } from "./new-badge";
@@ -983,7 +984,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
       .catch(() => { if (alive) setLoreErr(true); });
     return () => { alive = false; };
   }, [event.id, hasLore, mode, locale, lore, loreErr]);
-  const [script, setScript] = useState<ScriptData | null>(null);
+  const [rawScript, setScript] = useState<ScriptData | null>(null);
   const [scriptErr, setScriptErr] = useState(false);
   // 전문 언어: 현재 로케일 버전이 있으면 그 언어, 없으면 KR로 폴백 (EN/JA는 /story/script/<loc>/)
   const scriptLoc = locale !== "ko" && scriptIdsByLocale[locale]?.has(event.id) ? locale : "ko";
@@ -997,6 +998,9 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
       .catch(() => { if (alive) setScriptErr(true); });
     return () => { alive = false; };
   }, [event.id, hasScript, scriptLoc]);
+  // {@nickname} → 로그인한 게임 닉네임 / 박사·Doctor·ドクター (app/nickname.ts) — 전문·리더기 둘 다 이 script 를 쓴다
+  const nick = useNick();
+  const script = useMemo(() => (rawScript ? nickifyDeep(rawScript, scriptLoc, nick) : rawScript), [rawScript, scriptLoc, nick]);
   // 모드 전환도 URL 해시에 남긴다 (사용자 요청 2026-07-22) — replaceState라 뒤로가기 히스토리는 안 쌓인다.
   //  · 전문 = 접미 없음(#story-<id>) — ScriptReader가 마운트되며 ep1부터, 이후 에피소드 전환은 자체적으로 /ep<N> 기록
   //  · AI 요약 = #story-<id>/summary

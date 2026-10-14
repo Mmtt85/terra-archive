@@ -10,6 +10,7 @@ import { lazy, startTransition, Suspense, useCallback, useEffect, useLayoutEffec
 import storyEventsData from "./data/stories.json";
 import obtainData from "./data/op-obtain.json";
 import { ACQUIRE_KEYS, ACQUIRE_LABEL, acquireOf, type AcquireKey } from "./op-acquire";
+import { nickifyDeep, useNick } from "./nickname";
 import { openEvent } from "./event-open";
 // 탭 본문은 전부 지연 로드한다 (INP 조사 2026-08-09). 종전엔 정적 import라 **어느 탭을
 // 열든 모든 탭의 코드와 데이터를 받아서 파싱**했다 — /stories가 오퍼 DB 1.8MB를, /infra가
@@ -4889,7 +4890,10 @@ const profileCache = new Map<string, ProfileDoc | null>();
 function ProfileSection({ operator }: { operator: Operator }) {
   const { locale, t } = useI18n();
   const key = `${locale}/${operator.id}`;
-  const [doc, setDoc] = useState<ProfileDoc | null | undefined>(() => profileCache.get(key));
+  const [rawDoc, setDoc] = useState<ProfileDoc | null | undefined>(() => profileCache.get(key));
+  // {@nickname} → 로그인한 게임 닉네임 / 박사 (app/nickname.ts)
+  const nick = useNick();
+  const doc = useMemo(() => (rawDoc ? nickifyDeep(rawDoc, locale, nick) : rawDoc), [rawDoc, locale, nick]);
 
   useEffect(() => {
     if (profileCache.has(key)) { setDoc(profileCache.get(key)); return; }
@@ -4955,7 +4959,9 @@ function RecordSection({ operator, operators, onRelated }: {
   const { locale, t } = useI18n();
   const key = `${locale}/${operator.id}`;
   const known = recordIds.has(operator.id);
-  const [doc, setDoc] = useState<RecordDoc | null | undefined>(() => (known ? recordCache.get(key) : null));
+  const [rawDoc, setDoc] = useState<RecordDoc | null | undefined>(() => (known ? recordCache.get(key) : null));
+  const nick = useNick();
+  const doc = useMemo(() => (rawDoc ? nickifyDeep(rawDoc, locale, nick) : rawDoc), [rawDoc, locale, nick]);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
   useEffect(() => {
@@ -5091,7 +5097,9 @@ const VOICE_HEAD = 12; // 처음 보이는 줄 수 — 오퍼당 최대 114줄�
 function VoiceSection({ operator }: { operator: Operator }) {
   const { locale, t } = useI18n();
   const key = `${locale}/${operator.id}`;
-  const [doc, setDoc] = useState<VoiceDoc | null | undefined>(() => voiceCache.get(key));
+  const [rawDoc, setDoc] = useState<VoiceDoc | null | undefined>(() => voiceCache.get(key));
+  const nick = useNick();
+  const doc = useMemo(() => (rawDoc ? nickifyDeep(rawDoc, locale, nick) : rawDoc), [rawDoc, locale, nick]);
   const [all, setAll] = useState(false);
 
   useEffect(() => {

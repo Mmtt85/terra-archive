@@ -131,13 +131,15 @@ def fetch_txt_cached(path):
     return txt
 
 
-# 인라인 마크업 제거 — <p=2>·</>·<color=…>·<i> 류. {@nickname} 은 플레이어 호칭 '박사'.
+# 인라인 마크업 제거 — <p=2>·</>·<color=…>·<i> 류. {@nickname} 은 표식 그대로 둔다 (app/nickname.ts).
 MARKUP = re.compile(r"</?[@$a-zA-Z][^>]*>|</>")
 
 def clean(s):
-    s = re.sub(r"\{@nickname\}", NICKNAME, s, flags=re.I)  # 플레이어 호칭 (언어별: 박사/Doctor/ドクター)
+    # 플레이어 호칭은 **표식 그대로** 남긴다 — 화면(app/nickname.ts)이 로그인한 사람은 게임 닉네임으로, 아니면 박사/Doctor/ドクター 로
+    # 바꿔 넣는다 (사용자 지시 2026-10-14). 종전엔 여기서 '박사'로 바꿨는데 한국어 원문이 거의 "{@nickname} 박사"라 "박사 박사"가 445곳 생겼다
+    s = re.sub(r"\{@nickname\}", "{@nickname}", s, flags=re.I)
     s = s.replace("{@nbs}", " ")          # 비개행 공백 토큰 → 일반 공백 (예: "Ave Mujica")
-    s = re.sub(r"\{@[^}]*\}", "", s)        # 그 외 미처리 제어 토큰({@...}) 제거
+    s = re.sub(r"\{@(?!nickname\})[^}]*\}", "", s)   # 그 외 미처리 제어 토큰({@...}) 제거
     s = MARKUP.sub("", s)
     s = re.sub(r"[ \t]{2,}", " ", s)        # 토큰 제거로 생긴 이중 공백 정리
     s = s.replace("\\n", "\n").replace("\r", "")

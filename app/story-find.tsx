@@ -8,6 +8,7 @@
 // 실제로 맞춰 본다. 흔한 말("켈시")은 후보가 많으니 결과가 RESULT_CAP 줄을 넘으면 멈추고 '더 찾기'.
 // 정규화·조각 규칙·해시는 build-story-find.py 와 자구까지 같아야 한다.
 
+import { nickify, useNick } from "./nickname";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
 import { useI18n } from "./i18n";
@@ -78,6 +79,7 @@ export default function StoryFindWindow({ onClose, onOpen }: {
   onOpen: (id: string, ep: number, line: number, name: string) => void;
 }) {
   const { locale, t } = useI18n();
+  const nick = useNick();
   const loc = (locale === "en" || locale === "ja" ? locale : "ko") as "ko" | "en" | "ja";
   const { term, inputProps, inputRef } = useSearchInput();
   const q = useMemo(() => norm(term), [term]);
@@ -111,7 +113,8 @@ export default function StoryFindWindow({ onClose, onOpen }: {
       const add: Group[] = [];
       batch.forEach((si, bi) => {
         const hits: Hit[] = [];
-        for (const [ep, line, who, text] of texts[bi]) {
+        for (const [ep, line, who, raw] of texts[bi]) {
+          const text = nickify(raw, loc, nick);   // {@nickname} → 닉네임 / 박사 (app/nickname.ts) — 강조 위치가 어긋나지 않게 바꾼 뒤에 찾는다
           const m = normMap(text);
           const at = m.n.indexOf(q);
           if (at < 0) continue;

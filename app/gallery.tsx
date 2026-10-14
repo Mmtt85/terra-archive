@@ -8,6 +8,7 @@
 // 보기 선택(CG·스탠딩·일러스트)은 해시(#cg·#sprite·#illust)로 — 프리렌더는 언제나 CG 라, 딥링크 첫 페인트는
 // data-hashswap 가리개 + useLayoutEffect 로 맞춘다 (new-screen 점검표 §1).
 
+import { nickifyDeep, useNick } from "./nickname";
 import { DynVideo, dynPoster, hasDyn } from "./dyn-illust";
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { asset, storyCutUrl } from "./assets";
@@ -101,7 +102,7 @@ function charMatch(c: GChar, path: string[], opById: Map<string, GalleryOp>): bo
   return !a || (c.s ?? []).includes(Number(a));
 }
 
-export default function Gallery({ doc, operators, includeFuture, onShowOperator, onOpenEvent }: {
+export default function Gallery({ doc: rawDoc, operators, includeFuture, onShowOperator, onOpenEvent }: {
   doc: GalleryDoc; operators: GalleryOp[]; includeFuture?: boolean;
   /** 오퍼 상세 모달 — 페이지를 넘기지 않고 그 자리에 (사용자 지시 2026-10-04) */
   onShowOperator?: (id: string) => void;
@@ -109,6 +110,9 @@ export default function Gallery({ doc, operators, includeFuture, onShowOperator,
   onOpenEvent?: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
+  // CG 설명의 대사(스토리 전문에서 온 것)에 {@nickname} 이 있다 — 닉네임 / 박사로 (app/nickname.ts)
+  const nick = useNick();
+  const doc = useMemo(() => nickifyDeep(rawDoc, locale, nick), [rawDoc, locale, nick]);
   const [view, setView] = useState<View>("cg");
   const { term, clear, inputProps } = useSearchInput();
   // 분류 — 한 갈래씩 좁혀 가는 계층 (작전 도감과 같은 규약: 같은 단계는 하나만, 다시 누르면 해제)
