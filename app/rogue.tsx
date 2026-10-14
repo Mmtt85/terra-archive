@@ -2598,6 +2598,11 @@ export default function RogueGuide({ initialTopic }: {
       if (live && oc.rogueScreen === "runStart" && !squadLocked.current) fixSquad();
       // 판 시작 화면(분대 선택·모집 조합 선택·초기 모집)엔 노드가 없다 — 지난 판·잘못 잡힌 노드를 비운다 (2026-10-13)
       if (live && (oc.rogueScreen === "runStart" || oc.rogueScreen === "squadSelect")) { setLiveNode(null); setBridgePipNode(null); }
+      // 탐험 로비 — 판 밖이라 알아볼 게 없다. 작은 창 노드 칸에 '탐험을 시작하면 인식됩니다' 안내 (사용자 지시 2026-10-14)
+      if (live && oc.rogueScreen === "lobby") {
+        setLiveNode(null);
+        setBridgePipNode({ kind: t("안내"), name: t("탐험 로비"), text: t("탐험을 시작하면 그때부터 화면을 인식합니다.") });
+      }
       // 노드를 고르지 않은 지도 화면 — 지나간 노드(작전·조우)를 비운다
       if (live && oc.rogueScreen === "map" && oc.target.kind === "none" && !oc.battle && !oc.rogueNode) { setLiveNode(null); setBridgePipNode(null); }
       // 기타 노드(교활한 상인·앞서 출발 등)를 고른 지도 화면 — 노드 칸에 그 노드 (사용자 지시 2026-10-13)
@@ -2625,6 +2630,9 @@ export default function RogueGuide({ initialTopic }: {
         setLensInitial(oc);
         noteBridge(t("테마 되묻기"));
         flashLensMsg(null);
+      } else if (oc.rogueScreen === "lobby") {
+        noteBridge(t("탐험 로비"));
+        flashLensMsg(t("탐험 로비 화면입니다 — 탐험을 시작하면 그때부터 화면을 인식합니다."), 4000);
       } else {
         noteBridge(oc.battle ? t("전투 중") : t("못 찾음"));
         flashLensMsg(t("인식된 정보가 없습니다 — 분대·유물·조우·작전 화면을 캡처해 보세요."), 3000);

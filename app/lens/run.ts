@@ -232,7 +232,7 @@ export function warmData(mode: LensMode, locale = "ko", cnTopic?: string): void 
 export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, locale = "ko",
   opts?: { lock?: boolean; live?: boolean; cnTopic?: string }): Promise<LensOutcome> {
   let lines: string[];
-  let rogueScreenOut: "map" | "runStart" | "squadSelect" | undefined;
+  let rogueScreenOut: "map" | "runStart" | "squadSelect" | "lobby" | undefined;
   let rogueNodeOut: string | undefined;
   let oc: LensOutcome;
   if (mode === "recruit") {
@@ -504,7 +504,7 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // 화면 전체 읽기에 이미 잡힌 왼쪽 아래 구석 숫자를 쓴다. 좌표는 0~1 정규화 (session.boxes)
     let hudGrade: number | null = null;
     let comboScreen = false;
-    let rogueScreen: "map" | "runStart" | "squadSelect" | undefined;
+    let rogueScreen: "map" | "runStart" | "squadSelect" | "lobby" | undefined;
     {
       const bx = session.boxes();
       const topN = bx.filter((b) => b.y1 < 0.2).map((b) => normText(b.text));
@@ -513,6 +513,13 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       if (topN.some((x) => x.includes("모집조합선택"))) { rogueScreen = "runStart"; comboScreen = true; }
       else if (topN.some((x) => x.includes("초기모집"))) rogueScreen = "runStart";
       else if (topN.some((x) => x.includes("분대선택"))) rogueScreen = "squadSelect";
+      // 탐험 로비(테마 첫 화면 — 계속 탐험·탐험 시작·심층 탐험·방문객 명단·정기 작전) — 판 밖이라 알아볼 게 없다.
+      // 판정을 통째로 비우고 '탐험을 시작하면 인식됩니다' 안내를 띄운다 (틀렸어요 2026-10-14 "아예 인식이 안 돼요" — 로비 화면이었다)
+      else {
+        const all = bx.map((b) => normText(b.text)).join("|");
+        const LOBBY = ["계속탐험", "탐험시작", "탐험포기", "심층탐험", "방문객명단", "정기작전", "안내책자"];
+        if (LOBBY.filter((k) => all.includes(k)).length >= 2) { rogueScreen = "lobby"; comboScreen = true; }
+      }
       const zoneEntries = index.entries.filter((e) => e.section === "zone" && (!topic || e.topic === topic));
       const drop = new Set<string>();
       for (const b of bx) {

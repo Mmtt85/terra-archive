@@ -80,7 +80,7 @@ export type LensOutcome = {
   battle?: boolean;
   /** 통합전략 화면 종류 (PaddleOCR HUD 판독, run.ts) — map: 위쪽 HUD 에 층 이름이 보이는 지도·노드 화면 · runStart: '초기 모집'
    *  (분대·난이도가 왼쪽 아래에 이미 정해져 있다) · squadSelect: '분대 선택' (새 판). 상시 창이 노드 비우기·분대 확정에 쓴다 */
-  rogueScreen?: "map" | "runStart" | "squadSelect";
+  rogueScreen?: "map" | "runStart" | "squadSelect" | "lobby";
   /** 지도에서 고른 기타 노드(nodeTypes id) — 교활한 상인·앞서 출발 등 (run.ts) */
   rogueNode?: string;
   // 전투 입장 암전 화면 (평균 밝기가 낮다) — 리플레이가 "노드를 눌러 봤다"와

@@ -2570,6 +2570,10 @@ const D: Record<string, Pair> = {
   "커널 오퍼": ["Kernel", "カーネル"],
   "필터 초기화": ["Reset filters", "フィルターをリセット"],
   "이름 검색": ["Search name", "名前で検索"],
+  // PRTS 링크 — 통합전략 탐험 로비 (2026-10-14)
+  "탐험 로비": ["Exploration lobby", "探索ロビー"],
+  "탐험을 시작하면 그때부터 화면을 인식합니다.": ["Recognition starts once you begin an exploration.", "探索を始めると、そこから画面を認識します。"],
+  "탐험 로비 화면입니다 — 탐험을 시작하면 그때부터 화면을 인식합니다.": ["This is the exploration lobby — recognition starts once you begin an exploration.", "探索ロビー画面です — 探索を始めると、そこから画面を認識します。"],
   "스테이지 클리어 현황": ["Stage clear status", "ステージクリア状況"],
   "× {n}개 획득 가능": ["× {n} to earn", "× {n}個 獲得可能"],
   "지금 들어갈 수 있는 작전 중 아직 3성(완료)을 못 받은 작전에서 처음 한 번 주는 순오리지늄 — 돌격 작전·스토리 작전 포함": [
