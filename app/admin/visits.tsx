@@ -60,7 +60,8 @@ export type Summary = {
   };
 };
 type TrendRow = { day: string; sessions: number; human_sessions: number; visitors: number; new_visitors: number; views: number; active_ms: number };
-type SessView = { path: string; hash: string | null; t0: number | null; vis: number; act: number; scroll: number | null; out: string | null };
+type SessView = { path: string; hash: string | null; t0: number | null; vis: number; act: number; scroll: number | null; out: string | null;
+  /** 헤더 이벤트 칩 클릭 — 화면이 아니라 동선 사이에 끼우는 표식 (withChips) */ chip?: string };
 const whenShort = (at: string) => new Date(at).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
 /** PRTS 링크 기록을 연결·해제 한 쌍으로 묶는다 (사용자 지시 2026-10-11 — 따로 한 줄씩 나와 읽기 어려웠다).
  *  방문자마다 시간순으로 훑어 연결 뒤 처음 오는 해제를 짝으로 삼는다. 기간 앞에서 잘린 해제는 연결 시각이 비고,
@@ -282,11 +283,32 @@ function groupTrail(views: SessRow["views"]): TrailItem[] {
   const out: TrailItem[] = [];
   let i = 0;
   while (i < views.length) {
-    const f = familyOf(views[i].path, views[i].hash);
+    const f = views[i].chip ? null : familyOf(views[i].path, views[i].hash);   // 칩 표식은 묶지 않는다
     let j = i + 1;
-    while (f && j < views.length && !views[j - 1].out && familyOf(views[j].path, views[j].hash)?.key === f.key) j += 1;
+    while (f && j < views.length && !views[j - 1].out && !views[j].chip && familyOf(views[j].path, views[j].hash)?.key === f.key) j += 1;
     out.push(f && j - i >= 2 ? { kind: "group", start: i, end: j, label: f.label } : { kind: "one", i });
     i = j;
+  }
+  return out;
+}
+
+/** 헤더 이벤트 칩 클릭(visit_event ev_chip)을 동선 사이에 끼운다 — 따로 표·뱃지를 두지 않고 그 자리에 (사용자 지시 2026-10-14
+ *  "세션 타임라인 >> 사이에 넣어줘"). 누른 시각 뒤에 처음 시작한 화면(보통 그 칩이 연 이벤트 창) 바로 앞에 놓는다.
+ *  detail = 이벤트 id · 위수 협의 칩 'promo:<탭>' · 중섭 칩 'cn:<id>' · 펼친 목록 줄 'menu:<id>' */
+function withChips(s: SessRow): SessRow["views"] {
+  const chips = (s.events ?? []).filter((e) => e.kind === "ev_chip");
+  if (!chips.length) return s.views;
+  const start = Date.parse(s.at);
+  const out = [...s.views];
+  for (const e of [...chips].reverse()) {
+    const raw = e.detail ?? "";
+    const [pre, id] = raw.includes(":") ? [raw.slice(0, raw.indexOf(":")), raw.slice(raw.indexOf(":") + 1)] : ["", raw];
+    const name = pre === "promo" ? (SECTION_KO[id] ?? id) : (STORY_NAME.get(id) ?? id);
+    const t = (Date.parse(e.at) - start) / 1000;
+    const at = out.findIndex((v) => !v.chip && (v.t0 ?? 0) >= t - 1);
+    const mark: SessView = { path: "", hash: `#chip-${raw}`, t0: t, vis: 0, act: 0, scroll: null, out: null,
+      chip: `헤더 이벤트 칩 · ${name}${pre === "cn" ? " (중섭)" : pre === "menu" ? " (목록)" : ""}` };
+    out.splice(at < 0 ? out.length : at, 0, mark);
   }
   return out;
 }
@@ -762,7 +784,7 @@ function SessionLine({ s, hit }: { s: SessRow; hit?: boolean }) {
   // 아직 안 나간 세션 — 열린 탭은 1분마다 기록을 보내므로(visit-track.ts BEAT_MS) 마지막 수신이 2분 안이면 '조작 중'.
   // DB 함수가 옛판이라 last_at 이 없으면 시작 시각 + 마지막 화면의 시작·보인 시간으로 어림한다 (사용자 지시 2026-10-10)
   const live = sessLive(s);
-  const trail = mergeRepeats(s.views);
+  const trail = mergeRepeats(withChips(s));
   const fbLink = useContext(FbLinkCtx);
   return (
     <li className={`${(s.kind ?? (s.human ? "human" : "bot")) === "bot" ? "bot" : ""}${hit ? " vz-fb-hit" : ""}`}>
@@ -796,6 +818,7 @@ function SessionLine({ s, hit }: { s: SessRow; hit?: boolean }) {
           // 화면 한 칸 — 묶음 안에서는 계열 이름(앞머리)을 떼고 뒤쪽만
           const step = (i: number, strip?: string) => {
             const v = trail[i];
+            if (v.chip) return <span key={i} className="vz-step vz-chip" title={new Date(Date.parse(s.at) + (v.t0 ?? 0) * 1000).toLocaleTimeString("ko-KR", { hour12: false })}>⚑ {v.chip}</span>;
             const full = pathLabel(v.path, v.hash);
             // 묶음 이름 뒤쪽만 — '오퍼레이터 · 스토리 · X · 19화' 처럼 앞에 다른 화면 이름이 붙어 있어도 찾아서 뗀다
             const at = strip ? full.indexOf(`${strip} · `) : -1;
@@ -1435,9 +1458,7 @@ export function VisitsPanel() {
           )}
 
           {/* PRTS 틀렸어요 (2026-10-12) — 인식 표는 걷어냈다 (아래 PrtsWrong) */}
-          <PrtsWrong {...top("prtsWrong")} from={rangeArgs?.p_from ?? isoAt(spanStart ?? Math.floor(Date.now() / 60_000) * 60_000 - days * 86400_000)} to={rangeArgs?.p_to ?? "infinity"} />
-          {/* 헤더 이벤트 칩 (2026-10-14 사용자 지시 "헤더 이벤트 버튼 눌러서 띄우는 것도 통계로") — visit_event ev_chip */}
-          <EvChips from={rangeArgs?.p_from ?? isoAt(spanStart ?? Math.floor(Date.now() / 60_000) * 60_000 - days * 86400_000)} to={rangeArgs?.p_to ?? "infinity"} />
+          <PrtsWrong {...top("prtsWrong")} tick={tick} from={rangeArgs?.p_from ?? isoAt(spanStart ?? Math.floor(Date.now() / 60_000) * 60_000 - days * 86400_000)} to={rangeArgs?.p_to ?? "infinity"} />
 
           <div className="vz-cols">
             <div>
@@ -1508,54 +1529,13 @@ export function VisitsPanel() {
 // PRTS 인식 표(합계·결과별·구역별·최근 기록)는 걷어냈다 (사용자 지시 2026-10-12 "인식표 그건 걍 지우자. 받지도 말자" —
 // 인식마다 한 줄씩 쌓여 하루 3천 줄, 그 표 하나가 5초씩 걸려 관리자 화면이 느려졌다). 이제 인식 기록은 '틀렸어요'를 누를 때만
 // 오고(bridge.ts markBridgeWrong), 여기는 그 목록만 가벼운 함수(visits_prts_wrong — 틀렸어요 줄에서 출발)로 받는다
-type EvChipRec = { id: string; n: number; people: number; last: string };
-/** 헤더 진행 중 이벤트 칩·목록 줄 클릭 — 이벤트별 횟수·사람 수 (DB 함수 visits_ev_chips, 2026-10-14). 함수가 없으면 칸을 안 그린다 */
-function EvChips({ from, to }: { from: string; to: string }) {
-  const [d, setD] = useState<EvChipRec[] | null>(null);
-  const [names, setNames] = useState<Record<string, string>>({});
-  useEffect(() => {
-    let alive = true;
-    rpc<EvChipRec[] | null>("visits_ev_chips", { p_from: from, p_to: to })
-      .then((r) => { if (alive) setD(r ?? []); })
-      .catch(() => { if (alive) setD(null); });
-    return () => { alive = false; };
-  }, [from, to]);
-  // 이벤트 이름 — 칸을 열 때만 이벤트 표(400KB)를 받는다
-  useEffect(() => {
-    if (!d?.length) return;
-    void import("../data/events.json").then((m) => {
-      const map: Record<string, string> = {};
-      for (const e of (m.default as { events: { id: string; n: string }[] }).events) map[e.id] = e.n;
-      setNames(map);
-    });
-  }, [d]);
-  if (!d) return null;
-  const label = (id: string) => {
-    const [pre, rest] = id.includes(":") ? [id.split(":")[0], id.slice(id.indexOf(":") + 1)] : ["", id];
-    const where = pre === "menu" ? "펼친 목록" : pre === "cn" ? "중섭 칩" : pre === "promo" ? "기간 한정 칩" : "칩";
-    return <>{names[rest] ?? rest} <span className="vz-note">· {where}</span></>;
-  };
-  const total = d.reduce((a, r) => a + r.n, 0);
-  return (
-    <>
-      <Head title="헤더 이벤트 칩" sub={`클릭 ${num(total)}회 · 라이브만 (2026-10-14부터 기록)`} />
-      {!d.length ? <p className="vz-note">이 기간에는 헤더 이벤트 칩 클릭이 없습니다.</p> : (
-        <div className="vz-tablewrap"><table className="vz-table">
-          <thead><tr><th>이벤트</th><th>클릭</th><th>사람</th><th>마지막</th></tr></thead>
-          <tbody>{d.map((r) => <tr key={r.id}><td title={r.id}>{label(r.id)}</td><td>{num(r.n)}</td><td>{num(r.people)}</td><td>{whenShort(r.last)}</td></tr>)}</tbody>
-        </table></div>
-      )}
-    </>
-  );
-}
-
 type PrtsWrongRec = { /** 틀렸어요 줄 id — 지우기 단추 (2026-10-13~, SQL 미적용이면 없다) */ id?: string; at: string; visitor: string | null; topic: string | null; result: string | null; section: string | null;
   target: string | null; note: string | null; seen: string | null; cached: boolean | null; shot: string | null; env: string | null;
   /** 그 인식의 판정 + OCR 이 읽은 줄 (JSON 파일 주소, 2026-10-13~) */ ocr?: string | null;
   /** 누른 사람이 적은 한 줄 메모 (틀렸어요 모달, 2026-10-13~) */ memo?: string | null };
 const RESULT_KO: Record<string, string> = { goto: "바로 이동", tie: "후보 여럿", none: "못 읽음", battle: "전투 화면", unreported: "결과 안 옴" };
 
-function PrtsWrong({ from, to, top, setTop }: { from: string; to: string; top: number; setTop: (n: number) => void; onAll?: () => void }) {
+function PrtsWrong({ from, to, tick, top, setTop }: { from: string; to: string; tick: number; top: number; setTop: (n: number) => void; onAll?: () => void }) {
   const [d, setD] = useState<PrtsWrongRec[] | null>(null);
   const [all, setAll] = useState(false);   // 전체 보기 창 — 받아 온 목록이 여기 있어 창도 여기서 연다
   // 지우기 — 대응을 마친 틀렸어요를 목록에서 없앤다 (사용자 지시 2026-10-13 "대응완료하면 지울 수 있게"). DB 함수 visits_prts_wrong_delete
@@ -1584,7 +1564,7 @@ function PrtsWrong({ from, to, top, setTop }: { from: string; to: string; top: n
       .then((r) => { if (alive) setD(r ?? []); })
       .catch(() => { if (alive) setD(null); });
     return () => { alive = false; };
-  }, [from, to]);
+  }, [from, to, tick]);
   if (!d) return null;   // 함수가 아직 없거나(SQL 미적용) 받기 실패 — 칸을 그리지 않는다
   return (
     <>

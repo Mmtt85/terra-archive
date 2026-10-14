@@ -9799,6 +9799,8 @@ html.dark .vz {
 .vz-step small { color: var(--muted); font: 600 11px var(--mono); margin-left: 3px; }
 .vz-step.out { background: none; border: 1px dashed var(--border-hover); font-weight: 600; }
 .vz-step.exit { background: none; color: var(--muted); font-weight: 600; }
+/* 헤더 이벤트 칩 클릭 — 화면이 아니라 동선 사이의 표식 (admin/visits.tsx withChips, 2026-10-14) */
+.vz-step.vz-chip { background: none; border: 1px dashed var(--line); color: var(--ink2); font-weight: 600; }
 
 /* ── 재료 파밍 효율표 탭 ─────────────────────────────── */
 .farm {
