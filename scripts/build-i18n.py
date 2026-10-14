@@ -328,9 +328,21 @@ def build_locale(prefix):
     # 그 오퍼가 미래시(중섭 선행)로 실려 있던 동안 쓰던 그 언어 이름(ケルシー・エスペランタ 등)을 이어 쓴다
     # (2026-10-14 한섭 큰 점검 — JA 오퍼 도감에 신규 5명 이름이 한글로 나갈 뻔했다)
     try:
-        _prev_names = {o["id"]: o.get("name") for o in json.load(open(f"{REPO}/app/data/operators.{C['out']}.json", encoding="utf-8"))}
+        _prev_ops = {o["id"]: o for o in json.load(open(f"{REPO}/app/data/operators.{C['out']}.json", encoding="utf-8"))}
     except (OSError, ValueError, KeyError, TypeError):
-        _prev_names = {}
+        _prev_ops = {}
+    _prev_names = {k: v.get("name") for k, v in _prev_ops.items()}
+
+    def _carry(cur, prev):
+        """같은 자리의 글자 칸이 지금은 한국어 폴백인데 예전 파일엔 그 언어 글이 있으면 그걸 이어 쓴다 — 미래시(중섭 선행)로
+        실려 있던 동안의 번역(세부 직군·태그·소속·스킬·재능 등). 모양이 다르면(목록 길이 등) 그 칸은 손대지 않는다 (2026-10-14)"""
+        if isinstance(cur, dict) and isinstance(prev, dict):
+            return {k: (_carry(v, prev[k]) if k in prev and k not in ("id", "code", "aliases", "image", "accent", "concepts") else v) for k, v in cur.items()}
+        if isinstance(cur, list) and isinstance(prev, list) and len(cur) == len(prev):
+            return [_carry(x, y) for x, y in zip(cur, prev)]
+        if isinstance(cur, str) and isinstance(prev, str) and HANGUL.search(cur) and not HANGUL.search(prev) and prev.strip():
+            return prev
+        return cur
     for op in kr_ops:
         cid = op["id"]
         c = chars.get(cid)
@@ -358,6 +370,8 @@ def build_locale(prefix):
             # 오는 값이라 그 표에 없으면 방법이 없다 — KR 폴백을 그대로 둔다.
             fb["job"] = C["job"].get(op.get("jobCode"), op["job"])
             fb["position"] = C["position"].get(op["position"], op["position"])
+            if cid in _prev_ops:
+                fb = _carry(fb, _prev_ops[cid])
             ops_out.append(fb)
             names[cid] = fb["name"]
             continue
