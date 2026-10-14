@@ -196,11 +196,11 @@ const MANUAL_EVENTS = [
   // zone_table zoneValidInfo(act3enemyduel_zone1)와도 같다. until = 종료일.
   { id: "act3enemyduel", name: "듀얼 채널: 아이비바인", type: "ENEMY_DUEL", displayType: "NONE",
     start: "2026-09-23T07:00:00.000Z", end: "2026-10-06T18:59:59.000Z", until: "2026-10-07" },
-  // 2026-10-14 한섭 큰 점검 — 메인 17장 이벤트 '임계 상전이'(11:00 개방). 레포 activity_table 이 아직 못 따라와
-  // 헤더 진행 중 이벤트 칩이 비었다. 값은 게임 CDN activity_table 그대로(type TYPE_MAINSS · displayType NONE),
-  // zone_table zoneValidInfo(act4mainss_zone1)와도 같다. until = 종료일
+  // 2026-10-14 한섭 큰 점검 — 메인 17장 이벤트 '임계 상전이'. 레포 activity_table 이 아직 못 따라와
+  // 헤더 진행 중 이벤트 칩이 비었다. 종료는 게임 CDN activity_table 그대로(type TYPE_MAINSS · displayType NONE).
+  // 개방은 데이터(11:00)가 아니라 실제 16:00 — 사용자 교정 2026-10-14. 아래 EVENT_OVERRIDES 에도 같은 값. until = 종료일
   { id: "act4mainss", name: "임계 상전이", type: "TYPE_MAINSS", displayType: "NONE",
-    start: "2026-10-14T02:00:00.000Z", end: "2026-10-27T18:59:59.000Z", until: "2026-10-28" },
+    start: "2026-10-14T07:00:00.000Z", end: "2026-10-27T18:59:59.000Z", until: "2026-10-28" },
 ];
 
 // 실데이터를 **덮어쓰는** 자리 (2026-08-25). MANUAL_EVENTS는 activity_table에 아직 없는
@@ -212,6 +212,9 @@ const EVENT_OVERRIDES = [
   // 공지 https://cafe.naver.com/arknightskor/1246570 — 개방 8/27(목) 04:00은 실데이터와 같다.
   // 종료는 KR 관례대로 업데이트 당일(목) 03:59 = 2026-09-10 03:59 KST.
   { id: "act41sre", until: "2026-09-11", end: "2026-09-09T18:59:59.000Z" },
+  // 메인 17장 이벤트 '임계 상전이' — activity_table·zone_table 은 10/14 11:00 개방이지만 실제 개방은 16:00
+  // (사용자 교정 2026-10-14). 레포 표가 따라와 MANUAL_EVENTS 가 밀려나도 16:00 이 유지되게.
+  { id: "act4mainss", until: "2026-10-28", start: "2026-10-14T07:00:00.000Z" },
 ];
 
 async function fetchEvents() {
