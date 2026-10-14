@@ -635,6 +635,42 @@ for loc, _, suf in LOCALES:
     json.dump(by_loc[loc], open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"  {os.path.basename(p)}: {len(by_loc[loc]['stages'])}개 {os.path.getsize(p)//1024}KB")
 
+# 남은 순오리지늄 (2026-10-14, 제안 d4c30874 "남은 광산 계산기") — 처음 3성(완료) 때 한 번 주는 순오리지늄(diamondOnceDrop).
+# 내 정보 '스테이지 클리어 현황'이 계정의 작전 상태(3 미만)와 맞춰 센다. 돌격(#f#)·스토리 작전(st_)은 작전 도감에 없어 따로 싣는다.
+# ids = 작전 id(개수는 1 — 아닌 것만 n 에) · ref = 열림 판정에 쓸 도감 작전 id 가 자기(돌격은 #f# 뗀 것)와 다를 때만,
+# ""면 상시(메인·막간·일일). 이벤트 작전은 같은 구역의 도감 작전으로 기간을 본다
+_site_ids = {e["id"] for e in by_loc["ko"]["stages"]}
+_zone_ref = {}
+for sid, kv in tables["ko"].items():
+    if sid in _site_ids and kv.get("zoneId"):
+        _zone_ref.setdefault(kv["zoneId"], sid)
+_op_rows = []
+for sid, kv in tables["ko"].items():
+    n = kv.get("diamondOnceDrop") or 0
+    if not n:
+        continue
+    base = sid[:-3] if sid.endswith("#f#") else sid
+    if base in _site_ids:
+        ref = base
+    elif kv.get("stageType") in ("MAIN", "SUB", "DAILY"):
+        # 상시 — 같은 구역 도감 작전이 있으면 그걸로(메인은 언제나 열림 판정이라 같고, '어디서 얻나' 목록이 그 장 묶음에 든다)
+        ref = _zone_ref.get(kv.get("zoneId"), "")
+    else:
+        ref = _zone_ref.get(kv.get("zoneId"))
+        if ref is None:
+            continue   # 도감에 없는 옛 이벤트 구역 — 열렸는지 알 수 없어 뺀다
+    _op_rows.append([sid, n, ref])
+_op_rows.sort()
+_op_doc = {"ids": [r[0] for r in _op_rows],
+           "n": {r[0]: r[1] for r in _op_rows if r[1] != 1},
+           "ref": {r[0]: r[2] for r in _op_rows if r[2] != (r[0][:-3] if r[0].endswith("#f#") else r[0])},
+           # 도감에 없는 작전(스토리 작전 st_·이벤트 _st)의 [코드, 이름] — '어디서 얻나' 목록에 쓴다
+           "nm": {r[0]: [clean(tables["ko"][r[0]].get("code")) or r[0], clean(tables["ko"][r[0]].get("name")) or ""]
+                  for r in _op_rows if (r[0][:-3] if r[0].endswith("#f#") else r[0]) not in _site_ids}}
+_op_path = os.path.join(DATA, "stage-op.json")
+json.dump(_op_doc, open(_op_path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+print(f"  stage-op.json: 순오리지늄 작전 {len(_op_rows)}개 · 합 {sum(r[1] for r in _op_rows)} {os.path.getsize(_op_path)//1024}KB")
+
 # 미번역 감시 — EN/JA에 한글이 남아 있으면 그 작전은 KR 폴백이다 (CN 선행 이벤트 등)
 HANGUL = re.compile(r"[가-힣]")
 for loc in ("en", "ja"):

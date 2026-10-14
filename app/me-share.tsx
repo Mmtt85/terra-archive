@@ -15,7 +15,7 @@ import { eliteText, masteryText, potText, WALLET_ROWS, type MeData } from "./me-
 import type { ItemDoc } from "./items";
 import { evalTile, tileLabel, useCustomTiles } from "./me-custom";
 import type { StageDoc } from "./stage-data";
-import { openChecker } from "./stage-open";
+import { openChecker, runningChecker } from "./stage-open";
 import qrcode from "qrcode-generator";
 
 // 카드 안 그림 — R2 아바타는 CORS 로 받아야 이미지에 들어간다. ?cors 는 캐시 키를 갈라 그리드 <img> 가 남긴
@@ -105,13 +105,16 @@ export function MeShare({ me, owned, released, opById, stages, items, onClose }:
   const progress = useMemo(() => {
     const rec = me.profile?.stages;
     if (!stages || !rec) return null;
-    const isOpen = openChecker(now);   // 지금 못 들어가는 작전은 미클리어·3성 미달성에서 뺀다 (진행 상황 카드와 같은 기준)
+    const isOpen = openChecker(now);   // 지금 못 들어가는 작전은 미클리어·3성 미달성에서 뺀다 (스테이지 클리어 현황 카드와 같은 기준)
+    const isRunning = runningChecker(now);
     let left = 0, star = 0, campDone = 0, camps = 0;
     for (const s of stages.stages) {
       if (s.id.startsWith("tr_") || s.sub) continue;
       if (s.t === "CAMPAIGN") { camps += 1; if ((me.profile?.campaigns[s.id] ?? 0) >= 400) campDone += 1; continue; }
       if (s.t !== "MAIN" && s.t !== "SUB" && s.t !== "ACTIVITY") continue;
       if (!isOpen(s)) continue;
+      // 기록 없는 끝난 이벤트 작전은 세지 않는다 — 깬 기록이 계정 데이터에서 지워진다 (내 정보 카드와 같은 기준, 2026-10-14)
+      if (s.t === "ACTIVITY" && rec[s.id] == null && !isRunning(s.id)) continue;
       const state = rec[s.id] ?? -1;
       if (state < 2) left += 1; else if (state === 2) star += 1;
     }
@@ -255,7 +258,7 @@ export function MeShare({ me, owned, released, opById, stages, items, onClose }:
                     ))}
                   </section>
                   <section>
-                    <h4>{t("진행 상황")}</h4>
+                    <h4>{t("스테이지 클리어 현황")}</h4>
                     {progress ? (
                       <dl className="me-share-prog">
                         <div><dt>{t("메인 스토리 진행")}</dt><dd>{progress.next ? `${progress.next.code} ${progress.next.name}` : t("모두 클리어")}</dd></div>

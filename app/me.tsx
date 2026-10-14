@@ -32,7 +32,7 @@ import { Marquee } from "./marquee";
 import { AttributeFilter } from "./attr-filter";
 import recruitData from "./data/recruit.json";
 import { MeShare } from "./me-share";
-import { openChecker } from "./stage-open";
+import { openChecker, runningChecker } from "./stage-open";
 import { CustomTileEditor, DEFAULT_LAYOUT, MAX_CUSTOM, evalTile, saveCustomTiles, tileLabel, useCustomTiles, useLayoutCustomized, type Cond, type CustomTile, type TileValue } from "./me-custom";
 
 export type MeOp = {
@@ -69,6 +69,35 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 // 접어 두는 줄 수 — 이만큼만 먼저 보이고 '전부 보기'로 편다
 const DEPOT_ROWS = 4;
 const EP_FOLD = 6;
+
+// 남은 순오리지늄 — 작전을 처음 3성(완료)으로 깰 때 한 번 주는 것 (제안 d4c30874 "남은 광산 계산기", 2026-10-14).
+// stage-op.json(build-stages.py) = 순오리지늄 주는 작전 전부(돌격 #f#·스토리 작전 포함). 계정 작전 상태가 3 미만이고
+// 지금 들어갈 수 있는 것만 센다 — 열림 판정은 미클리어와 같은 openChecker(ref = 판정에 쓸 도감 작전, "" = 상시)
+type StageOpDoc = { ids: string[]; n: Record<string, number>; ref: Record<string, string>; nm?: Record<string, [string, string]> };
+function useStageOp(): StageOpDoc | null {
+  const [doc, setDoc] = useState<StageOpDoc | null>(null);
+  useEffect(() => { void import("./data/stage-op.json").then((m) => setDoc(m.default as unknown as StageOpDoc)); }, []);
+  return doc;
+}
+function primeLeft(doc: StageOpDoc | null, rec: Record<string, number> | undefined, stages: StageDoc | null,
+  isOpen: (s: { id: string; t: string }) => boolean, isRunning: (id: string) => boolean): { n: number; ids: string[] } | null {
+  if (!doc || !rec || !stages) return null;
+  const typeOf = new Map(stages.stages.map((s) => [s.id, s.t]));
+  let n = 0;
+  const ids: string[] = [];
+  for (const id of doc.ids) {
+    if ((rec[id] ?? -1) >= 3) continue;
+    const ref = doc.ref[id] ?? id.replace(/#f#$/, "");
+    const type = typeOf.get(ref) ?? "ACTIVITY";
+    if (ref && !isOpen({ id: ref, t: type })) continue;
+    // 기록이 아예 없는 이벤트 작전은 지금 기간 중인 이벤트일 때만 — 끝난 이벤트는 깬 기록이 계정 데이터에서 지워진다
+    // (사용자 지적 2026-10-14 "작년에 다 깬 중생의 여정이 77개에 들어 있다")
+    if (rec[id] == null && type === "ACTIVITY" && !isRunning(ref)) continue;
+    n += doc.n[id] ?? 1;
+    ids.push(id);
+  }
+  return { n, ids };
+}
 const OPS_ROWS = 2;
 
 /** 격자의 실제 열 수 — 접을 때 '몇 줄'을 꽉 채우려고 잰다 (사용자 지적 2026-10-05: 두 번째 줄 끝이 비면 그게 다인 줄 안다).
@@ -1114,10 +1143,14 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
   // 지금 못 들어가는 작전(끝난 기간 이벤트·지난 순환 섬멸)은 미클리어·3성 미달성에 넣지 않는다 (사용자 지시 2026-10-04).
   // 클리어 수·전체 수는 그대로 센다 — 이미 깬 기록까지 지울 이유는 없다
   const [isOpen] = useState(() => openChecker(Date.now()));
+  const opDoc = useStageOp();
+  const [isRunning] = useState(() => runningChecker(Date.now()));
+  const prime = useMemo(() => primeLeft(opDoc, rec, stages, isOpen, isRunning), [opDoc, rec, stages, isOpen, isRunning]);
   const data = useMemo(() => {
     if (!stages || !rec) return null;
     const byId = new Map(stages.stages.map((s) => [s.id, s]));
     const groups = new Map<string, ProgGroup>();
+    const gOf = new Map<string, string>();   // 작전 → 묶음 이름 ('어디서 얻나' 순오리지늄 목록)
     const get = (key: string, cat: ProgCat, name: string, order: number) => {
       let g = groups.get(key);
       if (!g) { g = { key, cat, name, order, total: 0, clear: 0, perfect: 0, left: [], star: [], tough: 0, toughClear: 0, open: 0 }; groups.set(key, g); }
@@ -1140,6 +1173,10 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
         if (kills >= 400) { g.clear += 1; g.perfect += 1; } else if (isOpen(s)) g.left.push(s.id);
         return;
       } else return;
+      gOf.set(s.id, g.name);
+      // 기록이 아예 없는 끝난 이벤트 작전은 세지 않는다 — 깬 기록이 계정 데이터에서 지워져 '안 깸'과 구분이 안 된다
+      // (사용자 지적 2026-10-14: 작년에 다 깬 '중생의 여정' 전투 작전이 미클리어로). 순오리지늄(primeLeft)과 같은 규칙
+      if (s.t === "ACTIVITY" && rec[s.id] == null && !isRunning(s.id)) return;
       const state = rec[s.id] ?? -1;
       if (s.sub) { g.tough += 1; if (state >= 2) g.toughClear += 1; return; }
       g.total += 1;
@@ -1150,10 +1187,10 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
     });
     const list = [...groups.values()].filter((g) => g.total > 0).sort((a, b) => a.order - b.order);
     const next = me.profile?.status.progress ? byId.get(me.profile.status.progress) ?? null : null;
-    return { list, byId, next };
-  }, [stages, rec, camps, me.profile, t, isOpen]);
+    return { list, byId, next, gOf };
+  }, [stages, rec, camps, me.profile, t, isOpen, isRunning]);
   if (!rec) return null;
-  if (!data) return <Card no="PROGRESS" title={t("진행 상황")}><p className="me-note">{t("불러오는 중…")}</p></Card>;
+  if (!data) return <Card no="PROGRESS" title={t("스테이지 클리어 현황")}><p className="me-note">{t("불러오는 중…")}</p></Card>;
   const pendingOf = (g: ProgGroup) => (withStars ? [...g.left, ...g.star] : g.left);
   const inCat = data.list.filter((g) => cat === "all" || g.cat === cat);
   const leftTotal = inCat.reduce((n, g) => n + g.left.length, 0);
@@ -1204,7 +1241,7 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
     </ul>
   );
   return (
-    <Card no="PROGRESS" title={t("진행 상황")}
+    <Card no="PROGRESS" title={t("스테이지 클리어 현황")}
       aside={<>
         <button type="button" className={`me-sort${pendingFirst ? " selected" : ""}`} onClick={() => setPendingFirst((v) => !v)}>
           <span aria-hidden>⇅</span>{t("미완료 먼저")}
@@ -1225,6 +1262,22 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
         }))}>
           <span>{t("섬멸 작전 400 달성")}</span><b>{fmt(camp?.clear ?? 0)}<small>/{fmt(camp?.total ?? 0)}</small></b>
         </button>
+        {/* 누르면 어디서 얻나 — 묶음별 작전 목록 (사용자 지시 2026-10-14) */}
+        <button type="button" disabled={!prime?.n} onClick={() => {
+          if (!prime) return;
+          const by = new Map<string, string[]>();
+          for (const id of prime.ids) {
+            const base = id.replace(/#f#$/, "");
+            const ref = opDoc?.ref[id] || base;
+            const name = data.gOf.get(base) ?? data.gOf.get(ref) ?? t("스토리 작전");
+            by.set(name, [...(by.get(name) ?? []), id]);
+          }
+          setStageList((cur) => ({ title: t("순오리지늄 획득 가능"), key: (cur?.key ?? 0) + 1,
+            groups: [...by].map(([name, ids]) => ({ name, ids })) }));
+        }} title={t("지금 들어갈 수 있는 작전 중 아직 3성(완료)을 못 받은 작전에서 처음 한 번 주는 순오리지늄 — 돌격 작전·스토리 작전 포함")}>
+          <span>{t("순오리지늄")}</span>
+          <b className="me-prime"><img src={itemIcon("DIAMOND")} alt="" width={22} height={22} />{prime == null ? "…" : t("× {n}개 획득 가능", { n: fmt(prime.n) })}</b>
+        </button>
       </div>
       <p className="me-note me-prog-note">{t("미클리어·3성 미달성에는 지금 들어갈 수 있는 작전만 셉니다 — 끝난 기간 이벤트와 지난 순환 섬멸은 뺍니다. 막대는 클리어한 작전 비율, '3성'은 3성 클리어한 작전 수입니다.")}</p>
       <div className="me-seg me-prog-cats" role="group">
@@ -1236,7 +1289,7 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
       </div>
       {epList(shown, true)}
       {!full && ordered.length > EP_FOLD && <MoreButton open={false} total={ordered.length} onToggle={() => setAll(true)} />}
-      {all && <MoreModal title={t("진행 상황")} onClose={() => setAll(false)}>{epList(ordered, false)}</MoreModal>}
+      {all && <MoreModal title={t("스테이지 클리어 현황")} onClose={() => setAll(false)}>{epList(ordered, false)}</MoreModal>}
       {stageList && (
         <ModalWindow key={`sl-${stageList.key}`} label={stageList.title} className="operator-modal me-list-modal" onClose={() => setStageList(null)}>
           <div className="me-list">
@@ -1250,12 +1303,16 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
                   <h4>{grp.name}<small>{fmt(grp.ids.length)}</small></h4>
                   <div className="me-stage-chips">
                     {grp.ids.map((id) => {
-                      const s = data.byId.get(id);
-                      if (!s) return null;
+                      // 돌격(#f#)은 그 작전 도감으로, 도감에 없는 스토리 작전은 이름만 (순오리지늄 목록)
+                      const assault = id.endsWith("#f#");
+                      const s = data.byId.get(id) ?? (assault ? data.byId.get(id.slice(0, -3)) : undefined);
+                      const nm = opDoc?.nm?.[id];
+                      if (!s && !nm) return null;
+                      if (!s) return <button key={id} type="button" disabled title={nm![1]}><b>{nm![0]}</b><span>{nm![1]}</span></button>;
                       const kills = s.t === "CAMPAIGN" ? camps?.[id] ?? 0 : null;
                       return (
-                        <button key={id} type="button" onClick={() => onOpenStage(id)} title={s.name}>
-                          <b>{s.code}</b><span>{s.name}{kills != null ? ` · ${fmt(kills)}/400` : ""}</span>
+                        <button key={id} type="button" onClick={() => onOpenStage(s.id)} title={s.name}>
+                          <b>{s.code}</b><span>{assault ? `${t("돌격")} · ` : ""}{s.name}{kills != null ? ` · ${fmt(kills)}/400` : ""}</span>
                         </button>
                       );
                     })}
@@ -1435,6 +1492,10 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
   // 진행 상황 — 지금 메인 스토리 장의 대표 그림 (main_15-08 → 15장)
   const chap = /^main_(\d+)-/.exec(p?.status.progress ?? "")?.[1];
   const cleared = Object.values(p?.stages ?? {}).filter((v) => v >= 2).length;
+  const opDoc = useStageOp();
+  const [isOpen] = useState(() => openChecker(now));
+  const [isRunning] = useState(() => runningChecker(now));
+  const prime = useMemo(() => primeLeft(opDoc, p?.stages, stages, isOpen, isRunning), [opDoc, p?.stages, stages, isOpen, isRunning]);
   // 친구 — 가장 최근에 들어온 친구의 비서 오퍼 정예화 일러
   const friends = [...(p?.friends ?? [])].sort((a, b) => b.lastOnline - a.lastOnline);
   const fSec = friends.find((f) => f.secretary && opById.has(f.secretary))?.secretary;
@@ -1447,8 +1508,11 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
     return items.items.filter((i) => i.i && (inv[i.id] ?? 0) > 0 && i.g === "material").sort((a, b) => b.r - a.r || (inv[b.id] ?? 0) - (inv[a.id] ?? 0)).slice(0, 3).map((i) => itemIcon(i.i!));
   }, [inv, items]);
   const bg = (url: string) => ({ ["--bg" as string]: `url(${url})` });
-  const tiles: { key: DrawerKey; label: string; head: string; sub: string; style?: React.CSSProperties; cls?: string; icons?: string[] }[] = [];
-  if (p?.stages) tiles.push({ key: "progress", label: "PROGRESS", head: t("진행 상황"), sub: t("클리어한 작전 {n}개", { n: fmt(cleared) }),
+  const tiles: { key: DrawerKey; label: string; head: string; sub: string; top?: React.ReactNode; style?: React.CSSProperties; cls?: string; icons?: string[] }[] = [];
+  if (p?.stages) tiles.push({ key: "progress", label: "PROGRESS", head: t("스테이지 클리어 현황"),
+    sub: t("클리어한 작전 {n}개", { n: fmt(cleared) }),
+    // 순오리지늄은 제목 위 한 줄로 (사용자 지시 2026-10-14 "버튼 위쪽에다")
+    top: prime?.n ? <span className="me-prime"><img src={itemIcon("DIAMOND")} alt={t("순오리지늄")} width={16} height={16} />{t("× {n}개 획득 가능", { n: fmt(prime.n) })}</span> : undefined,
     style: bg(asset(`/story/main_${chap && Number(chap) <= 17 ? chap : 17}.webp`)) });
   if (p) tiles.push({ key: "friends", label: "FRIENDS", head: t("친구"), sub: p.friends ? t("{n}명", { n: fmt(p.friends.length) }) : "—",
     style: fSec ? bg(asset(`/skin/full/${fSec}_1.webp`)) : undefined, cls: "art art-r" });
@@ -1464,6 +1528,7 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
           <button key={x.key} type="button" className={`${x.style ? "has-bg" : ""}${x.cls ? ` ${x.cls}` : ""}`} style={x.style} onClick={() => setOpen(x.key)}>
             {x.icons && <span className="me-drawer-icons" aria-hidden>{x.icons.map((src) => <img key={src} src={src} alt="" width={64} height={64} loading="lazy" />)}</span>}
             <small className="section-no">{x.label}</small>
+            {x.top && <span className="me-drawer-top">{x.top}</span>}
             <b>{x.head}</b>
             <em>{x.sub}</em>
           </button>

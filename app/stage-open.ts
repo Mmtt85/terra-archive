@@ -23,3 +23,11 @@ export function openChecker(nowMs: number): (stage: { id: string; t: string }) =
     return true;
   };
 }
+
+/** 지금 **기간 중인** 이벤트 작전인가 (상설 사이드 스토리는 아님). 끝난 이벤트의 전투 작전 기록은 계정 데이터에서 빠져서
+ *  (2026-10-14 실측: 작년에 다 깬 '중생의 여정' 등 상설화된 사이드 스토리 10개가 스토리 작전 기록만 남음) 기록이 없다고 안 깬 것이 아니다 */
+export function runningChecker(nowMs: number): (id: string) => boolean {
+  const today = kstDay(nowMs);
+  const running = new Set(doc.events.filter(([s, e]) => s <= today && today <= e).flatMap(([, , ids]) => ids));
+  return (id) => running.has(id);
+}
