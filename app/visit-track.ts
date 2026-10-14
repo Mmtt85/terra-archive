@@ -126,15 +126,16 @@ function post(table: "visit_session" | "visit_view" | "visit_event" | "prts_scan
     if (env === "dev") console.debug(`[visit] ${table} ${JSON.stringify(rows)}`);   // 프로젝트 연결 전 시험 — 콘솔에만
     return;
   }
-  // visit_player 는 같은 (방문자, 서버, UID) 를 여러 번 보낸다 — 이미 있으면 조용히 넘긴다 (insert 권한만으로 되는 ON CONFLICT DO NOTHING)
-  const dedupe = table === "visit_player";
-  void fetch(`${VISITS_URL}/rest/v1/${table}${dedupe ? "?on_conflict=visitor,server,uid" : ""}`, {
+  // visit_player 는 같은 (방문자, 서버, UID) 를 여러 번 보낸다 — 두 번째부터는 기본키 중복(409)으로 DB 가 거절하고 여기선 버린다.
+  // ⚠ '이미 있으면 무시'(on_conflict + resolution=ignore-duplicates)는 쓰면 안 된다 — 중복 확인에 읽기 권한이 필요해
+  //   익명 쓰기가 RLS 에 통째로 막혔다 (2026-10-14 실측: 표가 빈 채로 남았다)
+  void fetch(`${VISITS_URL}/rest/v1/${table}`, {
     method: "POST",
     headers: {
       apikey: VISITS_ANON_KEY,
       Authorization: `Bearer ${VISITS_ANON_KEY}`,
       "Content-Type": "application/json",
-      Prefer: dedupe ? "return=minimal,resolution=ignore-duplicates" : "return=minimal",
+      Prefer: "return=minimal",
     },
     body: JSON.stringify(rows),
     keepalive: true,   // 탭을 닫는 순간에도 끊기지 않게 (omni-picks.ts 와 같은 방식)

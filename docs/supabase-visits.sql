@@ -462,7 +462,7 @@ $$;
 -- 세션 타임라인 목록 — 한 사람의 동선을 한 줄로
 drop function if exists public.visits_sessions_range(timestamptz, timestamptz, boolean, text, text, int);
 -- ── 방문자 ↔ 게임 계정 (2026-10-14) ── 내 정보로 로그인한 사람은 세션 타임라인에 UID·닉네임으로 (사용자 지시 "로그인한 사람은 UID 로, 아닌 사람은 기존처럼")
--- 사이트(app/visit-track.ts notePlayer)가 세션마다·로그인 때 보낸다. 같은 (방문자, 서버, UID) 는 ON CONFLICT DO NOTHING 으로 버린다
+-- 사이트(app/visit-track.ts notePlayer)가 세션마다·로그인 때 보낸다. 같은 (방문자, 서버, UID) 는 기본키 중복으로 DB 가 거절한다(익명엔 읽기 권한이 없어 ON CONFLICT 를 못 쓴다)
 create table if not exists public.visit_player (
   visitor uuid not null,
   server text not null check (char_length(server) <= 8),
