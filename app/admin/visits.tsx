@@ -703,24 +703,17 @@ function sessLive(s: SessRow): boolean {
   return Date.now() - lastAt < 2 * 60_000;   // 1분 전송(입력이 있을 때만) 한 번 놓친 정도까지 — 3분이면 닫은 탭이 오래 남았다 (2026-10-11)
 }
 
-/** 세션 머리줄에 붙일 일 기록 칩 — PRTS 는 연결·해제를 한 칸으로 묶는다(해제가 없으면 '연결 중') */
+/** 세션 머리줄에 붙일 일 기록 칩 — PRTS 는 연결·해제를 한 칸으로 묶는다(해제가 없으면 '연결 중').
+ *  내 정보 로그인·동기화 칩은 뺐다 — 로그인한 사람은 세션이 UID 로 나와 겹친다 (사용자 지시 2026-10-15) */
 function sessEvents(s: SessRow): { label: string; title: string; cls: string }[] {
   const out: { label: string; title: string; cls: string }[] = [];
   const hm = (iso: string) => new Date(iso).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
   let open: { at: string; detail: string | null } | null = null;
-  const me: Record<string, { label: string; title: string; cls: string; n: number } | undefined> = {};
   for (const e of s.events ?? []) {
     if (e.kind === "prts_start") open = { at: e.at, detail: e.detail };
     else if (e.kind === "prts_end") {
       out.push({ label: `PRTS ${e.detail ?? ""} ${fmtDur(e.dur ?? 0)}`.replace(/\s+/g, " "), title: `PRTS 링크 ${open ? hm(open.at) : "?"} ~ ${hm(e.at)} 연결`, cls: "prts" });
       open = null;
-    } else if (e.kind === "me_login" || e.kind === "me_sync") {
-      // 같은 종류는 칩 하나로 합치고 횟수만 (사용자 지시 2026-10-11 "로그인 두 번이면 뱃지 두 개 → 하나로")
-      const label = e.kind === "me_login" ? "내 정보 로그인" : "내 정보 동기화";
-      const at = `${hm(e.at)}${e.server ? ` · ${e.server}` : ""}`;
-      const prev = me[e.kind];
-      if (prev) { prev.n += 1; prev.title += `, ${at}`; prev.label = `${label} ×${prev.n}`; }
-      else { me[e.kind] = { label, title: at, cls: "me", n: 1 }; out.push(me[e.kind]!); }
     }
   }
   if (open) out.push({ label: `PRTS ${open.detail ?? ""} 연결 중`.replace(/\s+/g, " "), title: `PRTS 링크 ${hm(open.at)}부터 연결 중`, cls: "prts on" });
