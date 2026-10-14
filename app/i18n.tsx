@@ -2574,6 +2574,16 @@ const D: Record<string, Pair> = {
   "탐험 로비": ["Exploration lobby", "探索ロビー"],
   "탐험을 시작하면 그때부터 화면을 인식합니다.": ["Recognition starts once you begin an exploration.", "探索を始めると、そこから画面を認識します。"],
   "탐험 로비 화면입니다 — 탐험을 시작하면 그때부터 화면을 인식합니다.": ["This is the exploration lobby — recognition starts once you begin an exploration.", "探索ロビー画面です — 探索を始めると、そこから画面を認識します。"],
+  // 인프라 — 자동편성으로 바뀐 곳 (2026-10-14)
+  "직전 편성에서 자동편성으로 바뀌었습니다": ["Changed by auto-assign since the previous layout", "直前の編成から自動編成で変わりました"],
+  "내 정보 갱신으로 편성을 다시 짰습니다 · 전과 달라진 곳 {c}곳 · 새로 들어간 오퍼 {n}명": ["Re-assigned after your account sync · {c} rooms changed · {n} operators newly placed", "マイ情報の更新で編成を組み直しました・変わった部屋 {c}か所・新たに入ったオペレーター {n}名"],
+  "이전: {name}": ["Was: {name}", "以前: {name}"],
+  "이전: 빈 자리": ["Was: empty slot", "以前: 空き枠"],
+  "변경 있음": ["Changed", "変更あり"],
+  "교체": ["Swapped", "交代"],
+  "새로: {a}": ["In: {a}", "新規: {a}"],
+  "빠짐: {d}": ["Out: {d}", "外れ: {d}"],
+  "전과 달라진 곳 {c}곳 · 새로 들어간 오퍼 {n}명": ["{c} rooms changed · {n} operators newly placed", "変わった部屋 {c}か所・新たに入ったオペレーター {n}名"],
   "스테이지 클리어 현황": ["Stage clear status", "ステージクリア状況"],
   "× {n}개 획득 가능": ["× {n} to earn", "× {n}個 獲得可能"],
   "지금 들어갈 수 있는 작전 중 아직 3성(완료)을 못 받은 작전에서 처음 한 번 주는 순오리지늄 — 돌격 작전·스토리 작전 포함": [

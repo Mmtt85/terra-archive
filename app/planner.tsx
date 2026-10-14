@@ -67,6 +67,28 @@ const RECYCLE_KEY = "terra-archive-infra-recycle";
 // 육성 추천 표시 개수 — 엔진은 정렬 전체를 반환하고, 숨긴 오퍼 자리는 다음 순위가 채운다
 const INVEST_SHOW = 20;
 
+/** 방(cell) → 조(shift)마다 [새로 들어간, 빠진] 오퍼 id (제안 5e1364b5, 2026-10-14) */
+type PlanDiff = Record<string, { add: string[][]; drop: string[][] }>;
+function diffPlans(prev: Plan | null, next: Plan): PlanDiff | null {
+  if (!prev || !Object.values(prev.assignments).some((shifts) => shifts.some((ids) => ids.length))) return null;   // 처음 편성 — 비교할 게 없다
+  const pick = (arr: string[][] | undefined, i: number) => (arr && arr.length ? arr[Math.min(i, arr.length - 1)] : []) ?? [];
+  const out: PlanDiff = {};
+  for (const key of new Set([...Object.keys(prev.assignments), ...Object.keys(next.assignments)])) {
+    const a = prev.assignments[key], b = next.assignments[key];
+    const n = Math.max(a?.length ?? 0, b?.length ?? 0, 1);
+    const add: string[][] = [], drop: string[][] = [];
+    let any = false;
+    for (let i = 0; i < n; i++) {
+      const was = new Set(pick(a, i)), now = new Set(pick(b, i));
+      add.push([...now].filter((id) => !was.has(id)));
+      drop.push([...was].filter((id) => !now.has(id)));
+      if (add[i].length || drop[i].length) any = true;
+    }
+    if (any) out[key] = { add, drop };
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 export default function InfraPlanner({ onShowOperator, extra, includeFuture }: { onShowOperator?: (id: string) => void; extra?: ExtraI18n | null; includeFuture?: boolean } = {}) {
   const { locale, t } = useI18n();
   // 로케일 표시 오버레이: 이름·스킬명·설명만 교체하고(krName에 원본 보존),
@@ -127,7 +149,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [switchFlash, setSwitchFlash] = useState(false);
   // 프리셋별 저장 버킷 — 243/153/252 각각의 편성·레벨·육성추천을 따로 보관해 전환 시
   // 재편성 없이 그대로 복원한다 (사용자 확정 2026-07-24: "각각 따로 한번 자동편성하면 유지")
-  type LayoutBucket = { plan: Plan | null; levels: Levels; invest: RaiseRec[] | null; investHidden: string[]; dormPins?: Record<string, string[]>; roomPins?: Record<string, RoomPin[]>; /** 자동편성 직후 스냅샷 — '자동편성 시점으로' 되돌리기 기준 (새로고침 후에도 유지) */ basePlan?: Plan | null };
+  type LayoutBucket = { plan: Plan | null; levels: Levels; invest: RaiseRec[] | null; investHidden: string[]; dormPins?: Record<string, string[]>; roomPins?: Record<string, RoomPin[]>; /** 자동편성 직후 스냅샷 — '자동편성 시점으로' 되돌리기 기준 (새로고침 후에도 유지) */ basePlan?: Plan | null;
+    /** 직전 편성 ↔ 마지막 자동편성 결과의 차이 — 방 카드 NEW 표시 (제안 5e1364b5, 2026-10-14) */ planDiff?: PlanDiff | null;
+    /** '내 정보' 동기화가 편성을 비울 때 남겨 두는 직전 편성 — 들어와서 다시 짠 결과와 비교한다 */ diffFrom?: Plan | null };
   const bucketsRef = useRef<Partial<Record<LayoutPreset, LayoutBucket>>>({});
   const syncBucket = (lay: LayoutPreset, patch: Partial<LayoutBucket>) => {
     bucketsRef.current[lay] = {
@@ -206,8 +230,43 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // bucketsRef는 동기 갱신이라 바로 뒤에 오는 persist가 이 값을 그대로 저장한다.
   const rememberBase = (next: Plan | null, lay: LayoutPreset = layout) => {
     setBasePlan(next);
-    syncBucket(lay, { basePlan: next });
+    syncBucket(lay, next ? { basePlan: next } : { basePlan: null, planDiff: null });   // 기준이 없어지면 변경 표시도 근거가 없다
+    if (!next) setPlanDiff(null);
   };
+  // 자동편성으로 바뀐 곳 (제안 5e1364b5 "내 정보 갱신 뒤 자동편성으로 편성이 바뀌면 new 표시를") — '전체 자동편성'을 누른 순간 화면에
+  // 있던 편성과 새 결과를 방·조마다 비교한다. 손으로 바꾼 것은 세지 않는다('자동편성 시점으로'가 맡는다). 다음 자동편성·'표시 지우기'까지 유지
+  const [planDiff, setPlanDiff] = useState<PlanDiff | null>(null);
+  const rememberDiff = (next: PlanDiff | null, lay: LayoutPreset = layout) => {
+    seenDiffRef.current.clear();   // 새 비교 — 지난번에 열어 본 기록은 버린다
+    setPlanDiff(next);
+    syncBucket(lay, { planDiff: next });
+  };
+  // '변경 있음' 표시는 따로 지우는 단추 없이 — **열어 본 시설**은 인프라 화면을 떠날 때(다른 화면으로 이동·탭 닫기) 지운다
+  // (사용자 지시 2026-10-14 "지우기 단추가 굳이 필요한가 — 열어 봤고 나가면 자동으로"). 화면에 있는 동안은 남겨 다시 볼 수 있다
+  const seenDiffRef = useRef(new Set<string>());
+  const diffLive = useRef({ diff: planDiff, layout });
+  diffLive.current = { diff: planDiff, layout };
+  useEffect(() => { if (openRoom && planDiff?.[openRoom]) seenDiffRef.current.add(openRoom); }, [openRoom, planDiff]);
+  useEffect(() => {
+    const prune = () => {
+      const seen = seenDiffRef.current;
+      const { diff, layout: lay } = diffLive.current;
+      if (!seen.size || !diff) return;
+      const left = Object.fromEntries(Object.entries(diff).filter(([k]) => !seen.has(k)));
+      const next = Object.keys(left).length ? left : null;
+      seen.clear();
+      setPlanDiff(next);
+      syncBucket(lay, { planDiff: next });
+      // 저장(persist)을 기다리지 않고 바로 쓴다 — 떠나는 중이라 다음 저장이 없다
+      try {
+        const cur = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+        if (cur) localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...cur, buckets: bucketsRef.current }));
+      } catch { /* 못 쓰면 다음에 다시 */ }
+    };
+    window.addEventListener("pagehide", prune);
+    return () => { window.removeEventListener("pagehide", prune); prune(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // 육성(정예화 완성) 추천 — 반사실 재최적화 결과(null=미실행)와 진행률, 모달 표시 여부.
   // 결과는 한 번 분석하면 새 자동편성 전까지 유지된다 (persist·export 포함, 사용자 확정 2026-07-21)
   const [investRecs, setInvestRecs] = useState<RaiseRec[] | null>(null);
@@ -336,7 +395,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
 
   const exportState = () => {
-    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), opLevels: Array.from(levelById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, roomPins, recycle: recycleMode, buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins, roomPins, basePlan } } }, null, 1);
+    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), opLevels: Array.from(levelById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, roomPins, recycle: recycleMode, buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins, roomPins, basePlan, planDiff } } }, null, 1);
     const blob = new Blob([payload], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -391,6 +450,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         // 되돌리기 기준 — 파일에 있으면 살리고, 없으면(구버전 파일) 비운다
         const fileBase = fileBuckets[lay]?.basePlan;
         setBasePlan(fileBase ? sanitizePlan(fileBase) : null);
+        setPlanDiff(fileBuckets[lay]?.planDiff ?? null);
         setInvestRecs(invest);
         setInvestHidden(hidden);
         setShowInvest(false);
@@ -566,6 +626,18 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
 
   // 자동편성 스냅샷과 달라진 칸 수 (조별로 센다) — 0이면 되돌릴 게 없다
+  // 자동편성으로 바뀐 곳 — 지금 보는 조(A/B)의 새로 들어간·빠진 오퍼 (제안 5e1364b5)
+  const diffAt = (key: string, shift: number) => {
+    const d = planDiff?.[key];
+    if (!d) return null;
+    const i = Math.min(shift, d.add.length - 1);
+    const add = d.add[i] ?? [], drop = d.drop[i] ?? [];
+    return add.length || drop.length ? { add, drop } : null;
+  };
+  const diffTitle = (d: { add: string[]; drop: string[] }) => {
+    const names = (ids: string[]) => ids.map((id) => effectiveOpById.get(id)?.name ?? id).join(", ");
+    return [t("직전 편성에서 자동편성으로 바뀌었습니다"), d.add.length ? t("새로: {a}", { a: names(d.add) }) : "", d.drop.length ? t("빠짐: {d}", { d: names(d.drop) }) : ""].filter(Boolean).join("\n");
+  };
   const changedCells = useMemo(() => {
     if (!plan || !basePlan) return 0;
     let n = 0;
@@ -622,8 +694,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
       const next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, recycle: recycleJob, priority: prio, layout, levels, customRooms, customProducts, dormPins, roomPins: rpins }, paced);
+      const diff = diffPlans(plan, next);
       setPlan(next);
       rememberBase(next); // 되돌리기 기준 — 미리보기(previewOptimize)는 여기 손대지 않는다
+      rememberDiff(diff);
       setActiveShift(0);
       // 새 자동편성 → 기존 육성 추천·숨김 무효화 + 임시 적용 세션 종료(새 편성이 기준). 2026-07-21
       setInvestRecs(null);
@@ -634,7 +708,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       persist(ids, next, elite, lvById, prio, null, new Set(), layout, levels, customRooms, customProducts, dormPins, rpins);
       // 실제 계산에 쓰인 인원 = 보유 ∩ 현재 표시 대상(미래시 토글 반영) — 미래시 OFF면 미실장 제외
       const usedCount = visibleOps.filter((op) => ids.has(op.id)).length;
-      showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: usedCount }));
+      const diffCells = diff ? Object.keys(diff).length : 0;
+      const diffOps = diff ? Object.values(diff).reduce((a, d) => a + d.add.reduce((b, x) => b + x.length, 0), 0) : 0;
+      showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: usedCount })
+        + (diffCells ? ` · ${t("전과 달라진 곳 {c}곳 · 새로 들어간 오퍼 {n}명", { c: diffCells, n: diffOps })}` : ""));
     } finally {
       setOptimizing(null);
     }
@@ -806,6 +883,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setPlan(restored);
     // 프리셋마다 편성이 다르니 이월하지 않고, **그 프리셋이 갖고 있던** 기준을 복원한다
     setBasePlan(b.basePlan ? sanitizePlan(b.basePlan) : null);
+    setPlanDiff(b.planDiff ?? null);
     setInvestRecs(b.invest);
     setInvestHidden(new Set(b.investHidden));
     setDormPinsState(restoreDormPins(b.dormPins));
@@ -1028,7 +1106,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           if (Number.isFinite(char.level) && char.level >= 1) opLevels.push([op.id, Math.min(MAX_OP_LEVEL, Math.round(char.level))]);
         }
         const buckets = base.buckets && typeof base.buckets === "object" ? base.buckets : {};
-        for (const k of Object.keys(buckets)) buckets[k] = { ...buckets[k], plan: null, invest: null, investHidden: [], basePlan: null };
+        // 직전 편성은 diffFrom 으로 남긴다 — 다시 짠 편성과 비교해 바뀐 방에 NEW (제안 5e1364b5 "내 정보 갱신 뒤 편성이 바뀌면 new 표시")
+        for (const k of Object.keys(buckets)) buckets[k] = { ...buckets[k], diffFrom: buckets[k].plan ?? buckets[k].diffFrom ?? null, plan: null, invest: null, investHidden: [], basePlan: null, planDiff: null };
         saved = JSON.stringify({ ...base, owned, elite, opLevels, buckets, plan: null, invest: null, investHidden: [] });
         localStorage.setItem(STORAGE_KEY, saved);
         localStorage.setItem(ME_APPLIED_KEY, String(me.syncedAt));
@@ -1065,6 +1144,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             dormPins: restoreDormPins(rb.dormPins),
             roomPins: restoreRoomPins(rb.roomPins),
             basePlan: rb.basePlan ?? null,
+            planDiff: rb.planDiff ?? null,
+            diffFrom: rb.diffFrom ?? null,
           };
         }
         if (savedLayout !== "243") { setLayoutPreset(savedLayout, savedCustom, savedProducts); setLayoutState(savedLayout); }
@@ -1075,6 +1156,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         if (bucket) { setInvestRecs(restoreInvest(bucket.invest)); setInvestHidden(restoreHidden(bucket.investHidden)); setDormPinsState(restoreDormPins(bucket.dormPins)); setRoomPinsState(restoreRoomPins(bucket.roomPins)); }
         // 되돌리기 기준도 함께 복원 — 손상 저장분 방어를 위해 plan과 같은 sanitize를 태운다
         if (bucket?.basePlan) { try { setBasePlan(sanitizePlan(bucket.basePlan)); } catch { setBasePlan(null); } }
+        if (bucket?.planDiff) setPlanDiff(bucket.planDiff);
         // 손상·구버전 저장분 방어 — raw 복원은 assignments 등 누락 시 렌더 크래시
         // (개발 중간 상태가 저장된 localStorage에서 실제 발병, 2026-07-19). 정규화 실패면
         // 아래로 떨어져 새 편성을 만든다.
@@ -1092,8 +1174,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
         void optimizeOff({ owned: ids, elite, opLevels: restoreOpLevels(data.opLevels), includeFuture: false, priority: "gold", layout: savedLayout, levels: savedLevels, customRooms: savedCustom, customProducts: savedProducts },
           (step: OptimizeStep) => { setOptimizing(stepMessage(step)); }).finally(() => setOptimizing(null)).then((made) => {
+          // 내 정보 동기화로 비운 편성이면 그 직전 편성과 비교해 NEW 를 단다
+          let d: PlanDiff | null = null;
+          if (bucket?.diffFrom) { try { d = diffPlans(sanitizePlan(bucket.diffFrom), made); } catch { d = null; } }
           setPlan(made);
-          syncBucket(savedLayout, { plan: made });
+          setPlanDiff(d);
+          syncBucket(savedLayout, { plan: made, planDiff: d, diffFrom: null });
+          if (d) {
+            const ops = Object.values(d).reduce((a, x) => a + x.add.reduce((b, y) => b + y.length, 0), 0);
+            showToast(t("내 정보 갱신으로 편성을 다시 짰습니다 · 전과 달라진 곳 {c}곳 · 새로 들어간 오퍼 {n}명", { c: Object.keys(d).length, n: ops }));
+          }
           try {
             const cur = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
             if (cur) localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...cur, plan: made, buckets: bucketsRef.current }));
@@ -1730,7 +1820,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           {plan && (
             <div className="shift-tabs">
               {Array.from({ length: SHIFT_COUNT }, (_, i) => (
-                <button key={i} className={activeShift === i ? "selected" : ""} onClick={() => setActiveShift(i)}>{[t("A조 (풀파워)"), t("B조 (회복 교대)")][i]}</button>
+                <button key={i} className={activeShift === i ? "selected" : ""} onClick={() => setActiveShift(i)}>{[t("A조 (풀파워)"), t("B조 (회복 교대)")][i]}
+                  {/* 그 조에 자동편성으로 바뀐 방이 있으면 NEW (사용자 지시 2026-10-14) */}
+                  {(() => {
+                    // 그 조에 남은 NEW 방 수 — 다 사라지면 배지도 사라진다 (사용자 지시 2026-10-14 "NEW ×N 개도")
+                    const n = planDiff ? Object.keys(planDiff).filter((k) => diffAt(k, i)).length : 0;
+                    return n > 0 && <span className="plan-chg plan-chg-tab">{t("변경 있음")} ×{n}</span>;
+                  })()}</button>
               ))}
               {drainClock && (
                 <span className="shift-clock" title={t("제일 빨리 닳는 시설의 완전 소진 기준 — 그 전에(대개 컨디션 12 신호쯤) A조 전체를 B조로 한 번에 교대합니다. 특히 제어센터가 먼저 지치면 감면이 꺼져 전 방이 가속되니 병목보다 늦으면 안 됩니다. 전원이 풀 컨디션(24)에서 시작한다고 본 추정치라, 오퍼별 현재 피로도에 따라 실제 시간은 달라집니다")}>
@@ -1814,6 +1910,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               // 숙소도 클릭 → 상세 모달 (사용자 요청 2026-07-24) — 레벨 조절(전력·숙소 연동 스킬)용.
               // 편성은 시너지 고정 전용이라 모달에서 읽기 전용.
               <button key={cell.key} type="button" className={`ship-room dorm-room pos-${cell.key.toLowerCase()}`} onClick={() => openRoomAt(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
+                {(() => { const d = diffAt(cell.key, 0); return d && <span className="plan-chg plan-chg-card" title={diffTitle(d)}>{t("변경 있음")}</span>; })()}
                 <div className="ship-room-head"><b>{t(cell.label)}<em className={`room-lv${levelOf(cell.key) < maxLevelOf(cell.room) ? "" : " max"}`}>Lv{levelOf(cell.key)}</em></b><span>{locked.length ? t("고정 {n}명", { n: locked.length }) : t("휴식")}</span></div>
                 {/* 얼굴은 **클릭 대상이 아니다** — 다른 시설 카드와 동일하게 카드 전체가 방 상세를
                     여는 버튼이고 썸네일은 표시 전용 (사용자 요청 2026-07-28). 편성 안내 문구도
@@ -1821,7 +1918,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 <div className="ship-room-crew">
                   {pinned.map((op) => (
                     <img key={op.id} src={asset(op.image)} alt={op.name} width={180} height={180}
-                      className={locked.includes(op.id) ? "dorm-locked" : undefined}
+                      className={[locked.includes(op.id) ? "dorm-locked" : "", diffAt(cell.key, 0)?.add.includes(op.id) ? "plan-new-face" : ""].filter(Boolean).join(" ") || undefined}
                       title={locked.includes(op.id) ? t("{name} — 숙소 고정 (자동편성이 유지)", { name: op.name }) : op.name}
                       loading="lazy" />
                   ))}
@@ -1838,10 +1935,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           // (플레임테일 B조: 작전기록 +30 / 순금 -30 등. 사용자 지적 2026-07-19)
           const ambientPart = score - Math.round(teamScore(team, cell.room, { ...ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan ? plantsFor(plan, activeShift, effectiveOpById) : undefined, presentIds, undefined, roomOf), shiftHours: plan?.shiftHours?.[activeShift] }));
           // 임시 적용 중이면 원래(스냅샷·커밋 정예화) 효율 대비 변화를 방 카드에 인플레이스 표시
+          const cellDiff = diffAt(cell.key, activeShift);
           const raiseBefore = tempApplied.size > 0 && tempBasePlan && cell.room !== "CONTROL" && !PARK_KEYS.includes(cell.key)
             ? Math.round(scoreRoomIn(tempBasePlan, committedOpById, cell.key, activeShift)) : null;
           return (
             <button key={cell.key} type="button" className={`ship-room ${cell.slot != null ? `pos-slot-${cell.slot}` : `pos-${cell.key.toLowerCase()}`}`} onClick={() => openRoomAt(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
+              {cellDiff && <span className="plan-chg plan-chg-card" title={diffTitle(cellDiff)}>{t("변경 있음")}</span>}
               <div className="ship-room-head">
                 <b>
                   {/* 사용자 지정 제조소: 제목의 품목 자리에 2버튼 그룹 — 제조/무역/발전 토글과 동일한 모양
@@ -1903,7 +2002,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   const isTemp = tempApplied.has(op.id); // 육성 추천 임시 적용 오퍼 — 미리보기임을 썸네일에 표시
                   const isPinned = (roomPins[cell.key] ?? []).includes(op.id); // 생산방 고정 (A·B 양조 근무)
                   return (
-                    <span key={op.id} className={`op-av${isTemp ? " temp" : ""}`} title={isTemp ? t("{name} — 임시 적용 중 (완성 가정 미리보기)", { name: op.name }) : undefined}>
+                    <span key={op.id} className={`op-av${isTemp ? " temp" : ""}${cellDiff?.add.includes(op.id) ? " plan-new-face" : ""}`} title={isTemp ? t("{name} — 임시 적용 중 (완성 가정 미리보기)", { name: op.name }) : undefined}>
                       <img src={asset(op.image)} alt={op.name} width={180} height={180} title={isTemp ? undefined : isPinned ? t("{name} — 방 고정 (A·B 양조 근무, 자동편성이 유지)", { name: op.name }) : op.name} loading="lazy" />
                       <em className={`op-elite e${elite}`} title={t("정예화 {n}", { n: elite })}>E{elite}</em>
                       {isPinned && <i className="op-pin-badge" aria-hidden>📌</i>}
@@ -1997,6 +2096,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           onSetLevel={setRoomLevel}
           onUpdateTeam={openCell.room === "DORMITORY" ? (key, _shift, ids) => updateDorm(key, ids) : updateWorkTeam}
           pins={openCell.room === "DORMITORY" ? (dormPins[openCell.key] ?? []) : (roomPins[openCell.key] ?? [])}
+          diff={planDiff?.[openCell.key] ?? null}
           onTogglePin={openCell.room === "DORMITORY"
             ? (opId: string) => toggleDormPin(openCell.key, opId)
             : (opId: string, shiftIdx?: number) => toggleRoomPin(openCell.key, opId, shiftIdx ?? 0)}
@@ -2332,7 +2432,7 @@ function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose }:
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, canRevert, onRevert, onOpenRoom, onShowOperator, onUpdateTeam, eliteById, onSetElite, onUnlockElite, blocked, unowned, onOpenRoster, tempIds, onRevertTempOne, onSetLevel, pins, onTogglePin }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; /** 이 창을 연 뒤 편성을 바꿨는가 — 창 안 되돌리기 버튼 표시 */ canRevert?: boolean; onRevert?: () => void; onOpenRoom?: (key: string, shift: number) => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; /** 잠긴 스킬 열기 — 정예화를 올리고 자동편성까지 다시 돌린다 */ onUnlockElite?: (id: string, elite: Elite) => void; /** 보유했지만 이 방 스킬이 정예화·레벨로 잠긴 오퍼 → 필요 조건 */ blocked: Map<string, string>; /** 이 방 스킬이 있는데 아직 보유로 안 켠 오퍼 */ unowned: InfraOp[]; onOpenRoster?: () => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; pins?: RoomPin[]; onTogglePin?: (opId: string, shiftIdx?: number) => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, canRevert, onRevert, onOpenRoom, onShowOperator, onUpdateTeam, eliteById, onSetElite, onUnlockElite, blocked, unowned, onOpenRoster, tempIds, onRevertTempOne, onSetLevel, pins, onTogglePin, diff }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; /** 이 창을 연 뒤 편성을 바꿨는가 — 창 안 되돌리기 버튼 표시 */ canRevert?: boolean; onRevert?: () => void; onOpenRoom?: (key: string, shift: number) => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; /** 잠긴 스킬 열기 — 정예화를 올리고 자동편성까지 다시 돌린다 */ onUnlockElite?: (id: string, elite: Elite) => void; /** 보유했지만 이 방 스킬이 정예화·레벨로 잠긴 오퍼 → 필요 조건 */ blocked: Map<string, string>; /** 이 방 스킬이 있는데 아직 보유로 안 켠 오퍼 */ unowned: InfraOp[]; onOpenRoster?: () => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; pins?: RoomPin[]; onTogglePin?: (opId: string, shiftIdx?: number) => void; /** 직전 편성 ↔ 자동편성 결과 차이 (제안 5e1364b5) */ diff?: { add: string[][]; drop: string[][] } | null }) {
   const { locale, t } = useI18n();
   const [shift, setShift] = useState(initialShift);
   const [termOpen, setTermOpen] = useState<string | null>(null); // RIIC 용어 팝업 (외세·실리 등)
@@ -2764,6 +2864,15 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     return rels.slice(0, 4);
   };
 
+  // 직전 편성과 바뀐 자리 — 새로 들어온 오퍼 ↔ 빠진 오퍼를 순서대로 짝짓는다 (짝 없는 새 오퍼 = 빈 자리에 들어옴)
+  const nmOf = (id: string) => opMap.get(id)?.name ?? opById.get(id)?.name ?? id;
+  const swap = (() => {
+    if (!diff) return null;
+    const i = Math.min(shiftIndex, diff.add.length - 1);
+    const add = diff.add[i] ?? [], drop = diff.drop[i] ?? [];
+    if (!add.length && !drop.length) return null;
+    return { prev: new Map(add.map((id, k) => [id, drop[k] ?? null] as const)), left: drop.slice(add.length) };
+  })();
   return (
     <ModalWindow label={t(cell.label)} className="operator-modal room-modal" onClose={onClose} style={{ "--accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
         <header className="room-modal-head">
@@ -2847,6 +2956,11 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
           <section className="detail-section">
             <span className="detail-no">CREW / 01</span>
             <h3>{t("편성 ({a}/{b})", { a: team.length, b: slots })}</h3>
+            {/* 자동편성으로 바뀐 방 — 새로 들어온 오퍼 카드마다 NEW + '이전: 누구' (사용자 지시 2026-10-14 "이격 쏜즈 카드에 뉴 뱃지와 함께
+                이전에는 미니멀리스트였다고"). 바꿔 들어온 짝이 없는 빠진 오퍼만 여기 한 줄로 */}
+            {swap && swap.left.length > 0 && (
+              <p className="room-diff-left"><span className="plan-chg">{t("변경 있음")}</span>{t("빠짐: {d}", { d: swap.left.map(nmOf).join(", ") })}</p>
+            )}
             {cell.room === "DORMITORY" && (
               <p className="dorm-note">{rich(t("숙소는 **항상 5명을 꽉 채운 상태로 유지**하세요. 고정 생성원 외의 빈 자리는 휴식이 필요한 아무 오퍼레이터로 채우면 됩니다 — 토큰 생성과 회복 효율은 풀 인원 기준으로 계산됩니다."))}</p>
             )}
@@ -2914,7 +3028,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 const elsewhere = op.skills.filter((skill) => skill.room !== cell.room && unused(skill));
                 const shown = [...b.skills, ...gated, ...elsewhere];
                 return (
-                  <article key={op.id} className="crew-card">
+                  <article key={op.id} className={`crew-card${swap?.prev.has(op.id) ? " has-new" : ""}`}>
                     {tempIds.has(op.id) && <button type="button" className="crew-revert" title={t("이 오퍼만 임시 적용을 되돌립니다")} onClick={() => onRevertTempOne(op.id)}>↩</button>}
                     {onTogglePin && (() => {
                       // 고정 상태 3단 — 없음 / 양조(📌) / 이 조만(📌A·📌B). 클릭하면 다음 단계로 돈다.
@@ -2932,6 +3046,19 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                       );
                     })()}
                     {onUpdateTeam && <button type="button" className="crew-remove" title={t("이 자리에서 빼기")} onClick={() => setIds(rawIds.filter((id) => id !== op.id))}>✕</button>}
+                    {/* 자동편성으로 새로 들어온 오퍼 — 오른쪽 ✕ 밑에 NEW + 이전 오퍼 (사용자 지시 2026-10-14) */}
+                    {swap?.prev.has(op.id) && (
+                      <span className="crew-new"><span className="plan-chg">{swap.prev.get(op.id) ? t("교체") : t("추가")}</span>
+                        {(() => {
+                          const pid = swap.prev.get(op.id);
+                          const pop = pid ? opMap.get(pid) ?? opById.get(pid) : undefined;
+                          // 이름만이 아니라 얼굴도 (사용자 지시 2026-10-14)
+                          // 얼굴을 누르면 그 오퍼 상세 (사용자 지시 2026-10-14)
+                          return <em>{pop && <img src={asset(pop.image)} alt={pop.name} width={34} height={34} loading="lazy"
+                            className={onShowOperator ? "op-link" : undefined} title={t("{name} 상세 정보", { name: pop.name })}
+                            onClick={(event) => { event.stopPropagation(); onShowOperator?.(pop.id); }} />}{pid ? t("이전: {name}", { name: nmOf(pid) }) : t("이전: 빈 자리")}</em>;
+                        })()}</span>
+                    )}
                     <span className={`crew-face${tempIds.has(op.id) ? " temp" : ""}`}>
                       <img src={asset(op.image)} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
                         title={tempIds.has(op.id) ? t("{name} — 임시 적용 중 (완성 가정 미리보기)", { name: op.name }) : t("{name} 상세 정보", { name: op.name })} onClick={() => onShowOperator?.(op.id)} />
@@ -2940,6 +3067,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                     <div>
                       <b>
                         {op.name} <i>{"★".repeat(op.rarity)}</i>
+
                         {(() => {
                           // 정예화 판정은 스킬이 필터링되지 않은 원본(opById) 기준
                           const master = opById.get(op.id);

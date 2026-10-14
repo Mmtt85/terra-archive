@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import TitleTip from "./title-tip";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -201,6 +202,8 @@ var m=''+((e&&e.message)||'');if(isChunk(m)||(hit&&/reading '?default'?|of undef
           }}
         />
         {children}
+        {/* 사이트 전체 툴팁 — title 을 0.5초 뒤 사이트가 그린다 (app/title-tip.tsx, 2026-10-14) */}
+        <TitleTip />
         {/* Cloudflare Web Analytics — 정본 도메인에서만 + 자동화 브라우저 제외.
             localhost·프리뷰(해시.pages.dev)에 더해 navigator.webdriver(Playwright·Selenium 등
             헤드리스 검증 크롤)도 걸러낸다 — 2026-07-21 스토리 전수 크롤 293건이 실방문으로

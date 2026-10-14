@@ -5493,6 +5493,9 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   font-size: 14px;
   font-family: inherit;
 }
+/* 조 탭 NEW — 그 조에 자동편성으로 바뀐 방이 있을 때 (2026-10-14) */
+.shift-tabs button { position: relative; }
+.shift-tabs .plan-chg-tab { position: absolute; top: -9px; right: -6px; z-index: 1; }
 .shift-tabs {
   display: flex;
   align-items: center;
@@ -5646,7 +5649,10 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   transform: none;
   margin-left: 6px;
   flex: none;
+  white-space: nowrap;   /* '베타'가 '베/타' 두 줄로 쪼개졌다 (사용자 지적 2026-10-14) */
 }
+/* 배지가 붙은 줄은 한 줄로 — 메뉴 폭이 글+배지만큼 늘어난다 */
+.drop-menu li > button:has(.new-badge) { white-space: nowrap; }
 /* 섹션 제목(h3)·모달 제목 안 배지는 제자리 인라인 — 절대배치면 제목 폭이 넓어
    섹션 오른쪽 끝으로 날아가 잘린다 (기지 치비 실측 2026-08-03) */
 .detail-section h3 .new-badge,
@@ -6046,6 +6052,25 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   font: 800 12px var(--mono);
 }
 /* 한 줄 고정 — 5인 방(제어센터 등)은 썸네일이 자동으로 줄어들어 줄바꿈 없이 들어간다 */
+/* 자동편성으로 바뀐 곳 (제안 5e1364b5, 2026-10-14) — 방 카드 오른쪽 위 NEW(공용 배지, 마우스를 올리면 바뀐 오퍼), 새로 들어간 얼굴엔 라임 테두리 */
+/* 시설 상세 모달 — 새로 들어온 오퍼 카드의 NEW + '이전: 누구', 짝 없이 빠진 오퍼 한 줄 */
+.room-diff-left .plan-chg { margin-right: 6px; vertical-align: middle; }
+.crew-new { position: absolute; top: 38px; right: 8px; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; width: 140px; text-align: right; }
+/* 오른쪽에 떠 있는 NEW·이전 칸 밑으로 긴 스킬 글이 깔려 끝이 가려졌다 (사용자 지적 2026-10-14) — 그 폭만큼 본문을 비운다 */
+.crew-card.has-new > div { padding-right: 150px; }
+@media (max-width: 640px) { .crew-new { position: static; grid-column: 1 / -1; width: auto; flex-direction: row; justify-content: flex-end; } .crew-card.has-new > div { padding-right: 0; } }
+
+.crew-new em { display: inline-flex; align-items: center; gap: 5px; font-style: normal; font-size: 11px; font-weight: 600; color: var(--muted); }
+.crew-card .crew-new em img { width: 34px; height: 34px; border-radius: var(--r-sm); object-fit: cover; border: 1px solid var(--line); }
+.crew-card .crew-new em img.op-link { cursor: pointer; }
+.crew-card .crew-new em img.op-link:hover { border-color: var(--lime-line); }
+.room-diff-left { margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+/* '변경 있음' — 글은 NEW 대신 '변경 있음', 색은 종전 빨간 배지 그대로 (사용자 결정 2026-10-14 "빨간색도 괜찮았는데"). 깜빡임은 뺀다 */
+.plan-chg { display: inline-block; padding: 1.5px 7px; border-radius: var(--r-pill); background: linear-gradient(135deg, #ff5a3c, #ff2d78); color: #fff; font-size: 9px; font-weight: 800; letter-spacing: 0.02em; line-height: 1.45; white-space: nowrap; box-shadow: 0 0 0 1px rgba(255, 45, 120, 0.35); }
+/* 시설 카드 오른쪽 위 — 카드가 넘침을 잘라서 위로 빼면 잘렸다. 위 테두리에 매달린 탭 모양으로 카드 위 여백(11px) 안에 */
+.ship-room { position: relative; }
+.ship-room > .plan-chg-card { position: absolute; top: 0; right: 10px; padding: 0 6px; line-height: 12px; border-radius: 0 0 5px 5px; cursor: help; z-index: 1; }
+.ship-room-crew .op-av.plan-new-face img, .ship-room-crew img.plan-new-face { outline: 2px solid var(--lime-line); outline-offset: -2px; }
 .ship-room-crew {
   display: flex;
   flex-wrap: nowrap;
@@ -30554,3 +30579,7 @@ html.dark .me-pf-art { opacity: .3; }
 .gacha-suggest-sep { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 4px; }
 .gacha-suggest-sep::before { content: attr(data-sep); display: block; padding: 2px 10px; font-size: 10px; color: var(--muted); }
 .gacha-note { margin: 0; font-size: 11px; line-height: 1.6; color: var(--muted); }
+
+/* 사이트 전체 툴팁 (app/title-tip.tsx, 2026-10-14) — title 문구를 그대로, 줄바꿈 유지 */
+.ta-tip { position: fixed; z-index: 2147483000; max-width: min(340px, calc(100vw - 16px)); padding: 6px 9px; border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: var(--white); color: var(--ink); box-shadow: var(--sh-2); font-size: 12px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; pointer-events: none; }
