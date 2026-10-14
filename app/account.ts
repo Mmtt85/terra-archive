@@ -137,6 +137,9 @@ export type PrefEntry = { t: number; d: string | null };
 export async function prefsGet(token: string): Promise<Record<string, PrefEntry>> {
   return ((await post("/prefs/get", { token })).keys ?? {}) as Record<string, PrefEntry>;
 }
+export async function prefsDelete(token: string): Promise<void> {
+  await post("/prefs/delete", { token });
+}
 export async function prefsPut(token: string, keys: Record<string, PrefEntry>, keepalive = false): Promise<Record<string, PrefEntry>> {
   if (keepalive) {   // 탭을 닫는 중 — 응답은 기다리지 않는다
     void fetch(apiBase() + "/prefs/put", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, keys }), keepalive: true }).catch(() => null);

@@ -33,6 +33,7 @@ import { AttributeFilter } from "./attr-filter";
 import recruitData from "./data/recruit.json";
 import { MeShare } from "./me-share";
 import { openChecker, runningChecker } from "./stage-open";
+import { resetCloudPrefs } from "./cloud-prefs";
 import { Dropdown } from "./dropdown";
 import { ACQUIRE_KEYS, ACQUIRE_LABEL, acquireOf, type AcquireKey } from "./op-acquire";
 import { CustomTileEditor, DEFAULT_LAYOUT, MAX_CUSTOM, evalTile, saveCustomTiles, tileLabel, useCustomTiles, useLayoutCustomized, type Cond, type CustomTile, type TileValue } from "./me-custom";
@@ -277,7 +278,13 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
   );
 }
 
-/** 제목 오른쪽 — 데이터 지우기 · 다시 동기화. 이 탭에서 로그인한 적이 없으면(토큰 없음) 동기화는 로그인 창을 연다 */
+// 저장된 설정 완전 초기화가 지우는 것 — app/cloud-prefs.tsx SYNC 와 같은 목록 (제안 열람 코드는 남긴다)
+const RESET_ITEMS = [
+  "라이트·다크 모드", "사이트 언어", "미래시 보기", "내 정보 맞춤 칸", "스토리 읽은 위치",
+  "리더기 글자·삽화 크기·소리", "인프라 자동편성기 — 보유 오퍼 설정·편성·우선순위·배치·재활용소",
+  "공채 '4★ 이상 확정 조합만'", "갤러리 스포일러 가리기", "NEW 배지 본 기록",
+];
+/** 제목 오른쪽 — 저장된 설정 완전 초기화 · 로그아웃 · 다시 동기화. 이 탭에서 로그인한 적이 없으면(토큰 없음) 동기화는 로그인 창을 연다 */
 function MeActions({ onLogin }: { onLogin: () => void }) {
   const { t } = useI18n();
   const { confirm, dialog } = useConfirm();
@@ -312,14 +319,35 @@ function MeActions({ onLogin }: { onLogin: () => void }) {
       if (code === "token-expired") { dropMeToken(); onLogin(); }
     } finally { setBusy(false); }
   };
+  // 로그아웃 — 종전 '데이터 지우기'. 저장된 설정은 지우지 않는다는 걸 이름·문구로 분명히 (사용자 지시 2026-10-14)
   const wipe = async () => {
-    if (!(await confirm({ message: t("이 브라우저에 저장된 내 계정 데이터를 지웁니다. 오퍼 도감·아이템 도감의 보유 표시도 함께 사라집니다 (인프라 편성은 그대로 남습니다)."), confirmLabel: t("지우기") }))) return;
+    if (!(await confirm({ title: t("로그아웃"), message: t("이 브라우저에서 게임 계정 연결을 끊습니다. 내 정보 화면과 오퍼 도감·아이템 도감의 보유 표시가 사라지고 설정 동기화가 멈춥니다. 저장된 설정은 지워지지 않으며, 다시 로그인하면 그대로 이어집니다."), confirmLabel: t("로그아웃") }))) return;
     clearMe();
+  };
+  // 저장된 설정 완전 초기화 — 계정 저장소와 이 브라우저의 설정을 기본값으로 (되돌릴 수 없어 무엇이 사라지는지 다 적는다)
+  const [resetting, setResetting] = useState(false);
+  const resetAll = async () => {
+    if (!(await confirm({ title: t("저장된 설정 완전 초기화"), danger: true, confirmLabel: t("초기화"),
+      // 문단·목록으로 — 한 덩어리 줄글이라 읽히지 않았다 (사용자 지적 2026-10-14). 확인 창 본문은 pre-line 이라 \n 이 그대로 줄바꿈
+      message: [
+        t("이 계정에 저장된 UID·설정과 이 브라우저의 설정을 모두 지우고 기본값으로 되돌립니다."),
+        t("다른 기기에서도 더 이상 이어지지 않으며, 되돌릴 수 없습니다."),
+        "",
+        t("사라지는 것"),
+        ...RESET_ITEMS.map((x) => `• ${t(x)}`),
+        "",
+        t("이 브라우저는 로그아웃되고, 제안 게시판의 내 제안(열람 코드)만 남습니다."),
+      ].join("\n") }))) return;
+    setResetting(true);
+    // 로그아웃까지 — 계정 저장소를 지운 뒤 이 브라우저의 계정 연결도 끊는다 (사용자 지시 2026-10-14 "완전 삭제는 로그아웃도")
+    try { await resetCloudPrefs(clearMe); } catch { setResetting(false); setErr(t("초기화하지 못했습니다 — 잠시 뒤 다시 시도해 주세요.")); }
   };
   return (
     <div className="me-head-actions">
       {dialog}
-      <button type="button" className="import-action" onClick={() => void wipe()}><span className="btn-icon" aria-hidden>✕</span>{t("데이터 지우기")}</button>
+      <button type="button" className="import-action" disabled={resetting} onClick={() => void resetAll()}
+        title={t("이 계정에 저장된 설정과 이 브라우저의 설정을 모두 기본값으로 되돌립니다")}><span className="btn-icon" aria-hidden>↺</span>{t("저장된 설정 완전 초기화")}</button>
+      <button type="button" className="import-action" onClick={() => void wipe()}><span className="btn-icon" aria-hidden>⏻</span>{t("로그아웃")}</button>
       <button type="button" className="import-action apply" disabled={busy} onClick={() => void resync()}>
         <span className="btn-icon" aria-hidden>⟳</span>{busy ? t("가져오는 중…") : t("다시 동기화")}
       </button>

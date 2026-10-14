@@ -9,7 +9,7 @@
 //   entries — 객체의 항목마다 at 이 큰 쪽 (스토리 읽은 위치: 기기 A 에서 읽은 이야기와 기기 B 에서 읽은 이야기가 둘 다 남는다)
 // ⚠ 워커 PREF_KEYS(workers/account/src/index.js)와 같은 목록이어야 한다 — 거기 없는 키는 받아 주지 않는다
 import { useEffect } from "react";
-import { adminKeyGet, prefsGet, prefsPut, type PrefEntry } from "./account";
+import { adminKeyGet, prefsDelete, prefsGet, prefsPut, type PrefEntry } from "./account";
 import { getBoardAdminKey, setBoardAdminKey } from "./feedback";
 import { isOwnerUid } from "./visit-track";
 import { mePrefToken, PREF_EVENT } from "./me-store";
@@ -58,6 +58,20 @@ function mergeEntries(local: string | null, remote: string | null): string | nul
   const out = { ...a };
   for (const [id, v] of Object.entries(b)) if (!out[id] || (v?.at ?? 0) > (out[id]?.at ?? 0)) out[id] = v;
   return Object.keys(out).length ? JSON.stringify(out) : local;
+}
+
+/** 저장된 설정 완전 초기화 — 내 정보의 단추 (사용자 지시 2026-10-14). 계정에 저장된 설정을 지우고, 이 브라우저의 같은 설정도 기본값으로 되돌린다.
+ *  제안 열람 코드만은 남긴다 — 지우면 그동안 쓴 제안을 다시 볼 길이 없어진다. 끝나면 새로 연다(기능들이 기본값으로 다시 읽게) */
+export async function resetCloudPrefs(logout?: () => void): Promise<void> {
+  const token = mePrefToken();
+  if (token) await prefsDelete(token);
+  logout?.();   // 로그아웃까지 (내 정보 clearMe — 게임 토큰·설정용 표·계정 데이터)
+  for (const { key } of SYNC) {
+    if (key === "ta-feedback-token" || key === "ta-feedback-extra") continue;
+    try { localStorage.removeItem(key); } catch { /* 무시 */ }
+  }
+  try { localStorage.removeItem(META); } catch { /* 무시 */ }
+  location.reload();
 }
 
 export default function CloudPrefs() {

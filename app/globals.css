@@ -2736,6 +2736,7 @@ html.dark .tags-track > span {
   font-size: 14px;
   line-height: 1.6;
   color: var(--ink2);
+  white-space: pre-line;   /* 문단 나눔 — 저장된 설정 완전 초기화의 '사라지는 것' 목록 (2026-10-14) */
 }
 .confirm-actions {
   display: flex;

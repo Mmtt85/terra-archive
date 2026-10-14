@@ -831,6 +831,14 @@ async function prefsGet(token) {
   const doc = (await PREFS.get(key, "json")) ?? { keys: {} };
   return { ok: true, keys: doc.keys ?? {} };
 }
+/** 이 계정에 저장된 설정을 통째로 지운다 — 내 정보 '저장된 설정 완전 초기화' (2026-10-14) */
+async function prefsDelete(token) {
+  const key = await prefOwner(token);
+  if (!key) throw new HttpError(401, "pref-token");
+  if (!PREFS) throw new HttpError(503, "pref-store");
+  await PREFS.delete(key);
+  return { ok: true };
+}
 /** 키마다 더 나중(t)인 것을 남긴다 — 다른 기기에서 동시에 고쳐도 그 키 단위로 최신이 이긴다 */
 async function prefsPut(token, keys) {
   const key = await prefOwner(token);
@@ -1065,9 +1073,10 @@ export default {
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== "object") return json({ ok: false, error: "bad-body" }, origin, 400);
     // 사이트 설정 동기화 — 서버·UID 는 표 안에 있다 (서버 값을 따로 받지 않는다)
-    if (url.pathname === "/prefs/get" || url.pathname === "/prefs/put" || url.pathname === "/admin/key") {
+    if (url.pathname === "/prefs/get" || url.pathname === "/prefs/put" || url.pathname === "/prefs/delete" || url.pathname === "/admin/key") {
       try {
         if (url.pathname === "/admin/key") return json(await adminKeyFor(body.token), origin);
+        if (url.pathname === "/prefs/delete") return json(await prefsDelete(body.token), origin);
         return json(url.pathname === "/prefs/get" ? await prefsGet(body.token) : await prefsPut(body.token, body.keys), origin);
       } catch (error) {
         return json({ ok: false, error: error?.code ?? "internal" }, origin, error instanceof HttpError ? error.status : 500);
