@@ -11,10 +11,11 @@ import { useEffect, useState } from "react";
 import qrcode from "qrcode-generator";
 import type { T } from "./i18n";
 import {
-  AccountError, accountErrorText, loginCnAccount, pollCnScan, startCnScan,
+  AccountError, accountErrorText, MAINTENANCE_TEXT, MAINTENANCE_TITLE, loginCnAccount, pollCnScan, startCnScan,
   type AccountRoster, type AccountStep, type CnLogin,
 } from "./account";
 import { saveMe } from "./me-store";
+import { useConfirm } from "./confirm";
 import { AccountSteps } from "./roster-import";
 
 /** 중국어 고유명사 + 작은 주석 (보는 언어 하나) */
@@ -112,8 +113,14 @@ export function CnLoginFields({ t, server, submitLabel, onAccount }: {
   const [step, setStep] = useState<AccountStep | "start">("start");
   const [error, setError] = useState<string | null>(null);
 
+  const { confirm, dialog: maintDialog } = useConfirm();
   const fail = (caught: unknown) => {
     const code = caught instanceof AccountError ? caught.code : "internal";
+    if (code === "maintenance") {
+      void confirm({ alert: true, title: t(MAINTENANCE_TITLE),
+        message: t(MAINTENANCE_TEXT, { window: (caught as AccountError).window ?? "" }) });
+      return;
+    }
     setError(t(cnErrorText(code), { code }));
   };
 
@@ -164,6 +171,7 @@ export function CnLoginFields({ t, server, submitLabel, onAccount }: {
 
   return (
     <>
+      {maintDialog}
       {server === "cn" ? (
         <>
           <div className="cn-modes" role="radiogroup">

@@ -108,6 +108,47 @@ class HttpError extends Error {
   constructor(status, code) { super(code); this.status = status; this.code = code; }
 }
 
+// ── 점검 판별 (2026-10-14) ─────────────────────────────────────
+// 점검 중엔 u8·게임 서버가 로그인을 거절해 'token-expired'·'login-failed' 로 읽혔고, 사이트가 저장된 로그인을 지우며
+// "로그인 정보가 만료"라고 띄웠다 (사용자 지적 2026-10-14 한섭 큰 점검). 실패했을 때만 게임의 점검 사전공지
+// ({an}/Android/preannouncement.meta.json — 게임이 접속 화면에 띄우는 그 공지)를 보고, 공지의 점검 시간 안이면 'maintenance'.
+// 공지는 점검 며칠 전부터 actived 라 시간까지 읽어야 한다 — 시간을 못 읽으면 점검으로 보지 않는다
+// (중섭은 2024년 공지가 계속 actived 다). 한섭 "10월 14일 (수), 10:00 ~ 16:00", 일섭 "2026年10月14日(水）10:00～16:00" — 둘 다 UTC+9.
+function parseMaintenanceWindow(text) {
+  const kst = new Date(Date.now() + 9 * 3600_000);
+  const m = text.match(/(?:(\d{4})年)?(\d{1,2})[월月] ?(\d{1,2})[일日][^\d]{0,12}(\d{1,2}):(\d{2}) ?[~～〜\-－] ?(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  const year = Number(m[1] ?? kst.getUTCFullYear()), mon = Number(m[2]) - 1, day = Number(m[3]);
+  const at = (h, mi) => Date.UTC(year, mon, day, Number(h) - 9, Number(mi));
+  const start = at(m[4], m[5]);
+  let end = at(m[6], m[7]);
+  if (end <= start) end += 86_400_000; // 자정을 넘기는 점검
+  return { start, end, label: `${m[2]}/${m[3]} ${m[4].padStart(2, "0")}:${m[5]}~${m[6].padStart(2, "0")}:${m[7]}` };
+}
+async function maintenanceError(network) {
+  try {
+    const base = String(network?.an ?? "").replace(/\{0\}\/announcement\.meta\.json$/, "");
+    if (!base || base === network.an) return null;
+    const meta = await (await fetch(base + "Android/preannouncement.meta.json", { headers: BASE_HEADERS })).json();
+    if (!meta?.actived || !meta.preAnnounceUrl) return null;
+    const html = await (await fetch(meta.preAnnounceUrl)).text();
+    const w = parseMaintenanceWindow(html.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " "));
+    const now = Date.now();
+    // 앞뒤 여유 — 점검 직전 접속 차단·연장 점검
+    if (!w || now < w.start - 30 * 60_000 || now > w.end + 2 * 3600_000) return null;
+    const error = new HttpError(503, "maintenance");
+    error.window = w.label;
+    return error;
+  } catch {
+    return null;
+  }
+}
+/** 게임 서버 단계가 실패하면 점검인지 먼저 본다 — 점검이면 원래 오류 대신 'maintenance' */
+async function orMaintenance(promise, network) {
+  try { return await promise; }
+  catch (error) { throw (await maintenanceError(network)) ?? error; }
+}
+
 async function sendCode(email, server) {
   const body = JSON.stringify({ Account: email, Randstr: "", Ticket: "" });
   const res = await fetch(YOSTAR_DOMAIN[server] + "/yostar/send-code", {
@@ -808,7 +849,7 @@ function streamed(origin, run) {
     try {
       await send(await run((step) => { void send({ step }); }));
     } catch (error) {
-      await send({ ok: false, error: error?.code ?? "internal" });
+      await send({ ok: false, error: error?.code ?? "internal", ...(error?.window ? { window: error.window } : {}) });
     } finally {
       await writer.close().catch(() => {});
     }
@@ -860,7 +901,7 @@ async function handleLogin({ email, code, server, phone, password, username, hgT
     step("yostar");
     cred = await getYostarToken(email, code.trim(), server, deviceId);
   }
-  const fetched = await fetchUser(cred, deviceId, network, step, server);
+  const fetched = await orMaintenance(fetchUser(cred, deviceId, network, step, server), network);
   step("digest");
   const r = roster(fetched.user), prof = profile(fetched.user, fetched.friends, fetched.shop);
   prof.seal = raw ? null : await sealOf(r, prof, server);
@@ -871,7 +912,7 @@ async function handleLogin({ email, code, server, phone, password, username, hgT
 async function handleSync({ token, server, raw }, step = noStep) {
   step("network");
   const network = await getNetworkConfig(server);
-  const fetched = await fetchUser({ uid: token.uid, token: token.token }, token.deviceId, network, step, server);
+  const fetched = await orMaintenance(fetchUser({ uid: token.uid, token: token.token }, token.deviceId, network, step, server), network);
   step("digest");
   const r = roster(fetched.user), prof = profile(fetched.user, fetched.friends, fetched.shop);
   prof.seal = raw ? null : await sealOf(r, prof, server);
@@ -1000,7 +1041,7 @@ export default {
     } catch (error) {
       const status = error instanceof HttpError ? error.status : 500;
       // 오류 문자열에 이메일·코드가 섞이지 않도록 코드만 내보낸다
-      return json({ ok: false, error: error?.code ?? "internal" }, origin, status);
+      return json({ ok: false, error: error?.code ?? "internal", ...(error?.window ? { window: error.window } : {}) }, origin, status);
     }
   },
 };

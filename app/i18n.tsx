@@ -1538,6 +1538,11 @@ const D: Record<string, Pair> = {
     "Please check the email address and the selected server.",
     "メールアドレスとサーバー選択を確認してください。",
   ],
+  "게임 서버 점검 중": ["Game server under maintenance", "ゲームサーバーメンテナンス中"],
+  "지금 게임 서버가 점검 중이라 계정 정보를 받아 올 수 없습니다 (점검 {window} · 한국 시간). 점검이 끝난 뒤 다시 시도해 주세요.": [
+    "The game server is under maintenance, so your account data can't be fetched right now (maintenance {window} KST). Please try again after it ends.",
+    "現在ゲームサーバーがメンテナンス中のため、アカウント情報を取得できません（メンテナンス {window} 日本時間）。終了後にもう一度お試しください。",
+  ],
   "로그인 정보가 만료되었습니다 — 인증코드로 다시 로그인해 주세요.": [
     "Your sign-in expired — please sign in again with a verification code.",
     "ログイン情報の期限が切れました — 認証コードで再ログインしてください。",

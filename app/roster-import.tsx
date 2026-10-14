@@ -14,10 +14,11 @@ import { rich, type T } from "./i18n";
 import { Dropdown } from "./dropdown";
 import { isNewFeature } from "./whats-new";
 import {
-  ACCOUNT_SERVERS, ACCOUNT_STEPS, AccountError, accountErrorText, isYostarServer, loginAccount, sendAccountCode,
+  ACCOUNT_SERVERS, ACCOUNT_STEPS, AccountError, accountErrorText, MAINTENANCE_TEXT, MAINTENANCE_TITLE, isYostarServer, loginAccount, sendAccountCode,
   type AccountRoster, type AccountServer, type AccountStep,
 } from "./account";
 import { saveMe } from "./me-store";
+import { useConfirm } from "./confirm";
 import { CnLoginFields } from "./account-cn";
 
 type Props = {
@@ -91,8 +92,15 @@ export function AccountLoginForm({ t, onAccount, submitLabel, privacy }: { t: T;
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const { confirm, dialog: maintDialog } = useConfirm();
   const fail = (caught: unknown) => {
     const failCode = caught instanceof AccountError ? caught.code : "internal";
+    // 게임 점검 — 오류 줄 대신 알림 창 (2026-10-14)
+    if (failCode === "maintenance") {
+      void confirm({ alert: true, title: t(MAINTENANCE_TITLE),
+        message: t(MAINTENANCE_TEXT, { window: (caught as AccountError).window ?? "" }) });
+      return;
+    }
     setError(t(accountErrorText(failCode), { code: failCode }));
     // 쿨다운(too-many)은 직전 요청의 코드가 아직 유효하다는 뜻이라 입력칸을 닫지 않는다
     if (failCode === "too-many") setSent(true);
@@ -159,6 +167,7 @@ export function AccountLoginForm({ t, onAccount, submitLabel, privacy }: { t: T;
 
   return (
     <>
+      {maintDialog}
       <div className="import-form">
         {serverPick}
         <label className="import-email">

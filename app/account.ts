@@ -127,7 +127,8 @@ export type AccountRoster = { player: AccountPlayer; chars: AccountChar[]; token
 
 /** 워커가 돌려준 오류 코드 — 문구는 accountErrorText()가 정한다. */
 export class AccountError extends Error {
-  constructor(public code: string) { super(code); }
+  /** window — 점검(maintenance)일 때 워커가 게임 공지에서 읽은 점검 시간 "10/14 10:00~16:00" (KST) */
+  constructor(public code: string, public window?: string) { super(code); }
 }
 
 async function post(path: string, body: unknown): Promise<Record<string, unknown>> {
@@ -142,7 +143,7 @@ async function post(path: string, body: unknown): Promise<Record<string, unknown
     throw new AccountError("offline");
   }
   const data = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-  if (!res.ok || !data || data.ok !== true) throw new AccountError(String(data?.error ?? `http-${res.status}`));
+  if (!res.ok || !data || data.ok !== true) throw new AccountError(String(data?.error ?? `http-${res.status}`), typeof data?.window === "string" ? data.window : undefined);
   return data;
 }
 
@@ -173,7 +174,7 @@ async function postStream(path: string, body: Record<string, unknown>, onStep?: 
   }
   if (!res.body || !(res.headers.get("Content-Type") ?? "").includes("ndjson")) {
     const data = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-    if (!res.ok || !data || data.ok !== true) throw new AccountError(String(data?.error ?? `http-${res.status}`));
+    if (!res.ok || !data || data.ok !== true) throw new AccountError(String(data?.error ?? `http-${res.status}`), typeof data?.window === "string" ? data.window : undefined);
     return data;
   }
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
@@ -197,7 +198,7 @@ async function postStream(path: string, body: Record<string, unknown>, onStep?: 
   }
   take(buf);
   const data = last as Record<string, unknown> | null;
-  if (!data || data.ok !== true) throw new AccountError(String(data?.error ?? "internal"));
+  if (!data || data.ok !== true) throw new AccountError(String(data?.error ?? "internal"), typeof data?.window === "string" ? data.window : undefined);
   return data;
 }
 
@@ -226,6 +227,10 @@ export async function verifySeal(code: string): Promise<SealData | null> {
   return data.valid === true ? (data.data as SealData) : null;
 }
 
+/** 게임 점검 안내 — 오류 줄과 알림 창이 같이 쓴다. {window} = AccountError.window */
+export const MAINTENANCE_TITLE = "게임 서버 점검 중";
+export const MAINTENANCE_TEXT = "지금 게임 서버가 점검 중이라 계정 정보를 받아 올 수 없습니다 (점검 {window} · 한국 시간). 점검이 끝난 뒤 다시 시도해 주세요.";
+
 /** 오류 코드를 한국어 원문(i18n 키)으로 — 사전에 같은 키가 있어야 EN/JA가 나온다. */
 export function accountErrorText(code: string): string {
   switch (code) {
@@ -238,6 +243,7 @@ export function accountErrorText(code: string): string {
     case "bad-email":
     case "bad-request": return "이메일 형식과 서버 선택을 확인해 주세요.";
     case "token-expired": return "로그인 정보가 만료되었습니다 — 인증코드로 다시 로그인해 주세요.";
+    case "maintenance": return MAINTENANCE_TEXT;
     // 중섭 (2026-10-06)
     case "bad-phone": return "휴대폰 번호 형식이 맞지 않습니다 (중국 휴대폰 번호 11자리).";
     case "bad-password": return "아이디 또는 비밀번호가 맞지 않습니다.";

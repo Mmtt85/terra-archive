@@ -203,7 +203,7 @@ export function MeShare({ me, owned, released, opById, stages, items, onClose }:
                     {hero.map((h) => (
                       <div key={h.label}><span>{h.label}</span>
                         <b>{fmt(h.n)}{h.total > 0 && <small>/{fmt(h.total)}</small>}</b>
-                        {h.total > 0 && <em>{Math.round((h.n / h.total) * 100)}%</em>}
+                        {h.total > 0 && <em>{Math.floor((h.n / h.total) * 100)}%</em>}{/* 내림 — 100% 는 다 모았을 때만 */}
                       </div>
                     ))}
                   </div>

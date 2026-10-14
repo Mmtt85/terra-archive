@@ -15,7 +15,7 @@ import { useHashSync } from "./hash-modal";
 
 import {
   infra, ops, opById, factionsOf, withElite, clueBase, maxElite, eliteOptions, eliteLocks, levelLocks,
-  ELITE_LABEL, MAX_OP_LEVEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
+  ELITE_LABEL, MAX_OP_LEVEL, maxOpLevel, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, orderFixFor, roomMaxNetDrain,
   ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
@@ -3172,6 +3172,7 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, level, locked, o
   onShowOperator?: (id: string) => void; t: T;
 }) {
   const options = eliteOptions(op);
+  const levelCap = maxOpLevel(op.rarity, elite);
   // 레벨은 노정예에서만 인프라 계산에 영향을 준다('Lv.30' 해금 스킬) — 1정 이상은
   // 그 조건을 이미 넘겼으므로 입력칸을 흐리게 두되 기록은 그대로 남긴다
   const levelMatters = elite === 0;
@@ -3207,7 +3208,11 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, level, locked, o
       {owned && options.length > 0 && (
         <div className="elite-toggle" role="group" aria-label={t("{name} 정예화 단계", { name: op.name })}>
           {options.map((option) => (
-            <button key={option} type="button" className={elite === option ? "selected" : ""} onClick={() => onElite(op.id, option)}>{t(ELITE_LABEL[option])}</button>
+            <button key={option} type="button" className={elite === option ? "selected" : ""} onClick={() => {
+              onElite(op.id, option);
+              // 정예화를 내리면 그 단계 최대 레벨로 줄인다 (2정 Lv.90 → 노정예면 Lv.50)
+              if (level != null && level > maxOpLevel(op.rarity, option)) onLevel(op.id, maxOpLevel(op.rarity, option));
+            }}>{t(ELITE_LABEL[option])}</button>
           ))}
         </div>
       )}
@@ -3217,14 +3222,14 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, level, locked, o
             ? t("노정예 Lv.30부터 열리는 기지 스킬이 있어 레벨이 계산에 반영됩니다")
             : t("1정 이상은 레벨 조건을 이미 넘겨 계산에 영향이 없습니다")}>
           <span>Lv.</span>
-          <input type="number" min={1} max={MAX_OP_LEVEL} inputMode="numeric"
-            value={level ?? ""} placeholder="—"
+          <input type="number" min={1} max={levelCap} inputMode="numeric"
+            value={level == null ? "" : Math.min(level, levelCap)} placeholder="—"
             aria-label={t("{name} 레벨", { name: op.name })}
             onChange={(event) => {
               const raw = event.target.value.trim();
               if (!raw) { onLevel(op.id, undefined); return; }
               const n = Math.round(Number(raw));
-              if (Number.isFinite(n)) onLevel(op.id, Math.max(1, Math.min(MAX_OP_LEVEL, n)));
+              if (Number.isFinite(n)) onLevel(op.id, Math.max(1, Math.min(levelCap, n)));
             }} />
         </label>
       )}

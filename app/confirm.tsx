@@ -15,6 +15,7 @@ export type ConfirmOptions = {
   cancelLabel?: string;
   danger?: boolean; // 되돌릴 수 없는 파괴적 동작이면 확인 버튼을 경고색으로
   altLabel?: string; // 취소·확인 사이의 세 번째 버튼 — 누르면 confirm() 이 "alt" 를 돌려준다
+  alert?: boolean; // 알림만 — 취소 버튼 없이 확인 하나 (게임 점검 안내, 2026-10-14)
 };
 
 function ConfirmDialog({
@@ -24,6 +25,7 @@ function ConfirmDialog({
   cancelLabel,
   danger,
   altLabel,
+  alert,
   onConfirm,
   onCancel,
   onAlt,
@@ -47,7 +49,7 @@ function ConfirmDialog({
         {title && <h3 className="confirm-title">{title}</h3>}
         <p className="confirm-message">{message}</p>
         <div className="confirm-actions">
-          <button type="button" className="confirm-cancel" onClick={onCancel}>{cancelLabel ?? t("취소")}</button>
+          {!alert && <button type="button" className="confirm-cancel" onClick={onCancel}>{cancelLabel ?? t("취소")}</button>}
           {altLabel && <button type="button" className="confirm-cancel" onClick={onAlt}>{altLabel}</button>}
           <button type="button" ref={okRef} className={`confirm-ok${danger ? " danger" : ""}`} onClick={onConfirm}>{confirmLabel ?? t("확인")}</button>
         </div>

@@ -19,7 +19,7 @@ import { ModalWindow } from "./modal-window";
 import { useConfirm } from "./confirm";
 import { AccountLoginForm, AccountSteps } from "./roster-import";
 import { MeVerify } from "./me-verify";
-import { AccountError, accountErrorText, syncAccount, ACCOUNT_SERVERS, type AccountChar, type AccountFriend, type AccountProfile, type AccountStep } from "./account";
+import { AccountError, accountErrorText, syncAccount, MAINTENANCE_TEXT, MAINTENANCE_TITLE, ACCOUNT_SERVERS, type AccountChar, type AccountFriend, type AccountProfile, type AccountStep } from "./account";
 import { cnErrorText } from "./account-cn";
 import { clearMe, dropMeToken, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, mePulls, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages } from "./dex-cross";
@@ -270,6 +270,12 @@ function MeActions({ onLogin }: { onLogin: () => void }) {
     catch (caught) {
       const raw = caught instanceof AccountError ? caught.code : "internal";
       const code = /^u8 4\d\d$/.test(raw) ? "token-expired" : raw;
+      // 게임 점검 — 로그인 정보는 그대로 두고 알림 창으로 (사용자 지시 2026-10-14 "점검 문구도 모달 같은 걸로")
+      if (code === "maintenance") {
+        void confirm({ alert: true, title: t(MAINTENANCE_TITLE),
+          message: t(MAINTENANCE_TEXT, { window: (caught as AccountError).window ?? "" }) });
+        return;
+      }
       setErr(t((tok.server === "cn" || tok.server === "bili" ? cnErrorText : accountErrorText)(code), { code }));
       // 토큰이 죽었으면(만료·다른 기기 로그인) 지우고 로그인 창으로 — 요스타 단계에서 4xx 가 와도 같은 뜻이다
       if (code === "token-expired") { dropMeToken(); onLogin(); }
@@ -990,7 +996,8 @@ function Kpis({ owned, released, opById, me, onList, demo }: { owned: AccountCha
     const v = evalTile(tile, ctx);
     const label = tileLabel(tile, t);
     const big = tile.kind === "builtin" && tile.key === "owned";
-    const pct = big && v.total ? `${Math.round((v.value / Math.max(1, v.total)) * 100)}%` : null;
+    // 내림 — 반올림하면 413/415 가 100% 로 보였다 (사용자 지적 2026-10-14). 100% 는 다 모았을 때만
+    const pct = big && v.total ? `${Math.floor((v.value / Math.max(1, v.total)) * 100)}%` : null;
     const clickable = !!(v.chars || v.ops);
     const body = <><span>{label}</span><b>{fmt(v.value)}{v.total != null && <small>/{fmt(v.total)}</small>}</b>{pct && <small className="me-kpi-pct">{pct}</small>}{v.total != null && <Ring value={v.value} total={v.total} />}</>;
     return (

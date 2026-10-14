@@ -271,6 +271,13 @@ export const ELITE_LABEL: Record<Elite, string> = { 0: "노정예", 1: "1정", 2
 // 오퍼 레벨 입력 상한 — 6성 2정 만렙. 정예화 단계별 실제 상한은 성급마다 다르지만,
 // 인프라 계산에 쓰이는 건 'Lv.30 미만이냐'뿐이라 입력은 단순 범위 검증만 한다.
 export const MAX_OP_LEVEL = 90;
+// 성급·정예화별 실제 최대 레벨 — 입력 칸은 이 값으로 막는다 (사용자 지적 2026-10-14: "1성 로봇 레벨 30 넘어까지 지정돼").
+// [노정예, 1정, 2정] — 1·2성은 정예화가 없어 30, 3성은 1정까지
+const LEVEL_CAP: Record<number, number[]> = { 1: [30], 2: [30], 3: [40, 55], 4: [45, 60, 70], 5: [50, 70, 80], 6: [50, 80, 90] };
+export function maxOpLevel(rarity: number, elite: Elite): number {
+  const caps = LEVEL_CAP[rarity] ?? LEVEL_CAP[6];
+  return caps[Math.min(elite, caps.length - 1)];
+}
 export function eliteOptions(op: InfraOp): Elite[] {
   if (op.rarity <= 2) return [];
   return op.rarity === 3 ? [0, 1] : [0, 1, 2];
