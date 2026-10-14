@@ -148,9 +148,14 @@ function loadDexNames(): Promise<void> {
     import("../data/items.json").then((m) => {
       for (const it of (m.default as unknown as { items: { id: string; n: string }[] }).items) ITEM_NAME.set(it.id, it.n);
     }),
+    // 이벤트 이름 — 동선의 헤더 이벤트 칩 표식(withChips). 스토리 없는 이벤트(임계 상전이 등)는 STORY_NAME 에 없다
+    import("../data/events.json").then((m) => {
+      for (const e of (m.default as unknown as { events: { id: string; n: string }[] }).events) EVENT_NAME.set(e.id, e.n);
+    }),
   ])).then(() => undefined).catch(() => { dexNames = null; });
   return dexNames;
 }
+const EVENT_NAME = new Map<string, string>();
 const STORY_NAME = new Map((storiesData as unknown as { events: { id: string; name: { ko: string } }[] }).events.map((e) => [e.id, e.name.ko]));
 export const SECTION_KO: Record<string, string> = {
   홈: "홈", operators: "오퍼레이터", stories: "스토리", enemies: "적 도감", stages: "작전", events: "이벤트",
@@ -303,7 +308,7 @@ function withChips(s: SessRow): SessRow["views"] {
   for (const e of [...chips].reverse()) {
     const raw = e.detail ?? "";
     const [pre, id] = raw.includes(":") ? [raw.slice(0, raw.indexOf(":")), raw.slice(raw.indexOf(":") + 1)] : ["", raw];
-    const name = pre === "promo" ? (SECTION_KO[id] ?? id) : (STORY_NAME.get(id) ?? id);
+    const name = pre === "promo" ? (SECTION_KO[id] ?? id) : (EVENT_NAME.get(id) ?? STORY_NAME.get(id) ?? id);
     const t = (Date.parse(e.at) - start) / 1000;
     const at = out.findIndex((v) => !v.chip && (v.t0 ?? 0) >= t - 1);
     const mark: SessView = { path: "", hash: `#chip-${raw}`, t0: t, vis: 0, act: 0, scroll: null, out: null,
