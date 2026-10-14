@@ -324,6 +324,13 @@ def build_locale(prefix):
 
     ops_out = []
     names = {}
+    # 지금 파일의 그 언어 이름 — 한섭이 먼저 받은 오퍼는 로케일 표(일섭·글섭)에 없어 이름이 한국어로 폴백했다.
+    # 그 오퍼가 미래시(중섭 선행)로 실려 있던 동안 쓰던 그 언어 이름(ケルシー・エスペランタ 등)을 이어 쓴다
+    # (2026-10-14 한섭 큰 점검 — JA 오퍼 도감에 신규 5명 이름이 한글로 나갈 뻔했다)
+    try:
+        _prev_names = {o["id"]: o.get("name") for o in json.load(open(f"{REPO}/app/data/operators.{C['out']}.json", encoding="utf-8"))}
+    except (OSError, ValueError, KeyError, TypeError):
+        _prev_names = {}
     for op in kr_ops:
         cid = op["id"]
         c = chars.get(cid)
@@ -336,11 +343,16 @@ def build_locale(prefix):
             #   JA는 jp 표가 먼저 갖고 있어 영향이 없다 — 그래서 en만 손본다.
             fb = dict(op)
             appel = (_kr_chars.get(cid) or {}).get("appellation")
+            prev = _prev_names.get(cid)
+            keep = prev if prev and not HANGUL.search(prev) else None
             if C["out"] == "en" and appel and appel != op["name"]:
                 al = [a for a in [op["name"], *op.get("aliases", [])] if a and a != appel]
                 seen_al = set(); al = [a for a in al if not (a in seen_al or seen_al.add(a))]
                 fb["name"] = appel
                 fb["aliases"] = al
+            elif keep:
+                fb["name"] = keep
+                fb["aliases"] = [a for a in [op["name"], *op.get("aliases", [])] if a and a != keep]
             # 직업·배치는 KR 레코드가 코드값(jobCode "WARRIOR" · position "근거리")을 들고 있어
             # 로케일 표 없이도 정확히 번역된다. 소속·종족·전투 태그는 로케일 핸드북/가챠 표에서
             # 오는 값이라 그 표에 없으면 방법이 없다 — KR 폴백을 그대로 둔다.

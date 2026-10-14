@@ -959,7 +959,6 @@ table dict__string__clz_Torappu_BuildingData_TradingRoomSpecialOrderInfo {
 }
 
 table clz_Torappu_BuildingData_TradingRoomInfoData {
-    tradingRoomSpecialOrderData: [dict__string__clz_Torappu_BuildingData_TradingRoomSpecialOrderInfo]; 
 }
 
 table clz_Torappu_BuildingData {
@@ -1044,6 +1043,7 @@ table clz_Torappu_BuildingData {
     emojis: [string]; 
     categoryNames: [dict__string__string]; 
     buffSortData: [dict__string__clz_Torappu_BuildingData_BuildingRoomTypeBuffSortData]; 
+    tradingRoomInfoData: clz_Torappu_BuildingData_TradingRoomInfoData; 
 }
 
 root_type clz_Torappu_BuildingData;
