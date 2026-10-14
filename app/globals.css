@@ -27280,7 +27280,6 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 .me-own-badge b { font-size: 11px; color: var(--ink); }
 .me-own-badge i { font-style: normal; color: var(--muted); margin-left: 2px; }
 .me-own-badge.none { color: var(--muted); }
-.operator-card.me-unowned .portrait > img { filter: grayscale(0.85); opacity: 0.55; }
 .operator-grid.mini .me-own-badge { display: none; }
 /* 오퍼 상세 히어로 오른쪽 — 내 육성 현황 (히어로는 어두운 그라데이션 위 흰 글자) */
 .me-op-strip { flex: none; display: grid; grid-template-columns: repeat(5, auto); gap: 3px 14px; align-content: center; padding: 8px 12px; border: 1px solid #ffffff38; background: #00000033; font-size: 13px; color: #fff; }

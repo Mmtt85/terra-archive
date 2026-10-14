@@ -3332,7 +3332,7 @@ function OperatorCard({ operator, index, onSelect, mine }: { operator: Operator;
   // 실제 앵커 — 크롤러가 따라갈 내부 링크이자 새 탭/북마크가 되는 정본 주소.
   // 클릭은 종전대로 가로채 모달을 연다 (미실장 오퍼는 상세 라우트가 없어 목록 주소로).
   return (
-    <a className={`operator-card${operator.unreleased ? " fut-dim" : ""}${peek ? " peek" : ""}${mine === null && !operator.unreleased && isCollectible(operator.id) ? " me-unowned" : ""}`} href={operatorHref(locale, operator)}
+    <a className={`operator-card${operator.unreleased ? " fut-dim" : ""}${peek ? " peek" : ""}`} href={operatorHref(locale, operator)}
       onPointerEnter={remeasure} onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold}
       onContextMenu={(event) => { if (held.current || peek) event.preventDefault(); }}
       onClick={(event) => {
@@ -3348,10 +3348,11 @@ function OperatorCard({ operator, index, onSelect, mine }: { operator: Operator;
         {/* 위 줄: 성급 별 + 직군 (사용자 지시 2026-09-18 "성급 오른쪽에다가 직군을 써줘") */}
         <div className="portrait-meta">{/* 성급+직군이 카드 폭을 넘으면 흘러간다 — 미실장 미니카드는 폭이 52~96px 라 별 6개에 "스페셜리스트" 같은 긴 직군이 붙으면 100px 을 넘긴다 (사용자 지적 2026-09-20). 이름·태그와 같은 마퀴 장치(.meta-track ← home.tsx 측정 → --flow-ms). */}<div className="meta-track"><span data-rarity={operator.rarity}>{"★".repeat(operator.rarity)}</span><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div></div>
         {visible && <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} decoding="async" />}
-        {/* 내 계정 — 보유하면 정예화·레벨(+잠재), 아니면 '미보유' (내 정보 로그인 시에만) */}
-        {mine !== undefined && !operator.unreleased && isCollectible(operator.id) && (
-          <span className={`me-own-badge${mine ? "" : " none"}`}>
-            {mine ? <><b>{eliteText(locale, mine.elite, mine.level)}</b><i>{potText(locale, mine.potential)}</i></> : t("미보유")}
+        {/* 내 계정 — 보유하면 정예화·레벨(+잠재) 배지. 미보유는 아무 표시 없이 평소 카드 그대로 — 흑백·'미보유' 꼬리표는
+            미실장(흑백)과 헷갈렸다 (사용자 지시 2026-10-14 "미보유는 그냥 아무것도 없어야지, 회색이면 미실장 같잖아") */}
+        {mine && !operator.unreleased && isCollectible(operator.id) && (
+          <span className="me-own-badge">
+            <b>{eliteText(locale, mine.elite, mine.level)}</b><i>{potText(locale, mine.potential)}</i>
           </span>
         )}
         {/* 아래 패널: 접힌 채엔 이름 한 줄, 펼치면 소속·출신·종족·컨셉 태그 */}
