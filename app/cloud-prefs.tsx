@@ -17,7 +17,19 @@ import { mePrefToken, PREF_EVENT } from "./me-store";
 //   token   — 제안 게시판 열람 코드: 계정에 있으면 그걸 쓰고, 이 브라우저가 따로 쓰던 코드는 예전 코드 목록으로 옮긴다 (계정에 없으면 이 브라우저 것을 올린다)
 //   union   — 예전 열람 코드 목록: 합집합 (어느 기기에서 쓴 제안이든 다 보이게)
 // ⚠ 순서: token 이 union 보다 먼저 — token 이 옮긴 코드를 union 이 같이 올린다
+// 2026-10-14 (사용자 지시 "본 사이트에서 이어지는 거 전부") — 화면 설정 전부를 더했다. 기기마다 달라야 하는 것(창 위치·크기)·
+// 그때그때 쓰고 버리는 것(위수 협의 판·파티, 치비 대화, 검색 기록)·계정 데이터 자체(ta:me — 기기마다 다시 동기화)·방문자 번호는 넣지 않는다
 const SYNC: { key: string; merge: "lww" | "entries" | "token" | "union" }[] = [
+  { key: "ta-theme", merge: "lww" },                    // 라이트·다크 모드
+  { key: "ta-locale", merge: "lww" },                   // 사이트 언어
+  { key: "ta-include-future", merge: "lww" },           // 미래시(중섭 선행) 보기
+  { key: "story-reader-prefs", merge: "lww" },          // 스토리 글자·삽화 크기
+  { key: "story-reader-sound", merge: "lww" },          // 리더기 소리
+  { key: "ta:gallery-spoiler", merge: "lww" },          // 갤러리 스포일러 가리기
+  { key: "ta-recruit-prized", merge: "lww" },           // 공채 '4★ 이상 확정 조합만'
+  { key: "ta:new-seen", merge: "lww" },                 // NEW 배지 본 기록
+  { key: "terra-archive-infra-v3", merge: "lww" },      // 인프라 편성기 — 보유 오퍼 설정·편성·우선순위·배치
+  { key: "terra-archive-infra-recycle", merge: "lww" }, // 인프라 재활용소 우선도
   { key: "ta:me-layout", merge: "lww" },
   { key: "ta:story-pos", merge: "entries" },
   { key: "ta-feedback-token", merge: "token" },
@@ -33,6 +45,8 @@ const writeMeta = (m: Meta) => { try { localStorage.setItem(META, JSON.stringify
 const get = (k: string): string | null => { try { return localStorage.getItem(k); } catch { return null; } };
 function put(k: string, v: string | null) {
   try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { return; }
+  // 테마는 storage 이벤트를 듣는 곳이 없어 바로 바꿔 준다 (머리 단추는 html.dark 클래스를 지켜본다)
+  if (k === "ta-theme" && (v === "dark" || v === "light")) document.documentElement.classList.toggle("dark", v === "dark");
   // 같은 탭의 기능들이 따라오게 — 원래는 다른 탭에서 바뀔 때만 오는 이벤트를 흉내 낸다
   window.dispatchEvent(new StorageEvent("storage", { key: k, newValue: v }));
 }

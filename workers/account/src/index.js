@@ -790,8 +790,10 @@ async function hmac(text) {
 // 쓰기·읽기는 **설정용 표**로만: 로그인·동기화 때 [2, 서버, UID] 를 SIGN_KEY 로 서명해 내준다. 정품 인증 seal 은 공유 이미지 QR 로
 // 남에게 보이는 값이라 이 용도로 쓰지 않는다. UID 를 그냥 받으면 누구나 남의 설정을 고칠 수 있다.
 let PREFS = null;
-const PREF_MAX = 200_000;          // 계정당 설정 전체 상한 (바이트)
-const PREF_KEYS = new Set(["ta:me-layout", "ta:story-pos", "ta-feedback-token", "ta-feedback-extra"]);   // 받아 주는 설정 키 — 사이트 app/cloud-prefs.ts SYNC 와 같게
+const PREF_MAX = 2_000_000;        // 계정당 설정 전체 상한 (바이트) — 인프라 편성기 상태가 커서 넉넉히 (KV 한도 25MB)
+const PREF_KEYS = new Set(["ta:me-layout", "ta:story-pos", "ta-feedback-token", "ta-feedback-extra",
+  "ta-theme", "ta-locale", "ta-include-future", "story-reader-prefs", "story-reader-sound", "ta:gallery-spoiler",
+  "ta-recruit-prized", "ta:new-seen", "terra-archive-infra-v3", "terra-archive-infra-recycle"]);   // 받아 주는 설정 키 — 사이트 app/cloud-prefs.ts SYNC 와 같게
 async function prefTokenOf(server, uid) {
   if (!SIGN_KEY || !uid) return null;
   const body = b64url(new TextEncoder().encode(JSON.stringify([2, server, String(uid)])));

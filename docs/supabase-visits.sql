@@ -467,7 +467,6 @@ create table if not exists public.visit_player (
   visitor uuid not null,
   server text not null check (char_length(server) <= 8),
   uid text not null check (char_length(uid) <= 24),
-  nick text check (char_length(nick) <= 40),
   env text not null default 'live' check (env in ('live', 'dev')),
   at timestamptz not null default now(),
   primary key (visitor, server, uid)
@@ -504,7 +503,7 @@ returns json language sql stable security definer set search_path = public as $$
       -- 방문자 익명 id — 세션 타임라인에 코드(앞 8자)로 보여 PRTS·틀렸어요 표와 맞춰 본다 (2026-10-12)
       'visitor', s.visitor,
       -- 그 방문자가 내 정보로 로그인한 게임 계정 (가장 최근) — 없으면 null (2026-10-14)
-      'player', (select json_build_object('server', p.server, 'uid', p.uid, 'nick', p.nick) from public.visit_player p
+      'player', (select json_build_object('server', p.server, 'uid', p.uid) from public.visit_player p
                  where p.visitor = s.visitor order by p.at desc limit 1),
       -- 마지막으로 받은 시각 — 열려 있는 탭은 1분마다 보내므로(visit-track.ts BEAT_MS) 몇 분 안이면 '조작 중' (2026-10-10)
       'last_at', (select max(vv.at) from public.visit_view vv where vv.session = s.id),

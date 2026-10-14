@@ -93,7 +93,7 @@ type SessRow = {
   /** 브라우저 익명 방문자 id (2026-10-12~ DB 함수 — 옛 함수면 없다). 화면엔 앞 8자 */
   visitor?: string | null;
   /** 그 방문자가 내 정보로 로그인한 게임 계정 (visit_player, 2026-10-14~ — SQL 적용 전이면 없다) */
-  player?: { server: string; uid: string; nick: string | null } | null;
+  player?: { server: string; uid: string } | null;
   /** 그 세션의 일 기록 — PRTS 연결·해제, 내 정보 로그인·동기화 (2026-10-11~ DB 함수) */
   events?: { at: string; kind: string; detail: string | null; dur: number | null; server: string | null }[];
 };
@@ -801,7 +801,7 @@ function SessionLine({ s, hit }: { s: SessRow; hit?: boolean }) {
         {/* 방문자 코드 — PRTS·틀렸어요 표의 방문자와 맞춰 볼 수 있게 (사용자 지시 2026-10-12) */}
         {/* 로그인한 사람은 게임 계정으로 (사용자 지시 2026-10-14) — 아닌 사람은 종전처럼 방문자 코드만 */}
         {s.player
-          ? <span className="vz-tag vz-player" title={`${s.player.nick ?? ""} · 방문자 ${s.visitor?.slice(0, 8) ?? "-"}`}>👤 {s.player.server}:{s.player.uid}{s.player.nick ? ` · ${s.player.nick}` : ""}</span>
+          ? <span className="vz-tag vz-player" title={`방문자 ${s.visitor?.slice(0, 8) ?? "-"}`}>👤 {s.player.server}:{s.player.uid}</span>
           : s.visitor && <code className="vz-visitor" title={s.visitor}>{s.visitor.slice(0, 8)}</code>}
         <span className="vz-tag vz-total" title="화면마다 조작 시간(없으면 보인 시간)의 합">합계 {fmtDur(total)}</span>
         <b>{s.src}</b>

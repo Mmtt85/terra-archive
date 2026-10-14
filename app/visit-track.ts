@@ -15,8 +15,8 @@
 //   · 바깥 링크를 누르면 그 주소, 본문을 어디까지 내렸는지(%).
 // 보내는 법 — 화면을 떠날 때·탭을 내릴 때 **그사이 늘어난 몫만** 한 행으로 보낸다(추가 전용. 익명 키에
 //   UPDATE 를 열지 않는다). 서버가 같은 (session, seq) 를 합친다.
-// 안 보내는 것 — IP·위치. 방문자 구분은 localStorage 의 무작위 id 이고, 내 정보로 로그인한 사람만 그 게임 계정(서버·UID·닉네임)을
-//   방문자와 잇는다 (visit_player, 2026-10-14 "로그인한 사람은 UID 로, 아닌 사람은 기존처럼").
+// 안 보내는 것 — IP·위치·닉네임. 방문자 구분은 localStorage 의 무작위 id 이고, 내 정보로 로그인한 사람만 그 게임 계정(서버·UID)을
+//   방문자와 잇는다 — 서버·UID 만, 닉네임은 안 보낸다 (visit_player, 2026-10-14 "로그인한 사람은 UID 로, 아닌 사람은 기존처럼").
 //
 // **운영자 본인은 기록하지 않는다** (사용자 지시 2026-10-04 "내 움직임은 통계에 들어가면 안돼") —
 //   ① 내 정보로 관리자 UID(OWNER_UIDS)에 로그인한 브라우저 — 2026-10-14~. 종전의 관리 사이트 'ta-no-track' 쿠키는 없앴다
@@ -197,11 +197,11 @@ function notePlayer(): void {
   if (!started) return;
   try {
     const visitor = localStorage.getItem(VISITOR_KEY);
-    const me = JSON.parse(localStorage.getItem("ta:me") ?? "null") as { server?: string; player?: { uid?: string | number; nickName?: string; nickNumber?: string } } | null;
+    const me = JSON.parse(localStorage.getItem("ta:me") ?? "null") as { server?: string; player?: { uid?: string | number } } | null;
     const uid = me?.player?.uid != null ? String(me.player.uid) : "";
     if (!visitor || !uid || !me?.server) return;
-    const nick = me.player?.nickName ? `${me.player.nickName}${me.player.nickNumber ? `#${me.player.nickNumber}` : ""}` : null;
-    post("visit_player", [{ visitor: clip(visitor, 64), server: clip(me.server, 8), uid: clip(uid, 24), nick: clip(nick, 40), env }]);
+    // 닉네임은 보내지 않는다 — 알아보는 데 UID 면 충분하고, 모으는 건 적을수록 좋다 (사용자 지시 2026-10-14 "닉네임은 필요 없지 않나")
+    post("visit_player", [{ visitor: clip(visitor, 64), server: clip(me.server, 8), uid: clip(uid, 24), env }]);
   } catch { /* 저장 막힘 */ }
 }
 
