@@ -9085,6 +9085,11 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   flex-wrap: wrap;
   gap: 6px;
 }
+/* 상단 탭은 한 줄로 (사용자 지시 2026-10-15 "왜 두 행에 걸쳐 나오는가") — 제목·탭 모두 줄바꿈 없이, 좁은 폭에서만 가로 스크롤 */
+.admin > header:has(> .admin-tabs) { flex-wrap: nowrap; }
+.admin > header h1 { white-space: nowrap; flex: none; }
+.admin-tools.admin-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.admin-tools.admin-tabs > * { flex: none; white-space: nowrap; }
 /* 관리 페이지 단추 — 모양은 공용 두 가지 (2026-10-10 통일, 사용자 지시 "관리 페이지 버튼들도 탭 버튼처럼"):
    고르는 단추(상단 탭·필터·기간 칩) = .tab-btn, 그 밖의 실행 단추(새로고침·리포트·저장…) = 공용 드롭다운 단추와 같은 옅은 바탕.
    여기는 치수만 둔다 — 테두리·바탕·선택 표시는 파일 맨 끝의 공용 규칙이 맡는다 */
@@ -30594,3 +30599,6 @@ html.dark .me-pf-art { opacity: .3; }
 .ap-item summary { cursor: pointer; }
 .ap-pre { margin: 8px 0 0; max-height: 360px; overflow: auto; font: 12px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 .ap-list { margin: 8px 0 0; padding-left: 20px; font-size: 13px; }
+.ap-kv { margin: 0 0 10px; font-size: 14px; color: var(--ink2); }
+.ap-kv b { font-size: 18px; color: var(--ink); }
+.ap-kv b.warn { color: var(--danger); }

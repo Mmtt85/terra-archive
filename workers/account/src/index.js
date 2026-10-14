@@ -824,6 +824,17 @@ async function adminKeyFor(token) {
   if (!ADMIN_KEY) throw new HttpError(503, "admin-key-missing");
   return { ok: true, key: ADMIN_KEY };
 }
+// KV 쓰기 횟수 — KV 무료 플랜은 하루(UTC) 쓰기 1,000번. 횟수를 KV 에 세면 그게 또 쓰기라, 방문 기록 DB(kv_write)에 한 줄씩 남긴다.
+// 관리 화면 'UID 설정' 탭이 하루치를 센다 (사용자 지시 2026-10-15). 공개(anon) 키·주소는 사이트 app/visit-track.ts 와 같다
+const VISITS_URL = "https://ytulglqiwcwufeyguvrj.supabase.co";
+const VISITS_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0dWxnbHFpd2N3dWZleWd1dnJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwODgxMDMsImV4cCI6MjEwNjY2NDEwM30.N0bLhSrTtqoP3xOcYcnZfa32grznXN7LBcbp26OqX7E";
+function noteKvWrite(kind) {
+  return fetch(`${VISITS_URL}/rest/v1/kv_write`, {
+    method: "POST",
+    headers: { apikey: VISITS_ANON_KEY, Authorization: `Bearer ${VISITS_ANON_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify([{ kind }]),
+  }).catch(() => null);   // 기록이 실패해도 설정 저장은 그대로
+}
 async function prefsGet(token) {
   const key = await prefOwner(token);
   if (!key) throw new HttpError(401, "pref-token");
@@ -837,6 +848,7 @@ async function prefsDelete(token) {
   if (!key) throw new HttpError(401, "pref-token");
   if (!PREFS) throw new HttpError(503, "pref-store");
   await PREFS.delete(key);
+  await noteKvWrite("delete");
   return { ok: true };
 }
 /** 키마다 더 나중(t)인 것을 남긴다 — 다른 기기에서 동시에 고쳐도 그 키 단위로 최신이 이긴다 */
@@ -855,6 +867,7 @@ async function prefsPut(token, keys) {
   const text = JSON.stringify({ keys: cur, at: Date.now() });
   if (text.length > PREF_MAX) throw new HttpError(413, "pref-too-big");
   await PREFS.put(key, text);
+  await noteKvWrite("put");
   return { ok: true, keys: cur };
 }
 

@@ -715,3 +715,27 @@ returns json language sql stable security definer set search_path = public as $$
   ) r
 $$;
 grant execute on function public.visits_ev_chips(timestamptz, timestamptz) to anon;
+
+-- ── 설정 동기화 KV 쓰기 횟수 (2026-10-15) ── 계정 워커 noteKvWrite 가 KV 에 쓸 때마다 한 줄. KV 무료 하루(UTC) 1,000번 감시용
+create table if not exists public.kv_write (
+  at timestamptz not null default now(),
+  kind text not null check (kind in ('put', 'delete'))
+);
+create index if not exists kv_write_at_idx on public.kv_write (at desc);
+alter table public.kv_write enable row level security;
+drop policy if exists "anon insert kv write" on public.kv_write;
+create policy "anon insert kv write" on public.kv_write for insert to anon with check (true);
+drop policy if exists "admin read kv write" on public.kv_write;
+create policy "admin read kv write" on public.kv_write for select to anon using ((select public.visits_is_admin()));
+
+-- 하루(UTC — KV 한도가 풀리는 기준)별 쓰기 수, 최근 p_days 일
+create or replace function public.visits_kv_writes(p_days int default 14)
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(d order by d.day desc), '[]') from (
+    select (at at time zone 'UTC')::date as day, count(*) filter (where kind = 'put') as puts, count(*) filter (where kind = 'delete') as deletes
+    from public.kv_write
+    where at >= now() - make_interval(days => p_days) and (select public.visits_is_admin())
+    group by 1
+  ) d
+$$;
+grant execute on function public.visits_kv_writes(int) to anon;

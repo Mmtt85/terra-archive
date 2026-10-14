@@ -663,8 +663,6 @@ export default function AdminPage() {
             파일{files ? ` (${uploadRows.length})` : ""}
           </button>
           <button className={tab === "prefs" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("prefs")}>UID 설정</button>
-          {/* Access 세션 종료 — 다시 들어오려면 구글 로그인 필요 */}
-          <button className="tab-btn" onClick={() => { window.location.href = "/cdn-cgi/access/logout"; }}>로그아웃</button>
         </div>
       </header>
       {status && <p className="admin-status">{status}</p>}
