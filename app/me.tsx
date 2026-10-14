@@ -87,7 +87,7 @@ function primeLeft(doc: StageOpDoc | null, rec: Record<string, number> | undefin
   const ids: string[] = [];
   for (const id of doc.ids) {
     if ((rec[id] ?? -1) >= 3) continue;
-    const ref = doc.ref[id] ?? id.replace(/#f#$/, "");
+    const ref = doc.ref[id] ?? id.replace(/#f#$|#s$/, "");
     const type = typeOf.get(ref) ?? "ACTIVITY";
     if (ref && !isOpen({ id: ref, t: type })) continue;
     // 기록이 아예 없는 이벤트 작전은 지금 기간 중인 이벤트일 때만 — 끝난 이벤트는 깬 기록이 계정 데이터에서 지워진다
@@ -1161,6 +1161,7 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
     const mainZones = new Set(stages.stages.filter((s) => s.t === "MAIN" || s.t === "SUB").map((s) => s.z));
     stages.stages.forEach((s) => {
       if (s.id.startsWith("tr_")) return;   // 훈련 작전
+      if (s.id.includes("autochess")) return;   // 위수 협의 판 — 클리어·3성·순오리지늄이 있는 작전이 아니다 (사용자 지적 2026-10-14)
       if (s.t === "ACTIVITY" && s.ev == null && mainZones.has(s.z)) return;
       let g: ProgGroup;
       if (s.t === "MAIN" || s.t === "SUB") g = get(`z${s.z}`, "main", stages.zones[s.z], s.z);
@@ -1267,7 +1268,7 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
           if (!prime) return;
           const by = new Map<string, string[]>();
           for (const id of prime.ids) {
-            const base = id.replace(/#f#$/, "");
+            const base = id.replace(/#f#$|#s$/, "");
             const ref = opDoc?.ref[id] || base;
             const name = data.gOf.get(base) ?? data.gOf.get(ref) ?? t("스토리 작전");
             by.set(name, [...(by.get(name) ?? []), id]);
@@ -1304,15 +1305,18 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
                   <div className="me-stage-chips">
                     {grp.ids.map((id) => {
                       // 돌격(#f#)은 그 작전 도감으로, 도감에 없는 스토리 작전은 이름만 (순오리지늄 목록)
+                      // 돌격 = #f# · 고난 = #s(14장~) / tough_(10~13장) — 앞 둘은 도감에 따로 없어 본 작전으로 연다
                       const assault = id.endsWith("#f#");
-                      const s = data.byId.get(id) ?? (assault ? data.byId.get(id.slice(0, -3)) : undefined);
+                      const adverse = id.endsWith("#s") || id.startsWith("tough_");
+                      const s = data.byId.get(id) ?? data.byId.get(id.replace(/#f#$|#s$/, ""));
                       const nm = opDoc?.nm?.[id];
                       if (!s && !nm) return null;
-                      if (!s) return <button key={id} type="button" disabled title={nm![1]}><b>{nm![0]}</b><span>{nm![1]}</span></button>;
+                      // 스토리 작전(전투 없음)은 작전 맵과 구분 — '스토리 ·' + 점선 (사용자 지시 2026-10-14)
+                      if (!s) return <button key={id} type="button" className="story" disabled title={nm![1]}><b>{nm![0]}</b><span>{t("스토리")} · {nm![1]}</span></button>;
                       const kills = s.t === "CAMPAIGN" ? camps?.[id] ?? 0 : null;
                       return (
                         <button key={id} type="button" onClick={() => onOpenStage(s.id)} title={s.name}>
-                          <b>{s.code}</b><span>{assault ? `${t("돌격")} · ` : ""}{s.name}{kills != null ? ` · ${fmt(kills)}/400` : ""}</span>
+                          <b>{s.code}</b><span>{assault ? `${t("돌격")} · ` : adverse ? `${t("고난")} · ` : ""}{s.name}{kills != null ? ` · ${fmt(kills)}/400` : ""}</span>
                         </button>
                       );
                     })}

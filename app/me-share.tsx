@@ -109,7 +109,7 @@ export function MeShare({ me, owned, released, opById, stages, items, onClose }:
     const isRunning = runningChecker(now);
     let left = 0, star = 0, campDone = 0, camps = 0;
     for (const s of stages.stages) {
-      if (s.id.startsWith("tr_") || s.sub) continue;
+      if (s.id.startsWith("tr_") || s.sub || s.id.includes("autochess")) continue;   // 위수 협의 판은 작전이 아니다
       if (s.t === "CAMPAIGN") { camps += 1; if ((me.profile?.campaigns[s.id] ?? 0) >= 400) campDone += 1; continue; }
       if (s.t !== "MAIN" && s.t !== "SUB" && s.t !== "ACTIVITY") continue;
       if (!isOpen(s)) continue;

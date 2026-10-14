@@ -649,7 +649,7 @@ for sid, kv in tables["ko"].items():
     n = kv.get("diamondOnceDrop") or 0
     if not n:
         continue
-    base = sid[:-3] if sid.endswith("#f#") else sid
+    base = sid[:-3] if sid.endswith("#f#") else sid[:-2] if sid.endswith("#s") else sid   # 돌격 #f# · 고난 #s
     if base in _site_ids:
         ref = base
     elif kv.get("stageType") in ("MAIN", "SUB", "DAILY"):
@@ -663,10 +663,10 @@ for sid, kv in tables["ko"].items():
 _op_rows.sort()
 _op_doc = {"ids": [r[0] for r in _op_rows],
            "n": {r[0]: r[1] for r in _op_rows if r[1] != 1},
-           "ref": {r[0]: r[2] for r in _op_rows if r[2] != (r[0][:-3] if r[0].endswith("#f#") else r[0])},
+           "ref": {r[0]: r[2] for r in _op_rows if r[2] != re.sub(r"#f#$|#s$", "", r[0])},
            # 도감에 없는 작전(스토리 작전 st_·이벤트 _st)의 [코드, 이름] — '어디서 얻나' 목록에 쓴다
            "nm": {r[0]: [clean(tables["ko"][r[0]].get("code")) or r[0], clean(tables["ko"][r[0]].get("name")) or ""]
-                  for r in _op_rows if (r[0][:-3] if r[0].endswith("#f#") else r[0]) not in _site_ids}}
+                  for r in _op_rows if re.sub(r"#f#$|#s$", "", r[0]) not in _site_ids}}
 _op_path = os.path.join(DATA, "stage-op.json")
 json.dump(_op_doc, open(_op_path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print(f"  stage-op.json: 순오리지늄 작전 {len(_op_rows)}개 · 합 {sum(r[1] for r in _op_rows)} {os.path.getsize(_op_path)//1024}KB")

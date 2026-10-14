@@ -27186,6 +27186,8 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 
 /* 진행 상황 */
 /* 스테이지 클리어 현황 — 순오리지늄 아이콘 + × N개 (2026-10-14) */
+.me-stage-chips button.story { border-style: dashed; }
+.me-stage-chips button.story:disabled { opacity: 1; cursor: default; }
 .me-prime { display: inline-flex; align-items: center; gap: 4px; }
 .me-prime img { flex: none; object-fit: contain; }
 .me-progress-sum { display: grid; grid-template-columns: 1.6fr repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
