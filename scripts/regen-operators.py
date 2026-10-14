@@ -18,6 +18,11 @@ battle_equip = load(f"{S}/kr_battle_equip_table.json")
 battle_equip = battle_equip.get("equips", battle_equip)
 building = load(f"{S}/kr_building_data.json")
 ranges = load(f"{S}/kr_range_table.json"); ranges = ranges.get("range", ranges)
+# 한섭 range_table 은 CDN 19표에 없어 클뜯 레포판(늦다)이다 — 새로 생긴 사거리(켈시 에스페란타 y-11)가 없으면
+# 중섭 표로 채운다. 안 그러면 실장되는 날 그 스킬 사거리가 빠진다 (2026-10-14 실측)
+_cn_ranges = load(f"{S}/cn_range_table.json"); _cn_ranges = _cn_ranges.get("range", _cn_ranges)
+for _rid, _r in _cn_ranges.items():
+    ranges.setdefault(_rid, _r)
 team_table = load(f"{S}/kr_handbook_team_table.json")
 kr_team_table = team_table
 handbook = load(f"{S}/kr_handbook_info_table.json"); handbook = handbook.get("handbookDict", handbook)
