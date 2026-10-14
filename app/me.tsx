@@ -33,6 +33,8 @@ import { AttributeFilter } from "./attr-filter";
 import recruitData from "./data/recruit.json";
 import { MeShare } from "./me-share";
 import { openChecker, runningChecker } from "./stage-open";
+import { Dropdown } from "./dropdown";
+import { ACQUIRE_KEYS, ACQUIRE_LABEL, acquireOf, type AcquireKey } from "./op-acquire";
 import { CustomTileEditor, DEFAULT_LAYOUT, MAX_CUSTOM, evalTile, saveCustomTiles, tileLabel, useCustomTiles, useLayoutCustomized, type Cond, type CustomTile, type TileValue } from "./me-custom";
 
 export type MeOp = {
@@ -423,7 +425,7 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
       {share && onShareClose && <MeShare me={me} owned={owned} released={released} opById={opById} stages={stages} items={items} onClose={onShareClose} />}
       {list && (
         <ModalWindow key={`ls-${list.key}`} label={list.title} className="operator-modal me-list-modal" onClose={() => setList(null)}>
-          <OpListBody title={list.title} entries={list.entries} opById={opById} onShowOperator={onShowOperator} />
+          <OpListBody title={list.title} entries={list.entries} opById={opById} chars={mine} onShowOperator={onShowOperator} />
         </ModalWindow>
       )}
       {openItem && items && (
@@ -765,30 +767,83 @@ function MoreButton({ open, total, onToggle }: { open: boolean; total: number; o
 }
 
 // ── 오퍼 목록 모달 본문 ──────────────────────────────────────
-function OpListBody({ title, entries, opById, onShowOperator }: { title: string; entries: ListEntry[]; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void }) {
+// 거르기·정렬 — 오퍼 도감처럼 (사용자 지시 2026-10-14 "내 정보 보유 오퍼도 오퍼 도감처럼 필터링 및 정렬"):
+// 이름 검색 · 성급 · 직군 · 획득 구분(한정·통상·보상·공채·커널, op-acquire.ts) — 같은 줄 안은 하나라도(OR), 줄끼리는 모두(AND).
+// 정렬 기본은 들어온 순서(칸마다 정한 성급·레벨 순)이고, 계정 오퍼가 있는 목록만 레벨·잠재·최근 영입으로 바꿀 수 있다
+type OpSort = "base" | "level" | "potential" | "name" | "gain";
+const dropLabel = (name: string, picked: string | null) => (picked ? <>{name} · <b>{picked}</b></> : name);
+function OpListBody({ title, entries, opById, chars, onShowOperator }: { title: string; entries: ListEntry[]; opById: Map<string, MeOp>; chars?: Map<string, AccountChar>; onShowOperator?: (id: string) => void }) {
   const { locale, t } = useI18n();
+  const fmt = fmtOf(locale);
+  const [q, setQ] = useState("");
+  // 드롭다운마다 하나만 고른다 — 고르면 목록이 닫히고, 줄끼리는 모두 만족(AND) (사용자 지시 2026-10-14 "or 가 아니라 and 로").
+  // 같은 값을 다시 고르면 풀린다
+  const [rar, setRar] = useState<number | null>(null);
+  const [jobs, setJobs] = useState<string | null>(null);
+  const [acq, setAcq] = useState<AcquireKey | null>(null);
+  const [sort, setSort] = useState<OpSort>("base");
+  const [rev, setRev] = useState(false);
+  const toggle = <V,>(set: React.Dispatch<React.SetStateAction<V | null>>) => (v: V) => set((cur) => (cur === v ? null : v));
+  const rows = entries.map((e) => ({ e, op: opById.get(e.id), c: chars?.get(e.id) })).filter((x): x is { e: ListEntry; op: MeOp; c: AccountChar | undefined } => !!x.op);
+  // 고를 거리는 이 목록에 있는 것만 — 없는 성급·직군 칩은 띄우지 않는다
+  const rarOpts = [6, 5, 4, 3, 2, 1].filter((r) => rows.some((x) => x.op.rarity === r));
+  const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "SUPPORT", "SPECIAL"];   // 게임 직군 순서
+  const jobOpts = [...new Map(rows.filter((x) => x.op.jobCode).map((x) => [x.op.jobCode!, x.op.job ?? x.op.jobCode!])).entries()]
+    .sort((a, b) => JOB_ORDER.indexOf(a[0]) - JOB_ORDER.indexOf(b[0]));
+  const acqOpts = ACQUIRE_KEYS.filter((k) => rows.some((x) => acquireOf(x.op.id).includes(k)));
+  const hasChars = rows.some((x) => x.c);
+  const nq = normSearch(q);
+  const shown = rows.filter((x) => (!nq || normSearch(x.op.name).includes(nq))
+    && (rar == null || x.op.rarity === rar)
+    && (jobs == null || x.op.jobCode === jobs)
+    && (acq == null || acquireOf(x.op.id).includes(acq)));
+  if (sort !== "base") {
+    const key = (x: (typeof rows)[number]): number => sort === "level" ? (x.c ? x.c.elite * 1000 + x.c.level : -1)
+      : sort === "potential" ? (x.c?.potential ?? -1) : sort === "gain" ? (x.c?.gain ?? 0) : 0;
+    shown.sort(sort === "name" ? (a, b) => a.op.name.localeCompare(b.op.name, locale)
+      : (a, b) => key(b) - key(a) || b.op.rarity - a.op.rarity || a.op.name.localeCompare(b.op.name, locale));
+  }
+  if (rev) shown.reverse();
+  const filtered = !!(nq || rar != null || jobs != null || acq != null);
+  // '기본'은 목록에 두지 않는다 — 아무것도 안 고른 상태가 기본이고, 초기화로 돌아간다 (사용자 지시 2026-10-14)
+  const SORTS: [OpSort, string][] = [...(hasChars ? [["level", "레벨"], ["potential", "잠재"], ["gain", "최근 영입"]] as [OpSort, string][] : []), ["name", "이름"]];
   return (
     <div className="me-list">
       <header className="me-list-head">
         <span className="modal-kicker">MY OPERATORS</span>
-        <h3>{title}<small>{t("{n}명", { n: fmtOf(locale)(entries.length) })}</small></h3>
+        <h3>{title}<small>{filtered ? `${fmt(shown.length)} / ${t("{n}명", { n: fmt(rows.length) })}` : t("{n}명", { n: fmt(rows.length) })}</small></h3>
       </header>
+      {rows.length > 1 && (
+        // 드롭다운으로 (사용자 지시 2026-10-14 "보유 오퍼 필터링은 드롭다운 버튼으로") — 오퍼 도감 필터와 같은 공용 Dropdown
+        <div className="me-depot-tools me-op-tools">
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("이름 검색")} aria-label={t("이름 검색")} />
+          {rarOpts.length > 1 && <Dropdown ariaLabel={t("성급")} label={dropLabel(t("성급"), rar == null ? null : `${rar}★`)} selected={rar == null ? [] : [String(rar)]}
+            items={rarOpts.map((r) => ({ value: String(r), label: `${r}★`, count: rows.filter((x) => x.op.rarity === r).length }))}
+            onPick={(v) => toggle(setRar)(Number(v))} />}
+          {jobOpts.length > 1 && <Dropdown ariaLabel={t("직군")} label={dropLabel(t("직군"), jobOpts.find(([c]) => c === jobs)?.[1] ?? null)} selected={jobs == null ? [] : [jobs]}
+            items={jobOpts.map(([code, name]) => ({ value: code, label: name, count: rows.filter((x) => x.op.jobCode === code).length }))}
+            onPick={(v) => toggle(setJobs)(v)} />}
+          {acqOpts.length > 1 && <Dropdown ariaLabel={t("획득 구분")} label={dropLabel(t("획득 구분"), acq == null ? null : t(ACQUIRE_LABEL[acq]))} selected={acq == null ? [] : [acq]}
+            items={acqOpts.map((k) => ({ value: k, label: t(ACQUIRE_LABEL[k]), count: rows.filter((x) => acquireOf(x.op.id).includes(k)).length }))}
+            onPick={(v) => toggle(setAcq)(v as AcquireKey)} />}
+          <Dropdown ariaLabel={t("정렬")} label={sort === "base" ? t("정렬") : <>{t("정렬")} · <b>{t(SORTS.find(([k]) => k === sort)?.[1] ?? "")}</b></>} selected={[sort]}
+            items={SORTS.map(([k, label]) => ({ value: k, label: t(label) }))} onPick={(v) => setSort(v as OpSort)} />
+          <button type="button" className={`me-sort${rev ? " selected" : ""}`} onClick={() => setRev((v) => !v)} title={t("정렬 뒤집기")}><span aria-hidden>⇅</span>{t("뒤집기")}</button>
+          {(filtered || sort !== "base" || rev) && <button type="button" className="me-sort" onClick={() => { setQ(""); setRar(null); setJobs(null); setAcq(null); setSort("base"); setRev(false); }}>{t("초기화")}</button>}
+        </div>
+      )}
       <div className="modal-scroll">
-        {entries.length ? (
+        {shown.length ? (
           <ul className="me-ops">
-            {entries.map((e) => {
-              const op = opById.get(e.id);
-              if (!op) return null;
-              return (
-                <li key={e.id}>
-                  <button type="button" onClick={() => onShowOperator?.(e.id)} title={op.name}>
-                    <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(op.id)} alt="" width={56} height={56} loading="lazy" /></span>
-                    <span className="me-op-name">{op.name}</span>
-                    <em>{e.sub}</em>
-                  </button>
-                </li>
-              );
-            })}
+            {shown.map(({ e, op }) => (
+              <li key={e.id}>
+                <button type="button" onClick={() => onShowOperator?.(e.id)} title={op.name}>
+                  <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(op.id)} alt="" width={56} height={56} loading="lazy" /></span>
+                  <span className="me-op-name">{op.name}</span>
+                  <em>{e.sub}</em>
+                </button>
+              </li>
+            ))}
           </ul>
         ) : <p className="me-note">{t("해당하는 오퍼가 없습니다.")}</p>}
       </div>

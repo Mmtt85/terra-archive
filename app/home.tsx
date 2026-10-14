@@ -9,6 +9,7 @@ import { PAGE_HELP_TABS, openPageHelp } from "./page-help";
 import { lazy, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import storyEventsData from "./data/stories.json";
 import obtainData from "./data/op-obtain.json";
+import { ACQUIRE_KEYS, ACQUIRE_LABEL, acquireOf, type AcquireKey } from "./op-acquire";
 import { openEvent } from "./event-open";
 // 탭 본문은 전부 지연 로드한다 (INP 조사 2026-08-09). 종전엔 정적 import라 **어느 탭을
 // 열든 모든 탭의 코드와 데이터를 받아서 파싱**했다 — /stories가 오퍼 DB 1.8MB를, /infra가
@@ -1144,6 +1145,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 보유 필터 — '내 정보'에 계정 데이터가 있을 때만 나온다 (2026-10-04)
   const [selectedOwn, setSelectedOwn] = useState<string[]>([]);
   const [selectedObtain, setSelectedObtain] = useState<string[]>([]);
+  // 획득 구분 — 한정·통상·보상·공채·커널 (겹침, 고른 것 중 하나라도) (사용자 지시 2026-10-14)
+  const [selectedAcquire, setSelectedAcquire] = useState<string[]>([]);
   const me = useMe();
   const myChars = meChars(me);
   // 중섭 계정이 연동돼 있으면 미래시를 켠 채로 잠근다 — 그 계정의 오퍼·재료 상당수가 한섭엔 아직 없다
@@ -1484,7 +1487,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const chipCount = useMemo(() => {
     const concept = new Map<string, number>(), faction = new Map<string, number>(), tag = new Map<string, number>();
     const job = new Map<string, number>(), sub = new Map<string, number>(), rarity = new Map<string, number>();
-    const method = new Map<string, number>(), obtain = new Map<string, number>();
+    const method = new Map<string, number>(), obtain = new Map<string, number>(), acquire = new Map<string, number>();
     const bump = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
     for (const operator of roster) {
       for (const concept0 of operator.concepts) bump(concept, concept0);
@@ -1498,8 +1501,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       bump(method, damageTypeOf(operator));       // 물리/마법
       const ob = obtainOf(operator.id);
       if (ob) bump(obtain, ob);
+      for (const k of acquireOf(operator.id)) bump(acquire, k);
     }
-    return { concept, faction, tag, job, sub, rarity, method, obtain };
+    return { concept, faction, tag, job, sub, rarity, method, obtain, acquire };
     // damageTypeOf는 locale·t 클로저 (로케일이 바뀌면 라벨도 바뀐다)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roster, locale, t]);
@@ -2256,10 +2260,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       // 조합은 모두 만족 — 종전 OR 이라 만렙+풀잠이 '둘 중 하나'로 넓어졌다
       const matchesOwn = !myChars || selectedOwn.length === 0 || selectedOwn.every((key) => ownMatch(key, operator, myChars.get(operator.id)));
       const matchesObtain = selectedObtain.length === 0 || selectedObtain.includes(obtainOf(operator.id) ?? "");
-      return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesRarity && matchesQuery && matchesOwn && matchesObtain;
+      const matchesAcquire = selectedAcquire.length === 0 || acquireOf(operator.id).some((k) => selectedAcquire.includes(k));
+      return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesRarity && matchesQuery && matchesOwn && matchesObtain && matchesAcquire;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, searchTerm, locale, myChars, selectedOwn, selectedObtain]);
+  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, searchTerm, locale, myChars, selectedOwn, selectedObtain, selectedAcquire]);
 
   // 백과사전 검색이 0건이면 그것도 "실패한 검색"이다 (뱅제 → 은재 → … 연쇄를 잇기 위해)
   useEffect(() => {
@@ -2277,6 +2282,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     setSelectedRarities([]);
     setSelectedOwn([]);
     setSelectedObtain([]);
+    setSelectedAcquire([]);
     clearSearch();
   };
 
@@ -2292,7 +2298,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     setSelectedSubProfessions((subs) => (subs.every((sub) => allowed.has(sub)) ? subs : subs.filter((sub) => allowed.has(sub))));
   };
 
-  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || selectedRarities.length > 0 || (!!myChars && selectedOwn.length > 0) || selectedObtain.length > 0 || searchTerm.trim().length > 0;
+  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || selectedRarities.length > 0 || (!!myChars && selectedOwn.length > 0) || selectedObtain.length > 0 || selectedAcquire.length > 0 || searchTerm.trim().length > 0;
 
   const sorted = useMemo(() => {
     if (sortKey === "기본") {
@@ -2801,6 +2807,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             { title: t("전투 태그"), items: combatTags, selected: tags, onToggle: toggleTag, countForItem: (item) => chipCount.tag.get(item) ?? 0 },
             { title: t("공격 방식"), items: attackMethods, selected: selectedMethods, onToggle: toggleIn(setSelectedMethods), countForItem: (item) => chipCount.method.get(item) ?? 0 },
             { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => chipCount.faction.get(item) ?? 0 },
+            { title: t("획득 구분"), items: ACQUIRE_KEYS.filter((c) => chipCount.acquire.has(c)), selected: selectedAcquire, onToggle: toggleIn(setSelectedAcquire), labelFor: (item) => t(ACQUIRE_LABEL[item as AcquireKey]), countForItem: (item) => chipCount.acquire.get(item) ?? 0 },
             { title: t("획득 경로"), items: OBTAIN_CODES.filter((c) => chipCount.obtain.has(c)), selected: selectedObtain, onToggle: toggleIn(setSelectedObtain), labelFor: (item) => t(OBTAIN_LABEL[item]), countForItem: (item) => chipCount.obtain.get(item) ?? 0 },
             // 내 계정 — '내 정보'에서 로그인했을 때만 (보유·육성 상태로 거르기)
             ...(myChars ? [{ title: t("내 보유"), breakBefore: true, items: [...OWN_KEYS], selected: selectedOwn, onToggle: (item: string) => setSelectedOwn((cur) => toggleOwnKey(cur, item)), labelFor: (item: string) => t(item), countForItem: (item: string) => ownCount.get(item) ?? 0 }] : []),
@@ -2835,6 +2842,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             {selectedSubProfessions.map((item) => <button key={`s-${item}`} onClick={() => toggleIn(setSelectedSubProfessions)(item)}>{item} ×</button>)}
             {myChars && selectedOwn.map((item) => <button key={`o-${item}`} onClick={() => toggleIn(setSelectedOwn)(item)}>{t(item)} ×</button>)}
             {selectedObtain.map((item) => <button key={`b-${item}`} onClick={() => toggleIn(setSelectedObtain)(item)}>{t(OBTAIN_LABEL[item])} ×</button>)}
+            {selectedAcquire.map((item) => <button key={`a-${item}`} onClick={() => toggleIn(setSelectedAcquire)(item)}>{t(ACQUIRE_LABEL[item as AcquireKey])} ×</button>)}
             {searchTerm && <button onClick={() => clearSearch()}>“{searchTerm}” ×</button>}
           </div>
 

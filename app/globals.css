@@ -5397,6 +5397,9 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   margin-left: auto;
   gap: 8px;
 }
+/* 이미지로 보기 — 버튼 줄을 전폭으로 펴고 그 줄 맨 왼쪽 끝에 (사용자 지시 2026-10-14). 나머지는 그대로 오른쪽 정렬 */
+.planner-buttons:has(.planner-image-btn) { flex: 1 1 100%; }
+.planner-buttons .planner-image-btn { margin-right: auto; }
 /* 보조 버튼(빈 자리만·비우기·그 외) — 핵심 2버튼과 위계를 가르려 한 톤 낮춘다 (2026-07-27) */
 .planner-buttons button {
   border: 1px solid var(--btn-line);
@@ -5637,10 +5640,12 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   right: 28px;
 }
 /* '그 외' 드롭다운도 세로 메뉴 — 같은 규칙으로 줄 안 오른쪽에 둔다 (MAA 내보내기 베타 배지) */
+/* 줄 안 오른쪽 절대배치는 글이 긴 줄('MAA 기반시설 내보내기')에서 글자를 덮었다 (사용자 지적 2026-10-14) — 글 뒤에 인라인으로 */
 .drop-menu button .new-badge {
-  top: 50%;
-  right: 10px;
-  transform: translateY(-50%);
+  position: static;
+  transform: none;
+  margin-left: 6px;
+  flex: none;
 }
 /* 섹션 제목(h3)·모달 제목 안 배지는 제자리 인라인 — 절대배치면 제목 폭이 넓어
    섹션 오른쪽 끝으로 날아가 잘린다 (기지 치비 실측 2026-08-03) */
@@ -27253,6 +27258,8 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 .me-friend-name span { font-size: 12px; color: var(--muted); }
 
 /* 창고 */
+/* 오퍼 목록 창 거르기·정렬 (2026-10-14) */
+.me-op-tools { margin: 0 0 10px; }
 .me-depot-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .me-depot-tools input { padding: 5px 10px; border: 1px solid var(--line); background: var(--white); color: var(--ink); font: inherit; font-size: 13px; width: 180px; }
 .me-depot-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }

@@ -1351,67 +1351,136 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         ? `${t("≈{n}개", { n: num(yieldDay.drones) })} (${t("작전기록 +{r} or 순금 +{g}", {
             r: yieldRooms.exp > 0 ? num(yieldDay.droneRecords) : "0",
             g: yieldRooms.gold > 0 ? num(yieldDay.droneGold) : "0" })})` : "—" },
+      // 재활용소 (미래시 칸이 있을 때만) — 화면 요약 줄과 같은 값 (사용자 지적 2026-10-14 "재활용소가 없네")
+      ...(cellByKey.has("RECYCLE") ? [{ k: `♻ ${t("재활용소")}`, v: recycleDay ? t("≈{n} 이성/일", { n: num(recycleDay.apPerDay) }) : "—" }] : []),
     ];
-    const W = 1240; const lineH = 46;
-    const STAT_TOP = 146; const STAT_COLS = 4; const STAT_ROW_H = 46;
-    const statW = (W - 64) / STAT_COLS;
-    const statRows = Math.ceil(stats.length / STAT_COLS);
-    const top = STAT_TOP + statRows * STAT_ROW_H + 12;
-    const rowHeights = rows.map((row) => row.crews.length * lineH + 12);
+    // ── 그리기 (2026-10-14 다시 그림 — 사용자 지시 "더 가독성 좋고 예쁘게") ──
+    // 종전: 밝은 바탕 세로 표 한 줄에 얼굴 34px·글자 12px — 2,000px 넘게 길고 이름이 얼굴 옆에 붙어 읽기 어려웠다.
+    // 지금: 사이트처럼 어두운 바탕, 방마다 카드 · 생산 구역 / 중앙 / 숙소 세 묶음을 3열로 · 얼굴 54px 아래 이름 · 2배 해상도.
+    const S = 2;                                  // 레티나 — 공유한 이미지가 흐리지 않게
+    const W = 1500, P = 28, G = 14, COLS = 3;
+    const AV = 54, SLOT = 70, ROW_H = 84, HEAD_H = 46;
+    const FONT = getComputedStyle(document.body).fontFamily || "sans-serif";
+    const C = { bg: "#0f1315", card: "#181d20", line: "#2a3135", ink: "#eef1ec", sub: "#c4cbc6", muted: "#7f898e", lime: "#c3d24b", limeInk: "#131719", b: "#3a4247" };
+    const WING = new Set(["TRADING", "MANUFACTURE", "POWER", "RECYCLE"]);
+    // 숙소는 숙소끼리 따로 (사용자 지시 2026-10-14)
+    const groups = [
+      { title: "PRODUCTION", rows: rows.filter((r) => WING.has(r.cell.room)) },
+      { title: "CENTER", rows: rows.filter((r) => !WING.has(r.cell.room) && r.cell.room !== "DORMITORY") },
+      { title: "DORMS", rows: rows.filter((r) => r.cell.room === "DORMITORY"), cols: 4 },
+    ].filter((gr) => gr.rows.length) as { title: string; rows: Row[]; cols?: number }[];
+    const colW = (cols: number) => (W - P * 2 - G * (cols - 1)) / cols;
+    const cardH = (row: Row) => HEAD_H + row.crews.length * ROW_H + 10;
+    // 줄 단위 배치 — 같은 줄 카드는 높이를 맞춘다 (읽는 순서 = 화면 순서)
+    const layoutOf = (list: Row[], cols = COLS) => {
+      const lines: Row[][] = [];
+      for (let i = 0; i < list.length; i += cols) lines.push(list.slice(i, i + cols));
+      return lines.map((line) => ({ line, h: Math.max(...line.map(cardH)) }));
+    };
+    const STAT_COLS = 5, STAT_H = 64;
+    const statLines = Math.ceil(stats.length / STAT_COLS);
+    const HEADER_H = 112;
+    const top = HEADER_H + 20 + statLines * (STAT_H + 10) + 6;
+    const groupH = groups.map((gr) => 30 + layoutOf(gr.rows, gr.cols).reduce((sum, l) => sum + l.h + G, 0));
+    const H = top + groupH.reduce((x, y) => x + y, 0) + 56;
     const canvas = document.createElement("canvas");
-    canvas.width = W; canvas.height = top + rowHeights.reduce((a, b) => a + b, 0) + 70;
+    canvas.width = W * S; canvas.height = H * S;
     const g = canvas.getContext("2d")!;
-    g.fillStyle = "#f1f0eb"; g.fillRect(0, 0, W, canvas.height);
-    g.fillStyle = "#131719"; g.fillRect(0, 0, W, 96);
-    g.fillStyle = "#c3d24b"; g.font = "900 30px monospace"; g.fillText("TERRA ARCHIVE // RIIC PLAN", 32, 58);
-    g.fillStyle = "#131719"; g.font = "700 15px sans-serif";
-    g.fillText(`${strategyLabel(plan, locale, t)} · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}`, 32, 126);
-    stats.forEach((stat, index) => {
-      const sx = 32 + (index % STAT_COLS) * statW;
-      const sy = STAT_TOP + Math.floor(index / STAT_COLS) * STAT_ROW_H;
-      g.fillStyle = "#687176"; g.font = "700 11px monospace";
-      g.fillText(stat.k, sx, sy + 13);
-      g.fillStyle = "#131719"; g.font = "800 17px monospace";
-      g.fillText(stat.v, sx, sy + 35);
+    g.scale(S, S);
+    const font = (w: number, px: number, mono = false) => `${w} ${px}px ${mono ? "ui-monospace, SFMono-Regular, Menlo, monospace" : FONT}`;
+    const rr = (x: number, y: number, w: number, h: number, r: number) => { g.beginPath(); g.roundRect(x, y, w, h, r); };
+    const fit = (text: string, max: number) => {
+      if (g.measureText(text).width <= max) return text;
+      let s0 = text;
+      while (s0.length > 1 && g.measureText(`${s0}…`).width > max) s0 = s0.slice(0, -1);
+      return `${s0}…`;
+    };
+    // 바탕·머리
+    g.fillStyle = C.bg; g.fillRect(0, 0, W, H);
+    g.fillStyle = "#151a1d"; g.fillRect(0, 0, W, HEADER_H);
+    g.fillStyle = C.lime; g.fillRect(0, HEADER_H - 3, W, 3);
+    g.fillStyle = C.lime; g.font = font(800, 13, true); g.fillText("TERRA ARCHIVE  //  RIIC PLAN", P, 36);
+    g.fillStyle = C.ink; g.font = font(800, 30); g.fillText(t("인프라 편성표"), P, 76);
+    g.fillStyle = C.muted; g.font = font(600, 14);
+    const strat = `${strategyLabel(plan, locale, t)}`;
+    const tokens = Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ");
+    g.fillText(fit(strat, W - P * 2 - 260), P + 260, 58);
+    if (tokens) g.fillText(fit(tokens, W - P * 2 - 260), P + 260, 82);
+    // 요약 지표 — 카드 타일
+    const SW = (W - P * 2 - 10 * (STAT_COLS - 1)) / STAT_COLS;
+    stats.forEach((stat, i) => {
+      const x = P + (i % STAT_COLS) * (SW + 10), y = HEADER_H + 20 + Math.floor(i / STAT_COLS) * (STAT_H + 10);
+      g.fillStyle = C.card; rr(x, y, SW, STAT_H, 8); g.fill();
+      g.strokeStyle = C.line; g.lineWidth = 1; rr(x + 0.5, y + 0.5, SW - 1, STAT_H - 1, 8); g.stroke();
+      g.fillStyle = C.muted; g.font = font(700, 12); g.fillText(fit(stat.k, SW - 28), x + 14, y + 23);
+      // 긴 값(하루 드론 회복)은 글자를 줄여 끝까지 보이게 — 19px 에서 12px 까지, 그래도 넘치면 말줄임 (사용자 지적 2026-10-14 "글 끊긴다")
+      let px = 19;
+      for (; px > 12; px -= 1) { g.font = font(800, px); if (g.measureText(stat.v).width <= SW - 28) break; }
+      g.fillStyle = C.ink; g.fillText(fit(stat.v, SW - 28), x + 14, y + 49);
     });
-    let y = top;
-    rows.forEach((row, index) => {
-      const h = rowHeights[index];
-      g.fillStyle = index % 2 ? "#eceae3" : "#fbfbf8"; g.fillRect(24, y, W - 48, h - 8);
-      g.fillStyle = ROOM_ACCENT[row.cell.room] ?? "#888"; g.fillRect(24, y, 5, h - 8);
-      g.fillStyle = "#131719"; g.font = "800 15px sans-serif";
-      g.fillText(t(row.cell.label), 44, y + 26);
-      row.crews.forEach((crew, crewIndex) => {
-        const cy = y + crewIndex * lineH;
-        g.font = "900 13px monospace";
-        const labelWidth = g.measureText(crew.label).width;
-        const badgeWidth = Math.max(26, labelWidth + 14);
-        g.fillStyle = "#131719";
-        g.fillRect(210, cy + 10, badgeWidth, 26);
-        g.fillStyle = "#c3d24b";
-        g.fillText(crew.label, 210 + (badgeWidth - labelWidth) / 2, cy + 28);
-        let x = 210 + badgeWidth + 12;
+    // 방 카드
+    const drawCard = (row: Row, x: number, y: number, h: number, CW: number) => {
+      const accent = ROOM_ACCENT[row.cell.room] ?? "#888";
+      g.fillStyle = C.card; rr(x, y, CW, h, 10); g.fill();
+      g.strokeStyle = C.line; g.lineWidth = 1; rr(x + 0.5, y + 0.5, CW - 1, h - 1, 10); g.stroke();
+      g.save(); rr(x, y, CW, h, 10); g.clip(); g.fillStyle = accent; g.fillRect(x, y, CW, 4); g.restore();
+      g.fillStyle = accent; g.beginPath(); g.arc(x + 20, y + 27, 5, 0, Math.PI * 2); g.fill();
+      g.fillStyle = C.ink; g.font = font(800, 17); g.fillText(t(row.cell.label), x + 32, y + 33);
+      row.crews.forEach((crew, ci) => {
+        const cy = y + HEAD_H + ci * ROW_H;
+        if (ci > 0) { g.fillStyle = C.line; g.fillRect(x + 14, cy - 4, CW - 28, 1); }
+        // 조 표시 — A 라임 · B 회색 · 고정/단일은 테두리만
+        const lab = crew.label === "-" ? "" : crew.label;
+        g.font = font(900, 12, true);
+        const bw = lab ? Math.max(26, g.measureText(lab).width + 14) : 0;
+        if (lab) {
+          g.fillStyle = lab === "A" ? C.lime : lab === "B" ? C.b : "transparent";
+          rr(x + 14, cy + 16, bw, 22, 5); g.fill();
+          if (lab !== "A" && lab !== "B") { g.strokeStyle = C.muted; rr(x + 14.5, cy + 16.5, bw - 1, 21, 5); g.stroke(); }
+          g.fillStyle = lab === "A" ? C.limeInk : C.ink;
+          g.fillText(lab, x + 14 + (bw - g.measureText(lab).width) / 2, cy + 31);
+        }
+        let ax = x + 14 + (bw ? bw + 12 : 0);
+        // 얼굴이 많아 칸을 넘치면 간격을 줄인다 (숙소 4열 등) — 점수 자리 70px 은 비워 둔다
+        const slot = Math.min(SLOT, (x + CW - 14 - (crew.score != null ? 70 : 0) - ax) / Math.max(1, crew.team.length));
         for (const op of crew.team) {
           const img = avatars.get(op.id);
-          if (img) g.drawImage(img, x, cy + 6, 34, 34);
-          g.fillStyle = "#131719"; g.font = "700 12px sans-serif";
-          g.fillText(op.name, x + 40, cy + 28);
-          x += 40 + Math.max(g.measureText(op.name).width + 20, 76);
+          g.save(); rr(ax, cy + 2, AV, AV, 8); g.clip();
+          g.fillStyle = "#232a2e"; g.fillRect(ax, cy + 2, AV, AV);
+          if (img) g.drawImage(img, ax, cy + 2, AV, AV);
+          g.restore();
+          g.fillStyle = C.sub; g.font = font(600, 11);
+          const nm = fit(op.name, slot - 4);
+          g.fillText(nm, ax + (AV - g.measureText(nm).width) / 2, cy + AV + 18);
+          ax += slot;
         }
         if (!crew.team.length) {
-          g.fillStyle = "#9aa0a3"; g.font = "700 12px sans-serif";
-          g.fillText(row.cell.key === "TRAINING" ? t("비워둠 (특화 훈련용)") : t("휴식 공간"), 248, cy + 28);
+          g.fillStyle = C.muted; g.font = font(600, 13);
+          g.fillText(row.cell.key === "TRAINING" ? t("비워둠 (특화 훈련용)") : t("휴식 공간"), ax, cy + 33);
         }
         if (crew.score != null) {
-          g.fillStyle = "#687176"; g.font = "800 13px monospace";
           const label = `+${crew.score}${row.cell.room === "CONTROL" ? "" : "%"}`;
-          g.fillText(label, W - 48 - g.measureText(label).width, cy + 28);
+          g.font = font(800, 17, true);
+          g.fillStyle = lab === "B" ? C.sub : C.lime;
+          g.fillText(label, x + CW - 16 - g.measureText(label).width, cy + 33);
         }
       });
-      y += h;
+    };
+    let y = top;
+    groups.forEach((gr) => {
+      g.fillStyle = C.muted; g.font = font(800, 12, true); g.fillText(gr.title, P, y + 14);
+      y += 30;
+      const cw = colW(gr.cols ?? COLS);
+      for (const { line, h } of layoutOf(gr.rows, gr.cols)) {
+        line.forEach((row, i) => drawCard(row, P + i * (cw + G), y, h, cw));
+        y += h + G;
+      }
     });
-    g.fillStyle = "#687176"; g.font = "700 11px monospace";
-    g.fillText(t("A = 풀파워 주간조 · B = 회복 교대조 · terra-archive infra planner"), 32, canvas.height - 28);
+    g.fillStyle = C.muted; g.font = font(600, 12);
+    g.fillText(t("A = 풀파워 주간조 · B = 회복 교대조"), P, H - 24);
+    g.font = font(700, 12, true);
+    const site = "terra-archive.net/infra";
+    g.fillStyle = C.lime; g.fillText(site, W - P - g.measureText(site).width, H - 24);
     canvas.toBlob((blob) => {
       if (!blob) return;
       setImageUrl(URL.createObjectURL(blob)); // 미리보기 모달로 바로 표시
@@ -1459,6 +1528,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           {/* startTransition: 로스터 모달(카드 수백 장)은 렌더가 무거워 클릭 페인트부터 내보낸다 (INP, 2026-07-21) */}
           {/* 보유 오퍼 설정·전체 자동편성 = 핵심 2버튼(.primary) — 나머지는 보조 톤으로 낮춰
               위계를 만든다 (사용자 요청 2026-07-27: "버튼이 너무 많아 헷갈림") */}
+          {/* 이미지로 보기 — '그 외'에서 꺼내 이 줄 맨 왼쪽으로 (사용자 지시 2026-10-14) */}
+          <button className="planner-image-btn" onClick={() => void exportImage()} disabled={!plan} title={t("A조·B조 편성표를 이미지로 확인 (PNG)")}><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</button>
           <button className="primary" onClick={() => startTransition(() => { setRosterMode("direct"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}<NewBadge id="scanner+op-level" show={anyNewFeature("scanner", "op-level")} /></button>
           {/* 라벨이 '계산 중…'으로 바뀌어도 버튼 폭이 줄지 않게 원 라벨로 폭을 잡아둔다 (사용자 요청 2026-07-21) */}
           <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}>
@@ -1483,14 +1554,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             label={<><span className="btn-icon" aria-hidden>⋯</span>{t("그 외")}</>}
             selected={[]}
             onPick={(v) => {
-              if (v === "image") exportImage();
-              else if (v === "save") exportState();
+              if (v === "save") exportState();
               else if (v === "import") importRef.current?.click();
               else if (v === "maa") setShowMaa(true);
               else if (v === "help") setShowHelp(true);
             }}
             items={[
-              { value: "image", label: <><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</>, title: t("A조·B조 편성표를 이미지로 확인 (PNG)") },
               { value: "save", label: <><span className="btn-icon" aria-hidden>⤓</span>{t("현재 상태 파일로 저장")}</>,
                 className: dirty ? "save-pending" : undefined,
                 title: dirty ? t("저장 후 변경 사항이 있습니다 — 파일로 저장하세요") : t("보유 오퍼와 편성을 JSON 파일로 저장") },

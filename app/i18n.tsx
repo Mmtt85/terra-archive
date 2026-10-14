@@ -2562,6 +2562,14 @@ const D: Record<string, Pair> = {
   "순오리지늄 획득 가능": ["Originite Prime to earn", "純正源石 獲得可能"],
   "스토리 작전": ["Story stages", "ストーリー作戦"],
   "돌격": ["Challenge", "強襲"],
+  // 획득 구분 (app/op-acquire.ts, 2026-10-14)
+  "획득 구분": ["Acquisition", "入手区分"],
+  "한정 오퍼": ["Limited", "限定"],
+  "통상 오퍼": ["Standard", "恒常"],
+  "공채 오퍼": ["Recruitment", "公開求人"],
+  "커널 오퍼": ["Kernel", "カーネル"],
+  "필터 초기화": ["Reset filters", "フィルターをリセット"],
+  "이름 검색": ["Search name", "名前で検索"],
   "스테이지 클리어 현황": ["Stage clear status", "ステージクリア状況"],
   "× {n}개 획득 가능": ["× {n} to earn", "× {n}個 獲得可能"],
   "지금 들어갈 수 있는 작전 중 아직 3성(완료)을 못 받은 작전에서 처음 한 번 주는 순오리지늄 — 돌격 작전·스토리 작전 포함": [
