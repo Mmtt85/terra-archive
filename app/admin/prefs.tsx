@@ -48,9 +48,16 @@ function Body({ k, d }: { k: string; d: string | null }) {
 export function KvWrites() {
   const [res, setRes] = useState<{ limit: number; days: { day: string; puts: number; deletes: number; rows: number }[] } | null>(null);
   const [err, setErr] = useState(false);
+  // 10초마다 + 창으로 돌아오면 다시 받는다 — 처음 한 번만 받아 새로고침해도 그대로였다 (사용자 지적 2026-10-15).
+  // 사이트는 설정을 1분에 한 번 묶어 올려서, 바꾼 뒤 숫자가 오르기까지 최대 1분쯤 걸린다
   useEffect(() => {
-    fetch("/api/prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usage: 14 }) })
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status))).then((j) => (j?.ok ? setRes(j) : setErr(true))).catch(() => setErr(true));
+    const load = () => fetch("/api/prefs", { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usage: 14 }) })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status))).then((j) => { if (j?.ok) { setRes(j); setErr(false); } else setErr(true); }).catch(() => setErr(true));
+    void load();
+    const id = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 10_000);
+    const onVis = () => { if (document.visibilityState === "visible") void load(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { window.clearInterval(id); document.removeEventListener("visibilitychange", onVis); };
   }, []);
   if (err) return <span className="ap-kv">설정 저장소 쓰기 — 못 읽음</span>;
   if (!res) return null;
