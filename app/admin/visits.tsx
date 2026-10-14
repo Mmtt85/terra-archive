@@ -10,6 +10,7 @@
 // DB 가 80% 차면 오래된 것부터 지운다(docs/supabase-visits.sql visits_maintain).
 
 import { Who, refreshPlayers } from "./who";
+import { KvWrites } from "./prefs";
 import { createPortal } from "react-dom";
 import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
@@ -1345,6 +1346,7 @@ export function VisitsPanel() {
                       onClick={() => setMeServer(o.value)}>{o.label} <b>{num(cnt)}</b></button>
                   );
                 })}
+                <KvWrites />
               </div>
               {meBy.length ? meTable(tops.mesync) : <p className="vz-note">{meServer ? "이 서버의 동기화 기록이 없습니다." : "이 기간에는 동기화 기록이 없습니다."}</p>}
             </div>

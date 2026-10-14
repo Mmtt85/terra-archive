@@ -42,31 +42,25 @@ function Body({ k, d }: { k: string; d: string | null }) {
   return <pre className="ap-pre">{JSON.stringify(v, null, 1)}</pre>;
 }
 
-// KV 쓰기 횟수 — 무료 플랜 하루(UTC, 한국 9시에 풀림) 1,000번. 계정 워커가 쓸 때마다 방문 기록 DB(kv_write)에 남긴 줄을 센다 (2026-10-15)
+// KV 쓰기 횟수 — 무료 플랜 하루(UTC, 한국 9시에 풀림) 1,000번. 계정 워커가 쓸 때마다 방문 기록 DB(kv_write)에 남긴 줄을 센다 (2026-10-15).
+// 방문 통계의 내 정보 동기화 서버 단추 줄 오른쪽 끝에 붙는다 (사용자 지시 2026-10-15) — 지난 14일은 마우스를 올리면 보인다
 const KV_DAILY = 1000;
-function KvWrites() {
+export function KvWrites() {
   const [rows, setRows] = useState<{ day: string; puts: number; deletes: number }[] | null>(null);
   const [err, setErr] = useState(false);
   useEffect(() => {
     fetch("/api/visits/rpc/visits_kv_writes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ p_days: 14 }) })
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status))).then(setRows).catch(() => setErr(true));
   }, []);
-  if (err) return <p className="vz-note">KV 쓰기 횟수를 못 읽었습니다 — 바탕화면 kv_write_log.sql 을 아직 안 돌렸을 수 있습니다.</p>;
+  if (err) return <span className="ap-kv">설정 저장소 쓰기 — 못 읽음</span>;
   if (!rows) return null;
   const today = new Date().toISOString().slice(0, 10);
   const now = rows.find((r) => r.day === today);
   const used = (now?.puts ?? 0) + (now?.deletes ?? 0);
+  const tip = [`KV 무료 플랜 하루 ${KV_DAILY.toLocaleString()}번 (UTC 기준, 한국 9시에 풀림)`, "",
+    ...rows.map((r) => `${r.day}  저장 ${r.puts} · 초기화 ${r.deletes} · 합계 ${r.puts + r.deletes}`)].join("\n");
   return (
-    <>
-      <div className="vz-head"><h3 className="vz-h">설정 저장소 쓰기<small> — KV 무료 플랜 하루 {KV_DAILY.toLocaleString()}번 (UTC 기준, 한국 9시에 풀림)</small></h3></div>
-      <p className="ap-kv">오늘 <b className={used >= KV_DAILY * 0.8 ? "warn" : ""}>{used.toLocaleString()}</b> / {KV_DAILY.toLocaleString()}번 ({Math.round((used / KV_DAILY) * 100)}%)</p>
-      {rows.length > 0 && (
-        <div className="vz-tablewrap"><table className="vz-table">
-          <thead><tr><th>날짜 (UTC)</th><th>저장</th><th>초기화</th><th>합계</th></tr></thead>
-          <tbody>{rows.map((r) => <tr key={r.day}><td>{r.day}</td><td>{r.puts}</td><td>{r.deletes}</td><td>{r.puts + r.deletes}</td></tr>)}</tbody>
-        </table></div>
-      )}
-    </>
+    <span className="ap-kv" title={tip}>설정 저장소 쓰기 오늘 <b className={used >= KV_DAILY * 0.8 ? "warn" : ""}>{used.toLocaleString()}</b> / {KV_DAILY.toLocaleString()}</span>
   );
 }
 
@@ -87,7 +81,6 @@ export default function PrefsPanel() {
   };
   return (
     <section className="vz">
-      <KvWrites />
       <div className="vz-head"><h3 className="vz-h">UID 로 사이트 설정 보기<small> — 내 정보로 로그인한 계정이 저장해 둔 설정 (app/cloud-prefs.tsx)</small></h3></div>
       <div className="admin-tools ap-search">
         <Dropdown ariaLabel="서버" label={SERVERS.find(([v]) => v === server)?.[1] ?? server} selected={[server]}
