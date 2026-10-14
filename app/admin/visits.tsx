@@ -1436,6 +1436,8 @@ export function VisitsPanel() {
 
           {/* PRTS 틀렸어요 (2026-10-12) — 인식 표는 걷어냈다 (아래 PrtsWrong) */}
           <PrtsWrong {...top("prtsWrong")} from={rangeArgs?.p_from ?? isoAt(spanStart ?? Math.floor(Date.now() / 60_000) * 60_000 - days * 86400_000)} to={rangeArgs?.p_to ?? "infinity"} />
+          {/* 헤더 이벤트 칩 (2026-10-14 사용자 지시 "헤더 이벤트 버튼 눌러서 띄우는 것도 통계로") — visit_event ev_chip */}
+          <EvChips from={rangeArgs?.p_from ?? isoAt(spanStart ?? Math.floor(Date.now() / 60_000) * 60_000 - days * 86400_000)} to={rangeArgs?.p_to ?? "infinity"} />
 
           <div className="vz-cols">
             <div>
@@ -1506,6 +1508,47 @@ export function VisitsPanel() {
 // PRTS 인식 표(합계·결과별·구역별·최근 기록)는 걷어냈다 (사용자 지시 2026-10-12 "인식표 그건 걍 지우자. 받지도 말자" —
 // 인식마다 한 줄씩 쌓여 하루 3천 줄, 그 표 하나가 5초씩 걸려 관리자 화면이 느려졌다). 이제 인식 기록은 '틀렸어요'를 누를 때만
 // 오고(bridge.ts markBridgeWrong), 여기는 그 목록만 가벼운 함수(visits_prts_wrong — 틀렸어요 줄에서 출발)로 받는다
+type EvChipRec = { id: string; n: number; people: number; last: string };
+/** 헤더 진행 중 이벤트 칩·목록 줄 클릭 — 이벤트별 횟수·사람 수 (DB 함수 visits_ev_chips, 2026-10-14). 함수가 없으면 칸을 안 그린다 */
+function EvChips({ from, to }: { from: string; to: string }) {
+  const [d, setD] = useState<EvChipRec[] | null>(null);
+  const [names, setNames] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let alive = true;
+    rpc<EvChipRec[] | null>("visits_ev_chips", { p_from: from, p_to: to })
+      .then((r) => { if (alive) setD(r ?? []); })
+      .catch(() => { if (alive) setD(null); });
+    return () => { alive = false; };
+  }, [from, to]);
+  // 이벤트 이름 — 칸을 열 때만 이벤트 표(400KB)를 받는다
+  useEffect(() => {
+    if (!d?.length) return;
+    void import("../data/events.json").then((m) => {
+      const map: Record<string, string> = {};
+      for (const e of (m.default as { events: { id: string; n: string }[] }).events) map[e.id] = e.n;
+      setNames(map);
+    });
+  }, [d]);
+  if (!d) return null;
+  const label = (id: string) => {
+    const [pre, rest] = id.includes(":") ? [id.split(":")[0], id.slice(id.indexOf(":") + 1)] : ["", id];
+    const where = pre === "menu" ? "펼친 목록" : pre === "cn" ? "중섭 칩" : pre === "promo" ? "기간 한정 칩" : "칩";
+    return <>{names[rest] ?? rest} <span className="vz-note">· {where}</span></>;
+  };
+  const total = d.reduce((a, r) => a + r.n, 0);
+  return (
+    <>
+      <Head title="헤더 이벤트 칩" sub={`클릭 ${num(total)}회 · 라이브만 (2026-10-14부터 기록)`} />
+      {!d.length ? <p className="vz-note">이 기간에는 헤더 이벤트 칩 클릭이 없습니다.</p> : (
+        <div className="vz-tablewrap"><table className="vz-table">
+          <thead><tr><th>이벤트</th><th>클릭</th><th>사람</th><th>마지막</th></tr></thead>
+          <tbody>{d.map((r) => <tr key={r.id}><td title={r.id}>{label(r.id)}</td><td>{num(r.n)}</td><td>{num(r.people)}</td><td>{whenShort(r.last)}</td></tr>)}</tbody>
+        </table></div>
+      )}
+    </>
+  );
+}
+
 type PrtsWrongRec = { /** 틀렸어요 줄 id — 지우기 단추 (2026-10-13~, SQL 미적용이면 없다) */ id?: string; at: string; visitor: string | null; topic: string | null; result: string | null; section: string | null;
   target: string | null; note: string | null; seen: string | null; cached: boolean | null; shot: string | null; env: string | null;
   /** 그 인식의 판정 + OCR 이 읽은 줄 (JSON 파일 주소, 2026-10-13~) */ ocr?: string | null;

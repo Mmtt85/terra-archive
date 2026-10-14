@@ -59,17 +59,18 @@ _cdn_bundles = {}
 
 
 def cdn_story_txt(path):
-    """게임 CDN에서 story txt 하나를 꺼낸다 (KR 전용). 못 찾으면 None."""
+    """게임 CDN에서 story txt 하나를 꺼낸다 — 그 언어 서버(kr·jp·en)의 CDN. 못 찾으면 None.
+    2026-10-14~ 일섭·글섭도 (종전엔 KR 전용이라, 한섭과 같은 날 패치된 일섭 메인 17장 전문이 레포를 기다리다 빠졌다)"""
     global _cdn
-    if LANG != "kr":
-        return None                       # EN/JA 는 서버가 달라 별도 — 지금은 KR 만
+    if LANG not in ("kr", "jp", "en"):
+        return None
     try:
         sys.path.insert(0, os.path.join(REPO, "scripts"))
         from fbsutil import Cdn, unity_lzham
         import UnityPy
         if _cdn is None:
             unity_lzham()
-            _cdn = Cdn("kr", cache_dir=os.path.join(REPO, ".gamedata", ".cdn"))
+            _cdn = Cdn(LANG, cache_dir=os.path.join(REPO, ".gamedata", ".cdn"))
             _cdn.manifest()
         try:
             _, bundle = _cdn.find("gamedata/story/" + path)
@@ -93,13 +94,13 @@ def cdn_story_txt(path):
 
 def merge_cdn_review(review):
     """레포 리뷰 테이블이 못 따라온 이벤트를 CDN 판으로 메운다.
-    `.gamedata/kr_story_review_table.json` 은 fetch-gamedata-cdn.py 가 받아 둔다."""
-    if LANG != "kr":
+    `.gamedata/<서버>_story_review_table.json` 은 fetch-gamedata-cdn.py 가 받아 둔다 (kr·jp·en, 2026-10-14~ 일섭·글섭도)."""
+    if LANG not in ("kr", "jp", "en"):
         return review
-    dest = os.path.join(REPO, ".gamedata", "kr_story_review_table.json")
+    dest = os.path.join(REPO, ".gamedata", f"{LANG}_story_review_table.json")
     if not os.path.exists(dest):
         subprocess.run([sys.executable, os.path.join(REPO, "scripts", "fetch-gamedata-cdn.py"),
-                        "--server", "kr", "--tables", "story_review_table"], cwd=REPO, check=False)
+                        "--server", LANG, "--tables", "story_review_table"], cwd=REPO, check=False)
     if not os.path.exists(dest):
         return review
     cdn = json.load(open(dest, encoding="utf-8"))

@@ -93,7 +93,8 @@ alter table public.visit_event add column if not exists detail text check (char_
 alter table public.visit_event add column if not exists dur_ms int check (dur_ms between 0 and 86400000);
 alter table public.visit_event drop constraint if exists visit_event_kind_check;
 -- leave(2026-10-11) = 탭을 닫거나 페이지를 떠날 때 — 뒤에 같은 세션의 화면 기록이 이어지면 사이트 안 이동이라 무시(어드민 '조작 중' 판정)
-alter table public.visit_event add constraint visit_event_kind_check check (kind in ('me_login', 'me_sync', 'prts_start', 'prts_end', 'leave'));
+alter table public.visit_event add constraint visit_event_kind_check check (kind in ('me_login', 'me_sync', 'prts_start', 'prts_end', 'leave', 'ev_chip'));
+-- ev_chip(2026-10-14) = 헤더 진행 중 이벤트 칩·이벤트 목록 줄을 눌렀다. detail = 이벤트 id(위수 협의 칩 'promo:<탭>', 중섭 칩 'cn:<id>', 펼친 목록 줄 'menu:<id>')
 
 -- ── 일별 집계 (영구 보관) ─────────────────────────────────────────────────────
 
@@ -683,3 +684,14 @@ begin
 end $$;
 grant execute on function public.visits_prts_wrong_delete(uuid) to anon;
 
+-- 관리자 '헤더 이벤트 칩' 표 (2026-10-14) — 기간 안에 칩을 누른 횟수·사람 수를 이벤트별로. 라이브만
+create or replace function public.visits_ev_chips(p_from timestamptz, p_to timestamptz)
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(r order by r.n desc), '[]') from (
+    select e.detail as id, count(*) as n, count(distinct e.visitor) as people, max(e.at) as last
+    from public.visit_event e
+    where e.kind = 'ev_chip' and e.env = 'live' and e.at >= p_from and e.at < p_to and (select public.visits_is_admin())
+    group by e.detail
+  ) r
+$$;
+grant execute on function public.visits_ev_chips(timestamptz, timestamptz) to anon;

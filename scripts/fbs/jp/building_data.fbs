@@ -1,6 +1,6 @@
-// jp 서버 전용 building_data 스키마 — scripts/fbs-repair.py 가 자동 생성.
+// kr 서버 전용 building_data 스키마 — scripts/fbs-repair.py 가 자동 생성.
 // 원본: MooncellWiki/OpenArknightsFBS main(중섭). 이 서버 클라에 없는 필드 2개를
-// 지웠다 (정답지 = 클뜯 레포의 jp JSON — 공식 직렬화기는 부재 필드도 null 로 찍으므로
+// 지웠다 (정답지 = 클뜯 레포의 kr JSON — 공식 직렬화기는 부재 필드도 null 로 찍으므로
 // '한 번도 안 나온 키' = '클라에 없는 필드'). 클라가 올라가 또 어긋나면 다시 돌릴 것.
 
 // This file is auto-generated, see https://github.com/MooncellWiki/OpenArknightsFBS for details.
@@ -959,7 +959,6 @@ table dict__string__clz_Torappu_BuildingData_TradingRoomSpecialOrderInfo {
 }
 
 table clz_Torappu_BuildingData_TradingRoomInfoData {
-    tradingRoomSpecialOrderData: [dict__string__clz_Torappu_BuildingData_TradingRoomSpecialOrderInfo]; 
 }
 
 table clz_Torappu_BuildingData {
@@ -1044,6 +1043,7 @@ table clz_Torappu_BuildingData {
     emojis: [string]; 
     categoryNames: [dict__string__string]; 
     buffSortData: [dict__string__clz_Torappu_BuildingData_BuildingRoomTypeBuffSortData]; 
+    tradingRoomInfoData: clz_Torappu_BuildingData_TradingRoomInfoData; 
 }
 
 root_type clz_Torappu_BuildingData;

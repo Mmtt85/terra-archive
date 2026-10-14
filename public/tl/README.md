@@ -43,9 +43,9 @@
 | [`stage.json`](https://files.terra-archive.net/assets/tl/stage.json) | 작전 — 이름·설명 — 공식 한국어 5,316 + 비공식 번역 315 | 5,631 | 1.3 MB |
 | [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (비공식 번역) | 1,117 | 170 KB |
 | [`is.json`](https://files.terra-archive.net/assets/tl/is.json) | 통합전략 1~6 — 소장품·노드·조우·엔딩·전투 (테마 구분 없이 한 벌) | 5,740 | 973 KB |
-| [`story.json`](https://files.terra-archive.net/assets/tl/story.json) | 스토리 — 한국 서버에 아직 없는 이벤트·메인·오퍼 스토리의 대사·화자·선택지·편 제목 · 기계 번역 초벌 — 공식 한국어 199 + 비공식 번역 25,053 | 25,252 | 4.8 MB |
+| [`story.json`](https://files.terra-archive.net/assets/tl/story.json) | 스토리 — 한국 서버에 아직 없는 이벤트·메인·오퍼 스토리의 대사·화자·선택지·편 제목 · 기계 번역 초벌 — 공식 한국어 142 + 비공식 번역 17,893 | 18,035 | 3.4 MB |
 
-전량 약 17.7 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
+전량 약 16.3 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
 
 `ra.json`은 전부 비공식 번역입니다 — 한섭에 아직 안 나온 것이라 공식 한국어가
 없습니다. `story.json`도 거의 전부 비공식입니다 — 화자 이름이나 「好。」 같은 짧은

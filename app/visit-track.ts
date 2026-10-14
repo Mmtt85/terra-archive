@@ -185,9 +185,9 @@ function sendSession(locale: string): void {
   saveSess();
 }
 
-/** 일이 있었다고 한 줄 남긴다 — 지금은 '내 정보' 로그인·다시 동기화 (사용자 요청 2026-10-05 "누가, 몇 번 했는지").
+/** 일이 있었다고 한 줄 남긴다 — '내 정보' 로그인·다시 동기화 (사용자 요청 2026-10-05 "누가, 몇 번 했는지"), 헤더 이벤트 칩 클릭(ev_chip, 2026-10-14).
  *  누가 = 방문 기록과 같은 익명 방문자 id. 닉네임·계정 정보는 보내지 않는다. */
-export function noteVisitEvent(kind: "me_login" | "me_sync" | "prts_start" | "prts_end" | "leave", server?: string, extra?: { detail?: string; dur?: number }): void {
+export function noteVisitEvent(kind: "me_login" | "me_sync" | "prts_start" | "prts_end" | "leave" | "ev_chip", server?: string, extra?: { detail?: string; dur?: number }): void {
   if (!started) return;
   let visitor = "";
   try { visitor = localStorage.getItem(VISITOR_KEY) ?? ""; } catch { /* 프라이빗 모드 */ }

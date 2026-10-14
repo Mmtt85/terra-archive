@@ -143,7 +143,7 @@ import { EnemyPage, type Enemy as EnemyEntry, type EnemyStages } from "./enemy-d
 // 작전 상세도 **lazy가 아니다** — 같은 프리렌더 이유 (app/enemy-detail.tsx 머리주석)
 import { StagePage } from "./stage-detail";
 import type { StageView } from "./stage-data";
-import { startVisitTrack } from "./visit-track";
+import { startVisitTrack, noteVisitEvent } from "./visit-track";
 import { reloadIfStale, startVersionCheck } from "./version-check";
 import { I18nProvider, useI18n, conceptName, makeT, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n, type T } from "./i18n";
 import { SPECIAL_CONCEPTS, conceptTitle, conceptMatches, resolveConcepts, suggestConcepts } from "./concepts";
@@ -694,7 +694,7 @@ function EventBadges({ onOpenEvent, includeFuture }: {
                         (openEventById). 공식 카페 공지는 이벤트 상세 모달의 버튼이 맡는다. */}
                     {onOpenEvent
                       ? <button type="button" className="event-row-btn"
-                          onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 가이드에서 보기")}>{body}</button>
+                          onClick={() => { noteVisitEvent("ev_chip", undefined, { detail: `menu:${event.id}` }); onOpenEvent(event.id, event.type); }} title={t("이벤트 가이드에서 보기")}>{body}</button>
                       : <span className="event-row-plain">{body}</span>}
                   </li>
                 );
@@ -720,7 +720,7 @@ function EventBadges({ onOpenEvent, includeFuture }: {
                         (openEventById). 공식 카페 공지는 이벤트 상세 모달의 버튼이 맡는다. */}
                     {onOpenEvent
                       ? <button type="button" className="event-row-btn"
-                          onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 가이드에서 보기")}>{body}</button>
+                          onClick={() => { noteVisitEvent("ev_chip", undefined, { detail: `menu:${event.id}` }); onOpenEvent(event.id, event.type); }} title={t("이벤트 가이드에서 보기")}>{body}</button>
                       : <span className="event-row-plain">{body}</span>}
                   </li>
                 );
@@ -2386,6 +2386,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
               <a className={`promo-trigger${tab === PROMO.tab ? " selected" : ""}`}
                 href={`${localeBase}/${TAB_SEG[PROMO.tab]}`}
                 onClick={(event) => {
+                  noteVisitEvent("ev_chip", undefined, { detail: `promo:${PROMO.tab}` });   // 헤더 이벤트 칩 클릭 통계 (2026-10-14)
                   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                   event.preventDefault(); switchTab(PROMO.tab);
                 }}>
@@ -2403,6 +2404,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
               <a key={ev.id} className="promo-trigger ev-promo" href={eventHref(ev)} title={eventName(locale, ev)}
                 onPointerEnter={prefetchEventDex} onFocus={prefetchEventDex}
                 onClick={(event) => {
+                  noteVisitEvent("ev_chip", undefined, { detail: ev.id });
                   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                   event.preventDefault();
                   if (EVENT_GUIDE_TAB[ev.type ?? ""] || knownEventIds.has(ev.id)) openEventById(ev.id, ev.type);
@@ -2420,6 +2422,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 title={`${eventName(locale, ev)} · ${t("중국 서버 진행중")}`}
                 onPointerEnter={prefetchEventDex} onFocus={prefetchEventDex}
                 onClick={(event) => {
+                  noteVisitEvent("ev_chip", undefined, { detail: `cn:${ev.id}` });
                   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                   event.preventDefault();
                   if (knownEventIds.has(ev.id)) openEventById(ev.id, ev.type);
