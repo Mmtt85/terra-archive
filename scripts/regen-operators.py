@@ -406,6 +406,13 @@ NEW_ACCENTS = {
     "char_4212_nasti": "#7d6f95", "char_4213_skybx": "#5a8bc0", "char_4214_cairn": "#6e8a75",
     "char_616_pithst": "#7f7f89", "char_617_sharp2": "#a0654e",
     "char_4230_mcnist": "#5f8a8a",
+    # 2026-10-14 한섭 큰 점검 신규 — 초상 색을 보고 채도 낮게 고름
+    "char_1052_kalts2": "#6f8f6a", "char_4228_closur": "#8a4f5c", "char_4226_veen": "#a06a7a",
+    "char_4225_tanya": "#5f8fa6", "char_4227_gallus": "#7f8a6a",
+    # 실장 뒤에도 회색으로 남아 있던 9명 (같은 날 함께 정리)
+    "char_4031_liesel": "#8f9a5e", "char_4223_botany": "#9a8a6a", "char_4224_turdus": "#6d6a8f",
+    "char_4221_ju": "#8a7a5a", "char_4222_taraxa": "#4f8a86", "char_4037_demetr": "#9a5050",
+    "char_2027_wang": "#6a6f78", "char_1051_headb2": "#8f5a62", "char_1050_chen3": "#4f5f9a",
 }
 
 # curated display overrides from the deployed prototype (baked into data now)
@@ -468,7 +475,8 @@ def build_op(cid, c):
         "modules": build_modules(cid),
         "infrastructure": build_infra(cid),
         "seq": release_seq.get(cid, -1),
-        "accent": (old or {}).get("accent") or NEW_ACCENTS.get(cid) or "#6b7a86",
+        # 회색 #6b7a86 은 '아직 안 정함' 기본값 — 미실장 때 들어간 회색이 실장 뒤에도 이어져 카드가 회색으로 남았다 (2026-10-14)
+        "accent": ((old or {}).get("accent") if (old or {}).get("accent") not in (None, "", "#6b7a86") else None) or NEW_ACCENTS.get(cid) or "#6b7a86",
         "image": f"/avatars/{cid}.webp",  # local copy; run scripts/download-avatars.py for new ops
     }
     cur = CURATED.get(name)

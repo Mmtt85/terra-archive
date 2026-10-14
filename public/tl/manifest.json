@@ -1,29 +1,29 @@
 {
- "updated": "2026-09-29",
+ "updated": "2026-10-14",
  "files": [
   {
    "file": "op.json",
-   "url": "https://files.terra-archive.net/assets/tl/op.json?v=336b121855f24a90",
-   "label": "오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록 — 공식 한국어 24,320 + 비공식 번역 2,116",
-   "hash": "336b121855f24a90"
+   "url": "https://files.terra-archive.net/assets/tl/op.json?v=f40cd93621cd66cf",
+   "label": "오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록 — 공식 한국어 24,642 + 비공식 번역 2,353",
+   "hash": "f40cd93621cd66cf"
   },
   {
    "file": "item.json",
-   "url": "https://files.terra-archive.net/assets/tl/item.json?v=65a622239af9772d",
-   "label": "아이템·재료 — 이름·설명·용도 — 공식 한국어 3,026 + 비공식 번역 211",
-   "hash": "65a622239af9772d"
+   "url": "https://files.terra-archive.net/assets/tl/item.json?v=0dfea032060d54fe",
+   "label": "아이템·재료 — 이름·설명·용도 — 공식 한국어 3,086 + 비공식 번역 158",
+   "hash": "0dfea032060d54fe"
   },
   {
    "file": "enemy.json",
-   "url": "https://files.terra-archive.net/assets/tl/enemy.json?v=7cb835e281316de2",
-   "label": "적 — 이름·설명·능력 — 공식 한국어 3,141 + 비공식 번역 246",
-   "hash": "7cb835e281316de2"
+   "url": "https://files.terra-archive.net/assets/tl/enemy.json?v=8f5fa743a2273961",
+   "label": "적 — 이름·설명·능력 — 공식 한국어 3,186 + 비공식 번역 362",
+   "hash": "8f5fa743a2273961"
   },
   {
    "file": "stage.json",
-   "url": "https://files.terra-archive.net/assets/tl/stage.json?v=dddc5669bbfec7c2",
-   "label": "작전 — 이름·설명 — 공식 한국어 5,248 + 비공식 번역 302",
-   "hash": "dddc5669bbfec7c2"
+   "url": "https://files.terra-archive.net/assets/tl/stage.json?v=64e36ddcac89758c",
+   "label": "작전 — 이름·설명 — 공식 한국어 5,316 + 비공식 번역 315",
+   "hash": "64e36ddcac89758c"
   },
   {
    "file": "ra.json",
@@ -33,15 +33,15 @@
   },
   {
    "file": "is.json",
-   "url": "https://files.terra-archive.net/assets/tl/is.json?v=f50e1ab14d19da4b",
+   "url": "https://files.terra-archive.net/assets/tl/is.json?v=24f64eec1fd08223",
    "label": "통합전략 1~6 — 소장품·노드·조우·엔딩·전투 (테마 구분 없이 한 벌)",
-   "hash": "f50e1ab14d19da4b"
+   "hash": "24f64eec1fd08223"
   },
   {
    "file": "story.json",
-   "url": "https://files.terra-archive.net/assets/tl/story.json?v=f9166fa48ef0f882",
-   "label": "스토리 — 한국 서버에 아직 없는 이벤트·메인·오퍼 스토리의 대사·화자·선택지·편 제목 · 기계 번역 초벌 — 공식 한국어 163 + 비공식 번역 22,147",
-   "hash": "f9166fa48ef0f882"
+   "url": "https://files.terra-archive.net/assets/tl/story.json?v=541ef30ba25efd8c",
+   "label": "스토리 — 한국 서버에 아직 없는 이벤트·메인·오퍼 스토리의 대사·화자·선택지·편 제목 · 기계 번역 초벌 — 공식 한국어 199 + 비공식 번역 25,053",
+   "hash": "541ef30ba25efd8c"
   }
  ]
 }
