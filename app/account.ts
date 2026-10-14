@@ -123,7 +123,27 @@ export type AccountProfile = {
   stories?: Record<string, string[]>;
 };
 
-export type AccountRoster = { player: AccountPlayer; chars: AccountChar[]; token: AccountToken; profile?: AccountProfile };
+export type AccountRoster = { player: AccountPlayer; chars: AccountChar[]; token: AccountToken; profile?: AccountProfile;
+  /** 사이트 설정 동기화용 표 — 워커가 [서버, UID] 를 서명한 것 (app/cloud-prefs.ts, 2026-10-14~). 옛 워커면 없다 */
+  prefToken?: string | null };
+
+/** 관리자 키 — 설정용 표의 UID 가 관리자면 계정 워커가 내준다 (워커 /admin/key, 2026-10-14). 아니면 AccountError("not-admin") */
+export async function adminKeyGet(token: string): Promise<string> {
+  return String((await post("/admin/key", { token })).key ?? "");
+}
+
+/** 사이트 설정 읽기/쓰기 — 게임 UID 별 KV (워커 /prefs/get · /prefs/put) */
+export type PrefEntry = { t: number; d: string | null };
+export async function prefsGet(token: string): Promise<Record<string, PrefEntry>> {
+  return ((await post("/prefs/get", { token })).keys ?? {}) as Record<string, PrefEntry>;
+}
+export async function prefsPut(token: string, keys: Record<string, PrefEntry>, keepalive = false): Promise<Record<string, PrefEntry>> {
+  if (keepalive) {   // 탭을 닫는 중 — 응답은 기다리지 않는다
+    void fetch(apiBase() + "/prefs/put", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, keys }), keepalive: true }).catch(() => null);
+    return keys;
+  }
+  return ((await post("/prefs/put", { token, keys })).keys ?? {}) as Record<string, PrefEntry>;
+}
 
 /** 워커가 돌려준 오류 코드 — 문구는 accountErrorText()가 정한다. */
 export class AccountError extends Error {

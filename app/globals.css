@@ -30207,6 +30207,8 @@ html.dark :is(.own-corner, .skin-owned).no { background: color-mix(in srgb, #000
 /* 세션 머리줄의 일 기록 칩 (2026-10-11) — PRTS 링크는 청록, 내 정보는 보라 계열로 화면 칩과 구분 */
 .vz-tag.vz-ev.prts { color: #0b6e66; background: color-mix(in srgb, #2fbfa5 18%, transparent); border-color: transparent; font-weight: 700; }
 .vz-tag.vz-ev.prts.on { color: #fff; background: #1d8f7e; }
+.vz-player-inline { color: var(--lime-ink); font-weight: 700; white-space: nowrap; }
+.vz-tag.vz-player { color: var(--lime-ink); border-color: var(--lime-line); font-weight: 700; }
 .vz-tag.vz-ev.me { color: #6a4fb0; background: color-mix(in srgb, #8e6ad8 15%, transparent); border-color: transparent; }
 html.dark .vz-tag.vz-ev.prts { color: #6fe3cf; }
 html.dark .vz-tag.vz-ev.me { color: #c3aef5; }
@@ -30583,3 +30585,11 @@ html.dark .me-pf-art { opacity: .3; }
 /* 사이트 전체 툴팁 (app/title-tip.tsx, 2026-10-14) — title 문구를 그대로, 줄바꿈 유지 */
 .ta-tip { position: fixed; z-index: 2147483000; max-width: min(340px, calc(100vw - 16px)); padding: 6px 9px; border: 1px solid var(--line); border-radius: var(--r-sm);
   background: var(--white); color: var(--ink); box-shadow: var(--sh-2); font-size: 12px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; pointer-events: none; }
+
+/* 관리 — UID 설정 보기 (app/admin/prefs.tsx, 2026-10-14) */
+.ap-search { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 14px; }
+.ap-search input { padding: 6px 10px; border: 1px solid var(--line); background: var(--white); color: var(--ink); font: inherit; font-size: 13px; width: 200px; }
+.ap-item { margin: 0 0 10px; padding: 10px 12px; border: 1px solid var(--line); background: var(--white); }
+.ap-item summary { cursor: pointer; }
+.ap-pre { margin: 8px 0 0; max-height: 360px; overflow: auto; font: 12px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.ap-list { margin: 8px 0 0; padding-left: 20px; font-size: 13px; }

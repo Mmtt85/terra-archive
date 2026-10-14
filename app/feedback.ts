@@ -75,11 +75,29 @@ export function ensureFeedbackToken(): string {
   return token;
 }
 
+// 예전 열람 코드들 — 내 정보 로그인으로 계정의 코드가 들어오면 이 브라우저가 따로 쓰던 코드는 여기로 옮겨 같이 조회한다
+// (app/cloud-prefs.tsx, 2026-10-14 "로그인한 사람은 열람 코드 입력 없이 자기 제안이 보이게"). 고치기·지우기는 그 행의 코드로
+const FEEDBACK_EXTRA_KEY = "ta-feedback-extra";
+function extraTokens(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(FEEDBACK_EXTRA_KEY) ?? "[]");
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && UUID_RE.test(x)) : [];
+  } catch { return []; }
+}
+
 /** 열람 코드 입력 — uuid 형식이면 토큰을 교체하고 true (다른 기기에서 이어보기) */
 export function setFeedbackToken(code: string): boolean {
   const v = code.trim().toLowerCase();
   if (!UUID_RE.test(v)) return false;
-  try { localStorage.setItem(FEEDBACK_TOKEN_KEY, v); } catch { return false; }
+  try {
+    // 지금 쓰던 코드는 버리지 않고 예전 코드로 옮긴다 — 그 코드로 쓴 제안도 계속 보인다 (2026-10-14)
+    const cur = getFeedbackToken();
+    if (cur && cur !== v) {
+      const extra = extraTokens();
+      if (!extra.includes(cur)) localStorage.setItem(FEEDBACK_EXTRA_KEY, JSON.stringify([...extra, cur]));
+    }
+    localStorage.setItem(FEEDBACK_TOKEN_KEY, v);
+  } catch { return false; }
   return true;
 }
 
@@ -94,12 +112,22 @@ export type FeedbackReply = { id: string; body: string; created_at: string };
 export type MyFeedbackRow = {
   id: string; created_at: string; kind: FeedbackKind; message: string; payload: unknown;
   feedback_replies: FeedbackReply[];
+  /** 이 행을 연 열람 코드 — 예전 코드로 쓴 제안은 그 코드로 고치고 지운다 */
+  _token?: string;
 };
 
-/** 내 제안 목록 (답변 포함, 최신순) — 토큰이 없으면 네트워크 없이 [] */
+/** 내 제안 목록 (답변 포함, 최신순) — 지금 코드 + 예전 코드들 전부. 코드가 없으면 네트워크 없이 [] */
 export async function fetchMyFeedback(): Promise<MyFeedbackRow[]> {
-  const token = getFeedbackToken();
-  if (!token) return [];
+  const main = getFeedbackToken();
+  const tokens = [...new Set([main, ...extraTokens()].filter((x): x is string => !!x))];
+  if (!tokens.length) return [];
+  const lists = await Promise.all(tokens.map((tk) => fetchFeedbackFor(tk).then((rows) => rows.map((r) => ({ ...r, _token: tk })))
+    .catch((e) => { if (tk === main) throw e; return [] as MyFeedbackRow[]; })));
+  const seen = new Set<string>();
+  return lists.flat().filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)))
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+}
+async function fetchFeedbackFor(token: string): Promise<MyFeedbackRow[]> {
   const headers = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "x-feedback-token": token };
   const embed = "select=id,created_at,kind,message,payload,feedback_replies(id,body,created_at)" +
     "&order=created_at.desc&feedback_replies.order=created_at.asc&limit=100";
@@ -129,8 +157,8 @@ function authorHeaders(token: string) {
 }
 
 /** 본인 제안 수정 — 내용(message)만 바꾼다 */
-export async function updateMyFeedback(id: string, message: string) {
-  const token = getFeedbackToken();
+export async function updateMyFeedback(id: string, message: string, rowToken?: string) {
+  const token = rowToken ?? getFeedbackToken();
   if (!token) throw new Error("열람 토큰이 없습니다");
   const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
     method: "PATCH",
@@ -143,8 +171,8 @@ export async function updateMyFeedback(id: string, message: string) {
 }
 
 /** 본인 제안 삭제 — 달린 답변도 FK cascade로 함께 지워진다 */
-export async function deleteMyFeedback(id: string) {
-  const token = getFeedbackToken();
+export async function deleteMyFeedback(id: string, rowToken?: string) {
+  const token = rowToken ?? getFeedbackToken();
   if (!token) throw new Error("열람 토큰이 없습니다");
   const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
     method: "DELETE",

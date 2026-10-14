@@ -785,6 +785,69 @@ async function hmac(text) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(SIGN_KEY), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   return new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(text))).slice(0, 16);
 }
+// ── 사이트 설정 동기화 (2026-10-14) ─────────────────────────
+// 게임 UID 는 계정마다 평생 안 바뀐다 — 그걸 열쇠로 사이트 설정(내 정보 맞춤 칸·스토리 읽은 위치)을 KV(PREFS)에 둔다.
+// 쓰기·읽기는 **설정용 표**로만: 로그인·동기화 때 [2, 서버, UID] 를 SIGN_KEY 로 서명해 내준다. 정품 인증 seal 은 공유 이미지 QR 로
+// 남에게 보이는 값이라 이 용도로 쓰지 않는다. UID 를 그냥 받으면 누구나 남의 설정을 고칠 수 있다.
+let PREFS = null;
+const PREF_MAX = 200_000;          // 계정당 설정 전체 상한 (바이트)
+const PREF_KEYS = new Set(["ta:me-layout", "ta:story-pos", "ta-feedback-token", "ta-feedback-extra"]);   // 받아 주는 설정 키 — 사이트 app/cloud-prefs.ts SYNC 와 같게
+async function prefTokenOf(server, uid) {
+  if (!SIGN_KEY || !uid) return null;
+  const body = b64url(new TextEncoder().encode(JSON.stringify([2, server, String(uid)])));
+  return `${body}.${b64url(await hmac(body))}`;
+}
+async function prefOwner(token) {
+  if (!SIGN_KEY || typeof token !== "string" || token.length > 300) return null;
+  const [body, sig] = token.split(".");
+  if (!body || !sig) return null;
+  const want = b64url(await hmac(body));
+  let diff = want.length ^ sig.length;
+  for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ (sig.charCodeAt(i) || 0);
+  if (diff !== 0) return null;
+  try {
+    const v = JSON.parse(new TextDecoder().decode(unb64url(body)));
+    return Array.isArray(v) && v[0] === 2 && typeof v[1] === "string" && typeof v[2] === "string" ? `p:${v[1]}:${v[2]}` : null;
+  } catch { return null; }
+}
+// 관리자 — 내 정보로 로그인한 게임 UID 가 이것이면 사이트 관리자 기능을 연다 (사용자 지시 2026-10-14 "내 UID 로 로그인하면 관리자").
+// 서명된 설정용 표로만 판정한다(UID 를 그냥 받지 않는다). 통과하면 관리자 키(ADMIN_KEY 시크릿 = .supabase-admin-key)를 내준다 —
+// 제안 게시판 답변·위수 협의 통계 같은 쓰기는 지금처럼 Supabase RLS 가 그 키로 확인한다
+const ADMIN_UIDS = new Set(["07799010"]);
+let ADMIN_KEY = null;
+async function adminKeyFor(token) {
+  const key = await prefOwner(token);
+  const uid = key?.split(":")[2];
+  if (!uid || !ADMIN_UIDS.has(uid)) throw new HttpError(403, "not-admin");
+  if (!ADMIN_KEY) throw new HttpError(503, "admin-key-missing");
+  return { ok: true, key: ADMIN_KEY };
+}
+async function prefsGet(token) {
+  const key = await prefOwner(token);
+  if (!key) throw new HttpError(401, "pref-token");
+  if (!PREFS) throw new HttpError(503, "pref-store");
+  const doc = (await PREFS.get(key, "json")) ?? { keys: {} };
+  return { ok: true, keys: doc.keys ?? {} };
+}
+/** 키마다 더 나중(t)인 것을 남긴다 — 다른 기기에서 동시에 고쳐도 그 키 단위로 최신이 이긴다 */
+async function prefsPut(token, keys) {
+  const key = await prefOwner(token);
+  if (!key) throw new HttpError(401, "pref-token");
+  if (!PREFS) throw new HttpError(503, "pref-store");
+  if (!keys || typeof keys !== "object") throw new HttpError(400, "bad-request");
+  const doc = (await PREFS.get(key, "json")) ?? { keys: {} };
+  const cur = doc.keys ?? {};
+  for (const [k, v] of Object.entries(keys)) {
+    if (!PREF_KEYS.has(k) || !v || typeof v !== "object" || !Number.isFinite(v.t)) continue;
+    if (v.d !== null && typeof v.d !== "string") continue;
+    if (!cur[k] || v.t > cur[k].t) cur[k] = { t: v.t, d: v.d };
+  }
+  const text = JSON.stringify({ keys: cur, at: Date.now() });
+  if (text.length > PREF_MAX) throw new HttpError(413, "pref-too-big");
+  await PREFS.put(key, text);
+  return { ok: true, keys: cur };
+}
+
 // 순서가 곧 형식이다 — 바꾸면 v 를 올린다 (검증 창이 같은 순서로 읽는다)
 const SEAL_FIELDS = ["v", "server", "uid", "nick", "nickNo", "level", "register", "at", "owned", "e2", "e2l90", "pot6", "m3", "skins", "medals"];
 async function sealOf(rosterResult, prof, server) {
@@ -905,7 +968,7 @@ async function handleLogin({ email, code, server, phone, password, username, hgT
   step("digest");
   const r = roster(fetched.user), prof = profile(fetched.user, fetched.friends, fetched.shop);
   prof.seal = raw ? null : await sealOf(r, prof, server);
-  return withRaw({ ok: true, ...r, profile: prof, token: { uid: cred.uid, token: cred.token, deviceId } }, fetched, raw);
+  return withRaw({ ok: true, ...r, profile: prof, token: { uid: cred.uid, token: cred.token, deviceId }, prefToken: raw ? null : await prefTokenOf(server, r.player?.uid) }, fetched, raw);
 }
 
 // 저장된 토큰으로 재동기화 (이메일 코드 불필요)
@@ -916,7 +979,7 @@ async function handleSync({ token, server, raw }, step = noStep) {
   step("digest");
   const r = roster(fetched.user), prof = profile(fetched.user, fetched.friends, fetched.shop);
   prof.seal = raw ? null : await sealOf(r, prof, server);
-  return withRaw({ ok: true, ...r, profile: prof, token }, fetched, raw);
+  return withRaw({ ok: true, ...r, profile: prof, token, prefToken: raw ? null : await prefTokenOf(server, r.player?.uid) }, fetched, raw);
 }
 
 // 크레딧 상점 — 게임에서 상점을 열 때 받는 정보. '오퍼레이터 언락'의 누적 소비 크레딧이 syncData 에는 없어서
@@ -954,6 +1017,8 @@ async function fetchUser(cred, deviceId, network, step = noStep, server = "kr") 
 export default {
   async fetch(request, env) {
     SIGN_KEY = env?.SIGN_KEY ?? null;
+    PREFS = env?.PREFS ?? null;
+    ADMIN_KEY = env?.ADMIN_KEY ?? null;
     const origin = request.headers.get("Origin") ?? "";
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders(origin) });
@@ -981,11 +1046,31 @@ export default {
       const body = await request.json().catch(() => null);
       return json(await verifySeal(body?.code), origin);
     }
+    // 관리 화면 'UID 로 설정 보기' (2026-10-14) — admin-api 워커·dev 중계가 관리자 키(x-admin-key)를 붙여 서버끼리 부른다
+    if (url.pathname === "/admin/prefs") {
+      const given = request.headers.get("x-admin-key") ?? "";
+      if (!ADMIN_KEY || given !== ADMIN_KEY) return json({ ok: false, error: "not-admin" }, origin, 403);
+      if (!PREFS) return json({ ok: false, error: "pref-store" }, origin, 503);
+      const q = await request.json().catch(() => null);
+      const server = String(q?.server ?? ""), uid = String(q?.uid ?? "").replace(/\D/g, "");
+      if (!validServer(server) || !uid) return json({ ok: false, error: "bad-request" }, origin, 400);
+      const doc = await PREFS.get(`p:${server}:${uid}`, "json");
+      return json({ ok: true, server, uid, found: !!doc, keys: doc?.keys ?? {}, at: doc?.at ?? null }, origin);
+    }
     // 브라우저 외부(다른 사이트·스크립트)에서의 호출은 받지 않는다
     if (!ORIGIN_OK(origin)) return json({ ok: false, error: "origin" }, origin, 403);
 
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== "object") return json({ ok: false, error: "bad-body" }, origin, 400);
+    // 사이트 설정 동기화 — 서버·UID 는 표 안에 있다 (서버 값을 따로 받지 않는다)
+    if (url.pathname === "/prefs/get" || url.pathname === "/prefs/put" || url.pathname === "/admin/key") {
+      try {
+        if (url.pathname === "/admin/key") return json(await adminKeyFor(body.token), origin);
+        return json(url.pathname === "/prefs/get" ? await prefsGet(body.token) : await prefsPut(body.token, body.keys), origin);
+      } catch (error) {
+        return json({ ok: false, error: error?.code ?? "internal" }, origin, error instanceof HttpError ? error.status : 500);
+      }
+    }
     const server = body.server;
     if (!validServer(server)) return json({ ok: false, error: "bad-server" }, origin, 400);
 

@@ -461,6 +461,24 @@ $$;
 
 -- 세션 타임라인 목록 — 한 사람의 동선을 한 줄로
 drop function if exists public.visits_sessions_range(timestamptz, timestamptz, boolean, text, text, int);
+-- ── 방문자 ↔ 게임 계정 (2026-10-14) ── 내 정보로 로그인한 사람은 세션 타임라인에 UID·닉네임으로 (사용자 지시 "로그인한 사람은 UID 로, 아닌 사람은 기존처럼")
+-- 사이트(app/visit-track.ts notePlayer)가 세션마다·로그인 때 보낸다. 같은 (방문자, 서버, UID) 는 ON CONFLICT DO NOTHING 으로 버린다
+create table if not exists public.visit_player (
+  visitor uuid not null,
+  server text not null check (char_length(server) <= 8),
+  uid text not null check (char_length(uid) <= 24),
+  nick text check (char_length(nick) <= 40),
+  env text not null default 'live' check (env in ('live', 'dev')),
+  at timestamptz not null default now(),
+  primary key (visitor, server, uid)
+);
+create index if not exists visit_player_visitor_idx on public.visit_player (visitor, at desc);
+alter table public.visit_player enable row level security;
+drop policy if exists "anon insert visit player" on public.visit_player;
+create policy "anon insert visit player" on public.visit_player for insert to anon with check (true);
+drop policy if exists "admin read visit player" on public.visit_player;
+create policy "admin read visit player" on public.visit_player for select to anon using ((select public.visits_is_admin()));
+
 create or replace function public.visits_sessions_range(p_from timestamptz, p_to timestamptz, p_human boolean default true,
   p_src text default null, p_landing text default null, p_limit int default 100, p_kinds text[] default null)
 returns json language sql stable security definer set search_path = public as $$
@@ -485,6 +503,9 @@ returns json language sql stable security definer set search_path = public as $$
       'utm', s.utm_source,
       -- 방문자 익명 id — 세션 타임라인에 코드(앞 8자)로 보여 PRTS·틀렸어요 표와 맞춰 본다 (2026-10-12)
       'visitor', s.visitor,
+      -- 그 방문자가 내 정보로 로그인한 게임 계정 (가장 최근) — 없으면 null (2026-10-14)
+      'player', (select json_build_object('server', p.server, 'uid', p.uid, 'nick', p.nick) from public.visit_player p
+                 where p.visitor = s.visitor order by p.at desc limit 1),
       -- 마지막으로 받은 시각 — 열려 있는 탭은 1분마다 보내므로(visit-track.ts BEAT_MS) 몇 분 안이면 '조작 중' (2026-10-10)
       'last_at', (select max(vv.at) from public.visit_view vv where vv.session = s.id),
       -- 그 세션의 일 기록 — PRTS 링크 연결·해제, 내 정보 로그인·동기화 (2026-10-11 "세션 타임라인에 PRTS 가 안 보인다")

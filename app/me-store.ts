@@ -44,6 +44,19 @@ function setToken(next: MeToken | null) {
     else window.localStorage.removeItem(TOKEN_KEY);
   } catch { /* 저장 못 하면 이 탭에서만 쓴다 */ }
 }
+// 사이트 설정 동기화용 표 (app/cloud-prefs.ts) — 게임 토큰과 달리 만료가 없다(UID 는 평생 같다). '데이터 지우기'만 지운다
+const PREF_KEY = "ta:me-pref";
+export const PREF_EVENT = "ta:me-pref";
+export function mePrefToken(): string | null {
+  try { return window.localStorage.getItem(PREF_KEY) || null; } catch { return null; }
+}
+function setPrefToken(next: string | null) {
+  try {
+    const prev = window.localStorage.getItem(PREF_KEY);
+    if (next) window.localStorage.setItem(PREF_KEY, next); else window.localStorage.removeItem(PREF_KEY);
+    if (prev !== next) window.dispatchEvent(new Event(PREF_EVENT));
+  } catch { /* 무시 */ }
+}
 /** 토큰이 만료됐을 때 — 다음엔 로그인 창으로 보낸다 */
 export const dropMeToken = () => setToken(null);
 
@@ -82,6 +95,7 @@ export function getMe(): MeData | null {
 export function saveMe(roster: AccountRoster, server: AccountServer, kind: "me_login" | "me_sync" = "me_login") {
   noteVisitEvent(kind, server);   // 방문 통계 — 누가(익명 id) 몇 번 동기화했는지
   if (roster.token) setToken({ server, token: roster.token });
+  if (roster.prefToken) setPrefToken(roster.prefToken);
   const data: MeData = {
     v: 1, server, syncedAt: Date.now(), player: roster.player, chars: roster.chars, profile: roster.profile ?? null,
   };
@@ -92,6 +106,7 @@ export function saveMe(roster: AccountRoster, server: AccountServer, kind: "me_l
 
 export function clearMe() {
   setToken(null);
+  setPrefToken(null);
   try { window.localStorage.removeItem(KEY); } catch { /* 무시 */ }
   cachedRaw = undefined;
   window.dispatchEvent(new Event(EVENT));

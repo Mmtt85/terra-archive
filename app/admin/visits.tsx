@@ -9,6 +9,7 @@
 // 기간 7·30·90일은 원장에서, '1년'은 매일 밤 말아 둔 일별 집계표에서 읽는다. 원장은 기간으로 자르지 않고
 // DB 가 80% 차면 오래된 것부터 지운다(docs/supabase-visits.sql visits_maintain).
 
+import { Who } from "./who";
 import { createPortal } from "react-dom";
 import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
@@ -91,6 +92,8 @@ type SessRow = {
   last_at?: string | null;
   /** 브라우저 익명 방문자 id (2026-10-12~ DB 함수 — 옛 함수면 없다). 화면엔 앞 8자 */
   visitor?: string | null;
+  /** 그 방문자가 내 정보로 로그인한 게임 계정 (visit_player, 2026-10-14~ — SQL 적용 전이면 없다) */
+  player?: { server: string; uid: string; nick: string | null } | null;
   /** 그 세션의 일 기록 — PRTS 연결·해제, 내 정보 로그인·동기화 (2026-10-11~ DB 함수) */
   events?: { at: string; kind: string; detail: string | null; dur: number | null; server: string | null }[];
 };
@@ -796,7 +799,10 @@ function SessionLine({ s, hit }: { s: SessRow; hit?: boolean }) {
       <header>
         <time>{when}</time>
         {/* 방문자 코드 — PRTS·틀렸어요 표의 방문자와 맞춰 볼 수 있게 (사용자 지시 2026-10-12) */}
-        {s.visitor && <code className="vz-visitor" title={s.visitor}>{s.visitor.slice(0, 8)}</code>}
+        {/* 로그인한 사람은 게임 계정으로 (사용자 지시 2026-10-14) — 아닌 사람은 종전처럼 방문자 코드만 */}
+        {s.player
+          ? <span className="vz-tag vz-player" title={`${s.player.nick ?? ""} · 방문자 ${s.visitor?.slice(0, 8) ?? "-"}`}>👤 {s.player.server}:{s.player.uid}{s.player.nick ? ` · ${s.player.nick}` : ""}</span>
+          : s.visitor && <code className="vz-visitor" title={s.visitor}>{s.visitor.slice(0, 8)}</code>}
         <span className="vz-tag vz-total" title="화면마다 조작 시간(없으면 보인 시간)의 합">합계 {fmtDur(total)}</span>
         <b>{s.src}</b>
         {s.ref && s.ref !== s.src && <span className="vz-muted" title={s.ref}><Go href={/^https?:\/\//.test(s.ref) ? s.ref : null}>{s.ref.replace(/^https?:\/\//, "").slice(0, 60)}</Go></span>}
@@ -1153,7 +1159,7 @@ export function VisitsPanel() {
       <tbody>
         {meBy.slice(0, n).map((b) => (
           <tr key={b.visitor ?? "?"}>
-            <td title={b.visitor ?? ""}><code>{(b.visitor ?? "—").slice(0, 8)}</code></td>
+            <td title={b.visitor ?? ""}><Who visitor={b.visitor} /></td>
             {/* 유입 — 로그인한 세션이 어디서 왔는가 (사용자 요청 2026-10-05). 주소가 있으면 호스트·경로를 툴팁으로 */}
             <td title={b.ref ?? ""}>{b.src ?? "—"}{b.ref && <small className="vz-note"> {b.ref.replace(/^https?:\/\//, "").slice(0, 40)}</small>}</td>
             <td>{num(b.n)}</td><td>{num(b.login)}</td><td>{num(b.sync)}</td><td>{b.server ? serverLabel(b.server) : "—"}</td>
@@ -1176,7 +1182,7 @@ export function VisitsPanel() {
       <thead><tr><th>방문자</th><th>연결</th><th>해제</th><th>어디서</th><th>연결 시간</th><th>유입</th></tr></thead>
       <tbody>{prtsLog.slice(0, n).map((r, i) => (
                       <tr key={i}>
-                        <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
+                        <td title={r.visitor ?? ""}><Who visitor={r.visitor} /></td>
                         <td>{r.start ? whenShort(r.start) : "—"}</td>
                         <td>{r.end ? whenShort(r.end) : r.dangling ? <span className="vz-note" title="다음 연결 전에 해제 기록이 오지 않음 — 탭을 닫았거나 기록 전에 끊겼다">기록 없음</span> : <b>연결 중</b>}</td>
                         <td><code>{r.detail ?? "—"}</code></td>
@@ -1586,7 +1592,7 @@ function PrtsWrong({ from, to, tick, top, setTop }: { from: string; to: string; 
           <thead><tr><th>방문자</th><th>틀렸어요</th><th>판정</th><th>이동 대상 / 상태줄</th><th title="그 화면에서 맞춘 게임 항목 이름 · #화면 종류">판정 근거</th><th>화면</th><th aria-label="지우기" /></tr></thead>
           <tbody>{d!.slice(0, n).map((r, i) => (
             <tr key={i}>
-              <td title={r.visitor ?? ""}><code>{(r.visitor ?? "—").slice(0, 8)}</code></td>
+              <td title={r.visitor ?? ""}><Who visitor={r.visitor} /></td>
               <td>{whenShort(r.at)}{r.topic ? <span className="vz-note"> · {r.topic}</span> : null}{r.env === "dev" ? <span className="vz-tag" title="라이브가 아닌 곳(localhost 등)에서 누름">dev</span> : null}
                 {r.memo ? <div title="누른 사람이 적은 메모">💬 {r.memo}</div> : null}</td>
               <td>{RESULT_KO[r.result ?? ""] ?? r.result ?? "—"} <code>{r.section ?? ""}</code>{r.cached ? <span className="vz-note"> · 캐시</span> : null}</td>

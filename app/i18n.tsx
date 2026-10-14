@@ -2584,6 +2584,13 @@ const D: Record<string, Pair> = {
   "새로: {a}": ["In: {a}", "新規: {a}"],
   "빠짐: {d}": ["Out: {d}", "外れ: {d}"],
   "전과 달라진 곳 {c}곳 · 새로 들어간 오퍼 {n}명": ["{c} rooms changed · {n} operators newly placed", "変わった部屋 {c}か所・新たに入ったオペレーター {n}名"],
+  "로그인하면 **내 정보 맞춤 칸 구성·스토리 읽은 위치**를 이 게임 계정(UID)으로 저장해 두고, 다른 기기·브라우저에서 로그인해도 그대로 이어집니다.": [
+    "Once you log in, your **My Info tile layout and story reading positions** are saved to this game account (UID), so they carry over when you log in on another device or browser.",
+    "ログインすると、**マイ情報のカスタム枠の配置とストーリーの既読位置**をこのゲームアカウント（UID）に保存し、別の端末・ブラウザでログインしてもそのまま引き継がれます。",
+  ],
+  "내 정보로 로그인해 두었으니 다른 기기에서도 내 정보 로그인만 하면 내 제안이 그대로 보입니다.": ["You're logged in via My Info, so your suggestions show up on other devices as soon as you log in there too.", "マイ情報でログイン済みなので、別の端末でもマイ情報にログインするだけで自分の提案がそのまま見えます。"],
+  "내 정보로 로그인해 두면 다른 기기에서도 로그인만으로 내 제안이 이어집니다.": ["Log in via My Info and your suggestions carry over to other devices just by logging in.", "マイ情報でログインしておくと、別の端末でもログインするだけで自分の提案が引き継がれます。"],
+  "로그인이 번거로우면 위 열람 코드를 복사해 다른 기기의 '다른 기기에서 이어보기'에 붙여 넣어도 됩니다.": ["If you'd rather not log in, copy the access code above and paste it into 'Continue on another device' there.", "ログインが面倒なら、上の閲覧コードをコピーして別の端末の「別の端末で続きを見る」に貼り付けても大丈夫です。"],
   "스테이지 클리어 현황": ["Stage clear status", "ステージクリア状況"],
   "× {n}개 획득 가능": ["× {n} to earn", "× {n}個 獲得可能"],
   "지금 들어갈 수 있는 작전 중 아직 3성(완료)을 못 받은 작전에서 처음 한 번 주는 순오리지늄 — 돌격 작전·스토리 작전 포함": [

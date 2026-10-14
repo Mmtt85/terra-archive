@@ -97,6 +97,13 @@ export function adminDevProxy(): Plugin {
             });
           }
 
+          // UID 별 사이트 설정 — 계정 워커 /admin/prefs (2026-10-14)
+          if (url === "/api/prefs") {
+            const key = readKey(root, ".supabase-admin-key");
+            if (!key) return send(res, 503, { ok: false, error: "키 파일 없음 (.supabase-admin-key)" });
+            return relay(req, res, "https://terra-archive-account.nzkonaru.workers.dev/admin/prefs", { "x-admin-key": key, "Content-Type": "application/json" });
+          }
+
           if (url === "/api/files" || url.startsWith("/api/files/")) {
             const key = readKey(root, ".upload-admin-key");
             if (!key) return send(res, 503, { ok: false, error: "키 파일 없음 (.upload-admin-key)" });

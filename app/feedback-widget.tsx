@@ -1,14 +1,15 @@
 "use client";
 
+import { mePrefToken, PREF_EVENT } from "./me-store";
 import { NewBadge } from "./new-badge";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import {
   feedbackReady, sendFeedback, uploadFeedbackFile, imagesOf, filesOf, fmtFileSize, isFeedbackImage, FEEDBACK_IMG_MAX, FEEDBACK_IMG_MB,
   getFeedbackToken, setFeedbackToken, getFeedbackSeen, markFeedbackSeen,
   fetchMyFeedback, countNewReplies, countNewFeedback, countNewFeedbackSince,
   updateMyFeedback, deleteMyFeedback,
-  getBoardAdminKey, setBoardAdminKey, probeBoardAdminKey, fetchAllFeedbackBoard,
+  getBoardAdminKey, fetchAllFeedbackBoard,
   boardAdminAddReply, boardAdminDeleteReply, boardAdminEditReply, boardAdminDeleteFeedback, boardAdminSetReviewed,
   countryOf, visitorOf, flagOf,
   type FeedbackKind, type BoardRow,
@@ -48,6 +49,9 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
   // 관리자 모드 (사용자 확정 2026-08-17: "제안 모달에서 답변 + 어차피 싹 다 볼 수 있어야") —
   // 열람 코드 입력칸에 관리자 키를 넣으면 전체 제안 + 답변 폼이 열린다
   const [adminKey, setAdminKey] = useState<string | null>(null);
+  // 내 정보 로그인(설정 동기화 표)이 있으면 열람 코드가 계정으로 이어진다 (app/cloud-prefs.tsx)
+  const loggedIn = useSyncExternalStore((cb) => { window.addEventListener(PREF_EVENT, cb); return () => window.removeEventListener(PREF_EVENT, cb); },
+    () => !!mePrefToken(), () => false);
   const [replyVal, setReplyVal] = useState("");
   const [replyBusy, setReplyBusy] = useState(false);
   // 대응완료(reviewed_at) 가리기 — /admin의 '대응미완료' 기본 보기와 같은 감각 (기본: 가림)
@@ -180,12 +184,6 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
 
   // ── 관리자 모드 동작 (게시판에서 직접 답변 — 그 제안의 작성자에게만 보인다) ──
 
-  const exitAdmin = () => {
-    setBoardAdminKey(null);
-    setAdminKey(null);
-    setThreadId(null);
-    void refresh(true);
-  };
 
   const sendReply = async (row: BoardRow) => {
     const body = replyVal.trim();
@@ -278,7 +276,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     setEditBusy(true);
     setActErr(false);
     try {
-      await updateMyFeedback(row.id, msg);
+      await updateMyFeedback(row.id, msg, row._token);
       setRows((cur) => (cur ?? []).map((r) => (r.id === row.id ? { ...r, message: msg } : r)));
       setEditingId(null);
     } catch {
@@ -295,7 +293,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     }))) return;
     setActErr(false);
     try {
-      await deleteMyFeedback(row.id);
+      await deleteMyFeedback(row.id, row._token);
       setRows((cur) => (cur ?? []).filter((r) => r.id !== row.id));
       setThreadId(null);
     } catch {
@@ -405,17 +403,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
       void refresh(true);
       return;
     }
-    // uuid가 아니면 관리자 키로 시도 — 틀리면 겉으론 형식 오류와 동일하게 보인다.
-    // 하한 8자 = make-admin-rotate-sql.mjs --allow-short 하한과 동일 (2026-08-17 사용자
-    // 키 9자로 교체하며 20자 → 8자. 확인은 요청 1회짜리 probe라 오타에 낭비될 것도 없다)
-    if (v.length >= 8 && (await probeBoardAdminKey(v))) {
-      setBoardAdminKey(v);
-      setCodeErr(false);
-      setCodeOpen(false);
-      setCodeVal("");
-      void refresh(true);
-      return;
-    }
+    // 관리자 키를 이 칸에 넣던 방식은 없앴다 — 관리자는 내 정보로 관리자 UID 로그인하면 저절로 켜진다 (app/cloud-prefs.tsx, 2026-10-14)
     setCodeErr(true);
   };
 
@@ -491,8 +479,8 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
       <footer className="fb-code-foot">
         {adminKey ? (
           <div className="fb-code-row">
+            {/* 관리자 UID 로그인이면 저절로 켜진다 — 해제 단추는 없앴다 (사용자 지시 2026-10-14) */}
             <small>🛠 {t("관리자 모드 — 모든 제안이 보입니다")}</small>
-            <button type="button" className="fb-code-toggle" onClick={exitAdmin}>{t("관리자 해제")}</button>
           </div>
         ) : (<>
         <div className="fb-code-row">
@@ -518,12 +506,17 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
             />
             <button type="button" onClick={() => void applyCode()}>{t("적용")}</button>
             {codeErr && <small className="fb-code-err">{t("코드 형식이 올바르지 않습니다")}</small>}
-            {!codeErr && !!rows?.length && (
-              <small className="fb-code-warn">{t("코드를 적용하면 이 브라우저의 기존 제안 {n}건은 목록에서 사라집니다 — 필요하면 현재 열람 코드를 먼저 복사해 두세요", { n: rows.length })}</small>
-            )}
+
           </div>
         )}
-        {token && !codeOpen && <small className="fb-code-hint">{t("이 코드를 다른 기기에서 입력하면 같은 목록을 볼 수 있습니다")}</small>}
+        {/* 다른 기기에서 내 제안 보기 — 두 갈래 (사용자 지시 2026-10-14): 내 정보 로그인이면 저절로, 아니면 열람 코드 */}
+        {!codeOpen && (
+          <small className="fb-code-hint">
+            {loggedIn ? t("내 정보로 로그인해 두었으니 다른 기기에서도 내 정보 로그인만 하면 내 제안이 그대로 보입니다.")
+              : t("내 정보로 로그인해 두면 다른 기기에서도 로그인만으로 내 제안이 이어집니다.")}
+            {token && <><br />{t("로그인이 번거로우면 위 열람 코드를 복사해 다른 기기의 '다른 기기에서 이어보기'에 붙여 넣어도 됩니다.")}</>}
+          </small>
+        )}
         </>)}
       </footer>
   </>);

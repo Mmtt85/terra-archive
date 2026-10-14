@@ -4,6 +4,7 @@
 //   GET  /api/me                      로그인 확인 — {email}
 //   ANY  /api/supabase/<rest>?query   → SUPABASE_URL/rest/v1/<rest> (+x-admin-key)
 //   ANY  /api/files[...]              → UPLOAD_API/files[...] (+x-admin-key)
+//   POST /api/prefs {server, uid}     → 계정 워커 /admin/prefs (+x-admin-key) — UID 별 사이트 설정 (2026-10-14)
 //
 // Access가 admin.terra-archive.net 전체를 덮으므로 여기 도달한 요청은 이미 로그인을
 // 통과했지만, 그래도 JWT를 직접 검증한다 — 라우트 우회·설정 실수에 대한 이중 방어.
@@ -108,6 +109,13 @@ export default {
         apikey: env.VISITS_ANON_KEY,
         Authorization: `Bearer ${env.VISITS_ANON_KEY}`,
         "x-admin-key": env.SUPABASE_ADMIN_KEY ?? "",
+      });
+    }
+
+    // UID 별 사이트 설정 조회 — /api/prefs → 계정 워커 /admin/prefs (+x-admin-key) (2026-10-14)
+    if (url.pathname === "/api/prefs") {
+      return proxy(request, "https://terra-archive-account.nzkonaru.workers.dev/admin/prefs", {
+        "x-admin-key": env.SUPABASE_ADMIN_KEY ?? "", "Content-Type": "application/json",
       });
     }
 

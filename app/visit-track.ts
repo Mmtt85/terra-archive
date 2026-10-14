@@ -15,14 +15,14 @@
 //   · 바깥 링크를 누르면 그 주소, 본문을 어디까지 내렸는지(%).
 // 보내는 법 — 화면을 떠날 때·탭을 내릴 때 **그사이 늘어난 몫만** 한 행으로 보낸다(추가 전용. 익명 키에
 //   UPDATE 를 열지 않는다). 서버가 같은 (session, seq) 를 합친다.
-// 안 보내는 것 — IP·계정·위치. 방문자 구분은 localStorage 의 무작위 id 하나뿐이다.
+// 안 보내는 것 — IP·위치. 방문자 구분은 localStorage 의 무작위 id 이고, 내 정보로 로그인한 사람만 그 게임 계정(서버·UID·닉네임)을
+//   방문자와 잇는다 (visit_player, 2026-10-14 "로그인한 사람은 UID 로, 아닌 사람은 기존처럼").
 //
 // **운영자 본인은 기록하지 않는다** (사용자 지시 2026-10-04 "내 움직임은 통계에 들어가면 안돼") —
-//   ① 제안 게시판 관리자 모드가 켜진 브라우저(localStorage 에 관리자 키, feedback.ts getBoardAdminKey)
-//   ② admin.terra-archive.net 을 연 적 있는 브라우저 — 어드민 페이지가 terra-archive.net 전체에 거는
-//      'ta-no-track' 쿠키(1년). 어드민은 Cloudflare Access 뒤라 운영자만 이 쿠키를 받는다.
-//   ③ 로컬 dev(localhost) 화면에서 링크로 들어온 브라우저 — 그 자리에서 ② 쿠키도 건다 (2026-10-06)
-//   세션 도중에 관리자 모드를 켜면 그 순간부터 더 보내지 않는다.
+//   ① 내 정보로 관리자 UID(OWNER_UIDS)에 로그인한 브라우저 — 2026-10-14~. 종전의 관리 사이트 'ta-no-track' 쿠키는 없앴다
+//   ② 관리자 키가 있는 브라우저(관리자 UID 로그인 때 계정 워커가 내준다, feedback.ts getBoardAdminKey)
+//   ③ 로컬 dev(localhost) 화면에서 링크로 들어온 화면 (2026-10-06)
+//   세션 도중에 관리자가 되면 그 순간부터 더 보내지 않는다.
 //
 // 화면 전환은 history 함수를 가로채지 않고 **주소를 1초마다 본다** — 사이트 곳곳이 pushState 를 직접
 // 부르고 vinext 도 그 함수를 덧씌우고 있어서(hash-modal.ts 주석), 가로채기는 서로 꼬일 수 있다.
@@ -40,20 +40,26 @@ const IDLE_MS = 30_000;                // 마지막 입력 뒤 이만큼 지나�
 const TICK_MS = 1_000;
 const BEAT_MS = 60_000;   // 열린 탭의 중간 전송 주기 (어드민 '조작 중' 판정)
 let lastBeat = Date.now();
-export const NO_TRACK_COOKIE = "ta-no-track";   // 어드민 페이지가 거는 '운영자 브라우저' 표식
 
-/** 운영자 본인 브라우저인가 — 그러면 아무것도 보내지 않는다 */
-function isOwner(): boolean {
-  if (getBoardAdminKey()) return true;
-  // ③ 로컬 dev(localhost·127.0.0.1)에서 링크를 눌러 들어온 브라우저 — 로컬 관리자 화면에서 라이브를 열어 본 운영자다
-  //    (사용자 지시 2026-10-06 "유입원 localhost:3000 은 통계에 안 잡히게"). 다음부터도 빠지게 표식을 건다
+/** 관리자 게임 UID — 내 정보로 이 계정에 로그인한 브라우저가 운영자다 (사용자 지시 2026-10-14 "내 UID 로 로그인하면 관리자, 기존 판정은 다 지워").
+ *  관리자 기능의 실제 권한(관리자 키)은 계정 워커가 서명된 표로 확인해 내준다(app/cloud-prefs.tsx) — 여기는 통계 제외·화면 표시용 판정이다 */
+export const OWNER_UIDS = new Set(["07799010"]);
+export function isOwnerUid(): boolean {
   try {
-    if (document.referrer && /^(localhost|127\.0\.0\.1)$/.test(new URL(document.referrer).hostname)) {
-      markOwnerBrowser();
-      return true;
-    }
+    const uid = (JSON.parse(localStorage.getItem("ta:me") ?? "null") as { player?: { uid?: string | number } } | null)?.player?.uid;
+    return uid != null && OWNER_UIDS.has(String(uid));
+  } catch { return false; }
+}
+
+/** 운영자 본인 브라우저인가 — 그러면 아무것도 보내지 않는다.
+ *  종전엔 관리 사이트가 거는 'ta-no-track' 쿠키·제안 창에 넣은 관리자 키로 가렸다 — 2026-10-14 관리자 UID 로그인으로 바꿨다 */
+function isOwner(): boolean {
+  if (isOwnerUid() || getBoardAdminKey()) return true;
+  // 로컬 dev(localhost·127.0.0.1)에서 링크를 눌러 들어온 화면 — 로컬 관리 화면에서 라이브를 열어 본 운영자다 (2026-10-06)
+  try {
+    if (document.referrer && /^(localhost|127\.0\.0\.1)$/.test(new URL(document.referrer).hostname)) return true;
   } catch { /* 이상한 리퍼러 */ }
-  try { return document.cookie.split("; ").some((c) => c === `${NO_TRACK_COOKIE}=1`); } catch { return false; }
+  return false;
 }
 
 /** 운영자 브라우저인가 (밖에서 쓰는 판정) — 시험 중인 기능을 운영자에게만 보일 때 쓴다 (PRTS 작은 창, 2026-10-12).
@@ -64,11 +70,6 @@ export function isOwnerBrowser(): boolean {
   return isOwner();
 }
 
-/** 어드민 페이지가 부른다 — terra-archive.net 과 그 아래 모든 주소에 '운영자' 표식을 1년 건다 */
-export function markOwnerBrowser(): void {
-  if (!/(^|\.)terra-archive\.net$/.test(location.hostname)) return;   // localhost 에선 도메인 쿠키를 못 건다
-  document.cookie = `${NO_TRACK_COOKIE}=1; domain=.terra-archive.net; path=/; max-age=31536000; secure; samesite=lax`;
-}
 
 type Sess = { id: string; start: number; seq: number; sent: boolean };
 type View = {
@@ -113,7 +114,7 @@ function saveSess(): void {
 
 let muted = false;
 
-function post(table: "visit_session" | "visit_view" | "visit_event" | "prts_scan", rows: object[]): void {
+function post(table: "visit_session" | "visit_view" | "visit_event" | "prts_scan" | "visit_player", rows: object[]): void {
   if (!rows.length) return;
   // PRTS 인식 기록은 관리자 브라우저에서도 보낸다 — 운영자가 직접 테스트하며 '틀렸어요'를 누르기 때문
   // (사용자 지시 2026-10-12 "내가 보낸 거라도 받을 수 있게"). 방문자 칸이 'owner' 라 어드민에서 구분된다
@@ -125,13 +126,15 @@ function post(table: "visit_session" | "visit_view" | "visit_event" | "prts_scan
     if (env === "dev") console.debug(`[visit] ${table} ${JSON.stringify(rows)}`);   // 프로젝트 연결 전 시험 — 콘솔에만
     return;
   }
-  void fetch(`${VISITS_URL}/rest/v1/${table}`, {
+  // visit_player 는 같은 (방문자, 서버, UID) 를 여러 번 보낸다 — 이미 있으면 조용히 넘긴다 (insert 권한만으로 되는 ON CONFLICT DO NOTHING)
+  const dedupe = table === "visit_player";
+  void fetch(`${VISITS_URL}/rest/v1/${table}${dedupe ? "?on_conflict=visitor,server,uid" : ""}`, {
     method: "POST",
     headers: {
       apikey: VISITS_ANON_KEY,
       Authorization: `Bearer ${VISITS_ANON_KEY}`,
       "Content-Type": "application/json",
-      Prefer: "return=minimal",
+      Prefer: dedupe ? "return=minimal,resolution=ignore-duplicates" : "return=minimal",
     },
     body: JSON.stringify(rows),
     keepalive: true,   // 탭을 닫는 순간에도 끊기지 않게 (omni-picks.ts 와 같은 방식)
@@ -182,15 +185,32 @@ function sendSession(locale: string): void {
     env,
   }]);
   sess.sent = true;
+  notePlayer();   // 이미 로그인해 둔 사람 — 세션마다 한 번 (중복은 DB 가 버린다)
   saveSess();
 }
 
 /** 일이 있었다고 한 줄 남긴다 — '내 정보' 로그인·다시 동기화 (사용자 요청 2026-10-05 "누가, 몇 번 했는지"), 헤더 이벤트 칩 클릭(ev_chip, 2026-10-14).
  *  누가 = 방문 기록과 같은 익명 방문자 id. 닉네임·계정 정보는 보내지 않는다. */
+/** 내 정보로 로그인한 게임 계정 — 방문자(브라우저 익명 id)와 잇는다. 관리자 세션 타임라인이 그 사람을 UID·닉네임으로 알아보게
+ *  (사용자 지시 2026-10-14 "방문 통계도 로그인한 사람은 UID 로, 아닌 사람은 기존처럼"). me-store 를 import 하면 순환이라 저장분을 직접 읽는다 */
+function notePlayer(): void {
+  if (!started) return;
+  try {
+    const visitor = localStorage.getItem(VISITOR_KEY);
+    const me = JSON.parse(localStorage.getItem("ta:me") ?? "null") as { server?: string; player?: { uid?: string | number; nickName?: string; nickNumber?: string } } | null;
+    const uid = me?.player?.uid != null ? String(me.player.uid) : "";
+    if (!visitor || !uid || !me?.server) return;
+    const nick = me.player?.nickName ? `${me.player.nickName}${me.player.nickNumber ? `#${me.player.nickNumber}` : ""}` : null;
+    post("visit_player", [{ visitor: clip(visitor, 64), server: clip(me.server, 8), uid: clip(uid, 24), nick: clip(nick, 40), env }]);
+  } catch { /* 저장 막힘 */ }
+}
+
 export function noteVisitEvent(kind: "me_login" | "me_sync" | "prts_start" | "prts_end" | "leave" | "ev_chip", server?: string, extra?: { detail?: string; dur?: number }): void {
   if (!started) return;
   let visitor = "";
   try { visitor = localStorage.getItem(VISITOR_KEY) ?? ""; } catch { /* 프라이빗 모드 */ }
+  // 로그인·동기화 — saveMe 가 이 호출 **뒤에** 계정 데이터를 저장하므로 한 박자 늦게 잇는다
+  if (kind === "me_login" || kind === "me_sync") setTimeout(notePlayer, 0);
   post("visit_event", [{ session: sess?.id ?? uuid(), visitor: clip(visitor, 64), kind, server: clip(server ?? null, 8), env,
     ...(extra?.detail ? { detail: clip(extra.detail, 40) } : {}),
     ...(extra?.dur != null ? { dur_ms: Math.max(0, Math.min(86_400_000, Math.round(extra.dur))) } : {}) }]);
