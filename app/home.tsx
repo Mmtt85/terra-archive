@@ -3223,7 +3223,7 @@ const OWN_KEYS = ["보유", "미보유", "만렙", "육성 중", "풀잠", "3마
 // "미보유 배포 오퍼의 입수 방법을 목록에서 걸러 보기" — '내 보유: 미보유'와 같이 걸면 안 가진 배포 오퍼만 남는다
 const OBTAIN = obtainData as { ops: Record<string, string[]>; events: Record<string, { ko: string; en: string; ja: string }> };
 const OBTAIN_LABEL: Record<string, string> = {
-  gacha: "헤드헌팅", limited: "한정 헤드헌팅", collab: "콜라보", event: "이벤트 배포", cert: "증명서 교역소",
+  gacha: "헤드헌팅", recruit: "공개모집", limited: "한정 헤드헌팅", collab: "콜라보", event: "이벤트 배포", cert: "증명서 교역소",
   credit: "크레딧 교역소", rogue: "통합전략", main: "메인 스토리", anniv: "기념 보상", package: "패키지",
 };
 const OBTAIN_CODES = Object.keys(OBTAIN_LABEL);

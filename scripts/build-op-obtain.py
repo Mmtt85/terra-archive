@@ -3,7 +3,7 @@
 
 오퍼 목록의 '획득 경로' 필터와 오퍼 상세의 '획득 경로' 줄이 쓴다. 값은 **언어와 무관한 코드**라 한 파일로 세 언어가 같이 쓴다.
   · 코드 — 한섭 character_table 의 itemObtainApproach 를 묶는다. 인재 채용 오퍼는 가챠 풀(gacha-pool.json)의 한정·콜라보로 다시 가른다
-      gacha 헤드헌팅 · limited 한정 헤드헌팅 · collab 콜라보 · event 이벤트 배포 · cert 증명서 교역소 · credit 크레딧 교역소
+      gacha 헤드헌팅 · recruit 공개모집(헤드헌팅 풀에 없는 공채 전용) · limited 한정 헤드헌팅 · collab 콜라보 · event 이벤트 배포 · cert 증명서 교역소 · credit 크레딧 교역소
       rogue 통합전략 · main 메인 스토리 · anniv 기념 보상 · package 패키지
   · 이벤트 — 이벤트 배포 오퍼는 이벤트 데이터(events*.json)의 ops 'reward' 로 어느 이벤트인지 잇는다 (원 이벤트 = 가장 먼저 열린 것).
       사이트 개설 전 옛 이벤트는 그 기록이 없어 코드만 남는다
@@ -38,6 +38,10 @@ cn_path = GD / "cn_character_table.json"
 cn_ct = json.loads(cn_path.read_text(encoding="utf-8")) if cn_path.exists() else {}
 pool = json.loads((DATA / "gacha-pool.json").read_text(encoding="utf-8"))
 limited, collab = set(pool.get("limited", [])), set(pool.get("collab", []))
+# 게임의 '인재 채용'(招募寻访)은 헤드헌팅 + 공개모집을 한 말로 쓴다 — 헤드헌팅 풀(통상·커널·한정·콜라보) 어디에도 없고
+# 공개모집 풀에만 있으면 공개모집(recruit). 종전엔 GALLUS² 같은 1성 로봇까지 '헤드헌팅'이었다 (사용자 지적 2026-10-14)
+gacha_any = set(x for v in pool.get("pool", {}).values() for x in v) | set(pool.get("kernel", [])) | limited | collab
+recruit_ids = {o["id"] for o in json.loads((DATA / "recruit.json").read_text(encoding="utf-8"))["ops"]}
 
 def events(suffix):
     p = DATA / f"events{suffix}.json"
@@ -69,7 +73,8 @@ for cid, c, table in rows_src:
             unknown[raw] = unknown.get(raw, 0) + 1
         continue
     if code == "gacha":
-        code = "limited" if cid in limited else "collab" if cid in collab else "gacha"
+        code = "limited" if cid in limited else "collab" if cid in collab else \
+            "recruit" if cid in recruit_ids and cid not in gacha_any and cid in ct else "gacha"
     row = [code]
     if cid in reward:
         evid = reward[cid][0]
