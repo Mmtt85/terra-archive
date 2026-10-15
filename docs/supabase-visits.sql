@@ -739,3 +739,61 @@ returns json language sql stable security definer set search_path = public as $$
   ) d
 $$;
 grant execute on function public.visits_kv_writes(int) to anon;
+
+-- ── 오래 도는 쿼리 기록 (2026-10-15) ── 10-15 09:00~10:01 KST 방문 DB 가 통째로 멈춰(REST·auth 헬스까지 무응답, 로그엔
+--    statement timeout·connection lost 가 되풀이) 재시작했는데, 멈춘 동안엔 pg_stat_activity 를 볼 수 없어 원인을 못 잡았다.
+--    그래서 1분마다 5초 넘게 도는 쿼리를 적어 둔다 — 다음에 멈추면 재시작한 뒤
+--    select * from public.slow_activity order by at desc, running_for desc limit 50;
+create table if not exists public.slow_activity (
+  at timestamptz not null default now(),
+  pid int, state text, wait_event_type text, wait_event text,
+  running_for interval, usename text, query text
+);
+alter table public.slow_activity enable row level security;   -- 바깥(anon)에선 못 읽게
+
+select cron.unschedule('slow-activity') where exists (select 1 from cron.job where jobname = 'slow-activity');
+select cron.schedule('slow-activity', '* * * * *', $$
+  insert into public.slow_activity (pid, state, wait_event_type, wait_event, running_for, usename, query)
+  select pid, state, wait_event_type, wait_event, now() - query_start, usename, left(query, 500)
+  from pg_stat_activity
+  where datname = current_database() and state <> 'idle' and pid <> pg_backend_pid()
+    and now() - query_start > interval '5 seconds';
+  delete from public.slow_activity where at < now() - interval '2 days';
+$$);
+
+-- ── 방문 DB 부하 줄이기 (2026-10-15) ── 아침 9시에 방문 DB 가 통째로 멈췄다(재시작으로 복구). pg_stat_statements 를 보니
+--    DB 시간의 거의 전부(합계 23시간 남짓)가 관리 화면 집계 함수였다 — 기록이 쌓여 한 번이 0.5~1초로 느려진 데다 탭 서너 개가 10초마다 불렀다.
+--    관리 화면은 30초·창 하나만 갱신하도록 고쳤고(app/admin/visits.tsx), DB 쪽은 아래 둘.
+
+-- ① 세션 타임라인이 세션마다 그 세션의 일 기록(visit_event)을 찾는데 세션 색인이 없어 세션마다 표 전체를 훑었다.
+--    '떠남(leave)' 기록이 붙으며 표가 빠르게 커져 느려졌다
+create index if not exists visit_event_session_idx on public.visit_event (session);
+
+-- ② 최근 7일·30일 같은 여러 날 집계는 결과를 5분 동안 저장해 두고 그대로 돌려준다 — 30일 집계가 13초 걸렸다.
+--    (일별 집계표로 다시 짜는 안은 집계 함수가 170줄이라 위험해 이 방식으로 갈음.) 오늘(0일)·하루는 매번 새로 센다
+create table if not exists public.visit_cache (
+  key text primary key,
+  at timestamptz not null default now(),
+  body json
+);
+alter table public.visit_cache enable row level security;   -- 정책 없음 = 바깥(anon)에선 못 읽는다. 아래 함수(소유자 권한)만 쓴다
+
+create or replace function public.visits_summary(p_days int default 30, p_human boolean default true, p_kinds text[] default null)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare
+  k text;
+  r json;
+begin
+  if not (select public.visits_is_admin()) then return null; end if;
+  if p_days <= 1 then
+    return public.visits_summary_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_days <= 0, p_kinds);
+  end if;
+  k := format('summary:%s:%s:%s', p_days, p_human, coalesce(array_to_string(p_kinds, ','), ''));
+  select c.body into r from public.visit_cache c where c.key = k and c.at > now() - interval '5 minutes';
+  if r is not null then return r; end if;
+  r := public.visits_summary_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, false, p_kinds);
+  insert into public.visit_cache (key, at, body) values (k, now(), r)
+    on conflict (key) do update set at = excluded.at, body = excluded.body;
+  return r;
+end $$;
+grant execute on function public.visits_summary(int, boolean, text[]) to anon;

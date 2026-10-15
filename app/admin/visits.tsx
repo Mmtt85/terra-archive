@@ -596,7 +596,20 @@ const KIND_HINT: Record<Kind, string> = {
 const SPAN_LABEL: Record<number, string> = { 7: "최근 7일", 30: "최근 30일", 90: "최근 90일", 365: "1년(일별 집계)" };
 // 방문 통계 자동 갱신 주기 (2026-10-10 1분 → 10초). 2026-10-12 IO 예산 메일 때 30초로 늘렸다가 10초로 되돌렸다 —
 // 탭이 가려져 있으면 아예 안 받으니 켜 두고 보는 동안만이다 (사용자 지시). 대신 관리 창은 하나만 켠다
-const AUTO_EVERY = 10_000;
+// 2026-10-15 30초로 — 방문 DB 가 아침 9시에 통째로 멈췄다(재시작으로 복구). pg_stat_statements 를 보니 DB 시간의 거의 전부가
+// 관리 화면 집계 함수였다(합계 23시간 남짓, 방문 기록 넣기는 0.15시간). 기록이 쌓여 한 번이 0.5~1초로 느려진 데다 탭 서너 개가 10초마다 불렀다
+const AUTO_EVERY = 30_000;
+// 자동 갱신은 관리 창 하나만 — 가장 최근에 보던(보이거나 누른) 탭이 맡고, 나머지는 쉰다. 맡은 탭이 90초 넘게 소식이 없으면(닫힘) 보이는 탭이 넘겨받는다
+const LEAD_KEY = "ta-admin-visits-lead";
+const TAB_ID = Math.random().toString(36).slice(2);
+const claimLead = () => { try { localStorage.setItem(LEAD_KEY, JSON.stringify({ id: TAB_ID, at: Date.now() })); } catch { /* 저장 막힘 — 혼자 돈다 */ } };
+const isLead = () => {
+  try {
+    const v = JSON.parse(localStorage.getItem(LEAD_KEY) ?? "null") as { id?: string; at?: number } | null;
+    if (!v?.id || v.id === TAB_ID || Date.now() - (v.at ?? 0) > 90_000) { claimLead(); return true; }
+    return false;
+  } catch { return true; }
+};
 const SESSIONS_ALL = 1000;                // 세션 타임라인 '전체 보기'의 상한 (2026-10-12 5,000 → 1,000 — 위와 같은 까닭, 한 번에 만드는 JSON 이 컸다)
 const ALL_STEP = 50;                      // 전체 보기 창에서 한 번에 더 그리는 줄 수
 
@@ -999,14 +1012,22 @@ export function VisitsPanel() {
     // 그 위에 10초마다 같은 쿼리를 새로 쌓아 방문 DB 가 밀렸다(하루치 7초·7일치 60초 시간 초과, 2026-10-11 사용자 "1분째 안 바뀐다")
     const due = () => !inflight.current && Date.now() - Math.max(last, doneAt.current) >= EVERY;
     const bump = () => { last = Date.now(); sessSilent.current = true; setTick((n) => n + 1); };
+    claimLead();   // 지금 연 탭이 맡는다
     const timer = setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      if (due()) bump();
+      if (!isLead()) { setLeft(-2); return; }   // 다른 관리 창이 갱신 중 — 이 탭은 쉰다
+      if (due()) { claimLead(); bump(); }
       setLeft(inflight.current ? -1 : Math.max(0, Math.ceil((EVERY - (Date.now() - Math.max(last, doneAt.current))) / 1000)));
     }, 1_000);
-    const onVis = () => { if (document.visibilityState === "visible" && due()) bump(); };
-    document.addEventListener("visibilitychange", onVis);
-    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", onVis); };
+    // 이 탭으로 돌아오거나 누르면 이 탭이 맡는다
+    const take = () => { if (document.visibilityState === "visible") { claimLead(); if (due()) bump(); } };
+    document.addEventListener("visibilitychange", take);
+    window.addEventListener("focus", take);
+    window.addEventListener("pointerdown", claimLead);
+    return () => {
+      clearInterval(timer); document.removeEventListener("visibilitychange", take);
+      window.removeEventListener("focus", take); window.removeEventListener("pointerdown", claimLead);
+    };
   }, []);
 
   useEffect(() => {
@@ -1283,7 +1304,7 @@ export function VisitsPanel() {
         </button>
         {/* 이미지 리포트 — 지금 고른 기간·사람만/봇 포함 그대로 (사용자 지시 2026-10-05). 1년 보기는 일별 집계라 빠진다 */}
         <button className="vz-report-btn" onClick={() => setReport(true)} disabled={!data || busy || (days === 365 && !range) || !!slot} title={slot ? "칸을 고른 동안은 리포트를 뽑지 않습니다" : undefined}>리포트 이미지</button>
-        {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · {left < 0 ? "불러오는 중" : `${left}초 후 갱신`}</span>}
+        {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · {left === -2 ? "다른 관리 창에서 갱신 중 — 누르면 이 창이 맡음" : left < 0 ? "불러오는 중" : `${left}초 후 갱신`}</span>}
       </div>
       {status && <p className="admin-status">{status}</p>}
       {report && data && <VisitsReport data={data} from={reportSpan.from} to={reportSpan.to} who={whoLabel} onlyHuman={!kinds.includes("bot")} tops={tops} onClose={() => setReport(false)} />}
