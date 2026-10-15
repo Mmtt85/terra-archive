@@ -223,6 +223,7 @@ const D: Record<string, Pair> = {
   "배포 {t}": ["Deployed {t}", "デプロイ {t}"],
   "다크 모드 전환": ["Toggle dark mode", "ダークモード切替"],
   "닫기": ["Close", "閉じる"],
+  "오퍼레이터 정보": ["Operator info", "オペレーター情報"],
   "스킨": ["Outfits", "衣装"],
   "이미지 없음": ["No image", "画像なし"],
   "기본 일러": ["Base art", "基本イラスト"],

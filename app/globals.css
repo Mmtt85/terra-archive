@@ -24959,7 +24959,7 @@ html.dark .ac-bring-dial {
   cursor: pointer;
   user-select: none;
 }
-.vn-stage:focus-visible { outline: 2px solid var(--lime, #b8e04a); outline-offset: 2px; }
+.vn-stage:focus-visible { outline: none; }   /* 키보드로 넘길 때 무대에 라임 테두리가 생겨 거슬렸다 (사용자 지시 2026-10-15) — 넘기는 키는 그대로 먹는다 */
 /* 아래에 남은 건 안내문 한 줄뿐 — 예약 높이 44px (조작은 전부 무대 위에 있다) */
 .vn-root.full .vn-stage {
   width: min(100%, calc((100dvh - 44px) * 16 / 9));
@@ -30647,3 +30647,33 @@ html.dark .me-pf-art { opacity: .3; }
 .page-seo p { margin: 0 0 8px; }
 .page-seo ul { margin: 0; padding-left: 18px; }
 .page-seo-tags li b { margin-right: 6px; color: var(--ink); }
+
+/* 리더기 용어 설명 (2026-10-15, 제안 9ef0afcb) — 전문 보기와 같은 인물·용어 밑줄을 대사·나레이션·자막 줄(st)에, 누르면 리더기 안 위쪽에 카드.
+   대사창이 어두운 바탕이라 밑줄은 옅은 흰색. 손가락으로 맞히기 쉽게 위아래 누를 자리를 조금 넓힌다 */
+.vn-box .ent-mark { text-decoration-color: rgba(255, 255, 255, 0.5); padding-block: 4px; border-radius: 3px; }
+.vn-box .ent-mark:hover, .vn-box .ent-mark:focus-visible { text-decoration-color: rgba(255, 255, 255, 0.9); background: rgba(255, 255, 255, 0.12); }
+.vn-peek {
+  position: absolute; z-index: 4; top: 48px; left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px)); max-height: calc(100% - 60px); overflow-y: auto;   /* 폰 세로(무대 ~200px)에서도 서너 줄은 보이게 — 대사창을 잠깐 덮어도 된다(닫으면 끝) */
+  display: flex; gap: 10px; align-items: flex-start; padding: 10px 34px 10px 12px;
+  background: rgba(10, 12, 18, 0.94); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: var(--r-sm);
+  color: #eef1f7; cursor: default; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  font-size: clamp(12px, calc(0.6cqw + 9.5px), 17px); line-height: 1.6;
+}
+.vn-peek > img { flex: none; width: 52px; height: 52px; object-fit: cover; object-position: top; border-radius: var(--r-xs); background: rgba(255, 255, 255, 0.06); }
+.vn-peek-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vn-peek-text b { font-size: 1.05em; color: #fff; }
+.vn-peek-text span { color: #d6dbe6; white-space: pre-wrap; }
+.vn-peek-op { align-self: flex-start; margin-top: 4px; padding: 3px 10px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: var(--r-pill);
+  background: transparent; color: #fff; font: inherit; font-size: 0.85em; cursor: pointer; }
+.vn-peek-op:hover { background: rgba(255, 255, 255, 0.12); }
+.vn-peek-x { position: absolute; top: 4px; right: 6px; width: 26px; height: 26px; border: 0; background: none; color: #cfd4de; font-size: 18px; line-height: 1; cursor: pointer; }
+.vn-peek-x:hover { color: #fff; }
+@media (max-width: 600px) {
+  .vn-peek { top: 40px; padding: 8px 30px 8px 10px; gap: 8px; }
+  .vn-peek > img { width: 40px; height: 40px; }
+}
+
+/* 관리 피드백 — 이 사람의 다른 제안 창 (2026-10-15). 제안 카드(.admin-row)를 그대로 창 안에 */
+.fb-author-modal { width: min(820px, calc(100vw - 32px)); }
+.fb-author-list { display: grid; gap: 10px; }

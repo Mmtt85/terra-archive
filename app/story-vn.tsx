@@ -95,8 +95,18 @@ function upcoming(au: AuSnap[], idx: number, cur: AuSnap | null): string[] {
   return [...ids];
 }
 
-export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine, onLine }: {
+/** 리더기 용어 설명 (2026-10-15, 제안 9ef0afcb "전문 보기처럼 리더기에서도 용어를 눌러 보게") — 전문 보기(story.tsx ScriptReader)가
+ *  같은 인물·용어 목록과 밑줄 함수를 넘겨 준다. 설명 카드는 리더기 **안**(대사창 위)에 띄운다 — 전체 모드는 리더기가 body 포털이라
+ *  페이지 쪽 카드가 그 뒤에 깔렸다. PC·모바일·인라인·전체 모드 모두 같은 규칙: 누를 때만 뜨고, 떠 있을 때 첫 탭은 닫기만(줄을 안 넘긴다) */
+export type VnEntity = { name: string; desc: string; img?: string; op?: string };
+export type VnEntHandlers = { onEntity: (ei: number, el: HTMLElement, hover: boolean) => void; onLeave: () => void };
+
+export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine, onLine, entities, markText, onShowOperator }: {
   ep: ScriptEp;
+  /** 용어 설명 — 인물·용어 목록과 밑줄 함수(story.tsx markEntities). 없으면 글자 그대로 */
+  entities?: VnEntity[];
+  markText?: (text: string, handlers: VnEntHandlers) => React.ReactNode;
+  onShowOperator?: (id: string) => void;
   /** 처음 보여 줄 줄(0부터) — 갤러리 CG '스토리에서 보기' (2026-10-04). 화가 바뀌면 key 로 다시 마운트돼 0부터 */
   startLine?: number;
   title: string;
@@ -156,6 +166,17 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine
     setIdx((i) => Math.min(last, Math.max(0, i + delta)));
   }, [last]);
 
+  // 용어 설명 카드 — 연 줄(idx)을 같이 들고, 줄이 바뀌면 저절로 안 보인다(이펙트로 지우지 않는다)
+  const [peek, setPeek] = useState<{ ei: number; idx: number } | null>(null);
+  const peekOpen = peek != null && peek.idx === idx;
+  const entHandlers = useMemo<VnEntHandlers>(() => ({
+    // 마우스를 올려 뜨는 동작은 쓰지 않는다 — 대사창 위에서 커서가 지나갈 때마다 카드가 깜빡였다
+    onEntity: (ei, _el, hover) => { if (!hover) setPeek((p) => (p && p.ei === ei && p.idx === idx ? null : { ei, idx })); },
+    onLeave: () => {},
+  }), [idx]);
+  /** 다음 줄 — 카드가 떠 있으면 닫기만 한다 */
+  const next = useCallback(() => { if (peekOpen) { setPeek(null); return; } go(1); }, [peekOpen, go]);
+
   // 전체 모드 = 우리 오버레이 + **브라우저 전체화면**. 후자를 같이 걸어야 주소창·툴바가
   // 사라진다 (사용자 요청 2026-08-25). 지원하지 않는 환경(아이폰 사파리는 요소 전체화면이
   // 없다)에서는 조용히 실패하고 오버레이만 남는다 — 기능은 그대로 쓸 수 있다.
@@ -178,10 +199,10 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine
     //    document 버블이라 그냥 두면 이쪽보다 먼저 돈다.
     if (e.key === "Escape") { if (full) { e.preventDefault(); e.stopPropagation?.(); exitFull(); } return; }
     if (e.key === " " || e.key === "ArrowRight" || e.key === "Enter" || e.key === "PageDown") {
-      e.preventDefault(); go(1); return;
+      e.preventDefault(); next(); return;
     }
     if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(-1); }
-  }, [go, full, exitFull]);
+  }, [go, next, full, exitFull]);
 
   // 소리는 사용자 조작 안에서만 켤 수 있다 (자동재생 정책) — 리더기 안의 클릭·키를 **캡처 단계**에서
   // 받아 깨운다. 버튼들이 전파를 끊어도(stopPropagation) 캡처는 먼저 온다.
@@ -201,6 +222,25 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine
     window.addEventListener("keydown", handler, true);
     return () => window.removeEventListener("keydown", handler, true);
   }, [full, onKey, wake]);
+
+  // 인라인일 때도 페이지 어디서든 ←·→ 로 넘긴다 (사용자 지시 2026-10-15 "리더기가 아니라 화면 전체에서 좌우 키") — 좌우만이다:
+  // Space·Enter 는 페이지 스크롤·단추 몫이라 그대로 둔다. 무대에 포커스가 있으면 무대의 onKeyDown 이 먼저 처리하고(preventDefault)
+  // 여기선 건너뛴다. 글자 입력 칸·드롭다운·열린 창(작전·오퍼 상세 등) 위에서는 그쪽 몫이라 손대지 않는다
+  useEffect(() => {
+    if (full) return;   // 전체 모드는 위 리스너가 창 전체를 받는다
+    const handler = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.isComposing || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      const el = e.target as HTMLElement | null;
+      if (el?.closest("input, textarea, select, [contenteditable], [role=listbox], [role=menu], [role=slider]")) return;
+      if (document.querySelector(".modal-window, [aria-modal=true]")) return;
+      e.preventDefault();
+      wake();
+      if (e.key === "ArrowRight") next(); else go(-1);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [full, next, go, wake]);
 
   // 브라우저 쪽에서 전체화면이 풀리면(Esc·제스처) 오버레이도 같이 내린다 — 상태가 갈리면
   // 화면은 덮여 있는데 나가는 길이 안 보인다.
@@ -249,11 +289,11 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine
   // 자동 넘김 — 지금 줄의 글자 수로 머무는 시간을 정한다 (짧으면 빨리, 길면 천천히).
   // idx 가 바뀌면 타이머가 새로 걸리므로, 손으로 넘겨도 박자가 그 줄 기준으로 다시 잡힌다.
   useEffect(() => {
-    if (!auto || atEnd) return;
+    if (!auto || atEnd || peekOpen) return;   // 설명 카드를 보는 동안은 AUTO 를 멈춘다
     const chars = ((line?.x ?? "") + (line?.st ?? "") + (line?.loc ?? "")).length;
     const timer = setTimeout(() => go(1), autoDelay(chars));
     return () => clearTimeout(timer);
-  }, [auto, atEnd, idx, line, go]);
+  }, [auto, atEnd, idx, line, go, peekOpen]);
 
   const body = (
     <div className={`vn-root${full ? " full" : ""}`} onClickCapture={wake} onKeyDownCapture={wake}
@@ -262,7 +302,7 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine
           ⚠ 각 층의 key 에 **그림 이름**을 넣는다 — 그래야 등장 애니메이션이 매 줄이 아니라
              그림이 실제로 바뀐 순간에만 돈다 (매 줄 깜빡이면 눈이 아프다). */}
       <div className={`vn-stage${stage.sh ? " shake" : ""}`}
-        onClick={() => go(1)} onKeyDown={onKey} role="button" tabIndex={0} aria-label={t("다음 줄")}>
+        onClick={next} onKeyDown={onKey} role="button" tabIndex={0} aria-label={t("다음 줄")}>
         {bgSrc && <img key={stage.bg} className="vn-bg" src={bgSrc} alt="" aria-hidden onError={hideErr} />}
         {chars.map(([base, expr], k) => {
           if (!base || base === "char_empty") return null;
@@ -328,19 +368,36 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine
         {/* 대사창 — ⚠ 줄마다 애니메이션을 걸지 말 것. 글자가 매 줄 깜빡여 읽기 힘들다
             (사용자 지적 2026-08-25). 바뀌는 건 글자뿐이라 전환 효과가 필요 없다. */}
         <div className="vn-box" ref={boxRef}
-          onClick={(e) => { e.stopPropagation(); go(1); }} role="presentation">
+          onClick={(e) => { e.stopPropagation(); next(); }} role="presentation">
           {line?.loc && <p className="vn-loc">{line.loc}</p>}
           {line?.opts && (
             <div className="vn-opts"><i>{t("선택지")}</i>{line.opts.map((o, j) => <span key={j}>{o}</span>)}</div>
           )}
           {line?.br != null && <p className="vn-br">▼ {t("분기")}</p>}
-          {line?.st && <p className="vn-st">{line.st}</p>}
+          {line?.st && <p className="vn-st">{markText ? markText(line.st, entHandlers) : line.st}</p>}
           {line?.n && <p className="vn-name">{line.n}</p>}
-          {line?.x && <p className={line.n ? "vn-say" : "vn-narr"}>{line.x}</p>}
+          {line?.x && <p className={line.n ? "vn-say" : "vn-narr"}>{markText ? markText(line.x, entHandlers) : line.x}</p>}
           {!line?.x && !line?.st && !line?.opts && line?.br == null && !line?.loc && (
             <p className="vn-narr vn-beat">— {t("장면 전환")} —</p>
           )}
         </div>
+        {peekOpen && entities?.[peek.ei] && (() => {
+          const en = entities[peek.ei];
+          const img = en.img ?? (en.op ? `/avatars/${en.op}.webp` : undefined);
+          return (
+            <div className="vn-peek" role="dialog" aria-label={en.name} onClick={(e) => e.stopPropagation()}>
+              {img && <img className={en.img ? "" : "avatar"} src={asset(img)} alt="" loading="lazy" decoding="async" />}
+              <div className="vn-peek-text">
+                <b>{en.name}</b>
+                <span>{en.desc}</span>
+                {en.op && onShowOperator && (
+                  <button type="button" className="vn-peek-op" onClick={() => { const id = en.op!; if (full) exitFull(); setPeek(null); onShowOperator(id); }}>{t("오퍼레이터 정보")} ↗</button>
+                )}
+              </div>
+              <button type="button" className="vn-peek-x" aria-label={t("닫기")} onClick={() => setPeek(null)}>×</button>
+            </div>
+          );
+        })()}
       </div>
 
       <p className="vn-hint">

@@ -572,6 +572,25 @@ export default function AdminPage() {
   // 제안 ↔ 세션 잇기 (사용자 지시 2026-10-12) — 세션 타임라인의 '✉ 제안' 을 누르면 이 탭의 그 제안으로, 제안의 👤 를 누르면 그 사람 세션 창
   const [flashId, setFlashId] = useState("");
   const [visitorWin, setVisitorWin] = useState<{ visitor: string; at: string } | null>(null);
+  // 같은 사람이 보낸 제안 묶음 (사용자 지시 2026-10-15 "이 사람이 보낸 다른 제안도 볼 수 있게") — 작성자 토큰(열람 코드, 로그인하면
+  // 기기끼리 이어진다)이나 방문자 코드 중 하나라도 같으면 같은 사람. 둘이 엇갈려 이어지는 경우(토큰 A·방문자 X, 토큰 B·방문자 X)도 한 묶음으로
+  const othersOf = useMemo(() => {
+    const parent = new Map<string, string>();
+    const find = (k: string): string => { let r = k; while (parent.get(r) && parent.get(r) !== r) r = parent.get(r)!; parent.set(k, r); return r; };
+    const union = (a: string, b: string) => { parent.set(find(a), find(b)); };
+    for (const r of rows) {
+      const me = `r:${r.id}`;
+      parent.set(me, parent.get(me) ?? me);
+      if (r.author_token) union(me, `t:${r.author_token}`);
+      const v = visitorOf(r.payload);
+      if (v) union(me, `v:${v}`);
+    }
+    const group = new Map<string, FeedbackRow[]>();
+    for (const r of rows) { const g = find(`r:${r.id}`); group.set(g, [...(group.get(g) ?? []), r]); }
+    return (row: FeedbackRow) => (group.get(find(`r:${row.id}`)) ?? []).filter((x) => x.id !== row.id)
+      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+  }, [rows]);
+  const [authorWin, setAuthorWin] = useState<FeedbackRow | null>(null);
   const fbLink = useMemo(() => ({
     list: rows.flatMap((r) => { const v = visitorOf(r.payload); return v ? [{ id: r.id, at: r.created_at, visitor: v }] : []; }),
     open: (id: string) => {
@@ -753,6 +772,10 @@ export default function AdminPage() {
                 <button type="button" className="fb-geo-chip fb-visitor-btn" title="방문 통계의 방문자 코드 — 눌러서 이 사람의 세션 보기"
                   onClick={() => setVisitorWin({ visitor: visitorOf(row.payload)!, at: row.created_at })}><Who visitor={visitorOf(row.payload)} /> · 세션 보기 ▸</button>
               )}
+              {othersOf(row).length > 0 && (
+                <button type="button" className="fb-geo-chip fb-visitor-btn" title="같은 사람(같은 열람 코드나 방문자 코드)이 보낸 다른 제안"
+                  onClick={() => setAuthorWin(row)}>✉ 이 사람의 다른 제안 {othersOf(row).length}건 ▸</button>
+              )}
               <button className="handling-btn" onClick={() => toggleHandling(row)}>{handlingAt(row.payload) ? "대응 해제" : "대응중"}</button>
               <button className="review-btn" onClick={() => toggleReviewed(row)}>{row.reviewed_at ? "대응 취소" : "대응완료"}</button>
               <button onClick={() => remove(row)}>삭제</button>
@@ -816,6 +839,42 @@ export default function AdminPage() {
       </div>
       </>)}
 
+      {authorWin && (
+        <ModalWindow label="이 사람의 다른 제안" className="fb-author-modal" onClose={() => setAuthorWin(null)}>
+          {/* 목록으로 옮겨 가지 않고 창 안에서 바로 본다 (사용자 지시 2026-10-15) — 본문·첨부·답변을 그대로, 최신이 위 */}
+          <p className="admin-status">#{authorWin.id.slice(0, 8)} 을 보낸 사람이 보낸 다른 제안 {othersOf(authorWin).length}건</p>
+          <div className="fb-author-list">
+            {othersOf(authorWin).map((r) => (
+              <article key={r.id} className={`admin-row kind-${r.kind}${r.reviewed_at ? " reviewed" : ""}`}>
+                <header>
+                  <code className="fb-id">#{r.id.slice(0, 8)}</code>
+                  <b>{KIND_LABEL[r.kind] ?? r.kind}</b>
+                  {pageOf(r.payload) && <a className="page-chip" href={pageOf(r.payload)} target="_blank" rel="noreferrer">📍 {pageLabel(pageOf(r.payload)!)}</a>}
+                  {handlingAt(r.payload) && !r.reviewed_at && <i className="handling-badge">🔧 대응중</i>}
+                  {r.reviewed_at && <i className="reviewed-badge">✓ 확인됨</i>}
+                  <time>{new Date(r.created_at).toLocaleString("ko-KR")}</time>
+                </header>
+                {r.message && <p>{r.message}</p>}
+                {imagesOf(r.payload).length > 0 && (
+                  <div className="fb-images">{imagesOf(r.payload).map((u) => <a key={u} href={u} target="_blank" rel="noreferrer"><img src={u} alt="" loading="lazy" /></a>)}</div>
+                )}
+                {filesOf(r.payload).length > 0 && (
+                  <div className="fb-files">{filesOf(r.payload).map((f) => (
+                    <a key={f.url} href={f.url} download={f.name} rel="noreferrer" className="fb-filechip"><span className="fb-filechip-name">📄 {f.name}</span><small>{fmtFileSize(f.size)}</small></a>
+                  ))}</div>
+                )}
+                {(r.feedback_replies ?? []).length > 0 && (
+                  <div className="fb-admin-replies">
+                    {(r.feedback_replies ?? []).map((rep) => (
+                      <div key={rep.id} className="fb-admin-reply"><span className="fb-admin-reply-body">{rep.body}</span></div>
+                    ))}
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        </ModalWindow>
+      )}
       {visitorWin && (
         <FbLinkCtx.Provider value={fbLink}>
           <VisitorSessions visitor={visitorWin.visitor} at={visitorWin.at} onClose={() => setVisitorWin(null)} />

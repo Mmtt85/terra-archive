@@ -771,7 +771,9 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
               setReadPos({ ep: epIdx, line: i });
             } : undefined}
             hasPrev={epIdx > 0} hasNext={epIdx < script.eps.length - 1}
-            onEp={(d) => goEp(epIdx + d)} />
+            onEp={(d) => goEp(epIdx + d)}
+            // 용어 설명 — 전문 보기와 같은 인물·용어·밑줄 (제안 9ef0afcb, 2026-10-15). 카드는 리더기 안에 뜬다
+            entities={railEntities} markText={(text, handlers) => markEntities(text, em, handlers)} onShowOperator={onShowOperator} />
         </Suspense>
       )}
       <div className="story-detail-grid">
