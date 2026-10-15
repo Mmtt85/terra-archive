@@ -38,6 +38,11 @@ export async function visitorsOfPlayer(server: string, uid: string): Promise<str
   return [...(byCode ?? new Map<string, Player>()).entries()].filter(([, p]) => p.server === server && p.uid === uid).map(([k]) => k);
 }
 
+/** 방문자 코드(앞 8자) → 게임 계정 표 전체 — 받기 전엔 null. 내 정보 동기화 표를 계정 단위로 합칠 때 (2026-10-15) */
+export function usePlayerMap(): Map<string, Player> | null {
+  return useSyncExternalStore(subscribe, () => byCode, () => null);
+}
+
 /** 방문자 코드(전체 또는 앞 8자) → 로그인한 게임 계정, 모르면 null */
 export function usePlayerOf(visitor: string | null | undefined): Player | null {
   const map = useSyncExternalStore(subscribe, () => byCode, () => null);

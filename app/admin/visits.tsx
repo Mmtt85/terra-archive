@@ -9,7 +9,7 @@
 // 기간 7·30·90일은 원장에서, '1년'은 매일 밤 말아 둔 일별 집계표에서 읽는다. 원장은 기간으로 자르지 않고
 // DB 가 80% 차면 오래된 것부터 지운다(docs/supabase-visits.sql visits_maintain).
 
-import { Who, PlayerButton, refreshPlayers } from "./who";
+import { Who, PlayerButton, refreshPlayers, usePlayerMap } from "./who";
 import { KvWrites } from "./prefs";
 import { createPortal } from "react-dom";
 import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -914,6 +914,7 @@ export function VisitorSessions({ visitor, at, onClose }: { visitor: string; at:
 }
 
 export function VisitsPanel() {
+  const playerMap = usePlayerMap();
   const [days, setDays] = useState<0 | 7 | 30 | 90 | 365>(0);
   // 내 정보 동기화 — 서버별로 거르기 (사용자 요청 2026-10-06). 통계가 방문자별로 묶여 있어 방문자의 서버(max) 기준이다
   const [meServer, setMeServer] = useState("");
@@ -1162,19 +1163,37 @@ export function VisitsPanel() {
       </tbody>
     </table></div>
   );
-  const meBy = (data?.me_sync?.by ?? []).filter((b) => !meServer || b.server === meServer)
+  // 계정(UID) 단위로 합친다 (사용자 지시 2026-10-15 "로그인 횟수가 아니라 로그인한 사람으로") — 같은 계정을 두 기기에서 쓰면 한 줄.
+  // 방문자↔계정 기록이 없는 방문자(옛 화면·저장 막힌 브라우저)는 종전처럼 방문자 한 줄. 서버는 계정의 서버
+  type MeRow = NonNullable<typeof data>["me_sync"] extends infer M ? M extends { by: (infer R)[] } ? R & { devices: number; key: string } : never : never;
+  const meGroups: MeRow[] = (() => {
+    const g = new Map<string, MeRow>();
+    for (const b of data?.me_sync?.by ?? []) {
+      const p = b.visitor ? playerMap?.get(b.visitor.slice(0, 8)) : undefined;
+      const key = p ? `${p.server}:${p.uid}` : `v:${b.visitor ?? "?"}`;
+      const cur = g.get(key);
+      if (!cur) g.set(key, { ...b, server: p?.server ?? b.server, devices: 1, key } as MeRow);
+      else {
+        cur.n += b.n; cur.login += b.login; cur.sync += b.sync; cur.devices += 1;
+        if (String(b.last) > String(cur.last)) cur.last = b.last;
+      }
+    }
+    return [...g.values()];
+  })();
+  const meAccounts = meGroups.filter((r) => !r.key.startsWith("v:")).length;
+  const meBy = meGroups.filter((b) => !meServer || b.server === meServer)
     .slice().sort((a, b) => meSort === "last" ? String(b.last).localeCompare(String(a.last))
       : meSort === "sync" ? (b.sync - a.sync) || (b.n - a.n) || String(b.last).localeCompare(String(a.last))   // 다시 동기화 많은 순 (사용자 2026-10-08)
       : (b.n - a.n) || String(b.last).localeCompare(String(a.last)));
-  const meServers = [...new Set((data?.me_sync?.by ?? []).map((b) => b.server).filter((x): x is string => !!x))];
+  const meServers = [...new Set(meGroups.map((b) => b.server).filter((x): x is string => !!x))];
   const serverLabel = (code: string) => ACCOUNT_SERVERS.find((x) => x.code === code)?.label ?? code;
   const meTable = (n: number) => !data?.me_sync ? null : (
     <div className="vz-tablewrap"><table className="vz-table">
       <thead><tr><th>방문자</th><th>유입</th><th>합계</th><th>로그인</th><th>다시 동기화</th><th>서버</th><th>마지막</th></tr></thead>
       <tbody>
         {meBy.slice(0, n).map((b) => (
-          <tr key={b.visitor ?? "?"}>
-            <td title={b.visitor ?? ""}><Who visitor={b.visitor} /></td>
+          <tr key={b.key}>
+            <td title={b.visitor ?? ""}><Who visitor={b.visitor} />{b.devices > 1 && <small className="vz-note"> · 기기 {b.devices}</small>}</td>
             {/* 유입 — 로그인한 세션이 어디서 왔는가 (사용자 요청 2026-10-05). 주소가 있으면 호스트·경로를 툴팁으로 */}
             <td title={b.ref ?? ""}>{b.src ?? "—"}{b.ref && <small className="vz-note"> {b.ref.replace(/^https?:\/\//, "").slice(0, 40)}</small>}</td>
             <td>{num(b.n)}</td><td>{num(b.login)}</td><td>{num(b.sync)}</td><td>{b.server ? serverLabel(b.server) : "—"}</td>
@@ -1338,8 +1357,8 @@ export function VisitsPanel() {
           {data.me_sync && (
             <div className="vz-mesync">
               <Head title="내 정보 동기화" {...top("mesync", "내 정보 동기화")} sub={meServer
-                ? `${serverLabel(meServer)} — 로그인 ${num(meBy.reduce((a, b) => a + b.login, 0))} · 다시 동기화 ${num(meBy.reduce((a, b) => a + b.sync, 0))} · ${num(meBy.length)}명`
-                : `로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · ${num(data.me_sync.people)}명 — 누가 = 방문자 익명 id (닉네임은 받지 않는다) · 유입 = 이 기간 첫 로그인 세션이 들어온 곳`} >
+                ? `${serverLabel(meServer)} — 로그인 ${num(meBy.reduce((a, b) => a + b.login, 0))} · 다시 동기화 ${num(meBy.reduce((a, b) => a + b.sync, 0))} · 계정 ${num(meBy.filter((r) => !r.key.startsWith("v:")).length)}개${meBy.some((r) => r.key.startsWith("v:")) ? ` + 계정 모름 ${num(meBy.filter((r) => r.key.startsWith("v:")).length)}` : ""}`
+                : `로그인 ${num(data.me_sync.login)} · 다시 동기화 ${num(data.me_sync.sync)} · 계정 ${num(meAccounts)}개 (UID 기준)${meGroups.length > meAccounts ? ` + 계정 모름 ${num(meGroups.length - meAccounts)}` : ""} · 방문자 ${num(data.me_sync.people)} — 같은 계정의 여러 기기는 한 줄 · 유입 = 이 기간 첫 로그인 세션이 들어온 곳`} >
                 {/* 정렬은 드롭다운으로, '상위 n' 과 같은 줄 오른쪽 (사용자 지시 2026-10-08) */}
                 <Dropdown ariaLabel="정렬" label={meSort === "last" ? "최신순" : meSort === "sync" ? "다시 동기화순" : "횟수순"} selected={[meSort]}
                   items={[{ value: "n", label: "횟수순" }, { value: "last", label: "최신순" }, { value: "sync", label: "다시 동기화순" }]} onPick={(v) => setMeSort(v as "n" | "last" | "sync")} />
@@ -1351,7 +1370,7 @@ export function VisitsPanel() {
                 {[{ value: "", label: "전체" },
                   ...ACCOUNT_SERVERS.map((x) => ({ value: x.code, label: x.label })),
                   ...meServers.filter((c) => !ACCOUNT_SERVERS.some((x) => x.code === c)).map((c) => ({ value: c, label: c }))].map((o) => {
-                  const cnt = o.value ? data.me_sync!.by.filter((b) => b.server === o.value).length : data.me_sync!.by.length;
+                  const cnt = o.value ? meGroups.filter((b) => b.server === o.value).length : meGroups.length;
                   return (
                     <button key={o.value || "all"} type="button" className={`${meServer === o.value ? "selected" : ""}${cnt ? "" : " zero"}`}
                       onClick={() => setMeServer(o.value)}>{o.label} <b>{num(cnt)}</b></button>
