@@ -108,6 +108,20 @@ node scripts/r2-sync.mjs                                              # 이미�
 한꺼번에** (SESSION.md §1). 워커(`MANUAL_EVENTS` 등)만 고쳤으면 `bash workers/broadcast/deploy.sh`
 (사이트 배포와 별개지만 사용자에게 한 줄 보고할 것).
 
+### 번역 사전 공개본 올리기 — 사이트 배포와 별개, **빠뜨리기 쉬움** (2026-10-16 추가)
+
+데이터를 다시 받았으면 `public/tl`(번역 사전 공개 API)도 새로 구워져 있다 — 로컬 `ci-refresh.sh` 가 `build-tldict.py` 를 같이 돈다.
+**사이트 배포는 이걸 올리지 않는다**(`deploy.sh` 가 `tl` 을 뺀다). 받는 쪽은 남의 앱이라 사이트 배포가 끝난 뒤 따로 올린다:
+
+```bash
+node scripts/publish-tl.mjs --dry    # 올릴 것이 있나 (README·manifest·바뀐 사전)
+node scripts/publish-tl.mjs          # 있으면 올린다 — 끝에 '확인 — manifest 일치' 가 떠야 한다
+```
+
+`public/tl/manifest.json`(날짜·해시)이 바뀌었으면 커밋·푸시한다 — `bash scripts/ship.sh --no-deploy -m "…" public/tl/…`.
+⚠ 9/27~10/16 이 단계가 어느 점검 스킬에도 없어서, 굽고 커밋은 했는데 **3주 가까이 옛 공개본(9/27 판)이 나갔다**.
+업로드는 `publish-tl.mjs` 전용 — `r2-sync.mjs` 에 `tl` 을 넣지 말 것 (기억 tldict-public-api).
+
 ## 아무 문제 없으면
 
 "열린 것: <이벤트명> / 배너·공지 링크·숨김 규칙 정상 / 손댈 것 없음"으로 짧게 끝낸다.

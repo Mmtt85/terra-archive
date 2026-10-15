@@ -32,6 +32,7 @@ description: 점검일 자동 감시(예약 작업·배경 폴러·하위 에이
 | ⑭ | EN/JA 전문 번역 | 하위 에이전트 언어별 2개씩 (뱃노래·기도문 같은 반복 문구는 `<lang>/_song.txt` 로 공유) → `--cn-merge <id> --lang en|ja` | EN/JA 스토리 상세 |
 | ⑮ | EN/JA 요약 번역 | 하위 에이전트 → `story-i18n-merge.py` (발행본 표기 바꾸면 `--publish`) | 미번역·폴백 0 |
 | ⑯ | 다시 배포 | `ship.sh` | 라이브 EN/JA |
+| ⑯′ | **번역 사전 공개본** — 사이트 배포는 안 올린다 | `node scripts/publish-tl.mjs --dry` → `publish-tl.mjs` (2026-10-16 추가, 3주 빠뜨린 전례) | `files.terra-archive.net/assets/tl/manifest.json` 의 updated 가 오늘 |
 | ⑰ | 업데이트 내역 + 디시 | `changelog-post` (하루치 묶어서, 최신이 맨 위) → `dc-promo` | 사이트 업데이트 내역 · 디시 소개글 |
 
 ## 1. 2026-10-09 에 실제로 난 실패 (전부)
