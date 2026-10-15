@@ -139,7 +139,7 @@ let logMeta: { topic: string | null; name: string | null; startedAt: string; end
 // 화면 판정 캐시 — 최근에 본 화면(축소 그레이)과 그때의 판정. 같은 화면으로 돌아오면
 // (맵↔노드 모달 왕복이 전형) OCR 없이 판정을 재적용한다 (2026-07-26 속도 요청).
 let lastEmitGray: Uint8Array | null = null;
-let sceneMemos: { gray: Uint8Array; outcome: LensOutcome }[] = [];
+let sceneMemos: { gray: Uint8Array; outcome: LensOutcome; src?: { blob?: Blob } }[] = [];   // src = 그 장면을 처음 읽은 인식(화면 그림을 늦게 받아 둔다)
 let battleHold = false, battleHoldAt = 0;
 
 // ── 인식 기록 (2026-10-12, 사용자 지시 "얼마나 걸렸나 제대로 인식이 됐나") ─────────────────────────────
@@ -359,7 +359,7 @@ export function memoBridgeScene(outcome: LensOutcome): void {
   if (!lastEmitGray || outcome.target.kind !== "goto") return;
   const g = lastEmitGray;
   sceneMemos = sceneMemos.filter((m) => m.gray !== g);
-  sceneMemos.push({ gray: g, outcome });
+  sceneMemos.push({ gray: g, outcome, src: scan ?? undefined });
   if (sceneMemos.length > MEMO_MAX) sceneMemos.shift();
 }
 
@@ -604,7 +604,9 @@ function tick(): void {
       emitted++;
       console.debug(`[bridge] 이미 본 화면 → 판정 재적용 #${emitted} (OCR 생략)`);
       say("replay");
-      scan = { id: prtsScanId(), emitAt: now, w: latestW, h: latestH, crop: 1, cached: true, href: location.href, oc: m.outcome };
+      // 다시 읽지 않은 화면도 '틀렸어요' 때 화면을 같이 보낼 수 있게 — 같은 장면을 처음 읽을 때 쓴 화면을 이어 받는다
+      // (틀렸어요 2026-10-15 c742fee1 은 캐시 결과라 화면이 없어 원인을 볼 수 없었다)
+      scan = { id: prtsScanId(), emitAt: now, w: latestW, h: latestH, crop: 1, cached: true, href: location.href, oc: m.outcome, blob: m.src?.blob };
       for (const cb of replaySubs) cb(m.outcome);
       finishScan();
       return;

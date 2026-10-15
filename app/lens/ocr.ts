@@ -122,6 +122,9 @@ export type OcrSession = {
   difficulty(): Promise<number | null>;
   /** 왼쪽 아래 난이도 배지를 잘라 PaddleOCR 로 — 화면 전체 읽기의 검출이 작은 빨간 육각형 숫자를 놓친다 (2026-10-13). 못 읽으면 null */
   gradeBadge(): Promise<number | null>;
+  /** 화면 위 가운데 띠(통합전략 층 이름 자리)만 잘라 PaddleOCR 로 다시 찾아 읽는다 — 전체 화면은 긴 변 960 으로 줄여 글자를 찾아서
+   *  가는 층 이름('안개의 기로'·'고향의 잔해')을 놓쳤다 (틀렸어요 2026-10-15 두 건). PaddleOCR 을 안 쓰는 환경이면 빈 배열 */
+  topBand(): Promise<string[]>;
   /** 직전 전체프레임 패스의 줄 상자 — **0~1 정규화 좌표**. 호출 측이 화면 배치를 읽어
    *  "이 글자 위/옆"을 짚을 때 쓴다 (위수 협의 맹약 원형의 중첩 숫자 등). */
   boxes(): OcrBox[];
@@ -503,6 +506,19 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
       }
       const best = [...votes].sort((a, b) => b[1] - a[1] || String(b[0]).length - String(a[0]).length)[0];
       return best ? best[0] : null;
+    },
+    async topBand() {
+      if (!colorC || !paddleFullOk) return [];
+      // 가로 28~72% · 세로 0~14% — 창 제목 표시줄이 붙은 캡처(위가 2% 남짓 밀린다)도 들어오게 위는 0 부터
+      const sx = Math.round(W * 0.28), sw = Math.round(W * 0.44), sh = Math.round(H * 0.14);
+      if (sw < 16 || sh < 8) return [];
+      const bc = document.createElement("canvas");
+      bc.width = sw; bc.height = sh;
+      const bx = bc.getContext("2d", { willReadFrequently: true })!;
+      bx.imageSmoothingQuality = "high";
+      bx.drawImage(colorC, sx, 0, sw, sh, 0, 0, sw, sh);
+      const got = await paddleReadFrame(bc, pl ?? "kor");
+      return (got ?? []).map((b) => b.text).filter(Boolean);
     },
     async chipsAlt(cut = 0.5) {
       if (paddleOk) return [];   // PaddleOCR 로 읽었으면 tesseract 흑백 재시도는 하지 않는다 (느리고, 뭉갬 땜질용이었다)

@@ -2333,6 +2333,12 @@ export default function RogueGuide({ initialTopic }: {
     const bandIds = new Set(data.bands.map((b) => b.id));
     const hlBands = (g.highlight ?? []).filter((id) => bandIds.has(id));
     if (hlBands.length && !squadLocked.current) squadCand.current = data.bands.find((b) => b.id === hlBands[0])?.name ?? squadCand.current;
+    // 판 안(분대 정한 뒤)에 분대가 하나만 다시 인식되면 — 소장품 목록 등 — 그게 실제로 가진 분대다. 다르면 바로잡는다
+    // (틀렸어요 2026-10-15 c742fee1 "꽃다발 분대 X 대리인 분대 O" — 분대 선택 화면에서 마지막으로 본 분대가 후보로 확정됐다)
+    else if (hlBands.length === 1 && squadLocked.current) {
+      const nm = data.bands.find((b) => b.id === hlBands[0])?.name;
+      if (nm && nm !== bridgePipFloor().squad) setBridgePipFloor({ squad: nm });
+    }
     else if (!hlBands.length && !squadLocked.current && squadCand.current && bridgePipFloor().floor) fixSquad();
     // 시대(재앙 시대 등) — 소장품 칸이 아니라 공통 정보 띠에 (사용자 지시 2026-10-13)
     const eras = new Map(((data.mechanics ?? []).find((m) => m.label === "시대")?.items ?? []).map((it) => [it.id, it]));
@@ -2624,7 +2630,12 @@ export default function RogueGuide({ initialTopic }: {
         memoBridgeScene(oc);
         for (const ev of journeyEvents(oc, false)) logBridgeEvent(ev);
       }
-      if (oc.target.kind === "goto") {
+      // 작전 결과 화면('작전 성공'·'작전 실패') — 끝난 작전 이름이 떠 있어 그 작전 카드로 다시 넘어갔다 (틀렸어요 2026-10-15 fc4a3f3d,
+      // 험난한 길을 깬 뒤 결과 화면). 결과는 플레이 기록에만 남기고 화면은 그대로 둔다
+      if (live && oc.hud?.result && oc.target.kind === "goto" && oc.section === "stage") {
+        noteBridge(oc.hud.result === "success" ? t("작전 성공") : t("작전 실패"));
+        flashLensMsg(null);
+      } else if (oc.target.kind === "goto") {
         const items = lensSideItems(oc, live);
         const rg = rogueGoto(oc.target.goto);
         onLensGoto(rg && items.length ? { ...rg, items } : oc.target.goto, live);

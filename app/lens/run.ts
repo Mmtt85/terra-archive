@@ -546,6 +546,22 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
             : { floor: Number(z.id.replace(/\D/g, "")) || undefined, place: "", name: z.name });
         }
       }
+      // 그래도 못 찾았고 판 안 HUD(목표 HP·지휘 레벨)가 보이면 — 위 가운데 띠만 잘라 다시 읽는다. 전체 화면 읽기는 줄인 그림에서
+      // 글자를 찾아 가는 층 이름을 놓쳤다 (틀렸어요 2026-10-15 '안개의 기로'·'고향의 잔해' 두 건 — 노드 이름표는 다 읽고 층 이름만 빠졌다)
+      if (!drop.size && !rogueScreen) {
+        const allN = bx.map((b) => normText(b.text));
+        if (allN.some((x) => x.toLowerCase().includes("목표hp") || x.includes("지휘레벨"))) {
+          const band = (await session.topBand()).map((t) => normText(t.replace(/^[\sIⅠⅡⅢⅣⅤⅥⅦⅧlㅣ|1-9]+/, "")));
+          const joined = band.join("");
+          const z = zoneEntries.find((e) => e.nameN.length >= 3 && (band.includes(e.nameN) || joined.includes(e.nameN)));
+          if (z) {
+            drop.add(`\u0000band:${z.id}`);   // 표식만 — 이 줄은 lines 에 없다
+            if (opts?.live) setBridgePipFloor(/^zone_sky_/.test(z.id) ? { floor: 0, place: z.name, name: z.name }
+              : { floor: Number(z.id.replace(/\D/g, "")) || undefined, place: "", name: z.name });
+          }
+          console.debug(`[lens] 층 이름 다시 읽기: ${band.join(" | ") || "없음"} → ${z?.name ?? "못 찾음"}`);
+        }
+      }
       // ⚠ 위쪽 HUD 에 층 이름이 보이는 화면(지도·노드)에서만 — 난이도 배지는 그 화면에만 있다. 분대·오퍼 선택 화면 왼쪽 아래의
       //   다른 숫자('1')를 난이도로 읽어 난이도 1 로 고정됐다 (사용자 제보 2026-10-13)
       if (drop.size && !rogueScreen) rogueScreen = "map";
@@ -596,8 +612,16 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
         if (descIdx.reduce((a, i) => a + ns[i].length, 0) < 10) {
           // 설명 글을 못 읽은 프레임 — 패널 제목 바로 밑의 'INFO.' 표식(OCR 은 'ENFD.'·'EINFD.' 로 읽는다)이 붙어 있으면 고른 노드다
           // (틀렸어요 2026-10-13 '득과 실': 작은 설명 글이 통째로 안 읽혔다)
-          const INFO = /^e?[il1]?nf[od0]$/;
-          const k = ns.findIndex((n, i) => n === c.nameN && (INFO.test(ns[i + 1] ?? "") || INFO.test(ns[i + 2] ?? "")));
+          const INFO = /^e?[il1]?nf[od0]$/i;   // 대소문자 무시 — PaddleOCR 은 'INFO'·'ENFD' 대문자로 읽는다(종전 소문자만 받아 걸리지 않았다, 2026-10-15)
+          let k = ns.findIndex((n, i) => n === c.nameN && (INFO.test(ns[i + 1] ?? "") || INFO.test(ns[i + 2] ?? "")));
+          // 읽힌 순서가 'INFO' 가 이름보다 앞일 때도 있다 (틀렸어요 2026-10-15 '우연한 만남') — 자리로 본다: 오른쪽 위 설명 창의 제목
+          // (화면 오른쪽 절반·위 40%) 바로 밑(세로 12% 안, 가로로 붙어)에 INFO 상자가 있으면 고른 노드다. 지도 이름표는 그 자리에 INFO 가 없다
+          if (k < 0) {
+            const bxs = session.boxes();
+            const title = bxs.find((b) => normText(b.text) === c.nameN && b.x0 > 0.5 && b.y0 < 0.4
+              && bxs.some((o) => INFO.test(normText(o.text)) && o.y0 >= b.y0 && o.y0 - b.y1 < 0.12 && Math.abs(o.x0 - b.x0) < 0.12));
+            if (title) k = ns.findIndex((n) => n === c.nameN);
+          }
           if (k < 0) continue;
           descIdx = [k];
         }
