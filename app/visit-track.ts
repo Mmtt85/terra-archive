@@ -81,6 +81,10 @@ type View = {
 let started = false;
 let env: "live" | "dev" = "live";
 let sess: Sess | null = null;
+// 이 탭의 방문자 id — 저장소(localStorage)에 못 쓰는 브라우저(사파리 개인 정보 보호·앱 안 브라우저)에서도 세션과 같은 id 로 이어 쓴다.
+// 종전엔 세션은 새 id 로 남고, 그 뒤 기록(로그인·동기화·PRTS)은 저장소에서 다시 읽다가 비어 방문자 없이 남았다 (2026-10-15 실측)
+let memVisitor = "";
+const visitorId = (): string => { try { return localStorage.getItem(VISITOR_KEY) || memVisitor; } catch { return memVisitor; } };
 let view: View | null = null;
 let lastInput = 0;
 let lastTick = 0;
@@ -157,6 +161,7 @@ function sendSession(locale: string): void {
     revisit = !!visitor;
     if (!visitor) { visitor = uuid(); localStorage.setItem(VISITOR_KEY, visitor); }
   } catch { visitor = uuid(); }
+  memVisitor = visitor;
   let refHost: string | null = null;
   let ref: string | null = null;
   try {
@@ -194,24 +199,30 @@ function sendSession(locale: string): void {
  *  누가 = 방문 기록과 같은 익명 방문자 id. 닉네임·계정 정보는 보내지 않는다. */
 /** 내 정보로 로그인한 게임 계정 — 방문자(브라우저 익명 id)와 잇는다. 관리자 세션 타임라인이 그 사람을 UID·닉네임으로 알아보게
  *  (사용자 지시 2026-10-14 "방문 통계도 로그인한 사람은 UID 로, 아닌 사람은 기존처럼"). me-store 를 import 하면 순환이라 저장분을 직접 읽는다 */
-function notePlayer(): void {
+function notePlayer(given?: { server: string; uid: string }): void {
   if (!started) return;
   try {
-    const visitor = localStorage.getItem(VISITOR_KEY);
-    const me = JSON.parse(localStorage.getItem("ta:me") ?? "null") as { server?: string; player?: { uid?: string | number } } | null;
-    const uid = me?.player?.uid != null ? String(me.player.uid) : "";
-    if (!visitor || !uid || !me?.server) return;
+    const visitor = visitorId();
+    // 로그인 직후엔 넘겨받은 계정을 그대로 — 저장소에 못 쓰는 브라우저는 ta:me 를 다시 읽어도 비어 있다
+    let server = given?.server ?? "", uid = given?.uid ?? "";
+    if (!uid) {
+      const me = JSON.parse(localStorage.getItem("ta:me") ?? "null") as { server?: string; player?: { uid?: string | number } } | null;
+      uid = me?.player?.uid != null ? String(me.player.uid) : "";
+      server = me?.server ?? "";
+    }
+    if (!visitor || !uid || !server) return;
     // 닉네임은 보내지 않는다 — 알아보는 데 UID 면 충분하고, 모으는 건 적을수록 좋다 (사용자 지시 2026-10-14 "닉네임은 필요 없지 않나")
-    post("visit_player", [{ visitor: clip(visitor, 64), server: clip(me.server, 8), uid: clip(uid, 24), env }]);
+    post("visit_player", [{ visitor: clip(visitor, 64), server: clip(server, 8), uid: clip(uid, 24), env }]);
   } catch { /* 저장 막힘 */ }
 }
 
-export function noteVisitEvent(kind: "me_login" | "me_sync" | "prts_start" | "prts_end" | "leave" | "ev_chip", server?: string, extra?: { detail?: string; dur?: number }): void {
+export function noteVisitEvent(kind: "me_login" | "me_sync" | "prts_start" | "prts_end" | "leave" | "ev_chip", server?: string, extra?: { detail?: string; dur?: number; uid?: string }): void {
   if (!started) return;
-  let visitor = "";
-  try { visitor = localStorage.getItem(VISITOR_KEY) ?? ""; } catch { /* 프라이빗 모드 */ }
-  // 로그인·동기화 — saveMe 가 이 호출 **뒤에** 계정 데이터를 저장하므로 한 박자 늦게 잇는다
-  if (kind === "me_login" || kind === "me_sync") setTimeout(notePlayer, 0);
+  const visitor = visitorId();
+  // 로그인·동기화 — 계정을 넘겨받았으면 바로, 아니면 saveMe 가 저장한 뒤(한 박자 늦게) 읽어서 잇는다
+  if (kind === "me_login" || kind === "me_sync") {
+    if (extra?.uid && server) notePlayer({ server, uid: extra.uid }); else setTimeout(() => notePlayer(), 0);
+  }
   post("visit_event", [{ session: sess?.id ?? uuid(), visitor: clip(visitor, 64), kind, server: clip(server ?? null, 8), env,
     ...(extra?.detail ? { detail: clip(extra.detail, 40) } : {}),
     ...(extra?.dur != null ? { dur_ms: Math.max(0, Math.min(86_400_000, Math.round(extra.dur))) } : {}) }]);
@@ -230,7 +241,7 @@ export function notePrtsScan(r: PrtsScanRow): void {
   if (!started && !prtsReady) return;
   let visitor = "";
   if (isOwner()) visitor = "owner";
-  else try { visitor = localStorage.getItem(VISITOR_KEY) ?? ""; } catch { /* 프라이빗 모드 */ }
+  else visitor = visitorId();
   // 관리자는 방문 세션이 없다 — 이 탭 동안 쓰는 세션 id 를 따로 만든다
   if (!sess && !prtsSession) prtsSession = uuid();
   const ms = (v?: number) => (v == null ? null : Math.max(0, Math.min(600_000, Math.round(v))));

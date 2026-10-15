@@ -204,7 +204,7 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
         <button type="button" className="bridge-toast-off bridge-pip-off" onClick={forceBridgeRescan} title={t("지금 화면을 바로 다시 인식합니다")}>{t("강제 인식")}</button>
         {/* 틀렸어요는 연결 끊기 왼쪽 — 바닥줄에 두면 내용이 길 때 스크롤해 내려가야 보였다 (사용자 지시 2026-10-13) */}
         {last && (last.wrong
-          ? <span className="bridge-toast-thanks bridge-pip-thanks">{t(last.shot === "sending" ? "화면 보내는 중…" : last.shot === "fail" ? "화면 전송 실패 — 기록만 남겼어요" : "알려 주셔서 고마워요")}</span>
+          ? <span className="bridge-toast-thanks bridge-pip-thanks">{t(last.shot === "sending" ? "보내는 중…" : last.shot === "fail" ? "보내지 못했어요 — 다시 눌러 주세요" : "알려 주셔서 고마워요 — 답은 제안 게시판 '내 제안'에서 볼 수 있어요")}</span>
           : <WrongButton t={t} cls="bridge-pip-wrong" />)}
         <button type="button" className="bridge-toast-off bridge-pip-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>{t("연결 끊기")}</button>
       </header>
@@ -267,7 +267,7 @@ export default function BridgeButton({ t }: { t: T }) {
         const last = bridgeLastScan();
         if (!last) return null;
         return last.wrong
-          ? <span className="bridge-toast-thanks">{t(last.shot === "sending" ? "화면 보내는 중…" : last.shot === "fail" ? "화면 전송 실패 — 기록만 남겼어요" : "알려 주셔서 고마워요")}</span>
+          ? <span className="bridge-toast-thanks">{t(last.shot === "sending" ? "보내는 중…" : last.shot === "fail" ? "보내지 못했어요 — 다시 눌러 주세요" : "알려 주셔서 고마워요 — 답은 제안 게시판 '내 제안'에서 볼 수 있어요")}</span>
           : <WrongButton t={t} cls="" />;
       })()}
       {pipOk && (

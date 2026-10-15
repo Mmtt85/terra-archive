@@ -93,7 +93,8 @@ export function getMe(): MeData | null {
 
 /** 게임 로그인 결과를 저장한다 — 인프라 '가져오기'로 로그인해도 같은 곳에 쌓인다. */
 export function saveMe(roster: AccountRoster, server: AccountServer, kind: "me_login" | "me_sync" = "me_login") {
-  noteVisitEvent(kind, server);   // 방문 통계 — 누가(익명 id) 몇 번 동기화했는지
+  // 방문 통계 — 누가(익명 id) 몇 번 동기화했는지 · 계정(UID)도 바로 넘겨 방문자와 잇는다(저장소에 못 쓰는 브라우저에서도)
+  noteVisitEvent(kind, server, roster.player?.uid != null ? { uid: String(roster.player.uid) } : undefined);
   if (roster.token) setToken({ server, token: roster.token });
   if (roster.prefToken) setPrefToken(roster.prefToken);
   const data: MeData = {

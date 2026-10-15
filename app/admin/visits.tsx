@@ -15,7 +15,6 @@ import { createPortal } from "react-dom";
 import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
 import { DatePicker } from "../date-picker";
-import { useConfirm } from "../confirm";
 import { ACCOUNT_SERVERS } from "../account";
 import { ModalWindow } from "../modal-window";
 import { VisitsReport } from "./visits-report";
@@ -661,9 +660,9 @@ function Head({ title, sub, top, setTop, onAll, children }: { title: string; sub
   );
 }
 
-// prtsBy·prtsLog·prtsWrong — PRTS 링크 표 셋도 다른 목록처럼 개수 고르기·전체 보기 (사용자 지시 2026-10-13)
-type TopKey = "src" | "ref" | "landing" | "pages" | "sections" | "device" | "lang" | "tz" | "out" | "sessions" | "mesync" | "prtsBy" | "prtsLog" | "prtsWrong";
-const TOP_DEFAULT: Record<TopKey, number> = { src: 5, ref: 5, landing: 5, pages: 5, sections: 5, device: 5, lang: 5, tz: 5, out: 5, sessions: 5, mesync: 5, prtsBy: 5, prtsLog: 10, prtsWrong: 10 };
+// prtsBy·prtsLog — PRTS 링크 표 둘도 다른 목록처럼 개수 고르기·전체 보기 (사용자 지시 2026-10-13)
+type TopKey = "src" | "ref" | "landing" | "pages" | "sections" | "device" | "lang" | "tz" | "out" | "sessions" | "mesync" | "prtsBy" | "prtsLog";
+const TOP_DEFAULT: Record<TopKey, number> = { src: 5, ref: 5, landing: 5, pages: 5, sections: 5, device: 5, lang: 5, tz: 5, out: 5, sessions: 5, mesync: 5, prtsBy: 5, prtsLog: 10 };
 const TOPS_KEY = "ta-admin-visit-tops";   // localStorage — 목록마다 고른 개수
 
 function loadTops(): Record<TopKey, number> {
@@ -1214,7 +1213,6 @@ export function VisitsPanel() {
     : allOf.key === "sessions" ? allSessions?.length ?? 0
     : allOf.key === "prtsBy" ? data.prts?.by.length ?? 0
     : allOf.key === "prtsLog" ? prtsLog.length
-    : allOf.key === "prtsWrong" ? 0
     : barRows[allOf.key].length;
   const allRender = (n: number) => !allOf ? null
     : allOf.key === "pages" ? pageTable(n)
@@ -1222,7 +1220,6 @@ export function VisitsPanel() {
     : allOf.key === "sessions" ? <ol className="vz-sessions">{(allSessions ?? []).slice(0, n).map((x) => <SessionLine key={x.id} s={x} />)}</ol>
     : allOf.key === "prtsBy" ? prtsByTable(n)
     : allOf.key === "prtsLog" ? prtsLogTable(n)
-    : allOf.key === "prtsWrong" ? null
     : <BarList top={n} rows={barRows[allOf.key]} />;
   const filled = data ? (range ? fillRange(data.days, range.from, range.to) : fillDays(data.days, days)) : [];
   const today = kstToday();
@@ -1485,8 +1482,7 @@ export function VisitsPanel() {
             </>
           )}
 
-          {/* PRTS 틀렸어요 (2026-10-12) — 인식 표는 걷어냈다 (아래 PrtsWrong) */}
-          <PrtsWrong {...top("prtsWrong")} tick={tick} from={rangeArgs?.p_from ?? isoAt(spanStart ?? Math.floor(Date.now() / 60_000) * 60_000 - days * 86400_000)} to={rangeArgs?.p_to ?? "infinity"} />
+          {/* PRTS 틀렸어요는 피드백 탭으로 옮겼다 (사용자 지시 2026-10-15 "방문 통계가 아니라 피드백으로", app/lens/bridge.ts markBridgeWrong) */}
 
           <div className="vz-cols">
             <div>
@@ -1551,75 +1547,4 @@ export function VisitsPanel() {
       )}
     </section>
   );
-}
-
-// ── PRTS 틀렸어요 (2026-10-12) ──────────────────────────────────────────────────────────────────────
-// PRTS 인식 표(합계·결과별·구역별·최근 기록)는 걷어냈다 (사용자 지시 2026-10-12 "인식표 그건 걍 지우자. 받지도 말자" —
-// 인식마다 한 줄씩 쌓여 하루 3천 줄, 그 표 하나가 5초씩 걸려 관리자 화면이 느려졌다). 이제 인식 기록은 '틀렸어요'를 누를 때만
-// 오고(bridge.ts markBridgeWrong), 여기는 그 목록만 가벼운 함수(visits_prts_wrong — 틀렸어요 줄에서 출발)로 받는다
-type PrtsWrongRec = { /** 틀렸어요 줄 id — 지우기 단추 (2026-10-13~, SQL 미적용이면 없다) */ id?: string; at: string; visitor: string | null; topic: string | null; result: string | null; section: string | null;
-  target: string | null; note: string | null; seen: string | null; cached: boolean | null; shot: string | null; env: string | null;
-  /** 그 인식의 판정 + OCR 이 읽은 줄 (JSON 파일 주소, 2026-10-13~) */ ocr?: string | null;
-  /** 누른 사람이 적은 한 줄 메모 (틀렸어요 모달, 2026-10-13~) */ memo?: string | null };
-const RESULT_KO: Record<string, string> = { goto: "바로 이동", tie: "후보 여럿", none: "못 읽음", battle: "전투 화면", unreported: "결과 안 옴" };
-
-function PrtsWrong({ from, to, tick, top, setTop }: { from: string; to: string; tick: number; top: number; setTop: (n: number) => void; onAll?: () => void }) {
-  const [d, setD] = useState<PrtsWrongRec[] | null>(null);
-  const [all, setAll] = useState(false);   // 전체 보기 창 — 받아 온 목록이 여기 있어 창도 여기서 연다
-  // 지우기 — 대응을 마친 틀렸어요를 목록에서 없앤다 (사용자 지시 2026-10-13 "대응완료하면 지울 수 있게"). DB 함수 visits_prts_wrong_delete
-  const { confirm, dialog: confirmDialog } = useConfirm();
-  const [delMsg, setDelMsg] = useState("");
-  const del = async (r: PrtsWrongRec) => {
-    if (!r.id) return;
-    const ok = await confirm({ message: `${whenShort(r.at)} 틀렸어요를 지웁니다 — 첨부한 화면·OCR 기록 파일도 같이 지워집니다. 계속할까요?`, danger: true });
-    if (ok !== true) return;
-    try {
-      const n = await rpc<number>("visits_prts_wrong_delete", { p_id: r.id });
-      if (n > 0) {
-        // 첨부 파일(R2 feedback/… 의 화면 jpg·OCR json)도 지운다 — 업로드 워커는 관리자에게 feedback/ 삭제만 열어 둔다 (사용자 지적 2026-10-13 "첨부 이미지도 지워야")
-        for (const u of [r.shot, r.ocr]) {
-          const key = u?.match(/^https?:\/\/[^/]+\/(feedback\/.+)$/)?.[1];
-          if (key) await fetch(`/api/files/${key}`, { method: "DELETE" }).catch(() => null);
-        }
-        setD((cur) => (cur ?? []).filter((x) => x.id !== r.id)); setDelMsg("");
-      }
-      else setDelMsg("지우지 못했습니다 (관리자 키·SQL 확인)");
-    } catch { setDelMsg("지우지 못했습니다 — visits_prts_wrong_delete SQL 을 아직 안 돌렸을 수 있습니다"); }
-  };
-  useEffect(() => {
-    let alive = true;
-    rpc<PrtsWrongRec[] | null>("visits_prts_wrong", { p_from: from, p_to: to })
-      .then((r) => { if (alive) setD(r ?? []); })
-      .catch(() => { if (alive) setD(null); });
-    return () => { alive = false; };
-  }, [from, to, tick]);
-  if (!d) return null;   // 함수가 아직 없거나(SQL 미적용) 받기 실패 — 칸을 그리지 않는다
-  return (
-    <>
-      {confirmDialog}
-      {delMsg && <p className="vz-note">{delMsg}</p>}
-      <Head title="PRTS 틀렸어요" sub={`${num(d.length)}건 · 라이브·dev 모두 (누를 때 그 인식과 화면 한 장이 온다)`}
-        top={top} setTop={setTop} onAll={() => setAll(true)} />
-      {all && <AllWindow title="PRTS 틀렸어요" total={d.length} onClose={() => setAll(false)} render={(n) => wrongTable(n)} />}
-      {!d.length ? <p className="vz-note">이 기간에는 틀렸어요가 없습니다.</p> : wrongTable(top)}
-    </>
-  );
-  function wrongTable(n: number) { return (
-        <div className="vz-tablewrap vz-prts-log"><table className="vz-table">
-          <thead><tr><th>방문자</th><th>틀렸어요</th><th>판정</th><th>이동 대상 / 상태줄</th><th title="그 화면에서 맞춘 게임 항목 이름 · #화면 종류">판정 근거</th><th>화면</th><th aria-label="지우기" /></tr></thead>
-          <tbody>{d!.slice(0, n).map((r, i) => (
-            <tr key={i}>
-              <td title={r.visitor ?? ""}><Who visitor={r.visitor} /></td>
-              <td>{whenShort(r.at)}{r.topic ? <span className="vz-note"> · {r.topic}</span> : null}{r.env === "dev" ? <span className="vz-tag" title="라이브가 아닌 곳(localhost 등)에서 누름">dev</span> : null}
-                {r.memo ? <div title="누른 사람이 적은 메모">💬 {r.memo}</div> : null}</td>
-              <td>{RESULT_KO[r.result ?? ""] ?? r.result ?? "—"} <code>{r.section ?? ""}</code>{r.cached ? <span className="vz-note"> · 캐시</span> : null}</td>
-              <td title={r.target ?? ""}><code>{(r.target ?? "—").slice(0, 40)}</code>{r.note ? <span className="vz-note"> · {r.note}</span> : null}</td>
-              <td>{r.seen ? r.seen.split("|").join(" · ") : "—"}</td>
-              <td>{r.shot ? <a href={r.shot} target="_blank" rel="noopener noreferrer"><img src={r.shot} alt="" style={{ width: 120, height: "auto", display: "block" }} loading="lazy" /></a> : <span className="vz-note">없음</span>}
-                {r.ocr && <a className="vz-note" href={r.ocr} target="_blank" rel="noopener noreferrer">OCR 기록</a>}</td>
-              <td>{r.id && <button type="button" className="act-btn vz-del-btn" onClick={() => void del(r)} title="대응을 마쳤으면 이 틀렸어요를 지운다">지우기</button>}</td>
-            </tr>
-          ))}</tbody>
-        </table></div>
-  ); }
 }

@@ -25,7 +25,7 @@ import { forgetModalPos, PRTS_MODAL_KEY } from "../modal-geo";
 import { useEffect, useRef, useState } from "react";
 import type { LensOutcome } from "./match";
 import { holdVisitActive, notePrtsStart, notePrtsEnd, notePrtsScan, prtsScanId, type PrtsScanRow } from "../visit-track";
-import { uploadFeedbackFile } from "../feedback";
+import { sendFeedback, uploadFeedbackFile } from "../feedback";
 import { lastOcrLines } from "./ocr-trace";
 
 // 크롬 전용 API 라 TS 기본 DOM 타입에 없다 — 쓰는 만큼만 선언
@@ -191,30 +191,39 @@ function finishScan(ocrStart?: number): void {
   notify();
 }
 
-/** 토스트의 '틀렸어요' — 마지막 인식을 틀렸다고 표시하고, **그 인식에 쓴 화면 한 장**을 같이 올린다
- *  (사용자 지시 2026-10-12 "인식된 화면을 받아보는 게 낫다"). 평소 기록엔 그림이 없고 이 단추를 누를 때만 간다 —
- *  토스트 안내문이 그렇게 말한다. 올리는 곳은 제안 게시판 첨부와 같은 익명 업로드(workers/upload, feedback/…). 같은 인식엔 한 번만 */
+/** 토스트의 '틀렸어요' — 마지막 인식을 틀렸다고 **제안 게시판에 피드백 한 건**으로 보낸다 (사용자 지시 2026-10-15 "PRTS 틀렸어요는 방문 통계가 아니라
+ *  피드백으로 와야 한다" — 종전엔 방문 기록 DB 의 prts_scan wrong·shot 줄로 남고 관리 화면 방문 통계 탭에서 봤다).
+ *  종류는 '데이터 오류', 본문 = [PRTS 인식 틀렸어요] + 메모 + 판정, 첨부 = 그 인식에 쓴 화면 한 장 + 판정·OCR 이 읽은 줄 JSON
+ *  (사용자 지시 2026-10-12 "인식된 화면을 받아보는 게 낫다", 10-13 "OCR 내용 json 도"). 보낸 사람의 '내 제안'에도 보이고 답변을 받는다.
+ *  인식 한 줄(scan)은 통계라 방문 기록에 그대로 남긴다. 같은 인식엔 한 번만 */
 export function markBridgeWrong(memo?: string): void {
   const ls = lastScan;
   if (!ls || ls.wrong) return;
   ls.wrong = true;
-  const wrongId = prtsScanId();
   if (ls.row) notePrtsScan(ls.row);   // 그 인식 한 줄 — 이때 처음 보낸다
   // 메모 — 뭐가 틀렸는지 한 줄 (사용자 지시 2026-10-13 "틀렸어요 누를 때 한 줄 써서 보낼 수 있게"). 비워도 된다
   const note = memo?.trim().slice(0, 200) || undefined;
-  notePrtsScan({ id: wrongId, kind: "wrong", ref: ls.id, topic: lock?.topic, ...(note ? { note } : {}) });
-  if (!ls.blob) { ls.shot = "none"; notify(); return; }
   ls.shot = "sending";
   notify();
-  const file = new File([ls.blob], `prts-wrong-${ls.id.slice(0, 8)}.jpg`, { type: "image/jpeg" });
-  // 화면에 더해 **그 인식의 판정 + OCR 이 읽은 줄 전체**를 JSON 으로 (사용자 지시 2026-10-13 "패들 OCR 이 인식한 내용 json 도 받아야") —
-  // 화면만으로는 왜 틀렸는지(무엇을 어떻게 읽었는지) 알 수 없다. 둘 다 'shot' 줄로 남고 관리자 목록이 화면·OCR 기록으로 나눠 보인다
-  const ocrFile = new File([JSON.stringify({ id: ls.id, ...(ls.row ?? {}), ...(note ? { memo: note } : {}), ocr: ls.ocr ?? [] }, null, 1)], `prts-wrong-${ls.id.slice(0, 8)}.json`, { type: "application/json" });
-  void uploadFeedbackFile(file)
-    .then((up) => { notePrtsScan({ id: prtsScanId(), kind: "shot", ref: ls.id, img: up.url }); ls.shot = "sent"; })
-    .then(() => uploadFeedbackFile(ocrFile))
-    .then((up) => { if (up) notePrtsScan({ id: prtsScanId(), kind: "shot", ref: ls.id, img: up.url }); })
-    .catch(() => { if (ls.shot !== "sent") ls.shot = "fail"; })
+  const r = ls.row;
+  const shot = ls.blob ? new File([ls.blob], `prts-wrong-${ls.id.slice(0, 8)}.jpg`, { type: "image/jpeg" }) : null;
+  const ocrFile = new File([JSON.stringify({ id: ls.id, ...(r ?? {}), ...(note ? { memo: note } : {}), ocr: ls.ocr ?? [] }, null, 1)], `prts-wrong-${ls.id.slice(0, 8)}.json`, { type: "application/json" });
+  const message = [
+    `[PRTS 인식 틀렸어요] ${note ?? "(메모 없음)"}`,
+    r && `인식: ${[r.result, r.section, r.target].filter(Boolean).join(" · ") || "—"}`,
+    r?.seen && `근거: ${r.seen.replaceAll("|", ", ")}`,
+    r && `통합전략 ${r.topic ?? "?"} · ${r.page ?? "?"} · ${r.ms ?? "?"}ms${r.cached ? " (캐시)" : ""}`,
+  ].filter(Boolean).join("\n");
+  void (async () => {
+    const images: string[] = [];
+    const files: { url: string; name: string; size: number }[] = [];
+    if (shot) { const up = await uploadFeedbackFile(shot).catch(() => null); if (up) images.push(up.url); }
+    const oj = await uploadFeedbackFile(ocrFile).catch(() => null);
+    if (oj) files.push({ url: oj.url, name: oj.name, size: oj.size });
+    await sendFeedback("data_error", message, { source: "prts-wrong", scan: ls.id, topic: r?.topic ?? null, images, files });
+  })()
+    .then(() => { ls.shot = "sent"; })
+    .catch(() => { ls.shot = "fail"; ls.wrong = false; })   // 못 보냈으면 다시 누를 수 있게
     .finally(() => { ls.blob = undefined; notify(); });
 }
 export const bridgeLastScan = () => lastScan;
