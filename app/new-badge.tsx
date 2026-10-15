@@ -10,11 +10,19 @@
 // ⚠ 본 기록은 마운트 뒤에만 읽는다 — 렌더 중에 읽으면 프리렌더 HTML(배지 있음)과 갈라져 React #418 이다.
 
 import { useEffect, useRef, useState } from "react";
+import { FEATURE_RELEASED } from "./whats-new";
 
 const SEEN_KEY = "ta:new-seen";
 const SEEN_EVENT = "ta:new-seen";
 
-function readSeen(): Record<string, 1> {
+// 값 = 본 날(일 단위 숫자, Date.now()/86400000). 평생 쌓이지 않게 KEEP_DAYS 지난 것은 쓸 때마다 지운다 (사용자 지적 2026-10-15
+// "NEW 배지 본 기록이 평생 누적될 것 같다"). NEW 는 길어야 3일만 뜨므로(whats-new.ts·changelog NEW_DAYS) 30일 지난 기록은 다시 뜰 일이 없다.
+// 옛 기록(값 1, 날짜 없음)은 처음 쓸 때 오늘 날짜를 붙여 30일 뒤에 함께 정리된다
+// 보관 기간 = 가장 긴 NEW 기간 + 일주일, 최소 30일 — 나중에 3일보다 긴 NEW 를 만들어도 그 기간 안에 기록이 지워져 다시 뜨지 않게.
+// (인프라 '변경 있음'은 이 기록과 무관한 따로 장치다)
+const KEEP_DAYS = Math.max(30, ...Object.values(FEATURE_RELEASED).map((e) => (typeof e === "string" ? 3 : e.days) + 7));
+const today = () => Math.floor(Date.now() / 86_400_000);
+function readSeen(): Record<string, number> {
   try { return JSON.parse(localStorage.getItem(SEEN_KEY) ?? "{}") ?? {}; } catch { return {}; }
 }
 
@@ -27,8 +35,14 @@ export function markBadgeSeen(id: string, quiet = false) {
   try {
     const seen = readSeen();
     if (seen[id]) return;
-    seen[id] = 1;
-    localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+    const now = today();
+    const kept: Record<string, number> = {};
+    for (const [k, d] of Object.entries(seen)) {
+      const day = typeof d === "number" && d > 1 ? d : now;   // 옛 기록(1)은 오늘 본 것으로
+      if (now - day <= KEEP_DAYS) kept[k] = day;
+    }
+    kept[id] = now;
+    localStorage.setItem(SEEN_KEY, JSON.stringify(kept));
   } catch { /* 저장이 막힌 창이면 이번 화면에서만 숨긴다 */ }
   if (!quiet) window.dispatchEvent(new CustomEvent<string>(SEEN_EVENT, { detail: id }));
 }
