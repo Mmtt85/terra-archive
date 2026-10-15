@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import HomeKo from "../../home-ko";
 import { rogueSlugs, rogueMetadata, rogueJsonLd } from "../../seo-rogue";
 import JsonLd from "../../json-ld";
+import RouteOnly from "../../route-only";
+import { RogueTopicSeo } from "../../page-seo/rogue";
 
 // 통합전략 테마 — 테마마다 실제 정적 페이지 (2026-08-06, SEO).
 // 종전엔 6개 테마가 /rogue?topic=isN 쿼리 파라미터 하나를 나눠 써서 사이트맵에도 없었다.
@@ -23,7 +25,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   return (
     <>
       <JsonLd data={rogueJsonLd("ko", slug)} />
-      <HomeKo initialTab="rogue" initialRogue={slug} />
+      <HomeKo initialTab="rogue" initialRogue={slug} pageSeo={<RouteOnly path={`/rogue/${slug}`}><RogueTopicSeo slug={slug} /></RouteOnly>} />
     </>
   );
 }

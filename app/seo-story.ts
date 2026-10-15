@@ -59,7 +59,7 @@ const nameOf = (locale: SeoLocale, id: string) => {
 };
 
 const TITLE: Record<SeoLocale, (name: string) => string> = {
-  ko: (name) => `${name} 스토리 요약 - 명방(명일방주) | 테라 아카이브`,
+  ko: (name) => `${name} 스토리 요약 - 명일방주 | 테라 아카이브`,
   en: (name) => `${name} Story Summary - Arknights | Terra Archive`,
   ja: (name) => `${name} ストーリー要約 - アークナイツ | テラアーカイブ`,
 };
@@ -80,7 +80,7 @@ const descOf = (locale: SeoLocale, id: string) => {
 
 // 요약이 없는(기록뿐인) 이벤트 — 이 주소로 색인되는 본문은 요약이 아니라 이벤트 기록이다.
 const LORE_TITLE: Record<SeoLocale, (name: string) => string> = {
-  ko: (name) => `${name} 이벤트 기록 - 명방(명일방주) | 테라 아카이브`,
+  ko: (name) => `${name} 이벤트 기록 - 명일방주 | 테라 아카이브`,
   en: (name) => `${name} Event Records - Arknights | Terra Archive`,
   ja: (name) => `${name} イベント記録 - アークナイツ | テラアーカイブ`,
 };
@@ -158,4 +158,11 @@ export function storyJsonLd(locale: SeoLocale, id: string) {
       },
     ],
   };
+}
+
+/** 스토리 목록 서버 안내(app/page-seo/stories.tsx)용 — 상세가 있는 스토리 전부, 이름·출시월·한 줄 소개. 최신이 위 (2026-10-15) */
+export function storyListFor(locale: SeoLocale): { id: string; name: string; start?: string; tagline?: string; lore: boolean }[] {
+  return storyIds
+    .map((id) => ({ id, name: nameOf(locale, id), start: BY_ID.get(id)?.start, tagline: TAGLINE[locale][id]?.tagline, lore: loreOnly(id) }))
+    .sort((a, b) => (b.start ?? "").localeCompare(a.start ?? ""));
 }

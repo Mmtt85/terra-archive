@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import HomeJa from "../../home-ja";
 import { pageMetadata, jsonLdFor } from "../../seo";
 import JsonLd from "../../json-ld";
+import RouteOnly from "../../route-only";
+import { UpgradeSeo } from "../../page-seo/tools";
 
 export const metadata: Metadata = pageMetadata("ja", "upgrade");
 
@@ -9,7 +11,7 @@ export default function Page() {
   return (
     <>
       <JsonLd data={jsonLdFor("ja", "upgrade")} />
-      <HomeJa initialTab="upgrade" />
+      <HomeJa initialTab="upgrade" pageSeo={<RouteOnly path="/ja/upgrade"><UpgradeSeo lang="ja" /></RouteOnly>} />
     </>
   );
 }

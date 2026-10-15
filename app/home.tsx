@@ -6,7 +6,7 @@
 import { confirmedDay, fmtMonthDay } from "./kr-confirmed";
 import { NewBadge } from "./new-badge";
 import { PAGE_HELP_TABS, openPageHelp } from "./page-help";
-import { lazy, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { lazy, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import storyEventsData from "./data/stories.json";
 import obtainData from "./data/op-obtain.json";
 import { ACQUIRE_KEYS, ACQUIRE_LABEL, acquireOf, type AcquireKey } from "./op-acquire";
@@ -1064,10 +1064,10 @@ function Portal({ onOpenTab, onOpenEvent }: {
   );
 }
 
-export default function Home({ locale, operators, extra, summariesLoader, initialTab = "portal", initialStory, initialOperator, initialRogue, initialSandbox, initialAutochess, initialEnemy, pageEnemy, pageEnemyStages, pageStage }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab?: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialSandbox?: string; initialAutochess?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null }) {
+export default function Home({ locale, operators, extra, summariesLoader, initialTab = "portal", initialStory, initialOperator, initialRogue, initialSandbox, initialAutochess, initialEnemy, pageEnemy, pageEnemyStages, pageStage, pageSeo }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab?: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialSandbox?: string; initialAutochess?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null; pageSeo?: ReactNode }) {
   return (
     <I18nProvider locale={locale}>
-      <HomeInner operators={operators} extra={extra} summariesLoader={summariesLoader} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} initialRogue={initialRogue} initialSandbox={initialSandbox} initialAutochess={initialAutochess} initialEnemy={initialEnemy} pageEnemy={pageEnemy} pageEnemyStages={pageEnemyStages} pageStage={pageStage} />
+      <HomeInner operators={operators} extra={extra} summariesLoader={summariesLoader} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} initialRogue={initialRogue} initialSandbox={initialSandbox} initialAutochess={initialAutochess} initialEnemy={initialEnemy} pageEnemy={pageEnemy} pageEnemyStages={pageEnemyStages} pageStage={pageStage} pageSeo={pageSeo} />
     </I18nProvider>
   );
 }
@@ -1075,7 +1075,7 @@ export default function Home({ locale, operators, extra, summariesLoader, initia
 // '미래시 포함' 토글 localStorage 키 — 켜면 한국 서버 미실장(CN 선행) 오퍼도 목록에 표시
 const FUTURE_KEY = "ta-include-future";
 
-function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory, initialOperator, initialRogue, initialSandbox, initialAutochess, initialEnemy, pageEnemy, pageEnemyStages, pageStage }: { operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialSandbox?: string; initialAutochess?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null }) {
+function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory, initialOperator, initialRogue, initialSandbox, initialAutochess, initialEnemy, pageEnemy, pageEnemyStages, pageStage, pageSeo }: { operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialSandbox?: string; initialAutochess?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null; pageSeo?: ReactNode }) {
   const { locale, t } = useI18n();
   // 방문 동선 기록 (app/visit-track.ts — 라이브 도메인에서만, 한 번만 켜진다)
   useEffect(() => { startVisitTrack(locale); }, [locale]);
@@ -1882,54 +1882,54 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     // 하이드레이션 직후 목록 제목으로 뭉개지지 않는다 (app/seo-operator.ts TITLE과 같은 키)
     const op = selected ?? pageOperator;
     document.title = op
-      ? t("{name} - 명방(명일방주) 오퍼레이터 | 테라 아카이브", { name: op.name })
+      ? t("{name} - 명일방주 오퍼레이터 | 테라 아카이브", { name: op.name })
       : tab === "planner"
-        ? t("인프라 자동편성기 - 명방(명일방주) 기반시설 편성 | 테라 아카이브")
+        ? t("인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브")
         : tab === "recruit"
-          ? t("공개채용 도우미 - 명방 공채 계산기 (명일방주 공개모집) | 테라 아카이브")
+          ? t("공개채용 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브")
           : tab === "enemy"
             ? (pageEnemy && enemyPageOpen
-              ? t("{name} - 명방(명일방주) 적 도감 | 테라 아카이브", { name: pageEnemy.name })
-              : t("적 도감 - 명방(명일방주) 적 정보 | 테라 아카이브"))
+              ? t("{name} - 명일방주 적 도감 | 테라 아카이브", { name: pageEnemy.name })
+              : t("적 도감 - 명일방주 적 정보 | 테라 아카이브"))
           : tab === "stage"
             ? (pageStage && stagePageOpen
-              ? t("{code} {name} - 명방(명일방주) 작전 | 테라 아카이브", { code: pageStage.stage.code, name: pageStage.stage.name })
-              : t("작전 도감 - 명방(명일방주) 스테이지 지형·드랍 | 테라 아카이브"))
+              ? t("{code} {name} - 명일방주 작전 | 테라 아카이브", { code: pageStage.stage.code, name: pageStage.stage.name })
+              : t("작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브"))
           : tab === "item"
-            ? t("아이템 도감 - 명방(명일방주) 아이템 정보 | 테라 아카이브")
+            ? t("아이템 도감 - 명일방주 아이템 정보 | 테라 아카이브")
           : tab === "event"
-            ? t("이벤트 가이드 - 명방(명일방주) 이벤트 정보 | 테라 아카이브")
+            ? t("이벤트 가이드 - 명일방주 이벤트 정보 | 테라 아카이브")
           : tab === "farm"
-            ? t("재료파밍 도우미 - 명방(명일방주) 재료 파밍 효율표 | 테라 아카이브")
+            ? t("재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브")
             : tab === "sim"
-            ? t("작전 시뮬레이터 - 명방(명일방주) 적 스폰 타임라인 | 테라 아카이브")
+            ? t("작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브")
             : tab === "gacha"
-            ? t("가챠 시뮬레이터 - 명방(명일방주) 헤드헌팅 시뮬 | 테라 아카이브")
+            ? t("가챠 시뮬레이터 - 명일방주 헤드헌팅 시뮬레이터 | 테라 아카이브")
             : tab === "upgrade"
-            ? t("육성 비용 계산기 - 명방(명일방주) 오퍼 육성 재료 계산 | 테라 아카이브")
+            ? t("육성 비용 계산기 - 명일방주 오퍼레이터 육성 재료 계산 | 테라 아카이브")
             : tab === "story"
               // 상세가 열려 있으면 스토리별 제목 — 상세 라우트의 <title>(app/seo-story.ts)과 같은 문구
               ? (storyTitle
-                ? t("{name} 스토리 요약 - 명방(명일방주) | 테라 아카이브", { name: storyTitle })
-                : t("스토리 - 명방(명일방주) 스토리 요약·전문 | 테라 아카이브"))
+                ? t("{name} 스토리 요약 - 명일방주 | 테라 아카이브", { name: storyTitle })
+                : t("스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브"))
               : tab === "gallery"
-                ? t("갤러리 - 명방(명일방주) 스토리 CG·스탠딩·일러스트 | 테라 아카이브")
+                ? t("갤러리 - 명일방주 스토리 CG·스탠딩·일러스트 | 테라 아카이브")
               : tab === "me"
-                ? t("내 정보 - 명방(명일방주) 계정 육성 통계·창고 | 테라 아카이브")
+                ? t("내 정보 - 명일방주 계정 육성 통계·창고 | 테라 아카이브")
               : tab === "rogue"
                 // 테마 페이지(/rogue/is6)는 라우트 <title>(app/seo-rogue.ts)과 같은 테마 제목 — 예전엔 하이드레이션 뒤
                 // 일반 제목으로 덮여 검색에 테마 이름이 안 걸렸다 (2026-10-12)
                 ? (() => {
                   const tp = ROGUE_TOPICS.find((x) => rogueSlugOf(x.id) === /\/rogue\/(is\d+)/.exec(window.location.pathname)?.[1]);
                   return tp
-                    ? t("{name} - 명방 록라(명일방주 통합전략) 공략 | 테라 아카이브", { name: t(tp.name) })
-                    : t("통합전략 가이드 - 명방 록라(명일방주 통합전략) 공략 | 테라 아카이브");
+                    ? t("{name} - 명일방주 통합전략 공략 | 테라 아카이브", { name: t(tp.name) })
+                    : t("통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브");
                 })()
                 : tab === "ra"
-                ? t("생존연산 가이드 - 명방(명일방주) 생존연산 공략 | 테라 아카이브")
+                ? t("생존연산 가이드 - 명일방주 생존연산 공략 | 테라 아카이브")
                 : tab === "archive"
-                ? t("오퍼레이터 백과사전 - 명방(명일방주) 오퍼 도감 | 테라 아카이브")
-                : t("테라 아카이브 | 명방(명일방주) 팬사이트 · 공채 계산기·인프라 편성·록라 공략");
+                ? t("오퍼레이터 백과사전 - 명일방주 오퍼레이터 도감 | 테라 아카이브")
+                : t("테라 아카이브 | 명일방주 팬사이트 · 공개모집 계산기·기반시설 편성·통합전략 공략");
   }, [tab, selected, pageOperator, storyTitle, rogueSlug, t]);
 
   // 오퍼 모달은 히스토리 엔트리를 쌓지 않고 해시만 교체한다(공유용 딥링크).
@@ -2935,6 +2935,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           );
       })()}
 
+      {/* 화면별 서버 안내 칸(app/page-seo/*) — 지연 로드 화면은 서버 HTML 에 본문이 없어 검색에서 그 주제 페이지로 읽히지 않았다 (2026-10-15).
+          라우트(page.tsx)가 넘기고, RouteOnly 가 그 주소에 있을 때만 보인다. 푸터 바로 위 */}
+      {pageSeo}
       <footer ref={footerRef}
         className={`${footerFolded ? "folded" : ""}${footDragH != null ? " dragging" : ""}`}
         style={footDragH != null ? { maxHeight: `${footDragH}px` } : undefined}>

@@ -30635,3 +30635,15 @@ html.dark .me-pf-art { opacity: .3; }
 .rg-free-tools button:hover { color: var(--ink); }
 .rg-free-tools span { width: 9.5em; padding: 2px 0; color: var(--muted); font-size: 12px; line-height: 1.5; word-break: keep-all; }
 
+
+/* 화면별 서버 안내 — 푸터 위 접는 칸 (app/page-seo/*, 2026-10-15). 지연 로드 화면도 서버 HTML 에 본문이 들어가게 */
+.page-seo { margin: 24px 0 0; }
+.page-seo h3 { margin: 12px 0 4px; font-size: 13px; }
+.page-seo dl { margin: 0; } .page-seo dt { font-size: 13px; font-weight: 700; color: var(--ink); margin-top: 6px; } .page-seo dd { margin: 0 0 4px; font-size: 13px; line-height: 1.7; color: var(--ink2); }
+.page-seo details { border: 1px solid var(--line); background: var(--white); padding: 12px 16px; }
+.page-seo summary { cursor: pointer; font-size: 14px; font-weight: 700; color: var(--ink2); }
+.page-seo h2 { margin: 18px 0 6px; font-size: 14px; }
+.page-seo p, .page-seo li { font-size: 13px; line-height: 1.7; color: var(--ink2); }
+.page-seo p { margin: 0 0 8px; }
+.page-seo ul { margin: 0; padding-left: 18px; }
+.page-seo-tags li b { margin-right: 6px; color: var(--ink); }

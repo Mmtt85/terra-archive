@@ -26,7 +26,7 @@ const metaOf = (locale: SeoLocale, slug: string): TopicMeta | null => {
 };
 
 const TITLE: Record<SeoLocale, (name: string) => string> = {
-  ko: (name) => `${name} - 명방 록라(명일방주 통합전략) 공략 | 테라 아카이브`,
+  ko: (name) => `${name} - 명일방주 통합전략 공략 | 테라 아카이브`,
   en: (name) => `${name} - Arknights Integrated Strategies Guide | Terra Archive`,
   ja: (name) => `${name} - アークナイツ統合戦略攻略 | テラアーカイブ`,
 };

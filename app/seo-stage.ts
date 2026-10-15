@@ -51,7 +51,7 @@ export function stagePageData(locale: SeoLocale, id: string): StageView | null {
 
 const TITLE: Record<SeoLocale, (code: string, name: string) => string> = {
   // ⚠ 하이드레이션 후 app/home.tsx의 document.title도 같은 문구로 맞춘다 (i18n 사전 같은 키)
-  ko: (code, name) => `${code} ${name} - 명방(명일방주) 작전 | 테라 아카이브`,
+  ko: (code, name) => `${code} ${name} - 명일방주 작전 | 테라 아카이브`,
   en: (code, name) => `${code} ${name} - Arknights Stage | Terra Archive`,
   ja: (code, name) => `${code} ${name} - アークナイツ 作戦 | テラアーカイブ`,
 };
