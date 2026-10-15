@@ -9643,6 +9643,7 @@ html.dark .vz {
 /* 기간·사람만 버튼 묶음과 떼어 놓는다 · 받아오는 동안은 버튼 글자만 '불러오는 중'으로 (사용자 지시 2026-10-04).
    두 글자를 한 칸에 겹쳐 두고 하나만 보여서 버튼 폭이 바뀌지 않는다 */
 .vz-controls .vz-refresh { margin-left: 14px; display: inline-grid; }
+.admin-status-tools .vz-refresh { display: inline-grid; }   /* 피드백 탭 새로고침도 같은 단추 (2026-10-15) */
 .vz-refresh > span { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
 .vz-refresh > span + span, .vz-refresh.busy > span:first-child { visibility: hidden; }
 .vz-refresh.busy > span + span { visibility: visible; }

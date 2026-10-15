@@ -276,8 +276,11 @@ export default function AdminPage() {
       .catch(() => { /* 워커 불통 시 섹션이 '확인 중'으로 남음 */ });
   }, [me]);
 
+  // 새로고침 — 방문 통계와 같은 방식: 위쪽에 '불러오는 중…' 줄을 띄우지 않고 단추 안에서만 바뀐다. 그 줄이 생겼다 사라지며 목록이
+  // 통째로 아래로 밀렸다 올라왔다 (사용자 지적 2026-10-15)
+  const [fbBusy, setFbBusy] = useState(false);
   const load = async () => {
-    setStatus("불러오는 중…");
+    setFbBusy(true);
     try {
       const data = await adminListFeedback();
       setRows(data);
@@ -286,7 +289,7 @@ export default function AdminPage() {
       loadChanges();
     } catch {
       setStatus("조회 실패 — 잠시 후 다시 시도해주세요");
-    }
+    } finally { setFbBusy(false); }
   };
 
   // ── 업데이트 내역 (docs/supabase-changelog.sql) — 저장하면 사이트에 바로 반영 ──
@@ -748,7 +751,10 @@ export default function AdminPage() {
           </button>
         ))}
         {/* 새로고침은 이 탭 것이라 머리글이 아니라 필터 줄에 둔다 (사용자 지시 2026-08-29) */}
-        <button className="admin-refresh" onClick={() => load()}>↻ 새로고침</button>
+        <button className={`vz-refresh${fbBusy ? " busy" : ""}`} onClick={() => load()} disabled={fbBusy} aria-busy={fbBusy}>
+          <span>새로고침</span>
+          <span role="status"><i className="vz-spin" aria-hidden />불러오는 중</span>
+        </button>
       </div>
       <div className="admin-list">
         {shown.map((row) => (
