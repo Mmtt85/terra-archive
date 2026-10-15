@@ -208,6 +208,32 @@ export function ModalWindow({ label, className, style, onClose, permanent, defau
   }, []);
 
   // Esc 가드 레지스트리 — z·고정 상태를 항상 최신으로
+  // 휠이 창 뒤 페이지로 새지 않게 (사용자 지시 2026-10-15 "모달에서 휠 굴리면 뒤 본페이지가 오르내린다") —
+  // 창 안에서 그 방향으로 더 스크롤할 칸이 있으면 그 칸에 맡기고, 없으면(끝에 닿았거나 스크롤 칸이 없으면) 막는다.
+  // React 의 onWheel 은 passive 라 preventDefault 가 안 먹어 직접 단다. 고정(📌)한 창은 뒤 페이지를 쓰는 중이라 막지 않는다
+  const backdropRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const bd = backdropRef.current;
+    if (!bd || pinned) return;
+    const canScroll = (el: HTMLElement, dx: number, dy: number) => {
+      const st = getComputedStyle(el);
+      const y = /(auto|scroll|overlay)/.test(st.overflowY) && el.scrollHeight > el.clientHeight + 1
+        && (dy > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : dy < 0 ? el.scrollTop > 0 : false);
+      const x = /(auto|scroll|overlay)/.test(st.overflowX) && el.scrollWidth > el.clientWidth + 1
+        && (dx > 0 ? el.scrollLeft + el.clientWidth < el.scrollWidth - 1 : dx < 0 ? el.scrollLeft > 0 : false);
+      return y || x;
+    };
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) return;   // 확대·축소 제스처
+      for (let el = e.target as HTMLElement | null; el; el = el.parentElement) {
+        if (canScroll(el, e.deltaX, e.deltaY)) return;
+        if (el === bd) break;
+      }
+      e.preventDefault();
+    };
+    bd.addEventListener("wheel", onWheel, { passive: false });
+    return () => bd.removeEventListener("wheel", onWheel);
+  }, [pinned]);
   const registryId = useRef<symbol | null>(null);
   if (registryId.current === null) registryId.current = Symbol("mw");
   useEffect(() => {
@@ -223,7 +249,7 @@ export function ModalWindow({ label, className, style, onClose, permanent, defau
   // 스태킹 루트로 쓰면 zTop 카운터가 전역에서 참이 된다.
   if (typeof document === "undefined") return null; // 프리렌더에는 창이 없다
   return createPortal(
-    <div className={`modal-backdrop mw-backdrop${pinned ? " mw-pinned" : ""}`} style={{ zIndex: z }}
+    <div ref={backdropRef} className={`modal-backdrop mw-backdrop${pinned ? " mw-pinned" : ""}`} style={{ zIndex: z }}
       onMouseDown={(e) => { if (!pinned && e.target === e.currentTarget) onClose(); }}>
       <section ref={panelRef}
         className={`mw-window ${className ?? ""}${dragging ? " mw-dragging" : ""}`}

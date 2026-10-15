@@ -4,6 +4,10 @@
 // 내 정보로 로그인한 계정의 설정(app/cloud-prefs.tsx 가 올린 것)을 계정 워커 D1 에서 읽는다 — /api/prefs (admin-api 워커·dev 중계가 관리자 키를 붙인다)
 import { useEffect, useState } from "react";
 import { Dropdown } from "../dropdown";
+import { ModalWindow } from "../modal-window";
+import { adminListFeedback, visitorOf, type FeedbackRow } from "../feedback";
+import { FbReadCard } from "./fb-card";
+import { visitorsOfPlayer } from "./who";
 import findMeta from "../data/story-find-meta.json";
 
 type Entry = { t: number; d: string | null };
@@ -70,6 +74,63 @@ export function KvWrites() {
   );
 }
 
+/** 찾은 결과 — UID 설정 탭과 방문 통계 'UID 를 눌러 보기' 창이 같이 쓴다 (2026-10-15) */
+function PrefsResult({ res }: { res: Result }) {
+  if (!res.ok) return <p className="vz-note">못 읽었습니다 — {res.error}</p>;
+  if (!res.found) return <p className="vz-note">{res.server}:{res.uid} — 저장된 설정이 없습니다 (아직 이 기능이 생긴 뒤 로그인·동기화를 안 했다).</p>;
+  return (
+    <>
+      <p className="vz-note">{res.server}:{res.uid}{res.at ? ` · 마지막 저장 ${when(res.at)}` : ""}</p>
+      {Object.entries(res.keys ?? {}).map(([k, e]) => (
+        <details key={k} className="ap-item" open={!BIG.has(k)}>
+          <summary><b>{LABEL[k] ?? k}</b> <span className="vz-note">{k} · {when(e.t)} · {(e.d ?? "").length}자</span></summary>
+          <Body k={k} d={e.d} />
+        </details>
+      ))}
+    </>
+  );
+}
+async function lookup(server: string, uid: string): Promise<Result> {
+  try {
+    const r = await fetch("/api/prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ server, uid }) });
+    return await r.json().catch(() => ({ ok: false, error: `HTTP ${r.status}` }));
+  } catch (e) { return { ok: false, error: String(e) }; }
+}
+
+/** 방문 통계에서 로그인한 방문자(👤 서버:UID)를 누르면 — UID 설정 탭에서 그 UID 를 찾은 것과 같은 결과를 창으로 (사용자 지시 2026-10-15).
+ *  그 사람이 보낸 제안도 함께 ("해당 유저 제안도") — 저장된 제안 열람 코드(ta-feedback-token·ta-feedback-extra)와 같은 작성자 토큰이거나,
+ *  그 UID 로 로그인했던 방문자 코드로 보낸 제안 */
+export function PrefsModal({ server, uid, onClose }: { server: string; uid: string; onClose: () => void }) {
+  const [res, setRes] = useState<Result | null>(null);
+  const [fb, setFb] = useState<FeedbackRow[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const r = await lookup(server, uid);
+      if (!alive) return;
+      setRes(r);
+      const tokens = new Set<string>();
+      const tok = r.keys?.["ta-feedback-token"]?.d;
+      if (tok) tokens.add(tok.replace(/^"|"$/g, ""));
+      try { for (const x of JSON.parse(r.keys?.["ta-feedback-extra"]?.d ?? "[]") as unknown[]) if (typeof x === "string") tokens.add(x); } catch { /* 옛 모양 */ }
+      const [visitors, rows] = await Promise.all([visitorsOfPlayer(server, uid), adminListFeedback().catch(() => [] as FeedbackRow[])]);
+      const vs = new Set(visitors);
+      if (alive) setFb(rows.filter((row) => (row.author_token && tokens.has(row.author_token)) || vs.has(visitorOf(row.payload) ?? "")));
+    })();
+    return () => { alive = false; };
+  }, [server, uid]);
+  return (
+    <ModalWindow label={`${server}:${uid} — 저장된 설정 · 제안`} className="ap-prefs-modal" onClose={onClose}>
+      <h3 className="vz-h">이 사람의 제안{fb ? ` ${fb.length}건` : ""}</h3>
+      {!fb ? <p className="vz-note">불러오는 중…</p>
+        : fb.length === 0 ? <p className="vz-note">보낸 제안이 없습니다 (열람 코드·방문자 코드로 찾음).</p>
+        : <div className="fb-author-list">{fb.map((row) => <FbReadCard key={row.id} row={row} />)}</div>}
+      <h3 className="vz-h">저장된 설정</h3>
+      {res ? <PrefsResult res={res} /> : <p className="vz-note">불러오는 중…</p>}
+    </ModalWindow>
+  );
+}
+
 export default function PrefsPanel() {
   const [server, setServer] = useState("kr");
   const [uid, setUid] = useState("");
@@ -79,11 +140,8 @@ export default function PrefsPanel() {
     const u = uid.replace(/\D/g, "");
     if (!u) return;
     setBusy(true);
-    try {
-      const r = await fetch("/api/prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ server, uid: u }) });
-      setRes(await r.json().catch(() => ({ ok: false, error: `HTTP ${r.status}` })));
-    } catch (e) { setRes({ ok: false, error: String(e) }); }
-    finally { setBusy(false); }
+    setRes(await lookup(server, u));
+    setBusy(false);
   };
   return (
     <section className="vz">
@@ -94,19 +152,7 @@ export default function PrefsPanel() {
         <input value={uid} onChange={(e) => setUid(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void search(); }} placeholder="UID (예: 07799010)" inputMode="numeric" />
         <button type="button" onClick={() => void search()} disabled={busy}>{busy ? "찾는 중…" : "찾기"}</button>
       </div>
-      {res && !res.ok && <p className="vz-note">못 읽었습니다 — {res.error}</p>}
-      {res?.ok && !res.found && <p className="vz-note">{res.server}:{res.uid} — 저장된 설정이 없습니다 (아직 이 기능이 생긴 뒤 로그인·동기화를 안 했다).</p>}
-      {res?.ok && res.found && (
-        <>
-          <p className="vz-note">{res.server}:{res.uid}{res.at ? ` · 마지막 저장 ${when(res.at)}` : ""}</p>
-          {Object.entries(res.keys ?? {}).map(([k, e]) => (
-            <details key={k} className="ap-item" open={!BIG.has(k)}>
-              <summary><b>{LABEL[k] ?? k}</b> <span className="vz-note">{k} · {when(e.t)} · {(e.d ?? "").length}자</span></summary>
-              <Body k={k} d={e.d} />
-            </details>
-          ))}
-        </>
-      )}
+      {res && <PrefsResult res={res} />}
     </section>
   );
 }

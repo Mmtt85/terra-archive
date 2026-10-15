@@ -223,6 +223,9 @@ const D: Record<string, Pair> = {
   "배포 {t}": ["Deployed {t}", "デプロイ {t}"],
   "다크 모드 전환": ["Toggle dark mode", "ダークモード切替"],
   "닫기": ["Close", "閉じる"],
+  "최근 읽은 곳": ["Continue reading", "続きから読む"],
+  "{name} {ep}화 {line}줄": ["{name} · ep. {ep}, line {line}", "{name} 第{ep}話 {line}行"],
+  "{name} — {ep}화 {line}번째 줄부터": ["{name} — from episode {ep}, line {line}", "{name} — 第{ep}話 {line}行目から"],
   "오퍼레이터 정보": ["Operator info", "オペレーター情報"],
   "스킨": ["Outfits", "衣装"],
   "이미지 없음": ["No image", "画像なし"],
@@ -2845,10 +2848,6 @@ const D: Record<string, Pair> = {
   "작게": ["Small", "小"],
   "보통": ["Medium", "中"],
   "크게": ["Large", "大"],
-  "게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.": [
-    "The original in-game story script. Only dialogue, narration, and cutscenes are shown; staging (music/effects) is omitted.",
-    "ゲーム内ストーリースクリプトの原文です。セリフ・地の文・カットシーンのみ表示され、演出（音楽・効果）は省略されます。",
-  ],
   "전문은 현재 한국어 게임 텍스트로만 제공됩니다.": [
     "The full script is currently available in Korean game text only.",
     "全文は現在、韓国語のゲームテキストのみ提供されます。",

@@ -691,7 +691,6 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
             {/* .drop 으로 감싸야 버튼 안쪽 여백까지 줄 높이에 잡힌다 (없으면 4px 낮다) */}
             <div className="sc-ep-pick"><span>&nbsp;</span><div className="drop"><span className="drop-btn">&nbsp;</span></div></div>
           </div>
-          <h3 className="sc-ep-title" aria-hidden>&nbsp;</h3>
           <div className="vn-root">
             <div className="vn-stage"><p className="vn-loading">{t("스크립트 불러오는 중…")}</p></div>
             <p className="vn-hint" aria-hidden>&nbsp;</p>
@@ -717,10 +716,10 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
     )}
     {withPrefs && !scene && <ReaderPrefsBar prefs={ownPrefs} setPrefs={setOwnPrefs} />}
     <div className="story-script" ref={topRef}>
-      {!scene && <p className="story-disclaimer">{t("게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.")}</p>}
       {script.tr === "cn" && <p className="story-disclaimer">{t("아직 정식 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 텍스트입니다.")}</p>}
       {/* 에피소드 고르기 — 종전엔 칩을 전부 늘어놓았는데(메인 스토리는 39개까지 간다)
           화면 위쪽을 통째로 먹어서 드롭다운으로 바꿨다 (사용자 지시 2026-08-25). */}
+      {/* 화 제목 줄(BB-ST-1 끝나지 않은 이별 브릿지)은 뺐다 — 바로 위 고르기가 같은 글자를 이미 보여 준다 (사용자 지시 2026-10-15) */}
       <div className="sc-ep-nav">
         <div className="sc-ep-pick">
           <span>{t("에피소드")}</span>
@@ -732,8 +731,25 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
             onPick={(value) => goEp(Number(value))} />
         </div>
         <span className="sc-ep-count">{epIdx + 1} / {script.eps.length}</span>
+        {/* 읽던 곳 줄 — 고르기 줄 오른쪽에 (사용자 지시 2026-10-15). 리더기로 볼 때만 */}
+        {scene && ep.vn && ep.vn.length > 0 && <>
+      {!resume && readPos && (readPos.ep > 0 || readPos.line > 0) && (
+        <p className="sc-resume sc-progress">
+          <span>📖 {t("{ep}화 {line}번째 줄까지 읽음", { ep: readPos.ep + 1, line: readPos.line + 1 })}</span>
+          {/* 읽은 기록 리셋 (사용자 요청 2026-10-13) — 책갈피·'다 읽음'을 지운다. 계속 넘기면 그 자리부터 다시 쌓인다 */}
+          <button type="button" className="sc-resume-clear" onClick={() => { if (eventId) clearStoryPos(eventId); setReadPos(null); }}>{t("읽은 기록 지우기")}</button>
+        </p>
+      )}
+      {resume && (
+        <p className="sc-resume">
+          <span>📖 {t("지난번 읽던 곳부터 — {ep}화 {line}번째 줄", { ep: resume.ep + 1, line: resume.line + 1 })}</span>
+          <button type="button" onClick={() => { setResume(null); setRestartK((k) => k + 1); goEp(0); }}>{t("처음부터 읽기")}</button>
+          <button type="button" className="sc-resume-clear" onClick={() => { if (eventId) clearStoryPos(eventId); setResume(null); setReadPos(null); }}>{t("읽은 기록 지우기")}</button>
+          <button type="button" className="sc-resume-x" aria-label={t("닫기")} onClick={() => setResume(null)}>×</button>
+        </p>
+      )}
+        </>}
       </div>
-      <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}</h3>
       {scene && ep.vn && ep.vn.length > 0 && (
         /* ⚠ fallback을 null로 두지 말 것 (실측 CLS 2026-08-25). story-vn 청크는 상세 본문보다
            한 박자 늦게 도착하는데, 그 순간 16:9 무대(390×844에서 199px · 1280에서 405px)가
@@ -747,21 +763,6 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
         }>
           {/* key: 에피소드가 바뀌면 새로 마운트해 첫 줄부터 — 안에서 이펙트로 되감으면
               연쇄 렌더가 된다 (react-compiler 규칙) */}
-          {!resume && readPos && (readPos.ep > 0 || readPos.line > 0) && (
-            <p className="sc-resume sc-progress">
-              <span>📖 {t("{ep}화 {line}번째 줄까지 읽음", { ep: readPos.ep + 1, line: readPos.line + 1 })}</span>
-              {/* 읽은 기록 리셋 (사용자 요청 2026-10-13) — 책갈피·'다 읽음'을 지운다. 계속 넘기면 그 자리부터 다시 쌓인다 */}
-              <button type="button" className="sc-resume-clear" onClick={() => { if (eventId) clearStoryPos(eventId); setReadPos(null); }}>{t("읽은 기록 지우기")}</button>
-            </p>
-          )}
-          {resume && (
-            <p className="sc-resume">
-              <span>📖 {t("지난번 읽던 곳부터 — {ep}화 {line}번째 줄", { ep: resume.ep + 1, line: resume.line + 1 })}</span>
-              <button type="button" onClick={() => { setResume(null); setRestartK((k) => k + 1); goEp(0); }}>{t("처음부터 읽기")}</button>
-              <button type="button" className="sc-resume-clear" onClick={() => { if (eventId) clearStoryPos(eventId); setResume(null); setReadPos(null); }}>{t("읽은 기록 지우기")}</button>
-              <button type="button" className="sc-resume-x" aria-label={t("닫기")} onClick={() => setResume(null)}>×</button>
-            </p>
-          )}
           <SceneMode key={`${epIdx}:${restartK}`} ep={ep} title={`${ep.code} ${ep.name}`.trim()}
             startLine={initialLine != null && epIdx === (initialEp ?? 0) ? initialLine
               : resume && restartK === 0 && epIdx === resume.ep ? Math.min(resume.line, ep.lines.length - 1) : undefined}
@@ -1903,6 +1904,14 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
   // 대사 검색 창 · 그 결과로 연 이야기 창 (검색 창은 그대로 두고 위에 얹는다 — 닫으면 결과로 돌아온다)
   const [findOpen, setFindOpen] = useState(false);
   const [findStory, setFindStory] = useState<{ id: string; name: string; ep: number; line: number; k: number } | null>(null);
+  // 최근 읽은 곳 — 책갈피 중 가장 최근 것 (사용자 지시 2026-10-15 "대사 검색 왼쪽에, 제일 최근에 읽은 곳으로 자동 이동하는 버튼").
+  // 대사 검색 결과와 같은 창으로 그 화·줄부터 리더기를 연다
+  const readAll = useSyncExternalStore(subscribeStoryPos, storyPosSnapshot, storyPosServer);
+  const lastRead = useMemo(() => {
+    let best: [string, StoryPos] | null = null;
+    for (const [id, p] of Object.entries(readAll)) if (eventById.has(id) && canOpenStory(id) && (!best || p.at > best[1].at)) best = [id, p];
+    return best;
+  }, [readAll]);
   const [lensThumb, setLensThumb] = useState<string | null>(null);
   const [lensNav, setLensNav] = useState(0); // 같은 스토리 안 다른 ep 재이동 시 전문 뷰어 리마운트용
   const lensMsgTimer = useRef<number | undefined>(undefined);
@@ -2004,6 +2013,16 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
         <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
 
         {/* 대사 검색 — 대사 한 구절로 이야기·화·줄을 찾는다 (제안 게시판 요청 2026-10-08). 세 언어 모두 */}
+        {lastRead && (() => {
+          const [id, p] = lastRead;
+          const name = locText(locale, eventById.get(id)!.name);
+          return (
+            <button type="button" className="story-find-btn story-resume-btn"
+              title={t("{name} — {ep}화 {line}번째 줄부터", { name, ep: p.ep + 1, line: p.line + 1 })}
+              onClick={() => setFindStory({ id, name, ep: p.ep, line: p.line, k: Date.now() })}>
+              📖 {t("최근 읽은 곳")} <small className="story-resume-where">{t("{name} {ep}화 {line}줄", { name, ep: p.ep + 1, line: p.line + 1 })}</small></button>
+          );
+        })()}
         <button type="button" className="story-find-btn" onClick={() => setFindOpen(true)}>⌕ {t("대사 검색")}</button>
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 (KR 클라 전용) */}
         {locale === "ko" && (

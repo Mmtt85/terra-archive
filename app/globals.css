@@ -10360,6 +10360,10 @@ html.dark .vz {
 .story-viewtabs .story-find-btn {
   margin-left: auto;
 }
+/* 최근 읽은 곳 — 대사 검색 바로 왼쪽 (2026-10-15). 둘 중 앞 단추만 오른쪽으로 밀고 뒤는 붙인다 */
+.story-viewtabs .story-resume-btn + .story-find-btn { margin-left: 0; }
+.story-resume-where { margin-left: 4px; font-size: 0.88em; font-weight: 400; color: var(--muted); }
+.story-viewtabs .story-resume-btn { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .story-viewtabs .story-find-btn + .lens-open-wrap {
   margin-left: 0;
 }
@@ -22371,6 +22375,8 @@ p.sb-trline { margin-top: 2px; }
 .sc-resume.sc-progress { color: var(--muted); background: none; border-style: dashed; }
 .sc-resume .sc-resume-clear { margin-left: auto; color: var(--muted); }
 .sc-resume .sc-resume-clear + .sc-resume-x { margin-left: 0; }
+/* 고르기 줄 오른쪽에 붙는 읽던 곳 줄 (2026-10-15) — 줄 안에서 오른쪽 끝으로 */
+.sc-ep-nav .sc-resume { margin: 0 0 0 auto; }
 .op-record-modal .vn-stage {
   /* 창 높이 − 제목·보기전환·안내문·조작안내·여백 ≈ 220px (실측 1440×700에서 딱 안 넘침) */
   width: min(100%, calc((min(82dvh, 900px) - 220px) * 16 / 9));
@@ -30677,3 +30683,24 @@ html.dark .me-pf-art { opacity: .3; }
 /* 관리 피드백 — 이 사람의 다른 제안 창 (2026-10-15). 제안 카드(.admin-row)를 그대로 창 안에 */
 .fb-author-modal { width: min(820px, calc(100vw - 32px)); }
 .fb-author-list { display: grid; gap: 10px; }
+
+/* 관리 방문 통계 — 로그인한 방문자(👤 서버:UID)를 누르면 저장된 설정 창 (2026-10-15) */
+button.vz-player-btn { font: inherit; cursor: pointer; border-style: solid; }
+button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0; color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
+.ap-prefs-modal { width: min(820px, calc(100vw - 32px)); }
+
+/* 스토리 창 — PC 여백 줄이기 (사용자 지시 2026-10-15 "패딩이 너무 두껍다"). 종전 창 본문 12/20 + 스토리 본문 24/76 + 제목 줄 위 20 에,
+   본문 칸이 720px 로 묶여 창을 키워도 양옆만 넓어졌다. 창 안에서는 본문 여백을 줄이고 칸을 960px 까지 */
+.sy-modal .story.story-detail { padding: 8px 24px 24px; }
+.sy-modal .story-detail-head { margin-top: 4px; }
+.sy-modal .story-detail-inner { max-width: 960px; }
+
+/* 스토리 창 — 폰에서 여백 줄이기 (사용자 지시 2026-10-15 "패딩이 두껍다", "리더기 폭을 창에 거의 꽉 차게").
+   종전엔 창 바깥 10 + 창 본문 20 + 스토리 본문 18 = 한쪽 48px 이라 화면 386px 중 리더기가 273px 이었다.
+   창 본문 10px, 스토리 본문 좌우 0, 리더기는 창 본문 여백까지 끌어와 창 폭에 꽉 */
+@media (max-width: 600px) {
+  .sy-modal .mw-body { padding: 8px 10px 16px; }
+  .sy-modal .story.story-detail { padding-left: 0; padding-right: 0; }
+  .sy-modal .vn-root:not(.full) { margin-inline: -10px; }
+}
+

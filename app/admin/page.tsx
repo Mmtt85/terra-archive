@@ -14,6 +14,7 @@ import { RULES as bundledRules } from "../rules";
 import { DatePicker } from "../date-picker";
 import PrefsPanel from "./prefs";
 import { Who } from "./who";
+import { FbReadCard } from "./fb-card";
 import operatorsData from "../data/operators.json";
 import recruitData from "../data/recruit.json";
 import farmData from "../data/farm.json";
@@ -770,7 +771,7 @@ export default function AdminPage() {
               {/* 방문자 코드 — 방문 통계 세션 타임라인·PRTS 표의 방문자와 같은 값 (2026-10-12~ 보낸 제안부터) */}
               {visitorOf(row.payload) && (
                 <button type="button" className="fb-geo-chip fb-visitor-btn" title="방문 통계의 방문자 코드 — 눌러서 이 사람의 세션 보기"
-                  onClick={() => setVisitorWin({ visitor: visitorOf(row.payload)!, at: row.created_at })}><Who visitor={visitorOf(row.payload)} /> · 세션 보기 ▸</button>
+                  onClick={() => setVisitorWin({ visitor: visitorOf(row.payload)!, at: row.created_at })}><Who visitor={visitorOf(row.payload)} plain /> · 세션 보기 ▸</button>
               )}
               {othersOf(row).length > 0 && (
                 <button type="button" className="fb-geo-chip fb-visitor-btn" title="같은 사람(같은 열람 코드나 방문자 코드)이 보낸 다른 제안"
@@ -844,34 +845,7 @@ export default function AdminPage() {
           {/* 목록으로 옮겨 가지 않고 창 안에서 바로 본다 (사용자 지시 2026-10-15) — 본문·첨부·답변을 그대로, 최신이 위 */}
           <p className="admin-status">#{authorWin.id.slice(0, 8)} 을 보낸 사람이 보낸 다른 제안 {othersOf(authorWin).length}건</p>
           <div className="fb-author-list">
-            {othersOf(authorWin).map((r) => (
-              <article key={r.id} className={`admin-row kind-${r.kind}${r.reviewed_at ? " reviewed" : ""}`}>
-                <header>
-                  <code className="fb-id">#{r.id.slice(0, 8)}</code>
-                  <b>{KIND_LABEL[r.kind] ?? r.kind}</b>
-                  {pageOf(r.payload) && <a className="page-chip" href={pageOf(r.payload)} target="_blank" rel="noreferrer">📍 {pageLabel(pageOf(r.payload)!)}</a>}
-                  {handlingAt(r.payload) && !r.reviewed_at && <i className="handling-badge">🔧 대응중</i>}
-                  {r.reviewed_at && <i className="reviewed-badge">✓ 확인됨</i>}
-                  <time>{new Date(r.created_at).toLocaleString("ko-KR")}</time>
-                </header>
-                {r.message && <p>{r.message}</p>}
-                {imagesOf(r.payload).length > 0 && (
-                  <div className="fb-images">{imagesOf(r.payload).map((u) => <a key={u} href={u} target="_blank" rel="noreferrer"><img src={u} alt="" loading="lazy" /></a>)}</div>
-                )}
-                {filesOf(r.payload).length > 0 && (
-                  <div className="fb-files">{filesOf(r.payload).map((f) => (
-                    <a key={f.url} href={f.url} download={f.name} rel="noreferrer" className="fb-filechip"><span className="fb-filechip-name">📄 {f.name}</span><small>{fmtFileSize(f.size)}</small></a>
-                  ))}</div>
-                )}
-                {(r.feedback_replies ?? []).length > 0 && (
-                  <div className="fb-admin-replies">
-                    {(r.feedback_replies ?? []).map((rep) => (
-                      <div key={rep.id} className="fb-admin-reply"><span className="fb-admin-reply-body">{rep.body}</span></div>
-                    ))}
-                  </div>
-                )}
-              </article>
-            ))}
+            {othersOf(authorWin).map((r) => <FbReadCard key={r.id} row={r} />)}
           </div>
         </ModalWindow>
       )}

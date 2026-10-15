@@ -9,7 +9,7 @@
 // 기간 7·30·90일은 원장에서, '1년'은 매일 밤 말아 둔 일별 집계표에서 읽는다. 원장은 기간으로 자르지 않고
 // DB 가 80% 차면 오래된 것부터 지운다(docs/supabase-visits.sql visits_maintain).
 
-import { Who, refreshPlayers } from "./who";
+import { Who, PlayerButton, refreshPlayers } from "./who";
 import { KvWrites } from "./prefs";
 import { createPortal } from "react-dom";
 import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -807,7 +807,7 @@ function SessionLine({ s, hit }: { s: SessRow; hit?: boolean }) {
         {/* 방문자 코드 — PRTS·틀렸어요 표의 방문자와 맞춰 볼 수 있게 (사용자 지시 2026-10-12) */}
         {/* 로그인한 사람은 게임 계정으로 (사용자 지시 2026-10-14) — 아닌 사람은 종전처럼 방문자 코드만 */}
         {s.player
-          ? <span className="vz-tag vz-player" title={`방문자 ${s.visitor?.slice(0, 8) ?? "-"}`}>👤 {s.player.server}:{s.player.uid}</span>
+          ? <PlayerButton player={s.player} visitor={s.visitor} className="vz-tag vz-player" />
           : s.visitor && <code className="vz-visitor" title={s.visitor}>{s.visitor.slice(0, 8)}</code>}
         <span className="vz-tag vz-total" title="화면마다 조작 시간(없으면 보인 시간)의 합">합계 {fmtDur(total)}</span>
         <b>{s.src}</b>
