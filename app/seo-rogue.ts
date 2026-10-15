@@ -69,8 +69,9 @@ export function rogueMetadata(locale: SeoLocale, slug: string): Metadata {
     description,
     alternates: { canonical: urlOf(locale, slug), languages, ...RSS_ALT(locale) },
     robots: { index: true, follow: true },
+    // og:url 은 뺐다 — 메신저 카드가 그 주소(# 뒤가 빠진 정식 주소)로 열려 창 딥링크가 사라졌다 (사용자 지시 2026-10-15). 정식 주소는 canonical 이 맡는다
     openGraph: {
-      title, description, type: "article", url: urlOf(locale, slug), siteName,
+      title, description, type: "article", siteName,
       locale: locale === "ko" ? "ko_KR" : locale === "ja" ? "ja_JP" : "en_US",
       images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },

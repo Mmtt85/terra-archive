@@ -194,11 +194,11 @@ export function pageMetadata(locale: SeoLocale, tab: SeoTab = "portal"): Metadat
     keywords: meta.keywords,
     alternates: { canonical: url, languages: languagesFor(tab), ...RSS_ALT(locale) },
     robots: { index: true, follow: true },
+    // og:url 은 뺐다 — 메신저 카드가 그 주소(# 뒤가 빠진 정식 주소)로 열려 창 딥링크가 사라졌다 (사용자 지시 2026-10-15). 정식 주소는 canonical 이 맡는다
     openGraph: {
       title,
       description,
       type: "website",
-      url,
       siteName: meta.siteName,
       locale: meta.ogLocale,
       alternateLocale: Object.values(META).filter((m) => m !== meta).map((m) => m.ogLocale),
