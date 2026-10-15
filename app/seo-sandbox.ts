@@ -70,9 +70,8 @@ export function sandboxMetadata(locale: SeoLocale, slug: string): Metadata {
       },
     },
     robots: { index: true, follow: true },
-    // og:url 은 뺐다 — 메신저 카드가 그 주소(# 뒤가 빠진 정식 주소)로 열려 창 딥링크가 사라졌다 (사용자 지시 2026-10-15). 정식 주소는 canonical 이 맡는다
     openGraph: {
-      title: m.title, description: m.desc, type: "article",
+      title: m.title, description: m.desc, type: "article", url,
       images: [{ url: ogImage, width: 1200, height: 630, alt: m.title }],
     },
     twitter: { card: "summary_large_image", site: "@naru35405955", title: m.title, description: m.desc, images: [ogImage] },
