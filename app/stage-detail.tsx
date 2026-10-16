@@ -34,17 +34,19 @@ type RouteDoc = Record<string, StageRoutes | string>;
 // 경로 파일은 넷 — 본 도감 · 통합전략(rg) · 생존연산 사막 이야기(sb, 2026-09-23 도감 편입) ·
 // 이벤트 도감의 미래시 작전(fut, 2026-09-29 — scripts/build-future-dex.py, 이벤트 창에서만 연다).
 // 생존연산 파일은 /ra 모달(app/sandbox.tsx)과 **같은 파일**이라 청크 하나를 같이 쓴다.
-type RouteSrc = "base" | "rogue" | "sb1" | "fut";
-const ROUTES_CACHE: Record<RouteSrc, RouteDoc | null> = { base: null, rogue: null, sb1: null, fut: null };
-const ROUTES_LOADING: Record<RouteSrc, Promise<unknown> | null> = { base: null, rogue: null, sb1: null, fut: null };
+// 위기협약(cc, 2026-10-16 — scripts/build-stages-crisis.py)이 다섯째다.
+type RouteSrc = "base" | "rogue" | "sb1" | "fut" | "cc";
+const ROUTES_CACHE: Record<RouteSrc, RouteDoc | null> = { base: null, rogue: null, sb1: null, fut: null, cc: null };
+const ROUTES_LOADING: Record<RouteSrc, Promise<unknown> | null> = { base: null, rogue: null, sb1: null, fut: null, cc: null };
 const ROUTE_IMPORTS: Record<RouteSrc, () => Promise<{ default?: unknown }>> = {
   base: () => import("./data/stage-routes.json"),
   rogue: () => import("./data/rogue-routes.json"),
   sb1: () => import("./data/sandbox-routes.json"),
   fut: () => import("./data/future-routes.json"),
+  cc: () => import("./data/crisis-routes.json"),
 };
-const routeSrc = (s: { rg?: number; sb?: number; fut?: number }): RouteSrc =>
-  (s.sb ? "sb1" : s.rg ? "rogue" : s.fut ? "fut" : "base");
+const routeSrc = (s: { rg?: number; sb?: number; fut?: number; cc?: number }): RouteSrc =>
+  (s.sb ? "sb1" : s.rg ? "rogue" : s.fut ? "fut" : s.cc ? "cc" : "base");
 function loadRoutes(k: RouteSrc): Promise<unknown> {
   if (ROUTES_CACHE[k]) return Promise.resolve(ROUTES_CACHE[k]);
   ROUTES_LOADING[k] ??= ROUTE_IMPORTS[k]()
@@ -204,6 +206,8 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
     // 생존연산 지역 — 이성 대신 행동력 (평소 / 적습 시, /ra 모달과 같은 표기)
     ...(s.act ? [[t("행동력"), String(s.act[0])] as [string, string]] : []),
     ...(s.act && s.act[1] !== s.act[0] ? [[t("적습 시 행동력"), String(s.act[1])] as [string, string]] : []),
+    // 홀로그램 매트릭스 — 훈장 두 개를 받는 지표 점수 (게임 표 juniorMedalScore·seniorMedalScore)
+    ...(s.rn?.medal?.[0] != null ? [[t("훈장 점수"), t("하급 {a} · 상급 {b}", { a: String(s.rn.medal[0]), b: String(s.rn.medal[1] ?? "") })] as [string, string]] : []),
   ];
   // 활성 환경의 적 스탯 배수 — 고난(alt) 뷰는 자기 em, 긴급은 일반판의 chgEm.
   // 일반판이 없는 고난 전용 작전(H10-1 등)은 em이 상시 걸린다 (게임도 항상 고난이다).
@@ -367,6 +371,26 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
                     onTogglePin={rd ? togglePin : undefined} />
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* 지표(계약 태그) — 홀로그램 매트릭스만 게임 표에 있다. 시즌 위기협약의 지표는 서버가 내려 줘
+              클라이언트 데이터에 없다 (scripts/build-stages-crisis.py 머리주석) */}
+          {s.rn && s.rn.r.length > 0 && (
+            <section className="st-block">
+              <h3>
+                <span className="section-no">RUNE</span>{t("지표")} <em>{s.rn.r.length}</em>
+                {s.rn.set && <span className="st-envnote">{s.rn.set}</span>}
+              </h3>
+              <ul className="st-runes">
+                {s.rn.r.map(([pt, text, must, grp], i) => (
+                  <li key={i} className={must ? "must" : undefined}>
+                    <span className="st-rune-pt">{must ? t("필수") : `+${pt}`}</span>
+                    <span className="st-rune-text">{text}</span>
+                    {grp >= 0 && <em className="st-rune-grp">{must ? t("둘 중 하나") : t("같은 묶음 중 하나")}</em>}
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 

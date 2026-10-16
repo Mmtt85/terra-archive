@@ -36,7 +36,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(REPO, "app", "data")
 GD = os.path.join(REPO, ".gamedata")
 ICON_DIR = os.path.join(REPO, "public", "stage", "dev")
-ROUTE_FILES = ("stage-routes.json", "rogue-routes.json", "future-routes.json")
+ROUTE_FILES = ("stage-routes.json", "rogue-routes.json", "future-routes.json", "crisis-routes.json")
 
 # 안 보이는 장치 — 표에 표식이 없어 이름·설명으로 가린다 (2026-09-29 전수 156종 중).
 #  · 이름에 '제어'·'컨트롤러'·'통제' — 밀물 제어 장치·독가스 컨트롤러·협동 경기 통제·늪지대 제어 …

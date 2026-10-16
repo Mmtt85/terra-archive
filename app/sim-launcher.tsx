@@ -18,7 +18,7 @@ import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
 import { AttributeFilter } from "./attr-filter";
-import { rogueHrefOf, sandboxHrefOf, stageMapOf, stagePath } from "./dex-paths";
+import { crisisHrefOf, rogueHrefOf, sandboxHrefOf, stageMapOf, stagePath } from "./dex-paths";
 import { StageFile } from "./stage-detail";
 import { mergeRogueDoc, stageFilterTree, viewOf, type EnemyStatsIndex, type Stage, type StageDoc } from "./stage-data";
 import { ModalWindow } from "./modal-window";
@@ -44,7 +44,7 @@ function SimCard({ stage, zone, canSim, onSelect }: {
   return (
     <a className={`st-card sim-card${canSim ? "" : " nosim"}`}
       // 통합전략·생존연산은 개별 상세 페이지가 없다 — 보조 클릭은 그 가이드로 (도감 카드와 같은 규칙)
-      href={stage.rg ? rogueHrefOf(locale, stage.id) : stage.sb ? sandboxHrefOf(locale)
+      href={stage.rg ? rogueHrefOf(locale, stage.id) : stage.sb ? sandboxHrefOf(locale) : stage.cc ? crisisHrefOf(locale, stage.id)
         : stagePath(locale, stage.id) + (canSim ? "?sim=1" : "")}
       onClick={(event) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
@@ -79,12 +79,13 @@ export default function SimLauncher() {
       // 통합전략·생존연산 작전도 찾게 **색인 셋을 이어 붙인다** (사용자 요청 2026-09-23 "생존연산·통합전략도
       // 작전 시뮬레이터에 편입") — 작전 도감 목록(app/stages-*.tsx)과 같은 합치기다.
       const load = locale === "en"
-        ? Promise.all([import("./data/stages.en.json"), import("./data/stages-rogue.en.json"), import("./data/stages-sandbox.en.json")])
+        ? Promise.all([import("./data/stages.en.json"), import("./data/stages-rogue.en.json"), import("./data/stages-sandbox.en.json"), import("./data/stages-crisis.en.json")])
         : locale === "ja"
-          ? Promise.all([import("./data/stages.ja.json"), import("./data/stages-rogue.ja.json"), import("./data/stages-sandbox.ja.json")])
-          : Promise.all([import("./data/stages.json"), import("./data/stages-rogue.json"), import("./data/stages-sandbox.json")]);
+          ? Promise.all([import("./data/stages.ja.json"), import("./data/stages-rogue.ja.json"), import("./data/stages-sandbox.ja.json"), import("./data/stages-crisis.ja.json")])
+          : Promise.all([import("./data/stages.json"), import("./data/stages-rogue.json"), import("./data/stages-sandbox.json"), import("./data/stages-crisis.json")]);
       const un = (m: unknown) => ((m as { default?: unknown }).default ?? m) as StageDoc;
-      jobs.push(load.then(([a, b, c]) => { DOCS[locale] = mergeRogueDoc(mergeRogueDoc(un(a), un(b)), un(c)); }));
+      // 위기협약(2026-10-16)이 넷째 색인이다
+      jobs.push(load.then(([a, b, c, d]) => { DOCS[locale] = mergeRogueDoc(mergeRogueDoc(mergeRogueDoc(un(a), un(b)), un(c)), un(d)); }));
     }
     if (!SIM_SET) {
       jobs.push(import("./data/sim-stages.json").then((m) => {
@@ -230,7 +231,7 @@ export default function SimLauncher() {
   const recs = useMemo(() => {
     if (!doc || !sims) return null;
     // 추천은 본 도감 작전만 — 뒤에 이어 붙인 통합전략·생존연산이 '마지막 = 최신'을 가로채면 안 된다
-    const vis = doc.stages.filter((s) => s.sub === undefined && !s.rg && !s.sb && sims.has(s.id));
+    const vis = doc.stages.filter((s) => s.sub === undefined && !s.rg && !s.sb && !s.cc && sims.has(s.id));
     const byCode = (list: Stage[]) => {
       const m = new Map<string, Stage>();
       for (const s of list) m.set(`${s.code}|${s.name}`, s);

@@ -1,0 +1,482 @@
+{
+ "#冰狱行动-3": {
+  "ko": "#얼음 감옥 작전-3",
+  "en": "#Operation Cocytus-3",
+  "ja": "#氷獄作戦-3"
+ },
+ "#尘霾行动-1": {
+  "ko": "#더스트 작전-1",
+  "en": "#Operation Achlys-1",
+  "ja": "#煙塵作戦-1"
+ },
+ "#演绎文明": {
+  "ko": "#문명의 해석",
+  "en": "#Culture Unfolding",
+  "ja": "#文明の変遷"
+ },
+ "#苏醒，浮出梦乡": {
+  "ko": "#소생, 떠오른 꿈나라에서의",
+  "en": "#Awakening, a Dream's End",
+  "ja": "#夢からの「覚醒」"
+ },
+ "<冰爆源石虫>和<冰爆源石虫·α>最大生命值+80％，且获得沉默抗性，场上出现额外的<冰爆源石虫·α>": {
+  "ko": "'빙폭 원석충' 및 '빙폭 원석충 α'의 최대 HP +80%, 침묵 내성 효과 획득, 추가로 '빙폭 원석충 α' 등장",
+  "en": "'Infused Glacial Originium Slugs' and 'Infused Glacial Originium Slugs α' gain +80% Max HP and Silence resist; extra 'Infused Glacial Originium Slugs α' will appear",
+  "ja": "<ヒョウバクムシ>と<ヒョウバクムシα>の最大HP+80%、能力が無効化できなくなる。追加の<ヒョウバクムシα>が出現"
+ },
+ "<冰爆源石虫>和<冰爆源石虫·α>移动速度+60％，最大生命值+120％且获得沉默抗性，场上出现额外的<冰爆源石虫·α>": {
+  "ko": "'빙폭 원석충' 및 '빙폭 원석충 α'의 이동 속도 +60%, 최대 HP +120%, 침묵 내성 효과 획득, 추가로 '빙폭 원석충 α' 등장",
+  "en": "'Infused Glacial Originium Slugs' and 'Infused Glacial Originium Slugs α' gain +60% Movement Speed, +120% Max HP, and Silence resist; extra 'Infused Glacial Originium Slugs α' will appear",
+  "ja": "<ヒョウバクムシ>と<ヒョウバクムシα>の移動速度+60%、最大HP+120%、能力が無効化できなくなる。追加の<ヒョウバクムシα>が出現"
+ },
+ "<幽灵组长>会被替换为<萨卡兹祭坛看护者>且<萨卡兹祭坛看护者>生命值+100％，移动速度+50％": {
+  "ko": "'유령 리더'가 '살카즈 제단 수호자'로 변경, '살카즈 제단 수호자'의 HP +100%, 이동 속도 +50%",
+  "en": "'Wraith Leaders' will be replaced by 'Sarkaz Altar Keepers', and 'Sarkaz Altar Keepers' gain +100% HP and +50% Movement Speed",
+  "ja": "<ゴースト隊長>が<サルカズ祭壇守護者>に変化し、<サルカズ祭壇守護者>の最大HP+100%、移動速度+50%"
+ },
+ "<枯朽之种>和<腐败之种>最大生命值+400%，攻击力+100%": {
+  "ko": "'메마른 씨앗' 및 '부패의 씨앗'의 최대 HP +400%, 공격력 +100%",
+  "en": "'Seeds of Withering' and 'Seeds of Decay' gain +400% Max HP and +100% ATK",
+  "ja": "<枯朽の種>と<腐敗の種>の最大HP+400%、攻撃力+100%"
+ },
+ "<梅菲斯特，“歌者”>对宿主单位的强化作用提升": {
+  "ko": "'메피스토, 「노래하는 자」'의 숙주 유닛 강화 효과 증가",
+  "en": "Mephisto, 'The Singer' grants stronger buffs to Host units",
+  "ja": "<Mephisto・歌う者>の寄生ユニットへの強化効果が上昇"
+ },
+ "<梅菲斯特，“歌者”>攻击力+150%，且会更频繁治疗友军": {
+  "ko": "'메피스토, 「노래하는 자」'의 공격력 +150%, 동료를 더 자주 치료",
+  "en": "Mephisto, 'The Singer' gains +150% ATK and heals allies more frequently",
+  "ja": "<Mephisto・歌う者>の攻撃力+150%、仲間をより頻繁に治療する"
+ },
+ "<梅菲斯特，“歌者”>的休眠状态持续时间缩短，期间自我治疗效果提升": {
+  "ko": "'메피스토, 「노래하는 자」'의 휴면 상태 지속 시간 감소, 휴면 중 자가 치료 효과 증가",
+  "en": "Mephisto, 'The Singer' has a shorter Dormant duration and increased self-healing while Dormant",
+  "ja": "<Mephisto・歌う者>の休眠状態の継続時間が短縮し、休眠中の自己回復効果が上昇"
+ },
+ "<梅菲斯特，“歌者”>的毒性粉尘伤害+100%": {
+  "ko": "'메피스토, 「노래하는 자」'의 독먼지 대미지 +100%",
+  "en": "Toxic dust from Mephisto, 'The Singer' deals +100% damage",
+  "ja": "<Mephisto・歌う者>の毒性粉塵によるダメージ+100%"
+ },
+ "<梅菲斯特，“歌者”>退场时，释放一次持续时间无限的毒性粉尘\n<梅菲斯特，“歌者”>的毒性粉尘伤害+100%\n我方防御点可承受的敌方数量变为2\n战场上后续出现<浮士德>与弩炮台\n所有敌人生命值+100%": {
+  "ko": "'메피스토, 「노래하는 자」'가 퇴장할 때 지속 시간이 무한한 독먼지를 1회 방출\n'메피스토, 「노래하는 자」'의 독먼지 대미지 +100%\n아군 스테이지 HP가 2로 변경\n이후에 '파우스트' 및 발리스타 등장\n모든 적의 HP +100%",
+  "en": "When Mephisto, 'The Singer' leaves the field, releases toxic dust with infinite duration once\nToxic dust from Mephisto, 'The Singer' deals +100% damage\nLife Points reduced to 2\n'Faust' and Turrets will spawn on the map later\nAll enemies gain +100% HP",
+  "ja": "<Mephisto・歌う者>が退場する時、継続時間無制限の毒性粉塵を1回放出\n<Mephisto・歌う者>の毒性粉塵によるダメージ+100%\n防衛ラインの最大耐久値が2になる\n<Faust>とバリスタが戦場に後から出現\n全ての敵の最大HP+100%"
+ },
+ "<污染秽蚀>造成伤害提高至300％，且会同时造成凋亡损伤": {
+  "ko": "<오염의 침식>이 입히는 대미지가 300%로 증가, 동시에 쇠약 손상을 입힘",
+  "en": "'Corruption' deals 300% damage and also deals Necrosis",
+  "ja": "<蝕む穢れ>の与ダメージが300%に増加し、同時に壊死損傷を与える"
+ },
+ "<浮士德>提前出现，特殊弩箭的伤害+100%，且冷却时间-50%": {
+  "ko": "'파우스트'가 예정보다 일찍 등장, 특수 화살의 대미지 +100%, 쿨타임 -50%",
+  "en": "'Faust' spawns earlier; his special bolt deals +100% damage and has -50% cooldown",
+  "ja": "<Faust>が早めに出現し、特殊な矢のダメージ+100%、クールタイム-50%"
+ },
+ "<萨卡兹枯朽吸纳者>生命值+80％，移动速度+80％。场上出现额外的<萨卡兹枯朽吸纳者>": {
+  "ko": "'살카즈 부패의 흡수자'의 HP +80%, 이동 속도 +80%, 추가로 '살카즈 부패의 흡수자' 등장",
+  "en": "'Sarkaz Wither Maws' gain +80% HP and +80% Movement Speed. Extra 'Sarkaz Wither Maws' will appear",
+  "ja": "<枯朽サルカズ受容者>の最大HP+80%、移動速度+80%。追加の<枯朽サルカズ受容者>が出現"
+ },
+ "<萨卡兹枯朽战士>替换为<蒸汽战车>，最大生命值+50%但数量减少\n<蒸汽战车>移动速度+50%\n<蒸汽战车>生命值低于50%时额外免疫传送、麻痹、战栗、恐惧、诱导": {
+  "ko": "'살카즈 부패의 전사'가 '증기전차'로 변경, 최대 HP +50%, 등장 수 감소\n'증기전차'의 이동 속도 +50%\n'증기전차'의 HP가 50% 미만일 때 전송, 마비, 전율, 공포, 유도 효과에 추가로 면역",
+  "en": "'Sarkaz Witherers' are replaced by 'Steam Tanks', which gain +50% Max HP but appear in fewer numbers\n'Steam Tanks' gain +50% Movement Speed\n'Steam Tanks' become additionally immune to Teleport, Paralysis, Frighten, Fear, and Lure when below 50% HP",
+  "ja": "<枯朽サルカズ戦士>が<蒸気戦車>に変化し、最大HP+50%、ただし出現数が減少\n<蒸気戦車>の移動速度+50%\n<蒸気戦車>のHPが50%未満の時、転送・麻痺・戦慄・恐怖・誘導が追加で無効"
+ },
+ "<萨卡兹枯朽战士>生命值额外+300%，且无法被阻挡": {
+  "ko": "'살카즈 부패의 전사'의 HP 추가로 +300%, 저지 불가",
+  "en": "'Sarkaz Witherers' gain an extra +300% HP and cannot be blocked",
+  "ja": "<枯朽サルカズ戦士>の最大HPがさらに+300%、ブロック不可"
+ },
+ "<萨卡兹枯朽术师>替换为<萨卡兹王庭军术师>，且最大生命值+100%": {
+  "ko": "'살카즈 부패의 캐스터'가 '살카즈 왕정군 캐스터'로 변경, 최대 HP +100%",
+  "en": "'Sarkaz Wither Casters' are replaced by 'Sarkaz Royal Court Casters', and gain +100% Max HP",
+  "ja": "<枯朽サルカズ術師>が<サルカズ王庭軍術師>に変化し、最大HP+100%"
+ },
+ "<萨卡兹王庭军精锐术师>攻击范围扩大至原来2倍，生命值+60％": {
+  "ko": "'살카즈 왕정군 정예 캐스터'의 공격 범위가 2배로 확대, HP +60%",
+  "en": "'Sarkaz Royal Court Elite Casters' have 2x Attack Range and gain +60% HP",
+  "ja": "<サルカズ王庭軍精鋭術師>の攻撃範囲が2倍に拡大、最大HP+60%"
+ },
+ "<雪怪小队破冰者>生命值+120％攻击速度+20，且攻击会额外造成与自身攻击间隔等长时间的寒冷，场上出现额外的<雪怪小队破冰者>": {
+  "ko": "'눈의 악마 쇄빙자 리더'의 HP +120%, 공격 속도 +20, 공격 시 자신의 공격 간격과 같은 시간 동안 추가로 냉기 부여, 추가로 '눈의 악마 쇄빙자 리더' 등장",
+  "en": "'Yeti Icecleaver Leaders' gain +120% HP and +20 ASPD, and their attacks additionally inflict Cold for a duration equal to their Attack Interval; extra 'Yeti Icecleaver Leaders' will appear",
+  "ja": "<アイスブレイカー>の最大HP+120%、攻撃速度+20、攻撃時に自身の攻撃間隔と同じ時間の寒冷を追加で付与。追加の<アイスブレイカー>が出現"
+ },
+ "<雪怪小队破冰者>生命值+80％、场上出现额外的<雪怪小队破冰者>": {
+  "ko": "'눈의 악마 쇄빙자 리더'의 HP +80%, 추가로 '눈의 악마 쇄빙자 리더' 등장",
+  "en": "'Yeti Icecleaver Leaders' gain +80% HP; extra 'Yeti Icecleaver Leaders' will appear",
+  "ja": "<アイスブレイカー>の最大HP+80%、追加の<アイスブレイカー>が出現"
+ },
+ "<雪怪术师组长>的生命值+100％，攻击范围扩大，<雪怪术师组长>获得隐匿": {
+  "ko": "'눈의 악마 캐스터 리더'의 HP +100%, 공격 범위 확대, '눈의 악마 캐스터 리더'가 은신 효과 획득",
+  "en": "'Yeti Caster Leaders' gain +100% HP and increased Attack Range, and become invisible",
+  "ja": "<スノーキャスター隊長>の最大HP+100%、攻撃範囲拡大、<スノーキャスター隊長>がステルス状態になる"
+ },
+ "主题曲": {
+  "ko": "메인 스토리",
+  "en": "Main Theme",
+  "ja": "メインテーマ"
+ },
+ "冻结状态的我方单位被击倒或撤退时，再部署时间+70秒": {
+  "ko": "빙결 상태의 아군 유닛이 쓰러지거나 퇴각하면 재배치 시간 +70초",
+  "en": "Friendly units that are defeated or retreat while Frozen gain +70 seconds Redeployment Time",
+  "ja": "凍結状態の味方ユニットが撃破されるか撤退した時、再配置時間+70秒"
+ },
+ "出现额外的<狂暴宿主士兵>，<狂暴宿主士兵>未被阻挡时受到的物理与法术伤害-60%": {
+  "ko": "추가로 '폭주한 숙주 병사' 등장, '폭주한 숙주 병사'가 저지당하고 있지 않을 때 받는 물리 및 마법 대미지 -60%",
+  "en": "Extra 'Enraged Possessed Soldiers' will appear; 'Enraged Possessed Soldiers' take -60% Physical and Arts damage when unblocked",
+  "ja": "追加の<狂化寄生兵>が出現。<狂化寄生兵>がブロックされていない時、受ける物理・術ダメージ-60%"
+ },
+ "出现额外的<狂暴宿主组长>，<狂暴宿主士兵>与<狂暴宿主组长>未被阻挡时受到的物理与法术伤害-90%": {
+  "ko": "추가로 '폭주한 숙주 리더' 등장, '폭주한 숙주 병사' 및 '폭주한 숙주 리더'가 저지당하고 있지 않을 때 받는 물리 및 마법 대미지 -90%",
+  "en": "Extra 'Enraged Possessed Leaders' will appear; 'Enraged Possessed Soldiers' and 'Enraged Possessed Leaders' take -90% Physical and Arts damage when unblocked",
+  "ja": "追加の<狂化寄生隊長>が出現。<狂化寄生兵>と<狂化寄生隊長>がブロックされていない時、受ける物理・術ダメージ-90%"
+ },
+ "医疗、重装及辅助干员部署费用提高至2倍": {
+  "ko": "메딕, 디펜더, 서포터 오퍼레이터의 배치 코스트가 2배로 증가",
+  "en": "The DP Cost of Medic, Defender and Supporter Operators is doubled",
+  "ja": "【医療】・【重装】・【補助】の配置コストが2倍に増加"
+ },
+ "医疗、重装及辅助干员部署费用提高至3倍": {
+  "ko": "메딕, 디펜더, 서포터 오퍼레이터의 배치 코스트가 3배로 증가",
+  "en": "The DP Cost of Medic, Defender and Supporter Operators is tripled",
+  "ja": "【医療】・【重装】・【補助】の配置コストが3倍に増加"
+ },
+ "地图中的8个地面位置无法部署": {
+  "ko": "전장 내 8개 지상 위치에 배치 불가",
+  "en": "8 low-ground tiles on the map are no longer available for deployment",
+  "ja": "戦場中の8つの地上マスが配置不可になる"
+ },
+ "地图中的9个高台位置无法部署": {
+  "ko": "전장 내 9개 고지대 위치에 배치 불가",
+  "en": "9 high-ground tiles on the map are no longer available for deployment",
+  "ja": "戦場中の9つの高台マスが配置不可になる"
+ },
+ "场上出现额外的<游击队盾卫>": {
+  "ko": "추가로 '유격대 방패병' 등장",
+  "en": "Extra 'Guerrilla Shieldguards' will appear",
+  "ja": "追加の<遊撃隊盾兵>が出現"
+ },
+ "场上出现额外的<源石冰晶>": {
+  "ko": "추가로 <오리지늄 얼음 결정> 등장",
+  "en": "Extra 'Originium Ice Crystals' will appear",
+  "ja": "追加の<源石氷晶>が出現"
+ },
+ "场上初始出现<汲营枯枝>": {
+  "ko": "초기에 <부식된 고목> 등장",
+  "en": "'Twigs That Crave' will appear at start",
+  "ja": "戦場に<渇欲の枯枝>が出現した状態で開始"
+ },
+ "场上初始出现<汲营枯枝>，<汲营枯枝>更易受到伤害，被摧毁时改为生成<萨卡兹哨兵组长>，<萨卡兹哨兵组长>移动速度+100％，<萨卡兹哨兵组长>受伤后使全体敌方攻击额外提升100％": {
+  "ko": "초기에 <부식된 고목> 등장, <부식된 고목>이 받는 대미지 증가, 파괴되면 대신 '살카즈 보초 리더' 생성, '살카즈 보초 리더'의 이동 속도 +100%, '살카즈 보초 리더'가 대미지를 받으면 모든 적의 공격력 추가로 +100%",
+  "en": "'Twigs That Crave' will appear at start and take increased damage; when destroyed, they produce 'Sarkaz Sentinel Leaders' instead. 'Sarkaz Sentinel Leaders' gain +100% Movement Speed, and once damaged, increase the ATK of all enemies by an extra 100%",
+  "ja": "戦場に<渇欲の枯枝>が出現した状態で開始。<渇欲の枯枝>の被ダメージが増加し、破壊された時は代わりに<サルカズ歩哨隊長>を産み出す。<サルカズ歩哨隊長>の移動速度+100%、<サルカズ歩哨隊長>がダメージを受けると敵全員の攻撃力が追加で+100%"
+ },
+ "场上初始出现<汲营枯枝>，<汲营枯枝>生命值+200％，<食腐使徒>生命值+100％，攻击力+100％": {
+  "ko": "초기에 <부식된 고목> 등장, <부식된 고목>의 HP +200%, '나흐체러르 추종자'의 HP +100%, 공격력 +100%",
+  "en": "'Twigs That Crave' will appear at start and gain +200% HP; 'Rot Eaters' gain +100% HP and +100% ATK",
+  "ja": "戦場に<渇欲の枯枝>が出現した状態で開始。<渇欲の枯枝>の最大HP+200%、<ナハツェーラーの使徒>の最大HP+100%、攻撃力+100%"
+ },
+ "场上初始出现额外的<萨卡兹宿主百夫长>，且<萨卡兹宿主百夫长>生命值+100%，攻击力+100%": {
+  "ko": "초기에 추가로 '살카즈 숙주 백부장' 등장, '살카즈 숙주 백부장'의 HP +100%, 공격력 +100%",
+  "en": "Extra 'Sarkaz Centurion Hosts' will appear at start, and gain +100% HP and +100% ATK",
+  "ja": "追加の<サルカズ寄生ケントゥリオ>が戦場に出現した状態で開始し、<サルカズ寄生ケントゥリオ>の最大HP+100%、攻撃力+100%"
+ },
+ "场上后续出现<枯朽萃聚使徒>和<腐败萃聚使徒>": {
+  "ko": "이후에 '문드러진 응집 사도' 및 '부패한 응집 사도' 등장",
+  "en": "'Withering Collector Disciples' and 'Decaying Collector Disciples' will spawn on the map later",
+  "ja": "<枯朽凝集使徒>と<腐敗凝集使徒>が戦場に後から出現"
+ },
+ "复现了初次遭遇梅菲斯特，“歌者”时的作战环境。\n我们从声音之中辨识意识，从交流之中确认思维。但它的歌声并不为此而生，他只想继续歌唱，撕裂一切维度中的意志。": {
+  "ko": "처음 메피스토, '노래하는 자'를 만났을 때의 작전 환경을 재현했다.\n우리는 목소리로 의식을 분별하고, 대화로 사고를 확인한다. 그러나 그 노랫소리는 그것을 위해 태어난 것이 아니다. 그는 그저 계속 노래하며, 모든 차원에 걸친 의지를 찢어발기고 싶을 뿐이다.",
+  "en": "A recreation of our first encounter with Mephisto, 'The Singer'.\nWe discern consciousness through voices, and confirm thought through communication. But his song was not born for that. He only wants to keep singing, tearing apart the will in every dimension.",
+  "ja": "初めてメフィスト・歌う者に遭遇した際の作戦環境を再現したもの。\n我々は声から意識を識別し、対話から思考を確かめる。だが、その歌声はそのために生まれたものではない。彼はただ歌い続け、あらゆる次元の意志を引き裂きたいだけなのだ。"
+ },
+ "复现了在维多利亚与萨卡兹王庭军对决的作战环境。\n即便情况愈发不利，信念依然能成为武器，击败这些无穷无尽的腐朽。\n<汲营枯枝>被摧毁或关卡结束时产生食腐使徒": {
+  "ko": "빅토리아에서 살카즈 왕정군과 맞섰을 때의 작전 환경을 재현했다.\n상황이 점점 불리해지더라도, 신념은 여전히 무기가 되어 이 끝없는 부패를 물리칠 수 있다.\n<부식된 고목> 파괴되거나 또는 모든 적을 처치하면 나흐체러르 추종자로 변경",
+  "en": "A recreation of our showdown with the Sarkaz Royal Court army in Victoria.\nEven as the situation grows ever more dire, conviction can still become a weapon to defeat this endless decay.\n'Twigs That Crave' Produces Rot Eaters when destroyed or at the end of the stage.",
+  "ja": "ヴィクトリアでサルカズ王庭軍と対決した際の作戦環境を再現したもの。\n状況がいかに不利になろうとも、信念はなお武器となり、この果てしない腐朽を打ち破ることができる。\n<渇欲の枯枝>破壊された時または敵全滅時に<ナハツェーラーの使徒>を産み出す。"
+ },
+ "复现了在龙门遭遇大量冰爆源石虫的作战环境。\n在极端环境中迅速重整队伍并保持状态，是此次作战的重中之重。\n<源石冰晶>周期性地释放对我方单位施加【寒冷】的范围性寒流": {
+  "ko": "용문에서 대량의 빙폭 원석충을 마주했을 때의 작전 환경을 재현했다.\n극한의 환경 속에서 신속히 대열을 재정비하고 상태를 유지하는 것이 이번 작전의 핵심이다.\n<오리지늄 얼음 결정> 주기적으로 아군 유닛에게 [냉기] 효과를 부여하는 한기를 내뿜음",
+  "en": "A recreation of our encounter with a horde of Infused Glacial Originium Slugs in Lungmen.\nQuickly regrouping and staying in shape under extreme conditions is the top priority of this operation.\n'Originium Ice Crystal' Periodically releases a frigid wave that will inflict Cold to affected allied units.",
+  "ja": "龍門で大量のヒョウバクムシに遭遇した際の作戦環境を再現したもの。\n極限の環境下で迅速に隊列を立て直し、態勢を維持することが今回の作戦の最重要課題である。\n<源石氷晶>周期的に周囲の味方ユニットに寒冷状態を付与する衝撃波を放出する"
+ },
+ "复现了迎击萨卡兹庞大军势的作战环境。\n战场不会给予任何人喘息的机会，如果侵袭永无止境，我们的守备也必须一步不退。\n<阿勒黛的卫护>为我方释放群体屏障": {
+  "ko": "살카즈의 거대한 군세를 맞아 싸웠을 때의 작전 환경을 재현했다.\n전장은 누구에게도 숨 돌릴 틈을 주지 않는다. 침공이 끝없이 이어진다면, 우리의 수비 또한 한 걸음도 물러서선 안 된다.\n<알레데일의 가호> 아군을 위해 보호막 시전",
+  "en": "A recreation of our defense against the vast Sarkaz host.\nThe battlefield grants no one a moment's respite. If the onslaught never ends, our defense must not yield a single step.\n'Allerdale's Guard' Forms an AOE barrier for allies.",
+  "ja": "サルカズの大軍勢を迎え撃った際の作戦環境を再現したもの。\n戦場は誰にも息をつく暇を与えない。侵攻が果てしなく続くのなら、我々の守りもまた一歩たりとも退いてはならない。\n<アラデルの衛護>味方に広範囲のバリアを展開する。"
+ },
+ "局部坏死": {
+  "ko": "부분괴사",
+  "en": "Partial Necrosis",
+  "ja": "局部壊死"
+ },
+ "怒号光明": {
+  "ko": "울부짖는 광명",
+  "en": "Roaring Flare",
+  "ja": "怒号光明"
+ },
+ "我方单位自然技力回复速度-40%": {
+  "ko": "아군 유닛의 자연 SP 회복 속도 -40%",
+  "en": "Friendly units have -40% natural SP recovery rate",
+  "ja": "味方ユニットの自然SP回復速度-40%"
+ },
+ "我方可同时部署人数降至4": {
+  "ko": "배치 가능 인원수가 4로 감소",
+  "en": "Deployment limit is reduced to 4",
+  "ja": "同時配置可能数が4人に減少"
+ },
+ "我方所有单位再部署时间延长150%": {
+  "ko": "모든 아군 유닛의 재배치 시간 +150%",
+  "en": "All allies gain +150% Redeployment Time",
+  "ja": "全ての味方の再配置時間+150%"
+ },
+ "我方所有单位再部署时间延长75%": {
+  "ko": "모든 아군 유닛의 재배치 시간 +75%",
+  "en": "All allies gain +75% Redeployment Time",
+  "ja": "全ての味方の再配置時間+75%"
+ },
+ "战场上初始出现<萨卡兹骸骨拷打者>，<萨卡兹骸骨拷打者>被击倒时留下2个<枯朽之种>": {
+  "ko": "초기에 '살카즈 본가드 고문관' 등장, '살카즈 본가드 고문관'이 쓰러지면 '메마른 씨앗' 2개를 남김",
+  "en": "'Sarkaz Boneguard Torturers' will appear at start, and leave behind 2 'Seeds of Withering' when defeated",
+  "ja": "戦場に<サルカズ骨骸拷問隊長>が出現した状態で開始し、<サルカズ骨骸拷問隊長>が撃破された時に<枯朽の種>を2つ残す"
+ },
+ "所有我方单位最大生命值-800": {
+  "ko": "모든 아군 유닛의 최대 HP -800",
+  "en": "All allied units have -800 Max HP",
+  "ja": "味方全員の最大HP-800"
+ },
+ "所有我方单位的攻击力-20%": {
+  "ko": "모든 아군 유닛의 공격력 -20%",
+  "en": "All allied units have -20% ATK",
+  "ja": "味方全員の攻撃力-20%"
+ },
+ "所有我方单位的攻击力-20％": {
+  "ko": "모든 아군 유닛의 공격력 -20%",
+  "en": "All allied units have -20% ATK",
+  "ja": "味方全員の攻撃力-20%"
+ },
+ "所有我方单位的攻击力-40%": {
+  "ko": "모든 아군 유닛의 공격력 -40%",
+  "en": "All allied units have -40% ATK",
+  "ja": "味方全員の攻撃力-40%"
+ },
+ "所有我方单位的攻击力-40％": {
+  "ko": "모든 아군 유닛의 공격력 -40%",
+  "en": "All allied units have -40% ATK",
+  "ja": "味方全員の攻撃力-40%"
+ },
+ "所有我方单位的攻击力-60％": {
+  "ko": "모든 아군 유닛의 공격력 -60%",
+  "en": "All allied units have -60% ATK",
+  "ja": "味方全員の攻撃力-60%"
+ },
+ "所有我方非先锋单位部署费用+25，所有我方单位再部署时间+200秒": {
+  "ko": "뱅가드를 제외한 모든 아군 유닛의 배치 코스트 +25, 모든 아군 유닛의 재배치 시간 +200초",
+  "en": "All non-Vanguard allies have +25 DP Cost, and all allies gain +200 seconds Redeployment Time",
+  "ja": "【先鋒】以外の味方全員の配置コスト+25、味方全員の再配置時間+200秒"
+ },
+ "所有敌人受到的法术伤害-25％": {
+  "ko": "모든 적이 받는 마법 대미지 -25%",
+  "en": "All enemies take -25% Arts damage",
+  "ja": "全ての敵が受ける術ダメージ-25%"
+ },
+ "所有敌人受到的法术伤害-30%": {
+  "ko": "모든 적이 받는 마법 대미지 -30%",
+  "en": "All enemies take -30% Arts damage",
+  "ja": "全ての敵が受ける術ダメージ-30%"
+ },
+ "所有敌人受到的物理伤害-25％": {
+  "ko": "모든 적이 받는 물리 대미지 -25%",
+  "en": "All enemies take -25% Physical damage",
+  "ja": "全ての敵が受ける物理ダメージ-25%"
+ },
+ "所有敌人受到的物理伤害-30%": {
+  "ko": "모든 적이 받는 물리 대미지 -30%",
+  "en": "All enemies take -30% Physical damage",
+  "ja": "全ての敵が受ける物理ダメージ-30%"
+ },
+ "所有敌人生命值+120％，防御力+30％\n我方单位进入冻结状态时会立即受到500点法术伤害": {
+  "ko": "모든 적의 HP +120%, 방어력 +30%\n아군 유닛이 빙결 상태가 되면 즉시 500의 마법 대미지를 받음",
+  "en": "All enemies gain +120% HP and +30% DEF\nFriendly units immediately take 500 Arts damage when Frozen",
+  "ja": "全ての敵の最大HP+120%、防御力+30%\n味方ユニットが凍結状態になると即座に500の術ダメージを受ける"
+ },
+ "所有敌人生命值+130％": {
+  "ko": "모든 적의 HP +130%",
+  "en": "All enemies gain +130% HP",
+  "ja": "全ての敵の最大HP+130%"
+ },
+ "所有敌人生命值+20％，攻击力+15％\n场上初始出现<愧悔魂灵圣杯>": {
+  "ko": "모든 적의 HP +20%, 공격력 +15%\n초기에 '후회하는 영혼의 성배' 등장",
+  "en": "All enemies gain +20% HP and +15% ATK\n'Chalice of Regret' will appear at start",
+  "ja": "全ての敵の最大HP+20%、攻撃力+15%\n戦場に<慚愧せし魂の聖杯>が出現した状態で開始"
+ },
+ "所有敌人生命值+80％": {
+  "ko": "모든 적의 HP +80%",
+  "en": "All enemies gain +80% HP",
+  "ja": "全ての敵の最大HP+80%"
+ },
+ "所有敌人生命值提升至160%": {
+  "ko": "모든 적의 HP가 160%로 증가",
+  "en": "All enemies HP increased to 160%",
+  "ja": "全ての敵の最大HPが160%まで上昇"
+ },
+ "所有敌人生命值提升至160％": {
+  "ko": "모든 적의 HP가 160%로 증가",
+  "en": "All enemies HP increased to 160%",
+  "ja": "全ての敵の最大HPが160%まで上昇"
+ },
+ "所有敌人生命值提升至200%": {
+  "ko": "모든 적의 HP가 200%로 증가",
+  "en": "All enemies HP increased to 200%",
+  "ja": "全ての敵の最大HPが200%まで上昇"
+ },
+ "所有敌人生命值提升至200％": {
+  "ko": "모든 적의 HP가 200%로 증가",
+  "en": "All enemies HP increased to 200%",
+  "ja": "全ての敵の最大HPが200%まで上昇"
+ },
+ "所有敌人的攻击力+50%": {
+  "ko": "모든 적의 공격력 +50%",
+  "en": "All enemies gain +50% ATK",
+  "ja": "全ての敵の攻撃力+50%"
+ },
+ "所有敌人的攻击力+80%": {
+  "ko": "모든 적의 공격력 +80%",
+  "en": "All enemies gain +80% ATK",
+  "ja": "全ての敵の攻撃力+80%"
+ },
+ "所有敌人的攻击力提升至140％": {
+  "ko": "모든 적의 공격력이 140%로 증가",
+  "en": "All enemies have 140% ATK",
+  "ja": "全ての敵の攻撃力が140%まで上昇"
+ },
+ "所有敌人的攻击力提升至170％": {
+  "ko": "모든 적의 공격력이 170%로 증가",
+  "en": "All enemies have 170% ATK",
+  "ja": "全ての敵の攻撃力が170%まで上昇"
+ },
+ "所有敌人的最大生命值+100%，攻击力+50%\n所有我方单位的攻击力-50%": {
+  "ko": "모든 적의 최대 HP +100%, 공격력 +50%\n모든 아군 유닛의 공격력 -50%",
+  "en": "All enemies gain +100% Max HP and +50% ATK\nAll allied units have -50% ATK",
+  "ja": "敵全員の最大HP+100%、攻撃力+50%\n味方全員の攻撃力-50%"
+ },
+ "指标·信念新生": {
+  "ko": "지표: 신념의 재탄생",
+  "en": "Criterion - Conviction Reborn",
+  "ja": "指標・信念新生"
+ },
+ "指标·刺骨低温": {
+  "ko": "지표: 뼈를 에는 추위",
+  "en": "Criterion - Bitter Cold",
+  "ja": "指標・骨身に染む寒さ"
+ },
+ "指标·思维裂痕": {
+  "ko": "지표: 사고의 균열",
+  "en": "Criterion - Fractured Mind",
+  "ja": "指標・思考の亀裂"
+ },
+ "指标·浩荡": {
+  "ko": "지표: 대군의 행진",
+  "en": "Criterion - Mighty Host",
+  "ja": "指標・浩蕩"
+ },
+ "敌人移动速度+50%，<梅菲斯特，“歌者”>的等待时间-30%": {
+  "ko": "적의 이동 속도 +50%, '메피스토, 「노래하는 자」'의 대기 시간 -30%",
+  "en": "Enemies gain +50% Movement Speed; Mephisto, 'The Singer' has -30% waiting time",
+  "ja": "敵の移動速度+50%、<Mephisto・歌う者>の待機時間-30%"
+ },
+ "术师和特种干员的部署费用提升至2倍": {
+  "ko": "캐스터, 스페셜리스트 오퍼레이터의 배치 코스트가 2배로 증가",
+  "en": "The DP Cost of Caster and Specialist Operators is doubled",
+  "ja": "【術師】・【特殊】の配置コストが2倍に増加"
+ },
+ "淬火尘霾": {
+  "ko": "리턴 투 미스트",
+  "en": "Return To Mist",
+  "ja": "淬火煙塵"
+ },
+ "特种、术师和近卫干员的部署费用提升至2倍": {
+  "ko": "스페셜리스트, 캐스터, 가드 오퍼레이터의 배치 코스트가 2배로 증가",
+  "en": "The DP Cost of Specialist, Caster and Guard Operators is doubled",
+  "ja": "【特殊】・【術師】・【前衛】の配置コストが2倍に増加"
+ },
+ "特种、术师和近卫干员的部署费用提升至3倍": {
+  "ko": "스페셜리스트, 캐스터, 가드 오퍼레이터의 배치 코스트가 3배로 증가",
+  "en": "The DP Cost of Specialist, Caster and Guard Operators is tripled",
+  "ja": "【特殊】・【術師】・【前衛】の配置コストが3倍に増加"
+ },
+ "狙击、术师及特种干员部署费用提高至2倍": {
+  "ko": "스나이퍼, 캐스터, 스페셜리스트 오퍼레이터의 배치 코스트가 2배로 증가",
+  "en": "The DP Cost of Sniper, Caster and Specialist Operators is doubled",
+  "ja": "【狙撃】・【術師】・【特殊】の配置コストが2倍に増加"
+ },
+ "狙击、术师及特种干员部署费用提高至3倍": {
+  "ko": "스나이퍼, 캐스터, 스페셜리스트 오퍼레이터의 배치 코스트가 3배로 증가",
+  "en": "The DP Cost of Sniper, Caster and Specialist Operators is tripled",
+  "ja": "【狙撃】・【術師】・【特殊】の配置コストが3倍に増加"
+ },
+ "禁止使用术师和特种干员": {
+  "ko": "캐스터, 스페셜리스트 오퍼레이터 사용 금지",
+  "en": "Caster and Specialist Operators cannot be deployed",
+  "ja": "【術師】・【特殊】使用禁止"
+ },
+ "禁止使用近卫和狙击干员": {
+  "ko": "가드, 스나이퍼 오퍼레이터 사용 금지",
+  "en": "Guard and Sniper Operators cannot be deployed",
+  "ja": "【前衛】・【狙撃】使用禁止"
+ },
+ "精英敌人的法术抗性+30": {
+  "ko": "정예 적의 마법 저항 +30",
+  "en": "Elite enemies gain +30 RES",
+  "ja": "敵【エリート】の術耐性+30"
+ },
+ "精英敌人的防御力+2000": {
+  "ko": "정예 적의 방어력 +2000",
+  "en": "Elite enemies gain +2000 DEF",
+  "ja": "敵【エリート】の防御力+2000"
+ },
+ "近卫和狙击干员的部署费用提升至2倍": {
+  "ko": "가드, 스나이퍼 오퍼레이터의 배치 코스트가 2배로 증가",
+  "en": "The DP Cost of Guard and Sniper Operators is doubled",
+  "ja": "【前衛】・【狙撃】の配置コストが2倍に増加"
+ },
+ "部署费用的自然回复速度降低50%": {
+  "ko": "배치 코스트의 자연 회복 속도 -50%",
+  "en": "Natural DP regeneration rate is reduced by 50%",
+  "ja": "コストの自然回復速度-50%"
+ },
+ "部署费用的自然回复速度降低50％": {
+  "ko": "배치 코스트의 자연 회복 속도 -50%",
+  "en": "Natural DP regeneration rate is reduced by 50%",
+  "ja": "コストの自然回復速度-50%"
+ },
+ "部署费用的自然回复速度降低75%": {
+  "ko": "배치 코스트의 자연 회복 속도 -75%",
+  "en": "Natural DP regeneration rate is reduced by 75%",
+  "ja": "コストの自然回復速度-75%"
+ },
+ "部署费用的自然回复速度降低75％": {
+  "ko": "배치 코스트의 자연 회복 속도 -75%",
+  "en": "Natural DP regeneration rate is reduced by 75%",
+  "ja": "コストの自然回復速度-75%"
+ },
+ "重装、狙击和辅助干员的部署费用提升至2倍": {
+  "ko": "디펜더, 스나이퍼, 서포터 오퍼레이터의 배치 코스트가 2배로 증가",
+  "en": "The DP Cost of Defender, Sniper and Supporter Operators is doubled",
+  "ja": "【重装】・【狙撃】・【補助】の配置コストが2倍に増加"
+ },
+ "重装、狙击和辅助干员的部署费用提升至3倍": {
+  "ko": "디펜더, 스나이퍼, 서포터 오퍼레이터의 배치 코스트가 3배로 증가",
+  "en": "The DP Cost of Defender, Sniper and Supporter Operators is tripled",
+  "ja": "【重装】・【狙撃】・【補助】の配置コストが3倍に増加"
+ },
+ "除<霜锐>外，所有敌人每次攻击时造成与攻击间隔等长的寒冷": {
+  "ko": "'프로스트샤프'를 제외한 모든 적이 공격할 때마다 공격 간격과 같은 시간 동안 냉기 부여",
+  "en": "All enemies except 'Razorfang' inflict Cold for a duration equal to their Attack Interval with each attack",
+  "ja": "<フロストファング>以外の全ての敵が、攻撃するたびに攻撃間隔と同じ時間の寒冷を付与する"
+ }
+}

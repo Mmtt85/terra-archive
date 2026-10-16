@@ -216,6 +216,9 @@ run "build-event-extra"  python3 scripts/build-event-extra.py "$G"
 # 미래시 이벤트의 작전·적·재화 상세 (이벤트 창 전용) — build-events 산출물을 읽으므로 바로 뒤. 그림(중섭 도면·초상)은
 # 로컬에서만 받는다 (scripts/build-future-dex.py 머리주석).
 run "build-future-dex"   python3 scripts/build-future-dex.py "$G" --no-images
+# 작전 도감·시뮬레이터의 위기협약 색인 (시즌 맵·홀로그램 매트릭스, 2026-10-16) — 게임 CDN 의 표·레벨만 읽는다.
+# 도면은 로컬에서만 받는다 (scripts/build-stages-crisis.py 머리주석). 경로 문서(crisis-routes.json)도 여기서 나온다
+run "build-stages-crisis" python3 scripts/build-stages-crisis.py --no-images
 # 경로 지도의 미리 깔린 장치 사전(이름·설명) — 경로 문서들(작전·통합전략·미래시)의 pd 를 모아 만든다.
 # 아이콘은 CDN 번들을 여는 일이라 로컬에서만 (scripts/build-devices.py 머리주석).
 run "build-devices"      python3 scripts/build-devices.py --no-icons

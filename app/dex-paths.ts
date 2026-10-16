@@ -29,6 +29,10 @@ export const rogueHrefOf = (locale: string, stageId: string) => {
  *  scripts/build-stages-sandbox.py). 사막 이야기 가이드(/ra/sand)로 보낸다. */
 export const sandboxHrefOf = (locale: string) => `${base(locale)}/ra/sand`;
 
+/** 위기협약 맵(Stage.cc)의 정본 주소 — 역시 /stages/<id> 페이지가 없다 (scripts/build-stages-crisis.py).
+ *  전용 가이드가 아직 없어 작전 도감 모달 딥링크로 보낸다. */
+export const crisisHrefOf = (locale: string, stageId: string) => `${base(locale)}/stages#st-${stageId}`;
+
 /** 적 초상. 변종(_2 등)은 원본 id 이미지로 폴백한다 (build-enemies.py와 같은 규약) */
 export const enemyImg = (id: string) => asset(`/enemy/${id}.webp`);
 export const enemyImgBase = (id: string) => asset(`/enemy/${id.replace(/_\d+$/, "")}.webp`);

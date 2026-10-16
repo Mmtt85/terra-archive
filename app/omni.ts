@@ -87,7 +87,9 @@ const TAB_ENTRIES: { tab: Tab; label: string; alt: string[] }[] = [
   { tab: "archive", label: "오퍼 백과사전", alt: ["operator archive", "도감", "오퍼레이터", "백과", "캐릭터"] },
   // "인프라 딸깍" — 커뮤니티에서 기지 편성을 그렇게 부른다 (사용자 지정 2026-07-26)
   { tab: "enemy", label: "적 도감", alt: ["enemy", "적", "몹", "도감", "적도감", "enemies"] },
-  { tab: "stage", label: "작전 도감", alt: ["stage", "작전", "스테이지", "맵", "지형", "stages"] },
+  { tab: "stage", label: "작전 도감", alt: ["stage", "작전", "스테이지", "맵", "지형", "stages",
+    // 위기협약 맵·홀로그램 매트릭스가 작전 도감 안에 있다 (2026-10-16 — 전용 화면 없음)
+    "위기협약", "위기 협약", "cc", "contingency contract", "홀로그램 매트릭스", "危機契約"] },
   // 내 정보 — 게임 로그인으로 받은 내 계정 (2026-10-04)
   { tab: "me", label: "내 정보", alt: ["me", "my", "my page", "mypage", "마이페이지", "내정보", "계정", "계정 연동", "로그인", "창고", "보유", "통계", "account", "depot", "マイページ", "アカウント", "倉庫"] },
   { tab: "gallery", label: "갤러리", alt: ["gallery", "cg", "일러", "일러스트", "스탠딩", "입식", "스킨", "정예 일러", "2정 일러", "아트", "ギャラリー", "立ち絵", "イラスト"] },

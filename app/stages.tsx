@@ -26,7 +26,7 @@ const ItemModal = lazy(() => import("./farm").then((m) => ({ default: m.ItemModa
 import {
   StageFile, stagePath, viewOf, type Stage, type StageDoc,
 } from "./stage-detail";
-import { rogueHrefOf, sandboxHrefOf, stageMapOf } from "./dex-paths";
+import { crisisHrefOf, rogueHrefOf, sandboxHrefOf, stageMapOf } from "./dex-paths";
 import { stageFilterTree } from "./stage-data";
 // 적 칩 코어 스탯 (~67KB) — 이 파일은 lazy 청크라 메인 번들엔 안 실린다
 import enemyStats from "./data/enemy-stats.json";
@@ -41,7 +41,8 @@ function StageCard({ stage, zone, typeName, onSelect }: {
   // 통합전략 작전은 파일 수 한도 때문에 /stages/<id> 개별 페이지가 없다
   // (scripts/build-stages-rogue.py 머리주석). 보조 클릭이 404로 가지 않도록 그 테마의
   // 정본 주소로 보낸다 — 왼쪽 클릭은 아래 preventDefault로 도감 모달을 연다.
-  const href = stage.rg ? rogueHrefOf(locale, stage.id) : stage.sb ? sandboxHrefOf(locale) : stagePath(locale, stage.id);
+  const href = stage.rg ? rogueHrefOf(locale, stage.id) : stage.sb ? sandboxHrefOf(locale)
+    : stage.cc ? crisisHrefOf(locale, stage.id) : stagePath(locale, stage.id);
   return (
     <a className="st-card" href={href}
       onClick={(event) => {

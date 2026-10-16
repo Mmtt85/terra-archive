@@ -128,6 +128,11 @@ python3 scripts/build-stages-rogue.py        # → app/data/stages-rogue{,.en,.j
 생존연산 신시즌이 왔으면 `python3 scripts/build-sandbox.py`도 같은 취급 — 그 뒤에 **작전 도감의 생존연산 색인**
 `python3 scripts/build-stages-sandbox.py`(→ stages-sandbox{,.en,.ja}.json · sandbox-ortho.json, 네트워크 불필요)도.
 
+**위기협약 새 시즌·홀로그램 매트릭스 새 시즌**이 왔으면(또는 점검마다 한 번) — 시즌 맵 도면까지 받으려면 로컬에서:
+`python3 scripts/build-stages-crisis.py` (→ stages-crisis{,.en,.ja}.json · crisis-routes.json · public/stage/crisis_v2_*.webp).
+중국어 문구가 남으면 `scripts/crisis-untranslated.json` → `scripts/crisis-tl.json` 에 채운다. 시즌 지표(계약 태그)는
+게임 서버가 내려 줘 데이터에 없다 — 매트릭스 지표만 실린다.
+
 위수 협의(오토체스) 시즌이 열렸거나 갱신됐으면:
 
 ```bash

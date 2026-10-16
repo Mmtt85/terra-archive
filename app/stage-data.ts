@@ -37,6 +37,11 @@ export type Stage = {
   /** e 와 같은 순서의 코어 스탯 [hp,atk,def,res] — 색인과 다른 값을 레코드가 직접 들고 간다: 적 도감 색인에 없는
    *  적(생존연산 전용)·통합전략 테마 수치(레벨 파일 덮어쓰기, build-stages-rogue.py). 0 이면 색인에서 */
   es?: ([number, number, number, number] | 0)[];
+  /** 위기협약 맵·홀로그램 매트릭스 — 경로 출처가 crisis-routes.json 이고 /stages/<id> 페이지가 없다
+   *  (scripts/build-stages-crisis.py, 2026-10-16). 도면은 본 도감과 같은 public/stage 폴더다 */ cc?: 1;
+  /** (홀로그램 매트릭스만) 지표 — set: 지표 세트 이름, medal: 훈장 점수 [하급, 상급],
+   *  r: [점수, 설명, 필수 1|0, 배타 묶음 번호(-1 = 없음)][] (게임 표 순서) */
+  rn?: { set?: string | null; medal?: (number | null)[]; r: [number, string, number, number][] };
   /** 이벤트 도감의 미래시(중섭 선행) 작전 — 경로·시뮬 출처가 future-routes.json 이다 (scripts/build-future-dex.py) */
   fut?: 1;
 };

@@ -21409,6 +21409,45 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   flex-direction: column;
   gap: 10px;
 }
+/* 홀로그램 매트릭스 지표 — 점수 칸 · 설명 · 묶음 표시 (2026-10-16, scripts/build-stages-crisis.py) */
+.st-runes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+}
+.st-runes li {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 2px 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.st-rune-pt {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--crimson);
+  text-align: right;
+}
+.st-runes li.must .st-rune-pt {
+  color: var(--muted);
+  font-family: inherit;
+  font-weight: 500;
+}
+.st-rune-text {
+  white-space: pre-line;
+}
+.st-rune-grp {
+  grid-column: 2;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--muted);
+}
 .st-dropgroup h4 {
   margin: 0 0 4px;
   font-size: 12px;
@@ -27241,6 +27280,8 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 .me-progress-sum span { display: block; font-size: 11px; color: var(--muted); }
 .me-progress-sum b { font-size: 16px; overflow-wrap: anywhere; }
 .me-progress-sum b small { font-size: 12px; font-weight: 500; color: var(--muted); }
+/* 순오리지늄 칸 밑줄 — 같은 모집단의 클리어 / 입장 가능 (2026-10-16) */
+.me-progress-sum .me-prime-base { display: block; margin-top: 2px; font-size: 11px; color: var(--muted); }
 .me-toggle { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
 .me-eps { list-style: none; margin: 0; padding: 0; }
 .me-eps > li { border-bottom: 1px solid var(--line); }

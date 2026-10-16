@@ -84,23 +84,34 @@ function useStageOp(): StageOpDoc | null {
   return doc;
 }
 function primeLeft(doc: StageOpDoc | null, rec: Record<string, number> | undefined, stages: StageDoc | null,
-  isOpen: (s: { id: string; t: string }) => boolean, isRunning: (id: string) => boolean): { n: number; ids: string[] } | null {
+  isOpen: (s: { id: string; t: string }) => boolean, isRunning: (id: string) => boolean):
+  { n: number; ids: string[]; open: number; clear: number; shut: number; shutIds: string[] } | null {
   if (!doc || !rec || !stages) return null;
   const typeOf = new Map(stages.stages.map((s) => [s.id, s.t]));
-  let n = 0;
-  const ids: string[] = [];
+  let n = 0, open = 0, clear = 0, shut = 0;
+  const ids: string[] = [], shutIds: string[] = [];
   for (const id of doc.ids) {
-    if ((rec[id] ?? -1) >= 3) continue;
     const ref = doc.ref[id] ?? id.replace(/#f#$|#s$/, "");
     const type = typeOf.get(ref) ?? "ACTIVITY";
-    if (ref && !isOpen({ id: ref, t: type })) continue;
+    const state = rec[id] ?? -1;
     // 기록이 아예 없는 이벤트 작전은 지금 기간 중인 이벤트일 때만 — 끝난 이벤트는 깬 기록이 계정 데이터에서 지워진다
-    // (사용자 지적 2026-10-14 "작년에 다 깬 중생의 여정이 77개에 들어 있다")
+    // (사용자 지적 2026-10-14 "작년에 다 깬 중생의 여정이 77개에 들어 있다"). 깼는지 알 수 없으니 입장 불가에도 넣지 않는다
     if (rec[id] == null && type === "ACTIVITY" && !isRunning(ref)) continue;
+    // 지금 입장 불가(끝난 기간 이벤트·지난 순환 작전)인데 3성 전인 작전 — 받을 수 없는 순오리지늄이라 '획득 가능'엔 안 넣고
+    // 따로 센다 (사용자 지시 2026-10-16 "입장불가 스테이지는 아무 데도 표시가 안 나온다, 표시해 줘")
+    if (ref && !isOpen({ id: ref, t: type })) {
+      if (state < 3) { shut += doc.n[id] ?? 1; shutIds.push(id); }
+      continue;
+    }
+    // 같은 모집단의 '입장 가능'·'클리어' — 남은 수만 보면 많은지 적은지 가늠이 안 된다 (사용자 지시 2026-10-16
+    // "클리어한 작전하고 현재 입장 가능한 스테이지 수를 적어 주는 게 좋겠다", 제보 "390개 깼는데 574개?")
+    open += 1;
+    if (state >= 2) clear += 1;
+    if (state >= 3) continue;
     n += doc.n[id] ?? 1;
     ids.push(id);
   }
-  return { n, ids };
+  return { n, ids, open, clear, shut, shutIds };
 }
 const OPS_ROWS = 2;
 
@@ -1235,8 +1246,12 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
   const [isRunning] = useState(() => runningChecker(Date.now()));
   const prime = useMemo(() => primeLeft(opDoc, rec, stages, isOpen, isRunning), [opDoc, rec, stages, isOpen, isRunning]);
   const data = useMemo(() => {
-    if (!stages || !rec) return null;
+    if (!stages || !rec || !opDoc) return null;
     const byId = new Map(stages.stages.map((s) => [s.id, s]));
+    // 순오리지늄을 안 주는 이벤트 판(미니게임·대화판 — 엔드리스 카니발 IC-P 트랙, 시라쿠사인 IS-QT 등)은 세지 않는다.
+    // 미클리어로 떠서 "남은 작전 = 돌 받을 곳"으로 읽혔다 (디시 제보 2026-10-16 "광석차 드라이브·도란도란 해 봤는데 안 준다",
+    // 사용자 지시 "2 ㄱ"). 게임 표의 diamondOnceDrop 0 = stage-op.json 에 없는 작전
+    const opSet = new Set(opDoc.ids);
     const groups = new Map<string, ProgGroup>();
     const gOf = new Map<string, string>();   // 작전 → 묶음 이름 ('어디서 얻나' 순오리지늄 목록)
     const get = (key: string, cat: ProgCat, name: string, order: number) => {
@@ -1251,6 +1266,7 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
       if (s.id.startsWith("tr_")) return;   // 훈련 작전
       if (s.id.includes("autochess")) return;   // 위수 협의 판 — 클리어·3성·순오리지늄이 있는 작전이 아니다 (사용자 지적 2026-10-14)
       if (s.t === "ACTIVITY" && s.ev == null && mainZones.has(s.z)) return;
+      if (s.t === "ACTIVITY" && !opSet.has(s.id)) return;
       let g: ProgGroup;
       if (s.t === "MAIN" || s.t === "SUB") g = get(`z${s.z}`, "main", stages.zones[s.z], s.z);
       else if (s.t === "ACTIVITY") g = s.ev != null ? get(`e${s.ev}`, "event", stages.events[s.ev], 10000 + s.ev) : get(`ez${s.z}`, "event", stages.zones[s.z], 20000 + s.z);
@@ -1277,7 +1293,7 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
     const list = [...groups.values()].filter((g) => g.total > 0).sort((a, b) => a.order - b.order);
     const next = me.profile?.status.progress ? byId.get(me.profile.status.progress) ?? null : null;
     return { list, byId, next, gOf };
-  }, [stages, rec, camps, me.profile, t, isOpen, isRunning]);
+  }, [stages, rec, camps, me.profile, t, isOpen, isRunning, opDoc]);
   if (!rec) return null;
   if (!data) return <Card no="PROGRESS" title={t("스테이지 클리어 현황")}><p className="me-note">{t("불러오는 중…")}</p></Card>;
   const pendingOf = (g: ProgGroup) => (withStars ? [...g.left, ...g.star] : g.left);
@@ -1352,20 +1368,25 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
           <span>{t("섬멸 작전 400 달성")}</span><b>{fmt(camp?.clear ?? 0)}<small>/{fmt(camp?.total ?? 0)}</small></b>
         </button>
         {/* 누르면 어디서 얻나 — 묶음별 작전 목록 (사용자 지시 2026-10-14) */}
-        <button type="button" disabled={!prime?.n} onClick={() => {
+        <button type="button" disabled={!prime?.n && !prime?.shut} onClick={() => {
           if (!prime) return;
-          const by = new Map<string, string[]>();
-          for (const id of prime.ids) {
-            const base = id.replace(/#f#$|#s$/, "");
-            const ref = opDoc?.ref[id] || base;
-            const name = data.gOf.get(base) ?? data.gOf.get(ref) ?? t("스토리 작전");
-            by.set(name, [...(by.get(name) ?? []), id]);
-          }
+          const groupBy = (list: string[], tail = "") => {
+            const by = new Map<string, string[]>();
+            for (const id of list) {
+              const base = id.replace(/#f#$|#s$/, "");
+              const ref = opDoc?.ref[id] || base;
+              const name = (data.gOf.get(base) ?? data.gOf.get(ref) ?? t("스토리 작전")) + tail;
+              by.set(name, [...(by.get(name) ?? []), id]);
+            }
+            return [...by].map(([name, ids]) => ({ name, ids }));
+          };
+          // 입장 불가는 맨 뒤에 따로 — 묶음 이름에 표시를 달아 섞이지 않게 (2026-10-16)
           setStageList((cur) => ({ title: t("순오리지늄 획득 가능"), key: (cur?.key ?? 0) + 1,
-            groups: [...by].map(([name, ids]) => ({ name, ids })) }));
+            groups: [...groupBy(prime.ids), ...groupBy(prime.shutIds, ` — ${t("지금 입장 불가")}`)] }));
         }} title={t("지금 들어갈 수 있는 작전 중 아직 3성(완료)을 못 받은 작전에서 처음 한 번 주는 순오리지늄 — 돌격 작전·스토리 작전 포함")}>
           <span>{t("순오리지늄")}</span>
           <b className="me-prime"><img src={itemIcon("DIAMOND")} alt="" width={22} height={22} />{prime == null ? "…" : t("× {n}개 획득 가능", { n: fmt(prime.n) })}</b>
+          {prime && <small className="me-prime-base">{(t("클리어 {a} · 입장 가능 {b}", { a: fmt(prime.clear), b: fmt(prime.open) }) + (prime.shut ? ` · ${t("입장 불가 {n}", { n: fmt(prime.shut) })}` : ""))}</small>}
         </button>
       </div>
       <p className="me-note me-prog-note">{t("미클리어·3성 미달성에는 지금 들어갈 수 있는 작전만 셉니다 — 끝난 기간 이벤트와 지난 순환 섬멸은 뺍니다. 막대는 클리어한 작전 비율, '3성'은 3성 클리어한 작전 수입니다.")}</p>
@@ -1602,7 +1623,8 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
   const bg = (url: string) => ({ ["--bg" as string]: `url(${url})` });
   const tiles: { key: DrawerKey; label: string; head: string; sub: string; top?: React.ReactNode; style?: React.CSSProperties; cls?: string; icons?: string[] }[] = [];
   if (p?.stages) tiles.push({ key: "progress", label: "PROGRESS", head: t("스테이지 클리어 현황"),
-    sub: t("클리어한 작전 {n}개", { n: fmt(cleared) }),
+    // 순오리지늄 작전 중 지금 입장 가능한 수와 그중 클리어한 수 — 위 '획득 가능'과 같은 모집단이다
+    sub: prime ? (t("클리어 {a} · 입장 가능 {b}", { a: fmt(prime.clear), b: fmt(prime.open) }) + (prime.shut ? ` · ${t("입장 불가 {n}", { n: fmt(prime.shut) })}` : "")) : t("클리어한 작전 {n}개", { n: fmt(cleared) }),
     // 순오리지늄은 제목 위 한 줄로 (사용자 지시 2026-10-14 "버튼 위쪽에다")
     top: prime?.n ? <span className="me-prime"><img src={itemIcon("DIAMOND")} alt={t("순오리지늄")} width={16} height={16} />{t("× {n}개 획득 가능", { n: fmt(prime.n) })}</span> : undefined,
     style: bg(asset(`/story/main_${chap && Number(chap) <= 17 ? chap : 17}.webp`)) });

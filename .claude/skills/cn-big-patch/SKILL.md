@@ -169,6 +169,12 @@ python3 scripts/build-sandbox.py
 python3 scripts/build-stages-sandbox.py             # 작전 도감·시뮬레이터의 생존연산 색인도 따라가야 한다
 ```
 
+**위기협약 새 시즌(#N)·홀로그램 매트릭스 새 시즌** (`crisis_v2_table` 변경 시):
+```bash
+python3 scripts/build-stages-crisis.py              # 시즌 맵 도면(중섭 CDN)·경로·매트릭스 지표 — 미래시는 '중국 서버 선행'으로 붙는다
+```
+중국어 문구는 `scripts/crisis-untranslated.json` 을 보고 `scripts/crisis-tl.json` 에 ko·en·ja 를 채운 뒤 `--no-images` 로 한 번 더.
+
 **중섭 이벤트 (미실장 이벤트 줄)** — 새 이벤트가 열렸거나 지난 패치 뒤 처음이면 **반드시**:
 ```bash
 Skill: cn-future-events     # 이름표·작전/적/재화 번역·그림·상위 재료·신규 오퍼(--cn-only)까지 빠짐없이

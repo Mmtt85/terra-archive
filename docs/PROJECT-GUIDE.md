@@ -542,6 +542,12 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
   행동력(`act`)·전용 적 수치(`es`)·초상(`enemyImg`)을 레코드가 들고 간다. 도면이 격자 평면도인 86개엔
   `ortho:1` → 상세가 원근 없이 격자를 겹쳐 합친 도면을 만든다. 재기동 앵커(v3)는 이름 없는 지형 조각이라
   아직 넣지 않았다. 통합전략·생존연산 작전은 **작전 시뮬레이터 검색에도** 잡힌다(색인의 `sim:1`).
+- `app/data/stages-crisis.json` / `.en` / `.ja` — **작전 도감·작전 시뮬레이터에 얹는 위기협약**
+  (사용자 요청 2026-10-16 "위기협약 해줘"). `scripts/build-stages-crisis.py`가 게임 CDN 의 `crisis_v2_table`·레벨에서
+  같은 방식으로 낸다 — 시즌 맵(`crisis_v2_SS-NN`, '맵 N')과 홀로그램 매트릭스(`level_recalrune_*`, 지표 `rn`), `cc:1`.
+  경로는 `crisis-routes.json`, 도면은 본 도감과 같은 `public/stage/`. **시즌 지표(계약 태그)·위험도 보상은 클라이언트
+  데이터에 없다**(시즌이 열릴 때 서버가 내려 준다 — 레벨의 runes 가 비어 있고 번들엔 아이콘뿐). 맵 이름도 없다.
+  중섭 전용 시즌은 이름 뒤 '(중국 서버 선행)', 중국어 문구는 `scripts/crisis-tl.json` 이 옮긴다.
 - `app/data/stages-rogue.json` / `.en` / `.ja` — **작전 도감에 얹는 통합전략 작전 693개**
   (사용자 요청 2026-08-16 "맵 도감에서 각 로그라이크 맵도 찾을 수 있도록"). `scripts/build-stages-rogue.py`가
   `rogue{1..6}.json`에서 뽑아 같은 `StageDoc` 모양으로 낸다(로케일당 ~390KB). 화면에서

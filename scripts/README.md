@@ -182,6 +182,7 @@ python3 scripts/build-event-vecbreak.py        # → app/data/event-vecbreak{,.e
 #   (그림 경로를 파일 유무로 싣는다). medal_table 은 fetch-gamedata-cdn.py 기본 세트에 있다.
 python3 scripts/build-stages-rogue.py          # → app/data/stages-rogue{,.en,.ja}.json (작전 도감의 통합전략 693건) + rogue-cams.json
 python3 scripts/build-stages-sandbox.py        # → app/data/stages-sandbox{,.en,.ja}.json (생존연산 사막 이야기 106건) + sandbox-ortho.json
+python3 scripts/build-stages-crisis.py         # → app/data/stages-crisis{,.en,.ja}.json + crisis-routes.json (위기협약 시즌 맵·홀로그램 매트릭스, 게임 CDN)
 #   ⚠ build-sandbox.py 뒤에 — 입력이 sandbox*.json·sandbox-routes.json 이다 (네트워크 불필요)
 #   ⚠ 입력이 app/data/rogue{1..6}.json 뿐이라 **build-rogue.py 뒤에** 돌린다 (네트워크 불필요).
 #     stages.json에 섞지 않는 이유 = 상세 페이지 파일 수 한도. 스크립트 머리주석 참조.
