@@ -54,7 +54,8 @@ const MAP_VER = "6";
     되풀이한다. 버전 쿼리는 붙이지 않는다 — 록라 도면은 /rogue가 예전부터 무버전으로 물고
     있어, 여기서만 v를 붙이면 같은 이미지를 캐시 키 두 벌로 받게 된다. */
 export const stageMap = (id: string, rogue?: boolean) =>
-  (rogue ? asset(`/rogue/map/${id}.webp`) : asset(`/stage/${id}.webp?v=${MAP_VER}`));
+  (rogue ? asset(`/rogue/map/${id}.webp`) : asset(`/stage/${id.split("~")[0]}.webp?v=${MAP_VER}`));
+/* ⚠ `~` 뒤는 위기 협약 재사용 맵의 시즌 별칭이다 (`level_rune_06-01~s1-8`) — 도면은 원래 맵 것 (scripts/build-stages-crisis.py) */
 /** 작전 레코드 → 도면 URL — 본 도감 · 통합전략(rg) · 생존연산(sb, 2026-09-23) 폴더를 가른다.
  *  생존연산 도면은 /ra 가 예전부터 무버전으로 물고 있는 public/sandbox/map 을 그대로 쓴다. */
 export const stageMapOf = (s: { id: string; rg?: number; sb?: number }) =>

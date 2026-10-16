@@ -549,6 +549,11 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
   맵은 작전 도감·시뮬레이터에도 얹힌다 (`cc:1`) — `scripts/build-stages-crisis.py`가 게임 CDN 의 `crisis_v2_table`·`crisis_table`·레벨에서
   낸다. 맵 이름은 **시즌 곡(bgmEvent `<시즌>_main`)을 쓰는 판 = 메인 실험 장소(v1 상주 작전 지점), 나머지 = 로테이션** (훈장 조건 문구의
   공식 표기). v1 레벨 묶음은 `level_rune_<시즌+2>` — 01·02 묶음(시즌 곡 없음)과 #0 황무지는 뺐다. 매트릭스는 지표 `rn` 까지.
+  **맵 목록(지난 시즌 맵을 다시 쓰는 로테이션 포함)·지표(계약)는 PRTS 위키가 정본**이다 (2026-10-17 — 게임 데이터엔 그 시즌 새 맵만 있고 지표는
+  서버 몫): `python3 scripts/fetch-crisis-prts.py` → `scripts/crisis-prts.json`(시즌 1 은 상주 1 + 로테이션 7, 시즌 2 는 메인 1 + 로테이션 4,
+  지표 2,587) → 빌더가 시즌×맵마다 작전을 만들고(재사용 맵은 `<원래 id>~s1-8` 별칭 — 도면·경로·카메라는 원래 맵, `stageMap` 이 `~` 앞만 본다)
+  상세에 지표 `cr` 를 싣는다. 문구는 `scripts/crisis-tl.json`(비공식 번역 — 화면이 'PRTS 위키 기준 · 비공식 번역'이라 적는다).
+  홀로그램 매트릭스 맵은 원본 작전(levelCode 가 같은 본 도감 작전)의 실사 도면·카메라를 복사해 쓴다.
   경로는 `crisis-routes.json`, 도면은 본 도감과 같은 `public/stage/`. **시즌 지표(계약 태그)·위험도 보상은 클라이언트
   데이터에 없다**(시즌이 열릴 때 서버가 내려 준다 — 레벨의 runes 가 비어 있고 번들엔 아이콘뿐). 맵 이름도 없다.
   중섭 전용 시즌은 이름 뒤 '(중국 서버 선행)', 중국어 문구는 `scripts/crisis-tl.json` 이 옮긴다.

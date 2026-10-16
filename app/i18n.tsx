@@ -2121,6 +2121,9 @@ const D: Record<string, Pair> = {
   "적습 시 행동력": ["AP on raid", "敵襲時の行動力"],
   // 위기협약 — 홀로그램 매트릭스 지표 (app/stage-detail.tsx, 2026-10-16). 게임 공식 표기: 지표 = Criterion / 指標
   "지표": ["Criteria", "指標"],
+  "계약": ["Contracts", "契約"],
+  "PRTS 위키 기준 · 비공식 번역": ["From the PRTS wiki · unofficial translation", "PRTS wiki 準拠・非公式翻訳"],
+  "세트 완료 +{n}": ["Set bonus +{n}", "セット達成 +{n}"],
   "위기 협약": ["Contingency Contract", "危機契約"],
   // 내 정보 — 순오리지늄 작전 중 클리어 / 지금 입장 가능 (app/me.tsx primeLeft, 2026-10-16)
   "클리어 {a} · 입장 가능 {b}": ["Cleared {a} · Open {b}", "クリア {a} · 入場可能 {b}"],

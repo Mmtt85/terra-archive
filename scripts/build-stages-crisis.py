@@ -67,9 +67,9 @@ MAP_MAIN = {"v2": {"ko": "메인 실험 장소", "en": "Main Test Site", "ja": "
 MAP_ROT = {"v2": {"ko": "로테이션 실험 장소", "en": "Rotating Test Site", "ja": "緊急試験区画"},
            "v1": {"ko": "로테이션 작전 지점", "en": "Rotating Operation Site", "ja": "緊急作戦地域"}}
 # 이벤트 가이드 창의 안내 한 줄 — 시즌 지표는 데이터에 없다 (머리주석)
-NOTE = {"ko": "시즌 지표(계약 태그)·위험도별 보상은 시즌 중에만 게임 서버가 내려 줘 게임 데이터에 없습니다 — 맵·등장 적·훈장 조건·일정만 싣습니다.",
-        "en": "Season criteria (contract tags) and risk rewards are sent by the game server only during the season and are not in the game data — this page lists maps, enemies, medal conditions and the schedule.",
-        "ja": "シーズンの指標（契約タグ）と危機等級ごとの報酬は開催中にのみゲームサーバーから配信され、ゲームデータにはありません。マップ・出現する敵・勲章の条件・日程のみ掲載しています。"}
+NOTE = {"ko": "맵 목록(로테이션 포함)과 지표(계약)는 PRTS 위키의 중국 서버 기록을 옮긴 것이고 번역은 비공식입니다 — 한국 서버의 이름·수치와 다를 수 있습니다. 지표는 맵을 누르면 상세에 나옵니다.",
+        "en": "Map lists (including rotations) and criteria (contracts) come from the PRTS wiki's CN-server records with unofficial translations — names and values may differ on Global. Open a map to see its criteria.",
+        "ja": "マップ一覧（ローテーション含む）と指標（契約）はPRTS wikiの中国版の記録を移したもので、翻訳は非公式です。日本版の名称・数値と異なる場合があります。マップを開くと指標が表示されます。"}
 EV_ETA = {"crisis_v2_season_5_1": "2026-12"}   # 한섭 개방 예정 (사용자 제공 일정 2026-10-16 "위기협약 #5 12/10")
 FUTURE = {"ko": " (중국 서버 선행)", "en": " (CN preview)", "ja": "（中国版先行）"}
 PERIOD = {"ko": "{srv} 서버 기간 {a} ~ {b}", "en": "{srv} server: {a} – {b}", "ja": "{srv}版の開催期間 {a}～{b}"}
@@ -263,25 +263,79 @@ def add_maps(season_id, prefix, rels, code, gen, bgm_main):
                      "code": f"{code}-{i + 1}"})
 
 
+# ── 시즌 맵 목록·계약 지표 — PRTS 위키 (scripts/fetch-crisis-prts.py → scripts/crisis-prts.json, 2026-10-17) ──────────
+# 게임 파일에는 그 시즌에 **새로 생긴** 맵만 있고, 지난 시즌 맵을 다시 쓰는 로테이션(시즌 1 은 상주 1 + 로테이션 7, 시즌 2 는 메인 1 +
+# 로테이션 4)은 없다. 지표(계약 태그)도 시즌 중 서버가 내려 줄 뿐 클라이언트 데이터에 없다 (머리주석). 그래서 맵 목록·지표는 PRTS 를 정본으로
+# 삼는다 (사용자 지시 2026-10-17 "위기협약이랑 홀로그램 매트릭스는 제약도 다 표시", "로테이션 작전은 한 개가 아니라 여러 개").
+# 같은 맵이 여러 시즌에 나오고 시즌마다 지표가 다르므로 **시즌×맵마다 작전 항목**을 둔다 — 그 맵이 처음 생긴 시즌 밖에서는
+# id 가 `<원래 id>~<시즌>` 별칭이고, 도면·경로·카메라는 원래 id 것을 쓴다 (app/dex-paths.ts stageMap 이 `~` 앞만 본다).
+PRTS_PATH = os.path.join(HERE, "crisis-prts.json")
+PRTS = (load(PRTS_PATH).get("seasons") or {}) if os.path.exists(PRTS_PATH) else {}
+
+
+def rel_of(level):
+    return ("crisis/v2/level_" + level) if level.startswith("crisis_v2_") else ("rune/" + level)
+
+
+def base_of(rel):
+    return ("crisis_v2_" if rel.startswith("crisis/") else "level_rune_") + rel.rsplit("_", 1)[1]
+
+
+def season_key(season_id):
+    n = re.search(r"season_(\d+)_", season_id).group(1)
+    return ("s2-" if season_id.startswith("crisis_v2") else "s1-") + n
+
+
+def add_prts_maps(season_id, code, gen):
+    """PRTS 의 그 시즌 맵 — 메인(상주)이 먼저, 그다음 로테이션 (PRTS 순서). 레벨이 없는 맵은 건너뛴다"""
+    maps = [m for m in PRTS[season_id]["maps"] if m.get("level") and rel_of(m["level"]) in LEVELS]
+    maps.sort(key=lambda m: 0 if m.get("kind") == "main" else 1)
+    seen = set()
+    for i, m in enumerate(maps):
+        rel = rel_of(m["level"])
+        base = base_of(rel)
+        if base in seen:
+            continue
+        seen.add(base)
+        own = LEVELS[rel][1].get("bgmEvent") == f"{season_id}_main" or base.startswith(
+            ("crisis_v2_%02d-" % int(re.search(r"season_(\d+)_", season_id).group(1))) if gen == "v2" else
+            ("level_rune_%02d-" % (int(re.search(r"season_(\d+)_", season_id).group(1)) + 2)))
+        plan.append({"sid": base if own else f"{base}~{season_key(season_id)}", "base": base, "rel": rel, "season": season_id,
+                     "kind": "map", "gen": gen, "main": m.get("kind") == "main", "prts": m, "code": f"{code}-{i + 1}"})
+
+
 for s1 in sorted(V1["kr"].get("seasonInfo") or [], key=lambda x: x["startTs"]):
     n = int(re.search(r"season_(\d+)_", s1["seasonId"]).group(1))
     if n < 1:
         continue   # #0 황무지(베타) — 시즌 곡을 쓰는 맵이 없다
+    if s1["seasonId"] in PRTS:
+        add_prts_maps(s1["seasonId"], f"#{n}", "v1")
+        continue
     rels = sorted(r for r in LEVELS if r.startswith(f"rune/level_rune_{n + 2:02d}-"))
     add_maps(s1["seasonId"], "level_rune_", rels, f"#{n}", "v1", f"{s1['seasonId']}_main")
 for s in seasons:
     n = int(re.search(r"season_(\d+)_", s["seasonId"]).group(1))
+    if s["seasonId"] in PRTS:
+        add_prts_maps(s["seasonId"], s["crisisV2SeasonCode"], "v2")
+        continue
     rels = sorted(r for r in LEVELS if r.startswith(f"crisis/v2/level_crisis_v2_{n:02d}-"))
     add_maps(s["seasonId"], "crisis_v2_", rels, s["crisisV2SeasonCode"], "v2", f"{s['seasonId']}_main")
+for p in plan:
+    p.setdefault("base", p["sid"])
 recal_cn = tables["cn"]["recalRuneData"]["seasons"]
 for rs in sorted(recal_cn.values(), key=lambda x: x["sortId"]):
     for st in rs["stages"].values():
         rel = "recalrune/" + st["levelId"].rsplit("/", 1)[1].lower()
         if rel in LEVELS:
             plan.append({"sid": st["stageId"], "rel": rel, "season": rs["seasonId"], "kind": "matrix"})
+for p in plan:
+    p.setdefault("base", p["sid"])
 
 
 def map_name(p, loc):
+    if p.get("prts"):
+        kind = MAP_MAIN[p["gen"]][loc] if p["main"] else MAP_ROT[p["gen"]][loc]
+        return f"{kind} · {tr(p['prts']['name'], loc)}"
     if p["main"]:
         return MAP_MAIN[p["gen"]][loc]
     return MAP_ROT[p["gen"]][loc] + (f" {p['n']}" if p["multi"] else "")
@@ -317,6 +371,28 @@ def matrix_stage(season_id, sid, srv):
     return own, own is None
 
 
+def contract_runes(p, loc):
+    """맵 상세의 지표(계약) — PRTS 표 그대로, 문구는 crisis-tl.json 으로 옮긴다 (비공식 번역).
+    시즌 2: {t: 2, s: [[지표 세트, 추가 점수]], r: [[세트 번호|-1, 이름, 효과, 차원, 점수, 칸 수]]}
+    시즌 1: {t: 1, s: [[계약 묶음, 0]], r: [[묶음 번호|-1, 이름, 효과, '', 등급, 0]]}"""
+    T = lambda x: tr(x, loc) if x else x
+    sets, rows = [], []
+    for r in p["prts"].get("runes") or []:
+        key = r.get("set") or r.get("group")
+        si = -1
+        if key:
+            names = [x[0] for x in sets]
+            tk = T(key)
+            if tk not in names:
+                sets.append([tk, r.get("setBonus") or 0])
+            si = [x[0] for x in sets].index(tk)
+        if p["gen"] == "v2":
+            rows.append([si, T(r.get("name")) or r.get("id"), T(r.get("desc")) or "", T(r.get("dim")) or "", r.get("score") or 0, r.get("count") or 0])
+        else:
+            rows.append([si, T(r.get("name")) or r.get("id"), T(r.get("desc")) or "", "", r.get("level") or 0, 0])
+    return {"t": 2 if p["gen"] == "v2" else 1, "s": sets, "r": rows}
+
+
 def build(loc, srv):
     ev_list, ev_ix, enemy_ids, enemy_ix, names = [], {}, [], {}, {}
     stages = []
@@ -336,6 +412,8 @@ def build(loc, srv):
             rec["name"] = map_name(p, loc)
             if period:
                 rec["desc"] = period
+            if p.get("prts"):
+                rec["cr"] = contract_runes(p, loc)
         else:
             st, cn_only = matrix_stage(p["season"], p["sid"], srv)
             st = st or recal_cn[p["season"]]["stages"][p["sid"]]
@@ -386,9 +464,9 @@ def build(loc, srv):
             rec["e"] = e
             if any(es):
                 rec["es"] = es
-        if os.path.exists(os.path.join(STAGE_IMG, p["sid"] + ".webp")):
+        if os.path.exists(os.path.join(STAGE_IMG, p["base"] + ".webp")):
             rec["map"] = 1
-        if p["sid"] in SIM:
+        if p["base"] in SIM:
             rec["sim"] = 1
         if fut:
             rec["fut0"] = 1      # 표시용 아님 — 아래 요약 줄이 센다 (저장 전에 뺀다)
@@ -406,13 +484,13 @@ if not NO_IMAGES:
     _spec.loader.exec_module(_rogue)
     got = drawn = 0
     for p in plan:
-        dest = os.path.join(STAGE_IMG, p["sid"] + ".webp")
+        dest = os.path.join(STAGE_IMG, p["base"] + ".webp")
         if os.path.exists(dest):
             continue
         png = None
         if p["kind"] == "map":
             for srv in ("kr", "cn"):
-                png = cdnassets.png_bytes(f"arts/ui/stage/mappreviews/{p['sid']}", srv)
+                png = cdnassets.png_bytes(f"arts/ui/stage/mappreviews/{p['base']}", srv)
                 if png:
                     break
         if png:
@@ -456,11 +534,13 @@ if not NO_IMAGES:
 # ── 이동 경로·시뮬 ───────────────────────────────────────────────────────────
 routes = {}
 for p in plan:
+    if p["base"] in routes:
+        continue
     lv_srv, lv = LEVELS[p["rel"]]
     d = routes_of_level(lv, {**ENEMY_DB["kr"], **ENEMY_DB[lv_srv]} if lv_srv != "kr" else ENEMY_DB["kr"])
     if d:
-        d.update(devices_of_level(lv, p["sid"]))
-        routes[p["sid"]] = d
+        d.update(devices_of_level(lv, p["base"]))
+        routes[p["base"]] = d
 SIM = {sid for sid, d in routes.items() if d.get("sp") and d.get("wv")}
 
 by_loc = {loc: build(loc, srv) for loc, srv, _ in LOCALES}
@@ -469,7 +549,7 @@ by_loc = {loc: build(loc, srv) for loc, srv, _ in LOCALES}
 n_nm = 0
 for p in plan:
     d = routes.get(p["sid"])
-    if not d:
+    if not isinstance(d, dict):
         continue
     lv_srv, lv = LEVELS[p["rel"]]
     known = {c for c in (canon(k, lv_srv) for k, *_ in level_enemies(lv)) if c} & set(d.get("e") or {})
@@ -478,6 +558,9 @@ for p in plan:
     if nm:
         d["nm"] = nm
         n_nm += len(nm)
+for p in plan:          # 별칭 작전 → 원래 맵의 경로 (app/stage-detail.tsx routeDocFor 가 한 단계 푼다)
+    if p["sid"] != p["base"] and p["base"] in routes:
+        routes[p["sid"]] = p["base"]
 rp = os.path.join(DATA, "crisis-routes.json")
 json.dump(routes, open(rp, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print(f"  crisis-routes.json: 경로 {len(routes)} · 시뮬 {len(SIM)} · 경로 주인 이름 보충 {n_nm} — {os.path.getsize(rp) // 1024}KB")
@@ -485,11 +568,20 @@ print(f"  crisis-routes.json: 경로 {len(routes)} · 시뮬 {len(SIM)} · 경�
 # 실사 도면 위 경로 투영용 전투 카메라 — 본 도감과 같은 출처·규칙 (scripts/stagecams.py)
 LV_DIR = {"crisis": "Crisis/v2/", "recalrune": "Recalrune/", "rune": "Rune/"}
 level_of = {p["sid"]: "Obt/" + LV_DIR[p["rel"].split("/", 1)[0]] + p["rel"].rsplit("/", 1)[1] for p in plan}
+level_of.update({p["base"]: level_of[p["sid"]] for p in plan})
 level_of.update({sid: v[1] for sid, v in MATRIX_ORIG.items() if v[1]})   # 매트릭스 = 원본 작전 카메라
 for loc, _, suf in LOCALES:
     prev = os.path.join(DATA, f"stages-crisis{suf}.json")
     keep = {e["id"]: e["cam"] for e in load(prev)["stages"] if "cam" in e} if os.path.exists(prev) else {}
-    stagecams.attach(by_loc[loc], STAGE_IMG, level_of, keep, grid_of=lambda sid: (routes.get(sid) or {}).get("g"))
+    stagecams.attach(by_loc[loc], STAGE_IMG, level_of, keep,
+                     grid_of=lambda sid: ((routes.get(routes[sid]) if isinstance(routes.get(sid), str) else routes.get(sid)) or {}).get("g"))
+    cam_of = {x["id"]: x["cam"] for x in by_loc[loc]["stages"] if x.get("cam")}
+    for p in plan:
+        if p["sid"] != p["base"]:
+            rec = next(x for x in by_loc[loc]["stages"] if x["id"] == p["sid"])
+            cam = cam_of.get(p["base"]) or stagecams.cam_for(p["base"], STAGE_IMG, {p["base"]: level_of.get(p["sid"])})
+            if cam:
+                rec["cam"] = cam
 
 for loc, _, suf in LOCALES:
     doc = by_loc[loc]

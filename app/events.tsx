@@ -483,7 +483,7 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
               {/* 전투 없는 스토리 작전(act52side_st01 · st_ · spst_)은 도면이 없다 — 그리지 않는다. 그려 두고 404 에 지우면
                   16:9 칸이 잡혔다가 접혀 카드 줄이 늘었다 줄었다 했다 (사용자 지적 2026-10-10 어제의 바다 작전 탭) */}
               {!NO_MAP.test(id) && (
-                <img className="ev-stage-map" src={asset(`/stage/${id}.webp`)} alt="" aria-hidden width={640} height={360}
+                <img className="ev-stage-map" src={asset(`/stage/${id.split("~")[0]}.webp`)} alt="" aria-hidden width={640} height={360}
                   loading="lazy" decoding="async" onError={(e) => { e.currentTarget.remove(); }} />
               )}
               {storyOnly && story?.cut?.[code] && (

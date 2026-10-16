@@ -131,7 +131,7 @@ python3 scripts/build-stages-rogue.py        # → app/data/stages-rogue{,.en,.j
 **위기협약 새 시즌·홀로그램 매트릭스 새 시즌**이 왔으면(또는 점검마다 한 번) — 시즌 맵 도면까지 받으려면 로컬에서:
 `python3 scripts/build-stages-crisis.py` (→ stages-crisis{,.en,.ja}.json · crisis-routes.json · public/stage/crisis_v2_*.webp).
 중국어 문구가 남으면 `scripts/crisis-untranslated.json` → `scripts/crisis-tl.json` 에 채운다. 시즌 지표(계약 태그)는
-게임 서버가 내려 줘 데이터에 없다 — 매트릭스 지표만 실린다.
+게임 서버가 내려 줘 데이터에 없다 — 시즌 지표·로테이션 맵 목록은 PRTS 위키에서 받는다(`python3 scripts/fetch-crisis-prts.py --refresh`, 2026-10-17~).
 
 위수 협의(오토체스) 시즌이 열렸거나 갱신됐으면:
 

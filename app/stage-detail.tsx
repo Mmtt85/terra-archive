@@ -394,6 +394,34 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
             </section>
           )}
 
+          {/* 위기 협약 지표·계약 — 묶음(지표 세트·계약 묶음)별로 (PRTS 위키 기준, 사용자 지시 2026-10-17 "제약도 다 표시") */}
+          {s.cr && s.cr.r.length > 0 && (
+            <section className="st-block">
+              <h3>
+                <span className="section-no">RUNE</span>{s.cr.t === 2 ? t("지표") : t("계약")} <em>{s.cr.r.length}</em>
+                <span className="st-envnote">{t("PRTS 위키 기준 · 비공식 번역")}</span>
+              </h3>
+              {[...s.cr.s.map((g, i) => [i, g] as const), [-1, null] as const].map(([gi, g]) => {
+                const rows = s.cr!.r.filter((x) => x[0] === gi);
+                if (!rows.length) return null;
+                return (
+                  <div key={gi} className="st-cr-group">
+                    <h4>{g ? g[0] : t("기타")}{g && g[1] > 0 && <em>{t("세트 완료 +{n}", { n: String(g[1]) })}</em>}</h4>
+                    <ul className="st-runes">
+                      {rows.map(([, name, desc, dim, val, cnt], i) => (
+                        <li key={i}>
+                          <span className="st-rune-pt">{s.cr!.t === 2 ? `+${val}` : `Lv${val}`}</span>
+                          <span className="st-rune-text"><b>{name}</b>{cnt > 1 && <em className="st-rune-grp"> ×{cnt}</em>}{"\n"}{desc}</span>
+                          {dim && <em className="st-rune-grp">{dim}</em>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </section>
+          )}
+
           {byKind.length > 0 && (
             <section className="st-block">
               <h3><span className="section-no">DROP</span>{t("드랍")}</h3>

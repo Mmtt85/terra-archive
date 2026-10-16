@@ -174,6 +174,7 @@ python3 scripts/build-stages-sandbox.py             # 작전 도감·시뮬레�
 python3 scripts/build-stages-crisis.py              # 시즌 맵 도면(중섭 CDN)·경로·매트릭스 지표 — 미래시는 '중국 서버 선행'으로 붙는다
 ```
 중국어 문구는 `scripts/crisis-untranslated.json` 을 보고 `scripts/crisis-tl.json` 에 ko·en·ja 를 채운 뒤 `--no-images` 로 한 번 더.
+**새 시즌이면 맵 목록·지표를 PRTS 에서 먼저** — `python3 scripts/fetch-crisis-prts.py --refresh` (PRTS 문서가 채워지는 데 며칠 걸린다 — 시즌 개방 뒤 다시).
 
 **중섭 이벤트 (미실장 이벤트 줄)** — 새 이벤트가 열렸거나 지난 패치 뒤 처음이면 **반드시**:
 ```bash

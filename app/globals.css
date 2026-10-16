@@ -21448,6 +21448,12 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   font-size: 11px;
   color: var(--muted);
 }
+/* 위기 협약 지표 묶음 — 묶음 이름 줄 + 그 묶음의 지표 (2026-10-17) */
+.st-cr-group + .st-cr-group { margin-top: 10px; }
+.st-cr-group h4 { margin: 0 0 4px; font-size: 12px; font-weight: 700; display: flex; gap: 8px; align-items: baseline; }
+.st-cr-group h4 em { font-style: normal; font-weight: 500; font-size: 11px; color: var(--muted); }
+.st-cr-group .st-rune-text b { font-weight: 700; }
+.st-cr-group .st-rune-text .st-rune-grp { display: inline; }
 .st-dropgroup h4 {
   margin: 0 0 4px;
   font-size: 12px;
