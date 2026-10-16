@@ -24113,5 +24113,170 @@
   "ko": "에피소드 17의 모의 훈련에서 누적 15점 획득",
   "en": "Earn a total of 15 points in the Strategic Simulation of Episode 17.",
   "ja": "第十七章の砂盤推論で累計15ポイントを獲得。"
+ },
+ "“千帆来朝”花瓶": {
+  "ko": "“천 척의 돛” 꽃병",
+  "en": "\"A Thousand Sails\" Vase",
+  "ja": "「千帆来朝」花瓶"
+ },
+ "“心诚则灵”香炉": {
+  "ko": "“정성이면 통한다” 향로",
+  "en": "\"Sincerity Answered\" Censer",
+  "ja": "「心誠なれば通ず」香炉"
+ },
+ "“永恒奔跑”仪仗盾": {
+  "ko": "“영원한 질주” 의장 방패",
+  "en": "\"Eternal Running\" Ceremonial Shield",
+  "ja": "「永遠の疾走」儀仗盾"
+ },
+ "“至伟之术”净手盆": {
+  "ko": "“지고의 기예” 손 씻는 대야",
+  "en": "\"The Greatest Art\" Washbasin",
+  "ja": "「至高の術」手洗い盆"
+ },
+ "“远海遗声”灯": {
+  "ko": "“먼바다의 메아리” 등",
+  "en": "\"Echoes of the Far Sea\" Lamp",
+  "ja": "「遠海の残響」灯"
+ },
+ "“驯服大海”弩": {
+  "ko": "“바다를 길들이다” 쇠뇌",
+  "en": "\"Taming the Sea\" Crossbow",
+  "ja": "「海を馴らす」弩"
+ },
+ "戴罪空盔甲": {
+  "ko": "죄를 짊어진 빈 갑옷",
+  "en": "Guilt-Laden Empty Armor",
+  "ja": "罪を負う空の鎧"
+ },
+ "老练禁术学徒": {
+  "ko": "노련한 금술 견습생",
+  "en": "Seasoned Forbidden Arts Apprentice",
+  "ja": "老練な禁術の徒弟"
+ },
+ "一缕头发": {
+  "ko": "머리카락 한 타래",
+  "en": "A Lock of Hair",
+  "ja": "一房の髪"
+ },
+ "一张画报": {
+  "ko": "포스터 한 장",
+  "en": "A Poster",
+  "ja": "一枚のポスター"
+ },
+ "一本笔记": {
+  "ko": "노트 한 권",
+  "en": "A Notebook",
+  "ja": "一冊のノート"
+ },
+ "一朵纸花": {
+  "ko": "종이꽃 한 송이",
+  "en": "A Paper Flower",
+  "ja": "一輪の紙の花"
+ },
+ "一抔骨灰": {
+  "ko": "한 줌의 유골",
+  "en": "A Handful of Ashes",
+  "ja": "一握りの遺灰"
+ },
+ "一枚螺栓": {
+  "ko": "볼트 하나",
+  "en": "A Bolt",
+  "ja": "一本のボルト"
+ },
+ "一口罐头": {
+  "ko": "통조림 하나",
+  "en": "A Tin Can",
+  "ja": "ひと缶の缶詰"
+ },
+ "一件失物": {
+  "ko": "잃어버린 물건 하나",
+  "en": "A Lost Item",
+  "ja": "ひとつの落とし物"
+ },
+ "被强活性塑能基质控制的包金空盔甲。": {
+  "ko": "강활성 가소성 기질에 조종당하는 금박 입힌 빈 갑옷.",
+  "en": "Gilded empty armor controlled by highly active Plastic Matrix.",
+  "ja": "強活性の可塑性基質に操られた金張りの空の鎧。"
+ },
+ "被强活性塑能基质控制的华丽花瓶。": {
+  "ko": "강활성 가소성 기질에 조종당하는 화려한 꽃병.",
+  "en": "An ornate vase controlled by highly active Plastic Matrix.",
+  "ja": "強活性の可塑性基質に操られた華麗な花瓶。"
+ },
+ "被强活性塑能基质控制的古老香炉。": {
+  "ko": "강활성 가소성 기질에 조종당하는 오래된 향로.",
+  "en": "An ancient censer controlled by highly active Plastic Matrix.",
+  "ja": "強活性の可塑性基質に操られた古い香炉。"
+ },
+ "被强活性塑能基质控制的坚固盾牌。": {
+  "ko": "강활성 가소성 기질에 조종당하는 견고한 방패.",
+  "en": "A sturdy shield controlled by highly active Plastic Matrix.",
+  "ja": "強活性の可塑性基質に操られた堅固な盾。"
+ },
+ "被强活性塑能基质控制的大功率壁灯。": {
+  "ko": "강활성 가소성 기질에 조종당하는 고출력 벽등.",
+  "en": "A high-power wall lamp controlled by highly active Plastic Matrix.",
+  "ja": "強活性の可塑性基質に操られた高出力の壁灯。"
+ },
+ "被强活性塑能基质控制的镶金净手盆。": {
+  "ko": "강활성 가소성 기질에 조종당하는 금을 박은 손 씻는 대야.",
+  "en": "A gold-inlaid washbasin controlled by highly active Plastic Matrix.",
+  "ja": "強活性の可塑性基質に操られた金象嵌の手洗い盆。"
+ },
+ "被强活性塑能基质控制的高磅数手弩。": {
+  "ko": "강활성 가소성 기질에 조종당하는 고장력 손쇠뇌.",
+  "en": "A heavy-draw hand crossbow controlled by highly active Plastic Matrix.",
+  "ja": "強活性の可塑性基質に操られた高張力のハンドクロスボウ。"
+ },
+ "遵从导师指引，在城中制造混乱的老练学徒。": {
+  "ko": "스승의 지시에 따라 도시에서 혼란을 일으키는 노련한 견습생.",
+  "en": "Seasoned apprentices who sow chaos in the city on their master's instructions.",
+  "ja": "師匠の指示に従い、都市で混乱を引き起こす老練な弟子。"
+ },
+ "本次行动中干员部署不受近远程限制": {
+  "ko": "오퍼레이터 배치 시 근원거리 제한 없음",
+  "en": "No melee/ranged deployment restrictions",
+  "ja": "オペレーターは遠近の制限を受けず自由な位置に配置可能。"
+ },
+ "“我听说赠送羽毛是黎博利表示好意的方式，可我没有羽毛，只能把自己的头发编成绳结，送给镇上的每一个孩子。那时候，我真的很期望他们谁能回赠我一顶帽子，好让我的头皮不被海风吹得生疼。”": {
+  "ko": "“깃털을 선물하는 게 리베리가 호의를 표하는 방식이라고 들었지만, 내게는 깃털이 없어서 내 머리카락을 매듭으로 엮어 마을 아이들 모두에게 하나씩 줄 수밖에 없었다. 그때 나는 정말로 그들 중 누군가가 답례로 모자 하나를 선물해 주기를 바랐다. 그러면 바닷바람에 두피가 쓰라리지 않을 테니까.”",
+  "en": "\"I heard that giving feathers is how Liberi show goodwill, but I had no feathers, so all I could do was braid my own hair into knots and give one to every child in town. Back then, I truly hoped one of them would give me a hat in return, so the sea wind wouldn't sting my scalp so badly.\"",
+  "ja": "「羽根を贈るのはリーベリが好意を示すやり方だと聞いたけれど、私には羽根がないから、自分の髪を編んで結び目にし、町の子どもたち一人ひとりに贈るしかなかった。あの頃は本当に、誰かがお返しに帽子をくれないかと願っていた。そうすれば海風で頭皮がひりひりせずに済むから。」"
+ },
+ "“画报上是一位身穿白衣，手持剑与提灯的圣洁修士。那时候我还不知道那就是伊比利亚的象征，我只觉得她美丽，就总跑去看那张画报。后来，有异教徒在画报上泼了血，被举报的人却是我。”": {
+  "ko": "“포스터에는 흰옷을 입고 검과 등불을 든 성스러운 수도사가 그려져 있었다. 그때 나는 그것이 이베리아의 상징이라는 것도 몰랐고, 그저 그녀가 아름답다고만 생각해서 늘 그 포스터를 보러 가곤 했다. 나중에 어느 이교도가 포스터에 피를 끼얹었는데, 고발당한 사람은 나였다.”",
+  "en": "\"The poster showed a holy cleric dressed in white, holding a sword and a lantern. Back then I didn't know that was the symbol of Iberia; I just thought she was beautiful, so I kept going to look at that poster. Later, a heretic splashed blood on it, and the one who got reported was me.\"",
+  "ja": "「ポスターには、白い衣をまとい、剣とランタンを手にした聖なる修道士が描かれていた。あの頃の私はそれがイベリアの象徴だとは知らず、ただ彼女を美しいと思って、いつもそのポスターを見に行っていた。その後、異教徒がポスターに血をぶちまけたのに、告発されたのは私だった。」"
+ },
+ "“每当我问起海里的那个未曾谋面的‘故乡’是什么模样，父亲总会先搪塞过去，事后又详尽无遗地回答我。我总以为他藏在柜子里的笔记上写的是他在阿戈尔生活时的见闻，可那里面只是打着怎么回答我的草稿。”": {
+  "ko": "“바닷속에 있다는, 한 번도 본 적 없는 '고향'이 어떤 모습이냐고 물을 때마다, 아버지는 늘 처음엔 얼버무리고는 나중에 빠짐없이 자세하게 대답해 주었다. 나는 아버지가 장 속에 숨겨 둔 노트에 에기르에서 살던 시절의 견문이 적혀 있는 줄로만 알았는데, 그 안에는 내게 어떻게 대답할지 써 본 초안뿐이었다.”",
+  "en": "\"Whenever I asked what that 'homeland' in the sea I'd never seen was like, Father would always dodge the question at first, then answer me afterward in exhaustive detail. I always assumed the notebook he hid in the cabinet held what he'd seen and heard living in Aegir, but all it held were drafts of how to answer me.\"",
+  "ja": "「海の中にあるという、一度も見たことのない『故郷』がどんな所なのか尋ねるたびに、父はいつもまずはぐらかし、後になってから余すところなく詳しく答えてくれた。父が戸棚に隠していたノートには、エーギルで暮らしていた頃の見聞が書かれているのだとずっと思っていたけれど、中にあったのは私にどう答えるかの下書きだけだった。」"
+ },
+ "“父亲死后，我在后院焚烧了他的尸体。火光理所当然地引来了镇上的执裁官，但看到火堆里确实只有一具寂寂无名的岛民遗体，她撇撇嘴，用手里的搜查令折了一朵蹩脚的纸花，放在了火堆前。”": {
+  "ko": "“아버지가 돌아가신 뒤, 나는 뒤뜰에서 아버지의 시신을 태웠다. 불빛은 당연하게도 마을의 재판관을 불러들였지만, 불더미 속에 정말로 이름 없는 섬사람의 유해 하나뿐인 것을 보자, 그녀는 입을 삐죽이더니 손에 든 수색 영장으로 어설픈 종이꽃 한 송이를 접어 불더미 앞에 놓았다.”",
+  "en": "\"After Father died, I burned his body in the backyard. Naturally, the firelight drew the town's Arbiter, but when she saw that the pyre truly held nothing but the remains of a nameless islander, she pursed her lips, folded a clumsy paper flower out of the search warrant in her hand, and set it before the fire.\"",
+  "ja": "「父が死んだ後、私は裏庭で父の遺体を焼いた。炎は当然のように町の執裁官を呼び寄せたが、火の中に本当に名もなき島民の亡骸がひとつあるだけなのを見ると、彼女は口をとがらせ、手にしていた捜査令状で不格好な紙の花を一輪折って、火の前に置いた。」"
+ },
+ "“父亲不愿让我把他的骨灰撒入大海，尽管他曾亲口说过那是阿戈尔人的传统。他恨这片土地，但他终归在这里挣扎了太久，不愿就这么轻描淡写地‘离开’。哪怕只是一抔骨灰，他也算是在这里留下了点什么。”": {
+  "ko": "“아버지는 내가 자신의 유골을 바다에 뿌리는 걸 원치 않았다. 그것이 에기르인의 전통이라고 직접 말한 적도 있으면서. 아버지는 이 땅을 증오했지만, 결국 이곳에서 너무 오래 발버둥 쳐 왔기에, 이렇게 대수롭지 않게 '떠나고' 싶지는 않았던 것이다. 한 줌의 유골일지라도, 아버지는 이곳에 무언가를 남긴 셈이다.”",
+  "en": "\"Father didn't want me to scatter his ashes into the sea, even though he himself had once told me it was an Aegirian tradition. He hated this land, but in the end he had struggled here for too long, and he didn't want to 'leave' so lightly. Even if it was only a handful of ashes, he could be said to have left something behind here.\"",
+  "ja": "「父は自分の遺灰を私に海へ撒かせようとしなかった。それがエーギル人の伝統だと、自分の口で言ったことがあるのに。父はこの土地を憎んでいたが、結局ここであまりにも長くもがいてきたから、こんなにあっさりと『去る』のは嫌だったのだ。たとえ一握りの遺灰でも、父はここに何かを残したことになる。」"
+ },
+ "“我遇见一位老人，她恳请我帮个忙。她毫不掩饰自己的愤怒，我也知道我该举报她。但她恳请我收下一枚古旧的螺栓，告诉我，就像这些螺栓会不断提醒岛民不要遗忘自己的价值，她和其他所有的岛民，也都会记得我。”": {
+  "ko": "“나는 한 노인을 만났는데, 그녀는 내게 도와 달라고 간청했다. 그녀는 자신의 분노를 조금도 감추지 않았고, 나도 그녀를 고발해야 한다는 걸 알았다. 하지만 그녀는 낡은 볼트 하나를 받아 달라고 간청하며 말했다. 이 볼트들이 섬사람들에게 자신의 가치를 잊지 말라고 끊임없이 일깨워 주듯, 그녀와 다른 모든 섬사람들도 나를 기억할 거라고.”",
+  "en": "\"I met an old woman who begged me for a favor. She made no attempt to hide her anger, and I knew I ought to report her. But she begged me to accept an old bolt, and told me that just as these bolts constantly remind the islanders not to forget their own worth, she and all the other islanders would remember me too.\"",
+  "ja": "「私はある老婆に出会い、手を貸してほしいと懇願された。彼女は怒りを少しも隠そうとせず、私も彼女を告発すべきだとわかっていた。けれど彼女は古びたボルトを一本受け取ってほしいと懇願し、こう言った。このボルトが島民に自分たちの価値を忘れるなと絶えず思い出させるように、彼女も、ほかのすべての島民も、私のことを覚えているだろうと。」"
+ },
+ "“我帮反叛的岛民害了人，但没有真的接触深海教会，所以审判庭取走的是我的舌头，而不是性命。这样也好，这样我终于不用每天都尝一遍那永远一成不变、令人作呕的罐头味儿了。”": {
+  "ko": "“나는 반역한 섬사람들을 도와 사람을 해쳤지만, 심해 교회와 진짜로 접촉하지는 않았기에, 재판소는 내 목숨이 아니라 혀를 가져갔다. 차라리 잘됐다. 이제야 매일같이 그 영원히 한결같고 구역질 나는 통조림 맛을 보지 않아도 되니까.”",
+  "en": "\"I helped the rebel islanders hurt people, but I never truly had contact with the Church of the Deep, so the Inquisition took my tongue instead of my life. That's fine by me. This way, I finally don't have to taste that forever-unchanging, nauseating canned-food flavor every single day.\"",
+  "ja": "「私は反逆した島民に手を貸して人を傷つけたが、深海教会と本当に接触したわけではなかったから、審問庭が奪ったのは命ではなく舌だった。それでいい。これでようやく、あの永遠に変わらない、吐き気のする缶詰の味を毎日味わわずに済むのだから。」"
+ },
+ "“我在水下遇到一个岛民姑娘，似乎已经连着十几个小时没上过岸了。她急切地问我有没有看见一枚丢在海里的螺栓，我试着用手势告诉她这不可能找得到，但她全然不管不顾。所以，我掏出那枚我用舌头换来的螺栓，递给了她。”": {
+  "ko": "“나는 물속에서 섬사람 아가씨 하나를 만났는데, 벌써 열 몇 시간째 뭍에 오르지 않은 것 같았다. 그녀는 바다에 떨어뜨린 볼트 하나를 못 봤냐고 다급하게 물었고, 나는 그걸 찾을 수 있을 리 없다고 손짓으로 알려 주려 했지만, 그녀는 아랑곳하지 않았다. 그래서 나는 혀와 맞바꾼 그 볼트를 꺼내 그녀에게 건넸다.”",
+  "en": "\"Underwater, I met an islander girl who seemed not to have come ashore for over ten hours straight. She anxiously asked whether I'd seen a bolt lost in the sea. I tried to tell her with gestures that there was no way it could be found, but she paid no heed at all. So I took out the bolt I had traded my tongue for and handed it to her.\"",
+  "ja": "「水の中で一人の島民の娘に出会った。もう十数時間も陸に上がっていないようだった。彼女は海で落としたボルトを見なかったかと切羽詰まった様子で尋ねてきた。私は見つかるはずがないと身振りで伝えようとしたが、彼女はまったく耳を貸さなかった。だから私は、舌と引き換えに手に入れたあのボルトを取り出し、彼女に手渡した。」"
  }
 }

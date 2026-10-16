@@ -262,6 +262,11 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       lines = lines.concat(await session.chipsAlt());
       oc = analyzeRecruit(lines, tags, rl);
     }
+    // 그래도 모자라면 빈 글자로 돌아온 칩만 하나씩 다시 (PaddleOCR 경로 — chipsAlt 는 그땐 건너뛴다. 틀렸어요 966a22eb '신입')
+    if (nTags() > 0 && nTags() < 5) {
+      lines = lines.concat(await session.chipsRetry());
+      oc = analyzeRecruit(lines, tags, rl);
+    }
     // 공채 화면 모양이 아니면 버린다 — 다른 화면의 '로봇'·'가드' 같은 글자가 태그로 잡혔다 (match.ts recruitLayoutOk)
     if (nTags() > 0 && !recruitLayoutOk(session.chipBoxes(), tags, rl)) {
       console.debug("[lens] 공채 화면 모양이 아님 — 태그 무시", session.chipBoxes().map((b) => b.text).join(" "));

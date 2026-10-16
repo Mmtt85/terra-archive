@@ -32,7 +32,7 @@ import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
 import { Dropdown } from "./dropdown";
 import { SearchSuggest } from "./search-suggest";
-import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages, type FutureDex } from "./dex-cross";
+import { isCrisisStage, loadCrisisStages, loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages, type FutureDex } from "./dex-cross";
 import { EnemyFile, enemyImg, type Enemy, type EnemyLevel, type EnemyStages, type StatOverride } from "./enemy-detail";
 import { DuelDetail, type DuelFighter } from "./event-duel";
 import { VecDetail } from "./event-vecbreak";
@@ -82,6 +82,8 @@ export type EventRow = {
   duel?: 1;
   /** 벡터 돌파 — 상세(커널 돌파·총력전·특별 전선·전투 보급·마일스톤 …)를 app/event-vecbreak.tsx 가 따로 받는다 */
   vb?: 1;
+  /** 창 위쪽 안내 한 줄 — 위기 협약: 시즌 지표가 데이터에 없다는 것 (scripts/build-stages-crisis.py NOTE, 이미 로케일별 문구) */
+  note?: string;
 };
 export type EventDoc = { updated: string; events: EventRow[] };
 
@@ -90,6 +92,8 @@ const TYPE_LABEL: Record<string, string> = {
   SIDESTORY: "사이드 스토리",
   MINISTORY: "미니 이벤트",
   BRANCHLINE: "막간 이야기",
+  // 위기 협약 시즌·홀로그램 매트릭스 — 별도 목록(events-crisis*.json)이 이어 붙는다 (2026-10-16)
+  CRISIS: "위기 협약",
   NONE: "기타",
 };
 const typeOf = (row: EventRow) => (row.type && TYPE_LABEL[row.type] ? row.type : "NONE");
@@ -579,6 +583,7 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
             ? <span className="ev-period">{confirmedDay(row.id) ? t("한국 서버 {md} 개방 확정", { md: fmtMonthDay(locale, confirmedDay(row.id)!) })
                 : row.eta ? t("한국 서버 {ym} 예정", { ym: row.eta.replace("-", ".") }) : t("미실장")}</span>
             : row.start && <span className="ev-period">{row.start}{row.end ? ` ~ ${row.end}` : ""}</span>}
+          {row.note && <p className="ev-note">{row.note}</p>}
         </div>
       </header>
       {/* 탭 — 개요(썸네일·교환 재화 | 이벤트 오퍼·맵 상위 재료) · 작전 · 등장 적 · 일정 · 미션 · 훈장 · 가구 · 신뢰도 보너스
@@ -665,6 +670,11 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
     void Promise.all([loadStages(locale), loadEnemyStats()]).then(async ([d, stats]) => {
       let doc = d;
       let st = d.stages.find((x) => x.id === sid);
+      // 위기 협약 맵 — 자기 색인에서 (본 도감·미래시 도감에 없다)
+      if (!st && isCrisisStage(sid)) {
+        doc = mergeRogueDoc(d, await loadCrisisStages(locale));
+        st = doc.stages.find((x) => x.id === sid);
+      }
       if (!st) {
         const f = await loadFutureDex(locale);
         setFut(f);

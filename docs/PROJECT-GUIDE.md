@@ -542,9 +542,13 @@ python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/bui
   행동력(`act`)·전용 적 수치(`es`)·초상(`enemyImg`)을 레코드가 들고 간다. 도면이 격자 평면도인 86개엔
   `ortho:1` → 상세가 원근 없이 격자를 겹쳐 합친 도면을 만든다. 재기동 앵커(v3)는 이름 없는 지형 조각이라
   아직 넣지 않았다. 통합전략·생존연산 작전은 **작전 시뮬레이터 검색에도** 잡힌다(색인의 `sim:1`).
-- `app/data/stages-crisis.json` / `.en` / `.ja` — **작전 도감·작전 시뮬레이터에 얹는 위기협약**
-  (사용자 요청 2026-10-16 "위기협약 해줘"). `scripts/build-stages-crisis.py`가 게임 CDN 의 `crisis_v2_table`·레벨에서
-  같은 방식으로 낸다 — 시즌 맵(`crisis_v2_SS-NN`, '맵 N')과 홀로그램 매트릭스(`level_recalrune_*`, 지표 `rn`), `cc:1`.
+- `app/data/stages-crisis.json` / `.en` / `.ja` · `events-crisis.json` / `.en` / `.ja` — **위기 협약**(공식 표기는 띄어 쓴다).
+  본 자리는 **이벤트 가이드**다 (사용자 지시 2026-10-16 "이벤트가이드에 들어가야 하는 거 아님?") — 시즌 하나가 이벤트 카드 하나
+  (v1 #1~#12 `rune_season_N_1` · v2 #1~ `crisis_v2_season_N_1` · 홀로그램 매트릭스 `recalRune_season_N`, 종류 `CRISIS`).
+  일정·훈장 탭은 같은 빌더가 `event-extra/<로케일>/<시즌 id>.json` 에 쓴다(build-event-extra.py 가 지우지 않는다).
+  맵은 작전 도감·시뮬레이터에도 얹힌다 (`cc:1`) — `scripts/build-stages-crisis.py`가 게임 CDN 의 `crisis_v2_table`·`crisis_table`·레벨에서
+  낸다. 맵 이름은 **시즌 곡(bgmEvent `<시즌>_main`)을 쓰는 판 = 메인 실험 장소(v1 상주 작전 지점), 나머지 = 로테이션** (훈장 조건 문구의
+  공식 표기). v1 레벨 묶음은 `level_rune_<시즌+2>` — 01·02 묶음(시즌 곡 없음)과 #0 황무지는 뺐다. 매트릭스는 지표 `rn` 까지.
   경로는 `crisis-routes.json`, 도면은 본 도감과 같은 `public/stage/`. **시즌 지표(계약 태그)·위험도 보상은 클라이언트
   데이터에 없다**(시즌이 열릴 때 서버가 내려 준다 — 레벨의 runes 가 비어 있고 번들엔 아이콘뿐). 맵 이름도 없다.
   중섭 전용 시즌은 이름 뒤 '(중국 서버 선행)', 중국어 문구는 `scripts/crisis-tl.json` 이 옮긴다.

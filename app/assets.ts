@@ -24,7 +24,7 @@ export const storyCutUrl = (name: string) => `${asset(`/story/cut/${encodeURICom
 /** 이벤트 창 훈장·가구 그림(/event/medal·/event/furni) 캐시 키. 그림이 R2 에 올라가기 **전에** 누가 그 주소를 열면
  *  404 가 엣지에 4시간 박힌다 — 중섭 선행 이벤트는 도감이 먼저 배포되고 그림이 뒤따라 올 때가 있어 그렇게 됐다
  *  (2026-10-09 어제의 바다 가구 19장). 그림을 새로 받아 올린 뒤 값을 올리면 새 키로 바로 받아진다. */
-export const EVENT_ART_VER = "2026100901";
+export const EVENT_ART_VER = "2026101601";
 /** 스토리 목록·연대기 카드 섬네일(/story/<id>.webp) 캐시 키 — 새 섬네일을 올리기 전에 그 주소가 한 번이라도 열리면
  *  404 가 엣지에 4시간 박힌다(2026-10-10 상전이 임계 main_17). 섬네일을 새로 넣으면 올린다. */
 export const STORY_THUMB_VER = "2026101001";

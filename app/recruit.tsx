@@ -16,7 +16,7 @@ import { recognizeShot, warmData } from "./lens/run";
 import { warmOcr } from "./lens/ocr";
 import { warmPaddle } from "./lens/paddle";
 import { useClipboardWatch } from "./lens/clipwatch";
-import { useBridgeWatch } from "./lens/bridge";
+import { noteBridgeOutcome, useBridgeWatch } from "./lens/bridge";
 import { BridgeTopicButton } from "./lens/bridge-button";
 import { setBridgePipRecruit, useBridgeStatus } from "./lens/bridge";
 import { useDropWatch } from "./lens/dropwatch";
@@ -254,6 +254,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     try {
       // 화면 언어로 — 영어·일본어 페이지는 그 언어 게임 화면을 읽는다 (2026-10-13, 종전엔 "ko" 고정)
       const oc = await recognizeShot("recruit", file, undefined, locale, { live });
+      if (live) noteBridgeOutcome(oc);   // '틀렸어요' 기록에 잡힌 태그가 실리게
       if (live) offRecruit.current = oc.target.kind === "goto" ? 0 : offRecruit.current + 1;
       if (live && offRecruit.current === 2) { setQuickTerm(""); setManualOff([]); setManualOn([]); }
       if (oc.target.kind === "goto") {

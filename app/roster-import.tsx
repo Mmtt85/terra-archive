@@ -32,6 +32,15 @@ type Props = {
 export function RosterImportPanel({ t, onMaaFile, onScan, onAccount, scanBadge }: Props) {
   return (
     <div className="roster-import">
+      {/* 게임 로그인이 맨 위 — 가장 정확한 방법이다 (사용자 지시 2026-10-16) */}
+      <section className="import-way import-login">
+        <h4>{t("게임 로그인")}<NewBadge id="account" show={isNewFeature("account")} /></h4>
+        <p>{t("요스타 계정 이메일로 인증코드를 받아 로그인하면, 계정의 실제 보유 목록과 정예화를 그대로 가져옵니다 — 가장 정확한 방법입니다.")}</p>
+        <p className="import-warn">{rich(t("**주의: 가져오는 순간 게임 접속이 끊깁니다.** 데이터를 받으려면 게임 서버에 접속을 새로 열어야 하고, 명일방주는 계정당 접속을 하나만 허용하기 때문입니다. 게임을 하지 않을 때 쓰세요 — 계정에는 아무 문제가 없고, 다시 실행하면 그대로 접속됩니다."))}</p>
+        <AccountLoginForm t={t} onAccount={onAccount} submitLabel={t("로그인해서 보유 오퍼 가져오기")}
+          privacy={t("이메일과 인증코드는 저장하지 않습니다 — 요스타 인증을 대신 호출하는 데만 쓰고 바로 버립니다. 받은 보유 목록도 이 브라우저 안에만 남습니다.")} />
+      </section>
+
       <section className="import-way">
         <h4>{t("MAA 파일")}</h4>
         <p>{t("MAA(MaaAssistantArknights)의 오퍼 박스 인식 결과 JSON을 불러옵니다. 파일에 있는 오퍼만 갱신하므로, MAA가 모르는 최신 오퍼는 현재 설정이 그대로 남습니다.")}</p>
@@ -48,14 +57,6 @@ export function RosterImportPanel({ t, onMaaFile, onScan, onAccount, scanBadge }
         <button type="button" className="import-action" onClick={onScan}>
           <span className="btn-icon" aria-hidden>◉</span>{t("스크린샷으로 보유 오퍼 스캔")}{scanBadge}
         </button>
-      </section>
-
-      <section className="import-way import-login">
-        <h4>{t("게임 로그인")}<NewBadge id="account" show={isNewFeature("account")} /></h4>
-        <p>{t("요스타 계정 이메일로 인증코드를 받아 로그인하면, 계정의 실제 보유 목록과 정예화를 그대로 가져옵니다 — 가장 정확한 방법입니다.")}</p>
-        <p className="import-warn">{rich(t("**주의: 가져오는 순간 게임 접속이 끊깁니다.** 데이터를 받으려면 게임 서버에 접속을 새로 열어야 하고, 명일방주는 계정당 접속을 하나만 허용하기 때문입니다. 게임을 하지 않을 때 쓰세요 — 계정에는 아무 문제가 없고, 다시 실행하면 그대로 접속됩니다."))}</p>
-        <AccountLoginForm t={t} onAccount={onAccount} submitLabel={t("로그인해서 보유 오퍼 가져오기")}
-          privacy={t("이메일과 인증코드는 저장하지 않습니다 — 요스타 인증을 대신 호출하는 데만 쓰고 바로 버립니다. 받은 보유 목록도 이 브라우저 안에만 남습니다.")} />
       </section>
     </div>
   );

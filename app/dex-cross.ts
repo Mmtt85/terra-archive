@@ -109,3 +109,21 @@ export async function loadFutureDex(locale: string): Promise<FutureDex> {
   futureCache.set(locale, doc);
   return doc;
 }
+
+// 위기 협약 시즌 맵·홀로그램 매트릭스 (scripts/build-stages-crisis.py, 2026-10-16) — 이벤트 가이드의 위기 협약 창이 맵을 열 때만 받는다.
+// 작전 도감 목록은 자기 래퍼(app/stages-*.tsx)가 이미 이어 붙여 둔다
+const CRISIS_LOADERS: Record<string, () => Promise<unknown>> = {
+  ko: () => import("./data/stages-crisis.json"),
+  en: () => import("./data/stages-crisis.en.json"),
+  ja: () => import("./data/stages-crisis.ja.json"),
+};
+const crisisCache = new Map<string, StageDoc>();
+export async function loadCrisisStages(locale: string): Promise<StageDoc> {
+  const hit = crisisCache.get(locale);
+  if (hit) return hit;
+  const doc = unwrap<StageDoc>(await (CRISIS_LOADERS[locale] ?? CRISIS_LOADERS.ko)());
+  crisisCache.set(locale, doc);
+  return doc;
+}
+/** 위기 협약 작전 id — 시즌 맵(crisis_v2_·level_rune_)·홀로그램 매트릭스(level_recalrune_) */
+export const isCrisisStage = (id: string) => /^(crisis_v2_|level_rune_|level_recalrune_)/.test(id);

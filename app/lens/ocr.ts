@@ -106,6 +106,9 @@ export type OcrSession = {
   /** 칩 재독 — 흑백으로 또렷하게 + 2배 확대해 다시 읽는다. 공채 태그가 다섯 개 다 안 나왔을 때만 (run.ts).
    *  브라우저 확대가 짧은 두 글자 칸을 뭉개 '가드'를 '리도'로 읽은 실측 (틀렸어요 2026-10-12, 오프라인 sharp 는 읽음) */
   chipsAlt(cut?: number): Promise<string[]>;
+  /** 빈 글자로 돌아온 칩만 **하나씩**(묶지 않고) 자르는 범위를 바꿔 다시 읽는다 — PaddleOCR 경로 전용. 공채 태그가 다섯 개가 안 될 때 (run.ts).
+   *  틀렸어요 966a22eb (2026-10-16): 2560px 화면에서 '신입' 칩이 묶음 읽기로 빈 글자 — 같은 칩을 따로 읽으면 신뢰도 90 */
+  chipsRetry(): Promise<string[]>;
   /** 화면 전체를 PaddleOCR 로 읽었나 (sparse 뒤) — 그러면 난이도는 그 결과의 왼쪽 아래 숫자로 정한다 (run.ts) */
   paddleUsed(): boolean;
   /** 마지막 chips()/chipsAlt() 가 읽은 칩의 글자와 자리(캔버스 좌표) — 공채 화면 배치 판정용 (match.ts recruitLayoutOk) */
@@ -209,6 +212,7 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
   let paddleOk = false;
   let paddleFullOk = false;   // 이 세션에서 화면 전체를 PaddleOCR 로 읽었다   // 이 세션에서 칩을 PaddleOCR 로 읽었다 — chipsAlt(tesseract 재시도)를 건너뛴다
   const chipSeen: { text: string; x: number; y: number; w: number; h: number }[] = [];
+  const chipMiss: { x: number; y: number; w: number; h: number }[] = [];   // chips() 에서 빈 글자로 돌아온 칩 (chipsRetry)
   grayNormalize(img.data);
   ctx.putImageData(img, 0, 0);
   // tesseract 는 **필요할 때만** 받는다 — PaddleOCR 경로(공채 칩·통합전략 전체 읽기)에선 숫자 배지 같은 특수 판독이나
@@ -453,7 +457,7 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
         const got = await paddleReadBoxes(colorC, rects, 640, pl ?? "kor");
         if (got) {
           paddleOk = true;
-          got.forEach((g, i) => { if (g.text) chipSeen.push({ text: g.text, ...rects[i] }); });
+          got.forEach((g, i) => { if (g.text) chipSeen.push({ text: g.text, ...rects[i] }); else chipMiss.push(rects[i]); });
           const lines = got.filter((g) => g.text).map((g) => g.text);
           console.debug(`[lens] 칩 PaddleOCR ${rects.length}개:`, got.map((g) => `${g.text}(${Math.round(g.conf * 100)})`).join(" "));
           return lines;
@@ -476,6 +480,22 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
       return out;
     },
     chipBoxes() { return chipSeen; },
+    async chipsRetry() {
+      if (!colorC || !paddleOk || !chipMiss.length) return [];
+      const out: string[] = [];
+      for (const r of chipMiss.slice(0, 8)) {
+        // 그대로 한 번, 가장자리를 좌우 8%·위아래 12% 더 깎아 한 번 — 먼저 읽히는 쪽을 쓴다
+        const ix = Math.round(r.w * 0.08), iy = Math.round(r.h * 0.12);
+        for (const rr of [r, { x: r.x + ix, y: r.y + iy, w: r.w - ix * 2, h: r.h - iy * 2 }]) {
+          if (rr.w < 16 || rr.h < 10) continue;
+          const got = await paddleReadBoxes(colorC, [rr], 640, pl ?? "kor");
+          const txt = got?.[0]?.text;
+          if (txt) { out.push(txt); chipSeen.push({ text: txt, ...r }); break; }
+        }
+      }
+      console.debug(`[lens] 칩 재독 ${chipMiss.length}개:`, out.join(" "));
+      return out;
+    },
     paddleUsed() { return paddleFullOk; },
     async gradeBadge() {
       if (!colorC) return null;

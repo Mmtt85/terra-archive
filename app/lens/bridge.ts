@@ -353,6 +353,9 @@ export const bridgeLogCount = () => runLog.length;
 
 /** 각 탭이 라이브 인식 결과를 알려준다 — ① 전투 화면이면 전투 홀드에 들어가고(큰 전환까지
  *  인식 중단), ② 확신 이동(goto)이면 화면 판정 캐시에 남겨 같은 화면 복귀 시 OCR을 생략한다. */
+/** 인식 기록에 판정만 싣는다 — 화면 캐시에 남기지 않는다. 공채처럼 덜 읽힌 결과(태그 넷)를 같은 화면에 붙들면 안 되는 탭용
+ *  (틀렸어요 966a22eb 2026-10-16: 공채는 판정을 안 넘겨 '틀렸어요'가 늘 unreported 로 왔다) */
+export function noteBridgeOutcome(outcome: LensOutcome): void { if (scan) scan.oc = outcome; }
 export function memoBridgeScene(outcome: LensOutcome): void {
   if (scan) scan.oc = outcome;   // 인식 기록에 판정을 싣는다
   if (outcome.battle) { battleHold = true; battleHoldAt = Date.now(); return; }

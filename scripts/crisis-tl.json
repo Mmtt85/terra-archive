@@ -478,5 +478,270 @@
   "ko": "'프로스트샤프'를 제외한 모든 적이 공격할 때마다 공격 간격과 같은 시간 동안 냉기 부여",
   "en": "All enemies except 'Razorfang' inflict Cold for a duration equal to their Attack Interval with each attack",
   "ja": "<フロストファング>以外の全ての敵が、攻撃するたびに攻撃間隔と同じ時間の寒冷を付与する"
+ },
+ "以书阁中堆积起的无数案牍为印象铸造的蚀刻章。\n以锐不可当的千钧笔力，勾销掉那些书中兵戈，字里冤仇。": {
+  "ko": "서각에 산더미처럼 쌓인 수많은 문서를 모티브로 제작한 훈장.\n누구도 막을 수 없는 묵직한 필력으로, 책 속의 전쟁과 글자 속의 원한을 지워 냈습니다.",
+  "en": "An engraved medal based on the countless documents piled up in the library.\nWith an unstoppable, mighty stroke of the brush, it strikes out the wars within the books and the grudges between the lines.",
+  "ja": "書庫に積み上げられた無数の文書をイメージして作られた勲章。\n何者にも止められぬ力強い筆致で、書の中の戦と字の間の怨みを消し去る。"
+ },
+ "涤墨作战中随时装附送的蚀刻章。\n荒野聚焦，追溯之旅。": {
+  "ko": "척묵 작전에서 컬렉션에 동봉된 훈장.\n황야에 초점을 맞추고, 근원을 되짚는 여정을 떠납니다.",
+  "en": "An engraved medal that comes with an outfit in Operation Dimo.\nFocusing on the wilds, a journey to trace back to the source.",
+  "ja": "作戦コード「滌墨」において、コーデのおまけについてくる勲章。\n荒野に焦点を合わせ、源を辿る旅へ。"
+ },
+ "涤墨作战中颁发给专研精进之人的蚀刻章。": {
+  "ko": "척묵 작전에서 노력에 전념한 자에게 주는 훈장.",
+  "en": "An engraved medal awarded to those who dedicated themselves to forging continuous progress during Operation Dimo.",
+  "ja": "作戦コード「滌墨」において、一つの道に精進し続けた者に贈られる勲章。"
+ },
+ "涤墨作战中颁发给互帮互助之人的蚀刻章。": {
+  "ko": "척묵 작전에서 서로 도움을 준 자에게 주는 훈장.",
+  "en": "An engraved medal awarded to those who helped each other during Operation Dimo.",
+  "ja": "作戦コード「滌墨」において、戦友と共闘した者に贈られる勲章。"
+ },
+ "涤墨作战中颁发给坚守阵线之人的蚀刻章。\n您已具备了指挥高强度阵地战的能力。": {
+  "ko": "척묵 작전에서 방어선을 지켜 낸 자에게 주는 훈장.\n당신은 고강도 진지전 지휘 능력을 갖추었습니다.",
+  "en": "An engraved medal awarded to those who stood on the front lines during Operation Dimo.\nYou have proven your ability to command high-intensity battles, making effective use of the terrain.",
+  "ja": "作戦コード「滌墨」において、防衛ラインを守り抜いた者に贈られる勲章。\n貴殿にはハイレベルな陣地戦を指揮する能力が備わっている。"
+ },
+ "涤墨作战中颁发给戍守阵线之人的蚀刻章。": {
+  "ko": "척묵 작전에서 방어선을 수호한 자에게 주는 훈장.",
+  "en": "An engraved medal awarded to those who defended the front lines during Operation Dimo.",
+  "ja": "作戦コード「滌墨」において、防衛ラインを死守した者に贈られる勲章。"
+ },
+ "涤墨作战中颁发给战胜绝境之人的蚀刻章。\n您的记录镌刻于不朽的丰碑之上，而您仍迈步向前。": {
+  "ko": "척묵 작전에서 역경을 헤쳐나온 자에게 주는 훈장.\n당신의 기록은 녹슬지 않는 기념비에 새겨져 당신이 앞으로 계속 나아갈 수 있도록 격려할 것입니다.",
+  "en": "An engraved medal awarded to those who conquered desperation during Operation Dimo.\nYou have overcome many challenges.",
+  "ja": "作戦コード「滌墨」において、窮境に打ち勝った者に贈られる勲章。\n貴殿の記録は記念碑に永遠に刻まれたが、きっとこれからもその歩みが止まることはないだろう。"
+ },
+ "涤墨作战中颁发给攻克万难之人的蚀刻章。": {
+  "ko": "척묵 작전에서 각종 난관을 극복한 자에게 주는 훈장.",
+  "en": "An engraved medal awarded to those who overcame countless hardships during Operation Dimo.",
+  "ja": "作戦コード「滌墨」において、数多の困難を突破した者に贈られる勲章。"
+ },
+ "涤墨作战中颁发给随机应变之人的蚀刻章。": {
+  "ko": "척묵 작전에서 임기응변을 발휘한 자에게 주는 훈장.",
+  "en": "An engraved medal awarded to those who responded to the shifting demands of Operation Dimo.",
+  "ja": "作戦コード「滌墨」において、臨機応変に対応した者に贈られる勲章。"
+ },
+ "涤墨作战中颁发给面对逆境之人的蚀刻章。\n您的记录刻于金铁之上，为圣所永久铭记。": {
+  "ko": "척묵 작전에서 역경을 마주한 자에게 주는 훈장.\n당신의 기록은 이 금속에 새겨져 생추어리에서 영원히 기억될 것입니다.",
+  "en": "An engraved medal awarded to those who faced adversity during Operation Dimo.\nThe Sanctuary preserves your record in posterity.",
+  "ja": "作戦コード「滌墨」において、逆境に立ち向かった者に贈られる勲章。\n貴殿の記録は鋼鉄に刻まれ、聖堂で永遠に語り継がれるだろう。"
+ },
+ "涤墨作战期间，主测试地总分达到300分": {
+  "ko": "척묵 작전 동안, 메인 실험 장소에서 최고 평점 300점 달성",
+  "en": "During Operation Dimo, reach a score of 300 in Main Test Site.",
+  "ja": "作戦コード「滌墨」で、通常試験区画の評価値の合計が300点に達する。"
+ },
+ "涤墨作战期间，主测试地总分达到600分": {
+  "ko": "척묵 작전 동안, 메인 실험 장소에서 최고 평점 600점 달성",
+  "en": "During Operation Dimo, reach a score of 600 in Main Test Site.",
+  "ja": "作戦コード「滌墨」で、通常試験区画の評価値の合計が600点に達する。"
+ },
+ "涤墨作战期间，主测试地总分达到620分": {
+  "ko": "척묵 작전 동안, 메인 실험 장소에서 최고 평점 620점 달성",
+  "en": "During Operation Dimo, reach a score of 620 in Main Test Site.",
+  "ja": "作戦コード「滌墨」で、通常試験区画の評価値の合計が620点に達する。"
+ },
+ "涤墨作战期间，主测试地的任意一项分数历史最高达到100分": {
+  "ko": "척묵 작전 동안, 메인 실험 장소에서 임의 항목의 역대 최고 득점 100점 달성",
+  "en": "During Operation Dimo, reach a best score of 100 in any Main Test Site category.",
+  "ja": "作戦コード「滌墨」で、通常試験区画の任意の項目の最高評価値記録が100点に達する。"
+ },
+ "涤墨作战期间，使用助战并通关任意作战不小于5次": {
+  "ko": "척묵 작전 동안, 지원 유닛을 사용해 임의 작전 최소 5회 클리어",
+  "en": "During Operation Dimo, use Friend Support to clear stages at any operation at least 5 times.",
+  "ja": "作戦コード「滌墨」で、戦友サポートを使用して任意の試験区画を5回以上クリア。"
+ },
+ "涤墨作战期间，完成主测试地中的任意一个关键节点": {
+  "ko": "척묵 작전 동안, 메인 실험 장소의 임의 특수 지점 클리어",
+  "en": "During Operation Dimo, complete any key node in Main Test Site.",
+  "ja": "作戦コード「滌墨」で、通常試験区画の任意のキーノードを1つクリアする。"
+ },
+ "涤墨作战期间，完成主测试地中的全部指标集（不含指标集：应变）": {
+  "ko": "척묵 작전 동안, 메인 실험 장소의 모든 지표 세트 완료 ('지표 세트: 응변' 제외)",
+  "en": "During Operation Dimo, complete all of Main Test Site's Objective Sets (Excluding Objective Set: Emergency Response).",
+  "ja": "作戦コード「滌墨」で、通常試験区画の「指標グループ：対応力」を除くすべての指標グループをクリアする。"
+ },
+ "涤墨作战期间，完成所有轮换测试地中的全部关键节点": {
+  "ko": "척묵 작전 동안, 로테이션 실험 장소의 모든 특수 지점 클리어",
+  "en": "During Operation Dimo, complete all key nodes in Rotating Test Site.",
+  "ja": "作戦コード「滌墨」で、緊急試験区画のキーノードを全てクリアする。"
+ },
+ "涤墨作战期间，完成轮换测试地中的任意一个关键节点": {
+  "ko": "척묵 작전 동안, 로테이션 실험 장소의 임의 특수 지점 클리어",
+  "en": "During Operation Dimo, complete any key node in Rotating Test Site.",
+  "ja": "作戦コード「滌墨」で、緊急試験区画の任意のキーノードを1つクリアする。"
+ },
+ "涤墨作战期间，获得时装新地形": {
+  "ko": "척묵 작전 동안, 컬렉션 '새로운 지형' 획득",
+  "en": "During Operation Dimo, obtain the outfit New Terrain.",
+  "ja": "作戦コード「滌墨」で、コーデ「新地形」を獲得する。"
+ },
+ "涤墨作战蚀刻章套组": {
+  "ko": "척묵 작전 훈장 세트",
+  "en": "Operation Dimo Engraved Medal Set",
+  "ja": "作戦コード｢滌墨｣勲章シリーズ"
+ },
+ "记录涤墨作战期间危机合约履行情况的蚀刻章套组。\n每一枚蚀刻章都见证了您在涤墨作战中作出的贡献。\n涤墨净魂，再书新篇。": {
+  "ko": "척묵 작전 동안 이행한 위기 협약의 훈장 세트.\n박사님의 공헌을 치하하기 위한 훈장들이 포함되어 있습니다.\n먹물을 씻어 영혼을 맑히고, 새로운 장을 다시 써 내려갑니다.",
+  "en": "A set of engraved medals commemorating the completion of Contingency Contracts during Operation Dimo.\nEach medal bears witness to the contributions you made during Operation Dimo.\nThe ink is washed away and the soul cleansed; a new chapter is written.",
+  "ja": "作戦コード「滌墨」期間の危機契約履行状況を記録した勲章シリーズ。\nそれぞれどの勲章もドクターが滌墨作戦で貢献した成果を証明している。\n墨を滌ぎ魂を清め、新たな一篇を書き記す。"
+ },
+ "涤墨合作奖章": {
+  "ko": "척묵 협력 훈장",
+  "en": "Dimo: Medal of Cooperation",
+  "ja": "滌墨共闘勲章"
+ },
+ "涤墨合约奖章": {
+  "ko": "척묵 협약 훈장",
+  "en": "Dimo: Commemorative Contract Medal",
+  "ja": "滌墨契約勲章"
+ },
+ "涤墨合约奖章·II": {
+  "ko": "척묵 협약 훈장 II",
+  "en": "Dimo: Commemorative Contract Medal II",
+  "ja": "滌墨契約勲章・Ⅱ"
+ },
+ "涤墨响应奖章": {
+  "ko": "척묵 호응 훈장",
+  "en": "Dimo: Call to Arms Medal",
+  "ja": "滌墨機才勲章"
+ },
+ "涤墨战服奖章": {
+  "ko": "척묵 전투복 훈장",
+  "en": "Dimo: Combat Attire Medal",
+  "ja": "滌墨武装勲章"
+ },
+ "涤墨澄澈奖章": {
+  "ko": "척묵 정화 훈장",
+  "en": "Dimo Cleansing Medal",
+  "ja": "滌墨浄化勲章"
+ },
+ "涤墨突破奖章": {
+  "ko": "척묵 돌파 훈장",
+  "en": "Dimo: Breakthrough Medal",
+  "ja": "滌墨突破勲章"
+ },
+ "涤墨阵地奖章": {
+  "ko": "척묵 진지 훈장",
+  "en": "Dimo: Trailblazer Medal",
+  "ja": "滌墨防衛勲章"
+ },
+ "涤墨阵地奖章·II": {
+  "ko": "척묵 진지 훈장 II",
+  "en": "Dimo: Trailblazer Medal II",
+  "ja": "滌墨防衛勲章・Ⅱ"
+ },
+ "涤墨验证奖章": {
+  "ko": "척묵 검증 훈장",
+  "en": "Dimo: Verification Medal",
+  "ja": "滌墨認証勲章"
+ },
+ "危机合约<涤墨作战>活动已开放": {
+  "ko": "위기 협약 <척묵 작전> 이벤트 개방 중",
+  "en": "Contingency Contract <Operation Dimo> is now open",
+  "ja": "危機契約<作戦コード「滌墨」>開催中"
+ },
+ "开放新轮换测试地": {
+  "ko": "신규 로테이션 실험 장소 개방 중",
+  "en": "New Rotating Test Site unlocked",
+  "ja": "新たな緊急試験区画開放"
+ },
+ "新增常驻可选指标与开放新轮换测试地": {
+  "ko": "상주 지표 추가 및 신규 로테이션 실험 장소 개방",
+  "en": "Added permanently available Criteria and new Rotating Test Sites opened",
+  "ja": "通常試験区画に新規指標追加、新たな緊急試験区画開放"
+ },
+ "在#苏醒，浮出梦乡中获得8评分": {
+  "ko": "'#소생, 떠오른 꿈나라에서의'에서 평점 8 획득",
+  "en": "Score 8 in #Awakening, a Dream's End",
+  "ja": "#夢からの「覚醒」で評価値8を獲得。"
+ },
+ "在#苏醒，浮出梦乡中获得15评分": {
+  "ko": "'#소생, 떠오른 꿈나라에서의'에서 평점 15 획득",
+  "en": "Score 15 in #Awakening, a Dream's End",
+  "ja": "#夢からの「覚醒」で評価値15を獲得。"
+ },
+ "在#演绎文明中获得8评分": {
+  "ko": "#문명의 해석에서 평점 8 획득",
+  "en": "Score 8 in #Culture Unfolding",
+  "ja": "#文明の変遷で評価値8を獲得。"
+ },
+ "在#演绎文明中获得15评分": {
+  "ko": "#문명의 해석에서 평점 15 획득",
+  "en": "Score 15 in #Culture Unfolding",
+  "ja": "#文明の変遷で評価値15を獲得。"
+ },
+ "在#冰狱行动-3中获得8评分": {
+  "ko": "#얼음 감옥 작전-3에서 평점 8 획득",
+  "en": "Score 8 in #Operation Cocytus-3",
+  "ja": "#氷獄作戦-3で評価値8を獲得。"
+ },
+ "在#冰狱行动-3中获得15评分": {
+  "ko": "#얼음 감옥 작전-3에서 평점 15 획득",
+  "en": "Score 15 in #Operation Cocytus-3",
+  "ja": "#氷獄作戦-3で評価値15を獲得。"
+ },
+ "在#尘霾行动-1中获得8评分": {
+  "ko": "#더스트 작전-1에서 평점 8 획득",
+  "en": "Score 8 in #Operation Achlys-1",
+  "ja": "#煙塵作戦-1で評価値8を獲得。"
+ },
+ "在#尘霾行动-1中获得15评分": {
+  "ko": "#더스트 작전-1에서 평점 15 획득",
+  "en": "Score 15 in #Operation Achlys-1",
+  "ja": "#煙塵作戦-1で評価値15を獲得。"
+ },
+ "思维裂痕矩阵奖章": {
+  "ko": "'사고의 균열' 매트릭스 훈장",
+  "en": "Fractured Mind Matrix Medal",
+  "ja": "思考の亀裂マトリクス勲章"
+ },
+ "浩荡矩阵奖章": {
+  "ko": "'대군의 행진' 매트릭스 훈장",
+  "en": "Mighty Host Matrix Medal",
+  "ja": "浩蕩マトリクス勲章"
+ },
+ "刺骨低温矩阵奖章": {
+  "ko": "'뼈를 에는 추위' 매트릭스 훈장",
+  "en": "Bitter Cold Matrix Medal",
+  "ja": "骨身に染む寒さマトリクス勲章"
+ },
+ "信念新生矩阵奖章": {
+  "ko": "'신념의 재탄생' 매트릭스 훈장",
+  "en": "Conviction Reborn Matrix Medal",
+  "ja": "信念新生マトリクス勲章"
+ },
+ "第二矩阵奖章": {
+  "ko": "두 번째 매트릭스 훈장",
+  "en": "Second Matrix Medal",
+  "ja": "第二マトリクス勲章"
+ },
+ "全息作战矩阵中颁发给第二批在死地求生之人的蚀刻章。\n艰难的战斗能造就无畏的战士，您的经历就是最好的证明。": {
+  "ko": "홀로그램 매트릭스에서 죽을 고비를 넘고 살아남은 두 번째 사람들에게 주는 훈장.\n고된 전투는 두려움 없는 전사를 만들어 내며, 당신의 경험이 그 가장 좋은 증거입니다.",
+  "en": "An engraved medal from the Holographic Combat Matrix granted to the second to survive desperate ground.\nHard battles forge fearless warriors, and your experience is the finest proof.",
+  "ja": "投影作戦マトリクスにおいて、二番目に死地から生還した者に贈られる勲章。\n苛烈な戦いこそが恐れを知らぬ戦士を生む。貴殿の経験こそがその何よりの証明である。"
+ },
+ "全息作战矩阵中颁发给战胜冰寒之人的蚀刻章。\n希望的火种，即便在最寒冷的环境中也依然能够留存。": {
+  "ko": "홀로그램 매트릭스에서 혹한을 극복한 사람에게 주는 훈장.\n희망의 불씨는 가장 추운 환경 속에서도 꺼지지 않고 남아 있을 수 있습니다.",
+  "en": "An engraved medal from the Holographic Combat Matrix awarded to those who overcame the bitter cold.\nThe spark of hope endures even in the coldest of places.",
+  "ja": "投影作戦マトリクスにおいて、厳寒を打ち破った者に贈られる勲章。\n希望の火種は、最も凍てつく環境の中でも消えずに残り続ける。"
+ },
+ "全息作战矩阵中颁发给战胜大军之人的蚀刻章。\n您面对众多敌人却毫不退缩的勇气，将一直被传颂下去。": {
+  "ko": "홀로그램 매트릭스에서 대군을 극복한 사람에게 주는 훈장.\n수많은 적 앞에서도 물러서지 않은 당신의 용기는 영원히 전해질 것입니다.",
+  "en": "An engraved medal from the Holographic Combat Matrix awarded to those who defeated the mighty host.\nYour courage, unflinching before countless foes, will be sung for ages to come.",
+  "ja": "投影作戦マトリクスにおいて、大軍を打ち破った者に贈られる勲章。\n数多の敵を前にしても一歩も退かなかった貴殿の勇気は、永く語り継がれるだろう。"
+ },
+ "全息作战矩阵中颁发给战胜枯朽之人的蚀刻章。\n您在晦暗的时代中，为人们建立起坚实的信念支点。": {
+  "ko": "홀로그램 매트릭스에서 메마름과 부패를 극복한 사람에게 주는 훈장.\n당신은 어두운 시대 속에서 사람들에게 굳건한 신념의 버팀목을 세워 주었습니다.",
+  "en": "An engraved medal from the Holographic Combat Matrix awarded to those who overcame withering decay.\nIn a dark age, you built a firm foundation of conviction for the people.",
+  "ja": "投影作戦マトリクスにおいて、枯朽を打ち破った者に贈られる勲章。\n暗き時代の中で、貴殿は人々のために揺るぎない信念の支えを築き上げた。"
+ },
+ "全息作战矩阵中颁发给战胜歌者之人的蚀刻章。\n您用一场胜利，作为意志终将胜过虚无的宣告。": {
+  "ko": "홀로그램 매트릭스에서 노래하는 자를 극복한 사람에게 주는 훈장.\n당신은 하나의 승리로, 의지가 끝내 공허를 이겨 낸다는 것을 선언했습니다.",
+  "en": "An engraved medal from the Holographic Combat Matrix awarded to those who defeated the Singer.\nWith a single victory, you proclaimed that will shall ultimately triumph over the void.",
+  "ja": "投影作戦マトリクスにおいて、歌い手を打ち破った者に贈られる勲章。\n貴殿は一つの勝利をもって、意志がついには虚無に打ち勝つことを宣言した。"
  }
 }

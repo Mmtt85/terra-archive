@@ -188,7 +188,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // "drain" = 지속 시간이 달라지는 이유, "policy" = A조·B조 교대 정책
   const [shiftNote, setShiftNote] = useState<ShiftNoteKind | null>(null);
   // 보유 오퍼 설정의 입력 방식 탭 — 딥링크(#roster/#roster-import)와 동기화하려 여기서 쥔다
-  const [rosterMode, setRosterMode] = useState<"direct" | "import">("direct");
+  const [rosterMode, setRosterMode] = useState<"direct" | "import">("import");
   // 딥링크 (사용자 요청 2026-07-27: 링크 가능한 상태 전부 URL로) — /infra 경로 위에서
   // #roster(직접 입력)·#roster-import(가져오기 탭)·#help·#flows·#room-<방키> 를 양방향 동기화.
   // #invest(육성 추천)는 분석 결과가 있어야만 열리는 모달이라 딥링크 대상이 아니다.
@@ -1620,7 +1620,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               위계를 만든다 (사용자 요청 2026-07-27: "버튼이 너무 많아 헷갈림") */}
           {/* 이미지로 보기 — '그 외'에서 꺼내 이 줄 맨 왼쪽으로 (사용자 지시 2026-10-14) */}
           <button className="planner-image-btn" onClick={() => void exportImage()} disabled={!plan} title={t("A조·B조 편성표를 이미지로 확인 (PNG)")}><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</button>
-          <button className="primary" onClick={() => startTransition(() => { setRosterMode("direct"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}<NewBadge id="scanner+op-level" show={anyNewFeature("scanner", "op-level")} /></button>
+          <button className="primary" onClick={() => startTransition(() => { setRosterMode("import"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}<NewBadge id="scanner+op-level" show={anyNewFeature("scanner", "op-level")} /></button>
           {/* 라벨이 '계산 중…'으로 바뀌어도 버튼 폭이 줄지 않게 원 라벨로 폭을 잡아둔다 (사용자 요청 2026-07-21) */}
           <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}>
             <span className="btn-icon" aria-hidden>⟳</span>
@@ -1685,7 +1685,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           selected={selectedRaise} applied={new Set(tempApplied.keys())} onRevert={revertTemp}
           diag={investDiag} hiddenCount={investRecs?.filter((r) => investHidden.has(r.opId)).length ?? 0}
           onUnhideAll={() => { setInvestHidden(new Set()); persist(ownedIds, plan, eliteById, levelById, priority, investRecs, new Set()); }}
-          onOpenRoster={() => { setShowInvest(false); startTransition(() => { setRosterMode("direct"); setShowRoster(true); }); }}
+          onOpenRoster={() => { setShowInvest(false); startTransition(() => { setRosterMode("import"); setShowRoster(true); }); }}
           t={t} locale={locale} />
       )}
 
@@ -2115,7 +2115,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             showToast(t("{name} 정예화를 올리고 자동편성을 다시 돌립니다", { name: opById.get(id)?.name ?? id }));
             void runOptimize(ownedIds, next, priority, levelById);
           }}
-          onOpenRoster={() => { openRoomAt(null); startTransition(() => { setRosterMode("direct"); setShowRoster(true); }); }}
+          onOpenRoster={() => { openRoomAt(null); startTransition(() => { setRosterMode("import"); setShowRoster(true); }); }}
           tempIds={new Set(tempApplied.keys())}
           onRevertTempOne={(id) => { void revertTempOne(id); }}
         />
@@ -3672,8 +3672,9 @@ function RosterModal({ allOps, lockFuture, ownedIds, eliteById, levelById, onApp
           <div className="roster-head-row">
             <h2>{t("보유 오퍼레이터 설정")}</h2>
             <div className="roster-mode" role="group" aria-label={t("보유 오퍼 입력 방식")}>
-              <button type="button" className={mode === "direct" ? "selected" : ""} onClick={() => setMode("direct")}><span className="btn-icon" aria-hidden>▦</span>{t("직접 입력")}</button>
+              {/* 가져오기가 왼쪽·기본 (사용자 지시 2026-10-16 "가져오기 탭을 왼쪽에, 디폴트로, 게임 로그인을 제일 위로") */}
               <button type="button" className={mode === "import" ? "selected" : ""} onClick={() => setMode("import")}><span className="btn-icon" aria-hidden>⤒</span>{t("가져오기")}<NewBadge id="account" show={isNewFeature("account")} /></button>
+              <button type="button" className={mode === "direct" ? "selected" : ""} onClick={() => setMode("direct")}><span className="btn-icon" aria-hidden>▦</span>{t("직접 입력")}</button>
             </div>
           </div>
           {/* 가져오기 모드에는 도구 줄이 없다 — 세 경로 모두 결과를 직접 입력으로 되돌리므로

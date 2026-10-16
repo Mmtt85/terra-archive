@@ -25594,6 +25594,13 @@ html[lang="ja"] .vn-box {
   font: 700 11px var(--mono);
   color: var(--muted);
 }
+/* 창 위쪽 안내 한 줄 — 위기 협약: 시즌 지표가 데이터에 없다 (EventRow.note, 2026-10-16) */
+.ev-modal .ev-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
 /* 썸네일은 왼쪽, 스토리 읽기·이벤트 오퍼·작전은 오른쪽 (사용자 요청 2026-09-17).
    왼쪽 폭은 세로 키비주얼(420×508)이 제 크기로 들어가는 값. */
 .ev-top {

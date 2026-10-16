@@ -369,8 +369,11 @@ for loc, T in TB.items():
             out[aid] = rec
     d = os.path.join(OUT_DIR, loc)
     os.makedirs(d, exist_ok=True)
+    # 위기 협약 시즌·홀로그램 매트릭스 파일은 scripts/build-stages-crisis.py 가 같은 폴더에 쓴다 — 지우지 않는다 (2026-10-16)
+    _cc = os.path.join(DATA, "events-crisis.json")
+    keep = {e["id"] for e in load(_cc)["events"]} if os.path.exists(_cc) else set()
     for f in os.listdir(d):                      # 사라진 이벤트 파일은 지운다
-        if f.endswith(".json") and f[:-5] not in out:
+        if f.endswith(".json") and f[:-5] not in out and f[:-5] not in keep:
             os.remove(os.path.join(d, f))
     total = 0
     for aid, rec in out.items():
