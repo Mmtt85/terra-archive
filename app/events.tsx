@@ -267,6 +267,7 @@ function EventCard({ row, onSelect, onGuide, mini }: {
       <span className="ev-card-face" ref={ref} data-noimg={t("이미지 없음")}>
         {visible && row.thumb && (
           <img src={asset(row.thumb)} alt="" aria-hidden loading="lazy" decoding="async"
+            className={row.thumb.startsWith("/stage/") ? "ev-map-thumb" : undefined}
             onError={(e) => { e.currentTarget.remove(); }} />
         )}
       </span>
@@ -360,6 +361,7 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
       <div className="ev-hero" data-noimg={t("이미지 없음")}>
         {row.thumb && (
           <img src={asset(row.thumb)} alt="" aria-hidden loading="lazy" decoding="async"
+            className={row.thumb.startsWith("/stage/") ? "ev-map-thumb" : undefined}
             onError={(e) => { e.currentTarget.remove(); }} />
         )}
       </div>

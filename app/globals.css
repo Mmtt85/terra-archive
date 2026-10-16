@@ -25664,6 +25664,16 @@ html[lang="ja"] .vn-box {
   .ev-top { grid-template-columns: minmax(0, 1fr); }
   .ev-hero img { max-height: 240px; }
 }
+/* 실사 도면 섬네일(위기 협약 시즌 — 메인 맵 도면) — 16:9 전투 화면을 정사각형에 눌러 담은 그림이라 작전 카드(.ev-stage-map)처럼
+   16:9 로 펴서 보인다 (사용자 지적 2026-10-17 "섬네일이 정사각형이 돼서 이상하다, 상세의 상주 작전 섬네일은 잘 나온다") */
+.ev-card-face img.ev-map-thumb,
+.ev-hero img.ev-map-thumb {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  aspect-ratio: 16 / 9;
+  object-fit: fill;
+}
 .ev-links {
   margin: 0 0 12px;
 }
@@ -30168,11 +30178,20 @@ html.rg-theme.rg6 .header-collapse-toggle { border-color: #1f3a34; color: color-
    둘이 그 칸(높이 = 2층 깊이 196 − 10)에 들어가게 흑류수해 묶음 카드를 114 → 96px 로 (사용자 허락: 층 말고 다른 단추 크기 조정) */
 @media (min-width: 1101px) {
   html.rg-theme.rg6 .rg-mapfield:has(> .rg-zone-cards) { --sec-col: 96px; }
-  /* 왼쪽 두 칸(우연한 만남·조우 전투·추격전)은 원더랜드와 무관하니 다시 키운다 (사용자 지시 같은 날 "이 셋은 좀 키워도") */
+  /* 왼쪽 두 칸도 오른쪽과 같은 96px — 종전엔 120px 로 키웠는데(2026-10-11 "이 셋은 좀 키워도") 내용 확장으로 왼쪽 묶음이 늘자
+     왼쪽만 커 보였다 (사용자 지시 2026-10-17 "왼쪽 카드가 왜 오른쪽보다 커, 같은 크기로") */
   html.rg-theme.rg6 .rg-mapfield:has(> .rg-zone-cards) {
-    grid-template-columns: repeat(2, minmax(72px, var(--sec-col-l, 120px))) minmax(0, 1fr) repeat(2, minmax(72px, var(--sec-col, 96px)));
+    grid-template-columns: repeat(2, minmax(72px, var(--sec-col, 96px))) minmax(0, 1fr) repeat(2, minmax(72px, var(--sec-col, 96px)));
   }
   .rg-mapfield > .rg-sec-cards > .rg-wonder-card { grid-area: 2 / 5; align-self: end; }
+  /* 7·8번째 묶음(거점전·외나무다리) — 내용 확장으로 '조우 전투 · 특수'(잿구덩이) 카드가 늘어 7·8번째로 밀리자 공용 규칙(n+7 → 두 칸 폭
+     새 줄)을 받아 250px 로 커졌다 (사용자 지적 2026-10-17 "거점전이랑 외나무다리 버튼이 왜 이렇게 커"). 왼쪽 두 칸 한 줄 아래에
+     다른 묶음 카드와 같은 크기로 */
+  /* 넘치는 7번째는 새 줄이 아니라 둘째 줄 오른쪽의 빈 칸(기타 노드 왼쪽)으로 — 새 줄로 두니 혼자 판 밑으로 삐져나와 보였다
+     (사용자 지적 2026-10-17 "외나무다리가 밑으로 삐져나갔잖아") */
+  /* 자리: 왼쪽 우연한 만남 **밑** — 오른쪽 원더랜드가 기타 노드 밑에 붙은 것과 대칭 (둘째 줄 오른쪽 빈 칸은 6층 카드와 겹친다) */
+  html.rg-theme.rg6 .rg-mapfield > .rg-sec-cards > :nth-child(7 of :not(.rg-wonder-card)) { grid-area: 2 / 1; align-self: end; }
+  html.rg-theme.rg6 .rg-mapfield > .rg-sec-cards > :nth-child(8 of :not(.rg-wonder-card)) { grid-area: 4 / 1; }
 }
 
 /* 아이템 상세 '내 창고 N' — 섬네일과 설명 사이(제목 칸 맨 아래)에 묻혀 눈에 안 띄었다 (사용자 지적 2026-10-11).

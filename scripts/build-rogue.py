@@ -2344,8 +2344,9 @@ def build_rogue6():
         level_cache[level_id] = {"refs": refs, "counts": counts, "emg": emg, "raw": lv}
         return level_cache[level_id]
 
-    # s = 특수 전투 (흑류수해 DLC 「잿구덩이」 ro6_s_1, 2026-10-16)
-    kind_map = {"n": "normal", "e": "emergency", "b": "boss", "s": "special",
+    # s = 특수 전투 (흑류수해 DLC 「잿구덩이」 ro6_s_1, 2026-10-16) — 조우 「커다란 빨간 버튼」에서 들어가는 전투라 조우 전투로 묶는다
+    #     (따로 '조우 전투 · 특수' 묶음 카드가 생겨 지도판 배치가 밀렸다 — 사용자 지적 2026-10-17 "이건 또 뭔데?")
+    kind_map = {"n": "normal", "e": "emergency", "b": "boss", "s": "incident",
                 "t": "incident", "duel": "duel", "c": "chase"}
     # 거점전(BATTLE_SAVAGE “居民”据点)·추격전(追猎) 정본 집합은 **게임 유물 데이터가 직접
     # 열거한다** — 손 목록 금지. (사용자 제보 2026-08-17로 판명된 회귀: 2026-07-18에

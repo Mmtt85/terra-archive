@@ -24,7 +24,8 @@
     "ro6_b_5_dlc1": 5,
     "ro6_b_6_dlc1": 6,
     "ro6_b_7_dlc1": 7,
-    "ro6_b_7_b_dlc1": 7
+    "ro6_b_7_b_dlc1": 7,
+    "ro6_b_5_b": 5
   },
   "encounterFloors": {},
   "encounterNotes": {
@@ -87,6 +88,7 @@
     "ro6_b_5": 2,
     "ro6_b_6": 3,
     "ro6_b_7": 4,
-    "ro6_b_7_b": 4
+    "ro6_b_7_b": 4,
+    "ro6_b_5_b": 2
   }
 }

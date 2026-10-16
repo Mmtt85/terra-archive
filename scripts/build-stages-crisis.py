@@ -55,7 +55,10 @@ from routeutil import routes_of_level, devices_of_level  # noqa: E402
 
 # 공식 표기는 띄어 쓴 '위기 협약' (한섭 활동 일정표 "위기 협약 <정죄 작전> 이벤트 개방 중", 2026-10-16 확인)
 TYPE_LABEL = {"ko": "위기 협약", "en": "Contingency Contract", "ja": "危機契約"}
-SEASON_EV = {"ko": "위기 협약 {code} <{name}>", "en": "Contingency Contract {code} {name}", "ja": "危機契約{code} {name}"}
+# 시즌 1(2020-09 ~ 2023-10, crisis_table)·시즌 2(파이롤리시스 작전부터, crisis_v2_table) — 번호가 둘 다 #1 부터라 시즌을 붙인다
+# (사용자 지적 2026-10-17 "파이롤리시스 작전부터는 시즌2")
+SEASON_EV = {"ko": "위기 협약 시즌 {gen} {code} <{name}>", "en": "Contingency Contract S{gen} {code} {name}",
+             "ja": "危機契約 シーズン{gen} {code} {name}"}
 MATRIX_EV = {"ko": "홀로그램 매트릭스 #{code}", "en": "Holographic Combat Matrix #{code}", "ja": "投影作戦マトリクス #{code}"}
 # 맵 이름 — 시즌 전용 곡(bgmEvent = <시즌>_main)을 쓰는 판이 메인, 지난 이벤트 곡을 쓰는 판이 로테이션이다
 # (2026-10-16 레벨 49개 전수). 이름은 훈장 획득 조건 문구의 공식 표기 (kr/en/jp medal_table)
@@ -291,7 +294,7 @@ def season_meta(season_id, loc, srv):
         kr = next(x for x in V1["kr"]["seasonInfo"] if x["seasonId"] == season_id)
         meta = own or kr
         n = re.search(r"season_(\d+)_", season_id).group(1)
-        ev = SEASON_EV[loc].format(code=f"#{n}", name=meta["name"])
+        ev = SEASON_EV[loc].format(gen=1, code=f"#{n}", name=meta["name"])
         period = PERIOD[loc].format(srv=SRV_NAME[loc][srv], a=ymd(meta["startTs"], srv), b=ymd(meta["endTs"], srv)) if own else None
         return ev, period, False, (kr["startTs"], kr["endTs"])
     if season_id.startswith("crisis_v2"):
@@ -299,7 +302,7 @@ def season_meta(season_id, loc, srv):
         meta = own or tables["cn"]["seasonInfoDataMap"][season_id]
         kr = tables["kr"]["seasonInfoDataMap"].get(season_id)
         name = meta["name"] if own else (SEASON_NAME_FUT.get(season_id) or {}).get(loc) or tr(meta["name"], loc)
-        ev = SEASON_EV[loc].format(code=meta["crisisV2SeasonCode"], name=name)
+        ev = SEASON_EV[loc].format(gen=2, code=meta["crisisV2SeasonCode"], name=name)
         period = PERIOD[loc].format(srv=SRV_NAME[loc][srv if own else "cn"], a=ymd(meta["startTs"], srv if own else "cn"),
                                     b=ymd(meta["endTs"], srv if own else "cn"))
         return ev, period, not own, ((kr["startTs"], kr["endTs"]) if kr else None)
@@ -419,6 +422,37 @@ if not NO_IMAGES:
             drawn += 1
     print(f"도면: 미리보기 {got} · 격자 렌더 {drawn}")
 
+# ── 홀로그램 매트릭스 — 원본 작전의 실사 도면·카메라를 그대로 쓴다 ─────────────────────────────────
+# 매트릭스는 지난 작전(7-18·H5-1·LS-4 …)의 맵을 그대로 다시 쓴다 — 게임에 매트릭스 전용 미리보기는 없어 종전엔 격자 렌더였다
+# (사용자 지적 2026-10-17 "기존 맵을 그대로 쓰는데 왜 실사 도면이 없어?"). 원본 = 작전 코드(levelCode)가 같은 본 도감 작전
+# (돌격·고난·#f# 제외, 한섭 표 → 중섭 표). 도면은 그 작전의 public/stage 그림을 복사하고, 카메라는 원본 레벨로 찾는다(level_of).
+_ST = {srv: (cdntables.table("stage_table", server=srv) or {}).get("stages") or {} for srv in ("kr", "cn")}
+MATRIX_ORIG = {}
+for p in plan:
+    if p["kind"] != "matrix":
+        continue
+    st = (tables["kr"]["recalRuneData"]["seasons"].get(p["season"]) or recal_cn[p["season"]])["stages"].get(p["sid"]) \
+        or recal_cn[p["season"]]["stages"][p["sid"]]
+    code = clean(st.get("levelCode"))
+    for srv in ("kr", "cn"):
+        hit = next((k for k, v in _ST[srv].items() if v.get("code") == code and "#" not in k
+                    and not k.startswith(("tough_", "easy_")) and v.get("difficulty") != "FOUR_STAR"), None)
+        if hit:
+            MATRIX_ORIG[p["sid"]] = (hit, _ST[srv][hit].get("levelId"), srv)
+            break
+print(f"매트릭스 원본 작전: " + " · ".join(f"{k}→{v[0]}" for k, v in MATRIX_ORIG.items()))
+if not NO_IMAGES:
+    import shutil
+    from imgutil import save_webp
+    for sid, (orig, _, srv) in MATRIX_ORIG.items():
+        src = os.path.join(STAGE_IMG, orig + ".webp")
+        if not os.path.exists(src):
+            png = cdnassets.png_bytes(f"arts/ui/stage/mappreviews/{orig}", srv)
+            if png:
+                save_webp(png, src, photo=True, max_px=640, method=4)
+        if os.path.exists(src):
+            shutil.copyfile(src, os.path.join(STAGE_IMG, sid + ".webp"))
+
 # ── 이동 경로·시뮬 ───────────────────────────────────────────────────────────
 routes = {}
 for p in plan:
@@ -451,6 +485,7 @@ print(f"  crisis-routes.json: 경로 {len(routes)} · 시뮬 {len(SIM)} · 경�
 # 실사 도면 위 경로 투영용 전투 카메라 — 본 도감과 같은 출처·규칙 (scripts/stagecams.py)
 LV_DIR = {"crisis": "Crisis/v2/", "recalrune": "Recalrune/", "rune": "Rune/"}
 level_of = {p["sid"]: "Obt/" + LV_DIR[p["rel"].split("/", 1)[0]] + p["rel"].rsplit("/", 1)[1] for p in plan}
+level_of.update({sid: v[1] for sid, v in MATRIX_ORIG.items() if v[1]})   # 매트릭스 = 원본 작전 카메라
 for loc, _, suf in LOCALES:
     prev = os.path.join(DATA, f"stages-crisis{suf}.json")
     keep = {e["id"]: e["cam"] for e in load(prev)["stages"] if "cam" in e} if os.path.exists(prev) else {}
