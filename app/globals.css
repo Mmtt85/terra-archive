@@ -14648,7 +14648,8 @@ html.rg-theme {
   height: 100%;
   object-fit: cover;
   object-position: 68% 22%;
-  opacity: 0.3;
+  opacity: 0.4;   /* 0.3 → 0.4 (2026-10-17 테마 조명과 함께 — 대비는 비네트가 지킨다) */
+  filter: saturate(1.15);
   pointer-events: none;
   -webkit-mask-image: linear-gradient(180deg, #000 0, #000 32%, transparent 82%);
   mask-image: linear-gradient(180deg, #000 0, #000 32%, transparent 82%);
@@ -14662,6 +14663,52 @@ html.rg-theme.rg6 .rg-kv-page {
   transform: translateY(10%);
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 6%, #000 32%, transparent 82%);
   mask-image: linear-gradient(180deg, transparent 0, #000 6%, #000 32%, transparent 82%);
+}
+/* ── 테마 조명 (사용자 요청 2026-10-17 "테마별 배경·색감 좀 더 예쁘게") ──
+   배경이 '어두운 단색 + 흐린 그림'뿐이라 밋밋했다. 키비주얼 **위**에 얇은 조명 한 장을 덮는다:
+   ① 인물 쪽(오른쪽 위)에 테마 주색 빛 ② 왼쪽 아래에 보조색 안개 ③ 가장자리를 눌러 주는 비네트.
+   그림 자체는 조금 더 살리고(불투명도 0.3 → 0.4, 채도 살짝) — 글 대비는 비네트·카드 바탕이 지킨다.
+   색은 테마마다 --rgglow(주) · --rgglow2(보조) 두 개만 고른다. */
+.rg,
+html.rg-theme {
+  --rgglow: #c23b4e;
+  --rgglow2: #c9a35c;
+}
+.rg.rg2, html.rg-theme.rg2 { --rgglow: #3f8fe0; --rgglow2: #4fd2e6; }
+.rg.rg3, html.rg-theme.rg3 { --rgglow: #a9c6e0; --rgglow2: #e6ecf4; }
+.rg.rg4, html.rg-theme.rg4 { --rgglow: #a01e2c; --rgglow2: #c47a33; }
+.rg.rg5, html.rg-theme.rg5 { --rgglow: #f0a0c0; --rgglow2: #c9a7e8; }
+.rg.rg6, html.rg-theme.rg6 { --rgglow: #1fb59e; --rgglow2: #c9b27c; }
+.rg:has(.rg-kv-page)::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 45% at 72% 18%, color-mix(in srgb, var(--rgglow) 22%, transparent), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 12% 100%, color-mix(in srgb, var(--rgglow2) 12%, transparent), transparent 70%),
+    radial-gradient(ellipse 110% 85% at 55% 35%, transparent 55%, color-mix(in srgb, var(--rgbg) 80%, #000) 100%);
+}
+/* 카드 — 윗변에 테마빛 한 줄, 올리면 은은한 빛무리 */
+.rg .rg-zonecard,
+.rg .rg-sec-card,
+.rg .rg-zone,
+.rg .rg-relic,
+.rg .rg-ending,
+.rg .rg-visitor,
+.rg .rg-enemy-cell {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--rgglow) 28%, transparent);
+  transition: border-color 0.15s, box-shadow 0.2s;
+}
+.rg .rg-zonecard:hover,
+.rg .rg-sec-card:hover,
+.rg .rg-relic:hover,
+.rg .rg-ending:hover,
+.rg .rg-visitor:hover,
+.rg .rg-enemy-cell:hover {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--rgglow) 55%, transparent),
+    0 0 18px color-mix(in srgb, var(--rgglow) 22%, transparent);
 }
 /* ⚠ 본문에 z-index 를 일괄로 걸면 안 된다 — .rg-head(z 5)·.rg-headtools(z 30) 처럼
    원래 층이 있던 요소까지 1로 눌려, 테마 변경 드롭다운이 탭 줄 **뒤로** 들어가 눌리지

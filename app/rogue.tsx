@@ -67,6 +67,9 @@ function routesFor(id: string): StageRoutes | undefined {
 // 게임연결·리플레이 배포 스위치 — 2026-07-26 켜짐(사용자 지시). 끄면 진입 버튼
 // (BridgeTopicButton)만 사라지고 인식 파이프라인은 죽은 경로로 남는다.
 const BRIDGE_LIVE = true;
+/* 테마 키비주얼 캐시 키 — R2 그림은 30일 캐시라 같은 파일명으로 갈아 끼우면 옛 그림이 남는다. 그림을 바꾸면 올린다
+   (2026-10-17 스토리 컷씬판 1600×900 으로 교체). */
+const KV_VER = "20261017";
 
 // 스샷 레이더 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
 const LensHelpModal = lazy(() => import("./lens/help"));
@@ -2925,7 +2928,7 @@ export default function RogueGuide({ initialTopic }: {
         {/* 테마 키비주얼 — 히어로 상자가 아니라 **페이지 배경**으로 깔린다
             (사용자 제안 2026-09-20). 스크롤과 무관하게 제자리(fixed), 아래로 갈수록
             사라지는 마스크 + 낮은 불투명도라 글을 가리지 않는다. CSS: .rg-kv-page */}
-        {initialTopic && <img className="rg-kv-page" src={asset(`/rogue/kv${initialTopic.split("_")[1]}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
+        {initialTopic && <img className="rg-kv-page" src={asset(`/rogue/kv${initialTopic.split("_")[1]}.webp?v=${KV_VER}`)} alt="" aria-hidden loading="lazy" decoding="async" />}
         {seed && (
           <header className="rg-head">
             <div className="rg-hero">
@@ -3066,7 +3069,7 @@ export default function RogueGuide({ initialTopic }: {
     <section className={`rg${topic === "rogue_1" ? "" : " rg" + topic.split("_")[1]}`} aria-labelledby="rg-title"
       style={{ ["--rg-hue" as string]: TOPIC_HUE[topic] }}>
       {/* 테마 키비주얼 — 히어로 상자가 아니라 페이지 배경 (위 프리렌더 분기와 같은 그림) */}
-      <img className="rg-kv-page" src={asset(`/rogue/kv${topic.split("_")[1]}.webp`)} alt="" aria-hidden decoding="async" />
+      <img className="rg-kv-page" src={asset(`/rogue/kv${topic.split("_")[1]}.webp?v=${KV_VER}`)} alt="" aria-hidden decoding="async" />
       <header className="rg-head">
         <div className="rg-hero">
           <div className="rg-hero-text">

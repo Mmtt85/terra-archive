@@ -1099,6 +1099,9 @@ def build_topic(tid="rogue_1", loc=None):
     # 토픽마다 불규칙해 개별 매핑. 이미 있으면 스킵 (사용자 확정 아트 2026-07-18).
     # ⚠ rogue_3 좌측 반쪽엔 CN 제목이 박혀 있어 커밋본 kv3.webp는 하늘 그라데이션
     # 보간으로 텍스트를 지운 가공본 — 삭제 후 재실행하면 텍스트가 되살아난다.
+    # ⚠ 2026-10-17 부터 커밋본 kv1~6 은 이 경로가 아니라 같은 그림의 스토리 컷씬판
+    #   avg/images/pic_rogue_<N>_kv{1|2} (1600×900, 글자·바랜 테두리 없음)이다 — 사용자 "배경 고해상도 없었나?".
+    #   N → 컷: 1·4·5·6 = kv1, 2·3 = kv2 (rogue_6 은 중섭). 아래는 파일이 없을 때만 도는 옛 폴백.
     KV_SRC = {
         "rogue_2": ("rogue_2_update/entrykeyvisuals/rogue_2_kv_1_2/rl2_home_kv12_bg1.png",
                     "rogue_2_update/entrykeyvisuals/rogue_2_kv_1_2/rl2_home_kv12_bg2.png"),
