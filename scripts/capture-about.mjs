@@ -47,6 +47,9 @@ const SHOTS = [
     for (let i = 0; i < 2 && await ten.count(); i++) { await ten.first().click(); await page.waitForTimeout(300); }
     await page.waitForTimeout(600);
   } },
+  // 2026-10-17 추가 — 가챠 플래너·DPS 계산기 (DPS 는 예시 오퍼 세 명과 적 하나를 주소로 채운다)
+  { name: "gachaplan", path: "/gacha-planner" },
+  { name: "dps", path: "/dps?op=char_1013_chen2,char_103_angel,char_134_ifrit&enemy=enemy_1007_slime:1", prep: async (page) => { await page.waitForTimeout(800); } },
   { name: "story", path: "/stories" },
   { name: "rogue", path: "/rogue" },
   { name: "ra", path: "/ra" },

@@ -26,7 +26,7 @@ type ShotPair = { d: string; m: string };
 // 옛 캡처가 남는데, 쿼리가 바뀌면 새 캐시 키라 전부 즉시 새로 받는다 (2026-08-02).
 // ⚠ 순서 주의: 이 값을 올린 뒤 r2-sync 전에 /about을 열면, 새 쿼리 키에 옛 이미지가
 // 엣지 캐시(max-age 14400)로 4시간 박힌다. r2-sync를 먼저 돌리고 나서 올릴 것 (2026-08-13).
-const SHOT_VER = "2026101201";
+const SHOT_VER = "2026101701";
 const PORTAL_SHOT: ShotPair = { d: "/about/portal.webp", m: "/about/portal-m.webp" };
 const HOME_NAME: Record<Locale, string> = { ko: "홈 화면", en: "Home", ja: "ホーム" };
 const CHRONICLE_SHOT: ShotPair = { d: "/about/chronicle.webp", m: "/about/chronicle-m.webp" };
@@ -42,6 +42,8 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   farm: { d: "/about/farm.webp", m: "/about/farm-m.webp" },
   upgrade: { d: "/about/upgrade.webp", m: "/about/upgrade-m.webp" },
   gacha: { d: "/about/gacha.webp", m: "/about/gacha-m.webp" },
+  gachaplan: { d: "/about/gachaplan.webp", m: "/about/gachaplan-m.webp" },
+  dps: { d: "/about/dps.webp", m: "/about/dps-m.webp" },
   story: { d: "/about/story.webp", m: "/about/story-m.webp" },
   rogue: { d: "/about/rogue.webp", m: "/about/rogue-m.webp" },
   ra: { d: "/about/ra.webp", m: "/about/ra-m.webp" },
@@ -233,6 +235,25 @@ const CONTENT: Record<Locale, Content> = {
           "통상·한정 배너에 6성·5성 픽업 자리를 늘려 가며 — 눌러서 오퍼를 검색해 넣기, 미래시를 켜면 미실장 오퍼도",
           "성급별 확률·첫 10회 5성 보장은 게임 데이터 그대로, 50회부터 6성 +2% 천장과 픽업 비율(한정 70%)은 게임 안 공지대로",
           "나온 6성은 오른쪽 기록에 장수와 함께 모이고, 누르면 오퍼 상세",
+        ],
+      },
+      {
+        tab: "gachaplan", icon: "✷", name: "가챠 플래너",
+        summary: "지금 가진 재화와 수입으로 앞으로 올 배너마다 몇 연차를 쓸 수 있는지 계산합니다.",
+        bullets: [
+          "합성옥·허가증·순오리지늄에 일일·주간 임무, 섬멸 작전, 월정액, 노란 증표 상점 허가증까지 더해 셈",
+          "중국 서버 기준 예상 일정과 신규·한정 오퍼 — 줄마다 쓸 연차를 적으면 뒤 일정이 따라 바뀌고, '+N'으로 늘어난 내역 확인",
+          "복각·한정 배너는 직접 추가, 뽑을 오퍼를 지정하면 '가챠하러 가기'로 시뮬레이터에서 바로",
+          "내 정보로 로그인하면 지금 재화를 불러오고 설정이 계정에 저장",
+        ],
+      },
+      {
+        tab: "dps", icon: "⚔", name: "DPS 계산기",
+        summary: "오퍼레이터의 스킬 화력을 적 방어력·마법 저항·적 수에 따라 비교합니다.",
+        bullets: [
+          "여러 오퍼를 넣고 정예화·잠재·스킬 레벨·모듈을 골라 스킬 중 DPS와 스킬 한 번 총 피해",
+          "적 도감에서 적을 고르거나 방어력·마법 저항을 직접 — 범위 공격은 맞는 적 수만큼, 탄약형은 다 쓸 때까지",
+          "방어력·저항에 따른 DPS 곡선에서 순위가 뒤집히는 자리, 마우스를 올리면 정확한 값",
         ],
       },
       {
@@ -436,6 +457,25 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
+        tab: "gachaplan", icon: "✷", name: "Pull Planner",
+        summary: "Works out how many pulls you can spend on each upcoming banner from your currency and income.",
+        bullets: [
+          "Orundum, permits and Originite Prime plus daily/weekly missions, Annihilation, Monthly Card and Distinction Certificate permits",
+          "CN-based estimated schedule with new and limited operators — set pulls per banner and the rest of the list follows; \"+N\" shows the breakdown",
+          "Add reruns or limited banners yourself, mark target operators and jump to the gacha simulator",
+          "Log in via My Info to load your current currency and sync settings to your account",
+        ],
+      },
+      {
+        tab: "dps", icon: "⚔", name: "DPS Calculator",
+        summary: "Compare operators' skill damage by enemy DEF, RES and enemy count.",
+        bullets: [
+          "Add several operators and pick promotion, potential, skill level and module to see skill DPS and total damage per skill",
+          "Pick an enemy from the database or enter DEF/RES directly — AoE scales with enemies hit, ammo skills count until the ammo runs out",
+          "DPS curves over DEF/RES show where rankings flip; hover for exact values",
+        ],
+      },
+      {
         tab: "story", icon: "✦", name: "Story",
         summary: "Read event and main stories two ways: the full script, or an AI digest.",
         bullets: [
@@ -633,6 +673,25 @@ const CONTENT: Record<Locale, Content> = {
           "通常・限定バナーに★6・★5のピックアップ枠を必要なだけ追加 — 押してオペレーターを検索、「未実装データを含む」をオンにすれば未実装オペレーターも",
           "レアリティ別確率と最初の10回の★5保証はゲームデータそのまま、50回目からの★6 +2%天井とピックアップ割合（限定70%）はゲーム内告知どおり",
           "出た★6は右の記録に枚数つきで集まり、押すとオペレーター詳細",
+        ],
+      },
+      {
+        tab: "gachaplan", icon: "✷", name: "ガチャプランナー",
+        summary: "手持ちの資源と収入から、今後のバナーごとに何回引けるかを計算します。",
+        bullets: [
+          "合成玉・スカウト券・純正源石に、デイリー・ウィークリー任務、殲滅作戦、月パック、高級資格証のスカウト券まで加算",
+          "中国版基準の予想日程と新規・限定オペレーター — 予定ごとに使う回数を入れると以降が更新、「+N」で内訳を確認",
+          "復刻・限定バナーは自分で追加、狙うオペレーターを指定して「ガチャを引きに行く」でシミュレーターへ",
+          "マイ情報でログインすると現在の資源を読み込み、設定をアカウントに保存",
+        ],
+      },
+      {
+        tab: "dps", icon: "⚔", name: "DPS計算機",
+        summary: "オペレーターのスキル火力を、敵の防御力・術耐性・数ごとに比較します。",
+        bullets: [
+          "複数のオペレーターの昇進・潜在・スキルレベル・モジュールを選び、スキル中DPSとスキル1回の総ダメージ",
+          "敵情報から敵を選ぶか防御力・術耐性を直接入力 — 範囲攻撃は命中数に応じて、弾薬スキルは弾切れまで",
+          "防御力・術耐性ごとのDPS曲線で順位が入れ替わる位置、マウスを合わせると正確な値",
         ],
       },
       {

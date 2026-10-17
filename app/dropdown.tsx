@@ -104,8 +104,11 @@ export function Dropdown({
   useEffect(() => {
     if (!open) return;
     // 바깥 클릭·Esc로 닫기 — 종전에는 화면마다 따로 달려 있었다
+    // 바깥 = 단추·목록이 아닌 곳. 감싼 칸(.drop)이 폭 100%로 늘어난 화면(DPS 계산기 적 고르기 등)에서 단추 오른쪽 빈자리를 눌러도
+    // '안쪽'으로 쳐서 안 닫혔다 (사용자 지적 2026-10-17 "전에도 있었던 문제") — 칸 자체를 누른 것도 바깥으로 본다
     const onDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const root = rootRef.current, target = event.target as Node;
+      if (!root?.contains(target) || target === root) setOpen(false);
     };
     const onEsc = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
     window.addEventListener("mousedown", onDown);
