@@ -2752,6 +2752,7 @@ const D: Record<string, Pair> = {
   "기반시설": ["Base", "基地"],
   "내 보유": ["My roster", "所持状況"],
   "내 육성 현황": ["My progress", "自分の育成状況"],
+  "내 레벨": ["My level", "自分のレベル"],
   "내 정보": ["My Account", "マイページ"],
   "내 정보 - 명일방주 계정 육성 통계·창고 | 테라 아카이브": ["My Account - Arknights Roster Stats & Depot | Terra Archive", "マイページ - アークナイツ アカウント育成統計・倉庫 | テラアーカイブ"],
   "내 정보의 계정 데이터로 보유 오퍼를 맞췄습니다 — {name} 박사 · 보유 {n}명": ["Roster synced from My Account — Dr. {name} · {n} owned", "マイページのアカウントデータで所持オペレーターを合わせました — {name} ドクター · 所持 {n}人"],

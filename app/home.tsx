@@ -3462,14 +3462,12 @@ function MyOperator({ operator }: { operator: Operator }) {
   const head = <b className="me-op-strip-head">{t("내 육성 현황")}<RecruitButton id={operator.id} small /></b>;
   if (!c) return <div className="me-op-strip none">{head}<span>{t("미보유")}</span></div>;
   const mods = operator.modules.filter((m) => (c.modules[m.id] ?? 0) > 0);
-  // 마스터가 하나라도 있으면 스킬 레벨은 7 이 당연하니 뺀다 · MAX 배지는 없앤다 (사용자 지시 2026-10-04 "너무 길어진다")
-  const mastered = c.mastery.some((m) => m > 0);
+  // 스킬 레벨은 뺀다 — 아래 스킬 칸의 레벨 탭이 내 레벨로 열려(점 표시) 거기서 보인다 (사용자 지시 2026-10-17). MAX 배지도 없앴다(10-04)
   return (
     <div className="me-op-strip">
       {head}
       <span><i>{t("정예화")}</i>{eliteText(locale, c.elite, c.level)}</span>
       <span><i>{t("잠재")}</i>{potText(locale, c.potential)}</span>
-      {operator.skills.length > 0 && !mastered && <span><i>{t("스킬")}</i>Lv.{c.skill}</span>}
       {operator.skills.map((sk, i) => (c.mastery[i] ?? 0) > 0 && (
         <span key={sk.id}><i>{t("{n}스킬", { n: i + 1 })}</i>{masteryText(locale, c.mastery[i])}</span>
       ))}
@@ -4007,6 +4005,9 @@ function ModuleSection({ operator, modules }: { operator: Operator; modules: Ope
 function SkillSection({ operator }: { operator: Operator }) {
   const { locale, t } = useI18n();
   const key = `${locale}/${operator.id}`;
+  // 내 정보(게임 로그인)에 이 오퍼가 있으면 레벨 탭을 **내 레벨**로 연다 (사용자 지시 2026-10-17). 탭 순서 0~6 = Lv1~7, 7~9 = 특화 1~3
+  const myChar = meChars(useMe())?.get(operator.id);
+  const myAt = (index: number) => myChar ? ((myChar.mastery[index] ?? 0) > 0 ? 6 + myChar.mastery[index] : myChar.skill - 1) : undefined;
   const [doc, setDoc] = useState<SkillLevelDoc | null | undefined>(() => skillLevelCache.get(key));
 
   useEffect(() => {
@@ -4029,7 +4030,7 @@ function SkillSection({ operator }: { operator: Operator }) {
       {operator.skills.length ? (
         <div className="skill-list">
           {operator.skills.map((skill, index) => (
-            <SkillCard key={skill.id} skill={skill} index={index} levels={doc?.[skill.id]}
+            <SkillCard key={skill.id} skill={skill} index={index} levels={doc?.[skill.id]} myAt={myAt(index)}
               baseRange={operator.stats[operator.stats.length - 1]?.range} summons={operator.summons} />
           ))}
         </div>
@@ -4060,11 +4061,12 @@ function summonSkillRange(skill: Skill, summons: Summon[]): { summon: Summon; ra
   return undefined;
 }
 
-function SkillCard({ skill, index, levels, baseRange, summons = [] }: { skill: Skill; index: number; levels?: SkillLevels; baseRange?: RangeGrid[]; summons?: Summon[] }) {
+function SkillCard({ skill, index, levels, baseRange, summons = [], myAt }: { skill: Skill; index: number; levels?: SkillLevels; baseRange?: RangeGrid[]; summons?: Summon[]; myAt?: number }) {
   const { t } = useI18n();
   const count = (levels?.v ?? levels?.sp ?? levels?.d ?? levels?.ti)?.length ?? 0;
-  const [picked, setPicked] = useState<number | null>(null); // null = 최고 레벨
-  const at = count ? Math.min(picked ?? count - 1, count - 1) : -1;
+  const [picked, setPicked] = useState<number | null>(null); // null = 내 레벨(내 정보에 있으면), 없으면 최고 레벨
+  const mine = myAt != null && myAt >= 0 && count ? Math.min(myAt, count - 1) : undefined;
+  const at = count ? Math.min(picked ?? mine ?? count - 1, count - 1) : -1;
 
   // 레벨을 타지 않는 값은 operators.json(최고 레벨)의 것을 그대로 쓴다
   const sp = levels?.sp?.[at];
@@ -4108,8 +4110,8 @@ function SkillCard({ skill, index, levels, baseRange, summons = [] }: { skill: S
           <div className="skill-levels" role="group" aria-label={t("스킬 레벨")}>
             <span className="skill-levels-label">Lv</span>
             {Array.from({ length: count }, (unused, level) => (
-              <button key={level} type="button" className={level === at ? "selected" : ""}
-                aria-pressed={level === at} onClick={() => setPicked(level)}>
+              <button key={level} type="button" className={`${level === at ? "selected" : ""}${level === mine ? " mine" : ""}`}
+                aria-pressed={level === at} title={level === mine ? t("내 레벨") : undefined} onClick={() => setPicked(level)}>
                 {skillLevelLabel(level, count)}
               </button>
             ))}

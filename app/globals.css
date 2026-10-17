@@ -3185,6 +3185,12 @@ html.dark .tags-track > span {
   background: var(--accent);
   border-color: var(--accent);
 }
+/* 내 정보의 내 레벨 탭 — 밑에 작은 점 (2026-10-17). 처음엔 이 탭이 골라져 열리고, 다른 레벨을 눌러도 점은 남아 어디가 내 것인지 보인다 */
+.skill-levels button.mine { position: relative; }
+.skill-levels button.mine::after {
+  content: ""; position: absolute; left: 50%; bottom: -5px; width: 4px; height: 4px; margin-left: -2px;
+  border-radius: 50%; background: var(--lime-line);
+}
 /* 레벨을 타는 수치 — 어느 숫자가 레벨로 바뀌는지 문장에서 바로 보이게 */
 .skill-val {
   color: var(--accent);
