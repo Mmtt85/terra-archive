@@ -2764,6 +2764,7 @@ const D: Record<string, Pair> = {
   "전술 장비": ["Tactical equipment", "戦術装備"],
   "모은 오퍼": ["Collected operators", "集めたオペレーター"],
   "이번 시즌": ["This season", "今シーズン"],
+  "내 진행 {n}/{total}": ["My progress {n}/{total}", "自分の進捗 {n}/{total}"],
   "시즌 카드": ["Season card", "シーズンカード"],
   "맵 전용 카드": ["Map card", "マップ専用カード"],
   "누르면 효과와 보조 모듈": ["Click for effects and modules", "押すと効果と強化パーツ"],

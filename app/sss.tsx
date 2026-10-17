@@ -138,24 +138,22 @@ export function SssGuide() {
           <ul className="sss-maps">
             {[...openMaps].map((id) => <MapTile key={id} id={id} doc={doc} open mine={mine} got={got} onPick={setPick} />)}
           </ul>
+          {/* 소제목 없이 맵 칸과 같은 줄 — 밑변이 서로 안 맞았다 (사용자 지적 2026-10-17). 칸에 '시즌 카드'라고 이미 적혀 있다 */}
           <div className="sss-season-cards">
-            <h3>{t("시즌 리더 카드")}</h3>
             <div className="sss-ctiles">{cCards.map((id) => card(id))}</div>
           </div>
         </div>
-        {mine?.season && mine.season.id === cur && (
-          <p className="sss-note">{t("내 시즌 임무 {n}/{total} · 기간 보상 {c}/{l}", {
-            n: Object.values(mine.season.missions).filter((m) => m[2] || m[0] >= m[1]).length, total: Object.keys(mine.season.missions).length,
-            c: mine.season.period?.cur ?? 0, l: mine.season.period?.len ?? 0 })}</p>
-        )}
-        <h3>{t("시즌 임무")}</h3>
+        {/* 내 진행도는 제목 옆에 (사용자 지적 2026-10-17 "시즌 임무 쪽에 붙어야"). '기간 보상'(season.period)은 뜻이 확실치 않아 뺐다 */}
+        <h3>{t("시즌 임무")}{mine?.season && mine.season.id === cur && (
+          <em className="sss-h-side">{t("내 진행 {n}/{total}", { n: Object.values(mine.season.missions).filter((m) => m[2] || m[0] >= m[1]).length, total: Object.keys(mine.season.missions).length })}</em>
+        )}</h3>
         <ul className="sss-missions">
           {Object.entries(doc.missions).filter(([id]) => id.startsWith(cur.replace("tower_season_", "tower_season") + "_")).map(([id, [desc, rw]]) => {
             const m = mine?.season?.id === cur ? mine.season.missions[id] : undefined;
             const done = !!m && (m[2] === 1 || m[0] >= m[1]);
             return (
               <li key={id} className={done ? "done" : undefined}>
-                <span>{desc}</span>{reward(rw)}{m && <em>{Math.min(m[0], m[1])}/{m[1]}</em>}
+                <span>{desc}</span>{m && <em>{Math.min(m[0], m[1])}/{m[1]}</em>}{reward(rw)}
               </li>
             );
           })}
