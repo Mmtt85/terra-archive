@@ -30,6 +30,7 @@ const SYNC: { key: string; merge: "lww" | "entries" | "token" | "union" }[] = [
   { key: "ta:new-seen", merge: "lww" },                 // NEW 배지 본 기록
   { key: "terra-archive-infra-v3", merge: "lww" },      // 인프라 편성기 — 보유 오퍼 설정·편성·우선순위·배치
   { key: "terra-archive-infra-recycle", merge: "lww" }, // 인프라 재활용소 우선도
+  { key: "terra-archive-infra-training", merge: "lww" }, // 인프라 훈련실 운용 (비워 둔다 · 까지 고려, 2026-10-17)
   { key: "ta:me-layout", merge: "lww" },
   { key: "ta:me-order", merge: "lww" },
   { key: "ta:rogue-map-pos", merge: "lww" },

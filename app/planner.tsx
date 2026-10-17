@@ -22,6 +22,7 @@ import {
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS, PLANTS_BASE_RT,
   splitPriority, joinPriority, AUTO_BENCH_IDS, genEstimate,
   setRecycle, RECYCLE_MODE, RECYCLE_SPEC, recycleRate, recycleDaily, type RecycleMode,
+  setTrainingUse, TRAINING_USE,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type ProdAxis, type DrainMode, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
 } from "./planner-engine";
 import type { RaiseRec, InvestProgress } from "./planner-invest";
@@ -64,6 +65,8 @@ const ME_APPLIED_KEY = "terra-archive-infra-me-at";
 // 재활용소 우선도 (끔/보통/우선, 기본 보통 — 사용자 규칙 2026-10-09). 미래시 전용 설정이라 버킷이
 // 아니라 따로 둔다 — 프리셋과 무관하고, 미래시를 껐다 켜도 고른 값이 남아야 한다.
 const RECYCLE_KEY = "terra-archive-infra-recycle";
+// 훈련실 운용 — "use" = 훈련실까지 고려(2석, 조건 충족용), 그 밖 = 비워 둔다(기본). 제안 f03863ae, 2026-10-17
+const TRAINING_KEY = "terra-archive-infra-training";
 // 육성 추천 표시 개수 — 엔진은 정렬 전체를 반환하고, 숨긴 오퍼 자리는 다음 순위가 채운다
 const INVEST_SHOW = 20;
 
@@ -126,6 +129,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       if (v === "off" || v === "normal" || v === "first") setRecycleModeState(v);
     } catch { /* 무시 */ }
   }, []);
+  const [trainingUse, setTrainingUseState] = useState(false);
+  useEffect(() => {
+    try { setTrainingUseState(localStorage.getItem(TRAINING_KEY) === "use"); } catch { /* 무시 */ }
+  }, []);
+  const setTrainingChoice = (on: boolean) => {
+    setTrainingUseState(on);
+    try { localStorage.setItem(TRAINING_KEY, on ? "use" : "empty"); } catch { /* 무시 */ }
+  };
+  // 엔진 모듈 상태(slotsFor 의 훈련실 자리 수)는 렌더 전에 맞춘다 — 표시(0/1·0/2)와 수동 편성이 같은 값을 보게
+  if (TRAINING_USE !== trainingUse) setTrainingUse(trainingUse);
   const setRecycleChoice = (mode: RecycleMode) => {
     setRecycleModeState(mode);
     try { localStorage.setItem(RECYCLE_KEY, mode); } catch { /* 무시 */ }
@@ -395,7 +408,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
 
   const exportState = () => {
-    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), opLevels: Array.from(levelById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, roomPins, recycle: recycleMode, buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins, roomPins, basePlan, planDiff } } }, null, 1);
+    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), opLevels: Array.from(levelById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, roomPins, recycle: recycleMode, training: trainingUse ? "use" : "empty", buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins, roomPins, basePlan, planDiff } } }, null, 1);
     const blob = new Blob([payload], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -424,6 +437,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         if (fileCustom) setCustomRooms(fileCustom);
         const fileProducts = restoreCustomProducts(data.customProducts);
         if (fileProducts) setCustomProducts(fileProducts);
+        if (data.training === "use" || data.training === "empty") setTrainingChoice(data.training === "use");
         if (data.recycle === "off" || data.recycle === "normal" || data.recycle === "first") {
           setRecycleChoice(data.recycle);
           if (includeFuture && RECYCLE_SPEC) setRecycle(data.recycle); // 아래 sanitizePlan이 재활용소 칸을 보도록 먼저
@@ -693,7 +707,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, recycle: recycleJob, priority: prio, layout, levels, customRooms, customProducts, dormPins, roomPins: rpins }, paced);
+      const next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, recycle: recycleJob, training: trainingUse, priority: prio, layout, levels, customRooms, customProducts, dormPins, roomPins: rpins }, paced);
       const diff = diffPlans(plan, next);
       setPlan(next);
       rememberBase(next); // 되돌리기 기준 — 미리보기(previewOptimize)는 여기 손대지 않는다
@@ -744,7 +758,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setInvesting({ done: 0, total: 0 });
     try {
       let candidates = 0; // 엔진이 정밀 평가한 후보 수 — 0건 안내를 후보 유무로 갈라 쓴다
-      const recs = await investOff({ owned: ownedIds, elite: eliteById, opLevels: levelById, includeFuture: !!includeFuture, recycle: recycleJob, priority, layout, levels, customRooms, customProducts, dormPins, roomPins },
+      const recs = await investOff({ owned: ownedIds, elite: eliteById, opLevels: levelById, includeFuture: !!includeFuture, recycle: recycleJob, training: trainingUse, priority, layout, levels, customRooms, customProducts, dormPins, roomPins },
         (p) => { if (p.total) candidates = p.total; setInvesting(p); });
       setInvestDiag({ unfinished: unfinishedCount, candidates });
       setInvestRecs(recs);
@@ -779,7 +793,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimizeOff({ owned: ownedIds, elite: effElite, opLevels: levelById, includeFuture: !!includeFuture, recycle: recycleJob, priority, layout, levels, customRooms, customProducts, dormPins, roomPins }, paced);
+      const next = await optimizeOff({ owned: ownedIds, elite: effElite, opLevels: levelById, includeFuture: !!includeFuture, recycle: recycleJob, training: trainingUse, priority, layout, levels, customRooms, customProducts, dormPins, roomPins }, paced);
       setPlan(next);
       setActiveShift(0);
     } finally { setOptimizing(null); }
@@ -1727,6 +1741,17 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             ))}
           </>
         )}
+        {/* 훈련실 운용 (제안 f03863ae, 2026-10-17) — 비워 둔다(기본, 1석) · 까지 고려(2석: 트레이너 + 훈련 대상).
+            고려해도 훈련 속도로 채우지 않고, 다른 오퍼의 조건(뮤엘시스의 라인 랩 인원 등)을 채울 때만 앉힌다. 설정만 저장, 편성은 자동편성 버튼으로 */}
+        <span className="prio-label prio-label-layout" title={t("훈련실을 비워 둘지, 다른 오퍼의 조건을 채우는 데 쓸지 — 다음 자동편성부터 적용됩니다")}>{t("훈련실")}</span>
+        {([false, true] as const).map((on) => (
+          <label key={String(on)} className={trainingUse === on ? "on" : ""}
+            title={on ? t("훈련실 두 자리(트레이너·훈련 대상)를 씁니다. 뮤엘시스의 라인 랩 인원처럼 다른 오퍼의 조건을 채울 때만 앉히고, 훈련 속도로 채우지는 않습니다")
+              : t("훈련실은 특화 훈련용으로 비워 둡니다. 다른 오퍼의 조건이 훈련실 배치로만 채워질 때만 한 자리를 씁니다")}>
+            <input type="radio" name="training-mode" checked={trainingUse === on} onChange={() => setTrainingChoice(on)} />
+            {t(on ? "까지 고려" : "비워 둔다")}
+          </label>
+        ))}
         {/* 재활용소 우선도 — 미래시를 켰을 때만 (사용자 규칙 2026-10-09). 설정만 저장, 편성은 자동편성 버튼으로 */}
         {recycleJob && (
           <>

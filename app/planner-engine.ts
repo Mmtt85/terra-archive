@@ -536,12 +536,17 @@ export function levelOf(key: string): number {
   return typeof v === "number" && v >= 1 && v <= max ? Math.floor(v) : max;
 }
 // 방 슬롯 수 = 레벨별 phases (제조·무역 1/2/3, 제어센터 = 레벨). 레벨 미지정은 만렙 슬롯
+/** 훈련실 운용 — false(기본) = 비워 둔다(1석), true = 훈련실까지 고려(2석: 트레이너 + 훈련 대상).
+ *  사용자 결정 2026-10-17 (제안 f03863ae "훈련실에 2명 — 뮤엘시스"): 절대룰(1석)은 기본값으로 남기고 옵션으로 연다.
+ *  켜도 훈련실은 **조건 충족용 파킹**으로만 채운다(훈련 속도로 채우지 않는다 — 2026-07-29 철회 사유 그대로) */
+export let TRAINING_USE = false;
+export function setTrainingUse(on: boolean) { TRAINING_USE = !!on; }
 export function slotsFor(key: string): number {
   const room = cellByKey.get(key)?.room ?? key;
-  // 훈련실 근무석은 **1석**으로 고정한다. 게임 데이터 정원은 2(트레이너석+훈련대상석)이고
+  // 훈련실 근무석은 기본 **1석**으로 고정한다. 게임 데이터 정원은 2(트레이너석+훈련대상석)이고
   // 2026-07-29에 2석으로 풀어봤지만, 뒤따르는 편성이 계속 꼬여 사용자가 1석으로 되돌리라고
-  // 지시했다("2명으로 늘린 거 다시 1명으로 롤백") — 그 판단이 이 캡의 근거다.
-  if (room === "TRAINING") return 1;
+  // 지시했다("2명으로 늘린 거 다시 1명으로 롤백") — 그 판단이 이 캡의 근거다. '훈련실까지 고려' 옵션일 때만 2석
+  if (room === "TRAINING") return TRAINING_USE ? 2 : 1;
   const spec = infra.rooms[room];
   return spec?.phases?.[levelOf(key) - 1]?.slots ?? spec?.slots ?? 1;
 }
@@ -2943,6 +2948,11 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
             if (skill.workRooms?.includes("TRAINING")) for (const pid of skill.workPartners ?? []) wanted.add(pid);
             if (skill.roomPartner?.room === "TRAINING") wanted.add(skill.roomPartner.id);
             if (skill.perFacility) for (const pid of skill.perFacility.ids) wanted.add(pid);
+            // '훈련실까지 고려'면 기지 전체 진영 인원을 세는 스킬(뮤엘시스 "기반시설 내 라인 랩 1명당")의
+            // 그 진영원도 후보 — 숙소 대신 훈련실에 앉혀 인원을 채운다 (제안 f03863ae, 2026-10-17)
+            if (TRAINING_USE && skill.perFaction && skill.perScope === "base") {
+              for (const cand of roster) if (memberOf(cand, skill.perFaction)) wanted.add(cand.id);
+            }
           }
         }
         const before = scoreExTraining(shift);
@@ -2970,6 +2980,25 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   // 편성 확정 — 씨앗 주차 중 수혜 오퍼가 결국 배치되지 않은 짝은 숙소에서 빼고(이유 없는
   // 숙소 인원은 편성을 읽을 수 없게 만든다), 새로 필요해진 짝은 이득일 때만 넣는다.
   if (park) parkEnablers();
+  // '훈련실까지 고려'면 숙소 파킹한 짝(울피아누스 등 — "기반시설 어디든 있으면" 조건용)을 훈련실로 옮겨 숙소 자리를
+  // 비운다 (사용자 지시 2026-10-17, 제안 f03863ae "훈련실에 두고 숙소를 여는 게 실용적"). 숙소는 두 조 공통이라
+  // **두 조 훈련실 모두에** 자리가 있을 때만 옮기고, 옮긴 뒤 점수가 조금이라도 떨어지면 되돌린다.
+  // 숙소 전용 스킬 오퍼(체르니·아이리스 등)는 파킹 명단에 없으므로 건드리지 않는다
+  if (TRAINING_USE && assignments["TRAINING"]?.length) {
+    const tTeams = assignments["TRAINING"];
+    for (const id of [...parked]) {
+      const dormKey = dormKeys.find((key) => (assignments[key]?.[0] ?? []).includes(id));
+      if (!dormKey) continue;
+      if (!tTeams.every((team) => (team ?? []).length < slotsFor("TRAINING"))) break;
+      const before = scoreExTraining(0) + scoreExTraining(1);
+      assignments[dormKey][0] = (assignments[dormKey][0] ?? []).filter((other) => other !== id);
+      for (let i = 0; i < tTeams.length; i += 1) tTeams[i] = [...(tTeams[i] ?? []), id];
+      if (scoreExTraining(0) + scoreExTraining(1) < before - 1e-6) {
+        for (let i = 0; i < tTeams.length; i += 1) tTeams[i] = (tTeams[i] ?? []).filter((other) => other !== id);
+        assignments[dormKey][0] = [...(assignments[dormKey][0] ?? []), id];
+      }
+    }
+  }
   // 재활용소 (미래시 전용, §11) — 감사·백필이 다 끝난 **뒤**에 남은 인원으로만 채운다. 미래시가
   // 꺼져 있으면 LAYOUT에 칸이 없어 아무것도 안 한다 (종전 편성과 바이트 단위 동일).
   fillRecycle(assignments, roster, reserved, roomLockOps);

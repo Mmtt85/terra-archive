@@ -844,7 +844,7 @@ let DB = null;
 const PREF_MAX = 2_000_000;        // 계정당 설정 전체 상한 (바이트) — 인프라 편성기 상태가 커서 넉넉히 (D1 한 줄 한도도 2MB)
 const PREF_KEYS = new Set(["ta:me-layout", "ta:story-pos", "ta-feedback-token", "ta-feedback-extra",
   "ta-theme", "ta-locale", "ta-include-future", "story-reader-prefs", "story-reader-sound", "ta:gallery-spoiler",
-  "ta-recruit-prized", "ta:new-seen", "terra-archive-infra-v3", "terra-archive-infra-recycle", "ta:me-order", "ta:rogue-map-pos", "ta:gacha-plan"]);   // 받아 주는 설정 키 — 사이트 app/cloud-prefs.ts SYNC 와 같게
+  "ta-recruit-prized", "ta:new-seen", "terra-archive-infra-v3", "terra-archive-infra-recycle", "terra-archive-infra-training", "ta:me-order", "ta:rogue-map-pos", "ta:gacha-plan"]);   // 받아 주는 설정 키 — 사이트 app/cloud-prefs.ts SYNC 와 같게
 async function prefTokenOf(server, uid) {
   if (!SIGN_KEY || !uid) return null;
   const body = b64url(new TextEncoder().encode(JSON.stringify([2, server, String(uid)])));
