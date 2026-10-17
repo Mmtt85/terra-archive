@@ -34,6 +34,26 @@ export async function loadEnemies(locale: string): Promise<Map<string, Enemy>> {
   return map;
 }
 
+/** 통합전략·생존연산·위기 협약 작전 색인 — 작전 도감 목록이 본 문서 뒤에 이어 붙이는 것들 (stages-*.tsx).
+ *  적 도감 '등장 작전'에 이 작전들도 실리면서(scripts/build-enemy-stages-extra.py, 2026-10-17) 누르면 열려야 해서
+ *  찾는 작전이 본 문서에 없을 때만 지연 로드해 붙인다 */
+const EXTRA_STAGE_LOADERS: Record<string, (() => Promise<unknown>)[]> = {
+  ko: [() => import("./data/stages-rogue.json"), () => import("./data/stages-sandbox.json"), () => import("./data/stages-crisis.json")],
+  en: [() => import("./data/stages-rogue.en.json"), () => import("./data/stages-sandbox.en.json"), () => import("./data/stages-crisis.en.json")],
+  ja: [() => import("./data/stages-rogue.ja.json"), () => import("./data/stages-sandbox.ja.json"), () => import("./data/stages-crisis.ja.json")],
+};
+const fullCache = new Map<string, StageDoc>();
+/** 본 문서 + 특수 작전 색인을 합친 문서 — 본 문서에 없는 작전 id 를 열 때 */
+export async function loadStagesFull(locale: string): Promise<StageDoc> {
+  const hit = fullCache.get(locale);
+  if (hit) return hit;
+  const { mergeRogueDoc } = await import("./stage-data");
+  let doc = await loadStages(locale);
+  for (const ld of EXTRA_STAGE_LOADERS[locale] ?? EXTRA_STAGE_LOADERS.ko) doc = mergeRogueDoc(doc, unwrap<StageDoc>(await ld()));
+  fullCache.set(locale, doc);
+  return doc;
+}
+
 /** 작전 도감 문서. 이미 받았으면 즉시 돌려준다. */
 export async function loadStages(locale: string): Promise<StageDoc> {
   const hit = stageCache.get(locale);

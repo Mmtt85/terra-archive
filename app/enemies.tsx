@@ -17,7 +17,7 @@ import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
 import { SearchSuggest } from "./search-suggest";
-import { loadEnemyStages, loadEnemyStats, loadStages } from "./dex-cross";
+import { loadEnemyStages, loadEnemyStats, loadStages, loadStagesFull } from "./dex-cross";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 // 재료 상세는 재료파밍 도우미의 것을 그대로 쓴다 (작전 모달의 드랍에서 열린다)
@@ -111,7 +111,9 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
   const openStage = (sid: string) => {
     setStageRaise((k) => k + 1);
     // 스탯 색인을 같이 받아야 등장 적 카드에 HP·공격 수치가 실린다 (사용자 제보 2026-08-11)
-    void Promise.all([loadStages(locale), loadEnemyStats()]).then(([doc, stats]) => {
+    void Promise.all([loadStages(locale), loadEnemyStats()]).then(async ([doc0, stats]) => {
+      // 통합전략·생존연산·위기 협약 작전은 본 문서에 없다 — 그때만 특수 색인까지 붙인 문서에서 찾는다 (2026-10-17)
+      const doc = doc0.stages.some((x) => x.id === sid) ? doc0 : await loadStagesFull(locale);
       const st = doc.stages.find((x) => x.id === sid);
       setSubStage(st ? viewOf(doc, st, stats) : null);
     });

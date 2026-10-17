@@ -20520,8 +20520,8 @@ main.site-main > .site-header {
   white-space: nowrap;
 }
 .en-rank.r-elite {
-  border-color: var(--amber-ink);
-  color: var(--amber-ink);
+  border-color: var(--gold-ink);
+  color: var(--gold-ink);
 }
 .en-rank.r-boss {
   border-color: var(--danger);
@@ -20529,16 +20529,18 @@ main.site-main > .site-header {
 }
 
 /* ── 적 상세 (모달 · 상세 페이지 공용) ─────────────────────────────────────── */
+/* 2026-10-17 가독성 손질 (사용자 지시 "적 상세 모달 가독성이 부족, 아주 예쁘게") — 머리에 핵심 수치 넷, 설명은 인용처럼 한 단 옅게,
+   사실은 테두리 상자 대신 옅은 칸, 능력은 번호 줄, 절 제목 뒤 가는 선, 스탯표는 세로줄을 걷고 핵심 열만 굵게 */
 .en-file {
-  padding: 18px 20px 24px;
+  padding: 20px 22px 26px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 22px;
 }
 .en-head {
   display: grid;
   grid-template-columns: 132px minmax(0, 1fr);
-  gap: 16px;
+  gap: 18px;
   align-items: center;
 }
 .en-portrait {
@@ -20550,9 +20552,70 @@ main.site-main > .site-header {
 .en-head-main {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
+.en-head-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 26px;
+}
+/* 핵심 수치 — HP·공격력·방어력·마법 저항. 떨어진 타일 넷: 이름(왼)·상위 N%(오) / 큰 값(차이) / 적 전체 대비 막대
+   (2026-10-17 "좀 더 예쁘게" — 종전엔 한 덩어리 격자에 이름과 숫자뿐) */
+.en-key {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 4px 0 0;
+}
+.en-key > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 12px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-panel);
+}
+.en-key dt {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.en-key dt em {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.en-key dd {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.en-key dd small {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.en-key dd small.plus { color: var(--gold-ink); }
+.en-key .en-bar { margin-top: 2px; }
+.en-key .en-bar i { background: var(--lime-line); }
 .en-code {
   font-family: var(--mono);
   font-size: 11px;
@@ -20574,32 +20637,132 @@ main.site-main > .site-header {
   font-size: 11px;
   padding: 2px 8px;
   border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--ink2);
+}
+/* 상세 머리의 등급 배지 — 글자가 위로 치우쳐 보였다 (줄 높이 기본값 탓, 사용자 지적 2026-10-17). 옆 칩과 높이를 맞추고 세로 가운데 */
+.en-badges .en-rank {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  line-height: 1;
+}
+.en-badges { align-items: center; }
+.en-badges .en-tag, .en-badges .en-fact { min-height: 22px; box-sizing: border-box; display: inline-flex; align-items: center; }
+/* 머리의 사실 칩 — '공격 원거리'처럼 옅은 이름표 + 값 (2026-10-17, 종전 별도 구역 .en-facts) */
+.en-fact {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  background: var(--bg-panel);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.en-fact small {
+  font-size: 11px;
+  font-weight: 500;
   color: var(--muted);
 }
-.en-imm {
-  border-color: var(--border-strong);
-  color: var(--ink);
+/* 공격 범위 칩 — 칸(오퍼 범위 칸과 같은 색) + 실제 판정인 원 선 */
+.en-key:has(.en-range) { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
+.en-key > .en-range { align-items: center; }
+.en-key > .en-range dd { font-size: 16px; }
+.en-range-svg { margin-top: 2px; overflow: visible; }
+.en-range-svg rect { fill: var(--bg-soft); stroke: var(--line); stroke-width: 0.5; }
+.en-range-svg rect.on { fill: var(--lime); stroke: none; opacity: 0.85; }
+.en-range-svg rect.origin { fill: var(--chip); stroke: var(--chip-line); }
+.en-range-svg circle { fill: none; stroke: var(--ink); stroke-width: 1; stroke-dasharray: 2 1.5; }
+/* 형태(페이즈) 제목 줄 — 번호 없이 굵은 소제목 */
+.en-abil li.en-abil-title {
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold-ink);
 }
+/* 상태이상 8종 — 통하는 것은 옅은 테두리 칩, 면역은 연한 빨강 + '면역' (2026-10-17) */
+.en-status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));   /* 9종 = 3 × 3 으로 반듯하게 (자동 채움은 6 + 2 로 갈렸다) */
+  gap: 6px;
+}
+.en-status > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+}
+.en-status > span b { flex: 1; min-width: 0; font-weight: inherit; white-space: nowrap; }
+.en-st-icon {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.en-st-ok .en-st-icon { color: var(--muted); }
+/* 게임 원본 실루엣(공포·마비) — 글자색으로 칠한 마스크. 선 그림보다 살짝 크게 해 무게를 맞춘다 */
+.en-st-icon.game {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin: -2px -2px -2px -2px;
+  background: currentColor;
+  -webkit-mask: no-repeat center / contain;
+  mask: no-repeat center / contain;
+}
+.en-st-ok {
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink2);
+}
+.en-status .en-imm small {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+/* 상태이상 면역 — 막히는 효과라 연한 빨강 칩 (tint-red + danger 짝) */
+.en-imm {
+  padding: 3px 10px;
+  border-color: transparent;
+  background: var(--tint-red);
+  color: var(--danger);
+  font-weight: 600;
+}
+/* 설명 — 도감 문구라 인용처럼 한 단 옅게, 왼쪽 가는 선 */
 .en-desc {
   margin: 0;
-  font-size: 14px;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--line);
+  font-size: 13px;
   line-height: 1.75;
-  color: var(--ink);
+  color: var(--ink2);
   white-space: pre-line;
 }
 .en-facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
   margin: 0;
-  padding: 12px;
-  border: 1px solid var(--line);
 }
 .en-facts > div {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
+  padding: 8px 12px;
+  background: var(--bg-panel);
+  border-radius: var(--r-sm);
 }
 .en-facts dt {
   font-size: 11px;
@@ -20608,27 +20771,65 @@ main.site-main > .site-header {
 .en-facts dd {
   margin: 0;
   font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+/* 구역 — 능력·스탯·면역·등장 작전을 각각 옅은 판으로 감싸 경계를 또렷하게, 제목 왼쪽엔 라임 표식
+   (사용자 지적 2026-10-17 "섹션별 구분이 잘 안 된다 — 스탯이랑 등장 작전 같은 거") */
+.en-block {
+  padding: 14px 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-panel);
 }
 .en-block > h3 {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  margin: 0 0 8px;
+  margin: 0 0 12px;
   font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.en-block > h3::before {
+  content: "";
+  width: 3px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--lime-line);
 }
 .en-block > h3 em {
   font-style: normal;
+  font-family: var(--mono);
   font-size: 12px;
+  font-weight: 600;
   color: var(--muted);
 }
+/* 능력 — 번호 줄 */
 .en-abil {
   margin: 0;
-  padding-left: 18px;
+  padding: 0;
+  list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 14px;
+  border-top: 1px solid var(--line);
+}
+.en-abil li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
   line-height: 1.6;
+  color: var(--ink);
+}
+.en-abil li i {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.9;
+  color: var(--muted);
 }
 .en-stats {
   width: 100%;
@@ -20637,19 +20838,148 @@ main.site-main > .site-header {
 }
 .en-stats th,
 .en-stats td {
-  border: 1px solid var(--line);
-  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  padding: 7px 10px;
   text-align: right;
 }
-.en-stats thead th,
+.en-stats thead th {
+  background: var(--bg-panel);
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.en-stats thead th:first-child,
 .en-stats tbody th {
   text-align: left;
-  color: var(--muted);
-  font-weight: 500;
+}
+.en-stats tbody th {
+  color: var(--ink2);
+  font-weight: 600;
   white-space: nowrap;
 }
 .en-stats td {
   font-family: var(--mono);
+  color: var(--ink2);
+  font-variant-numeric: tabular-nums;
+}
+/* 스탯 시트 (2026-10-17 — 표 대신) — 스탯마다 한 줄: 이름 · 값 · 적 전체 대비 막대 · '상위 N%'. 넓으면 두 단 */
+.en-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.en-lvtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.en-lvtabs button {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--btn-line);
+  border-radius: var(--r-sm);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.en-lvtabs button:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); color: var(--btn-ink-hover); }
+.en-lvtabs button.on, .en-lvtabs button.on:hover { background: var(--btn-on-bg); border-color: transparent; color: var(--btn-on-ink); font-weight: 600; }
+.en-sheet-ctx {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink2);
+}
+.en-sheet-rows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.en-sheet-rows > div {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+.en-sheet-rows dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.en-sheet-rows dd {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 112px minmax(40px, 1fr) 54px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.en-sheet-rows dd b {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.en-sheet-rows .key dd b {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+/* /rogue 모달 — 배율이 걸린 값 (종전 표의 td.up 과 같은 톤) */
+.en-sheet-rows .up dd b { color: var(--crimson); }
+.en-sheet-rows dd small {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.en-sheet-rows dd small.plus { color: var(--gold-ink); }
+.en-sheet-rows dd small.minus { color: var(--muted); }
+/* 값 칸은 폭 고정 — 막대가 줄마다 같은 자리에서 시작하게 (값 자릿수가 달라 들쭉날쭉했다) */
+.en-sheet-rows .en-v { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.en-bar {
+  position: relative;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+.en-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--ink3);
+}
+.en-sheet-rows .key .en-bar i { background: var(--lime-line); }
+.en-sheet-rows dd em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+}
+@media (max-width: 620px) {
+  .en-sheet-rows { grid-template-columns: minmax(0, 1fr); }
+  .en-stagegroup { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .en-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* 핵심 열(HP·공격력·방어력·마법 저항)만 진하게 */
+.en-stats td.key {
+  color: var(--ink);
+  font-weight: 600;
+}
+.en-stats tbody tr:hover td,
+.en-stats tbody tr:hover th {
+  background: var(--bg-soft);
 }
 /* 배율이 반영된 칸 — /rogue 적 상세의 '그 자리 수치' 줄 (작전 도감 칩 .st-enemy-stats b.up과 같은 톤) */
 .en-stats td.up {
@@ -20671,50 +21001,79 @@ main.site-main > .site-header {
 .en-links a:hover {
   border-color: var(--border-hover);
 }
-/* 등장 작전 — 구역별로 접어 보여준다. 최다 71개까지 나오므로 자체 스크롤을 준다. */
+/* 등장 작전 — 왼쪽 열에 구역 이름(작전 수), 오른쪽에 같은 폭 칩 격자 (사용자 지시 2026-10-17 "등장 작전도 못생겼네").
+   종전엔 구역 이름 아래 들쭉날쭉한 칩 줄 + 칸 안 자체 스크롤(최대 320px)이었다 — 스크롤은 창 하나로 */
 .en-stagelist {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: 320px;
-  overflow-y: auto;
-  padding-right: 4px;
 }
+.en-stagegroup {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.en-stagegroup:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+/* 이름이 두 줄로 넘어가도 작전 수는 이름 끝에 붙는다 — flex 였을 땐 오른쪽 끝에 따로 떠 있었다 (사용자 지적 2026-10-17) */
 .en-stagegroup h4 {
-  margin: 0 0 4px;
+  display: block;
+  margin: 4px 0 0;
   font-size: 12px;
-  color: var(--muted);
+  line-height: 1.45;
+  color: var(--ink2);
+  font-weight: 600;
+}
+.en-stagegroup h4 em {
+  margin-left: 6px;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 11px;
   font-weight: 500;
+  color: var(--muted);
 }
 .en-stagegroup ul {
   margin: 0;
   padding: 0;
   list-style: none;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 6px;
 }
+/* 칩이 구역 이름 높이만큼 늘어날 때 글자가 위에 붙어 있었다 — 세로 가운데로 (사용자 지적 2026-10-17) */
 .en-stagegroup li {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
-  padding: 3px 8px;
+  padding: 5px 9px;
   border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--white);
   font-size: 12px;
-  max-width: 100%;
+  min-width: 0;
 }
 .en-stagegroup li b {
+  flex: none;
   font-family: var(--mono);
   font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
 }
 .en-stagegroup li span {
-  color: var(--muted);
+  min-width: 0;
+  color: var(--ink2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .en-stagegroup li em {
+  flex: none;
+  margin-left: auto;
   font-style: normal;
+  font-family: var(--mono);
   font-size: 11px;
   color: var(--muted);
 }
@@ -20728,6 +21087,9 @@ main.site-main > .site-header {
   }
   .en-head {
     grid-template-columns: 96px minmax(0, 1fr);
+  }
+  .en-key, .en-key:has(.en-range) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .en-portrait {
     width: 96px;
@@ -20745,13 +21107,16 @@ main.site-main > .site-header {
   color: var(--muted);
 }
 /* 강화된 스탯으로 나오는 작전 표시 */
+/* 강화 작전 — 왼쪽 금색 띠 */
 .en-stagegroup li.reinforced {
-  border-color: var(--amber-ink);
+  border-left: 3px solid var(--gold-ink);
+  padding-left: 7px;
 }
 .en-lv {
   font-style: normal;
   font-size: 10px;
-  color: var(--amber-ink);
+  font-weight: 600;
+  color: var(--gold-ink);
 }
 
 /* ── 작전 도감 (/stages) ────────────────────────────────────────────────────
@@ -21504,8 +21869,9 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 /* 등장 작전 칸이 작전 도감으로 가는 링크가 됐다 (2026-08-09) */
 .en-stagegroup li > a {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
+  flex: 1;
   color: inherit;
   text-decoration: none;
   min-width: 0;
@@ -22241,6 +22607,54 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-modal .mw-body { padding: 8px 20px 20px; }
 .sb-dt { padding: 0; }
 .sb-dt > p:first-of-type { margin-top: 8px; }
+/* ── 생존연산 상세 손질 (2026-10-17, 사용자 지시 "사막 이야기 아이템 도감도 예쁘게") — 적·아이템 상세와 같은 결.
+   상세 창 16종이 이 틀(.sb-dt)을 같이 쓴다: 머리 아이콘 판 · 큰 이름 · 옅은 보조 설명은 인용처럼 · 절 제목엔 라임 표식과 가는 선 ·
+   재료 칩 호버는 검게 뒤집지 않고 한 단 눌린 바탕 (디자인 규칙: 명암 반전은 '선택됨' 전용) */
+.sb-dt .sb-dt-head { gap: 16px; margin-bottom: 4px; }
+.sb-dt .sb-dt-head img {
+  width: 88px;
+  height: 88px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-bottom: 3px solid var(--lime-line);
+}
+.sb-dt h2 { font-size: 22px; line-height: 1.25; letter-spacing: -0.3px; }
+.sb-dt .sb-dt-head .sb-cmeta { margin-top: 8px; gap: 6px; }
+.sb-dt .sb-dt-head .sb-chip { font-size: 11px; padding: 2px 9px; border-radius: var(--r-sm); }
+.sb-dt > p.sb-dim {
+  margin-top: 8px;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--line);
+  color: var(--ink2);
+}
+.sb-dt h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.sb-dt h4::before {
+  content: "";
+  flex: none;
+  width: 3px;
+  height: 13px;
+  border-radius: 1px;
+  background: var(--lime-line);
+}
+.sb-dt h4::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.sb-dt h4 .sb-count { font-style: normal; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--muted); }
+.sb-dt .sb-matline { gap: 6px; }
+.sb-dt .sb-matchip { padding: 3px 10px 3px 4px; border-radius: var(--r-sm); background: var(--bg-panel); }
+.sb-dt .sb-matchip:hover { color: var(--ink); background: var(--bg-press); border-color: var(--border-hover); }
+.sb-dt .sb-matchip:hover em { color: var(--muted); opacity: 1; }
 .sb-dt .st-facts { margin-top: 8px; }
 .sb-dt .sb-cmeta { margin-top: 4px; }
 
@@ -25382,6 +25796,126 @@ html[lang="ja"] .vn-box {
   background: var(--chip);
   color: #ffab63;
 }
+/* ── 아이템 상세 본문 (.it-file, 2026-10-17 가독성 손질) — 적 상세와 같은 결. 재료파밍 재료 창(.item-modal 단독)은 건드리지 않게
+   전부 .it-file 아래로. 아이콘 테두리는 등급색(T1~T6, .farm-tier 와 같은 값) */
+.it-file { display: flex; flex-direction: column; gap: 16px; }
+.it-file .itf-head {
+  position: relative;
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+/* 보유/미보유 칩(오른쪽 위)은 배지 줄 높이에만 걸리게 — 머리 전체에 오른쪽 여백을 두면 용도 글이 좁게 접혔다 */
+.it-file .itf-badges { padding-right: 64px; min-height: 22px; }
+/* 공용 규칙 header:has(> .own-corner) > div { padding-right: 90px } 를 여기선 걷는다 — 칩 자리는 배지 줄만 비운다 */
+.it-file .itf-head > .itf-title { padding-right: 0; }
+.it-file .itf-badges { padding-right: 90px; }
+.item-modal:has(.it-file) { width: min(520px, 100%); }
+.itf-icon {
+  --tier: var(--line);
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border: 1px solid color-mix(in srgb, var(--tier) 70%, transparent);
+  border-bottom-width: 3px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--tier) 10%, var(--bg-panel));   /* 그라데이션은 디자인 규칙상 걷었다 — 등급색을 옅게 한 단 */
+}
+.itf-icon[data-tier="1"] { --tier: #8d8d86; } .itf-icon[data-tier="2"] { --tier: #7fae3c; } .itf-icon[data-tier="3"] { --tier: #3d8fd6; }
+.itf-icon[data-tier="4"] { --tier: #a45ce0; } .itf-icon[data-tier="5"] { --tier: #d39b1f; } .itf-icon[data-tier="6"] { --tier: #e0782a; }
+.itf-icon img { width: 80px; height: 80px; object-fit: contain; }
+.itf-title { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.itf-badges { display: flex; align-items: center; gap: 6px; }
+.itf-group {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-style: normal;
+  color: var(--ink2);
+}
+.it-file h3 { margin: 0; font-size: 22px; line-height: 1.25; letter-spacing: -0.3px; }
+.itf-usage { margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink2); }
+.itf-desc {
+  margin: 0;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--line);
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ink2);
+  white-space: pre-line;
+}
+.itf-block {
+  padding: 12px 14px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-panel);
+}
+.itf-block > h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.itf-block > h4::before {
+  content: "";
+  width: 3px;
+  height: 13px;
+  border-radius: 1px;
+  background: var(--lime-line);
+}
+.itf-block > h4 em { font-style: normal; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--muted); }
+.it-file .it-obtain { color: var(--ink); }
+.it-file .it-links .it-link { border-radius: var(--r-sm); background: var(--white); }
+.itf-drops {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.itf-drops li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px 5px 5px;
+  border-radius: var(--r-sm);
+  background: var(--white);
+}
+.itf-code {
+  min-width: 56px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-panel);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+.itf-code:hover { border-color: var(--border-hover); }
+.itf-kind { font-size: 12px; color: var(--ink2); }
+/* 드랍 확률 — 높을수록 진하게 */
+.itf-occ {
+  padding: 1px 8px;
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--bg-soft);
+}
+.itf-occ.hi { color: var(--tint-lime-ink); background: var(--tint-lime); }
+.itf-occ.mid { color: var(--ink); }
+.itf-occ.lo { color: var(--muted); background: transparent; border: 1px solid var(--line); }
 /* 상세 모달 — .item-modal(재료파밍의 재료 상세)을 그대로 얹어 쓴다. 여기서는 분류 배지와
    획득 경로 줄만 덧댄다. */
 .it-group-badge {

@@ -124,27 +124,33 @@ export function ItemFile({ item, doc, onOpenStage }: {
 }) {
   const { locale, t } = useI18n();
   const have = haveOf(useMe()?.profile?.inventory, item);
+  // 드랍 확률 — 높을수록 진하게 (확정·거의 항상 > 자주 > 보통 > 가끔)
+  const occTone = (o: string) => (/확정|거의 항상|Guaranteed|Almost|確定|ほぼ/.test(o) ? "hi" : /자주|Often|しばしば|よく/.test(o) ? "mid" : /가끔|Rare|Sometimes|まれ|たまに/.test(o) ? "lo" : "");
+  // 2026-10-17 가독성 손질 (사용자 지시 "아이템 상세 모달도 더 예쁘게") — 적 상세와 같은 결: 머리(큰 아이콘 · 배지 · 이름 · 용도),
+  // 설명은 인용처럼 옅게, 획득 방법·드랍 작전은 각각 판으로. 이벤트 도감·내 정보 창고 모달도 이 본문을 쓴다
   return (
-    <>
-      <header>
+    <div className="it-file">
+      <header className="itf-head">
         {/* 보유 표시는 사이트 공통 모서리 칩 — '보유 N' / '미보유' (사용자 지시 2026-10-11 "다 통일") */}
         {have !== undefined && (have > 0
           ? <span className="own-corner" title={t("내 창고")}>{t("보유")} {have.toLocaleString()}</span>
           : <span className="own-corner no" title={t("내 창고")}>{t("미보유")}</span>)}
-        <span className="item-modal-icon" data-tier={item.r}>
+        <span className="itf-icon" data-tier={item.r}>
           {item.i && <img src={itemIcon(item.i)} alt={item.n} width={183} height={183} />}
         </span>
-        <div>
+        <div className="itf-title">
+          <div className="itf-badges">
+            <span className={`farm-tier tier-${item.r}`}>T{item.r}</span>
+            <em className="itf-group">{t(GROUP_LABEL[item.g])}</em>
+          </div>
           <h3>{item.n}</h3>
-          <span className={`farm-tier tier-${item.r}`}>T{item.r}</span>
-          <em className="it-group-badge">{t(GROUP_LABEL[item.g])}</em>
+          {item.u && <p className="itf-usage">{item.u}</p>}
         </div>
       </header>
-      {item.d && <p className="item-desc">{item.d}</p>}
-      {item.u && <p className="item-usage">{item.u}</p>}
+      {item.d && <p className="itf-desc">{item.d}</p>}
       {(item.o || item.b || item.evName || item.farm) && (
-        <div className="item-craft">
-          <b>{t("획득 방법")}</b>
+        <section className="itf-block">
+          <h4>{t("획득 방법")}</h4>
           {/* 어느 이벤트 재화인지 — 스토리 페이지가 없는 이벤트(미니게임·보스러시)도 많아서
               이름은 항상 글로 보여주고, 링크는 아래 it-links 에서 있을 때만 건다. */}
           {(item.evName || item.evs) && (
@@ -154,39 +160,41 @@ export function ItemFile({ item, doc, onOpenStage }: {
           )}
           {item.o && <p className="it-obtain">{item.o}</p>}
           {item.os?.map((o) => <p key={o} className="it-obtain">{o}</p>)}
-          {item.b && <p className="it-obtain">{t(ROOM_LABEL[item.b])}</p>}
-          <div className="it-links">
-            {item.ev && (
-              <a className="it-link" href={storyHref(locale, item.ev)}>{t("이 이벤트 스토리 보기")}</a>
-            )}
-            {/* 효율표는 재료파밍 도우미의 #item-<id> 딥링크가 정본이다 (2026-07-27) */}
-            {item.farm ? (
-              <a className="it-link" href={`${localeBase(locale)}/farm#item-${item.id}`}>
-                {t("재료파밍 효율표에서 보기")}
-              </a>
-            ) : null}
-          </div>
-        </div>
+          {item.b && <p className="it-obtain itf-room">{t(ROOM_LABEL[item.b])}</p>}
+          {(item.ev || item.farm) && (
+            <div className="it-links">
+              {item.ev && (
+                <a className="it-link" href={storyHref(locale, item.ev)}>{t("이 이벤트 스토리 보기")}</a>
+              )}
+              {/* 효율표는 재료파밍 도우미의 #item-<id> 딥링크가 정본이다 (2026-07-27) */}
+              {item.farm ? (
+                <a className="it-link" href={`${localeBase(locale)}/farm#item-${item.id}`}>
+                  {t("재료파밍 효율표에서 보기")}
+                </a>
+              ) : null}
+            </div>
+          )}
+        </section>
       )}
       {item.drop && item.drop.length > 0 && (
-        <div className="item-stages">
-          <b>{t("드랍 작전")}</b>
-          <ul className="it-drops">
+        <section className="itf-block">
+          <h4>{t("드랍 작전")} <em>{item.drop.length + (item.dropMore ?? 0)}</em></h4>
+          <ul className="itf-drops">
             {item.drop.map(([sid, code, occ, kind]) => (
               <li key={`${sid}-${kind}`}>
-                <button type="button" className="farm-code as-btn" onClick={() => onOpenStage(sid)}>{code}</button>
-                <span className="it-drop-kind">{doc.kinds[kind] ?? ""}</span>
-                <span className="it-drop-occ">{doc.occ[occ] ?? ""}</span>
+                <button type="button" className="itf-code" onClick={() => onOpenStage(sid)}>{code}</button>
+                <span className="itf-kind">{doc.kinds[kind] ?? ""}</span>
+                <span className={`itf-occ ${occTone(doc.occ[occ] ?? "")}`}>{doc.occ[occ] ?? ""}</span>
               </li>
             ))}
           </ul>
           {item.dropMore ? <p className="it-drop-more">{t("그 밖에 {n}개 작전에서도 나옵니다.", { n: item.dropMore })}</p> : null}
-        </div>
+        </section>
       )}
       {!item.d && !item.u && !item.o && !item.drop && (
-        <p className="item-usage">{t("게임이 설명을 붙이지 않은 아이템이에요.")}</p>
+        <p className="itf-usage">{t("게임이 설명을 붙이지 않은 아이템이에요.")}</p>
       )}
-    </>
+    </div>
   );
 }
 

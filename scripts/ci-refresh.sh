@@ -220,6 +220,9 @@ run "build-future-dex"   python3 scripts/build-future-dex.py "$G" --no-images
 # 작전 도감·시뮬레이터의 위기협약 색인 (시즌 맵·홀로그램 매트릭스, 2026-10-16) — 게임 CDN 의 표·레벨만 읽는다.
 # 도면은 로컬에서만 받는다 (scripts/build-stages-crisis.py 머리주석). 경로 문서(crisis-routes.json)도 여기서 나온다
 run "build-stages-crisis" python3 scripts/build-stages-crisis.py --no-images
+# 적 도감 '등장 작전'에 통합전략·생존연산·위기 협약 작전을 덧붙인다 — 위 색인들(stages-rogue·sandbox·crisis)을 읽으므로 그 뒤,
+# build-stages 가 enemy-stages 를 뒤집어 쓴 뒤라 작전 도감에는 영향이 없다 (2026-10-17, 고대의 넝쿨 등 통합전략 전용 적 80종)
+run "build-enemy-stages-extra" python3 scripts/build-enemy-stages-extra.py
 # 경로 지도의 미리 깔린 장치 사전(이름·설명) — 경로 문서들(작전·통합전략·미래시)의 pd 를 모아 만든다.
 # 아이콘은 CDN 번들을 여는 일이라 로컬에서만 (scripts/build-devices.py 머리주석).
 run "build-devices"      python3 scripts/build-devices.py --no-icons

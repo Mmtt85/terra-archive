@@ -62,7 +62,9 @@ load = lambda p: json.load(open(p, encoding="utf-8"))
 ENEMY_NAME_FIX = {"캔모씨": "캔낫"}
 
 IMMUNE_FIELDS = ["stunImmune", "silenceImmune", "sleepImmune", "frozenImmune", "levitateImmune",
-                 "fearedImmune", "palsyImmune", "attractImmune"]
+                 "fearedImmune", "palsyImmune", "attractImmune", "disarmedCombatImmune"]
+# disarmedCombatImmune = 전율(ba.tremble "저지될 경우 일반 공격 불가") 면역 — 2026-10-17 추가 (적 레벨 93개에 켜져 있다).
+# 남은 하나 groundBoundImmune(5개)은 게임 용어 사전에 이름이 없어 싣지 않는다
 # ⚠ 표기는 **게임 원문 그대로** 쓴다 (사용자 지적 2026-09-13). 원본 스킬 설명의 용어 태그가
 #   정본이다: `<$ba.levitate>공중 부양</>` · `<$ba.attract>유도</>` (kr_skill_table 실측 —
 #   '부양'은 단독으로 쓰인 적이 없고 153건 전부 '공중 부양'의 일부, '흡인'은 0건).
@@ -73,9 +75,9 @@ IMMUNE_FIELDS = ["stunImmune", "silenceImmune", "sleepImmune", "frozenImmune", "
 #   게임 원문에서 이 상태는 오퍼가 **자기 자신에게** 거는 "공격 중지"(머틀·재키·우타게·굼 등)뿐이고,
 #   적에게 거는 수단이 KR 스킬 표에 없다. 85종에 면역만 달려 있어 뜨기만 하고 뜻이 없었다.
 IMMUNE_LABELS = {
-    "ko": ["기절", "침묵", "수면", "빙결", "공중 부양", "공포", "마비", "유도"],
-    "en": ["Stun", "Silence", "Sleep", "Freeze", "Levitate", "Fear", "Paralysis", "Lure"],
-    "ja": ["スタン", "沈黙", "睡眠", "凍結", "浮遊", "恐怖", "麻痺", "誘導"],
+    "ko": ["기절", "침묵", "수면", "빙결", "공중 부양", "공포", "마비", "유도", "전율"],
+    "en": ["Stun", "Silence", "Sleep", "Freeze", "Levitate", "Fear", "Paralysis", "Lure", "Frighten"],
+    "ja": ["スタン", "沈黙", "睡眠", "凍結", "浮遊", "恐怖", "麻痺", "誘導", "戦慄"],
 }
 DAMAGE_LABELS = {
     "ko": {"PHYSIC": "물리", "MAGIC": "마법", "NO_DAMAGE": "피해 없음", "HEAL": "치유"},
@@ -273,7 +275,11 @@ def build_enemies(loc):
         levels.sort(key=lambda x: x["l"])
         name = clean(hb.get("name")) or eid
         name = ENEMY_NAME_FIX.get(name, name)
-        abil = [clean(a.get("text")) for a in (hb.get("abilityList") or []) if clean(a.get("text"))]
+        abil_src = [a for a in (hb.get("abilityList") or []) if clean(a.get("text"))]
+        abil = [clean(a.get("text")) for a in abil_src]
+        # 형태(페이즈) 제목 줄 — 게임 도감은 굵은 제목으로 띄운다('여유로운 돌리'·'다급해진 돌리'). 능력 문구는 그대로 두고
+        # 몇 번째 줄이 제목인지만 따로 싣는다 (사용자 지적 2026-10-17 — 번호가 붙어 능력처럼 보였다)
+        abil_t = [i for i, a in enumerate(abil_src) if a.get("textFormat") == "TITLE"]
         if not abil and hb.get("ability"):
             abil = [clean(hb["ability"])]
         e = {
@@ -290,6 +296,8 @@ def build_enemies(loc):
             "motion": MOTION_LABELS[loc].get(motion) if motion else None,
             "lv": levels,
         }
+        if abil_t:
+            e["abilT"] = abil_t
         # 사거리 0/-1은 "근접이라 사거리 개념 없음" — 키를 아예 안 넣어 파일을 줄인다
         if rng and rng > 0:
             e["rng"] = num(rng)
