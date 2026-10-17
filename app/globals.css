@@ -30120,6 +30120,11 @@ html.dark :is(.drop-btn, .act-btn, .tab-btn, .nav-toggle, .feedback-top-btn, .fe
 :root .main-tabs .tab-icon {
   font-size: 13px;
   margin-right: 7px;
+  /* 아이콘 글자(◇ ⦿ ⌂ ▤ ✶ ❖ ✦ ⓘ)마다 폭이 달라 뒤 글자의 왼쪽 줄이 들쭉날쭉했다 (사용자 지적 2026-10-18) —
+     칸 폭을 못 박고 가운데로 */
+  width: 1.3em;
+  text-align: center;
+  flex: none;
 }
 :root .main-tabs .tab-group-arrow {
   font-size: 12px;
