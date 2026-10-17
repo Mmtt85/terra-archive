@@ -37,6 +37,8 @@ const DOCS: Record<string, () => Promise<{ default: unknown }>> = {
   en: () => import("./data/towers-detail.en.json"),
   ja: () => import("./data/towers-detail.ja.json"),
 };
+type SssTab = "overview" | "maps" | "tactical" | "cards" | "history";
+const SSS_TABS: [SssTab, string][] = [["overview", "개요"], ["maps", "맵"], ["tactical", "전술 장비"], ["cards", "리더 카드"], ["history", "시즌 기록"]];
 const TOWER_ART_VER = "2026101701";   // app/me.tsx 와 같은 값 — R2 그림을 바꾸면 둘 다 올린다
 const CARD_ART_VER = "2026101702";   // 01 은 R2 에 올리기 전 열어 본 404 가 엣지에 남았다
 export const cardArt = (id: string) => asset(`/tower/card/${id}.webp?v=${CARD_ART_VER}`);
@@ -76,6 +78,7 @@ export function SssGuide() {
   const [enStages, setEnStages] = useState<EnemyStages | null>(null);
   const [enemyRaise, setEnemyRaise] = useState(0);
   const [pick, setPick] = useState<string | null>(null);
+  const [tab, setTab] = useState<SssTab>("overview");
   const [cardPick, setCardPick] = useState<string | null>(null);
   const [now] = useState(() => Date.now() / 1000);   // 이번 시즌 가르기 — 렌더마다 시계를 읽지 않게
   const itemById = useMemo(() => new Map((items?.items ?? []).flatMap((i) => [[i.id, i] as const, ...(i.alt ?? []).map((a) => [a, i] as const)])), [items]);
@@ -131,6 +134,14 @@ export function SssGuide() {
 
   return (
     <div className="sss">
+      {/* 탭 (사용자 지시 2026-10-18 "섹션을 탭으로 — 개요엔 이번 시즌 맵·임무·기본 규칙") */}
+      <div className="sss-tabs" role="tablist">
+        {SSS_TABS.map(([k, label]) => (
+          <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? "on" : undefined} onClick={() => setTab(k)}>{t(label)}</button>
+        ))}
+      </div>
+      {tab === "overview" && (
+        <>
       {/* ── 이번 시즌 ── */}
       <section className="sss-sec">
         <h2>{t("이번 시즌")} <small>{doc.seasons[cur]?.[0]} · {fmtDay(locale, cs)} ~ {fmtDay(locale, ce)}</small></h2>
@@ -160,6 +171,23 @@ export function SssGuide() {
         </ul>
       </section>
 
+      {/* ── 기본 규칙 ── */}
+      <section className="sss-sec">
+        <h2>{t("기본 규칙")}</h2>
+        <ul className="sss-rules">
+          {doc.const.initCharCount != null && <li>{t("처음 데려가는 오퍼 {n}명 · 층마다 {k}번 모집, 한 번에 {c}명 중 고른다", { n: doc.const.initCharCount, k: doc.const.charRecruitTimes ?? 0, c: doc.const.charRecruitChoiceCount ?? 0 })}</li>}
+          {doc.const.assistCharLimit != null && <li>{t("지원 오퍼 {n}명까지", { n: doc.const.assistCharLimit })}</li>}
+          {doc.const.subCardObtainDesc && <li>{doc.const.subCardObtainDesc}</li>}
+          {doc.const.lowerItemId && (
+            <li>{t("모듈 강화 데이터 상한")} — {reward([[doc.const.lowerItemId, doc.const.lowerItemLimit ?? 0], ...(doc.const.higherItemId ? [[doc.const.higherItemId, doc.const.higherItemLimit ?? 0] as [string, number]] : [])])}</li>
+          )}
+        </ul>
+      </section>
+
+        </>
+      )}
+      {tab === "maps" && (
+        <>
       {/* ── 맵 ── */}
       <section className="sss-sec">
         <h2>{t("맵")} <small>{t("누르면 층별 작전·보상·리더 카드·훈장")}</small></h2>
@@ -169,9 +197,13 @@ export function SssGuide() {
         </ul>
       </section>
 
+        </>
+      )}
+      {tab === "tactical" && (
+        <>
       {/* ── 전술 장비 ── */}
       <section className="sss-sec">
-        <h2>{t("전술 장비")} <small>{t("직군마다 A·B 중 하나를 고른다")}</small></h2>
+        <h2>{t("전술 장비")} <small>{t("직군마다 A·B 중 하나를 고른다")}{mine?.tactical && Object.keys(mine.tactical).length > 0 ? ` · ${t("강조된 칸이 내 선택")}` : ""}</small></h2>
         <table className="sss-tac">
           <tbody>
             {JOB_ORDER.map((job) => {
@@ -179,7 +211,12 @@ export function SssGuide() {
               return (
                 <tr key={job}>
                   <th>{t(JOB_KO[job])}</th>
-                  {rows.map(([, desc, ab]) => <td key={ab}><b className="sss-ab">{ab}</b>{desc}</td>)}
+                  {rows.map(([, desc, ab]) => {
+                    // 내 정보의 평소 선택 (워커 towerDigest.tactical) — 그 칸을 강조 (사용자 요청 2026-10-18)
+                    const id = Object.entries(doc.tactical).find(([, v]) => v[0] === job && v[2] === ab)?.[0];
+                    const picked = !!id && mine?.tactical?.[job] === id;
+                    return <td key={ab} className={picked ? "mine" : undefined}><b className="sss-ab">{ab}</b>{desc}{picked && <em className="sss-mine">{t("내 선택")}</em>}</td>;
+                  })}
                 </tr>
               );
             })}
@@ -187,6 +224,10 @@ export function SssGuide() {
         </table>
       </section>
 
+        </>
+      )}
+      {tab === "cards" && (
+        <>
       {/* ── 리더 카드 (시즌 카드) ── */}
       <section className="sss-sec">
         <h2>{t("리더 카드")} <small>{t("누르면 효과와 보조 모듈")}</small></h2>
@@ -196,6 +237,10 @@ export function SssGuide() {
         <div className="sss-ctiles">{Object.entries(doc.cardInfo).filter(([, v]) => v[0] !== "SEASON").map(([id]) => card(id))}</div>
       </section>
 
+        </>
+      )}
+      {tab === "history" && (
+        <>
       {/* ── 지난 시즌 ── */}
       <section className="sss-sec">
         <h2>{t("시즌 기록")}</h2>
@@ -217,18 +262,8 @@ export function SssGuide() {
         </table>
       </section>
 
-      {/* ── 기본 규칙 ── */}
-      <section className="sss-sec">
-        <h2>{t("기본 규칙")}</h2>
-        <ul className="sss-rules">
-          {doc.const.initCharCount != null && <li>{t("처음 데려가는 오퍼 {n}명 · 층마다 {k}번 모집, 한 번에 {c}명 중 고른다", { n: doc.const.initCharCount, k: doc.const.charRecruitTimes ?? 0, c: doc.const.charRecruitChoiceCount ?? 0 })}</li>}
-          {doc.const.assistCharLimit != null && <li>{t("지원 오퍼 {n}명까지", { n: doc.const.assistCharLimit })}</li>}
-          {doc.const.subCardObtainDesc && <li>{doc.const.subCardObtainDesc}</li>}
-          {doc.const.lowerItemId && (
-            <li>{t("모듈 강화 데이터 상한")} — {reward([[doc.const.lowerItemId, doc.const.lowerItemLimit ?? 0], ...(doc.const.higherItemId ? [[doc.const.higherItemId, doc.const.higherItemLimit ?? 0] as [string, number]] : [])])}</li>
-          )}
-        </ul>
-      </section>
+        </>
+      )}
 
       {/* ── 맵 창 ── */}
       {pick && (() => {

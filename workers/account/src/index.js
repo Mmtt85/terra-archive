@@ -679,9 +679,13 @@ function towerDigest(user) {
   // 얻은 보안파견 훈장 — 맵마다 완료·긴급 보급·히든(재시도 없이) 셋 (사용자 요청 2026-10-17). 처음 얻은 시각(fts)이 있으면 얻은 것
   const medals = Object.entries(user?.medal?.medals ?? {})
     .filter(([id, m]) => /^medal_(tower_complete|hardtower_complete|hidden_tower)_/.test(id) && num(m?.fts) > 0).map(([id]) => id);
+  // 평소 고른 직군별 전술 장비 (outer.tactical {직군: 장비 id}) — 보안파견 가이드 표에 '내 선택' 표시 (사용자 요청 2026-10-18)
+  const tactical = {};
+  for (const [job, id] of Object.entries(t.outer?.tactical ?? {})) if (typeof id === "string" && id) tactical[job] = id;
   return {
     maps,
     medals,
+    tactical,
     season: ss?.id ? {
       id: ss.id, finish: num(ss.finishTs),
       missions: Object.fromEntries(Object.entries(ss.missions ?? {}).map(([id, m]) => [id, [num(m?.value), num(m?.target), m?.hasRecv ? 1 : 0]])),

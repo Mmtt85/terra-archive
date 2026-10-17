@@ -32039,3 +32039,13 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
   .prio-field .drop { width: 100%; }
   .prio-field .drop-btn { width: 100%; }
 }
+
+/* 보안파견 가이드 전술 장비 — 내 정보의 평소 선택 (2026-10-18) */
+.sss-tac td.mine { background: color-mix(in srgb, var(--lime) 10%, transparent); box-shadow: inset 0 0 0 1px var(--lime-line); color: var(--ink); }
+.sss-mine { display: inline-block; margin-left: 8px; padding: 0 5px; font: 700 10px/16px var(--mono); font-style: normal; color: var(--lime-ink); border: 1px solid var(--lime-line); }
+
+/* 보안파견 가이드 탭 (2026-10-18 "섹션을 탭으로") — 밑줄 탭 */
+.sss-tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: -8px; }
+.sss-tabs button { padding: 8px 14px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: var(--ink2); font: inherit; font-size: 14px; cursor: pointer; }
+.sss-tabs button:hover { color: var(--ink); }
+.sss-tabs button.on { color: var(--ink); font-weight: 700; border-bottom-color: var(--lime-line); }

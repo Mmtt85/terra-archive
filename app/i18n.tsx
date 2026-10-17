@@ -2766,6 +2766,8 @@ const D: Record<string, Pair> = {
   "전술 장비": ["Tactical equipment", "戦術装備"],
   "모은 오퍼": ["Collected operators", "集めたオペレーター"],
   "이번 시즌": ["This season", "今シーズン"],
+  "내 선택": ["My pick", "自分の選択"],
+  "강조된 칸이 내 선택": ["highlighted = my pick", "強調された枠が自分の選択"],
   "{token} 생성": ["{token} made", "{token}の生成"],
   "{token} 소비": ["{token} used", "{token}の消費"],
   "+{n} {token}": ["+{n} {token}", "+{n} {token}"],

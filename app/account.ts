@@ -131,6 +131,8 @@ export type AccountProfile = {
     maps: Record<string, [number, number, number, number]>;
     /** 얻은 보안파견 훈장 id — 완료·긴급 보급·히든 (2026-10-17~) */
     medals?: string[];
+    /** 평소 고른 직군별 전술 장비 {직군: 장비 id} (2026-10-18~) */
+    tactical?: Record<string, string>;
     season: { id: string; finish: number; missions: Record<string, [number, number, number]>;
       period: { term: number; cur: number; len: number } | null;
       slots: Record<string, { god: string | null; squad: { id: string; skill: number; equip: string | null }[] }[]> } | null;
