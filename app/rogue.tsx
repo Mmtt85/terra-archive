@@ -80,7 +80,7 @@ type Emg = {
 } | null;
 // end = 몇 번 엔딩 경로의 보스인가 (1 = 기본 엔딩, N = 히든 N-1 — rogueN-curated.json bossEnding, 2026-10-02)
 // var = 강화판 등 같은 자리 보스의 다른 판, varCond = 그 판으로 바뀌는 조건, varProb = 확률로 나오는 판의 확률 (bossVariant)
-type Stage = { var?: string; varCond?: string; varProb?: number; id: string; kind: string; zone: number | null; code: string | null; name: string; desc: string | null; eliteDesc: string | null; emg: Emg; map?: string | null; enemies: StageEnemy[]; cn?: string; end?: number };
+type Stage = { var?: string; varCond?: string; varProb?: number; side?: 1; id: string; kind: string; zone: number | null; code: string | null; name: string; desc: string | null; eliteDesc: string | null; emg: Emg; map?: string | null; enemies: StageEnemy[]; cn?: string; end?: number };
 type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number; immune?: string[]; img?: string | null; cn?: string };
 // 소장품 효과의 수치 (scripts/build-rogue.py relic_effects) — usage 문장이 아니라 게임
 // 데이터의 blackboard에서 뽑아 3개 로케일에 같은 배열로 심는다(언어 무관 합산).
@@ -131,6 +131,8 @@ type RogueData = {
   variations: Variation[]; endings: Ending[]; encounters: Encounter[]; visitors?: Visitor[];
   /** 원더랜드(PORTAL 노드)로 들어가는 히든 구역 — 흑류수해 '싹트지 않은 요람' (build-rogue.py, 2026-10-11) */
   portal?: { name: string; desc: string; cn?: string };
+  /** 따로 생기는 곁 구역 — 흑류수해 「꺼진 태양의 남은 길」(熄日余径). 그 구역 전투는 Stage.side (build-rogue.py · rogue6-curated.json sideRoute) */
+  sideRoute?: { name: string; desc: string; cn?: string };
   // 토픽 고유 시스템 갤러리 (거부반응·암호판·붕괴 패러다임·사고·시대·주화·분노 등) — 전시관 서브탭.
   // kind=하위 분류(사고: 염원/영감/구상), usage의 개행은 단계 효과(심화·형성기 등) 줄바꿈.
   mechanics?: { label: string; items: { id: string; name: string; kind?: string; usage?: string | null; desc?: string | null; img?: boolean; iconId?: string; stages?: InvStage[] }[] }[];
@@ -1199,6 +1201,9 @@ function ZoneModal({ zone, badge, pairs, bosses, onOpenStage, onClose, inline }:
   onOpenStage: (p: StagePair) => void; onClose: () => void; inline?: boolean;
 }) {
   const { t } = useI18n();
+  const side = data.sideRoute;
+  const mainPairs = side ? pairs.filter((p) => !p.n.side) : pairs, sidePairs = side ? pairs.filter((p) => p.n.side) : [];
+  const mainBosses = side ? bosses.filter((s) => !s.side) : bosses, sideBosses = side ? bosses.filter((s) => s.side) : [];
   return (
     <RgWin inline={inline} label={nmText(zone.name, zone.cn)} className="rg-modal rg-zmodal" onClose={onClose}>
       <header className="rg-modal-head">
@@ -1216,20 +1221,34 @@ function ZoneModal({ zone, badge, pairs, bosses, onOpenStage, onClose, inline }:
       {!zone.variant && pairs.length === 0 && bosses.length === 0 && (
         <p className="rg-zone-empty">{t("층 정보만 먼저 공개됐습니다 — 작전·보스는 아직 게임 데이터에 없습니다")}</p>
       )}
-      {pairs.length > 0 && (
+      {mainPairs.length > 0 && (
         <div className="rg-stage-group">
-          <h4>{t("작전")} <em>{pairs.length}</em> <span className="rg-stage-hint">{t("카드를 열면 일반/긴급 탭으로 전환할 수 있습니다")}</span></h4>
+          <h4>{t("작전")} <em>{mainPairs.length}</em> <span className="rg-stage-hint">{t("카드를 열면 일반/긴급 탭으로 전환할 수 있습니다")}</span></h4>
           <div className="rg-stage-cards">
-            <StageCardGroups pairs={pairs} onOpen={onOpenStage} />
+            <StageCardGroups pairs={mainPairs} onOpen={onOpenStage} />
           </div>
         </div>
       )}
-      {bosses.length > 0 && (
+      {mainBosses.length > 0 && (
         <div className="rg-stage-group">
-          <h4 className="boss">{t("험난한 길 (보스)")} <em>{bosses.length}</em></h4>
+          <h4 className="boss">{t("험난한 길 (보스)")} <em>{mainBosses.length}</em></h4>
           <div className="rg-stage-cards">
-            <StageCardGroups pairs={pairsOf(bosses)} onOpen={onOpenStage} boss />
+            <StageCardGroups pairs={pairsOf(mainBosses)} onOpen={onOpenStage} boss />
           </div>
+        </div>
+      )}
+      {/* 곁 구역 — 흑류수해 「꺼진 태양의 남은 길」. 종전엔 이 판들이 이름 없이 위 목록에 두 번씩 나왔다 (사용자 지적 2026-10-17 "매핑이 안 돼 있네") */}
+      {side && (sidePairs.length > 0 || sideBosses.length > 0) && (
+        <div className="rg-stage-group rg-side-route" id="rg-side-route">
+          <h4><Nm name={side.name} cn={side.cn} /> <em>{sidePairs.length + sideBosses.length}</em></h4>
+          <p className="rg-zone-desc">{side.desc}</p>
+          {sidePairs.length > 0 && <div className="rg-stage-cards"><StageCardGroups pairs={sidePairs} onOpen={onOpenStage} /></div>}
+          {sideBosses.length > 0 && (
+            <>
+              <h4 className="boss">{t("험난한 길 (보스)")} <em>{sideBosses.length}</em></h4>
+              <div className="rg-stage-cards"><StageCardGroups pairs={pairsOf(sideBosses)} onOpen={onOpenStage} boss /></div>
+            </>
+          )}
         </div>
       )}
     </RgWin>
@@ -2811,6 +2830,12 @@ export default function RogueGuide({ initialTopic }: {
       : <button key={key} type="button" className="rg-cond-node" onClick={() => goEnding(end.id)}>{disp}</button>;
     const zone = byName(zoneByName, name);
     if (zone) return <button key={key} type="button" className="rg-cond-node" onClick={() => setZoneOpen(zone)}>{disp}</button>;
+    // 곁 구역(「꺼진 태양의 남은 길」) — 그 전투가 처음 나오는 층 창을 연다 (사용자 지적 2026-10-17 "매핑이 안 돼 있네")
+    if (data.sideRoute && name === data.sideRoute.name) {
+      const first = Math.min(...data.stages.filter((s) => s.side && s.zone != null).map((s) => s.zone!));
+      const z = data.zones.find((x) => x.num === first && !x.variant);
+      if (z) return <button key={key} type="button" className="rg-cond-node" onClick={() => setZoneOpen(z)}>{disp}</button>;
+    }
     // 노드 — 외나무다리는 자기 카드(결투 작전 지도), 나머지는 기타 노드 모달의 그 항목
     const nt = byName(ntByName, name);
     if (nt) return (

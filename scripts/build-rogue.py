@@ -2706,6 +2706,13 @@ def build_rogue6():
         for s in stages:
             if s["id"] in boss_end:
                 s["end"] = boss_end[s["id"]]
+        # 熄日余径(꺼진 태양의 남은 길) — 따로 생기는 구역의 전투는 _dlc1 판 (rogue6-curated.json sideRoute, 2026-10-17).
+        # side=1 — 층 창이 따로 묶는다. 보스 _dlc1 은 그 소장품을 지녔을 때의 험난한 길(더 어려워진 판)이라 같은 묶음 아래 보스 칸에
+        side = curated.get("sideRoute") or {}
+        if side.get("suffix"):
+            for s in stages:
+                if s["id"].endswith(side["suffix"]):
+                    s["side"] = 1
 
     # 조우 씬 트리 — CN 텍스트로 부착하면 아래 keep_cn·translate()가 KR 오버레이를
     # 일괄 처리한다 (분기 라벨 포함 — 미번역은 rogue6-untranslated.json 리포트로)
@@ -2744,6 +2751,8 @@ def build_rogue6():
         "weathers": weathers,
         "subweathers": subweathers,
         "variations": variations,
+        # 이름·설명은 중국어 원문으로 싣고 rogue6-{ko,en,ja}.json 사전이 언어별로 옮긴다 (다른 문구와 같은 길)
+        **({"sideRoute": {"name": curated["sideRoute"]["name"], "desc": curated["sideRoute"]["desc"], "cn": curated["sideRoute"]["name"]}} if curated.get("sideRoute") else {}),
         "endings": endings,
         "encounters": encounters,
         **({"visitors": visitors} if visitors else {}),

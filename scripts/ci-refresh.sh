@@ -204,6 +204,7 @@ run "build-op-debut"     python3 scripts/build-operator-debut.py
 run "build-events"       python3 scripts/build-events.py "$G"
 # 가챠 시뮬레이터 풀 (/gacha) — 인재 채용 오퍼·한정·콜라보, 확률·5성 보장 + 이벤트 배너 목록(events*.json 을 읽으므로 build-events 뒤) (2026-10-12)
 run "build-gacha-pool"   python3 scripts/build-gacha-pool.py
+run "build-dps"          python3 scripts/build-dps.py          # DPS 계산기 — 스탯·스킬 계수 (2026-10-17)
 # 오퍼 획득 경로 (오퍼 목록 필터·상세) — 가챠 풀·이벤트를 읽으므로 바로 뒤 (2026-10-12)
 run "build-op-obtain"    python3 scripts/build-op-obtain.py
 # 지금 들어갈 수 있는 작전 기준표 (내 정보 '진행 상황') — build-events 산출물을 읽으므로 바로 뒤

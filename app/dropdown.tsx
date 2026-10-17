@@ -10,6 +10,7 @@
 //   여기는 축이 하나인 자리 전용이다. multi로 그 축 안에서 여러 값을 고를 수는 있다.
 import { useEffect, useRef, useState } from "react";
 import { normSearch } from "./search";
+import { useI18n } from "./i18n";
 
 export type DropItem = {
   value: string;
@@ -60,7 +61,7 @@ function clipBottom(el: HTMLElement): number {
 
 export function Dropdown({
   label, items, selected, onPick, multi, ariaLabel,
-  className, buttonClassName, scroll, disabled, actions, search, anchor,
+  className, buttonClassName, scroll, disabled, actions, search, anchor, limit,
 }: {
   /** 버튼에 보일 현재 상태 */
   label: React.ReactNode;
@@ -81,7 +82,11 @@ export function Dropdown({
   search?: string;
   /** 목록을 단추 대신 이 조상(closest 선택자)의 왼끝·폭에 맞춘다 — 좁은 패널 안의 작은 단추 (가챠 픽업 자리, 2026-10-12) */
   anchor?: string;
+  /** 한 번에 그리는 줄 수 상한 — 넘는 만큼은 '외 N개 · 검색으로 찾기' 한 줄로 (DPS 계산기 적 1,586종, 2026-10-17:
+   *  다 그리면 여는 데 1.7초 걸렸다). 검색하면 걸러진 것 중에서 다시 상한까지 */
+  limit?: number;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [alignRight, setAlignRight] = useState(false);
   // 조상에 잘릴 때만 화면 기준(position: fixed)으로 띄운다 — 늘 **아래로**, 모달 밖으로 넘어가도 보이게
@@ -106,7 +111,16 @@ export function Dropdown({
     window.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onEsc);
     // 떠 있는 목록(float)은 스크롤·창 크기 변경에 버튼과 어긋난다 — 닫는다. 목록 안 스크롤(scroll 목록)은 뺀다
-    const onScroll = (event: Event) => { if (!rootRef.current?.contains(event.target as Node)) setOpen(false); };
+    // 바깥이 스크롤되면 — 종전엔 바로 닫았는데, 휠을 조금만 굴려도 목록이 사라졌다 (DPS 계산기 오퍼 추가, 사용자 지적 2026-10-17).
+    // 이제 목록이 단추를 따라 움직이고, 단추가 화면 밖으로 나가면 그때 닫는다. 창 크기 변경은 그대로 닫는다
+    const onScroll = (event: Event) => {
+      if (rootRef.current?.contains(event.target as Node)) return;
+      const btn = rootRef.current?.querySelector<HTMLElement>(".drop-btn");
+      if (event.type === "resize" || !btn) { setOpen(false); return; }
+      const r = btn.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) { setOpen(false); return; }
+      setFloat((f) => (f ? { ...f, top: r.bottom + 4, ...(f.left !== undefined && f.left !== "auto" && !f.width ? { left: r.left } : {}) } : f));
+    };
     if (float) { window.addEventListener("scroll", onScroll, true); window.addEventListener("resize", onScroll); }
     return () => {
       window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc);
@@ -162,7 +176,7 @@ export function Dropdown({
                 }} />
             </li>
           )}
-          {shown.map((item) => {
+          {(limit && shown.length > limit ? shown.slice(0, limit) : shown).map((item) => {
             const on = selected.includes(item.value);
             return (
               <li key={item.value} role="none">
@@ -177,6 +191,9 @@ export function Dropdown({
               </li>
             );
           })}
+          {limit != null && shown.length > limit && (
+            <li role="none" className="drop-more">{t("외 {n}개 — 이름으로 검색하면 나옵니다", { n: shown.length - limit })}</li>
+          )}
         </ul>
       )}
     </div>

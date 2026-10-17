@@ -1,0 +1,821 @@
+{
+ "skchr_midn_1": {
+  "dmg": "arts"
+ },
+ "skchr_spot_1": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중에는 공격하지 않는다(치료·방어 전념) — 스킬 중 피해는 0으로 셌다",
+   "en": "Stops attacking during the skill — counted as 0 damage while active",
+   "ja": "スキル中は攻撃しない — スキル中のダメージは0として計算"
+  }
+ },
+ "skchr_nearl_2": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중에는 공격하지 않는다(치료·방어 전념) — 스킬 중 피해는 0으로 셌다",
+   "en": "Stops attacking during the skill — counted as 0 damage while active",
+   "ja": "スキル中は攻撃しない — スキル中のダメージは0として計算"
+  }
+ },
+ "skchr_catap_1": {
+  "ok": [
+   "attack@range_scale"
+  ]
+ },
+ "skchr_sunbr_1": {
+  "ok": [
+   "ct"
+  ]
+ },
+ "skchr_nearl_1": {
+  "ok": [
+   "ct"
+  ]
+ },
+ "skchr_sunbr_2": {
+  "noAttack": true,
+  "ok": [
+   "disarm"
+  ],
+  "note": {
+   "ko": "스킬 중에는 공격하지 않는다(치료·방어 전념) — 스킬 중 피해는 0으로 셌다",
+   "en": "Stops attacking during the skill — counted as 0 damage while active",
+   "ja": "スキル中は攻撃しない — スキル中のダメージは0として計算"
+  }
+ },
+ "skchr_greyy_2": {
+  "ok": [
+   "talent_scale"
+  ]
+ },
+ "skchr_fmout_2": {
+  "ok": [
+   "time"
+  ],
+  "note": {
+   "ko": "스킬이 끝난 뒤 10초간 공격 중지는 넣지 않았다",
+   "en": "The 10s attack stop after the skill ends is not counted",
+   "ja": "スキル終了後10秒間の攻撃停止は含めていない"
+  }
+ },
+ "skchr_lolxh_1": {
+  "dur": -1,
+  "ok": [
+   "prob"
+  ],
+  "note": {
+   "ko": "전환 상태를 계속 유지하는 것으로 셌다. 저지 중인 모든 적 동시 공격은 1명 기준",
+   "en": "Counted as staying in the toggled state; hitting all blocked enemies is counted as 1 target",
+   "ja": "切り替え状態を維持するものとして計算。ブロック中の全敵同時攻撃は1体として計算"
+  }
+ },
+ "skchr_lolxh_2": {
+  "targets": 2,
+  "skip": [
+   "attack@def_penetrate_fixed"
+  ],
+  "note": {
+   "ko": "HP 50% 미만 목표에게 추가로 들어가는 방어력 200 무시 공격 1회는 넣지 않았다",
+   "en": "The extra hit ignoring 200 DEF against targets below 50% HP is not counted",
+   "ja": "HP50%未満の目標への防御力200無視の追加攻撃は含めていない"
+  }
+ },
+ "skchr_doberm_2": {
+  "ok": [
+   "talent_scale"
+  ]
+ },
+ "skchr_durnar_2": {
+  "targets": 3,
+  "note": {
+   "ko": "저지 중인 적 3명을 동시에 공격하는 것으로 셌다",
+   "en": "Counted as hitting 3 blocked enemies at once",
+   "ja": "ブロック中の敵3体を同時攻撃として計算"
+  }
+ },
+ "skchr_deepcl_1": {
+  "skip": [
+   "atk"
+  ],
+  "note": {
+   "ko": "공격력 +60%는 촉수에게만 붙어 딥컬러 본인 공격에는 넣지 않았다",
+   "en": "The +60% ATK applies only to the tentacles, not to Deepcolor's own attacks",
+   "ja": "攻撃力+60%は触手のみで、ディープカラー本人の攻撃には含めていない"
+  }
+ },
+ "skchr_deepcl_2": {
+  "ok": [
+   "prob"
+  ]
+ },
+ "skchr_robrta_2": {
+  "noAttack": true,
+  "ok": [
+   "robrta_s_2[recharge].cnt"
+  ],
+  "note": {
+   "ko": "스킬 중에는 공격하지 않는다(치료·방어 전념) — 스킬 중 피해는 0으로 셌다",
+   "en": "Stops attacking during the skill — counted as 0 damage while active",
+   "ja": "スキル中は攻撃しない — スキル中のダメージは0として計算"
+  }
+ },
+ "skchr_luton_2": {
+  "noAttack": true,
+  "burst": {
+   "scale": "magic_atk_scale",
+   "hits": 15,
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "magic_atk_scale",
+   "interval"
+  ],
+  "note": {
+   "ko": "공격을 멈추고 2초마다 주변 모든 적에게 공격력 100% 마법 피해 — 30초 동안 15회로 셌다",
+   "en": "Stops attacking and deals 100% ATK Arts damage to all nearby enemies every 2s — counted as 15 pulses over 30s",
+   "ja": "攻撃を停止し2秒ごとに周囲の全敵へ攻撃力100%の術ダメージ — 30秒で15回として計算"
+  }
+ },
+ "skchr_myrtle_2": {
+  "noAttack": true,
+  "ok": [
+   "interval",
+   "value"
+  ],
+  "note": {
+   "ko": "스킬 중에는 공격하지 않는다(치료·방어 전념) — 스킬 중 피해는 0으로 셌다",
+   "en": "Stops attacking during the skill — counted as 0 damage while active",
+   "ja": "スキル中は攻撃しない — スキル中のダメージは0として計算"
+  }
+ },
+ "skchr_mm_2": {
+  "ok": [
+   "attack@prob"
+  ]
+ },
+ "skchr_shotst_1": {
+  "dur": 0
+ },
+ "skchr_shotst_2": {
+  "dur": 0,
+  "targets": 5
+ },
+ "skchr_frncat_1": {
+  "ok": [
+   "frncat_s_1[debuff].atk",
+   "frncat_s_1[debuff].duration"
+  ]
+ },
+ "skchr_vrdant_2": {
+  "dmg": "arts",
+  "ok": [
+   "hp_ratio"
+  ]
+ },
+ "skchr_bubble_2": {
+  "noAttack": true,
+  "skip": [
+   "atk_scale"
+  ],
+  "note": {
+   "ko": "공격을 멈추고 피격 시 방어력 50% 반격 — 반격 피해는 넣지 않았다",
+   "en": "Stops attacking; the counter for 50% of DEF when hit is not counted",
+   "ja": "攻撃を停止。被弾時の防御力50%反撃ダメージは含めていない"
+  }
+ },
+ "skchr_bstalk_2": {
+  "ok": [
+   "value",
+   "interval"
+  ]
+ },
+ "skchr_sqrrel_2": {
+  "targets": "aoe"
+ },
+ "skchr_yuki_2": {
+  "dmg": "arts",
+  "note": {
+   "ko": "수리검의 초당 마법 피해를 공격 1회당 1번으로 셌다",
+   "en": "The shuriken's Arts damage per second is counted once per attack",
+   "ja": "手裏剣の毎秒術ダメージを攻撃1回につき1回として計算"
+  }
+ },
+ "skchr_spikes_1": {
+  "times": 2
+ },
+ "skchr_spikes_2": {
+  "dmg": "arts"
+ },
+ "skchr_skgoat_2": {
+  "noAttack": true,
+  "ok": [
+   "interval"
+  ],
+  "note": {
+   "ko": "스킬 중에는 공격하지 않는다(치료·방어 전념) — 스킬 중 피해는 0으로 셌다",
+   "en": "Stops attacking during the skill — counted as 0 damage while active",
+   "ja": "スキル中は攻撃しない — スキル中のダメージは0として計算"
+  }
+ },
+ "skchr_ethan_2": {
+  "ok": [
+   "talent_scale"
+  ]
+ },
+ "skchr_utage_1": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중에는 공격하지 않는다(치료·방어 전념) — 스킬 중 피해는 0으로 셌다",
+   "en": "Stops attacking during the skill — counted as 0 damage while active",
+   "ja": "スキル中は攻撃しない — スキル中のダメージは0として計算"
+  }
+ },
+ "skchr_indigo_2": {
+  "ok": [
+   "talent_scale"
+  ],
+  "note": {
+   "ko": "속박된 적에게 0.5초마다 들어가는 피해는 넣지 않았다",
+   "en": "Periodic damage every 0.5s to bound enemies is not included",
+   "ja": "拘束した敵への0.5秒ごとのダメージは含まない"
+  }
+ },
+ "skchr_jaksel_2": {
+  "noAttack": true,
+  "ok": [
+   "jaksel_skill_2[evade].prob"
+  ],
+  "note": {
+   "ko": "공격을 멈추고 회피 성공 시에만 반격 — 반격 피해는 넣지 않았다",
+   "en": "Stops attacking and only counters after a dodge — counter damage is not counted",
+   "ja": "攻撃を停止し回避成功時のみ反撃 — 反撃ダメージは含めていない"
+  }
+ },
+ "skchr_jesica_2": {
+  "ok": [
+   "prob"
+  ]
+ },
+ "skchr_strong_2": {
+  "ok": [
+   "scale"
+  ]
+ },
+ "skchr_cutter_2": {
+  "times": 1
+ },
+ "skchr_peacok_2": {
+  "scale": "success.atk_scale",
+  "dmg": "arts",
+  "targets": "aoe",
+  "ok": [
+   "success.atk_scale",
+   "success.silence",
+   "failure.stun"
+  ],
+  "note": {
+   "ko": "50% 확률 실패(피해 없음)는 빼고 성공한 경우로 셌다",
+   "en": "Counted as a success; the 50% chance to fail (no damage) is not factored in",
+   "ja": "成功時として計算。50%の失敗確率(ダメージなし)は含めていない"
+  }
+ },
+ "skchr_caper_2": {
+  "times": "cnt",
+  "ok": [
+   "cnt"
+  ]
+ },
+ "skchr_ctrail_2": {
+  "ok": [
+   "attack@max_walk_target"
+  ]
+ },
+ "skchr_blackd_2": {
+  "ok": [
+   "blackd_s_2[period].def",
+   "blackd_s_2[period].cost",
+   "blackd_s_2[period].interval",
+   "blackd_s_2[period].trig_cnt",
+   "blackd_s_2[once].cost"
+  ]
+ },
+ "skchr_snakek_2": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중에는 공격하지 않는다(치료·방어 전념) — 스킬 중 피해는 0으로 셌다",
+   "en": "Stops attacking during the skill — counted as 0 damage while active",
+   "ja": "スキル中は攻撃しない — スキル中のダメージは0として計算"
+  }
+ },
+ "skchr_quartz_2": {
+  "scale": "attack@s2_atk_scale",
+  "ok": [
+   "attack@s2_atk_scale",
+   "attack@s2_buff_prob",
+   "attack@s2_stun",
+   "damage_scale",
+   "fake_damage"
+  ]
+ },
+ "skchr_cammou_2": {
+  "ok": [
+   "attack@prob"
+  ]
+ },
+ "skchr_totter_2": {
+  "targets": "attack@s2n.max_target",
+  "ok": [
+   "attack@s2n.max_target"
+  ],
+  "note": {
+   "ko": "적 1명만 공격할 때의 공격력 225%는 넣지 않았다",
+   "en": "The 225% ATK when attacking only 1 enemy is not counted",
+   "ja": "敵1体のみ攻撃時の攻撃力225%は含めていない"
+  }
+ },
+ "skchr_pinecn_1": {
+  "ok": [
+   "cnt"
+  ]
+ },
+ "skchr_pinecn_2": {
+  "atk": "pinecn_s_2[a].atk",
+  "ok": [
+   "pinecn_s_2[a].atk",
+   "pinecn_s_2[b].atk",
+   "pinecn_s_2[c].atk",
+   "pinecn_s_2[d].atk"
+  ],
+  "note": {
+   "ko": "첫 발동(공격력 +60%)으로 셌다 — 발동마다 +20%씩 쌓이는 효과(최대 +120%)는 넣지 않았다",
+   "en": "Counted as the first activation (+60% ATK); the +20% per activation stacking (up to +120%) is not counted",
+   "ja": "初回発動(攻撃力+60%)として計算。発動ごとの+20%累積(最大+120%)は含めていない"
+  }
+ },
+ "skchr_podego_1": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중 일반 공격이 아군 치료로 바뀐다 — 스킬 중 피해는 0으로 셌다",
+   "en": "Attacks become heals during the skill — counted as 0 damage while active",
+   "ja": "スキル中は通常攻撃が味方の治療になる — スキル中のダメージは0として計算"
+  }
+ },
+ "skchr_podego_2": {
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": "projectile_delay_time",
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "note": {
+   "ko": "포자 범위의 초당 공격력 80% 마법 피해를 6초 동안 6회로 셌다",
+   "en": "The spore zone's 80% ATK Arts damage per second is counted as 6 ticks over 6s",
+   "ja": "胞子範囲の毎秒攻撃力80%術ダメージを6秒で6回として計算"
+  }
+ },
+ "skchr_frostl_1": {
+  "dur": 0
+ },
+ "skchr_frostl_2": {
+  "ok": [
+   "prob",
+   "debuff"
+  ]
+ },
+ "skchr_humus_1": {
+  "ok": [
+   "value"
+  ]
+ },
+ "skchr_humus_2": {
+  "atk": "humus_s_2[peak_1].peak_performance.atk",
+  "ok": [
+   "humus_s_2[peak_1].peak_performance.atk",
+   "humus_s_2[peak_1].peak_performance.hp_ratio",
+   "humus_s_2[peak_2].peak_performance.atk",
+   "humus_s_2[peak_2].peak_performance.hp_ratio"
+  ],
+  "note": {
+   "ko": "HP 50% 초과 시 공격력 +45%로 셌다 — HP 80% 초과 시 2배(+90%)는 넣지 않았다",
+   "en": "Counted as +45% ATK (HP above 50%); the doubled +90% above 80% HP is not counted",
+   "ja": "HP50%超の攻撃力+45%として計算。HP80%超の2倍(+90%)は含めていない"
+  }
+ },
+ "skchr_blitz_2": {
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 1,
+   "targets": 3
+  },
+  "skip": [
+   "atk_scale"
+  ],
+  "ok": [
+   "talent_scale"
+  ],
+  "note": {
+   "ko": "발동 시 저지한 적(최대 3명)에게 공격력 200% 1회, 그 뒤 공격 속도 +200으로 평타",
+   "en": "On activation 200% ATK once to blocked enemies (up to 3), then normal attacks with ASPD +200",
+   "ja": "発動時ブロック中の敵(最大3体)に攻撃力200%を1回、その後攻撃速度+200で通常攻撃"
+  }
+ },
+ "skchr_rfrost_1": {
+  "skip": [
+   "atk_scale"
+  ],
+  "ok": [
+   "cnt"
+  ],
+  "note": {
+   "ko": "함정 피해는 넣지 않았다 — 스킬은 함정 1개를 얻을 뿐 평타는 그대로",
+   "en": "Trap damage is not counted — the skill only grants a trap, normal attacks are unchanged",
+   "ja": "罠のダメージは含めていない — スキルは罠を1個得るだけで通常攻撃は変わらない"
+  }
+ },
+ "skchr_rfrost_2": {
+  "skip": [
+   "atk_scale",
+   "times"
+  ],
+  "ok": [
+   "cnt",
+   "constraint",
+   "trap_atk_scale"
+  ],
+  "note": {
+   "ko": "함정 피해는 넣지 않았다 — 스킬은 함정 1개를 얻을 뿐 평타는 그대로",
+   "en": "Trap damage is not counted — the skill only grants a trap, normal attacks are unchanged",
+   "ja": "罠のダメージは含めていない — スキルは罠を1個得るだけで通常攻撃は変わらない"
+  }
+ },
+ "skchr_robin_1": {
+  "skip": [
+   "atk_scale"
+  ],
+  "ok": [
+   "cnt",
+   "constraint"
+  ],
+  "note": {
+   "ko": "함정 피해는 넣지 않았다 — 스킬은 함정 1개를 얻을 뿐 평타는 그대로",
+   "en": "Trap damage is not counted — the skill only grants a trap, normal attacks are unchanged",
+   "ja": "罠のダメージは含めていない — スキルは罠を1個得るだけで通常攻撃は変わらない"
+  }
+ },
+ "skchr_robin_2": {
+  "skip": [
+   "atk_scale"
+  ],
+  "ok": [
+   "cnt"
+  ],
+  "note": {
+   "ko": "함정 피해는 넣지 않았다 — 스킬은 함정 1개를 얻을 뿐 평타는 그대로",
+   "en": "Trap damage is not counted — the skill only grants a trap, normal attacks are unchanged",
+   "ja": "罠のダメージは含めていない — スキルは罠を1個得るだけで通常攻撃は変わらない"
+  }
+ },
+ "skchr_fuze_2": {
+  "dur": 0,
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 5,
+   "targets": "aoe"
+  },
+  "note": {
+   "ko": "집속탄 5회 폭발(회당 공격력 480%)이 모두 같은 적들에게 맞는 것으로 셌다",
+   "en": "Counted as all 5 explosions (480% ATK each) hitting the same enemies",
+   "ja": "集束弾の5回爆発(各攻撃力480%)がすべて同じ敵に命中するとして計算"
+  }
+ },
+ "skchr_iana_2": {
+  "ok": [
+   "anti_invisible_duration"
+  ]
+ },
+ "skchr_tachak_1": {
+  "dur": "projectile_delay_time",
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": "projectile_delay_time",
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "interval"
+  ],
+  "note": {
+   "ko": "연소 구역의 초당 공격력 70% 마법 피해를 6초 동안 6회로 셌고, 그동안 평타는 방어력 200 무시",
+   "en": "The burn zone's 70% ATK Arts damage per second is counted as 6 ticks over 6s; normal attacks ignore 200 DEF meanwhile",
+   "ja": "燃焼エリアの毎秒攻撃力70%術ダメージを6秒で6回として計算し、その間の通常攻撃は防御力200無視"
+  }
+ },
+ "skchr_tachak_2": {
+  "skip": [
+   "atk_scale"
+  ],
+  "note": {
+   "ko": "15% 확률로 공격력 200%가 되는 효과는 넣지 않았다",
+   "en": "The 15% chance for 200% ATK is not counted",
+   "ja": "15%の確率で攻撃力200%になる効果は含めていない"
+  }
+ },
+ "skchr_grani_2": {
+  "targets": 2,
+  "note": {
+   "ko": "저지 가능 수 2명(기본 1 + 1)을 동시에 공격하는 것으로 셌다",
+   "en": "Counted as hitting 2 blocked enemies at once (block 1 + 1)",
+   "ja": "ブロック数2体(基本1+1)を同時攻撃として計算"
+  }
+ },
+ "skchr_greyy2_2": {
+  "dur": 0,
+  "noAttack": true,
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 8,
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "ct",
+   "interval",
+   "prob"
+  ],
+  "note": {
+   "ko": "뇌전구가 12초 동안 1.5초마다 터지는 것을 8회로 셌다 (그동안 평타는 별도)",
+   "en": "The orb's pulses every 1.5s for 12s are counted as 8 hits (normal attacks continue separately)",
+   "ja": "雷球の12秒間1.5秒ごとの攻撃を8回として計算(その間の通常攻撃は別)"
+  }
+ },
+ "skchr_swllow_1": {
+  "times": 2,
+  "ok": [
+   "cnt"
+  ]
+ },
+ "skchr_graceb_1": {
+  "times": 2
+ },
+ "skchr_graceb_2": {
+  "dur": 0,
+  "times": 3,
+  "ok": [
+   "ct"
+  ]
+ },
+ "skchr_grabds_1": {
+  "dur": 0,
+  "targets": 2,
+  "ok": [
+   "ct"
+  ]
+ },
+ "skchr_glacus_2": {
+  "scale": "atk_scale[normal]",
+  "targets": "aoe",
+  "ok": [
+   "atk_scale[normal]"
+  ],
+  "note": {
+   "ko": "[드론] 적에게 2배 피해는 넣지 않았다",
+   "en": "Double damage against [Drone] enemies is not counted",
+   "ja": "[ドローン]の敵への2倍ダメージは含めていない"
+  }
+ },
+ "skchr_ncdeer_1": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중 공격이 아군 치료로 바뀐다 — 스킬 중 피해는 0으로 셌다",
+   "en": "Attacks become heals during the skill — counted as 0 damage while active",
+   "ja": "スキル中は攻撃が味方の治療になる — スキル中のダメージは0として計算"
+  }
+ },
+ "skchr_ncdeer_2": {
+  "noAttack": true,
+  "ok": [
+   "prob",
+   "talent@hp_ratio"
+  ],
+  "note": {
+   "ko": "스킬 중 공격이 아군 치료로 바뀐다 — 스킬 중 피해는 0으로 셌다",
+   "en": "Attacks become heals during the skill — counted as 0 damage while active",
+   "ja": "スキル中は攻撃が味方の治療になる — スキル中のダメージは0として計算"
+  }
+ },
+ "skchr_dagda_1": {
+  "scale": "attack@defensive_atk_scale",
+  "ok": [
+   "attack@defensive_atk_scale"
+  ]
+ },
+ "skchr_dagda_2": {
+  "times": 2
+ },
+ "skchr_toledo_1": {
+  "skip": [
+   "attack@atk"
+  ],
+  "note": {
+   "ko": "저지된 적에게 주는 약화(공격력 -25%)는 적에게 거는 효과라 계산에서 뺐다",
+   "en": "The 25% Weaken on blocked enemies is an enemy debuff and is excluded",
+   "ja": "ブロックされた敵への弱化(攻撃力-25%)は敵へのデバフなので計算から除いた"
+  }
+ },
+ "skchr_kaitou_2": {
+  "targets": 2
+ },
+ "skchr_lava2_2": {
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 40,
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "interval"
+  ],
+  "note": {
+   "ko": "공격을 멈추고 지옥불 고리가 40초 동안 초당 1회 — 고리 하나만 셌다",
+   "en": "Stops attacking; the hellfire ring hits once per second for 40s — only one ring is counted",
+   "ja": "攻撃を停止し、獄炎の輪が40秒間毎秒1回 — 輪は1つ分のみ計算"
+  }
+ },
+ "skchr_laios_2": {
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 1,
+   "targets": 1
+  },
+  "ok": [
+   "not_combat"
+  ],
+  "note": {
+   "ko": "공격을 멈추고 스킬 끝에 저지한 적에게 공격력 450% 1회",
+   "en": "Stops attacking; deals 450% ATK once to the blocked enemy when the skill ends",
+   "ja": "攻撃を停止し、スキル終了時にブロック中の敵へ攻撃力450%を1回"
+  }
+ },
+ "skchr_whitew_1": {
+  "ok": [
+   "prob"
+  ]
+ },
+ "skchr_whitew_2": {
+  "dmg": "arts",
+  "targets": 2
+ },
+ "skchr_lionhd_2": {
+  "dur": 0,
+  "ok": [
+   "ct"
+  ]
+ },
+ "skchr_noirc2_1": {
+  "noAttack": true,
+  "burst": {
+   "scale": "multi_atk_scale",
+   "hits": "multi_times",
+   "targets": 1
+  },
+  "ok": [
+   "multi_atk_scale",
+   "multi_times",
+   "multi_hit_interval",
+   "nadao_duration",
+   "nadaodonghua_duration"
+  ],
+  "note": {
+   "ko": "공격을 멈추고 피격 시 반격(공격력 150% 4회) 1번으로 셌다 — 처치 후 다시 납도하는 것은 넣지 않았다",
+   "en": "Stops attacking; counted as one counter (150% ATK ×4) when hit — re-sheathing after a kill is not counted",
+   "ja": "攻撃を停止し、被弾時の反撃(攻撃力150%×4)1回として計算 — 撃破後の再納刀は含めていない"
+  }
+ },
+ "skchr_noirc2_2": {
+  "noAttack": true,
+  "burst": {
+   "scale": "multi_atk_scale",
+   "hits": "multi_times",
+   "targets": 1
+  },
+  "ok": [
+   "multi_atk_scale",
+   "multi_times",
+   "cnt"
+  ]
+ },
+ "skchr_lunacu_2": {
+  "ok": [
+   "lunacu_s_2[cam].cam_duration",
+   "lunacu_s_2[start_cam].start_cam_duration"
+  ]
+ },
+ "skchr_liskam_2": {
+  "dmg": "arts",
+  "ok": [
+   "attack@buff_prob"
+  ]
+ },
+ "skchr_liesel_1": {
+  "dur": 0
+ },
+ "skchr_liesel_2": {
+  "dur": 0,
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 1,
+   "targets": "max_target_cnt"
+  },
+  "ok": [
+   "max_target_cnt"
+  ],
+  "note": {
+   "ko": "적 3명에게 공격력 180% 1회만 셌다 — 6초간 초당 35% 지속 피해는 넣지 않았다",
+   "en": "Counted only the 180% ATK hit on 3 enemies — the 35% per second damage over 6s is not counted",
+   "ja": "敵3体への攻撃力180%の1回のみ計算 — 6秒間毎秒35%の継続ダメージは含めていない"
+  }
+ },
+ "skchr_makiri_1": {
+  "ok": [
+   "cnt",
+   "value"
+  ]
+ },
+ "skchr_makiri_2": {
+  "atk": "makiri_s_2[passive].atk",
+  "ok": [
+   "makiri_s_2[passive].atk",
+   "makiri_s_2[passive].hp_recovery_per_sec_by_max_hp_ratio",
+   "cost_decrease",
+   "interval",
+   "value"
+  ]
+ },
+ "skchr_otter_2": {
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 1,
+   "targets": "aoe"
+  },
+  "note": {
+   "ko": "기계 수달 1기의 폭발로 셌다 — 수달이 여러 기면 그만큼 더 들어간다",
+   "en": "Counted as one Mechanical Otter exploding — more otters deal more",
+   "ja": "機械カワウソ1体の爆発として計算 — 複数いればその分増える"
+  }
+ },
+ "skchr_meteo_2": {
+  "dur": 0
+ },
+ "skchr_melnte_2": {
+  "targets": "aoe",
+  "ok": [
+   "scale"
+  ],
+  "note": {
+   "ko": "거리 감소 없는 공격력 500%로, 경로상의 적 모두에게 맞는 것으로 셌다",
+   "en": "Counted at 500% ATK with no distance falloff, hitting every enemy in the path",
+   "ja": "距離減衰なしの攻撃力500%で、経路上の敵すべてに命中するとして計算"
+  }
+ },
+ "skchr_morgan_1": {
+  "ok": [
+   "attack@hp_ratio"
+  ]
+ },
+ "skchr_malist_2": {
+  "ok": [
+   "ct"
+  ]
+ },
+ "_report": {
+  "요약": "219행 검토, 94개 스킬에 보정. 종류별(겹침 있음): times 7 · dmg 7 · burst 12 · targets 12 · noAttack 23 · dur 13 · skip 14 · scale 4 · atk 3 · ok/메모만 25. 공용 skcom_* 스킬은 건드리지 않았다.",
+  "주요 수정": "'다음 공격'인데 dur=-1이라 무한으로 계산되던 스킬 dur 0(메테오 S1·S2, 프로스트리프 S1, 그레인버즈 S1, 리프레사 S1·S2, 레온하르트 S2, 메테오라이트 S2, 그레이스베어러 S2) · 공격 중지/치료 전념 스킬 noAttack · 함정 오퍼(Frost·로빈) 함정 배율을 평타에서 제거 · 데 톨레도 S1 적 약화(attack@atk -25%)가 자기 공격력에서 빠지던 것 제거 · 나소흑 S2 방어 무시 200이 모든 평타에 붙던 것 제거 · 마법 변경(미드나이트 S1, 아렌 S2, 버던트 S2, 라플란드 S2, 리스캄 S2, 시라유키 S2, 컨빅션 S2)",
+  "불확실": [
+   "skchr_indigo_2·skchr_delphn_1: base_attack_time이 양수인데 설명은 '딜레이 감소' — 해석을 몰라 계수를 빼고 기본 간격으로 둠",
+   "skchr_yuki_2: 수리검 초당 80% 마법 피해를 공격 1회=1틱으로 어림",
+   "skchr_durnar_2(3명)·skchr_grani_2(2명): 저지 수가 설명에 숫자로 없어 직군 기본 저지 수로 넣음",
+   "skchr_lolxh_1: dur 0 토글 스킬을 무한 지속으로 바꿈, 저지 중 모든 적 동시 공격은 1명 기준",
+   "skchr_totter_2: 대상 3명으로 셈 — 1명일 때 225%는 표현 불가",
+   "skchr_humus_2·skchr_pinecn_2: 조건/누적 공격력 중 가장 낮은 단계(+45%, +60%)로 셈",
+   "skchr_luton_2(15회)·skchr_lava2_2(40회)·skchr_greyy2_2(8회): 주기 피해를 지속÷주기 리터럴 횟수로 넣음 — 다른 레벨에선 어긋날 수 있음",
+   "skchr_noirc2_1: 피격 반격 1번(150%×4)으로 어림, 재납도 연쇄는 미반영",
+   "skchr_otter_2: 기계 수달 1기 폭발 기준",
+   "skchr_grabds_2(보정 안 함): '공격 중지'와 '공격 속도 +130, 목표 3개 공격'이 함께 있어 해석 보류"
+  ],
+  "직군 규칙 쪽 문제(보정 범위 밖)": "crusher(쿼츠)·pusher(쇼) 특성 '저지 중인 모든 적 동시 공격'이 SUB 표에 없어 1명으로 계산됨 · bombarder 특성 여진 2회(2회차 50%) 미반영 · 패시브 스킬(우타게 S2 마법 변경 등)은 fx.dmg가 적용되지 않음"
+ }
+}

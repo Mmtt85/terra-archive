@@ -30882,6 +30882,127 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
 .gp-add-actions button:disabled { opacity: 0.45; cursor: default; }
 .gp-add-actions button.danger { margin-right: auto; color: var(--crimson); }
 .gp-custom-acts { display: flex; gap: 10px; }
+/* ── DPS 계산기 (app/dps.tsx, 2026-10-17) — 틀은 가챠 플래너(.gacha-plan): 왼쪽 적·조건, 오른쪽 오퍼 카드 + 곡선.
+   선 색은 오퍼 순서(s0~s5) — 성급색(.gacha 의 --r6·--r5…)과 라임·진홍을 빌려 쓴다 */
+.dps { --s0: var(--lime-line); --s1: var(--r6); --s2: var(--r3); --s3: var(--r4); --s4: var(--r5); --s5: var(--crimson); }
+.dps .gp-note p { margin: 0 0 6px; }
+.dps-seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.dps-seg button { height: 28px; padding: 0 10px; border: 1px solid var(--btn-line); border-radius: var(--r-xs); background: var(--btn-bg); color: var(--btn-ink); font: inherit; font-size: 12px; cursor: pointer; }
+.dps-seg button.on { background: var(--btn-pri-bg); border-color: var(--btn-pri-line); color: var(--btn-pri-ink); font-weight: 700; }
+.dps-foe-drop { width: 100%; }
+/* 드롭다운 줄 수 상한 안내 (app/dropdown.tsx limit) */
+.drop-menu .drop-more { padding: 8px 10px; font-size: 11px; color: var(--muted); }
+.dps-foe-img { flex: none; width: 22px; height: 22px; margin-right: 6px; object-fit: contain; vertical-align: middle; }
+.dps-foe-drop .drop-label { display: inline-flex; align-items: center; }
+.dps-foe-sub { margin-left: 6px; font-size: 11px; color: var(--muted); }
+.dps-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; align-items: start; }
+.dps-card { --sc: var(--s0); display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-top: 3px solid var(--sc); border-radius: var(--r-sm); background: var(--white); }
+.dps-card.s1 { --sc: var(--s1); } .dps-card.s2 { --sc: var(--s2); } .dps-card.s3 { --sc: var(--s3); } .dps-card.s4 { --sc: var(--s4); } .dps-card.s5 { --sc: var(--s5); }
+.dps-card header { display: flex; align-items: center; gap: 8px; }
+.dps-op { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.dps-op img { width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--line); }
+.dps-op span { display: flex; flex-direction: column; min-width: 0; }
+.dps-op b { font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dps-op small { font-size: 11px; color: var(--muted); }
+.dps-op:hover b { text-decoration: underline; }
+.dps-x { width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 16px; line-height: 1; cursor: pointer; }
+.dps-x:hover { color: var(--crimson); }
+.dps-op-img { flex: none; padding: 0; border: 0; background: none; cursor: pointer; }
+.dps-op-img img { display: block; width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--line); }
+.dps-op-img:hover img { border-color: var(--border-hover); }
+.dps-swap-wrap { flex: 0 1 auto; min-width: 0; margin-right: auto; }
+.dps-card header .drop-btn.dps-swap { width: auto; max-width: 100%; height: auto; min-height: 40px; padding: 2px 8px; gap: 8px; text-align: left; }
+.dps-op-name { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.dps-card header .dps-swap .drop-label { flex: 1; min-width: 0; text-align: left; }
+.dps-op-name b { font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--ink); }
+.dps-op-name small { font-size: 11px; font-weight: 500; color: var(--muted); }
+.dps-swap-wrap .drop-menu { min-width: 240px; }
+.dps-ctrl { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; font-size: 12px; }
+.dps-ctrl .drop-btn { height: 28px; font-size: 12px; }
+.dps-lv { display: inline-flex; align-items: center; gap: 4px; }
+.dps-lv .num-input { width: 104px; }
+.dps-trust { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; }
+.dps-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dps-table th, .dps-table td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
+.dps-table th:first-child { text-align: left; font-weight: 500; color: var(--muted); }
+.dps-table th small { margin-left: 6px; font-size: 11px; color: var(--muted); }
+.dps-table thead th { font-size: 11px; font-weight: 700; color: var(--muted); }
+.dps-table tbody td { font-weight: 700; color: var(--ink); }
+.dps-table td small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
+.dps-table thead th:not(:first-child) { width: 34%; }
+.dps-facts { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; font-size: 11px; color: var(--muted); }
+.dps-partial { margin: 0; padding: 6px 8px; border-left: 3px solid var(--r5); background: var(--bg-faint); font-size: 11px; line-height: 1.5; color: var(--muted); }
+.dps-partial b { margin-right: 6px; color: var(--ink); }
+.dps-fx { margin: 0; padding: 6px 8px; border-left: 3px solid var(--lime-line); background: var(--bg-faint); font-size: 11px; line-height: 1.5; color: var(--muted); }
+.dps-desc { margin: 0; font-size: 11px; line-height: 1.6; color: var(--muted); white-space: pre-line; }
+.dps-none { margin: 0; font-size: 12px; color: var(--muted); }
+/* 오퍼 추가 칸은 위쪽에 낮게 — 옆 카드 높이로 늘어나 목록이 맨 밑에 떴다 (사용자 지적 2026-10-17 "커다란 버튼 맨 밑에 리스트가 떠서 보기 힘들다") */
+.dps-add-wrap { align-self: start; }
+:root .dps .drop-btn.dps-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 100%; height: 96px;
+  border: 1px dashed var(--btn-line) !important; background: var(--btn-bg) !important; color: var(--muted); border-radius: var(--r-sm); }
+:root .dps .drop-btn.dps-add:hover { color: var(--ink); border-color: var(--border-hover) !important; }
+.dps .dps-add .drop-caret { display: none; }
+.dps .dps-add b { font-size: 22px; font-weight: 400; line-height: 1; }
+.dps .dps-add span { font-size: 12px; }
+.dps .dps-add .drop-label { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.dps-chart { margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); }
+.dps-chart figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; margin-bottom: 6px; font-size: 12px; font-weight: 700; }
+.dps-chart figcaption small { margin-left: 10px; font-size: 11px; font-weight: 500; color: var(--muted); }
+.dps-chart svg { display: block; width: 100%; height: auto; }
+/* 마우스를 올린 자리 — 세로선 · 선마다 점 · 값 상자 (2026-10-17) */
+.dps-chart-box { position: relative; }
+.dps-axis-seg { margin-left: auto; }
+.dps-axis-seg button { height: 24px; padding: 0 8px; font-size: 11px; }
+.dps-chart svg .hover line { stroke: var(--ink); stroke-width: 1; opacity: .4; }
+.dps-chart svg .hover circle { fill: var(--s0); stroke: var(--white); stroke-width: 1.5; }
+/* 점 → 세로축 점선 + 축 값 (마우스 자리·고른 적 자리) */
+.dps-chart svg line.to-y { stroke: var(--s0); stroke-width: 1; stroke-dasharray: 3 3; opacity: .7; }
+.dps-chart svg text.y { font-size: 11px; font-weight: 700; fill: var(--s0); paint-order: stroke; stroke: var(--white); stroke-width: 4px; }
+.dps-chart svg .s1 line.to-y { stroke: var(--s1); } .dps-chart svg .s1 text.y { fill: var(--s1); }
+.dps-chart svg .s2 line.to-y { stroke: var(--s2); } .dps-chart svg .s2 text.y { fill: var(--s2); }
+.dps-chart svg .s3 line.to-y { stroke: var(--s3); } .dps-chart svg .s3 text.y { fill: var(--s3); }
+.dps-chart svg .s4 line.to-y { stroke: var(--s4); } .dps-chart svg .s4 text.y { fill: var(--s4); }
+.dps-chart svg .s5 line.to-y { stroke: var(--s5); } .dps-chart svg .s5 text.y { fill: var(--s5); }
+.dps-chart svg .cross text.y { fill: var(--ink); }
+.dps-tip.flip { transform: translateX(calc(-100% - 12px)); }
+.dps-chart svg { cursor: crosshair; }
+.dps-tip.pinned { border-color: var(--lime-line); box-shadow: 0 0 0 1px var(--lime-line), 0 2px 8px rgba(0, 0, 0, .18); pointer-events: none; }
+.dps-tip .dps-pin { font-size: 11px; font-weight: 700; color: var(--lime-ink); }
+.dps-pin-badge { margin-left: 10px; padding: 1px 6px; border: 1px solid var(--lime-line); border-radius: var(--r-xs); font-size: 11px; font-style: normal; font-weight: 700; color: var(--lime-ink); }
+.dps-chart svg .hover .s1 circle { fill: var(--s1); } .dps-chart svg .hover .s2 circle { fill: var(--s2); } .dps-chart svg .hover .s3 circle { fill: var(--s3); }
+.dps-chart svg .hover .s4 circle { fill: var(--s4); } .dps-chart svg .hover .s5 circle { fill: var(--s5); }
+.dps-tip { position: absolute; transform: translateX(12px); display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border: 1px solid var(--line);
+  border-radius: var(--r-xs); background: var(--white); box-shadow: 0 2px 8px rgba(0, 0, 0, .18); font-size: 11px; pointer-events: none; white-space: nowrap; z-index: 2; }
+.dps-tip b { font-size: 11px; }
+.dps-tip span { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.dps-tip span i { width: 10px; height: 3px; background: var(--s0); }
+.dps-tip span.s1 i { background: var(--s1); } .dps-tip span.s2 i { background: var(--s2); } .dps-tip span.s3 i { background: var(--s3); } .dps-tip span.s4 i { background: var(--s4); } .dps-tip span.s5 i { background: var(--s5); }
+.dps-tip em { margin-left: auto; padding-left: 10px; font-style: normal; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.dps-chart svg text { font-size: 11px; fill: var(--muted); }
+.dps-chart svg .grid { stroke: var(--line); stroke-width: 1; }
+.dps-chart svg .cur { stroke: var(--muted); stroke-dasharray: 4 3; }
+.dps-chart svg .axis { stroke: var(--border-strong); stroke-width: 1; }
+.dps-chart svg text.axis-title { font-size: 12px; font-weight: 700; fill: var(--ink); }
+.dps-chart svg text.cur-label { fill: var(--ink); }
+/* 두 선이 엇갈리는 자리 (2026-10-17) */
+.dps-chart svg .cross line { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 2 2; opacity: .55; }
+.dps-chart svg .cross circle { fill: var(--ink); }
+.dps-chart svg .cross text { font-size: 11px; font-weight: 700; fill: var(--ink); }
+/* 세로축 쪽 엇갈림 DPS — 눈금 숫자 위에 덮이도록 바탕색 테두리 */
+.dps-chart svg .cross text.y { paint-order: stroke; stroke: var(--white); stroke-width: 4px; }
+.dps-chart svg .cur-pt circle { fill: var(--s0); } .dps-chart svg .cur-pt text { font-size: 11px; font-weight: 700; fill: var(--s0); paint-order: stroke; stroke: var(--white); stroke-width: 3px; }
+.dps-chart svg .cur-pt.s1 circle, .dps-chart svg .cur-pt.s1 text { fill: var(--s1); } .dps-chart svg .cur-pt.s2 circle, .dps-chart svg .cur-pt.s2 text { fill: var(--s2); }
+.dps-chart svg .cur-pt.s3 circle, .dps-chart svg .cur-pt.s3 text { fill: var(--s3); } .dps-chart svg .cur-pt.s4 circle, .dps-chart svg .cur-pt.s4 text { fill: var(--s4); }
+.dps-chart svg .cur-pt.s5 circle, .dps-chart svg .cur-pt.s5 text { fill: var(--s5); }
+.dps-chart svg .ln { stroke-width: 2; stroke: var(--s0); }
+.dps-chart svg .ln.s1 { stroke: var(--s1); } .dps-chart svg .ln.s2 { stroke: var(--s2); } .dps-chart svg .ln.s3 { stroke: var(--s3); } .dps-chart svg .ln.s4 { stroke: var(--s4); } .dps-chart svg .ln.s5 { stroke: var(--s5); }
+.dps-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 11px; }
+.dps-legend li { display: flex; align-items: center; gap: 6px; }
+.dps-legend i { width: 14px; height: 3px; background: var(--s0); }
+.dps-legend .s1 i { background: var(--s1); } .dps-legend .s2 i { background: var(--s2); } .dps-legend .s3 i { background: var(--s3); } .dps-legend .s4 i { background: var(--s4); } .dps-legend .s5 i { background: var(--s5); }
+/* 흑류수해 곁 구역(꺼진 태양의 남은 길) — 층 창 안의 따로 묶음 (2026-10-17) */
+.rg-side-route { padding-top: 10px; border-top: 1px dashed var(--line); }
+
 .gp-op-wrap { display: inline-flex; align-items: center; gap: 2px; }
 .gp-op-x { width: 18px; height: 18px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 14px; line-height: 1; cursor: pointer; }
 .gp-op-x:hover { color: var(--crimson); }

@@ -26,7 +26,7 @@ import poolData from "./data/gacha-pool.json";
 type PlanRow = { id: string; n: Record<"ko" | "en" | "ja", string>; start?: string | null; end?: string | null; eta?: string; fut?: 1; ops?: string[]; lim?: 1; prime?: number };
 const PLAN = ((poolData as unknown as { plan?: PlanRow[] }).plan ?? []);
 
-type Income = { daily: number; weekly: number; anni: number; card: boolean; monthPermit: number; monthOrundum: number; monthPrime: number; useOP: boolean };
+type Income = { daily: number; weekly: number; anni: number; card: boolean; monthPermit: number; monthOrundum: number; monthPrime: number; useOP: boolean; cert: boolean };
 type Start = { orundum: number; permit: number; permit10: number; prime: number };
 type Custom = { id: string; name: string; date: string };
 // targets = 일정마다 뽑을 오퍼(목표) — 사용자 지시 2026-10-17 "무슨 오퍼 뽑을건지 지정하는 기능도 필요"
@@ -37,10 +37,11 @@ const GACHAABLE = new Set([...Object.values(POOL.pool).flat(), ...POOL.limited, 
 
 // 기본 수입 — 일일 임무 합성옥 100 · 주간 임무 500 · 섬멸 작전 주 1,800 (주간 상한) · 월정액 켬 · 순오리지늄 환산 켬
 // (사용자 지시 2026-10-17 "기본적으로 월정액이랑 오리지늄도 합성옥 바꾼다 체크돼 있어야 함")
-const DEF_INCOME: Income = { daily: 100, weekly: 500, anni: 1800, card: true, monthPermit: 0, monthOrundum: 0, monthPrime: 0, useOP: true };
+const DEF_INCOME: Income = { daily: 100, weekly: 500, anni: 1800, card: true, monthPermit: 0, monthOrundum: 0, monthPrime: 0, useOP: true, cert: false };
 const KEY = "ta:gacha-plan";
 // 한정 배너 전용 연차 — 기간 중 매일 무료 1회(보통 14일) + 그 배너에서만 쓰는 10회 헤드헌팅권 1장 (사용자 설명 2026-10-17
 // "한정 배너는 대부분 하루 1뽑 무료 + 그 한정에서만 쓸 수 있는 10뽑 헤드헌팅권"). 게임 표에 없는 값이라 상수로
+const CERT_PULLS = 38;
 const LIM_FREE_DAYS = 14, LIM_TICKET = 10;
 const LIM_ONLY = LIM_FREE_DAYS + LIM_TICKET;
 const DAY = 86400000;
@@ -124,17 +125,20 @@ export function GachaPlanner({ operators, onShowOperator }: { operators: Operato
       daily: days * income.daily, weekly: weeks * income.weekly, anni: weeks * income.anni, monthOrundum: months * income.monthOrundum,
       card: income.card ? days * 200 : 0, cardPrime: income.card ? months * 6 : 0, permit: months * income.monthPermit,
       monthPrime: months * income.monthPrime,   // 그 밖의 순오리지늄 (사용자 지시 2026-10-17 "그 밖의 오리지늄도")
+      // 노란 증표 상점(고급 증표 구역) 헤드헌팅 허가증 사다리 풀매수 — 허가증 1·2·5장 + 10회 허가증 1·2장 = 한 달 38회, 증표 258
+      // (PRTS 采购中心/凭证交易所 高级凭证区, 매달 1일 초기화 · 사용자 지시 2026-10-17 "매달 노티로 헤드헌팅권 사는 5단계, 풀매수 전제")
+      cert: income.cert ? months * CERT_PULLS : 0,
     };
   };
   const gained = (day: number) => {
     const p = parts(day);
-    return { orundum: p.daily + p.weekly + p.anni + p.monthOrundum + p.card, permit: p.permit, prime: p.cardPrime + p.monthPrime };
+    return { orundum: p.daily + p.weekly + p.anni + p.monthOrundum + p.card, permit: p.permit + p.cert, prime: p.cardPrime + p.monthPrime };
   };
 
   // 줄마다 남는 재화 — 이벤트 순오리지늄은 그날 들어온다고 보고, 쓸 때는 허가증부터
   const table = useMemo(() => {
     // gain = 앞 일정(첫 줄은 오늘) 뒤로 그날까지 늘어난 연차 — '그날 연차'가 왜 느는지 보이게 (사용자 질문 2026-10-17 "가진 연차는 왜 늘어나")
-    type Why = { daily: number; weekly: number; anni: number; monthOrundum: number; card: number; cardPrime: number; permit: number; monthPrime: number; eventPrime: number };
+    type Why = { daily: number; weekly: number; anni: number; monthOrundum: number; card: number; cardPrime: number; permit: number; monthPrime: number; cert: number; eventPrime: number };
     const out: (typeof rows[number] & { before: number; spend: number; only: number; after: number; gain: number; why: Why })[] = [];
     let prevParts = parts(today);
     let prevAfter = Math.floor((start.orundum + (income.useOP ? start.prime * 180 : 0)) / 600) + start.permit + start.permit10 * 10;
@@ -156,7 +160,7 @@ export function GachaPlanner({ operators, onShowOperator }: { operators: Operato
       const cur = parts(r.day);
       const why = { daily: cur.daily - prevParts.daily, weekly: cur.weekly - prevParts.weekly, anni: cur.anni - prevParts.anni,
         monthOrundum: cur.monthOrundum - prevParts.monthOrundum, card: cur.card - prevParts.card, cardPrime: cur.cardPrime - prevParts.cardPrime,
-        permit: cur.permit - prevParts.permit, monthPrime: cur.monthPrime - prevParts.monthPrime, eventPrime: r.prime };
+        permit: cur.permit - prevParts.permit, monthPrime: cur.monthPrime - prevParts.monthPrime, cert: cur.cert - prevParts.cert, eventPrime: r.prime };
       prevParts = cur;
       out.push({ ...r, before, spend, only, after: before - general, gain: before - prevAfter, why });
       prevAfter = before - general;
@@ -191,7 +195,7 @@ export function GachaPlanner({ operators, onShowOperator }: { operators: Operato
           )}
         </div>
         <div className="gp-group">
-          <h3>{t("수입 (합성옥)")}
+          <h3>{t("수입")}
             {/* 순오리지늄 환산(useOP)은 재화 칸 설정이라 여기 '되돌리기'와 무관하다 */}
             {saved.income && Object.keys(saved.income).some((k) => k !== "useOP") && (
               <button type="button" className="gp-link" onClick={() => setSaved((s) => ({ ...s, income: s.income?.useOP !== undefined ? { useOP: s.income.useOP } : undefined }))}>{t("기본값으로 되돌리기")}</button>
@@ -204,6 +208,7 @@ export function GachaPlanner({ operators, onShowOperator }: { operators: Operato
           <div className="gp-field"><span title={t("매달 들어오는 양 — 30일마다 더한다")}>{t("그 밖의 순오리지늄")}</span><NumInput value={income.monthPrime} onChange={(v) => setIncome("monthPrime", v)} step={1} /></div>
           <div className="gp-field"><span title={t("매달 들어오는 양 — 30일마다 더한다")}>{t("그 밖의 허가증")}</span><NumInput value={income.monthPermit} onChange={(v) => setIncome("monthPermit", v)} step={1} /></div>
           <label className="gp-check"><input type="checkbox" checked={income.card} onChange={(e) => setIncome("card", e.target.checked)} />{t("월정액 (하루 합성옥 200 · 한 달 순오리지늄 6)")}</label>
+          <label className="gp-check" title={t("허가증 1·2·5장 + 10회 허가증 1·2장 — 노란 증표 258개, 매달 1일 초기화")}><input type="checkbox" checked={income.cert} onChange={(e) => setIncome("cert", e.target.checked)} />{t("노란 증표 상점 헤드헌팅 허가증 매달 다 산다 (한 달 38회)")}</label>
         </div>
         <p className="gp-note">{t("'그날 연차'는 지금 가진 재화에 그날까지 쌓일 수입(일일·주간 임무, 섬멸, 지난 이벤트의 순오리지늄)을 더하고 앞 일정에서 쓴 만큼을 뺀 값입니다. 그 밑의 +는 앞 일정 뒤로 늘어난 연차입니다.")}</p>
         <p className="gp-note">{t("이벤트 수입은 작전 첫 3성 순오리지늄만 셉니다 — 이벤트 상점·미션의 허가증·합성옥은 게임 데이터에 없어 '그 밖의' 칸에 넣어 주세요. 날짜가 '예상'인 일정은 중국 서버 기준 추정이라 실제와 다를 수 있습니다.")}</p>
@@ -312,6 +317,7 @@ export function GachaPlanner({ operators, onShowOperator }: { operators: Operato
           [t("섬멸 작전"), w.anni ? t("합성옥 {n}", { n: f(w.anni) }) : "", t("한 주 {n} × {w}주", { n: f(income.anni), w: f(income.anni ? w.anni / income.anni : 0) })],
           [t("월정액"), w.card ? t("합성옥 {n}", { n: f(w.card) }) + (w.cardPrime ? ` · ${t("순오리지늄 {n}", { n: f(w.cardPrime) })}` : "") : "", t("하루 합성옥 200 · 30일마다 순오리지늄 6")],
           [t("그 밖의 합성옥"), w.monthOrundum ? t("합성옥 {n}", { n: f(w.monthOrundum) }) : "", t("한 달 {n}", { n: f(income.monthOrundum) })],
+          [t("노란 증표 상점"), w.cert ? t("{n}회", { n: f(w.cert) }) : "", t("허가증 1·2·5장 + 10회 허가증 1·2장 — 한 달 38회")],
           [t("그 밖의 순오리지늄"), w.monthPrime ? t("순오리지늄 {n}", { n: f(w.monthPrime) }) + (income.useOP ? ` (${t("합성옥 {n}", { n: f(w.monthPrime * 180) })})` : "") : "", t("한 달 {n}", { n: f(income.monthPrime) })],
           [t("그 밖의 허가증"), w.permit ? t("{n}장", { n: f(w.permit) }) : "", t("한 달 {n}장", { n: f(income.monthPermit) })],
           [t("이 이벤트 첫 클리어"), w.eventPrime ? t("순오리지늄 {n}", { n: f(w.eventPrime) }) + (income.useOP ? ` (${t("합성옥 {n}", { n: f(w.eventPrime * 180) })})` : "") : "", t("작전 첫 3성 보상 — 게임 데이터")],

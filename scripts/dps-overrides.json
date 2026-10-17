@@ -1,0 +1,52 @@
+{
+ "_comment": "DPS 계산기 스킬 보정 규칙 (app/dps-calc.ts SkillFx). 키 = 스킬 id. 문자열 값은 그 레벨의 계수 키. 사용자 지시 2026-10-17 \"첸 더 던스트릭도 고쳐 주고 다른 오퍼들도 전수조사\"",
+ "skchr_chen3_1": {
+  "times": 2,
+  "note": {
+   "ko": "공격이 2연 공격이라 공격 한 번에 2회로 셌다",
+   "en": "Attacks hit twice, counted as 2 hits per attack",
+   "ja": "攻撃が2連撃になるため、1回の攻撃を2ヒットとして計算"
+  }
+ },
+ "skchr_chen3_2": {
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 10,
+   "targets": 1,
+   "dmg": "arts"
+  },
+  "skip": [
+   "atk_scale"
+  ],
+  "atk": "chen3_s2[respawn_buff].atk",
+  "ok": [
+   "chen3_s2[respawn_buff].atk",
+   "chen3_s2[respawn_buff].prob"
+  ],
+  "note": {
+   "ko": "발동 시 가장 가까운 적 1명에게 참격 10회(공격력 480% 마법) — 처치하면 남은 참격이 옮겨 가지만 1명 기준으로 셌다. 그 뒤 남은 시간은 공격력 +300%로 평타",
+   "en": "On activation, 10 slashes (480% ATK Arts) on the nearest enemy — counted against one target even though remaining slashes jump on kill. Then normal attacks with +300% ATK",
+   "ja": "発動時、最も近い敵1体に斬撃10回（攻撃力の480%術） — 撃破時の移り先は数えず1体で計算。その後の残り時間は攻撃力+300%で通常攻撃"
+  }
+ },
+ "skchr_chen3_3": {
+  "times": 3,
+  "targets": "attack@max_target",
+  "dmg": "arts",
+  "burst": {
+   "scale": "projectile_min_atk_scale",
+   "hits": 1,
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "hp_ratio",
+   "projectile_min_atk_scale"
+  ],
+  "note": {
+   "ko": "공격마다 최대 4명에게 공격력 210% 마법 피해 3회. 발동 검기는 대상 현재 HP 6%와 공격력 580% 중 큰 쪽인데 최소값(580%)으로 셌다",
+   "en": "Each attack deals 210% ATK Arts damage 3 times to up to 4 enemies. The activation sword wave uses its 580% ATK minimum rather than 6% of current HP",
+   "ja": "攻撃ごとに最大4体へ攻撃力の210%術ダメージを3回。発動時の剣気は現在HPの6%と攻撃力580%の大きい方だが、最低値（580%）で計算"
+  }
+ }
+}

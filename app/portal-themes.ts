@@ -69,6 +69,9 @@ export const PORTAL_TILES: PortalTile[] = [
   // 가챠 플래너 (2026-10-17) — 앞으로의 배너 일정과 수입으로 연차를 계획
   { id: "pullplan", label: "가챠 플래너", tab: "gachaplan", area: "sim", kind: "plate", group: "sim",
     desc: "앞으로의 배너 일정과 수입으로 쓸 연차를 계획", icon: "✷" },
+  // DPS 계산기 (2026-10-17) — 스킬·방어력·적 수에 따른 대미지
+  { id: "dpscalc", label: "DPS 계산기", tab: "dps", area: "sim", kind: "plate", group: "sim",
+    desc: "스킬·적 방어력·적 수에 따른 DPS 비교", icon: "⚔" },
   { id: "simulate", label: "작전 시뮬레이터", tab: "sim", area: "sim", kind: "plate", group: "sim",
     desc: "적이 언제 어디서 나와 어디로 가는지 재생", icon: "▶" },
   { id: "story", label: "스토리", tab: "story", area: "story", kind: "plate",

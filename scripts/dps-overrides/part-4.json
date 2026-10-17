@@ -1,0 +1,1006 @@
+{
+ "skchr_surtr_3": {
+  "ok": [
+   "interval",
+   "hp_ratio"
+  ]
+ },
+ "skchr_shu_2": {
+  "noAttack": true,
+  "ok": [
+   "extra_extend_scale"
+  ],
+  "note": {
+   "ko": "스킬 중에는 공격하지 않고 치료만 한다.",
+   "en": "Stops attacking and only heals during the skill.",
+   "ja": "スキル中は攻撃せず治療のみ行う。"
+  }
+ },
+ "skchr_shu_3": {
+  "ok": [
+   "e_atk",
+   "e_attack_speed",
+   "e_max_stack_cnt",
+   "max_distance"
+  ]
+ },
+ "skchr_swire2_3": {
+  "times": 2,
+  "skip": [
+   "atk_scale"
+  ],
+  "ok": [
+   "atk_scale"
+  ],
+  "note": {
+   "ko": "2연 공격으로 셌다. 수동 종료 시 금화를 쓰는 공격(금화당 150%)은 넣지 않았다.",
+   "en": "Counted as 2 hits per attack; the coin barrage on manual end (150% per coin) is not included.",
+   "ja": "2連撃で計算。手動終了時のコイン攻撃（1枚につき150%）は含まない。"
+  }
+ },
+ "skchr_lisa_3": {
+  "noAttack": true,
+  "ok": [
+   "scale_delta_to_one"
+  ],
+  "note": {
+   "ko": "스킬 중에는 공격하지 않는다.",
+   "en": "Does not attack during the skill.",
+   "ja": "スキル中は攻撃しない。"
+  }
+ },
+ "skchr_ironmn_1": {
+  "ok": [
+   "fake_scale"
+  ]
+ },
+ "skchr_ironmn_2": {
+  "targets": 2,
+  "ok": [
+   "fake_interval"
+  ],
+  "note": {
+   "ko": "저지 중인 적 전부를 저지 가능 수(2명)로 셌다.",
+   "en": "'All blocked enemies' counted as Block 2.",
+   "ja": "ブロック中の敵全員をブロック数（2体）で計算。"
+  }
+ },
+ "skchr_dusk_1": {
+  "dur": 0,
+  "ok": [
+   "cnt"
+  ]
+ },
+ "skchr_siege_2": {
+  "targets": "aoe",
+  "ok": [
+   "ct"
+  ]
+ },
+ "skchr_svrash_3": {
+  "ok": [
+   "def"
+  ]
+ },
+ "skchr_svash2_1": {
+  "ok": [
+   "svash2_s_1[deck].cost",
+   "svash2_s_1[deck].shield",
+   "token_cost_modify"
+  ]
+ },
+ "skchr_svash2_2": {
+  "ok": [
+   "cost_scale_display",
+   "cnt",
+   "token_cost_modify"
+  ]
+ },
+ "skchr_svash2_3": {
+  "scale": "bird_atk_scale",
+  "targets": "aoe",
+  "ok": [
+   "bird_atk_scale",
+   "svash2_s_3[start_cost].cost",
+   "svash2_s_3[cost].cost",
+   "svash2_s_3[cost].interval",
+   "change_cnt",
+   "cnt",
+   "weak[limit]",
+   "damage_scale_display",
+   "cost_reduce_max"
+  ],
+  "note": {
+   "ko": "공격마다 직선 범위 적 전부에게 공격력 200%로 셌다. 취약(받는 피해 +30%)은 넣지 않았다.",
+   "en": "Each attack counted as 200% ATK to all enemies in the line; the 30% Fragile is not included.",
+   "ja": "攻撃ごとに直線範囲の敵全員へ攻撃力200%で計算。脆弱（30%）は含まない。"
+  }
+ },
+ "skchr_thorns_2": {
+  "noAttack": true,
+  "ok": [
+   "cooldown"
+  ],
+  "note": {
+   "ko": "스킬 중에는 공격하지 않는다. 피격 시 반격은 넣지 않았다.",
+   "en": "Does not attack during the skill; counterattacks when hit are not included.",
+   "ja": "スキル中は攻撃しない。被弾時の反撃は含まない。"
+  }
+ },
+ "skchr_haak_2": {
+  "ok": [
+   "damage"
+  ]
+ },
+ "skchr_haak_3": {
+  "ok": [
+   "damage"
+  ]
+ },
+ "skchr_archet_1": {
+  "targets": 1,
+  "burst": {
+   "scale": "atk_scale_2",
+   "hits": 1,
+   "targets": "show_max_target"
+  },
+  "ok": [
+   "atk_scale_2",
+   "show_max_target"
+  ],
+  "note": {
+   "ko": "주 대상 230%에 더해 주변 최대 3명에게 180%를 한 번 더 셌다.",
+   "en": "Main target 230%, plus 180% to up to 3 nearby enemies.",
+   "ja": "メイン対象230%に加え、周囲最大3体へ180%を計算。"
+  }
+ },
+ "skchr_archet_2": {
+  "ok": [
+   "cnt"
+  ],
+  "note": {
+   "ko": "화살 5회가 모두 맞는 것으로 셌다(튕길 다른 적이 없을 때는 덜 맞을 수 있다).",
+   "en": "Counted all 5 hits landing; fewer may land when there are no other enemies to bounce to.",
+   "ja": "5回すべて命中として計算（跳ね先がない場合は減る可能性あり）。"
+  }
+ },
+ "skchr_ascln_1": {
+  "targets": "aoe",
+  "dur": 0,
+  "times": 2,
+  "ok": [
+   "cnt"
+  ]
+ },
+ "skchr_ascln_2": {
+  "targets": "aoe"
+ },
+ "skchr_ascln_3": {
+  "targets": "aoe",
+  "ok": [
+   "attack@damage_hitrate_physical",
+   "attack@damage_hitrate_magical",
+   "attack@hp_ratio"
+  ]
+ },
+ "skchr_halo2_1": {
+  "targets": "chain.max_target",
+  "ok": [
+   "attack@chain.max_target"
+  ],
+  "note": {
+   "ko": "튕기는 공격을 최대 3명에게 같은 피해로 셌다.",
+   "en": "Bounces counted as equal damage to up to 3 enemies.",
+   "ja": "跳ね返りを最大3体へ同じダメージで計算。"
+  }
+ },
+ "skchr_halo2_2": {
+  "dur": 0,
+  "ok": [
+   "atk_scale_link",
+   "max_target_attack"
+  ],
+  "note": {
+   "ko": "다음 공격 한 번으로 셌다. 연결된 적이 받는 같은 피해는 최대 3명으로 어림했다.",
+   "en": "Counted as one enhanced attack; linked enemies approximated as up to 3 targets.",
+   "ja": "次の攻撃1回として計算。連結された敵は最大3体で概算。"
+  }
+ },
+ "skchr_irene_2": {
+  "times": 1,
+  "ok": [
+   "value"
+  ]
+ },
+ "skchr_irene_3": {
+  "times": 1,
+  "targets": "aoe",
+  "burst": {
+   "scale": "multi_atk_scale",
+   "hits": "multi_times",
+   "targets": 1
+  },
+  "ok": [
+   "multi_atk_scale",
+   "multi_times",
+   "multi_hit_interval"
+  ],
+  "note": {
+   "ko": "주변 적 전부 300% 한 번에 더해, 폭격 12회(각 250%)를 한 번씩 1명에게 맞는 것으로 셌다.",
+   "en": "300% to all nearby enemies, plus 12 bombardments (250% each) counted as hitting 1 enemy each.",
+   "ja": "周囲の敵全員に300%、さらに爆撃12回（各250%）を各1体に命中として計算。"
+  }
+ },
+ "skchr_aphris_2": {
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 16,
+   "targets": "aoe"
+  },
+  "ok": [
+   "interval"
+  ],
+  "note": {
+   "ko": "광선을 0.5초마다 16회, 직선 위 적 전부에게 맞는 것으로 셌다.",
+   "en": "Beam counted as 16 ticks (every 0.5s) hitting all enemies in the line.",
+   "ja": "光線を0.5秒ごと16回、直線上の敵全員に命中として計算。"
+  }
+ },
+ "skchr_aglina_2": {
+  "scale": "damage_scale",
+  "ok": [
+   "damage_scale"
+  ],
+  "note": {
+   "ko": "공격은 공격력 45%의 마법 피해로 셌다",
+   "en": "Attacks counted as 45% ATK Arts damage",
+   "ja": "攻撃は攻撃力45%の術ダメージとして計算"
+  }
+ },
+ "skchr_aglna2_2": {
+  "dmg": "arts",
+  "ok": [
+   "chant_duration",
+   "mass_level",
+   "buff_duration_ground_bound",
+   "buff_duration_levitate"
+  ]
+ },
+ "skchr_aglna2_3": {
+  "ok": [
+   "aglna2_s_3[unblocked].attack_speed",
+   "aglna2_s_3[blocked].attack_speed",
+   "attack@attack_range_id",
+   "attack@max_walk_target"
+  ]
+ },
+ "skchr_ebnhlz_1": {
+  "ok": [
+   "attack@cnt"
+  ]
+ },
+ "skchr_ebnhlz_2": {
+  "dur": 0,
+  "targets": "aoe",
+  "ok": [
+   "atk_scale"
+  ],
+  "note": {
+   "ko": "잔상 1개가 한 번 터져 주변 적 전부에게 맞는 것으로 셌다(잔상은 모은 에너지 +1개).",
+   "en": "Counted as one afterimage exploding once on all nearby enemies (actual count is stored energy +1).",
+   "ja": "残像1体が1回爆発し周囲の敵全員に命中として計算（実際は蓄積エネルギー+1体）。"
+  }
+ },
+ "skchr_amgoat_1": {
+  "atk": "amgoat_s_1[b].atk",
+  "times": 1.6,
+  "ok": [
+   "amgoat_s_1[a].attack_speed",
+   "amgoat_s_1[b].attack_speed",
+   "amgoat_s_1[b].atk"
+  ],
+  "note": {
+   "ko": "2회차부터 기준(공격력 +60%)으로 셌다. 공격 속도 +60은 공격 1회당 1.6타로 바꿔 넣었다.",
+   "en": "Counted from the 2nd activation (ATK +60%); ASPD +60 is expressed as 1.6 hits per attack.",
+   "ja": "2回目以降（攻撃力+60%）で計算。攻撃速度+60は攻撃1回あたり1.6ヒットとして反映。"
+  }
+ },
+ "skchr_amgoat_2": {
+  "dur": 0,
+  "scale": "fk",
+  "ok": [
+   "fk",
+   "ct",
+   "atk_scale_2"
+  ],
+  "note": {
+   "ko": "주 대상 370%만 셌다. 주변 폭발 피해(절반)는 넣지 않았다.",
+   "en": "Only the 370% on the main target is counted; the half-damage explosion is not included.",
+   "ja": "メイン対象への370%のみ計算。周囲への半分の爆発ダメージは含まない。"
+  }
+ },
+ "skchr_angel2_2": {
+  "ok": [
+   "addtional_ammo_each",
+   "recover_each_cnt",
+   "shield_max_duration",
+   "steal",
+   "steal_max"
+  ]
+ },
+ "skchr_angel2_3": {
+  "times": 5,
+  "ok": [
+   "max_deploy_character"
+  ],
+  "note": {
+   "ko": "공격마다 160% 5연 공격으로 셌다. 공격 1회에 탄약 5발을 쓰지만 탄약 수 계산에는 아직 반영되지 않았다.",
+   "en": "Counted as 5 hits of 160% per attack; the 5-ammo-per-attack cost is not yet reflected in ammo count.",
+   "ja": "攻撃ごとに160%の5連撃で計算。1回で弾薬5発消費する点は弾数計算に未反映。"
+  }
+ },
+ "skchr_etlchi_2": {
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 24,
+   "targets": "aoe"
+  },
+  "ok": [
+   "interval"
+  ],
+  "note": {
+   "ko": "피의 낫 하나가 0.5초마다 24회 주변 적 전부를 치는 것으로 셌다. 아군 쪽 낫은 넣지 않았다.",
+   "en": "One blood scythe counted as 24 ticks (every 0.5s) on all nearby enemies; the ally's scythe is not included.",
+   "ja": "血の鎌1つが0.5秒ごと24回、周囲の敵全員に命中として計算。味方側の鎌は含まない。"
+  }
+ },
+ "skchr_heyak_1": {
+  "dur": 0,
+  "targets": 2,
+  "ok": [
+   "cnt"
+  ]
+ },
+ "skchr_heyak_2": {
+  "times": 9
+ },
+ "skchr_heyak_3": {
+  "scale": "max_atk_scale",
+  "ok": [
+   "attack@min_atk_scale",
+   "attack@max_atk_scale"
+  ],
+  "note": {
+   "ko": "회오리바람이 3칸 이상 이동한 최대 피해(420%)로 셌다.",
+   "en": "Counted at max damage (420%) after the whirlwind travels 3 tiles.",
+   "ja": "竜巻が3マス移動した最大ダメージ（420%）で計算。"
+  }
+ },
+ "skchr_hodrer_1": {
+  "dur": 0,
+  "ok": [
+   "hp_ratio"
+  ]
+ },
+ "skchr_ulpia_1": {
+  "dur": 0
+ },
+ "skchr_ulpia_3": {
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 1,
+   "targets": "aoe"
+  }
+ },
+ "skchr_yu_2": {
+  "dmg": "arts",
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 1,
+   "targets": "aoe",
+   "dmg": "arts"
+  }
+ },
+ "skchr_weedy_2": {
+  "dur": -1,
+  "targets": "aoe",
+  "ok": [
+   "base_force_level"
+  ]
+ },
+ "skchr_weedy_3": {
+  "dur": 0,
+  "dmg": "arts",
+  "targets": "aoe",
+  "note": {
+   "ko": "발사 한 번(광역 350% 마법)으로 셌다. 밀려난 거리에 비례하는 트루 대미지는 넣지 않았다.",
+   "en": "Counted as one shot (350% AoE Arts); True damage based on distance pushed is not included.",
+   "ja": "発射1回（範囲350%術）で計算。移動距離に応じた確定ダメージは含まない。"
+  }
+ },
+ "skchr_wisdel_1": {
+  "scale": 4.6,
+  "ok": [
+   "append_atk_scale",
+   "stun_duration"
+  ],
+  "note": {
+   "ko": "본 공격 100%에 여진 3회(각 120%)를 더해 4.6배로 셌다.",
+   "en": "Counted as 100% main hit plus 3 aftershocks at 120% each (4.6x).",
+   "ja": "本攻撃100%＋余震3回（各120%）で4.6倍として計算。"
+  }
+ },
+ "skchr_wisdel_3": {
+  "scale": "atk_scale_3",
+  "ok": [
+   "attack@atk_scale_3",
+   "max_cnt"
+  ],
+  "note": {
+   "ko": "레버넌트의 그림자와 제1재능 추가 피해는 넣지 않았다.",
+   "en": "Revenant shadows and the 1st talent's extra damage are not included.",
+   "ja": "レヴナントの影と第1素質の追加ダメージは含まない。"
+  }
+ },
+ "skchr_makoto_1": {
+  "dmg": "arts",
+  "note": {
+   "ko": "대역 상태의 오르페우스 공격을 본체 공격 간격으로 어림했다.",
+   "en": "Orpheus attacks in Substitute state are approximated using the operator's own attack interval.",
+   "ja": "代役状態のオルフェウスの攻撃を本体の攻撃間隔で概算。"
+  }
+ },
+ "skchr_makoto_2": {
+  "dmg": "arts",
+  "ok": [
+   "attack@kill_damage"
+  ],
+  "note": {
+   "ko": "대역 상태의 타나토스 공격을 본체 공격 간격으로 어림했다. 즉사 효과는 넣지 않았다.",
+   "en": "Thanatos attacks in Substitute state are approximated using the operator's own attack interval; the execute effect is not included.",
+   "ja": "代役状態のタナトスの攻撃を本体の攻撃間隔で概算。即死効果は含まない。"
+  }
+ },
+ "skchr_excu2_3": {
+  "burst": {
+   "scale": "final_atk_scale",
+   "hits": 1,
+   "targets": "aoe"
+  },
+  "ok": [
+   "trait_ratio",
+   "attack@final_atk_scale"
+  ],
+  "note": {
+   "ko": "스킬 종료 시 250% 피해를 한 번 더 셌다. 탄약마다 쌓이는 공격력 +6%는 1회분만 넣었다.",
+   "en": "The 250% hit on skill end is added; the +6% ATK stacking per ammo is counted only once.",
+   "ja": "スキル終了時の250%を加算。弾薬ごとに重なる攻撃力+6%は1回分のみ反映。"
+  }
+ },
+ "skchr_ines_1": {
+  "burst": {
+   "scale": "bleed_atk_scale",
+   "hits": "bleed_duration",
+   "targets": 1,
+   "dmg": "arts"
+  },
+  "ok": [
+   "bleed_atk_scale",
+   "bleed_duration"
+  ]
+ },
+ "skchr_ifrit_2": {
+  "dur": 0,
+  "ok": [
+   "ct"
+  ]
+ },
+ "skchr_ifrit_3": {
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 20,
+   "targets": "aoe"
+  },
+  "note": {
+   "ko": "화염 방사를 초당 1회씩 20회, 범위 내 적 전부에게 맞는 것으로 셌다. 최대 HP 비례 감소는 넣지 않았다.",
+   "en": "Flamethrower counted as 20 ticks (1 per second) on all enemies in range; the max-HP-based HP loss is not included.",
+   "ja": "火炎放射を毎秒1回×20回、範囲内の敵全員に命中として計算。最大HP割合の減少は含まない。"
+  }
+ },
+ "skchr_jesca2_2": {
+  "ok": [
+   "prob"
+  ]
+ },
+ "skchr_jesca2_3": {
+  "ok": [
+   "jesca2_s_3_token[def].def",
+   "jesca2_s_3[def].def",
+   "attack@extrabomb.stun",
+   "attack@extrabomb.projectile_range"
+  ]
+ },
+ "skchr_zuole_2": {
+  "targets": 2,
+  "ok": [
+   "hp_ratio",
+   "scale",
+   "max_scale",
+   "shield_decrease"
+  ],
+  "note": {
+   "ko": "저지 중인 적 전부를 저지 가능 수(2명)로 셌다.",
+   "en": "'All blocked enemies' counted as Block 2.",
+   "ja": "ブロック中の敵全員をブロック数（2体）で計算。"
+  }
+ },
+ "skchr_zuole_3": {
+  "times": 8,
+  "targets": 3,
+  "ok": [
+   "last_atk_bonus",
+   "shield_scale",
+   "max_scale"
+  ],
+  "note": {
+   "ko": "참격 7회 중 마지막 일격 2배를 더해 8타로 셌다.",
+   "en": "7 slashes with the final one doubled, counted as 8 hits.",
+   "ja": "斬撃7回のうち最後の一撃2倍を含め8ヒットとして計算。"
+  }
+ },
+ "skchr_headb2_3": {
+  "times": 5,
+  "atk": "atk_base",
+  "ok": [
+   "atk_base",
+   "atk_step",
+   "unmovable"
+  ],
+  "note": {
+   "ko": "공격력 +100%로 5회를 셌다. 회마다 쌓이는 공격력 +30%와 고지대 확산 피해는 넣지 않았다.",
+   "en": "Counted 5 hits at ATK +100%; the +30% ATK per hit and highland spread damage are not included.",
+   "ja": "攻撃力+100%で5回計算。1回ごとの攻撃力+30%と高台の拡散ダメージは含まない。"
+  }
+ },
+ "skchr_chen_2": {
+  "times": 1,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 1,
+   "targets": "max_target",
+   "dmg": "arts"
+  },
+  "note": {
+   "ko": "물리 500%와 마법 500%를 따로 셌다.",
+   "en": "Counted 500% Physical and 500% Arts separately.",
+   "ja": "物理500%と術500%を別々に計算。"
+  }
+ },
+ "skchr_chyue_1": {
+  "ok": [
+   "cnt"
+  ],
+  "note": {
+   "ko": "3회 충전을 한꺼번에 쓴 기준(400%×3)으로 셌다.",
+   "en": "Counted as using all 3 charges at once (400% x3).",
+   "ja": "3回チャージを一度に使った場合（400%×3）で計算。"
+  }
+ },
+ "skchr_chyue_2": {
+  "burst": {
+   "scale": "atk_scale_down",
+   "hits": 1,
+   "targets": "max_target"
+  },
+  "ok": [
+   "atk_scale_down"
+  ],
+  "note": {
+   "ko": "450%에 더해 공중 부양 해제 시 650%를 최대 4명에게 셌다.",
+   "en": "450% plus 650% on levitation release, to up to 4 enemies.",
+   "ja": "450%に加え、浮遊解除時の650%を最大4体に計算。"
+  }
+ },
+ "skchr_chyue_3": {
+  "targets": "aoe",
+  "ok": [
+   "cast_cnt"
+  ],
+  "note": {
+   "ko": "5회 발동 뒤 강화(2연 공격·추가 피해)는 넣지 않았다.",
+   "en": "The enhancement after 5 activations (2 hits, extra damage) is not included.",
+   "ja": "5回発動後の強化（2連撃・追加ダメージ）は含まない。"
+  }
+ },
+ "skchr_qiubai_1": {
+  "dur": 0,
+  "burst": {
+   "scale": "aoe_scale",
+   "hits": 1,
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "aoe_scale"
+  ]
+ },
+ "skchr_qiubai_2": {
+  "burst": {
+   "scale": "sword_begin_atk_scale",
+   "hits": 2,
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "sword_begin_atk_scale",
+   "sword_end_atk_scale",
+   "sword_end_duration"
+  ],
+  "note": {
+   "ko": "시작 300%(마법)와 종료 300%(물리)를 둘 다 마법으로 어림했다.",
+   "en": "The 300% start (Arts) and 300% end (Physical) hits are both approximated as Arts.",
+   "ja": "開始300%（術）と終了300%（物理）をどちらも術で概算。"
+  }
+ },
+ "skchr_qiubai_3": {
+  "dmg": "arts",
+  "targets": 3,
+  "note": {
+   "ko": "공격 속도 중첩(+13, 최대 8회)은 1회분만 넣었다.",
+   "en": "ASPD stacking (+13, up to 8) is counted only once.",
+   "ja": "攻撃速度の累積（+13、最大8回）は1回分のみ反映。"
+  }
+ },
+ "skchr_billro_1": {
+  "targets": "aoe"
+ },
+ "skchr_billro_2": {
+  "targets": "aoe",
+  "ok": [
+   "attack@root"
+  ]
+ },
+ "skchr_billro_3": {
+  "targets": "aoe"
+ },
+ "skchr_cerber_1": {
+  "dur": 0,
+  "ok": [
+   "cnt"
+  ]
+ },
+ "skchr_cerber_3": {
+  "dmg": "phys"
+ },
+ "skchr_clemnt_2": {
+  "scale": "aoe_atk_scale",
+  "ok": [
+   "attack@aoe_atk_scale",
+   "attack@max_passenger_mass",
+   "attack@max_passenger_cnt"
+  ],
+  "note": {
+   "ko": "공격마다 최대 5명에게 250%로 셌다. 추방정·소용돌이 피해는 넣지 않았다.",
+   "en": "Each attack counted as 250% to up to 5 enemies; the expulsion boat and vortex damage are not included.",
+   "ja": "攻撃ごとに最大5体へ250%で計算。追放艇・渦のダメージは含まない。"
+  }
+ },
+ "skchr_oblvns_1": {
+  "dur": 0,
+  "dmg": "arts",
+  "scale": 4.22,
+  "ok": [
+   "atk_scale_2",
+   "atk_scale_3",
+   "atk_scale_4",
+   "atk_scale_5",
+   "atk_scale_6",
+   "atk_scale_7",
+   "atk_scale_8",
+   "angle"
+  ],
+  "note": {
+   "ko": "음표 8개(100%→5%, 합 422%)가 모두 한 적에게 맞는 것으로 셌다.",
+   "en": "Counted all 8 notes (100% down to 5%, 422% total) hitting one enemy.",
+   "ja": "音符8個（100%→5%、合計422%）すべてが1体に命中として計算。"
+  }
+ },
+ "skchr_oblvns_2": {
+  "skip": [
+   "attack@attack_speed"
+  ],
+  "ok": [
+   "attack@attack_speed",
+   "attack@passby_delay"
+  ],
+  "note": {
+   "ko": "피아노(공격력 +110%, 물리) 기준으로 셌다. 오르간(공격 속도 +140, 마법)은 넣지 않았다.",
+   "en": "Counted in Piano mode (ATK +110%, Physical); Organ mode (ASPD +140, Arts) is not included.",
+   "ja": "ピアノ（攻撃力+110%、物理）で計算。オルガン（攻撃速度+140、術）は含まない。"
+  }
+ },
+ "skchr_oblvns_3": {
+  "times": 2,
+  "note": {
+   "ko": "음표 2개(각 220%)를 모두 물리로 셌다. 실제로는 하나가 마법이다.",
+   "en": "Both notes (220% each) counted as Physical; one is actually Arts.",
+   "ja": "音符2個（各220%）をどちらも物理で計算。実際は1つが術。"
+  }
+ },
+ "skchr_phatm2_1": {
+  "dur": 0,
+  "ok": [
+   "unmove"
+  ]
+ },
+ "skchr_titi_2": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중에는 공격하지 않는다. 제1재능 피해는 넣지 않았다.",
+   "en": "Does not attack during the skill; 1st talent damage is not included.",
+   "ja": "スキル中は攻撃しない。第1素質のダメージは含まない。"
+  }
+ },
+ "skchr_typhon_2": {
+  "times": 2,
+  "ok": [
+   "first_duration"
+  ],
+  "note": {
+   "ko": "화살 2발이 모두 맞는 것으로 셌다(다른 적이 있으면 나뉜다).",
+   "en": "Both arrows counted as hitting (they split across enemies when possible).",
+   "ja": "矢2本とも命中として計算（他の敵がいれば分散）。"
+  }
+ },
+ "skchr_typhon_3": {
+  "scale": "s3_atk_scale",
+  "times": "s3_max_hit_num",
+  "dur": 98.4,
+  "ok": [
+   "attack@s3_atk_scale",
+   "attack@s3_max_hit_num",
+   "attack@s3_trigger_time"
+  ],
+  "note": {
+   "ko": "화살비 5회(각 175%)가 모두 표적에게 맞는 것으로 셌다. 지속은 탄약 10발 × 공격 간격(약 98초)으로 고정했다.",
+   "en": "Arrow rain counted as all 5 hits (175% each) on the marked target; duration fixed at 10 ammo x attack interval (~98s).",
+   "ja": "矢の雨5回（各175%）すべてが標的に命中として計算。持続は弾薬10発×攻撃間隔（約98秒）で固定。"
+  }
+ },
+ "skchr_bgsnow_1": {
+  "scale": 1.5,
+  "ok": [
+   "prob",
+   "atk_scale"
+  ],
+  "note": {
+   "ko": "40% 확률 225%를 기댓값(150%)으로 셌다.",
+   "en": "The 40% chance of 225% is counted as its expected value (150%).",
+   "ja": "40%の確率で225%を期待値（150%）として計算。"
+  }
+ },
+ "skchr_bgsnow_2": {
+  "dur": 0,
+  "times": 3
+ },
+ "skchr_pallas_1": {
+  "times": 2
+ },
+ "skchr_pasngr_1": {
+  "dur": 0,
+  "scale": "pasngr_s_1.atk_scale",
+  "targets": "pasngr_s_1.max_target",
+  "ok": [
+   "pasngr_s_1.atk_scale",
+   "pasngr_s_1.max_target",
+   "pasngr_s_1.sluggish"
+  ]
+ },
+ "skchr_pasngr_3": {
+  "dur": "duration",
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 8,
+   "targets": 1
+  },
+  "ok": [
+   "ct",
+   "interval",
+   "chain.max_target"
+  ],
+  "note": {
+   "ko": "천둥 구역 4초 동안 0.5초마다 150% 추가 공격 8회를 1명에게 셌다(튕김은 넣지 않았다).",
+   "en": "8 extra 150% attacks (every 0.5s for 4s) counted on 1 enemy; bounces are not included.",
+   "ja": "雷区域4秒間、0.5秒ごとの150%追加攻撃8回を1体に計算（跳ね返りは含まない）。"
+  }
+ },
+ "skchr_judge_1": {
+  "dur": 0,
+  "burst": {
+   "scale": "atk_scale_2",
+   "hits": 1,
+   "targets": 1,
+   "dmg": "arts"
+  },
+  "ok": [
+   "atk_scale_2",
+   "judge_s_1_enhance_checker.atk_scale"
+  ],
+  "note": {
+   "ko": "추가 마법 200%만 셌다. 차지 추가 효과는 넣지 않았다.",
+   "en": "Only the extra 200% Arts damage is counted; the Charged bonus is not included.",
+   "ja": "追加の術200%のみ計算。チャージ追加効果は含まない。"
+  }
+ },
+ "skchr_judge_2": {
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 20,
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "shield_scale"
+  ],
+  "note": {
+   "ko": "공격 대신 초당 140% 마법 피해를 20회, 주변 적 전부에게 셌다.",
+   "en": "No attacks; counted 20 ticks of 140% Arts per second on all nearby enemies.",
+   "ja": "攻撃の代わりに毎秒140%術ダメージ20回を周囲の敵全員に計算。"
+  }
+ },
+ "skchr_pepe_1": {
+  "dur": 0
+ },
+ "skchr_sbell2_1": {
+  "dur": 0,
+  "targets": "aoe",
+  "ok": [
+   "trig_cnt"
+  ]
+ },
+ "skchr_sbell2_2": {
+  "scale": "atk_scale_s2",
+  "targets": "aoe",
+  "ok": [
+   "attack@atk_scale_s2",
+   "talent@max_cast_tile_count",
+   "talent@cold",
+   "talent@token_key"
+  ]
+ },
+ "skchr_sbell2_3": {
+  "scale": "atk_scale_s3",
+  "targets": "aoe",
+  "ok": [
+   "attack@atk_scale_s3",
+   "attract_time",
+   "interval"
+  ]
+ },
+ "skchr_flamtl_2": {
+  "times": 2,
+  "ok": [
+   "flamtl_s_2.prob",
+   "flamtl_s_2.duration"
+  ]
+ },
+ "skchr_flamtl_3": {
+  "ok": [
+   "prob",
+   "value"
+  ]
+ },
+ "skchr_phenxi_3": {
+  "scale": "atk_scale_2",
+  "ok": [
+   "attack@atk_scale_2",
+   "attack@dist"
+  ],
+  "note": {
+   "ko": "폭발 범위 전체에 125%로 셌다. 중심부 추가 공격력 +220%는 넣지 않았다.",
+   "en": "Counted 125% across the blast area; the +220% bonus at the center is not included.",
+   "ja": "爆発範囲全体を125%で計算。中心部の攻撃力+220%は含まない。"
+  }
+ },
+ "skchr_haruka_1": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중에는 공격 대신 치료한다.",
+   "en": "Heals instead of attacking during the skill.",
+   "ja": "スキル中は攻撃の代わりに治療する。"
+  }
+ },
+ "skchr_haruka_2": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중에는 공격 대신 치료한다.",
+   "en": "Heals instead of attacking during the skill.",
+   "ja": "スキル中は攻撃の代わりに治療する。"
+  }
+ },
+ "skchr_haruka_3": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중에는 공격 대신 치료한다. 공중 부양된 적에게 주는 피해는 넣지 않았다.",
+   "en": "Heals instead of attacking during the skill; damage to levitated enemies is not included.",
+   "ja": "スキル中は攻撃の代わりに治療する。浮遊した敵へのダメージは含まない。"
+  }
+ },
+ "skchr_helage_2": {
+  "times": 2,
+  "ok": [
+   "prob"
+  ]
+ },
+ "skchr_hsguma_3": {
+  "targets": "aoe",
+  "note": {
+   "ko": "전방 1칸의 적 전부를 동시에 치는 것으로 셌다.",
+   "en": "Counted as hitting all enemies on the tile in front.",
+   "ja": "前方1マスの敵全員を同時攻撃として計算。"
+  }
+ },
+ "skchr_hsgma2_1": {
+  "skip": [
+   "atk_scale"
+  ],
+  "ok": [
+   "atk_scale"
+  ],
+  "note": {
+   "ko": "피격 시 반격(175% 마법)은 넣지 않았다.",
+   "en": "The counterattack when hit (175% Arts) is not included.",
+   "ja": "被弾時の反撃（175%術）は含まない。"
+  }
+ },
+ "skchr_hsgma2_2": {
+  "times": 3,
+  "targets": 3,
+  "ok": [
+   "heal_ratio"
+  ],
+  "note": {
+   "ko": "저지 중인 적 전부를 저지 가능 수(3명)로 셌다. 방패 피해는 넣지 않았다.",
+   "en": "'All blocked enemies' counted as Block 3; shield damage is not included.",
+   "ja": "ブロック中の敵全員をブロック数（3体）で計算。盾のダメージは含まない。"
+  }
+ },
+ "skchr_hsgma2_3": {
+  "times": 2
+ },
+ "skchr_horn_1": {
+  "dur": 0,
+  "ok": [
+   "cnt"
+  ]
+ },
+ "skchr_horn_2": {
+  "scale": "s2.atk_scale",
+  "dur": 28,
+  "ok": [
+   "attack@s2.atk_scale",
+   "attack@s2.trigger_time",
+   "attack@s2.hp_ratio",
+   "hp_ratio"
+  ],
+  "note": {
+   "ko": "탄약 10발 × 공격 간격(약 28초)으로 셌다. 과부하 마법 추가 피해는 넣지 않았다.",
+   "en": "Duration counted as 10 ammo x attack interval (~28s); Overload extra Arts damage is not included.",
+   "ja": "弾薬10発×攻撃間隔（約28秒）で計算。過負荷の追加術ダメージは含まない。"
+  }
+ },
+ "_report": "입력 218행 중 103개 스킬에 규칙 추가 (나머지는 맞거나 표현 불가로 건너뜀 — 처형자 등 calcNow가 비어 있는 행 포함). 종류별: times 23 · dmg 8 · burst 16 · targets 26 · scale 15 · noAttack 11 · dur 24 · skip 10 · atk 2 · ok/note만 14. 불확실: ① skchr_aglina_2·ebnhlz_1·cerber_2·flamtl_3 — base_attack_time 양수인데 설명은 '감소'(곱셈 계수로 보임), 계산기에 간격 필드가 없어 times=1/계수로 보정 — 계산기 자체 수정 권장 ② skchr_amgoat_1 — 공격 속도 +60을 times 1.6으로 대신함(aspd 필드 없음) ③ skchr_typhon_3·horn_2 — 탄약 키가 s3_trigger_time·s2.trigger_time이라 탄약형으로 안 잡혀 dur을 현재 간격 기준 고정값으로 넣음 ④ skchr_angel2_3 — '공격할 때마다 탄약 5발' 미추출(ap 없음), 지속이 5배로 과대 ⑤ billro_1~3·sbell2_2~3 — 방진술사 스킬 공격을 범위 전체로 봄 ⑥ skchr_wisdel_1 — 여진 횟수(기본 1+추가 2) 해석 ⑦ skchr_oblvns_1 — 음표 8개 전부 한 적에게 명중 가정 ⑧ skchr_flamtl_2 — '2회에 한하여'를 2타로 해석 ⑨ skchr_makoto_1~2 — 소환물 공격을 본체 간격으로 어림 ⑩ skchr_halo2_2 — 연결 대상 수 해석."
+}

@@ -1,0 +1,934 @@
+{
+ "skchr_christ_2": {
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 20,
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "interval"
+  ],
+  "note": {
+   "ko": "영체가 20초 동안 초당 1회 주변 적 전부를 치는 것으로 셌다. 신경 손상 폭발 대상 추가 원소 피해는 넣지 않았다.",
+   "en": "Counted as the spirit hitting all nearby enemies once per second for 20 s; the extra Elemental Damage vs. Nervous Impairment burst targets is not included.",
+   "ja": "霊体が20秒間、毎秒1回周囲の敵全員を攻撃するものとして計算した。神経損傷爆発中の敵への追加元素ダメージは含まない。"
+  }
+ },
+ "skchr_mitm_1": {
+  "noAttack": true,
+  "burst": {
+   "scale": "aoe_damage_scale",
+   "targets": "aoe"
+  },
+  "ok": [
+   "aoe_damage_scale"
+  ]
+ },
+ "skchr_mitm_2": {
+  "ok": [
+   "mitm_s_2[to_token].block_cnt",
+   "mitm_s_2[to_token].def",
+   "mitm_s_2[to_token].hp",
+   "mitm_s_2[cost].cost",
+   "mitm_s_2[cost].interval",
+   "mitm_s_2[cost].display",
+   "block_cnt_display"
+  ]
+ },
+ "skchr_mint_2": {
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "targets": "aoe"
+  },
+  "note": {
+   "ko": "스킬 종료 시 범위 피해를 발동 피해로 셌다.",
+   "en": "The end-of-skill area damage is counted as a one-time burst.",
+   "ja": "スキル終了時の範囲ダメージを1回の発動ダメージとして計算した。"
+  }
+ },
+ "skchr_beewax_2": {
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "targets": "aoe"
+  }
+ },
+ "skchr_varkis_2": {
+  "scale": "s2_atk_scale",
+  "ok": [
+   "s2_atk_scale",
+   "hp_ratio",
+   "dynamic_dec_per_sec"
+  ]
+ },
+ "skchr_bibeak_2": {
+  "times": 1,
+  "dmg": "arts"
+ },
+ "skchr_bison_2": {
+  "noAttack": true,
+  "ok": [
+   "bison_s_2[self].def",
+   "bison_s_2[ally].def",
+   "bison_s_2[self].taunt_level"
+  ]
+ },
+ "skchr_threye_1": {
+  "dur": 0,
+  "ok": [
+   "cnt"
+  ],
+  "note": {
+   "ko": "다음 공격 한 번이 강화되는 스킬로 셌다.",
+   "en": "Counted as a skill that empowers the next attack once.",
+   "ja": "次の攻撃1回を強化するスキルとして計算した。"
+  }
+ },
+ "skchr_bobb_1": {
+  "dur": 0,
+  "ok": [
+   "cnt"
+  ],
+  "note": {
+   "ko": "다음 공격 한 번이 강화되는 스킬로 셌다.",
+   "en": "Counted as a skill that empowers the next attack once.",
+   "ja": "次の攻撃1回を強化するスキルとして計算した。"
+  }
+ },
+ "skchr_botany_1": {
+  "dur": 0,
+  "note": {
+   "ko": "다음 공격 한 번이 강화되는 스킬로 셌다.",
+   "en": "Counted as a skill that empowers the next attack once.",
+   "ja": "次の攻撃1回を強化するスキルとして計算した。"
+  }
+ },
+ "skchr_skybx_1": {
+  "dur": 0,
+  "note": {
+   "ko": "다음 공격 한 번이 강화되는 스킬로 셌다.",
+   "en": "Counted as a skill that empowers the next attack once.",
+   "ja": "次の攻撃1回を強化するスキルとして計算した。"
+  }
+ },
+ "skchr_aroma_1": {
+  "dur": 0,
+  "note": {
+   "ko": "다음 공격 한 번이 강화되는 스킬로 셌다.",
+   "en": "Counted as a skill that empowers the next attack once.",
+   "ja": "次の攻撃1回を強化するスキルとして計算した。"
+  }
+ },
+ "skchr_panda_1": {
+  "dur": 0,
+  "note": {
+   "ko": "다음 공격 한 번이 강화되는 스킬로 셌다.",
+   "en": "Counted as a skill that empowers the next attack once.",
+   "ja": "次の攻撃1回を強化するスキルとして計算した。"
+  }
+ },
+ "skchr_odda_1": {
+  "dur": 0,
+  "note": {
+   "ko": "다음 공격 한 번이 강화되는 스킬로 셌다.",
+   "en": "Counted as a skill that empowers the next attack once.",
+   "ja": "次の攻撃1回を強化するスキルとして計算した。"
+  }
+ },
+ "skchr_forcer_1": {
+  "dur": 0,
+  "note": {
+   "ko": "다음 공격 한 번이 강화되는 스킬로 셌다.",
+   "en": "Counted as a skill that empowers the next attack once.",
+   "ja": "次の攻撃1回を強化するスキルとして計算した。"
+  }
+ },
+ "skchr_brigid_1": {
+  "dur": 0,
+  "note": {
+   "ko": "다음 공격 한 번이 강화되는 스킬로 셌다.",
+   "en": "Counted as a skill that empowers the next attack once.",
+   "ja": "次の攻撃1回を強化するスキルとして計算した。"
+  }
+ },
+ "skchr_kazema_1": {
+  "dur": 0,
+  "ok": [
+   "hp_ratio"
+  ],
+  "note": {
+   "ko": "다음 공격 한 번이 강화되는 스킬로 셌다.",
+   "en": "Counted as a skill that empowers the next attack once.",
+   "ja": "次の攻撃1回を強化するスキルとして計算した。"
+  }
+ },
+ "skchr_bluep_1": {
+  "dur": 0,
+  "targets": 2,
+  "note": {
+   "ko": "다음 공격 한 번이 강화되는 스킬로 셌다.",
+   "en": "Counted as a skill that empowers the next attack once.",
+   "ja": "次の攻撃1回を強化するスキルとして計算した。"
+  }
+ },
+ "skchr_threye_2": {
+  "targets": 2
+ },
+ "skchr_hpsts_2": {
+  "targets": 2,
+  "ok": [
+   "hp_ratio"
+  ],
+  "note": {
+   "ko": "저지 중인 적 2명을 모두 치는 것으로 셌다.",
+   "en": "Counted as hitting all 2 blocked enemies.",
+   "ja": "ブロック中の敵2体すべてを攻撃するものとして計算した。"
+  }
+ },
+ "skchr_branch_2": {
+  "targets": 3,
+  "ok": [
+   "not_combat"
+  ],
+  "note": {
+   "ko": "저지 중인 적 3명을 모두 치는 것으로 셌다.",
+   "en": "Counted as hitting all 3 blocked enemies.",
+   "ja": "ブロック中の敵3体すべてを攻撃するものとして計算した。"
+  }
+ },
+ "skchr_aprot2_1": {
+  "targets": 3,
+  "note": {
+   "ko": "저지 중인 적 3명을 모두 치는 것으로 셌다.",
+   "en": "Counted as hitting all 3 blocked enemies.",
+   "ja": "ブロック中の敵3体すべてを攻撃するものとして計算した。"
+  }
+ },
+ "skchr_astesi_2": {
+  "targets": 3,
+  "note": {
+   "ko": "저지 중인 적 3명을 모두 치는 것으로 셌다.",
+   "en": "Counted as hitting all 3 blocked enemies.",
+   "ja": "ブロック中の敵3体すべてを攻撃するものとして計算した。"
+  }
+ },
+ "skchr_sophia_2": {
+  "targets": 3,
+  "note": {
+   "ko": "저지 중인 적 3명을 모두 치는 것으로 셌다.",
+   "en": "Counted as hitting all 3 blocked enemies.",
+   "ja": "ブロック中の敵3体すべてを攻撃するものとして計算した。"
+  }
+ },
+ "skchr_bena_2": {
+  "ok": [
+   "hp_ratio"
+  ]
+ },
+ "skchr_baslin_1": {
+  "ok": [
+   "ct"
+  ]
+ },
+ "skchr_baslin_2": {
+  "noAttack": true,
+  "ok": [
+   "attack@scale"
+  ]
+ },
+ "skchr_vendla_2": {
+  "skip": [
+   "atk_scale"
+  ],
+  "note": {
+   "ko": "아군이 맞을 때 되돌려 주는 마법 피해(공격력 50%)는 넣지 않았다.",
+   "en": "The Arts damage reflected when the taunting ally is hit (50% ATK) is not included.",
+   "ja": "味方が攻撃を受けた時に与える術ダメージ（攻撃力の50%）は含まない。"
+  }
+ },
+ "skchr_bobb_2": {
+  "noAttack": true,
+  "burst": {
+   "scale": "atk_scale",
+   "hits": "projectile_life_time",
+   "targets": "aoe"
+  },
+  "note": {
+   "ko": "연소 구역이 11초 동안 초당 1회 구역 안 적 전부를 치는 것으로 셌다.",
+   "en": "Counted as the burning zone hitting every enemy inside once per second for 11 s.",
+   "ja": "燃焼エリアが11秒間、毎秒1回エリア内の敵全員に当たるものとして計算した。"
+  }
+ },
+ "skchr_broca_1": {
+  "dmg": "arts"
+ },
+ "skchr_broca_2": {
+  "dmg": "arts"
+ },
+ "skchr_brigid_2": {
+  "times": 5,
+  "ok": [
+   "attack@interval",
+   "attack@cut_duration",
+   "attack@cut_scale"
+  ],
+  "note": {
+   "ko": "명중 후 추가 4회 타격(공격력 100%)을 한 공격 5타로 셌다.",
+   "en": "The 4 extra hits after the boomerang lands (100% ATK) are counted as 5 hits per attack.",
+   "ja": "命中後の追加4回攻撃（攻撃力100%）を1回の攻撃で5ヒットとして計算した。"
+  }
+ },
+ "skchr_bluep_2": {
+  "targets": 3,
+  "note": {
+   "ko": "추가 목표 2명도 2회씩 맞는 것으로 셌다(실제로는 주요 목표만 2회).",
+   "en": "The 2 extra targets are also counted as taking 2 hits (in game only the main target is hit twice).",
+   "ja": "追加の2体も2回攻撃を受けるものとして計算した（実際は主目標のみ2回）。"
+  }
+ },
+ "skchr_lasher_2": {
+  "ok": [
+   "cnt"
+  ]
+ },
+ "skchr_vodfox_2": {
+  "skip": [
+   "atk",
+   "def"
+  ],
+  "note": {
+   "ko": "저주인형은 적의 공격력·방어력을 깎는 효과라 자신의 공격력에는 넣지 않았고, 적 방어력 감소도 넣지 않았다.",
+   "en": "The Cursed Doll lowers enemy ATK/DEF; it is not applied to own ATK, and the DEF reduction is not included.",
+   "ja": "呪いの人形は敵の攻撃力・防御力を下げる効果のため自身の攻撃力には反映せず、防御力低下も含まない。"
+  }
+ },
+ "skchr_aprot2_2": {
+  "ok": [
+   "hp_ratio"
+  ]
+ },
+ "skchr_sensi_1": {
+  "noAttack": true,
+  "ok": [
+   "up_duration"
+  ],
+  "note": {
+   "ko": "요리 중 3초는 공격하지 않는다. 요리 뒤 무작위 버프는 넣지 않았다.",
+   "en": "No attacks during the 3 s of cooking; the random buff afterwards is not included.",
+   "ja": "調理中の3秒間は攻撃しない。調理後のランダムバフは含まない。"
+  }
+ },
+ "skchr_sensi_2": {
+  "noAttack": true,
+  "ok": [
+   "tick_heal_scale",
+   "magic_sp"
+  ]
+ },
+ "skchr_snsant_2": {
+  "dmg": "arts",
+  "targets": "aoe"
+ },
+ "skchr_snhunt_2": {
+  "times": 2,
+  "scale": "atk_scale_1",
+  "ok": [
+   "atk_scale_1",
+   "ct"
+  ],
+  "note": {
+   "ko": "이동 중이지 않은 적에게 260%로 오르는 것은 넣지 않았다.",
+   "en": "The increase to 260% against non-moving enemies is not included.",
+   "ja": "移動していない敵への260%は含まない。"
+  }
+ },
+ "skchr_spuria_2": {
+  "ok": [
+   "stun_time",
+   "prob"
+  ]
+ },
+ "skchr_cement_1": {
+  "dur": 0,
+  "targets": "aoe",
+  "ok": [
+   "cnt"
+  ]
+ },
+ "skchr_xingzh_1": {
+  "dur": 0,
+  "noAttack": true
+ },
+ "skchr_xingzh_2": {
+  "noAttack": true,
+  "ok": [
+   "attack@xingzh_s_2[heal].interval",
+   "attack@xingzh_s_2[heal].atk_to_hp_recovery_ratio"
+  ],
+  "note": {
+   "ko": "스킬 중에는 공격하지 않고 치료만 해서 공격 피해는 0으로 셌다.",
+   "en": "During the skill the operator heals instead of attacking, so attack damage is counted as 0.",
+   "ja": "スキル中は攻撃せず治療のみ行うため、攻撃ダメージは0として計算した。"
+  }
+ },
+ "skchr_tknogi_1": {
+  "noAttack": true,
+  "ok": [
+   "attack@prob"
+  ],
+  "note": {
+   "ko": "스킬 중에는 공격하지 않고 치료만 해서 공격 피해는 0으로 셌다.",
+   "en": "During the skill the operator heals instead of attacking, so attack damage is counted as 0.",
+   "ja": "スキル中は攻撃せず治療のみ行うため、攻撃ダメージは0として計算した。"
+  }
+ },
+ "skchr_tknogi_2": {
+  "noAttack": true,
+  "ok": [
+   "talent@hp_ratio",
+   "talent_scale"
+  ],
+  "note": {
+   "ko": "스킬 중에는 공격하지 않고 치료만 해서 공격 피해는 0으로 셌다.",
+   "en": "During the skill the operator heals instead of attacking, so attack damage is counted as 0.",
+   "ja": "スキル中は攻撃せず治療のみ行うため、攻撃ダメージは0として計算した。"
+  }
+ },
+ "skchr_quercu_1": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중에는 공격하지 않고 치료만 해서 공격 피해는 0으로 셌다.",
+   "en": "During the skill the operator heals instead of attacking, so attack damage is counted as 0.",
+   "ja": "スキル中は攻撃せず治療のみ行うため、攻撃ダメージは0として計算した。"
+  }
+ },
+ "skchr_quercu_2": {
+  "noAttack": true,
+  "note": {
+   "ko": "스킬 중에는 공격하지 않고 치료만 해서 공격 피해는 0으로 셌다.",
+   "en": "During the skill the operator heals instead of attacking, so attack damage is counted as 0.",
+   "ja": "スキル中は攻撃せず治療のみ行うため、攻撃ダメージは0として計算した。"
+  }
+ },
+ "skchr_almond_1": {
+  "ok": [
+   "cnt"
+  ]
+ },
+ "skchr_almond_2": {
+  "noAttack": true,
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 2,
+   "targets": 1
+  },
+  "ok": [
+   "hit_interval"
+  ],
+  "note": {
+   "ko": "4초 동안 1.5초마다 2회 들어가는 것으로 셌다.",
+   "en": "Counted as 2 ticks (every 1.5 s over 4 s).",
+   "ja": "4秒間に1.5秒ごと、計2回として計算した。"
+  }
+ },
+ "skchr_amiya_3": {
+  "dmg": "true"
+ },
+ "skchr_asbest_2": {
+  "targets": "aoe"
+ },
+ "skchr_aigis_2": {
+  "dur": 0,
+  "burst": {
+   "scale": "kick_atk_scale",
+   "targets": "aoe"
+  },
+  "ok": [
+   "kick_atk_scale"
+  ]
+ },
+ "skchr_akafyu_1": {
+  "times": 2
+ },
+ "skchr_akafyu_2": {
+  "ok": [
+   "hp_ratio"
+  ]
+ },
+ "skchr_absin_1": {
+  "dur": -1
+ },
+ "skchr_tmoris_1": {
+  "noAttack": true,
+  "skip": [
+   "atk_scale",
+   "times"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": "times",
+   "targets": "aoe",
+   "dmg": "arts"
+  }
+ },
+ "skchr_tmoris_2": {
+  "targets": "aoe",
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 15,
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "attack@interval"
+  ],
+  "note": {
+   "ko": "초당 마법 피해를 15초분 발동 피해로 셌다.",
+   "en": "The per-second Arts damage is counted as a 15 s total burst.",
+   "ja": "毎秒の術ダメージを15秒分の発動ダメージとして計算した。"
+  }
+ },
+ "skchr_kirara_1": {
+  "targets": "aoe",
+  "burst": {
+   "scale": "kirara_s_1.atk_scale",
+   "targets": 1,
+   "dmg": "arts"
+  },
+  "ok": [
+   "kirara_s_1.atk_scale"
+  ]
+ },
+ "skchr_kirara_2": {
+  "targets": "aoe",
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 8,
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "note": {
+   "ko": "초당 마법 피해를 8초분 발동 피해로 셌다. 재능 강화는 넣지 않았다.",
+   "en": "The per-second Arts damage is counted as an 8 s total burst; the talent boost is not included.",
+   "ja": "毎秒の術ダメージを8秒分の発動ダメージとして計算した。素質強化は含まない。"
+  }
+ },
+ "skchr_ayer_1": {
+  "dmg": "arts"
+ },
+ "skchr_ayer_2": {
+  "dmg": "arts",
+  "skip": [
+   "atk_scale"
+  ],
+  "note": {
+   "ko": "아군이 저지한 적에게 주는 추가 마법 피해(170%)는 넣지 않았다.",
+   "en": "The extra Arts damage (170%) to enemies blocked by nearby allies is not included.",
+   "ja": "周囲の味方がブロック中の敵への追加術ダメージ（170%）は含まない。"
+  }
+ },
+ "skchr_panda_2": {
+  "dur": 0,
+  "targets": "aoe"
+ },
+ "skcom_assist_cost[3]": {
+  "noAttack": true,
+  "ok": [
+   "value",
+   "interval"
+  ]
+ },
+ "skchr_elysm_2": {
+  "noAttack": true,
+  "ok": [
+   "value",
+   "interval",
+   "def"
+  ]
+ },
+ "skchr_wanqin_2": {
+  "noAttack": true,
+  "ok": [
+   "value",
+   "wanqin_s_2[cost].interval",
+   "wanqin_s_2[cost].cost"
+  ]
+ },
+ "skchr_jcinta_2": {
+  "noAttack": true,
+  "ok": [
+   "value",
+   "interval",
+   "talent_scale",
+   "attack@heal_max_target"
+  ]
+ },
+ "skchr_odda_2": {
+  "ok": [
+   "attack@value"
+  ]
+ },
+ "skchr_aurora_2": {
+  "skip": [
+   "atk_scale"
+  ],
+  "dur": 18,
+  "note": {
+   "ko": "탄약 9발을 공격 9회(약 18초)로 셌다. 빙결된 적에게 330%로 오르는 것은 넣지 않았다.",
+   "en": "The 9 rounds are counted as 9 attacks (about 18 s); the increase to 330% against Frozen enemies is not included.",
+   "ja": "弾薬9発を攻撃9回（約18秒）として計算した。凍結した敵への330%は含まない。"
+  }
+ },
+ "skchr_waaifu_1": {
+  "atk": "waaifu_s_1[self].atk",
+  "ok": [
+   "waaifu_s_1[self].atk",
+   "attack@waaifu_s_1[debuff].atk",
+   "attack@waaifu_s_1[debuff].duration"
+  ]
+ },
+ "skchr_mortis_2": {
+  "times": 3,
+  "dmg": "arts",
+  "ok": [
+   "value"
+  ]
+ },
+ "skchr_wulfen_1": {
+  "dur": 0,
+  "noAttack": true,
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "targets": "aoe"
+  },
+  "ok": [
+   "cnt"
+  ],
+  "note": {
+   "ko": "광석 '킬러' 한 개를 기폭하는 피해를 발동 피해로 셌다.",
+   "en": "One Ore 'Killer' detonation is counted as the skill's burst.",
+   "ja": "鉱石「キラー」1個の起爆ダメージを発動ダメージとして計算した。"
+  }
+ },
+ "skchr_wulfen_2": {
+  "dur": 0,
+  "noAttack": true,
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": 2,
+   "targets": "aoe"
+  },
+  "ok": [
+   "cnt"
+  ],
+  "note": {
+   "ko": "광석 '킬러' 한 개를 기폭하는 피해를 발동 피해로 셌다.",
+   "en": "One Ore 'Killer' detonation is counted as the skill's burst.",
+   "ja": "鉱石「キラー」1個の起爆ダメージを発動ダメージとして計算した。"
+  }
+ },
+ "skchr_warmy_2": {
+  "targets": 2
+ },
+ "skchr_chimes_2": {
+  "noAttack": true,
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "targets": "aoe"
+  },
+  "ok": [
+   "maxcnt"
+  ],
+  "note": {
+   "ko": "종료 피해는 공격력 +50%까지 다 오른 상태로 셌다.",
+   "en": "The end-of-skill damage is counted with the full +50% ATK.",
+   "ja": "終了時のダメージは攻撃力+50%まで上がった状態で計算した。"
+  }
+ },
+ "skchr_windft_1": {
+  "targets": "aoe",
+  "ok": [
+   "ct"
+  ]
+ },
+ "skchr_amoris_1": {
+  "scale": 2.0,
+  "ok": [
+   "attack@atk_scale_heavy",
+   "attack@atk_scale_light"
+  ],
+  "note": {
+   "ko": "3타(160%+20%×2)를 합쳐 배율 2.0로 셌다(방어력이 높으면 실제보다 높게 나온다).",
+   "en": "The 3 hits (160% + 20%×2) are summed into one 2.0x hit (overestimates against high DEF).",
+   "ja": "3ヒット（160%+20%×2）を合算し倍率2.0として計算した（防御力が高いと実際より高く出る）。"
+  }
+ },
+ "skchr_amoris_2": {
+  "scale": 3.1,
+  "ok": [
+   "attack@atk_scale_heavy",
+   "attack@atk_scale_light"
+  ],
+  "note": {
+   "ko": "8타(125%×2+10%×6)를 합쳐 배율 3.1로 셌다(방어력이 높으면 실제보다 높게 나온다).",
+   "en": "The 8 hits (125%×2 + 10%×6) are summed into one 3.1x hit (overestimates against high DEF).",
+   "ja": "8ヒット（125%×2+10%×6）を合算し倍率3.1として計算した（防御力が高いと実際より高く出る）。"
+  }
+ },
+ "skchr_excu_2": {
+  "times": 2
+ },
+ "skchr_tiger_2": {
+  "dmg": "arts"
+ },
+ "skchr_forcer_2": {
+  "dur": 0,
+  "noAttack": true,
+  "ok": [
+   "forcer_s_2[brush].stun",
+   "forcer_s_2[hit_directly].stun"
+  ]
+ },
+ "skchr_ju_1": {
+  "scale": "atk_scale_s1",
+  "ok": [
+   "atk_scale_s1"
+  ]
+ },
+ "skchr_ju_2": {
+  "targets": "max_target_s2",
+  "ok": [
+   "attack@max_target_s2"
+  ]
+ },
+ "skchr_headbr_2": {
+  "ok": [
+   "value",
+   "interval"
+  ]
+ },
+ "skchr_bdhkgt_2": {
+  "noAttack": true,
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": "projectile_delay_time",
+   "targets": "aoe"
+  },
+  "ok": [
+   "interval",
+   "slow_down_duration"
+  ],
+  "note": {
+   "ko": "차크람이 15초 동안 초당 1회 주변 적 전부를 치는 것으로 셌다.",
+   "en": "Counted as the chakram hitting all nearby enemies once per second for 15 s.",
+   "ja": "チャクラムが15秒間、毎秒1回周囲の敵全員に当たるものとして計算した。"
+  }
+ },
+ "skchr_catap2_2": {
+  "skip": [
+   "attack@atk"
+  ],
+  "ok": [
+   "retrigger_cost"
+  ]
+ },
+ "skchr_pianst_2": {
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "targets": "aoe"
+  },
+  "ok": [
+   "pianst_s_2_fxbound_1",
+   "pianst_s_2_fxbound_2",
+   "interval"
+  ],
+  "note": {
+   "ko": "피격마다 쌓이는 공격력은 1회분(+30%)만 셌다.",
+   "en": "The ATK stacking on each hit taken is counted as 1 stack (+30%) only.",
+   "ja": "被弾ごとに重なる攻撃力は1回分（+30%）のみ計算した。"
+  }
+ },
+ "skchr_chilc_1": {
+  "noAttack": true,
+  "ok": [
+   "mid_cost",
+   "step",
+   "prob_add",
+   "prob_stay",
+   "prob_minus",
+   "floor",
+   "ground"
+  ]
+ },
+ "skchr_chilc_2": {
+  "ok": [
+   "prob"
+  ]
+ },
+ "skchr_qanik_2": {
+  "burst": {
+   "scale": "trigger_atk_scale",
+   "hits": 14,
+   "targets": "max_target"
+  },
+  "ok": [
+   "interval",
+   "trigger_atk_scale"
+  ],
+  "note": {
+   "ko": "0.5초마다 주는 피해를 7초분(14회) 발동 피해로 셌다. 부양 종료 시 300% 범위 피해는 넣지 않았다.",
+   "en": "The damage every 0.5 s is counted as a 7 s (14 ticks) burst; the 300% area damage when Levitate ends is not included.",
+   "ja": "0.5秒ごとのダメージを7秒分（14回）の発動ダメージとして計算した。浮遊終了時の300%範囲ダメージは含まない。"
+  }
+ },
+ "skchr_kazema_2": {
+  "ok": [
+   "hp_ratio"
+  ]
+ },
+ "skchr_cathy_1": {
+  "atk": "s1_atk",
+  "ok": [
+   "s1_atk",
+   "s1_def"
+  ]
+ },
+ "skchr_cathy_2": {
+  "noAttack": true,
+  "ok": [
+   "overwrite_ratio",
+   "interval"
+  ]
+ },
+ "skchr_rfalcn_2": {
+  "ok": [
+   "value",
+   "rfalcn_s_2[cost].interval",
+   "rfalcn_s_2[cost].cost"
+  ]
+ },
+ "skchr_cairn_2": {
+  "dur": "buff_duration",
+  "skip": [
+   "atk_scale"
+  ],
+  "burst": {
+   "scale": "atk_scale",
+   "hits": "buff_duration",
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "buff_duration",
+   "shield_hp_ratio"
+  ],
+  "note": {
+   "ko": "주변 지상 적에게 10초 동안 초당 1회 마법 피해를 주는 것으로 셌다.",
+   "en": "Counted as Arts damage to nearby ground enemies once per second for 10 s.",
+   "ja": "周囲の地上の敵に10秒間、毎秒1回術ダメージを与えるものとして計算した。"
+  }
+ },
+ "skchr_moeshd_2": {
+  "targets": "aoe"
+ },
+ "skchr_slchan_1": {
+  "dmg": "arts"
+ },
+ "skchr_slchan_2": {
+  "dmg": "true"
+ },
+ "skchr_chiave_2": {
+  "dur": 0,
+  "dmg": "arts",
+  "targets": "aoe",
+  "ok": [
+   "magic_resistance"
+  ]
+ },
+ "skchr_kichi_1": {
+  "atk": 0.75,
+  "note": {
+   "ko": "공격력 증가는 최대 4회 중첩(+100%)으로 셌다.",
+   "en": "The ATK increase is counted at the max 4 stacks (+100%).",
+   "ja": "攻撃力上昇は最大4回重複（+100%）として計算した。"
+  }
+ },
+ "skchr_kichi_2": {
+  "ok": [
+   "attack@unmoveable"
+  ]
+ },
+ "skchr_tecno_2": {
+  "ok": [
+   "tecno_s_2[token][mode].attack_speed"
+  ]
+ },
+ "skchr_yukari_1": {
+  "dur": 0,
+  "scale": "multi_atk_scale",
+  "times": 3,
+  "dmg": "arts",
+  "burst": {
+   "scale": "final_atk_scale",
+   "targets": "aoe",
+   "dmg": "arts"
+  },
+  "ok": [
+   "multi_atk_scale",
+   "final_atk_scale"
+  ]
+ },
+ "skchr_yukari_2": {
+  "dur": 0,
+  "noAttack": true,
+  "ok": [
+   "damage_up"
+  ]
+ },
+ "_report": {
+  "요약": "입력 219행(고유 스킬 205개) 중 107개 스킬에 보정. 종류별: times 7, dmg 13, burst 19, targets 20, noAttack 27, dur 24, scale/atk/skip 28, ok/note만 15",
+  "불확실": [
+   "skchr_hamoni_1·skchr_iris_1 — 미스틱의 base_attack_time 0.2/0.6이 '기본 간격 배율'로 보이는데 계산기는 '비율만큼 늘림'으로 읽는다. 계산기에 간격 덮어쓰기 필드가 없어 skip+메모만 했다(hamoni_2도 같은 문제, 현재 미반영).",
+   "스토커(stalker)는 특성이 '공격 범위 내 모든 적 동시 공격'인데 SUB 규칙에 없어 평타가 단일 대상으로 계산된다 — dps-calc.ts SUB에 aoe 추가 필요(이 파트에선 스킬만 targets:aoe).",
+   "skchr_hpsts_2·branch_2·aprot2_1·astesi_2·sophia_2 — '저지 중인 적 전부'를 저지 수(2/3)로 넣었다. 불굴 3·술사 가드 2·교관 2 기준 추정.",
+   "블레싱(xingzh·tknogi·quercu) — 특성 '스킬 발동 후 아군 치료로 변경'에 따라 noAttack. xingzh_1(즉시 치료, dur -1)은 dur 0으로 바꿨다.",
+   "skchr_aurora_2 — 탄약 9발인데 trigger_time 키가 없어 dur 18초(9발×간격 2.0) 리터럴로 넣었다. 빙결 330%는 뺐다.",
+   "skchr_almond_2 — 4초 동안 1.5초마다 → 2회로 셌다(3회일 수도).",
+   "skchr_cairn_2 — '10초간 공격력 80% 마법 피해'를 초당 1회로 해석.",
+   "skchr_catap2_2 — atk와 attack@atk가 둘 다 1이라 이중 적용(+200%)되던 것을 attack@atk 제외로 막았다(설명은 +100%).",
+   "skchr_catap2_1 — 5연/10연 번갈아 + 매 타 35% 마법 추가, 저지 중인 적 전부 — 표현 불가로 건너뜀.",
+   "skchr_brigid_1 — 부메랑 3회 튕김이 같은 적에게 3타인지 불명, times 3은 그대로 두고 dur만 0으로."
+  ]
+ }
+}
