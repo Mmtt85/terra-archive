@@ -16549,7 +16549,9 @@ html.rg-theme {
 .rg-stat {
   font: 700 12px/1 var(--mono);
   border: 1px solid var(--rgline);
-  background: var(--rgdeep);
+  /* 종전 --rgdeep(테마의 가장 깊은 색)은 카드 바탕 위에서 거의 검정 덩어리였다 (사용자 지적 2026-10-17) —
+     바탕은 없애고 테두리만 (사용자 지시 같은 날 "아예 배경색을 없애면") */
+  background: none;
   color: var(--rgink);
   padding: 4px 8px;
   border-radius: var(--r-xs);
