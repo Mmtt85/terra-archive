@@ -8,7 +8,7 @@ import k3 from "../data/rogue3.json"; import e3 from "../data/rogue3.en.json"; i
 import k4 from "../data/rogue4.json"; import e4 from "../data/rogue4.en.json"; import j4 from "../data/rogue4.ja.json";
 import k5 from "../data/rogue5.json"; import e5 from "../data/rogue5.en.json"; import j5 from "../data/rogue5.ja.json";
 import k6 from "../data/rogue6.json"; import e6 from "../data/rogue6.en.json"; import j6 from "../data/rogue6.ja.json";
-import { BASE, type SeoLang } from "./locale";
+import { BASE, SEO_LABEL, type SeoLang } from "./locale";
 
 type Topic = {
   id: string; name: string; future?: boolean; line?: string;
@@ -63,7 +63,8 @@ export function RogueHubSeo({ lang = "ko" }: { lang?: SeoLang }) {
   return (
     <section className="page-seo" aria-label={L.hubAria}>
       <details>
-        <summary>{L.hubSummary}</summary>
+        <summary>{SEO_LABEL[lang]}</summary>
+        <p className="page-seo-title">{L.hubSummary}</p>
         <p>{L.hubP}</p>
         <ul>
           {Object.entries(INDEX).map(([id, e]) => {
@@ -88,7 +89,8 @@ export function RogueTopicSeo({ slug, lang = "ko" }: { slug: string; lang?: SeoL
   return (
     <section className="page-seo" aria-label={L.aria(t.name)}>
       <details>
-        <summary>{L.summary(t.name)}</summary>
+        <summary>{SEO_LABEL[lang]}</summary>
+        <p className="page-seo-title">{L.summary(t.name)}</p>
         <p>{L.intro(t.name, !!TOPICS.ko[id]?.future)} {oneLine(t.line)}</p>
 
         <h2>{L.zones}</h2>

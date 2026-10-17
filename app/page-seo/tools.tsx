@@ -9,17 +9,18 @@ import operatorsData from "../data/operators.json";
 import stagesKo from "../data/stages.json";
 import stagesEn from "../data/stages.en.json";
 import stagesJa from "../data/stages.ja.json";
-import { BASE, type SeoLang } from "./locale";
+import { BASE, SEO_LABEL, type SeoLang } from "./locale";
 
 const P = pool as { rates: Record<"3" | "4" | "5" | "6", number>; guarantee5: number; pool: Record<string, string[]> };
 const pct = (v: number) => `${Math.round(v * 1000) / 10}%`;
 const NUM_LOCALE: Record<SeoLang, string> = { ko: "ko-KR", en: "en-US", ja: "ja-JP" };
 
-function Box({ label, summary, children }: { label: string; summary: string; children: React.ReactNode }) {
+function Box({ lang, label, summary, children }: { lang: SeoLang; label: string; summary: string; children: React.ReactNode }) {
   return (
     <section className="page-seo" aria-label={label}>
       <details>
-        <summary>{summary}</summary>
+        <summary>{SEO_LABEL[lang]}</summary>
+        <p className="page-seo-title">{summary}</p>
         {children}
       </details>
     </section>
@@ -71,7 +72,7 @@ const GACHA = {
 export function GachaSeo({ lang = "ko" }: { lang?: SeoLang }) {
   const L = GACHA[lang];
   return (
-    <Box label={L.label} summary={L.summary}>
+    <Box lang={lang} label={L.label} summary={L.summary}>
       <h2>{L.how}</h2>
       <p>{L.p}</p>
       <h2>{L.rules}</h2>
@@ -126,7 +127,7 @@ export function UpgradeSeo({ lang = "ko" }: { lang?: SeoLang }) {
   const L = UPGRADE[lang];
   const n = (v: number) => v.toLocaleString(NUM_LOCALE[lang]);
   return (
-    <Box label={L.label} summary={L.summary}>
+    <Box lang={lang} label={L.label} summary={L.summary}>
       <h2>{L.how}</h2>
       <p>{L.p1}</p>
       <p>{L.p2}</p>
@@ -162,7 +163,7 @@ const INFRA = {
 export function InfraSeo({ lang = "ko" }: { lang?: SeoLang }) {
   const L = INFRA[lang];
   return (
-    <Box label={L.label} summary={L.summary}>
+    <Box lang={lang} label={L.label} summary={L.summary}>
       <h2>{L.how}</h2>
       <p>{L.p1}</p>
       <h2>{L.in}</h2>
@@ -203,7 +204,7 @@ const SIM = {
 export function SimSeo({ lang = "ko" }: { lang?: SeoLang }) {
   const L = SIM[lang];
   return (
-    <Box label={L.label} summary={L.summary}>
+    <Box lang={lang} label={L.label} summary={L.summary}>
       <h2>{L.how}</h2>
       <p>{L.p1}</p>
       <p>{L.p2}</p>

@@ -3,7 +3,7 @@
 // 검색에서 공개모집 페이지로 읽히지 않았다(사용자 지적 — 미나세 공채 계산기는 태그 이름과 사용법 몇 줄이 HTML 에 있어 걸린다).
 // 서버 컴포넌트라 이 칸은 자바스크립트로 실려 가지 않는다 — 다른 화면 용량과 무관. 문구는 계산기 도움말과 같은 내용. 세 언어
 import { SNIPE_DICT, TAG_GROUPS, data, type ComboResult } from "../recruit-core";
-import { opName, tagName, type SeoLang } from "./locale";
+import { opName, tagName, SEO_LABEL, type SeoLang } from "./locale";
 
 const TAG_ID = new Map(data.tags.map((t) => [t.name, t.id]));
 
@@ -55,7 +55,8 @@ export default function RecruitSeo({ lang = "ko" }: { lang?: SeoLang }) {
   return (
     <section className="page-seo" aria-label={L.aria}>
       <details>
-        <summary>{L.summary}</summary>
+        <summary>{SEO_LABEL[lang]}</summary>
+        <p className="page-seo-title">{L.summary}</p>
         <h2>{L.how}</h2>
         <p>{L.p1}</p>
         <p>{L.p2}</p>

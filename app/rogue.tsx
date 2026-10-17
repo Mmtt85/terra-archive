@@ -69,7 +69,7 @@ function routesFor(id: string): StageRoutes | undefined {
 const BRIDGE_LIVE = true;
 /* 테마 키비주얼 캐시 키 — R2 그림은 30일 캐시라 같은 파일명으로 갈아 끼우면 옛 그림이 남는다. 그림을 바꾸면 올린다
    (2026-10-17 스토리 컷씬판 1600×900 으로 교체). */
-const KV_VER = "20261017";
+const KV_VER = "2026101702";   // 01 은 업로드 전 dev 가 먼저 불러 옛 그림이 그 키에 박혔다
 
 // 스샷 레이더 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
 const LensHelpModal = lazy(() => import("./lens/help"));
