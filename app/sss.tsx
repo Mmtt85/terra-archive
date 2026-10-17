@@ -38,6 +38,8 @@ const DOCS: Record<string, () => Promise<{ default: unknown }>> = {
   ja: () => import("./data/towers-detail.ja.json"),
 };
 const TOWER_ART_VER = "2026101701";   // app/me.tsx 와 같은 값 — R2 그림을 바꾸면 둘 다 올린다
+const CARD_ART_VER = "2026101702";   // 01 은 R2 에 올리기 전 열어 본 404 가 엣지에 남았다
+export const cardArt = (id: string) => asset(`/tower/card/${id}.webp?v=${CARD_ART_VER}`);
 const towerBg = (id: string) => (/^tower_n_/.test(id) ? asset(`/tower/${id}.webp?v=${TOWER_ART_VER}`) : null);
 const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "SUPPORT", "SPECIAL"];
 const JOB_KO: Record<string, string> = { PIONEER: "뱅가드", WARRIOR: "가드", TANK: "디펜더", SNIPER: "스나이퍼", CASTER: "캐스터", MEDIC: "메딕", SUPPORT: "서포터", SPECIAL: "스페셜리스트" };
@@ -74,6 +76,7 @@ export function SssGuide() {
   const [enStages, setEnStages] = useState<EnemyStages | null>(null);
   const [enemyRaise, setEnemyRaise] = useState(0);
   const [pick, setPick] = useState<string | null>(null);
+  const [cardPick, setCardPick] = useState<string | null>(null);
   const [now] = useState(() => Date.now() / 1000);   // 이번 시즌 가르기 — 렌더마다 시계를 읽지 않게
   const itemById = useMemo(() => new Map((items?.items ?? []).flatMap((i) => [[i.id, i] as const, ...(i.alt ?? []).map((a) => [a, i] as const)])), [items]);
   const openStage = (sid: string) => {
@@ -112,19 +115,16 @@ export function SssGuide() {
       })}
     </span>
   );
-  const card = (id: string, cls = "") => {
-    const [nm, desc] = doc.cards[id] ?? [id, ""];
-    const subs = doc.cardInfo[id]?.[2] ?? [];
+  // 리더 카드 — 작은 카드 칸, 누르면 상세 창 (사용자 지시 2026-10-17 "카드 형식으로, 클릭하면 모달")
+  const card = (id: string) => {
+    const [nm] = doc.cards[id] ?? [id, ""];
+    const [type, linked] = doc.cardInfo[id] ?? ["", null];
     return (
-      <article key={id} className={`sss-card ${cls}`}>
-        <h4>{nm}</h4>
-        <p>{desc}</p>
-        {subs.length > 0 && (
-          <ul>
-            {subs.map((s) => <li key={s}><b>{doc.cards[s]?.[0] ?? s}</b><span>{doc.cards[s]?.[1]}</span></li>)}
-          </ul>
-        )}
-      </article>
+      <button key={id} type="button" className="sss-ctile" onClick={() => setCardPick(id)}>
+        <i className="sss-card-ic big" style={{ ["--ic" as string]: `url(${cardArt(id)})` }} />
+        <b>{nm}</b>
+        <small>{type === "SEASON" ? t("시즌 카드") : linked ? name(linked) : ""}</small>
+      </button>
     );
   };
   const [cs, ce, cCards] = doc.seasonInfo[cur] ?? [0, 0, []];
@@ -140,7 +140,7 @@ export function SssGuide() {
           </ul>
           <div className="sss-season-cards">
             <h3>{t("시즌 리더 카드")}</h3>
-            {cCards.map((id) => card(id, "season"))}
+            <div className="sss-ctiles">{cCards.map((id) => card(id))}</div>
           </div>
         </div>
         {mine?.season && mine.season.id === cur && (
@@ -191,10 +191,11 @@ export function SssGuide() {
 
       {/* ── 리더 카드 (시즌 카드) ── */}
       <section className="sss-sec">
-        <h2>{t("시즌 리더 카드")} <small>{t("맵 전용 카드는 맵 창에")}</small></h2>
-        <div className="sss-cards">
-          {Object.entries(doc.cardInfo).filter(([, v]) => v[0] === "SEASON").map(([id]) => card(id))}
-        </div>
+        <h2>{t("리더 카드")} <small>{t("누르면 효과와 보조 모듈")}</small></h2>
+        <h3>{t("시즌 카드")}</h3>
+        <div className="sss-ctiles">{Object.entries(doc.cardInfo).filter(([, v]) => v[0] === "SEASON").map(([id]) => card(id))}</div>
+        <h3>{t("맵 전용 카드")}</h3>
+        <div className="sss-ctiles">{Object.entries(doc.cardInfo).filter(([, v]) => v[0] !== "SEASON").map(([id]) => card(id))}</div>
       </section>
 
       {/* ── 지난 시즌 ── */}
@@ -210,7 +211,7 @@ export function SssGuide() {
                   <td>{doc.seasons[id]?.[0]}</td>
                   <td>{fmtDay(locale, s)} ~ {fmtDay(locale, e)}</td>
                   <td>{(doc.seasons[id]?.[1] ?? []).map((m) => <button key={m} type="button" onClick={() => setPick(m)}>{name(m)}</button>)}</td>
-                  <td>{cards.map((c) => doc.cards[c]?.[0] ?? c).join(" · ")}</td>
+                  <td>{cards.map((c) => <button key={c} type="button" onClick={() => setCardPick(c)}>{doc.cards[c]?.[0] ?? c}</button>)}</td>
                 </tr>
               );
             })}
@@ -242,16 +243,23 @@ export function SssGuide() {
         return (
           <ModalWindow label={name(pick)} className="operator-modal sss-modal" onClose={() => setPick(null)}>
             <div className="sss-map">
-              {bg && <img className="sss-map-bg" src={bg} alt="" />}
-              <h3>{name(pick)}{doc.towers[pick]?.[1] && <small> · {doc.towers[pick][1]}</small>}{openMaps.has(pick) && <i className="sss-open">{t("이번 시즌")}</i>}</h3>
+              {/* 머리 — 맵 그림 위에 이름·의뢰처·층·내 기록·보스 (사용자 요청 2026-10-17 "이미지 안에 정보") */}
+              <header className="me-rx-hero sss-hero" style={bg ? { ["--bg" as string]: `url(${bg})` } : undefined}>
+                <small>{t("보안파견")}{doc.towers[pick]?.[1] ? ` · ${doc.towers[pick][1]}` : ""}</small>
+                <h3>{name(pick)}</h3>
+                <p className="loc"><b>{t("{n}층", { n: total })}</b>{doc.towers[pick]?.[3] ? ` · ${t("긴급 보급")}` : ""}</p>
+                <p className="chips">
+                  {openMaps.has(pick) && <span><b>{t("이번 시즌")}</b></span>}
+                  {my && <span>{t("내 기록")} <b>{t("일반")} {my[0]}/{total}</b>{doc.towers[pick]?.[3] ? <b>{t("긴급")} {my[1]}/{total}</b> : null}</span>}
+                  {boss && (
+                    <button type="button" className="band" onClick={() => openEnemy(boss.id)}>
+                      <img src={enemyImg(boss.id)} alt="" loading="lazy" />{t("보스")} <b>{boss.name}</b>
+                    </button>
+                  )}
+                </p>
+              </header>
               {info?.desc && <p className="sss-desc">{info.desc}</p>}
               {(info?.danger || info?.hardDesc) && <p className="sss-danger">{[info.danger, info.hardDesc].filter(Boolean).join("\n")}</p>}
-              {my && <p className="sss-note">{t("내 기록 — 일반 {a}/{n} · 긴급 {b}/{n}", { a: my[0], b: my[1], n: total })}</p>}
-              {boss && (
-                <button type="button" className="sss-boss" onClick={() => openEnemy(boss.id)}>
-                  <img src={enemyImg(boss.id)} alt="" width={40} height={40} loading="lazy" /><span><small>{t("보스")}</small><b>{boss.name}</b></span>
-                </button>
-              )}
               <h4>{t("층별 작전 · 첫 클리어 보상")}</h4>
               <ul className="sss-floors">
                 {Array.from({ length: total }, (_, f) => {
@@ -268,7 +276,7 @@ export function SssGuide() {
                   );
                 })}
               </ul>
-              {info?.card && <><h4>{t("맵 리더 카드")}</h4>{card(info.card)}</>}
+              {info?.card && <><h4>{t("맵 리더 카드")}</h4><div className="sss-ctiles">{card(info.card)}</div></>}
               {info?.curses.length ? (
                 <>
                   <h4>{t("저주 카드")}</h4>
@@ -296,6 +304,12 @@ export function SssGuide() {
           </ModalWindow>
         );
       })()}
+      {cardPick && (
+        <ModalWindow key={`cd-${cardPick}`} label={doc.cards[cardPick]?.[0] ?? cardPick} className="operator-modal sss-cmodal" onClose={() => setCardPick(null)}>
+          <LeaderCardBody id={cardPick} cards={doc.cards} subs={doc.cardInfo[cardPick]?.[2] ?? []}
+            note={doc.cardInfo[cardPick]?.[0] === "SEASON" ? t("시즌 카드") : doc.cardInfo[cardPick]?.[1] ? `${t("맵 전용 카드")} · ${name(doc.cardInfo[cardPick][1]!)}` : undefined} />
+        </ModalWindow>
+      )}
       {openItem && items && (
         <ModalWindow label={openItem.n} className="item-modal it-modal" onClose={() => setOpenItem(null)}>
           <ItemFile item={openItem} doc={items} onOpenStage={openStage} />
@@ -340,5 +354,33 @@ function MapTile({ id, doc, open, mine, got, onPick }: {
         )}
       </button>
     </li>
+  );
+}
+
+/** 리더 카드 상세 — 가이드와 내 정보 이어하기가 같이 쓴다 */
+export function LeaderCardBody({ id, cards, subs, note }: { id: string; cards: Record<string, [string, string]>; subs: string[]; note?: string }) {
+  const { t } = useI18n();
+  const [nm, desc] = cards[id] ?? [id, ""];
+  return (
+    <div className="sss-cdetail">
+      <div className="sss-card-head">
+        <i className="sss-card-ic huge" style={{ ["--ic" as string]: `url(${cardArt(id)})` }} />
+        <div>{note && <small>{note}</small>}<h3>{nm}</h3></div>
+      </div>
+      <p className="sss-cdesc">{desc}</p>
+      {subs.length > 0 && (
+        <>
+          <h4>{t("보조 모듈")}</h4>
+          <ul>
+            {subs.map((sid) => (
+              <li key={sid}>
+                <i className="sss-card-ic" style={{ ["--ic" as string]: `url(${cardArt(sid)})` }} />
+                <div><b>{cards[sid]?.[0] ?? sid}</b><p>{cards[sid]?.[1]}</p></div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
   );
 }

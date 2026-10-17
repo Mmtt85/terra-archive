@@ -31107,10 +31107,10 @@ button.me-resume-idle:hover { border-color: var(--border-strong); }
 .me-resume-relic-grid img { max-width: 100%; max-height: 100%; width: auto; height: auto; }
 .me-resume-troop.sm b { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 /* 이어하기 칸 바탕 그림 — 은은하게(오른쪽에서 왼쪽으로 사라지게), 글자는 그 위 */
-.me-resume > button.has-bg { position: relative; overflow: hidden; isolation: isolate; min-height: 76px; }
-.me-resume > button.has-bg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--bg) center / cover no-repeat;
+.me-resume > button.has-bg, .me-resume > a.has-bg { position: relative; overflow: hidden; isolation: isolate; min-height: 76px; }
+.me-resume > button.has-bg::before, .me-resume > a.has-bg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--bg) center / cover no-repeat;
   opacity: .32; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 70%); mask-image: linear-gradient(90deg, transparent 0%, #000 70%); transition: opacity .3s; }
-.me-resume > button.has-bg:hover::before { opacity: .45; }
+.me-resume > button.has-bg:hover::before, .me-resume > a.has-bg:hover::before { opacity: .45; }
 html.dark .me-resume > button.has-bg::before { opacity: .26; }
 /* 소장품 격자 — 아이콘 + 이름 (2026-10-11 "그림만 보곤 모른다") · 상세는 모달 */
 .me-resume-relic-grid { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 5px; }
@@ -31145,8 +31145,9 @@ html.dark .me-resume > button.has-bg::before { opacity: .26; }
 /* 이어하기 → 가이드로 가는 링크 (2026-10-17) */
 .me-rx-go { position: absolute; top: 12px; right: 14px; padding: 4px 10px; font-size: 12px; color: #fff; text-decoration: none; background: #ffffff26; backdrop-filter: blur(4px); }
 .me-rx-go:hover { background: #ffffff40; }
-.me-tower-go { display: inline-block; margin: 0 0 8px; font-size: 12px; color: var(--lime-ink); text-decoration: none; }
-.me-tower-go:hover { text-decoration: underline; }
+/* 이어하기 보안파견 창 맨 아래 — 맵 기록·훈장은 가이드에서 (2026-10-17) */
+a.me-resume-idle { text-decoration: none; color: inherit; }
+a.me-resume-idle:hover { border-color: var(--border-strong); }
 .me-rx-hero .chips button.band img { width: 22px; height: 22px; object-fit: contain; margin: -3px 0; }
 .me-rx-hero .chips b { font-size: 13px; }
 .me-rx-hero .chips .diff b { font: 800 16px var(--mono); color: #ffd36b; }
@@ -31778,7 +31779,8 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
 .num-input input::-webkit-inner-spin-button, .num-input input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* ── 보안파견 가이드 (/sss, 2026-10-17) — app/sss.tsx. 사이트 공용 토큰만 쓴다 ── */
-.sss { display: flex; flex-direction: column; gap: 28px; padding-bottom: 24px; }
+/* 바깥 틀은 다른 화면(.explorer)과 같은 폭·여백 — 종전엔 여백이 없어 제목 줄보다 양옆 64px 씩 넓었다 (사용자 지적 2026-10-17) */
+.sss { display: flex; flex-direction: column; gap: 28px; box-sizing: border-box; width: min(100%, 1600px); margin: 0 auto; padding: 18px clamp(18px, 4vw, 64px) 24px; }
 .sss-sec h2 { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; font-size: 18px; }
 .sss-sec h2 small { font-size: 12px; font-weight: 400; color: var(--muted); }
 .sss-sec h3 { margin: 16px 0 8px; font-size: 14px; }
@@ -31807,17 +31809,22 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
 .sss-card h4 { margin: 0 0 4px; font-size: 14px; }
 .sss-card p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--ink2); white-space: pre-line; }
 .sss-card ul { list-style: none; margin: 8px 0 0; padding: 8px 0 0; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 6px; }
-.sss-card li { display: grid; grid-template-columns: auto 1fr; gap: 8px; font-size: 12px; line-height: 1.55; }
+.sss-card li { display: grid; grid-template-columns: 22px auto 1fr; align-items: start; gap: 8px; font-size: 12px; line-height: 1.55; }
 .sss-card li b { white-space: nowrap; }
 .sss-card li span { color: var(--ink2); }
 .sss-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; }
 .sss-cards .sss-card + .sss-card { margin-top: 0; }
-.sss-missions { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 6px 16px; }
-.sss-missions li { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink2); }
+/* 시즌 임무 — 한 줄에 8장 카드 (사용자 지시 2026-10-17 "한 줄띡이 아니라 카드 형식으로 한 줄에 8개") */
+.sss-missions { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 1100px) { .sss-missions { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .sss-missions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sss-missions li { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--line); background: var(--white); font-size: 12px; line-height: 1.5; color: var(--ink2); }
 .sss-missions li > span:first-child { flex: 1; }
-.sss-missions li em { font: 600 11px var(--mono); font-style: normal; color: var(--muted); }
-.sss-missions li.done > span:first-child { color: var(--muted); text-decoration: line-through; }
-.sss-reward { display: inline-flex; gap: 6px; vertical-align: middle; }
+.sss-missions li > em { font: 600 11px var(--mono); font-style: normal; color: var(--muted); }
+.sss-missions li.done { border-color: var(--lime-line); }
+.sss-missions li.done > span:first-child { color: var(--muted); }
+.sss-missions li.done > em { color: var(--lime-ink); }
+.sss-reward { display: inline-flex; flex-wrap: wrap; gap: 6px; vertical-align: middle; }
 .sss-reward button { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
 .sss-reward em { font: 600 10px var(--mono); font-style: normal; color: var(--ink2); }
 .sss-tac { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -31846,8 +31853,8 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
 .sss-boss small { font-size: 10px; color: var(--muted); }
 .sss-floors { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .sss-floors li { display: flex; align-items: center; gap: 12px; }
-.sss-floors button { flex: 1; display: flex; align-items: baseline; gap: 10px; padding: 7px 10px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.sss-floors button:hover:not(:disabled) { border-color: var(--lime-line); }
+.sss-floors li > button { flex: 1; display: flex; align-items: baseline; gap: 10px; padding: 7px 10px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.sss-floors li > button:hover:not(:disabled) { border-color: var(--lime-line); }
 .sss-floors b { font: 700 12px var(--mono); white-space: nowrap; }
 .sss-floors span { font-size: 12px; color: var(--ink2); }
 .sss-curses, .sss-medals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
@@ -31864,4 +31871,33 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
 /* 이어하기 보안파견 — 저장한 편성에 없던, 판 중에 추가로 모집한 오퍼 (2026-10-17) */
 .me-op-extra { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); padding: 0 4px; font-style: normal; font-size: 9px; line-height: 13px; white-space: nowrap;
   color: var(--lime-ink); background: var(--white); border: 1px solid var(--lime-line); }
-.sss-floors li { display: grid; grid-template-columns: minmax(0, 1fr) 150px; }
+.sss-floors li { display: grid; grid-template-columns: minmax(0, 1fr) 170px; }
+
+/* 리더 카드·보조 모듈 그림 — 흰 실루엣이라 마스크로 글자색에 칠한다 (2026-10-17) */
+.me-card-ic, .sss-card-ic { display: inline-block; flex: none; background: currentColor; -webkit-mask: var(--ic) center / contain no-repeat; mask: var(--ic) center / contain no-repeat; }
+.me-card-ic { width: 18px; height: 18px; align-self: center; }
+.me-rx-hero .chips span em { font-style: normal; font-size: 11px; opacity: .75; }
+.sss-card-head { display: flex; gap: 12px; align-items: flex-start; }
+.sss-card-ic { width: 22px; height: 22px; color: var(--ink); }
+.sss-card-ic.big { width: 52px; height: 52px; }
+/* 리더 카드 칸·상세 창 (2026-10-17) */
+.sss-ctiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.sss-ctile { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px 10px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; text-align: center; cursor: pointer; }
+.sss-ctile:hover { border-color: var(--lime-line); }
+.sss-ctile b { font-size: 12px; line-height: 1.35; }
+.sss-ctile small { font-size: 10px; color: var(--muted); }
+.sss-card-ic.huge { width: 72px; height: 72px; }
+.sss-cmodal { width: min(560px, 100%); }
+.sss-cdetail { padding: 4px 4px 8px; }
+.sss-cdetail .sss-card-head { align-items: center; margin-bottom: 10px; }
+.sss-cdetail small { font-size: 11px; color: var(--muted); }
+.sss-cdetail h3 { margin: 2px 0 0; font-size: 18px; }
+.sss-cdesc { margin: 0; font-size: 13px; line-height: 1.7; color: var(--ink2); white-space: pre-line; }
+.sss-cdetail h4 { margin: 16px 0 8px; font-size: 13px; }
+.sss-cdetail ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.sss-cdetail li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); }
+.sss-cdetail li .sss-card-ic { width: 28px; height: 28px; }
+.sss-cdetail li b { font-size: 13px; }
+.sss-cdetail li p { margin: 2px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink2); white-space: pre-line; }
+.sss-hero { margin: 0 0 12px; min-height: 150px; }
+.sss-hero .chips button.band img { width: 26px; height: 26px; object-fit: cover; }

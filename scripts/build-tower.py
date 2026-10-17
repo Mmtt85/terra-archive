@@ -151,6 +151,23 @@ def main():
             im = im.resize((720, round(im.height * 720 / im.width)))
         im.save(dest, "WEBP", quality=82, method=6)
         got += 1
+    # 리더 카드·보조 모듈 그림 — 흰 실루엣(RGBA)이라 화면이 마스크로 글자색에 칠한다 (2026-10-17 "리더 카드에 섬네일 없나")
+    cd = os.path.join(d, "card")
+    os.makedirs(cd, exist_ok=True)
+    cgot = 0
+    for cid in list((kr.get("mainCards") or {})) + list((kr.get("subCards") or {})):
+        dest = os.path.join(cd, f"{cid}.webp")
+        if os.path.exists(dest):
+            continue
+        try:
+            im = cdnassets.image(f"arts/ui/[uc]climbtower/godcard/{cid}")
+        except Exception:
+            im = None
+        if im is None:
+            continue
+        im.convert("RGBA").save(dest, "WEBP", quality=90, method=6)
+        cgot += 1
+    print(f"  카드 그림 새로 {cgot}장")
     print(f"  towers.json: 보안파견 {len(names)}곳 · 이름표 세 언어 · 배경 새로 {got}장 (없음 {miss})")
 
 
