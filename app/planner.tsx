@@ -18,7 +18,7 @@ import {
   ELITE_LABEL, MAX_OP_LEVEL, maxOpLevel, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, orderFixFor, roomMaxNetDrain,
-  ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
+  ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, KEEP_MARGIN, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS, PLANTS_BASE_RT,
   splitPriority, joinPriority, AUTO_BENCH_IDS, genEstimate,
   setRecycle, RECYCLE_MODE, RECYCLE_SPEC, recycleRate, recycleDaily, type RecycleMode,
@@ -707,7 +707,28 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, recycle: recycleJob, training: trainingUse, priority: prio, layout, levels, customRooms, customProducts, dormPins, roomPins: rpins }, paced);
+      let next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, recycle: recycleJob, training: trainingUse, priority: prio, layout, levels, customRooms, customProducts, dormPins, roomPins: rpins, prev: planEmpty ? null : plan }, paced);
+      // 안정장치 — 새 편성이 KEEP_MARGIN 점 넘게 낫지 않으면 총점을 보여 주고 바꿀지 묻는다 (사용자 요청 2026-10-18)
+      const kept = next.kept;
+      delete next.kept;
+      let keptCurrent = false;
+      if (kept) {
+        setOptimizing(null);
+        const d = kept.after - kept.before;
+        const nd = diffPlans(plan, kept.next);
+        const cells = nd ? Object.keys(nd).length : 0;
+        const moved = nd ? Object.values(nd).reduce((a, x) => a + x.add.reduce((b, y) => b + y.length, 0), 0) : 0;
+        // 새 편성이 지금과 똑같으면 물을 것도 없다
+        const go = cells > 0 && await confirm({
+          title: t("편성이 거의 달라지지 않습니다"),
+          message: t("지금 편성 총점 {a}점 → 새 편성 {b}점 ({d}점). 바꾸면 {c}곳에서 오퍼 {n}명이 자리를 옮깁니다. 차이가 {m}점 이하라 게임에서 옮겨 앉혀도 얻는 게 거의 없습니다. 새 편성으로 바꾸시겠어요?",
+            { a: kept.before.toFixed(1), b: kept.after.toFixed(1), d: `${d >= 0 ? "+" : ""}${d.toFixed(1)}`, c: cells, n: moved, m: KEEP_MARGIN }),
+          confirmLabel: t("새 편성으로 바꾸기"),
+          cancelLabel: t("지금 편성 유지"),
+        });
+        if (go) next = kept.next;
+        else keptCurrent = cells > 0;
+      }
       const diff = diffPlans(plan, next);
       setPlan(next);
       rememberBase(next); // 되돌리기 기준 — 미리보기(previewOptimize)는 여기 손대지 않는다
@@ -725,7 +746,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       const diffCells = diff ? Object.keys(diff).length : 0;
       const diffOps = diff ? Object.values(diff).reduce((a, d) => a + d.add.reduce((b, x) => b + x.length, 0), 0) : 0;
       showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: usedCount })
-        + (diffCells ? ` · ${t("전과 달라진 곳 {c}곳 · 새로 들어간 오퍼 {n}명", { c: diffCells, n: diffOps })}` : ""));
+        + (diffCells ? ` · ${t("전과 달라진 곳 {c}곳 · 새로 들어간 오퍼 {n}명", { c: diffCells, n: diffOps })}`
+          : keptCurrent ? ` · ${t("지금 편성을 그대로 두었습니다")}` : ""));
     } finally {
       setOptimizing(null);
     }

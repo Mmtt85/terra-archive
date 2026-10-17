@@ -1349,7 +1349,7 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
 
 /**
  * 방의 유효 효율(%) — teamScore와 orderFixFor가 **같은 값**을 쓰도록 뽑아 둔 공용 계산.
- * 샤마르 override는 전원 효율을 대체하고, 위디·유넥티스 automation은 오퍼 제공분만 0으로
+ * 샤마르 override는 전원 효율을 대체하고(자기 말고 1명당 +45%), 위디·유넥티스 automation은 오퍼 제공분만 0으로
  * 만들되 시설 기반 생산력은 살린다.
  */
 function roomEfficiency(parts: OpBreakdown[], team: InfraOp[]): number {
@@ -1363,7 +1363,9 @@ function roomEfficiency(parts: OpBreakdown[], team: InfraOp[]): number {
   const opProvided = parts.reduce((sum, p) => sum + p.efficiency, 0);
   const amplify = parts.reduce((sum, p) => sum + p.amplify.reduce(
     (a, spec) => a + Math.min(spec.cap, Math.floor(opProvided / spec.per) * spec.add), 0), 0);
-  return override > 0 ? override * team.length
+  // 샤마르 '속삭임'은 **자기 말고** 배치 인원 1명당 +45% (일섭 원문 "自身以外の配属オペレーター1人につき" — 한섭 번역 "각 인원"이
+  // 모호해 종전엔 3명 전원으로 세 +135%였다. 실측 샤마르+테킬라+키라라 = +97% = 90 + 제어센터 오라 7, 제안 ab38f1d7 2026-10-18)
+  return override > 0 ? override * Math.max(0, team.length - 1)
     : automation > 0 ? automation + facilityEff
     : additive + facilityEff + amplify;
 }
@@ -1422,7 +1424,7 @@ export function opSolo(op: InfraOp, room: string, slots: number, ctx: Ctx): numb
   // endless 모드: 단독 순소모 보너스(쇼트리스트 순위) — 회복·저소모 오퍼가 top-40에서 잘리지 않게
   // 특별 오더는 단독 기준으로도 자기 효율만큼 증폭된다 (팀 효율 반영은 teamScore가 한다)
   const soloOrderFix = b.orderFixed ? b.orderFix * (1 + b.efficiency / 100) : 0;
-  return b.efficiency + b.clueBase + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + soloOrderFix + b.override * slots + b.perCoworker * (slots - 1) + auras + endlessBonus([op], room, ctx);
+  return b.efficiency + b.clueBase + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + soloOrderFix + b.override * Math.max(0, slots - 1) + b.perCoworker * (slots - 1) + auras + endlessBonus([op], room, ctx);
 }
 
 export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>, ctx: Ctx, seedOps: InfraOp[] = []): InfraOp[] {
@@ -1658,6 +1660,7 @@ export type Plan = {
   priority?: ProdPriority;    // 우선 생산 모드 (기본 gold)
   auditRounds?: number[];     // 조별 전수 감사 수렴 회차 [A, B] — 진행 안내 재생용
   shiftHours?: number[];      // 조별 교대 시계 [A, B] — 성장형 평균 기준 주기 (최대 소모 오퍼 기준)
+  kept?: { before: number; after: number; next: Plan }; // 안정장치가 지금 편성을 남겼을 때만 — 지금·새 편성 총점과 새 편성 (화면이 물어보고 고른다, 저장 전에 뗀다)
 };
 
 
@@ -3066,6 +3069,56 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
     }
   }
   return total;
+}
+
+// ── 편성 안정장치 (사용자 결정 2026-10-18, INFRA-RULES §1) ─────────────────────────────
+// 자동편성을 다시 눌렀을 때 새 편성이 지금 편성보다 KEEP_MARGIN 점 넘게 낫지 않으면 지금 편성을 그대로 둔다.
+// 계산식이 조금만 바뀌어도(샤마르 '속삭임' 수정 등) 동점에 가까운 안들이 서로 자리를 바꿔 방 열 곳이
+// 뒤섞였는데, 실제 이득은 0~1점이었다 — 사용자가 게임에서 편성을 옮기는 수고만 생긴다.
+// 지금 편성은 **현재 엔진·현재 로스터로 다시 채점**해 비교한다. 기지 구성·우선 생산·보유·고정이 달라져
+// 지금 편성을 그대로 쓸 수 없으면 비교하지 않고 새 편성을 쓴다.
+export const KEEP_MARGIN = 5;
+export function keepIfClose(prev: Plan | null | undefined, next: Plan, roster: InfraOp[], pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, RoomPin[]> = {}): { plan: Plan; kept: boolean } {
+  if (!prev || prev.priority !== next.priority) return { plan: next, kept: false };
+  const byId = new Map(roster.map((op) => [op.id, op]));
+  const keys = Object.keys(next.assignments);
+  if (keys.length !== Object.keys(prev.assignments).length) return { plan: next, kept: false };
+  for (const key of keys) {
+    const a = prev.assignments[key], b = next.assignments[key];
+    if (!a || a.length !== b.length) return { plan: next, kept: false };
+    // 생산·지원 방은 꽉 채운다(절대룰) — 칸 수가 다르면 시설 레벨·훈련실 설정이 바뀐 것
+    if (!key.startsWith("DORM") && a.some((team, i) => team.length !== b[i].length)) return { plan: next, kept: false };
+    if (a.some((team) => team.some((id) => !byId.has(id)))) return { plan: next, kept: false };
+  }
+  for (const [key, ids] of Object.entries(pinnedDorms)) {
+    if (ids.some((id) => !(prev.assignments[key]?.[0] ?? []).includes(id))) return { plan: next, kept: false };
+  }
+  for (const [key, pins] of Object.entries(roomPins)) {
+    const shifts = prev.assignments[key] ?? [];
+    for (const pin of pins) {
+      const s = pinShift(pin);
+      const want = s == null ? shifts : [shifts[Math.min(s, shifts.length - 1)] ?? []];
+      if (!want.length || want.some((team) => !team.includes(pinId(pin)))) return { plan: next, kept: false };
+    }
+  }
+  // 정예화가 바뀌었을 수 있다 — 진영 수·토큰 원장을 지금 로스터로 다시 센다 (손 편집과 같은 방식)
+  const factionCounts = prev.assignments[keys[0]].map((_, s) => {
+    const counts: Record<string, number> = {};
+    for (const key of keys) {
+      const shifts = prev.assignments[key];
+      for (const id of shifts[Math.min(s, shifts.length - 1)] ?? []) {
+        const op = byId.get(id);
+        if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
+      }
+    }
+    return counts;
+  });
+  const ledger = prev.flows?.length ? recountTokens(prev.assignments, byId, prev.flows) : null;
+  const rescored: Plan = { ...prev, factionCounts, ...(ledger ? { tokenPoints: ledger.tokenPoints, flows: ledger.flows } : {}) };
+  delete rescored.shiftHours; // 교대 시계도 지금 정예화로 다시 잰다
+  const before = planScore(rescored, byId);
+  const after = planScore(next, byId);
+  return after > before + KEEP_MARGIN ? { plan: next, kept: false } : { plan: { ...rescored, kept: { before, after, next } }, kept: true };
 }
 
 // ── 재활용소(回收站) — 하루 이성 환산과 배치 (사용자 규칙 2026-10-09, INFRA-RULES §11) ─────────

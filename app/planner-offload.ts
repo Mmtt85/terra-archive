@@ -2,7 +2,7 @@
 // Web Worker(planner-worker.ts)로 id·정예화만 보내 계산하고, 진행 콜백(step/progress)은
 // postMessage로 돌려받아 메인 스레드는 상태 갱신·리페인트만 한다 (INP 근본 해결, 2026-07-22).
 // 워커 생성 실패·미지원(구형 브라우저)이면 종전대로 메인 스레드에서 직접 계산(폴백).
-import { ops, withElite, optimize, setLayoutPreset, setLevels, setRecycle, setTrainingUse, type RecycleMode, type Elite, type Plan, type ProdPriority, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct, type RoomPin } from "./planner-engine";
+import { ops, withElite, optimize, setLayoutPreset, setLevels, setRecycle, setTrainingUse, keepIfClose, type RecycleMode, type Elite, type Plan, type ProdPriority, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct, type RoomPin } from "./planner-engine";
 import { recommendRaises, type RaiseRec, type InvestProgress } from "./planner-invest";
 
 export type PlannerJob = {
@@ -20,6 +20,7 @@ export type PlannerJob = {
   roomPins?: Record<string, RoomPin[]>; // 생산방 고정 오퍼 — 문자열=양조 고정, {id,shift}=조별 고정 (2026-09-12)
   recycle?: RecycleMode | null; // 재활용소 우선도 — 미래시 꺼짐이면 null(칸 없음). §11, 2026-10-09
   training?: boolean; // 훈련실까지 고려(2석, 조건 충족용) — 기본 false = 비워 둔다 (2026-10-17)
+  prev?: Plan | null; // 지금 편성 — 새 편성이 KEEP_MARGIN 점 넘게 낫지 않으면 이걸 그대로 둔다 (안정장치, 2026-10-18)
 };
 
 type Pending = {
@@ -74,7 +75,7 @@ function postJob(cmd: "optimize" | "invest", job: PlannerJob, hooks: Pick<Pendin
   const promise = new Promise<unknown>((resolve, reject) => {
     pending.set(mySeq, { resolve, reject, ...hooks });
   });
-  w.postMessage({ seq: mySeq, cmd, owned: [...job.owned], elite: [...job.elite.entries()], opLevels: [...(job.opLevels ?? new Map()).entries()], includeFuture: job.includeFuture, priority: job.priority, layout: job.layout ?? "243", levels: job.levels ?? null, customRooms: job.customRooms ?? null, customProducts: job.customProducts ?? null, dormPins: job.dormPins ?? {}, roomPins: job.roomPins ?? {}, recycle: job.recycle ?? null, training: !!job.training });
+  w.postMessage({ seq: mySeq, cmd, owned: [...job.owned], elite: [...job.elite.entries()], opLevels: [...(job.opLevels ?? new Map()).entries()], includeFuture: job.includeFuture, priority: job.priority, layout: job.layout ?? "243", levels: job.levels ?? null, customRooms: job.customRooms ?? null, customProducts: job.customProducts ?? null, dormPins: job.dormPins ?? {}, roomPins: job.roomPins ?? {}, recycle: job.recycle ?? null, training: !!job.training, prev: job.prev ?? null });
   return promise;
 }
 
@@ -94,7 +95,9 @@ export async function optimizeOff(job: PlannerJob, onStep?: (step: OptimizeStep)
   setTrainingUse(!!job.training);
   setLayoutPreset(job.layout ?? "243", job.customRooms ?? null, job.customProducts ?? null); // 폴백(메인 스레드)도 워커와 동일하게 프리셋 동기화
   setLevels(job.levels ?? null);
-  return optimize(rosterOf(job), job.priority, onStep && (async (step) => { onStep(step); }), job.dormPins ?? {}, job.roomPins ?? {});
+  const roster = rosterOf(job);
+  const next = await optimize(roster, job.priority, onStep && (async (step) => { onStep(step); }), job.dormPins ?? {}, job.roomPins ?? {});
+  return keepIfClose(job.prev, next, roster, job.dormPins ?? {}, job.roomPins ?? {}).plan;
 }
 
 // 육성 추천 — 워커에서. onProgress는 후보 진행 바 갱신용

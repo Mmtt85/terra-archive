@@ -2898,6 +2898,11 @@ const D: Record<string, Pair> = {
   "새로: {a}": ["In: {a}", "新規: {a}"],
   "빠짐: {d}": ["Out: {d}", "外れ: {d}"],
   "전과 달라진 곳 {c}곳 · 새로 들어간 오퍼 {n}명": ["{c} rooms changed · {n} operators newly placed", "変わった部屋 {c}か所・新たに入ったオペレーター {n}名"],
+  "편성이 거의 달라지지 않습니다": ["Barely any improvement", "編成はほとんど変わりません"],
+  "지금 편성 총점 {a}점 → 새 편성 {b}점 ({d}점). 바꾸면 {c}곳에서 오퍼 {n}명이 자리를 옮깁니다. 차이가 {m}점 이하라 게임에서 옮겨 앉혀도 얻는 게 거의 없습니다. 새 편성으로 바꾸시겠어요?": ["Current total {a} → new layout {b} ({d}). Switching changes {c} rooms and moves {n} operators. The gap is {m} points or less, so rearranging in game gains almost nothing. Switch to the new layout?", "今の編成の総合点 {a} → 新しい編成 {b}（{d}）。切り替えると{c}か所でオペレーター{n}名が入れ替わります。差が{m}点以下なので、ゲーム内で配置し直してもほとんど得がありません。新しい編成に切り替えますか？"],
+  "새 편성으로 바꾸기": ["Switch to new layout", "新しい編成に切り替える"],
+  "지금 편성 유지": ["Keep current layout", "今の編成を維持"],
+  "지금 편성을 그대로 두었습니다": ["Kept your current layout", "今の編成をそのまま残しました"],
   "로그인하면 **내 정보 맞춤 칸 구성·스토리 읽은 위치**를 이 게임 계정(UID)으로 저장해 두고, 다른 기기·브라우저에서 로그인해도 그대로 이어집니다.": [
     "Once you log in, your **My Info tile layout and story reading positions** are saved to this game account (UID), so they carry over when you log in on another device or browser.",
     "ログインすると、**マイ情報のカスタム枠の配置とストーリーの既読位置**をこのゲームアカウント（UID）に保存し、別の端末・ブラウザでログインしてもそのまま引き継がれます。",

@@ -131,6 +131,9 @@ export default function CloudPrefs() {
     let lastPush = 0;
     const push = async (keepalive = false) => {
       if (!token || !pulled || !dirty.size) return;
+      // 로컬 개발 서버는 받기만 하고 올리지 않는다 — 고치는 중인 엔진으로 돌린 편성이 계정에 실려
+      // 라이브 화면까지 바뀌었다 (2026-10-18 샤마르 계산 수정 중, 사용자 지적 "라이브가 박살")
+      if (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) { dirty.clear(); return; }
       if (!keepalive && Date.now() - lastPush < PUSH_EVERY_MS) return;   // 1분 안에 또 바뀐 건 모았다가 다음 번에
       lastPush = Date.now();
       const meta = readMeta();

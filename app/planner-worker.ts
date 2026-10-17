@@ -4,7 +4,7 @@
 // 옮기는 것만이 근본 해결 (2026-07-22 /infra INP Poor 10% 리포트).
 // 엔진은 React 무의존 순수 계산이라 그대로 임포트한다 (verify-plan.mjs와 같은 성질).
 // 호출부는 planner-offload.ts — 오퍼 객체 대신 id·정예화만 주고받는다 (직렬화 최소화).
-import { ops, withElite, optimize, setLayoutPreset, setLevels, setRecycle, setTrainingUse, type RecycleMode, type Elite, type ProdPriority, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct, type RoomPin } from "./planner-engine";
+import { ops, withElite, optimize, setLayoutPreset, setLevels, setRecycle, setTrainingUse, keepIfClose, type Plan, type RecycleMode, type Elite, type ProdPriority, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct, type RoomPin } from "./planner-engine";
 import { recommendRaises } from "./planner-invest";
 
 export type PlannerJobMsg = {
@@ -23,6 +23,7 @@ export type PlannerJobMsg = {
   roomPins?: Record<string, RoomPin[]>; // 생산방 고정 인원 — 문자열=양조 고정, {id,shift}=조별 고정 (2026-09-12)
   recycle?: RecycleMode | null; // 재활용소 우선도 (미래시 꺼짐 = null → 칸 없음)
   training?: boolean; // 훈련실까지 고려 (기본 false = 비워 둔다, 2026-10-17)
+  prev?: Plan | null; // 지금 편성 — 안정장치(keepIfClose) 비교 대상 (2026-10-18)
 };
 
 // DOM lib의 Window 타입과 겹치지 않게 postMessage(1인자)만 뽑아 쓴다
@@ -46,7 +47,7 @@ self.addEventListener("message", (event) => {
       if (msg.cmd === "optimize") {
         const roster = visible.map((op) => withElite(op, eliteById.get(op.id), levelById.get(op.id))).filter((op) => ownedIds.has(op.id));
         const plan = await optimize(roster, msg.priority, (step) => { post({ seq: msg.seq, type: "step", step }); }, msg.dormPins ?? {}, msg.roomPins ?? {});
-        post({ seq: msg.seq, type: "done", result: plan });
+        post({ seq: msg.seq, type: "done", result: keepIfClose(msg.prev, plan, roster, msg.dormPins ?? {}, msg.roomPins ?? {}).plan });
       } else {
         const recs = await recommendRaises(visible, ownedIds, eliteById, msg.priority, (p) => { post({ seq: msg.seq, type: "progress", progress: p }); }, msg.dormPins ?? {}, levelById, msg.roomPins ?? {});
         post({ seq: msg.seq, type: "done", result: recs });
