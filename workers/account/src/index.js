@@ -765,6 +765,11 @@ function profile(user, friends, shop) {
     // 연 스토리 — 게임 '스토리 회상'이 기록한 것(storyreview.groups[스토리].stories[].id). 끝난 이벤트는 작전 기록이 지워져
     // 작전 조건만으론 '한 적 있음'을 알 수 없다 — 갤러리 스포 방지가 쓴다 (2026-10-06). '<스토리>_' 접두는 떼고 싣는다
     stories: storiesDigest(user),
+    // 패러독스 시뮬레이션을 깬 오퍼 id (2026-10-17) — troop.addon[오퍼].stage[mem_…] 가 연 적 있는 패러독스다. 깼으면 completeTimes 가
+    // 1 이상(실계정 192개 중 state 3 이 190, state 1 이 2 — 둘 다 completeTimes 1). 안 열린 패러독스는 기록 자체가 없다
+    paradox: Object.entries(user?.troop?.addon ?? {})
+      .filter(([, row]) => Object.values(row?.stage ?? {}).some((st) => num(st?.completeTimes) > 0 || num(st?.state) >= 3))
+      .map(([id]) => id),
   };
 }
 

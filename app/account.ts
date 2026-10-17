@@ -121,6 +121,8 @@ export type AccountProfile = {
   rogue?: Record<string, { collect: Record<string, string[]>; chat?: { chat?: Record<string, number>; chatV2?: Record<string, string[]> }; record: Record<string, unknown> | null }>;
   /** 연 스토리 — 스토리 id → 그 안의 storyId('<스토리>_' 접두를 뗀 것, 접두가 다르면 '=' + 전체) (2026-10-06~ 워커, 갤러리 스포 방지) */
   stories?: Record<string, string[]>;
+  /** 패러독스 시뮬레이션을 깬 오퍼 id (2026-10-17~ 워커 — 그 전 동기화엔 없다) */
+  paradox?: string[];
 };
 
 export type AccountRoster = { player: AccountPlayer; chars: AccountChar[]; token: AccountToken; profile?: AccountProfile;

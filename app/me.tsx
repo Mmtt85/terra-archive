@@ -31,6 +31,8 @@ import { normSearch } from "./search";
 import { Marquee } from "./marquee";
 import { AttributeFilter } from "./attr-filter";
 import recruitData from "./data/recruit.json";
+import paradoxData from "./data/paradox.json";
+import towerNames from "./data/towers.json";
 import { MeShare } from "./me-share";
 import { openChecker, runningChecker } from "./stage-open";
 import { resetCloudPrefs } from "./cloud-prefs";
@@ -204,6 +206,8 @@ function sampleMe(operators: MeOp[]): MeData {
         ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["MEETING", 3], ["HIRE", 3], ["WORKSHOP", 3], ["TRAINING", 3]]
         .map(([room, level], i) => ({ slot: String(i), room: String(room), level: Number(level) })),
       skins: 87, medals: 140, medalTotal: 1402, furniture: 620,
+      // 예시 패러독스 — 2정 오퍼의 70% 쯤을 깬 것으로
+      paradox: chars.filter((c) => c.elite === 2 && hash(`${c.id}px`) < 0.7).map((c) => c.id),
       labor: { value: 132, max: 192, ts: SAMPLE_TS, speed: 0.3, point: 0 },
       // 예시 화면의 '이어하기' (2026-10-11) — 흑류수해 3층 진행 중 + 생존연산 12일째
       progress: {
@@ -457,6 +461,7 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
           summary: <Kpis owned={owned} released={released} opById={opById} me={me} onList={openList} demo={demo} />,
           resume: <Paused me={me} opById={opById} onShowOperator={onShowOperator} />,
           recruit: <RecruitPool mine={mine} opById={opById} onShowOperator={onShowOperator} />,
+          paradox: <Paradox me={me} mine={mine} released={released} onShowOperator={onShowOperator} />,
           // 진행 상황·친구·최근 얻은 오퍼·창고는 바로 볼 일이 적어 버튼으로 접고 누르면 창으로 (사용자 지시 2026-10-11) — 묶음 안에서 좌우로도 옮긴다
           drawers: <Drawers me={me} now={now} owned={owned} opById={opById} stages={stages} items={items}
             onOpenStage={openStage} onOpenItem={(i) => setOpenItem(i)} onShowOperator={onShowOperator} />,
@@ -512,13 +517,23 @@ const ROGUE_DOCS: Record<string, Record<string, () => Promise<{ default: unknown
     rogue_4: () => import("./data/rogue4.ja.json"), rogue_5: () => import("./data/rogue5.ja.json"), rogue_6: () => import("./data/rogue6.ja.json") },
 };
 
+// 보안파견 맵 이름(세 언어)·배경 — scripts/build-tower.py (2026-10-17 사용자 "어느 맵인지도 안 나오고 배경도 없다").
+// 배경은 게임 보안파견 화면의 맵 그림. 훈련장(tower_tr_*)은 그림이 없다
+const TOWERS = towerNames as Record<string, { ko: string; en: string; ja: string }>;
+const towerBg = (id: string | null) => (id && /^tower_n_/.test(id) ? asset(`/tower/${id}.webp`) : null);
+
 function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const [open, setOpen] = useState<"rogue" | "tower" | "sandbox" | null>(null);
+  // 세 칸은 늘 자리에 둔다 — 진행 중이 아니면 '진행 아님' (사용자 지시 2026-10-17). 종전엔 진행 중인 것만 나와 칸 수·자리가 바뀌었다
   const pg = me.profile?.progress;
-  if (!pg || (!pg.rogue && !pg.tower && !pg.sandbox)) return null;
-  const r = pg.rogue, tw = pg.tower, sb = pg.sandbox;
+  const r = pg?.rogue, tw = pg?.tower, sb = pg?.sandbox;
+  const idle = (label: string) => (
+    <div className="me-resume-idle"><b>{t(label)}</b><span>{t("진행 아님")}</span></div>
+  );
   const topic = r ? t(TOPICS.find((x) => x.id === r.theme)?.name ?? r.theme ?? "?") : "";
+  const towerName = tw?.tower ? TOWERS[tw.tower]?.[locale === "en" ? "en" : locale === "ja" ? "ja" : "ko"] ?? null : null;
+  const twBg = towerBg(tw?.tower ?? null);
   return (
     <Card no="RESUME" title={t("이어하기")} aside={<small>{t("마지막 동기화 때 진행 중이던 콘텐츠")}</small>}>
       <div className="me-resume">
@@ -530,25 +545,29 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
             <em>{rogueFloor(r) != null ? `${t("{n}층", { n: rogueFloor(r)! })} · ` : ""}{t("난이도 {n}", { n: r.grade })} · HP {r.hp}/{r.maxHp}</em>
           </button>
         )}
+        {!r && idle("통합전략")}
         {tw && (
-          <button type="button" onClick={() => setOpen("tower")}>
-            <b>{t("보안파견")}</b><span>{tw.hard ? t("하드") : t("일반")}</span>
-            <em>{t("{n}층", { n: tw.coord + 1 })}</em>
+          <button type="button" className={twBg ? "has-bg" : undefined} onClick={() => setOpen("tower")}
+            style={twBg ? { ["--bg" as string]: `url(${twBg})` } : undefined}>
+            <b>{t("보안파견")}</b><span>{towerName ?? (tw.hard ? t("하드") : t("일반"))}</span>
+            <em>{towerName ? `${tw.hard ? t("하드") : t("일반")} · ` : ""}{t("{n}층", { n: tw.coord + 1 })}</em>
           </button>
         )}
-        {sb && (
+        {!tw && idle("보안파견")}
+        {sb ? (
           <button type="button" className="has-bg" onClick={() => setOpen("sandbox")}
             style={{ ["--bg" as string]: `url(${asset("/sandbox/world/sandbox_1.webp")})` }}>
             <b>{t("생존연산")}</b><span>{t("사막 이야기")}</span>
             <em>{t("{n}일째", { n: sb.day })} · {t("행동력")} {sb.ap}/{sb.maxAp}</em>
           </button>
-        )}
+        ) : idle("생존연산")}
       </div>
       {open === "rogue" && r && <ResumeRogue r={r} topic={topic} opById={opById} onShowOperator={onShowOperator} onClose={() => setOpen(null)} />}
       {open === "tower" && tw && (
         <ModalWindow label={t("보안파견")} className="operator-modal me-resume-modal" onClose={() => setOpen(null)}>
           <div className="me-resume-body">
-            <h3>{t("보안파견")}{tw.hard ? ` · ${t("하드")}` : ""}</h3>
+            <h3>{t("보안파견")}{towerName ? ` · ${towerName}` : ""}{tw.hard ? ` · ${t("하드")}` : ""}</h3>
+            {twBg && <img className="me-resume-tower" src={twBg} alt="" loading="lazy" />}
             <dl className="me-resume-facts">
               <dt>{t("진행")}</dt><dd>{t("{n}층", { n: tw.coord + 1 })}</dd>
               <dt>{t("시작")}</dt><dd>{fmtWhen(tw.start)}</dd>
@@ -1457,7 +1476,7 @@ function RecruitPool({ mine, opById, onShowOperator }: { mine: Map<string, Accou
   const shown = list.slice(0, fold);
   // 목록 그리기 — 본문(앞 몇 줄)과 '전부 보기' 창(전체)이 같이 쓴다 (사용자 2026-10-07 "페이지가 너무 길어진다")
   const recList = (items: typeof list, withRef: boolean) => (
-    <ul className="me-ops" ref={withRef ? gridRef : undefined}>
+    <ul className="me-ops dense" ref={withRef ? gridRef : undefined}>
       {items.map((o) => {
         const op = opById.get(o.id)!;
         const c = mine.get(o.id);
@@ -1487,6 +1506,81 @@ function RecruitPool({ mine, opById, onShowOperator }: { mine: Map<string, Accou
       {list.length > fold && <MoreButton open={false} total={list.length} onToggle={() => setAll(true)} />}
       {all && <MoreModal title={t("공개모집으로 채울 오퍼")} onClose={() => setAll(false)}>{recList(list, false)}</MoreModal>}
       <p className="me-note">{t("1·2성은 모집 시간을 줄여야 나옵니다 — 1성은 3시간 50분 이하, 2성은 7시간 30분 이하.")}</p>
+    </Card>
+  );
+}
+
+// ── 패러독스 시뮬레이션 (사용자 요청 2026-10-17 "클리어한 것과 남은 오퍼 — 육성 안 해서 안 열린 것도") ─────
+// 해금 조건(정예화·레벨)은 app/data/paradox.json(scripts/build-paradox.py), 깬 기록은 워커가 계정 원본 troop.addon 에서 뽑는다(profile.paradox).
+// 남은 것을 셋으로 가른다: 지금 할 수 있음(조건 충족·안 깸) · 육성 필요(보유했지만 조건 미달) · 미보유
+const PARADOX = paradoxData as unknown as Record<string, [number, number, number?]>;
+type ParadoxMode = "ready" | "train" | "missing" | "clear";
+function Paradox({ me, mine, released, onShowOperator }: { me: MeData; mine: Map<string, AccountChar>; released: MeOp[]; onShowOperator?: (id: string) => void }) {
+  const { locale, t } = useI18n();
+  const fmt = fmtOf(locale);
+  const done = me.profile?.paradox;
+  const cnAccount = me.server === "cn" || me.server === "bili";
+  const groups = useMemo(() => {
+    const cleared = new Set(done ?? []);
+    const g: Record<ParadoxMode, MeOp[]> = { ready: [], train: [], missing: [], clear: [] };
+    for (const op of released) {
+      const req = PARADOX[op.id];
+      if (!req || (req[2] && !cnAccount)) continue;   // 중섭에만 있는 패러독스는 한·일·글섭 계정에서 뺀다
+      const c = mine.get(op.id);
+      if (cleared.has(op.id)) g.clear.push(op);
+      else if (!c) g.missing.push(op);
+      else if (c.elite > req[0] || (c.elite === req[0] && c.level >= req[1])) g.ready.push(op);
+      else g.train.push(op);
+    }
+    for (const list of Object.values(g)) list.sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name, locale));
+    return g;
+  }, [done, released, mine, locale, cnAccount]);
+  const [mode, setMode] = useState<ParadoxMode | null>(null);
+  const cur: ParadoxMode = mode ?? (groups.ready.length ? "ready" : groups.train.length ? "train" : "missing");
+  const [all, setAll] = useState(false);
+  const [gridRef, cols] = useGridCols();
+  const fold = (cols || 9) * OPS_ROWS;
+  const total = groups.clear.length + groups.ready.length + groups.train.length + groups.missing.length;
+  const need = (op: MeOp) => {
+    const [e, l] = PARADOX[op.id];
+    return l <= 1 ? t("{e}정 필요", { e }) : t("{e}정 Lv.{l} 필요", { e, l });
+  };
+  const sub = (op: MeOp) => {
+    const c = mine.get(op.id);
+    if (curShown === "train") return need(op);
+    return c ? eliteText(locale, c.elite, c.level) : `${op.rarity}★`;
+  };
+  const grid = (items: MeOp[], withRef: boolean) => (
+    <ul className="me-ops dense" ref={withRef ? gridRef : undefined}>
+      {items.map((op) => (
+        <li key={op.id}>
+          <button type="button" onClick={() => onShowOperator?.(op.id)} title={op.name}>
+            <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(op.id)} alt="" width={56} height={56} loading="lazy" /></span>
+            <span className="me-op-name">{op.name}</span>
+            <em>{sub(op)}</em>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+  const SEG: [ParadoxMode, string][] = [["ready", "지금 가능"], ["train", "육성 필요"], ["missing", "미보유"], ["clear", "클리어"]];
+  // 클리어 기록이 없는 옛 동기화 — 깼는지는 몰라도 '육성 필요'·'미보유'는 정예화만으로 가를 수 있어 그 둘은 보여 준다
+  const segs = done ? SEG : SEG.filter(([k]) => k === "train" || k === "missing");
+  const curShown: ParadoxMode = done ? cur : (mode === "missing" ? "missing" : "train");
+  const shownList = groups[curShown];
+  return (
+    <Card no="PARADOX" title={t("패러독스 시뮬레이션")}
+      aside={(
+        <div className="me-seg" role="group">
+          {segs.map(([k, label]) => (
+            <button key={k} type="button" className={curShown === k ? "selected" : ""} onClick={() => { setMode(k); setAll(false); }}>{t(label)} {fmt(groups[k].length)}</button>
+          ))}
+        </div>
+      )}>
+      <p className="me-note">{done ? t("클리어 {n} / {total}", { n: fmt(groups.clear.length), total: fmt(total) }) : t("클리어 기록은 다시 동기화하면 보입니다.")}</p>
+      {shownList.length ? grid(shownList.slice(0, fold), true) : <p className="me-note">{t("해당하는 오퍼가 없습니다.")}</p>}
+      {shownList.length > fold && <MoreButton open={false} total={shownList.length} onToggle={() => setAll(true)} />}
+      {all && <MoreModal title={`${t("패러독스 시뮬레이션")} · ${t(SEG.find(([k]) => k === curShown)![1])}`} onClose={() => setAll(false)}>{grid(shownList, false)}</MoreModal>}
     </Card>
   );
 }
