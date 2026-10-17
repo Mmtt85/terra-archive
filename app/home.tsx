@@ -538,9 +538,11 @@ function eventName(locale: Locale, event: GameEvent): string {
   // 복각 표시는 살린다 — 원본과 이름이 같아 구분이 안 되면 "이미 본 이벤트"인지 알 수 없다
   return RERUN_SUFFIX.test(event.name) ? `${base} (${makeT(locale)("재개방")})` : base;
 }
+// 스토리 목록에 없는 이벤트의 섬네일 — 이벤트 도감 색인이 싣는다 (build-events.py, 2026-10-17 '임계 상전이')
+const eventThumbs = (eventIdsData as unknown as { thumbs?: Record<string, string> }).thumbs ?? {};
 function eventThumb(locale: Locale, event: GameEvent): string | undefined {
   const story = storyOf(event);
-  if (!story) return undefined;
+  if (!story) return eventThumbs[event.id] ? asset(eventThumbs[event.id]) : undefined;
   { const p = (locale === "ja" ? story.thumbJa : locale === "en" ? story.thumbEn : undefined) ?? story.thumb; return p ? asset(p) : undefined; }
 }
 const eventDday = (event: GameEvent, now: number): number => Math.max(0, Math.ceil((Date.parse(event.end) - now) / DAY));

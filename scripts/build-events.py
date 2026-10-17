@@ -832,7 +832,10 @@ ids_path = os.path.join(DATA, "event-ids.json")
 loc_names = {loc: {r["id"]: r["n"] for r in rows[loc]} for loc in ("en", "ja")}
 names = {aid: [loc_names["en"].get(aid), loc_names["ja"].get(aid)]
          for aid in sorted(r["id"] for r in rows["ko"]) if aid not in stories}
-json.dump({"updated": updated, "ids": sorted(r["id"] for r in rows["ko"]), "names": names},
+# 섬네일도 — 스토리 목록에 없는 이벤트(메인 스토리 이벤트 '임계 상전이' act4mainss 등)는 헤더·홈 진행중 이벤트에 그림이 비었다
+# (사용자 지적 2026-10-17 "다른 이벤트처럼 넣어 줘"). 이벤트 도감의 thumb 을 같이 싣는다
+thumbs = {r["id"]: r["thumb"] for r in rows["ko"] if r.get("thumb") and r["id"] not in stories}
+json.dump({"updated": updated, "ids": sorted(r["id"] for r in rows["ko"]), "names": names, "thumbs": thumbs},
           open(ids_path, "w", encoding="utf-8"), ensure_ascii=False)
 print(f"  event-ids.json  {os.path.getsize(ids_path) // 1024}KB")
 print(f"이벤트 {len(rows['ko'])}개(미래시 {n_fut}) — 작전 {n_stage} · 등장 적 {n_enemy} · "
