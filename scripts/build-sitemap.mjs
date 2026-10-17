@@ -154,7 +154,8 @@ for (const route of routes) {
 // 그래서 **사람이 검색하는 순서**로 싣는다: 포탈 → 도구 화면 → 오퍼 상세 → 스토리 → 작전(메인 먼저) → 적(기본형 먼저,
 // _2·_3 변형은 맨 끝). 언어도 **한국어 전부 → 영어 → 일본어** (국내 검색엔진이 한국어부터 만나게).
 // priority 는 구글은 무시하지만 네이버는 참고할 수 있어 단계별로 차등을 둔다.
-const TOP = ["infra", "recruit", "operators", "rogue", "ra", "autochess", "upgrade", "farm", "stories", "stages", "enemies", "events", "items", "sim", "gallery", "me", "about"];
+// dps·gacha·gacha-planner — 2026-10-17 (종전엔 목록에 없어 도구 단계 맨 끝이었다)
+const TOP = ["infra", "recruit", "operators", "rogue", "ra", "autochess", "upgrade", "farm", "dps", "gacha", "gacha-planner", "stories", "stages", "enemies", "events", "items", "sim", "gallery", "me", "about"];
 const STAGE_RANK = (() => {
   const doc = JSON.parse(readFileSync(join(ROOT, "app/data/stages.json"), "utf8"));
   const typeRank = { MAIN: 0, SUB: 1, CAMPAIGN: 2, CLIMB_TOWER: 3, SPECIAL_STORY: 4, DAILY: 5 };

@@ -43,6 +43,8 @@ TAB_META = {
     "farm":    ("FARMING EFFICIENCY",    "hex"),
     "upgrade": ("UPGRADE SIMULATOR",     "bars"),
     "gacha":   ("GACHA SIMULATOR",       "cards"),
+    "gachaplan": ("PULL PLANNER",        "bars"),     # 2026-10-17
+    "dps":     ("DPS CALCULATOR",        "target"),   # 2026-10-17
     "story":   ("AI STORY DIGEST",       "story"),
     "gallery": ("STORY ART GALLERY",     "cards"),
     "me":      ("MY ACCOUNT",            "bars"),
@@ -96,6 +98,12 @@ SUBLINE = {
     "gacha":   {"ko": "픽업을 골라 가챠를 미리 돌려 보기.",
                 "en": "Pick rate-ups and try headhunting before you pull.",
                 "ja": "ピックアップを選んで、ガチャを先にお試し。"},
+    "gachaplan": {"ko": "가진 재화와 수입으로 배너마다 몇 연차인지 계획.",
+                  "en": "Plan your pulls for every upcoming banner.",
+                  "ja": "手持ちと収入から、バナーごとのガチャ回数を計画。"},
+    "dps":     {"ko": "스킬·적 방어력·적 수에 따른 DPS를 비교.",
+                "en": "Compare skill DPS by enemy DEF, RES and count.",
+                "ja": "スキル・敵の防御・数ごとのDPSを比較。"},
     "story":   {"ko": "이벤트 스토리를 컷씬과 함께 10분 요약으로.",
                 "en": "Event stories summarized with cutscenes in 10 min.",
                 "ja": "イベントストーリーをカットシーンと共に10分要約。"},

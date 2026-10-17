@@ -229,7 +229,7 @@ function tabName(locale: SeoLocale, tab: Exclude<SeoTab, "portal">): string {
 
 // 계산기·시뮬레이터 성격의 탭 — 브라우저에서 바로 돌아가는 무료 웹 도구임을 밝힌다.
 // (평점·설치수 같은 건 없으므로 지어내지 않는다 — aggregateRating 없이 엔티티만 준다.)
-const OG_PENDING = new Set<SeoTab>(["gachaplan", "dps"]);   // 지금은 비어 있다 (가챠는 2026-10-12 build-og.py 로 채웠다)
+const OG_PENDING = new Set<SeoTab>([]);   // 가챠 플래너·DPS 계산기도 2026-10-17 build-og.py 로 채웠다   // 지금은 비어 있다 (가챠는 2026-10-12 build-og.py 로 채웠다)
 const TOOL_TABS: SeoTab[] = ["planner", "recruit", "upgrade", "gacha", "gachaplan", "dps", "farm", "sim"];
 const APP_CATEGORY: Record<SeoLocale, string> = {
   ko: "게임 유틸리티", en: "GameApplication", ja: "ゲームユーティリティ",
