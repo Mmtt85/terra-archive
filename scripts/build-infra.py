@@ -902,6 +902,10 @@ def parse_skill(entry, oname, oid=None):
         # 사실상 발동하지 않는다. 플래너가 미충족으로 보고 오라를 계상하지 않게 표시
         gp = re.search(r"(\d+)대 이상의 작업 플랫폼이 발전소에 배치된 경우", text)
         gate_platforms = int(gp.group(1)) if gp else None
+        # "다른 작업 플랫폼이 발전소에 배치되어 있을 경우" (GALLUS² 닭려 매커니즘) = 자기 말고 1대 — 같은 규칙으로 미충족.
+        # 종전엔 위 문장만 알아봐 이 스킬이 무조건 +5% 로 계산됐다 (제안 bc41dc56, 2026-10-16)
+        if gate_platforms is None and re.search(r"다른 작업 플랫폼이 발전소에 배치되어 있을 경우", text):
+            gate_platforms = 1
         # 공사용 로봇 세트 (미니멀리스트): 생성 스킬이 "시설 레벨당 +1대 (최대 64대)",
         # 소비 스킬이 "로봇 8대당 생산력 +5%" — 만렙 기지 상한(64대) 기준으로 결합
         robo_cap = re.search(r"공사용 로봇[^%]*?최대 (\d+)대", text)
