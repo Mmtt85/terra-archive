@@ -5187,6 +5187,10 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 .prio-label-layout .new-badge {
   margin-left: 6px;
 }
+/* 훈련실 '까지 고려' NEW — 기본 위치(-13px)면 줄 위 글자에 살짝 걸쳤다 (사용자 지적 2026-10-18) — 조금 더 위로 */
+label:has(> input[name="training-mode"]) .new-badge {
+  top: -18px;
+}
 
 /* ── 전력·시설 레벨 시스템 (2026-07-24) ─────────────────────────────────────
    요약 행 전력 수지 셀 + 방 카드 Lv 배지 + 방 모달 레벨 셀렉터 */

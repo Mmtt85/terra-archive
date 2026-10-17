@@ -1750,6 +1750,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               : t("훈련실은 특화 훈련용으로 비워 둡니다. 다른 오퍼의 조건이 훈련실 배치로만 채워질 때만 한 자리를 씁니다")}>
             <input type="radio" name="training-mode" checked={trainingUse === on} onChange={() => setTrainingChoice(on)} />
             {t(on ? "까지 고려" : "비워 둔다")}
+            {/* 새 옵션 표시 — '까지 고려'를 한 번 고르면 사라진다 (2026-10-18) */}
+            {on && <NewBadge id="training-room" show={isNewFeature("training-room")} />}
           </label>
         ))}
         {/* 재활용소 우선도 — 미래시를 켰을 때만 (사용자 규칙 2026-10-09). 설정만 저장, 편성은 자동편성 버튼으로 */}
