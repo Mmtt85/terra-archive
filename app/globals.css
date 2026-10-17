@@ -31001,6 +31001,32 @@ html.dark .fb-visitor-btn { color: #ffc56b; }
 .me-resume-idle { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; min-height: 76px; border: 1px dashed var(--line); }
 .me-resume-idle b { font-size: 11px; color: var(--muted); letter-spacing: .3px; }
 .me-resume-idle span { font-size: 13px; color: var(--muted); }
+button.me-resume-idle { background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+button.me-resume-idle:hover { border-color: var(--border-strong); }
+.me-resume-idle em { font: 600 11px var(--mono); font-style: normal; color: var(--ink2); }
+/* 보안파견 맵 훈장 셋 (완료·긴급·히든) — 얻은 것만 강조 */
+.me-tower-medals { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.me-tower-medals i { font-style: normal; font-size: 10px; line-height: 16px; padding: 0 4px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.me-tower-medals i.got { color: var(--lime-ink); border-color: var(--lime-line); }
+/* 이번 시즌에 열린 맵 — 테두리와 표시 (2026-10-17) */
+.me-tower-maps li.open { box-shadow: inset 0 0 0 1px var(--lime-line); }
+.me-tower-open { position: absolute; top: 6px; right: 6px; font-style: normal; font-size: 10px; line-height: 15px; padding: 0 5px; color: var(--lime-ink); border: 1px solid var(--lime-line); }
+/* 전술 장비 A/B */
+/* 맵 칸을 누르면 층 고르기 창 (2026-10-17) */
+.me-tower-maps li.pick { cursor: pointer; }
+.me-tower-maps li.pick:hover { box-shadow: inset 0 -2px 0 var(--lime-line); }
+.me-tower-maps li.pick.open:hover { box-shadow: inset 0 0 0 1px var(--lime-line), inset 0 -2px 0 var(--lime-line); }
+.me-tower-floors { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
+.me-tower-floors button { width: 100%; display: flex; align-items: baseline; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.me-tower-floors button:hover { border-color: var(--lime-line); }
+.me-tower-floors b { font: 700 12px var(--mono); color: var(--ink); white-space: nowrap; }
+.me-tower-floors span { font-size: 12px; color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 시즌 임무 보상 — 아이템 아이콘 + 개수, 누르면 아이템 도감 */
+.me-tower-missions li { grid-template-columns: 1fr auto 60px 34px; }
+.me-tower-reward { display: flex; gap: 6px; }
+.me-tower-reward button { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
+.me-tower-reward em { font: 600 10px var(--mono); font-style: normal; color: var(--ink2); }
+.me-tac-ab { display: inline-block; min-width: 16px; margin-right: 6px; font: 700 10px/15px var(--mono); text-align: center; border: 1px solid var(--line); color: var(--ink); }
 /* 보안파견 상세 — 그 맵의 게임 배경 */
 .me-resume-tower { display: block; width: 100%; max-height: 220px; object-fit: cover; margin: 0 0 12px; border-radius: var(--r-sm); }
 /* 내 정보 › 보안파견 (2026-10-17 "보안파견 정보 전부") — 맵 기록 격자·시즌 임무·저장한 편성 */
@@ -31008,7 +31034,7 @@ html.dark .fb-visitor-btn { color: #ffc56b; }
 .me-sub:first-of-type { margin-top: 2px; }
 .me-sub em { font: 600 11px var(--mono); font-style: normal; color: var(--muted); }
 .me-sub .me-sub-side { margin-left: auto; }
-.me-tower-maps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.me-tower-maps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 6px; }
 .me-tower-maps li { position: relative; overflow: hidden; isolation: isolate; display: flex; flex-direction: column; gap: 2px; min-height: 64px; padding: 8px 10px;
   background: var(--soft-fill, color-mix(in srgb, var(--ink) 5%, var(--paper))); }
 .me-tower-maps li.has-bg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--bg) center 40% / cover no-repeat; opacity: .32; }
@@ -31113,6 +31139,15 @@ html.dark .me-resume > button.has-bg::before { opacity: .26; }
 .me-rx-hero .loc b { font-size: 16px; margin-right: 6px; }
 .me-rx-hero .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
 .me-rx-hero .chips span { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; font-size: 12px; background: #ffffff1f; backdrop-filter: blur(4px); }
+.me-rx-hero .chips button.band { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; font: inherit; font-size: 12px; color: inherit; border: 0; cursor: pointer; background: #ffffff1f; backdrop-filter: blur(4px); }
+.me-rx-hero .chips button.band:hover { background: #ffffff33; }
+.me-rx-hero .chips button.band { align-items: center; }
+/* 이어하기 → 가이드로 가는 링크 (2026-10-17) */
+.me-rx-go { position: absolute; top: 12px; right: 14px; padding: 4px 10px; font-size: 12px; color: #fff; text-decoration: none; background: #ffffff26; backdrop-filter: blur(4px); }
+.me-rx-go:hover { background: #ffffff40; }
+.me-tower-go { display: inline-block; margin: 0 0 8px; font-size: 12px; color: var(--lime-ink); text-decoration: none; }
+.me-tower-go:hover { text-decoration: underline; }
+.me-rx-hero .chips button.band img { width: 22px; height: 22px; object-fit: contain; margin: -3px 0; }
 .me-rx-hero .chips b { font-size: 13px; }
 .me-rx-hero .chips .diff b { font: 800 16px var(--mono); color: #ffd36b; }
 .me-rx-hero .chips em { font-style: normal; opacity: .85; }
@@ -31741,3 +31776,92 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
   border: 0; border-radius: 0; box-shadow: none; background: transparent; height: auto;
 }
 .num-input input::-webkit-inner-spin-button, .num-input input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ── 보안파견 가이드 (/sss, 2026-10-17) — app/sss.tsx. 사이트 공용 토큰만 쓴다 ── */
+.sss { display: flex; flex-direction: column; gap: 28px; padding-bottom: 24px; }
+.sss-sec h2 { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; font-size: 18px; }
+.sss-sec h2 small { font-size: 12px; font-weight: 400; color: var(--muted); }
+.sss-sec h3 { margin: 16px 0 8px; font-size: 14px; }
+.sss-note { margin: 0 0 10px; font-size: 12px; color: var(--ink2); }
+.sss-season { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .sss-season { grid-template-columns: 1fr; } }
+.sss-season-cards h3 { margin-top: 0; }
+.sss-maps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.sss-maps li { position: relative; overflow: hidden; isolation: isolate; border: 1px solid var(--line); background: var(--white); }
+.sss-maps li.has-bg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--bg) center 40% / cover no-repeat; opacity: .35; }
+.sss-maps li.open { border-color: var(--lime-line); }
+.sss-maps li:hover { border-color: var(--border-strong); }
+.sss-maps button { width: 100%; min-height: 96px; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 10px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.sss-maps b { font-size: 14px; }
+.sss-maps small { font-size: 11px; color: var(--ink2); }
+.sss-maps span { font: 600 11px var(--mono); color: var(--ink2); }
+.sss-maps span.mine { color: var(--ink); }
+.sss-open { position: absolute; top: 8px; right: 8px; font-style: normal; font-size: 10px; line-height: 15px; padding: 0 5px; color: var(--lime-ink); border: 1px solid var(--lime-line); }
+.sss-map h3 .sss-open { position: static; margin-left: 8px; vertical-align: middle; }
+.sss-maps .sss-open { position: static; margin-bottom: 2px; }
+.sss-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.sss-chips i { font-style: normal; font-size: 10px; line-height: 16px; padding: 0 4px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.sss-chips i.got { color: var(--lime-ink); border-color: var(--lime-line); }
+.sss-card { padding: 10px 12px; border: 1px solid var(--line); background: var(--white); }
+.sss-card + .sss-card { margin-top: 8px; }
+.sss-card h4 { margin: 0 0 4px; font-size: 14px; }
+.sss-card p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--ink2); white-space: pre-line; }
+.sss-card ul { list-style: none; margin: 8px 0 0; padding: 8px 0 0; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 6px; }
+.sss-card li { display: grid; grid-template-columns: auto 1fr; gap: 8px; font-size: 12px; line-height: 1.55; }
+.sss-card li b { white-space: nowrap; }
+.sss-card li span { color: var(--ink2); }
+.sss-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; }
+.sss-cards .sss-card + .sss-card { margin-top: 0; }
+.sss-missions { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 6px 16px; }
+.sss-missions li { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink2); }
+.sss-missions li > span:first-child { flex: 1; }
+.sss-missions li em { font: 600 11px var(--mono); font-style: normal; color: var(--muted); }
+.sss-missions li.done > span:first-child { color: var(--muted); text-decoration: line-through; }
+.sss-reward { display: inline-flex; gap: 6px; vertical-align: middle; }
+.sss-reward button { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
+.sss-reward em { font: 600 10px var(--mono); font-style: normal; color: var(--ink2); }
+.sss-tac { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sss-tac th { width: 90px; padding: 8px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--line); }
+.sss-tac td { padding: 8px; line-height: 1.55; color: var(--ink2); border-bottom: 1px solid var(--line); vertical-align: top; }
+.sss-ab { display: inline-block; min-width: 16px; margin-right: 6px; font: 700 10px/15px var(--mono); text-align: center; border: 1px solid var(--line); color: var(--ink); }
+.sss-seasons { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sss-seasons th { padding: 6px 8px; text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); }
+.sss-seasons td { padding: 6px 8px; border-bottom: 1px solid var(--line); color: var(--ink2); }
+.sss-seasons tr.cur td { color: var(--ink); font-weight: 600; }
+.sss-seasons td button { margin-right: 8px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-decoration: underline; text-decoration-color: var(--line); }
+.sss-seasons td button:hover { color: var(--lime-ink); }
+.sss-rules { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8; color: var(--ink2); }
+/* 맵 창 */
+.sss-modal { width: min(760px, 100%); }
+.sss-map { padding: 4px 4px 8px; }
+.sss-map-bg { display: block; width: 100%; max-height: 240px; object-fit: cover; margin: 0 0 12px; }
+.sss-map h3 { margin: 0 0 8px; font-size: 18px; }
+.sss-map h3 small { font-size: 13px; font-weight: 400; color: var(--ink2); }
+.sss-map h4 { margin: 18px 0 8px; font-size: 13px; }
+.sss-desc { margin: 0 0 8px; font-size: 13px; line-height: 1.7; color: var(--ink2); }
+.sss-danger { margin: 0 0 8px; padding: 8px 10px; font-size: 12px; line-height: 1.6; white-space: pre-line; background: var(--tint-red); color: var(--ink); }
+.sss-boss { display: inline-flex; align-items: center; gap: 8px; margin: 4px 0 0; padding: 6px 10px 6px 6px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; cursor: pointer; }
+.sss-boss:hover { border-color: var(--border-strong); }
+.sss-boss span { display: flex; flex-direction: column; text-align: left; }
+.sss-boss small { font-size: 10px; color: var(--muted); }
+.sss-floors { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.sss-floors li { display: flex; align-items: center; gap: 12px; }
+.sss-floors button { flex: 1; display: flex; align-items: baseline; gap: 10px; padding: 7px 10px; border: 1px solid var(--line); background: var(--white); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.sss-floors button:hover:not(:disabled) { border-color: var(--lime-line); }
+.sss-floors b { font: 700 12px var(--mono); white-space: nowrap; }
+.sss-floors span { font-size: 12px; color: var(--ink2); }
+.sss-curses, .sss-medals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.sss-curses li { display: grid; grid-template-columns: auto 1fr; gap: 10px; font-size: 12px; }
+.sss-curses li span { color: var(--ink2); }
+.sss-medals li { display: grid; grid-template-columns: 84px auto 1fr auto; align-items: baseline; gap: 10px; padding: 6px 10px; font-size: 12px; border: 1px solid var(--line); }
+.sss-medals li i { font-style: normal; font-size: 11px; color: var(--muted); }
+.sss-medals li span { color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sss-medals li em { font-style: normal; font-size: 11px; }
+.sss-medals li.got { border-color: var(--lime-line); }
+.sss-medals li.got em { color: var(--lime-ink); }
+.sss-medals li.no em { color: var(--muted); }
+
+/* 이어하기 보안파견 — 저장한 편성에 없던, 판 중에 추가로 모집한 오퍼 (2026-10-17) */
+.me-op-extra { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); padding: 0 4px; font-style: normal; font-size: 9px; line-height: 13px; white-space: nowrap;
+  color: var(--lime-ink); background: var(--white); border: 1px solid var(--lime-line); }
+.sss-floors li { display: grid; grid-template-columns: minmax(0, 1fr) 150px; }

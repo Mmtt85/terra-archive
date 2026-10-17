@@ -28,7 +28,7 @@ const OUT = join(ROOT, "dist", "client");
 const R2_ONLY = new Set([
   "story", "lens", "tesseract", "avatars", "about", "og", "items", "scan", "profiles", "skins", "skin",
   "voice", "skills", "modules", "enemy", "stage", "sandbox", "ac", "records", "lore", "event", "tl",
-  "rogue",
+  "rogue", "tower",
 ]);
 const ALL = !!process.env.TA_LOCAL_ASSETS;
 

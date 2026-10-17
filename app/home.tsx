@@ -26,6 +26,8 @@ const UpgradeSim = lazy(() => import("./farm").then((m) => ({ default: m.Upgrade
 const GachaSim = lazy(() => import("./gacha").then((m) => ({ default: m.GachaSim })));
 const GachaPlanner = lazy(() => import("./gacha-planner").then((m) => ({ default: m.GachaPlanner })));
 const DpsCalc = lazy(() => import("./dps").then((m) => ({ default: m.DpsCalc })));
+// 보안파견 가이드 (/sss, 2026-10-17)
+const SssGuide = lazy(() => import("./sss").then((m) => ({ default: m.SssGuide })));
 // 적 도감 목록 — 로케일마다 자기 데이터(~1MB)만 든 청크를 받는다 (app/enemies-{ko,en,ja}.tsx).
 // 셋을 한 모듈에서 동적 선택하면 번들러가 세 JSON을 같은 청크에 묶어 3MB가 된다.
 const ENEMY_DEX = {
@@ -305,17 +307,17 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "gacha" | "gachaplan" | "dps" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "about";
+export type Tab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "gacha" | "gachaplan" | "dps" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "sss" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
 // ⚠ 적 도감의 URL 세그먼트는 "enemies"(복수)인데 초상 자산 폴더는 public/enemy/(단수)다.
 //    일부러 다르게 뒀다 — scripts/deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만
 //    떼어내는데(서빙은 R2), 이름이 같으면 라우트 HTML까지 통째로 지워진다.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", gachaplan: "gacha-planner", dps: "dps", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", gachaplan: "gacha-planner", dps: "dps", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", sss: "sss", about: "about" };
 // ⚠ TAB_SEG와 짝 — 세그먼트를 더하면 여기도 같이 (enemies·stages가 빠져 /stages가
 //   portal로 판정되던 기존 누락도 2026-08-10에 함께 채움)
-const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", items: "item", events: "event", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", "gacha-planner": "gachaplan", dps: "dps", stories: "story", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", items: "item", events: "event", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", "gacha-planner": "gachaplan", dps: "dps", stories: "story", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", sss: "sss", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 빌드(=배포) 시각 — vite define으로 박히는 ISO 문자열을 KST 분 단위로 찍는다.
@@ -1935,6 +1937,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 })()
                 : tab === "ra"
                 ? t("생존연산 가이드 - 명일방주 생존연산 공략 | 테라 아카이브")
+                : tab === "sss"
+                ? t("보안파견 가이드 - 명일방주 보안파견 공략 | 테라 아카이브")
                 : tab === "archive"
                 ? t("오퍼레이터 백과사전 - 명일방주 오퍼레이터 도감 | 테라 아카이브")
                 : t("테라 아카이브 | 명일방주 팬사이트 · 공개모집 계산기·기반시설 편성·통합전략 공략");
@@ -1999,6 +2003,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     rogue: t("통합전략 가이드"),
     ra: t("생존연산 가이드"),
     autochess: t("위수 협의 가이드"),
+    sss: t("보안파견 가이드"),
     about: t("테라 아카이브 소개"),
   };
   // 햄버거 메뉴 묶음 (사용자 확정 2026-08-09 '메뉴 마토메') — 도감(오퍼·적·작전)과
@@ -2008,7 +2013,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // ⚠ 이벤트는 **가이드 묶음**이다 (사용자 확정 2026-09-16: "이벤트를 메인메뉴로 빼기는 좀
     //   그런가? 가이드에 이벤트를 넣어야 할듯"). 통합전략·생존연산·위수 협의와 같은 결 —
     //   "이 콘텐츠를 보러 간다"는 메뉴지 자료를 뒤지는 도감 묶음이 아니다.
-  const GUIDE_TABS: Tab[] = ["rogue", "ra", "autochess", "event"];
+  const GUIDE_TABS: Tab[] = ["rogue", "ra", "autochess", "sss", "event"];
   const TAB_GROUPS: { id: "dex" | "sim" | "gacha"; name: string; icon: string; items: { tab: Tab; short: string }[] }[] = [
     { id: "dex", name: t("도감"), icon: "▤", items: [
       { tab: "archive", short: t("오퍼레이터") }, { tab: "enemy", short: t("적") }, { tab: "stage", short: t("작전") },
@@ -2644,6 +2649,16 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                     ))}
                   </div>
                 </div>
+                {/* 보안파견 가이드 (2026-10-17) — 부메뉴 없는 줄이라 이벤트와 같이 열림 경로를 'guide' 로 되돌린다 */}
+                <a href={`${localeBase}/sss`} className={`menu-item-bar tab-sub tab-sss${tab === "sss" ? " selected" : ""}`}
+                  onMouseEnter={hoverHold("guide")}
+                  onClick={(event) => {
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                    event.preventDefault(); switchTab("sss");
+                  }}>
+                  <span className="tab-sub-mark" aria-hidden>›</span>{t("보안파견")}
+                  <NewBadge id={`tab:sss@${tabNewSig("sss")}`} show={tabHasNewFeature("sss")} />
+                </a>
                 {/* 이벤트 도감 — 하위 플라이아웃을 달지 않는다. 이벤트가 150개라 메뉴에
                     풀면 화면을 덮는다(통전 테마 6개·생존연산 2시즌과는 규모가 다르다).
                     고르는 것은 화면 안 검색·필터가 맡는다. */}
@@ -2924,6 +2939,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         )}
         {tab === "ra" && <SandboxForLocale includeFuture={includeFuture} season={sandboxSlug === "anchor" ? "v3" : "v2"} />}
         {tab === "autochess" && <AutochessForLocale season={autochessSeason} onShowOperator={showOperatorById} />}
+        {tab === "sss" && <SssGuide />}
         {tab === "about" && <About onOpenTab={switchTab} />}
       </Suspense>
       {/* 작전 시뮬레이터 런처 — SEO 표적 페이지라 **정적 임포트로 프리렌더**한다
@@ -4314,7 +4330,7 @@ const subscribeNever = () => () => {};
 // 대화 액션 → 탭 라벨 (i18n 키 — 헤더 내비와 동일 사전)
 const CHAT_TAB_LABEL: Record<string, string> = {
   portal: "홈", planner: "인프라 자동편성기", archive: "오퍼 백과사전", enemy: "적 도감", stage: "작전 도감", sim: "작전 시뮬레이터", recruit: "공개채용 도우미",
-  farm: "재료파밍 도우미", upgrade: "육성 비용 계산기", story: "스토리", rogue: "통합전략 가이드", ra: "생존연산 가이드", about: "테라 아카이브 소개",
+  farm: "재료파밍 도우미", upgrade: "육성 비용 계산기", story: "스토리", rogue: "통합전략 가이드", ra: "생존연산 가이드", sss: "보안파견 가이드", about: "테라 아카이브 소개",
 };
 
 function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Operator[]; onNavigate: (tab: Tab) => void; onShowOperator: (op: Operator) => void }) {
@@ -5366,7 +5382,7 @@ function SkillRange({ grids, base, ownerName, note }: { grids: RangeGrid[]; base
 // 페이지 머리 — 자기 제목이 없던 도감·시뮬레이터 화면(맨 위가 '탐색 조건'으로 시작했다)에 공통으로 단다
 // (리디자인 2차, 2026-10-07). 이름·설명·아이콘은 홈 칸 정의(PORTAL_TILES)를 그대로 쓴다 — 번역도 거기 있다.
 // 묶음 이름(도감·시뮬레이터)은 뺐다 — 제목이 이미 말해 준다 (사용자 2026-10-07). 공채는 자기 제목 줄 대신 이걸 쓴다
-const PAGE_HEAD_TABS = new Set(["archive", "enemy", "stage", "item", "gallery", "farm", "upgrade", "gacha", "gachaplan", "dps", "sim", "event", "recruit", "story", "me", "planner"]);
+const PAGE_HEAD_TABS = new Set(["archive", "enemy", "stage", "item", "gallery", "farm", "upgrade", "gacha", "gachaplan", "dps", "sim", "event", "recruit", "story", "me", "planner", "sss"]);
 function PageHead({ tab }: { tab: string }) {
   const { t } = useI18n();
   const tile = PORTAL_TILES.find((x) => x.tab === tab);

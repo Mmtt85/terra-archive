@@ -5,9 +5,10 @@
   app/data/towers-detail{,.en,.ja}.json  보안파견 칸이 열 때 받는 이름표:
       towers   {id: [이름, 부제, 층 수, 하드 있음 0/1]}
       cards    {id: [이름, 설명]}   리더 카드(mainCards) + 보조 모듈(subCards)
-      tactical {id: [직군, 설명]}   직군별 전술 장비
-      seasons  {id: 이름}
-      missions {id: 설명}           시즌 임무
+      tactical {id: [직군, 설명, A|B]}   직군별 전술 장비
+      seasons  {id: [이름, 열린 맵 id들]}
+      missions {id: [설명, [[보상 아이템 id, 개수], …]]}  시즌 임무
+      medals   {맵: {clear|hard|hidden: [훈장 id, 이름, 얻는 법]}}  맵별 훈장 셋
   public/tower/<id>.webp            게임 보안파견 화면의 맵 배경(towerbkg, 1024×864 → 720) — 없는 것만 받는다
 
 이어하기·보안파견 칸은 계정 원본의 tower(current·outer·season)를 워커가 추린 것이다 (workers/account towerDigest).
@@ -40,7 +41,7 @@ def detail(t, fb):
     """한 언어치 이름표 — 그 언어 표에 없는 id 는 fb(한섭 표)에서"""
     def pick(key, i):
         return (t.get(key) or {}).get(i) or (fb.get(key) or {}).get(i) or {}
-    out = {"towers": {}, "cards": {}, "tactical": {}, "seasons": {}, "missions": {}}
+    out = {"towers": {}, "cards": {}, "tactical": {}, "seasons": {}, "missions": {}, "medals": {}}
     for i in fb.get("towers") or {}:
         r = pick("towers", i)
         out["towers"][i] = [r.get("name") or "", r.get("subName") or "", int(r.get("stageNum") or 0), 1 if r.get("hardLevels") else 0]
@@ -50,12 +51,45 @@ def detail(t, fb):
             out["cards"][i] = [r.get("name") or "", clean(r.get("desc"))]
     for i in fb.get("tacticalBuffs") or {}:
         r = pick("tacticalBuffs", i)
-        out["tactical"][i] = [r.get("profession") or "", clean(r.get("desc"))]
+        out["tactical"][i] = [r.get("profession") or "", clean(r.get("desc")), r.get("buffType") or ""]   # buffType A/B
     for i in fb.get("seasonInfos") or {}:
-        out["seasons"][i] = pick("seasonInfos", i).get("name") or ""
+        r = pick("seasonInfos", i)
+        out["seasons"][i] = [r.get("name") or "", r.get("towers") or []]   # [이름, 이번 시즌에 열린 맵]
+    # ── 보안파견 가이드(/sss, 2026-10-17)용 — 내 정보는 위 칸만 쓴다 ──
+    # info   {맵: {desc, danger, hardDesc, boss, card, curses[], tasks[[층, [[아이템, 개수]…]]…], levels[], training}}
+    # cardInfo {카드: [종류 TOWER|SEASON, 연결 맵, 보조 모듈 id들]}   curses {id: [이름, 설명]}
+    # seasonInfo {시즌: [시작, 끝, 시즌 카드들]}   const {숫자 규칙 몇 개}
+    out["info"], out["cardInfo"], out["curses"], out["seasonInfo"] = {}, {}, {}, {}
+    for i in fb.get("towers") or {}:
+        r, r0 = pick("towers", i), (fb.get("towers") or {}).get(i) or {}
+        out["info"][i] = {
+            "desc": clean(r.get("desc")), "danger": clean(r.get("dangerDesc")), "hardDesc": clean(r.get("hardModeDesc")),
+            "boss": r0.get("bossId"), "card": r0.get("cardId"), "curses": sorted(set(r0.get("curseCardIds") or [])),
+            "tasks": [[x.get("levelNum"), [[w.get("id"), int(w.get("count") or 0)] for w in x.get("rewards") or []]] for x in r0.get("taskInfo") or []],
+            "levels": r0.get("levels") or [], "training": 1 if r0.get("towerType") == "TRAINING" else 0,
+        }
+    for i, r0 in (fb.get("mainCards") or {}).items():
+        out["cardInfo"][i] = [r0.get("type") or "", r0.get("linkedTowerId"), r0.get("subCardIds") or []]
+    for i in fb.get("curseCards") or {}:
+        r = pick("curseCards", i)
+        out["curses"][i] = [r.get("name") or "", clean(r.get("desc"))]
+    for i, r0 in (fb.get("seasonInfos") or {}).items():
+        out["seasonInfo"][i] = [int(r0.get("startTs") or 0), int(r0.get("endTs") or 0), r0.get("seasonCards") or []]
+    dc = t.get("detailConst") or fb.get("detailConst") or {}
+    out["const"] = {k: dc.get(k) for k in ("initCharCount", "charRecruitTimes", "charRecruitChoiceCount", "assistCharLimit", "subCardObtainDesc", "lowerItemId", "lowerItemLimit", "higherItemId", "higherItemLimit")}
     for i, r0 in (fb.get("missionData") or {}).items():
         if r0.get("type") == "TOWERSEASON":
-            out["missions"][i] = clean(pick("missionData", i).get("description"))
+            # [설명, 보상 [[아이템 id, 개수], …]] — 보상도 보여 달라 (사용자 요청 2026-10-17)
+            out["missions"][i] = [clean(pick("missionData", i).get("description")),
+                                  [[x.get("id"), int(x.get("count") or 0)] for x in r0.get("rewards") or [] if x.get("id")]]
+    # 맵별 훈장 — [훈장 id, 이름, 얻는 법] 셋: 완료(medal_tower_complete_NN) · 긴급 보급 완료(medal_hardtower_complete_NN) ·
+    # 히든(medal_hidden_tower_NN — 재시도 없이 완벽하게, 사용자 요청 2026-10-17 "히든 훈장 획득 여부")
+    for i, r in (t.get("_medals") or fb.get("_medals") or {}).items():
+        m = re.fullmatch(r"medal_(tower_complete|hardtower_complete|hidden_tower)_(\d+)", i)
+        if not m:
+            continue
+        kind = {"tower_complete": "clear", "hardtower_complete": "hard", "hidden_tower": "hidden"}[m.group(1)]
+        out["medals"].setdefault(f"tower_n_{m.group(2)}", {})[kind] = [i, r.get("medalName") or "", clean(r.get("getMethod") or r.get("description"))]
     return out
 
 
@@ -83,6 +117,9 @@ def main():
         sys.exit("✗ kr_climb_tower_table 이 없다")
     # 표에서 빠진 초기 맵을 앞에 끼운다 (이미 있는 id 는 표가 이긴다)
     for t, server in ((kr, "kr"), (en, "en"), (jp, "jp")):
+        mp = os.path.join(G, f"{server}_medal_table.json")
+        if t and os.path.exists(mp):
+            t["_medals"] = {r["medalId"]: r for r in json.load(open(mp, encoding="utf-8")).get("medalList") or [] if "tower" in r.get("medalId", "")}
         if t:
             t["towers"] = {**{k: v for k, v in retired(server).items() if k not in (t.get("towers") or {})}, **(t.get("towers") or {})}
     names = {}

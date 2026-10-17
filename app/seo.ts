@@ -11,14 +11,14 @@ import { CONTACT_EMAIL } from "./contact";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "gacha" | "gachaplan" | "dps" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "about";
+export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "gacha" | "gachaplan" | "dps" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "sss" | "about";
 
 // 탭 → URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators로 분리 — 사용자 확정
 // 2026-07-17: 루트 진입 시 오퍼 이미지 강제 로딩을 없애기 위해 포탈 첫화면 도입). 라우트 폴더명과 반드시 일치.
 // ⚠ 적 도감 세그먼트는 "enemies"(복수) — 초상 자산 폴더 public/enemy/(단수)와 일부러 다르다.
 //    deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만 떼어내기 때문(서빙은 R2).
 export const TAB_SEG: Record<SeoTab, string> = {
-  portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", gachaplan: "gacha-planner", dps: "dps", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about",
+  portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", gachaplan: "gacha-planner", dps: "dps", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", sss: "sss", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -140,6 +140,12 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     en: { title: "Stronghold Protocol Guide - Arknights Auto Chess | Terra Archive", description: "Arknights Stronghold Protocol (auto chess) Season 2 guide — 23 alliances (8 nation, 15 trait) with their operators, garrison abilities plus skills and modules for all 121 units, 10 leader enemies and 119 Tactical Training enemies across 7 types, Supply Center tier prices and levels, free-pick slots and stand-in units, 59 items and 40 strategies, straight from game data." },
     ja: { title: "堅守協定ガイド - アークナイツ オートチェス攻略 | テラアーカイブ", description: "アークナイツ堅守協定（オートチェス）シーズン2「盟約」ガイド — 盟約23種（国家8・特性15）ごとのオペレーター、121体それぞれの専用能力とスキル・モジュール、リーダー級10種と訓練用仮想敵7系統119種、補給センターの等級別価格とレベル、自由選択枠と代替ユニット、アイテム59種・戦略40種までゲームデータから整理しました。" },
   },
+  // 보안파견 가이드 (2026-10-17) — 제목엔 줄임말 금지(보파 X)
+  sss: {
+    ko: { title: "보안파견 가이드 - 명일방주 보안파견 공략 | 테라 아카이브", description: "명일방주(명방·Arknights) 보안파견 가이드 — 맵 23곳의 층별 작전과 첫 클리어 보상, 보스, 맵 리더 카드와 보조 모듈, 직군별 전술 장비 A·B, 저주 카드, 맵마다 완료·긴급 보급·일반 퍼펙트(히든) 훈장, 이번 시즌 열린 맵과 시즌 임무, 지난 시즌 기록을 게임 데이터에서 정리했습니다. 내 정보로 로그인하면 내 최고 층과 훈장 획득이 함께 보입니다." },
+    en: { title: "Stationary Security Service Guide - Arknights SSS Guide | Terra Archive", description: "Arknights Stationary Security Service guide — floor-by-floor operations and first-clear rewards for all 23 maps, bosses, map leader cards and modules, tactical equipment A/B for every class, curse cards, each map's clear, emergency and hidden perfect medals, this season's open maps and missions, and past seasons. Log in with My Account to see your best floors and medals." },
+    ja: { title: "保全派遣ガイド - アークナイツ保全派遣攻略 | テラアーカイブ", description: "アークナイツ保全派遣ガイド — 全23マップの階層ごとの作戦と初回クリア報酬、ボス、マップ専用リーダーカードと強化パーツ、職分ごとの戦術装備A・B、呪いカード、各マップのクリア・応急・隠し勲章、今シーズンの開放マップとシーズン任務、過去シーズンの記録をゲームデータから整理しました。マイページでログインすると自分の最高到達階層と勲章も表示されます。" },
+  },
   about: {
     ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 자동편성기, 공개채용 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },
     en: { title: "About - Feature Guide | Terra Archive", description: "About Terra Archive — what the operator encyclopedia, base auto-planner, public recruitment helper, material farming/upgrade simulator, and AI story digest do, and when to use each." },
@@ -229,7 +235,7 @@ function tabName(locale: SeoLocale, tab: Exclude<SeoTab, "portal">): string {
 
 // 계산기·시뮬레이터 성격의 탭 — 브라우저에서 바로 돌아가는 무료 웹 도구임을 밝힌다.
 // (평점·설치수 같은 건 없으므로 지어내지 않는다 — aggregateRating 없이 엔티티만 준다.)
-const OG_PENDING = new Set<SeoTab>([]);   // 가챠 플래너·DPS 계산기도 2026-10-17 build-og.py 로 채웠다   // 지금은 비어 있다 (가챠는 2026-10-12 build-og.py 로 채웠다)
+const OG_PENDING = new Set<SeoTab>(["sss"]);   // 가챠 플래너·DPS 계산기도 2026-10-17 build-og.py 로 채웠다   // 지금은 비어 있다 (가챠는 2026-10-12 build-og.py 로 채웠다)
 const TOOL_TABS: SeoTab[] = ["planner", "recruit", "upgrade", "gacha", "gachaplan", "dps", "farm", "sim"];
 const APP_CATEGORY: Record<SeoLocale, string> = {
   ko: "게임 유틸리티", en: "GameApplication", ja: "ゲームユーティリティ",

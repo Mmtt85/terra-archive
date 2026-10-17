@@ -8,7 +8,7 @@ import React, { createContext, useContext, useLayoutEffect, useRef, useState, us
 import { useI18n } from "./i18n";
 
 const KEY = "ta:me-order";
-export const ME_ORDER_DEFAULT = ["summary", "resume", "recruit", "paradox", "tower", "drawers", "rarity"] as const;
+export const ME_ORDER_DEFAULT = ["summary", "resume", "recruit", "paradox", "drawers", "rarity"] as const;
 export type MeBlock = (typeof ME_ORDER_DEFAULT)[number];
 
 export const DRAWER_DEFAULT = ["progress", "friends", "recent", "depot"] as const;

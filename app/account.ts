@@ -129,6 +129,8 @@ export type AccountProfile = {
   /** 보안파견 기록 (2026-10-17~ 워커 towerDigest) — maps: [일반 최고 층, 하드 최고 층, 하드 열림, 소탕], 시즌 임무: [값, 목표, 받음] */
   tower?: {
     maps: Record<string, [number, number, number, number]>;
+    /** 얻은 보안파견 훈장 id — 완료·긴급 보급·히든 (2026-10-17~) */
+    medals?: string[];
     season: { id: string; finish: number; missions: Record<string, [number, number, number]>;
       period: { term: number; cur: number; len: number } | null;
       slots: Record<string, { god: string | null; squad: { id: string; skill: number; equip: string | null }[] }[]> } | null;

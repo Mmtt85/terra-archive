@@ -459,10 +459,9 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
         {/* 오른쪽 열 — 카드 머리의 손잡이(⠿)로 끌어 순서를 바꾼다, 순서는 설정 동기화로 이어진다 (사용자 지시 2026-10-15, app/me-order.tsx) */}
         <SortColumn className="me-col me-col-main" blocks={{
           summary: <Kpis owned={owned} released={released} opById={opById} me={me} onList={openList} demo={demo} />,
-          resume: <Paused me={me} opById={opById} onShowOperator={onShowOperator} />,
+          resume: <Paused me={me} opById={opById} onShowOperator={onShowOperator} onOpenStage={openStage} items={items} onOpenItem={(i) => setOpenItem(i)} stages={stages} />,
           recruit: <RecruitPool mine={mine} opById={opById} onShowOperator={onShowOperator} />,
           paradox: <Paradox me={me} mine={mine} released={released} onShowOperator={onShowOperator} />,
-          tower: <TowerCard me={me} opById={opById} onShowOperator={onShowOperator} />,
           // 진행 상황·친구·최근 얻은 오퍼·창고는 바로 볼 일이 적어 버튼으로 접고 누르면 창으로 (사용자 지시 2026-10-11) — 묶음 안에서 좌우로도 옮긴다
           drawers: <Drawers me={me} now={now} owned={owned} opById={opById} stages={stages} items={items}
             onOpenStage={openStage} onOpenItem={(i) => setOpenItem(i)} onShowOperator={onShowOperator} />,
@@ -521,9 +520,12 @@ const ROGUE_DOCS: Record<string, Record<string, () => Promise<{ default: unknown
 // 보안파견 맵 이름(세 언어)·배경 — scripts/build-tower.py (2026-10-17 사용자 "어느 맵인지도 안 나오고 배경도 없다").
 // 배경은 게임 보안파견 화면의 맵 그림. 훈련장(tower_tr_*)은 그림이 없다
 const TOWERS = towerNames as Record<string, { ko: string; en: string; ja: string }>;
-const towerBg = (id: string | null) => (id && /^tower_n_/.test(id) ? asset(`/tower/${id}.webp`) : null);
+// ?v= — R2 에 올리기 전에 열어 본 주소의 404 가 엣지에 남았다 (2026-10-17). 그림을 바꾸면 올린다
+const TOWER_ART_VER = "2026101701";
+const towerBg = (id: string | null) => (id && /^tower_n_/.test(id) ? asset(`/tower/${id}.webp?v=${TOWER_ART_VER}`) : null);
 
-function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void }) {
+function Paused({ me, opById, onShowOperator, onOpenStage, items, onOpenItem, stages }: { me: MeData; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void;
+  onOpenStage?: (id: string) => void; items?: ItemDoc | null; onOpenItem?: (i: DexItem) => void; stages?: StageDoc | null }) {
   const { locale, t } = useI18n();
   const [open, setOpen] = useState<"rogue" | "tower" | "sandbox" | null>(null);
   // 세 칸은 늘 자리에 둔다 — 진행 중이 아니면 '진행 아님' (사용자 지시 2026-10-17). 종전엔 진행 중인 것만 나와 칸 수·자리가 바뀌었다
@@ -535,6 +537,15 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
   const topic = r ? t(TOPICS.find((x) => x.id === r.theme)?.name ?? r.theme ?? "?") : "";
   const towerName = tw?.tower ? TOWERS[tw.tower]?.[locale === "en" ? "en" : locale === "ja" ? "ja" : "ko"] ?? null : null;
   const tDoc = useTowerDoc();
+  const tp = me.profile?.tower;
+  // 이 맵에 저장해 둔 편성 — 모은 오퍼 중 여기 없는 오퍼가 판 중에 '추가 모집'한 오퍼다
+  const squadIds = new Set((tw?.tower ? tp?.season?.slots[tw.tower] ?? [] : []).flatMap((sl) => sl.squad.map((m) => m.id)));
+  // 히든 훈장(재시도 없이 6층까지) 얻은 수 — 칸에 한 줄로
+  const hiddenIds = tDoc ? Object.values(tDoc.medals).map((m) => m.hidden?.[0]).filter(Boolean) as string[] : [];
+  const hiddenTotal = hiddenIds.length;
+  const hiddenGot = hiddenIds.filter((id) => tp?.medals?.includes(id)).length;
+  // 진행 중이 아닐 때 칸 바탕 — 이번 시즌에 열린 첫 맵의 그림 (사용자 지적 2026-10-17 "배경 이미지가 안 나와")
+  const seasonBg = towerBg((tp?.season ? tDoc?.seasons[tp.season.id]?.[1]?.[0] : null) ?? null);
   const twBg = towerBg(tw?.tower ?? null);
   return (
     <Card no="RESUME" title={t("이어하기")} aside={<small>{t("마지막 동기화 때 진행 중이던 콘텐츠")}</small>}>
@@ -555,7 +566,13 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
             <em>{towerName ? `${tw.hard ? t("하드") : t("일반")} · ` : ""}{t("{n}층", { n: tw.coord + 1 })}</em>
           </button>
         )}
-        {!tw && idle("보안파견")}
+        {!tw && (tp ? (
+          <button type="button" className={`me-resume-idle${seasonBg ? " has-bg" : ""}`} onClick={() => setOpen("tower")}
+            style={seasonBg ? { ["--bg" as string]: `url(${seasonBg})` } : undefined}>
+            <b>{t("보안파견")}</b><span>{t("진행 아님")}</span>
+            {hiddenTotal > 0 && <em>{t("히든 훈장 {n}/{total}", { n: hiddenGot, total: hiddenTotal })}</em>}
+          </button>
+        ) : idle("보안파견"))}
         {sb ? (
           <button type="button" className="has-bg" onClick={() => setOpen("sandbox")}
             style={{ ["--bg" as string]: `url(${asset("/sandbox/world/sandbox_1.webp")})` }}>
@@ -565,9 +582,10 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
         ) : idle("생존연산")}
       </div>
       {open === "rogue" && r && <ResumeRogue r={r} topic={topic} opById={opById} onShowOperator={onShowOperator} onClose={() => setOpen(null)} />}
-      {open === "tower" && tw && (
+      {open === "tower" && (tw || tp) && (
         <ModalWindow label={t("보안파견")} className="operator-modal me-resume-modal" onClose={() => setOpen(null)}>
           <div className="me-resume-body">
+            {tw ? (<>
             <h3>{t("보안파견")}{towerName ? ` · ${towerName}` : ""}{tw.hard ? ` · ${t("하드")}` : ""}</h3>
             {twBg && <img className="me-resume-tower" src={twBg} alt="" loading="lazy" />}
             <dl className="me-resume-facts">
@@ -583,7 +601,7 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
                 <h4>{t("전술 장비")}</h4>
                 <dl className="me-resume-facts">
                   {JOB_ORDER.filter((j) => tw.tactical![j]).map((j) => (
-                    <React.Fragment key={j}><dt>{t(JOB_KO[j] ?? j)}</dt><dd>{tDoc?.tactical[tw.tactical![j]]?.[1] ?? tw.tactical![j]}</dd></React.Fragment>
+                    <React.Fragment key={j}><dt>{t(JOB_KO[j] ?? j)}</dt><dd>{tDoc?.tactical[tw.tactical![j]]?.[2] && <b className="me-tac-ab">{tDoc.tactical[tw.tactical![j]][2]}</b>}{tDoc?.tactical[tw.tactical![j]]?.[1] ?? tw.tactical![j]}</dd></React.Fragment>
                   ))}
                 </dl>
               </>
@@ -596,10 +614,12 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
                   {tw.cards.map((c, i) => {
                     const op = opById.get(c.id);
                     if (!op) return null;
+                    const extra = squadIds.size > 0 && !squadIds.has(c.id);
                     return (
                       <li key={`${c.id}-${i}`}>
                         <button type="button" onClick={() => onShowOperator?.(c.id)} title={op.name}>
-                          <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(c.id)} alt="" width={46} height={46} loading="lazy" /></span>
+                          <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(c.id)} alt="" width={46} height={46} loading="lazy" />
+                            {extra && <i className="me-op-extra">{t("추가 모집")}</i>}</span>
                           <span className="me-op-name">{op.name}</span>
                           {c.level > 0 && <em>{eliteText(locale, c.elite, c.level)}</em>}
                         </button>
@@ -609,6 +629,10 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
                 </ul>
               </>
             )}
+            </>) : <h3>{t("보안파견")} <small className="me-note">{t("진행 아님")}</small></h3>}
+            <a className="me-tower-go" href={`${locale === "ko" ? "" : `/${locale}`}/sss`}>{t("보안파견 가이드로")} ›</a>
+            {/* 맵 기록·훈장·시즌 임무·저장한 편성 — 진행 여부와 상관없이 (2026-10-17) */}
+            <TowerInfo me={me} opById={opById} onShowOperator={onShowOperator} onOpenStage={onOpenStage} items={items} onOpenItem={onOpenItem} stages={stages} />
           </div>
         </ModalWindow>
       )}
@@ -756,6 +780,10 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
   const diff = doc?.difficulties.find((d) => d.grade === r.grade && (!r.mode || d.mode === r.mode)) ?? doc?.difficulties.find((d) => d.grade === r.grade);
   const [pickRelic, setPickRelic] = useState<number | null>(null);
   const relicById = new Map<string, RogueItem>();
+  // 분대는 소장품이 아니다 (사용자 지적 2026-10-17) — 계정의 소장품 칸에 같이 들어 있어 따로 떼어 머리 줄에 둔다
+  const bandIds = new Set((doc?.bands ?? []).map((b) => b.id));
+  const relicIdx = r.relics.map((id, i) => [id, i] as const).filter(([id]) => !bandIds.has(id));
+  const bandIdx = r.relics.map((id, i) => [id, i] as const).filter(([id]) => bandIds.has(id));
   if (doc) {
     for (const list of [doc.relics, doc.bands, doc.tools, doc.capsules, doc.exploreTools, doc.legacies, doc.buoys, doc.scraps, ...(doc.mechanics ?? []).map((m) => m.items)]) {
       for (const x of list ?? []) if (x?.id && !relicById.has(x.id)) relicById.set(x.id, x);
@@ -768,10 +796,19 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
         <header className="me-rx-hero" style={r.theme ? { ["--bg" as string]: `url(${asset(`/rogue/kv${r.theme.split("_")[1]}.webp`)})` } : undefined}>
           <small>{t("통합전략")} · {t("시작")} {fmtWhen(r.start)}</small>
           <h3>{topic}</h3>
+          {/* 그 테마 가이드로 (사용자 요청 2026-10-17) */}
+          {r.theme && <a className="me-rx-go" href={`${locale === "ko" ? "" : `/${locale}`}/rogue/is${r.theme.split("_")[1]}`}>{t("이 테마 가이드로")} ›</a>}
           <p className="loc">{zone ? <><b>{t("{n}층", { n: zone.num })}</b> {zone.name}</> : rogueFloor(r) != null ? <b>{t("{n}층", { n: rogueFloor(r)! })}</b> : t("다시 동기화하면 보입니다")}</p>
           <p className="chips">
             <span className="diff">{t("난이도")} <b>{r.grade}</b>{diff ? <em>{diff.name}</em> : null}</span>
             <span>{t("목표 엔딩")} <b>{ending ? ending.name : r.toEnding ? "—" : t("정하지 않음")}</b></span>
+            {bandIdx.map(([id, i]) => (
+              <button key={id} type="button" className="band" onClick={() => setPickRelic(i)}>
+                <img src={asset(`/rogue/relic/${relicById.get(id)?.iconId ?? id}.webp`)} alt="" loading="lazy" decoding="async"
+                  onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                {t("분대")} <b>{relicById.get(id)?.name ?? id}</b>
+              </button>
+            ))}
           </p>
         </header>
         <div className="me-rx-stats">
@@ -795,9 +832,9 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
         </details>
         {/* 소장품 — 아이콘 + 이름 격자(그림만으론 모른다), 누르면 상세 모달 (사용자 지시 2026-10-11) */}
         <details className="me-resume-fold" open>
-        <summary>{t("소장품")} <em>{r.relics.length}</em></summary>
+        <summary>{t("소장품")} <em>{relicIdx.length}</em></summary>
         <ul className="me-resume-relic-grid">
-          {r.relics.map((id, i) => {
+          {relicIdx.map(([id, i]) => {
             const rel = relicById.get(id);
             return (
               <li key={i}>
@@ -1628,9 +1665,10 @@ function Paradox({ me, mine, released, onShowOperator }: { me: MeData; mine: Map
 type TowerDoc = {
   towers: Record<string, [string, string, number, number]>;
   cards: Record<string, [string, string]>;
-  tactical: Record<string, [string, string]>;
-  seasons: Record<string, string>;
-  missions: Record<string, string>;
+  tactical: Record<string, [string, string, string]>;
+  seasons: Record<string, [string, string[]]>;
+  missions: Record<string, [string, [string, number][]]>;
+  medals: Record<string, Partial<Record<"clear" | "hard" | "hidden", [string, string, string]>>>;
 };
 const TOWER_DOCS: Record<string, () => Promise<{ default: unknown }>> = {
   ko: () => import("./data/towers-detail.json"),
@@ -1647,33 +1685,57 @@ function useTowerDoc(): TowerDoc | null {
   }, [locale]);
   return doc;
 }
+// 칩 이름 — "보안·긴급·히든"만으론 뭔지 몰랐다 (사용자 지적 2026-10-17). 히든은 일반 모드를 재시도 없이 깨는 것(unlockParam [맵, 1, 0])
+const MEDAL_LABEL = { clear: "일반 완료", hard: "긴급 완료", hidden: "일반 퍼펙트" } as const;
 const JOB_KO: Record<string, string> = { PIONEER: "뱅가드", WARRIOR: "가드", TANK: "디펜더", SNIPER: "스나이퍼", CASTER: "캐스터", MEDIC: "메딕", SUPPORT: "서포터", SPECIAL: "스페셜리스트" };
 const fmtDay = (locale: string, sec: number) => (sec ? new Date(sec * 1000).toLocaleDateString(DT_LOCALE[locale as Locale] ?? "ko-KR", { year: "numeric", month: "long", day: "numeric" }) : "—");
 
-function TowerCard({ me, opById, onShowOperator }: { me: MeData; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void }) {
+// 이어하기 › 보안파견 창 안에 그린다 (사용자 지시 2026-10-17 "섹션을 따로 만들지 말고 이어하기 보안파견에") — 진행 중이 아니어도 칸을 눌러 연다
+function TowerInfo({ me, opById, onShowOperator, onOpenStage, items, onOpenItem, stages }: { me: MeData; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void;
+  onOpenStage?: (id: string) => void; items?: ItemDoc | null; onOpenItem?: (i: DexItem) => void; stages?: StageDoc | null }) {
   const { locale, t } = useI18n();
   const doc = useTowerDoc();
+  const [pickMap, setPickMap] = useState<string | null>(null);
   const tp = me.profile?.tower;
-  if (!tp) {
-    return (
-      <Card no="SECURITY" title={t("보안파견")}>
-        <p className="me-note">{t("보안파견 기록은 다시 동기화하면 보입니다.")}</p>
-      </Card>
-    );
-  }
+  if (!tp) return <p className="me-note">{t("보안파견 기록은 다시 동기화하면 보입니다.")}</p>;
+  const got = new Set(tp.medals ?? []);
   const ss = tp.season;
   // 맵 순서 — 이름표(게임 표 순서, 초기 맵 1~4 먼저) · 훈련장은 맨 뒤
+  // 이번 시즌에 열린 맵(사용자 요청 2026-10-17 "지금 열려 있는 보안파견 표시") — 자리는 그대로, 표시만 단다("맨 앞에 둘 필요는 없다")
+  const open = new Set(ss ? doc?.seasons[ss.id]?.[1] ?? [] : []);
   const ids = Object.keys(tp.maps).sort((a, b) => {
     const tr = Number(a.startsWith("tower_tr_")) - Number(b.startsWith("tower_tr_"));
     return tr || a.localeCompare(b, "en", { numeric: true });
   });
   const name = (id: string) => doc?.towers[id]?.[0] || TOWERS[id]?.[locale === "en" ? "en" : locale === "ja" ? "ja" : "ko"] || id;
   const missions = ss ? Object.entries(ss.missions) : [];
+  // 층 목록 — 맵 칸을 누르면 뜨는 창에서 층을 고르면 그 작전(지형·적)이 작전 도감 창으로 (사용자 요청 2026-10-17 "맵 정보는 없나" →
+  // "카드에 층 수를 다 넣지 말고 카드를 누르면 창에서"). 작전 id 는 lt_<맵 번호>_<층>, 긴급은 _ex
+  const floors = (id: string, total: number, hard: boolean) => {
+    const num = /^tower_n_(\d+)$/.exec(id)?.[1];
+    if (!num || !total || !onOpenStage) return null;
+    return (
+      <ul className="me-tower-floors">
+        {Array.from({ length: total }, (_, f) => {
+          const sid = `lt_${num}_${String(f + 1).padStart(2, "0")}${hard ? "_ex" : ""}`;
+          const st = stages?.stages.find((x) => x.id === sid);
+          return (
+            <li key={sid}>
+              <button type="button" onClick={() => onOpenStage(sid)}>
+                <b>{t("{n}층", { n: f + 1 })}</b><span>{st?.name ?? sid}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
+  const itemOf = (iid: string) => items?.items.find((x) => x.id === iid || x.alt?.includes(iid));
   const missionDone = missions.filter(([, m]) => m[2] || m[0] >= m[1]).length;
   return (
-    <Card no="SECURITY" title={t("보안파견")}
-      aside={ss ? <small>{doc?.seasons[ss.id] ?? ss.id} · {t("{d}까지", { d: fmtDay(locale, ss.finish) })}</small> : undefined}>
-      <h4 className="me-sub">{t("맵 기록")}</h4>
+    <>
+      {ss && <p className="me-note">{doc?.seasons[ss.id]?.[0] ?? ss.id} · {t("{d}까지", { d: fmtDay(locale, ss.finish) })}</p>}
+      <h4 className="me-sub">{t("맵 기록")} <em className="me-sub-side">{t("훈장 칩은 밝으면 획득 — 일반 퍼펙트는 일반 모드를 재시도 없이 끝낸 히든 훈장")}</em></h4>
       <ul className="me-tower-maps">
         {ids.map((id) => {
           const [best, hardBest, hardOpen] = tp.maps[id];
@@ -1682,13 +1744,26 @@ function TowerCard({ me, opById, onShowOperator }: { me: MeData; opById: Map<str
           const bg = towerBg(id);
           const full = (n: number) => total > 0 && n >= total;
           return (
-            <li key={id} className={bg ? "has-bg" : undefined} style={bg ? { ["--bg" as string]: `url(${bg})` } : undefined}>
+            <li key={id} className={`${bg ? "has-bg" : ""}${open.has(id) ? " open" : ""}${onOpenStage && /^tower_n_/.test(id) ? " pick" : ""}`}
+              style={bg ? { ["--bg" as string]: `url(${bg})` } : undefined}
+              onClick={onOpenStage && /^tower_n_/.test(id) ? () => setPickMap(id) : undefined}>
               <b>{name(id)}</b>
+              {open.has(id) && <i className="me-tower-open">{t("이번 시즌")}</i>}
               <span className={full(best) ? "done" : undefined}>{t("일반")} {best}{total ? `/${total}` : ""}</span>
               {hasHard && (
                 <span className={full(hardBest) ? "done" : hardOpen ? undefined : "off"}>
                   {t("하드")} {hardOpen ? `${hardBest}${total ? `/${total}` : ""}` : t("잠김")}
                 </span>
+              )}
+              {/* 맵 훈장 셋 — 완료·긴급 보급·히든(재시도 없이 완벽하게). 얻었으면 강조, 못 얻었으면 흐리게 (사용자 요청 2026-10-17) */}
+              {doc?.medals[id] && (
+                <div className="me-tower-medals">
+                  {(["clear", "hard", "hidden"] as const).map((k) => {
+                    const md = doc.medals[id][k];
+                    if (!md) return null;
+                    return <i key={k} className={got.has(md[0]) ? "got" : undefined} title={`${md[1]} — ${md[2]}`}>{t(MEDAL_LABEL[k])}</i>;
+                  })}
+                </div>
               )}
             </li>
           );
@@ -1703,9 +1778,21 @@ function TowerCard({ me, opById, onShowOperator }: { me: MeData; opById: Map<str
           <ul className="me-tower-missions">
             {missions.map(([id, [value, target, recv]]) => {
               const done = recv === 1 || value >= target;
+              const rewards = doc?.missions[id]?.[1] ?? [];
               return (
                 <li key={id} className={done ? "done" : undefined}>
-                  <span>{doc?.missions[id] ?? id}</span>
+                  <span title={doc?.missions[id]?.[0]}>{doc?.missions[id]?.[0] ?? id}</span>
+                  <span className="me-tower-reward">
+                    {rewards.map(([iid, n]) => {
+                      const it = itemOf(iid);
+                      return (
+                        <button key={iid} type="button" title={it?.n ?? iid} onClick={() => it && onOpenItem?.(it)}>
+                          {it?.i ? <img src={itemIcon(it.i)} alt="" width={18} height={18} loading="lazy" /> : null}
+                          <em>×{fmtOf(locale)(n)}</em>
+                        </button>
+                      );
+                    })}
+                  </span>
                   <i style={{ ["--p" as string]: `${Math.min(1, target ? value / target : 0) * 100}%` }} />
                   <em>{Math.min(value, target)}/{target}</em>
                 </li>
@@ -1713,38 +1800,25 @@ function TowerCard({ me, opById, onShowOperator }: { me: MeData; opById: Map<str
             })}
           </ul>
 
-          {Object.keys(ss.slots).length > 0 && (
-            <>
-              <h4 className="me-sub">{t("저장한 편성")}</h4>
-              {Object.entries(ss.slots).map(([tower, list]) => list.map((sl, i) => (
-                <div key={`${tower}-${i}`} className="me-tower-squad">
-                  <div className="me-tower-squad-head">
-                    <b>{name(tower)}</b>
-                    {sl.god && <span title={doc?.cards[sl.god]?.[1]}>{t("리더 카드")} · {doc?.cards[sl.god]?.[0] ?? sl.god}</span>}
-                  </div>
-                  <ul className="me-ops dense">
-                    {sl.squad.map((m, j) => {
-                      const op = opById.get(m.id);
-                      if (!op) return null;
-                      const c = me.chars.find((x) => x.id === m.id);
-                      return (
-                        <li key={`${m.id}-${j}`}>
-                          <button type="button" onClick={() => onShowOperator?.(m.id)} title={op.name}>
-                            <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(m.id)} alt="" width={46} height={46} loading="lazy" /></span>
-                            <span className="me-op-name">{op.name}</span>
-                            <em>{c ? eliteText(locale, c.elite, c.level) : `${op.rarity}★`}</em>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )))}
-            </>
-          )}
+          {/* 저장한 편성은 이어하기에서 뺀다 — 진행 중 판의 '모은 오퍼'가 그 편성을 늘 품고 있다 (사용자 지시 2026-10-17).
+              모은 오퍼 쪽에서 편성 밖 오퍼에 '추가 모집'을 단다 */}
         </>
       )}
-    </Card>
+      {pickMap && (() => {
+        const total = doc?.towers[pickMap]?.[2] ?? 0;
+        const bg = towerBg(pickMap);
+        return (
+          <ModalWindow label={name(pickMap)} className="operator-modal me-resume-modal" onClose={() => setPickMap(null)}>
+            <div className="me-resume-body">
+              <h3>{name(pickMap)}{doc?.towers[pickMap]?.[1] ? <small className="me-note"> · {doc.towers[pickMap][1]}</small> : null}</h3>
+              {bg && <img className="me-resume-tower" src={bg} alt="" loading="lazy" />}
+              {/* 긴급판은 작전 창 오른쪽 위 '일반 환경 · 긴급 환경' 전환으로 본다 — 목록을 두 번 늘어놓지 않는다 */}
+              {floors(pickMap, total, false)}
+            </div>
+          </ModalWindow>
+        );
+      })()}
+    </>
   );
 }
 
