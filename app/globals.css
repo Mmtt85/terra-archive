@@ -14654,10 +14654,11 @@ html.rg-theme {
   -webkit-mask-image: linear-gradient(180deg, #000 0, #000 32%, transparent 82%);
   mask-image: linear-gradient(180deg, #000 0, #000 32%, transparent 82%);
 }
-/* 미즈키·흑류수해는 키비주얼을 10% 아래로 (사용자 지시 2026-09-25 — 5%, 이어서 "5%씩만 더"). 그림(1.62:1)이
+/* 미즈키·흑류수해·팬텀(2026-10-17 "인물이 위로 치우쳤다")은 키비주얼을 10% 아래로 (사용자 지시 2026-09-25 — 5%, 이어서 "5%씩만 더"). 그림(1.62:1)이
    대개 화면보다 가로로 넓어 cover 가 세로를 딱 맞추므로 object-position 의 세로 값으로는 움직이지 않는다 —
    상자째 내린다. 내린 만큼 위에 빈 띠가 생겨 그림 윗변이 헤더 밑으로 선처럼 드러나므로(900px 높이에서 90px)
    윗변 6% 를 부드럽게 들인다 — 나머지 마스크(32%까지 또렷, 82%에서 사라짐)는 종전 그대로. */
+.rg-kv-page[src*="/kv1.webp"],   /* 팬텀은 기본 테마라 rg1 클래스가 없다 — 그림 주소로 집는다 */
 html.rg-theme.rg2 .rg-kv-page,
 html.rg-theme.rg6 .rg-kv-page {
   transform: translateY(10%);
