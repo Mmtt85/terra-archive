@@ -129,6 +129,29 @@ for e in ev_ko:
         row["start"] = e["start"]
     events.append(row)
 
+# 가챠 플래너의 앞으로 일정 (제안 29e01609·48a95d32, 2026-10-17) — 진행 중이거나 앞으로 올 이벤트 전부(배너가 없는 이벤트도 첫 클리어
+# 순오리지늄 수입이 있어 넣는다). 날짜는 한섭 기간, 미실장은 중↔한 시차 추정월(eta). 신규 헤드헌팅 오퍼(ops)와 한정 여부(lim)를 같이
+today = time.strftime("%Y-%m-%d")
+plan = []
+for e in ev_ko:
+    if not e.get("fut") and not ((e.get("end") or "") >= today):
+        continue
+    picks = [o[0] for o in e.get("ops", []) if o[3] == "new" and o[2] >= 5 and gachaable(o[0]) and o[0] not in kernel]
+    row = {"id": e["id"], "n": {"ko": e["n"], **{loc: names[loc].get(e["id"]) or e["n"] for loc in ("en", "ja")}}}
+    if e.get("fut"):
+        row["fut"] = 1
+        if e.get("eta"):
+            row["eta"] = e["eta"]
+    else:
+        row["start"], row["end"] = e.get("start"), e.get("end")
+    if picks:
+        row["ops"] = picks
+        if any(x in limited for x in picks):
+            row["lim"] = 1
+    if e.get("prime"):
+        row["prime"] = e["prime"]
+    plan.append(row)
+
 out = {
     "updated": time.strftime("%Y-%m-%d"),
     "rates": rates,
@@ -139,8 +162,9 @@ out = {
     "future": future,
     "collab": sorted(collab),
     "events": events,
+    "plan": plan,
 }
 OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
 print(f"확률 {rates} · 5성 보장 {guarantee5}회")
-print(f"이벤트 배너 {len(events)}개 (미실장 {sum(1 for e in events if e.get('fut'))})")
+print(f"이벤트 배너 {len(events)}개 (미실장 {sum(1 for e in events if e.get('fut'))}) · 플래너 일정 {len(plan)}개")
 print(f"gacha-pool.json: 6성 {len(pool['6'])} · 5성 {len(pool['5'])} · 4성 {len(pool['4'])} · 3성 {len(pool['3'])} · 한정 {len(out['limited'])} · 커널 {len(out['kernel'])} · 미실장 {len(future)} · 콜라보 {len(collab)}")

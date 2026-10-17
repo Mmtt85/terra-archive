@@ -66,6 +66,9 @@ export const PORTAL_TILES: PortalTile[] = [
   // 헤드헌팅 시뮬레이터 (2026-10-12) — 예전엔 대응 기능이 없어 헤드헌팅 칸을 뺐다(위 머리주석). 이제 생겼다
   { id: "headhunt", label: "가챠 시뮬레이터", tab: "gacha", area: "sim", kind: "plate", group: "sim",
     desc: "픽업을 골라 1회·10회 가챠를 재미로 돌려 보기", icon: "✶" },
+  // 가챠 플래너 (2026-10-17) — 앞으로의 배너 일정과 수입으로 연차를 계획
+  { id: "pullplan", label: "가챠 플래너", tab: "gachaplan", area: "sim", kind: "plate", group: "sim",
+    desc: "앞으로의 배너 일정과 수입으로 쓸 연차를 계획", icon: "✷" },
   { id: "simulate", label: "작전 시뮬레이터", tab: "sim", area: "sim", kind: "plate", group: "sim",
     desc: "적이 언제 어디서 나와 어디로 가는지 재생", icon: "▶" },
   { id: "story", label: "스토리", tab: "story", area: "story", kind: "plate",

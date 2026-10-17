@@ -27,6 +27,8 @@ export function DatePicker({ value, onChange, min, max, ariaLabel, placeholder =
 }) {
   const [open, setOpen] = useState(false);
   const [alignRight, setAlignRight] = useState(false);
+  // 아래 공간이 모자라면 위로 펼친다 — 스크롤되는 목록 맨 밑(가챠 플래너 '일정 더하기')에서 아래로 열면 목록이 길어지며 무너졌다 (2026-10-17)
+  const [dropUp, setDropUp] = useState(false);
   const cur = parse(value) ?? parse(max && todayKst() > max ? max : todayKst())!;
   const [view, setView] = useState({ y: cur.y, m: cur.m });
   const rootRef = useRef<HTMLDivElement>(null);
@@ -46,6 +48,11 @@ export function DatePicker({ value, onChange, min, max, ariaLabel, placeholder =
       setView({ y: p.y, m: p.m });
       const r = e.currentTarget.getBoundingClientRect();
       setAlignRight(window.innerWidth - r.left < 280);
+      // 아래 공간 = 화면 바닥 또는 가장 가까운 스크롤 상자 바닥까지 — 달력 판 높이(약 300px)가 안 들어가면 위로
+      let box = e.currentTarget.parentElement;
+      while (box && !/(auto|scroll)/.test(getComputedStyle(box).overflowY)) box = box.parentElement;
+      const bottom = Math.min(window.innerHeight, box ? box.getBoundingClientRect().bottom : window.innerHeight);
+      setDropUp(bottom - r.bottom < 310 && r.top > 310);
     }
     setOpen((o) => !o);
   };
@@ -71,7 +78,7 @@ export function DatePicker({ value, onChange, min, max, ariaLabel, placeholder =
         <i className="drop-caret" aria-hidden>▾</i>
       </button>
       {open && (
-        <div className={`drop-menu menu-anim date-menu${alignRight ? " align-right" : ""}`} role="dialog" aria-label={ariaLabel}>
+        <div className={`drop-menu menu-anim date-menu${alignRight ? " align-right" : ""}${dropUp ? " drop-up" : ""}`} role="dialog" aria-label={ariaLabel}>
           <div className="date-head">
             <button type="button" onClick={() => shift(-1)} aria-label="이전 달">‹</button>
             <b>{head}</b>

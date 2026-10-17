@@ -24,6 +24,7 @@ const FarmGuide = lazy(() => import("./farm"));
 const UpgradeSim = lazy(() => import("./farm").then((m) => ({ default: m.UpgradeSim })));
 // 헤드헌팅 시뮬레이터 (2026-10-12, 제안 0a84bd2f)
 const GachaSim = lazy(() => import("./gacha").then((m) => ({ default: m.GachaSim })));
+const GachaPlanner = lazy(() => import("./gacha-planner").then((m) => ({ default: m.GachaPlanner })));
 // 적 도감 목록 — 로케일마다 자기 데이터(~1MB)만 든 청크를 받는다 (app/enemies-{ko,en,ja}.tsx).
 // 셋을 한 모듈에서 동적 선택하면 번들러가 세 JSON을 같은 청크에 묶어 3MB가 된다.
 const ENEMY_DEX = {
@@ -303,17 +304,17 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "gacha" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "about";
+export type Tab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "gacha" | "gachaplan" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
 // ⚠ 적 도감의 URL 세그먼트는 "enemies"(복수)인데 초상 자산 폴더는 public/enemy/(단수)다.
 //    일부러 다르게 뒀다 — scripts/deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만
 //    떼어내는데(서빙은 R2), 이름이 같으면 라우트 HTML까지 통째로 지워진다.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", gachaplan: "gacha-planner", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 // ⚠ TAB_SEG와 짝 — 세그먼트를 더하면 여기도 같이 (enemies·stages가 빠져 /stages가
 //   portal로 판정되던 기존 누락도 2026-08-10에 함께 채움)
-const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", items: "item", events: "event", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", stories: "story", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", items: "item", events: "event", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", "gacha-planner": "gachaplan", stories: "story", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 빌드(=배포) 시각 — vite define으로 박히는 ISO 문자열을 KST 분 단위로 찍는다.
@@ -1193,7 +1194,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 같이 열린 채로 읽히고, 묶음을 닫거나 메뉴를 닫는 곳(setOpenGroup(""))이 2단까지 한 번에 접는다.
   // 종전엔 터치·좁은 화면에서 2단이 **늘 펼쳐져** 있어 태블릿에선 가이드 패널이 화면 아래로 넘쳐 끝까지
   // 내릴 수 없었다 (사용자 제보 2026-10-01 "태블릿에서 메뉴가 모바일마냥 전부 다 열린 상태 … 터치 해야 부메뉴 뜨도록").
-  const [openGroup, setOpenGroup] = useState<"" | "dex" | "sim" | "guide" | `guide/${"rogue" | "ra" | "autochess"}`>("");
+  const [openGroup, setOpenGroup] = useState<"" | "dex" | "sim" | "gacha" | "guide" | `guide/${"rogue" | "ra" | "autochess"}`>("");
   const guideOpen = openGroup === "guide" || openGroup.startsWith("guide/");
   // ── 플라이아웃 닫힘 지연 (사용자 요청 2026-09-05 "마우스 오버했던거 밖으로 삐져나가도
   //    안사라지게 해 줘") ────────────────────────────────────────────────────────
@@ -1905,6 +1906,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             ? t("작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브")
             : tab === "gacha"
             ? t("가챠 시뮬레이터 - 명일방주 헤드헌팅 시뮬레이터 | 테라 아카이브")
+            : tab === "gachaplan"
+            ? t("가챠 플래너 - 명일방주 합성옥·헤드헌팅 연차 계산 | 테라 아카이브")
             : tab === "upgrade"
             ? t("육성 비용 계산기 - 명일방주 오퍼레이터 육성 재료 계산 | 테라 아카이브")
             : tab === "story"
@@ -1980,6 +1983,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     planner: t("인프라 자동편성기"),
     recruit: t("공개채용 도우미"),
     gacha: t("가챠 시뮬레이터"),
+    gachaplan: t("가챠 플래너"),
     farm: t("재료파밍 도우미"),
     upgrade: t("육성 비용 계산기"),
     sim: t("작전 시뮬레이터"),
@@ -1999,7 +2003,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     //   그런가? 가이드에 이벤트를 넣어야 할듯"). 통합전략·생존연산·위수 협의와 같은 결 —
     //   "이 콘텐츠를 보러 간다"는 메뉴지 자료를 뒤지는 도감 묶음이 아니다.
   const GUIDE_TABS: Tab[] = ["rogue", "ra", "autochess", "event"];
-  const TAB_GROUPS: { id: "dex" | "sim"; name: string; icon: string; items: { tab: Tab; short: string }[] }[] = [
+  const TAB_GROUPS: { id: "dex" | "sim" | "gacha"; name: string; icon: string; items: { tab: Tab; short: string }[] }[] = [
     { id: "dex", name: t("도감"), icon: "▤", items: [
       { tab: "archive", short: t("오퍼레이터") }, { tab: "enemy", short: t("적") }, { tab: "stage", short: t("작전") },
       { tab: "item", short: t("아이템") },
@@ -2008,10 +2012,13 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     ] },
     { id: "sim", name: t("시뮬레이터"), icon: "◈", items: [
       { tab: "recruit", short: t("공개채용") }, { tab: "farm", short: t("재료파밍") }, { tab: "upgrade", short: t("오퍼 육성") },
-      // 헤드헌팅 시뮬레이터(/gacha) — 시뮬레이터 묶음 (사용자 지시 2026-10-12 "시뮬레이터 메뉴에 페이지가 하나 더")
-      { tab: "gacha", short: t("가챠") },
       // 작전 시뮬레이터(/sim) — "시뮬레이터 → 작전" (사용자 확정 2026-08-10 B안)
       { tab: "sim", short: t("작전") },
+    ] },
+    // 가챠 — 시뮬레이터(/gacha)·플래너(/gacha-planner) (사용자 지시 2026-10-17 "같은 화면에 넣지 말고 가챠 메뉴 → 시뮬레이터, 플래너 부메뉴로").
+    // 종전엔 시뮬레이터 묶음 안의 '가챠' 한 칸이었다
+    { id: "gacha", name: t("가챠"), icon: "✶", items: [
+      { tab: "gacha", short: t("시뮬레이터") }, { tab: "gachaplan", short: t("플래너") },
     ] },
   ];
   // 탭 청크 미리 받기 — 지연 로드(위 lazy)로 초기 파싱은 줄이되, **탭 전환 체감은 종전과
@@ -2881,6 +2888,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "farm" && <FarmGuide />}
         {tab === "upgrade" && <UpgradeSim operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
         {tab === "gacha" && <GachaSim operators={operators} onShowOperator={showOperatorById} includeFuture={includeFuture} />}
+        {tab === "gachaplan" && <GachaPlanner operators={operators} onShowOperator={showOperatorById} />}
         {/* 요약 JSON은 Suspense가 아니라 상태로 받으므로(summariesLoader), 도착 전에는
             Suspense 자리표시가 뜨지 않는다 — 그냥 아무것도 안 그리면 푸터가 헤더 바로 밑에
             붙었다가 밀려나며 CLS가 된다 (실측 모바일 0.281, 2026-08-13). 같은 자리표시를 쓴다. */}
@@ -5347,7 +5355,7 @@ function SkillRange({ grids, base, ownerName, note }: { grids: RangeGrid[]; base
 // 페이지 머리 — 자기 제목이 없던 도감·시뮬레이터 화면(맨 위가 '탐색 조건'으로 시작했다)에 공통으로 단다
 // (리디자인 2차, 2026-10-07). 이름·설명·아이콘은 홈 칸 정의(PORTAL_TILES)를 그대로 쓴다 — 번역도 거기 있다.
 // 묶음 이름(도감·시뮬레이터)은 뺐다 — 제목이 이미 말해 준다 (사용자 2026-10-07). 공채는 자기 제목 줄 대신 이걸 쓴다
-const PAGE_HEAD_TABS = new Set(["archive", "enemy", "stage", "item", "gallery", "farm", "upgrade", "gacha", "sim", "event", "recruit", "story", "me", "planner"]);
+const PAGE_HEAD_TABS = new Set(["archive", "enemy", "stage", "item", "gallery", "farm", "upgrade", "gacha", "gachaplan", "sim", "event", "recruit", "story", "me", "planner"]);
 function PageHead({ tab }: { tab: string }) {
   const { t } = useI18n();
   const tile = PORTAL_TILES.find((x) => x.tab === tab);

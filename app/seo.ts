@@ -11,14 +11,14 @@ import { CONTACT_EMAIL } from "./contact";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "gacha" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "about";
+export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "gacha" | "gachaplan" | "story" | "gallery" | "me" | "rogue" | "ra" | "autochess" | "about";
 
 // 탭 → URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators로 분리 — 사용자 확정
 // 2026-07-17: 루트 진입 시 오퍼 이미지 강제 로딩을 없애기 위해 포탈 첫화면 도입). 라우트 폴더명과 반드시 일치.
 // ⚠ 적 도감 세그먼트는 "enemies"(복수) — 초상 자산 폴더 public/enemy/(단수)와 일부러 다르다.
 //    deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만 떼어내기 때문(서빙은 R2).
 export const TAB_SEG: Record<SeoTab, string> = {
-  portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about",
+  portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", gacha: "gacha", gachaplan: "gacha-planner", story: "stories", gallery: "gallery", me: "me", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -91,6 +91,12 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ko: { title: "육성 비용 계산기 - 명일방주 오퍼레이터 육성 재료 계산 | 테라 아카이브", description: "명일방주(명방) 오퍼레이터 육성 비용 계산기 — 레벨·정예화·스킬·특화·모듈 목표 단계까지 필요한 용문폐·경험치·재료 총량을 합산합니다." },
     en: { title: "Upgrade Cost Calculator - Arknights Operator Material Calculator | Terra Archive", description: "Arknights operator upgrade cost calculator — total LMD, EXP, and materials needed to reach your target level, Elite, skills, masteries, and modules." },
     ja: { title: "育成コスト計算機 - アークナイツ オペレーター育成素材計算 | テラアーカイブ", description: "アークナイツ育成コスト計算機 — レベル・昇進・スキル・特化・モジュールの目標段階までに必要な龍門幣・経験値・素材の合計を集計します。" },
+  },
+  // 가챠 플래너 (2026-10-17, 제안 29e01609·48a95d32) — 제목엔 줄임말 금지 (기억 myeongbang-abbrev), 설명문은 괜찮다
+  gachaplan: {
+    ko: { title: "가챠 플래너 - 명일방주 합성옥·헤드헌팅 연차 계산 | 테라 아카이브", description: "명일방주(명방) 가챠 플래너 — 지금 가진 합성옥·헤드헌팅 허가증·순오리지늄에 일일·주간 임무, 섬멸 작전, 월정액, 이벤트 첫 클리어 순오리지늄 수입을 더해 앞으로의 배너 일정마다 몇 연차를 쓸 수 있는지 계산합니다. 중국 서버 기준 예상 일정과 신규·한정 오퍼 포함." },
+    en: { title: "Gacha Planner - Arknights Orundum & Headhunting Pull Calculator | Terra Archive", description: "Arknights gacha planner — add daily and weekly missions, Annihilation, Monthly Card and event first-clear Originite Prime to your current Orundum, permits and Prime, then plan how many pulls you can spend on each upcoming banner. Includes CN-based estimated schedules and new or limited operators." },
+    ja: { title: "ガチャプランナー - アークナイツ 合成玉・スカウト回数計算 | テラアーカイブ", description: "アークナイツのガチャプランナー — 現在の合成玉・スカウト券・純正源石にデイリー・ウィークリー任務、殲滅作戦、月パック、イベント初回クリアの純正源石を足し、今後のピックアップごとに何回引けるかを計算します。中国版基準の予想日程と新規・限定オペレーター付き。" },
   },
   // 헤드헌팅 시뮬레이터 (2026-10-12)
   gacha: {
@@ -217,8 +223,8 @@ function tabName(locale: SeoLocale, tab: Exclude<SeoTab, "portal">): string {
 
 // 계산기·시뮬레이터 성격의 탭 — 브라우저에서 바로 돌아가는 무료 웹 도구임을 밝힌다.
 // (평점·설치수 같은 건 없으므로 지어내지 않는다 — aggregateRating 없이 엔티티만 준다.)
-const OG_PENDING = new Set<SeoTab>([]);   // 지금은 비어 있다 (가챠는 2026-10-12 build-og.py 로 채웠다)
-const TOOL_TABS: SeoTab[] = ["planner", "recruit", "upgrade", "gacha", "farm", "sim"];
+const OG_PENDING = new Set<SeoTab>(["gachaplan"]);   // 지금은 비어 있다 (가챠는 2026-10-12 build-og.py 로 채웠다)
+const TOOL_TABS: SeoTab[] = ["planner", "recruit", "upgrade", "gacha", "gachaplan", "farm", "sim"];
 const APP_CATEGORY: Record<SeoLocale, string> = {
   ko: "게임 유틸리티", en: "GameApplication", ja: "ゲームユーティリティ",
 };

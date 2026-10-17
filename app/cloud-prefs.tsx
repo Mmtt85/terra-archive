@@ -32,7 +32,8 @@ const SYNC: { key: string; merge: "lww" | "entries" | "token" | "union" }[] = [
   { key: "terra-archive-infra-recycle", merge: "lww" }, // 인프라 재활용소 우선도
   { key: "ta:me-layout", merge: "lww" },
   { key: "ta:me-order", merge: "lww" },
-  { key: "ta:rogue-map-pos", merge: "lww" },            // 통합전략 지도판 카드 자리 (app/free-drag.tsx, 2026-10-15)                 // 내 정보 카드 순서 (app/me-order.tsx, 2026-10-15)
+  { key: "ta:rogue-map-pos", merge: "lww" },
+  { key: "ta:gacha-plan", merge: "lww" },               // 가챠 플래너 — 재화·수입·쓸 연차·직접 더한 일정·뽑을 오퍼 (2026-10-17)            // 통합전략 지도판 카드 자리 (app/free-drag.tsx, 2026-10-15)                 // 내 정보 카드 순서 (app/me-order.tsx, 2026-10-15)
   { key: "ta:story-pos", merge: "entries" },
   { key: "ta-feedback-token", merge: "token" },
   { key: "ta-feedback-extra", merge: "union" },
