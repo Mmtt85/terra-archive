@@ -31003,6 +31003,28 @@ html.dark .fb-visitor-btn { color: #ffc56b; }
 .me-resume-idle span { font-size: 13px; color: var(--muted); }
 /* 보안파견 상세 — 그 맵의 게임 배경 */
 .me-resume-tower { display: block; width: 100%; max-height: 220px; object-fit: cover; margin: 0 0 12px; border-radius: var(--r-sm); }
+/* 내 정보 › 보안파견 (2026-10-17 "보안파견 정보 전부") — 맵 기록 격자·시즌 임무·저장한 편성 */
+.me-sub { display: flex; align-items: baseline; gap: 8px; margin: 14px 0 8px; font-size: 13px; }
+.me-sub:first-of-type { margin-top: 2px; }
+.me-sub em { font: 600 11px var(--mono); font-style: normal; color: var(--muted); }
+.me-sub .me-sub-side { margin-left: auto; }
+.me-tower-maps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.me-tower-maps li { position: relative; overflow: hidden; isolation: isolate; display: flex; flex-direction: column; gap: 2px; min-height: 64px; padding: 8px 10px;
+  background: var(--soft-fill, color-mix(in srgb, var(--ink) 5%, var(--paper))); }
+.me-tower-maps li.has-bg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--bg) center 40% / cover no-repeat; opacity: .32; }
+.me-tower-maps b { font-size: 12px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me-tower-maps span { font: 600 11px var(--mono); color: var(--ink2); }
+.me-tower-maps span.done { color: var(--lime-ink); }
+.me-tower-maps span.off { color: var(--muted); }
+.me-tower-missions { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 4px 14px; }
+.me-tower-missions li { display: grid; grid-template-columns: 1fr 60px 34px; align-items: center; gap: 8px; font-size: 12px; color: var(--ink2); }
+.me-tower-missions li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me-tower-missions li i { height: 4px; background: linear-gradient(90deg, var(--lime-line) var(--p), var(--line) var(--p)); }
+.me-tower-missions li em { font: 600 11px var(--mono); font-style: normal; text-align: right; color: var(--muted); }
+.me-tower-missions li.done span { color: var(--muted); text-decoration: line-through; }
+.me-tower-squad + .me-tower-squad { margin-top: 10px; }
+.me-tower-squad-head { display: flex; align-items: baseline; gap: 10px; margin: 0 0 6px; font-size: 12px; }
+.me-tower-squad-head span { color: var(--muted); }
 .me-resume-modal { width: min(720px, calc(100vw - 32px)); }
 .me-resume-body { padding: 4px 4px 8px; }
 .me-resume-body h3 { margin: 0 0 10px; font-size: 18px; }

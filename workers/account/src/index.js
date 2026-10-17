@@ -617,6 +617,16 @@ function progressDigest(user) {
   const tw = user?.tower?.current?.status;
   if (tw && tw.state && tw.state !== "NONE") {
     out.tower = { state: tw.state, tower: tw.tower ?? null, coord: num(tw.coord), hard: !!tw.isHard, start: num(tw.start), strategy: tw.strategy ?? null };
+    // 진행 중인 판의 더 자세한 것 (사용자 요청 2026-10-17 "보안파견 정보 전부") — 직군별 전술 장비, 리더 카드, 모은 오퍼 카드, 함정.
+    // ⚠ 진행 중 샘플을 아직 못 봤다(실계정은 NONE) — 카드 칸 모양을 모르니 charId 가 보이는 것만 집는다
+    const cur = user.tower.current;
+    const tactical = {};
+    for (const [job, id] of Object.entries(tw.tactical ?? {})) if (id) tactical[job] = String(id);
+    const charOf = (c) => c?.charId ?? (c?.charInstId != null ? user?.troop?.chars?.[String(c.charInstId)]?.charId : null) ?? null;
+    out.tower.tactical = tactical;
+    out.tower.god = cur?.godCard?.id ? { id: cur.godCard.id, sub: cur.godCard.subGodCardId || null } : null;
+    out.tower.cards = Object.values(cur?.cards ?? {}).map((c) => ({ id: charOf(c), type: c?.type ?? null, elite: num(c?.evolvePhase), level: num(c?.level) })).filter((c) => c.id);
+    out.tower.traps = (cur?.trap ?? []).map((x) => (typeof x === "string" ? x : x?.id ?? null)).filter(Boolean);
   }
   const sb = user?.sandboxPerm?.template?.SANDBOX_V2?.sandbox_1;
   if (sb?.status && sb.main?.game) {
@@ -646,6 +656,35 @@ function progressDigest(user) {
     };
   }
   return Object.keys(out).length ? out : null;
+}
+
+// 보안파견 기록 (사용자 요청 2026-10-17 "보안파견 정보 전부") — 원본은 같은 날 실계정으로 확인했다:
+//   tower.outer.towers{id:{best,hardBest,unlockHard,canSweep}} · tower.season{id,finishTs,missions{id:{value,target,hasRecv}},
+//   slots{맵:[{godCardId,squad:[{charInstId,skillIndex,currentEquip}]}]},period{termTs,cur,len}}
+// 맵 기록은 [일반 최고 층, 하드 최고 층, 하드 열림 0/1, 소탕 0/1]
+function towerDigest(user) {
+  const t = user?.tower;
+  if (!t?.outer && !t?.season) return null;
+  const maps = {};
+  for (const [id, r] of Object.entries(t.outer?.towers ?? {})) maps[id] = [num(r?.best), num(r?.hardBest), r?.unlockHard ? 1 : 0, r?.canSweep ? 1 : 0];
+  const ss = t.season;
+  const charOf = (inst) => user?.troop?.chars?.[String(inst)]?.charId ?? null;
+  const slots = {};
+  for (const [tower, list] of Object.entries(ss?.slots ?? {})) {
+    slots[tower] = (Array.isArray(list) ? list : []).map((sl) => ({
+      god: sl?.godCardId ?? null,
+      squad: (sl?.squad ?? []).map((m) => ({ id: charOf(m?.charInstId), skill: num(m?.skillIndex), equip: m?.currentEquip ?? null })).filter((m) => m.id),
+    }));
+  }
+  return {
+    maps,
+    season: ss?.id ? {
+      id: ss.id, finish: num(ss.finishTs),
+      missions: Object.fromEntries(Object.entries(ss.missions ?? {}).map(([id, m]) => [id, [num(m?.value), num(m?.target), m?.hasRecv ? 1 : 0]])),
+      period: ss.period ? { term: num(ss.period.termTs), cur: num(ss.period.cur), len: num(ss.period.len) } : null,
+      slots,
+    } : null,
+  };
 }
 
 function profile(user, friends, shop) {
@@ -767,6 +806,7 @@ function profile(user, friends, shop) {
     stories: storiesDigest(user),
     // 패러독스 시뮬레이션을 깬 오퍼 id (2026-10-17) — troop.addon[오퍼].stage[mem_…] 가 연 적 있는 패러독스다. 깼으면 completeTimes 가
     // 1 이상(실계정 192개 중 state 3 이 190, state 1 이 2 — 둘 다 completeTimes 1). 안 열린 패러독스는 기록 자체가 없다
+    tower: towerDigest(user),
     paradox: Object.entries(user?.troop?.addon ?? {})
       .filter(([, row]) => Object.values(row?.stage ?? {}).some((st) => num(st?.completeTimes) > 0 || num(st?.state) >= 3))
       .map(([id]) => id),

@@ -111,7 +111,10 @@ export type AccountProfile = {
   progress?: {
     rogue?: { state: string; theme: string | null; mode: string | null; grade: number; start: number; zone: number; zoneId?: string | null; level: number; hp: number; maxHp: number;
       gold: number; shield: number; popCost: number; popMax: number; toEnding: string | null; relics: string[]; troop: { id: string; elite: number; level: number }[] };
-    tower?: { state: string; tower: string | null; coord: number; hard: boolean; start: number; strategy: string | null };
+    tower?: { state: string; tower: string | null; coord: number; hard: boolean; start: number; strategy: string | null;
+      /** 2026-10-17~ — 직군별 전술 장비 id, 리더 카드, 모은 오퍼 카드, 함정 */
+      tactical?: Record<string, string>; god?: { id: string; sub: string | null } | null;
+      cards?: { id: string; type: string | null; elite: number; level: number }[]; traps?: string[] };
     sandbox?: { state: number; day: number; maxDay: number; ap: number; maxAp: number; challenge: boolean;
       /** 아래는 2026-10-11 상세판 워커부터 */
       mode?: number; explore?: boolean; rift?: boolean; mapId?: string | null; season?: { type: number; remain: number; total: number } | null;
@@ -123,6 +126,13 @@ export type AccountProfile = {
   stories?: Record<string, string[]>;
   /** 패러독스 시뮬레이션을 깬 오퍼 id (2026-10-17~ 워커 — 그 전 동기화엔 없다) */
   paradox?: string[];
+  /** 보안파견 기록 (2026-10-17~ 워커 towerDigest) — maps: [일반 최고 층, 하드 최고 층, 하드 열림, 소탕], 시즌 임무: [값, 목표, 받음] */
+  tower?: {
+    maps: Record<string, [number, number, number, number]>;
+    season: { id: string; finish: number; missions: Record<string, [number, number, number]>;
+      period: { term: number; cur: number; len: number } | null;
+      slots: Record<string, { god: string | null; squad: { id: string; skill: number; equip: string | null }[] }[]> } | null;
+  } | null;
 };
 
 export type AccountRoster = { player: AccountPlayer; chars: AccountChar[]; token: AccountToken; profile?: AccountProfile;
