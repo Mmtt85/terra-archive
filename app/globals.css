@@ -5187,10 +5187,10 @@ html[lang="ja"] .potential-detail { word-break: normal; }
 .prio-label-layout .new-badge {
   margin-left: 6px;
 }
-/* 훈련실 '까지 고려' NEW — 기본 위치(-13px)면 줄 위 글자에 살짝 걸쳤다 (사용자 지적 2026-10-18) — 조금 더 위로 */
-label:has(> input[name="training-mode"]) .new-badge {
-  top: -18px;
-}
+/* 설정 묶음 한 칸 — 이름 + 드롭다운 단추 (2026-10-18 라디오 → 드롭다운). 칸 사이는 세로 구분선 */
+.prio-field { display: inline-flex; align-items: center; gap: 8px; }
+.prio-field + .prio-field { padding-left: 12px; border-left: 1px solid var(--line); }
+.prio-field > .new-badge { top: -14px; right: -10px; }
 
 /* ── 전력·시설 레벨 시스템 (2026-07-24) ─────────────────────────────────────
    요약 행 전력 수지 셀 + 방 카드 Lv 배지 + 방 모달 레벨 셀렉터 */
@@ -5503,6 +5503,44 @@ label:has(> input[name="training-mode"]) .new-badge {
 .planner-summary .wide b {
   font-size: 14px;
   font-family: inherit;
+}
+/* ── 편성 결과 한 패널 (2026-10-18 "예쁘게, 가독성 좋게" → "세로는 길지 않게") — app/planner.tsx .plan-sum ──
+   한 줄 격자: 왼쪽 전략·전력(위아래) / 가운데 생산 효율 4칸 / 오른쪽 하루 산출 2×2. 높이는 두 칸 줄(≈106px) —
+   종전 두 줄 카드(55+8+55)와 비슷하게 맞춰 아래 시설 배치도가 밀리지 않게 한다 */
+.plan-sum { display: grid; grid-template-columns: minmax(150px, 0.8fr) minmax(0, 2.2fr) minmax(0, 2.4fr); margin-top: 16px; border: 1px solid var(--line); background: var(--white); }
+.plan-sum-side { display: flex; flex-direction: column; border-right: 1px solid var(--line); }
+.plan-sum-side > * { flex: 1; }
+.plan-sum-side .strategy-cell { display: flex; flex-direction: column; justify-content: center; gap: 2px; border: 0; border-bottom: 1px solid var(--line); background: none; padding: 6px 14px; }
+.plan-sum-side .strategy-cell:hover:not(:disabled) { background: var(--bg-faint); }
+.plan-sum-side .strategy-cell span, .plan-sum-side .power-cell > span { font: 700 10px var(--mono); letter-spacing: 1px; color: var(--muted); }
+.plan-sum-side .strategy-cell b { font-size: 13px; font-weight: 700; color: var(--ink); }
+.plan-sum-side .power-cell { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 6px 28px 6px 14px; }
+.plan-sum-side .power-cell b { font: 800 14px var(--mono); }
+.plan-sum-side .power-detail { font-size: 10px; }
+.plan-sum-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 8px; border-right: 1px solid var(--line); }
+.plan-sum-tiles > div { display: flex; flex-direction: column; justify-content: center; padding: 6px 10px; background: var(--bg-faint); border: 1px solid var(--line); }
+.plan-sum-tiles span { font-size: 11px; color: var(--ink2); }
+.plan-sum-tiles b { margin-top: 2px; font: 800 20px/1.1 var(--mono); color: var(--ink); }
+.plan-sum-yield { list-style: none; margin: 0; padding: 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.plan-sum-yield li { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: center; align-items: baseline; column-gap: 8px; min-width: 0; padding: 5px 24px 5px 10px; border: 1px solid var(--line); }
+.plan-sum-yield li > span { grid-column: 1 / -1; }
+.plan-sum-yield li > span { font-size: 11px; color: var(--ink2); }
+.plan-sum-yield li > b { font: 800 16px/1.2 var(--mono); color: var(--ink); white-space: nowrap; }
+.plan-sum-yield li > b em { font-style: normal; font-weight: 600; color: var(--muted); }
+.plan-sum-yield li > small { font: 600 10px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plan-sum-yield li.short > small { color: var(--danger); }
+.plan-sum .cell-info { top: 4px; right: 3px; }
+/* 순금 생산 ÷ 소모 막대 — 칸 맨 아래 가는 줄, 모자라면 붉게 */
+.plan-sum-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--lime-line) var(--p), transparent var(--p)); }
+.plan-sum-yield li.short .plan-sum-bar { background: linear-gradient(90deg, var(--danger) var(--p), transparent var(--p)); }
+@media (max-width: 1100px) {
+  .plan-sum { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .plan-sum-side { grid-column: 1 / -1; flex-direction: row; border-right: 0; border-bottom: 1px solid var(--line); }
+  .plan-sum-side .strategy-cell { border-bottom: 0; border-right: 1px solid var(--line); }
+}
+@media (max-width: 640px) {
+  .plan-sum { grid-template-columns: 1fr; }
+  .plan-sum-tiles { border-right: 0; border-bottom: 1px solid var(--line); }
 }
 /* 조 탭 NEW — 그 조에 자동편성으로 바뀐 방이 있을 때 (2026-10-14) */
 .shift-tabs button { position: relative; }
@@ -31939,3 +31977,60 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
 .sss-cdetail li p { margin: 2px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink2); white-space: pre-line; }
 .sss-hero { margin: 0 0 12px; min-height: 150px; }
 .sss-hero .chips button.band img { width: 26px; height: 26px; object-fit: cover; }
+
+/* ── 시너지 트리 흐름 카드 (2026-10-18 "가독성 좋게 예쁘게") — app/planner.tsx FlowModal ──
+   토큰마다 한 장: 왼쪽 생성 → 가운데 토큰·총점(전환자) → 오른쪽 소비 */
+/* 가운데 칸 폭을 못 박아 카드마다 좌우 칸 폭이 같게 — 종전 auto 면 토큰 이름 길이에 따라 들쭉날쭉했다 */
+.flow-card { display: grid; grid-template-columns: minmax(0, 1fr) 176px minmax(0, 1fr); gap: 10px; align-items: stretch; margin: 0 0 12px; }
+.flow-col { padding: 10px 12px; border: 1px solid var(--line); background: var(--bg-faint); }
+.flow-col h4 { display: flex; align-items: baseline; gap: 8px; margin: 0 0 8px; font: 700 11px var(--mono); letter-spacing: 1px; color: var(--muted); }
+.flow-col h4 span { font: 600 11px var(--mono); letter-spacing: 0; color: var(--ink2); }
+.flow-col h4 b { font-size: 12px; font-weight: 700; font-family: inherit; letter-spacing: 0; color: var(--ink); }
+.flow-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.flow-op { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.flow-op img { width: 32px; height: 32px; object-fit: cover; border: 1px solid var(--line); background: var(--white); }
+.flow-op-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.flow-op-txt b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flow-op-txt i { font-style: normal; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flow-op-txt small { font-size: 10px; color: var(--muted); }
+.flow-op > em { font: 700 12px var(--mono); font-style: normal; color: var(--lime-ink); white-space: nowrap; }
+.flow-none { font-size: 12px; color: var(--muted); }
+.flow-mid { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.flow-arrow { font-size: 18px; color: var(--muted); }
+.flow-token { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; padding: 12px 14px; border: 1px solid var(--lime-line); background: var(--white); text-align: center; }
+.flow-token > b { font-size: 13px; }
+.flow-token > strong { font: 800 26px/1 var(--mono); color: var(--ink); }
+.flow-token > strong small { margin-left: 2px; font-size: 12px; color: var(--muted); }
+.flow-conv { list-style: none; margin: 4px 0 0; padding: 6px 0 0; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 4px; }
+.flow-conv li { display: grid; grid-template-columns: 22px auto; column-gap: 6px; align-items: center; justify-content: center; font-size: 11px; text-align: left; }
+.flow-conv li img { grid-row: 1 / 3; }
+.flow-conv li span, .flow-conv li i { white-space: nowrap; }
+.flow-conv img { width: 22px; height: 22px; object-fit: cover; }
+.flow-conv i { font-style: normal; color: var(--muted); }
+@media (max-width: 720px) {
+  .flow-card { grid-template-columns: minmax(0, 1fr); }
+  .flow-mid { justify-content: center; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+
+/* ── 인프라 플래너 모바일 단추 줄 (사용자 지적 2026-10-18 "이미지 보기가 보유 오퍼 설정 왼쪽에 붙어 있어 별로") ──
+   폰에선 할 일 순서대로 세 줄: ① 보유 오퍼 설정(가득) ② 전체·빈 자리 자동편성(반반) ③ 이미지로 보기·비우기·그 외(작게 셋).
+   데스크톱 줄은 그대로 */
+@media (max-width: 640px) {
+  .planner-buttons { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .planner-buttons > * { min-width: 0; margin: 0; justify-content: center; }
+  .planner-buttons > :nth-child(2) { grid-column: 1 / -1; order: 1; }
+  .planner-buttons > :nth-child(3) { grid-column: span 3; order: 2; }
+  .planner-buttons > :nth-child(4) { grid-column: span 3; order: 3; }
+  .planner-buttons > .planner-image-btn { grid-column: span 2; order: 4; }
+  .planner-buttons > :nth-child(5) { grid-column: span 2; order: 5; }
+  .planner-buttons > .more-group { grid-column: span 2; order: 6; }
+  .planner-buttons > .more-group > .drop-btn { width: 100%; justify-content: center; }
+  .planner-buttons > :nth-child(n + 4) { font-size: 12px; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
+  /* 설정 칸은 2열 격자 — 세로선이 줄바꿈 뒤 들여쓰기처럼 보였다 */
+  .prio-setting { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 10px; }
+  .prio-field { flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+  .prio-field + .prio-field { padding-left: 0; border-left: 0; }
+  .prio-field .drop { width: 100%; }
+  .prio-field .drop-btn { width: 100%; }
+}

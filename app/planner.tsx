@@ -1241,10 +1241,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 조 탭에 병목 기준 전체 시계를 표시한다. 순소모 0(무한동력·양조 고정)은 ∞. 회복 오라·제어센터
   // 기본 효과를 반영한 모델값이라 저장된 보수적 시계(plan.shiftHours)와는 다르다. 표시 전용이라
   // 편성·점수엔 영향 없음(생산 3모드 --compare 무관).
+  // 보고 있는 조 기준 (사용자 지시 2026-10-18 "B조로 토글하면 B조 문구로") — 종전엔 늘 A조로 쟀다
   const drainClock = useMemo(() => {
     if (!plan) return null;
-    const present = presentIdsFor(plan, 0);
-    const amb = aurasOf(teamFor("CONTROL", 0), ctxFor("CONTROL", pointsFor(0), plan.factionCounts[0], plantsFor(plan, 0, effectiveOpById), present));
+    const present = presentIdsFor(plan, activeShift);
+    const amb = aurasOf(teamFor("CONTROL", activeShift), ctxFor("CONTROL", pointsFor(activeShift), plan.factionCounts[activeShift], plantsFor(plan, activeShift, effectiveOpById), present));
     const rooms = new Map<string, number>();
     let worst = 0;
     let worstKey: string | null = null;
@@ -1252,9 +1253,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       // 재활용소(미래시)는 빼고 잰다 — 교대 시계(엔진 shiftHoursFor)도 안 보는 방이라, 여기 넣으면
       // 조 탭의 'A조 ~N시간'만 혼자 달라진다
       if (PARK_KEYS.includes(cell.key) || cell.key === "TRAINING" || cell.key.startsWith("DORM") || cell.room === "RECYCLE") continue;
-      const team = teamFor(cell.key, 0);
+      const team = teamFor(cell.key, activeShift);
       if (!team.length) continue;
-      const ctx = { ...ctxFor(cell.key, pointsFor(0), plan.factionCounts[0], plantsFor(plan, 0, effectiveOpById), present, amb), shift: 0 };
+      const ctx = { ...ctxFor(cell.key, pointsFor(activeShift), plan.factionCounts[activeShift], plantsFor(plan, activeShift, effectiveOpById), present, amb), shift: activeShift };
       const net = roomMaxNetDrain(team, cell.room, ctx);
       if (net == null) continue;
       rooms.set(cell.key, net);
@@ -1262,7 +1263,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     }
     return { rooms, worstKey, hours: worst <= 1e-9 ? Infinity : 24 / worst };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan, eliteById]);
+  }, [plan, eliteById, activeShift]);
 
   const summary = useMemo(() => {
     if (!plan) return null;
@@ -1703,142 +1704,149 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           t={t} locale={locale} />
       )}
 
-      {/* 편성 설정 (라디오) — 다음 자동편성부터 적용, 편성 실행은 버튼으로 */}
-      {/* 설정 행 — 기지 배치 → 운용 방식 → 우선 생산 순 (2026-07-28 순서 교체). 사용자 지정
-          배치에선 품목을 칸마다 직접 고르므로 우선 생산 라디오를 숨긴다 (사용자 요청 2026-07-24) */}
+      {/* 설정 행 — 기지 배치 → 운용 방식 → 우선 생산 → 훈련실 → 재활용소. 사용자 지정
+          배치에선 품목을 칸마다 직접 고르므로 운용·우선 생산을 숨긴다 (사용자 요청 2026-07-24) */}
+      {/* 편성 설정 — 묶음마다 '이름 + 드롭다운 단추' 한 칸 (사용자 지시 2026-10-18 "라디오가 넘칠 것 같다 — 드롭다운으로").
+          값·저장 키·동작은 종전 라디오와 같다. 다음 자동편성부터 적용, 편성 실행은 버튼으로 */}
       <div className="prio-setting">
-        <span className="prio-label">🏗 {t("기지 배치")}<NewBadge id="layout-153" show={isNewFeature("layout-153")} /></span>
-        {(["243", "153", "252", "custom"] as const).map((preset) => (
-          <label key={preset} className={layout === preset ? "on" : ""}
-            title={preset === "243" ? t("무역소 2 · 제조소 4(순금 2+작전기록 2) · 발전소 3")
-              : preset === "153" ? t("무역소 1 · 제조소 5(순금 1+작전기록 4) · 발전소 3")
-              : preset === "252" ? t("무역소 2 · 제조소 5(순금 2+작전기록 3) · 발전소 2 — 전력 부족: 작전기록 제조소 Lv2·사무실 Lv2·숙소 Lv1(첫 숙소만 Lv2) 권장, 정확히 540/540")
-              : t("제조소·무역소·발전소 9칸을 자유 구성합니다 — 방 카드의 제조소/무역소/발전소 버튼으로 종류를 바꿉니다")}>
-            <input type="radio" name="base-layout" checked={layout === preset} onChange={() => setLayoutChoice(preset)} />
-            {preset === "custom" ? t("사용자 지정") : preset}
-          </label>
-        ))}
+        <span className="prio-field">
+          <span className="prio-label">🏗 {t("기지 배치")}</span>
+          <Dropdown ariaLabel={t("기지 배치")} selected={[layout]}
+            label={layout === "custom" ? t("사용자 지정") : layout}
+            items={(["243", "153", "252", "custom"] as const).map((preset) => ({
+              value: preset,
+              label: preset === "custom" ? t("사용자 지정") : preset,
+              title: preset === "243" ? t("무역소 2 · 제조소 4(순금 2+작전기록 2) · 발전소 3")
+                : preset === "153" ? t("무역소 1 · 제조소 5(순금 1+작전기록 4) · 발전소 3")
+                : preset === "252" ? t("무역소 2 · 제조소 5(순금 2+작전기록 3) · 발전소 2 — 전력 부족: 작전기록 제조소 Lv2·사무실 Lv2·숙소 Lv1(첫 숙소만 Lv2) 권장, 정확히 540/540")
+                : t("제조소·무역소·발전소 9칸을 자유 구성합니다 — 방 카드의 제조소/무역소/발전소 버튼으로 종류를 바꿉니다"),
+            }))}
+            onPick={(v) => setLayoutChoice(v as typeof layout)} />
+          <NewBadge id="layout-153" show={isNewFeature("layout-153")} host=".prio-field" />
+        </span>
         {layout !== "custom" && (
           <>
-            {/* 운용 방식 ⇄ 우선 생산 순서 교체 (사용자 요청 2026-07-28) — 두 축은 직교라
-                순서만 바뀌고 동작·저장 값은 그대로다 */}
-            <span className="prio-label prio-label-layout" title={t("컨디션(피로도)을 어떻게 다룰지 — 우선 생산과 자유롭게 조합됩니다 (예: 순금 우선 + 장기 지속)")}>⏱ {t("운용 방식")}</span>
-            {(["off", "endless"] as const).map((axis) => (
-              <label key={axis} className={drainAxis === axis ? "on" : ""}
-                title={axis === "off" ? t("컨디션은 따지지 않고 생산 효율만 봅니다 — 자주 들여다보며 교대해 주는 운용")
-                  : t("주력인 A조를 컨디션 소모·회복까지 계산해 오래가게 짭니다 — 소모는 효율과 저울질(1순위 아님), B조는 A조가 쉬는 동안의 생산 교대. 제어센터에 무한동력(순소모 0) 조합이 가능한 로스터면 그 조합을 무조건 우선합니다")}>
-                <input type="radio" name="drain-mode" checked={drainAxis === axis} onChange={() => setDrainAxis(axis)} />
-                {t(axis === "off" ? "효율 우선" : "장기 지속")}
-                <NewBadge id="endless" show={axis === "endless" && isNewFeature("endless")} />
-              </label>
-            ))}
-            <span className="prio-label prio-label-layout" title={t("먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다")}>⚙ {t("우선 생산")}</span>
-            {(["gold", "exp", "balance"] as const).map((axis) => (
-              <label key={axis} className={prodAxis === axis ? "on" : ""}>
-                <input type="radio" name="prod-priority" checked={prodAxis === axis} onChange={() => setProdAxis(axis)} />
-                {t(axis === "gold" ? "순금 우선" : axis === "exp" ? "작전기록 우선" : "밸런스")}
-              </label>
-            ))}
+            {/* 운용 방식 ⇄ 우선 생산 — 두 축은 직교 (2026-07-28 순서 교체) */}
+            <span className="prio-field" title={t("컨디션(피로도)을 어떻게 다룰지 — 우선 생산과 자유롭게 조합됩니다 (예: 순금 우선 + 장기 지속)")}>
+              <span className="prio-label">⏱ {t("운용 방식")}</span>
+              <Dropdown ariaLabel={t("운용 방식")} selected={[drainAxis]}
+                label={t(drainAxis === "off" ? "효율 우선" : "장기 지속")}
+                items={(["off", "endless"] as const).map((axis) => ({
+                  value: axis,
+                  label: t(axis === "off" ? "효율 우선" : "장기 지속"),
+                  title: axis === "off" ? t("컨디션은 따지지 않고 생산 효율만 봅니다 — 자주 들여다보며 교대해 주는 운용")
+                    : t("주력인 A조를 컨디션 소모·회복까지 계산해 오래가게 짭니다 — 소모는 효율과 저울질(1순위 아님), B조는 A조가 쉬는 동안의 생산 교대. 제어센터에 무한동력(순소모 0) 조합이 가능한 로스터면 그 조합을 무조건 우선합니다"),
+                }))}
+                onPick={(v) => setDrainAxis(v as typeof drainAxis)} />
+              <NewBadge id="endless" show={isNewFeature("endless")} host=".prio-field" />
+            </span>
+            <span className="prio-field" title={t("먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다")}>
+              <span className="prio-label">⚙ {t("우선 생산")}</span>
+              <Dropdown ariaLabel={t("우선 생산")} selected={[prodAxis]}
+                label={t(prodAxis === "gold" ? "순금 우선" : prodAxis === "exp" ? "작전기록 우선" : "밸런스")}
+                items={(["gold", "exp", "balance"] as const).map((axis) => ({ value: axis, label: t(axis === "gold" ? "순금 우선" : axis === "exp" ? "작전기록 우선" : "밸런스") }))}
+                onPick={(v) => setProdAxis(v as typeof prodAxis)} />
+            </span>
           </>
         )}
-        {/* 훈련실 운용 (제안 f03863ae, 2026-10-17) — 비워 둔다(기본, 1석) · 까지 고려(2석: 트레이너 + 훈련 대상).
-            고려해도 훈련 속도로 채우지 않고, 다른 오퍼의 조건(뮤엘시스의 라인 랩 인원 등)을 채울 때만 앉힌다. 설정만 저장, 편성은 자동편성 버튼으로 */}
-        <span className="prio-label prio-label-layout" title={t("훈련실을 비워 둘지, 다른 오퍼의 조건을 채우는 데 쓸지 — 다음 자동편성부터 적용됩니다")}>{t("훈련실")}</span>
-        {([false, true] as const).map((on) => (
-          <label key={String(on)} className={trainingUse === on ? "on" : ""}
-            title={on ? t("훈련실 두 자리(트레이너·훈련 대상)를 씁니다. 뮤엘시스의 라인 랩 인원처럼 다른 오퍼의 조건을 채울 때만 앉히고, 훈련 속도로 채우지는 않습니다")
-              : t("훈련실은 특화 훈련용으로 비워 둡니다. 다른 오퍼의 조건이 훈련실 배치로만 채워질 때만 한 자리를 씁니다")}>
-            <input type="radio" name="training-mode" checked={trainingUse === on} onChange={() => setTrainingChoice(on)} />
-            {t(on ? "까지 고려" : "비워 둔다")}
-            {/* 새 옵션 표시 — '까지 고려'를 한 번 고르면 사라진다 (2026-10-18) */}
-            {on && <NewBadge id="training-room" show={isNewFeature("training-room")} />}
-          </label>
-        ))}
-        {/* 재활용소 우선도 — 미래시를 켰을 때만 (사용자 규칙 2026-10-09). 설정만 저장, 편성은 자동편성 버튼으로 */}
+        {/* 훈련실 운용 (제안 f03863ae, 2026-10-17) — 비워 둔다(기본, 1석) · 까지 고려(2석). 고려해도 훈련 속도로 채우지 않는다 */}
+        <span className="prio-field" title={t("훈련실을 비워 둘지, 다른 오퍼의 조건을 채우는 데 쓸지 — 다음 자동편성부터 적용됩니다")}>
+          <span className="prio-label">{t("훈련실")}</span>
+          <Dropdown ariaLabel={t("훈련실")} selected={[trainingUse ? "use" : "empty"]}
+            label={t(trainingUse ? "까지 고려" : "비워 둔다")}
+            items={[
+              { value: "empty", label: t("비워 둔다"), title: t("훈련실은 특화 훈련용으로 비워 둡니다. 다른 오퍼의 조건이 훈련실 배치로만 채워질 때만 한 자리를 씁니다") },
+              { value: "use", label: t("까지 고려"), title: t("훈련실 두 자리(트레이너·훈련 대상)를 씁니다. 뮤엘시스의 라인 랩 인원처럼 다른 오퍼의 조건을 채울 때만 앉히고, 훈련 속도로 채우지는 않습니다") },
+            ]}
+            onPick={(v) => setTrainingChoice(v === "use")} />
+          {/* 새 옵션 표시 — 칸 오른쪽 위, 칸을 누르면 사라진다 (2026-10-18) */}
+          <NewBadge id="training-room" show={isNewFeature("training-room")} host=".prio-field" />
+        </span>
+        {/* 재활용소 우선도 — 미래시를 켰을 때만 (사용자 규칙 2026-10-09) */}
         {recycleJob && (
-          <>
-            <span className="prio-label prio-label-layout" title={t("중국 서버에 새로 생긴 재활용소를 얼마나 챙길지 — 다음 자동편성부터 적용됩니다")}>♻ {t("재활용소")}</span>
-            {(["off", "normal", "first"] as const).map((mode) => (
-              <label key={mode} className={recycleMode === mode ? "on" : ""}
-                title={mode === "off" ? t("재활용소를 비워 둡니다 — 아무도 없어도 48시간마다 재료가 나옵니다")
+          <span className="prio-field" title={t("중국 서버에 새로 생긴 재활용소를 얼마나 챙길지 — 다음 자동편성부터 적용됩니다")}>
+            <span className="prio-label">♻ {t("재활용소")}</span>
+            <Dropdown ariaLabel={t("재활용소")} selected={[recycleMode]}
+              label={t(recycleMode === "off" ? "끔" : recycleMode === "normal" ? "보통" : "우선")}
+              items={(["off", "normal", "first"] as const).map((mode) => ({
+                value: mode,
+                label: t(mode === "off" ? "끔" : mode === "normal" ? "보통" : "우선"),
+                title: mode === "off" ? t("재활용소를 비워 둡니다 — 아무도 없어도 48시간마다 재료가 나옵니다")
                   : mode === "normal" ? t("재활용소 스킬 보유자를 앉히고 빈자리는 남는 오퍼로 채웁니다. 보유자가 다른 방 스킬도 있으면 하루 이성 환산으로 이득이 큰 쪽에 둡니다")
-                  : t("재활용소 스킬 보유자를 다른 방에서 빼서라도 재활용소에 앉힙니다")}>
-                <input type="radio" name="recycle-mode" checked={recycleMode === mode} onChange={() => setRecycleChoice(mode)} />
-                {t(mode === "off" ? "끔" : mode === "normal" ? "보통" : "우선")}
-              </label>
-            ))}
-          </>
+                  : t("재활용소 스킬 보유자를 다른 방에서 빼서라도 재활용소에 앉힙니다"),
+              }))}
+              onPick={(v) => setRecycleChoice(v as RecycleMode)} />
+          </span>
         )}
       </div>
 
       {/* 항상 렌더해 높이를 처음부터 예약 — 계산 전엔 '—'로 채운다. 계산 완료 후 값이 튀어나오며
           아래 배치도를 밀어내던 CLS 방지 (사용자 리포트 2026-07-20). summary가 있으면 plan도 항상 있음. */}
-      <div className="planner-summary">
-        {/* 전략 상세(패키지 구성·토큰 점수)는 길어서 카드를 세로로 늘리므로 시너지 트리
-            모달로 넘기고, 카드엔 클릭 안내만 둔다 (사용자 요청 2026-07-25) */}
-        <button type="button" className="strategy-cell" onClick={() => setShowFlows(true)} disabled={!plan}
-          title={plan ? `${strategyLabel(plan, locale, t)}${Object.keys(plan.tokenPoints).length > 0 ? ` · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}` : ""}` : undefined}>
-          <span>{t("전략")}</span>
-          <b className="strategy">{plan ? t("시너지 트리 보기 ▸") : "—"}</b>
-        </button>
-        <div><span>{t("순금 평균")}</span><b>{summary?.gold != null ? `+${summary.gold}%` : "—"}</b></div>
-        <div><span>{t("작전기록 평균")}</span><b>{summary?.exp != null ? `+${summary.exp}%` : "—"}</b></div>
-        <div><span>{t("무역소 평균")}</span><b>{summary?.trading != null ? `+${summary.trading}%` : "—"}</b></div>
-        <div><span>{t("드론 회복 효율")}</span><b>{summary ? `+${summary.power}%` : "—"}</b></div>
-        {/* 전력 수지 — 발전소 phases 공급(만렙 270×기수) vs 시설 소비. 음수면 게임에서 성립 불가.
-            소비/공급 슬래시 표기 + 시설별 내역 (사용자 요청 2026-07-24) */}
-        <div className={power.net < 0 ? "power-cell over" : "power-cell"} title={powerLines[0]}>
-          <span>⚡ {t("전력")}</span><b>{power.net >= 0 ? `+${power.net}` : power.net} <i className="power-detail">({power.consume}/{power.provide})</i></b>
-          <InfoDot onClick={() => setShiftNote("power")} t={t} />
-        </div>
-      </div>
-
-      {/* 하루 산출 — 종전 '기용 인원' 자리에서 시작해 **별도 줄 3칸**이 됐다 (사용자 요청
-          2026-08-06: "순금 생산/소모 · 벌어들이는 용문폐 · 만들어지는 작전기록 셋이 필요").
-          위 줄에 끼워 넣으면 8칸이라 라벨이 다 갈라져서 줄을 나눴다. 근사치라 ≈를 붙이고,
-          근거는 ⓘ 모달에 전부 밝힌다 — 툴팁은 스쳐 지나가는 사람용 보조. */}
-      <div className={`planner-summary planner-summary-yield${cellByKey.has("RECYCLE") ? " has-recycle" : ""}`}>
-        <div className="yield-cell" title={yieldGoldLines[0]}>
-          <span>🪙 {t("순금 생산 / 소모")}</span>
-          <b>{yieldDay && yieldRooms.gold > 0
-            ? <>{num(yieldDay.gold)} <em>/</em> {num(yieldDay.goldNeed)}</> : "—"}
-            {yieldDay && yieldDay.goldShort > 0.5
-              && <i className="yield-detail yield-short">{t("{n}개 부족", { n: num(yieldDay.goldShort) })}</i>}</b>
-          {yieldDay && <InfoDot onClick={() => setShiftNote("gold")} t={t} />}
-        </div>
-        <div className="yield-cell" title={yieldLmdLines[0]}>
-          <span>💰 {t("하루 평균 용문폐")}</span>
-          <b>{yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldDay.lmd)}` : "—"}</b>
-          {yieldDay && <InfoDot onClick={() => setShiftNote("lmd")} t={t} />}
-        </div>
-        <div className="yield-cell" title={yieldExpLines[0]}>
-          <span>📘 {t("하루 평균 작전기록")}</span>
-          <b>{yieldDay && yieldRooms.exp > 0 ? t("≈{n}개", { n: num(yieldDay.records) }) : "—"}
-            {yieldDay && yieldRooms.exp > 0 && <i className="yield-detail">({num(yieldDay.exp)} exp)</i>}</b>
-          {yieldDay && <InfoDot onClick={() => setShiftNote("exp")} t={t} />}
-        </div>
-        {/* 드론은 위 세 숫자에 **더하지 않는다** — 어디에 쓰는지가 사람마다 달라서
-            (사용자 확정 2026-08-06: 별도 칸). 환산은 작전기록 기준으로 적고, 순금 환산은
-            ⓘ 모달에 같이 넣는다. */}
-        <div className="yield-cell" title={yieldDroneLines[0]}>
-          <span>🛠 {t("하루 드론 회복")}</span>
-          {/* 좁은 화면에서 칸을 삐져나가던 줄 — 넘칠 때만 흘러간다 (사용자 제보 2026-09-23,
-              402px 실측 200px 내용 / 151px 칸). 넘치지 않으면 마퀴는 아무 일도 하지 않는다. */}
-          <b><Marquee>{yieldDay ? t("≈{n}개", { n: num(yieldDay.drones) }) : "—"}
-            {yieldDay && <i className="yield-detail">{t("작전기록 +{r} or 순금 +{g}", {
-              r: yieldRooms.exp > 0 ? num(yieldDay.droneRecords) : "0",
-              g: yieldRooms.gold > 0 ? num(yieldDay.droneGold) : "0" })}</i>}</Marquee></b>
-          {yieldDay && <InfoDot onClick={() => setShiftNote("drone")} t={t} />}
-        </div>
-        {/* 재활용소 (미래시 전용, 2026-10-09) — 다른 방과 같은 저울(하루 이성)로 본다. 칸이 없으면 줄도 종전 4칸 그대로 */}
-        {cellByKey.has("RECYCLE") && (
-          <div className="yield-cell" title={recycleLines[2]}>
-            <span>♻ {t("재활용소")}</span>
-            <b>{recycleDay ? t("≈{n} 이성/일", { n: num(recycleDay.apPerDay) }) : "—"}</b>
-            {recycleDay && <InfoDot onClick={() => setShiftNote("recycle")} t={t} />}
+      {/* 편성 결과 한 패널 (사용자 요청 2026-10-18 "예쁘게, 가독성 좋게") — 머리: 전략(시너지 트리) · 전력,
+          본문: 왼쪽 생산 효율 4칸 · 오른쪽 하루 산출. 종전 두 줄 카드 10장이 같은 무게로 늘어서 무엇이 결과인지 안 보였다.
+          계산 전에도 같은 틀을 그려 높이를 예약한다(CLS) — 값만 '—'. 근거는 종전대로 ⓘ 모달 */}
+      <section className="plan-sum">
+        {/* 세로를 아끼려고 머리 줄·소제목 없이 한 줄 격자 (사용자 지시 같은 날 "세로가 길면 시설이 밀린다") —
+            왼쪽 전략·전력 / 가운데 생산 효율 4칸 / 오른쪽 하루 산출 2×2 */}
+        <div className="plan-sum-side">
+          <button type="button" className="strategy-cell" onClick={() => setShowFlows(true)} disabled={!plan}
+            title={plan ? `${strategyLabel(plan, locale, t)}${Object.keys(plan.tokenPoints).length > 0 ? ` · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}` : ""}` : undefined}>
+            <span>{t("전략")}</span>
+            <b className="strategy">{plan ? t("시너지 트리 보기 ▸") : "—"}</b>
+          </button>
+          {/* 전력 수지 — 음수면 게임에서 성립 불가 (사용자 요청 2026-07-24) */}
+          <div className={power.net < 0 ? "power-cell over" : "power-cell"} title={powerLines[0]}>
+            <span>{t("전력")}</span>
+            <b>{power.net >= 0 ? `+${power.net}` : power.net} <i className="power-detail">{power.consume} / {power.provide}</i></b>
+            <InfoDot onClick={() => setShiftNote("power")} t={t} />
           </div>
-        )}
-      </div>
+        </div>
+            <div className="plan-sum-tiles" aria-label={t("생산 효율")}>
+              <div><span>{t("순금")}</span><b>{summary?.gold != null ? `+${summary.gold}%` : "—"}</b></div>
+              <div><span>{t("작전기록")}</span><b>{summary?.exp != null ? `+${summary.exp}%` : "—"}</b></div>
+              <div><span>{t("무역소")}</span><b>{summary?.trading != null ? `+${summary.trading}%` : "—"}</b></div>
+              <div><span>{t("드론 회복")}</span><b>{summary ? `+${summary.power}%` : "—"}</b></div>
+            </div>
+          {/* 하루 산출 (사용자 요청 2026-08-06) — 근사치라 ≈, 드론은 위 셋에 더하지 않는다(쓰임이 사람마다 다르다) */}
+            <ul className="plan-sum-yield" aria-label={t("하루 산출")}>
+              <li title={yieldGoldLines[0]} className={yieldDay && yieldDay.goldShort > 0.5 ? "short" : undefined}>
+                <span>{t("순금 생산 / 소모")}</span>
+                <b>{yieldDay && yieldRooms.gold > 0 ? <>{num(yieldDay.gold)} <em>/ {num(yieldDay.goldNeed)}</em></> : "—"}</b>
+                {yieldDay && yieldRooms.gold > 0 && yieldDay.goldNeed > 0 && (
+                  <i className="plan-sum-bar" style={{ ["--p" as string]: `${Math.min(100, (yieldDay.gold / yieldDay.goldNeed) * 100)}%` }} />
+                )}
+                <small>{yieldDay && yieldDay.goldShort > 0.5 ? t("{n}개 부족", { n: num(yieldDay.goldShort) }) : yieldDay && yieldRooms.gold > 0 ? t("충분") : ""}</small>
+                {yieldDay && <InfoDot onClick={() => setShiftNote("gold")} t={t} />}
+              </li>
+              <li title={yieldLmdLines[0]}>
+                <span>{t("용문폐")}</span>
+                <b>{yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldDay.lmd)}` : "—"}</b>
+                {yieldDay && <InfoDot onClick={() => setShiftNote("lmd")} t={t} />}
+              </li>
+              <li title={yieldExpLines[0]}>
+                <span>{t("작전기록")}</span>
+                <b>{yieldDay && yieldRooms.exp > 0 ? t("≈{n}개", { n: num(yieldDay.records) }) : "—"}</b>
+                <small>{yieldDay && yieldRooms.exp > 0 ? `${num(yieldDay.exp)} exp` : ""}</small>
+                {yieldDay && <InfoDot onClick={() => setShiftNote("exp")} t={t} />}
+              </li>
+              <li title={yieldDroneLines[0]}>
+                <span>{t("드론")}</span>
+                <b>{yieldDay ? t("≈{n}개", { n: num(yieldDay.drones) }) : "—"}</b>
+                <small><Marquee>{yieldDay ? t("작전기록 +{r} or 순금 +{g}", {
+                  r: yieldRooms.exp > 0 ? num(yieldDay.droneRecords) : "0",
+                  g: yieldRooms.gold > 0 ? num(yieldDay.droneGold) : "0" }) : ""}</Marquee></small>
+                {yieldDay && <InfoDot onClick={() => setShiftNote("drone")} t={t} />}
+              </li>
+              {/* 재활용소 (미래시 전용, 2026-10-09) */}
+              {cellByKey.has("RECYCLE") && (
+                <li title={recycleLines[2]}>
+                  <span>{t("재활용소")}</span>
+                  <b>{recycleDay ? t("≈{n} 이성/일", { n: num(recycleDay.apPerDay) }) : "—"}</b>
+                  {recycleDay && <InfoDot onClick={() => setShiftNote("recycle")} t={t} />}
+                </li>
+              )}
+            </ul>
+      </section>
 
       <div className={`ship${layout !== "243" ? ` ship-${layout}` : ""}${cellByKey.has("RECYCLE") ? " has-recycle" : ""}`}>
         {/* 교대 탭 + 육성 추천을 그리드 첫 행(제어센터·응접실과 같은 행)에 세로로 쌓는다 —
@@ -1858,8 +1866,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               {drainClock && (
                 <span className="shift-clock" title={t("제일 빨리 닳는 시설의 완전 소진 기준 — 그 전에(대개 컨디션 12 신호쯤) A조 전체를 B조로 한 번에 교대합니다. 특히 제어센터가 먼저 지치면 감면이 꺼져 전 방이 가속되니 병목보다 늦으면 안 됩니다. 전원이 풀 컨디션(24)에서 시작한다고 본 추정치라, 오퍼별 현재 피로도에 따라 실제 시간은 달라집니다")}>
                   {drainClock.hours === Infinity
-                    ? t("A조 전체 무한동력 ∞ — 교대 불필요")
-                    : t("A조 ~{h}시간 — {room} 기준 일괄 교대", { h: Math.round(drainClock.hours), room: t(cellByKey.get(drainClock.worstKey!)?.label ?? "") })}
+                    ? (activeShift === 0 ? t("A조 전체 무한동력 ∞ — 교대 불필요") : t("B조 전체 무한동력 ∞ — 교대 불필요"))
+                    : activeShift === 0
+                      ? t("A조 ~{h}시간 — {room} 기준 일괄 교대", { h: Math.round(drainClock.hours), room: t(cellByKey.get(drainClock.worstKey!)?.label ?? "") })
+                      : t("B조 ~{h}시간 — {room} 기준 A조로 복귀", { h: Math.round(drainClock.hours), room: t(cellByKey.get(drainClock.worstKey!)?.label ?? "") })}
                 </span>
               )}
               {/* 시계 배지 옆 짧은 단서 + 그 아래 짧은 교대 정책 — 둘 다 **클릭하면 상세 모달**
@@ -3325,55 +3335,60 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
         </header>
         <div className="modal-scroll">
           {flows.length === 0 && <p className="no-detail">{t("활성화된 포인트 시너지가 없습니다.")}</p>}
-          {flows.map((flow) => (
-            <section key={flow.token} className="detail-section flow-tree">
-              <h3>{tokenName(locale, flow.token)} <span className="flow-total">{t("총 {n}점", { n: Math.round(flow.total) })}</span></h3>
-              <ul>
-                <li className="flow-branch">{t("생성")}
-                  <ul>
-                    {flow.generators.map((gen, index) => {
-                      const op = opMap.get(gen.opId);
-                      return (
-                        <li key={`${gen.opId}-${index}`}>
-                          {avatar(op)}
-                          <b>{op?.name ?? gen.opId}</b> <i>{t(gen.at)}</i>
-                          <em>{t("+{n}점", { n: Math.round(gen.amount) })}{gen.via ? t(" ({token} 전환)", { token: tokenName(locale, gen.via) }) : ""}</em>
-                        </li>
-                      );
-                    })}
-                    {flow.generators.length === 0 && <li><em>{t("생성원이 배치되지 않음")}</em></li>}
-                  </ul>
+          {/* 토큰마다 흐름 카드 한 장 — 왼쪽 생성 → 가운데 토큰·총점(전환자) → 오른쪽 소비 (사용자 요청 2026-10-18 "가독성 좋게 예쁘게").
+              종전엔 얼굴이 이름 위에 한 줄을 따로 먹고 생성·소비가 세로로만 길게 늘어져 흐름이 안 보였다 */}
+          {flows.map((flow) => {
+            const person = (opId: string, at: string, value: React.ReactNode, key: string, sub?: React.ReactNode) => {
+              const op = opMap.get(opId);
+              return (
+                <li key={key} className="flow-op">
+                  {avatar(op)}
+                  <span className="flow-op-txt"><b>{op?.name ?? opId}</b><i>{t(at)}</i>{sub}</span>
+                  {value != null && <em>{value}</em>}
                 </li>
-                {flow.converters.length > 0 && (
-                  <li className="flow-branch">{t("전환")}
-                    <ul>
-                      {flow.converters.map((conv) => {
-                        const op = opMap.get(conv.opId);
-                        return <li key={conv.opId}>{avatar(op)}<b>{op?.name}</b> <em>{tokenName(locale, conv.from)} → {tokenName(locale, flow.token)}</em></li>;
-                      })}
-                    </ul>
-                  </li>
-                )}
-                <li className="flow-branch">{t("소비")}
+              );
+            };
+            return (
+              <section key={flow.token} className="flow-card">
+                <div className="flow-col">
+                  {/* 총 생산 — 생성원 몫의 합 (사용자 요청 같은 날 "총 생산·총 소비도") */}
+                  <h4><b>{t("{token} 생성", { token: tokenName(locale, flow.token) })}</b> <span>{t("합계 {n}점", { n: Math.round(flow.generators.reduce((a, g) => a + g.amount, 0)) })}</span></h4>
                   <ul>
-                    {flow.consumers.map((consumer, index) => {
-                      const op = opMap.get(consumer.opId);
-                      return (
-                        <li key={`${consumer.opId}-${index}`}>
-                          {avatar(op)}
-                          <b>{op?.name ?? consumer.opId}</b> <i>{t(consumer.at)}</i>
-                          <em>{consumer.percent
-                            ? t("{token} {n}점 소비 → {unit} +{m}% (1점당 +{r}%)", { token: tokenName(locale, flow.token), n: Math.round(flow.total), unit: t(UNIT[consumer.room] ?? "효율"), m: Math.round(consumer.gain), r: consumer.rate })
-                            : t("{token} 기반 컨디션 회복·소모 보정", { token: tokenName(locale, flow.token) })}</em>
-                        </li>
-                      );
-                    })}
-                    {flow.consumers.length === 0 && <li><em>{t("소비자가 배치되지 않음")}</em></li>}
+                    {/* 몫마다 무엇이 얼마 — "+20 생각의 사슬" (사용자 요청 같은 날 "뭘 생성하는지도") */}
+                    {flow.generators.map((gen, index) => person(gen.opId, gen.at, t("+{n} {token}", { n: Math.round(gen.amount), token: tokenName(locale, flow.token) }), `${gen.opId}-${index}`,
+                      gen.via ? <small>{t("{token}에서 전환", { token: tokenName(locale, gen.via) })}</small> : undefined))}
+                    {flow.generators.length === 0 && <li className="flow-none">{t("생성원이 배치되지 않음")}</li>}
                   </ul>
-                </li>
-              </ul>
-            </section>
-          ))}
+                </div>
+                <div className="flow-mid">
+                  <span className="flow-arrow" aria-hidden>→</span>
+                  <div className="flow-token">
+                    <b>{tokenName(locale, flow.token)}</b>
+                    <strong>{Math.round(flow.total)}<small>{t("점")}</small></strong>
+                    {flow.converters.length > 0 && (
+                      <ul className="flow-conv">
+                        {flow.converters.map((conv) => {
+                          const op = opMap.get(conv.opId);
+                          return <li key={conv.opId} title={`${tokenName(locale, conv.from)} → ${tokenName(locale, flow.token)}`}>{avatar(op)}<span>{op?.name}</span><i>{tokenName(locale, conv.from)} →</i></li>;
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                  <span className="flow-arrow" aria-hidden>→</span>
+                </div>
+                <div className="flow-col">
+                  {/* 소비자는 점수를 나눠 갖지 않고 **각자 총점을 그대로** 쓴다 — 그래서 합이 아니라 인원과 효과 합을 적는다 */}
+                  <h4><b>{t("{token} 소비", { token: tokenName(locale, flow.token) })}</b> <span>{t("{n}명이 {m}점을 각자 사용", { n: flow.consumers.length, m: Math.round(flow.total) })}</span></h4>
+                  <ul>
+                    {flow.consumers.map((consumer, index) => person(consumer.opId, consumer.at,
+                      consumer.percent ? `${t(UNIT[consumer.room] ?? "효율")} +${Math.round(consumer.gain)}%` : t("컨디션 보정"), `${consumer.opId}-${index}`,
+                      consumer.percent ? <small>{t("1점당 +{r}%", { r: consumer.rate })}</small> : undefined))}
+                    {flow.consumers.length === 0 && <li className="flow-none">{t("소비자가 배치되지 않음")}</li>}
+                  </ul>
+                </div>
+              </section>
+            );
+          })}
         </div>
     </ModalWindow>
   );
