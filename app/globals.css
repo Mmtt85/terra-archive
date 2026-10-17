@@ -31788,6 +31788,8 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
 .sss-season { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .sss-season > .sss-maps, .sss-season-cards > .sss-ctiles { height: 100%; }
 .sss-season > .sss-maps > li > button, .sss-season-cards .sss-ctile { height: 100%; }
+/* 늘어난 시즌 카드 칸 — 그림·이름을 세로 가운데로 (사용자 지시 2026-10-17) */
+.sss-season-cards .sss-ctile { justify-content: center; }
 .sss-h-side { margin-left: 10px; font: 600 12px var(--mono); font-style: normal; color: var(--muted); }
 @media (max-width: 860px) { .sss-season { grid-template-columns: 1fr; } }
 .sss-season-cards h3 { margin-top: 0; }
