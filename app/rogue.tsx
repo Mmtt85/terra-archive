@@ -9,6 +9,7 @@
 import { NewBadge } from "./new-badge";
 import { Fragment, lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { TOPICS, slugOf, roguePath } from "./rogue-topics";
+import { RecordModal } from "./rogue-record";
 import rogue1Data from "./data/rogue1.json";
 // 노드 종류 아이콘 보유 목록 — 이미지 자체는 R2에만 있고 커밋되지 않는다(.gitignore
 // /public/rogue/node/). 어느 (테마,타입) 조합에 아이콘이 있는지는 이 목록으로만 안다.
@@ -108,7 +109,8 @@ type InvItem = { id: string; name: string; usage?: string | null; desc?: string 
 type ArcHit = { key: string; item: InvItem; label: string; img: string | null; open?: "relic" | "diff" };
 // book = 엔딩 기록(엔딩북) 조각 — 게임 공식 해금 조건 텍스트 (사용자 소원 2026-08-17).
 // rid/txt = 기록 원문 (public/rogue/record/<rid>.json — build-rogue-records.py), txt면 클릭 열람.
-type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string; book?: { name?: string; cond?: string; rid?: string; txt?: 1; cn?: string }[] };
+type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string;
+  /** 엔딩 연출 스토리 기록 id (public/rogue/record/<avg>.json — 엔딩에 도달하면 재생되는 대화 장면, 2026-10-18) */ avg?: string; book?: { name?: string; cond?: string; rid?: string; txt?: 1; cn?: string }[] };
 // 월간 방문객 — 매달 로테이션되는 방문객 오퍼(chars)와 층·구역별 특별 조우 장면(scenes)
 type Visitor = { id: string; name?: string; cn?: string; desc?: string; ym?: string; chars: { id: string; name: string }[]; scenes?: { floor?: number; zone?: string; desc?: string; rid?: string; txt?: 1; cn?: string }[] };
 // 선택지는 계단식 트리 — next.desc는 그 선택의 결과 서사, next.choices는 이어지는 하위 선택지
@@ -846,66 +848,7 @@ function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, onOpenEnemy, appea
   );
 }
 
-// ── 기록 원문 모달 — 엔딩북 조각·방문객 장면의 스토리 전문 (사용자 요청 2026-08-17
-// "하나씩 볼 수 있게"). /rogue/record/<rid>.json 을 열 때 지연 로드, 현재 로케일 텍스트
-// 우선(없으면 ko → cn 폴백 — IS6은 cn뿐이라 중국어 원문 표시). ────────────────
-// 문단은 두 종류다 — **산문은 문자열, 대사는 {c,n,x}** (IS1 월간 친목회 기록만 원문이
-// 대화 스크립트다. 종전엔 [Dialog(head=…)] 명령이 그대로 화면에 찍혔다 — 사용자 제보
-// 2026-09-06 "팬텀록라 전시관 방문객 기록이 뭔가 이상하다").
-type RecLine = string | { c?: string; n?: string; x: string };
-
-function RecordModal({ rid, title, sub, onClose }: { rid: string; title: string; sub?: string; onClose: () => void }) {
-  const { t, locale } = useI18n();
-  const [paras, setParas] = useState<RecLine[] | null>(null);
-  const [zh, setZh] = useState(false);
-  const [err, setErr] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    fetch(asset(`/rogue/record/${rid}.json`))
-      .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
-      .then((d: Record<string, RecLine[]>) => {
-        if (!alive) return;
-        const pick = d[locale] ?? d.ko ?? d.cn ?? d.en;
-        if (pick) { setZh(!d[locale] && !d.ko); setParas(pick); } else setErr(true);
-      })
-      .catch(() => { if (alive) setErr(true); });
-    return () => { alive = false; };
-  }, [rid, locale]);
-  return (
-    <ModalWindow label={title} className="rg-modal rg-recmodal" onClose={onClose}>
-      <header className="rg-modal-head">
-        <div>
-          <span className="rg-kind">{t("기록")}</span>
-          <h3><span className="rg-modal-title">{title}</span></h3>
-          {sub && <span className="rg-modal-zone">{sub}</span>}
-        </div>
-      </header>
-      <div className="rg-rec-body" lang={zh ? "zh" : undefined}>
-        {err ? <p className="rg-rec-status">{t("기록을 불러오지 못했습니다.")}</p>
-          : paras === null ? <p className="rg-rec-status">{t("기록 불러오는 중…")}</p>
-            : paras.map((p, i) => {
-              if (typeof p === "string") return <p key={i}>{p}</p>;
-              if (!p.n) return <p key={i}>{p.x}</p>;
-              // 같은 화자가 이어지면 이름을 생략한다 (스토리 전문 뷰 .sc-line.cont 와 같은 규약)
-              const prev = paras[i - 1];
-              const cont = typeof prev === "object" && prev.n === p.n;
-              return (
-                <p key={i} className={cont ? "rg-rec-say cont" : "rg-rec-say"}>
-                  {!cont && (
-                    <span className="rg-rec-who">
-                      {p.c && <img src={asset(`/avatars/${p.c}.webp`)} alt="" width={180} height={180}
-                        loading="lazy" decoding="async" />}
-                      {p.n}
-                    </span>
-                  )}
-                  {p.x}
-                </p>
-              );
-            })}
-      </div>
-    </ModalWindow>
-  );
-}
+// 기록 원문 창(RecordModal)은 내 정보도 쓰려고 app/rogue-record.tsx 로 옮겼다 (2026-10-18)
 
 // ── 조우 상세 모달 — 엔딩 조건 등에서 조우를 참조할 때 연다 ──────────────────
 const ENC_CHOICE_FOLD = 8;   // 씬 트리 없는 조우의 선택지가 이보다 많으면 접어 둔다
@@ -1469,7 +1412,7 @@ export default function RogueGuide({ initialTopic }: {
   const [encOpen, setEncOpen] = useState<Encounter | null>(null);
   const [relicOpen, setRelicOpen] = useState<InvItem | null>(null); // 소장품·부품·자원 공용 상세
   // 기록 원문(엔딩북 조각·방문객 장면) 열람 — 제목·부제는 여는 쪽이 채운다
-  const [recOpen, setRecOpen] = useState<{ rid: string; title: string; sub?: string } | null>(null);
+  const [recOpen, setRecOpen] = useState<{ rid: string; title: string; sub?: string; kind?: string } | null>(null);
   // 통합 검색란 하나 (탭 줄 가운데 — 아래 uniHits 주석). 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 갱신 (search.ts)
   const { term: uniTerm, set: setUniTerm, inputProps: uniProps } = useSearchInput();
   // 쉐이 — 맵·노드 탭 안의 두 지도: g 계원(오른쪽으로 진행) / s 쉐이의 잔식(정사각형) (사용자 지시 2026-10-02)
@@ -3781,6 +3724,14 @@ export default function RogueGuide({ initialTopic }: {
               {e.desc && <p className="rg-ending-desc">{e.desc}</p>}
               {/* 엔딩 달성 시의 인용구 — 스토리 설명 바로 밑 (사용자 지시 2026-08-17, 예전엔 카드 맨 아래) */}
               {e.change && <p className="rg-ending-change">“{e.change}”</p>}
+              {/* 엔딩 연출 스토리 — 엔딩에 도달하면 재생되는 대화 장면 (사용자 요청 2026-10-18) */}
+              {e.avg && (
+                <button type="button" className="rg-rec-btn rg-ending-avg"
+                  onClick={() => setRecOpen({ rid: e.avg!, title: nmText(e.name, e.cn), sub: t("엔딩 스토리"), kind: t("엔딩 스토리") })}>
+                  <strong>{t("엔딩 스토리")}</strong><span>{t("엔딩에 도달하면 나오는 장면")}</span>
+                  <i className="rg-rec-read" aria-hidden>▸ {t("읽기")}</i>
+                </button>
+              )}
               {e.cond && e.cond.length > 0 && (
                 <div className="rg-ending-sec">
                   <h4>{t("진입 조건")}</h4>
@@ -3846,7 +3797,7 @@ export default function RogueGuide({ initialTopic }: {
           onToggleOwn={invSection(relicOpen.id) ? () => toggleInv(relicOpen.id) : undefined} />
       )}
       {/* 기록 원문 (엔딩북 조각·방문객 장면) — 스포일러성 전문이라 클릭한 것만 연다 */}
-      {recOpen && <RecordModal rid={recOpen.rid} title={recOpen.title} sub={recOpen.sub} onClose={() => setRecOpen(null)} />}
+      {recOpen && <RecordModal rid={recOpen.rid} title={recOpen.title} sub={recOpen.sub} kind={recOpen.kind} onClose={() => setRecOpen(null)} />}
       {/* 보유 리스트 모달 — 소장품/테마 자원 탭으로 구분해 담아둔 항목을 한눈에 (피드백 반영 2026-07-24) */}
       {/* 보유 리스트는 모달이 아니라 **떠 있는 창** (사용자 지시 2026-07-29):
           바깥을 눌러도 닫히지 않고, 뒤를 어둡게 덮지 않으며(백드롭 없음), 항상 맨 위에 있고,

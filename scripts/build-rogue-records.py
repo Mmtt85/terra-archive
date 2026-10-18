@@ -59,6 +59,11 @@ def record_ids(det):
         for it in b.get("clientEndbookItemDatas") or []:
             if it.get("textId"):
                 out.append(it["textId"])
+    # 엔딩 연출 스토리(avg) — 엔딩에 도달하면 재생되는 대화 장면 (2026-10-18 사용자 요청). 산문이 아니라 일반 스토리
+    # 대본이라 to_paras 대신 이벤트 스토리 파서(build-story-scripts.py parse_story)로 읽는다 (is_avg)
+    for b in ((ac.get("endbook") or {}).get("endbook") or {}).values():
+        if b.get("hasAvg") and b.get("avgId"):
+            out.append(b["avgId"])
     for c in ((ac.get("chat") or {}).get("chat") or {}).values():
         for it in c.get("chatItemList") or []:
             if it.get("chatStoryId"):
@@ -151,6 +156,31 @@ def to_paras(raw, names=None):
     return out
 
 
+_PARSE = None
+
+
+def is_avg(text_id):
+    return "/roguelike/" in text_id.lower() and "_ending_" in text_id.lower()
+
+
+def avg_paras(raw):
+    """엔딩 연출 스토리 대본 → 문단 (화자 있는 줄은 {"n", "x"}, 지문은 문자열). 그림 줄(CG)은 뺀다 — 기록 창은 글만 보인다"""
+    global _PARSE
+    if _PARSE is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("bss", os.path.join(os.path.dirname(os.path.abspath(__file__)), "build-story-scripts.py"))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _PARSE = mod.parse_story
+    out = []
+    for ln in _PARSE(raw):
+        x = ln.get("x")
+        if not x:
+            continue
+        out.append({"n": ln["n"], "x": x} if ln.get("n") else x)
+    return out
+
+
 def main():
     refresh = "--refresh" in sys.argv
     os.makedirs(CACHE, exist_ok=True)
@@ -171,7 +201,7 @@ def main():
     records = {}
     for (base, loc, branch, _t), raw in zip(jobs, texts):
         if raw:
-            records.setdefault(base, {})[loc] = to_paras(raw, char_names(branch))
+            records.setdefault(base, {})[loc] = avg_paras(raw) if is_avg(_t) else to_paras(raw, char_names(branch))
     # ⚠ **손으로 채운 로케일을 덮어쓰지 않는다** (2026-09-06). IS6은 CN뿐이라 ko 를 사람이
     # 번역해 넣어 뒀는데, 종전처럼 파일을 통째로 새로 쓰면 kr-big-patch 가 이 스크립트를
     # 돌리는 순간 그 번역이 조용히 날아간다. 받아 온 로케일이 이기고(공식 텍스트가 나오면

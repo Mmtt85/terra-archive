@@ -730,10 +730,15 @@ function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, Hit> {
     // 까지 nameHit시키면 모아보기에 유령 항목이 낀다 (2026-07-26 영상6: 상점마다 뿔피리 등장).
     // 더 긴(구체적) 이름이 같은 라인에 맞았으면 그 부분 문자열 이름은 떨어뜨린다.
     if (nameHits.length > 1) {
+      // 줄과 **정확히 같은** 이름이 있으면, 줄이 이름의 조각으로만 걸친(역포함) 더 긴 이름은 뺀다 — '대리인 분대' 한 줄이
+      // 분대 「대리인 분대」와 조우 「대리인 분대로 변경」 둘 다에 걸렸다 (PRTS 틀렸어요 fc278368, 2026-10-18)
+      if (nameHits.some((e) => e.nameN === line)) nameHits = nameHits.filter((e) => e.nameN === line || line.includes(e.nameN));
       const drop = new Set<Entry>();
       for (const a of nameHits) {
         for (const b of nameHits) {
-          if (a !== b && a.nameN.length > b.nameN.length && a.nameN.includes(b.nameN)) drop.add(b);
+          // 더 긴 이름이 **이 줄 안에 통째로 있을 때만** 그 안의 짧은 이름을 버린다. 긴 이름이 역포함으로만 걸렸는데
+          // 짧은 이름(정확히 일치)을 버리면 진짜를 잃는다 (위 fc278368 — 종전엔 정확히 맞은 분대가 떨어졌다)
+          if (a !== b && a.nameN.length > b.nameN.length && a.nameN.includes(b.nameN) && line.includes(a.nameN)) drop.add(b);
         }
       }
       if (drop.size) nameHits = nameHits.filter((e) => !drop.has(e));

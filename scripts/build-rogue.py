@@ -1688,9 +1688,15 @@ def build_topic(tid="rogue_1", loc=None):
                   for it in b.get("clientEndbookItemDatas") or []]
         if b.get("endingId") and bitems:
             book_by_ending[b["endingId"]] = bitems
+    # 엔딩 연출 스토리 — 엔딩에 도달하면 재생되는 대화 장면 (archiveComp.endbook[].avgId, 2026-10-18 사용자 요청).
+    # 본문은 build-rogue-records.py 가 public/rogue/record/<level_rogueN_ending_M>.json 으로 굽는다
+    avg_by_ending = {b["endingId"]: record_ref(b["avgId"]) for b in endbooks.values()
+                          if b.get("endingId") and b.get("hasAvg") and b.get("avgId")}
     for e in endings:
         if e["id"] in book_by_ending:
             e["book"] = book_by_ending[e["id"]]
+        if avg_by_ending.get(e["id"], {}).get("txt"):
+            e["avg"] = avg_by_ending[e["id"]]["rid"]
 
     # 월간 방문객 — monthSquad(방문객 오퍼·팀명·로테이션 연월·서사) + archiveComp.chat
     # (층·구역별 특별 조우 장면). 방문객 이름은 teamChars의 char id를 사이트 오퍼 데이터로
@@ -2683,9 +2689,15 @@ def build_rogue6():
                   for it in b.get("clientEndbookItemDatas") or []]
         if b.get("endingId") and bitems:
             book_by_ending6[b["endingId"]] = bitems
+    # 엔딩 연출 스토리 — 엔딩에 도달하면 재생되는 대화 장면 (archiveComp.endbook[].avgId, 2026-10-18 사용자 요청).
+    # 본문은 build-rogue-records.py 가 public/rogue/record/<level_rogueN_ending_M>.json 으로 굽는다
+    avg_by_ending6 = {b["endingId"]: record_ref(b["avgId"]) for b in endbooks6.values()
+                          if b.get("endingId") and b.get("hasAvg") and b.get("avgId")}
     for e in endings:
         if e["id"] in book_by_ending6:
             e["book"] = book_by_ending6[e["id"]]
+        if avg_by_ending6.get(e["id"], {}).get("txt"):
+            e["avg"] = avg_by_ending6[e["id"]]["rid"]
     try:
         op_name6 = {o["id"]: o["name"] for o in
                     json.load(open(os.path.join(REPO, "app", "data", "operators.json"), encoding="utf-8"))}
