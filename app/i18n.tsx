@@ -639,6 +639,7 @@ const D: Record<string, Pair> = {
   "코팅 완료": ["Fully coated", "コーティング完了"],
   "한국 서버 미실장": ["Not on the KR server yet", "韓国サーバー未実装"],
   "열리면 여기에 기록이 나옵니다": ["Your records will appear here once it opens", "実装されるとここに記録が出ます"],
+  "한국 서버에 아직 없는 테마라 기록이 비어 있습니다. 엔딩·분대·소장품 목록만 미리 볼 수 있습니다.": ["This theme isn't on the KR server yet, so there are no records — you can preview its endings, squads and collectibles.", "韓国サーバーにまだないテーマのため記録は空です。エンディング・分隊・秘宝の一覧だけ先に見られます。"],
   "{name} 상세 정보 열기": ["Open {name} details", "{name}の詳細を開く"],
   "{name} 오퍼레이터": ["Operator {name}", "オペレーター{name}"],
 

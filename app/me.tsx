@@ -1722,7 +1722,8 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
   const gradeOf = (bandIds: string[], ending: string) => Math.max(-1, ...bandIds.map((id) => rec.bandGrade?.[id]?.[ending] ?? -1));
   const allBands = Object.keys(rec.bandGrade ?? {});
   // 팬텀·미즈키(rogue_1·2)는 분대 훈장(난이도별)이 없어 계정 기록에 bandGrade 자체가 없다 — 그 분대로 엔딩을 봤는지(bandCnt)만 보여 준다
-  const hasGrade = allBands.length > 0;
+  // 기록이 아예 없는 미실장 테마(흑류수해)는 훈장 표 모양으로 — 훈장이 없는 건 팬텀·미즈키뿐이다
+  const hasGrade = allBands.length > 0 || (!raw?.record && !["rogue_1", "rogue_2"].includes(topic));
   const cntOf = (bandIds: string[], ending: string) => bandIds.reduce((a, id) => a + (rec.bandCnt?.[id]?.[ending] ?? 0), 0);
   const bestGrade = Math.max(-1, ...allBands.flatMap((b) => Object.values(rec.bandGrade?.[b] ?? {})));
   // 그 테마의 일반 모드 최고 난이도 — 거기까지 깬 칸은 진하게 (테마마다 15·18 …)
@@ -1759,6 +1760,7 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
         <h3>{(TOPICS.find((x) => x.id === topic)?.name) ?? short(topic)}</h3>
         <a className="me-rx-go" href={`${locale === "ko" ? "" : `/${locale}`}/rogue/is${topic.split("_")[1]}`}>{t("이 테마 가이드로")} ›</a>
       </header>
+      {!raw?.record && <p className="me-note">{t("한국 서버에 아직 없는 테마라 기록이 비어 있습니다. 엔딩·분대·소장품 목록만 미리 볼 수 있습니다.")}</p>}
       {/* 요약 한 줄 — 숫자마다 단위를 붙인다 (사용자 지적 2026-10-18 "뭔지 하나도 모르겠음") */}
       <div className="me-rg-sum">
         <span>{t("탐험 {n}회", { n: fmt(runs) })}</span>
@@ -1930,9 +1932,11 @@ function RogueStats({ me }: { me: MeData }) {
         })}
         {/* 아직 기록이 없는 미래시 테마(흑류수해) — 칸은 흐리게 두고, 한섭에 열려 기록이 오면 위 목록으로 넘어간다 (사용자 질문 2026-10-18) */}
         {TOPICS.filter((tp) => tp.future && !all[tp.id]?.record).map((tp) => (
-          <div key={tp.id} className="me-resume-idle has-bg me-rg-future" style={{ ["--bg" as string]: `url(${asset(`/rogue/kv${tp.id.split("_")[1]}.webp`)})` }}>
+          // 미실장이어도 눌러서 칸 모양(엔딩·분대·소장품 목록)은 볼 수 있게 — 기록은 비어 있다 (사용자 지시 2026-10-18)
+          <button key={tp.id} type="button" className="has-bg me-rg-future" onClick={() => setOpen(tp.id)}
+            style={{ ["--bg" as string]: `url(${asset(`/rogue/kv${tp.id.split("_")[1]}.webp`)})` }}>
             <b>{short(tp.id)}</b><span>{t("한국 서버 미실장")}</span><em>{t("열리면 여기에 기록이 나옵니다")}</em>
-          </div>
+          </button>
         ))}
       </div>
       {open && <RogueTopicDetail me={me} topic={open} onClose={() => setOpen(null)} />}
