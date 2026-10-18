@@ -1364,7 +1364,7 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
  * 샤마르 override는 전원 효율을 대체하고(자기 말고 1명당 +45%), 위디·유넥티스 automation은 오퍼 제공분만 0으로
  * 만들되 시설 기반 생산력은 살린다.
  */
-function roomEfficiency(parts: OpBreakdown[], team: InfraOp[]): number {
+export function roomEfficiency(parts: OpBreakdown[], team: InfraOp[]): number {
   const override = Math.max(...parts.map((p) => p.override), 0);
   const automation = parts.reduce((sum, p) => sum + p.automation, 0);
   const facilityEff = parts.reduce((sum, p) => sum + p.facilityEff, 0);
@@ -1382,10 +1382,20 @@ function roomEfficiency(parts: OpBreakdown[], team: InfraOp[]): number {
     : additive + facilityEff + amplify;
 }
 
+/** 오더 수익 배수 — 품질 수익(테킬라)은 같은 방 고품질 확률 요원 수만큼, 위약 수익(프로바이조)은 품질 요원이 적고 방 효율이 높을수록.
+ *  teamScore 와 방 창 '오더 수익' 칩이 같은 값을 쓰게 뽑아 뒀다 (칩이 ×1.5 전 25를 적어 총합과 12.5 어긋났다, 2026-10-19) */
+export function payoutMults(parts: OpBreakdown[], efficiency: number): { quality: number; violation: number } {
+  const probCount = parts.filter((p) => p.quality > 0).length;
+  const violationStep = (C as unknown as Record<string, number | undefined>).PAYOUT_VIOLATION_STEP ?? C.PAYOUT_QUALITY_STEP;
+  return {
+    quality: Math.min(1 + C.PAYOUT_QUALITY_STEP * probCount, C.PAYOUT_QUALITY_CAP),
+    violation: Math.max(1 - violationStep * probCount, 0) * Math.min(1 + efficiency / 100, C.PAYOUT_VIOLATION_CAP),
+  };
+}
+
 export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const parts = team.map((op) => breakdown(op, room, team, ctx));
   const efficiency = roomEfficiency(parts, team);
-  const probCount = parts.filter((p) => p.quality > 0).length;
   const quality = parts.reduce((sum, p) => sum + p.quality, 0);
   // quality payouts (테킬라) profit from quality orders; violation payouts
   // (프로바이조) need low-count orders — quality crew works against them, but
@@ -1394,7 +1404,6 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   // 위약 오더여야 — 상충이라 효율이 안 좋음"): VIOLATION_STEP=1이면 품질 요원 1명으로 위약
   // 배상이 0이 되어 같은 방에 안 앉는다. 테킬라 쪽 QUALITY_STEP을 같이 올리면 부스트가 1명
   // 만에 캡에 닿아 품질 결집 유인이 죽으므로(바이비크가 제이에 밀림) 반드시 분리 유지.
-  const violationStep = (C as unknown as Record<string, number | undefined>).PAYOUT_VIOLATION_STEP ?? C.PAYOUT_QUALITY_STEP;
   // 특별 오더(클로저·U-Official)는 그 방의 순금 오더를 전부 자기 고정 오더로 바꾼다 —
   // 고품질 확률·품질 수익(테킬라 4금 필요)·위약 수익(프로바이조 위약 오더 필요)의 **전제가
   // 사라지므로 전부 0**이다. 대신 자기 배수를 방 처리량에 곱으로 건다 (payout_v와 같은 구조).
@@ -1402,9 +1411,10 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const orderFix = orderFixed
     ? parts.reduce((sum, p) => sum + p.orderFix, 0) * Math.min(1 + efficiency / 100, C.PAYOUT_VIOLATION_CAP)
     : 0;
+  const mult = payoutMults(parts, efficiency);
   const payout = orderFixed ? orderFix
-    : parts.reduce((sum, p) => sum + p.payout, 0) * Math.min(1 + C.PAYOUT_QUALITY_STEP * probCount, C.PAYOUT_QUALITY_CAP)
-    + parts.reduce((sum, p) => sum + p.payoutViolation, 0) * Math.max(1 - violationStep * probCount, 0) * Math.min(1 + efficiency / 100, C.PAYOUT_VIOLATION_CAP);
+    : parts.reduce((sum, p) => sum + p.payout, 0) * mult.quality
+    + parts.reduce((sum, p) => sum + p.payoutViolation, 0) * mult.violation;
   let auras = 0;
   for (const kind of Object.keys(AURA_WEIGHT)) {
     const bestOfKind = Math.max(...parts.map((p) => p.auras[kind] ?? 0), 0);

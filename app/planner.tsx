@@ -17,7 +17,7 @@ import {
   infra, ops, opById, factionsOf, withElite, clueBase, maxElite, eliteOptions, eliteLocks, levelLocks,
   ELITE_LABEL, MAX_OP_LEVEL, maxOpLevel, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
-  AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, orderFixFor, roomMaxNetDrain,
+  AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, roomEfficiency, payoutMults, capConvFor, orderFixFor, roomMaxNetDrain,
   ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, flowsFromAssignments, tokenPartners, activeSkills, tokensAt, planTokensAt, planScore, shiftHoursFor, KEEP_MARGIN, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS, PLANTS_BASE_RT,
   splitPriority, joinPriority, AUTO_BENCH_IDS, genEstimate,
@@ -2770,7 +2770,21 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     acc["제어 오라(가중)"] += Object.keys(AURA_WEIGHT).reduce((sum, kind) => sum + ((b.auras[kind] ?? 0) + (b.aurasAdd[kind] ?? 0)) * AURA_WEIGHT[kind], 0);
     return acc;
   }, { "스킬 효율": 0, "시설 기반": 0, "자동화": 0, "품질 기대치": 0, "오더 수익": 0, "효율 오버라이드": 0, "동료 보너스": 0, "레어도 기본": 0, "제어 오라(가중)": 0 } as Record<string, number>);
-  agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, agg["스킬 효율"], ctx.product);
+  // 샤마르 '속삭임'(오버라이드)·위디류 자동화가 걸리면 다른 오퍼가 내는 효율은 **0** 이다 — 엔진(roomEfficiency)은 그렇게 세는데
+  // 이 칩만 각자 효율을 '스킬 효율'로 더하고 오버라이드는 1명분만 적어, 총합(+145)과 칩이 어긋났다
+  // (제안 4ea3fc07 2026-10-19 "샤마르+테킬라+칠책 — 칠책 +35 가 더해진 것처럼 보인다"). 총합은 원래 맞았다.
+  const parts0 = team.map((op) => breakdown(op, cell.room, team, ctx));
+  const overrideVal = Math.max(0, ...parts0.map((p) => p.override));
+  const replaced = overrideVal > 0 || parts0.some((p) => p.automation > 0);
+  if (replaced) { agg["스킬 효율"] = 0; agg["동료 보너스"] = 0; }
+  if (overrideVal > 0) agg["효율 오버라이드"] = overrideVal * Math.max(0, team.length - 1);
+  // 오더 수익 — 엔진과 같은 배수(같은 방 고품질 요원 수 · 방 효율)를 곱한 실제 몫. 특별 오더 방은 전제가 사라져 0 (특별 오더 칩이 따로 있다)
+  const roomEff0 = roomEfficiency(parts0, team);
+  const mult0 = payoutMults(parts0, roomEff0);
+  const orderFixedRoom = parts0.some((p) => p.orderFixed);
+  const payoutOf = (b: { payout: number; payoutViolation: number }) => (orderFixedRoom ? 0 : b.payout * mult0.quality + b.payoutViolation * mult0.violation);
+  agg["오더 수익"] = parts0.reduce((sum, p) => sum + payoutOf(p), 0);
+  agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, replaced ? roomEff0 : agg["스킬 효율"], ctx.product);
   // 용량 변환 — 팀이 쌓은 오더 상한/창고 용량을 변환기가 되돌린 효율/생산력 (베나벌컨버블·데겐블레허·제이)
   agg["용량 변환"] = capConvFor(team, cell.room, ctx);
   // 특별 오더(클로저·U-Official) — 스킬에 적힌 +10%가 아니라 **이 방에서 실제로 오르는 %p**를
@@ -2778,13 +2792,13 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   agg["특별 오더"] = orderFixFor(team, cell.room, ctx);
   // 증폭 — 팀이 제공한 효율(=스킬 효율 합)을 배수로 되돌림 (와이후 협동의식·스노우상트 근면성실)
   const ampSpecs = team.flatMap((op) => breakdown(op, cell.room, team, ctx).amplify);
-  agg["증폭"] = ampSpecs.reduce((sum, spec) => sum + Math.min(spec.cap, Math.floor(agg["스킬 효율"] / spec.per) * spec.add), 0);
+  agg["증폭"] = replaced ? 0 : ampSpecs.reduce((sum, spec) => sum + Math.min(spec.cap, Math.floor(agg["스킬 효율"] / spec.per) * spec.add), 0);
   // 다른 방 오퍼가 이 방에 넣어 준 몫(저스티스 나이트 → 와일드메인 제조소)을 따로 세운다
   // — breakdown이 efficiency에 섞어 두므로 '스킬 효율'에서 빼야 배치된 스킬 합과 눈으로
   // 맞는다 (사용자 요청 2026-08-08: 받는 쪽에도 출처 설명이 있어야 한다).
   // ⚠ 차감은 **증폭·오라 계산이 끝난 뒤**에 한다 — 저 둘은 crossIn을 포함한 방 효율을
   // 입력으로 쓰는 엔진과 같은 값을 봐야 하므로, 먼저 빼면 화면이 엔진과 어긋난다.
-  agg["타 시설에서 받음"] = team.reduce((sum, op) =>
+  agg["타 시설에서 받음"] = replaced ? 0 : team.reduce((sum, op) =>
     sum + breakdown(op, cell.room, team, ctx).crossIn.reduce((s, x) => s + x.value, 0), 0);
   agg["스킬 효율"] -= agg["타 시설에서 받음"];
   // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
@@ -3315,8 +3329,11 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 // 안 그러면 "스킬 +25%"인데 기여가 "+30%"로 찍혀, 나머지 5가 어디서 왔는지
                 // 화면에 아무 설명이 없다 (사용자 요청 2026-08-08).
                 const crossInSum = b.crossIn.reduce((sum, x) => sum + x.value, 0);
-                if (Math.round(b.efficiency - crossInSum) !== 0) parts.push(`${t(UNIT[cell.room] ?? "효율")} +${Math.round(b.efficiency - crossInSum)}${pct}`);
-                for (const got of b.crossIn) {
+                // 오버라이드·자동화가 걸린 방이면 이 오퍼의 효율은 0 으로 대체된다 — 사용자 지시 2026-10-19 "샤마르가 있으면 나머지는 그냥 0%로 보이게" (제안 4ea3fc07)
+                const zeroed = replaced && b.override <= 0 && b.automation <= 0 && Math.round(b.efficiency) !== 0;
+                if (zeroed) parts.push(t("{unit} 0% (효율 대체)", { unit: t(UNIT[cell.room] ?? "효율") }));
+                else if (Math.round(b.efficiency - crossInSum) !== 0) parts.push(`${t(UNIT[cell.room] ?? "효율")} +${Math.round(b.efficiency - crossInSum)}${pct}`);
+                for (const got of zeroed ? [] : b.crossIn) {
                   const giver = opById.get(got.from) ?? opMap.get(got.from);
                   parts.push(t("{name}({room})에게 받음 +{n}%", {
                     name: giver?.name ?? got.from,
@@ -3331,14 +3348,14 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                   if (Math.round(ampAdd) !== 0) parts.push(t("증폭 +{n}%", { n: Math.round(ampAdd) }));
                 }
                 if (Math.round(b.quality) !== 0) parts.push(t("고품질 확률 +{n}%p 상당", { n: Math.round(b.quality) }));
-                if (Math.round(b.payout + b.payoutViolation) !== 0) parts.push(t("오더 수익 +{n}% 상당", { n: Math.round(b.payout + b.payoutViolation) }));
+                if (Math.round(payoutOf(b)) !== 0) parts.push(t("오더 수익 +{n}% 상당", { n: Math.round(payoutOf(b)) }));
                 // 특별 오더는 방 처리량에 곱으로 걸리므로 스킬 문구의 +10%와 실제 기여가 다르다 —
                 // 이 방 기준 실제 %p를 적고, 배수 자체(+16.9%)도 괄호로 밝힌다
                 if (b.orderFixed) parts.push(t("특별 오더 +{n}%p 상당 (오더 수익 {m}배)", {
                   n: Math.round(orderFixFor(team, cell.room, ctx) * 10) / 10,
                   m: Math.round((1 + b.orderFix / 100) * 1000) / 1000,
                 }));
-                if (b.override > 0) parts.push(t("효율 대체 인당 +{n}%", { n: Math.round(b.override) }));
+                if (b.override > 0) parts.push(t("효율 대체 +{n}% (다른 {k}명 × {per}%)", { n: Math.round(b.override * Math.max(0, team.length - 1)), k: Math.max(0, team.length - 1), per: Math.round(b.override) }));
                 if (Math.round(b.perCoworker * (team.length - 1)) !== 0) parts.push(t("동료 보너스 +{n}%", { n: Math.round(b.perCoworker * (team.length - 1)) }));
                 if (Math.round(b.clueBase) !== 0) parts.push(t("레어도 기본 {r}성·{e} +{n}%", { r: op.rarity, e: t(ELITE_LABEL[op.elite ?? maxElite(op.rarity)]), n: Math.round(b.clueBase) }));
                 for (const [kind, value] of Object.entries(b.auras)) if (value > 0) parts.push(`${t(AURA_LABEL[kind] ?? kind)} +${Math.round(value)}%`);

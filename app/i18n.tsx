@@ -834,6 +834,8 @@ const D: Record<string, Pair> = {
   "전체 자동편성": ["Auto-assign all", "全自動編成"],
   "빈 자리만 자동편성": ["Fill empty slots", "空きスロットのみ自動編成"],
   "인프라 오퍼 육성 추천": ["Operator raise advisor (RIIC)", "インフラ オペレーター育成おすすめ"],
+  "{unit} 0% (효율 대체)": ["{unit} 0% (efficiency replaced)", "{unit} 0%（効率置換）"],
+  "효율 대체 +{n}% (다른 {k}명 × {per}%)": ["Efficiency override +{n}% ({k} others × {per}%)", "効率置換 +{n}%（他{k}人 × {per}%）"],
   "보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다": ["Among operators you own but haven't finished (elite lowered), finds the ones whose completion actually raises base efficiency by re-running the real auto-planner", "所持しているが未完成（昇進を下げた）オペレーターの中から、完成させると基地効率が上がるオペレーターを、実際の自動編成を回して見つけます"],
   "분석 중 {i}/{n}": ["Analyzing {i}/{n}", "分析中 {i}/{n}"],
   "분석 중…": ["Analyzing…", "分析中…"],
