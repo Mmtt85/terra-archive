@@ -281,6 +281,14 @@ def ability_of(hb):
     return "\n".join(lines) or hb.get("ability") or None
 
 
+def ability_titles(hb):
+    """능력 줄 중 형태(페이즈) 제목인 줄의 번호 — 게임 textFormat TITLE ('제2형태' 등). ability_of 와 같은 줄 세기.
+    화면은 이 줄을 번호 없는 소제목으로 띄운다 (적 도감 build-enemies.py abilT 와 같은 규칙, 2026-10-18
+    사용자 지적 "침몰한 자 강화 형태 텍스트도 리스트 하나로 들어가 버렸음")"""
+    al = [a for a in (hb.get("abilityList") or []) if a.get("text") and a.get("text").strip()]
+    return [i for i, a in enumerate(al) if a.get("textFormat") == "TITLE"]
+
+
 # ── 조우 씬 트리 (PRTS 매칭 — build-rogue-enc-scenes.py 산출물) ──────────────
 # 게임 excel엔 씬↔선택지 소속·랜덤 롤 테이블이 없어(클라 프리팹 소관) PRTS 위키의
 # ISEvent 구조를 id 매칭한 scripts/rogue-enc-scenes.json 을 로케일 텍스트로 해석해
@@ -1256,6 +1264,7 @@ def build_topic(tid="rogue_1", loc=None):
             "attack": attack_of(hb, tloc),
             "desc": hb.get("description"),
             "ability": ability_of(hb),
+            **({"abilT": ability_titles(hb)} if ability_titles(hb) else {}),
             "hp": num(attr("maxHp", 0)), "atk": num(attr("atk", 0)),
             "def": num(attr("def", 0)), "res": num(attr("magicResistance", 0)),
             "aspd": num(attr("attackSpeed", 100)), "ms": num(attr("moveSpeed", 1)),
@@ -2445,6 +2454,7 @@ def build_rogue6():
             "attack": attack_of(hbk) or attack_of(hb),
             "desc": hbk.get("description") or hb.get("description"),
             "ability": ability_of(hbk) or ability_of(hb),
+            **({"abilT": t} if (t := ability_titles(hbk) if ability_of(hbk) else ability_titles(hb)) else {}),
             "hp": num(attr("maxHp", 0)), "atk": num(attr("atk", 0)),
             "def": num(attr("def", 0)), "res": num(attr("magicResistance", 0)),
             "aspd": num(attr("attackSpeed", 100)), "ms": num(attr("moveSpeed", 1)),
@@ -2845,6 +2855,11 @@ def build_rogue6():
                 e["attack"] = attack_of(hl, loc) or attack_of(hc, loc)
                 e["desc"] = hl.get("description") or hc.get("description")
                 e["ability"] = ability_of(hl) or ability_of(hc)
+                t = ability_titles(hl) if ability_of(hl) else ability_titles(hc)
+                if t:
+                    e["abilT"] = t
+                else:
+                    e.pop("abilT", None)
                 e["immune"] = [imm.get(x, x) for x in e.get("immune") or []]
         for e in out["enemies"].values():
             e.pop("_hb", None)

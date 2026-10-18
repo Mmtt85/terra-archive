@@ -84,7 +84,7 @@ type Emg = {
 // end = 몇 번 엔딩 경로의 보스인가 (1 = 기본 엔딩, N = 히든 N-1 — rogueN-curated.json bossEnding, 2026-10-02)
 // var = 강화판 등 같은 자리 보스의 다른 판, varCond = 그 판으로 바뀌는 조건, varProb = 확률로 나오는 판의 확률 (bossVariant)
 type Stage = { var?: string; varCond?: string; varProb?: number; side?: 1; id: string; kind: string; zone: number | null; code: string | null; name: string; desc: string | null; eliteDesc: string | null; emg: Emg; map?: string | null; enemies: StageEnemy[]; cn?: string; end?: number };
-type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number; immune?: string[]; img?: string | null; cn?: string };
+type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; abilT?: number[]; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number; immune?: string[]; img?: string | null; cn?: string };
 // 소장품 효과의 수치 (scripts/build-rogue.py relic_effects) — usage 문장이 아니라 게임
 // 데이터의 blackboard에서 뽑아 3개 로케일에 같은 배열로 심는다(언어 무관 합산).
 // m: mul=배율 델타(0.35 → +35%) · add=가산 · scale=1 기준 배율(1.35 → +35%, 겹치면 곱)
@@ -805,6 +805,8 @@ function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, onOpenEnemy, appea
     id: ekey, idx: e.index, name: e.name, rank: e.rank, sort: 0, desc: e.desc,
     // 테마 데이터의 attack은 피해 유형("물리·마법")이고 능력은 줄바꿈으로 이어 붙여 있다 (build-rogue.py)
     abil: e.ability ? e.ability.split("\n").filter(Boolean) : [], dmg: e.attack ? e.attack.split("·") : [],
+    // 형태 제목 줄 번호 (build-rogue.py ability_titles) — 적 도감처럼 번호 없는 소제목으로 띄운다
+    ...(e.abilT?.length ? { abilT: e.abilT } : {}),
     race: [], way: null, motion: null, lv: [lv],
   };
   // 표의 단계 칸 = 지금 고른 난이도 (+ 긴급 노드에서 열었으면 긴급). 연 곳의 배율 컨텍스트를 그대로

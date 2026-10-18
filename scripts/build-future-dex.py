@@ -465,7 +465,8 @@ def build(loc, suf):
         src = eid if enemy_db.get(eid) else next((v for v in variants.get(eid, []) if enemy_db.get(v)), eid)
         tags = first_defined(src, "enemyTags") or []
         way, motion, rng = first_defined(src, "applyWay"), first_defined(src, "motion"), first_defined(src, "rangeRadius")
-        abil = [tr(a.get("text"), loc, f"abil {eid}") for a in hb.get("abilityList") or [] if clean(a.get("text"))]
+        abil_src = [a for a in hb.get("abilityList") or [] if clean(a.get("text"))]
+        abil = [tr(a.get("text"), loc, f"abil {eid}") for a in abil_src]
         rec = {
             "id": eid, "idx": hb.get("enemyIndex"), "name": enemy_name(eid, loc), "rank": hb.get("enemyLevel"),
             "sort": hb.get("sortId", 9999), "desc": tr(hb.get("description"), loc, f"edesc {eid}"),
@@ -475,6 +476,10 @@ def build(loc, suf):
             "motion": MOTION_LABELS[loc].get(motion) if motion else None,
             "lv": stat_rows(src, loc), "fut": 1,
         }
+        # 형태(페이즈) 제목 줄 번호 — 적 도감(build-enemies.py abilT)과 같은 규칙. 번호 없는 소제목으로 뜬다 (2026-10-18)
+        abil_t = [i for i, a in enumerate(abil_src) if a.get("textFormat") == "TITLE"]
+        if abil_t:
+            rec["abilT"] = abil_t
         if rng and rng > 0:
             rec["rng"] = num(rng)
         link = [x for x in hb.get("linkEnemies") or [] if x in enemy_ix]
