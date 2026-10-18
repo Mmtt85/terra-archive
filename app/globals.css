@@ -33612,3 +33612,107 @@ html.rg-theme.rg4 main.site-main {
 .rg-modal.rg-storymodal .future-note { margin: 12px 0 2px; padding: 8px 10px; border-left: 3px solid var(--rgline); font-size: 11px; line-height: 1.6; }
 /* 같은 안내 — --rgdeep 바탕이 창 바탕과 따로 놀아 보였다 → 창 바탕 그대로 + 금색 옅게 (사용자 지적 2026-10-19) */
 .rg-modal.rg-storymodal .future-note { background: color-mix(in srgb, var(--rggold) 6%, transparent); border-left-color: color-mix(in srgb, var(--rggold) 55%, transparent); }
+
+/* ── 인프라 육성 추천 창 개편 (2026-10-19, 사용자 "몇 달 전에 만든 기능이라 UI 가 처참하다 — 가독성 좋게") ──
+   카드 한 장 = 순위 · 얼굴 · (이름·승급 / 배치 / 방 변화 칩) · 오른쪽 '회수 N일' 큰 숫자. 설명 문단은 '계산 방식' 하나로 접었다 */
+.invest-panel.operator-modal.iv { width: min(780px, 94vw); }
+.iv-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.iv-head-text { min-width: 0; }
+.iv-eyebrow { font: 600 11px/1 var(--mono); letter-spacing: .04em; color: var(--muted); }
+.iv-head h3 { margin: 6px 0 0; font-size: 18px; font-weight: 800; line-height: 1.25; color: var(--ink); }
+.iv-sub { margin: 4px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink3); }
+.iv-head-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.iv-btn { padding: 6px 11px; border: 1px solid var(--btn-line); border-radius: var(--r-sm); background: var(--btn-bg); color: var(--btn-ink); font-size: 12px; font-weight: 600; cursor: pointer; transition: background .2s, border-color .2s, color .2s; }
+.iv-btn:disabled { opacity: .45; cursor: default; }
+.iv-btn.pri { border-color: var(--btn-pri-line); background: var(--btn-pri-bg); color: var(--btn-pri-ink); }
+@media (hover: hover) {
+  .iv-btn:not(:disabled):hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover); color: var(--btn-ink-hover); }
+  .iv-btn.pri:not(:disabled):hover { border-color: var(--btn-pri-bg-hover); background: var(--btn-pri-bg-hover); color: var(--on-lime); }
+}
+.iv-basis { margin: 10px 0 0; font-size: 12px; color: var(--ink3); }
+.iv-basis > summary { cursor: pointer; width: fit-content; font-weight: 600; color: var(--ink2); }
+.iv-basis ul { margin: 8px 0 0; padding: 10px 12px 10px 26px; border-radius: var(--r-md); background: var(--bg-soft); line-height: 1.6; }
+.iv-basis li + li { margin-top: 3px; }
+.iv-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.iv-card { display: grid; grid-template-columns: 22px auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--white); transition: border-color .2s; }
+.iv-card.on { border-color: var(--lime-line); }
+.iv-rank { align-self: start; padding-top: 4px; font: 600 12px/1 var(--mono); color: var(--muted); text-align: right; }
+.iv-faces { display: flex; align-self: start; }
+.iv-faces img { width: 48px; height: 48px; border-radius: var(--r-sm); background: var(--bg-soft); object-fit: cover; }
+.iv-faces img + img { margin-left: -12px; box-shadow: -2px 0 0 var(--white); }
+.iv-main { min-width: 0; }
+.iv-names { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.iv-name { display: inline-flex; align-items: baseline; gap: 6px; }
+.iv-name b { font-size: 14px; font-weight: 700; color: var(--ink); }
+.iv-name small { font-size: 11px; color: var(--muted); }
+.iv-plus { font-style: normal; font-size: 12px; color: var(--muted); margin-right: 2px; }
+.iv-tag { padding: 1px 6px; border-radius: var(--r-sm); background: var(--tint-lime); color: var(--tint-lime-ink); font-size: 10px; font-weight: 700; }
+.iv-place { margin: 3px 0 0; font-size: 11px; color: var(--ink3); }
+.iv-chips { list-style: none; margin: 7px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.iv-chips li { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 7px; border-radius: var(--r-sm); background: var(--bg-soft); font-size: 11px; line-height: 1.45; }
+.iv-chips li span { color: var(--ink3); }
+.iv-chips li b { font-weight: 600; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.iv-chips li.down b { color: var(--danger); }
+.iv-chips li.hours { background: var(--tint-warm); }
+.iv-chips li.hours span, .iv-chips li.hours b { color: var(--tint-warm-ink); }
+.iv-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; align-self: stretch; justify-content: space-between; }
+.iv-payback { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 4px 6px; border: 0; border-radius: var(--r-sm); background: transparent; color: inherit; cursor: pointer; text-align: right; }
+.iv-payback b { font-size: 20px; font-weight: 800; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.iv-payback b.na { font-size: 12px; font-weight: 600; color: var(--muted); }
+.iv-payback small { font-size: 11px; color: var(--muted); white-space: nowrap; }
+@media (hover: hover) { .iv-payback:hover { background: var(--btn-ghost-hover); } }
+.iv-acts { display: flex; gap: 4px; }
+.iv-mini { padding: 3px 8px; border: 1px solid var(--btn-line); border-radius: var(--r-sm); background: var(--btn-bg); color: var(--btn-ink); font-size: 11px; cursor: pointer; }
+.iv-mini.on { border-color: transparent; background: var(--btn-on-bg); color: var(--btn-on-ink); }
+@media (hover: hover) { .iv-mini:not(.on):hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover); color: var(--btn-ink-hover); } }
+.iv-applied { font-size: 11px; font-weight: 600; color: var(--ok); }
+@media (max-width: 640px) {
+  .iv-card { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "faces main" "side side"; gap: 8px 10px; }
+  .iv-rank { display: none; }
+  .iv-faces { grid-area: faces; }
+  .iv-main { grid-area: main; }
+  .iv-side { grid-area: side; flex-direction: row; align-items: center; justify-content: space-between; padding-top: 6px; border-top: 1px dashed var(--line); }
+  .iv-payback { flex-direction: row; align-items: baseline; gap: 6px; padding: 0; }
+}
+
+/* 인프라 모바일 단추 줄 — '임시 편성 해보기'가 끼어들며 nth-child 순번이 밀려 '편성 전체 비우기'가 맨 위 한 칸에 홀로 떨어졌다
+   (사용자 지적 2026-10-19). 순번 대신 클래스로 자리를 준다:
+   ① 보유 오퍼 설정(가득) ② 전체·빈 자리 자동편성(반반) ③ 이미지로 보기·임시 편성·그 외(셋) ④ 편성 전체 비우기(+ 자동편성 시점으로) */
+@media (max-width: 640px) {
+  .planner-buttons > * { grid-column: span 2; }
+  .planner-buttons > :nth-child(n) { order: 9; }
+  .planner-buttons > button.primary:not(:has(.btn-swap)) { grid-column: 1 / -1; order: 1; }
+  .planner-buttons > button.primary:has(.btn-swap) { grid-column: span 3; order: 2; }
+  .planner-buttons > .pl-fill-btn { grid-column: span 3; order: 3; }
+  .planner-buttons > .planner-image-btn { grid-column: span 2; order: 4; }
+  .planner-buttons > .pl-sandbox-btn { grid-column: span 2; order: 5; }
+  .planner-buttons > .more-group { grid-column: span 2; order: 6; }
+  .planner-buttons > .pl-clear-btn { grid-column: span 3; order: 7; }
+  .planner-buttons > .pl-clear-btn:not(:has(+ .pl-revert-btn)) { grid-column: 1 / -1; }
+  .planner-buttons > .pl-revert-btn { grid-column: span 3; order: 8; }
+  .planner-buttons > .planner-image-btn { font-size: 12px; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
+}
+/* 육성 추천 창 — 창 판(16·18px) + 공용 본문 여백(.mw-body 12·22·24px)이 겹쳐 안쪽이 두 겹으로 비었다 (사용자 지적 2026-10-19). 판 쪽을 걷는다 */
+.invest-panel.operator-modal.iv { padding: 0; }
+/* 육성 추천 탭 — 가진 오퍼 키우기 / 새로 데려와 키우기 (2026-10-19). 공용 탭 결: 바탕 없이 밑줄 */
+.iv-tabs { display: flex; gap: 4px; margin: 12px 0 0; border-bottom: 1px solid var(--line); }
+.iv-tabs button { position: relative; padding: 7px 12px; border: 0; background: transparent; color: var(--ink3); font-size: 13px; font-weight: 600; cursor: pointer; }
+.iv-tabs button small { margin-left: 4px; font: 600 11px/1 var(--mono); color: var(--muted); }
+.iv-tabs button.on { color: var(--ink); }
+.iv-tabs button.on::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; background: var(--tab-line, var(--lime-line)); }
+@media (hover: hover) { .iv-tabs button:not(.on):hover { color: var(--ink2); } }
+.iv-fresh-note, .iv-empty-tab { margin-top: 10px; }
+.iv-tag.route { background: var(--bg-soft); color: var(--ink3); font-weight: 600; }
+
+/* 인프라 시작 안내 — 보유 오퍼가 없을 때 (2026-10-19, 기본 284명 대신) */
+.pl-start { margin: 14px 0 0; padding: 18px 20px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--white); }
+.pl-start h3 { margin: 0; font-size: 16px; font-weight: 800; color: var(--ink); }
+.pl-start p { margin: 6px 0 0; font-size: 13px; line-height: 1.6; color: var(--ink3); }
+.pl-start-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.pl-start-acts > * { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border: 1px solid var(--btn-line); border-radius: var(--r-sm); background: var(--btn-bg); color: var(--btn-ink); font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; }
+.pl-start-acts > .pl-start-main { border-color: var(--btn-pri-line); background: var(--btn-pri-bg); color: var(--btn-pri-ink); font-size: 14px; }
+@media (hover: hover) {
+  .pl-start-acts > :not(.pl-start-main):hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover); color: var(--btn-ink-hover); }
+  .pl-start-acts > .pl-start-main:hover { border-color: var(--btn-pri-bg-hover); background: var(--btn-pri-bg-hover); color: var(--on-lime); }   /* 라임 채움 위 글자는 on-lime — 라임 글자 그대로면 사라진다 */
+}
+@media (max-width: 640px) { .pl-start-acts > * { flex: 1 1 100%; justify-content: center; } }

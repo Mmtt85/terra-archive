@@ -4,12 +4,16 @@
 // 옮기는 것만이 근본 해결 (2026-07-22 /infra INP Poor 10% 리포트).
 // 엔진은 React 무의존 순수 계산이라 그대로 임포트한다 (verify-plan.mjs와 같은 성질).
 // 호출부는 planner-offload.ts — 오퍼 객체 대신 id·정예화만 주고받는다 (직렬화 최소화).
-import { ops, withElite, optimize, setLayoutPreset, setLevels, setRecycle, setTrainingUse, keepIfClose, type Plan, type RecycleMode, type Elite, type ProdPriority, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct, type RoomPin } from "./planner-engine";
-import { recommendRaises } from "./planner-invest";
+import { ops, withElite, optimizeConfig, setLayoutPreset, setLevels, setRecycle, setTrainingUse, keepIfClose, type Plan, type OptimizeResult, type RecycleMode, type Elite, type ProdPriority, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct, type RoomPin } from "./planner-engine";
+import { investPrepare, investEvaluate, type InvestInput, type InvestCand } from "./planner-invest";
 
 export type PlannerJobMsg = {
   seq: number;
-  cmd: "optimize" | "invest";
+  // invest 는 두 단계로 나뉜다 (2026-10-19) — investPrep: 기준 편성 + 후보 목록, investEval: 받은 후보만 평가.
+  // 평가는 planner-offload 가 워커 여러 개에 후보를 나눠 맡긴다
+  cmd: "optimize" | "investPrep" | "investEval";
+  base?: OptimizeResult | null; // investPrep·investEval — 기준 편성의 전략 (방금 자동편성 결과면 다시 짜지 않는다)
+  cands?: InvestCand[];         // investEval — 이 워커가 맡은 후보
   owned: string[];
   elite: [string, Elite][];
   opLevels?: [string, number][]; // 오퍼 레벨 (미지정 = 제한 없음) — 노정예 'Lv.30' 스킬 판정
@@ -44,12 +48,17 @@ self.addEventListener("message", (event) => {
       const eliteById = new Map(msg.elite);
       const levelById = new Map(msg.opLevels ?? []);
       const ownedIds = new Set(msg.owned);
+      const inp: InvestInput = { visibleOps: visible, ownedIds, eliteById, priority: msg.priority, pinnedDorms: msg.dormPins ?? {}, levelById, roomPins: msg.roomPins ?? {} };
       if (msg.cmd === "optimize") {
         const roster = visible.map((op) => withElite(op, eliteById.get(op.id), levelById.get(op.id))).filter((op) => ownedIds.has(op.id));
-        const plan = await optimize(roster, msg.priority, (step) => { post({ seq: msg.seq, type: "step", step }); }, msg.dormPins ?? {}, msg.roomPins ?? {});
-        post({ seq: msg.seq, type: "done", result: keepIfClose(msg.prev, plan, roster, msg.dormPins ?? {}, msg.roomPins ?? {}).plan });
+        const cfg = await optimizeConfig(roster, msg.priority, (step) => { post({ seq: msg.seq, type: "step", step }); }, msg.dormPins ?? {}, msg.roomPins ?? {});
+        // base = 자동편성이 고른 전략 — 육성 추천이 기준 편성을 다시 짜지 않고 재사용한다 (2026-10-19)
+        post({ seq: msg.seq, type: "done", result: { plan: keepIfClose(msg.prev, cfg.plan, roster, msg.dormPins ?? {}, msg.roomPins ?? {}).plan, base: cfg } });
+      } else if (msg.cmd === "investPrep") {
+        post({ seq: msg.seq, type: "done", result: await investPrepare(inp, msg.base ?? null) });
       } else {
-        const recs = await recommendRaises(visible, ownedIds, eliteById, msg.priority, (p) => { post({ seq: msg.seq, type: "progress", progress: p }); }, msg.dormPins ?? {}, levelById, msg.roomPins ?? {});
+        const cands = msg.cands ?? [];
+        const recs = investEvaluate(inp, { base: msg.base!, cands }, (done, opId) => { post({ seq: msg.seq, type: "progress", progress: { done, total: cands.length, opId } }); });
         post({ seq: msg.seq, type: "done", result: recs });
       }
     } catch (error) {

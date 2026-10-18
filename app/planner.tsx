@@ -25,7 +25,7 @@ import {
   setTrainingUse, TRAINING_USE,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type ProdAxis, type DrainMode, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
 } from "./planner-engine";
-import type { RaiseRec, InvestProgress } from "./planner-invest";
+import { recKey, recOps, rankRaises, type RaiseRec, type InvestProgress } from "./planner-invest";
 // 요약 카드의 하루 산출(용문폐·작전기록) 근사 — 상수 출처는 그 파일 머리말
 import { dailyYield, yieldCells, EXP_PER_RECORD, GOLD_LMD as YIELD_GOLD_LMD, ORDER_LMD_HOUR } from "./planner-yield";
 // 회수일 각주가 쓰는 환산 기준 — 엔진(planner-invest)은 워커 전용 무거운 모듈이라
@@ -228,8 +228,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const importRef = useRef<HTMLInputElement>(null); // '그 외' → 저장된 상태 파일 가져오기
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [showMaa, setShowMaa] = useState(false); // MAA 기반시설 내보내기 모달 (베타)
-  // 1~5성은 기본 보유, 6성은 미보유로 시작 — 가진 6성만 직접 체크한다
-  const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)));
+  // 처음엔 **아무도 없이** 시작한다 (사용자 결정 2026-10-19 — 종전 '1~5성 기본 보유 284명'은 내 정보 동기화가 생긴 뒤로
+  // 가상의 편성이 내 편성처럼 보여 헷갈렸다). 빈 상태에선 시작 안내(로그인 · 직접 고르기 · 예시 로스터)를 띄운다
+  const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set());
   // 미지정 = 2정(정예화 2, 최대) 가정 — 정예화 2 스킬이 있는 오퍼만 1정으로 낮출 수 있다
   const [eliteById, setEliteById] = useState<Map<string, Elite>>(new Map());
   // 오퍼 레벨 (미지정 = 제한 없음). 노정예 Lv.30 해금 스킬 판정에만 쓰인다 —
@@ -328,7 +329,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 같은 기준으로 걸러야 "N명"과 실제 목록이 어긋나지 않는다 — 미래시 ON으로 분석해 두고
   // OFF로 돌아오면 헤더는 N명인데 목록이 텅 비던 경로 (사용자 제보 2026-07-25)
   const visibleRecs = useMemo(() => (investRecs
-    ? investRecs.filter((r) => !investHidden.has(r.opId) && effectiveOpById.has(r.opId)).slice(0, INVEST_SHOW)
+    ? investRecs.filter((r) => !investHidden.has(recKey(r)) && recOps(r).every((o) => effectiveOpById.has(o.opId)))   // 상한(INVEST_SHOW)은 창이 탭별로
     : null), [investRecs, investHidden, effectiveOpById]);
 
   // 편성이 비어 있는가 — 첫 진입(plan 없음)과 '편성 전체 비우기' 직후(빈 슬롯만 남음) 둘 다.
@@ -420,10 +421,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 저장된 육성 추천 복원 — opId가 실존하고 필수 필드가 있는 항목만 (손상·구버전 방어)
   const restoreInvest = (raw: unknown): RaiseRec[] | null => {
     if (!Array.isArray(raw)) return null;
-    return raw.filter((r): r is RaiseRec => {
+    // 예전 저장분(A조 %p 순)도 지금 기준(회수 빠른 순)으로 다시 세운다 (2026-10-19)
+    return rankRaises(raw.filter((r): r is RaiseRec => {
       const o = r as Record<string, unknown> | null;
-      return !!o && typeof o.opId === "string" && opById.has(o.opId) && typeof o.deltaScore === "number" && Array.isArray(o.roomDeltas) && !!o.cost;
-    });
+      return !!o && typeof o.opId === "string" && opById.has(o.opId) && typeof o.deltaScore === "number" && Array.isArray(o.roomDeltas) && !!o.cost
+        && (o.with == null || (Array.isArray(o.with) && (o.with as { opId?: unknown }[]).every((w) => typeof w?.opId === "string" && opById.has(w.opId))));
+    }));
   };
 
 
@@ -890,13 +893,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const applySelected = async () => {
     if (!visibleRecs) return;
     const adds = new Map<string, Elite>();
-    for (const r of visibleRecs) if (selectedRaise.has(r.opId)) adds.set(r.opId, r.to);
+    for (const r of visibleRecs) if (!r.fresh && selectedRaise.has(recKey(r))) for (const o of recOps(r)) adds.set(o.opId, o.to);   // 짝 카드는 둘 다
     await applyTempSet(adds, t("선택 {n}명을 임시 적용했습니다 — '되돌리기'로 취소할 수 있습니다", { n: adds.size }));
   };
   const applyAllRaises = async () => {
     if (!visibleRecs?.length) return;
     // 전체 = 화면에 보이는 목록(숨긴 오퍼 제외) 전체
-    const adds = new Map<string, Elite>(visibleRecs.map((r) => [r.opId, r.to]));
+    // 새로 데려오는 추천은 임시 적용 대상이 아니다 — 아직 없는 오퍼라 보유에 끼워 넣어야 해서 (전체 = 가진 오퍼 탭 상위만)
+    const adds = new Map<string, Elite>(visibleRecs.filter((r) => !r.fresh).slice(0, INVEST_SHOW).flatMap((r) => recOps(r).map((o) => [o.opId, o.to] as [string, Elite])));
     await applyTempSet(adds, t("추천 {n}명을 임시 적용했습니다 — '되돌리기'로 취소할 수 있습니다", { n: adds.size }));
   };
   // 오퍼 하나만 임시 적용 해제 — 남은 임시 오퍼들로 미리보기 재편성 (마지막 하나면 전체 되돌리기)
@@ -1413,7 +1417,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         return;
       }
     } catch { /* fall through to defaults */ }
-    void optimizeOff({ owned: new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)), elite: new Map(), includeFuture: false, priority: "gold", layout: "243", levels: null }).then(setPlan);
+    // 저장분도 내 정보도 없는 첫 방문 — 빈 편성으로 열고 시작 안내를 띄운다(아래 .pl-start). 종전엔 기본 284명으로 자동편성을 돌렸다
+    const empty = sanitizePlan({ priority: "gold" });
+    if (empty) setPlan(empty);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1870,13 +1876,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               {optimizing && <span className="btn-swap-over">{t("계산 중…")}</span>}
             </span>
           </button>
-          <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
+          <button className="pl-fill-btn" onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
           {/* 금빛 테두리로 다른 보조 버튼보다 한 단 띄운다 — 켜면 뜨는 금색 띠와 같은 색 (사용자 지적 2026-10-18 "눈에 안 띈다") */}
           <button className="pl-sandbox-btn" onClick={startSandbox} disabled={!plan} title={t("저장된 편성은 그대로 두고, 임시로 편성을 바꿔 보며 효율을 확인합니다")}><span className="btn-icon" aria-hidden>✎</span>{t("임시 편성 해보기")}<NewBadge id="infra-sandbox" show={isNewFeature("infra-sandbox")} /></button>
-          <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
+          <button className="pl-clear-btn" onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
           {/* 자동편성 이후 손을 댔을 때만 뜬다 (사용자 요청 2026-09-11) */}
           {!!basePlan && changedCells > 0 && !tempApplied.size && (
-            <button onClick={revertToAutoPlan} title={t("자동편성 이후 손으로 바꾼 {n}곳을 그 시점의 편성으로 되돌립니다", { n: changedCells })}>
+            <button className="pl-revert-btn" onClick={revertToAutoPlan} title={t("자동편성 이후 손으로 바꾼 {n}곳을 그 시점의 편성으로 되돌립니다", { n: changedCells })}>
               <span className="btn-icon" aria-hidden>↩</span>{t("자동편성 시점으로 ({n}곳)", { n: changedCells })}
             </button>
           )}
@@ -1926,12 +1932,40 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           onClose={() => setShowInvest(false)} onReanalyze={() => { void runInvest(); }}
           onToggleSelect={toggleSelectRaise} onApplySelected={applySelected} onApplyAll={applyAllRaises} onHide={hideRaise}
           selected={selectedRaise} applied={new Set(tempApplied.keys())} onRevert={revertTemp}
-          diag={investDiag} hiddenCount={investRecs?.filter((r) => investHidden.has(r.opId)).length ?? 0}
+          diag={investDiag} hiddenCount={investRecs?.filter((r) => investHidden.has(recKey(r))).length ?? 0}
           onUnhideAll={() => { setInvestHidden(new Set()); persist(ownedIds, plan, eliteById, levelById, priority, investRecs, new Set()); }}
           onOpenRoster={() => { setShowInvest(false); startTransition(() => { setRosterMode("import"); setShowRoster(true); }); }}
           t={t} locale={locale} />
       )}
 
+      {/* 시작 안내 — 보유 오퍼가 하나도 없을 때 (사용자 결정 2026-10-19 "디폴트 284명 대신 비워 두고 로그인시키는 게 나을지도").
+          ① 내 정보 로그인(가장 크게) ② 직접 고르기·스캔 ③ 예시 로스터(1~5성 전원 — 종전 기본값)로 둘러보기 */}
+      {plan && ownedIds.size === 0 && !sandbox && (   /* plan 이 차야 복원이 끝난 것 — 그 전엔 프리렌더 빈 상태라 재방문자에게 번쩍인다 */
+        <section className="pl-start" aria-label={t("인프라 자동편성 시작하기")}>
+          <h3>{t("보유 오퍼부터 알려 주세요")}</h3>
+          <p>{t("자동편성은 가진 오퍼로만 짭니다. 게임 계정으로 로그인하면 보유·정예화·레벨을 한 번에 가져옵니다.")}</p>
+          <div className="pl-start-acts">
+            <a className="pl-start-main" href={`${locale === "ko" ? "" : `/${locale}`}/me`}>{t("내 정보로 로그인해 가져오기")} <span aria-hidden>→</span></a>
+            <button type="button" onClick={() => startTransition(() => { setRosterMode("import"); setShowRoster(true); })}>{t("보유 오퍼 직접 고르기·스캔")}</button>
+            <button type="button" onClick={() => {
+              // 완전 무작위 예시 (사용자 지시 2026-10-19) — 실장 오퍼마다 반반 확률로 보유, 정예화도 0~최대 중 무작위.
+              // 정예화가 섞여 있어야 육성 추천까지 바로 눌러 볼 수 있다. 누를 때마다 다른 로스터가 나온다
+              const ids = new Set<string>();
+              const elite = new Map<string, Elite>();
+              for (const op of ops) {
+                if (op.unreleased || Math.random() < 0.5) continue;
+                ids.add(op.id);
+                const top = maxElite(op.rarity);
+                const e = Math.floor(Math.random() * (top + 1)) as Elite;
+                if (e < top && eliteOptions(op).length > 0) elite.set(op.id, e);   // 내 정보 동기화와 같은 규칙 — 정예화로 갈리는 인프라 스킬이 있을 때만
+              }
+              setOwnedIds(ids);
+              setEliteById(elite);
+              void runOptimize(ids, elite);
+            }} title={t("실장 오퍼 중 절반쯤을 무작위로 가졌다고 치고(정예화도 무작위) 편성해 봅니다 — 나중에 보유 오퍼 설정에서 바꿀 수 있습니다")}>{t("예시 로스터로 둘러보기")}</button>
+          </div>
+        </section>
+      )}
       {/* 설정 행 — 기지 배치 → 운용 방식 → 우선 생산 → 훈련실 → 재활용소. 사용자 지정
           배치에선 품목을 칸마다 직접 고르므로 운용·우선 생산을 숨긴다 (사용자 요청 2026-07-24) */}
       {/* 편성 설정 — 묶음마다 '이름 + 드롭다운 단추' 한 칸 (사용자 지시 2026-10-18 "라디오가 넘칠 것 같다 — 드롭다운으로").
@@ -2409,41 +2443,31 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   );
 }
 
-// 육성 추천 결과 모달 — recommendRaises가 증명한 "완성하면 이득인 정예화 투자"를 ΔS 순으로.
-// 방 %효율 변화·완성 비용은 실제 편성·게임 데이터 기준(근사 환산 없음). 한 번 분석하면 새
-// 자동편성 전까지 유지되며, 모달 안 '다시 분석'으로 강제 재계산한다.
+// 육성 추천 결과 모달 — 카드 한 장 = "이 오퍼(또는 짝)를 완성하면". 2026-10-19 개편:
+// 맨 앞 숫자는 **회수까지 며칠**(정렬 기준과 같음) · 하루 몇 이성, 그 아래 방 변화·교대 시간 칩.
+// 설명 문단 여러 개는 '계산 방식' 하나로 접었다(사용자 "몇 달 전에 만든 기능이라 UI 가 처참하다").
 function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onToggleSelect, onApplySelected, onApplyAll, onHide, selected, applied, onRevert, diag, hiddenCount, onUnhideAll, onOpenRoster, t, locale }: {
   recs: RaiseRec[]; opMap: Map<string, InfraOp>; onShowOperator?: (id: string) => void;
-  onClose: () => void; onReanalyze: () => void; onToggleSelect: (opId: string) => void; onApplySelected: () => void; onApplyAll: () => void;
-  onHide: (opId: string) => void; selected: Set<string>; applied: Set<string>; onRevert: () => void;
+  onClose: () => void; onReanalyze: () => void; onToggleSelect: (key: string) => void; onApplySelected: () => void; onApplyAll: () => void;
+  onHide: (key: string) => void; selected: Set<string>; applied: Set<string>; onRevert: () => void;
   diag: { unfinished: number; candidates: number } | null; hiddenCount: number; onUnhideAll: () => void; onOpenRoster: () => void;
   t: T; locale: Locale;
 }) {
-  // 방 라벨은 i18n 사전 키("제조소 1 · 순금" 등) — 배 뷰(t(cell.label))처럼 번역해 표시
-  // (일어판 육성 추천 모달에 방 이름만 한국어로 남던 문제, 사용자 리포트 2026-07-22)
-  // 칸 키(MANUFACTURE-2)면 그 칸 이름, 방 종류 키(MANUFACTURE)면 시설 이름 —
-  // 같은 종류 방이 여럿 바뀌면 육성 추천이 방 종류로 합산해 내려보낸다 (2026-07-25)
+  // 칸 키(MANUFACTURE-2)면 그 칸 이름, 방 종류 키(MANUFACTURE)면 시설 이름 — 같은 종류 방이 여럿 바뀌면 합산해 내려온다
   const roomLabel = (key: string) => t(cellByKey.get(key)?.label ?? infra.rooms[key]?.name ?? key);
   const shiftTag = (s: number) => (s === 0 ? t("A조") : t("B조"));
   const num = (n: number) => Math.round(n).toLocaleString();
+  const hrs = (h: number) => (Math.round(h * 10) / 10).toString();
   const SANITY_BASIS = sanityBasis.basis;
   const GOLD_LMD = sanityBasis.goldLmd;
   const SANITY_ITEMS = sanityBasis.items as Record<string, number>;
-  // 회수 버튼으로 펼치는 완성 비용 내역 — 한 번에 하나만 (사용자 지정 2026-08-05)
   const [openCost, setOpenCost] = useState<string | null>(null);
-  // 회수일 기준 — 기본은 용문폐+경험치만, 버튼을 눌러야 재료까지 합친다 (사용자 지정 2026-08-05).
-  // 오퍼별로 따로 켠다 — 전역이면 하나 켤 때 다른 카드까지 전부 바뀐다 (사용자 지적)
+  // 회수일 기준 — 기본은 용문폐+경험치만, 비용 창에서 켜야 재료까지 (사용자 지정 2026-08-05, 카드별로 따로)
   const [withMatIds, setWithMatIds] = useState<Set<string>>(new Set());
-  const matOn = (opId: string) => withMatIds.has(opId);
-  const toggleMat = (opId: string) => setWithMatIds((cur) => {
-    const next = new Set(cur);
-    if (next.has(opId)) next.delete(opId); else next.add(opId);
-    return next;
-  });
-  // ⚠ 비용·회수일은 저장된 payback 필드를 쓰지 않고 **cost + 현재 단가로 매번 재계산**한다.
-  // 구버전 엔진이 저장한 추천(apBase·daysWithMat 없음)을 새 UI가 읽으면 합계가 재료 포함값으로
-  // 폴백되고(11,164 vs 3,537) 없는 필드를 나눠 'NaN일'이 떴다 (사용자 제보 2026-08-05).
-  // 저장분에서 신뢰하는 건 dailyAp(방 델타 × 편성 교대 시계 — UI가 재현 불가)뿐이다.
+  const matOn = (key: string) => withMatIds.has(key);
+  const toggleMat = (key: string) => setWithMatIds((cur) => { const next = new Set(cur); if (next.has(key)) next.delete(key); else next.add(key); return next; });
+  // ⚠ 비용·회수일은 저장된 payback 필드를 쓰지 않고 cost + 현재 단가로 매번 재계산한다 — 구버전 저장분에서
+  // 'NaN일'이 떴다 (2026-08-05). 저장분에서 믿는 건 dailyAp(편성 두 벌의 하루 산출 차 — UI가 재현 불가)뿐이다.
   const apOf = (c: RaiseRec["cost"]) => {
     const apLmd = c.lmd / sanityBasis.lmdPerAp;
     const apExp = c.exp / sanityBasis.expPerAp;
@@ -2462,51 +2486,53 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
     const ap = apOf(r.cost);
     return (withM ? ap.apTotal : ap.apBase) / daily;
   };
-  const costRec = openCost ? recs.find((x) => x.opId === openCost) ?? null : null;
-  useEffect(() => {
-    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onEsc);
-    return () => window.removeEventListener("keydown", onEsc);
-  }, [onClose]);
+  const costRec = openCost ? recs.find((x) => recKey(x) === openCost) ?? null : null;
+  // 탭 — 가진 오퍼 키우기 / 새로 데려와 키우기 (2026-10-19). 가진 쪽이 없으면 새 오퍼 탭부터
+  const ownRecs = recs.filter((r) => !r.fresh);
+  const freshRecs = recs.filter((r) => r.fresh);
+  const [tab, setTab] = useState<"own" | "fresh">(() => (ownRecs.length || !freshRecs.length ? "own" : "fresh"));
+  const shown = (tab === "own" ? ownRecs : freshRecs).slice(0, INVEST_SHOW);
+  const OBTAIN_LABEL: Record<string, string> = { standard: "통상 헤드헌팅", kernel: "커널 헤드헌팅", recruit: "공개모집", cert: "자격증 상점", credit: "크레딧 교역소" };
+  const raiseText = (from: Elite, to: Elite, lv?: number) => `${t("{e} Lv.{lv}", { e: t(ELITE_LABEL[from]), lv: lv ?? 1 })} → ${t(ELITE_LABEL[to])}`;
   return (
-    <ModalWindow label={t("인프라 오퍼 육성 추천")} className="operator-modal invest-panel" onClose={onClose}>
-      <div className="invest-head">
-        <div className="invest-head-title">
-          <div>
-            <span className="section-no keep">{t("인프라 오퍼 육성 추천 · 정예화 완성 투자")}</span>
-            <h3>{recs.length ? t("완성하면 인프라가 좋아지는 오퍼 {n}명", { n: recs.length }) : t("추천할 오퍼가 없습니다")}</h3>
-          </div>
-          <button className="invest-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
+    <ModalWindow label={t("인프라 오퍼 육성 추천")} className="operator-modal invest-panel iv" onClose={onClose}>
+      <header className="iv-head">
+        <div className="iv-head-text">
+          <span className="iv-eyebrow">{t("인프라 오퍼 육성 추천")}</span>
+          <h3>{recs.length ? t("키우면 인프라가 좋아지는 오퍼 {n}건", { n: recs.length }) : t("추천할 오퍼가 없습니다")}</h3>
+          {diag && diag.candidates > 0 && <p className="iv-sub">{t("미완성 {n}명 중 {c}건을 실제로 완성해 자동편성을 다시 돌려 확인했습니다 · 회수가 빠른 순", { n: diag.unfinished, c: diag.candidates })}</p>}
         </div>
-        <div className="invest-head-btns">
-          {applied.size > 0 && <button className="invest-revert" onClick={onRevert} title={t("임시 적용을 모두 취소하고 이전 편성으로 되돌립니다")}>↩ {t("되돌리기 ({n})", { n: applied.size })}</button>}
-          {recs.length > 0 && <button className="invest-applysel" onClick={onApplySelected} disabled={selected.size === 0} title={t("선택한 오퍼만 한 번에 임시 적용합니다 (되돌리기 가능)")}>{t("선택 임시 적용 ({n})", { n: selected.size })}</button>}
-          {recs.length > 0 && <button className="invest-applyall" onClick={onApplyAll} title={t("추천 오퍼 전부를 임시 적용합니다 — 되돌리기 가능")}>{t("전체 임시 적용")}</button>}
-          <button className="invest-reanalyze" onClick={onReanalyze} title={t("현재 보유·정예화 상태로 다시 계산합니다 (임시 적용은 취소됩니다)")}>↻ {t("다시 분석")}</button>
+        <div className="iv-head-btns">
+          {applied.size > 0 && <button type="button" className="iv-btn" onClick={onRevert} title={t("임시 적용을 모두 취소하고 이전 편성으로 되돌립니다")}>↩ {t("되돌리기 ({n})", { n: applied.size })}</button>}
+          {recs.length > 0 && <button type="button" className="iv-btn" onClick={onApplySelected} disabled={selected.size === 0} title={t("선택한 오퍼만 한 번에 임시 적용합니다 (되돌리기 가능)")}>{t("선택 임시 적용 ({n})", { n: selected.size })}</button>}
+          {recs.length > 0 && <button type="button" className="iv-btn pri" onClick={onApplyAll} title={t("추천 오퍼 전부를 임시 적용합니다 — 되돌리기 가능")}>{t("전체 임시 적용")}</button>}
+          <button type="button" className="iv-btn" onClick={onReanalyze} title={t("현재 보유·정예화 상태로 다시 계산합니다 (임시 적용은 취소됩니다)")}>↻ {t("다시 분석")}</button>
         </div>
-      </div>
-      <p className="invest-note">{t("아직 완성 안 한(정예화를 낮춰 둔) 오퍼를 완성했다고 가정해 자동편성을 다시 돌리고, 방 %효율이 실제로 얼마나 오르는지로 이득을 증명합니다. 숫자는 그 방 %효율 변화의 합계(%p)이며, A조(주력)를 우선해 정렬합니다. '적용'은 완성했다 가정해 편성에 임시 반영합니다 — 되돌리기 가능하고, 전체 자동편성·다시 분석 전까지 추천은 그대로 유지됩니다.")}</p>
-      <p className="invest-note invest-note-sub">{t("교대는 12시간 고정이 아닙니다 — A조를 풀파워로 돌리다 A조 오퍼 중 하나라도 피로도가 소진되면 B조로 전환하고, A조가 전부 회복되면 즉시 A조로 되돌립니다. 그래서 A조 이득을 우선합니다.")}</p>
-      {/* 회수일 기준 전환 + 계산 근거 — 숫자만 던지지 않고 기준을 전부 밝힌다 (2026-08-05) */}
+      </header>
       {recs.length > 0 && (
-        <div />
+        <div className="iv-tabs" role="tablist">
+          <button type="button" role="tab" aria-selected={tab === "own"} className={tab === "own" ? "on" : undefined} onClick={() => setTab("own")}>{t("가진 오퍼 키우기")} <small>{ownRecs.length}</small></button>
+          <button type="button" role="tab" aria-selected={tab === "fresh"} className={tab === "fresh" ? "on" : undefined} onClick={() => setTab("fresh")}>{t("새로 데려와 키우기")} <small>{freshRecs.length}</small></button>
+        </div>
       )}
+      {recs.length > 0 && tab === "fresh" && <p className="iv-sub iv-fresh-note">{t("아직 없는 오퍼 중 지금 데려올 길이 있는 오퍼만 봅니다(통상·커널 헤드헌팅 · 공개모집 · 자격증 상점 · 크레딧 교역소). 비용은 데려온 뒤 Lv.1부터의 육성만이고, 뽑는 데 드는 값은 운이라 넣지 않았습니다.")}</p>}
       {recs.length > 0 && (
-        <details className="invest-basis">
-          <summary>{t("‘회수 N일’은 이렇게 계산했습니다 — 환산 기준 보기")}</summary>
+        <details className="iv-basis">
+          <summary>{t("계산 방식")}</summary>
           <ul>
-            <li>{rich(t("**기본은 용문폐·경험치만** 계산합니다. 위 버튼으로 켜면 듀얼칩 등 육성 재료의 이성까지 합칩니다."))}</li>
-            <li>{rich(t("**비용**: 완성에 드는 용문폐·경험치·재료를 각각의 전용 파밍처 이성 단가로 환산해 더합니다. 승급은 그 단계 만렙에서만 가능하므로 **남은 레벨업 비용까지 포함**합니다(보유 설정에 적어 둔 레벨부터 계산)."))}</li>
+            <li>{rich(t("**증명**: 그 오퍼를 완성했다고 치고 자동편성을 다시 돌려, 편성이 실제로 나아질 때만 추천합니다. 둘 다 키워야 열리는 시너지는 **짝 카드**로 함께 봅니다."))}</li>
+            <li>{rich(t("**회수 N일** = 완성 비용(이성) ÷ 하루 이득(이성). 기본은 **용문폐·경험치만**이고, 비용 창에서 재료까지 합칠 수 있습니다."))}</li>
+            <li>{rich(t("**하루 이득**: 두 편성의 하루 산출 차이입니다 — 방 %효율 × 그 방 1%p의 하루 산출을 A조·B조 근무 시간 비율로 섞습니다. 피로도가 줄어 A조가 더 오래 버티는 것도 여기 들어갑니다."))}</li>
+            <li>{t("제조소는 기본 1포인트/초(순금 4,320pt · 중급작전기록 10,800pt=1,000exp), 발전소는 드론 회복 +1%p = 하루 드론 2.4개 × 1개당 제조 180초로 환산합니다.")}</li>
             <li>{t("용문폐 1이성 = {lmd} (전용 스테이지 {ls} · {lap}이성에 {ld}) · 경험치 1이성 = {exp} (전용 스테이지 {es} · {eap}이성에 {ed})", { lmd: Math.round(SANITY_BASIS.lmd.drop / SANITY_BASIS.lmd.ap), ls: SANITY_BASIS.lmd.stage, lap: SANITY_BASIS.lmd.ap, ld: num(SANITY_BASIS.lmd.drop), exp: Math.round(SANITY_BASIS.exp.drop / SANITY_BASIS.exp.ap), es: SANITY_BASIS.exp.stage, eap: SANITY_BASIS.exp.ap, ed: num(SANITY_BASIS.exp.drop) })}</li>
-            <li>{t("재료 이성 단가: 파밍 가능한 재료는 재료파밍 도우미의 실측 드랍률 기준 최저 이성 스테이지, 칩·칩셋은 주간 PR 스테이지, 제작 전용 재료(듀얼칩·D32강 등)는 가공소 레시피를 재료까지 재귀 분해해 계산합니다.")}</li>
-            <li>{rich(t("**하루 이득**: 방 %효율 변화 × 그 방 1%p의 하루 산출 × 그 조가 실제로 근무하는 시간 비율. 제조소는 기본 생산 속도 1포인트/초(순금 4,320pt·중급작전기록 10,800pt=1,000exp) 기준입니다."))}</li>
             <li>{t("순금 1개는 무역소 주문에서 용문폐 {n}으로 봅니다 — 주문 보상만은 게임 데이터에 없어 통용값을 쓴 유일한 추정치입니다.", { n: num(GOLD_LMD) })}</li>
-            <li>{t("발전소·사무실·응접실 변화는 산출을 이성으로 환산할 근거가 없어 이득에서 빼고 '회수 환산 제외'로 표시합니다 — 실제 회수는 표시된 것보다 빠를 수 있습니다.")}</li>
+            <li>{rich(t("**새로 데려와 키우기**: 아직 없는 오퍼를 데려와 인프라 스킬이 다 열리는 정예화까지 키웠다고 치고 같은 방식으로 봅니다. 비용은 Lv.1부터의 육성만입니다."))}</li>
+            <li>{t("사무실·응접실만 바뀌는 추천은 산출을 이성으로 옮길 근거가 없어 회수일을 내지 않고 맨 뒤에 둡니다.")}</li>
+            <li>{t("기준은 전체 자동편성이 짜는 편성입니다 — 손으로 고친 편성과는 숫자가 조금 다를 수 있습니다. '임시 적용'은 완성했다 치고 편성에 미리 반영해 보는 것이며 되돌릴 수 있습니다.")}</li>
           </ul>
         </details>
       )}
-      {/* 0건 안내는 **이유별로** 다르게 — 종전엔 한 문장뿐이라 "정예화를 입력 안 해서 후보가
-          0인" 경우와 "후보는 다 검증했는데 이득이 없는" 경우가 구분되지 않았다 (2026-07-29). */}
+      {/* 0건 안내는 이유별로 (2026-07-29) */}
       {!recs.length && (
         <div className="invest-empty">
           {hiddenCount > 0 ? (<>
@@ -2524,76 +2550,88 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
           )}
         </div>
       )}
-      <ul className="invest-list">
-        {recs.map((r) => {
-          const op = opMap.get(r.opId);
-          if (!op) return null;
+      {recs.length > 0 && !shown.length && <p className="iv-sub iv-empty-tab">{tab === "own" ? t("가진 오퍼 중에는 키워서 나아지는 오퍼가 없습니다.") : t("새로 데려와서 나아지는 오퍼가 없습니다.")}</p>}
+      <ol className="iv-list">
+        {shown.map((r, rank) => {
+          const key = recKey(r);
+          const members = recOps(r).map((o) => ({ ...o, op: opMap.get(o.opId) })).filter((o) => o.op);
+          if (!members.length) return null;
           const deltas = [...r.roomDeltas].sort((a, b) => {
             const ap = r.placement && a.key === r.placement.key && a.shift === r.placement.shift ? 0 : 1;
             const bp = r.placement && b.key === r.placement.key && b.shift === r.placement.shift ? 0 : 1;
-            return ap - bp;
+            return ap - bp || a.shift - b.shift;
           }).slice(0, 4);
+          const days = daysOf(r, matOn(key));
+          const isApplied = recOps(r).every((o) => applied.has(o.opId));
+          const pair = !!r.with?.length;
           return (
-            <li key={r.opId} className="invest-card">
-              <img className={onShowOperator ? "op-link" : undefined} src={op.image} alt={op.name} width={180} height={180} loading="lazy" onClick={() => onShowOperator?.(r.opId)} />
-              <div className="invest-body">
-                <div className="invest-title">
-                  <b className={onShowOperator ? "op-link" : undefined} onClick={() => onShowOperator?.(r.opId)}>{op.name}</b>
-                  <i className="invest-stars" aria-hidden>{"★".repeat(op.rarity)}</i>
-                  <span className="invest-raise">{t("{e} Lv.{lv}", { e: t(ELITE_LABEL[r.from]), lv: r.fromLevel ?? 1 })} → {t(ELITE_LABEL[r.to])} {t("완성")}</span>
-                  {r.synergy && <span className="invest-syn" title={t("팀 시너지를 여는 오퍼 — 완성 시 열리는 세트의 총 시너지 효율까지 반영해 평가했습니다")}>{t("시너지")}</span>}
-                  <span className="invest-gains" title={t("완성 시 오르는 방 %효율의 조별 합계 — 아래 방 변화의 합입니다")}>
-                    {Math.round(r.aGain) >= 1 && <span className="inv-gain a">{t("A조 +{n}%p", { n: Math.round(r.aGain) })}</span>}
-                    {Math.round(r.bGain) >= 1 && <span className="inv-gain b">{t("B조 +{n}%p", { n: Math.round(r.bGain) })}</span>}
-                  </span>
-                  {/* 예상 회수일 — 누르면 완성 비용 내역이 펼쳐진다 (사용자 지정 2026-08-05).
-                      계산 근거는 그 내역과 패널 상단 각주에 그대로 밝힌다 */}
-                  <button type="button" className={`invest-payback${openCost === r.opId ? " on" : ""}`}
-                    aria-expanded={openCost === r.opId}
-                    onClick={() => setOpenCost(openCost === r.opId ? null : r.opId)}
-                    title={t("완성 비용 내역과 계산 과정을 봅니다")}>
-                    {daysOf(r, matOn(r.opId)) == null
-                      ? t("회수 계산 불가")
-                      : t("회수까지 {n}일", { n: num(Math.round(daysOf(r, matOn(r.opId))!)) })}
-                  </button>
+            <li key={key} className={`iv-card${pair ? " pair" : ""}${selected.has(key) ? " on" : ""}`}>
+              <span className="iv-rank" aria-hidden>{rank + 1}</span>
+              <div className="iv-faces">
+                {members.map((m) => (
+                  <img key={m.opId} className={onShowOperator ? "op-link" : undefined} src={m.op!.image} alt={m.op!.name} width={56} height={56} loading="lazy" onClick={() => onShowOperator?.(m.opId)} />
+                ))}
+              </div>
+              <div className="iv-main">
+                <div className="iv-names">
+                  {members.map((m, i) => (
+                    <span key={m.opId} className="iv-name">
+                      {i > 0 && <em className="iv-plus">+</em>}
+                      <b className={onShowOperator ? "op-link" : undefined} onClick={() => onShowOperator?.(m.opId)}>{m.op!.name}</b>
+                      <small>{r.fresh ? `${t("새로 데려오기")} → ${t(ELITE_LABEL[m.to])}` : raiseText(i === 0 ? r.from : r.with![i - 1].from, m.to, i === 0 ? r.fromLevel : r.with![i - 1].fromLevel)}</small>
+                    </span>
+                  ))}
+                  {(r.obtain ?? []).map((k) => <span key={k} className="iv-tag route">{t(OBTAIN_LABEL[k] ?? k)}</span>)}
+                  {pair && <span className="iv-tag" title={t("둘 다 키워야 열리는 시너지 — 한 명만 키우면 이만큼 오르지 않습니다")}>{t("짝")}</span>}
                 </div>
-                {r.placement && <div className="invest-place">{t("{room} · {shift}에 배치됩니다", { room: roomLabel(r.placement.key), shift: shiftTag(r.placement.shift) })}</div>}
-                {deltas.length > 0 && (
-                  <ul className="invest-rooms">
-                    {deltas.map((d, i) => (
-                      <li key={i}><span>{roomLabel(d.key)} {shiftTag(d.shift)}</span> <em>{Math.round(d.before)}% → {Math.round(d.after)}%</em></li>
-                    ))}
-                  </ul>
-                )}
-                {/* 비용 요약 줄은 뺐다 — 회수 버튼으로 펼치는 내역에 같은 내용이 표로 있다
-                    (사용자 지적 2026-08-05). 이 줄엔 선택·숨기기만 남긴다 */}
-                <div className="invest-cost">
-                  <span className="invest-cost-actions">
-                    {applied.has(r.opId)
-                      ? <span className="invest-applied" title={t("임시 적용됨 — 헤더 '되돌리기'로 취소")}>✓ {t("적용됨")}</span>
-                      : <>
-                          <button className={`invest-apply${selected.has(r.opId) ? " on" : ""}`} onClick={() => onToggleSelect(r.opId)} title={t("적용할 오퍼로 선택합니다 — 헤더 '선택 임시 적용'으로 한 번에 반영")}>{selected.has(r.opId) ? `✓ ${t("선택됨")}` : t("선택")}</button>
-                          <button className="invest-hide" onClick={() => onHide(r.opId)} title={t("이 오퍼를 추천 목록에서 숨깁니다 — 다음 순위 오퍼가 올라옵니다")}>{t("숨기기")}</button>
-                        </>}
-                  </span>
+                {r.placement && <p className="iv-place">{t("{room} · {shift}에 배치됩니다", { room: roomLabel(r.placement.key), shift: shiftTag(r.placement.shift) })}</p>}
+                <ul className="iv-chips">
+                  {deltas.map((d, i) => (
+                    <li key={i} className={d.after < d.before ? "down" : undefined}>
+                      <span>{roomLabel(d.key)} {shiftTag(d.shift)}</span>
+                      <b>{Math.round(d.before)}% → {Math.round(d.after)}%</b>
+                    </li>
+                  ))}
+                  {r.hours && (
+                    <li className="hours" title={t("피로도가 바뀌어 교대 주기가 달라집니다 — A조가 오래 버틸수록 하루 산출이 늘어납니다")}>
+                      <span>{t("교대 주기")}</span>
+                      <b>{t("A조 {a}h · B조 {b}h", { a: hrs(r.hours.before[0]), b: hrs(r.hours.before[1]) })} → {t("A조 {a}h · B조 {b}h", { a: hrs(r.hours.after[0]), b: hrs(r.hours.after[1]) })}</b>
+                    </li>
+                  )}
+                </ul>
+              </div>
+              <div className="iv-side">
+                <button type="button" className="iv-payback" onClick={() => setOpenCost(key)} title={t("완성 비용 내역과 계산 과정을 봅니다")}>
+                  {r.fresh && r.cost.lmd === 0 && r.cost.exp === 0 ? <b className="na">{t("육성 비용 없음")}</b>
+                    : days == null ? <b className="na">{t("회수 환산 없음")}</b> : <b>{t("{n}일", { n: num(days) })}</b>}
+                  <small>{days == null ? t("비용 보기") : t("회수 · 하루 {n} 이성", { n: (r.payback?.dailyAp ?? 0).toFixed(1) })}</small>
+                </button>
+                <div className="iv-acts">
+                  {r.fresh ? <button type="button" className="iv-mini" onClick={() => onHide(key)} title={t("이 오퍼를 추천 목록에서 숨깁니다 — 다음 순위 오퍼가 올라옵니다")}>{t("숨기기")}</button>
+                    : isApplied
+                    ? <span className="iv-applied" title={t("임시 적용됨 — 위 '되돌리기'로 취소")}>✓ {t("적용됨")}</span>
+                    : <>
+                        <button type="button" className={`iv-mini${selected.has(key) ? " on" : ""}`} aria-pressed={selected.has(key)} onClick={() => onToggleSelect(key)} title={t("적용할 오퍼로 선택합니다 — 위 '선택 임시 적용'으로 한 번에 반영")}>{selected.has(key) ? `✓ ${t("선택됨")}` : t("선택")}</button>
+                        <button type="button" className="iv-mini" onClick={() => onHide(key)} title={t("이 오퍼를 추천 목록에서 숨깁니다 — 다음 순위 오퍼가 올라옵니다")}>{t("숨기기")}</button>
+                      </>}
                 </div>
               </div>
             </li>
           );
         })}
-      </ul>
-      {/* 완성 비용 상세 — 카드 인라인이 아니라 별도 모달 (사용자 지정 2026-08-05).
-          표시 값은 전부 apOf/daysOf 재계산 — 저장분 형식과 무관하게 표와 합계가 항상 일치한다 */}
+      </ol>
+      {/* 완성 비용 상세 — 별도 창 (사용자 지정 2026-08-05). 표시 값은 전부 apOf/daysOf 재계산 */}
       {costRec && (() => {
         const ap = apOf(costRec.cost);
-        const on = matOn(costRec.opId);
+        const ck = recKey(costRec);
+        const on = matOn(ck);
         const days = daysOf(costRec, on);
         return (
         <ModalWindow label={t("완성 비용")} className="operator-modal invest-costmodal" onClose={() => setOpenCost(null)}>
           <div className="invest-costdetail">
             <h3 className="invest-costmodal-title">
-              {opMap.get(costRec.opId)?.name ?? costRec.opId}
-              <em>{t("{e} Lv.{lv}", { e: t(ELITE_LABEL[costRec.from]), lv: costRec.fromLevel ?? 1 })} → {t(ELITE_LABEL[costRec.to])} {t("완성")}</em>
+              {recOps(costRec).map((o) => opMap.get(o.opId)?.name ?? o.opId).join(" + ")}
+              <em>{raiseText(costRec.from, costRec.to, costRec.fromLevel)}{(costRec.with ?? []).map((w) => ` · ${raiseText(w.from, w.to, w.fromLevel)}`).join("")}</em>
             </h3>
             <p className="invest-costmodal-days">
               {days == null ? t("회수 계산 불가") : t("회수까지 {n}일", { n: num(Math.round(days)) })}
@@ -2617,15 +2655,15 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
             </table>
             {ap.apMat > 0 && (
               <button type="button" className={`invest-mattoggle${on ? " on" : ""}`} aria-pressed={on}
-                onClick={() => toggleMat(costRec.opId)}
+                onClick={() => toggleMat(ck)}
                 title={t("이 오퍼의 회수일을 용문폐·경험치만으로 볼지, 듀얼칩 등 육성 재료까지 합쳐 볼지 전환합니다")}>
                 <span className="invest-mattoggle-box" aria-hidden />{t("육성 재료 비용까지 포함")}
               </button>
             )}
             <p className="invest-costcalc">
               {days == null
-                ? t("이 오퍼가 올리는 방은 산출을 이성으로 환산할 근거가 없어(발전소·사무실·응접실) 회수일을 내지 않습니다. 방 %효율 이득은 위 목록 그대로입니다.")
-                : rich(t("하루 이득 **{daily} 이성** (방 %효율 변화 × 그 방 1%p의 하루 산출 × 그 조 근무시간 비율) → **{cost} ÷ {daily} = 약 {days}일**", { daily: costRec.payback!.dailyAp.toFixed(2), cost: num(on ? ap.apTotal : ap.apBase), days: num(Math.round(days)) }))}
+                ? t("이 추천이 바꾸는 방은 산출을 이성으로 환산할 근거가 없어(사무실·응접실) 회수일을 내지 않습니다. 방 %효율 변화는 카드 그대로입니다.")
+                : rich(t("하루 이득 **{daily} 이성** (두 편성의 하루 산출 차이) → **{cost} ÷ {daily} = 약 {days}일**", { daily: costRec.payback!.dailyAp.toFixed(2), cost: num(on ? ap.apTotal : ap.apBase), days: num(Math.round(days)) }))}
             </p>
             {days != null && ap.apMat > 0 && (
               <p className="invest-costcalc dim">{on
@@ -2784,7 +2822,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   const orderFixedRoom = parts0.some((p) => p.orderFixed);
   const payoutOf = (b: { payout: number; payoutViolation: number }) => (orderFixedRoom ? 0 : b.payout * mult0.quality + b.payoutViolation * mult0.violation);
   agg["오더 수익"] = parts0.reduce((sum, p) => sum + payoutOf(p), 0);
-  agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, replaced ? roomEff0 : agg["스킬 효율"], ctx.product);
+  agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, replaced ? roomEfficiency(parts0, team) : agg["스킬 효율"], ctx.product);
   // 용량 변환 — 팀이 쌓은 오더 상한/창고 용량을 변환기가 되돌린 효율/생산력 (베나벌컨버블·데겐블레허·제이)
   agg["용량 변환"] = capConvFor(team, cell.room, ctx);
   // 특별 오더(클로저·U-Official) — 스킬에 적힌 +10%가 아니라 **이 방에서 실제로 오르는 %p**를
@@ -3329,7 +3367,8 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 // 안 그러면 "스킬 +25%"인데 기여가 "+30%"로 찍혀, 나머지 5가 어디서 왔는지
                 // 화면에 아무 설명이 없다 (사용자 요청 2026-08-08).
                 const crossInSum = b.crossIn.reduce((sum, x) => sum + x.value, 0);
-                // 오버라이드·자동화가 걸린 방이면 이 오퍼의 효율은 0 으로 대체된다 — 사용자 지시 2026-10-19 "샤마르가 있으면 나머지는 그냥 0%로 보이게" (제안 4ea3fc07)
+                // 오버라이드·자동화가 걸린 방이면 이 오퍼의 효율은 0 으로 대체된다 — 그대로 +35 를 적으면 더해지는 것처럼 읽힌다 (제안 4ea3fc07)
+                // 사용자 지시 2026-10-19 "샤마르가 있으면 나머지는 그냥 0%로 보이게"
                 const zeroed = replaced && b.override <= 0 && b.automation <= 0 && Math.round(b.efficiency) !== 0;
                 if (zeroed) parts.push(t("{unit} 0% (효율 대체)", { unit: t(UNIT[cell.room] ?? "효율") }));
                 else if (Math.round(b.efficiency - crossInSum) !== 0) parts.push(`${t(UNIT[cell.room] ?? "효율")} +${Math.round(b.efficiency - crossInSum)}${pct}`);

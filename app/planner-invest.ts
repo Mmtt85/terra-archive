@@ -22,12 +22,14 @@
 //
 // 도메인 규칙 정본은 docs/INFRA-RULES.md, 엔진은 app/planner-engine.ts.
 import costsData from "./data/costs.json";
+import obtainData from "./data/op-obtain.json";
+import { acquireOf } from "./op-acquire";
 import sanityData from "./data/sanity.json";
 import {
-  optimizeConfig, buildPlan, planScore, teamScore, opSolo, withElite, maxElite, eliteLocks, setCapCluster, setShiftTiebreak,
+  optimizeConfig, buildPlan, planScore, setPriorityMode, teamScore, opSolo, withElite, maxElite, eliteLocks, setCapCluster, setShiftTiebreak,
   availableSetKeys, synergySetMembers, cellByKey, LAYOUT, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT, AUTO_BENCH_IDS,
   apPerPctDay, planTokensAt,
-  type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets, type RoomPin,
+  type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets, type RoomPin, type OptimizeResult,
 } from "./planner-engine";
 
 type CostPhase = { lmd: number; items: [string, number][] };
@@ -42,8 +44,10 @@ const OPS_COST = (costsData as unknown as { ops: Record<string, OpCost> }).ops;
 const REPORTED_ROOMS = new Set(["MANUFACTURE", "TRADING", "POWER", "HIRE", "MEETING"]);
 const reportedCells = () => LAYOUT.filter((cell) => REPORTED_ROOMS.has(cell.room)).map((cell) => cell.key);
 // 기여 판정용 근무 방 — 여기 배치돼야 "실제로 일하는" 것으로 본다 (숙소·가공소·훈련실 제외)
-const WORK_ROOMS = new Set(["MANUFACTURE", "TRADING", "POWER", "CONTROL", "HIRE", "MEETING"]);
-const CAND_CAP = 140;     // 정밀 평가 후보 상한 — 유망순(시너지·성급) 정렬 후 상위만 (성능)
+// 숙소도 넣는다 (2026-10-19) — 숙소에 앉아 피로도 회복·기지 동반 조건으로 이득을 내는 오퍼도 있다. 이득이 없으면 어차피 아래에서 걸러진다
+const WORK_ROOMS = new Set(["MANUFACTURE", "TRADING", "POWER", "CONTROL", "HIRE", "MEETING", "DORMITORY"]);
+const CAND_CAP = 240;     // 정밀 평가 후보 상한 — 안전장치. 여러 워커로 나눠 돌리므로 넉넉히 (2026-10-19, 종전 140은 저성급부터 잘렸다)
+const PAIR_CAP = 40;      // 짝 후보(둘 다 키워야 열리는 시너지) 평가 상한
 const EPS = 1e-6;         // ΔS 부호 판정용 부동소수 노이즈 컷
 const DROP_TOL = 3;       // 방 효율 하락 허용 오차 (재배치 잡음 판정 문턱)
 const SYNERGY_MIN = 25;   // 방이 하락해도 통과시키는 최소 ΔS — 진짜 시너지 결집만
@@ -187,25 +191,39 @@ export type RaiseRec = {
   from: Elite;
   to: Elite;
   fromLevel?: number;            // 비용 계산에 쓴 현재 레벨 (보유 설정 입력값 · 미지정이면 없음)
-  aGain: number;                 // A조 방 %효율 변화 합계(%p) — 표시·랭킹 기준(주력 조 우선)
+  /** 같이 키워야 열리는 짝 (2026-10-19) — 있으면 비용·이득·방 변화는 둘을 함께 완성한 값이다.
+   *  한 명씩만 올려 보는 평가로는 '둘 다 미완성인 토큰·세트 짝'이 각자 이득 0으로 영영 안 나왔다 */
+  with?: { opId: string; from: Elite; to: Elite; fromLevel?: number }[];
+  /** 아직 없는 오퍼 — 데려와서(뽑기·공채·상점) 키우면 (2026-10-19). 비용은 Lv.1 부터의 육성만, 데려오는 값은 운이라 안 넣는다 */
+  fresh?: boolean;
+  /** 데려오는 길 — standard 통상 헤드헌팅 · kernel 커널 · recruit 공채 · cert 자격증 상점 · credit 크레딧 교역소 */
+  obtain?: string[];
+  aGain: number;                 // A조 방 %효율 변화 합계(%p) — 표시용
   bGain: number;                 // B조(회복 교대) 방 %효율 변화 합계(%p)
   deltaScore: number;            // 내부 ΔplanScore (재배치 잡음 가드용 — 표시 안 함)
   synergy: boolean;              // 시너지 조각으로 판정돼 전체 최적화로 평가됨 (표시 힌트)
   roomDeltas: RoomDelta[];       // 바뀐 생산·무역·발전·사무실·응접실 방·조
   placement: { key: string; shift: number } | null; // raised 편성에서 이 오퍼 위치
+  /** 교대 시계 [A조, B조] 시간 — 피로도 소모가 바뀌어 A조가 더 오래 버티면 (2026-10-19) */
+  hours?: { before: number[]; after: number[] };
   cost: RaiseCost;
   payback?: Payback;             // 이성 환산 회수일 (근거는 UI가 그대로 밝힌다)
 };
+/** 목록·숨기기·선택의 열쇠 — 짝 카드는 같은 오퍼의 단독 카드와 따로 센다 */
+export const recKey = (r: Pick<RaiseRec, "opId" | "with">): string => (r.with?.length ? [r.opId, ...r.with.map((w) => w.opId)].join("+") : r.opId);
+/** 이 추천이 완성하는 오퍼 전부 (본인 + 짝) */
+export const recOps = (r: RaiseRec): { opId: string; to: Elite }[] => [{ opId: r.opId, to: r.to }, ...(r.with ?? []).map((w) => ({ opId: w.opId, to: w.to }))];
 
 export type InvestProgress = { done: number; total: number; opId?: string };
 
 // 로스터를 정예화 반영해 스탬프 + id 맵. current = eliteById에 없으면 성급 최대 가정.
-function stampRoster(visibleOps: InfraOp[], ownedIds: Set<string>, eliteById: Map<string, Elite>, override?: { id: string; elite: Elite }, levelById?: Map<string, number>) {
+function stampRoster(visibleOps: InfraOp[], ownedIds: Set<string>, eliteById: Map<string, Elite>, overrides?: { id: string; elite: Elite }[], levelById?: Map<string, number>) {
   const roster: InfraOp[] = [];
   const byId = new Map<string, InfraOp>();
+  const over = new Map((overrides ?? []).map((o) => [o.id, o.elite]));
   for (const op of visibleOps) {
-    if (!ownedIds.has(op.id)) continue;
-    const elite = override && override.id === op.id ? override.elite : eliteById.get(op.id) ?? maxElite(op.rarity);
+    if (!ownedIds.has(op.id) && !over.has(op.id)) continue;   // 새로 데려오는 후보(미보유)는 덮어쓰기로 들어온다
+    const elite = over.get(op.id) ?? eliteById.get(op.id) ?? maxElite(op.rarity);
     const stamped = withElite(op, elite, levelById?.get(op.id));
     roster.push(stamped);
     byId.set(op.id, stamped);
@@ -219,14 +237,14 @@ const TEAM_KINDS = new Set(["override", "payout", "quality", "percoworker", "amp
 // 후보 판정(admissible 사전 필터) + 시너지 조각 여부. pass=false면 그 오퍼는 완성해도 편성이
 // 절대 안 바뀐다(스킵). synergy=true면 팀 의존이라 전체 재탐색으로 총 시너지 효율까지 본다.
 // ⚠ pass 판정은 보수적(과포함) — 애매하면 통과, 실제 이득은 반사실 재편성이 최종 판정한다.
-function candidateInfo(rawOp: InfraOp, target: Elite, current: Elite, baseline: Plan, byId0: Map<string, InfraOp>, level?: number): { pass: boolean; synergy: boolean } {
+function candidateInfo(rawOp: InfraOp, target: Elite, current: Elite, baseline: Plan, byId0: Map<string, InfraOp>, level?: number, fresh = false): { pass: boolean; synergy: boolean; gained: InfraOp["skills"] } {
   // 목표는 정예화 1 이상이라 레벨 잠금이 없다 — 현재 상태에만 레벨을 먹여, 노정예 Lv.30
   // 미만이라 잠겨 있던 스킬도 '정예화하면 새로 열리는 것'으로 정확히 잡힌다
   const raised = withElite(rawOp, target);
   const base = withElite(rawOp, current, level);
-  const baseSkills = new Set(base.skills.map((s) => s.buffId ?? s.name));
+  const baseSkills = new Set(fresh ? [] : base.skills.map((s) => s.buffId ?? s.name));   // 새로 데려오면 스킬 전부가 새것
   const gained = raised.skills.filter((s) => !baseSkills.has(s.buffId ?? s.name));
-  if (!gained.length) return { pass: false, synergy: false };
+  if (!gained.length) return { pass: false, synergy: false, gained };
   let synergy = false;
   let pass = false;
   for (const skill of gained) {
@@ -251,40 +269,101 @@ function candidateInfo(rawOp: InfraOp, target: Elite, current: Elite, baseline: 
       if (soloRaised > (weakest === Infinity ? 0 : weakest)) { pass = true; break; }
     }
   }
-  return { pass, synergy };
+  return { pass, synergy, gained };
 }
 
-// 메인 — 보유·정예화 상태를 받아 "완성하면 이득인" 정예화 투자를 이득순 정렬 전체로 반환.
-export async function recommendRaises(
-  visibleOps: InfraOp[],
-  ownedIds: Set<string>,
-  eliteById: Map<string, Elite>,
-  priority: ProdPriority = "gold",
-  onProgress?: (p: InvestProgress) => void | Promise<void>,
-  pinnedDorms: Record<string, string[]> = {},  // 사용자가 숙소에 고정한 인원 — 반사실도 같은 기지 조건에서
-  levelById: Map<string, number> = new Map(),  // 오퍼 레벨 — 노정예 'Lv.30' 스킬이 잠긴 상태를 베이스라인에 반영
-  roomPins: Record<string, RoomPin[]> = {},   // 생산방 고정 인원 — 숙소 고정과 같은 이유로 관통 (조별 고정 포함)
-): Promise<RaiseRec[]> {
-  const cur = (op: InfraOp): Elite => eliteById.get(op.id) ?? maxElite(op.rarity);
-  // 정예화는 **지정이 없으면 만정예로 간주**하므로(성급 상한), 보유 설정에서 아무도 낮춰 두지
-  // 않았으면 완성할 게 없어 후보가 수학적으로 0이다. 그런데도 베이스라인 전체 optimize를
-  // 끝까지 돌린 뒤 빈 결과를 보여줬다 — 보유 405명이면 16초(모바일은 3~10배)를 통째로 버린다.
-  // 후보 유무는 optimize 없이 판정되므로 먼저 끊는다 (2026-07-25).
-  if (!visibleOps.some((op) => ownedIds.has(op.id) && raiseTarget(op, cur(op)) != null)) return [];
-  const { roster: baseRoster, byId: byId0 } = stampRoster(visibleOps, ownedIds, eliteById, undefined, levelById);
-  // 베이스라인 편성 + 그 편성이 고른 전략(토큰·시너지 세트) — 순수 가산 후보 평가에 재사용
-  // park = 베이스라인이 채택한 숙소 파킹 여부 — 반사실도 같은 전략으로 지어야 ΔplanScore가 공정하다
-  // 반사실은 베이스라인이 **실제로 쓴 전략 그대로** 지어야 한다 — 토큰·세트·파킹만 맞추고
-  // 시드(캡 확장·밀려난 생성원)·제외 명단(사슬 전환자)·용량 결집 on/off를 빠뜨리면, 반사실이
-  // 통째로 상수만큼 낮게 지어져 그 상수가 모든 후보의 ΔS에서 똑같이 깎인다. 실계정 404명
-  // 박스에서 −1.521이 걸려 후보 66건이 전부 음수 → **추천 0건**이었다 (2026-07-30).
-  const { plan: baseline, tokenChoice, factionSets, park, seeds, excluded, capCluster, shiftTiebreak } =
-    await optimizeConfig(baseRoster, priority, undefined, pinnedDorms, roomPins);
-  const S0 = planScore(baseline, byId0);
-  const droppedIds = new Set(excluded);
+// ── 하루 이득(이성) — 편성 전체로 잰다 (2026-10-19) ─────────────────────────────
+// 종전엔 '바뀐 방의 %p 변화 × 그 방 단가 × 기준 편성의 조 시간'이었다. 그러면 ① 피로도가 줄어
+// A조가 더 오래 버티는 이득(교대 시계 변화)이 통째로 빠지고 ② 정렬은 서로 단위가 다른 방의 %p를
+// 그냥 더해(제조소 +10 = 사무실 +10) 했다. 이제 두 편성 각각의 '하루 산출'을 그 편성의 교대
+// 시계로 섞어 빼고, 정렬도 이 값으로 낸 회수일로 한다.
+// 발전소 +1%p = 드론 회복 +1% → 하루 2.4개(기본 240개 — laborRecoverTime 360초) × 1개당 제조 180초
+// (manufactReduceTimeUnit, 기본 1포인트/초) — 요약 카드 드론 칸과 같은 상수(INFRA-RULES §7 드론).
+// 드론을 어디에 쓰는지는 사람마다 달라 제조소 평균 단가로 친다. 사무실·응접실은 여전히 환산 근거가 없다.
+const PT_DAY_1PCT = 3600 * 0.01 * 24;
+const DRONE_PT_PER_PCT_DAY = 240 * 0.01 * 180;
+function apPerPctInvest(key: string): number {
+  const room = cellByKey.get(key)?.room ?? key;
+  if (room === "POWER") return DRONE_PT_PER_PCT_DAY * (apPerPctDay("MANUFACTURE") / PT_DAY_1PCT);
+  return apPerPctDay(key);
+}
+type Effs = Map<string, number[]>;
+function effsOf(plan: Plan, byId: Map<string, InfraOp>): Effs {
+  const out: Effs = new Map();
+  for (const key of reportedCells()) {
+    const row: number[] = [];
+    for (let shift = 0; shift < SHIFT_COUNT; shift += 1) row.push(cellEff(plan, key, shift, byId));
+    out.set(key, row);
+  }
+  return out;
+}
+const hoursOf = (plan: Plan) => [plan.shiftHours?.[0] ?? 12, plan.shiftHours?.[1] ?? 12];
+function dailyApOf(p0: Plan, e0: Effs, p1: Plan, e1: Effs): number {
+  const h0 = hoursOf(p0); const h1 = hoursOf(p1);
+  const s0 = h0[0] + h0[1] || 24; const s1 = h1[0] + h1[1] || 24;
+  let ap = 0;
+  for (const [key, before] of e0) {
+    const per = apPerPctInvest(key);
+    if (!per) continue;
+    const after = e1.get(key) ?? before;
+    for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+      ap += ((after[shift] ?? 0) * (h1[shift] ?? 0) / s1 - (before[shift] ?? 0) * (h0[shift] ?? 0) / s0) * per;
+    }
+  }
+  return ap;
+}
+function paybackFrom(cost: RaiseCost, dailyAp: number): Payback {
+  const p = paybackOf(cost, []);
+  return { ...p, dailyAp, days: dailyAp > 0 ? p.apBase / dailyAp : null, daysWithMat: dailyAp > 0 ? p.apTotal / dailyAp : null };
+}
+const sumCost = (list: RaiseCost[]): RaiseCost => {
+  const items = new Map<string, number>();
+  let lmd = 0; let exp = 0;
+  for (const c of list) { lmd += c.lmd; exp += c.exp; for (const [id, n] of c.items) items.set(id, (items.get(id) ?? 0) + n); }
+  return { lmd, exp, items: [...items.entries()] };
+};
 
-  type Cand = { op: InfraOp; from: Elite; to: Elite; synergy: boolean };
-  const candidates: Cand[] = [];
+// ── 1단계: 기준 편성 + 후보 목록 ─────────────────────────────────────────────
+// 단계를 나눈 까닭 (2026-10-19 "생각보다 오래 걸린다"): 기준 편성(전체 자동편성 = 실측 11.5초)은
+// ① 방금 자동편성을 돌렸으면 그 결과(base)를 그대로 받아 건너뛰고, 후보 평가(후보 100명 × 재편성 ≈ 12초)는
+// ② 여러 워커에 나눠 동시에 돌린다(planner-offload). 단계마다 입력·출력이 전부 직렬화 가능한 값이다.
+export type InvestCand = { opId: string; from: Elite; to: Elite; synergy: boolean; with?: { opId: string; from: Elite; to: Elite }[]; fresh?: boolean; obtain?: string[] };
+
+// 새로 데려와 키우는 후보 (2026-10-19, 사용자 "가진 오퍼를 키우는 것도 필요하지만 새로 뽑아서 키우는 것도 추천 중 하나") —
+// 지금 손에 넣을 수 있는 길이 있는 오퍼만: 통상·커널 헤드헌팅, 공채, 자격증 상점, 크레딧 교역소. 한정·콜라보·이벤트 배포·
+// 통합전략 보상은 지금 데려올 수 없어 뺀다.
+const OBTAIN_ROUTE = (obtainData as unknown as { ops: Record<string, string[]> }).ops;
+export function obtainableNow(id: string): string[] {
+  const out: string[] = acquireOf(id).filter((k) => k === "standard" || k === "kernel" || k === "recruit");
+  const route = OBTAIN_ROUTE[id]?.[0];
+  if (route === "cert" || route === "credit") out.push(route);
+  return out;
+}
+const FRESH_CAP = 80;
+export type InvestSetup = { base: OptimizeResult; cands: InvestCand[] };
+export type InvestInput = {
+  visibleOps: InfraOp[]; ownedIds: Set<string>; eliteById: Map<string, Elite>; priority: ProdPriority;
+  pinnedDorms: Record<string, string[]>; levelById: Map<string, number>; roomPins: Record<string, RoomPin[]>;
+};
+
+/** 후보가 하나라도 있나 — 없으면 기준 편성조차 짤 필요가 없다 (전원 만정예 간주, 2026-07-25) */
+export function hasInvestCandidates(inp: InvestInput): boolean {
+  const cur = (op: InfraOp): Elite => inp.eliteById.get(op.id) ?? maxElite(op.rarity);
+  return inp.visibleOps.some((op) => (inp.ownedIds.has(op.id) ? raiseTarget(op, cur(op)) != null : !op.unreleased && obtainableNow(op.id).length > 0));
+}
+
+export async function investPrepare(inp: InvestInput, base?: OptimizeResult | null): Promise<InvestSetup | null> {
+  const { visibleOps, ownedIds, eliteById, priority, pinnedDorms, levelById, roomPins } = inp;
+  if (!hasInvestCandidates(inp)) return null;
+  const cur = (op: InfraOp): Elite => eliteById.get(op.id) ?? maxElite(op.rarity);
+  const { roster: baseRoster, byId: byId0 } = stampRoster(visibleOps, ownedIds, eliteById, undefined, levelById);
+  // 반사실은 베이스라인이 **실제로 쓴 전략 그대로** 지어야 한다 — 토큰·세트·파킹·시드·제외 명단·
+  // 결집 on/off 중 하나라도 빠지면 모든 후보의 ΔS 가 같은 상수만큼 깎여 추천이 0건이 된다 (2026-07-30)
+  const cfg = base ?? await optimizeConfig(baseRoster, priority, undefined, pinnedDorms, roomPins);
+  const baseline = cfg.plan;
+
+  type Raw = InvestCand & { gained: InfraOp["skills"] };
+  const singles: Raw[] = [];
   for (const op of visibleOps) {
     if (!ownedIds.has(op.id)) continue;
     if (AUTO_BENCH_IDS.has(op.id)) continue; // 자동편성 제외 명단(케이퍼·인포서)은 완성해도 편성이 안 바뀐다
@@ -293,34 +372,92 @@ export async function recommendRaises(
     if (to == null) continue;
     const info = candidateInfo(op, to, from, baseline, byId0, levelById.get(op.id));
     if (!info.pass) continue;
-    candidates.push({ op, from, to, synergy: info.synergy });
+    singles.push({ opId: op.id, from, to, synergy: info.synergy, gained: info.gained });
   }
-  // 후보가 상한을 넘으면 유망순으로 정밀 평가 대상을 좁힌다 — 표시는 20개씩이므로, 시너지
-  // 조각과 고성급(강한 스킬)을 앞세운다. 값싼 정렬이라 진짜 최상위를 놓칠 위험은 낮다.
-  candidates.sort((a, b) => (b.synergy ? 1 : 0) - (a.synergy ? 1 : 0) || b.op.rarity - a.op.rarity || a.op.seq - b.op.seq);
-  const capped = candidates.length > CAND_CAP;
-  const evalList = capped ? candidates.slice(0, CAND_CAP) : candidates;
+  // 상한은 안전장치 — 넘으면 시너지 먼저, 그다음 **싼 쪽(저성급)** 먼저 남긴다. 종전엔 고성급 먼저라
+  // 가성비 좋은 3·4성이 평가도 못 받고 잘렸다 (2026-10-19)
+  const rarity = (id: string) => byId0.get(id)?.rarity ?? 0;
+  const rawById = new Map(visibleOps.map((op) => [op.id, op]));
+  const rarity2 = (id: string) => rawById.get(id)?.rarity ?? 0;
+  singles.sort((a, b) => (b.synergy ? 1 : 0) - (a.synergy ? 1 : 0) || rarity(a.opId) - rarity(b.opId) || a.opId.localeCompare(b.opId));
+  const kept = singles.slice(0, CAND_CAP);
 
-  // 후보 하나를 평가 — 기본은 baseline 전략 재사용 buildPlan 1회. 세트 활성안은 **그 후보가
-  // 실제로 참가하는** 휴면 세트(setMembers) + 완성으로 새로 가용해지는 세트만 추가로 비교한다.
-  // 비참가 후보에까지 휴면 세트 재탐색을 돌리던 낭비를 없앤다(대부분 후보가 buildPlan 1회로 수렴).
+  // 짝 — 둘 다 미완성이라 한 명씩 올려서는 안 열리는 시너지. 새로 열리는 스킬끼리 이어진 것만:
+  // 토큰(한쪽이 새로 만들고 한쪽이 새로 씀) · 지정 동료(partners·basePartners) · 같은 세트(기준엔 없던 세트)
+  const syn = kept.filter((c) => c.synergy);
+  const pairKeys = new Set<string>();
+  const pairs: [Raw, Raw][] = [];
+  const addPair = (a: Raw, b: Raw) => {
+    if (pairs.length >= PAIR_CAP || a.opId === b.opId) return;
+    const [x, y] = a.opId < b.opId ? [a, b] : [b, a];
+    const k = `${x.opId}+${y.opId}`;
+    if (pairKeys.has(k)) return;
+    pairKeys.add(k); pairs.push([x, y]);
+  };
+  const uses = (c: Raw) => new Set(c.gained.flatMap((sk) => sk.tokenUse.map((u) => u.token)));
+  const gens = (c: Raw) => new Set(c.gained.flatMap((sk) => sk.tokenGen.map((g) => g.token)));
+  const mates = (c: Raw) => new Set(c.gained.flatMap((sk) => [...sk.partners, ...(sk.basePartners ?? [])]));
+  for (let i = 0; i < syn.length; i += 1) {
+    for (let j = i + 1; j < syn.length; j += 1) {
+      const a = syn[i]; const b = syn[j];
+      const tok = [...uses(a)].some((x) => gens(b).has(x)) || [...uses(b)].some((x) => gens(a).has(x));
+      if (tok || mates(a).has(b.opId) || mates(b).has(a.opId)) addPair(a, b);
+    }
+  }
+  if (syn.length > 1) {
+    const { roster: allUp } = stampRoster(visibleOps, ownedIds, eliteById, syn.map((c) => ({ id: c.opId, elite: c.to })), levelById);
+    const before = new Set(availableSetKeys(baseRoster));
+    const members = synergySetMembers(allUp);
+    const synById = new Map(syn.map((c) => [c.opId, c]));
+    for (const [key, ids] of Object.entries(members)) {
+      if (before.has(key)) continue;
+      const inSet = ids.map((id) => synById.get(id)).filter(Boolean) as Raw[];
+      for (let i = 0; i < inSet.length; i += 1) for (let j = i + 1; j < inSet.length; j += 1) addPair(inSet[i], inSet[j]);
+    }
+  }
+  const cands: InvestCand[] = kept.map(({ gained: _g, ...c }) => c);
+  // 새로 데려오는 후보 — 미보유 · 실장 · 지금 데려올 길이 있음. 목표는 인프라 스킬이 다 열리는 정예화(없으면 노정예)
+  const fresh: InvestCand[] = [];
+  for (const op of visibleOps) {
+    if (ownedIds.has(op.id) || op.unreleased || AUTO_BENCH_IDS.has(op.id)) continue;
+    const obtain = obtainableNow(op.id);
+    if (!obtain.length) continue;
+    const to = raiseTarget(op, 0) ?? 0;
+    const info = candidateInfo(op, to, 0, baseline, byId0, undefined, true);
+    if (!info.pass) continue;
+    fresh.push({ opId: op.id, from: 0, to, synergy: info.synergy, fresh: true, obtain });
+  }
+  fresh.sort((a, b) => (b.synergy ? 1 : 0) - (a.synergy ? 1 : 0) || rarity2(a.opId) - rarity2(b.opId) || a.opId.localeCompare(b.opId));
+  cands.push(...fresh.slice(0, FRESH_CAP));
+  for (const [a, b] of pairs) cands.push({ opId: a.opId, from: a.from, to: a.to, synergy: true, with: [{ opId: b.opId, from: b.from, to: b.to }] });
+  return { base: cfg, cands };
+}
+
+// ── 2단계: 후보 평가 — 워커 여러 개가 후보를 나눠 맡는다 ───────────────────────
+export function investEvaluate(inp: InvestInput, setup: InvestSetup, onEach?: (done: number, opId: string) => void): RaiseRec[] {
+  const { visibleOps, ownedIds, eliteById, priority, pinnedDorms, levelById, roomPins } = inp;
+  const { base, cands } = setup;
+  const { tokenChoice, factionSets, park, seeds, excluded, capCluster, shiftTiebreak } = base;
+  setPriorityMode(priority);
+  const { roster: baseRoster, byId: byId0 } = stampRoster(visibleOps, ownedIds, eliteById, undefined, levelById);
+  const droppedIds = new Set(excluded);
+  // 세트 활성안은 **그 후보가 실제로 참가하는** 휴면 세트 + 완성으로 새로 가용해지는 세트만 추가 비교
   const baselineAvail = new Set(availableSetKeys(baseRoster));
   const setMembers = synergySetMembers(baseRoster);
   const dormantSets = [...baselineAvail].filter((key) => !factionSets[key]);
-  const evalCandidate = (upRoster: InfraOp[], byId1: Map<string, InfraOp>, opId: string): { plan: Plan; score: number } => {
+  const evalCandidate = (upRoster: InfraOp[], byId1: Map<string, InfraOp>, ids: Set<string>): { plan: Plan; score: number } => {
     const configs: FactionSets[] = [factionSets];
     const seen = new Set(Object.keys(factionSets));
-    for (const key of dormantSets) if (!seen.has(key) && setMembers[key]?.includes(opId)) { configs.push({ ...factionSets, [key]: true }); seen.add(key); }
+    for (const key of dormantSets) if (!seen.has(key) && setMembers[key]?.some((id) => ids.has(id))) { configs.push({ ...factionSets, [key]: true }); seen.add(key); }
     for (const key of availableSetKeys(upRoster)) if (!baselineAvail.has(key) && !seen.has(key)) { configs.push({ ...factionSets, [key]: true }); seen.add(key); }
     let best: Plan | null = null;
     let bestS = -Infinity;
     // 베이스라인이 로스터에서 뺐던 오퍼는 반사실에서도 뺀다 (후보 본인이면 그대로 두어 평가).
-    const roster1 = droppedIds.size ? upRoster.filter((op) => op.id === opId || !droppedIds.has(op.id)) : upRoster;
+    const roster1 = droppedIds.size ? upRoster.filter((op) => ids.has(op.id) || !droppedIds.has(op.id)) : upRoster;
     setCapCluster(capCluster);
     setShiftTiebreak(shiftTiebreak);
     for (const cfg of configs) {
-      // ⑤(우선 생산 집중)는 planScore 중립(gold↔exp 등량 재배치)이라 육성 이득 델타를 안 바꾸고
-      // config 비교만 교란하므로 끈다 — 반사실 평가는 ⑤-무관 원가치로 본다 (planner-engine 참고).
+      // ⑤(우선 생산 집중)는 planScore 중립이라 육성 이득 델타를 안 바꾸고 config 비교만 교란하므로 끈다
       const plan = buildPlan(tokenChoice, roster1, cfg, priority, seeds, false, park, pinnedDorms, roomPins);
       const score = planScore(plan, byId1);
       if (score > bestS) { bestS = score; best = plan; }
@@ -330,31 +467,41 @@ export async function recommendRaises(
     return { plan: best!, score: bestS };
   };
 
-  const recs: RaiseRec[] = [];
-  for (let i = 0; i < evalList.length; i += 1) {
-    const { op, from, to, synergy } = evalList[i];
-    if (onProgress) await onProgress({ done: i, total: evalList.length, opId: op.id });
-    const { byId: byId1 } = stampRoster(visibleOps, ownedIds, eliteById, { id: op.id, elite: to }, levelById);
-    const upRoster = [...byId1.values()];
-    const { plan, score: S1 } = evalCandidate(upRoster, byId1, op.id);
-    const deltaScore = S1 - S0;
-    if (deltaScore <= EPS) continue;                 // 이득 없음/음수(휴리스틱 잡음) → 억제
-    const placement = placementOf(plan, op.id);
-    if (!placement) continue;                        // 근무 방에 안 앉으면 귀속 실패 → 억제
+  // 기준 편성도 반사실과 **같은 절차(buildPlan, ⑤ 끔)로 다시 짓는다** — base 가 앞서 저장해 둔 자동편성 결과라
+  // 엔진이 그새 바뀌었어도(배포) 비교 대상이 같은 엔진·같은 전략에서 나와 ΔS 에 상수 편향이 끼지 않는다 (2026-10-19)
+  const roster0 = droppedIds.size ? baseRoster.filter((op) => !droppedIds.has(op.id)) : baseRoster;
+  setCapCluster(capCluster);
+  setShiftTiebreak(shiftTiebreak);
+  const baseline = buildPlan(tokenChoice, roster0, factionSets, priority, seeds, false, park, pinnedDorms, roomPins);
+  setCapCluster(true);
+  setShiftTiebreak(true);
+  const S0 = planScore(baseline, byId0);
+  const effs0 = effsOf(baseline, byId0);
 
+  const recs: RaiseRec[] = [];
+  cands.forEach((c, i) => {
+    onEach?.(i, c.opId);
+    const ups = [{ id: c.opId, elite: c.to }, ...(c.with ?? []).map((w) => ({ id: w.opId, elite: w.to }))];
+    const ids = new Set(ups.map((u) => u.id));
+    const { byId: byId1 } = stampRoster(visibleOps, ownedIds, eliteById, ups, levelById);
+    const { plan, score: S1 } = evalCandidate([...byId1.values()], byId1, ids);
+    const deltaScore = S1 - S0;
+    if (deltaScore <= EPS) return;                   // 이득 없음/음수(휴리스틱 잡음) → 억제
+    const placement = placementOf(plan, c.opId);
+    if (!placement) return;                          // 근무 방에 안 앉으면 귀속 실패 → 억제
+    if ((c.with ?? []).some((w) => !placementOf(plan, w.opId))) return;   // 짝도 앉아야 짝 추천이다
+
+    const effs1 = effsOf(plan, byId1);
     const cellDeltas: RoomDelta[] = [];
-    for (const key of reportedCells()) {
+    for (const [key, before] of effs0) {
+      const after = effs1.get(key) ?? before;
       for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
-        const before = cellEff(baseline, key, shift, byId0);
-        const after = cellEff(plan, key, shift, byId1);
-        if (Math.abs(after - before) < 0.05) continue;
-        cellDeltas.push({ key, shift, before, after });
+        if (Math.abs((after[shift] ?? 0) - (before[shift] ?? 0)) < 0.05) continue;
+        cellDeltas.push({ key, shift, before: before[shift] ?? 0, after: after[shift] ?? 0 });
       }
     }
-    // 같은 종류 방끼리 팀이 통째로 자리를 맞바꾼 것(제조소3↔제조소4)은 **어느 칸이 어느 팀인지가
-    // 임의**일 뿐 실제 변화가 아니다. 칸 단위로 보면 한쪽이 -72%p로 잡혀 아래 하락 가드에
-    // 걸려버리므로(육성 추천이 통째로 0건이던 원인, 2026-07-25), 한 종류·한 조에서 두 칸 이상이
-    // 바뀌었으면 **방 종류 단위로 합산**해 판정하고 표시한다 — "제조소 B조 280% → 290%".
+    // 같은 종류 방끼리 팀이 통째로 자리를 맞바꾼 것(제조소3↔제조소4)은 실제 변화가 아니다 — 한 종류·한 조에서
+    // 두 칸 이상이 바뀌었으면 **방 종류 단위로 합산**해 판정하고 표시한다 (2026-07-25)
     const groups = new Map<string, RoomDelta[]>();
     for (const d of cellDeltas) {
       const room = cellByKey.get(d.key)?.room ?? d.key;
@@ -370,27 +517,71 @@ export async function recommendRaises(
       if (Math.abs(after - before) < 0.05) continue;  // 순수 자리 맞바꿈 — 표시할 변화 없음
       roomDeltas.push({ key: room, shift: list[0].shift, before, after });
     }
-    // 재배치 잡음 억제 — 어떤 방이 눈에 띄게 하락했는데 총이득(ΔS)이 작으면, 그 오퍼를 키운
-    // 효과가 아니라 그리디가 다른 방 인원을 뒤섞은 부작용이다("왜 키웠는데 다른 방이 나빠지지?"
-    // 혼란·불신 방지). ΔS가 큰 진짜 시너지 결집은 하락(딴 방→결집 방 이동)이 정상이라 통과.
-    if (!roomDeltas.length) continue;                // 보여줄 방 변화가 없으면(제어·훈련만 미세 변동) 억제
+    // 교대 시계 — 피로도가 줄어 A조가 더 오래 버티는 것도 이득이다 (15분 넘게 바뀌었을 때만 보인다)
+    const h0 = hoursOf(baseline); const h1 = hoursOf(plan);
+    const hoursMoved = Math.abs(h1[0] - h0[0]) >= 0.25 || Math.abs(h1[1] - h0[1]) >= 0.25;
+    if (!roomDeltas.length && !hoursMoved) return;   // 보여줄 변화가 없으면(제어·훈련만 미세 변동) 억제
+    // 재배치 잡음 억제 — 어떤 방이 눈에 띄게 하락했는데 총이득이 작으면 그리디가 다른 방을 뒤섞은 부작용이다
     const hasDrop = roomDeltas.some((d) => d.after < d.before - DROP_TOL);
-    if (hasDrop && deltaScore < SYNERGY_MIN) continue;
+    if (hasDrop && deltaScore < SYNERGY_MIN) return;
 
-    // 조별 방 %효율 변화 합계 — 유저에게 보여줄 구체 지표(추상 planScore 대신). A조(주력) 우선.
     const aGain = roomDeltas.reduce((sum, d) => (d.shift === 0 ? sum + (d.after - d.before) : sum), 0);
     const bGain = roomDeltas.reduce((sum, d) => (d.shift === 1 ? sum + (d.after - d.before) : sum), 0);
-    const fromLevel = levelById.get(op.id);
-    const cost = raiseCost(op.id, from, to, fromLevel);
-    recs.push({ opId: op.id, from, to, fromLevel, aGain, bGain, deltaScore, synergy, roomDeltas, placement, cost,
-                payback: paybackOf(cost, roomDeltas, baseline.shiftHours) });
-  }
-  if (onProgress) await onProgress({ done: evalList.length, total: evalList.length });
-  void capped; // 상한 초과 시 잘린 후보가 있으나(로그성) UI는 어차피 20개씩만 노출
-  // A조 방 효율 이득 우선 정렬 — A조가 풀파워 주력이라(피로 소진 전까지 A조로 돌림) 그 이득을
-  // 먼저 본다 (사용자 확정 2026-07-21). 동률이면 B조, 그다음 내부 총점.
-  recs.sort((a, b) => b.aGain - a.aGain || b.bGain - a.bGain || b.deltaScore - a.deltaScore);
-  // 전체 반환 — 표시 상한(20)은 UI(planner.tsx INVEST_SHOW) 몫. '숨기기' 시 21위부터 순서대로
-  // 올라와야 하므로(사용자 요청 2026-07-21) 여기서 자르지 않는다.
+    const fromLevel = c.fresh ? undefined : levelById.get(c.opId);
+    const withList = (c.with ?? []).map((w) => ({ ...w, fromLevel: levelById.get(w.opId) }));
+    const cost = sumCost([raiseCost(c.opId, c.from, c.to, fromLevel), ...withList.map((w) => raiseCost(w.opId, w.from, w.to, w.fromLevel))]);
+    const dailyAp = dailyApOf(baseline, effs0, plan, effs1);
+    // 총점(ΔS)은 올랐는데 이성으로 환산되는 산출은 줄었다 — 사무실·응접실 같은 환산 밖 방이 오르는 대신 생산이 깎인 것.
+    // '키우면 좋아진다'고 내밀 수 없다 (2026-10-19 실측: 플레임테일 하루 −2.1)
+    if (dailyAp < -0.1) return;
+    recs.push({ opId: c.opId, from: c.from, to: c.to, fromLevel, ...(withList.length ? { with: withList } : {}),
+                ...(c.fresh ? { fresh: true, obtain: c.obtain } : {}),
+                aGain, bGain, deltaScore, synergy: c.synergy, roomDeltas, placement,
+                ...(hoursMoved ? { hours: { before: h0, after: h1 } } : {}), cost,
+                payback: paybackFrom(cost, dailyAp) });
+  });
   return recs;
+}
+
+// ── 3단계: 거르기·정렬 ────────────────────────────────────────────────────────
+// 정렬 = **회수 빠른 순** (2026-10-19, 종전 'A조 %p 합계 큰 순'). %p 합계는 비용을 안 보고(재료 수십 개짜리
+// 6성 2정예화가 용문폐 몇만짜리 4성 위로), 단위가 다른 방을 그냥 더했다. 회수일 = 용문폐·경험치 이성 ÷ 하루
+// 이득(이성) — 화면 기본 표시와 같은 기준. 환산이 안 되는 추천(사무실·응접실만 바뀜)은 그 뒤에 %p 합계순.
+export function rankRaises(recs: RaiseRec[]): RaiseRec[] {
+  // 짝 카드는 **각자 따로 키운 것의 합보다 확실히 나을 때만** — 아니면 단독 카드로 충분하다
+  const single = new Map(recs.filter((r) => !r.with).map((r) => [r.opId, r]));
+  const kept = recs.filter((r) => {
+    if (!r.with?.length) return true;
+    const alone = recOps(r).reduce((sum, o) => sum + (single.get(o.opId)?.deltaScore ?? 0), 0);
+    return r.deltaScore > alone + 1;
+  });
+  const daysOf = (r: RaiseRec) => (r.payback && r.payback.dailyAp > 0 && r.payback.days != null ? r.payback.days : null);
+  return kept.sort((a, b) => {
+    const da = daysOf(a); const db = daysOf(b);
+    if (da != null && db != null) return da - db || b.deltaScore - a.deltaScore;
+    if (da != null) return -1;
+    if (db != null) return 1;
+    return (b.aGain + b.bGain) - (a.aGain + a.bGain) || b.deltaScore - a.deltaScore;
+  });
+}
+
+// 한 번에 — 하네스·워커 없는 폴백용. 화면은 planner-offload 가 단계별로 나눠 부른다.
+export async function recommendRaises(
+  visibleOps: InfraOp[],
+  ownedIds: Set<string>,
+  eliteById: Map<string, Elite>,
+  priority: ProdPriority = "gold",
+  onProgress?: (p: InvestProgress) => void | Promise<void>,
+  pinnedDorms: Record<string, string[]> = {},  // 사용자가 숙소에 고정한 인원 — 반사실도 같은 기지 조건에서
+  levelById: Map<string, number> = new Map(),  // 오퍼 레벨 — 노정예 'Lv.30' 스킬이 잠긴 상태를 베이스라인에 반영
+  roomPins: Record<string, RoomPin[]> = {},   // 생산방 고정 인원 — 숙소 고정과 같은 이유로 관통 (조별 고정 포함)
+  base?: OptimizeResult | null,               // 방금 자동편성의 결과 — 있으면 기준 편성을 다시 짜지 않는다
+): Promise<RaiseRec[]> {
+  const inp: InvestInput = { visibleOps, ownedIds, eliteById, priority, pinnedDorms, levelById, roomPins };
+  const setup = await investPrepare(inp, base);
+  if (!setup) return [];
+  const total = setup.cands.length;
+  const recs = investEvaluate(inp, setup, (done, opId) => { void onProgress?.({ done, total, opId }); });
+  if (onProgress) await onProgress({ done: total, total });
+  return rankRaises(recs);
 }

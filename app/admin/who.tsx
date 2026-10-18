@@ -6,6 +6,10 @@
 // 제안의 payload.visitor 는 8자, 방문 기록은 전체 uuid 라 앞 8자가 공통 열쇠다.
 import { useState, useSyncExternalStore } from "react";
 import { PrefsModal } from "./prefs";
+import { OWNER_UIDS } from "../visit-track";
+
+/** 운영자 본인 계정은 UID 옆에 '관리자' (사용자 지시 2026-10-19) */
+const label = (p: Player) => (OWNER_UIDS.has(p.uid) ? `관리자 · ${p.server}:${p.uid}` : `${p.server}:${p.uid}`);
 
 export type Player = { server: string; uid: string };
 let byCode: Map<string, Player> | null = null;
@@ -53,7 +57,7 @@ export function usePlayerOf(visitor: string | null | undefined): Player | null {
 export function Who({ visitor, plain }: { visitor: string | null | undefined; /** 단추 안에 들어갈 때 — 누르는 기능 없이 글자만 */ plain?: boolean }) {
   const p = usePlayerOf(visitor);
   if (p) return plain
-    ? <span className="vz-player-inline" title={`방문자 ${visitor?.slice(0, 8) ?? "-"}`}>👤 {p.server}:{p.uid}</span>
+    ? <span className="vz-player-inline" title={`방문자 ${visitor?.slice(0, 8) ?? "-"}`}>👤 {label(p)}</span>
     : <PlayerButton player={p} visitor={visitor} />;
   return <code>{(visitor ?? "—").slice(0, 8)}</code>;
 }
@@ -64,7 +68,7 @@ export function PlayerButton({ player, visitor, className = "vz-player-inline" }
   return (
     <>
       <button type="button" className={`${className} vz-player-btn`} title={`방문자 ${visitor?.slice(0, 8) ?? "-"} — 눌러서 저장된 설정 보기`}
-        onClick={(e) => { e.stopPropagation(); setOpen(true); }}>👤 {player.server}:{player.uid}</button>
+        onClick={(e) => { e.stopPropagation(); setOpen(true); }}>👤 {label(player)}</button>
       {open && <PrefsModal server={player.server} uid={player.uid} onClose={() => setOpen(false)} />}
     </>
   );

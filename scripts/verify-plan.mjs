@@ -218,12 +218,14 @@ await invCheck("육성추천: 결정론(재현성)", async () => {
   return { ok: sig(again) === sig(sharedRecs ?? []), detail: `${again.length}건` };
 });
 
-// ④ 랭킹 단조 — A조 이득(aGain) 내림차순 정렬 보장 (동률 시 bGain)
-await invCheck("육성추천: A조 이득 내림차순 정렬", async () => {
+// ④ 랭킹 — 회수 빠른 순(2026-10-19, 종전 A조 %p 순). 회수일이 있는 추천이 먼저, 그 안에선 회수일 오름차순
+await invCheck("육성추천: 회수 빠른 순 정렬", async () => {
   const rs = sharedRecs ?? [];
+  const d = (r) => (r.payback && r.payback.dailyAp > 0 && r.payback.days != null ? r.payback.days : null);
   for (let i = 1; i < rs.length; i += 1) {
-    const p = rs[i - 1]; const c = rs[i];
-    if (c.aGain > p.aGain + 1e-9 || (Math.abs(c.aGain - p.aGain) < 1e-9 && c.bGain > p.bGain + 1e-9)) return { ok: false, detail: `#${i}` };
+    const p = d(rs[i - 1]); const c = d(rs[i]);
+    if (p == null && c != null) return { ok: false, detail: `#${i} 환산 없는 추천이 앞` };
+    if (p != null && c != null && c < p - 1e-9) return { ok: false, detail: `#${i}` };
   }
   return { ok: true, detail: `${rs.length}건` };
 });
