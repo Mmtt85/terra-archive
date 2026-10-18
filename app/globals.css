@@ -13929,42 +13929,43 @@ html.rg-theme.rg3 .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
 }
 
 /* ── rogue_4 살카즈의 영겁 기담 — 검은 왕관 검붉은 스킨 (칠흑에 가까운 흑적 + 응혈빛
-   심홍 — 더 어둡고 검붉게, 사용자 요청 2026-07-19) ── */
+   심홍 — 더 어둡고 검붉게, 사용자 요청 2026-07-19 → 너무 어두워 버튼이 안 보인다고 바탕·카드·선·흐린 글자를
+   한 단계씩 밝힘, 사용자 요청 2026-10-18) ── */
 html.rg-theme.rg4 body,
 html.rg-theme.rg4 main.site-main {
-  background: linear-gradient(180deg, #070202, #0d0404 220px, #0f0505);
+  background: linear-gradient(180deg, #150808, #1c0b0b 220px, #1d0b0b);   /* 바탕 어두운 부분 한 단 더 밝게 (사용자 요청 2026-10-18) */
 }
 .rg.rg4,
 html.rg-theme.rg4 {
-  --rgbg: #0f0505;
-  --rgcard: #1b0909;
-  --rgline: #3d1815;
-  --rgink: #eed7cf;
-  --rgmut: #9d786f;
-  --rgcrim: #8e222f;
-  --rggold: #b8823f;
-  --rgdeep: #0c0304;
-  --rgmodal: #130606;
-  --rgmodalline: #4c1f1b;
-  --rgsel: #260f0e;
-  --rgtext2: #d2b3a9;
+  --rgbg: #170909;
+  --rgcard: #251010;
+  --rgline: #5a2620;
+  --rgink: #f4e3dd;
+  --rgmut: #b9958b;
+  --rgcrim: #a8303c;
+  --rggold: #cf9a55;
+  --rgdeep: #130606;
+  --rgmodal: #1d0b0b;
+  --rgmodalline: #67312a;
+  --rgsel: #361715;
+  --rgtext2: #e0c5bb;
   --rgup: #e8515f;
-  --rgupbg: #2b0c0c;
+  --rgupbg: #3a1111;
 }
 html.rg-theme.rg4 .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
   background: #060202e6;
 }
 .rg.rg4 .rg-topic.on {
-  box-shadow: 0 0 16px #8e222f66;
+  box-shadow: 0 0 16px #a8303c66;
 }
 .rg.rg4 .rg-diff-hex {
-  background: #0f0505;
+  background: #170909;
   color: #e8515f;
   border-color: #e8515f;
 }
 .rg.rg4 .rg-diffbar {
-  border-color: #4c1f1b;
-  background: #0f0505cc;
+  border-color: #67312a;
+  background: #170909cc;
 }
 
 /* ── rogue_5 쉐이의 기이한 계원 — 파스텔 분홍 수묵 스킨 (더 연하고 화사한 벚꽃 파스텔로,
@@ -14024,9 +14025,9 @@ html.rg-theme.rg3 .site-header {
   border-bottom-color: #3e434e;
 }
 html.rg-theme.rg4 .site-header {
-  background: #0f0505e6;
-  --header-solid: #0f0505;
-  border-bottom-color: #3d1815;
+  background: #170909e6;
+  --header-solid: #170909;
+  border-bottom-color: #5a2620;
 }
 html.rg-theme.rg5 .site-header {
   background: #22131be6;
@@ -14850,7 +14851,7 @@ html.rg-theme {
 }
 .rg.rg2, html.rg-theme.rg2 { --rgglow: #3f8fe0; --rgglow2: #4fd2e6; }
 .rg.rg3, html.rg-theme.rg3 { --rgglow: #a9c6e0; --rgglow2: #e6ecf4; }
-.rg.rg4, html.rg-theme.rg4 { --rgglow: #a01e2c; --rgglow2: #c47a33; }
+.rg.rg4, html.rg-theme.rg4 { --rgglow: #c02a3a; --rgglow2: #d48a40; }
 .rg.rg5, html.rg-theme.rg5 { --rgglow: #f0a0c0; --rgglow2: #c9a7e8; }
 .rg.rg6, html.rg-theme.rg6 { --rgglow: #1fb59e; --rgglow2: #c9b27c; }
 .rg:has(.rg-kv-page)::after {
@@ -15561,7 +15562,8 @@ html.rg-theme {
 }
 /* 사미(rg3)는 탭이 밝은 은색으로 채워지던 시절의 '글자 어둡게' 보정(.rg.rg3 .rg-tabs button.on)이 남아 바탕을 걷은 뒤
    어두운 배경에 검은 글자가 됐다 (사용자 지적 2026-10-10) — 보기 탭은 다른 테마와 같은 밝은 글자 */
-.rg.rg3 .rg-tabs .rg-tabs-views button.on {
+.rg.rg3 .rg-tabs .rg-tabs-views button.on,
+.rg.rg3 .rg-filterbar button.on {   /* 적 도감·전시관 안쪽 탭도 같은 사정 — 바탕이 걷혀 검은 글자가 안 보였다 (사용자 지적 2026-10-18) */
   color: #fff6e6;
 }
 .rg-tabs .rg-tabs-views button:focus-visible {
@@ -16020,12 +16022,6 @@ html.rg-theme {
 }
 .rg-cond-node.relic {
   color: #d8b8f0;
-}
-.rg-diff-table tbody tr {
-  cursor: pointer;
-}
-.rg-diff-table tbody tr:hover td {
-  background: var(--rgsel);
 }
 .rg-enc-desc {
   margin: 0;
@@ -16759,41 +16755,146 @@ html.rg-theme {
    칸 배경(머리·선택 행)은 overflow 로 모서리에서 자른다. 마지막 줄 밑줄은 표 테두리와 겹치므로 뺀다. */
 .rg-diff-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
   overflow: hidden;
   background: var(--rgcard);
   border: 1px solid var(--rgline);
 }
-.rg-diff-table tbody tr:last-child td {
-  border-bottom: 0;
+/* 계단형 (사용자 요청 2026-10-18 "난이도 탭 표도 예쁘게") — 번호 배지를 세로선으로 잇고, 고른 난이도까지 선·배지가 켜진다.
+   아직 안 닿은 단계는 흐리게, 고른 단계는 왼쪽 띠와 옅은 바탕으로 짚는다 */
+.rg-diff-ladder {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
 }
-.rg-diff-table th,
-.rg-diff-table td {
-  border-bottom: 1px solid var(--rgline);
-  padding: 8px 12px;
-  text-align: left;
+/* 넓은 화면에선 두 단으로 흐른다 — 규칙이 짧아 한 단이면 오른쪽 절반이 비었다 (사용자 지적 2026-10-18) */
+@media (min-width: 900px) {
+  .rg-diff-ladder { column-count: 2; column-gap: 0; column-rule: 1px solid color-mix(in srgb, var(--rgline) 70%, transparent); }
+  .rg-diff-ladder > li { break-inside: avoid; }
+}
+.rg-diff-ladder > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  padding: 0 16px 0 0;
+  min-height: 46px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.rg-diff-ladder > li:hover { background: color-mix(in srgb, var(--rgsel) 70%, transparent); }
+.rg-diff-ladder > li:focus-visible { outline: 2px solid var(--rggold); outline-offset: -2px; }
+.rg-diff-ladder > li + li::after {
+  content: "";
+  position: absolute;
+  left: 64px;
+  right: 16px;
+  top: 0;
+  border-top: 1px solid color-mix(in srgb, var(--rgline) 70%, transparent);
+}
+.rg-diff-step {
+  position: relative;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+}
+/* 세로선 — 첫 칸은 가운데부터, 마지막 칸은 가운데까지 */
+.rg-diff-step::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  translate: -50% 0;
+  background: color-mix(in srgb, var(--rgline) 90%, transparent);
+}
+.rg-diff-ladder > li:first-child .rg-diff-step::before { top: 50%; }
+.rg-diff-ladder > li:last-child .rg-diff-step::before { bottom: 50%; }
+.rg-diff-ladder > li.on .rg-diff-step::before { background: color-mix(in srgb, var(--rggold) 55%, transparent); }
+/* 고른 단계에서 선이 끊긴다 — 그 아래는 아직 안 켜졌으니 */
+.rg-diff-ladder > li.cur .rg-diff-step::before { bottom: 50%; }
+.rg-diff-ladder > li.cur:not(:last-child) .rg-diff-step::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  bottom: 0;
+  width: 2px;
+  translate: -50% 0;
+  background: color-mix(in srgb, var(--rgline) 90%, transparent);
+}
+.rg-diff-ladder .rg-diff-hex {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  width: 27px;
+  height: 31px;
+  font-size: 12px;
+}
+/* 안 닿은 단계 — 배지를 opacity 로 흐리면 뒤의 세로선이 비쳐 숫자를 가렸다 (사용자 지적 2026-10-18). 글자색만 낮춘다 */
+.rg-diff-ladder > li:not(.on) .rg-diff-hex { color: color-mix(in srgb, var(--rgtext2) 55%, transparent); }
+.rg-diff-ladder > li.cur .rg-diff-hex {
+  color: var(--rgdeep);
+  background: var(--rggold);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--rggold) 25%, transparent);
+}
+/* 쉬움은 글자가 길어 육각 대신 알약 */
+.rg-diff-ladder .rg-diff-hex.easy {
+  width: auto;
+  height: 22px;
+  padding: 0 7px;
+  clip-path: none;
+  border-radius: 999px;
+  font-size: 11px;
+}
+.rg-diff-rules {
+  list-style: none;
+  margin: 0;
+  padding: 9px 0;
+  display: grid;
+  gap: 3px;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.55;
   color: var(--rgtext2);
 }
-.rg-diff-table th {
-  font: 800 12px/1 var(--mono);
-  letter-spacing: 1px;
-  background: var(--rgdeep);
+.rg-diff-rules > li {
+  position: relative;
+  padding-left: 12px;
+}
+.rg-diff-rules > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--rggold) 60%, transparent);
+}
+.rg-diff-rules > li:only-child { padding-left: 0; }
+.rg-diff-rules > li:only-child::before { display: none; }
+.rg-num {
+  font-weight: 700;
+  font-family: var(--mono);
   color: var(--rggold);
 }
-.rg-diff-table td:first-child {
-  font: 800 13px/1 var(--mono);
-  width: 64px;
+.rg-diff-score {
+  font: 700 11px/1 var(--mono);
+  color: var(--rgmut);
+  letter-spacing: 0.5px;
 }
-.rg-diff-table tr.on td {
-  background: #2b1016;
-  color: var(--rgink);
+.rg-diff-ladder > li:not(.on) :is(.rg-diff-rules, .rg-diff-score) { opacity: 0.55; }
+.rg-diff-ladder > li.on .rg-diff-rules { color: var(--rgink); }
+.rg-diff-ladder > li.cur {
+  background: color-mix(in srgb, var(--rggold) 9%, transparent);
+  box-shadow: inset 3px 0 0 var(--rggold);
 }
-.rg-diff-table tr.on td:first-child {
-  color: #fff;
-  background: var(--rgcrim);
+.rg-diff-ladder > li.cur .rg-diff-score { color: var(--rggold); }
+@media (max-width: 600px) {
+  .rg-diff-ladder > li { grid-template-columns: 48px minmax(0, 1fr); padding-right: 12px; }
+  .rg-diff-ladder > li + li::after { left: 48px; right: 12px; }
+  .rg-diff-score { grid-column: 2; padding-bottom: 8px; margin-top: -4px; }
 }
 
 /* 엔딩 */
@@ -17515,6 +17616,8 @@ html.rg-theme .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
   --btn-pri-bg: var(--rgcrim);
   --btn-pri-line: var(--rgcrim);
   --btn-pri-ink: var(--rgbg);
+  --en-band: color-mix(in srgb, var(--rgcard), var(--rggold) 3%);
+  --en-glow: var(--rgglow, var(--rggold));
 }
 /* 적 상세는 본문(.en-file)이 제 여백을 가진다 — 작전 도감 창은 .mw-body:has(> .en-file)가 창 여백을
    0으로 물리는데, 통전 창 여백 규칙(.mw-window.rg-modal .mw-body, 0,3,0)이 그걸 이겨 두 겹이 된다 */
@@ -18223,7 +18326,8 @@ main.site-main > .site-header {
 /* 전시관 서브탭(환각·분대·방문객 …)도 위 탭 줄과 같은 세로 길이로 (사용자 지시 2026-09-20).
    .rg-filterbar 공통이 아니라 전시관(.rg-archive)에만 건다 — 소장품 필터·보유 리스트 창의
    버튼은 좁은 자리에 맞춰 일부러 작게 둔 것이라 같이 키우면 안 된다. */
-.rg-archive > .rg-filterbar > button {
+.rg-archive > .rg-filterbar > button,
+.rg-enemy-view > .rg-filterbar > button {   /* 적 도감 안쪽 탭(전체·일반·정예·리더)도 같은 높이로 (사용자 지시 2026-10-18) */
   min-height: 31px;
 }
 .rg-tabs .rg-inv-open {
@@ -30747,7 +30851,7 @@ html.dark .mw-window {
 html.rg-theme { --rg-hue: #c23b4e; }
 html.rg-theme.rg2 { --rg-hue: #4a9edd; }
 html.rg-theme.rg3 { --rg-hue: #b7c2d1; }
-html.rg-theme.rg4 { --rg-hue: #8e222f; }
+html.rg-theme.rg4 { --rg-hue: #b8424c; }
 html.rg-theme.rg5 { --rg-hue: #efa5c1; }
 html.rg-theme.rg6 { --rg-hue: #2fbfa5; }
 .rg-modal :is(.rg-stagecard, .rg-nodetype, .rg-enc-item) {
@@ -30976,7 +31080,7 @@ html.dark .vb-medals li:has(.vb-medal-btn) { background: color-mix(in srgb, var(
 html.rg-theme .header-collapse-toggle { border-color: #3c2129; color: color-mix(in srgb, var(--ink) 70%, #3c2129); }
 html.rg-theme.rg2 .header-collapse-toggle { border-color: #213858; color: color-mix(in srgb, var(--ink) 70%, #213858); }
 html.rg-theme.rg3 .header-collapse-toggle { border-color: #3e434e; color: color-mix(in srgb, var(--ink) 70%, #3e434e); }
-html.rg-theme.rg4 .header-collapse-toggle { border-color: #3d1815; color: color-mix(in srgb, var(--ink) 70%, #3d1815); }
+html.rg-theme.rg4 .header-collapse-toggle { border-color: #5a2620; color: color-mix(in srgb, var(--ink) 75%, #5a2620); }
 html.rg-theme.rg5 .header-collapse-toggle { border-color: #573448; color: color-mix(in srgb, var(--ink) 70%, #573448); }
 html.rg-theme.rg6 .header-collapse-toggle { border-color: #1f3a34; color: color-mix(in srgb, var(--ink) 70%, #1f3a34); }
 
@@ -32274,4 +32378,851 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
 }
 @media (hover: hover) {
   .rg-endmodal .rg-ending-book .rg-rec-btn:hover { border-color: var(--rggold); background: var(--rgsel); opacity: 1; }
+}
+
+/* ── 통합전략 적 도감·소장품·전시관·방문객 카드 — 머리 띠 + 본문 (사용자 선택 2026-10-18 "카드 디자인 자체를 예쁘게") ──
+   · 윗부분(이름·등급·아이콘)을 한 단 진한 띠로 묶고 가는 선 아래 본문(효과·스탯). 카드 모서리는 그대로, 띠는 모서리까지 꽉 채운다
+   · 효과 문장은 보통 굵기 + 수치만 테마색(.rg-num — 난이도 탭과 같은 규칙)
+   · 이념(초기/중기/말기)은 꼬리표를 왼쪽 칸에 세우고 문장은 그 오른쪽에 매달아, 줄이 꺾여도 꼬리표 밑으로 파고들지 않게 */
+.rg :is(.rg-enemy-cell.banded, .rg-relic:not(.capsule), .rg-visitor) { overflow: hidden; }
+.rg .rg-card-band,
+.rg :is(.rg-relic:not(.capsule), .rg-visitor) > header {
+  background: color-mix(in srgb, var(--rgdeep) 55%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--rgline) 85%, transparent);
+}
+
+/* 적 카드 */
+.rg .rg-enemy-cell.banded {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  text-align: left;
+}
+.rg .rg-enemy-cell.banded .rg-card-band {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  min-width: 0;
+}
+.rg .rg-enemy-cell.banded .rg-card-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.rg .rg-enemy-cell.banded .rg-enemy-idx { align-self: flex-start; }
+.rg .rg-enemy-cell.banded .rg-enemy-name {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.rg .rg-enemy-cell.banded .rg-enemy-idx { position: static; flex: none; opacity: 0.75; }
+.rg .rg-enemy-cell.banded .rg-card-body {
+  display: block;
+  padding: 9px 14px 10px;
+}
+/* 게임 초상 그림엔 가장자리 검은 테두리가 박혀 있다(158px 중 바깥 9px 남짓) — 잘라 내고 둥글게 */
+.rg .rg-enemy-cell.banded .rg-enemy-face {
+  width: 56px;
+  height: 56px;
+  margin: -2px;
+  border: 0;
+  background: none;
+  clip-path: inset(6.5% round var(--r-md));
+}
+.rg .rg-enemy-cell.banded .rg-enemy-face.none {
+  clip-path: none;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--rgdeep) 60%, transparent);
+}
+.rg .rg-enemy-cell.banded .rg-rank {
+  flex: none;
+  padding: 2px 6px;
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--rgtext2) 40%, transparent);
+  color: var(--rgtext2);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+.rg .rg-enemy-cell.banded .rg-rank.r-ELITE { border-color: #eac36e80; color: #eac36e; background: none; }
+.rg .rg-enemy-cell.banded .rg-rank.r-BOSS {
+  border-color: color-mix(in srgb, var(--rgcrim) 75%, transparent);
+  color: color-mix(in srgb, var(--rgcrim) 55%, #fff);
+  background: none;
+}
+/* 스탯 네 개는 한 줄 — 수치가 길어(HP 100,000·공격 1,200) 넘치는 카드만 다음 줄로 접힌다 */
+.rg .rg-enemy-cell.banded .rg-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 4px 14px;
+}
+.rg .rg-enemy-cell.banded .rg-stat {
+  border: 0;
+  padding: 0;
+  background: none;
+  font-size: 12px;
+  color: var(--rgtext2);
+}
+.rg .rg-enemy-cell.banded .rg-stat.up { color: var(--rgup); background: none; }
+.rg .rg-enemy-cell.banded .rg-stat.g14 { flex-basis: 100%; color: #eac36e; background: none; }
+
+/* 소장품·전시관 카드 */
+.rg :is(.rg-relic:not(.capsule), .rg-visitor) { padding: 0 0 6px; }
+.rg .rg-visitor { padding-bottom: 10px; }
+.rg :is(.rg-relic:not(.capsule), .rg-visitor) > header {
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 8px 12px;
+}
+.rg :is(.rg-relic:not(.capsule), .rg-visitor) > :not(header) { margin-left: 14px; margin-right: 14px; }
+.rg .rg-relic .rg-relic-icon {
+  width: 40px;
+  height: 40px;
+  background: none;
+}
+.rg .rg-relic h4 { line-height: 1.3; flex: 1; min-width: 0; }
+.rg .rg-relic .rg-relic-usage {
+  font-weight: 500;
+  color: color-mix(in srgb, var(--rgink) 88%, transparent);
+}
+.rg .rg-relic .rg-relic-usage:has(> .rg-wlv) {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 8px;
+  margin-bottom: 6px;
+}
+.rg .rg-relic .rg-relic-usage > .rg-wlv { margin: 0; text-align: center; }
+
+/* ── 카드 겉면 (사용자 요청 2026-10-18 "레이아웃 말고 진짜 디자인적으로 예쁘게") — 게임 UI 결을 따른다 ──
+   · 띠: 아래 테마색 가는 선(오른쪽으로 사라짐) — 사선 무늬는 과하다고 뺐다(사용자 2026-10-18)
+   · 모서리: 왼쪽 위·오른쪽 아래에 ㄱ자 표식(올리면 밝아짐)
+   · 적 카드: 등급색 왼쪽 띠(리더 = 테마 강조색, 정예 = 금색), 초상·아이콘 뒤 은은한 빛 */
+.rg :is(.rg-enemy-cell.banded, .rg-relic:not(.capsule), .rg-visitor) {
+  position: relative;
+  --rg-corner: color-mix(in srgb, var(--rggold) 45%, transparent);
+}
+.rg :is(.rg-enemy-cell.banded, .rg-relic:not(.capsule), .rg-visitor)::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--rg-corner), var(--rg-corner)) top left / 9px 1px no-repeat,
+    linear-gradient(var(--rg-corner), var(--rg-corner)) top left / 1px 9px no-repeat,
+    linear-gradient(var(--rg-corner), var(--rg-corner)) bottom right / 9px 1px no-repeat,
+    linear-gradient(var(--rg-corner), var(--rg-corner)) bottom right / 1px 9px no-repeat;
+  transition: opacity 0.2s;
+}
+.rg :is(.rg-enemy-cell.banded, .rg-relic.clickable):hover { --rg-corner: var(--rggold); }
+.rg .rg-card-band,
+.rg :is(.rg-relic:not(.capsule), .rg-visitor) > header {
+  border-bottom: 0;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--rggold) 60%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    color-mix(in srgb, var(--rgdeep) 55%, transparent);
+}
+/* 등급색 왼쪽 띠 — 카드 세로 전체 (사용자 지적 2026-10-18 "띠 부분만 해 놓으니 이상함"). 일반도 옅은 선으로 같은 자리에 */
+.rg .rg-enemy-cell.banded::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  z-index: 1;
+  background: color-mix(in srgb, var(--rgtext2) 30%, transparent);
+}
+.rg .rg-enemy-cell.banded:has(.rg-rank.r-BOSS)::before { background: color-mix(in srgb, var(--rgcrim) 85%, transparent); }
+.rg .rg-enemy-cell.banded:has(.rg-rank.r-ELITE)::before { background: #eac36eb0; }
+.rg .rg-enemy-cell.banded .rg-enemy-face,
+.rg :is(.rg-relic:not(.capsule), .rg-visitor) .rg-relic-icon {
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--rgglow, var(--rggold)) 30%, transparent));
+}
+.rg .rg-enemy-cell.banded .rg-enemy-idx {
+  padding: 2px 5px;
+  border: 1px solid color-mix(in srgb, var(--rgline) 90%, transparent);
+  border-radius: var(--r-xs);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+/* ── 적 상세 (사용자 요청 2026-10-18 "적 상세 모달 좀 더 예쁘게" — 통합전략 목록 카드와 같은 결) ──
+   사이트 적 도감·작전 도감·통합전략 창이 같은 본문(.en-file)을 쓴다 — 사이트 토큰으로만 칠하고, 통전 창은 위
+   토큰 바꿔 끼우기(.rg-modal .en-file)로 테마색이 된다 (사용자 지시 같은 날 "본사이트 적도감도 같이 변경").
+   --en-band(띠 바탕)·--en-glow(초상 뒤 빛)는 이 절 전용 토큰.
+   · 머리: 창 폭 꽉 찬 띠(짙은 바탕 + 아래 금색→사라지는 선 + 등급색 왼쪽 세로 띠), 초상은 검은 테두리를 잘라 둥글게·뒤에 테마빛
+   · 설명: 인용문처럼 — 기울임, 왼쪽 금색 선
+   · 절: 제목을 윗띠로(짙은 바탕 + 가는 금색 선), 모서리 ㄱ자 표식 */
+.en-file {
+  --en-band: color-mix(in srgb, var(--bg-panel), var(--gold-ink) 6%);
+  --en-glow: var(--gold-ink);
+  gap: 18px;
+}
+.en-file > .en-head {
+  position: relative;
+  overflow: hidden;
+  padding: 16px 18px 16px 21px;
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 60%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    radial-gradient(ellipse 60% 120% at 12% 50%, color-mix(in srgb, var(--en-glow) 12%, transparent), transparent 70%),
+    var(--en-band);
+}
+.en-file > .en-head::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: color-mix(in srgb, var(--ink2) 30%, transparent);
+}
+.en-file > .en-head:has(.r-boss)::before { background: color-mix(in srgb, var(--danger) 85%, transparent); }
+.en-file > .en-head:has(.r-elite)::before { background: var(--amber-ink, var(--gold-ink)); }
+.en-file .en-portrait {
+  width: 140px;
+  height: 140px;
+  margin: -4px;
+  background: none;
+  clip-path: inset(6.5% round var(--r-md));
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--en-glow) 30%, transparent));
+}
+.en-file .en-head-main :is(h1, h2) { letter-spacing: -0.3px; }
+.en-file .en-code {
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--line) 90%, transparent);
+  border-radius: var(--r-xs);
+  letter-spacing: 1px;
+}
+.en-file .en-block {
+  position: relative;
+  overflow: hidden;
+  padding: 0 16px 16px;
+  background: color-mix(in srgb, var(--bg-panel) 92%, transparent);
+  border-color: color-mix(in srgb, var(--line) 90%, transparent);
+  --rg-corner: color-mix(in srgb, var(--gold-ink) 45%, transparent);
+}
+.en-file .en-block::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--rg-corner), var(--rg-corner)) top left / 9px 1px no-repeat,
+    linear-gradient(var(--rg-corner), var(--rg-corner)) top left / 1px 9px no-repeat,
+    linear-gradient(var(--rg-corner), var(--rg-corner)) bottom right / 9px 1px no-repeat,
+    linear-gradient(var(--rg-corner), var(--rg-corner)) bottom right / 1px 9px no-repeat;
+}
+.en-file .en-block > h3 {
+  margin: 0 -16px 14px;
+  padding: 10px 16px 10px 18px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 60%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    var(--en-band);
+}
+.en-file .en-block > h3::before { display: none; }
+.en-file .en-block > h3 .section-no { color: var(--gold-ink); }
+.en-file .en-abil { border-top: 0; }
+.en-file .en-abil li:last-child { border-bottom: 0; }
+.en-file .en-abil li i { color: var(--gold-ink); }
+/* 안쪽 구분선은 바깥 테두리보다 훨씬 옅게 — 같은 굵기·같은 색이라 칸 테두리와 줄 구분이 헷갈렸다 (사용자 지적 2026-10-18) */
+.en-file .en-block .en-sheet-rows { border-top: 0; }
+.en-file .en-block .en-sheet-rows > div { border-bottom-color: color-mix(in srgb, var(--line) 40%, transparent); }
+.en-file .en-block .en-abil li { border-bottom-color: color-mix(in srgb, var(--line) 40%, transparent); }
+.en-file .en-block .en-sheet-rows > div:nth-last-child(-n+2):nth-child(odd),
+.en-file .en-block .en-sheet-rows > div:last-child { border-bottom: 0; }
+/* 머리·절에 overflow:hidden(모서리 자르기)을 걸면 flex 항목의 최소 높이가 0이 돼, 높이가 정해진 창(사이트 적 도감)에서
+   절이 눌려 찌그러졌다 — 줄어들지 않게 */
+.en-file > * { flex-shrink: 0; }
+/* 머리 짜임 — 초상 | 번호·이름·꼬리표 | 오른쪽 위(강화 단계 탭·설명), 그 아래 줄에 핵심 수치 (사용자 지시 2026-10-18) */
+.en-file > .en-head {
+  grid-template-columns: 132px minmax(0, 1fr) minmax(0, 0.95fr);
+  grid-template-areas: "pic main side" "pic keys keys";
+  align-items: start;
+  column-gap: 20px;
+  row-gap: 12px;
+}
+.en-file > .en-head > .en-portrait { grid-area: pic; align-self: center; }
+.en-file > .en-head > .en-head-main { grid-area: main; align-self: center; }
+.en-file > .en-head > .en-head-side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+.en-file > .en-head > .en-head-keys { grid-area: keys; min-width: 0; }
+.en-file > .en-head:not(:has(.en-head-keys)) { grid-template-areas: "pic main side"; }
+.en-file > .en-head:not(:has(.en-head-side)) { grid-template-columns: 132px minmax(0, 1fr); grid-template-areas: "pic main" "pic keys"; }
+.en-file > .en-head:not(:has(.en-head-side)):not(:has(.en-head-keys)) { grid-template-areas: "pic main"; }
+.en-head-side > .en-desc {
+  margin: 0;
+  padding: 0 0 0 12px;
+  border-left: 2px solid color-mix(in srgb, var(--gold-ink) 55%, transparent);
+  font-size: 12px;
+  line-height: 1.7;
+  font-style: italic;
+  text-align: left;
+  color: color-mix(in srgb, var(--ink2) 90%, transparent);
+}
+@media (max-width: 720px) {
+  .en-file > .en-head,
+  .en-file > .en-head:not(:has(.en-head-keys)) {
+    grid-template-columns: 96px minmax(0, 1fr);
+    grid-template-areas: "pic main" "side side" "keys keys";
+  }
+  .en-file > .en-head > .en-head-side { align-items: stretch; }
+}
+
+/* ── 사이트 적 도감 카드 — 통합전략 적 카드와 같은 짜임·겉면 (사용자 지시 2026-10-18 "적 도감 카드도 통합전략처럼") ──
+   머리 띠(초상·등급·종족·이름·번호, 아래 금색→사라지는 선) + 본문(스탯 한 줄) · 등급색 왼쪽 세로 띠 · 모서리 ㄱ자 표식 */
+.en-grid { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
+.en-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  background: var(--bg-panel);
+  contain-intrinsic-size: auto 270px auto 112px;
+  --en-corner: color-mix(in srgb, var(--gold-ink) 45%, transparent);
+}
+.en-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  z-index: 1;
+  background: color-mix(in srgb, var(--ink2) 25%, transparent);
+}
+.en-card:has(.en-rank.r-boss)::before { background: color-mix(in srgb, var(--danger) 85%, transparent); }
+.en-card:has(.en-rank.r-elite)::before { background: var(--gold-ink); }
+.en-card::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--en-corner), var(--en-corner)) top left / 9px 1px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) top left / 1px 9px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) bottom right / 9px 1px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) bottom right / 1px 9px no-repeat;
+}
+.en-card:hover { --en-corner: var(--gold-ink); }
+.en-card-band {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  min-width: 0;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 60%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    var(--bg-soft);
+}
+.en-card .en-card-face {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  background: none;
+  overflow: visible;
+}
+/* 게임 초상 그림 가장자리 검은 테두리(158px 중 9px 남짓)를 잘라 내고 둥글게 */
+.en-card .en-card-face img {
+  width: 62px;
+  height: 62px;
+  margin: -3px;
+  max-width: none;
+  clip-path: inset(6.5% round var(--r-md));
+}
+.en-card .en-card-body { flex: 1; gap: 4px; }
+.en-card .en-card-name { font-size: 13px; }
+.en-card .en-card-code {
+  align-self: flex-start;
+  flex: none;
+  padding: 2px 5px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-xs);
+  font-size: 10px;
+}
+.en-card .en-card-stat {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 9px 14px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink2);
+}
+.en-card .en-card-stat > span { overflow: visible; }
+
+/* ── 아이템 도감 카드 — 적 도감·통합전략 카드와 같은 겉면 (사용자 지시 2026-10-18 "아이템도") ──
+   본문으로 쓸 내용이 없어 짜임은 그대로(아이콘 | 이름·등급), 겉면만: 둥근 모서리·ㄱ자 표식·등급색 왼쪽 세로 띠·아이콘 뒤 등급색 빛.
+   등급색은 상세 창 아이콘(.itf-icon[data-tier])과 같은 값 */
+.it-card {
+  overflow: hidden;
+  padding: 10px 12px 10px 14px;
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 45%, transparent), transparent 60%) bottom / 100% 1px no-repeat,
+    var(--bg-panel);
+  --it-tier: color-mix(in srgb, var(--ink2) 35%, transparent);
+  --en-corner: color-mix(in srgb, var(--gold-ink) 45%, transparent);
+}
+.it-card:has([data-tier="1"]) { --it-tier: #8d8d86; }
+.it-card:has([data-tier="2"]) { --it-tier: #7fae3c; }
+.it-card:has([data-tier="3"]) { --it-tier: #3d8fd6; }
+.it-card:has([data-tier="4"]) { --it-tier: #a45ce0; }
+.it-card:has([data-tier="5"]) { --it-tier: #d39b1f; }
+.it-card:has([data-tier="6"]) { --it-tier: #e0782a; }
+.it-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--it-tier);
+}
+.it-card::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--en-corner), var(--en-corner)) top left / 9px 1px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) top left / 1px 9px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) bottom right / 9px 1px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) bottom right / 1px 9px no-repeat;
+}
+.it-card:hover { --en-corner: var(--gold-ink); transform: none; box-shadow: none; }
+.it-card-face {
+  border: 0;
+  border-radius: var(--r-md);
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--it-tier) 28%, transparent), transparent 70%);
+}
+/* 아이콘을 두 줄(이름·등급)에 걸쳐 세우고, 이름은 아래·등급은 위로 붙여 한 덩이로 — 종전엔 아이콘이 첫 줄만 차지해
+   등급 배지가 아이콘 밑 줄에 홀로 떨어져 보였다 (사용자 지적 2026-10-18 "티어 배지가 엄한 데에") */
+.it-card { grid-template-rows: auto auto; row-gap: 4px; align-content: center; }
+.it-card > .it-card-face { grid-row: 1 / span 2; align-self: center; }
+.it-card > .it-card-name { align-self: end; padding-right: 34px; }
+.it-card > .farm-tier { align-self: start; margin-top: 0; }
+
+/* ── 아이템 상세 — 적 상세·통합전략 창과 같은 결 (사용자 지시 2026-10-18 "아이템 상세 모달도 맞춰줘") ──
+   머리: 짙은 띠 + 아래 금색→사라지는 선 + 등급색 왼쪽 세로 띠, 아이콘은 테두리 대신 등급색 빛 · 설명: 기울임·금색 선 ·
+   절: 제목을 윗띠로 + 모서리 ㄱ자 표식 */
+.it-file { --it-tier: var(--line); }
+.it-file:has(.itf-icon[data-tier="1"]) { --it-tier: #8d8d86; }
+.it-file:has(.itf-icon[data-tier="2"]) { --it-tier: #7fae3c; }
+.it-file:has(.itf-icon[data-tier="3"]) { --it-tier: #3d8fd6; }
+.it-file:has(.itf-icon[data-tier="4"]) { --it-tier: #a45ce0; }
+.it-file:has(.itf-icon[data-tier="5"]) { --it-tier: #d39b1f; }
+.it-file:has(.itf-icon[data-tier="6"]) { --it-tier: #e0782a; }
+.it-file > .itf-head {
+  overflow: hidden;
+  padding: 14px 16px 14px 19px;
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 60%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    radial-gradient(ellipse 45% 120% at 10% 50%, color-mix(in srgb, var(--it-tier) 16%, transparent), transparent 70%),
+    var(--bg-soft);
+}
+.it-file > .itf-head::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--it-tier);
+}
+.it-file > .itf-head > .own-corner { top: 14px; right: 16px; }
+.it-file .itf-icon {
+  border: 0;
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--tier) 30%, transparent), transparent 70%);
+}
+.it-file > .itf-desc {
+  border-left-color: color-mix(in srgb, var(--gold-ink) 55%, transparent);
+  font-style: italic;
+}
+.it-file > .itf-block {
+  position: relative;
+  overflow: hidden;
+  padding: 0 14px 14px;
+  --en-corner: color-mix(in srgb, var(--gold-ink) 45%, transparent);
+}
+.it-file > .itf-block::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--en-corner), var(--en-corner)) top left / 9px 1px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) top left / 1px 9px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) bottom right / 9px 1px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) bottom right / 1px 9px no-repeat;
+}
+.it-file > .itf-block > h4 {
+  margin: 0 -14px 12px;
+  padding: 10px 14px 10px 16px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 60%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    var(--bg-soft);
+}
+.it-file > .itf-block > h4::before { display: none; }
+.it-file > * { flex-shrink: 0; }
+
+/* 절 바탕이 창 바탕과 거의 같아 절과 창이 구분되지 않았다 (사용자 지적 2026-10-18) — 절 바탕을 글자색 쪽으로 한 단 띄우고
+   테두리는 옅게 섞지 않고 그대로. 제목 띠(--en-band, 짙은 쪽)와도 대비가 생긴다 */
+.en-file .en-block,
+.it-file > .itf-block {
+  background: color-mix(in srgb, var(--bg-panel), var(--ink) 6%);
+  border-color: var(--line);
+}
+.rg-rmodal .rg-rblock { background: color-mix(in srgb, var(--rgcard), var(--rgink) 6%); }
+
+/* ── 통합전략 소장품 상세 — 적·아이템 상세와 같은 결 (사용자 요청 2026-10-18 "유물 상세 모달도 예쁘게") ──
+   머리 띠(아이콘·번호·종류·이름·효과) + 설명(기울임·금색 선) + 획득 방법 절(윗띠·모서리 표식) */
+.rg-rmodal .rg-rhead {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--rggold) 60%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    radial-gradient(ellipse 40% 120% at 10% 50%, color-mix(in srgb, var(--rgglow, var(--rggold)) 14%, transparent), transparent 70%),
+    color-mix(in srgb, var(--rgdeep) 70%, transparent);
+}
+.rg-rmodal .rg-rhead:not(:has(> img)) { grid-template-columns: minmax(0, 1fr); }
+.rg-rmodal .rg-rhead > .rg-relic-icon.lg {
+  width: 84px;
+  height: 84px;
+  background: none;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--rgglow, var(--rggold)) 35%, transparent));
+}
+.rg-rmodal .rg-rhead-title { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rg-rmodal .rg-rhead-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rg-rmodal .rg-rhead-kind {
+  padding: 2px 8px;
+  border: 1px solid var(--rgline);
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  color: var(--rgtext2);
+}
+.rg-rmodal .rg-rhead h3 { margin: 0; font-size: 18px; line-height: 1.3; color: var(--rgink); }
+.rg-rmodal .rg-rhead .rg-relic-usage { margin: 2px 0 0; font-weight: 500; color: var(--rgink); }
+.rg-rmodal .rg-rquote {
+  margin: 0 0 14px;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid color-mix(in srgb, var(--rggold) 55%, transparent);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--rgtext2);
+}
+.rg-rmodal .rg-rblock {
+  position: relative;
+  overflow: hidden;
+  margin: 0 0 14px;
+  padding: 0 14px 12px;
+  border: 1px solid var(--rgline);
+  border-radius: var(--r-md);
+  --en-corner: color-mix(in srgb, var(--rggold) 45%, transparent);
+}
+.rg-rmodal .rg-rblock::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--en-corner), var(--en-corner)) top left / 9px 1px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) top left / 1px 9px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) bottom right / 9px 1px no-repeat,
+    linear-gradient(var(--en-corner), var(--en-corner)) bottom right / 1px 9px no-repeat;
+}
+.rg-rmodal .rg-rblock > h4 {
+  margin: 0 -14px 10px;
+  padding: 9px 14px 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rgink);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--rggold) 60%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    color-mix(in srgb, var(--rgdeep) 70%, transparent);
+}
+.rg-rmodal .rg-rblock > p { margin: 0; font-size: 13px; line-height: 1.65; color: var(--rgtext2); }
+.rg-rmodal .rg-rlines { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rg-rmodal .rg-rlines > li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 10px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--rgink);
+}
+.rg-rmodal .rg-rlines > li > em {
+  font: 700 11px/1.4 var(--mono);
+  font-style: normal;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--rggold) 45%, transparent);
+  border-radius: var(--r-pill);
+  color: var(--rggold);
+  white-space: nowrap;
+}
+.rg-rmodal .rg-rlines > li > .full { grid-column: 1 / -1; }
+/* 절 제목 띠 — 짙은 바탕(--en-band)이 창 바탕과 같은 색이라 헷갈렸다 (사용자 지적 2026-10-18).
+   금색을 옅게 섞은 띠로: 창 바탕(어두움)·절 본문(글자색 쪽으로 띄움)과 모두 다른 결 */
+.en-file .en-block > h3,
+.it-file > .itf-block > h4 {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 70%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    color-mix(in srgb, var(--bg-panel), var(--gold-ink) 14%);
+}
+.rg-rmodal .rg-rblock > h4 {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--rggold) 70%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    color-mix(in srgb, var(--rgcard), var(--rggold) 14%);
+}
+
+/* 띠 색 통일 — 카드 윗띠·상세 창 머리 띠·절 제목 띠가 짙은 바탕이라 뒷배경과 톤이 같았다 (사용자 지적 2026-10-18 "띠의 색들이
+   너무 뒷배경이랑 비슷함"). 전부 '카드색 + 금색 13%' 한 가지로 — 배경보다 밝고 결도 다르다 */
+.rg .rg-card-band,
+.rg :is(.rg-relic:not(.capsule), .rg-visitor) > header {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--rggold) 70%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    color-mix(in srgb, var(--rgcard), var(--rggold) 7%);
+}
+.rg-rmodal .rg-rhead {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--rggold) 70%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    radial-gradient(ellipse 40% 120% at 10% 50%, color-mix(in srgb, var(--rgglow, var(--rggold)) 14%, transparent), transparent 70%),
+    color-mix(in srgb, var(--rgcard), var(--rggold) 7%);
+}
+.en-card-band {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 70%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    color-mix(in srgb, var(--bg-panel), var(--gold-ink) 6%);
+}
+.it-file > .itf-head {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 70%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    radial-gradient(ellipse 45% 120% at 10% 50%, color-mix(in srgb, var(--it-tier) 16%, transparent), transparent 70%),
+    color-mix(in srgb, var(--bg-panel), var(--gold-ink) 6%);
+}
+.en-file .en-block > h3,
+.it-file > .itf-block > h4 {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 70%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    var(--en-band, color-mix(in srgb, var(--bg-panel), var(--gold-ink) 6%));
+}
+.rg-rmodal .rg-rblock > h4 {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--rggold) 70%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    color-mix(in srgb, var(--rgcard), var(--rggold) 7%);
+}
+/* 절 제목 띠는 본문과 같은 바탕 — 아래 금색 가는 선만 남긴다 (사용자 지시 2026-10-18 "섹션은 띠랑 본문 색깔 같게") */
+.en-file .en-block > h3,
+.it-file > .itf-block > h4,
+.rg-rmodal .rg-rblock > h4 {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 70%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat;
+}
+.rg-rmodal .rg-rblock > h4 {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--rggold) 70%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat;
+}
+/* 카드 윗띠도 본문과 같은 바탕 — 금색 가로선 하나로만 띠와 내용을 가른다 (사용자 지시 2026-10-18) */
+.rg .rg-card-band,
+.rg :is(.rg-relic:not(.capsule), .rg-visitor) > header {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--rggold) 70%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat;
+}
+.en-card-band {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 70%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat;
+}
+/* 상세 창 머리 띠·절 바탕 톤 한 단 낮춤 (사용자 지적 2026-10-18 "상세 모달의 띠랑 섹션이 너무 밝다") */
+.en-file .en-block,
+.it-file > .itf-block { background: color-mix(in srgb, var(--bg-panel), var(--ink) 2.5%); }
+.rg-rmodal .rg-rblock { background: color-mix(in srgb, var(--rgcard), var(--rgink) 2.5%); }
+.en-file { --en-band: color-mix(in srgb, var(--bg-panel), var(--gold-ink) 3%); }
+.rg-rmodal .rg-rhead {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--rggold) 70%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    radial-gradient(ellipse 40% 120% at 10% 50%, color-mix(in srgb, var(--rgglow, var(--rggold)) 12%, transparent), transparent 70%),
+    color-mix(in srgb, var(--rgcard), var(--rggold) 3%);
+}
+.it-file > .itf-head {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 70%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    radial-gradient(ellipse 45% 120% at 10% 50%, color-mix(in srgb, var(--it-tier) 14%, transparent), transparent 70%),
+    color-mix(in srgb, var(--bg-panel), var(--gold-ink) 3%);
+}
+/* 머리 띠와 절 바탕을 같은 색 한 가지로 (사용자 지적 2026-10-18 "미묘하게 색깔 다르다") — 머리의 금색 섞기·뒤 빛을 걷고
+   절과 같은 '카드색 + 글자색 2.5%'. 절 테두리는 눈에 덜 띄게 옅게 */
+.rg-modal .en-file { --en-band: color-mix(in srgb, var(--rgcard), var(--rgink) 2.5%); }
+.en-file { --en-band: color-mix(in srgb, var(--bg-panel), var(--ink) 2.5%); }
+.en-file > .en-head {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 60%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    var(--en-band);
+}
+.rg-rmodal .rg-rhead {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--rggold) 70%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    color-mix(in srgb, var(--rgcard), var(--rgink) 2.5%);
+}
+.it-file > .itf-head {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-ink) 70%, transparent), color-mix(in srgb, var(--line) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat,
+    color-mix(in srgb, var(--bg-panel), var(--ink) 2.5%);
+}
+.en-file .en-block,
+.it-file > .itf-block { border-color: color-mix(in srgb, var(--line) 55%, transparent); }
+.rg-rmodal .rg-rblock { border-color: color-mix(in srgb, var(--rgline) 55%, transparent); }
+/* 절 테두리 한 번 더 옅게 (사용자 지시 2026-10-18) */
+.en-file .en-block,
+.it-file > .itf-block { border-color: color-mix(in srgb, var(--line) 30%, transparent); }
+.rg-rmodal .rg-rblock { border-color: color-mix(in srgb, var(--rgline) 30%, transparent); }
+/* 카드 테두리도 상세 창 절처럼 옅게 (사용자 지시 2026-10-18) */
+.rg :is(.rg-enemy-cell.banded, .rg-relic:not(.capsule), .rg-visitor):not(:hover) { border-color: color-mix(in srgb, var(--rgline) 30%, transparent); }
+:is(.en-card, .it-card):not(:hover) { border-color: color-mix(in srgb, var(--line) 30%, transparent); }
+/* 통전 카드의 '테두리'는 실제 border 가 아니라 안쪽 그림자 고리(inset 1px)였다 — 그 고리를 옅게 (사용자 지시 2026-10-18) */
+.rg :is(.rg-enemy-cell.banded, .rg-relic:not(.capsule), .rg-visitor):not(:hover) {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--rgline) 30%, transparent),
+    0 12px 26px -12px #000d;
+}
+/* 상세 창 맨 위 머리 띠(초상·아이콘)는 아래 금색 선을 뺀다 — 절 제목과 달리 아래 내용과 가를 필요가 없다 (사용자 지시 2026-10-18) */
+.en-file > .en-head { background: var(--en-band); }
+.rg-rmodal .rg-rhead { background: color-mix(in srgb, var(--rgcard), var(--rgink) 2.5%); }
+.it-file > .itf-head { background: color-mix(in srgb, var(--bg-panel), var(--ink) 2.5%); }
+
+/* ── 상태이상 9종 타일 (사용자 요청 2026-10-18 "상태이상 9개 좀 더 예쁘게") ──
+   아이콘 위·이름 아래 정사각 타일, 넓으면 한 줄 9칸(좁으면 3×3). 통하는 것은 옅게 가라앉히고,
+   면역만 빨간 테두리·옅은 빨강 바탕·오른쪽 위 '면역' 꼬리표로 바로 눈에 띄게 */
+.en-file .en-status {
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 760px) { .en-file .en-status { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.en-file .en-status > span {
+  position: relative;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-height: 68px;
+  padding: 10px 4px 8px;
+  border-radius: var(--r-md);
+  text-align: center;
+}
+.en-file .en-status > span b { flex: none; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.en-file .en-status .en-st-icon { width: 20px; height: 20px; }
+.en-file .en-status .en-st-icon.game { width: 22px; height: 22px; margin: -1px; }
+.en-file .en-st-ok {
+  border: 1px solid color-mix(in srgb, var(--line) 35%, transparent);
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+  color: color-mix(in srgb, var(--ink2) 70%, transparent);
+}
+.en-file .en-st-ok .en-st-icon { color: color-mix(in srgb, var(--muted) 80%, transparent); }
+.en-file .en-imm {
+  border: 1px solid color-mix(in srgb, var(--danger) 65%, transparent);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+  box-shadow: 0 0 14px -6px color-mix(in srgb, var(--danger) 70%, transparent);
+}
+.en-file .en-status .en-imm small {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 1px 4px;
+  border-radius: var(--r-xs);
+  background: var(--danger);
+  color: var(--paper);
+  font-size: 9px;
+  line-height: 1.3;
+  opacity: 1;
+}
+/* 머리 띠 세로 폭 줄이기 — 효과를 절로 내린 뒤 아이콘(84px)만 키를 잡아 띠가 길었다 (사용자 지적 2026-10-18) */
+.rg-rmodal .rg-rhead { grid-template-columns: 60px minmax(0, 1fr); gap: 14px; padding: 10px 14px; }
+.rg-rmodal .rg-rhead > .rg-relic-icon.lg { width: 60px; height: 60px; }
+
+/* ── 등장 작전 칸 (사용자 요청 2026-10-18 "등장 작전에 작전 버튼도 예쁘게") — 카드와 같은 결 ──
+   작전 번호는 금색 꼬리표, 이름은 옆, 출현 수는 오른쪽 작은 숫자 · 옅은 테두리, 올리면 금색 테두리·한 단 밝은 바탕 ·
+   구역 이름 줄 사이 구분선도 옅게 */
+.en-file .en-stagegroup { border-top-color: color-mix(in srgb, var(--line) 35%, transparent); }
+.en-file .en-stagegroup h4 { color: var(--ink); }
+.en-file .en-stagegroup ul { gap: 8px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.en-file .en-stagegroup li {
+  position: relative;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 45%, transparent);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+  overflow: hidden;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.en-file .en-stagegroup li > a { gap: 8px; padding: 6px 10px 6px 6px; }
+.en-file .en-stagegroup li b {
+  padding: 3px 6px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--gold-ink) 14%, transparent);
+  color: var(--gold-ink);
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+.en-file .en-stagegroup li span { color: var(--ink); }
+.en-file .en-stagegroup li em {
+  font-size: 10px;
+  color: var(--muted);
+}
+.en-file .en-stagegroup li:hover {
+  border-color: var(--gold-ink);
+  background: color-mix(in srgb, var(--gold-ink) 7%, transparent);
+}
+/* 강화 작전 — 왼쪽 금색 세로 띠는 칸 안쪽 그림자로(테두리 두께가 달라 칸 높이가 들쭉날쭉하지 않게) */
+.en-file .en-stagegroup li.reinforced {
+  border-left: 1px solid color-mix(in srgb, var(--line) 45%, transparent);
+  padding-left: 0;
+  box-shadow: inset 3px 0 0 var(--gold-ink);
+}
+.en-file .en-stagegroup li.reinforced > a { padding-left: 9px; }
+
+/* 살카즈 — 가장자리 비네트가 거의 검정이라 배경 어두운 부분이 칙칙했다 (사용자 요청 2026-10-18 "어두운 부분 살짝 밝게").
+   비네트를 검정 대신 테마 바탕색으로, 덮는 범위도 바깥쪽으로 */
+.rg.rg4:has(.rg-kv-page)::after {
+  background:
+    radial-gradient(ellipse 55% 45% at 72% 18%, color-mix(in srgb, var(--rgglow) 22%, transparent), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 12% 100%, color-mix(in srgb, var(--rgglow2) 12%, transparent), transparent 70%),
+    radial-gradient(ellipse 120% 95% at 55% 35%, transparent 62%, color-mix(in srgb, var(--rgbg) 70%, transparent) 100%);
+}
+/* 왼쪽 위가 특히 어둡다 (사용자 지적 2026-10-18) — 키비주얼(가운데 1280×720, 둥근 마스크) 바깥이라 바탕색만 보인다.
+   조명 판(.rg::after)에 얹은 빛은 너무 옅어 티가 안 나서, 바탕 자체에 화면 고정 빛을 한 겹 더 깐다 */
+html.rg-theme.rg4 body,
+html.rg-theme.rg4 main.site-main {
+  background:
+    radial-gradient(ellipse 45% 55% at 8% 6%, #5a1e1a66, #3a121033 45%, transparent 75%) fixed,
+    radial-gradient(ellipse 40% 45% at 92% 4%, #4a181633, transparent 70%) fixed,
+    linear-gradient(180deg, #150808, #1c0b0b 220px, #1d0b0b);
 }

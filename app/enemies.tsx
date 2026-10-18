@@ -55,32 +55,36 @@ function EnemyCard({ enemy, onSelect }: { enemy: Enemy; onSelect: (e: Enemy) => 
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
         event.preventDefault(); onSelect(enemy);
       }}>
-      <div className="en-card-face" ref={ref}>
-        {visible && (
-          <img src={enemyImg(enemy.id)} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
-            onError={(e) => {
-              const el = e.currentTarget;
-              if (base !== enemy.id && !el.dataset.fb) { el.dataset.fb = "1"; el.src = enemyImgBase(enemy.id); }
-              else el.style.visibility = "hidden";
-            }} />
-        )}
-      </div>
-      <div className="en-card-body">
-        <span className="en-card-code">{enemy.idx ?? "—"}</span>
-        <b className="en-card-name">{enemy.name}</b>
-        <span className="en-card-meta">
-          {enemy.rank && <em className={`en-rank r-${enemy.rank.toLowerCase()}`}>{t(RANK_KEY[enemy.rank] ?? enemy.rank)}</em>}
-          {enemy.race[0] && <span>{enemy.race[0]}</span>}
-        </span>
-        {/* 스탯은 두 줄로 나눈다 — 한 줄에 넷을 넣으면 카드 폭에서 "ATK 1…"로 잘린다
-            (2026-08-09 실측). 값이 잘린 숫자는 없는 것만 못하다. */}
-        {top && (
-          <span className="en-card-stat">
-            <span>HP {top.hp} · ATK {top.atk}</span>
-            <span>DEF {top.def} · RES {top.res}%</span>
+      {/* 머리 띠(초상·등급·종족·이름·번호) + 본문(스탯 한 줄) — 통합전략 적 카드와 같은 짜임 (사용자 지시 2026-10-18) */}
+      <div className="en-card-band">
+        <div className="en-card-face" ref={ref}>
+          {visible && (
+            <img src={enemyImg(enemy.id)} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
+              onError={(e) => {
+                const el = e.currentTarget;
+                if (base !== enemy.id && !el.dataset.fb) { el.dataset.fb = "1"; el.src = enemyImgBase(enemy.id); }
+                else el.style.visibility = "hidden";
+              }} />
+          )}
+        </div>
+        <div className="en-card-body">
+          <span className="en-card-meta">
+            {enemy.rank && <em className={`en-rank r-${enemy.rank.toLowerCase()}`}>{t(RANK_KEY[enemy.rank] ?? enemy.rank)}</em>}
+            {enemy.race[0] && <span>{enemy.race[0]}</span>}
           </span>
-        )}
+          <b className="en-card-name">{enemy.name}</b>
+        </div>
+        <span className="en-card-code">{enemy.idx ?? "—"}</span>
       </div>
+      {/* 스탯 넷은 한 줄 — 수치가 길면 다음 줄로 접힌다(잘라 내지 않는다, 2026-08-09 "ATK 1…" 잘림 교훈) */}
+      {top && (
+        <span className="en-card-stat">
+          <span>HP {top.hp.toLocaleString("en-US")}</span>
+          <span>{t("공격")} {top.atk.toLocaleString("en-US")}</span>
+          <span>{t("방어")} {top.def.toLocaleString("en-US")}</span>
+          <span>{t("마저")} {top.res}</span>
+        </span>
+      )}
     </a>
   );
 }

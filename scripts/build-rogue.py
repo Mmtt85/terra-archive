@@ -805,7 +805,7 @@ MECH_GROUPS = {
                 ("주사위", "item", ["DICE_TYPE"])],
     "rogue_3": [("암호판", "item", ["TOTEM"]),
                 ("붕괴 패러다임", "module_chaos", None)],
-    "rogue_4": [("사고", "fragment", None),
+    "rogue_4": [("생각", "fragment", None),   # 한섭 정식 명칭은 생각 (사용자 교정 2026-10-18, 종전 사고)
                 ("시대", "module_disaster", None)],
     "rogue_5": [("주화", "item", ["COPPER", "COPPER_BUFF"]),
                 ("분노", "module_wrath", None)],

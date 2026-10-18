@@ -327,13 +327,13 @@ export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy, onOpenStage, 
   ];
   return (
     <div className="en-file">
-      <header className="en-head">
+      {/* 머리 — 초상 | 번호·이름·꼬리표 | 오른쪽 위: 강화 단계 탭 + 설명 (사용자 지시 2026-10-18 "설명은 맨 위 띠 오른쪽 위에").
+          핵심 수치 넷은 그 아래 줄에 넓게 */}
+      <header className={`en-head${enemy.desc ? " has-desc" : ""}`}>
         <Portrait enemy={enemy} size={132} src={portrait} />
         <div className="en-head-main">
-          {/* 도감 번호 줄 오른쪽 끝에 강화 단계 탭 (사용자 지시 2026-10-17 "오른쪽 위가 맞는 거 같다") */}
           <div className="en-head-top">
             <span className="en-code">{enemy.idx ?? "—"}</span>
-            {!statCtx && enemy.lv.length > 1 && <LevelTabs levels={enemy.lv} sel={lvSel} onSel={setLvSel} />}
           </div>
           <h1>{title ?? enemy.name}</h1>
           <div className="en-badges">
@@ -341,13 +341,17 @@ export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy, onOpenStage, 
             {enemy.race.map((r) => <span className="en-tag" key={r}>{r}</span>)}
             {facts.map(([short, full, v]) => <span className="en-fact" key={full} title={full}><small>{short}</small>{v}</span>)}
           </div>
-          {/* 핵심 수치 넷 — 표까지 내려가지 않아도 바로 보이게. 강화 단계가 있으면 최고 단계 값을 화살표로 (2026-10-17 가독성 손질).
-              그 자리 수치로 바꿔 다는 /rogue 모달(statCtx)은 표가 정답이라 뺀다 */}
-          {!statCtx && enemy.lv.length > 0 && <KeyStats levels={enemy.lv} sel={lvSel} rng={enemy.rng} />}
         </div>
+        {(enemy.desc || (!statCtx && enemy.lv.length > 1)) && (
+          <div className="en-head-side">
+            {!statCtx && enemy.lv.length > 1 && <LevelTabs levels={enemy.lv} sel={lvSel} onSel={setLvSel} />}
+            {enemy.desc && <p className="en-desc">{enemy.desc}</p>}
+          </div>
+        )}
+        {/* 핵심 수치 넷 — 표까지 내려가지 않아도 바로 보이게. 강화 단계가 있으면 최고 단계 값을 화살표로 (2026-10-17 가독성 손질).
+            그 자리 수치로 바꿔 다는 /rogue 모달(statCtx)은 표가 정답이라 뺀다 */}
+        {!statCtx && enemy.lv.length > 0 && <div className="en-head-keys"><KeyStats levels={enemy.lv} sel={lvSel} rng={enemy.rng} /></div>}
       </header>
-
-      {enemy.desc && <p className="en-desc">{enemy.desc}</p>}
 
       {enemy.abil.length > 0 && (
         <section className="en-block">

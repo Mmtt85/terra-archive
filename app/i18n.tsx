@@ -3284,7 +3284,7 @@ const D: Record<string, Pair> = {
   "분노": ["Wrath", "怒り"],
   "암호판": ["Cipher Plates", "暗号板"],
   "붕괴 패러다임": ["Collapsal Paradigms", "崩壊パラダイム"],
-  "사고": ["Thoughts", "思考"],
+  "생각": ["Thoughts", "思考"],
   "시대": ["Eras", "時代"],
   "염원": ["Wishes", "念願"],
   "영감": ["Inspirations", "インスピレーション"],
@@ -3480,6 +3480,8 @@ const D: Record<string, Pair> = {
   "카드를 열면 일반/긴급 탭으로 전환할 수 있습니다": ["Open a card to switch between normal/emergency tabs", "カードを開くと通常/緊急タブを切り替えられます"],
 
   "추가 규칙": ["Added rule", "追加ルール"],
+  "점수 배율": ["Score ×", "スコア倍率"],
+  "오른쪽 ×숫자는 점수 배율입니다.": ["The ×number on the right is the score multiplier.", "右の×数値はスコア倍率です。"],
 
   // ── 피드백 위젯 ────────────────────────────────────────────────────────────
   "제안 보내기": ["Send Feedback", "フィードバックを送る"],

@@ -357,7 +357,8 @@ const viewsFor = (): { id: View; label: string }[] => [
   { id: "ending", label: "엔딩" },
 ];
 
-const RANK_KO: Record<string, string> = { NORMAL: "일반", ELITE: "정예", BOSS: "리더" };
+// BOSS 는 사이트 적 도감(RANK_KEY)과 같이 "보스" — 종전 "리더"라 같은 적이 카드·탭은 리더, 상세 창은 보스였다 (사용자 지시 2026-10-18)
+const RANK_KO: Record<string, string> = { NORMAL: "일반", ELITE: "정예", BOSS: "보스" };
 
 // ── 난이도 스탯 적용 ────────────────────────────────────────────────────────
 // 수치 규칙 (difficulties.ruleDesc 근거 — 토픽마다 다르다):
@@ -435,6 +436,30 @@ function applyDiff(e: Enemy, grade: number, ctx: StatCtx) {
 }
 
 const fmt = (n: number) => n.toLocaleString("en-US");
+
+// 난이도 규칙 한 문장 → 갈래 줄 — 따옴표·괄호 안 쉼표는 이름의 일부
+// ('볼리바르, 응어리의 핵')라 안 끊는다. 영어는 쉼표가 문장 안에도 흔해 통째로 둔다.
+function diffClauses(rule: string, locale: string): string[] {
+  if (locale === "en") return [rule.trim()];
+  const out: string[] = [];
+  let cur = "", depth = 0, sq = false;
+  for (const ch of rule) {
+    if (ch === "'") sq = !sq;
+    else if ("‘“「『【(（".includes(ch)) depth++;
+    else if ("’”」』】)）".includes(ch)) depth = Math.max(0, depth - 1);
+    // 한국어는 쉼표, 일본어는 구점(。)이 규칙 사이 구분 — 일본어 、는 문장 안 쉼표다. 앞 조각이 짧으면('모든 정예, 리더 적')
+    // 이름을 나열한 쉼표라 이어 붙인다
+    const cut = locale === "ja" ? ch === "。" : ch === "," || ch === "，";
+    if (cut && depth === 0 && !sq && cur.trim().length >= 8) { out.push(cur.trim()); cur = ""; continue; }
+    cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+// 수치(+30%·-2·10%·×1.5)만 강조 — 난이도 규칙·소장품·전시관 카드 효과 문장 (2026-10-18)
+function hiNums(text: string): React.ReactNode[] {
+  return text.split(/([+\-−×]\d+(?:\.\d+)?%?|\d+(?:\.\d+)?%)/).map((p, i) => (i % 2 ? <b key={i} className="rg-num">{p}</b> : p));
+}
 
 function StatRow({ e, grade, ctx }: { e: Enemy; grade: number; ctx: StatCtx }) {
   const { t } = useI18n();
@@ -929,30 +954,49 @@ function RelicModal({ relic, owned, onToggleOwn, onClose }: {
   const { t } = useI18n();
   return (
     <ModalWindow label={nmText(relic.name, relic.cn)} className="rg-modal rg-rmodal" onClose={onClose}>
-      <header className="rg-modal-head">
-        <div>
-          {relic.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${relic.iconId ?? relic.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
-          {relic.order && <span className="rg-relic-no">{relic.order}</span>}
+      {/* 머리 띠(아이콘·번호·종류·이름·효과) + 설명(인용) + 획득 방법 절 — 적·아이템 상세와 같은 결 (사용자 요청 2026-10-18) */}
+      <header className="rg-rhead">
+        {relic.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${relic.iconId ?? relic.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
+        <div className="rg-rhead-title">
+          {(relic.order || relic.kind || relic.typeName) && (
+            <div className="rg-rhead-badges">
+              {relic.order && <span className="rg-relic-no">{relic.order}</span>}
+              {(relic.kind || relic.typeName) && <span className="rg-rhead-kind">{t((relic.kind ?? relic.typeName)!)}</span>}
+            </div>
+          )}
           <h3><Nm name={relic.name} cn={relic.cn} /></h3>
-          {(relic.kind || relic.typeName) && <span className="rg-modal-zone">{t((relic.kind ?? relic.typeName)!)}</span>}
         </div>
       </header>
-      {/* 해당 소장품의 모든 데이터 — 효과·설명·획득 방법 (사용자 확정 2026-07-24).
-          다단계(stages, 붕괴 패러다임)는 단계별 [섬네일+이름+효과+플레이버] 블록으로 */}
+      {/* 효과는 머리 띠가 아니라 '효과' 절로 — 머리엔 아이콘·번호·종류·이름만 (사용자 지적 2026-10-18 "시대·생각 상세가
+          띠에 내용이 다 들어가 있다"). 줄 앞 [머리말](형성기/확장기/전성기 등)은 왼쪽 꼬리표 */}
+      {!relic.stages && relic.usage && (
+        <section className="rg-rblock">
+          <h4>{t("효과")}</h4>
+          <ul className="rg-rlines">
+            {relic.usage.split("\n").filter((l) => l.trim()).map((l, i) => {
+              const m = l.match(/^\s*[\[【［〔]([^\]】］〕]{1,8})[\]】］〕]\s*(.*)$/);
+              return <li key={i}>{m ? <><em>{m[1]}</em><span>{hiNums(m[2])}</span></> : <span className="full">{hiNums(l)}</span>}</li>;
+            })}
+          </ul>
+        </section>
+      )}
+      {/* 다단계(stages, 붕괴 패러다임)는 단계별 [섬네일+이름+효과+플레이버] 블록으로 */}
       {relic.stages ? relic.stages.map((s) => (
         <div key={s.name} className="rg-stage rg-stage-modal">
           {relic.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${relic.iconId ?? relic.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
           <div className="rg-stage-txt">
             <h4>{s.name} <em className="rg-stage-lb">{s.label}</em></h4>
-            {s.usage && <p className="rg-relic-usage rg-multiline">{s.usage}</p>}
+            {s.usage && <p className="rg-relic-usage rg-multiline">{hiNums(s.usage)}</p>}
             {s.desc && <p className="rg-relic-desc rg-multiline">{s.desc}</p>}
           </div>
         </div>
-      )) : (<>
-        {relic.usage && <p className="rg-relic-usage rg-multiline">{relic.usage}</p>}
-        {relic.desc && <p className="rg-relic-desc rg-multiline">{relic.desc}</p>}
-      </>)}
-      {relic.obtain && <p className="rg-relic-obtain"><em>{t("획득 방법")}</em> {relic.obtain}</p>}
+      )) : relic.desc && <p className="rg-relic-desc rg-rquote rg-multiline">{relic.desc}</p>}
+      {relic.obtain && (
+        <section className="rg-rblock">
+          <h4>{t("획득 방법")}</h4>
+          <p>{relic.obtain}</p>
+        </section>
+      )}
       {onToggleOwn && (
         <button type="button" className={`rg-inv-toggle${owned ? " on" : ""}`} onClick={onToggleOwn}>
           {owned ? `✓ ${t("보유중 — 누르면 보유 리스트에서 뺍니다")}` : `🎒 ${t("보유 리스트에 추가")}`}
@@ -1956,7 +2000,7 @@ export default function RogueGuide({ initialTopic }: {
     const fm = q.match(/^(\d+)(?:층|階|f)$/) ?? q.match(/^(?:f|floor)(\d+)$/);
     const floor = fm ? Number(fm[1]) : null;
     const kinds = new Set(Object.keys(KIND_LABEL).filter((k) => kw(KIND_LABEL[k]) || (k === "boss" && kw("보스"))));
-    const ranks = new Set(Object.keys(RANK_KO).filter((k) => kw(RANK_KO[k]) || (k === "BOSS" && kw("보스"))));
+    const ranks = new Set(Object.keys(RANK_KO).filter((k) => kw(RANK_KO[k]) || (k === "BOSS" && kw("리더"))));
     // "모든 자료에 대해서 다 나오게" (사용자 요청 2026-10-02, 흑류수해 전시관 › 환경이 안 나온다는 지적) — 이름에 더해
     // 작전 코드·적 번호·우연한 만남 선택지·효과 문장(층 효과·환각·환경·난이도 규칙·엔딩 설명·엔딩북 조각)까지 본다.
     // 플레이버 설명(desc)은 대부분 빼둔다 — 'HP' 한 마디에 수백 장이 걸린다.
@@ -2937,18 +2981,21 @@ export default function RogueGuide({ initialTopic }: {
 
   // 카드 그리기 — 각 탭과 통합 검색 결과 판이 같은 카드를 쓴다 (누르면 같은 상세)
   const enemyCell = ([key, e]: [string, Enemy]) => (
-    <button type="button" key={key} className="rg-enemy-cell row" id={`rg-en-${key}`}
+    <button type="button" key={key} className="rg-enemy-cell row banded" id={`rg-en-${key}`}
       onClick={() => setEnemyOpen({ key, ctx: dexCtx(key) })}>
-      {e.img ? <img className="rg-enemy-face" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
-        : <span className="rg-enemy-face none" aria-hidden>?</span>}
-      <span className="rg-enemy-cell-info">
-        <span className="rg-enemy-cell-head">
+      {/* 머리 띠(초상·등급·이름·번호) + 본문(스탯) — 사용자 선택 2026-10-18 '머리 띠 + 본문' */}
+      <span className="rg-card-band">
+        {e.img ? <img className="rg-enemy-face" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
+          : <span className="rg-enemy-face none" aria-hidden>?</span>}
+        <span className="rg-card-title">
           <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
+          <span className="rg-enemy-name"><Nm name={e.name} cn={e.cn} /></span>
         </span>
-        <span className="rg-enemy-name"><Nm name={e.name} cn={e.cn} /></span>
+        {e.index && <span className="rg-enemy-idx">{e.index}</span>}
+      </span>
+      <span className="rg-card-body">
         <StatRow e={e} grade={grade} ctx={dexCtx(key)} />
       </span>
-      {e.index && <span className="rg-enemy-idx">{e.index}</span>}
     </button>
   );
   const relicCard = (r: Relic) => (
@@ -2961,7 +3008,7 @@ export default function RogueGuide({ initialTopic }: {
         <h4><Nm name={r.name} cn={r.cn} /></h4>
         <InvPill owned={inv.has(r.id)} onToggle={() => toggleInv(r.id)} />
       </header>
-      {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
+      {r.usage && <p className="rg-relic-usage">{hiNums(r.usage)}</p>}
     </article>
   );
   const encItem = (enc: Encounter) => (
@@ -3258,7 +3305,7 @@ export default function RogueGuide({ initialTopic }: {
                         {h.label !== "난이도" && <em className="rg-uni-kind">{t(h.label)}</em>}
                       </header>
                       {(h.item.usage ?? h.item.stages?.map((st) => st.name).join(" · ")) && (
-                        <p className="rg-relic-usage rg-multiline">{h.item.usage ?? h.item.stages?.map((st) => st.name).join(" · ")}</p>
+                        <p className="rg-relic-usage rg-multiline">{hiNums(h.item.usage ?? h.item.stages?.map((st) => st.name).join(" · ") ?? "")}</p>
                       )}
                     </article>
                   ))}
@@ -3456,7 +3503,7 @@ export default function RogueGuide({ initialTopic }: {
                             <InvPill owned={inv.has(s.id)} onToggle={() => toggleInv(s.id)} />
                           </header>
                           {/* 미리보기는 효과까지만 — 플레이버 설명은 상세에서 (사용자 확정 2026-07-24) */}
-                          {s.usage && <p className="rg-relic-usage">{s.usage}</p>}
+                          {s.usage && <p className="rg-relic-usage">{hiNums(s.usage)}</p>}
                         </article>
                       ))}
                     </div>
@@ -3473,7 +3520,7 @@ export default function RogueGuide({ initialTopic }: {
                     {c.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${c.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                     <h4><Nm name={c.name} cn={c.cn} /></h4>
                   </header>
-                  {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
+                  {c.usage && <p className="rg-relic-usage">{hiNums(c.usage)}</p>}
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
                 </article>
               ))}
@@ -3499,7 +3546,7 @@ export default function RogueGuide({ initialTopic }: {
                 <article key={c.id} className={`rg-relic capsule${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}>
                   {c.img && <img className="rg-cap-art" src={asset(`/rogue/capsule/${c.id}.webp`)} alt={c.name} loading="lazy" decoding="async" />}
                   <header><h4>{c.name}</h4>{c.en && <span className="rg-cap-en">{c.en}</span>}</header>
-                  {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
+                  {c.usage && <p className="rg-relic-usage">{hiNums(c.usage)}</p>}
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
                 </article>
               ))}
@@ -3570,7 +3617,7 @@ export default function RogueGuide({ initialTopic }: {
                     {c.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${c.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                     <h4><Nm name={c.name} cn={c.cn} /></h4>
                   </header>
-                  {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
+                  {c.usage && <p className="rg-relic-usage">{hiNums(c.usage)}</p>}
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
                 </article>
               ))}
@@ -3584,7 +3631,7 @@ export default function RogueGuide({ initialTopic }: {
                     {c.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${c.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                     <h4><Nm name={c.name} cn={c.cn} /></h4>
                   </header>
-                  {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
+                  {c.usage && <p className="rg-relic-usage">{hiNums(c.usage)}</p>}
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
                 </article>
               ))}
@@ -3618,7 +3665,7 @@ export default function RogueGuide({ initialTopic }: {
                               {c.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${c.iconId ?? c.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                               <div className="rg-stage-txt">
                                 <h4>{s.name} <em className="rg-stage-lb">{s.label}</em></h4>
-                                {s.usage && <p className="rg-relic-usage rg-multiline">{s.usage}</p>}
+                                {s.usage && <p className="rg-relic-usage rg-multiline">{hiNums(s.usage)}</p>}
                               </div>
                             </div>
                           ))}
@@ -3630,7 +3677,7 @@ export default function RogueGuide({ initialTopic }: {
                           {resIds.has(c.id) && <InvPill owned={inv.has(c.id)} onToggle={() => toggleInv(c.id)} />}
                         </header>
                         {/* 미리보기는 효과까지만 — 플레이버 설명은 상세에서 (사용자 확정 2026-07-24) */}
-                        {c.usage && <p className="rg-relic-usage rg-multiline">{c.usage}</p>}
+                        {c.usage && <p className="rg-relic-usage rg-multiline">{hiNums(c.usage)}</p>}
                       </>)}
                     </article>
                   ))}
@@ -3651,7 +3698,7 @@ export default function RogueGuide({ initialTopic }: {
                   <h4>{v.name}</h4>
                   {v.fusion && <span className="rg-fusion-tag">{t("융합")}</span>}
                 </header>
-                {v.func && <p className="rg-relic-usage">{v.func}</p>}
+                {v.func && <p className="rg-relic-usage">{hiNums(v.func)}</p>}
                 {v.desc && <p className="rg-relic-desc">{v.desc}</p>}
               </article>
             ))}
@@ -3674,7 +3721,7 @@ export default function RogueGuide({ initialTopic }: {
                   <h4><Nm name={w.name} cn={w.cn} /></h4>
                 </header>
                 {w.levels.map((l) => (
-                  <p key={l.lv} className="rg-relic-usage"><em className={`rg-wlv lv-${l.lv}`}>{l.lv === "a" ? t("초기") : l.lv === "b" ? t("중기") : t("말기")}</em> {l.desc}</p>
+                  <p key={l.lv} className="rg-relic-usage"><em className={`rg-wlv lv-${l.lv}`}>{l.lv === "a" ? t("초기") : l.lv === "b" ? t("중기") : t("말기")}</em><span>{hiNums(l.desc ?? "")}</span></p>
                 ))}
               </article>
             ))}
@@ -3689,7 +3736,7 @@ export default function RogueGuide({ initialTopic }: {
                   {w.img && <img className="rg-relic-icon" src={asset(`/rogue/misc/${w.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                   <h4><Nm name={w.name} cn={w.cn} /></h4>
                 </header>
-                {w.desc && <p className="rg-relic-usage">{w.desc}</p>}
+                {w.desc && <p className="rg-relic-usage">{hiNums(w.desc)}</p>}
               </article>
             ))}
           </div>
@@ -3715,24 +3762,29 @@ export default function RogueGuide({ initialTopic }: {
 
       {!uniHits && view === "diff" && (
         <div className="rg-diff-view">
-          <p className="rg-zone-desc">{t("난이도는 하위 등급의 규칙을 전부 포함합니다. 현재 선택한 난이도까지의 규칙이 강조됩니다.")}</p>
-          <table className="rg-diff-table">
-            <thead><tr><th>{t("등급")}</th><th>{t("추가 규칙")}</th></tr></thead>
-            <tbody>
-              {data.difficulties.filter((d) => d.mode === "EASY" || d.mode === "NORMAL").map((d) => {
-                const on = d.mode === "EASY" ? grade < 0 : grade >= d.grade;
-                return (
-                  <tr key={`${d.mode}${d.grade}`} className={on ? "on" : ""} role="button" tabIndex={0}
-                    title={t("이 난이도로 설정")}
-                    onClick={() => setGrade(d.mode === "EASY" ? -1 : d.grade)}
-                    onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setGrade(d.mode === "EASY" ? -1 : d.grade); } }}>
-                    <td>{d.mode === "EASY" ? t("쉬움") : d.grade}</td>
-                    <td>{d.rule}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <p className="rg-zone-desc">{t("난이도는 하위 등급의 규칙을 전부 포함합니다. 현재 선택한 난이도까지의 규칙이 강조됩니다.")} {t("오른쪽 ×숫자는 점수 배율입니다.")}</p>
+          {/* 계단형 — 번호 배지를 세로선으로 잇고, 고른 난이도까지 선이 켜진다. 규칙은 쉼표 갈래마다 한 줄, 수치는 강조,
+              오른쪽에 점수 배율(scoreFactor) (사용자 요청 2026-10-18 "난이도 탭 표도 예쁘게") */}
+          <div className="rg-diff-table">
+          <ol className="rg-diff-ladder">
+            {data.difficulties.filter((d) => d.mode === "EASY" || d.mode === "NORMAL").map((d) => {
+              const g = d.mode === "EASY" ? -1 : d.grade;
+              const on = d.mode === "EASY" ? grade < 0 : grade >= d.grade;
+              return (
+                <li key={`${d.mode}${d.grade}`} className={`${on ? "on" : ""}${g === grade ? " cur" : ""}`} role="button" tabIndex={0}
+                  title={t("이 난이도로 설정")}
+                  onClick={() => setGrade(g)}
+                  onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setGrade(g); } }}>
+                  <span className="rg-diff-step"><i className={`rg-diff-hex${d.mode === "EASY" ? " easy" : ""}`}>{d.mode === "EASY" ? t("쉬움") : d.grade}</i></span>
+                  <ul className="rg-diff-rules">
+                    {diffClauses(d.rule ?? "", locale).map((c, j) => <li key={j}>{hiNums(c)}</li>)}
+                  </ul>
+                  {typeof d.score === "number" && d.score > 0 && <span className="rg-diff-score" title={t("점수 배율")}>×{d.score.toFixed(2)}</span>}
+                </li>
+              );
+            })}
+          </ol>
+          </div>
         </div>
       )}
 
@@ -3869,7 +3921,7 @@ export default function RogueGuide({ initialTopic }: {
       {enemyOpen && (
         <EnemyModal ekey={enemyOpen.key} grade={grade} ctx={enemyOpen.ctx} onClose={() => setEnemyOpen(null)}
           appear={enemyStages.get(enemyOpen.key) ?? []}
-          onOpenStage={(s) => { setEnemyOpen(null); setStageOpen(pairOf(s)); }}
+          onOpenStage={(s) => setStageOpen(pairOf(s))}  /* 적 창은 닫지 않고 작전 창을 위에 겹친다 (사용자 지시 2026-10-18) */
           onOpenEnemy={(key) => setEnemyOpen({ key, ctx: dexCtx(key) })} />
       )}
       {relicOpen && (
