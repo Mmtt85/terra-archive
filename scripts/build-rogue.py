@@ -2719,6 +2719,14 @@ def build_rogue6():
         for s in stages:
             if s["id"] in boss_end:
                 s["end"] = boss_end[s["id"]]
+            # 강화판 — 위 KR 경로(build_topic)와 같은 규칙. 라벨은 화면이 번역, 조건은 툴팁 (2026-10-18 꺼진 태양 _b)
+            bv = (curated.get("bossVariant") or {}).get(s["id"])
+            if bv:
+                s["var"] = bv.get("label")
+                if bv.get("cond"):
+                    s["varCond"] = bv["cond"]
+                if bv.get("prob"):
+                    s["varProb"] = bv["prob"]
         # 熄日余径(꺼진 태양의 남은 길) — 따로 생기는 구역의 전투는 _dlc1 판 (rogue6-curated.json sideRoute, 2026-10-17).
         # side=1 — 층 창이 따로 묶는다. 보스 _dlc1 은 그 소장품을 지녔을 때의 험난한 길(더 어려워진 판)이라 같은 묶음 아래 보스 칸에
         side = curated.get("sideRoute") or {}
