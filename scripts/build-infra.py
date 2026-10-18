@@ -651,8 +651,11 @@ def detect_cond_bonus(text, self_name, self_id=None):
     for n in names:
         if len(n) < 2 or n not in head or n == self_name or (self_id and name_to_id.get(n) == self_id):
             continue
-        if re.search(r"(?<![가-힣])" + re.escape(n) + r"[가이]? (?:기반시설|숙소)에 (?:배치|있)", head):
-            return _cut(n), {"type": "basePartner", "ids": [name_to_id[n]], "value": Y}
+        bp = re.search(r"(?<![가-힣])" + re.escape(n) + r"[가이]? (기반시설|숙소)에 (?:배치|있)", head)
+        if bp:
+            # '숙소에 배치되어 있으면'(믹사파라토 ← 피아메타)은 숙소 한정 — '기반시설에 있으면'(언더플로우 ← 울피아누스)과
+            # 다르다. 종전엔 둘 다 기지 어디든으로 읽어 피아메타가 다른 방에 있어도 +10%가 붙었다 (제보 6ce88197, 2026-10-18)
+            return _cut(n), {"type": "basePartner", "ids": [name_to_id[n]], "value": Y, "dorm": bp.group(1) == "숙소"}
         cr = re.search(r"(?<![가-힣])" + re.escape(n) + r"[가이]? (제어 센터|무역소|제조소|발전소|응접실|사무실)에 배치", head)
         if cr:
             return _cut(n), {"type": "crossRoom", "ids": [name_to_id[n]], "room": _ROOM_KW[cr.group(1)], "value": Y}
@@ -915,6 +918,7 @@ def parse_skill(entry, oname, oid=None):
         # partners로 오인하면 기본 효율까지 통째로 게이트돼 버린다
         base_partner_ids = []
         base_partner_bonus = None
+        base_partner_dorm = False
         bp = re.search(r"([가-힣A-Za-z0-9·' ]{2,20}?)(?:이|가) 기반시설[^%]*?있으면[^%]*?추가로 \+?\s*(\d+(?:\.\d+)?)\s*%", text)
         if bp and bp.group(1).strip() in name_to_id:
             base_partner_ids = [name_to_id[bp.group(1).strip()]]
@@ -1065,6 +1069,7 @@ def parse_skill(entry, oname, oid=None):
             if _cond["type"] == "basePartner":  # 엔진 basePartnerBonus 재사용 (언더플로우와 동일)
                 base_partner_ids = list(dict.fromkeys(base_partner_ids + _cond["ids"]))
                 base_partner_bonus = _cond["value"]
+                base_partner_dorm = bool(_cond.get("dorm"))
             elif _cond["type"] == "roomFaction":
                 cond_bonus = {"value": _cond["value"], "faction": _cond["faction"]}
             elif _cond["type"] == "roomPartner":
@@ -1166,6 +1171,7 @@ def parse_skill(entry, oname, oid=None):
             "partners": [p for p in partners_list if p not in base_partner_ids
                          and p != (cross_buff or {}).get("partner")],
             "basePartners": base_partner_ids, "basePartnerBonus": base_partner_bonus,
+            **({"basePartnerDorm": True} if base_partner_dorm else {}),
             # 작업 시설 동반(외드레르): 파트너가 workRooms 중 한 곳에 배치돼 있으면 **1명당** 가산
             **({"workPartners": work_partners, "workPartnerBonus": work_partner_bonus,
                 "workRooms": work_rooms} if work_partners and work_partner_bonus else {}),

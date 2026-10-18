@@ -33243,3 +33243,94 @@ html.rg-theme.rg4 main.site-main {
 .ff-img-own { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink2); cursor: pointer; }
 .ff-img-view { overflow: auto; max-height: min(78dvh, 820px); border-radius: var(--r-md); background: #121417; }
 .ff-img-view img { display: block; max-width: 100%; height: auto; }
+
+/* ── 인프라 임시 편성 모드 (제안 94ea7a3e, 2026-10-18) — 위쪽 띠 + 자동편성·설정 줄 잠금 ── */
+.planner.sandboxing { position: relative; }
+/* 버튼 줄~설정 줄 자리를 덮는다 — top·height 는 planner.tsx 가 재서 넣는다 */
+.pl-sandbox-bar {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 0;
+  overflow: auto;
+  padding: 6px 14px;
+  border: 1px solid var(--gold-ink);
+  border-left-width: 4px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--gold-ink) 10%, var(--white));
+  box-shadow: var(--sh-2);
+}
+.pl-sb-title { display: flex; flex-direction: column; gap: 2px; }
+.pl-sb-title b { font-size: 14px; color: var(--ink); }
+.pl-sb-title small { font-size: 12px; color: var(--muted); }
+.pl-sb-score { display: flex; align-items: baseline; gap: 6px; font-size: 13px; color: var(--ink2); }
+.pl-sb-score b { font: 700 18px var(--mono); color: var(--ink); }
+.pl-sb-score small { font-size: 12px; color: var(--muted); }
+.pl-sb-score em { margin-left: 6px; font-style: normal; font-family: var(--mono); font-weight: 700; }
+.pl-sb-score em.up { color: var(--lime-ink); }
+.pl-sb-score em.down { color: var(--danger); }
+.pl-sb-actions { display: flex; gap: 6px; margin-left: auto; }
+.planner.sandboxing .planner-buttons { visibility: hidden; }
+.pl-sb-actions .act-btn { height: 30px; padding: 0 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+:root .pl-sb-actions .act-btn.pl-sb-apply { background: var(--btn-pri-bg); color: var(--btn-pri-ink); }
+.prio-locked { font-size: 12px; color: var(--muted); }
+:root .planner-buttons .pl-sandbox-btn {
+  border-color: color-mix(in srgb, var(--gold-ink) 70%, transparent);
+  color: var(--gold-ink);
+  background: color-mix(in srgb, var(--gold-ink) 10%, transparent);
+}
+:root .planner-buttons .pl-sandbox-btn:hover:not(:disabled) {
+  border-color: var(--gold-ink);
+  background: color-mix(in srgb, var(--gold-ink) 18%, transparent);
+}
+
+/* 토큰 짝 추천 (사용자 요청 2026-10-18) — 후보 칩은 금빛 테두리, 다른 방 짝은 방 창 안 안내 줄 */
+.sub-chip.partner { border-style: solid; border-color: var(--gold-ink); }
+.sub-chip.partner em { color: var(--gold-ink); font-weight: 700; }
+.room-partner-hint {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--gold-ink);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--gold-ink) 8%, transparent);
+}
+.room-partner-hint p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--ink2); }
+.room-partner-go {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid color-mix(in srgb, var(--gold-ink) 60%, transparent);
+  border-radius: var(--r-pill);
+  background: none;
+  color: var(--gold-ink);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.room-partner-go:hover { background: color-mix(in srgb, var(--gold-ink) 14%, transparent); }
+
+/* 임시 편성 적용 전 점검 창 (2026-10-18) */
+.pl-apply-check { width: min(520px, 100%); place-self: center; height: fit-content; max-height: min(80dvh, 720px); }
+.pl-apply-check .mw-body { padding: 16px 18px; }
+.pl-ac-lead { margin: 0 0 12px; font-size: 13px; line-height: 1.6; color: var(--ink2); }
+.pl-ac-h { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--ink); }
+.pl-ac-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 4px; max-height: 320px; overflow: auto; }
+.pl-ac-list li > * {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  border-left: 3px solid var(--gold-ink);
+  border-radius: var(--r-sm);
+  background: none;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  text-align: left;
+}
+.pl-ac-list li > button { cursor: pointer; }
+.pl-ac-list li > button:hover { background: color-mix(in srgb, var(--gold-ink) 8%, transparent); }

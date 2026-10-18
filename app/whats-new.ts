@@ -35,6 +35,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "ac-deck": "2026-08-29", // 덱편성 시뮬레이터 — 배치·정비구역에 기물을 담아 맹약 상태를 계산 (/autochess 제목 줄 버튼)
   "ac-prts": "2026-09-07", // PRTS 시뮬레이션 — 게임 창을 물려 밴 기물·시뮬레이션 종류·전략·맹약 중첩을 화면에서 읽는다 (/autochess 제목 줄 버튼, 2026-09-06 폐기 → 09-07 재가동)
   "ac-party": "2026-09-21", // 파티 공유 — 게임의 '맹약 초대' 문구로 같은 방에 모여 전략·목표 맹약을 서로 본다 (/autochess 제목 줄 버튼)
+  "infra-sandbox": "2026-10-18", // 인프라 플래너 임시 편성 해보기 — 저장 없이 편성을 바꿔 보며 총점 비교 (제안 94ea7a3e)
   "training-room": "2026-10-18", // 인프라 플래너 훈련실 운용 옵션 — 비워 둔다 · 까지 고려(2석, 뮤엘시스 라인 랩·숙소 파킹 짝을 훈련실로)
   // 업데이트 내역 항목 NEW 는 2026-10-07 부터 **자동**이다 — 올린 지 3일 안의 항목(changelog-api.ts fetchRecentChangeIds).
   // 여기 'chlog:<id>' 를 손으로 넣지 않는다.
@@ -100,7 +101,7 @@ export function anyNewFeature(...keys: string[]): boolean {
 // 탭 → 그 탭 안에 든 새 기능 키 — 햄버거 메뉴 배지용 (사용자 요청 2026-07-24:
 // 새 기능이 있는 메뉴 항목에도 '새기능'을 표시). 새 기능을 다른 탭에 넣으면 여기도 갱신.
 const TAB_FEATURES: Record<string, string[]> = {
-  planner: ["scanner", "invest", "layout-153", "account", "endless", "op-level", "invest-payback", "training-room"],
+  planner: ["scanner", "invest", "layout-153", "account", "endless", "op-level", "invest-payback", "training-room", "infra-sandbox"],
   recruit: ["lens"],
   rogue: ["lens", "rogue-inv", "bridge", "rogue-eff", "rogue-cn", "route-map"],
   story: ["lens", "event-lore"], // 스샷 레이더(2026-07-24) · 이벤트 기록(2026-08-23)

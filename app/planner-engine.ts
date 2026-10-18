@@ -93,6 +93,7 @@ export type InfraSkill = {
   globalAura?: { kind: string; room: string; faction: string; per: number; cap: number; term?: string };
   basePartners?: string[];      // 기지 어디든(숙소 포함) 있으면 발동하는 동반 조건
   basePartnerBonus?: number | null; // 위 조건 충족 시 추가 효율 (언더플로우 +10)
+  basePartnerDorm?: boolean;    // true = 짝이 **숙소에** 있어야 발동 (믹사파라토 ← 피아메타, 제보 6ce88197)
   // 시설 집합 동반 조건 (외드레르 '자수성가', 2026-07-25): "이네스와 W가 **작업 시설**에 배치 시
   // 각각 추가로 +5%". 같은 방 동반(partners)도 숙소 포함 기지 전체(basePartners)도 아니라,
   // 용어 사전이 정의하는 시설 집합(작업 시설 = 발전소·제조소·무역소·사무실·응접실·제어 센터·
@@ -1176,7 +1177,9 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     }
     if (skill.capConv) out.capConv.push({ conv: skill.capConv, name: skill.name });
     // 기반시설 어디든 존재 조건 (언더플로우: 울피아누스가 숙소 포함 기지 내에 있으면 +10%)
-    if (skill.basePartners?.length && skill.basePartnerBonus && skill.basePartners.every((p) => ctx.presentIds?.has(p))) {
+    // 숙소 한정(basePartnerDorm)은 짝이 숙소에 앉아 있어야 한다 — roomOf 가 없는 호출(옛 경로)은 종전 판정으로
+    if (skill.basePartners?.length && skill.basePartnerBonus && skill.basePartners.every((p) =>
+      skill.basePartnerDorm && ctx.roomOf ? ctx.roomOf.get(p) === "DORMITORY" : ctx.presentIds?.has(p))) {
       out.efficiency += skill.basePartnerBonus;
     }
     // 작업 시설 동반 (외드레르 '자수성가'): 파트너가 그 시설 집합(숙소·가공소 제외)에 배치돼
@@ -1665,6 +1668,119 @@ export function recountTokens(
     return { ...flow, generators, total, consumers };
   });
   return { tokenPoints, flows: nextFlows };
+}
+
+// 토큰 원장을 **지금 편성에서 새로** 만든다 — 손 배치용 (사용자 지시 2026-10-18 "시너지팟을 손으로 완성해도 실시간으로").
+// recountTokens 는 원장에 이미 있는 생성원만 다시 세서, 자동편성이 앉히지 않은 생성원(총웨·센시 …)을 손으로 넣어도
+// 효과가 안 잡혔다. 여기서는 A조에 앉은 오퍼 중 그 토큰을 **쓰는** 사람이 있는 토큰마다 흐름을 세우고,
+// 앉은 오퍼의 생성 스킬(전환 사슬 포함 — 경로 전환자가 전부 앉아 있어야 산다)을 buildPlan 과 같은 규칙으로 싣는다.
+// 그 뒤 recountTokens 가 perMember·소비자를 다시 센다.
+export function flowsFromAssignments(assignments: Record<string, string[][]>, byId: Map<string, InfraOp>): TokenFlow[] {
+  const keys = [...PRODUCTION_KEYS, ...SUPPORT_KEYS, "DORM-0", "DORM-1", "DORM-2", "DORM-3"];
+  const seated: { op: InfraOp; key: string; room: string; product?: string; label: string }[] = [];
+  for (const key of keys) {
+    const cell = cellByKey.get(key);
+    for (const id of assignments[key]?.[0] ?? []) {
+      const op = byId.get(id);
+      if (op) seated.push({ op, key, room: cell?.room ?? key, product: cell?.product, label: cell?.label ?? key });
+    }
+  }
+  const present = new Set(seated.map((x) => x.op.id));
+  const used = new Set<string>();
+  // 전환자(로즈몬티스·에벤홀츠)의 tokenUse 는 '받아서 바꾸는' 몫이라 원본 토큰을 쓰는 것으로 치지 않는다 —
+  // 세면 감지 정보를 따로 또 계상해 같은 포인트를 두 번 센다 (자동편성 원장도 이 흐름은 안 세운다)
+  for (const { op, room, product } of seated) for (const sk of activeSkills(op, room, product)) {
+    for (const u of sk.tokenUse) if (sk.convert?.from !== u.token) used.add(u.token);
+  }
+  const flows: TokenFlow[] = [];
+  for (const token of used) {
+    // 상류 토큰 → 누적 전환율·필요한 전환자 (buildPlan 의 역방향 BFS와 같은 규칙, 앉은 오퍼만 본다)
+    const sources = new Map<string, number>();
+    const chainNeeds = new Map<string, string[]>();
+    const seen = new Set<string>([token]);
+    let frontier: { token: string; rate: number; need: string[] }[] = [{ token, rate: 1, need: [] }];
+    while (frontier.length) {
+      const next: typeof frontier = [];
+      for (const cur of frontier) for (const { op } of seated) for (const sk of op.skills) {
+        const cv = sk.convert;
+        if (!cv || cv.to !== cur.token || seen.has(cv.from) || cv.per <= 0) continue;
+        seen.add(cv.from);
+        const rate = cur.rate * (cv.amount / cv.per);
+        const need = [...cur.need, op.id];
+        sources.set(cv.from, rate);
+        chainNeeds.set(cv.from, need);
+        next.push({ token: cv.from, rate, need });
+      }
+      frontier = next;
+    }
+    const converters = seated.filter(({ op }) => op.skills.some((sk) => sk.convert?.to === token))
+      .map(({ op }) => ({ opId: op.id, from: op.skills.find((sk) => sk.convert?.to === token)?.convert?.from ?? "" }));
+    const generators: FlowGenerator[] = [];
+    for (const { op, room, product, label } of seated) {
+      for (const sk of activeSkills(op, room, product)) {
+        for (const g of sk.tokenGen) {
+          if (g.token !== token && !sources.has(g.token)) continue;
+          const need = g.token === token ? [] : chainNeeds.get(g.token) ?? [];
+          if (!need.every((id) => present.has(id))) continue;
+          const convRate = g.token === token ? 1 : sources.get(g.token) ?? 0;
+          const amount = genEstimate(g) * convRate;
+          if (amount <= 0) continue;
+          generators.push({ opId: op.id, at: label, amount, via: g.token === token ? undefined : g.token, convRate, perMember: g.perMember, need });
+        }
+      }
+    }
+    flows.push({ token, total: 0, generators, converters, consumers: [] });
+  }
+  return flows;
+}
+
+// 토큰 짝 찾기 — 손 편성을 돕는 추천 (사용자 요청 2026-10-18 "마르실을 제조소에 넣으면 숙소에 센시를 추천").
+// A조에 앉은 오퍼 기준으로 ① 쓰는 사람은 있는데 만드는 사람이 없는 토큰 → 그걸 만드는 후보(pool, 아직 안 앉은 오퍼),
+// ② 만드는 사람은 있는데 쓰는 사람이 없는 토큰 → 그걸 쓰는 후보를 돌려준다. 전환자(로즈몬티스 등)의 '받아서 바꾸는'
+// 사용은 쓰는 것으로 치지 않는다(flowsFromAssignments 와 같은 규칙). room = 그 후보가 앉아야 하는 시설(스킬의 방).
+export type TokenPartner = { token: string; withIds: string[]; room: string; role: "gen" | "use" };
+export function tokenPartners(assignments: Record<string, string[][]>, byId: Map<string, InfraOp>, pool: InfraOp[]): Map<string, TokenPartner[]> {
+  const keys = [...PRODUCTION_KEYS, ...SUPPORT_KEYS, "DORM-0", "DORM-1", "DORM-2", "DORM-3"];
+  const seated: { op: InfraOp; room: string; product?: string }[] = [];
+  for (const key of keys) {
+    const cell = cellByKey.get(key);
+    for (const id of assignments[key]?.[0] ?? []) {
+      const op = byId.get(id);
+      if (op) seated.push({ op, room: cell?.room ?? key, product: cell?.product });
+    }
+  }
+  const present = new Set(seated.map((x) => x.op.id));
+  const users = new Map<string, string[]>();
+  const makers = new Map<string, string[]>();
+  for (const { op, room, product } of seated) {
+    for (const sk of activeSkills(op, room, product)) {
+      for (const u of sk.tokenUse) if (sk.convert?.from !== u.token) users.set(u.token, [...(users.get(u.token) ?? []), op.id]);
+      for (const g of sk.tokenGen) makers.set(g.token, [...(makers.get(g.token) ?? []), op.id]);
+    }
+  }
+  // 전환으로 들어오는 몫까지 '만드는 사람이 있다'로 친다 — flowsFromAssignments 의 생성원이 곧 그 답이다
+  const live = new Set(flowsFromAssignments(assignments, byId).filter((f) => f.generators.length).map((f) => f.token));
+  const out = new Map<string, TokenPartner[]>();
+  const add = (id: string, p: TokenPartner) => {
+    const list = out.get(id) ?? [];
+    if (!list.some((x) => x.token === p.token && x.role === p.role)) list.push(p);
+    out.set(id, list);
+  };
+  for (const op of pool) {
+    if (present.has(op.id)) continue;
+    for (const sk of op.skills) {
+      for (const g of sk.tokenGen) {
+        const want = users.get(g.token);
+        if (want?.length && !live.has(g.token)) add(op.id, { token: g.token, withIds: [...new Set(want)], room: sk.room, role: "gen" });
+      }
+      for (const u of sk.tokenUse) {
+        if (sk.convert?.from === u.token) continue;
+        const made = makers.get(u.token);
+        if (made?.length && !users.get(u.token)?.length) add(op.id, { token: u.token, withIds: [...new Set(made)], room: sk.room, role: "use" });
+      }
+    }
+  }
+  return out;
 }
 
 export type TokenFlow = {

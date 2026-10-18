@@ -1,7 +1,7 @@
 "use client";
 
 import { NewBadge } from "./new-badge";
-import { lazy, memo, startTransition, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, memo, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
 import { Dropdown } from "./dropdown";
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
@@ -18,7 +18,7 @@ import {
   ELITE_LABEL, MAX_OP_LEVEL, maxOpLevel, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, orderFixFor, roomMaxNetDrain,
-  ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, tokensAt, planTokensAt, KEEP_MARGIN, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
+  ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, flowsFromAssignments, tokenPartners, activeSkills, tokensAt, planTokensAt, planScore, shiftHoursFor, KEEP_MARGIN, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS, PLANTS_BASE_RT,
   splitPriority, joinPriority, AUTO_BENCH_IDS, genEstimate,
   setRecycle, RECYCLE_MODE, RECYCLE_SPEC, recycleRate, recycleDaily, type RecycleMode,
@@ -43,7 +43,7 @@ import { buildMaaInfrast } from "./maa-export";
 // 공용 창형 모달 — 이동·리사이즈·고정·z순서 (2026-08-03)
 import { ModalWindow } from "./modal-window";
 import type { AccountRoster } from "./account";
-import { getMe } from "./me-store";
+import { getMe, useMe } from "./me-store";
 import costsData from "./data/costs.json";
 
 // 재료 표시용 카탈로그 (이름·아이콘) — costs.json items (build-costs.py 수확)
@@ -135,17 +135,23 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   }, []);
   const setTrainingChoice = (on: boolean) => {
     setTrainingUseState(on);
+    if (sandboxRef.current) return;   // 임시 편성 중엔 저장하지 않는다 — 적용할 때 쓴다
     try { localStorage.setItem(TRAINING_KEY, on ? "use" : "empty"); } catch { /* 무시 */ }
   };
   // 엔진 모듈 상태(slotsFor 의 훈련실 자리 수)는 렌더 전에 맞춘다 — 표시(0/1·0/2)와 수동 편성이 같은 값을 보게
   if (TRAINING_USE !== trainingUse) setTrainingUse(trainingUse);
   const setRecycleChoice = (mode: RecycleMode) => {
     setRecycleModeState(mode);
+    if (sandboxRef.current) return;
     try { localStorage.setItem(RECYCLE_KEY, mode); } catch { /* 무시 */ }
   };
   // 재활용소 칸은 **미래시가 켜졌을 때만** 있다. 엔진의 LAYOUT은 라이브 바인딩이라 렌더 전에 맞춰 둔다
   // (setRecycle은 멱등 — 값이 같으면 손대지 않는다). 워커 잡에는 recycleJob을 매번 싣는다.
-  const recycleJob: RecycleMode | null = includeFuture && RECYCLE_SPEC ? recycleMode : null;
+  // 재활용소에 사람을 앉히는 건 **중국 서버로 동기화한 계정**일 때만 (사용자 지시 2026-10-18). 한·일·글섭 계정은
+  // 미래시를 켜 재활용소 칸이 보여도 아직 그 시설이 없으니 비워 둔다. 동기화하지 않은(수동 입력) 경우는 설정대로
+  const meServer = useMe()?.server;
+  const recycleLocked = !!meServer && meServer !== "cn" && meServer !== "bili";
+  const recycleJob: RecycleMode | null = includeFuture && RECYCLE_SPEC ? (recycleLocked ? "off" : recycleMode) : null;
   if (RECYCLE_MODE !== recycleJob) setRecycle(recycleJob);
   // 기지 배치 프리셋 (사용자 요청 2026-07-24): 243(기본)·153·252. 엔진 모듈 상태(setLayoutPreset)와
   // 항상 함께 바꾼다 — LAYOUT은 라이브 바인딩이라 상태 변경 리렌더에서 새 값을 읽는다.
@@ -329,7 +335,26 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 육성 추천은 이 편성을 기준으로 계산되므로 비어 있으면 실행 자체를 막는다.
   const planEmpty = !plan || Object.values(plan.assignments).every((shifts) => shifts.every((ids) => ids.length === 0));
 
+  // ── 임시 편성 모드 (제안 94ea7a3e, 사용자 지시 2026-10-18 "임시 편성 해보기 — 본 화면 그대로") ──
+  // 게임에서 실제로 쓰는 편성을 손으로 옮겨 넣고 효율만 보고 싶다는 제안. 들어갈 때 편성·고정을 떠 두고,
+  // 그동안 persist 를 막아 아무것도 저장하지 않는다. '닫기'는 떠 둔 것으로 되돌리고, '이 편성으로 적용'은 그때 저장한다.
+  // 자동편성·설정 줄은 막는다(편성을 갈아엎거나 저장을 건드리는 것들) — 방 편집·고정·편성 비우기만 된다.
+  // 설정 줄(기지 배치·운용·우선 생산·훈련실·재활용소)과 방 레벨도 임시 편성 중에 바꿀 수 있다 (사용자 지시 2026-10-18) —
+  // 그래서 들어갈 때 그것들까지 떠 두고 '닫기'에서 통째로 되돌린다
+  type SandboxStash = {
+    plan: Plan | null; dormPins: Record<string, string[]>; roomPins: Record<string, RoomPin[]>; dirty: boolean;
+    layout: LayoutPreset; levels: Levels; priority: ProdPriority; customRooms: CustomRoom[]; customProducts: (CustomProduct | null)[];
+    buckets: Partial<Record<LayoutPreset, LayoutBucket>>; basePlan: Plan | null; planDiff: PlanDiff | null;
+    investRecs: RaiseRec[] | null; investHidden: Set<string>; trainingUse: boolean; recycleMode: RecycleMode;
+  };
+  const [sandbox, setSandbox] = useState<SandboxStash | null>(null);
+  const sandboxRef = useRef(false);
+  // 띠는 버튼 줄~설정 줄 자리를 **덮는다** (사용자 지시 2026-10-18 "띠 때문에 본문이 밑으로 내려간다") —
+  // 두 줄은 자리를 지킨 채 숨기고(visibility), 띠를 그 범위에 겹쳐 띄운다
+  const sectionRef = useRef<HTMLElement>(null);
+  const [sbBox, setSbBox] = useState<{ top: number; height: number; left: number; width: number } | null>(null);
   const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, lvById: Map<string, number> = levelById, prio: ProdPriority = priority, invest: RaiseRec[] | null = investRecs, hidden: Set<string> = investHidden, lay: LayoutPreset = layout, lvls: Levels = levels, rooms: CustomRoom[] = customRooms, products: (CustomProduct | null)[] = customProducts, pins: Record<string, string[]> = dormPins, rpins: Record<string, RoomPin[]> = roomPins) => {
+    if (sandboxRef.current) return;   // 임시 편성 중엔 저장하지 않는다
     // 현재 프리셋 버킷을 최신 상태로 갱신한 뒤 전체 버킷을 저장 — 다른 프리셋의 편성은 보존된다
     syncBucket(lay, { plan: nextPlan, levels: lvls, invest, investHidden: Array.from(hidden), dormPins: pins, roomPins: rpins });
     try {
@@ -506,10 +531,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       }
       return counts;
     });
-    // 원장이 비어 있는(구버전·수기) 플랜은 건드리지 않는다 — 빈 flows로 재집계하면
-    // 남아 있던 tokenPoints까지 0으로 지워진다
-    const ledger = plan.flows?.length ? recountTokens(assignments, effectiveOpById, plan.flows) : null;
-    const next = { ...plan, assignments, factionCounts, ...(ledger ? { tokenPoints: ledger.tokenPoints, flows: ledger.flows } : {}) };
+    // 토큰 원장은 **지금 편성에서 새로** 세운다 (flowsFromAssignments) — 자동편성 원장에 없던 생성원을 손으로 넣어도
+    // 그 몫이 바로 잡히게 (사용자 지시 2026-10-18). 종전엔 원장에 있는 생성원만 다시 셌다
+    const ledger = recountTokens(assignments, effectiveOpById, flowsFromAssignments(assignments, effectiveOpById));
+    // 교대 시계(조별 근무 시간)도 바뀐 편성으로 다시 잰다 — 종전엔 마지막 자동편성 값이 남아 방 효율·하루 생산이
+    // 손으로 바꾼 만큼의 지속시간 변화를 못 따라갔다 (사용자 지시 2026-10-18)
+    const shiftHours = Array.from({ length: SHIFT_COUNT }, (_, sh) => shiftHoursFor([...PRODUCTION_KEYS, ...SUPPORT_KEYS].map((key) => {
+      const cs = assignments[key] ?? [];
+      return { room: cellByKey.get(key)!.room, ops: (cs[Math.min(sh, cs.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[] };
+    })));
+    const next = { ...plan, assignments, factionCounts, shiftHours, ...(ledger ? { tokenPoints: ledger.tokenPoints, flows: ledger.flows } : {}) };
     setPlan(next);
     const cleaned = pins && Object.fromEntries(Object.entries(pins).filter(([, list]) => list.length));
     if (cleaned) setDormPinsState(cleaned);
@@ -541,12 +572,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // "울피아누스를 숙소에 넣고 자동편성 → 언더플로우가 들어가나 보자"가 성립하지 않는다.
   // 빼면 고정도 함께 풀린다. 엔진이 넣은 인원(토큰 생성원·짝 주차)은 고정이 아니며,
   // 📌를 눌러 잠글 수 있다 (사용자 요청 2026-07-25).
+  // ⚠ 2026-10-18부터 직접 넣어도 **자동으로 고정하지 않는다** (사용자 지시 "고정 버튼이 저절로 눌리는 게 불편") —
+  //   고정은 📌를 눌러서만. 빼면 그 오퍼의 고정은 풀린다
   const updateDorm = (cellKey: string, ids: string[]) => {
     if (!plan) return;
-    const before = plan.assignments[cellKey]?.[0] ?? [];
-    const added = ids.filter((id) => !before.includes(id));
     const kept = (dormPins[cellKey] ?? []).filter((id) => ids.includes(id));
-    updateTeam(cellKey, 0, ids, { ...dormPins, [cellKey]: [...kept, ...added.filter((id) => !kept.includes(id))] });
+    updateTeam(cellKey, 0, ids, { ...dormPins, [cellKey]: kept });
   };
   const toggleDormPin = (cellKey: string, opId: string) => {
     const cur = dormPins[cellKey] ?? [];
@@ -561,7 +592,17 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 시행해달라고 문구를 띄워줘" → "문구를 위에 띄우는 게 아니라 모달창같은 걸로").
   // 토스트·배너가 아니라 **모달 대화상자**(기존 confirm 패턴 — body 포털이라 방 편집
   // 창모달 위에 뜬다). [지금 재편성]은 방금 갱신된 고정 목록(rpins)을 직접 넘겨 실행하고,
+  // 자동편성은 사람이 눌러야만 돈다 (사용자 지시 2026-10-18) — 보유·정예화를 바꾼 자리에서는 바로 돌리지 않고 묻는다
+  const askOptimize = (title: string, go: () => void) => {
+    void confirm({
+      title,
+      message: t("바뀐 내용은 다음 전체 자동편성부터 편성에 반영됩니다 — 지금 재편성할까요? 지금 편성을 그대로 두려면 '나중에'를 누르세요."),
+      confirmLabel: t("지금 재편성"),
+      cancelLabel: t("나중에"),
+    }).then((ok) => { if (ok) go(); });
+  };
   // '나중에'는 닫기만 한다 — 더 고정할 오퍼가 남았을 수 있어서다. 해제(📌 OFF)에는 안 띄운다.
+  const pinAskRef = useRef(false);
   const askRepinOptimize = (rpins: Record<string, RoomPin[]>) => {
     void confirm({
       title: t("오퍼를 방에 고정했습니다"),
@@ -581,14 +622,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     if (!plan) return;
     const shifts = plan.assignments[cellKey] ?? [];
     const before = shifts[Math.min(shiftIdx, Math.max(0, shifts.length - 1))] ?? [];
-    const added = ids.filter((id) => !before.includes(id));
     const removed = before.filter((id) => !ids.includes(id));
+    // 직접 넣어도 자동 고정하지 않는다 (사용자 지시 2026-10-18) — 빼면 그 오퍼의 고정만 푼다
     const kept = (roomPins[cellKey] ?? []).filter((pin) => !removed.includes(pinId(pin)));
-    const keptIds = new Set(kept.map(pinId));
-    // 직접 넣은 오퍼는 종전대로 **양조 고정**(문자열)으로 시작한다 — 조별로 좁히는 건 📌를 더 눌러서
-    const nextPins = { ...roomPins, [cellKey]: [...kept, ...added.filter((id) => !keptIds.has(id))] };
-    updateTeam(cellKey, shiftIdx, ids, undefined, nextPins);
-    if (added.length) askRepinOptimize(nextPins); // 직접 추가 = 자동 고정 — 빼기만 한 편집엔 안 띄운다
+    updateTeam(cellKey, shiftIdx, ids, undefined, { ...roomPins, [cellKey]: kept });
   };
   // 📌는 세 단계를 돈다 (제보 2026-09-12 "조별 고정이 가능하면 좋겠어요"):
   //   해제 → 양조 고정 → **이 조만** 고정 → 해제.
@@ -607,7 +644,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setRoomPinsState(pins);
     persist(ownedIds, plan, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, dormPins, pins);
     setDirty(true);
-    if (pinning) askRepinOptimize(pins);
+    // 재편성 여부는 고정할 때마다가 아니라 **방 창을 닫을 때 한 번** 묻는다 (사용자 지시 2026-10-18)
+    if (pinning) pinAskRef.current = true;
+  };
+  const closeRoom = () => {
+    openRoomAt(null);
+    if (pinAskRef.current && !sandboxRef.current) askRepinOptimize(roomPins);
+    pinAskRef.current = false;
   };
 
   // 이미 배치된 오퍼의 정예화 단계를 방 상세에서 바로 바꾼다 — 편성 자체는 그대로 두고
@@ -894,7 +937,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     if (prio === priority) return;
     setPriorityState(prio);
     persist(ownedIds, plan, eliteById, levelById, prio);
-    showToast(t("편성 설정을 저장했습니다 — 다음 자동편성부터 적용됩니다"));
+    showToast(sandboxRef.current ? t("임시 편성 중에만 바뀝니다 — '이 편성으로 적용'을 눌러야 저장됩니다") : t("편성 설정을 저장했습니다 — 다음 자동편성부터 적용됩니다"));
   };
   // 2축 구조 (사용자 확정 2026-07-28): 생산 축(무엇을 많이) × 운용 축(얼마나 오래) —
   // 저장은 결합 문자열 하나("gold" = 순금+효율, "gold+endless" = 순금+장기 지속)로 한다
@@ -1085,6 +1128,166 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
 
   // 편성 전체 비우기 — 모든 방을 빈 슬롯으로 되돌린다(수동 배치 시작점). 되돌릴 수 없어 확인을 받는다.
+  // 임시 편성 — 시작·끝내기·비우기. 비우기는 본 '편성 전체 비우기'와 달리 시설 레벨·육성 추천은 건드리지 않는다
+  const startSandbox = () => {
+    if (!plan || sandbox) return;
+    sandboxRef.current = true;
+    setSandbox({
+      plan, dormPins, roomPins, dirty, layout, levels, priority, customRooms, customProducts,
+      buckets: structuredClone(bucketsRef.current), basePlan, planDiff, investRecs, investHidden, trainingUse, recycleMode,
+    });
+    showToast(t("임시 편성 중 — 여기서 바꾼 편성은 저장되지 않습니다"));
+  };
+  const endSandbox = (apply: boolean) => {
+    const sb = sandbox;
+    if (!sb) return;
+    sandboxRef.current = false;
+    setSandbox(null);
+    if (apply) {
+      persist(ownedIds, plan, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, dormPins, roomPins);
+      try { localStorage.setItem(TRAINING_KEY, trainingUse ? "use" : "empty"); localStorage.setItem(RECYCLE_KEY, recycleMode); } catch { /* 무시 */ }
+      setDirty(true);
+      showToast(t("임시 편성을 적용했습니다"));
+    } else {
+      // 엔진 배치·레벨부터 되돌린 뒤 편성 — 편성은 그 배치 기준이다
+      bucketsRef.current = sb.buckets;
+      setLayoutPreset(sb.layout, sb.customRooms, sb.customProducts);
+      setLayoutState(sb.layout);
+      setCustomRooms(sb.customRooms);
+      setCustomProducts(sb.customProducts);
+      setEngineLevels(sb.levels);
+      setLevelsState(sb.levels);
+      setPriorityState(sb.priority);
+      setTrainingUseState(sb.trainingUse);
+      setRecycleModeState(sb.recycleMode);
+      setPlan(sb.plan);
+      setBasePlan(sb.basePlan);
+      setPlanDiff(sb.planDiff);
+      setInvestRecs(sb.investRecs);
+      setInvestHidden(sb.investHidden);
+      setDormPinsState(sb.dormPins);
+      setRoomPinsState(sb.roomPins);
+      setDirty(sb.dirty);
+      openRoomAt(null);
+    }
+  };
+  useLayoutEffect(() => {
+    if (!sandbox) { setSbBox(null); return; }
+    const measure = () => {
+      const sec = sectionRef.current;
+      // 버튼 줄만 덮는다 — 설정 줄은 임시 편성 중에도 바꿀 수 있게 보인다 (사용자 지시 2026-10-18)
+      const a = sec?.querySelector(".planner-buttons");
+      if (!sec || !a) return;
+      const sr = sec.getBoundingClientRect();
+      const ctl = (a.closest(".planner-controls") ?? a).getBoundingClientRect();
+      const top = a.getBoundingClientRect().top - sr.top;
+      setSbBox({ top, height: ctl.bottom - sr.top - top, left: ctl.left - sr.left, width: ctl.width });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [sandbox]);
+  // 총점 — 교대 시계는 떠 둔 값 대신 지금 편성으로 다시 잰다(planScore 가 shiftHours 없으면 재계산)
+  const sandboxScores = useMemo(() => {
+    if (!sandbox || !plan) return null;
+    const score = (p: Plan) => Math.round(planScore({ ...p, shiftHours: undefined }, effectiveOpById));
+    return { now: score(plan), base: sandbox.plan ? score(sandbox.plan) : 0 };
+  }, [sandbox, plan, effectiveOpById]);
+  // 적용은 저장된 편성을 덮어쓰니 한 번 묻는다 (사용자 지적 2026-10-18 "실수로 눌러 버렸다") — 그 창에서
+  // **적용 전 점검**도 같이 보여 준다(사용자 지시 같은 날 "최종 검증" → 버튼 대신 적용 확인 창에). 계산은 실시간이라
+  // 따로 돌릴 게 없고, 다 짜고 나서 놓치기 쉬운 것만 짚는다. 항목을 누르면 그 방 창으로 간다
+  const [applyCheck, setApplyCheck] = useState<{ text: string; key?: string; shift?: number }[] | null>(null);
+  const applySandbox = () => {
+    if (!plan) return;
+    const issues: { text: string; key?: string; shift?: number }[] = [];
+    const shiftName = (sh: number) => t(sh === 0 ? "A조" : "B조");
+    const teamOf = (key: string, sh: number) => { const cs = plan.assignments[key] ?? []; return cs[Math.min(sh, cs.length - 1)] ?? []; };
+    // ① 빈 자리 — 근무 방(생산·지원)만, 방마다 한 줄(A·B 합쳐). 훈련실·숙소는 비워 두는 운용이 흔해 뺀다.
+    //   중요도가 낮아 맨 뒤에 붙인다(아래 empties) — 거의 빈 편성이면 이 줄만 수십 개라 짝·순금 항목이 묻혔다
+    const empties: typeof issues = [];
+    for (const c of LAYOUT) {
+      if (c.room === "DORMITORY" || c.room === "TRAINING" || c.room === "RECYCLE") continue;
+      const slots = slotsFor(c.key);
+      const shifts = (plan.assignments[c.key]?.length ?? 1) < 2 ? 1 : SHIFT_COUNT;   // 조가 하나뿐인 방(가공소 등)
+      const parts: string[] = [];
+      let firstShift = -1;
+      for (let sh = 0; sh < shifts; sh += 1) {
+        const n = slots - teamOf(c.key, sh).length;
+        if (n <= 0) continue;
+        if (firstShift < 0) firstShift = sh;
+        parts.push(shifts > 1 ? `${shiftName(sh)} ${n}` : String(n));
+      }
+      if (parts.length) empties.push({ text: t("{room} — 빈 자리 {n}", { room: c.label, n: parts.join(" · ") }), key: c.key, shift: firstShift });
+    }
+    // ② 짝 없는 오퍼 — 토큰을 쓰는데 만드는 사람이 없음 / 기지 동반 조건이 꺼짐 (A조 기준)
+    const ledger = recountTokens(plan.assignments, effectiveOpById, flowsFromAssignments(plan.assignments, effectiveOpById));
+    const present = presentIdsFor(plan, 0);
+    const where = roomOfFor(plan, 0);
+    const cellAt = cellOfFor(plan, 0);
+    const seatedUsers = new Map<string, string[]>();
+    for (const c of LAYOUT) {
+      for (const id of teamOf(c.key, 0)) {
+        const op = effectiveOpById.get(id);
+        if (!op) continue;
+        for (const sk of activeSkills(op, c.room, c.product)) {
+          for (const u of sk.tokenUse) if (sk.convert?.from !== u.token) seatedUsers.set(u.token, [...(seatedUsers.get(u.token) ?? []), id]);
+          if (sk.basePartners?.length && sk.basePartnerBonus) {
+            const miss = sk.basePartners.filter((pid) => (sk.basePartnerDorm ? where.get(pid) !== "DORMITORY" : !present.has(pid)));
+            if (miss.length) issues.push({ text: t("{who} — {names} 없음 (조건 +{n}% 꺼짐)", { who: op.name, names: miss.map((pid) => effectiveOpById.get(pid)?.name ?? opById.get(pid)?.name ?? pid).join(", "), n: sk.basePartnerBonus }), key: c.key, shift: 0 });
+          }
+        }
+      }
+    }
+    for (const [token, ids] of seatedUsers) {
+      if ((ledger.tokenPoints[token] ?? 0) > 0) continue;
+      const names = [...new Set(ids)].map((id) => effectiveOpById.get(id)?.name ?? id);
+      issues.push({ text: t("{who} — {token} 만드는 오퍼 없음", { who: names.join(", "), token: josa(locale, tokenName(locale, token), "을", "를") }), key: cellAt.get(ids[0]), shift: 0 });
+    }
+    // ③ 순금 부족 — 하루 기준
+    const y = dailyYield(plan, effectiveOpById);
+    if (y.goldShort > 0.5) issues.push({ text: t("순금이 하루 {n}개 모자랍니다 (무역소 소비 > 제조소 생산)", { n: Math.round(y.goldShort) }) });
+    // ④ A·B조 양쪽 근무 — 교대 휴식이 없다 (고정으로 일부러 둔 경우도 있어 알리기만)
+    const both = new Set<string>();
+    const workA = new Set<string>();
+    for (const c of LAYOUT) if (c.room !== "DORMITORY") for (const id of teamOf(c.key, 0)) workA.add(id);
+    for (const c of LAYOUT) if (c.room !== "DORMITORY" && (plan.assignments[c.key]?.length ?? 1) > 1) for (const id of teamOf(c.key, 1)) if (workA.has(id)) both.add(id);
+    if (both.size) issues.push({ text: t("A·B조 모두 근무(교대 휴식 없음) — {names}", { names: [...both].map((id) => effectiveOpById.get(id)?.name ?? id).join(", ") }) });
+    setApplyCheck([...issues, ...empties]);
+  };
+  const applyCheckWindow = applyCheck && (
+    <ModalWindow label={t("임시 편성을 적용할까요?")} className="pl-apply-check" onClose={() => setApplyCheck(null)}>
+      <p className="pl-ac-lead">
+        {sandboxScores
+          ? t("저장된 편성을 지금 임시 편성으로 바꿉니다 (총점 {a} → {b}). 되돌릴 수 없어요.", { a: sandboxScores.base.toLocaleString(), b: sandboxScores.now.toLocaleString() })
+          : t("저장된 편성을 지금 임시 편성으로 바꿉니다. 되돌릴 수 없어요.")}
+      </p>
+      <h4 className="pl-ac-h">{applyCheck.length ? t("적용 전 점검 — 확인할 것 {n}", { n: applyCheck.length }) : t("적용 전 점검 — 이상 없음")}</h4>
+      {applyCheck.length > 0 && (
+        <ul className="pl-ac-list">
+          {applyCheck.map((it, i) => (
+            <li key={i}>
+              {it.key
+                ? <button type="button" onClick={() => { setApplyCheck(null); setActiveShift(it.shift ?? 0); openRoomAt(it.key!); }}>{it.text} <span aria-hidden>→</span></button>
+                : <span>{it.text}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="confirm-actions">
+        <button type="button" className="confirm-cancel" onClick={() => setApplyCheck(null)}>{t("취소")}</button>
+        <button type="button" className="confirm-ok" onClick={() => { setApplyCheck(null); endSandbox(true); }}>{t("적용")}</button>
+      </div>
+    </ModalWindow>
+  );
+  const clearSandbox = () => {
+    if (!plan) return;
+    const assignments: Record<string, string[][]> = Object.fromEntries(
+      Object.entries(plan.assignments).map(([key, shifts]) => [key, shifts.map(() => [])])
+    );
+    setPlan({ ...plan, assignments, tokenPoints: {}, factionCounts: plan.factionCounts.map(() => ({})) });
+    setRoomPinsState({});
+  };
+
   const clearAll = async () => {
     if (!plan) return;
     const ok = await confirm({
@@ -1142,12 +1345,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           if (Number.isFinite(char.level) && char.level >= 1) opLevels.push([op.id, Math.min(MAX_OP_LEVEL, Math.round(char.level))]);
         }
         const buckets = base.buckets && typeof base.buckets === "object" ? base.buckets : {};
-        // 직전 편성은 diffFrom 으로 남긴다 — 다시 짠 편성과 비교해 바뀐 방에 NEW (제안 5e1364b5 "내 정보 갱신 뒤 편성이 바뀌면 new 표시")
-        for (const k of Object.keys(buckets)) buckets[k] = { ...buckets[k], diffFrom: buckets[k].plan ?? buckets[k].diffFrom ?? null, plan: null, invest: null, investHidden: [], basePlan: null, planDiff: null };
-        saved = JSON.stringify({ ...base, owned, elite, opLevels, buckets, plan: null, invest: null, investHidden: [] });
+        // 편성은 **그대로 둔다** — 동기화했다고 다시 짜지 않는다. 자동편성은 사람이 버튼을 눌러야만 돈다
+        // (사용자 지시 2026-10-18 "임시 편성으로 적용한 게 로그인 동기화 뒤 들어가면 자동으로 바뀐다 — 막아라").
+        // 종전엔 편성을 비우고 들어올 때 새로 짜며 diffFrom 으로 NEW 를 달았다 (제안 5e1364b5). 육성 추천만 근거가 바뀌어 버린다
+        for (const k of Object.keys(buckets)) buckets[k] = { ...buckets[k], invest: null, investHidden: [] };
+        saved = JSON.stringify({ ...base, owned, elite, opLevels, buckets, invest: null, investHidden: [] });
         localStorage.setItem(STORAGE_KEY, saved);
         localStorage.setItem(ME_APPLIED_KEY, String(me.syncedAt));
-        showToast(t("내 정보의 계정 데이터로 보유 오퍼를 맞췄습니다 — {name} 박사 · 보유 {n}명", { name: me.player.nickName, n: owned.length }));
+        showToast(t("내 정보의 계정 데이터로 보유 오퍼를 맞췄습니다 — {name} 박사 · 보유 {n}명 · 편성은 그대로 두었습니다 ('전체 자동편성'을 눌러야 새로 짭니다)", { name: me.player.nickName, n: owned.length }));
       }
       if (saved) {
         const data = JSON.parse(saved);
@@ -1200,31 +1405,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           const savedPlan = sanitizePlan(bucket.plan);
           if (savedPlan) { setPlan(savedPlan); if (!data.priority && savedPlan.priority) setPriorityState(savedPlan.priority); return; }
         }
-        // 마운트 시점엔 미래시 토글이 아직 복원 전(false)일 수 있으므로 미실장은 제외하고
-        // 기본 편성을 만든다 — 미래시 포함 편성은 토글 후 자동편성 버튼으로 실행
-        // 만든 편성은 **저장해 둔다** — 안 그러면 들어올 때마다 새로 짜서, 보유가 그대로인데도 편성이 바뀐다
-        // ('내 정보' 동기화로 편성을 비운 뒤 매번 자동편성이 돌던 문제, 사용자 지적 2026-10-05).
-        // 이 시점의 상태값은 아직 복원 전이라 persist() 대신 저장분에 편성만 끼워 넣는다
-        // 버튼으로 돌릴 때와 같은 진행 토스트 — '내 정보' 동기화 뒤 들어오면 여기서 다시 짜는데, 문구가 없어
-        // 화면이 아무 반응 없이 멈춘 것처럼 보였다 (사용자 지적 2026-10-12)
-        setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
-        void optimizeOff({ owned: ids, elite, opLevels: restoreOpLevels(data.opLevels), includeFuture: false, priority: "gold", layout: savedLayout, levels: savedLevels, customRooms: savedCustom, customProducts: savedProducts },
-          (step: OptimizeStep) => { setOptimizing(stepMessage(step)); }).finally(() => setOptimizing(null)).then((made) => {
-          // 내 정보 동기화로 비운 편성이면 그 직전 편성과 비교해 NEW 를 단다
-          let d: PlanDiff | null = null;
-          if (bucket?.diffFrom) { try { d = diffPlans(sanitizePlan(bucket.diffFrom), made); } catch { d = null; } }
-          setPlan(made);
-          setPlanDiff(d);
-          syncBucket(savedLayout, { plan: made, planDiff: d, diffFrom: null });
-          if (d) {
-            const ops = Object.values(d).reduce((a, x) => a + x.add.reduce((b, y) => b + y.length, 0), 0);
-            showToast(t("내 정보 갱신으로 편성을 다시 짰습니다 · 전과 달라진 곳 {c}곳 · 새로 들어간 오퍼 {n}명", { c: Object.keys(d).length, n: ops }));
-          }
-          try {
-            const cur = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-            if (cur) localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...cur, plan: made, buckets: bucketsRef.current }));
-          } catch { /* 저장 못 하면 다음에 다시 짠다 */ }
-        });
+        // 저장된 편성이 없으면 **빈 편성**으로 연다 — 들어오자마자 자동으로 짜지 않는다 (사용자 지시 2026-10-18
+        // "자동편성은 반드시 사람이 손으로 클릭해야만"). 종전엔 여기서 optimizeOff 를 돌렸다
+        const empty = sanitizePlan({ priority: data.priority });
+        if (empty) setPlan(empty);
+        showToast(t("편성이 비어 있습니다 — '전체 자동편성'을 누르거나 방을 눌러 직접 배치하세요"));
         return;
       }
     } catch { /* fall through to defaults */ }
@@ -1645,8 +1830,27 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   }, [openCell, visibleOps, ownedIds]);
 
   return (
-    <section className="planner">
+    <section ref={sectionRef} className={`planner${sandbox ? " sandboxing" : ""}`}>
       {confirmDialog}
+      {applyCheckWindow}
+      {sandbox && (
+        <div className="pl-sandbox-bar" role="status" style={sbBox ? { top: sbBox.top, height: sbBox.height, left: sbBox.left, width: sbBox.width } : undefined}>
+          <span className="pl-sb-title"><b>{t("임시 편성 중")}</b><small>{t("저장되지 않습니다 — 방을 눌러 직접 배치해 보세요")}</small></span>
+          {sandboxScores && (
+            <span className="pl-sb-score" title={t("양 조 전 방의 편성 총점 (자동편성이 비교하는 값)")}>
+              {t("총점")} <b>{sandboxScores.now.toLocaleString()}</b>
+              <small>{t("원래 편성 {n}", { n: sandboxScores.base.toLocaleString() })}
+                {sandboxScores.now !== sandboxScores.base && <em className={sandboxScores.now > sandboxScores.base ? "up" : "down"}>{sandboxScores.now > sandboxScores.base ? "+" : ""}{(sandboxScores.now - sandboxScores.base).toLocaleString()}</em>}
+              </small>
+            </span>
+          )}
+          <span className="pl-sb-actions">
+            <button type="button" className="act-btn" onClick={clearSandbox}>{t("편성 비우기")}</button>
+            <button type="button" className="act-btn pl-sb-apply" onClick={applySandbox}>{t("이 편성으로 적용")}</button>
+            <button type="button" className="act-btn" onClick={() => endSandbox(false)}>{t("닫기")}</button>
+          </span>
+        </div>
+      )}
       {/* 헤더 재구성 (사용자 요청 2026-07-27): RIIC 문구는 기지 배치·우선 생산 행 밑으로
           내려보내고, 버튼 5개는 전폭 한 줄(오른쪽 정렬)로 — '그 외'가 밑줄로 밀리지 않게 */}
       <div className="planner-controls">
@@ -1667,6 +1871,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </span>
           </button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
+          {/* 금빛 테두리로 다른 보조 버튼보다 한 단 띄운다 — 켜면 뜨는 금색 띠와 같은 색 (사용자 지적 2026-10-18 "눈에 안 띈다") */}
+          <button className="pl-sandbox-btn" onClick={startSandbox} disabled={!plan} title={t("저장된 편성은 그대로 두고, 임시로 편성을 바꿔 보며 효율을 확인합니다")}><span className="btn-icon" aria-hidden>✎</span>{t("임시 편성 해보기")}<NewBadge id="infra-sandbox" show={isNewFeature("infra-sandbox")} /></button>
           <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
           {/* 자동편성 이후 손을 댔을 때만 뜬다 (사용자 요청 2026-09-11) */}
           {!!basePlan && changedCells > 0 && !tempApplied.size && (
@@ -1785,7 +1991,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           <NewBadge id="training-room" show={isNewFeature("training-room")} host=".prio-field" />
         </span>
         {/* 재활용소 우선도 — 미래시를 켰을 때만 (사용자 규칙 2026-10-09) */}
-        {recycleJob && (
+        {recycleJob && recycleLocked && (
+          <span className="prio-field" title={t("동기화한 계정이 중국 서버가 아니라 재활용소는 비워 둡니다 — 아직 그 서버에 없는 시설입니다")}>
+            <span className="prio-label">♻ {t("재활용소")}</span>
+            <span className="prio-locked">{t("비움 (중국 서버 계정만)")}</span>
+          </span>
+        )}
+        {recycleJob && !recycleLocked && (
           <span className="prio-field" title={t("중국 서버에 새로 생긴 재활용소를 얼마나 챙길지 — 다음 자동편성부터 적용됩니다")}>
             <span className="prio-label">♻ {t("재활용소")}</span>
             <Dropdown ariaLabel={t("재활용소")} selected={[recycleMode]}
@@ -2097,7 +2309,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           lockFuture={lockFuture}
           ownedIds={ownedIds}
           eliteById={eliteById}
-          onApply={(ids, elite, lv) => { setOwnedIds(ids); setEliteById(elite); setLevelById(lv); setShowRoster(false); runOptimize(ids, elite, priority, lv); setDirty(true); }}
+          onApply={(ids, elite, lv) => {
+            setOwnedIds(ids); setEliteById(elite); setLevelById(lv); setShowRoster(false); setDirty(true);
+            persist(ids, plan, elite, lv);
+            // 보유를 바꿔도 곧바로 재편성하지 않고 묻는다 — 자동편성은 사람이 눌러야만 (사용자 지시 2026-10-18)
+            askOptimize(t("보유 오퍼를 저장했습니다"), () => void runOptimize(ids, elite, priority, lv));
+          }}
           onClose={() => setShowRoster(false)}
           onShowOperator={onShowOperator}
           mode={rosterMode}
@@ -2147,7 +2364,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           roster={roster}
           opMap={effectiveOpById}
           initialShift={activeShift}
-          onClose={() => openRoomAt(null)}
+          onClose={closeRoom}
           canRevert={!!roomEditBase}
           onRevert={revertRoomEdits}
           onOpenRoom={(key, shift) => { setActiveShift(shift); openRoomAt(key); }}
@@ -2171,8 +2388,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             setEliteById(next);
             persist(ownedIds, plan, next);
             setDirty(true);
-            showToast(t("{name} 정예화를 올리고 자동편성을 다시 돌립니다", { name: opById.get(id)?.name ?? id }));
-            void runOptimize(ownedIds, next, priority, levelById);
+            askOptimize(t("{name} 정예화를 올렸습니다", { name: opById.get(id)?.name ?? id }), () => { openRoomAt(null); void runOptimize(ownedIds, next, priority, levelById); });
           }}
           onOpenRoster={() => { openRoomAt(null); startTransition(() => { setRosterMode("import"); setShowRoster(true); }); }}
           tempIds={new Set(tempApplied.keys())}
@@ -2491,6 +2707,15 @@ function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose }:
   );
 }
 
+// 한국어 조사 — 받침에 따라 '은/는'·'이/가'·'을/를'을 붙인다. 한글로 안 끝나면 '이(가)'처럼 둘 다 적는다.
+// 다른 언어는 이름만 돌려준다 (EN/JA 문장은 조사가 없다) — 짝 추천 안내용 (2026-10-18)
+function josa(locale: string, word: string, withB: string, withoutB: string): string {
+  if (locale !== "ko") return word;
+  const c = word.charCodeAt(word.length - 1);
+  if (c < 0xac00 || c > 0xd7a3) return `${word}${withB}(${withoutB})`;
+  return word + ((c - 0xac00) % 28 !== 0 ? withB : withoutB);
+}
+
 function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, canRevert, onRevert, onOpenRoom, onShowOperator, onUpdateTeam, eliteById, onSetElite, onUnlockElite, blocked, unowned, onOpenRoster, tempIds, onRevertTempOne, onSetLevel, pins, onTogglePin, diff }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; /** 이 창을 연 뒤 편성을 바꿨는가 — 창 안 되돌리기 버튼 표시 */ canRevert?: boolean; onRevert?: () => void; onOpenRoom?: (key: string, shift: number) => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; /** 잠긴 스킬 열기 — 정예화를 올리고 자동편성까지 다시 돌린다 */ onUnlockElite?: (id: string, elite: Elite) => void; /** 보유했지만 이 방 스킬이 정예화·레벨로 잠긴 오퍼 → 필요 조건 */ blocked: Map<string, string>; /** 이 방 스킬이 있는데 아직 보유로 안 켠 오퍼 */ unowned: InfraOp[]; onOpenRoster?: () => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; pins?: RoomPin[]; onTogglePin?: (opId: string, shiftIdx?: number) => void; /** 직전 편성 ↔ 자동편성 결과 차이 (제안 5e1364b5) */ diff?: { add: string[][]; drop: string[][] } | null }) {
   const { locale, t } = useI18n();
   const [shift, setShift] = useState(initialShift);
@@ -2581,13 +2806,56 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     }
     return map;
   }, [cell.room, roster]);
+  // 토큰 짝 (사용자 요청 2026-10-18 "마르실을 넣으면 숙소에 센시를 추천") — 지금 편성에서 쓰는 사람만 있고 만드는 사람이
+  // 없는 토큰(또는 그 반대)의 짝 후보. 이 방에 앉아야 하는 짝은 후보 목록 맨 앞으로, 다른 방 짝은 위쪽 안내 줄로
+  const partners = useMemo(() => tokenPartners(plan.assignments, opMap, roster), [plan, opMap, roster]);
+  const partnerHere = (id: string) => partners.get(id)?.find((p) => p.room === cell.room);
   const benchFull = team.length < slots && onUpdateTeam
     ? roster
         .filter((op) => !allAssigned.has(op.id))
-        .map((op) => ({ op, delta: Math.round(teamScore([...team, op], cell.room, ctx)) - currentScore }))
+        // delta = 넣었을 때 **방 효율이 오르는 몫**(동료 스킬과의 상호작용 포함), own = 그 오퍼 **본인 스킬** 몫 —
+        // 둘이 다르면 칩에 둘 다 적는다 (사용자 지적 2026-10-18 "마르실 기본 30인데 왜 +35") 
+        .map((op) => ({ op, delta: Math.round(teamScore([...team, op], cell.room, ctx)) - currentScore,
+          own: Math.round(breakdown(op, cell.room, [...team, op], ctx).efficiency) }))
         .sort((a, b) => (enablerFor.has(b.op.id) ? 1 : 0) - (enablerFor.has(a.op.id) ? 1 : 0)
+          || (partnerHere(b.op.id) ? 1 : 0) - (partnerHere(a.op.id) ? 1 : 0)
           || b.delta - a.delta || b.op.rarity - a.op.rarity)
     : [];
+  // 이 방 사람과 짝인데 **다른 방**에 앉아야 하는 후보 — 토큰·방별로 묶어 안내한다 (넣는 순간 이 줄이 생긴다)
+  const partnerHints = useMemo(() => {
+    const groups = new Map<string, { token: string; room: string; role: "gen" | "use"; who: string[]; names: string[] }>();
+    for (const [id, list] of partners) {
+      const op = opMap.get(id);
+      if (!op) continue;
+      for (const p of list) {
+        if (p.room === cell.room) continue;
+        const mine = p.withIds.filter((w) => teamIds.has(w));
+        if (!mine.length) continue;
+        const k = `${p.role}|${p.token}|${p.room}`;
+        const g = groups.get(k) ?? { token: p.token, room: p.room, role: p.role, who: mine.map((w) => opMap.get(w)?.name ?? w), names: [] };
+        g.names.push(op.name);
+        groups.set(k, g);
+      }
+    }
+    return [...groups.values()];
+  }, [partners, opMap, cell.room, rawIds.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 기지 동반 조건(언더플로우 ← 울피아누스처럼 "기지 어디든 있으면 +N%")이 꺼져 있으면 그 동료를 안내한다 —
+  // 토큰이 아니라 짝 찾기에 안 걸렸다 (사용자 지적 2026-10-18 "언더플로우는 왜 울피아누스 추천 안 해 줘")
+  const baseHints = useMemo(() => {
+    const present = presentIdsFor(plan, shiftIndex);
+    const owned = new Set(roster.map((op) => op.id));
+    const out: { who: string; names: string[]; bonus: number; dorm: boolean }[] = [];
+    for (const op of team) {
+      for (const sk of activeSkills(op, cell.room, cell.product)) {
+        if (!sk.basePartners?.length || !sk.basePartnerBonus) continue;
+        const missing = sk.basePartners.filter((id) => (sk.basePartnerDorm ? roomOf.get(id) !== "DORMITORY" : !present.has(id)));
+        if (!missing.length) continue;
+        const names = missing.map((id) => (opMap.get(id)?.name ?? id) + (owned.has(id) ? "" : ` (${t("미보유")})`));
+        out.push({ who: op.name, names, bonus: sk.basePartnerBonus, dorm: !!sk.basePartnerDorm });
+      }
+    }
+    return out;
+  }, [plan, shiftIndex, roster, rawIds.join(","), cell.room]); // eslint-disable-line react-hooks/exhaustive-deps
   const benchKeyword = normSearch(benchTerm);
   const benchFiltered = benchKeyword
     ? benchFull.filter(({ op }) => normSearch(op.name).includes(benchKeyword) || normSearch(op.faction).includes(benchKeyword))
@@ -2781,7 +3049,9 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
         .filter((partner): partner is InfraOp => Boolean(partner))
         .map((partner) => ({ op: partner, on: presentNow.has(partner.id) }));
       if (chips.length) rels.push({
-        note: t("{name}이(가) 기지 어디든(숙소 포함) 있으면 추가 +{v}%", { name: chips.map((c) => c.op.name).join(", "), v: skill.basePartnerBonus }),
+        note: skill.basePartnerDorm
+          ? t("{name}이(가) 숙소에 있으면 추가 +{v}%", { name: chips.map((c) => c.op.name).join(", "), v: skill.basePartnerBonus })
+          : t("{name}이(가) 기지 어디든(숙소 포함) 있으면 추가 +{v}%", { name: chips.map((c) => c.op.name).join(", "), v: skill.basePartnerBonus }),
         chips,
       });
     }
@@ -3026,7 +3296,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
             {/* 배치 방법 안내는 방 카드가 아니라 여기(숙소 상세) 몫이다 — 카드는 다른 시설과
                 똑같이 표시 전용 (사용자 요청 2026-07-28) */}
             {cell.room === "DORMITORY" && onTogglePin && (
-              <p className="dorm-note">{rich(t("**숙소 인원은 여기서 직접 넣고 뺍니다** — 아래 후보를 누르면 즉시 배치되고, 이렇게 직접 넣은 오퍼는 **📌 고정**되어 자동편성이 그대로 둡니다 (울피아누스를 숙소에 고정해 언더플로우 +10%를 켜는 식). 카드의 📌를 눌러 고정을 걸거나 풀 수 있고, ✕로 빼면 고정도 함께 풀립니다."))}</p>
+              <p className="dorm-note">{rich(t("**숙소 인원은 여기서 직접 넣고 뺍니다** — 아래 후보를 누르면 즉시 배치됩니다. 다음 자동편성에서도 그대로 두려면 카드의 **📌**를 눌러 고정하세요 (울피아누스를 숙소에 고정해 언더플로우 +10%를 켜는 식). ✕로 빼면 고정도 함께 풀립니다."))}</p>
             )}
             {/* 생산방 고정 안내 — 숙소와 상호작용은 같지만 계약이 다르다: 고정 = A·B 양조 근무
                 (교대 휴식 없음). 고정된 오퍼가 실제로 있을 때만 띄워 평소 모달을 어지럽히지 않는다 */}
@@ -3203,19 +3473,53 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
             </div>
             {/* 자리가 꽉 차도 검색칸은 남긴다 — "왜 이 오퍼가 여기 없나"를 물어볼 곳이
                 여기뿐인데, 종전엔 빈 자리가 있을 때만 이 블록이 떴다 (제보 2026-08-24). */}
+            {(partnerHints.length > 0 || baseHints.length > 0) && (
+              <div className="room-partner-hint">
+                {baseHints.map((h) => {
+                  const dorm = LAYOUT.find((c) => c.room === "DORMITORY");
+                  return (
+                    <p key={`base${h.who}`}>
+                      <span aria-hidden>💡 </span>
+                      {h.dorm
+                        ? t("{who} {names} 숙소에 있으면 효율 +{n}% — 숙소에 넣어야 합니다", { who: josa(locale, h.who, "은", "는"), names: josa(locale, h.names.join(", "), "이", "가"), n: h.bonus })
+                        : t("{who} {names} 기지 어디든 있으면 효율 +{n}% — 숙소에 넣어 두면 근무 자리를 쓰지 않습니다", { who: josa(locale, h.who, "은", "는"), names: josa(locale, h.names.join(", "), "이", "가"), n: h.bonus })}
+                      {dorm && onOpenRoom && cell.room !== "DORMITORY" && (
+                        <button type="button" className="room-partner-go" onClick={() => onOpenRoom(dorm.key, shift)}>{t("{room} 열기 →", { room: t(infra.rooms.DORMITORY?.name ?? "숙소") })}</button>
+                      )}
+                    </p>
+                  );
+                })}
+                {partnerHints.map((h) => {
+                  const go = LAYOUT.find((c) => c.room === h.room);
+                  return (
+                    <p key={`${h.role}${h.token}${h.room}`}>
+                      <span aria-hidden>💡 </span>
+                      {h.role === "gen"
+                        ? t("{who} 쓰는 {token} 만드는 오퍼가 기지에 없습니다 — {names} {room}에 넣으면 같이 효과가 납니다", { who: josa(locale, h.who.join("·"), "이", "가"), token: josa(locale, tokenName(locale, h.token), "을", "를"), names: josa(locale, h.names.slice(0, 4).join(", "), "을", "를"), room: t(infra.rooms[h.room]?.name ?? h.room) })
+                        : t("{who} 만드는 {token} 받는 오퍼가 기지에 없습니다 — {names} {room}에 넣으면 같이 효과가 납니다", { who: josa(locale, h.who.join("·"), "이", "가"), token: josa(locale, tokenName(locale, h.token), "을", "를"), names: josa(locale, h.names.slice(0, 4).join(", "), "을", "를"), room: t(infra.rooms[h.room]?.name ?? h.room) })}
+                      {go && onOpenRoom && (
+                        <button type="button" className="room-partner-go" onClick={() => onOpenRoom(go.key, shift)}>{t("{room} 열기 →", { room: t(infra.rooms[h.room]?.name ?? h.room) })}</button>
+                      )}
+                    </p>
+                  );
+                })}
+              </div>
+            )}
             {(benchFull.length > 0 || (!!onUpdateTeam && slots > 0)) && (
               <div className="bench">
                 <span>{benchFull.length === 0
                   ? t("자리가 다 찼습니다 — 이름을 검색하면 그 오퍼가 지금 어디 있는지, 왜 여기 못 쓰는지 알려 줍니다:")
                   : cell.room === "DORMITORY"
-                  ? t("빈 자리에 추가 — 클릭 시 즉시 배치·고정 (다른 방의 조건을 켜 주는 오퍼가 맨 앞):")
-                  : t("빈 자리에 추가 — 클릭 시 즉시 배치·📌 고정 (기여 예상):")}</span>
+                  ? t("빈 자리에 추가 — 클릭 시 즉시 배치 (다른 방의 조건을 켜 주는 오퍼·토큰 짝이 맨 앞):")
+                  : t("빈 자리에 추가 — 클릭 시 즉시 배치 (토큰 짝이 맨 앞, 숫자는 기여 예상):")}</span>
                 <input className="bench-search" {...benchProps} placeholder={t("이름·소속으로 후보 검색")} />
                 {bench.length > 0 ? (
                   <div className="bench-chips">
-                    {bench.map(({ op, delta }) => {
+                    {bench.map(({ op, delta, own }) => {
                       // 숙소는 자체 산출이 없어 기여가 전부 0 — 대신 "누구의 조건을 켜 주는지"를 보여준다
                       const wakes = enablerFor.get(op.id);
+                      const pair = partnerHere(op.id);
+                      const pairWith = pair ? pair.withIds.map((w) => opMap.get(w)?.name ?? w).slice(0, 2).join("·") : "";
                       // 자동편성 제외 명단(케이퍼·인포서)은 후보로만 뜬다 — 직접 넣는 건 자유 (2026-07-28)
                       const manualOnly = AUTO_BENCH_IDS.has(op.id);
                       // 이 방 스킬이 정예화·레벨로 잠긴 오퍼 — 기여가 +0으로만 떠서 "왜 쓸모가
@@ -3224,12 +3528,16 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                       const need = blocked.get(op.id);
                       const needElite = need ? ELITE_NEED[need] : undefined;
                       return (
-                        <small key={op.id} className={`sub-chip swappable${wakes ? " enabler" : ""}${manualOnly ? " manual-only" : ""}${need ? " locked" : ""}`}
+                        <small key={op.id} className={`sub-chip swappable${wakes ? " enabler" : ""}${pair ? " partner" : ""}${manualOnly ? " manual-only" : ""}${need ? " locked" : ""}`}
                           title={need
                             ? t("{name}의 이 시설 스킬은 {need}부터 열립니다 — 지금 배치해도 효과가 없습니다", { name: op.name, need: t(need) })
                             : manualOnly
                             ? t("자동편성 제외 — 조건을 많이 타고 컨디션 소모가 커서 자동으로는 배치하지 않습니다. 직접 넣는 건 가능합니다")
-                            : wakes ? t("{name}의 조건을 켭니다 (기지 어디든 있으면 발동)", { name: wakes }) : t("{name} 추가", { name: op.name })}
+                            : wakes ? t("{name}의 조건을 켭니다 (기지 어디든 있으면 발동)", { name: wakes })
+                            : pair ? (pair.role === "gen"
+                              ? t("{with} 쓰는 {token} 만듭니다 — 짝", { with: josa(locale, pairWith, "이", "가"), token: josa(locale, tokenName(locale, pair.token), "을", "를") })
+                              : t("{with} 만드는 {token} 받습니다 — 짝", { with: josa(locale, pairWith, "이", "가"), token: josa(locale, tokenName(locale, pair.token), "을", "를") }))
+                            : t("{name} 추가", { name: op.name })}
                           onClick={() => setIds([...rawIds, op.id])}>
                           <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name}{" "}
                           {need ? (
@@ -3241,7 +3549,9 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                                 </button>
                               : <em className="need">{t("{need} 필요", { need: t(need) })}</em>
                           ) : (
-                            <em>{manualOnly ? t("수동 전용") : wakes ? t("{name} 조건", { name: wakes }) : delta >= 0 ? `+${delta}` : delta}</em>
+                            <em>{manualOnly ? t("수동 전용") : wakes ? t("{name} 조건", { name: wakes }) : pair ? t("짝 · {name}", { name: pairWith })
+                              : own !== delta && own !== 0 ? t("{d} (본인 {o})", { d: delta >= 0 ? `+${delta}` : String(delta), o: own >= 0 ? `+${own}` : String(own) })
+                              : delta >= 0 ? `+${delta}` : delta}</em>
                           )}
                         </small>
                       );
@@ -3922,7 +4232,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "숙소·시너지 고정 요원(숙소 생성원, 니엔 등)은 A/B 전환과 무관하게 고정됩니다. 응접실도 A/B 교대로 운영합니다 — 같은 인원을 24시간 돌리지 않습니다.",
     "가공소는 상시 슬롯이라 A조 한 팀(니엔 고정)만 편성하고 B조 칸은 비워 둡니다 — 회복 교대에 가공 요원을 따로 두지 않습니다.",
     "훈련실 정원 2는 트레이너석 1 + 훈련대상석 1이라, 플래너가 쓰는 근무석은 1석입니다. 그 1석도 실제 스킬 특화 훈련에 쓰도록 비워 둡니다 — 훈련 속도는 자원 생산과 단위가 달라 총점에 넣지 않으니 남는 인원으로 채우면 공짜처럼 보이지만, 훈련실도 시설로 세는 방이라 잉여 오퍼를 앉히면 총웨의 '쉐이 1명당 화식 +5(최대 5명)' 같은 카운터가 엉뚱하게 차 버립니다. 비움이 절대 규칙은 아닙니다 — 다른 오퍼의 조건이 훈련실 배치로만 충족될 때(외드레르의 W가 앉을 작업 시설이 훈련실밖에 안 남은 경우)는 그쪽 이득이 실제로 더 클 때만 배치합니다.",
-    "숙소도 방을 눌러 직접 편성할 수 있습니다 — 직접 넣은 오퍼는 📌로 고정되어 전체 자동편성이 그대로 둡니다(카드의 📌로 잠그거나 풀고, ✕로 빼면 고정도 풀립니다). 울피아누스를 숙소에 고정해 두면 다음 자동편성이 언더플로우(+10%)를 자연히 뽑아 갑니다. 고정 인원은 근무 방 후보에서 빠지므로 이중 배치되지 않습니다.",
+    "숙소도 방을 눌러 직접 편성할 수 있습니다 — 넣은 오퍼를 전체 자동편성에서도 그대로 두려면 카드의 📌로 고정하세요(✕로 빼면 고정도 풀립니다). 울피아누스를 숙소에 고정해 두면 다음 자동편성이 언더플로우(+10%)를 자연히 뽑아 갑니다. 고정 인원은 근무 방 후보에서 빠지므로 이중 배치되지 않습니다.",
     "숙소 고정 인원(생성원·주차)은 한 방에 몰지 않고 숙소마다 나눠 앉힙니다 — 숙소 회복은 계열별로 가장 높은 수치 하나만 적용되고, '전원 회복'은 그 방에서 쉬는 인원 수만큼 값이 붙기 때문입니다. 다만 아이리스·체르니·센시는 자기 숙소 레벨로 토큰을 만들므로 레벨이 가장 높은 숙소를 먼저 씁니다.",
     "생산방(무역소·제조소·발전소 등)도 같은 방식으로 오퍼를 📌 고정할 수 있습니다 — 다만 근무 방 고정은 A조·B조 양쪽에 같은 자리로 들어가 교대 휴식이 없어지므로, 컨디션(지속시간) 관리는 피아메타 등으로 직접 해야 합니다 (프로바이조를 무역소에, 미즈키를 제조소에 상주시키는 운용). 고정 오퍼는 다른 방·숙소 후보에서 빠져 이중 배치되지 않습니다.",
     "'짝이 기반시설(숙소 포함) 어디에든 있으면 +N%'인 조건(언더플로우←울피아누스, Bellone←비질, 산크타 믹사파라토←피아메타)은 짝이 일하지 않아도 성립합니다. 그래서 자동편성은 노는 짝을 빈 숙소에 '주차'해 조건을 켜는 안을 따로 만들어 보고, 기지 총점이 실제로 오를 때만 채택합니다 — 보유 오퍼가 두터워 대체 후보가 많으면 주차가 부른 재편성이 오히려 손해라 채택하지 않습니다.",
