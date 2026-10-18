@@ -7,9 +7,9 @@
 // 번역을 오버레이한 것으로 rogue_6과 같은 병기 표기. 블랙플로우는 KR 미출시라 KR 탭 비활성.
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
 import { NewBadge } from "./new-badge";
-import { Fragment, lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, lazy, startTransition, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { TOPICS, slugOf, roguePath } from "./rogue-topics";
-import { EndingStoryModal, RecordModal } from "./rogue-record";
+import { BossChip, EndingStoryModal, EndingWindow, RecordModal, endingBosses } from "./rogue-record";
 import rogue1Data from "./data/rogue1.json";
 // 노드 종류 아이콘 보유 목록 — 이미지 자체는 R2에만 있고 커밋되지 않는다(.gitignore
 // /public/rogue/node/). 어느 (테마,타입) 조합에 아이콘이 있는지는 이 목록으로만 안다.
@@ -125,9 +125,18 @@ type EncSceneChoice = { title?: string; desc?: string | null; cn?: string; cnTit
 type EncScene = { desc?: string | null; cn?: string; choices: EncSceneChoice[] };
 // nodes = 이 이벤트가 나오는 노드 — m: g 계원(기본 지도) · s 쉐이의 잔식(정사각형 지도), k: 노드 키 (쉐이만, build-rogue.py)
 type Encounter = { nodes?: { m: "g" | "s"; k: string }[]; scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string; battles?: string[]; battlesRandom?: 1; scenes?: EncScene[] };
+// 바깥 성장 트리 (역사의 재구성·문화 비교·고금학식 …) — build-rogue.py extract_growth (2026-10-18)
+type GrowthNode = {
+  id: string; name: string; type: string; row: number | null; col: number | null; cost: number; desc: string[];
+  icon: string | null; iconOff?: string | null; group?: string; front: string[]; next: string[];
+  effects: { key: string; num: number; form: string; label: string }[]; grade?: number; gradeDesc?: string; tag?: string; pos?: [number, number];
+};
+type Growth = { name: string | null; currency: string | null; nodes: GrowthNode[]; tokens: Record<string, { label: string; form: string; sort: number }>; totalCost: number; note?: string };
+
 type RogueData = {
   id: string; name: string; line: string | null; cnName?: string; future?: boolean; server?: string;
   zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null; func?: string | null; cn?: string }[];
+  growth?: Growth;
   // 쉐이의 잔식(정사각형 지도) 노드 — 계원 노드(nodeTypes)와 따로 (쉐이만, 2026-10-02)
   skyNodes?: { id: string; name: string; desc: string | null; cn?: string; icon?: string; clr?: string; sel?: string; subs?: string[] }[];
   difficulties: Difficulty[]; stages: Stage[]; enemies: Record<string, Enemy>;
@@ -445,12 +454,14 @@ function diffClauses(rule: string, locale: string): string[] {
   let cur = "", depth = 0, sq = false;
   for (const ch of rule) {
     if (ch === "'") sq = !sq;
-    else if ("‘“「『【(（".includes(ch)) depth++;
-    else if ("’”」』】)）".includes(ch)) depth = Math.max(0, depth - 1);
+    else if ("‘“「『【(（〈《<".includes(ch)) depth++;   // 〈시대의 가시〉, 〈흐느낌의 가시〉 처럼 이름을 감싼 괄호 안 쉼표도 안 끊는다
+    else if ("’”」』】)）〉》>".includes(ch)) depth = Math.max(0, depth - 1);
     // 한국어는 쉼표, 일본어는 구점(。)이 규칙 사이 구분 — 일본어 、는 문장 안 쉼표다. 앞 조각이 짧으면('모든 정예, 리더 적')
     // 이름을 나열한 쉼표라 이어 붙인다
     const cut = locale === "ja" ? ch === "。" : ch === "," || ch === "，";
-    if (cut && depth === 0 && !sq && cur.trim().length >= 8) { out.push(cur.trim()); cur = ""; continue; }
+    // 이름 나열(〈시대의 가시〉, 〈흐느낌의 가시〉 최대 HP …)은 쉼표 앞이 닫는 괄호로 끝난다 — 끊지 않는다
+    const listed = /[〉》>」』'’"”]$/.test(cur.trim());
+    if (cut && depth === 0 && !sq && !listed && cur.trim().length >= 8) { out.push(cur.trim()); cur = ""; continue; }
     cur += ch;
   }
   if (cur.trim()) out.push(cur.trim());
@@ -948,6 +959,125 @@ function EncounterModal({ enc, onClose, link, battles, onOpenStage, inline }: {
 
 // ── 아이템 상세 모달 — 소장품·부품·사고·주화 공용 (부품·자원도 소장품처럼 상세를 연다,
 // 피드백 반영 2026-07-24). owned/onToggleOwn이 오면 보유 리스트 토글 버튼을 붙인다.
+// ── 바깥 성장 트리 (사용자 요청 2026-10-18 "록라에 역사의 재구성 같은 거 데이터 다 있는데 넣어 줘") ──
+// 노드를 줄(row)마다 가운데 정렬로 놓고, 선행→다음 연결선은 화면 배치를 재서 SVG 로 긋는다.
+// 미즈키(rogue_2)는 좌표가 극좌표(pos = [각도, 반지름])라 반지름 순으로 줄을 세운다.
+// 난이도 노드(DIFFICULTY)는 '난이도 N 이상'일 때만 켜진 것으로 그린다 — 위쪽 난이도 슬라이더를 따른다.
+// 맨 위 합계 = 전부 찍었을 때의 효과 합 (난이도 노드는 지금 난이도에서 켜진 것만)
+function GrowthTree({ g, topic, grade }: { g: Growth; topic: string; grade: number }) {
+  const { t } = useI18n();
+  // 내 진행 — 내 정보 계정의 rlv2.outer[테마].buff (찍은 노드·포인트, 사용자 요청 2026-10-18). 없으면 트리만 보인다
+  const buff = useMe()?.profile?.rogue?.[topic]?.buff ?? null;
+  const mine = useMemo(() => (buff?.unlocked ? new Set(Object.keys(buff.unlocked)) : null), [buff]);
+  const rows = useMemo(() => {
+    const rowOf = new Map<string, number>();
+    const radii = [...new Set(g.nodes.map((n) => n.pos?.[1]).filter((r): r is number => typeof r === "number"))].sort((a, b) => a - b);
+    for (const n of g.nodes) rowOf.set(n.id, n.row ?? (n.pos ? radii.indexOf(n.pos[1]) + 1 : 0));
+    const byRow = new Map<number, GrowthNode[]>();
+    for (const n of g.nodes) {
+      const r = rowOf.get(n.id) ?? 0;
+      byRow.set(r, [...(byRow.get(r) ?? []), n]);
+    }
+    return [...byRow.entries()].sort((a, b) => a[0] - b[0]).map(([, list]) =>
+      list.sort((a, b) => (a.col ?? (a.pos ? -a.pos[0] : 0)) - (b.col ?? (b.pos ? -b.pos[0] : 0))));
+  }, [g]);
+  const gradeOk = (n: GrowthNode) => n.type !== "DIFFICULTY" || (n.grade ?? 0) <= grade;
+  // 켜짐 = 난이도 조건을 넘고, 내 진행이 있으면 내가 찍은 노드
+  const live = (n: GrowthNode) => gradeOk(n) && (!mine || mine.has(n.id));
+  const sumOf = (pick: (n: GrowthNode) => boolean) => {
+    const sum = new Map<string, number>();
+    for (const n of g.nodes) if (pick(n)) for (const e of n.effects) sum.set(e.key, (sum.get(e.key) ?? 0) + e.num);
+    return [...sum.entries()].map(([key, num]) => ({ key, num, tok: g.tokens[key] }))
+      .sort((a, b) => (a.tok?.sort ?? 99) - (b.tok?.sort ?? 99));
+  };
+  const totals = useMemo(() => sumOf(gradeOk), [g, grade]); // eslint-disable-line react-hooks/exhaustive-deps
+  const myTotals = useMemo(() => (mine ? sumOf(live) : null), [g, grade, mine]); // eslint-disable-line react-hooks/exhaustive-deps
+  const myCount = mine ? g.nodes.filter((n) => mine.has(n.id)).length : 0;
+  // 연결선 — 노드 칸의 화면 위치를 재서 선행 아래쪽 가운데 → 다음 위쪽 가운데
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [lines, setLines] = useState<{ x1: number; y1: number; x2: number; y2: number; on: boolean }[]>([]);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    if (!box) return;
+    const measure = () => {
+      const br = box.getBoundingClientRect();
+      const at = new Map<string, DOMRect>();
+      box.querySelectorAll<HTMLElement>("[data-gid]").forEach((el) => at.set(el.dataset.gid!, el.getBoundingClientRect()));
+      const out: typeof lines = [];
+      const byId = new Map(g.nodes.map((n) => [n.id, n]));
+      for (const n of g.nodes) {
+        const a = at.get(n.id);
+        if (!a) continue;
+        for (const nx of n.next) {
+          const b = at.get(nx);
+          if (!b) continue;
+          const m = byId.get(nx);
+          out.push({ x1: a.left + a.width / 2 - br.left, y1: a.bottom - br.top, x2: b.left + b.width / 2 - br.left, y2: b.top - br.top, on: live(n) && !!m && live(m) });
+        }
+      }
+      setLines(out);
+      setSize({ w: br.width, h: br.height });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [g, grade]); // eslint-disable-line react-hooks/exhaustive-deps
+  const icon = (id: string | null | undefined) => (id ? asset(`/rogue/growth/${topic}/${id}.webp`) : null);
+  return (
+    <div className="rg-growth">
+      <div className="rg-growth-head">
+        <p className="rg-zone-desc">{t("테마 밖에서 포인트를 모아 찍는 영구 성장 트리입니다. 모든 노드를 찍는 데 필요한 포인트는 {n}입니다.", { n: g.totalCost.toLocaleString() })}</p>
+        {g.note && <p className="rg-zone-desc rg-growth-note">{g.note}</p>}
+        {mine && (
+          <div className="rg-growth-sum mine">
+            <b>{t("내 진행 — 노드 {a}/{b} · 포인트 {c}/{d}", { a: myCount, b: g.nodes.length, c: buff?.pointCost ?? 0, d: buff?.pointOwned ?? 0 })}</b>
+            {myTotals?.map((x) => <span key={x.key}>{x.tok?.label ?? x.key} <em>+{Math.round(x.num * 100) / 100}{x.tok?.form === "PERCENTAGE" ? "%" : ""}</em></span>)}
+          </div>
+        )}
+        {totals.length > 0 && (
+          <div className="rg-growth-sum">
+            <b>{t("전부 찍으면")}</b>
+            {totals.map((x) => <span key={x.key}>{x.tok?.label ?? x.key} <em>+{Math.round(x.num * 100) / 100}{x.tok?.form === "PERCENTAGE" ? "%" : ""}</em></span>)}
+          </div>
+        )}
+      </div>
+      <div className="rg-growth-tree" ref={boxRef}>
+        <svg className="rg-growth-lines" width={size.w} height={size.h} aria-hidden>
+          {lines.map((l, i) => {
+            const my = (l.y1 + l.y2) / 2;
+            return <path key={i} className={l.on ? "on" : "off"} d={`M${l.x1},${l.y1} C${l.x1},${my} ${l.x2},${my} ${l.x2},${l.y2}`} />;
+          })}
+        </svg>
+        {rows.map((row, ri) => (
+          <div key={ri} className="rg-growth-row">
+            {row.map((n) => {
+              const on = live(n);
+              const src = icon(on ? n.icon : (n.iconOff ?? n.icon));
+              return (
+                <article key={n.id} data-gid={n.id} className={`rg-gnode t-${n.type.toLowerCase()}${on ? "" : " off"}${mine?.has(n.id) ? " mine" : ""}`}
+                  title={n.desc.join("\n")}>
+                  <header>
+                    {src && <img src={src} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    <b>{n.name}</b>
+                    {n.cost > 0 && <em className="rg-gcost">{n.cost}</em>}
+                  </header>
+                  <ul>{n.desc.map((d, i) => <li key={i}>{hiNums(d)}</li>)}</ul>
+                  {mine && !mine.has(n.id) && <small className="rg-ggrade notmine">{t("아직 안 찍음")}</small>}
+                  {n.type === "DIFFICULTY" && (
+                    <small className="rg-ggrade">{on ? t("난이도 {n} 이상 — 적용 중", { n: n.grade ?? 0 }) : t("난이도 {n} 이상에서 적용", { n: n.grade ?? 0 })}</small>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function RelicModal({ relic, owned, onToggleOwn, onClose }: {
   relic: InvItem; owned?: boolean; onToggleOwn?: () => void; onClose: () => void;
 }) {
@@ -1485,7 +1615,8 @@ export default function RogueGuide({ initialTopic }: {
        // 부표는 노드가 아니라 격자 지도 위 이벤트 마커 — 전시관으로 이동 (사용자 확정 2026-07-18)
        ...((data.buoys?.length ?? 0) > 0 ? [["buoy", "지도 마커 (부표)"] as [string, string]] : []),
        ...visitorTab]
-    : [...(hasVariations && HALLU_LABEL[topic] ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
+    : [...(data.growth?.nodes.length ? [["growth", data.growth.name ?? "성장 트리"] as [string, string]] : []),
+       ...(hasVariations && HALLU_LABEL[topic] ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
        ...((data.capsules?.length ?? 0) > 0 ? [["capsule", "레퍼토리 (음반)"] as [string, string]] : []),
        ...(data.mechanics ?? []).map((m) => [m.label, m.label] as [string, string]),
        ...((data.exploreTools?.length ?? 0) > 0 ? [["explore", "탐사 도구"] as [string, string]] : []),
@@ -1701,22 +1832,7 @@ export default function RogueGuide({ initialTopic }: {
   // 엔딩별 최종 보스 — 그 엔딩 경로(stage.end)의 가장 깊은 층 보스 작전(강화판 제외)에 나오는 첫 BOSS 적.
   // 카드에 보스 이름을 먼저 쓴다 — 다들 '아미야 엔딩·콜람 엔딩'으로 부른다 (사용자 지시 2026-10-18).
   // 짧은 이름은 쉼표 앞, 따옴표를 뗀 것 ('콜람, 마하사트바의 권화' → 콜람 · "'아미야', 노심의 종곡" → 아미야)
-  const endingBoss = useMemo(() => {
-    const m = new Map<string, { short: string; full: string }>();
-    data.endings.forEach((e, i) => {
-      const cand = data.stages.filter((st) => st.kind === "boss" && st.end === i + 1 && !st.var && !st.side);
-      const top = cand.sort((a, b) => (b.zone ?? 0) - (a.zone ?? 0))[0];
-      for (const x of top?.enemies ?? []) {
-        const en = data.enemies[x.key] ?? data.enemies[x.key.replace(/_\d+$/, "")];
-        if (en?.rank !== "BOSS" || !en.name) continue;
-        const full = en.name;
-        const short = full.split(/,\s*|，/)[0].replace(/^[\s'‘’"“”「」『』]+|[\s'‘’"“”「」『』]+$/g, "");
-        m.set(e.id, { short: short || full, full });
-        break;
-      }
-    });
-    return m;
-  }, [data]);
+  const endingBoss = useMemo(() => endingBosses(data), [data]);
   // 기타 노드 — 전투(작전·긴급·험난한 길)와 우연한 만남을 제외한 노드 타입 설명.
   // 같은 이름의 중복 타입(운명의 암시 등)은 하나만 남긴다 (사용자 요청 2026-07-18)
   const otherNodes = useMemo(() => {
@@ -3477,9 +3593,11 @@ export default function RogueGuide({ initialTopic }: {
                 : activeArc === "explore" ? data.exploreTools?.length ?? 0
                 : activeArc === "visitor" ? data.visitors?.length ?? 0
                 : activeArc === "band" ? data.bands.length
+                : activeArc === "growth" ? data.growth?.nodes.length ?? 0
                 : (data.mechanics ?? []).find((m) => m.label === activeArc)?.items.length ?? 0}
             </span>
           </div>
+          {activeArc === "growth" && data.growth && <GrowthTree g={data.growth} topic={topic} grade={grade} />}
           {activeArc === "scrap" && (
             <div className="rg-scrap-view">
               {["GOODS", "MOVE", "PASSIVE"].map((st) => {
@@ -3778,6 +3896,15 @@ export default function RogueGuide({ initialTopic }: {
                   <span className="rg-diff-step"><i className={`rg-diff-hex${d.mode === "EASY" ? " easy" : ""}`}>{d.mode === "EASY" ? t("쉬움") : d.grade}</i></span>
                   <ul className="rg-diff-rules">
                     {diffClauses(d.rule ?? "", locale).map((c, j) => <li key={j}>{hiNums(c)}</li>)}
+                    {/* 이 등급부터 켜지는 성장 트리 난이도 노드 (역사의 재구성 '오백 번 열람한 노트' 등) — 규칙 문구엔 없어서
+                        따로 붙인다 (사용자 요청 2026-10-18 "난이도 탭에서도 뭐가 적용되는지") */}
+                    {d.mode === "NORMAL" && (data.growth?.nodes ?? []).filter((n) => n.type === "DIFFICULTY" && n.grade === d.grade).map((n) => (
+                      <li key={n.id} className="rg-diff-growth">
+                        <b>{t("{tree} {name} 적용", { tree: data.growth?.name ?? t("성장 트리"), name: /^[《〈「『<]/.test(n.name) ? n.name : `〈${n.name}〉` })}</b>
+                        <span>{hiNums(n.desc.join(" · "))}</span>
+                        <small>{t("성장 트리에서 이 노드를 찍어 둔 경우")}</small>
+                      </li>
+                    ))}
                   </ul>
                   {typeof d.score === "number" && d.score > 0 && <span className="rg-diff-score" title={t("점수 배율")}>×{d.score.toFixed(2)}</span>}
                 </li>
@@ -3796,13 +3923,14 @@ export default function RogueGuide({ initialTopic }: {
           {/* 요약 카드 — 그림·번호·이름·달성·인용구·엔딩 스토리만. 설명·진입 조건·해금 스토리는 누르면 상세 창
               (사용자 선택 2026-10-18 "레이아웃이 아직도 난잡" — 카드마다 높이가 제각각이라 격자가 어지러웠다) */}
           {data.endings.map((e, ei) => (
-            <article key={e.id} id={`rg-end-${e.id}`} className={`rg-ending${e.pic ? " has-pic" : ""}${endFlash === e.id ? " flash" : ""}`}>
+            <article key={e.id} id={`rg-end-${e.id}`} className={`rg-ending${e.pic ? " has-pic" : ""}${endFlash === e.id ? " flash" : ""}`}
+              style={e.pic ? { ["--bg" as string]: `url(${asset(e.pic)})` } : undefined}>
               <button type="button" className="rg-ending-open" onClick={() => setEndDetail(e.id)} aria-label={t("{name} 상세 보기", { name: nmText(e.name, e.cn) })}>
                 <header className="rg-ending-hero" style={e.pic ? { ["--bg" as string]: `url(${asset(e.pic)})` } : undefined}>
                   <span className="rg-ending-no">ENDING {String(ei + 1).padStart(2, "0")}</span>
                   <div className="rg-ending-title">
                     {/* 최종 보스 이름도 같이 — '아미야 엔딩·콜람 엔딩'으로 부르니까 (사용자 지시 2026-10-18, 엔딩 이름은 그대로) */}
-                    {endingBoss.get(e.id) && <span className="rg-ending-boss" title={endingBoss.get(e.id)!.full}>{endingBoss.get(e.id)!.short}</span>}
+                    {endingBoss.get(e.id) && <BossChip boss={endingBoss.get(e.id)!} />}
                     <h3><Nm name={e.name} cn={e.cn} /></h3>
                     {prog && <em className={`rg-prog${prog.ending(e.id) ? " on" : ""}`}>{prog.ending(e.id) ? t("달성") : t("미달성")}</em>}
                   </div>
@@ -3829,75 +3957,15 @@ export default function RogueGuide({ initialTopic }: {
         const ei = data.endings.findIndex((x) => x.id === endDetail);
         const e = data.endings[ei];
         if (!e) return null;
+        // 공용 엔딩 창 (rogue-record.tsx EndingWindow) — 내 정보와 같은 창 (2026-10-18)
         return (
-          <ModalWindow key={e.id} label={nmText(e.name, e.cn)} className="rg-modal rg-endmodal" onClose={() => setEndDetail(null)}>
-            <header className="rg-ending-hero" style={e.pic ? { ["--bg" as string]: `url(${asset(e.pic)})` } : undefined}>
-              <span className="rg-ending-no">ENDING {String(ei + 1).padStart(2, "0")}</span>
-              <div className="rg-ending-title">
-                {endingBoss.get(e.id) && <span className="rg-ending-boss" title={endingBoss.get(e.id)!.full}>{endingBoss.get(e.id)!.short}</span>}
-                <h3><Nm name={e.name} cn={e.cn} /></h3>
-                {prog && <em className={`rg-prog${prog.ending(e.id) ? " on" : ""}`}>{prog.ending(e.id) ? t("달성") : t("미달성")}</em>}
-              </div>
-              {e.change && <p className="rg-ending-change">“{e.change}”</p>}
-              {/* 엔딩 설명도 그림 안 (사용자 지시 2026-10-18) */}
-              {e.desc && <p className="rg-ending-desc on-pic">{e.desc}</p>}
-              {e.avg && (
-                <button type="button" className="rg-ending-avg on-pic" onClick={() => setAvgOpen({ rid: e.avg!, title: nmText(e.name, e.cn) })}>
-                  <i aria-hidden>▶</i><b>{t("엔딩 스토리 보기")}</b>
-                </button>
-              )}
-            </header>
-            <div className="rg-ending-main">
-              {e.cond && e.cond.length > 0 && (
-                <div className="rg-ending-sec">
-                  <h4>{t("진입 조건")}</h4>
-                  <ol className="rg-ending-cond">
-                    {/* 칸 안의 '→' 갈래는 번호 줄로 (사용자 지시 2026-10-18 "카드 안에서는 > 말고 번호로") — 칸 사이만 › */}
-                    {e.cond.map((c, i) => {
-                      // 단계 구분은 앞뒤에 공백이 있는 ' → ' 만 — '「구원」→「정지」'처럼 붙은 화살표는 '바뀐다'는 뜻이라 한 문장이다 (2026-10-18)
-                      const parts = c.split(/\s+→\s+/).filter(Boolean);
-                      return (
-                        <li key={i}>
-                          {/* 진행 방향 화살촉 — 같은 줄 단계 사이엔 선 가운데, 줄이 넘어가면 윗줄 오른쪽 끝·아랫줄 왼쪽 시작에도
-                              (사용자 지시 2026-10-18 "5개인 경우 헷갈린다"). 한 줄 넷 기준 — CSS 의 4n 규칙과 같다 */}
-                          {i < e.cond!.length - 1 && <i className={`rg-step-arrow${i % 4 === 3 ? " wrap" : ""}`} aria-hidden />}
-                          {i > 0 && i % 4 === 0 && <i className="rg-step-arrow from" aria-hidden />}
-                          {/* 감싸서 칸 안 세로 가운데 정렬 — 칸을 바로 flex 로 만들면 링크 섞인 문장이 조각난다 (2026-10-18) */}
-                          <div className="rg-cond-in">
-                            {parts.length > 1
-                              ? <ol className="rg-cond-steps">{parts.map((p, j) => <li key={j}>{renderCond(p, e.id)}</li>)}</ol>
-                              : renderCond(c, e.id)}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </div>
-              )}
-              {e.book && e.book.length > 0 && (
-                <div className="rg-ending-sec rg-ending-book">
-                  <h4>{t("엔딩 후 해금 스토리")}<em>{e.book.length}</em></h4>
-                  <ul>
-                    {e.book.map((b, i) => (
-                      <li key={i}>
-                        {b.txt && b.rid ? (
-                          <button type="button" className="rg-rec-btn"
-                            onClick={() => setRecOpen({ rid: b.rid!, title: nmText(b.name ?? "", b.cn), sub: e.name })}>
-                            <strong><Nm name={b.name ?? ""} cn={b.cn} /></strong><span>{b.cond}</span>
-                            {prog && b.rid && <em className={`rg-prog sm${prog.has(b.rid) ? " on" : ""}`}>{prog.has(b.rid) ? t("해금됨") : t("미해금")}</em>}
-                            <i className="rg-rec-read" aria-hidden>▸ {t("읽기")}</i>
-                          </button>
-                        ) : (
-                          <div className="rg-rec-row"><strong><Nm name={b.name ?? ""} cn={b.cn} /></strong><span>{b.cond}</span>
-                            {prog && b.rid && <em className={`rg-prog sm${prog.has(b.rid) ? " on" : ""}`}>{prog.has(b.rid) ? t("해금됨") : t("미해금")}</em>}</div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </ModalWindow>
+          <EndingWindow e={e} index={ei} boss={endingBoss.get(e.id) ?? null}
+            done={prog ? prog.ending(e.id) : undefined}
+            bookGot={prog ? (rid) => prog.has(rid) : undefined}
+            renderCond={(c) => renderCond(c, e.id)}
+            onOpenStory={(rid, title) => setAvgOpen({ rid, title })}
+            onOpenRecord={(rid, title, sub) => setRecOpen({ rid, title, sub })}
+            onClose={() => setEndDetail(null)} />
         );
       })()}
       {zoneOpen && (

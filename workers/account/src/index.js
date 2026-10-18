@@ -553,7 +553,11 @@ function rogueDigest(user) {
     // 방문객(월간 소대 대화)은 팀 단위 id 하나에 장면별 진행이 값으로 들어 있다 — 값째 남긴다 (항목 8개 남짓)
     const chat = {};
     for (const kind of ["chat", "chatV2"]) if (outer?.collect?.[kind]) chat[kind] = outer.collect[kind];
-    out[topic] = { collect, chat, record: recordJson.length < 20000 ? record : { keys: Object.keys(record) } };
+    // 저금(bank — 판이 끝날 때 남은 오리지늄각뿔을 쌓아 두는 곳)과 바깥 성장 트리 진행(buff — 찍은 노드·포인트)도 싣는다
+    // (사용자 요청 2026-10-18 "쌓아 둔 각뿔 총 몇 개", 성장 트리 탭). 필드 이름을 실계정으로 맞추려고 원본째 + 바깥 키 목록
+    const small = (v) => { const j = v == null ? "" : JSON.stringify(v); return j && j.length < 8000 ? v : (v && typeof v === "object" ? { keys: Object.keys(v) } : null); };
+    out[topic] = { collect, chat, record: recordJson.length < 20000 ? record : { keys: Object.keys(record) },
+      bank: small(outer?.bank), buff: small(outer?.buff), outerKeys: Object.keys(outer ?? {}) };
   }
   return out;
 }
@@ -745,8 +749,16 @@ function profile(user, friends, shop) {
   })).filter((row) => row.id);
 
   // 기반시설 — 방 종류·레벨
+  // + 배치된 오퍼와 컨디션 (사용자 요청 2026-10-18 "내 정보에서 인프라 상태 — 피로도 다 단 애들 있나 간단하게").
+  //   building.roomSlots[칸].charInstIds(빈 칸 -1) · building.chars[instId].ap (만점 8,640,000 = 24 × 360,000) ·
+  //   lastApAddTime(ap 를 마지막으로 잰 시각). 컨디션은 0~24 로 바꿔 싣는다 — 동기화 시각 기준 값이다
+  const bchars = user?.building?.chars ?? {};
   const rooms = Object.entries(user?.building?.roomSlots ?? {}).map(([slot, row]) => ({
     slot, room: row?.roomId ?? "", level: num(row?.level),
+    ops: (Array.isArray(row?.charInstIds) ? row.charInstIds : []).filter((iid) => iid != null && Number(iid) >= 0).map((iid) => {
+      const bc = bchars[String(iid)] ?? {};
+      return { id: bc.charId ?? charOfInst(iid), ap: Number.isFinite(Number(bc.ap)) ? Math.round(Number(bc.ap) / 36000) / 10 : null, at: num(bc.lastApAddTime) || null };
+    }).filter((o) => o.id),
   })).filter((row) => row.room);
 
   const friendRows = Array.isArray(friends) ? friends.map((f) => ({

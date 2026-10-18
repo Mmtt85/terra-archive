@@ -14,7 +14,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { asset } from "./assets";
 import { TOPICS } from "./rogue-topics";
-import { EndingStoryModal } from "./rogue-record";
+import { BossChip, EndingStoryModal, EndingWindow, RecordModal, endingBosses } from "./rogue-record";
 import { useI18n, rich, DT_LOCALE, type ExtraI18n, type Locale } from "./i18n";
 import { ModalWindow } from "./modal-window";
 import { useConfirm } from "./confirm";
@@ -456,7 +456,7 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
           <ProfileCard me={me} now={now} opById={opById} demo={demo} />
           <Wallet me={me} items={items} onOpen={(i) => setOpenItem(i)} />
           <Support me={me} opById={opById} onShowOperator={onShowOperator} />
-          <Rooms me={me} />
+          <Rooms me={me} opById={opById} />
         </div>
         {/* 오른쪽 열 — 카드 머리의 손잡이(⠿)로 끌어 순서를 바꾼다, 순서는 설정 동기화로 이어진다 (사용자 지시 2026-10-15, app/me-order.tsx) */}
         <SortColumn className="me-col me-col-main" blocks={{
@@ -1158,9 +1158,16 @@ function Support({ me, opById, onShowOperator }: { me: MeData; opById: Map<strin
 }
 
 // ── 기반시설 ────────────────────────────────────────────────
-function Rooms({ me }: { me: MeData }) {
+function Rooms({ me, opById }: { me: MeData; opById?: Map<string, MeOp> }) {
   const { locale, t } = useI18n();
   const rooms = me.profile?.rooms ?? [];
+  // 컨디션 — 근무 방(숙소 제외)에 앉은 오퍼만. 0 = 바닥, 8 미만 = 낮음 (사용자 요청 2026-10-18 "피로도 다 단 애들 있나 간단하게").
+  // 값은 동기화 시각 기준이다 — 지금은 그보다 더 떨어져 있을 수 있다
+  const working = rooms.filter((r) => r.room !== "DORMITORY").flatMap((r) => (r.ops ?? []).map((o) => ({ ...o, room: r.room })));
+  const hasMood = working.some((o) => o.ap != null);
+  const nameOf = (id: string) => opById?.get(id)?.name ?? id;
+  const empty = working.filter((o) => o.ap != null && o.ap <= 0);
+  const low = working.filter((o) => o.ap != null && o.ap > 0 && o.ap < 8).sort((a, b) => (a.ap ?? 0) - (b.ap ?? 0));
   if (!rooms.length) return null;
   const groups = new Map<string, number[]>();
   for (const r of rooms) {
@@ -1177,6 +1184,25 @@ function Rooms({ me }: { me: MeData }) {
           );
         })}
       </ul>
+      {hasMood && (
+        <div className="me-mood">
+          <p className={`me-mood-sum${empty.length ? " bad" : low.length ? " warn" : " ok"}`}>
+            {empty.length ? t("컨디션이 바닥난 오퍼 {n}명", { n: empty.length })
+              : low.length ? t("컨디션이 낮은 오퍼 {n}명", { n: low.length })
+              : t("근무 중인 오퍼 {n}명 모두 컨디션 여유", { n: working.length })}
+            <small>{t("동기화 시점 기준")}</small>
+          </p>
+          {(empty.length > 0 || low.length > 0) && (
+            <ul className="me-mood-list">
+              {[...empty, ...low].map((o) => (
+                <li key={`${o.room}-${o.id}`} className={o.ap != null && o.ap <= 0 ? "bad" : "warn"}>
+                  <span>{nameOf(o.id)}</span><em>{t(ROOM_LABEL[o.room] ?? o.room)}</em><b>{o.ap?.toFixed(1)}</b>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {/* 인프라 자동 편성으로 바로 (사용자 지시 2026-10-11) */}
       <a className="me-rooms-go" href={`${locale === "ko" ? "" : `/${locale}`}/infra`}>{t("인프라 자동 편성")} <span aria-hidden>→</span></a>
     </Card>
@@ -1686,7 +1712,7 @@ type RogueRec = {
   bandCnt?: Record<string, Record<string, number>>; bandGrade?: Record<string, Record<string, number>>; stageCnt?: Record<string, number>;
   history?: { bandId: string; mode: string; modeGrade: number; ending: string; result: number; endTs: number }[];
 };
-type RogueStatDoc = { endings: { id: string; name: string; avg?: string; desc?: string | null; change?: string | null; cond?: string[]; book?: { name?: string; cond?: string; rid?: string }[] }[]; difficulties: { mode: string; grade: number; name: string }[];
+type RogueStatDoc = { endings: { id: string; name: string; cn?: string; pic?: string; avg?: string; desc?: string | null; change?: string | null; cond?: string[]; book?: { name?: string; cn?: string; cond?: string; rid?: string; txt?: 1 }[] }[]; difficulties: { mode: string; grade: number; name: string }[];
   bands: (RogueItem & { alt?: string[]; img?: boolean })[]; relics: (RogueItem & { img?: boolean; sp?: boolean })[] };
 const ROGUE_SHORT: Record<string, [string, string, string]> = {
   rogue_1: ["팬텀", "Phantom", "ファントム"], rogue_2: ["미즈키", "Mizuki", "ミヅキ"], rogue_3: ["사미", "Sami", "サーミ"],
@@ -1708,6 +1734,10 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
   const [relicOpen, setRelicOpen] = useState(false);
   const [onlyMissing, setOnlyMissing] = useState(false);
   const [endOpen, setEndOpen] = useState<string | null>(null);
+  const [recOpen, setRecOpen] = useState<{ rid: string; title: string; sub: string } | null>(null);
+  // 엔딩별 최종 보스(이름·별칭) — 가이드와 같은 계산 (doc 은 테마 데이터 원본이라 stages·enemies 도 들어 있다)
+  const bosses = useMemo(() => (doc ? endingBosses(doc as unknown as Parameters<typeof endingBosses>[0]) : new Map()), [doc]);
+  const [relicDetail, setRelicDetail] = useState<(RogueItem & { img?: boolean }) | null>(null);
   const [avgOpen, setAvgOpen] = useState<{ rid: string; title: string } | null>(null);
   useEffect(() => {
     if (!topic) return;
@@ -1718,6 +1748,11 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
   }, [topic, locale]);
   const short = (id: string) => (ROGUE_SHORT[id] ?? [id, id, id])[locale === "en" ? 1 : locale === "ja" ? 2 : 0];
   const raw = all[topic];
+  const bank = (raw as { bank?: Record<string, unknown> | null } | undefined)?.bank;
+  const bankCoins = bank && typeof bank === "object"
+    ? (typeof bank.current === "number" ? bank.current
+      : (Object.entries(bank).find(([k, v]) => typeof v === "number" && /coin|current|gold|cnt|count|num/i.test(k))?.[1] as number | undefined)) ?? null
+    : null;
   const rec = (raw?.record ?? {}) as RogueRec;
   const runs = Object.values(rec.modeCnt ?? {}).reduce((a, b) => a + b, 0);
   const clears = Object.values(rec.endingCnt ?? {}).reduce((a, m) => a + Object.values(m).reduce((x, y) => x + y, 0), 0);
@@ -1747,9 +1782,12 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
   const relicGrid = (list: RogueStatDoc["relics"]) => (
     <ul className="me-rg-relics">
       {list.map((r) => (
-        <li key={r.id} className={ownedRelic.has(r.id) ? undefined : "off"} title={`${r.name}${r.usage ? `\n${r.usage}` : ""}`}>
-          {r.img && <img src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" loading="lazy" decoding="async" />}
-          <span>{r.name}</span>
+        <li key={r.id} className={ownedRelic.has(r.id) ? undefined : "off"}>
+          {/* 누르면 상세 창 (사용자 요청 2026-10-18 "보유 소장품도 클릭하면 모달로 상세") */}
+          <button type="button" onClick={() => setRelicDetail(r)} title={`${r.name}${r.usage ? `\n${r.usage}` : ""}`}>
+            {r.img && <img src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" loading="lazy" decoding="async" />}
+            <span>{r.name}</span>
+          </button>
         </li>
       ))}
     </ul>
@@ -1761,36 +1799,59 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
         <small>{t("통합전략")}</small>
         <h3>{(TOPICS.find((x) => x.id === topic)?.name) ?? short(topic)}</h3>
         <a className="me-rx-go" href={`${locale === "ko" ? "" : `/${locale}`}/rogue/is${topic.split("_")[1]}`}>{t("이 테마 가이드로")} ›</a>
+        {/* 요약은 그림 띠 안에 칩으로 (사용자 지시 2026-10-18 "이미지 띠 쪽에 표시") — 숫자마다 단위를 붙인다.
+            쌓아 둔 오리지늄각뿔 = 계정 원본 rlv2.outer[테마].bank (워커 rogueDigest, 같은 날). 필드 이름이 실계정으로 확정되기 전이라
+            current 를 우선 보고 다른 숫자 필드로 물러난다 */}
+        <p className="chips me-rg-sum">
+          {/* '탐험 N회'는 뺐다 — 계정 기록(record)이 엔딩까지 간 판만 세서 늘 엔딩 수와 같았다. 실패 포함 탐험 수는 계정
+              동기화 데이터(rlv2.outer: bank·bp·buff·collect·mission·monthTeam·record·challenge·activity)에 없다 (2026-10-18 실계정 확인) */}
+          <span>{t("엔딩 {n}회 도달", { n: fmt(clears) })}</span>
+          {hasGrade && <span title={bestGrade >= 0 ? diffName(bestGrade) : undefined}>{t("최고 난이도 {n}", { n: bestGrade >= 0 ? String(bestGrade) : "—" })}</span>}
+          {doc && <span>{t("분대 {a}/{b} 해금", { a: fmt(doc.bands.filter((b) => [b.id, ...(b.alt ?? [])].some((id) => ownedBand.has(id))).length), b: fmt(doc.bands.length) })}</span>}
+          {doc && <button type="button" className="band" onClick={() => setRelicOpen(true)}>{t("소장품 {a}/{b} 수집", { a: fmt(relicHave), b: fmt(relics.length) })} ›</button>}
+        </p>
+        {/* 쌓아 둔 오리지늄각뿔 — 각뿔 아이콘과 함께 그림 띠 오른쪽 아래에 따로 (사용자 지시 2026-10-18) */}
+        {bankCoins != null && (
+          <span className="me-rg-bank" title={t("쌓아 둔 오리지늄각뿔")}>
+            <img src={asset(`/rogue/relic/${topic}_gold.webp`)} alt="" aria-hidden width={22} height={22} />
+            <b>{fmt(bankCoins)}</b>
+          </span>
+        )}
       </header>
       {!raw?.record && <p className="me-note">{t("한국 서버에 아직 없는 테마라 기록이 비어 있습니다. 엔딩·분대·소장품 목록만 미리 볼 수 있습니다.")}</p>}
-      {/* 요약 한 줄 — 숫자마다 단위를 붙인다 (사용자 지적 2026-10-18 "뭔지 하나도 모르겠음") */}
-      <div className="me-rg-sum">
-        <span>{t("탐험 {n}회", { n: fmt(runs) })}</span>
-        <span>{t("엔딩 {n}회 도달", { n: fmt(clears) })}</span>
-        {hasGrade && <span title={bestGrade >= 0 ? diffName(bestGrade) : undefined}>{t("최고 난이도 {n}", { n: bestGrade >= 0 ? String(bestGrade) : "—" })}</span>}
-        {doc && <span>{t("분대 {a}/{b} 해금", { a: fmt(doc.bands.filter((b) => [b.id, ...(b.alt ?? [])].some((id) => ownedBand.has(id))).length), b: fmt(doc.bands.length) })}</span>}
-        {doc && <button type="button" onClick={() => setRelicOpen(true)}>{t("소장품 {a}/{b} 수집", { a: fmt(relicHave), b: fmt(relics.length) })} ›</button>}
-      </div>
 
+      {/* 엔딩별 기록 — 표 대신 엔딩 그림 카드 (사용자 지시 2026-10-18 "엔딩별 기록·분대별 훈장 가독성 좋게").
+          카드 = 그림 + 번호·이름 + 모드별 도달 횟수 + 최고 난이도. 못 깬 엔딩은 흑백으로 흐리게. 누르면 엔딩 창 */}
       <h4 className="me-sub">{t("엔딩별 기록")}</h4>
-      <table className="me-rg-end">
-        <thead><tr><th>{t("엔딩")}</th><th>{t("도달 횟수")}{modes.length > 1 ? ` (${modes.map(([, l]) => t(l)).join(" / ")})` : ""}</th>{hasGrade && <th>{t("최고 난이도")}</th>}</tr></thead>
-        <tbody>
-          {endIds.map((id) => {
-            const g = gradeOf(allBands, id);
-            const done = modes.some(([m]) => rec.endingCnt?.[m]?.[id]);
-            return (
-              <tr key={id} className={done ? undefined : "off"}>
-                <th><button type="button" className="me-rg-endbtn" onClick={() => setEndOpen(id)}><em>{endNo(id)}</em>{endName(id)}</button></th>
-                {done
-                  ? <><td>{modes.map(([m]) => (rec.endingCnt?.[m]?.[id] ? t("{n}회", { n: fmt(rec.endingCnt[m][id]) }) : "–")).join(" / ")}</td>
-                    {hasGrade && <td title={g >= 0 ? diffName(g) : undefined}>{g >= 0 ? g : "—"}</td>}</>
-                  : <td colSpan={hasGrade ? 2 : 1}>{t("아직 못 깸")}</td>}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="me-rg-ends">
+        {endIds.map((id) => {
+          const g = gradeOf(allBands, id);
+          const done = modes.some(([m]) => rec.endingCnt?.[m]?.[id]);
+          const pic = doc?.endings.find((x) => x.id === id)?.pic;
+          const md = hasGrade && g >= 0 ? medalOf(g) : 0;
+          return (
+            <button key={id} type="button" className={`me-rg-endcard${done ? "" : " off"}`} onClick={() => setEndOpen(id)}
+              style={pic ? { ["--bg" as string]: `url(${asset(pic)})` } : undefined}>
+              <span className="me-rg-endcard-no">{endNo(id)}</span>
+              {bosses.get(id) && <BossChip boss={bosses.get(id)!} />}
+              <b>{endName(id)}</b>
+              {done ? (
+                <span className="me-rg-endcard-stat">
+                  {modes.filter(([m]) => rec.endingCnt?.[m]?.[id]).map(([m, l]) => (
+                    <em key={m}>{modes.length > 1 ? `${t(l)} ` : ""}{t("{n}회", { n: fmt(rec.endingCnt![m][id]) })}</em>
+                  ))}
+                  {hasGrade && g >= 0 && (
+                    <em className="g" title={diffName(g)}>
+                      {md > 0 && <img src={asset(`/rogue/misc/${topic}_difficulty_${md}_light.webp?v=${MEDAL_VER}`)} alt="" />}
+                      {t("최고 난이도 {n}", { n: String(g) })}
+                    </em>
+                  )}
+                </span>
+              ) : <span className="me-rg-endcard-stat"><em>{t("아직 못 깸")}</em></span>}
+            </button>
+          );
+        })}
+      </div>
 
       {/* 분대 × 엔딩 — 칸 = 그 분대로 그 엔딩을 깬 최고 난이도 (사용자 선택 2026-10-18) */}
       {hasGrade
@@ -1863,38 +1924,49 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
       ) : null}
 
       {endOpen && doc && (() => {
-        const e = doc.endings.find((x) => x.id === endOpen);
+        const ei = doc.endings.findIndex((x) => x.id === endOpen);
+        const boss = bosses.get(endOpen) ?? null;
+        const e = doc.endings[ei];
+        if (!e) return null;
         const gotBook = new Set(raw?.collect?.endBook ?? []);
         const g = gradeOf(allBands, endOpen);
+        const reached = modes.reduce((n, [m]) => n + (rec.endingCnt?.[m]?.[endOpen] ?? 0), 0);
+        // 가이드와 같은 엔딩 창 (rogue-record.tsx EndingWindow, 사용자 지시 2026-10-18) — 테마 색은 rg-themed rgN 으로 받는다
         return (
-          <ModalWindow label={`${t("엔딩")} ${endNo(endOpen)} · ${endName(endOpen)}`} className="operator-modal me-list-modal me-rg-end-modal" onClose={() => setEndOpen(null)}>
-            <div className="me-rg-endmodal">
-              {/* 오른쪽 위 — 본문(.me-rg-endmodal) 기준으로 붙인다. 머리 그림용 me-rx-go 를 쓰면 창 머리 밖으로 삐져나갔다 (사용자 지적 2026-10-18) */}
-              <a className="act-btn me-rg-guide" href={`${locale === "ko" ? "" : `/${locale}`}/rogue/is${topic.split("_")[1]}`}>{t("이 테마 가이드로")} ›</a>
-              <h3><em>{endNo(endOpen)}</em>{endName(endOpen)}</h3>
-              <p className="me-rg-endstat">
+          <EndingWindow e={e} index={ei} boss={boss} className={`rg-themed rg${topic.split("_")[1]}`}
+            done={raw?.record ? reached > 0 : undefined}
+            bookGot={raw?.record ? (rid) => gotBook.has(rid) : undefined}
+            onOpenStory={(rid, title) => setAvgOpen({ rid, title })}
+            onOpenRecord={(rid, title, sub) => setRecOpen({ rid, title, sub })}
+            onClose={() => setEndOpen(null)}
+            extra={raw?.record ? (
+              <p className="me-rg-endstat-bar">
                 {modes.map(([m, l]) => `${t(l)} ${t("{n}회", { n: fmt(rec.endingCnt?.[m]?.[endOpen] ?? 0) })}`).join(" · ")}
                 {hasGrade && g >= 0 && ` · ${t("최고 난이도 {n}", { n: String(g) })}`}
               </p>
-              {e?.desc && <p className="me-rg-enddesc">{e.desc}</p>}
-              {/* 엔딩 연출 스토리 — 엔딩에 도달하면 나오는 장면 (사용자 요청 2026-10-18, 가이드 엔딩 카드와 같은 기록 창) */}
-              {e?.avg && <button type="button" className="act-btn me-rg-avg" onClick={() => setAvgOpen({ rid: e.avg!, title: endName(endOpen) })}>▸ {t("엔딩 스토리 읽기")}</button>}
-              {e?.cond?.length ? (<><h4 className="me-sub">{t("가는 법")}</h4><ul className="me-rg-endcond">{e.cond.map((c, i) => <li key={i}>{c}</li>)}</ul></>) : null}
-              {e?.book?.length ? (
-                <>
-                  <h4 className="me-sub">{t("엔딩 기록")} <em className="me-sub-side">{fmt(e.book.filter((b) => b.rid && gotBook.has(b.rid)).length)}/{fmt(e.book.length)}</em></h4>
-                  <ul className="me-rg-endbook">
-                    {e.book.map((b, i) => {
-                      const got = !!b.rid && gotBook.has(b.rid);
-                      return <li key={i} className={got ? "got" : undefined}><b>{got ? "✓" : "·"} {b.name}</b>{b.cond && <span>{b.cond}</span>}</li>;
-                    })}
-                  </ul>
-                </>
-              ) : null}
-            </div>
-          </ModalWindow>
+            ) : undefined} />
         );
       })()}
+      {recOpen && <RecordModal rid={recOpen.rid} title={recOpen.title} sub={recOpen.sub} onClose={() => setRecOpen(null)} />}
+      {relicDetail && (
+        // 가이드 소장품 상세(rg-rmodal)와 같은 결 — 테마 색은 rg-themed rgN
+        <ModalWindow label={relicDetail.name} className={`rg-modal rg-rmodal rg-themed rg${topic.split("_")[1]}`} onClose={() => setRelicDetail(null)}>
+          <header className="rg-rhead">
+            {relicDetail.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${relicDetail.iconId ?? relicDetail.id}.webp`)} alt="" aria-hidden />}
+            <div className="rg-rhead-title">
+              <div className="rg-rhead-badges">
+                <span className={`rg-rhead-kind me-own${ownedRelic.has(relicDetail.id) ? " on" : ""}`}>{ownedRelic.has(relicDetail.id) ? t("보유") : t("미보유")}</span>
+              </div>
+              <h3>{relicDetail.name}</h3>
+            </div>
+          </header>
+          {(relicDetail.usage || relicDetail.func) && (
+            <section className="rg-rblock"><h4>{t("효과")}</h4><p className="rg-multiline">{relicDetail.usage ?? relicDetail.func}</p></section>
+          )}
+          {relicDetail.desc && <p className="rg-relic-desc rg-rquote rg-multiline">{relicDetail.desc}</p>}
+          {relicDetail.obtain && <section className="rg-rblock"><h4>{t("획득 방법")}</h4><p>{relicDetail.obtain}</p></section>}
+        </ModalWindow>
+      )}
       {avgOpen && <EndingStoryModal rid={avgOpen.rid} title={avgOpen.title} onClose={() => setAvgOpen(null)} />}
       {relicOpen && doc && (
         <MoreModal title={`${t("통합전략")} · ${short(topic)} · ${t("소장품")} ${fmt(relicHave)}/${fmt(relics.length)}`} onClose={() => setRelicOpen(false)}>
@@ -1930,7 +2002,7 @@ function RogueStats({ me }: { me: MeData }) {
           return (
             <button key={tp.id} type="button" className="has-bg" onClick={() => setOpen(tp.id)}
               style={{ ["--bg" as string]: `url(${asset(`/rogue/kv${tp.id.split("_")[1]}.webp`)})` }}>
-              <b>{short(tp.id)}</b><span>{t("탐험 {n}회", { n: fmt(runs) })}</span>
+              <b>{short(tp.id)}</b><span>{t("엔딩 {n}회", { n: fmt(runs) })}</span>
               <em>{t("엔딩 {n}종 도달", { n: fmt(ends) })}{best >= 0 ? ` · ${t("최고 난이도 {n}", { n: String(best) })}` : ""}</em>
             </button>
           );

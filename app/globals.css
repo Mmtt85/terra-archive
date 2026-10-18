@@ -13809,6 +13809,7 @@ html.rg-theme.rg6 main.site-main {
   background: linear-gradient(180deg, #060d0e, #0a1413 220px, #0b1512);
 }
 .rg.rg6,
+.mw-window.rg-themed.rg6,
 html.rg-theme.rg6 {
   --rgbg: #0a1413;
   --rgcard: #101d1a;
@@ -13847,6 +13848,7 @@ html.rg-theme.rg2 main.site-main {
   background: linear-gradient(180deg, #03060e, #060b18 220px, #070d1c);
 }
 .rg.rg2,
+.mw-window.rg-themed.rg2,
 html.rg-theme.rg2 {
   --rgbg: #070d1c;
   --rgcard: #0f1830;
@@ -13886,6 +13888,7 @@ html.rg-theme.rg3 main.site-main {
   background: linear-gradient(180deg, #0b0d11, #101318 220px, #13151a);
 }
 .rg.rg3,
+.mw-window.rg-themed.rg3,
 html.rg-theme.rg3 {
   --rgbg: #13151a;
   --rgcard: #1c1f25;
@@ -13936,6 +13939,7 @@ html.rg-theme.rg4 main.site-main {
   background: linear-gradient(180deg, #150808, #1c0b0b 220px, #1d0b0b);   /* 바탕 어두운 부분 한 단 더 밝게 (사용자 요청 2026-10-18) */
 }
 .rg.rg4,
+.mw-window.rg-themed.rg4,
 html.rg-theme.rg4 {
   --rgbg: #170909;
   --rgcard: #251010;
@@ -13975,6 +13979,7 @@ html.rg-theme.rg5 main.site-main {
   background: linear-gradient(180deg, #160c11, #1f1219 220px, #22131b);
 }
 .rg.rg5,
+.mw-window.rg-themed.rg5,
 html.rg-theme.rg5 {
   --rgbg: #22131b;
   --rgcard: #301b26;
@@ -14758,6 +14763,7 @@ html.rg-theme.rg6 .site-header {
    body 포털로 그려지므로, .rg 섹션 안쪽이 아니라 문서 루트에서 색을 받아야 한다
    (2026-08-24). 페이지 안에서는 종전대로 .rg 쪽 정의가 이긴다. */
 .rg,
+.mw-window.rg-themed,
 html.rg-theme {
   --rgbg: #150a0e;
   --rgcard: #211218;
@@ -33334,3 +33340,271 @@ html.rg-theme.rg4 main.site-main {
 }
 .pl-ac-list li > button { cursor: pointer; }
 .pl-ac-list li > button:hover { background: color-mix(in srgb, var(--gold-ink) 8%, transparent); }
+
+/* ── 통합전략 바깥 성장 트리 (역사의 재구성 등, 2026-10-18) ── */
+.rg-growth-head { margin: 0 0 14px; }
+.rg-growth-note { white-space: pre-line; font-size: 12px; }
+.rg-growth-sum {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--rgcard), var(--rgink) 2.5%);
+  font-size: 12px;
+  color: var(--rgtext2);
+}
+.rg-growth-sum b { color: var(--rggold); font-size: 12px; }
+.rg-growth-sum em { font-style: normal; font-family: var(--mono); font-weight: 700; color: var(--rgink); }
+.rg-growth-tree { position: relative; display: grid; gap: 22px; padding: 6px 0 12px; }
+.rg-growth-lines { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.rg-growth-lines path { fill: none; stroke-width: 1.5; }
+.rg-growth-lines path.on { stroke: color-mix(in srgb, var(--rggold) 55%, transparent); }
+.rg-growth-lines path.off { stroke: color-mix(in srgb, var(--rgline) 70%, transparent); stroke-dasharray: 3 4; }
+.rg-growth-row { position: relative; z-index: 1; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+.rg-gnode {
+  position: relative;
+  width: 200px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--rgline) 60%, transparent);
+  border-radius: var(--r-md);
+  background: var(--rgcard);
+}
+.rg-gnode header { display: flex; align-items: center; gap: 8px; }
+.rg-gnode header img { width: 30px; height: 30px; object-fit: contain; flex: none; }
+.rg-gnode header b { flex: 1; min-width: 0; font-size: 12px; line-height: 1.3; color: var(--rgink); }
+.rg-gcost {
+  flex: none;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--rggold) 16%, transparent);
+  color: var(--rggold);
+  font: 700 11px/1.4 var(--mono);
+  font-style: normal;
+  text-align: center;
+}
+.rg-gnode ul { margin: 6px 0 0; padding: 0; list-style: none; font-size: 11px; line-height: 1.5; color: var(--rgtext2); }
+.rg-gnode.t-key, .rg-gnode.t-large_rhodes, .rg-gnode.t-large_iberia, .rg-gnode.t-large_abyssal {
+  border-color: color-mix(in srgb, var(--rggold) 60%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rggold) 20%, transparent);
+}
+.rg-gnode.t-difficulty { border-style: dashed; border-color: color-mix(in srgb, var(--rgcrim) 70%, transparent); }
+.rg-gnode.t-difficulty:not(.off) { border-style: solid; background: color-mix(in srgb, var(--rgcard), var(--rgcrim) 10%); }
+.rg-gnode.off { opacity: 0.55; }
+.rg-ggrade { display: block; margin-top: 6px; font-size: 11px; font-weight: 700; color: var(--rgup); }
+.rg-gnode.off .rg-ggrade { color: var(--rgmut); }
+@media (max-width: 600px) { .rg-gnode { width: calc(50% - 5px); } }
+/* 난이도 탭 — 그 등급부터 켜지는 성장 트리 노드 (2026-10-18) */
+.rg-diff-rules > li.rg-diff-growth {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+  padding: 6px 10px 6px 12px;
+  border-left: 2px solid var(--rggold);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--rggold) 8%, transparent);
+}
+.rg-diff-rules > li.rg-diff-growth::before { display: none; }
+.rg-diff-growth b { font-size: 12px; color: var(--rggold); }
+.rg-diff-growth span { font-size: 12px; color: var(--rgink); }
+.rg-diff-growth small { font-size: 11px; color: var(--rgmut); }
+/* 성장 트리 노드도 다른 탭 카드와 같은 결 — 윗띠(아이콘·이름·포인트) / 금색 가로선 / 본문(효과) · 모서리 표식 (사용자 지시 2026-10-18) */
+.rg-gnode { padding: 0; overflow: hidden; --rg-corner: color-mix(in srgb, var(--rggold) 45%, transparent); }
+.rg-gnode::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--rg-corner), var(--rg-corner)) top left / 9px 1px no-repeat,
+    linear-gradient(var(--rg-corner), var(--rg-corner)) top left / 1px 9px no-repeat,
+    linear-gradient(var(--rg-corner), var(--rg-corner)) bottom right / 9px 1px no-repeat,
+    linear-gradient(var(--rg-corner), var(--rg-corner)) bottom right / 1px 9px no-repeat;
+}
+.rg-gnode header {
+  padding: 7px 10px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--rggold) 70%, transparent), color-mix(in srgb, var(--rgline) 60%, transparent) 55%, transparent) bottom / 100% 1px no-repeat;
+}
+.rg-gnode ul { margin: 0; padding: 7px 10px 9px; }
+.rg-gnode .rg-ggrade { margin: 0; padding: 0 10px 8px; }
+/* 내 정보 통합전략 상세 — 요약 칩은 그림 띠 안, 쌓아 둔 각뿔은 오른쪽 아래 (2026-10-18) */
+.me-rx-hero .me-rg-sum { margin: 10px 0 0; padding-right: 110px; }
+.me-rx-hero .me-rg-sum > * { background: #ffffff1f; color: #fff; backdrop-filter: blur(4px); font-weight: 600; }
+.me-rg-bank {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  border-radius: var(--r-pill);
+  background: #0b0e10b3;
+  color: #f2d48a;
+  backdrop-filter: blur(4px);
+}
+.me-rg-bank img { width: 22px; height: 22px; object-fit: contain; }
+.me-rg-bank b { font: 700 16px var(--mono); }
+/* 공용 엔딩 창 아래 도달 횟수 줄 (내 정보) */
+.me-rg-endstat-bar { margin: 0; padding: 8px 16px; font-size: 12px; color: var(--rgtext2); border-bottom: 1px solid color-mix(in srgb, var(--rgline) 60%, transparent); }
+
+/* ── 내 정보 통합전략 — 엔딩별 기록 카드 · 분대별 훈장 표 가독성 (사용자 지시 2026-10-18) ── */
+.me-rg-ends { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin: 0 0 16px; }
+.me-rg-endcard {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  min-height: 112px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: #15181c;
+  color: #fff;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.me-rg-endcard::before { content: ""; position: absolute; inset: 0; z-index: -2; background: var(--bg) center / cover no-repeat; opacity: .7; transition: transform .3s; }
+.me-rg-endcard::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, #0b0e1000 20%, #0b0e10d9 85%); }
+.me-rg-endcard:hover::before { transform: scale(1.04); }
+.me-rg-endcard.off::before { filter: grayscale(1); opacity: .35; }
+.me-rg-endcard-no { position: absolute; top: 8px; left: 10px; font: 700 11px var(--mono); letter-spacing: .5px; color: #ffffffb3; }
+.me-rg-endcard b { font-size: 13px; line-height: 1.35; }
+.me-rg-endcard-stat { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 11px; color: #ffffffcc; }
+.me-rg-endcard-stat em { display: inline-flex; align-items: center; gap: 4px; font-style: normal; }
+.me-rg-endcard-stat em.g { color: #f2d48a; }
+.me-rg-endcard-stat img { width: 16px; height: 16px; object-fit: contain; }
+.me-rg-endcard.off .me-rg-endcard-stat { color: #ffffff80; }
+
+.me-rg-mx { border-collapse: separate; border-spacing: 0; }
+.me-rg-mx tbody tr:nth-child(even) > * { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+.me-rg-mx tbody tr:hover > * { background: color-mix(in srgb, var(--gold-ink) 8%, transparent); }
+.me-rg-mx th, .me-rg-mx td { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); vertical-align: middle; }
+.me-rg-mx tbody th { position: sticky; left: 0; z-index: 1; background: var(--white); }
+.me-rg-mx tbody tr:nth-child(even) th { background: color-mix(in srgb, var(--white), var(--ink) 3%); }
+.me-rg-mx td.medal .me-rg-medal { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; }
+.me-rg-mx td.medal img { width: 26px; height: 26px; }
+.me-rg-mx td.ck { color: var(--gold-ink); font-weight: 700; }
+.me-rg-mx tr.off > * { opacity: .5; }
+/* 내 정보 기반시설 — 컨디션 요약 (2026-10-18) */
+.me-mood { margin: 10px 0 0; }
+.me-mood-sum { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; font-size: 13px; font-weight: 700; }
+.me-mood-sum small { font-size: 11px; font-weight: 500; color: var(--muted); }
+.me-mood-sum.bad { color: var(--danger); }
+.me-mood-sum.warn { color: var(--gold-ink); }
+.me-mood-sum.ok { color: var(--ink2); }
+.me-mood-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px; }
+.me-mood-list li { display: flex; align-items: baseline; gap: 6px; padding: 4px 8px; border-left: 3px solid var(--gold-ink); border-radius: var(--r-sm); background: var(--bg-soft); font-size: 12px; }
+.me-mood-list li.bad { border-left-color: var(--danger); }
+.me-mood-list li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.me-mood-list li em { font-style: normal; font-size: 11px; color: var(--muted); }
+.me-mood-list li b { font: 700 12px var(--mono); color: var(--ink); }
+/* 마우스를 올린 줄 강조가 분대 이름 칸(고정 칸, 불투명 바탕)까지 오게 — 짝수 줄 바탕 규칙이 이겨 td 까지만 칠해졌다 (사용자 지적 2026-10-18) */
+.me-rg-mx tbody tr:hover > th:first-child { background: color-mix(in srgb, var(--white), var(--gold-ink) 8%); }
+/* 성장 트리 — 내 진행 (2026-10-18) */
+.rg-growth-sum.mine { border-left: 3px solid var(--rggold); }
+.rg-gnode.mine::before {
+  content: "✓";
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--rggold);
+  color: var(--rgdeep);
+  font: 700 11px/1 var(--mono);
+}
+.rg-gnode { overflow: visible; }
+.rg-ggrade.notmine { color: var(--rgmut); font-weight: 600; }
+/* 내 정보 소장품 칸 — 누르면 상세 (2026-10-18) */
+.me-rg-relics li { padding: 0; }
+.me-rg-relics li > button { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 6px 4px; border: 0; border-radius: var(--r-sm); background: none; color: inherit; font: inherit; cursor: pointer; }
+.me-rg-relics li > button:hover { background: color-mix(in srgb, var(--gold-ink) 10%, transparent); }
+.rg-rhead-kind.me-own.on { border-color: color-mix(in srgb, var(--rggold) 60%, transparent); color: var(--rggold); }
+
+/* 엔딩 카드 가장자리 융합 (사용자 요청 2026-10-18 "테두리 안쪽은 테마색, 바깥쪽은 카드 이미지 색으로 살짝씩 섞어 융합된 것처럼") —
+   바깥: 같은 엔딩 그림을 크게 흐려 카드 밖으로 번지게(article ::before), 안쪽: 테마 빛으로 가장자리를 물들인다(머리 ::after 안쪽 그림자) */
+.rg .rg-endings .rg-ending.has-pic { position: relative; isolation: isolate; overflow: visible; border-color: transparent; }
+.rg .rg-endings .rg-ending.has-pic::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: calc(var(--r-md) + 3px);
+  background: var(--bg) center 35% / cover no-repeat;
+  filter: blur(7px) saturate(1.15);
+  opacity: .45;
+  pointer-events: none;
+}
+.rg .rg-endings .rg-ending.has-pic .rg-ending-open { display: block; border-radius: var(--r-md); overflow: hidden; }
+.rg-ending-hero::after {
+  box-shadow: inset 0 0 13px 3px color-mix(in srgb, var(--rgglow, var(--rggold)) 30%, transparent);   /* 두께 절반 (사용자 지시 2026-10-19) */
+}
+/* 보스 칩 — 그림을 덜 가리게 작게, 검은 바탕 없이 글자 그림자로만 (사용자 지시 같은 날) */
+.rg-ending-boss {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rggold);
+  text-shadow: 0 1px 3px #000c;
+}
+.rg-ending-boss small { margin-left: 5px; font-size: 10px; font-weight: 500; color: #f4e7d3cc; }
+.me-rg-endcard .rg-ending-boss { position: absolute; top: 8px; right: 10px; color: #f2d48a; }
+/* 바깥 그림 번짐 + 안쪽 테마 빛 둘 다, 안쪽은 옅게 (사용자 지시 2026-10-19 — 하나씩 걷어 보고 둘 다로 확정) */
+.rg-ending-hero::after { box-shadow: inset 0 0 13px 3px color-mix(in srgb, var(--rgglow, var(--rggold)) 16%, transparent); }
+
+/* ── 엔딩 카드 B안: 가장자리 페이드 (사용자 요청 2026-10-19 "배경의 켈시·클로저처럼 가장자리를 약간") ──
+   테두리·바깥 번짐·안쪽 빛 없이, 카드 머리(그림+어둠막) 가장자리를 투명하게 서서히 지워 배경에 녹인다.
+   폭 좌우 1.2%·위아래 2%, 끝은 완전 투명 (첫 판 7%·9%는 "너무 두껍다", 끝 40% 남긴 판은 약했다 — "얇게, 강하게", 같은 날)
+   되돌리려면 이 블록만 지우면 위의 블러 안(A안)으로 돌아간다 */
+.rg .rg-endings .rg-ending.has-pic { border-color: transparent; background: none; box-shadow: none; }
+.rg .rg-endings .rg-ending.has-pic::before { display: none; }
+.rg .rg-endings .rg-ending.has-pic .rg-ending-open { overflow: visible; }
+.rg .rg-endings .rg-ending.has-pic .rg-ending-hero {
+  background: transparent;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1.2%, #000 98.8%, transparent 100%), linear-gradient(180deg, transparent 0, #000 2%, #000 98%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0, #000 1.2%, #000 98.8%, transparent 100%), linear-gradient(180deg, transparent 0, #000 2%, #000 98%, transparent 100%);
+  mask-composite: intersect;
+}
+.rg .rg-endings .rg-ending.has-pic .rg-ending-hero::after { box-shadow: none; }
+/* 엔딩 상세 창의 그림도 같은 가장자리 페이드 (사용자 지시 2026-10-19 — 카드와 같은 폭·세기) */
+.rg-endmodal .rg-ending-hero {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1.2%, #000 98.8%, transparent 100%), linear-gradient(180deg, transparent 0, #000 2%, #000 98%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0, #000 1.2%, #000 98.8%, transparent 100%), linear-gradient(180deg, transparent 0, #000 2%, #000 98%, transparent 100%);
+  mask-composite: intersect;
+}
+/* 엔딩 그림 모서리도 살짝 둥글게 — 카드·상세 창 (사용자 지시 2026-10-19) */
+.rg .rg-endings .rg-ending.has-pic .rg-ending-hero,
+.rg-endmodal .rg-ending-hero { border-radius: var(--r-md); overflow: hidden; }
+/* 내 정보 통합전략의 엔딩 카드도 같은 가장자리 페이드·둥근 모서리 (사용자 지시 2026-10-19 "카드도") */
+.me-rg-endcard {
+  border-color: transparent;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1.2%, #000 98.8%, transparent 100%), linear-gradient(180deg, transparent 0, #000 2%, #000 98%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0, #000 1.2%, #000 98.8%, transparent 100%), linear-gradient(180deg, transparent 0, #000 2%, #000 98%, transparent 100%);
+  mask-composite: intersect;
+}
+/* 가이드 엔딩 카드 — 둥근 모서리가 그림 머리뿐 아니라 카드·누름 단추에도 같은 값으로 */
+.rg .rg-endings .rg-ending.has-pic,
+.rg .rg-endings .rg-ending.has-pic .rg-ending-open { border-radius: var(--r-md); }
+/* 엔딩 그림 모서리 — 가장자리 페이드에 묻혀 --r-md(3px)로는 둥근 게 안 보였다 → 큰 반경의 두 배 (사용자 지시 2026-10-19 "아주 조금 더") */
+.rg .rg-endings .rg-ending.has-pic,
+.rg .rg-endings .rg-ending.has-pic .rg-ending-open,
+.rg .rg-endings .rg-ending.has-pic .rg-ending-hero,
+.rg-endmodal .rg-ending-hero,
+.me-rg-endcard { border-radius: calc(var(--r-lg) * 2); }

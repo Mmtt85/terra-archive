@@ -84,6 +84,10 @@ scripts/story-resum/work/
 # python3 scripts/build-rogue.py --node-icons (멱등).
 /public/rogue/node/
 
+# 통합전략 바깥 성장 트리 노드 아이콘 — 노드 종류 아이콘과 같은 규약(커밋 안 함, R2 서빙).
+# 재생성은 python3 scripts/build-rogue.py --growth-icons (멱등).
+/public/rogue/growth/
+
 # 직전 배포 청크 캐시 (scripts/keep-assets.mjs) — 배포마다 갱신되는 로컬 산출물
 .deploy-assets/
 

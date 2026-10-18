@@ -129,3 +129,135 @@ export function EndingStoryModal({ rid, title, onClose, className }: { rid: stri
     </ModalWindow>
   );
 }
+
+// ── 엔딩 상세 창 — 통합전략 가이드와 내 정보가 같이 쓴다 (사용자 지시 2026-10-18 "내 정보에서도 리뉴얼된 엔딩 창") ──
+// 그림 머리(번호·최종 보스·이름·달성·인용구·설명·엔딩 스토리) + 진입 조건(점과 선 단계) + 해금 스토리(가로 칸).
+// className — 가이드는 'rg-modal rg-endmodal', 내 정보는 테마 색을 받으려고 'rg-themed rgN' 을 덧붙인다(globals.css 토큰 블록)
+function splitSteps(c: string): string[] {
+  const out: string[] = [];
+  let depth = 0, cur = "";
+  for (let i = 0; i < c.length; i += 1) {
+    const ch = c[i];
+    if ("(（[［".includes(ch)) depth += 1;
+    else if (")）]］".includes(ch)) depth = Math.max(0, depth - 1);
+    if (ch === "→" && depth === 0 && /\s/.test(c[i - 1] ?? "") && /\s/.test(c[i + 1] ?? "")) { out.push(cur.trim()); cur = ""; continue; }
+    cur += ch;
+  }
+  out.push(cur.trim());
+  return out.filter(Boolean);
+}
+// 엔딩별 최종 보스 — 그 엔딩으로 가는 험난한 길(boss 작전, end = 엔딩 번호) 중 가장 깊은 층의 첫 BOSS 적.
+// 이름은 '이름, 별칭'(프레몬트, 모든 생각의 해답) — 칩에 둘 다 적는다 (사용자 지시 2026-10-18 "보스 이름 별명도 다 적어 줘").
+// 가이드(rogue.tsx)와 내 정보(me.tsx)가 같이 쓴다
+export type EndingBoss = { short: string; epithet: string; full: string };
+export function endingBosses(doc: {
+  endings: { id: string }[];
+  stages?: { kind?: string | null; end?: number | null; var?: unknown; side?: unknown; zone?: number | null; enemies?: { key: string }[] | null }[];
+  enemies?: Record<string, { rank?: string | null; name?: string | null }>;
+}): Map<string, EndingBoss> {
+  const m = new Map<string, EndingBoss>();
+  const stages = doc.stages ?? [];
+  const enemies = doc.enemies ?? {};
+  doc.endings.forEach((e, i) => {
+    const top = stages.filter((st) => st.kind === "boss" && st.end === i + 1 && !st.var && !st.side)
+      .sort((a, b) => (b.zone ?? 0) - (a.zone ?? 0))[0];
+    for (const x of top?.enemies ?? []) {
+      const en = enemies[x.key] ?? enemies[x.key.replace(/_\d+$/, "")];
+      if (en?.rank !== "BOSS" || !en.name) continue;
+      const strip = (v: string) => v.replace(/^[\s'‘’"“”「」『』]+|[\s'‘’"“”「」『』]+$/g, "");
+      const [head, ...rest] = en.name.split(/,\s*|，/);
+      m.set(e.id, { short: strip(head) || en.name, epithet: strip(rest.join(", ")), full: en.name });
+      break;
+    }
+  });
+  return m;
+}
+export function BossChip({ boss }: { boss: EndingBoss }) {
+  return <span className="rg-ending-boss" title={boss.full}>{boss.short}{boss.epithet && <small>{boss.epithet}</small>}</span>;
+}
+
+export type EndingCard = {
+  id: string; name: string; cn?: string; pic?: string | null; change?: string | null; desc?: string | null; avg?: string;
+  cond?: string[]; book?: { name?: string; cn?: string; cond?: string; rid?: string; txt?: boolean | 1 }[];
+};
+export function EndingWindow({ e, index, className, boss, done, bookGot, renderCond, onOpenStory, onOpenRecord, onClose, extra }: {
+  e: EndingCard; index: number; className?: string;
+  boss?: EndingBoss | null;
+  /** 달성 여부 — undefined 면 꼬리표를 안 단다 */ done?: boolean;
+  /** 해금 스토리 해금 여부 — 없으면 꼬리표를 안 단다 */ bookGot?: (rid: string) => boolean;
+  renderCond?: (text: string) => React.ReactNode;
+  onOpenStory?: (rid: string, title: string) => void;
+  onOpenRecord?: (rid: string, title: string, sub: string) => void;
+  onClose: () => void;
+  /** 머리 아래에 덧붙일 줄 (내 정보: 도달 횟수·최고 난이도) */ extra?: React.ReactNode;
+}) {
+  const { t } = useI18n();
+  const title = e.cn ? `${e.cn} ${e.name}` : e.name;
+  const nm = (name: string, cn?: string) => (cn ? <><span lang="zh">{cn}</span><span className="rg-sub">{name}</span></> : <>{name}</>);
+  const cond = renderCond ?? ((c: string) => c);
+  return (
+    <ModalWindow key={e.id} label={title} className={`rg-modal rg-endmodal${className ? ` ${className}` : ""}`} onClose={onClose}>
+      <header className="rg-ending-hero" style={e.pic ? { ["--bg" as string]: `url(${asset(e.pic)})` } : undefined}>
+        <span className="rg-ending-no">ENDING {String(index + 1).padStart(2, "0")}</span>
+        <div className="rg-ending-title">
+          {boss && <BossChip boss={boss} />}
+          <h3>{nm(e.name, e.cn)}</h3>
+          {done !== undefined && <em className={`rg-prog${done ? " on" : ""}`}>{done ? t("달성") : t("미달성")}</em>}
+        </div>
+        {e.change && <p className="rg-ending-change">“{e.change}”</p>}
+        {e.desc && <p className="rg-ending-desc on-pic">{e.desc}</p>}
+        {e.avg && onOpenStory && (
+          <button type="button" className="rg-ending-avg on-pic" onClick={() => onOpenStory(e.avg!, title)}>
+            <i aria-hidden>▶</i><b>{t("엔딩 스토리 보기")}</b>
+          </button>
+        )}
+      </header>
+      {extra}
+      <div className="rg-ending-main">
+        {e.cond && e.cond.length > 0 && (
+          <div className="rg-ending-sec">
+            <h4>{t("진입 조건")}</h4>
+            <ol className="rg-ending-cond">
+              {e.cond.map((c, i) => {
+                // 단계 구분은 앞뒤 공백이 있는 ' → ' 만 (붙은 화살표는 '바뀐다'는 뜻이라 한 문장), 그리고 **괄호 밖**만 —
+                // '(수상한 상인 → 안전한 곳 → 전투 → 험난한 길)' 같은 괄호 속 경로까지 쪼개 줄이 다섯 개로 갈라졌다 (사용자 지적 2026-10-18)
+                const parts = splitSteps(c);
+                return (
+                  <li key={i}>
+                    {i < e.cond!.length - 1 && <i className={`rg-step-arrow${i % 4 === 3 ? " wrap" : ""}`} aria-hidden />}
+                    {i > 0 && i % 4 === 0 && <i className="rg-step-arrow from" aria-hidden />}
+                    <div className="rg-cond-in">
+                      {parts.length > 1 ? <ol className="rg-cond-steps">{parts.map((p, j) => <li key={j}>{cond(p)}</li>)}</ol> : cond(c)}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
+        {e.book && e.book.length > 0 && (
+          <div className="rg-ending-sec rg-ending-book">
+            <h4>{t("엔딩 후 해금 스토리")}<em>{e.book.length}</em></h4>
+            <ul>
+              {e.book.map((b, i) => {
+                const tag = bookGot && b.rid ? <em className={`rg-prog sm${bookGot(b.rid) ? " on" : ""}`}>{bookGot(b.rid) ? t("해금됨") : t("미해금")}</em> : null;
+                return (
+                  <li key={i}>
+                    {b.txt && b.rid && onOpenRecord ? (
+                      <button type="button" className="rg-rec-btn" onClick={() => onOpenRecord(b.rid!, b.cn ? `${b.cn} ${b.name ?? ""}` : b.name ?? "", e.name)}>
+                        <strong>{nm(b.name ?? "", b.cn)}</strong><span>{b.cond}</span>{tag}
+                        <i className="rg-rec-read" aria-hidden>▸ {t("읽기")}</i>
+                      </button>
+                    ) : (
+                      <div className="rg-rec-row"><strong>{nm(b.name ?? "", b.cn)}</strong><span>{b.cond}</span>{tag}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    </ModalWindow>
+  );
+}

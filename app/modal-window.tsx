@@ -259,7 +259,9 @@ export function ModalWindow({ label, className, style, onClose, permanent, defau
           ...(pos ? { position: "fixed", left: pos.x, top: pos.y, margin: 0 } : {}),
           ...(size ? { width: size.w, height: size.h, maxWidth: "none", maxHeight: "none" } : {}),
         }}
-        onPointerDownCapture={raise}>
+        // 자기 화면 영역 안을 눌렀을 때만 앞으로 — 리액트 이벤트는 포털을 건너 부모 컴포넌트로도 전해져서, 이 창 **안쪽에서
+        // 그려진** 다른 창(내 정보 통합전략 → 엔딩 → 해금 스토리)을 누르면 이 창이 올라와 엔딩 창이 뒤로 묻혔다 (사용자 지적 2026-10-18)
+        onPointerDownCapture={(e) => { if (panelRef.current?.contains(e.target as Node)) raise(); }}>
         {GRIPS.map((dir) => (
           <div key={dir} className={`mw-rs mw-rs-${dir}`} onPointerDown={(e) => onResizeStart(e, dir)}
             onPointerMove={onResizeMove} onPointerUp={onResizeEnd} onPointerCancel={onResizeEnd} />

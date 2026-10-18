@@ -86,7 +86,7 @@ export type AccountProfile = {
   campaigns: Record<string, number>;
   recruit: { slot: number; state: number; tags: number[]; picked: number[]; finish: number }[];
   assist: { id: string; skillIndex: number; equip: string | null }[];
-  rooms: { slot: string; room: string; level: number }[];
+  rooms: { slot: string; room: string; level: number; /** 배치 오퍼·컨디션(0~24, 동기화 시점) — 2026-10-18 워커부터 */ ops?: { id: string; ap: number | null; at: number | null }[] }[];
   skins: number;
   /** 보유 스킨 id (skin_table charSkins 키, 기본 복장 제외 — 2026-10-11~ 워커. 옛 동기화엔 없다) */
   skinIds?: string[];
@@ -121,7 +121,9 @@ export type AccountProfile = {
       zones?: Record<string, { state: number; weather: number }>; baseLv?: number; bossKill?: string[]; portable?: boolean; outpost?: boolean;
       techToken?: number; techUnlock?: number; drink?: number; squads?: { chars: string[]; tools: string[] }[]; usedChars?: string[]; best?: number };
   } | null;
-  rogue?: Record<string, { collect: Record<string, string[]>; chat?: { chat?: Record<string, number>; chatV2?: Record<string, string[]> }; record: Record<string, unknown> | null }>;
+  rogue?: Record<string, { collect: Record<string, string[]>; chat?: { chat?: Record<string, number>; chatV2?: Record<string, string[]> }; record: Record<string, unknown> | null;
+    /** 저금 — current 지금 쌓인 각뿔 · record 역대 최고 · totalPut 넣은 총량 (2026-10-18 실계정 확인) */ bank?: { current?: number; record?: number; totalPut?: number } | null;
+    /** 바깥 성장 트리 — 가진·쓴 포인트, 찍은 노드 {노드 id: 1} (팬텀은 id 에 테마 접두어가 없다) */ buff?: { pointOwned?: number; pointCost?: number; unlocked?: Record<string, number>; score?: number } | null }>;
   /** 연 스토리 — 스토리 id → 그 안의 storyId('<스토리>_' 접두를 뗀 것, 접두가 다르면 '=' + 전체) (2026-10-06~ 워커, 갤러리 스포 방지) */
   stories?: Record<string, string[]>;
   /** 패러독스 시뮬레이션을 깬 오퍼 id (2026-10-17~ 워커 — 그 전 동기화엔 없다) */

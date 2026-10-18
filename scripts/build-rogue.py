@@ -1035,6 +1035,119 @@ def relic_effects(buffs):
             out.append({"k": k, "v": ent["value"], "m": m, "sel": sel})
     return out
 
+
+# ── 바깥 성장 트리 (게임 밖에서 포인트를 들여 여는 영구 강화 — 역사의 재구성·고금학식 …) ─────────────
+# 원본: roguelike_topic_table.customizeData.<tid> — 세대마다 꼴이 다르다 (2026-10-18 전수 확인):
+#   rogue_1   developments·developmentTokens — 좌표 없음(가지 A~D × 탤런트 KEY 다섯 단), 아이콘 buffIconId 하나,
+#             rawDesc 없음(효과 수치뿐), buffTypeName(힘·내구력 …) 이 있다
+#   rogue_2   + developmentRawTextGroup·developmentLines — 좌표가 극좌표(positionP 각도 · positionR 반지름)
+#   rogue_3   developmentsTokens·developmentsDifficultyNodeInfos — 격자(positionRow·positionOrder), 난이도 노드 셋
+#   rogue_4~6 commonDevelopment{…} 로 한 겹 더 — 아이콘이 active/inactive/bottom 셋
+# 난이도 노드(DIFFICULTY)는 포인트 없이(tokenCost 0) 그 난이도 이상에서만 켜진다 (enableGrade 3·6·9).
+# 아이콘 그림은 --growth-icons 가 공식 CDN 번들에서 public/rogue/growth/<tid>/<iconId>.webp 로 뽑는다.
+GROWTH_NAME_RE = {
+    # 아이템 해금 조건 문구에서 트리 이름을 읽는다 — 괄호 안이 실제 노드 이름일 때만 믿는다
+    "kr": (r"^(.+?)에서 \[(.+?)\]", 1, 2),
+    "en": (r"['\[](.+?)['\]] in (.+?)\.?$", 2, 1),   # 'Sensibility' 도 [Liminal Consciousness] 도 있다
+    "jp": (r"^(.+?)で【(.+?)】", 1, 2),
+    "cn": (r"^(.+?)中解锁【(.+?)】", 1, 2),
+}
+
+
+def growth_text(s):
+    """게임 마크업만 걷고, 남은 <난이도 이름> 꺾쇠는 〈〉로 — 뒤의 sanitize 가 영문 <Facing Souls 3> 를
+    태그로 알고 통째로 지운다 (sanitize 는 '<' 다음 글자가 영문이면 태그로 본다)."""
+    if not isinstance(s, str):
+        return s
+    s = re.sub(r"</?color[^>]*>|<[@$][^>]*>|</>", "", s.replace("\r\n", "\n").replace("\\n", "\n"))
+    return re.sub(r"<([^<>]+)>", r"〈\1〉", s).strip()
+
+
+def extract_growth(table, tid, branch="kr"):
+    cd = (table.get("customizeData") or {}).get(tid) or {}
+    dev = cd.get("commonDevelopment") or cd
+    devs = dev.get("developments") or {}
+    if not devs:
+        return None
+    toks = dev.get("developmentTokens") or dev.get("developmentsTokens") or {}
+    diff = dev.get("developmentsDifficultyNodeInfos") or {}
+    ids = lambda v: [x for x in v if x] if isinstance(v, list) else []   # 레포 JSON 은 빈 배열을 {} 로 적는다
+    nodes = []
+    for x in devs.values():
+        effects = [{"key": e.get("displayType"), "num": e.get("displayNum"), "form": e.get("displayForm"),
+                    "label": growth_text(e.get("tokenDesc"))}
+                   for e in sorted(ids(x.get("buffDisplayInfo")), key=lambda e: e.get("sortId") or 0)]
+        raw = x.get("rawDesc")
+        desc = [growth_text(d) for d in (raw if isinstance(raw, list) else [raw] if raw else []) if d]
+        if not desc:   # rogue_1 — 글 없이 수치만 있다
+            desc = [f"{e['label']} +{e['num']}{'%' if e['form'] == 'PERCENTAGE' else ''}" for e in effects]
+        n = {
+            "id": x["buffId"], "name": growth_text(x.get("buffName")), "type": x.get("nodeType"),
+            "row": x.get("positionRow"), "col": x.get("positionOrder"), "cost": x.get("tokenCost") or 0,
+            "desc": desc,
+            "icon": x.get("activeIconId") or x.get("buffIconId"), "iconOff": x.get("inactiveIconId"),
+            "group": x.get("groupId"),
+            "front": ids(x.get("frontNodeId")), "next": ids(x.get("nextNodeId")),
+            "effects": effects,
+        }
+        if x.get("bottomIconId") and x["bottomIconId"] != n["icon"]:
+            n["iconBottom"] = x["bottomIconId"]           # 난이도 노드의 받침 그림
+        if x.get("effectType"):
+            n["etype"] = x["effectType"]                  # BUFF · RAW_TEXT_EFFECT · RAW_TEXT_BAND(분대 해금)
+        if x.get("buffTypeName"):
+            n["tag"] = growth_text(x["buffTypeName"])     # rogue_1 가지 이름 (힘·내구력·체력·재화 · KEY는 활력 …)
+        if "positionP" in x:
+            n["pos"] = [x.get("positionP"), x.get("positionR")]   # rogue_2 극좌표 (각도, 반지름)
+        if x.get("enrollId"):
+            n["enroll"] = x["enrollId"]                   # 확장판에서 붙은 노드 (rogue_N_enroll_2 …)
+        di = diff.get(x["buffId"])
+        if di:
+            n["grade"] = di.get("enableGrade")
+            if di.get("enableDesc"):
+                n["gradeDesc"] = growth_text(di["enableDesc"])
+        nodes.append(n)
+    # rogue_1 은 좌표가 없다 — 뿌리에서의 깊이를 단(row)으로, 같은 단 안 id 순서를 칸(col)으로 매긴다
+    if all(n["row"] is None and "pos" not in n for n in nodes):
+        by = {n["id"]: n for n in nodes}
+        depth = {}
+        def d_of(nid, seen=()):
+            if nid not in depth:
+                fr = [f for f in by[nid]["front"] if f in by and f not in seen]
+                depth[nid] = 1 + max((d_of(f, seen + (nid,)) for f in fr), default=0)
+            return depth[nid]
+        cols = {}
+        for n in nodes:
+            n["row"] = d_of(n["id"])
+            cols[n["row"]] = cols.get(n["row"], 0) + 1
+            n["col"] = cols[n["row"]]
+    # 트리 이름 — 해금 조건 문구('역사의 재구성에서 [노드] 개방')에서, 괄호 안이 이 트리 노드일 때만
+    names = {n["name"] for n in nodes}
+    pat, gi, ni = GROWTH_NAME_RE.get(branch, GROWTH_NAME_RE["kr"])
+    votes = {}
+    for it in ((table.get("details") or {}).get(tid) or {}).get("items", {}).values():
+        m = re.search(pat, growth_text(it.get("unlockCondDesc") or ""))
+        if m and m.group(ni) in names:
+            votes[m.group(gi)] = votes.get(m.group(gi), 0) + 1
+    name = max(votes, key=votes.get) if votes else None
+    note = growth_text(((table.get("details") or {}).get(tid) or {}).get("gameConst", {}).get("buffDesc"))
+    if not name and note:   # 해금 문구가 없으면 난이도 노드 안내문의 첫 색 글자(EN 은 순서가 달라 안 쓴다)
+        segs = re.findall(r"<color=[^>]*>([^<]*)</color>",
+                          ((table.get("details") or {}).get(tid) or {}).get("gameConst", {}).get("buffDesc") or "")
+        if segs and branch != "en":
+            name = segs[0].strip() or None
+    out = {
+        "name": name,
+        "currency": None,   # 성장 포인트 이름은 표에 없다 (클라 UI 문자열) — 화면 쪽 사전에서
+        "nodes": nodes,
+        "tokens": {k: {"label": growth_text(v.get("tokenDesc")), "form": v.get("displayForm"), "sort": v.get("sortId")}
+                   for k, v in sorted(toks.items(), key=lambda kv: kv[1].get("sortId") or 0)},
+        "totalCost": sum(n["cost"] for n in nodes),
+    }
+    if note:
+        out["note"] = note   # 난이도 노드 안내 (rogue_3~)
+    # rogue_2 developmentLines(연결선 60개)는 노드 next 와 정확히 같아(2026-10-18 대조) 따로 싣지 않는다 — 좌표는 노드 pos
+    return out
+
 def build_topic(tid="rogue_1", loc=None):
     """KR 정식 출시 토픽(rogue_1~5) 공통 빌더 — 스테이지 id 접두 roN_ 공통,
     토픽 고유 시스템(음반/메아리/탐사 도구 등)은 데이터 존재 여부로 분기한다.
@@ -1947,6 +2060,10 @@ def build_topic(tid="rogue_1", loc=None):
         out["mechanics"] = mechanics
     if visitors:
         out["visitors"] = visitors
+    # 바깥 성장 트리 (extract_growth 주석) — 문자열은 거기서 이미 다듬어 sanitize 를 그대로 지난다
+    growth = extract_growth(table, tid, branch)
+    if growth:
+        out["growth"] = growth
     # 게임 마크업 태그(<@ro.lose>1</>, <color=#...> 등)를 모든 문자열에서 일괄 제거
     def sanitize(v):
         if isinstance(v, str):
@@ -2137,6 +2254,33 @@ def cn_koreanize(ronum, out):
                     if len(sc["choices"]) == len(ks["choices"]):
                         for c, kc in zip(sc["choices"], ks["choices"]):
                             put_txt(c, kc, ("title", "desc", "branch", "note"))
+    # 바깥 성장 트리 — 노드 id 교차로 한섭 공식 글을 덮고, 노드·트리 이름은 원문 병기 (인게임은 중국어)
+    g, kg = out.get("growth"), kr.get("growth")
+    if g and kg:
+        if kg.get("name"):
+            if g.get("name") and g["name"] != kg["name"]:
+                g["cn"] = g["name"]
+            g["name"] = kg["name"]
+        for f in ("note",):
+            if kg.get(f):
+                g[f] = kg[f]
+        for k, v in (g.get("tokens") or {}).items():
+            if (kg.get("tokens") or {}).get(k, {}).get("label"):
+                v["label"] = kg["tokens"][k]["label"]
+        kr_nodes = {n["id"]: n for n in kg.get("nodes") or []}
+        for n in g.get("nodes") or []:
+            k = kr_nodes.get(n["id"])
+            if not k:
+                continue   # CN 선행 노드 — ③ 사전 폴백에 맡긴다
+            if n.get("name") and n["name"] != k.get("name"):
+                n["cn"] = n["name"]
+            put_txt(n, k, ("name", "tag", "gradeDesc"))
+            if len(n.get("desc") or []) == len(k.get("desc") or []):
+                n["desc"] = list(k["desc"])
+            if len(n.get("effects") or []) == len(k.get("effects") or []):
+                for e, ke in zip(n["effects"], k["effects"]):
+                    if ke.get("label"):
+                        e["label"] = ke["label"]
     # 토픽 이름·부제 — 한국어 공식 명칭으로, 중국어 원문은 cnName (블랙플로우와 같은 꼴)
     out["cnName"] = out["name"]
     if isinstance(kr.get("name"), str) and kr["name"].strip():
@@ -3368,6 +3512,46 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
     print(f"\n합계 {total}장 → public/rogue/node/  ·  R2 반영: node scripts/r2-sync.mjs")
 
 
+def unpack_growth_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue_5")):
+    """바깥 성장 트리 노드 아이콘 → public/rogue/growth/<tid>/<iconId>.webp (켜진·꺼진·받침 그림 전부).
+
+    출처는 공식 게임 CDN 번들 (2026-10-18 매니페스트 확인 — 171종 전부 있음):
+      rogue_1~3  arts/rglktopic.ab        arts/ui/rogueliketopic/outerbufficon/<id>
+      rogue_4·5  ui/rglktopic/rogue_N.ab  ui/rogueliketopic/topics/rogue_N/outerbuffcommonicon/<id>
+    번들 위치는 cdnassets 가 매니페스트에서 이름으로 찾는다 — 다음 테마가 다른 폴더에 실어도 그대로 따라간다.
+    원본이 48~160px 라 줄이지 않는다. KR 미출시 테마(rogue_6)는 중국 CDN.
+
+    ⚠ 산출물은 커밋하지 않는다 (.gitignore /public/rogue/growth/) — R2로만 서빙한다:
+      node scripts/r2-sync.mjs   (DIRS의 "rogue" 하위라 자동 포함)
+    데이터(growth.nodes[].icon)는 파일 존재와 무관하게 id 를 싣는다 — CI 에는 이 그림이 없다.
+    """
+    import io as _io
+    if not cdnassets.available():
+        sys.exit("pip3 install --user UnityPy lz4inv 후 다시 실행")
+    total, missing = 0, []
+    for tid in topics:
+        server = "cn" if tid == "rogue_6" else "kr"
+        g = extract_growth(fetch_json("excel/roguelike_topic_table.json", server), tid, server)
+        if not g:
+            print(f"{tid}: 성장 트리 없음 — 건너뜀"); continue
+        want = sorted({i for n in g["nodes"] for i in (n.get("icon"), n.get("iconOff"), n.get("iconBottom")) if i})
+        dest = os.path.join(REPO, "public", "rogue", "growth", tid)
+        os.makedirs(dest, exist_ok=True)
+        got = 0
+        for name in want:
+            path = cdnassets.find_path(name, server)
+            im = cdnassets.image(path, server) if path else None
+            if im is None:
+                missing.append(f"{tid}/{name}"); continue
+            buf = _io.BytesIO()
+            im.convert("RGBA").save(buf, "PNG")
+            save_webp(buf.getvalue(), os.path.join(dest, f"{name}.webp"), photo=False, method=4, try_lossless=True)
+            got += 1
+        total += got
+        print(f"{tid}: {got}/{len(want)}종 → public/rogue/growth/{tid}/")
+    print(f"\n합계 {total}장" + (f" · 누락 {missing}" if missing else "") + "  ·  R2 반영: node scripts/r2-sync.mjs")
+
+
 def dump_enc_untranslated():
     # 조우 씬 트리의 미번역 PRTS 텍스트 리포트 — 비면 파일도 비운다 (rogue6 리포트와 같은 규약)
     path = os.path.join(REPO, "scripts", "rogue-enc-untranslated.json")
@@ -3381,6 +3565,8 @@ if __name__ == "__main__":
     if arg == "--node-icons":
         unpack_node_icons(tuple(sys.argv[2:]) or None or (
             "rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue_5", "rogue_6"))
+    elif arg == "--growth-icons":
+        unpack_growth_icons(tuple(sys.argv[2:]) or ("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue_5"))
     elif arg == "--icons":
         unpack_icons(sys.argv[2] if len(sys.argv) > 2 else "rogue_1")
     elif arg == "rogue6":
