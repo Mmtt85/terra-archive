@@ -9,6 +9,7 @@
 import type { Metadata } from "next";
 import { asset } from "./assets";
 import { SITE_URL } from "./seo";
+import { autochessSeasonTitle } from "./route-titles";
 import seasonList from "./data/autochess-seasons.json";
 
 type SeoLocale = "ko" | "en" | "ja";
@@ -36,7 +37,7 @@ function copy(locale: SeoLocale, n: number) {
   if (locale === "en") {
     return {
       name: `Season ${n}`,
-      title: `Stronghold Protocol Season ${n} - Arknights Guide | Terra Archive`,
+      title: autochessSeasonTitle("en", n),
       desc: cur
         ? `Arknights Stronghold Protocol Season ${n} — alliances by faction and trait, every operator's Protocol-only ability, supply centre tiers, items, bands, tactics, drill enemies and leader enemies, straight from the game data.`
         : `Arknights Stronghold Protocol Season ${n} (${run}) — the alliances, chess pieces, items and battlefields exactly as they were that season. Values differ from the current season.`,
@@ -45,7 +46,7 @@ function copy(locale: SeoLocale, n: number) {
   if (locale === "ja") {
     return {
       name: `シーズン${n}`,
-      title: `堅守協定 シーズン${n} - アークナイツ攻略 | テラアーカイブ`,
+      title: autochessSeasonTitle("ja", n),
       desc: cur
         ? `アークナイツ堅守協定シーズン${n} — 陣営・特性別の盟約、駒ごとの専用アビリティ、購買部の数値、アイテム・バンド・戦術・特訓の敵・リーダーの敵をゲームデータからそのまま整理しました。`
         : `アークナイツ堅守協定シーズン${n}（${run}） — 当時の盟約・駒・アイテム・戦場をそのまま。数値は現行シーズンと異なります。`,
@@ -53,7 +54,7 @@ function copy(locale: SeoLocale, n: number) {
   }
   return {
     name: `시즌 ${n}`,
-    title: `위수 협의 시즌 ${n} - 명일방주 위수 협의 공략 | 테라 아카이브`,
+    title: autochessSeasonTitle("ko", n),
     desc: cur
       ? `명일방주 위수 협의(명토체스) 시즌 ${n} — 맹약(진영·특성)별 오퍼레이터, 기물마다의 위수 협의 전용 능력, 물자관리소 수치, 장비·밴드·전략·특훈 적·리더 적을 게임 데이터에서 그대로 정리했습니다.`
       : `명일방주 위수 협의(명토체스) 시즌 ${n}(${run}) — 그 시즌의 맹약·기물·장비·전장을 당시 수치 그대로 봅니다. 지금 시즌과는 수치가 다릅니다.`,

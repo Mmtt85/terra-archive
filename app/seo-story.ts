@@ -10,6 +10,7 @@
 import type { Metadata } from "next";
 import { asset } from "./assets";
 import { SITE_URL } from "./seo";
+import { loreStoryTitle } from "./route-titles";
 import storiesData from "./data/stories.json";
 import chronologyData from "./data/chronology.json";
 import summaryIdsData from "./data/story-summary-ids.json";
@@ -80,9 +81,9 @@ const descOf = (locale: SeoLocale, id: string) => {
 
 // 요약이 없는(기록뿐인) 이벤트 — 이 주소로 색인되는 본문은 요약이 아니라 이벤트 기록이다.
 const LORE_TITLE: Record<SeoLocale, (name: string) => string> = {
-  ko: (name) => `${name} 이벤트 기록 - 명일방주 | 테라 아카이브`,
-  en: (name) => `${name} Event Records - Arknights | Terra Archive`,
-  ja: (name) => `${name} イベント記録 - アークナイツ | テラアーカイブ`,
+  ko: (name) => loreStoryTitle("ko", name),
+  en: (name) => loreStoryTitle("en", name),
+  ja: (name) => loreStoryTitle("ja", name),
 };
 const LORE_DESC: Record<SeoLocale, (name: string) => string> = {
   ko: (name) => `명일방주 '${name}' 이벤트를 진행하며 미니게임·수집 요소로 풀리던 글 모음입니다. 이벤트가 끝나면 게임에서도 다시 볼 수 없는 기록입니다.`,

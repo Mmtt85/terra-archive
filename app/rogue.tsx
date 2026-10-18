@@ -1599,6 +1599,8 @@ export default function RogueGuide({ initialTopic }: {
     else url.searchParams.delete("sv");
     history.pushState(null, "", url.pathname + url.search + url.hash);
     applyTopic(id);
+    // 홈이 탭 제목을 테마에 맞춘다 (home.tsx 'ta:rogue-topic') — 종전엔 테마를 바꿔도 제목이 그대로였다 (2026-10-18)
+    window.dispatchEvent(new CustomEvent("ta:rogue-topic", { detail: slugOf(id) }));
   };
 
   // 서버 탭 클릭 — URL(?sv=cn)을 바꾸고 전환. 블랙플로우에서 KR 탭은 비활성(미출시).

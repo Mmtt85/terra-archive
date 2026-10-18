@@ -1779,7 +1779,7 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
   /** 상세 라우트(/stories/<id>)가 넘겨주는 이벤트 id — 프리렌더 HTML에 요약 본문이 담긴다 */
   initialStory?: string;
   /** 열린 스토리 이름(없으면 null) — 홈이 문서 제목에 반영한다 */
-  onStoryTitle?: (name: string | null) => void;
+  onStoryTitle?: (name: string | null, lore?: boolean) => void;
 }) {
   const { locale, t } = useI18n();
   // 기본 화면은 테라 연대기 (사용자 지시 2026-10-07 — 연대기가 잘 나와 맨 앞으로)
@@ -1889,9 +1889,10 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
   // 덮어써서, 상세 라우트가 내보낸 <title>(스토리별 제목)이 하이드레이션 직후 사라지고
   // 있었다. 구글은 렌더 후 제목을 쓰므로 색인 제목까지 목록 제목으로 뭉개진다 (2026-08-06).
   useEffect(() => {
-    onStoryTitle?.(selected ? locText(locale, selected.name) : null);
+    // 요약이 없으면 '이벤트 기록' 상세 — 제목 형식이 다르다 (app/seo-story.ts loreOnly)
+    onStoryTitle?.(selected ? locText(locale, selected.name) : null, selected ? !summaries[selected.id] : false);
     return () => onStoryTitle?.(null);
-  }, [selected, locale, onStoryTitle]);
+  }, [selected, locale, onStoryTitle, summaries]);
 
   // ─── 스샷 레이더 — 전문 대사 화면 인식 → 해당 이벤트·에피소드 전문 뷰어로 (2026-07-24) ───
   // 기본 꺼짐·비영속 (리프레시하면 꺼짐). 인덱스는 public/story/search.bin (앵커 3점 역색인).

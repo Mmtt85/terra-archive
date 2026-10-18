@@ -7,6 +7,7 @@
 import type { Metadata } from "next";
 import { asset } from "./assets";
 import { CONTACT_EMAIL } from "./contact";
+import { ABOUT_TITLE, AUTOCHESS_TITLE } from "./route-titles";
 
 export const SITE_URL = "https://terra-archive.net";
 
@@ -136,9 +137,9 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ja: { title: "生息演算ガイド - アークナイツ生息演算攻略 | テラアーカイブ", description: "アークナイツ生息演算ガイド — 料理レシピ、製作・設置物の素材、エリアと天候、遭遇の選択肢、裂け目の目標を整理。中国サーバー先行の新シーズンもプレビューできます。" },
   },
   autochess: {
-    ko: { title: "위수 협의 가이드 - 명일방주 위수 협의 공략 | 테라 아카이브", description: "명일방주(명방·Arknights) 위수 협의(오토체스) 시즌2 「맹약」 가이드 — 맹약 23종(진영 8·특성 15)별 오퍼레이터, 오퍼레이터 121명의 전용 능력과 스킬·모듈, 리더 적 10종과 특훈 적 7유형 119종, 보급센터 티어별 가격·레벨, 자유 선택 칸과 대체 기물, 아이템 59종·전략 40종까지 게임 데이터에서 정리했습니다." },
-    en: { title: "Stronghold Protocol Guide - Arknights Auto Chess | Terra Archive", description: "Arknights Stronghold Protocol (auto chess) Season 2 guide — 23 alliances (8 nation, 15 trait) with their operators, garrison abilities plus skills and modules for all 121 units, 10 leader enemies and 119 Tactical Training enemies across 7 types, Supply Center tier prices and levels, free-pick slots and stand-in units, 59 items and 40 strategies, straight from game data." },
-    ja: { title: "堅守協定ガイド - アークナイツ オートチェス攻略 | テラアーカイブ", description: "アークナイツ堅守協定（オートチェス）シーズン2「盟約」ガイド — 盟約23種（国家8・特性15）ごとのオペレーター、121体それぞれの専用能力とスキル・モジュール、リーダー級10種と訓練用仮想敵7系統119種、補給センターの等級別価格とレベル、自由選択枠と代替ユニット、アイテム59種・戦略40種までゲームデータから整理しました。" },
+    ko: { title: AUTOCHESS_TITLE.ko, description: "명일방주(명방·Arknights) 위수 협의(오토체스) 시즌2 「맹약」 가이드 — 맹약 23종(진영 8·특성 15)별 오퍼레이터, 오퍼레이터 121명의 전용 능력과 스킬·모듈, 리더 적 10종과 특훈 적 7유형 119종, 보급센터 티어별 가격·레벨, 자유 선택 칸과 대체 기물, 아이템 59종·전략 40종까지 게임 데이터에서 정리했습니다." },
+    en: { title: AUTOCHESS_TITLE.en, description: "Arknights Stronghold Protocol (auto chess) Season 2 guide — 23 alliances (8 nation, 15 trait) with their operators, garrison abilities plus skills and modules for all 121 units, 10 leader enemies and 119 Tactical Training enemies across 7 types, Supply Center tier prices and levels, free-pick slots and stand-in units, 59 items and 40 strategies, straight from game data." },
+    ja: { title: AUTOCHESS_TITLE.ja, description: "アークナイツ堅守協定（オートチェス）シーズン2「盟約」ガイド — 盟約23種（国家8・特性15）ごとのオペレーター、121体それぞれの専用能力とスキル・モジュール、リーダー級10種と訓練用仮想敵7系統119種、補給センターの等級別価格とレベル、自由選択枠と代替ユニット、アイテム59種・戦略40種までゲームデータから整理しました。" },
   },
   // 보안파견 가이드 (2026-10-17) — 제목엔 줄임말 금지(보파 X)
   sss: {
@@ -147,9 +148,9 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ja: { title: "保全派遣ガイド - アークナイツ保全派遣攻略 | テラアーカイブ", description: "アークナイツ保全派遣ガイド — 全23マップの階層ごとの作戦と初回クリア報酬、ボス、マップ専用リーダーカードと強化パーツ、職分ごとの戦術装備A・B、呪いカード、各マップのクリア・応急・隠し勲章、今シーズンの開放マップとシーズン任務、過去シーズンの記録をゲームデータから整理しました。マイページでログインすると自分の最高到達階層と勲章も表示されます。" },
   },
   about: {
-    ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 자동편성기, 공개채용 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },
-    en: { title: "About - Feature Guide | Terra Archive", description: "About Terra Archive — what the operator encyclopedia, base auto-planner, public recruitment helper, material farming/upgrade simulator, and AI story digest do, and when to use each." },
-    ja: { title: "紹介 - 機能ガイド | テラアーカイブ", description: "テラアーカイブの機能紹介 — オペレーター図鑑、基地自動編成、公開求人ヘルパー、素材周回・育成シミュ、AIストーリー要約が何で、どんな時に使うのかを案内します。" },
+    ko: { title: ABOUT_TITLE.ko, description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 자동편성기, 공개채용 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },
+    en: { title: ABOUT_TITLE.en, description: "About Terra Archive — what the operator encyclopedia, base auto-planner, public recruitment helper, material farming/upgrade simulator, and AI story digest do, and when to use each." },
+    ja: { title: ABOUT_TITLE.ja, description: "テラアーカイブの機能紹介 — オペレーター図鑑、基地自動編成、公開求人ヘルパー、素材周回・育成シミュ、AIストーリー要約が何で、どんな時に使うのかを案内します。" },
   },
 };
 

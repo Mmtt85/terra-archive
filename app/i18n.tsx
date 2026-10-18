@@ -637,6 +637,8 @@ const D: Record<string, Pair> = {
   "훈장 {n}단계": ["Medal tier {n}", "勲章 {n}段階"],
   "가는 법": ["How to reach", "到達方法"],
   "코팅 완료": ["Fully coated", "コーティング完了"],
+  "한국 서버 미실장": ["Not on the KR server yet", "韓国サーバー未実装"],
+  "열리면 여기에 기록이 나옵니다": ["Your records will appear here once it opens", "実装されるとここに記録が出ます"],
   "{name} 상세 정보 열기": ["Open {name} details", "{name}の詳細を開く"],
   "{name} 오퍼레이터": ["Operator {name}", "オペレーター{name}"],
 

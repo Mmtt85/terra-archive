@@ -1928,6 +1928,12 @@ function RogueStats({ me }: { me: MeData }) {
             </button>
           );
         })}
+        {/* 아직 기록이 없는 미래시 테마(흑류수해) — 칸은 흐리게 두고, 한섭에 열려 기록이 오면 위 목록으로 넘어간다 (사용자 질문 2026-10-18) */}
+        {TOPICS.filter((tp) => tp.future && !all[tp.id]?.record).map((tp) => (
+          <div key={tp.id} className="me-resume-idle has-bg me-rg-future" style={{ ["--bg" as string]: `url(${asset(`/rogue/kv${tp.id.split("_")[1]}.webp`)})` }}>
+            <b>{short(tp.id)}</b><span>{t("한국 서버 미실장")}</span><em>{t("열리면 여기에 기록이 나옵니다")}</em>
+          </div>
+        ))}
       </div>
       {open && <RogueTopicDetail me={me} topic={open} onClose={() => setOpen(null)} />}
     </Card>

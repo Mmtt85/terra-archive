@@ -118,6 +118,7 @@ import acSeasonList from "./data/autochess-seasons.json";
 import eventIdsData from "./data/event-ids.json";
 import cnRunningData from "./data/cn-running.json";
 import krRunningData from "./data/kr-running.json";
+import { ABOUT_TITLE, AUTOCHESS_TITLE, SANDBOX_TITLE, autochessSeasonTitle, loreStoryTitle } from "./route-titles";
 /** 스토리 요약(로케일별 1.8MB)은 **스토리 탭에 들어갈 때만** 받는다 (2026-08-09 INP 작업).
  *  종전엔 로케일 래퍼가 정적 import해 모든 페이지가 파싱했다. 셸에서 쓰던 곳은
  *  Portal의 죽은 stats prop 하나뿐이라 데이터 자체가 필요 없었다. */
@@ -1331,6 +1332,12 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 햄버거 '통합전략 가이드' 부메뉴 활성 표시용 — 현재 URL의 ?topic= 슬러그 (기본 is1)
   // 열려 있는 스토리 상세의 이름 — 문서 제목에 반영 (StoryGuide가 알려준다)
   const [storyTitle, setStoryTitle] = useState<string | null>(null);
+  // 생존연산·위수 협의 시즌 — 문서 제목 effect 가 위에서 읽으므로 여기서 선언한다 (전환 함수는 아래 switchSandbox·switchAutochess)
+  const [sandboxSlug, setSandboxSlug] = useState(initialSandbox ?? "sand");
+  const [autochessSeason, setAutochessSeason] = useState(() => autochessSeasonOf(initialAutochess));
+  // 요약 없이 이벤트 기록만 있는 스토리 — 제목을 '이벤트 기록' 형식으로 (app/seo-story.ts loreOnly 와 같게, 2026-10-18)
+  const [storyLore, setStoryLore] = useState(false);
+  const onStoryTitle = useCallback((name: string | null, lore?: boolean) => { setStoryTitle(name); setStoryLore(!!lore); }, []);
   // 오퍼 상세 **페이지**(/operators/<id>로 직접 진입). 모달(selected)과 별개다 —
   // 모달은 body 포털이라 프리렌더가 안 되고, 목록 위에 겹치므로 색인용으로 못 쓴다.
   const [pageOperator, setPageOperator] = useState<Operator | null>(
@@ -1553,7 +1560,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     const syncFromUrl = () => {
       const hash = decodeURIComponent(window.location.hash);
       setTab(tabFromPath(window.location.pathname));
-      setRogueSlug(new URLSearchParams(window.location.search).get("topic") || "is1");
+      // 테마는 경로(/rogue/isN)가 정본 — 옛 ?topic= 만 보면 뒤로가기 때마다 팬텀(is1) 제목이 됐다 (2026-10-18)
+      setRogueSlug(/\/rogue\/(is\d+)/.exec(window.location.pathname)?.[1] || new URLSearchParams(window.location.search).get("topic") || "is1");
+      { const ac = /\/autochess\/s(\d+)/.exec(window.location.pathname)?.[1]; if (ac) setAutochessSeason(Number(ac)); }
+      { const sb = /\/ra\/([a-z]+)/.exec(window.location.pathname)?.[1]; if (sb) setSandboxSlug(sb); }
       // 오퍼 상세 페이지 주소면 페이지 뷰로 (모달은 닫는다) — 뒤로/앞으로 대응
       const pathOp = operatorIdFromPath(window.location.pathname);
       const pageOp = pathOp ? operators.find((candidate) => candidate.id === pathOp) ?? null : null;
@@ -1920,7 +1930,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             : tab === "story"
               // 상세가 열려 있으면 스토리별 제목 — 상세 라우트의 <title>(app/seo-story.ts)과 같은 문구
               ? (storyTitle
-                ? t("{name} 스토리 요약 - 명일방주 | 테라 아카이브", { name: storyTitle })
+                ? (storyLore ? loreStoryTitle(locale, storyTitle) : t("{name} 스토리 요약 - 명일방주 | 테라 아카이브", { name: storyTitle }))
                 : t("스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브"))
               : tab === "gallery"
                 ? t("갤러리 - 명일방주 스토리 CG·스탠딩·일러스트 | 테라 아카이브")
@@ -1936,13 +1946,27 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                     : t("통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브");
                 })()
                 : tab === "ra"
-                ? t("생존연산 가이드 - 명일방주 생존연산 공략 | 테라 아카이브")
+                // 시즌 주소(/ra/sand·/ra/anchor)는 시즌 제목 (app/seo-sandbox.ts 와 같은 문구 — app/route-titles.ts)
+                ? (/\/ra\/[a-z]+/.test(window.location.pathname) && SANDBOX_TITLE[sandboxSlug as "sand" | "anchor"]
+                  ? SANDBOX_TITLE[sandboxSlug as "sand" | "anchor"][locale]
+                  : t("생존연산 가이드 - 명일방주 생존연산 공략 | 테라 아카이브"))
+                : tab === "autochess"
+                // 종전엔 분기가 없어 사이트 기본 제목으로 덮였다 (2026-10-18 전수조사)
+                ? (/\/autochess\/s\d+/.test(window.location.pathname) ? autochessSeasonTitle(locale, autochessSeason) : AUTOCHESS_TITLE[locale])
+                : tab === "about"
+                ? ABOUT_TITLE[locale]
                 : tab === "sss"
                 ? t("보안파견 가이드 - 명일방주 보안파견 공략 | 테라 아카이브")
                 : tab === "archive"
                 ? t("오퍼레이터 백과사전 - 명일방주 오퍼레이터 도감 | 테라 아카이브")
                 : t("테라 아카이브 | 명일방주 팬사이트 · 공개모집 계산기·기반시설 편성·통합전략 공략");
-  }, [tab, selected, pageOperator, storyTitle, rogueSlug, t]);
+  }, [tab, selected, pageOperator, storyTitle, storyLore, rogueSlug, sandboxSlug, autochessSeason, pageEnemy, enemyPageOpen, pageStage, stagePageOpen, locale, t]);
+  // 통합전략 화면 안의 테마 드롭다운(rogue.tsx goTopic)은 홈 상태를 거치지 않는다 — 바뀐 테마를 이벤트로 받아 제목에 반영 (2026-10-18)
+  useEffect(() => {
+    const on = (e: Event) => { const slug = (e as CustomEvent<string>).detail; if (slug) setRogueSlug(slug); };
+    window.addEventListener("ta:rogue-topic", on);
+    return () => window.removeEventListener("ta:rogue-topic", on);
+  }, []);
 
   // 오퍼 모달은 히스토리 엔트리를 쌓지 않고 해시만 교체한다(공유용 딥링크).
   // 예전엔 열 때 pushState, 닫을 때 history.back()으로 URL을 복원했는데, 인앱 브라우저
@@ -2085,7 +2109,6 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
 
   // 생존연산 시즌 전환 — /ra/<slug>로 주소를 바꾸고 탭을 연다 (통전 테마 전환과 같은 짜임).
   // ⚠ tabPath가 ?future=1을 달고 올 수 있어 문자열 이어붙이기 금지 (switchRogueTopic과 같은 함정).
-  const [sandboxSlug, setSandboxSlug] = useState(initialSandbox ?? "sand");
   const switchSandbox = (slug: string) => {
     setNavOpen(false); setOpenGroup(""); holdFlyout("");
     const [, query] = tabPath("ra").split("?");
@@ -2096,7 +2119,6 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
 
   // 위수 협의 시즌 전환 — /autochess/<slug>로 주소를 바꾸고 탭을 연다 (생존연산과 같은 짜임).
   // ⚠ tabPath가 ?future=1을 달고 올 수 있어 문자열 이어붙이기 금지.
-  const [autochessSeason, setAutochessSeason] = useState(() => autochessSeasonOf(initialAutochess));
   const switchAutochess = (n: number) => {
     setNavOpen(false); setOpenGroup(""); holdFlyout("");
     const [, query] = tabPath("autochess").split("?");
@@ -2917,7 +2939,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             Suspense 자리표시가 뜨지 않는다 — 그냥 아무것도 안 그리면 푸터가 헤더 바로 밑에
             붙었다가 밀려나며 CLS가 된다 (실측 모바일 0.281, 2026-08-13). 같은 자리표시를 쓴다. */}
         {tab === "story" && (summaries
-          ? <StoryGuide summaries={summaries} onShowOperator={showOperatorById} opIndex={storyOpIndex} initialStory={initialStory} onStoryTitle={setStoryTitle} />
+          ? <StoryGuide summaries={summaries} onShowOperator={showOperatorById} opIndex={storyOpIndex} initialStory={initialStory} onStoryTitle={onStoryTitle} />
           : <div className="tab-loading" aria-hidden />)}
         {tab === "rogue" && <RogueGuide initialTopic={initialRogue ? `rogue_${initialRogue.replace(/^is/, "")}` : undefined} />}
         {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
