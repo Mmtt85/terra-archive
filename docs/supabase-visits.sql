@@ -57,6 +57,8 @@ create table if not exists public.visit_session (
   env text not null default 'live' check (env in ('live', 'dev'))   -- dev = localhost 시험 전송
 );
 create index if not exists visit_session_started_idx on public.visit_session (started_at desc);
+-- 브라우저 이름 'Chrome/Android'·'KakaoTalk/iOS' 꼴 (2026-10-19, 사용자 지시 "무슨 브라우저로 들어왔는지도") — UA 통째는 받지 않는다
+alter table public.visit_session add column if not exists browser text check (char_length(browser) <= 40);
 
 create table if not exists public.visit_view (
   id bigint generated always as identity primary key,
@@ -93,7 +95,8 @@ alter table public.visit_event add column if not exists detail text check (char_
 alter table public.visit_event add column if not exists dur_ms int check (dur_ms between 0 and 86400000);
 alter table public.visit_event drop constraint if exists visit_event_kind_check;
 -- leave(2026-10-11) = 탭을 닫거나 페이지를 떠날 때 — 뒤에 같은 세션의 화면 기록이 이어지면 사이트 안 이동이라 무시(어드민 '조작 중' 판정)
-alter table public.visit_event add constraint visit_event_kind_check check (kind in ('me_login', 'me_sync', 'prts_start', 'prts_end', 'leave', 'ev_chip'));
+alter table public.visit_event add constraint visit_event_kind_check check (kind in ('me_login', 'me_sync', 'me_logout', 'me_reset', 'prts_start', 'prts_end', 'leave', 'ev_chip'));
+-- me_logout·me_reset(2026-10-19) = 내 정보 '로그아웃'·'저장된 설정 완전 초기화' — 관리자 동기화 표의 이력 칸
 -- ev_chip(2026-10-14) = 헤더 진행 중 이벤트 칩·이벤트 목록 줄을 눌렀다. detail = 이벤트 id(위수 협의 칩 'promo:<탭>', 중섭 칩 'cn:<id>', 펼친 목록 줄 'menu:<id>')
 
 -- ── 일별 집계 (영구 보관) ─────────────────────────────────────────────────────
@@ -377,15 +380,17 @@ returns json language sql stable security definer set search_path = public as $$
         'login', count(*) filter (where e.kind = 'me_login'), 'sync', count(*) filter (where e.kind = 'me_sync'),
         -- 유입(src·ref) = 그 사람이 이 기간에 처음 로그인한(없으면 처음 동기화한) 세션이 어디서 왔는가 (2026-10-05)
         'by', (select coalesce(json_agg(b order by b.n desc, b.last desc), '[]') from (
-            select g.*, f.src, f.ref from (
-              select x.visitor, count(*) as n, count(*) filter (where x.kind = 'me_login') as login,
-                     count(*) filter (where x.kind = 'me_sync') as sync, max(x.at) as last, max(x.server) as server
-              from public.visit_event x where x.at >= p_from and x.at < p_to and x.env = 'live' and x.kind in ('me_login', 'me_sync') group by 1) g
+            -- logout·reset = 로그아웃·설정 완전 초기화 횟수, browser = 유입과 같은 세션의 브라우저 (2026-10-19)
+            select g.*, f.src, f.ref, f.browser from (
+              select x.visitor, count(*) filter (where x.kind in ('me_login', 'me_sync')) as n, count(*) filter (where x.kind = 'me_login') as login,
+                     count(*) filter (where x.kind = 'me_sync') as sync, count(*) filter (where x.kind = 'me_logout') as logout,
+                     count(*) filter (where x.kind = 'me_reset') as reset, max(x.at) as last, max(x.server) as server
+              from public.visit_event x where x.at >= p_from and x.at < p_to and x.env = 'live' and x.kind in ('me_login', 'me_sync', 'me_logout', 'me_reset') group by 1) g
             left join lateral (
-              select public.visit_src(vs.ref_host) as src, coalesce(vs.ref, vs.ref_host) as ref
+              select public.visit_src(vs.ref_host) as src, coalesce(vs.ref, vs.ref_host) as ref, vs.browser
               from public.visit_event y join public.visit_session vs on vs.id = y.session
-              where y.visitor is not distinct from g.visitor and y.at >= p_from and y.at < p_to and y.env = 'live' and y.kind in ('me_login', 'me_sync')
-              order by (y.kind = 'me_login') desc, y.at asc limit 1) f on true) b),
+              where y.visitor is not distinct from g.visitor and y.at >= p_from and y.at < p_to and y.env = 'live' and y.kind in ('me_login', 'me_sync', 'me_logout', 'me_reset')
+              order by (y.kind = 'me_login') desc, (y.kind = 'me_sync') desc, y.at asc limit 1) f on true) b),
         'recent', (select coalesce(json_agg(r order by r.at desc), '[]') from (
             select x.at, x.visitor, x.kind, x.server, public.visit_src(vs.ref_host) as src, coalesce(vs.ref, vs.ref_host) as ref
             from public.visit_event x left join public.visit_session vs on vs.id = x.session

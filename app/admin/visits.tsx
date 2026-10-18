@@ -56,7 +56,8 @@ export type Summary = {
   me_sync?: {
     n: number; people: number; login: number; sync: number;
     /** src·ref = 이 기간 첫 로그인(없으면 첫 동기화) 세션의 유입 (2026-10-05~) */
-    by: { visitor: string | null; n: number; login: number; sync: number; last: string; server: string | null; src?: string | null; ref?: string | null }[];
+    /** logout·reset = 로그아웃·설정 완전 초기화 횟수, browser = 유입 세션의 브라우저 (2026-10-19~) */
+    by: { visitor: string | null; n: number; login: number; sync: number; logout?: number; reset?: number; last: string; server: string | null; src?: string | null; ref?: string | null; browser?: string | null }[];
     recent: { at: string; visitor: string | null; kind: string; server: string | null; src?: string | null; ref?: string | null }[];
   };
 };
@@ -1175,6 +1176,8 @@ export function VisitsPanel() {
       if (!cur) g.set(key, { ...b, server: p?.server ?? b.server, devices: 1, key } as MeRow);
       else {
         cur.n += b.n; cur.login += b.login; cur.sync += b.sync; cur.devices += 1;
+        cur.logout = (cur.logout ?? 0) + (b.logout ?? 0); cur.reset = (cur.reset ?? 0) + (b.reset ?? 0);
+        if (b.browser && !(cur.browser ?? "").split(" · ").includes(b.browser)) cur.browser = cur.browser ? `${cur.browser} · ${b.browser}` : b.browser;
         if (String(b.last) > String(cur.last)) cur.last = b.last;
       }
     }
@@ -1189,14 +1192,18 @@ export function VisitsPanel() {
   const serverLabel = (code: string) => ACCOUNT_SERVERS.find((x) => x.code === code)?.label ?? code;
   const meTable = (n: number) => !data?.me_sync ? null : (
     <div className="vz-tablewrap"><table className="vz-table">
-      <thead><tr><th>방문자</th><th>유입</th><th>합계</th><th>로그인</th><th>다시 동기화</th><th>서버</th><th>마지막</th></tr></thead>
+      <thead><tr><th>방문자</th><th>유입</th><th>브라우저</th><th>합계</th><th>로그인</th><th>다시 동기화</th><th title="내 정보 '로그아웃' · '저장된 설정 완전 초기화' 횟수 (2026-10-19~)">로그아웃·초기화</th><th>서버</th><th>마지막</th></tr></thead>
       <tbody>
         {meBy.slice(0, n).map((b) => (
           <tr key={b.key}>
             <td title={b.visitor ?? ""}><Who visitor={b.visitor} />{b.devices > 1 && <small className="vz-note"> · 기기 {b.devices}</small>}</td>
             {/* 유입 — 로그인한 세션이 어디서 왔는가 (사용자 요청 2026-10-05). 주소가 있으면 호스트·경로를 툴팁으로 */}
             <td title={b.ref ?? ""}>{b.src ?? "—"}{b.ref && <small className="vz-note"> {b.ref.replace(/^https?:\/\//, "").slice(0, 40)}</small>}</td>
-            <td>{num(b.n)}</td><td>{num(b.login)}</td><td>{num(b.sync)}</td><td>{b.server ? serverLabel(b.server) : "—"}</td>
+            {/* 브라우저 — 유입 세션의 것, 기기 여럿이면 ' · '로 이어 붙인다 (사용자 지시 2026-10-19) */}
+            <td><small>{b.browser ?? "—"}</small></td>
+            <td>{num(b.n)}</td><td>{num(b.login)}</td><td>{num(b.sync)}</td>
+            <td>{b.logout || b.reset ? [b.logout ? `로그아웃 ${num(b.logout)}` : "", b.reset ? `초기화 ${num(b.reset)}` : ""].filter(Boolean).join(" · ") : "—"}</td>
+            <td>{b.server ? serverLabel(b.server) : "—"}</td>
             <td>{new Date(b.last).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</td>
           </tr>
         ))}

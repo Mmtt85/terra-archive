@@ -152,6 +152,19 @@ function device(): "mobile" | "tablet" | "desktop" {
   return Math.min(screen.width, screen.height) >= 600 ? "tablet" : "mobile";
 }
 
+/** 어떤 브라우저로 왔나 — 'Chrome/Android' 꼴 (사용자 지시 2026-10-19 "무슨 브라우저로 들어왔는지도"). 인앱 브라우저를 먼저 가른다.
+ *  UA 문자열 통째로는 보내지 않는다 — 이름 하나면 충분하고 모으는 건 적을수록 좋다 */
+function browserName(): string {
+  const ua = navigator.userAgent;
+  const name = /KAKAOTALK/i.test(ua) ? "KakaoTalk" : /NAVER\(inapp/i.test(ua) ? "NaverApp" : /DaumApps/i.test(ua) ? "DaumApp"
+    : /Instagram/i.test(ua) ? "Instagram" : /FBAN|FBAV/i.test(ua) ? "Facebook" : /\bLine\//i.test(ua) ? "Line" : /Discord/i.test(ua) ? "Discord"
+    : /SamsungBrowser/i.test(ua) ? "Samsung" : /Whale/i.test(ua) ? "Whale" : /EdgA?\/|EdgiOS/i.test(ua) ? "Edge" : /OPR\/|Opera/i.test(ua) ? "Opera"
+    : /Firefox|FxiOS/i.test(ua) ? "Firefox" : /CriOS|Chrome\//i.test(ua) ? "Chrome" : /Safari/i.test(ua) ? "Safari" : "기타";
+  const os = /Android/i.test(ua) ? "Android" : /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) ? "iOS"
+    : /Windows/i.test(ua) ? "Windows" : /Mac OS X/i.test(ua) ? "Mac" : /Linux/i.test(ua) ? "Linux" : "";
+  return os ? `${name}/${os}` : name;
+}
+
 function sendSession(locale: string): void {
   if (!sess || sess.sent) return;
   let revisit = false;
@@ -184,6 +197,7 @@ function sendSession(locale: string): void {
     lang: clip(navigator.language, 20),
     tz: clip(Intl.DateTimeFormat().resolvedOptions().timeZone, 60),
     device: device(),
+    browser: clip(browserName(), 40),
     vw: innerWidth,
     vh: innerHeight,
     dark: document.documentElement.classList.contains("dark"),
@@ -216,7 +230,7 @@ function notePlayer(given?: { server: string; uid: string }): void {
   } catch { /* 저장 막힘 */ }
 }
 
-export function noteVisitEvent(kind: "me_login" | "me_sync" | "prts_start" | "prts_end" | "leave" | "ev_chip", server?: string, extra?: { detail?: string; dur?: number; uid?: string }): void {
+export function noteVisitEvent(kind: "me_login" | "me_sync" | "me_logout" | "me_reset" | "prts_start" | "prts_end" | "leave" | "ev_chip", server?: string, extra?: { detail?: string; dur?: number; uid?: string }): void {
   if (!started) return;
   const visitor = visitorId();
   // 로그인·동기화 — 계정을 넘겨받았으면 바로, 아니면 saveMe 가 저장한 뒤(한 박자 늦게) 읽어서 잇는다

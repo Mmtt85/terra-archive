@@ -11,6 +11,7 @@
 // 숫자 칸(한눈에 보기·성급별 육성)은 누르면 해당 오퍼 목록이 모달로 뜬다. 긴 목록은 몇 줄만 보이고 '전부 보기'로 편다.
 // 공개모집 슬롯은 빼다 (사용자 지시 — 너무 자주 바뀌어 동기화 시점 값이 쓸모없다).
 
+import { noteVisitEvent } from "./visit-track";
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { asset } from "./assets";
 import { TOPICS } from "./rogue-topics";
@@ -22,7 +23,7 @@ import { AccountLoginForm, AccountSteps } from "./roster-import";
 import { MeVerify } from "./me-verify";
 import { AccountError, accountErrorText, syncAccount, MAINTENANCE_TEXT, MAINTENANCE_TITLE, ACCOUNT_SERVERS, type AccountChar, type AccountFriend, type AccountProfile, type AccountStep } from "./account";
 import { cnErrorText } from "./account-cn";
-import { clearMe, dropMeToken, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, mePulls, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
+import { clearMe, dropMeToken, getMe, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, mePulls, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages } from "./dex-cross";
 import { GROUPS, GROUP_LABEL, ItemFile, itemIcon, type DexItem, type ItemDoc, type ItemGroup } from "./items";
 import { StageFile } from "./stage-detail";
@@ -340,6 +341,7 @@ function MeActions({ onLogin }: { onLogin: () => void }) {
   // 로그아웃 — 종전 '데이터 지우기'. 저장된 설정은 지우지 않는다는 걸 이름·문구로 분명히 (사용자 지시 2026-10-14)
   const wipe = async () => {
     if (!(await confirm({ title: t("로그아웃"), message: t("이 브라우저에서 게임 계정 연결을 끊습니다. 내 정보 화면과 오퍼 도감·아이템 도감의 보유 표시가 사라지고 설정 동기화가 멈춥니다. 저장된 설정은 지워지지 않으며, 다시 로그인하면 그대로 이어집니다."), confirmLabel: t("로그아웃") }))) return;
+    noteVisitEvent("me_logout", getMe()?.server);   // 관리자 동기화 표의 로그아웃·초기화 이력 (사용자 지시 2026-10-19)
     clearMe();
   };
   // 저장된 설정 완전 초기화 — 계정 저장소와 이 브라우저의 설정을 기본값으로 (되돌릴 수 없어 무엇이 사라지는지 다 적는다)
@@ -357,6 +359,7 @@ function MeActions({ onLogin }: { onLogin: () => void }) {
         t("이 브라우저는 로그아웃되고, 제안 게시판의 내 제안(열람 코드)만 남습니다."),
       ].join("\n") }))) return;
     setResetting(true);
+    noteVisitEvent("me_reset", getMe()?.server);
     // 로그아웃까지 — 계정 저장소를 지운 뒤 이 브라우저의 계정 연결도 끊는다 (사용자 지시 2026-10-14 "완전 삭제는 로그아웃도")
     try { await resetCloudPrefs(clearMe); } catch { setResetting(false); setErr(t("초기화하지 못했습니다 — 잠시 뒤 다시 시도해 주세요.")); }
   };
