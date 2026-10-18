@@ -26064,7 +26064,6 @@ html[lang="ja"] .vn-box {
 .vn-say, .vn-narr, .vn-st { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
 .vn-say { margin: 0; color: #f4f7fc; white-space: pre-wrap; }
 .vn-narr { margin: 0; color: #c8d0dd; white-space: pre-wrap; }
-.vn-beat { color: #6e7889; font-size: 0.86em; text-shadow: none; }
 /* 지문 — 한글에 이탤릭을 걸면 브라우저가 기울여 흉내 내(가짜 이탤릭) 지저분하다.
    기울이는 대신 왼쪽 세로선 + 옅은 색으로 대사와 구분한다 (2026-08-25). */
 .vn-st {
@@ -33226,3 +33225,21 @@ html.rg-theme.rg4 main.site-main {
     radial-gradient(ellipse 40% 45% at 92% 4%, #4a181633, transparent 70%) fixed,
     linear-gradient(180deg, #150808, #1c0b0b 220px, #1d0b0b);
 }
+
+/* 파밍 미래시 — 이미지로 보기 (사용자 요청 2026-10-18) */
+.ff-tools { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+.ff-img-modal {
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+  place-self: center;
+  height: fit-content;
+  max-height: min(88dvh, 860px);
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  box-shadow: var(--sh-3);
+}
+.ff-img-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 12px; }
+.ff-img-own { margin-right: auto; }
+.ff-img-own { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink2); cursor: pointer; }
+.ff-img-view { overflow: auto; max-height: min(78dvh, 820px); border-radius: var(--r-md); background: #121417; }
+.ff-img-view img { display: block; max-width: 100%; height: auto; }

@@ -9,7 +9,7 @@
 // 육성 비용 데이터는 scripts/build-costs.py가 생성하는 app/data/costs.json —
 // 정예화 1·2, 스킬 2~7, 특화 1~3, 모듈 1~3단계의 용문폐·재료 소요량.
 import { usePageHelp } from "./page-help";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
 import farmData from "./data/farm.json";
@@ -166,6 +166,11 @@ const fmtCount = (n: number) => (n >= 10000 ? `${Math.floor(n / 1000)}k` : Strin
 const FF_EV_W = 132;   // 이벤트 이름 칸
 const FF_COL_W = 68;   // 재료 칸 (전부 같은 폭)
 type FutureCell = { sid: string; code: string; ap: number; occ: string; extra: boolean };
+// 출현 빈도 → 효율 표기 (사용자 지시 2026-10-18 "자주·보통·가끔을 효율좋음·효율보통·효율낮음으로") — 작전 문서 occ 순번 기준
+// (0 확정 · 1 가끔 · 2 거의 항상 · 3 자주 · 4 보통). 확정·거의 항상은 그대로 둔다
+const FF_OCC: Record<number, string> = { 3: "효율좋음", 4: "효율보통", 1: "효율낮음" };
+// 파밍 미래시 이미지 미리보기·PNG 저장 (사용자 요청 2026-10-18) — 그리기 코드는 열 때만 받는다
+const FutureFarmImageModal = lazy(() => import("./farm-future-image").then((m) => ({ default: m.FutureFarmImageModal })));
 function FutureFarm({ onOpenItem, onOpenStage }: { onOpenItem: (id: string) => void; onOpenStage: (sid: string) => void }) {
   const { locale, t } = useI18n();
   // 내 창고 수량 — 내 정보에 계정 데이터가 있을 때만, 섬네일 오른쪽 위에 작게 (사용자 지시 2026-10-18)
@@ -226,7 +231,7 @@ function FutureFarm({ onOpenItem, onOpenStage }: { onOpenItem: (id: string) => v
         const byEv = rows.get(id) ?? new Map<number, FutureCell[]>();
         const cells = byEv.get(ev) ?? [];
         if (!cells.some((c) => c.sid === st.id && !c.extra === (k === 0))) {
-          cells.push({ sid: st.id, code: st.code, ap: st.ap ?? 0, occ: main.occ[o] ?? "", extra: k !== 0 });
+          cells.push({ sid: st.id, code: st.code, ap: st.ap ?? 0, occ: FF_OCC[o] ? t(FF_OCC[o]) : main.occ[o] ?? "", extra: k !== 0 });
         }
         byEv.set(ev, cells);
         rows.set(id, byEv);
@@ -236,7 +241,7 @@ function FutureFarm({ onOpenItem, onOpenStage }: { onOpenItem: (id: string) => v
     const events = [...evUsed].sort((a, b) => (a < 0 && b < 0 ? b - a : a - b));
     const ordered = [...rows.keys()].map((id) => mats.get(id)!).sort((a, b) => b.rarity - a.rarity || a.sortId - b.sortId);
     return { events, rows, ordered, evNames, liveKeys };
-  }, [docs]);
+  }, [docs, t]);
   // 가장 적게 가진 재료 세 개의 세로줄을 밝게 — 1위가 가장 밝다 (사용자 지시 2026-10-18). 창고 정보가 있을 때만
   const hot = useMemo(() => {
     const m = new Map<string, number>();
@@ -245,11 +250,35 @@ function FutureFarm({ onOpenItem, onOpenStage }: { onOpenItem: (id: string) => v
     return m;
   }, [inv, table]);
   const hotCls = (id: string) => (hot.has(id) ? ` ff-hot${hot.get(id)}` : "");
+  const [imgOpen, setImgOpen] = useState(false);
+  // 이미지용 자료 — 화면 표와 같은 순서·같은 칸
+  const imgData = useMemo(() => {
+    if (!table) return null;
+    return {
+      cols: table.ordered.map((m) => ({ id: m.id, name: locText(locale, m.name), img: asset(m.image), own: inv ? inv[m.id] ?? 0 : undefined })),
+      rows: table.events.map((ev) => ({
+        name: table.evNames.get(ev) ?? "—",
+        live: table.liveKeys.has(ev),
+        cells: table.ordered.map((m) => [...(table.rows.get(m.id)?.get(ev) ?? [])]
+          .sort((a, b) => Number(a.extra) - Number(b.extra) || a.code.localeCompare(b.code, "en", { numeric: true }))
+          .map((c) => ({ code: c.code, occ: c.occ, extra: c.extra }))),
+      })),
+      hot,
+    };
+  }, [table, inv, hot, locale]);
   if (failed) return <p className="recruit-empty">{t("미래시 데이터를 불러오지 못했습니다.")}</p>;
   if (!table) return <p className="recruit-empty">{t("불러오는 중…")}</p>;
   return (
     <div className="ff">
-      <p className="ff-note">{t("지금 진행 중인 이벤트(맨 위)와 중국 서버에 먼저 열린 이벤트의 작전에서 나오는 T3 이상 정예화 재료입니다. 이벤트 상점에서 무한 교환되는 로식 콜·망간 광석·연마석·RMA70-12는 뺐습니다. 확률은 게임 표기이고, 연한 칸은 추가 드랍입니다.")}</p>
+      <div className="ff-tools">
+        <button type="button" className="act-btn farm-future-btn" onClick={() => setImgOpen(true)}>{t("이미지로 보기")}</button>
+      </div>
+      {imgOpen && imgData && (
+        <Suspense fallback={null}>
+          <FutureFarmImageModal data={imgData} hasOwn={!!inv} onClose={() => setImgOpen(false)} />
+        </Suspense>
+      )}
+      <p className="ff-note">{t("지금 진행 중인 이벤트(맨 위)와 중국 서버에 먼저 열린 이벤트의 작전에서 나오는 T3 이상 정예화 재료입니다. 이벤트 상점에서 무한 교환되는 로식 콜·망간 광석·연마석·RMA70-12는 뺐습니다. 효율은 게임의 출현 빈도(자주·보통·가끔)를 옮긴 것이고, 연한 칸은 추가 드랍입니다.")}</p>
       {/* 가로줄(맨 위 머리) = 재료, 세로줄 = 이벤트 (사용자 지시 2026-10-18) */}
       <div className="ff-scroll">
         {/* 재료 칸은 모두 같은 폭 — 이름은 줄바꿈 (사용자 지시 2026-10-18 "좀 좁혀서 균등한 폭으로") */}

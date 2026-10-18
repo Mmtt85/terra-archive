@@ -162,9 +162,23 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine
   useEffect(() => { onLineRef.current = onLine; });
   useEffect(() => { onLineRef.current?.(idx); }, [idx]);
 
+  // 글 없는 줄(배경만 바뀌는 연출 줄)은 건너뛴다 — 종전엔 '— 장면 전환 —'을 띄워 멈춰 있었다 (사용자 지적 2026-10-18
+  // "자연스레 안 넘어가고 오히려 멈춰 버린다"). 무대(배경·인물)는 다음 줄로 이어지므로 잃는 게 없다.
+  // 단 그 줄에서만 보이는 CG(다음 줄에서 바뀜)는 건너뛰면 사라지니 남긴다 — 그땐 대사창을 비워 둔다
+  const skippable = useCallback((i: number) => {
+    const l = ep.lines[i];
+    if (!l || i >= last) return false;
+    if (l.x || l.st || l.opts || l.br != null || l.loc) return false;
+    return (stages[i]?.cut ?? null) === (stages[i + 1]?.cut ?? null);
+  }, [ep, last, stages]);
   const go = useCallback((delta: number) => {
-    setIdx((i) => Math.min(last, Math.max(0, i + delta)));
-  }, [last]);
+    setIdx((i) => {
+      let n = Math.min(last, Math.max(0, i + delta));
+      const step = delta < 0 ? -1 : 1;
+      while (n > 0 && n < last && skippable(n)) n += step;
+      return Math.min(last, Math.max(0, n));
+    });
+  }, [last, skippable]);
 
   // 용어 설명 카드 — 연 줄(idx)을 같이 들고, 줄이 바뀌면 저절로 안 보인다(이펙트로 지우지 않는다)
   const [peek, setPeek] = useState<{ ei: number; idx: number } | null>(null);
@@ -377,9 +391,6 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp, startLine
           {line?.st && <p className="vn-st">{markText ? markText(line.st, entHandlers) : line.st}</p>}
           {line?.n && <p className="vn-name">{line.n}</p>}
           {line?.x && <p className={line.n ? "vn-say" : "vn-narr"}>{markText ? markText(line.x, entHandlers) : line.x}</p>}
-          {!line?.x && !line?.st && !line?.opts && line?.br == null && !line?.loc && (
-            <p className="vn-narr vn-beat">— {t("장면 전환")} —</p>
-          )}
         </div>
         {peekOpen && entities?.[peek.ei] && (() => {
           const en = entities[peek.ei];
