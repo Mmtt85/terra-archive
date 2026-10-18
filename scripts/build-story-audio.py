@@ -81,6 +81,12 @@ def docs():
             for f in sorted(os.listdir(d)):
                 if f.endswith(".json"):
                     yield os.path.join(d, f), loc, "recs"
+        # 통합전략 엔딩 연출 스토리 — 기록과 같은 모양 (build-rogue-records.py, 2026-10-18)
+        d = os.path.join(REPO, "public", "rogue", "endstory", loc)
+        if os.path.isdir(d):
+            for f in sorted(os.listdir(d)):
+                if f.endswith(".json"):
+                    yield os.path.join(d, f), loc, "recs"
 
 
 def save(path, doc):

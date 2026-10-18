@@ -1,0 +1,45 @@
+{
+ "_comment": "통합전략 엔딩 연출 스토리의 자막 줄(st) 번역 — 대사(x)는 public/rogue/record/<id>.json 의 ko·en·ja 를 쓰고, 기록 JSON 에 없는 자막만 여기 (중섭 선행 흑류수해, 2026-10-18). {id: {중국어 원문: {ko, en, ja}}}",
+ "level_rogue6_ending_4": {
+  "探险队的成员们在昏迷前最后看见的景象是两个奇怪的人赶到，用不可思议的光束暂时制住了敌人。": {
+   "ko": "탐험대원들이 정신을 잃기 전 마지막으로 본 광경은, 이상한 두 사람이 달려와 믿기 힘든 광선으로 적을 잠시 붙잡아 두는 모습이었다.",
+   "en": "The last thing the expedition members saw before passing out was two strange people rushing in and holding the enemies off for a moment with unbelievable beams of light.",
+   "ja": "探検隊の面々が気を失う前に最後に見たのは、二人の奇妙な人物が駆けつけ、信じがたい光線で敵を一時的に食い止める光景だった。"
+  },
+  "但那两人似乎随即就陷入了苦战中。好像应该上前帮忙，但仅凭手中这些用来考古挖掘的工具，又能做到什么呢……": {
+   "ko": "하지만 그 두 사람도 곧 고전에 빠진 듯했다. 나서서 도와야 할 것 같았지만, 손에 든 거라곤 고고학 발굴용 도구뿐인데 무엇을 할 수 있겠는가……",
+   "en": "But the two of them soon seemed to be struggling. It felt like they ought to step in and help, but with nothing in hand but archaeological digging tools, what could they possibly do...",
+   "ja": "だがその二人も、すぐに苦戦に陥ったようだった。加勢すべきだとは思ったが、手にしているのは考古学の発掘道具だけ。何ができるというのか……"
+  },
+  "不知是不是因为这一天发生的事情太多太混乱，探险队成员们不堪重负的意识终于断线，他们沉入了黏腻的睡梦之中。": {
+   "ko": "하루 동안 너무 많은, 너무 혼란스러운 일이 벌어진 탓일까. 한계에 다다른 탐험대원들의 의식은 마침내 끊어졌고, 그들은 끈적한 잠 속으로 가라앉았다.",
+   "en": "Perhaps because far too much had happened that day, and all of it chaos, the expedition members' overwhelmed minds finally gave out, and they sank into a thick, sticky sleep.",
+   "ja": "この一日にあまりに多くの、あまりに混乱した出来事が起きたせいだろうか。耐えきれなくなった探検隊の面々の意識はついに途切れ、彼らはねっとりとした眠りへと沈んでいった。"
+  },
+  "异常重启的乌托邦废案模型已停止响应，信息碎片整理进程已启动……": {
+   "ko": "비정상적으로 재기동된 유토피아 폐기안 모델이 응답을 멈췄습니다. 정보 조각 정리 프로세스를 시작합니다……",
+   "en": "The abnormally restarted abandoned Utopia model has stopped responding. Information fragment defragmentation process started...",
+   "ja": "異常再起動したユートピア廃案モデルが応答を停止しました。情報断片の整理プロセスを開始します……"
+  },
+  "发现异常的观测扰动……": {
+   "ko": "비정상적인 관측 교란을 발견했습니다……",
+   "en": "Abnormal observational disturbance detected...",
+   "ja": "異常な観測擾乱を検出……"
+  },
+  "发现未知的储存单元……": {
+   "ko": "알 수 없는 저장 단위를 발견했습니다……",
+   "en": "Unknown storage unit detected...",
+   "ja": "未知のストレージユニットを検出……"
+  },
+  "发现异常的逆向探知意图来源……": {
+   "ko": "비정상적인 역탐지 의도의 출처를 발견했습니다……",
+   "en": "Source of abnormal reverse-detection intent detected...",
+   "ja": "異常な逆探知意図の発信源を検出……"
+  },
+  "已将异常记录上传至储存单元，请求中枢的下一步指令……": {
+   "ko": "비정상 기록을 저장 단위에 업로드했습니다. 중추의 다음 지시를 요청합니다……",
+   "en": "Abnormal records uploaded to the storage unit. Requesting next instruction from the core...",
+   "ja": "異常記録をストレージユニットにアップロードしました。中枢の次の指示を要求します……"
+  }
+ }
+}

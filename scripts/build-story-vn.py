@@ -40,6 +40,8 @@ ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/
 API = "https://api.github.com/repos/ArknightsAssets/ArknightsAssets2/contents/assets/dyn"
 SCRIPT_DIR = os.path.join(REPO, "public", "story", "script")
 REC_DIR = os.path.join(REPO, "public", "records")     # build-records.py 산출 (--records)
+# 통합전략 엔딩 연출 스토리 — 기록과 같은 모양({recs:[{lines,vn,au}], faces}) (build-rogue-records.py, 2026-10-18). --records 가 같이 훑는다
+ENDSTORY_DIR = os.path.join(REPO, "public", "rogue", "endstory")
 BG_DIR = os.path.join(REPO, "public", "story", "bg")
 SPR_DIR = os.path.join(REPO, "public", "story", "sprite")
 CACHE = os.path.join(REPO, ".gamedata", "story-vn-cache")
@@ -392,8 +394,7 @@ def collect_records():
     로케일마다 대본이 달라도 배경·스탠딩 이름은 같은 자산을 가리키지만, CN 선행 기록처럼
     한 로케일에만 있는 세트가 있어 세 폴더를 모두 훑는다."""
     bgs, sprites = set(), set()
-    for loc in ("ko", "en", "ja"):
-        d = os.path.join(REC_DIR, loc)
+    for d in [os.path.join(root, loc) for root in (REC_DIR, ENDSTORY_DIR) for loc in ("ko", "en", "ja")]:
         if not os.path.isdir(d):
             continue
         for f in sorted(os.listdir(d)):
@@ -505,7 +506,7 @@ def patch_missing(records=False):
 
     records=True 면 이벤트 전문 대신 오퍼레이터 기록(public/records/<loc>/)을 훑는다."""
     if records:
-        roots = [os.path.join(REC_DIR, loc) for loc in ("ko", "en", "ja")]
+        roots = [os.path.join(root, loc) for root in (REC_DIR, ENDSTORY_DIR) for loc in ("ko", "en", "ja")]
         tracks_of = lambda doc: [rec.get("vn") for rec in doc.get("recs", [])]
     else:
         roots = [SCRIPT_DIR, os.path.join(SCRIPT_DIR, "en"), os.path.join(SCRIPT_DIR, "ja")]

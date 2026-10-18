@@ -643,6 +643,13 @@ const D: Record<string, Pair> = {
   "엔딩 스토리": ["Ending story", "エンディングストーリー"],
   "엔딩에 도달하면 나오는 장면": ["The scene played when you reach this ending", "エンディング到達時に流れる場面"],
   "엔딩 스토리 읽기": ["Read ending story", "エンディングストーリーを読む"],
+  "중국 서버 선행 엔딩입니다 — 중국어 원문을 AI가 번역한 비공식 텍스트라 정식 출시 시 공식 번역과 다를 수 있습니다.": ["A CN-server-first ending — an unofficial AI translation of the Chinese text, which may differ from the official translation at release.", "中国サーバー先行のエンディングです — 中国語原文をAIが翻訳した非公式テキストのため、正式実装時の公式翻訳と異なる場合があります。"],
+  "엔딩 스토리 보기": ["Watch ending story", "エンディングストーリーを見る"],
+  "엔딩에 도달하면 나오는 장면 — 리더기로 재생": ["The scene played on reaching this ending — plays in the reader", "エンディング到達時に流れる場面 — リーダーで再生"],
+  "{name} 상세 보기": ["View {name} details", "{name} の詳細を見る"],
+  "진입 조건 {n}": ["{n} requirements", "進入条件 {n}"],
+  "해금 스토리 {n}": ["{n} unlock stories", "解放ストーリー {n}"],
+  "자세히": ["Details", "詳しく"],
   "{name} 상세 정보 열기": ["Open {name} details", "{name}の詳細を開く"],
   "{name} 오퍼레이터": ["Operator {name}", "オペレーター{name}"],
 

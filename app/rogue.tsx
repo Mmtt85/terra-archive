@@ -9,7 +9,7 @@
 import { NewBadge } from "./new-badge";
 import { Fragment, lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { TOPICS, slugOf, roguePath } from "./rogue-topics";
-import { RecordModal } from "./rogue-record";
+import { EndingStoryModal, RecordModal } from "./rogue-record";
 import rogue1Data from "./data/rogue1.json";
 // 노드 종류 아이콘 보유 목록 — 이미지 자체는 R2에만 있고 커밋되지 않는다(.gitignore
 // /public/rogue/node/). 어느 (테마,타입) 조합에 아이콘이 있는지는 이 목록으로만 안다.
@@ -110,7 +110,8 @@ type ArcHit = { key: string; item: InvItem; label: string; img: string | null; o
 // book = 엔딩 기록(엔딩북) 조각 — 게임 공식 해금 조건 텍스트 (사용자 소원 2026-08-17).
 // rid/txt = 기록 원문 (public/rogue/record/<rid>.json — build-rogue-records.py), txt면 클릭 열람.
 type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string;
-  /** 엔딩 연출 스토리 기록 id (public/rogue/record/<avg>.json — 엔딩에 도달하면 재생되는 대화 장면, 2026-10-18) */ avg?: string; book?: { name?: string; cond?: string; rid?: string; txt?: 1; cn?: string }[] };
+  /** 엔딩 연출 스토리 기록 id (public/rogue/record/<avg>.json — 엔딩에 도달하면 재생되는 대화 장면, 2026-10-18) */ avg?: string;
+  /** 엔딩 그림 경로 (/story/cut/… 또는 /rogue/ending/… — build-rogue.py ending_pic, 2026-10-18) */ pic?: string; book?: { name?: string; cond?: string; rid?: string; txt?: 1; cn?: string }[] };
 // 월간 방문객 — 매달 로테이션되는 방문객 오퍼(chars)와 층·구역별 특별 조우 장면(scenes)
 type Visitor = { id: string; name?: string; cn?: string; desc?: string; ym?: string; chars: { id: string; name: string }[]; scenes?: { floor?: number; zone?: string; desc?: string; rid?: string; txt?: 1; cn?: string }[] };
 // 선택지는 계단식 트리 — next.desc는 그 선택의 결과 서사, next.choices는 이어지는 하위 선택지
@@ -1413,6 +1414,8 @@ export default function RogueGuide({ initialTopic }: {
   const [relicOpen, setRelicOpen] = useState<InvItem | null>(null); // 소장품·부품·자원 공용 상세
   // 기록 원문(엔딩북 조각·방문객 장면) 열람 — 제목·부제는 여는 쪽이 채운다
   const [recOpen, setRecOpen] = useState<{ rid: string; title: string; sub?: string; kind?: string } | null>(null);
+  // 엔딩 연출 스토리 — 스토리 리더기 창 (2026-10-18)
+  const [avgOpen, setAvgOpen] = useState<{ rid: string; title: string } | null>(null);
   // 통합 검색란 하나 (탭 줄 가운데 — 아래 uniHits 주석). 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 갱신 (search.ts)
   const { term: uniTerm, set: setUniTerm, inputProps: uniProps } = useSearchInput();
   // 쉐이 — 맵·노드 탭 안의 두 지도: g 계원(오른쪽으로 진행) / s 쉐이의 잔식(정사각형) (사용자 지시 2026-10-02)
@@ -1649,6 +1652,27 @@ export default function RogueGuide({ initialTopic }: {
   // ⚠ 아래 mapSections 본문이 렌더 중에 ntFocus 를 읽으므로 그보다 **앞에서** 선언해야 한다.
   const [ntFocus, setNtFocus] = useState("");
   const [endFlash, setEndFlash] = useState("");
+  // 엔딩 상세 창 — 목록은 요약 카드만 (2026-10-18)
+  const [endDetail, setEndDetail] = useState<string | null>(null);
+  // 엔딩별 최종 보스 — 그 엔딩 경로(stage.end)의 가장 깊은 층 보스 작전(강화판 제외)에 나오는 첫 BOSS 적.
+  // 카드에 보스 이름을 먼저 쓴다 — 다들 '아미야 엔딩·콜람 엔딩'으로 부른다 (사용자 지시 2026-10-18).
+  // 짧은 이름은 쉼표 앞, 따옴표를 뗀 것 ('콜람, 마하사트바의 권화' → 콜람 · "'아미야', 노심의 종곡" → 아미야)
+  const endingBoss = useMemo(() => {
+    const m = new Map<string, { short: string; full: string }>();
+    data.endings.forEach((e, i) => {
+      const cand = data.stages.filter((st) => st.kind === "boss" && st.end === i + 1 && !st.var && !st.side);
+      const top = cand.sort((a, b) => (b.zone ?? 0) - (a.zone ?? 0))[0];
+      for (const x of top?.enemies ?? []) {
+        const en = data.enemies[x.key] ?? data.enemies[x.key.replace(/_\d+$/, "")];
+        if (en?.rank !== "BOSS" || !en.name) continue;
+        const full = en.name;
+        const short = full.split(/,\s*|，/)[0].replace(/^[\s'‘’"“”「」『』]+|[\s'‘’"“”「」『』]+$/g, "");
+        m.set(e.id, { short: short || full, full });
+        break;
+      }
+    });
+    return m;
+  }, [data]);
   // 기타 노드 — 전투(작전·긴급·험난한 길)와 우연한 만남을 제외한 노드 타입 설명.
   // 같은 이름의 중복 타입(운명의 암시 등)은 하나만 남긴다 (사용자 요청 2026-07-18)
   const otherNodes = useMemo(() => {
@@ -2731,6 +2755,8 @@ export default function RogueGuide({ initialTopic }: {
   const diffByName = useMemo(() => new Map(data.difficulties.map((d) => [d.name, true])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
   // 엔딩 → 그 카드로 스크롤하고 잠깐 테두리로 짚는다 (같은 엔딩 탭 안이라 모달 대신 제자리 이동)
   const goEnding = (id: string) => {
+    // 상세 창 안의 조건에서 다른 엔딩을 누르면 창의 엔딩을 바꾼다 (창 뒤 목록으로 스크롤해 봐야 안 보인다)
+    if (endDetail) { setEndDetail(id); return; }
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     document.getElementById(`rg-end-${id}`)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
     setEndFlash(id);
@@ -3715,28 +3741,84 @@ export default function RogueGuide({ initialTopic }: {
           {/* 엔딩 카드 — 진입 선행조건과 엔딩 후 해금 스토리(엔딩북)를 섹션으로 구분
               (사용자 지시 2026-08-17 "중구난방이니 나눠서 하나씩 볼 수 있게").
               기록 조각은 원문이 있으면(txt) 클릭해 전문을 읽는다. */}
-          {data.endings.map((e) => (
-            <article key={e.id} id={`rg-end-${e.id}`} className={`rg-ending${endFlash === e.id ? " flash" : ""}`}>
-              <header>
-                <h3><Nm name={e.name} cn={e.cn} /></h3>
-                {prog && <em className={`rg-prog${prog.ending(e.id) ? " on" : ""}`}>{prog.ending(e.id) ? t("달성") : t("미달성")}</em>}
-              </header>
-              {e.desc && <p className="rg-ending-desc">{e.desc}</p>}
-              {/* 엔딩 달성 시의 인용구 — 스토리 설명 바로 밑 (사용자 지시 2026-08-17, 예전엔 카드 맨 아래) */}
-              {e.change && <p className="rg-ending-change">“{e.change}”</p>}
-              {/* 엔딩 연출 스토리 — 엔딩에 도달하면 재생되는 대화 장면 (사용자 요청 2026-10-18) */}
+          {/* 요약 카드 — 그림·번호·이름·달성·인용구·엔딩 스토리만. 설명·진입 조건·해금 스토리는 누르면 상세 창
+              (사용자 선택 2026-10-18 "레이아웃이 아직도 난잡" — 카드마다 높이가 제각각이라 격자가 어지러웠다) */}
+          {data.endings.map((e, ei) => (
+            <article key={e.id} id={`rg-end-${e.id}`} className={`rg-ending${e.pic ? " has-pic" : ""}${endFlash === e.id ? " flash" : ""}`}>
+              <button type="button" className="rg-ending-open" onClick={() => setEndDetail(e.id)} aria-label={t("{name} 상세 보기", { name: nmText(e.name, e.cn) })}>
+                <header className="rg-ending-hero" style={e.pic ? { ["--bg" as string]: `url(${asset(e.pic)})` } : undefined}>
+                  <span className="rg-ending-no">ENDING {String(ei + 1).padStart(2, "0")}</span>
+                  <div className="rg-ending-title">
+                    {/* 최종 보스 이름도 같이 — '아미야 엔딩·콜람 엔딩'으로 부르니까 (사용자 지시 2026-10-18, 엔딩 이름은 그대로) */}
+                    {endingBoss.get(e.id) && <span className="rg-ending-boss" title={endingBoss.get(e.id)!.full}>{endingBoss.get(e.id)!.short}</span>}
+                    <h3><Nm name={e.name} cn={e.cn} /></h3>
+                    {prog && <em className={`rg-prog${prog.ending(e.id) ? " on" : ""}`}>{prog.ending(e.id) ? t("달성") : t("미달성")}</em>}
+                  </div>
+                  {e.change && <p className="rg-ending-change">“{e.change}”</p>}
+                  {/* 진입 조건·해금 스토리 수 — 그림 안 오른쪽 아래 (사용자 지시 2026-10-18 "이미지 안에") */}
+                  <span className="rg-ending-more">
+                    {[e.cond?.length ? t("진입 조건 {n}", { n: e.cond.length }) : null, e.book?.length ? t("해금 스토리 {n}", { n: e.book.length }) : null].filter(Boolean).join(" · ") || t("자세히")} ›
+                  </span>
+                </header>
+              </button>
+              {/* 엔딩 스토리 — 그림 오른쪽 위에 겹쳐 둔다 (사용자 지시 2026-10-18 "이미지 안에"). 그림 전체가 상세 창 단추라
+                  그 안에 넣으면 단추 중첩이 돼서, 같은 자리에 형제로 띄운다 */}
               {e.avg && (
-                <button type="button" className="rg-rec-btn rg-ending-avg"
-                  onClick={() => setRecOpen({ rid: e.avg!, title: nmText(e.name, e.cn), sub: t("엔딩 스토리"), kind: t("엔딩 스토리") })}>
-                  <strong>{t("엔딩 스토리")}</strong><span>{t("엔딩에 도달하면 나오는 장면")}</span>
-                  <i className="rg-rec-read" aria-hidden>▸ {t("읽기")}</i>
+                <button type="button" className="rg-ending-avg on-pic" onClick={() => setAvgOpen({ rid: e.avg!, title: nmText(e.name, e.cn) })}>
+                  <i aria-hidden>▶</i><b>{t("엔딩 스토리")}</b>
                 </button>
               )}
+            </article>
+          ))}
+        </div>
+      )}
+
+      {endDetail && (() => {
+        const ei = data.endings.findIndex((x) => x.id === endDetail);
+        const e = data.endings[ei];
+        if (!e) return null;
+        return (
+          <ModalWindow key={e.id} label={nmText(e.name, e.cn)} className="rg-modal rg-endmodal" onClose={() => setEndDetail(null)}>
+            <header className="rg-ending-hero" style={e.pic ? { ["--bg" as string]: `url(${asset(e.pic)})` } : undefined}>
+              <span className="rg-ending-no">ENDING {String(ei + 1).padStart(2, "0")}</span>
+              <div className="rg-ending-title">
+                {endingBoss.get(e.id) && <span className="rg-ending-boss" title={endingBoss.get(e.id)!.full}>{endingBoss.get(e.id)!.short}</span>}
+                <h3><Nm name={e.name} cn={e.cn} /></h3>
+                {prog && <em className={`rg-prog${prog.ending(e.id) ? " on" : ""}`}>{prog.ending(e.id) ? t("달성") : t("미달성")}</em>}
+              </div>
+              {e.change && <p className="rg-ending-change">“{e.change}”</p>}
+              {/* 엔딩 설명도 그림 안 (사용자 지시 2026-10-18) */}
+              {e.desc && <p className="rg-ending-desc on-pic">{e.desc}</p>}
+              {e.avg && (
+                <button type="button" className="rg-ending-avg on-pic" onClick={() => setAvgOpen({ rid: e.avg!, title: nmText(e.name, e.cn) })}>
+                  <i aria-hidden>▶</i><b>{t("엔딩 스토리 보기")}</b>
+                </button>
+              )}
+            </header>
+            <div className="rg-ending-main">
               {e.cond && e.cond.length > 0 && (
                 <div className="rg-ending-sec">
                   <h4>{t("진입 조건")}</h4>
                   <ol className="rg-ending-cond">
-                    {e.cond.map((c, i) => <li key={i}>{renderCond(c, e.id)}</li>)}
+                    {/* 칸 안의 '→' 갈래는 번호 줄로 (사용자 지시 2026-10-18 "카드 안에서는 > 말고 번호로") — 칸 사이만 › */}
+                    {e.cond.map((c, i) => {
+                      // 단계 구분은 앞뒤에 공백이 있는 ' → ' 만 — '「구원」→「정지」'처럼 붙은 화살표는 '바뀐다'는 뜻이라 한 문장이다 (2026-10-18)
+                      const parts = c.split(/\s+→\s+/).filter(Boolean);
+                      return (
+                        <li key={i}>
+                          {/* 진행 방향 화살촉 — 같은 줄 단계 사이엔 선 가운데, 줄이 넘어가면 윗줄 오른쪽 끝·아랫줄 왼쪽 시작에도
+                              (사용자 지시 2026-10-18 "5개인 경우 헷갈린다"). 한 줄 넷 기준 — CSS 의 4n 규칙과 같다 */}
+                          {i < e.cond!.length - 1 && <i className={`rg-step-arrow${i % 4 === 3 ? " wrap" : ""}`} aria-hidden />}
+                          {i > 0 && i % 4 === 0 && <i className="rg-step-arrow from" aria-hidden />}
+                          {/* 감싸서 칸 안 세로 가운데 정렬 — 칸을 바로 flex 로 만들면 링크 섞인 문장이 조각난다 (2026-10-18) */}
+                          <div className="rg-cond-in">
+                            {parts.length > 1
+                              ? <ol className="rg-cond-steps">{parts.map((p, j) => <li key={j}>{renderCond(p, e.id)}</li>)}</ol>
+                              : renderCond(c, e.id)}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ol>
                 </div>
               )}
@@ -3762,11 +3844,10 @@ export default function RogueGuide({ initialTopic }: {
                   </ul>
                 </div>
               )}
-            </article>
-          ))}
-        </div>
-      )}
-
+            </div>
+          </ModalWindow>
+        );
+      })()}
       {zoneOpen && (
         <ZoneModal zone={zoneOpen} badge={zoneBadge(zoneOpen)}
           pairs={zoneOpen.variant ? [] : (pairsByZone.get(zoneOpen.num) ?? []).concat(trialPairsFor(zoneOpen))}
@@ -3797,6 +3878,7 @@ export default function RogueGuide({ initialTopic }: {
           onToggleOwn={invSection(relicOpen.id) ? () => toggleInv(relicOpen.id) : undefined} />
       )}
       {/* 기록 원문 (엔딩북 조각·방문객 장면) — 스포일러성 전문이라 클릭한 것만 연다 */}
+      {avgOpen && <EndingStoryModal rid={avgOpen.rid} title={avgOpen.title} className="rg-modal rg-storymodal" onClose={() => setAvgOpen(null)} />}
       {recOpen && <RecordModal rid={recOpen.rid} title={recOpen.title} sub={recOpen.sub} kind={recOpen.kind} onClose={() => setRecOpen(null)} />}
       {/* 보유 리스트 모달 — 소장품/테마 자원 탭으로 구분해 담아둔 항목을 한눈에 (피드백 반영 2026-07-24) */}
       {/* 보유 리스트는 모달이 아니라 **떠 있는 창** (사용자 지시 2026-07-29):

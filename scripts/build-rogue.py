@@ -282,6 +282,18 @@ def ability_of(hb):
 
 
 
+
+def ending_pic(cands):
+    """엔딩 그림 경로 — 엔딩 카드 머리에 깐다 (사용자 요청 2026-10-18 "엔딩 카드 예쁘게"). 갤러리가 받아 둔 public/story/cut 을 먼저,
+    없으면 public/rogue/ending (팬텀 24_RL0N·흑류수해처럼 갤러리에 없는 것 — cdnassets 로 받아 둔 것)."""
+    for c in cands:
+        if not c:
+            continue
+        for rel in (f"/story/cut/{c}.webp", f"/rogue/ending/{c}.webp"):
+            if os.path.exists(os.path.join(REPO, "public", rel.lstrip("/"))):
+                return rel
+    return None
+
 def sort_bands(bands, r):
     """분대를 게임 화면 순서로 — init(시작 설정)의 initialBandRelic 순서 (사용자 지적 2026-10-18 "살카즈는 영혼 호송·박학다식·
     도면 제작·지휘 … 순서"). 대표 id 와 같은 계열 id(alt) 중 가장 앞 자리를 쓴다. 목록에 없는 분대는 뒤에 원래 순서대로."""
@@ -1697,6 +1709,10 @@ def build_topic(tid="rogue_1", loc=None):
             e["book"] = book_by_ending[e["id"]]
         if avg_by_ending.get(e["id"], {}).get("txt"):
             e["avg"] = avg_by_ending[e["id"]]["rid"]
+        pic = ending_pic([((r.get("endings") or {}).get(e["id"]) or {}).get("bgId")]
+                         + [b.get("cgId") for b in endbooks.values() if b.get("endingId") == e["id"]])
+        if pic:
+            e["pic"] = pic
 
     # 월간 방문객 — monthSquad(방문객 오퍼·팀명·로테이션 연월·서사) + archiveComp.chat
     # (층·구역별 특별 조우 장면). 방문객 이름은 teamChars의 char id를 사이트 오퍼 데이터로
@@ -2698,6 +2714,10 @@ def build_rogue6():
             e["book"] = book_by_ending6[e["id"]]
         if avg_by_ending6.get(e["id"], {}).get("txt"):
             e["avg"] = avg_by_ending6[e["id"]]["rid"]
+        pic = ending_pic([((r.get("endings") or {}).get(e["id"]) or {}).get("bgId")]
+                         + [b.get("cgId") for b in endbooks6.values() if b.get("endingId") == e["id"]])
+        if pic:
+            e["pic"] = pic
     try:
         op_name6 = {o["id"]: o["name"] for o in
                     json.load(open(os.path.join(REPO, "app", "data", "operators.json"), encoding="utf-8"))}

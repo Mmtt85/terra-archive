@@ -157,6 +157,84 @@ def to_paras(raw, names=None):
 
 
 _PARSE = None
+_BSS = None
+ENDSTORY_DIR = os.path.join(REPO, "public", "rogue", "endstory")
+NICK = {"ko": "박사", "en": "Doctor", "ja": "ドクター", "cn": "博士"}
+try:
+    ST_TL = json.load(open(os.path.join(REPO, "scripts", "rogue-endstory-tl.json"), encoding="utf-8"))
+except (OSError, ValueError):
+    ST_TL = {}
+
+
+def bss():
+    """이벤트 스토리 파서 모듈(build-story-scripts.py) — 대본·무대·소리 트랙을 같은 규약으로 뽑는다"""
+    global _BSS
+    if _BSS is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("bss", os.path.join(os.path.dirname(os.path.abspath(__file__)), "build-story-scripts.py"))
+        _BSS = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_BSS)
+    return _BSS
+
+
+def write_endstories(avg_raw):
+    """엔딩 연출 스토리를 **리더기용**으로 — public/rogue/endstory/<loc>/<id>.json = {id, recs:[{name, lines, vn?, au?}], faces}
+    (오퍼 기록 public/records 와 같은 모양 — 화면은 같은 ScriptReader 를 창으로 연다, 사용자 요청 2026-10-18 '엔딩 스토리도 리더기').
+    배경·스탠딩·소리 파일은 build-story-vn.py --records · build-story-audio.py 가 이 폴더도 훑어 받는다.
+    avg_raw = {id: {loc: 원문}}. 원문이 cn 뿐인 것(흑류수해)은 기록 JSON(public/rogue/record/<id>.json)의 ko·en·ja 번역을
+    대사 줄 순서대로 덮어 쓴다 — 무대·소리 트랙의 줄 번호(i)는 원문 그대로라 어긋나지 않는다."""
+    m = bss()
+    n = 0
+    for rid, by_loc in avg_raw.items():
+        try:
+            rec_json = json.load(open(os.path.join(OUT_DIR, f"{rid}.json"), encoding="utf-8"))
+        except (OSError, ValueError):
+            rec_json = {}
+        targets = {loc: (loc, raw) for loc, raw in by_loc.items() if loc in ("ko", "en", "ja")}
+        if not targets and "cn" in by_loc:
+            targets = {loc: ("cn", by_loc["cn"]) for loc in ("ko", "en", "ja") if rec_json.get(loc)}
+        for loc, (src_loc, raw) in targets.items():
+            m.NICKNAME = NICK[src_loc if src_loc != "cn" else loc]
+            vn, au = [], []
+            lines = m.parse_story(raw, vn, au)
+            from collections import Counter as _C, defaultdict as _dd
+            votes = _dd(_C)
+            m.scan_faces(raw, votes)
+            faces = m.resolve_faces(votes)
+            if src_loc == "cn":
+                tr = rec_json.get(loc) or []
+                said = [ln for ln in lines if ln.get("x")]
+                if len(tr) != len(said):
+                    print(f"  ✗ 엔딩 스토리 {rid} {loc}: 번역 {len(tr)}줄 ≠ 원문 {len(said)}줄 — 건너뜀")
+                    continue
+                for ln, t in zip(said, tr):
+                    if isinstance(t, dict):
+                        if ln.get("n") and t.get("n") and t["n"] != ln["n"]:
+                            if ln["n"] in faces and t["n"] not in faces:
+                                faces[t["n"]] = faces[ln["n"]]
+                            ln["n"] = t["n"]
+                        ln["x"] = t.get("x", ln["x"])
+                    else:
+                        ln["x"] = t
+            if src_loc == "cn":
+                # 자막 줄(st)은 기록 JSON 에 없다 — scripts/rogue-endstory-tl.json 에서 (원문 → 번역)
+                st_tr = (ST_TL.get(rid) or {})
+                for ln in lines:
+                    if ln.get("st") and (st_tr.get(ln["st"]) or {}).get(loc):
+                        ln["st"] = st_tr[ln["st"]][loc]
+                    elif ln.get("st"):
+                        print(f"  ⚠ 엔딩 스토리 {rid} {loc}: 자막 미번역 — {ln['st'][:20]}")
+            rec = {"name": "", "lines": lines}
+            if any(v.get("bg") or v.get("ch") for v in vn):
+                rec["vn"] = vn
+            if m.has_audio(au):
+                rec["au"] = au
+            d = os.path.join(ENDSTORY_DIR, loc)
+            os.makedirs(d, exist_ok=True)
+            json.dump({"id": rid, "recs": [rec], "faces": faces}, open(os.path.join(d, f"{rid}.json"), "w", encoding="utf-8"),
+                      ensure_ascii=False, separators=(",", ":"))
+            n += 1
+    print(f"→ public/rogue/endstory/ 리더기용 엔딩 스토리 {n}개 (로케일별)")
 
 
 def is_avg(text_id):
@@ -199,9 +277,12 @@ def main():
     with ThreadPoolExecutor(max_workers=8) as pool:
         texts = list(pool.map(lambda j: fetch_text(j[2], j[3], refresh), jobs))
     records = {}
+    avg_raw = {}
     for (base, loc, branch, _t), raw in zip(jobs, texts):
         if raw:
             records.setdefault(base, {})[loc] = avg_paras(raw) if is_avg(_t) else to_paras(raw, char_names(branch))
+            if is_avg(_t):
+                avg_raw.setdefault(base, {})[loc] = raw
     # ⚠ **손으로 채운 로케일을 덮어쓰지 않는다** (2026-09-06). IS6은 CN뿐이라 ko 를 사람이
     # 번역해 넣어 뒀는데, 종전처럼 파일을 통째로 새로 쓰면 kr-big-patch 가 이 스크립트를
     # 돌리는 순간 그 번역이 조용히 날아간다. 받아 온 로케일이 이기고(공식 텍스트가 나오면
@@ -222,6 +303,7 @@ def main():
         merged = {**kept, **locs}
         json.dump({k: merged[k] for k in ("ko", "en", "ja", "cn") if k in merged},   # 순서 고정 = 무의미한 diff 방지
                   open(path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+    write_endstories(avg_raw)
     n_ko = sum(1 for v in records.values() if "ko" in v)
     n_en = sum(1 for v in records.values() if "en" in v)
     n_ja = sum(1 for v in records.values() if "ja" in v)

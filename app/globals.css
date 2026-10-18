@@ -16825,24 +16825,73 @@ html.rg-theme {
 .rg-nodetype.focus {
   box-shadow: 0 0 0 2px var(--rggold);
 }
-.rg-ending h3 {
-  margin: 0 0 8px;
-  font-size: 16px;
-  letter-spacing: -0.3px;
-  border-left: 4px solid var(--rgcrim);
-  padding-left: 8px;
-  color: #f4e7d3;
+/* 엔딩 카드 머리 — 엔딩 그림 위에 번호·이름·인용구 (2026-10-18 "가독성 … 예쁘게") */
+.rg-ending { padding: 0; overflow: hidden; border-radius: var(--r-md); }
+.rg-ending-hero {
+  position: relative; isolation: isolate; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px;
+  min-height: 168px; padding: 16px 18px 14px; color: #f4e7d3;
+  background: #120d0b;
 }
-/* 내 진행 — '내 정보' 계정 데이터가 있을 때만 붙는 달성·해금 표식 (2026-10-05) */
-.rg-ending > header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+.rg-ending-hero::before { content: ""; position: absolute; inset: 0; z-index: -2; background: var(--bg, none) center 35% / cover no-repeat; opacity: .8; transition: opacity .2s; }
+.rg-ending-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, #0b080700 0%, #0b0807a0 45%, #0b0807f0 100%); }
+.rg-ending:not(.has-pic) .rg-ending-hero { min-height: 0; padding-top: 14px; }
+.rg-ending-no { font: 600 11px var(--mono); letter-spacing: .18em; color: var(--rggold); }
+.rg-ending-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rg-ending-hero h3 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.3px; color: #fff; text-shadow: 0 1px 8px #000c; }
+.rg-ending-main { padding: 14px 18px 18px; }
+/* 요약 카드 (2026-10-18) — 그림 머리 전체가 상세 창을 여는 단추, 아래 한 줄에 엔딩 스토리·자세히 */
+.rg-ending { display: flex; flex-direction: column; }
+.rg-ending-open { display: block; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.rg-ending-open .rg-ending-hero { height: 210px; }
+.rg-ending-open .rg-ending-change { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+@media (hover: hover) { .rg-ending-open:hover .rg-ending-hero::before { opacity: 1; } .rg-ending-open:hover h3 { text-decoration: underline; text-underline-offset: 4px; } }
+/* 그림 오른쪽 위에 겹친 엔딩 스토리 단추 — 카드(article 기준)·상세 창(머리 기준) 공통 */
+.rg-ending { position: relative; }
+.rg-ending-avg.on-pic {
+  position: absolute; top: 12px; right: 12px; z-index: 2; width: auto; margin: 0; padding: 5px 12px 5px 6px; gap: 8px;
+  border-color: color-mix(in srgb, var(--rggold) 70%, transparent); border-radius: 999px;
+  background: #0b0807c0; backdrop-filter: blur(4px);
 }
-.rg-ending > header h3 {
-  margin: 0;
+.rg-ending-avg.on-pic i { width: 22px; height: 22px; font-size: 9px; }
+.rg-ending-avg.on-pic b { font-size: 12px; }
+@media (hover: hover) { .rg-ending-avg.on-pic:hover { background: color-mix(in srgb, var(--rggold) 35%, #0b0807); } }
+.rg-ending-more { position: absolute; right: 14px; bottom: 12px; font-size: 11px; color: #e8dccbcc; text-shadow: 0 1px 6px #000; }
+.rg-ending-open .rg-ending-change { padding-right: 150px; }
+@media (hover: hover) { .rg-ending-open:hover .rg-ending-more { color: var(--rggold); } }
+/* 최종 보스 이름 — 엔딩 이름보다 먼저, 크게 ('아미야 엔딩'처럼 부르니까, 2026-10-18) */
+.rg-ending-boss { flex: none; padding: 2px 8px; border: 1px solid color-mix(in srgb, var(--rggold) 70%, transparent); border-radius: var(--r-sm); background: #0b0807b0; font-size: 12px; font-weight: 700; color: var(--rggold); }
+.rg-endmodal { width: min(680px, 100%); }
+.rg-modal.rg-storymodal { max-width: 900px; }
+.rg-modal.rg-storymodal .future-note { color: var(--rgmut); border-color: var(--rgline); background: var(--rgdeep); }
+.rg-endmodal .rg-ending-hero { min-height: 260px; margin: -4px -4px 0; padding-top: 60px; }
+.rg-ending-desc.on-pic { margin: 6px 0 0; color: #f1e6d6; text-shadow: 0 1px 8px #000; }
+.rg-endmodal .rg-ending-main > .rg-ending-sec:first-child { margin-top: 0; border-top: 0; padding-top: 4px; }
+/* 상세 창의 진입 조건 — 단계 칸을 왼쪽→오른쪽으로 잇고 사이에 › (사용자 지시 2026-10-18) */
+.rg-endmodal .rg-ending-cond { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px 26px; margin: 0; padding: 0; list-style: none; counter-reset: rgstep; }
+.rg-endmodal .rg-ending-cond > li {
+  position: relative; flex: 1 1 200px; margin: 0; padding: 10px 12px 10px 12px; counter-increment: rgstep;
+  border: 1px solid var(--rgline); border-radius: var(--r-sm); background: color-mix(in srgb, var(--rgline) 14%, transparent);
+  font-size: 12px; line-height: 1.6;
 }
+.rg-endmodal .rg-ending-cond > li { max-width: calc((100% - 78px) / 4); }
+/* 칸 안의 갈래 번호 줄 — 바깥 칸 장식(번호·›·테두리)을 물려받지 않게 되돌린다 */
+.rg-endmodal .rg-ending-cond .rg-cond-steps { margin: 0; padding-left: 18px; list-style: decimal; }
+.rg-endmodal .rg-ending-cond .rg-cond-steps li { flex: none; max-width: none; margin: 0 0 4px; padding: 0; border: 0; background: none; counter-increment: none; }
+.rg-endmodal .rg-ending-cond .rg-cond-steps li::before, .rg-endmodal .rg-ending-cond .rg-cond-steps li::after { content: none; }
+.rg-endmodal .rg-ending-cond .rg-cond-steps li::marker { color: var(--rgmut); font: 600 11px var(--mono); }
+/* 줄 끝 칸(한 줄 넷 → 4n 번째)의 › 는 다음 줄을 가리키지 못하니 숨긴다 (2026-10-18). 좁은 화면은 한 줄에 몇 칸이 들지 일정치 않아 › 를 모두 뺀다 */
+.rg-endmodal .rg-ending-cond > li { display: flex; align-items: center; }
+.rg-endmodal .rg-cond-in { width: 100%; }
+@media (max-width: 700px) { .rg-endmodal .rg-ending-cond > li { max-width: none; } }
+/* 상세 창의 해금 스토리 — 세로 목록 대신 가로로 나란한 칸 (사용자 지시 2026-10-18) */
+.rg-endmodal .rg-ending-book ul { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.rg-endmodal .rg-ending-book li { display: flex; }
+.rg-endmodal .rg-ending-book :is(.rg-rec-btn, .rg-rec-row) { flex-direction: column; align-items: flex-start; gap: 4px; height: 100%; padding: 10px 12px; }
+.rg-endmodal .rg-ending-book :is(.rg-rec-btn, .rg-rec-row) strong { min-width: 0; font-size: 13px; }
+.rg-endmodal .rg-ending-book :is(.rg-rec-btn, .rg-rec-row) span { font-size: 11px; line-height: 1.5; }
+.rg-endmodal .rg-ending-book .rg-prog.sm { margin-left: 0; }
+.rg-endmodal .rg-ending-book .rg-rec-read { margin-left: 0; margin-top: auto; }
+.rg-endmodal .rg-ending-main { padding: 16px 4px 8px; }
 .rg-prog {
   flex: none;
   display: inline-block;
@@ -16870,10 +16919,10 @@ html.rg-theme {
   margin-left: 8px;
 }
 .rg-ending-desc {
-  margin: 0 0 8px;
+  margin: 0 0 14px;
   font-size: 13px;
   line-height: 1.75;
-  color: var(--rgtext2);
+  color: var(--rgink);
 }
 .rg-ending-cond {
   margin: 0 0 8px;
@@ -16883,7 +16932,8 @@ html.rg-theme {
   color: var(--rgink);
 }
 .rg-ending-cond li {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  padding-left: 2px;
 }
 .rg-ending-cond li::marker {
   color: var(--rggold);
@@ -16891,22 +16941,24 @@ html.rg-theme {
 }
 .rg-ending-change {
   margin: 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--rggold);
   font-size: 12px;
+  line-height: 1.6;
   font-style: italic;
-  color: var(--rgmut);
+  color: #e8dccb;
+  text-shadow: 0 1px 6px #000c;
 }
 /* 엔딩 카드 섹션 — 진입 조건 / 엔딩 후 해금 스토리(엔딩북)를 나눠 정리
    (사용자 지시 2026-08-17 "중구난방이니 나눠서 하나씩 볼 수 있게") */
 .rg-ending-sec {
-  margin-top: 12px;
-  padding: 8px 12px;
-  border: 1px solid var(--rgline);
-  border-radius: var(--r-sm);
-  background: color-mix(in srgb, var(--rgline) 12%, transparent);
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rgline);
 }
 .rg-ending-sec > h4 {
-  margin: 0 0 8px;
-  font-size: 11px;
+  margin: 0 0 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -16929,7 +16981,16 @@ html.rg-theme {
   gap: 4px;
 }
 /* 조각 행 — 원문이 있으면 통째로 버튼(읽기), 없으면 정적 행. 이름/조건 2단 */
-.rg-ending-avg { margin: 0 0 10px; }
+.rg-ending-avg {
+  display: flex; align-items: center; gap: 10px; width: 100%; margin: 0 0 12px; padding: 10px 14px;
+  border: 1px solid var(--rggold); border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--rggold) 16%, transparent); color: inherit;
+  font: inherit; text-align: left; cursor: pointer; transition: background 0.15s;
+}
+.rg-ending-avg i { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--rggold); color: #111; font-style: normal; font-size: 11px; }
+.rg-ending-avg b { font-size: 14px; font-weight: 700; color: var(--rggold); }
+.rg-ending-avg span { font-size: 12px; opacity: .75; }
+@media (hover: hover) { .rg-ending-avg:hover { background: color-mix(in srgb, var(--rggold) 28%, transparent); } }
 .rg-rec-btn,
 .rg-rec-row {
   display: flex;
@@ -17415,7 +17476,8 @@ html.rg-theme .mw-backdrop:has(> .rg-modal):not(.mw-pinned) {
    경로 고정 칸(--rc 테두리·✓ 배지)도 작전 도감 규칙(.st-enemy.has-route) 그대로 탄다 —
    종전 .rg-enemy-cell.has-route 사본은 칸을 바꾸며 지웠다. */
 .rg-modal .st-block,
-.rg-modal .en-file {
+.rg-modal .en-file,
+.rg-modal.rg-storymodal .mw-body {   /* 엔딩 스토리 리더기도 같은 토큰 바꿔 끼우기 (2026-10-18) */
   --white: var(--rgdeep);
   --line: var(--rgline);
   --muted: var(--rgmut);
@@ -32159,3 +32221,57 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
 .me-rg-relics li.off { opacity: .4; }
 .me-rg-relics li.off img { filter: grayscale(1); }
 @media (max-width: 640px) { .me-rg-hist li { grid-template-columns: 48px minmax(0, 1fr) 56px; } .me-rg-hist li > span:last-child { grid-column: 2 / -1; } }
+
+/* ── 엔딩 상세 창 칸 다듬기 (2026-10-18 "진입조건이랑 해금스토리 카드도 예쁘게") ── */
+/* 진입 조건 — 단색 바탕·얇은 테두리 (그라데이션은 촌스럽다고 걷음, 2026-10-18), 칸 사이 › 는 금색 동그라미 */
+/* 점과 선 (단계 진행선, 사용자 선택 2026-10-18) — 상자 없이, 단계마다 금색 점 + 다음 점까지 가로선, 글은 점 아래.
+   한 줄 끝 칸(4n)·마지막 칸은 선을 긋지 않는다. 좁은 화면(한 줄 칸 수가 일정치 않다)은 선을 뺀다 */
+.rg-endmodal .rg-ending-cond { gap: 14px 26px; }
+.rg-endmodal .rg-ending-cond > li {
+  display: block; border: 0; background: none; padding: 22px 0 0; font-size: 12px; line-height: 1.65;
+}
+.rg-endmodal .rg-ending-cond > li { text-align: center; }
+.rg-endmodal .rg-ending-cond .rg-cond-steps { text-align: left; }
+/* 점은 칸 가운데 (사용자 지시 2026-10-18) */
+.rg-endmodal .rg-ending-cond > li::before {
+  content: ""; position: absolute; top: 2px; left: 50%; transform: translateX(-50%); z-index: 1; width: 11px; height: 11px; border-radius: 50%;
+  background: var(--rggold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rggold) 22%, transparent);
+}
+/* 선 — 칸마다 자기 폭 + 양옆 틈 절반(13px)을 그어 이어지게. 한 줄 첫 칸은 왼쪽에서 서서히 나타나고, 줄 끝·마지막 칸은
+   오른쪽으로 서서히 사라진다 (사용자 지시 2026-10-18 "왼쪽도 오른쪽처럼 그라데이션"). 한 줄 넷 기준(4n+1 = 줄 첫 칸) */
+.rg-endmodal .rg-ending-cond > li::after {
+  content: ""; position: absolute; top: 7px; left: -13px; right: -13px; height: 1px;
+  background: color-mix(in srgb, var(--rggold) 55%, transparent);
+}
+.rg-endmodal .rg-ending-cond > li:nth-child(4n+1)::after { left: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--rggold) 55%, transparent) 50%); }
+.rg-endmodal .rg-ending-cond > li:is(:nth-child(4n), :last-child)::after { right: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--rggold) 55%, transparent) 50%, transparent); }
+.rg-endmodal .rg-ending-cond > li:nth-child(4n+1):last-child::after { left: 0; right: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--rggold) 55%, transparent) 50%, transparent); }
+/* 진행 방향 › — 선 위 (점과 같은 높이) */
+/* 진행 꺾쇠 — 선과 같은 색·굵기의 가는 획 (배경·선에 녹아들게, 사용자 지시 2026-10-18). 단계 사이 선 가운데 · 줄 넘김 자리 */
+.rg-step-arrow {
+  position: absolute; top: 7.5px; right: -13px; z-index: 1; width: 6px; height: 10px;
+  /* 선과 같은 색·같은 굵기의 가는 꺾쇠 (끝이 둥근 획) — 마스크로 그려 색은 토큰을 따른다 */
+  background: color-mix(in srgb, var(--rggold) 55%, transparent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 10'%3E%3Cpath d='M1 1l4 4-4 4' fill='none' stroke='%23000' stroke-width='1.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 10'%3E%3Cpath d='M1 1l4 4-4 4' fill='none' stroke='%23000' stroke-width='1.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  transform: translate(50%, -50%);
+}
+.rg-step-arrow.wrap { right: 12px; transform: translate(0, -50%); }
+.rg-step-arrow.from { right: auto; left: 8px; transform: translate(0, -50%); }
+@media (max-width: 700px) { .rg-endmodal .rg-ending-cond > li::after, .rg-step-arrow { content: none; display: none; } }
+
+
+/* 해금 스토리 — 해금된 칸은 금색 테두리, 못 연 칸은 흐리게 */
+.rg-endmodal .rg-ending-book :is(.rg-rec-btn, .rg-rec-row) {
+  position: relative; border-color: var(--rgline);
+  background: var(--rgdeep); transition: border-color .15s;
+}
+.rg-endmodal .rg-ending-book :is(.rg-rec-btn, .rg-rec-row):has(.rg-prog.on) { border-color: color-mix(in srgb, var(--rggold) 70%, transparent); }
+.rg-endmodal .rg-ending-book :is(.rg-rec-btn, .rg-rec-row):has(.rg-prog:not(.on)) { opacity: .62; }
+.rg-endmodal .rg-ending-book :is(.rg-rec-btn, .rg-rec-row) strong { color: #f4e7d3; }
+.rg-endmodal .rg-ending-book .rg-rec-read {
+  margin-top: auto; padding-top: 4px;
+}
+@media (hover: hover) {
+  .rg-endmodal .rg-ending-book .rg-rec-btn:hover { border-color: var(--rggold); background: var(--rgsel); opacity: 1; }
+}

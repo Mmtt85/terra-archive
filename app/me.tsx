@@ -14,7 +14,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { asset } from "./assets";
 import { TOPICS } from "./rogue-topics";
-import { RecordModal } from "./rogue-record";
+import { EndingStoryModal } from "./rogue-record";
 import { useI18n, rich, DT_LOCALE, type ExtraI18n, type Locale } from "./i18n";
 import { ModalWindow } from "./modal-window";
 import { useConfirm } from "./confirm";
@@ -1895,7 +1895,7 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
           </ModalWindow>
         );
       })()}
-      {avgOpen && <RecordModal rid={avgOpen.rid} title={avgOpen.title} sub={t("엔딩 스토리")} kind={t("엔딩 스토리")} onClose={() => setAvgOpen(null)} />}
+      {avgOpen && <EndingStoryModal rid={avgOpen.rid} title={avgOpen.title} onClose={() => setAvgOpen(null)} />}
       {relicOpen && doc && (
         <MoreModal title={`${t("통합전략")} · ${short(topic)} · ${t("소장품")} ${fmt(relicHave)}/${fmt(relics.length)}`} onClose={() => setRelicOpen(false)}>
           <div className="me-seg" role="group" style={{ marginBottom: 10 }}>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import type { ScriptData } from "./story";
 import { asset } from "./assets";
 import { useI18n } from "./i18n";
 import { ModalWindow } from "./modal-window";
@@ -67,3 +68,43 @@ export function RecordModal({ rid, title, sub, kind, onClose }: { rid: string; t
   );
 }
 
+
+// ── 엔딩 연출 스토리 — 스토리 리더기로 (사용자 요청 2026-10-18 "엔딩 스토리도 스토리 리더기 붙일 수 있어") ──
+// public/rogue/endstory/<locale>/<id>.json = {id, recs:[{lines, vn?, au?}], faces} — 오퍼 기록(밀록)과 같은 모양이라
+// 같은 ScriptReader 를 창으로 연다 (home.tsx RecordSection 과 같은 짜임). story 청크는 열 때만 받는다.
+// 흑류수해(중섭 선행)는 중국어 원문을 AI 가 번역한 비공식 텍스트라 안내를 붙인다.
+const StoryScriptReader = lazy(() => import("./story").then((m) => ({ default: m.ScriptReader })));
+// ?v= — 파일을 고치면 올린다. R2 에 올리기 전에 열어 본 주소는 옛 판이 엣지에 4시간 남는다
+const ENDSTORY_VER = "2026101802";
+type EndStoryDoc = { id: string; recs: { lines: ScriptData["eps"][number]["lines"]; vn?: ScriptData["eps"][number]["vn"]; au?: ScriptData["eps"][number]["au"] }[]; faces?: Record<string, string> };
+
+// className — 통합전략 가이드에서 열면 'rg-modal rg-storymodal'(테마 색, 사용자 지시 2026-10-18), 내 정보에선 기본
+export function EndingStoryModal({ rid, title, onClose, className }: { rid: string; title: string; onClose: () => void; className?: string }) {
+  const { t, locale } = useI18n();
+  const [doc, setDoc] = useState<EndStoryDoc | null>(null);
+  const [err, setErr] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const get = (loc: string) => fetch(asset(`/rogue/endstory/${loc}/${rid}.json?v=${ENDSTORY_VER}`)).then((r) => (r.ok ? r.json() : null));
+    get(locale).then((d) => d ?? (locale === "ko" ? null : get("ko")))
+      .then((d: EndStoryDoc | null) => { if (!alive) return; if (d?.recs?.length) setDoc(d); else setErr(true); })
+      .catch(() => { if (alive) setErr(true); });
+    return () => { alive = false; };
+  }, [rid, locale]);
+  const script = useMemo<ScriptData | null>(() => (doc
+    ? { id: `${rid}-end`, eps: [{ code: "", name: title, tag: "", lines: doc.recs[0].lines,
+        ...(doc.recs[0].vn ? { vn: doc.recs[0].vn } : {}), ...(doc.recs[0].au ? { au: doc.recs[0].au } : {}) }], faces: doc.faces }
+    : null), [doc, rid, title]);
+  return (
+    <ModalWindow label={`${t("엔딩 스토리")} · ${title}`} className={className ?? "op-record-modal"} onClose={onClose}>
+      {/rogue6_/.test(rid) && <p className="future-note">{t("중국 서버 선행 엔딩입니다 — 중국어 원문을 AI가 번역한 비공식 텍스트라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}
+      {err ? <p className="no-detail">{t("기록을 불러오지 못했습니다.")}</p>
+        : !script ? <p className="no-detail">{t("불러오는 중…")}</p>
+          : (
+            <Suspense fallback={<p className="no-detail">{t("불러오는 중…")}</p>}>
+              <StoryScriptReader script={script} error={false} entities={[]} withPrefs withScene />
+            </Suspense>
+          )}
+    </ModalWindow>
+  );
+}
