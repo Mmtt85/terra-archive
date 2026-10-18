@@ -45,7 +45,7 @@ export type SynergySetDef = {
     requireRoomSkill?: boolean;      // 본체가 그 방 스킬을 가져야 하는가 (쉐라그는 머릿수라 false)
   };
   // bodies.room의 어느 칸에 — spread는 한 칸에 몰지 않고 칸마다 하나씩 흩는다 (어비설)
-  target: { cell: "first" | "firstFree" | "byAnchorProduct" | "spread" };
+  target: { cell: "first" | "firstFree" | "byAnchorProduct" | "pack" };
 };
 
 export type Fixture = {

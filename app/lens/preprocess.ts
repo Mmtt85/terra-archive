@@ -220,7 +220,14 @@ export function findDarkChips(data: Uint8ClampedArray | Uint8Array, W: number, H
   }
   // 읽기 순서(위→아래, 왼→오른쪽), 과도 검출 방어 상한
   boxes.sort((a, b) => (a.y - b.y) || (a.x - b.x));
-  return boxes.slice(0, 20);
+  if (boxes.length <= 20) return boxes;
+  // 상한을 넘으면 같은 줄에 같은 크기 짝이 있는 칩(공채 태그 2×3 격자 같은 버튼 줄)을 먼저 남긴다.
+  // 읽기 순서로만 자르면 위쪽 자원 표시·화살표에 자리를 뺏겨 아래 줄 태그가 잘렸다
+  // (제안 3dd16f12, 2026-10-18 — 2560×1440 공채 화면에서 둘째 줄 '생존형·소환'이 17·18번째)
+  const twin = (a: ChipBox) => boxes.some((b) => b !== a && Math.abs(b.y - a.y) < a.h * 0.3
+    && Math.abs(b.h - a.h) < a.h * 0.2 && Math.abs(b.w - a.w) < a.w * 0.15);
+  const keep = [...boxes.filter(twin), ...boxes.filter((b) => !twin(b))].slice(0, 20);
+  return keep.sort((a, b) => (a.y - b.y) || (a.x - b.x));
 }
 
 /**

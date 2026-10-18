@@ -18,7 +18,7 @@ import {
   ELITE_LABEL, MAX_OP_LEVEL, maxOpLevel, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, orderFixFor, roomMaxNetDrain,
-  ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, KEEP_MARGIN, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
+  ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, tokensAt, planTokensAt, KEEP_MARGIN, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS, PLANTS_BASE_RT,
   splitPriority, joinPriority, AUTO_BENCH_IDS, genEstimate,
   setRecycle, RECYCLE_MODE, RECYCLE_SPEC, recycleRate, recycleDaily, type RecycleMode,
@@ -1016,7 +1016,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     for (const shifts of Object.values(assignments)) for (const team of shifts) for (const id of team) usedAll.add(id);
     let added = 0;
     for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
-      const points = shift === 0 ? plan.tokenPoints : {};
+      const points = tokensAt(shift, assignments, effectiveOpById, plan.flows, plan.tokenPoints);
       const counts: Record<string, number> = {};
       const present = new Set<string>(); // 이 조 기준 기지 내 배치 전원
       const roomOf = new Map<string, string>(); // 방까지 보는 조건(작업 시설 동반) 판정용
@@ -1379,7 +1379,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const room = cellByKey.get(key)?.room;
     if (!room) return 0;
     const teamAt = (k: string) => (p.assignments[k]?.[Math.min(shift, (p.assignments[k]?.length ?? 1) - 1)] ?? []).map((id) => opMap.get(id)).filter(Boolean) as InfraOp[];
-    const points = shift === 0 ? p.tokenPoints : {};
+    const points = planTokensAt(p, opMap, shift);
     const counts = p.factionCounts[shift] ?? {};
     const present = presentIdsFor(p, shift);
     const rooms = roomOfFor(p, shift);
@@ -1436,12 +1436,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     };
     const roomOfAt = [0, 1].map((shift) => roomOfFor(plan, shift));
     const cellOfAt = [0, 1].map((shift) => cellOfFor(plan, shift));
-    const ambientAt = [0, 1].map((shift) => aurasOf(controlTeamAt(shift), ctxFor("CONTROL", shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plantsFor(plan, shift, effectiveOpById), presentIdsFor(plan, shift), undefined, roomOfAt[shift], cellOfAt[shift])));
+    const ambientAt = [0, 1].map((shift) => aurasOf(controlTeamAt(shift), ctxFor("CONTROL", planTokensAt(plan, effectiveOpById, shift), plan.factionCounts[shift] ?? {}, plantsFor(plan, shift, effectiveOpById), presentIdsFor(plan, shift), undefined, roomOfAt[shift], cellOfAt[shift])));
     const rows: Row[] = LAYOUT.map((cell) => {
       const shifts = plan.assignments[cell.key] ?? [];
       const scoreFor = (team: InfraOp[], shift: number) =>
         cell.room === "DORMITORY" || PARK_KEYS.includes(cell.key) ? null
-          : Math.round(teamScore(team, cell.room, { ...ctxFor(cell.key, shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plantsFor(plan, shift, effectiveOpById), presentIdsFor(plan, shift), ambientAt[shift], roomOfAt[shift], cellOfAt[shift]), shiftHours: plan.shiftHours?.[shift] }));
+          : Math.round(teamScore(team, cell.room, { ...ctxFor(cell.key, planTokensAt(plan, effectiveOpById, shift), plan.factionCounts[shift] ?? {}, plantsFor(plan, shift, effectiveOpById), presentIdsFor(plan, shift), ambientAt[shift], roomOfAt[shift], cellOfAt[shift]), shiftHours: plan.shiftHours?.[shift] }));
       const teamAt = (shift: number) => (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
       const single = cell.room === "DORMITORY" || cell.key === "TRAINING";
       if (single) {
@@ -2499,7 +2499,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   const rawIds = plan.assignments[cell.key]?.[shiftIndex] ?? [];
   const team = rawIds.map((id) => opMap.get(id)).filter(Boolean) as InfraOp[];
   const teamIds = new Set(team.map((op) => op.id));
-  const points = shiftIndex === 0 ? plan.tokenPoints : {};
+  const points = planTokensAt(plan, opMap, shiftIndex);
   // 제어센터 오라를 이 방 점수에도 합산 (제어센터 자신을 볼 때는 미적용)
   const controlShifts = plan.assignments["CONTROL"] ?? [];
   const controlTeam = (controlShifts[Math.min(shiftIndex, controlShifts.length - 1)] ?? []).map((id) => opMap.get(id)).filter(Boolean) as InfraOp[];

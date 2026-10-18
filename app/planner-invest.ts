@@ -26,7 +26,7 @@ import sanityData from "./data/sanity.json";
 import {
   optimizeConfig, buildPlan, planScore, teamScore, opSolo, withElite, maxElite, eliteLocks, setCapCluster, setShiftTiebreak,
   availableSetKeys, synergySetMembers, cellByKey, LAYOUT, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT, AUTO_BENCH_IDS,
-  apPerPctDay,
+  apPerPctDay, planTokensAt,
   type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets, type RoomPin,
 } from "./planner-engine";
 
@@ -159,7 +159,7 @@ function teamAt(plan: Plan, key: string, shift: number, byId: Map<string, InfraO
 function cellEff(plan: Plan, key: string, shift: number, byId: Map<string, InfraOp>): number {
   const cell = cellByKey.get(key);
   if (!cell) return 0;
-  const points = shift === 0 ? plan.tokenPoints : {};
+  const points = planTokensAt(plan, byId, shift);
   const counts = plan.factionCounts[shift] ?? {};
   const present = presentIdsFor(plan, shift);
   const rooms = roomOfFor(plan, shift);

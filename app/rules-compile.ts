@@ -80,7 +80,7 @@ export function validateRules(rows: RuleRow[]): string[] {
       if (bodies?.from === "roles" && !(Array.isArray(bodies.roles) && bodies.roles.length)) errors.push(`${tag}: from=roles면 roles 배열이 필요합니다`);
       if (bodies?.from === "anchorFaction" && !row.body.anchor) errors.push(`${tag}: from=anchorFaction이면 anchor가 필요합니다`);
       const cell = (row.body.target as { cell?: string } | undefined)?.cell;
-      if (!["first", "firstFree", "byAnchorProduct"].includes(cell ?? "")) errors.push(`${tag}: target.cell은 first/firstFree/byAnchorProduct 중 하나여야 합니다`);
+      if (!["first", "firstFree", "byAnchorProduct", "pack"].includes(cell ?? "")) errors.push(`${tag}: target.cell은 first/firstFree/byAnchorProduct/pack 중 하나여야 합니다`);
     }
   }
   // 엔진이 참조하는 상수는 전부 있어야 한다 — 빠지면 런타임 undefined 산술

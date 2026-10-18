@@ -954,6 +954,7 @@ export const AURA_TARGET: Record<string, string> = { MANUFACTURE: "ctrl_mfg", TR
 // 동종 최고 경쟁(ambientFor)이 아니라 endless 순소모 모델(roomMaxNetDrain)만 소비한다.
 export type AmbientAura = { kind: string; value: number; gateFaction?: string | null;
   gateOps?: string[];  // 진영 태그가 아니라 **확정 명단**으로 거는 방 게이트 (어비설 헌터스)
+  seatPer?: number; seatCap?: number; // 방 안 명단 인원 1명당 seatPer, 방당 상한 seatCap (어비설 특수 버프 — 2026-10-18)
   gateCount?: number | null; belowThreshold?: number | null; perFaction?: string | null; perProduct?: Record<string, number> | null; cap?: number; capPer?: number; rooms?: string[]; aura?: boolean };
 
 // 방 기본 속도 — 임계값 조건("N% 미만인 경우, 기본 속도 포함") 판정용 (사무실 기본 누적 5%)
@@ -984,8 +985,11 @@ export function aurasOf(controlTeam: InfraOp[], ctx: Ctx): AmbientAura[] {
         for (const [id, room] of ctx.roomOf ?? []) {
           if (room === g.room && opById.has(id) && counts(id)) seated += 1;
         }
+        // 방 값 = 그 방에 앉은 명단 인원 × (per × N), 방당 상한 cap — ambientFor 가 방마다 센다.
+        // 종전엔 방 인원과 무관하게 per × N 을 일률로 줬다 → 2명 앉은 방이 게임은 +80%인데 +40%로 나왔다
+        // (제안 1862ea04 실측: 제조소 두 곳에 2명씩, 스펙터·안드레아나·마르실 방 +115% = 80 + 35)
         if (seated > 0) {
-          list.push({ kind: g.kind, value: Math.min(g.per * seated, g.cap),
+          list.push({ kind: g.kind, value: Math.min(g.per * seated, g.cap), seatPer: g.per * seated, seatCap: g.cap,
             ...(named ? { gateOps: named } : { gateFaction: g.faction, gateCount: 1 }) });
         }
       }
@@ -1032,6 +1036,11 @@ export function ambientFor(room: string, team: InfraOp[], ambient?: AmbientAura[
     if (aura.gateOps && !team.some((member) => aura.gateOps!.includes(member.id))) continue;
     if (aura.gateFaction && team.filter((member) => factionsOf(member).includes(aura.gateFaction!)).length < (aura.gateCount ?? 1)) continue;
     if (aura.belowThreshold != null && (ROOM_BASE_RATE[room] ?? 0) + roomEfficiency >= aura.belowThreshold) continue;
+    if (aura.seatPer != null) {
+      const seated = team.filter((member) => (aura.gateOps ? aura.gateOps.includes(member.id) : memberOf(member, aura.gateFaction!))).length;
+      best = Math.max(best, Math.min(seated * aura.seatPer, aura.seatCap ?? Infinity));
+      continue;
+    }
     if (aura.value < 0) neg += aura.value;
     else best = Math.max(best, aura.value);
   }
@@ -1583,6 +1592,25 @@ export type FlowConsumer = { opId: string; at: string; room: string; rate: numbe
 // ⚠ 한계: 원장에 **없던 생성원은 되살아나지 않는다.** 자동편성이 앉히지 않은 총웨를 손으로
 //   제어센터에 넣어도 화식 생성원이 새로 생기지는 않는다 — 그건 전체 자동편성을 다시 돌려야 한다.
 //   손 배치가 바꿀 수 있는 건 '몇 명이 세어지는가'(perMember)와 '생성원이 아직 앉아 있는가'다.
+// ── 조별 토큰 (사용자 확정 2026-10-18, 제안 45ae659e) ─────────────────────────────
+// 종전엔 B조를 계산할 때 토큰을 통째로 0으로 놓았다(A조 원장만 셌다). 그런데 숙소는 A·B 같은 팀이라
+// 숙소 생성원(센시 마물 요리·아이리스 감지 정보 등)은 B조 근무 중에도 토큰을 만든다 — B조 마르실이
+// +5%를 못 받았다. 이제 B조는 **그 조에 실제로 있는 생성원**만으로 원장을 다시 센다
+// (A조에만 앉은 생성원·전환자는 빠지고, 원장에 없는 B조 전용 생성원은 세지 않는다 — 보수적).
+export function shiftAssignments(assignments: Record<string, string[][]>, shift: number): Record<string, string[][]> {
+  const out: Record<string, string[][]> = {};
+  for (const [key, shifts] of Object.entries(assignments)) out[key] = [shifts[Math.min(shift, shifts.length - 1)] ?? []];
+  return out;
+}
+export function tokensAt(shift: number, assignments: Record<string, string[][]>, byId: Map<string, InfraOp>, flows: TokenFlow[] | undefined, tokenPoints: Record<string, number>): Record<string, number> {
+  if (shift === 0) return tokenPoints;
+  if (!flows?.length) return {};
+  return recountTokens(shiftAssignments(assignments, shift), byId, flows).tokenPoints;
+}
+export function planTokensAt(plan: Plan, byId: Map<string, InfraOp>, shift: number): Record<string, number> {
+  return tokensAt(shift, plan.assignments, byId, plan.flows, plan.tokenPoints);
+}
+
 export function recountTokens(
   assignments: Record<string, string[][]>,
   rosterById: Map<string, InfraOp>,
@@ -1945,20 +1973,23 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
   if (bodies.length < min) return;
   // 시드 + 예약 — 같은 조의 앞 순서 방이 시드를 채가거나 전수 감사(seedKeep)가 쓸어내지 않게
   const cells = LAYOUT.filter((c) => c.room === room);
-  // spread — 한 칸에 모으지 않고 **칸마다 하나씩** 흩는다 (어비설 헌터스 제조소 세트).
-  // 전역 카운트형 오라(globalAura)는 N = 그 방 종류에 앉은 진영원 **총원**인데 그 값이
-  // 진영원이 앉은 **모든** 방에 일률로 붙는다. 그래서 4명을 네 제조소에 하나씩 두면 네 방이
-  // 각각 +40%지만, 한 방에 몰면 그 방 하나만 +40%다 — 모으는 순간 4분의 1이 된다.
-  if (def.target.cell === "spread") {
-    // 매번 **가장 덜 찬 칸**을 고른다. 고정 순번(round-robin)으로 돌리면 다른 세트가 이미
-    // 시드를 넣어 둔 칸이 섞였을 때 한 방에 둘이 겹치고 빈 제조소가 남는다 — 흩는 의미가 없다.
-    for (const op of bodies) {
+  // pack — 방당 상한에 닿기 직전까지 한 방에 모은다 (어비설 헌터스 제조소 세트, 2026-10-18 제안 1862ea04).
+  // 방 값 = 방 안 인원 n × per × N(총원), 상한 cap 이라 총합은 어떻게 나눠도 같지만(상한 전까지),
+  // 제어센터의 다른 제조소 오라와는 **최고값 경쟁**이라 적은 방에 몰수록 손해가 없다. 그래서
+  // k = ⌊cap ÷ (per × N)⌋ 명씩 묶는다 — 4명이면 2+2(+80%씩), 3명이면 한 방에 셋(+90%).
+  // 종전 spread(칸마다 하나씩)는 "모든 방에 N×per 일률"이라는 틀린 해석에서 나왔다.
+  if (def.target.cell === "pack") {
+    const g = anchorSkill?.globalAura;
+    const k = g ? Math.max(1, Math.floor(g.cap / (g.per * Math.max(1, bodies.length)))) : 1;
+    for (let i = 0; i < bodies.length; i += k) {
+      const group = bodies.slice(i, i + k);
+      // 무리째 들어갈 자리가 있는 칸 중 가장 덜 찬 칸 — 다른 세트 시드와 겹치지 않게
       const cell = cells
-        .filter((c) => slotsFor(c.key) > (seeds[c.key]?.length ?? 0))
+        .filter((c) => slotsFor(c.key) - (seeds[c.key]?.length ?? 0) >= group.length)
         .sort((a, b) => (seeds[a.key]?.length ?? 0) - (seeds[b.key]?.length ?? 0))[0];
       if (!cell) break;
-      seeds[cell.key] = [...(seeds[cell.key] ?? []), op];
-      reserved.set(op.id, cell.key);
+      seeds[cell.key] = [...(seeds[cell.key] ?? []), ...group];
+      for (const op of group) reserved.set(op.id, cell.key);
     }
   } else {
     const cell = def.target.cell === "firstFree" ? cells.find((c) => !(seeds[c.key]?.length))
@@ -2321,7 +2352,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     for (const [id, k] of cellOf) roomOf.set(id, cellByKey.get(k)?.room ?? k);
     const fc: Record<string, number> = {};
     for (const id of present) { const op = byIdAll.get(id); if (op) for (const f of factionsOf(op)) fc[f] = (fc[f] ?? 0) + 1; }
-    const tp = shift === 0 ? tokenPoints : {};
+    const tp = tokensAt(shift, assignments, byIdAll, flows, tokenPoints);
     const amb = aurasOf(teamAtKey("CONTROL", shift), ctxFor("CONTROL", tp, fc, plants, present, undefined, roomOf, cellOf));
     let total = 0;
     for (const key of [...prodKeys, ...SUPPORT_KEYS]) {
@@ -2427,7 +2458,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
         const idx = Math.min(shift, assignments[key].length - 1);
         const team = (assignments[key][idx] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
         if (!team.length) continue;
-        const ctx: Ctx = { product: cellByKey.get(key)?.product, tokenPoints: shift === 0 ? tokenPoints : {}, factionCounts: fc, plants, presentIds: placed, roomOf, cellOf: cellMapFor(shift) };
+        const ctx: Ctx = { product: cellByKey.get(key)?.product, tokenPoints: tokensAt(shift, assignments, byIdAll, flows, tokenPoints), factionCounts: fc, plants, presentIds: placed, roomOf, cellOf: cellMapFor(shift) };
         // 조건(roomPartner)이 실제 미충족인 멤버 — 시드/예약 오퍼는 건드리지 않는다
         const member = team.find((op) => reserved.get(op.id) !== key && op.skills.some((sk) =>
           sk.roomPartner && skillApplies(sk, room, ctx.product) && roomOf.get(sk.roomPartner.id) !== sk.roomPartner.room));
@@ -2510,7 +2541,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
           }
         }
       }
-      const tp = auditShift === 0 ? tokenPoints : {};
+      const tp = tokensAt(auditShift, assignments, byIdAll, flows, tokenPoints);
       // 앞서 확정한 조의 근무자 — 이번 조에서 사용 금지(동시 배치 금지), 남아 있으면 제거
       const lockedPrev = new Set<string>();
       for (let s2 = 0; s2 < auditShift; s2 += 1) for (const k of workKeys) for (const id of assignments[k]?.[s2] ?? []) lockedPrev.add(id);
@@ -2768,7 +2799,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
           const team = assignments[key][shift] ?? [];
           if (team.length >= slots) continue;
           const present = new Set<string>([...usedThisShift, ...dormIds]);
-          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shift };
+          const ctx = { ...ctxFor(key, tokensAt(shift, assignments, byIdAll, flows, tokenPoints), factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shift };
           const pool = new Map(roster.filter((op) =>
             !usedThisShift.has(op.id) && !otherWorking.has(op.id) &&
             (!reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
@@ -2825,7 +2856,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
         const team = (assignments[key][shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
         let added = false;
         while (team.length < slots && bench.length) {
-          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shift };
+          const ctx = { ...ctxFor(key, tokensAt(shift, assignments, byIdAll, flows, tokenPoints), factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shift };
           const base = teamValue(team, room, ctx);
           let at = 0;
           let best = teamValue([...team, bench[0]], room, ctx) - base;
@@ -2879,7 +2910,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
         for (const id of dorm5) rko.set(id, "DORMITORY");
         const cko = cellMapFor(shift);
         const pres = new Set<string>([...rko.keys(), ...dorm5]);
-        const tp5 = shift === 0 ? tokenPoints : {};
+        const tp5 = tokensAt(shift, assignments, byIdAll, flows, tokenPoints);
         const amb = aurasOf(team5("CONTROL"), ctxFor("CONTROL", tp5, factionCountsPerShift[shift], plants, pres));
         let t = 0;
         for (const k of prefKeys) t += teamScore(team5(k), "MANUFACTURE", { ...ctxFor(k, tp5, factionCountsPerShift[shift], plants, pres, amb), roomOf: rko, cellOf: cko });
@@ -3049,7 +3080,7 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
       const shifts = plan.assignments[key] ?? [];
       return (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => byId.get(id)).filter(Boolean) as InfraOp[];
     };
-    const points = shift === 0 ? plan.tokenPoints : {};
+    const points = planTokensAt(plan, byId, shift);
     const counts = plan.factionCounts[shift] ?? {};
     const present = presentIdsFor(plan, shift);
     const plants = plantsFor(plan, shift, byId); // 조별 실제 배치 기준 (Plan.plants 스칼라는 안 쓴다)
