@@ -21,12 +21,13 @@ import { SearchSuggest } from "./search-suggest";
 import { AttributeFilter } from "./attr-filter";
 import { familyIndex, materialFamily } from "./material-family";
 import { openEvent } from "./event-open";
+import { fetchEventPayload, type GameEvent } from "./event-feed";
 import { useHashSync } from "./hash-modal";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 import { noteArrival, noteMiss } from "./trail";
-import { loadEnemies, loadEnemyStages, loadEnemyStats, loadStages } from "./dex-cross";
+import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadStages, type FutureDex } from "./dex-cross";
 import { StageFile } from "./stage-detail";
-import { viewOf, type StageView } from "./stage-data";
+import { mergeRogueDoc, viewOf, type StageDoc, type StageView } from "./stage-data";
 import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 import { useMe, meChars } from "./me-store";
 import { Dropdown } from "./dropdown";
@@ -153,6 +154,152 @@ const CHIP_STAGES: Record<string, { code: string; zone: LocText; ap: number; bad
   return out;
 })();
 
+// ── 미래시 이벤트 파밍 표 (사용자 요청 2026-10-18 "앞으로 올 미래시에서 파밍 가능한 재료들을 표로") ──────────
+// 중섭에 먼저 열린 이벤트(future-dex.json, scripts/build-future-dex.py)의 작전 드랍 중 **정예화 재료만** 모은다
+// (이벤트 재화·증표는 뺀다). 행 = 재료(높은 등급부터), 열 = 이벤트, 칸 = 그 이벤트의 작전 코드와 게임 확률 표기.
+// 미래시 작전엔 펭귄 실측 드랍률이 없어서 게임 표기(확정·거의 항상·자주·보통·가끔)를 그대로 쓴다.
+// 드랍 행의 확률·종류 번호는 본 작전 문서(stages.json)의 occ·kinds 를 가리킨다 — 이벤트 창(mergeRogueDoc)과 같은 규칙.
+// 지금 이벤트 상점에서 무한 교환되는 T3 — 굳이 파밍할 이유가 없어 뺀다 (사용자 지시 2026-10-18)
+// 로식 콜 · 망간 광석 · 연마석 · RMA70-12
+const SHOP_ENDLESS = new Set(["30073", "30083", "30093", "30103"]);
+const fmtCount = (n: number) => (n >= 10000 ? `${Math.floor(n / 1000)}k` : String(n));
+const FF_EV_W = 132;   // 이벤트 이름 칸
+const FF_COL_W = 68;   // 재료 칸 (전부 같은 폭)
+type FutureCell = { sid: string; code: string; ap: number; occ: string; extra: boolean };
+function FutureFarm({ onOpenItem, onOpenStage }: { onOpenItem: (id: string) => void; onOpenStage: (sid: string) => void }) {
+  const { locale, t } = useI18n();
+  // 내 창고 수량 — 내 정보에 계정 데이터가 있을 때만, 섬네일 오른쪽 위에 작게 (사용자 지시 2026-10-18)
+  const inv = useMe()?.profile?.inventory;
+  const [docs, setDocs] = useState<{ fut: FutureDex; main: StageDoc; live: (GameEvent & { stageIds: string[] })[] } | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    // 지금 한섭에서 진행 중인 이벤트도 맨 위에 (사용자 지시 2026-10-18 "현재 진행중인 이벤트도, 진행중 배지와 함께") —
+    // 헤더와 같은 이벤트 피드에서 시작~끝 사이인 것
+    // 이벤트의 작전 목록은 이벤트 도감 데이터(events.json stages) — 메인 이야기 이벤트(임계 상전이 = main_17-xx)는
+    // 작전 id 가 이벤트 id 로 시작하지 않아서다
+    void Promise.all([loadFutureDex(locale), loadStages(locale), fetchEventPayload(), import("./data/events.json")])
+      .then(([fut, main, feed, evMod]) => {
+        const now = Date.now();
+        const evDoc = ((evMod as { default?: unknown }).default ?? evMod) as { events?: { id: string; stages?: [string, ...unknown[]][] }[] } | { id: string; stages?: [string, ...unknown[]][] }[];
+        const evList = Array.isArray(evDoc) ? evDoc : evDoc.events ?? [];
+        const stageIds = new Map(evList.map((e) => [e.id, (e.stages ?? []).map((row) => row[0])]));
+        const live = (feed?.events ?? []).filter((e) => Date.parse(e.start) <= now && now < Date.parse(e.end))
+          .map((e) => ({ ...e, stageIds: stageIds.get(e.id) ?? [] }));
+        if (alive) setDocs({ fut, main, live });
+      })
+      .catch(() => { if (alive) setFailed(true); });
+    return () => { alive = false; };
+  }, [locale]);
+  const table = useMemo(() => {
+    if (!docs) return null;
+    const { fut, main, live } = docs;
+    const mats = new Map(ALL_MATERIALS.map((m) => [m.id, m]));
+    const rows = new Map<string, Map<number, FutureCell[]>>();
+    const evUsed = new Set<number>();
+    // 줄 번호: 진행 중 이벤트는 -1, -2 … (맨 위), 미래시는 미래시 문서의 이벤트 번호 그대로
+    const evNames = new Map<number, string>(fut.stages.events.map((n, i) => [i, n]));
+    const liveKeys = new Set<number>();
+    const sources: { st: (typeof fut.stages.stages)[number]; ev: number }[] = [];
+    live.forEach((e, i) => {
+      const key = -1 - i;
+      const ids = new Set(e.stageIds);
+      const mine = main.stages.filter((st) => ids.has(st.id) || (st.id.startsWith(`${e.id}_`) && !/_(perm|rep)$/.test(st.id)));
+      if (!mine.length) return;
+      evNames.set(key, e.name);
+      liveKeys.add(key);
+      for (const st of mine) sources.push({ st, ev: key });
+    });
+    for (const st of fut.stages.stages) sources.push({ st, ev: st.ev ?? -999 });
+    for (const { st, ev } of sources) {
+      for (const row of st.d ?? []) {
+        const [id, o, k] = row as [string, number, number];
+        // T3 이상만 (사용자 지시 2026-10-18) — T1·T2 는 어디서나 나와 표만 길어진다
+        // 작전기록(2001~2004)은 정예화 재료가 아니다 — 빼 달라 (사용자 지시 2026-10-18)
+        if (!mats.has(id) || mats.get(id)!.rarity < 3 || /^200\d$/.test(id) || SHOP_ENDLESS.has(id)) continue;
+        const kind = main.kinds[k] ?? "";
+        // 최초 클리어 보상은 파밍이 아니다
+        if (kind === main.kinds[2]) continue;
+        // 진행 중 이벤트는 주요 드랍만 — 메인 이야기 이벤트(임계 상전이)는 작전마다 추가 드랍이 많아 칸이 두 배로 는다
+        if (liveKeys.has(ev) && k !== 0) continue;
+        evUsed.add(ev);
+        const byEv = rows.get(id) ?? new Map<number, FutureCell[]>();
+        const cells = byEv.get(ev) ?? [];
+        if (!cells.some((c) => c.sid === st.id && !c.extra === (k === 0))) {
+          cells.push({ sid: st.id, code: st.code, ap: st.ap ?? 0, occ: main.occ[o] ?? "", extra: k !== 0 });
+        }
+        byEv.set(ev, cells);
+        rows.set(id, byEv);
+      }
+    }
+    // 진행 중(-1, -2 …)이 맨 위, 그 아래 미래시 순서
+    const events = [...evUsed].sort((a, b) => (a < 0 && b < 0 ? b - a : a - b));
+    const ordered = [...rows.keys()].map((id) => mats.get(id)!).sort((a, b) => b.rarity - a.rarity || a.sortId - b.sortId);
+    return { events, rows, ordered, evNames, liveKeys };
+  }, [docs]);
+  // 가장 적게 가진 재료 세 개의 세로줄을 밝게 — 1위가 가장 밝다 (사용자 지시 2026-10-18). 창고 정보가 있을 때만
+  const hot = useMemo(() => {
+    const m = new Map<string, number>();
+    if (!inv || !table) return m;
+    [...table.ordered].sort((a, b) => (inv[a.id] ?? 0) - (inv[b.id] ?? 0)).slice(0, 3).forEach((x, i) => m.set(x.id, i + 1));
+    return m;
+  }, [inv, table]);
+  const hotCls = (id: string) => (hot.has(id) ? ` ff-hot${hot.get(id)}` : "");
+  if (failed) return <p className="recruit-empty">{t("미래시 데이터를 불러오지 못했습니다.")}</p>;
+  if (!table) return <p className="recruit-empty">{t("불러오는 중…")}</p>;
+  return (
+    <div className="ff">
+      <p className="ff-note">{t("지금 진행 중인 이벤트(맨 위)와 중국 서버에 먼저 열린 이벤트의 작전에서 나오는 T3 이상 정예화 재료입니다. 이벤트 상점에서 무한 교환되는 로식 콜·망간 광석·연마석·RMA70-12는 뺐습니다. 확률은 게임 표기이고, 연한 칸은 추가 드랍입니다.")}</p>
+      {/* 가로줄(맨 위 머리) = 재료, 세로줄 = 이벤트 (사용자 지시 2026-10-18) */}
+      <div className="ff-scroll">
+        {/* 재료 칸은 모두 같은 폭 — 이름은 줄바꿈 (사용자 지시 2026-10-18 "좀 좁혀서 균등한 폭으로") */}
+        <table className="ff-table" style={{ width: FF_EV_W + table.ordered.length * FF_COL_W }}>
+          <colgroup>
+            <col style={{ width: FF_EV_W }} />
+            {table.ordered.map((m) => <col key={m.id} style={{ width: FF_COL_W }} />)}
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">{t("이벤트")}</th>
+              {table.ordered.map((m) => (
+                <th key={m.id} scope="col" className={hotCls(m.id).trim() || undefined}>
+                  <button type="button" className="ff-mat" onClick={() => onOpenItem(m.id)} title={t("{name} 상세 정보 열기", { name: locText(locale, m.name) })}>
+                    <span className="ff-ico">
+                      <img src={asset(m.image)} alt="" width={28} height={28} loading="lazy" />
+                      {inv && <i title={t("내 창고")}>{t("보유")} {fmtCount(inv[m.id] ?? 0)}</i>}
+                    </span>
+                    <span>{locText(locale, m.name)}</span>
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {table.events.map((ev) => (
+              <tr key={ev}>
+                <th scope="row">{table.evNames.get(ev) ?? "—"}{table.liveKeys.has(ev) && <span className="ff-live">{t("진행중")}</span>}</th>
+                {table.ordered.map((m) => {
+                  const cells = (table.rows.get(m.id)?.get(ev) ?? []).sort((a, b) => Number(a.extra) - Number(b.extra) || a.code.localeCompare(b.code, "en", { numeric: true }));
+                  return (
+                    <td key={m.id} className={hotCls(m.id).trim() || undefined}>
+                      {cells.map((c) => (
+                        <button key={`${c.sid}-${c.extra}`} type="button" className={`ff-stage${c.extra ? " extra" : ""}`}
+                          title={`${c.code} · ${t("이성")} ${c.ap}${c.extra ? ` · ${t("추가 드랍")}` : ""}`} onClick={() => onOpenStage(c.sid)}>
+                          <b>{c.code}</b><span>{c.occ}</span>
+                        </button>
+                      ))}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function locText(locale: Locale, text: LocText): string {
   return (locale === "ko" ? text.ko : text[locale]) ?? text.ko;
 }
@@ -179,17 +326,31 @@ function useStageSubModal(onShowItem: (id: string) => void) {
     setStageRaise((k) => k + 1);
     // 스탯 색인을 같이 받아야 등장 적 카드에 HP·공격 수치가 실린다 (적 도감 쪽과 같은
     // 누락이 여기도 있었다 — 사용자 제보 2026-08-11)
-    void Promise.all([loadStages(locale), loadEnemyStats()]).then(([doc, stats]) => {
+    void Promise.all([loadStages(locale), loadEnemyStats()]).then(async ([doc, stats]) => {
       // 복각 상설 id(act18d0_07_perm)는 도감엔 원본 id(act18d0_07)로만 있다 — 접미를
       // 벗겨 재시도 (사용자 제보 2026-08-19: "WD-7을 눌러도 맵 모달이 안 뜸")
       const base = sid.replace(/_(perm|rep)$/, "");
       const st = doc.stages.find((x) => x.id === sid) ?? doc.stages.find((x) => x.id === base);
-      setStage(st ? viewOf(doc, st, stats) : null);
+      if (st) { setStage(viewOf(doc, st, stats)); return; }
+      // 미래시(중섭 선행) 이벤트 작전 — 본 도감에 없으면 미래시 문서에서 (미래시 파밍 표, 2026-10-18)
+      const f = await loadFutureDex(locale).catch(() => null);
+      const merged = f ? mergeRogueDoc(doc, f.stages) : null;
+      const fst = merged?.stages.find((x) => x.id === sid);
+      setStage(merged && fst ? viewOf(merged, fst, stats) : null);
     });
   };
   const openEnemy = (eid: string) => {
     setEnemyRaise((k) => k + 1);
-    void loadEnemies(locale).then((m) => { setEnMap(m); setEnemy(m.get(eid) ?? null); });
+    void loadEnemies(locale).then(async (m) => {
+      setEnMap(m);
+      const hit = m.get(eid);
+      if (hit) { setEnemy(hit); void loadEnemyStages(locale).then(setEnStages); return; }
+      // 미래시 작전의 적은 미래시 문서에만 있다
+      const f = await loadFutureDex(locale).catch(() => null);
+      const fe = f?.enemies.find((e) => e.id === eid) ?? null;
+      setEnemy(fe);
+      if (f && fe) setEnStages(f.enemyStages);
+    });
     void loadEnemyStages(locale).then(setEnStages);
   };
   const node = (
@@ -221,6 +382,8 @@ export default function FarmGuide() {
   // 표 읽는 법·출처는 한 번 읽으면 끝인데 머리글에 세 문단이 늘 깔려 있었다 —
   // 창으로 빼고 여는 버튼만 남긴다 (사용자 지시 2026-09-20, 공개채용 도우미와 같은 규약)
   const [showGuide, setShowGuide] = useState(false);
+  // 미래시(중섭 선행) 이벤트에서 파밍 가능한 재료 표 (사용자 요청 2026-10-18)
+  const [showFuture, setShowFuture] = useState(false);
   usePageHelp("farm", () => setShowGuide(true)); // 안내 창은 페이지 머리의 '?' 로 연다 (2026-10-07)
   // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에 searchTerm만 갱신 (search.ts)
   const { term: searchTerm, set: setSearchTerm, inputProps: searchProps } = useSearchInput();
@@ -329,6 +492,7 @@ export default function FarmGuide() {
             </div>
           </div>
           <div className="results-tools">
+            <button type="button" className="act-btn farm-future-btn" onClick={() => setShowFuture(true)}>{t("파밍 미래시")}</button>
             <div className="sort-wrap">
               <span>{t("정렬")}</span>
               <Dropdown ariaLabel={t("정렬")} selected={[stageSort]}
@@ -431,6 +595,12 @@ export default function FarmGuide() {
 
         </div>
       </div>
+
+      {showFuture && (
+        <ModalWindow label={t("파밍 미래시")} className="farm-future-modal" onClose={() => setShowFuture(false)}>
+          <FutureFarm onOpenItem={openItem} onOpenStage={sub.openStage} />
+        </ModalWindow>
+      )}
 
       {showGuide && (
         <ModalWindow label={t("재료 파밍 효율표 읽는 법")} className="farm-guide-modal" onClose={() => setShowGuide(false)}>

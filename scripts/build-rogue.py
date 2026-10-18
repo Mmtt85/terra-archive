@@ -281,6 +281,17 @@ def ability_of(hb):
     return "\n".join(lines) or hb.get("ability") or None
 
 
+
+def sort_bands(bands, r):
+    """분대를 게임 화면 순서로 — init(시작 설정)의 initialBandRelic 순서 (사용자 지적 2026-10-18 "살카즈는 영혼 호송·박학다식·
+    도면 제작·지휘 … 순서"). 대표 id 와 같은 계열 id(alt) 중 가장 앞 자리를 쓴다. 목록에 없는 분대는 뒤에 원래 순서대로."""
+    order = {}
+    for ini in r.get("init") or []:
+        for bid in ini.get("initialBandRelic") or []:
+            order.setdefault(bid, len(order))
+    big = len(order) + 1000
+    return sorted(bands, key=lambda b: min([order.get(i, big) for i in [b["id"], *(b.get("alt") or [])]]))
+
 def ability_titles(hb):
     """능력 줄 중 형태(페이즈) 제목인 줄의 번호 — 게임 textFormat TITLE ('제2형태' 등). ability_of 와 같은 줄 세기.
     화면은 이 줄을 번호 없는 소제목으로 띄운다 (적 도감 build-enemies.py abilT 와 같은 규칙, 2026-10-18
@@ -1327,8 +1338,17 @@ def build_topic(tid="rogue_1", loc=None):
         return (1, 0, o) if o else (2, 0, x["id"])
     relics.sort(key=relic_order_key)
     relic_icon_dir = os.path.join(REPO, "public", "rogue", "relic")
+    # 강도 변형(α/β/γ = _a/_b/_c)은 기본 소장품 그림을 같이 쓴다 — 흑류수해 경로(relic_icon_id)와 같은 폴백
+    # (사용자 지적 2026-10-18 "알파 감마 붙은 애들은 섬네일이 없네" — 사미 54·살카즈 60·쉐이 45종)
     for x in relics:
-        x["img"] = os.path.exists(os.path.join(relic_icon_dir, f"{x['id']}.webp"))
+        ic = x["id"] if os.path.exists(os.path.join(relic_icon_dir, f"{x['id']}.webp")) else None
+        if ic is None:
+            base = re.sub(r"_[a-z]$", "", x["id"])
+            if base != x["id"] and os.path.exists(os.path.join(relic_icon_dir, f"{base}.webp")):
+                ic = base
+        x["img"] = ic is not None
+        if ic and ic != x["id"]:
+            x["iconId"] = ic
 
     capsules = []
     cap_order = (r["archiveComp"].get("capsule") or {}).get("capsule") or {}
@@ -1387,9 +1407,15 @@ def build_topic(tid="rogue_1", loc=None):
             if nm not in best or score > best[nm][0]:
                 best[nm] = (score, {"id": iid, "name": nm, "desc": it.get("description"), "usage": it.get("usage"),
                                     "img": os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))})
+        # 분대는 같은 이름의 다른 id(기본판·강화판)도 남긴다 — 계정 기록(record.bandGrade·bandCnt)은 기본판 id 로 오는데
+        # 대표는 강화판일 수 있다 (내 정보 '통합전략 진행', 2026-10-18)
+        if itype == "BAND":
+            for iid, it in items.items():
+                if it.get("type") == itype and iid != best[it["name"]][1]["id"]:
+                    best[it["name"]][1].setdefault("alt", []).append(iid)
         return [e for _, e in best.values()]
     tools = item_group("ACTIVE_TOOL")
-    bands = item_group("BAND")
+    bands = sort_bands(item_group("BAND"), r)
     explore_tools = item_group("EXPLORE_TOOL")  # IS3 탐사 도구 (다른 토픽은 빈 배열)
 
     # ── 토픽 고유 시스템 갤러리 (환경 탭) — 토픽마다 다른 예외 메커니즘/수집품을 이름+설명으로.
@@ -1646,7 +1672,9 @@ def build_topic(tid="rogue_1", loc=None):
         "id": e["id"], "name": e["name"], "desc": e.get("desc"),
         "boss": e.get("bossIconId"), "priority": e.get("priority", 0),
         "change": e.get("changeEndingDesc"),
-    } for e in r["endings"].values()]
+    } for e in r["endings"].values()
+        # 도전 모드 전용 엔딩(ro3_ending_c '한 줄기 빛')은 뺀다 — 일반 탐험으로 가는 엔딩이 아니다 (사용자 지시 2026-10-18)
+        if not e["id"].endswith("_c")]
     endings.sort(key=lambda x: x["priority"])
 
     # 엔딩 기록(엔딩북) — 엔딩별 스토리 조각과 게임 공식 해금 조건 (사용자 소원 2026-08-17
@@ -2565,13 +2593,19 @@ def build_rogue6():
             if nm not in best or score > best[nm][0]:
                 best[nm] = (score, {"id": iid, "name": nm, "desc": it.get("description"), "usage": it.get("usage"),
                                     "img": os.path.exists(os.path.join(relic_icon_dir, f"{iid}.webp"))})
+        # 분대는 같은 이름의 다른 id(기본판·강화판)도 남긴다 — 계정 기록(record.bandGrade·bandCnt)은 기본판 id 로 오는데
+        # 대표는 강화판일 수 있다 (내 정보 '통합전략 진행', 2026-10-18)
+        if itype == "BAND":
+            for iid, it in items.items():
+                if it.get("type") == itype and iid != best[it["name"]][1]["id"]:
+                    best[it["name"]][1].setdefault("alt", []).append(iid)
         return [e for _, e in best.values()]
     tools = item_group6("ACTIVE_TOOL")
     # 악단(BAND) 아이콘 — init/initreliciconpic/<id>.png (id 일치). relic 폴더에 받아 img 판정 자동화.
     band_ids = [iid for iid, it in items.items() if it.get("type") == "BAND"]
     download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/rogue_6/init/initreliciconpic/{bid}.png",
                     os.path.join(relic_icon_dir, f"{bid}.webp")) for bid in band_ids], max_px=180, photo=False)
-    bands = item_group6("BAND")
+    bands = sort_bands(item_group6("BAND"), r)
 
     # 유산(襁褓 — 다음 탐색에 물려주는 아이템). 동명 중복(획득 횟수 슬롯)은 대표 1개만
     seen_legacy = set()
@@ -2634,7 +2668,9 @@ def build_rogue6():
         "id": e["id"], "name": e["name"], "desc": e.get("desc"),
         "boss": e.get("bossIconId"), "priority": e.get("priority", 0),
         "change": e.get("changeEndingDesc"),
-    } for e in r["endings"].values()]
+    } for e in r["endings"].values()
+        # 도전 모드 전용 엔딩(ro3_ending_c '한 줄기 빛')은 뺀다 — 일반 탐험으로 가는 엔딩이 아니다 (사용자 지시 2026-10-18)
+        if not e["id"].endswith("_c")]
     endings.sort(key=lambda x: x["priority"])
 
     # 엔딩 기록(엔딩북)·월간 방문객 — build_topic과 같은 추출 (CN 텍스트는 아래

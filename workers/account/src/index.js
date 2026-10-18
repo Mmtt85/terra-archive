@@ -540,8 +540,11 @@ function rogueDigest(user) {
     const collect = {};
     for (const [kind, map] of Object.entries(outer?.collect ?? {})) {
       if (!map || typeof map !== "object") continue;
+      // 소장품(relic)은 state 2 = 얻음, 1 = 해금만 됨(못 얻음) — 1 까지 세서 살카즈 350/350(실제 339)으로 나왔다
+      // (사용자 지적 2026-10-18, 원본 대조: rogue_4 state2 339·state1 11 / rogue_5 state2 251·state1 78·state0 4)
+      const need = kind === "relic" ? 2 : 1;
       const ids = Object.entries(map)
-        .filter(([, v]) => v && (typeof v !== "object" || (v.state ?? 1) > 0 || v.isNew === 0))
+        .filter(([, v]) => v && (typeof v !== "object" || (v.state ?? need) >= need || (need === 1 && v.isNew === 0)))
         .map(([id]) => id);
       if (ids.length) collect[kind] = ids;
     }

@@ -463,6 +463,7 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
           resume: <Paused me={me} opById={opById} onShowOperator={onShowOperator} />,
           recruit: <RecruitPool mine={mine} opById={opById} onShowOperator={onShowOperator} />,
           paradox: <Paradox me={me} mine={mine} released={released} onShowOperator={onShowOperator} />,
+          rogue: <RogueStats me={me} />,
           // 진행 상황·친구·최근 얻은 오퍼·창고는 바로 볼 일이 적어 버튼으로 접고 누르면 창으로 (사용자 지시 2026-10-11) — 묶음 안에서 좌우로도 옮긴다
           drawers: <Drawers me={me} now={now} owned={owned} opById={opById} stages={stages} items={items}
             onOpenStage={openStage} onOpenItem={(i) => setOpenItem(i)} onShowOperator={onShowOperator} />,
@@ -549,7 +550,7 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
   const seasonBg = towerBg((tp?.season ? tDoc?.seasons[tp.season.id]?.[1]?.[0] : null) ?? null);
   const twBg = towerBg(tw?.tower ?? null);
   return (
-    <Card no="RESUME" title={t("이어하기")} aside={<small>{t("마지막 동기화 때 진행 중이던 콘텐츠")}</small>}>
+    <Card no="RESUME" title={t("현재 진행 중")} aside={<small>{t("마지막 동기화 때 진행 중이던 콘텐츠")}</small>}>
       <div className="me-resume">
         {r && (
           // 카드 바탕에 그 테마의 대표 그림을 은은하게 (사용자 지시 2026-10-11) — 통합전략 페이지 배경과 같은 kvN
@@ -1669,6 +1670,266 @@ function Paradox({ me, mine, released, onShowOperator }: { me: MeData; mine: Map
       {shownList.length ? grid(shownList.slice(0, fold), true) : <p className="me-note">{t("해당하는 오퍼가 없습니다.")}</p>}
       {shownList.length > fold && <MoreButton open={false} total={shownList.length} onToggle={() => setAll(true)} />}
       {all && <MoreModal title={`${t("패러독스 시뮬레이션")} · ${t(SEG.find(([k]) => k === curShown)![1])}`} onClose={() => setAll(false)}>{grid(shownList, false)}</MoreModal>}
+    </Card>
+  );
+}
+
+// ── 통합전략 진행 (사용자 요청 2026-10-18 "개인통계에 나오는 모든 걸 한눈에") ─────────────────────────────
+// 계정 원본 rlv2.outer[테마].record (워커 rogueDigest 가 그대로 싣는다 — 2026-10-18 실계정 점검):
+//   modeCnt{모드: 탐험 수} · endingCnt{모드: {엔딩: 횟수}} · bandCnt{분대: {엔딩: 횟수}} · bandGrade{분대: {엔딩: 최고 난이도}}
+//   stageCnt{작전: 전투 수} · history[{bandId, mode, modeGrade, ending, result, endTs}] (최근 판, 일부 테마만)
+// 소장품 보유는 collect.relic. 분대 id 는 기록이 기본판, 테마 데이터 대표가 강화판일 수 있어 bands[].alt 로 함께 본다(build-rogue.py).
+// 게임 개인 통계의 '희망 소모' 같은 누계는 계정 원본에 없다.
+type RogueRec = {
+  last?: number; modeCnt?: Record<string, number>; endingCnt?: Record<string, Record<string, number>>;
+  bandCnt?: Record<string, Record<string, number>>; bandGrade?: Record<string, Record<string, number>>; stageCnt?: Record<string, number>;
+  history?: { bandId: string; mode: string; modeGrade: number; ending: string; result: number; endTs: number }[];
+};
+type RogueStatDoc = { endings: { id: string; name: string; desc?: string | null; change?: string | null; cond?: string[]; book?: { name?: string; cond?: string; rid?: string }[] }[]; difficulties: { mode: string; grade: number; name: string }[];
+  bands: (RogueItem & { alt?: string[]; img?: boolean })[]; relics: (RogueItem & { img?: boolean; sp?: boolean })[] };
+const ROGUE_SHORT: Record<string, [string, string, string]> = {
+  rogue_1: ["팬텀", "Phantom", "ファントム"], rogue_2: ["미즈키", "Mizuki", "ミヅキ"], rogue_3: ["사미", "Sami", "サーミ"],
+  rogue_4: ["살카즈", "Sarkaz", "サルカズ"], rogue_5: ["쉐이", "Sui", "歳"], rogue_6: ["흑류수해", "Sunken", "黒流樹海"],
+};
+// 분대 훈장 세 단계 — 게임 난이도 아이콘 묶음(displayIconId)과 같은 경계: 4~9 / 10~11 / 12 이상 (rogue_3~5 표 실측, 2026-10-18).
+// 그림은 게임 rogue_N_difficulty_{1,2,3}_light (public/rogue/misc). 0~3 은 훈장 없이 깼다는 표시만
+const MEDAL_AT = [4, 10, 12];
+// ?v= — R2 에 올리기 전에 열어 본 주소의 404 가 엣지에 남는다. 그림을 바꾸면 올린다
+const MEDAL_VER = "2026101803";
+const medalOf = (g: number) => MEDAL_AT.filter((x) => g >= x).length;
+const MODE_LABEL: [string, string][] = [["NORMAL", "일반"], ["MONTH_TEAM", "월간 분대"], ["CHALLENGE", "도전"], ["EASY", "쉬움"]];
+
+function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; onClose: () => void }) {
+  const { locale, t } = useI18n();
+  const fmt = fmtOf(locale);
+  const all = me.profile?.rogue ?? {};
+  const [doc, setDoc] = useState<RogueStatDoc | null>(null);
+  const [relicOpen, setRelicOpen] = useState(false);
+  const [onlyMissing, setOnlyMissing] = useState(false);
+  const [endOpen, setEndOpen] = useState<string | null>(null);
+  useEffect(() => {
+    if (!topic) return;
+    let alive = true;
+    setDoc(null);
+    void (ROGUE_DOCS[locale] ?? ROGUE_DOCS.ko)[topic]?.().then((m) => { if (alive) setDoc(((m as { default?: unknown }).default ?? m) as RogueStatDoc); });
+    return () => { alive = false; };
+  }, [topic, locale]);
+  const short = (id: string) => (ROGUE_SHORT[id] ?? [id, id, id])[locale === "en" ? 1 : locale === "ja" ? 2 : 0];
+  const raw = all[topic];
+  const rec = (raw?.record ?? {}) as RogueRec;
+  const runs = Object.values(rec.modeCnt ?? {}).reduce((a, b) => a + b, 0);
+  const clears = Object.values(rec.endingCnt ?? {}).reduce((a, m) => a + Object.values(m).reduce((x, y) => x + y, 0), 0);
+  const gradeOf = (bandIds: string[], ending: string) => Math.max(-1, ...bandIds.map((id) => rec.bandGrade?.[id]?.[ending] ?? -1));
+  const allBands = Object.keys(rec.bandGrade ?? {});
+  // 팬텀·미즈키(rogue_1·2)는 분대 훈장(난이도별)이 없어 계정 기록에 bandGrade 자체가 없다 — 그 분대로 엔딩을 봤는지(bandCnt)만 보여 준다
+  const hasGrade = allBands.length > 0;
+  const cntOf = (bandIds: string[], ending: string) => bandIds.reduce((a, id) => a + (rec.bandCnt?.[id]?.[ending] ?? 0), 0);
+  const bestGrade = Math.max(-1, ...allBands.flatMap((b) => Object.values(rec.bandGrade?.[b] ?? {})));
+  // 그 테마의 일반 모드 최고 난이도 — 거기까지 깬 칸은 진하게 (테마마다 15·18 …)
+  const maxGrade = Math.max(0, ...(doc?.difficulties ?? []).filter((d) => d.mode === "NORMAL").map((d) => d.grade));
+  const diffName = (g: number) => doc?.difficulties.find((d) => d.mode === "NORMAL" && d.grade === g)?.name ?? "";
+  const ownedRelic = new Set(raw?.collect?.relic ?? []);
+  const ownedBand = new Set(raw?.collect?.band ?? []);
+  const relics = doc?.relics ?? [];
+  const relicHave = relics.filter((r) => ownedRelic.has(r.id)).length;
+  // 기록에 나온 엔딩 — 테마 데이터 순서, 데이터에 없는 엔딩(도전 엔딩 등)은 뒤에
+  const endIds = [...new Set([...(doc?.endings ?? []).map((e) => e.id), ...Object.values(rec.endingCnt ?? {}).flatMap((m) => Object.keys(m))])]
+    .filter((id) => !id.endsWith("_c"));   // 도전 모드 전용 엔딩은 뺀다 (가이드와 같게, 2026-10-18)
+  const endName = (id: string) => doc?.endings.find((e) => e.id === id)?.name ?? (id.endsWith("_c") ? t("도전 엔딩") : id);
+  const endNo = (id: string) => { const i = (doc?.endings ?? []).findIndex((e) => e.id === id); return i >= 0 ? String(i + 1) : "C"; };
+  // 분대 표에선 도전 모드 전용 엔딩(ro3_ending_c '한 줄기 빛' 등)은 뺀다 — 분대를 고르는 판이 아니다 (사용자 지적 2026-10-18)
+  const bandEndings = (doc?.endings ?? []).map((e) => e.id).filter((id) => !id.endsWith("_c"));
+  const modes = MODE_LABEL.filter(([m]) => rec.endingCnt?.[m] || rec.modeCnt?.[m]);
+  const bandName = (id: string) => doc?.bands.find((b) => b.id === id || b.alt?.includes(id))?.name ?? id;
+  const relicGrid = (list: RogueStatDoc["relics"]) => (
+    <ul className="me-rg-relics">
+      {list.map((r) => (
+        <li key={r.id} className={ownedRelic.has(r.id) ? undefined : "off"} title={`${r.name}${r.usage ? `\n${r.usage}` : ""}`}>
+          {r.img && <img src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" loading="lazy" decoding="async" />}
+          <span>{r.name}</span>
+        </li>
+      ))}
+    </ul>
+  );
+  return (
+    <ModalWindow label={`${t("통합전략")} · ${short(topic)}`} className="operator-modal me-list-modal me-rg-modal" onClose={onClose}>
+      <div className="me-resume-body me-rg-body">
+      <header className="me-rx-hero" style={{ ["--bg" as string]: `url(${asset(`/rogue/kv${topic.split("_")[1]}.webp`)})` }}>
+        <small>{t("통합전략")}</small>
+        <h3>{(TOPICS.find((x) => x.id === topic)?.name) ?? short(topic)}</h3>
+        <a className="me-rx-go" href={`${locale === "ko" ? "" : `/${locale}`}/rogue/is${topic.split("_")[1]}`}>{t("이 테마 가이드로")} ›</a>
+      </header>
+      {/* 요약 한 줄 — 숫자마다 단위를 붙인다 (사용자 지적 2026-10-18 "뭔지 하나도 모르겠음") */}
+      <div className="me-rg-sum">
+        <span>{t("탐험 {n}회", { n: fmt(runs) })}</span>
+        <span>{t("엔딩 {n}회 도달", { n: fmt(clears) })}</span>
+        {hasGrade && <span title={bestGrade >= 0 ? diffName(bestGrade) : undefined}>{t("최고 난이도 {n}", { n: bestGrade >= 0 ? String(bestGrade) : "—" })}</span>}
+        {doc && <span>{t("분대 {a}/{b} 해금", { a: fmt(doc.bands.filter((b) => [b.id, ...(b.alt ?? [])].some((id) => ownedBand.has(id))).length), b: fmt(doc.bands.length) })}</span>}
+        {doc && <button type="button" onClick={() => setRelicOpen(true)}>{t("소장품 {a}/{b} 수집", { a: fmt(relicHave), b: fmt(relics.length) })} ›</button>}
+      </div>
+
+      <h4 className="me-sub">{t("엔딩별 기록")}</h4>
+      <table className="me-rg-end">
+        <thead><tr><th>{t("엔딩")}</th><th>{t("도달 횟수")}{modes.length > 1 ? ` (${modes.map(([, l]) => t(l)).join(" / ")})` : ""}</th>{hasGrade && <th>{t("최고 난이도")}</th>}</tr></thead>
+        <tbody>
+          {endIds.map((id) => {
+            const g = gradeOf(allBands, id);
+            const done = modes.some(([m]) => rec.endingCnt?.[m]?.[id]);
+            return (
+              <tr key={id} className={done ? undefined : "off"}>
+                <th><button type="button" className="me-rg-endbtn" onClick={() => setEndOpen(id)}><em>{endNo(id)}</em>{endName(id)}</button></th>
+                {done
+                  ? <><td>{modes.map(([m]) => (rec.endingCnt?.[m]?.[id] ? t("{n}회", { n: fmt(rec.endingCnt[m][id]) }) : "–")).join(" / ")}</td>
+                    {hasGrade && <td title={g >= 0 ? diffName(g) : undefined}>{g >= 0 ? g : "—"}</td>}</>
+                  : <td colSpan={hasGrade ? 2 : 1}>{t("아직 못 깸")}</td>}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {/* 분대 × 엔딩 — 칸 = 그 분대로 그 엔딩을 깬 최고 난이도 (사용자 선택 2026-10-18) */}
+      {hasGrade
+        ? <h4 className="me-sub">{t("분대별 훈장")} <em className="me-sub-side">{t("난이도 4·10·12 이상으로 깨면 훈장이 한 단계씩 오르고, 3단계가 코팅 완료입니다 (마우스를 올리면 깬 난이도)")}</em></h4>
+        : <h4 className="me-sub">{t("분대별 엔딩")} <em className="me-sub-side">{t("이 테마는 난이도별 분대 훈장이 없어, 그 분대로 엔딩을 봤는지(✓)만 기록됩니다")}</em></h4>}
+      <div className="me-rg-mx-wrap">
+        <table className="me-rg-mx">
+          <thead>
+            <tr>
+              <th>{t("분대")}</th>
+              <th>{t("클리어 횟수")}</th>
+              {bandEndings.map((e) => <th key={e}><button type="button" className="me-rg-endbtn" onClick={() => setEndOpen(e)} title={endName(e)}><em>{endNo(e)}</em><span>{endName(e)}</span></button></th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {(doc?.bands ?? []).map((b) => {
+              const ids = [b.id, ...(b.alt ?? [])];
+              const got = ids.some((id) => ownedBand.has(id));
+              const n = ids.reduce((a, id) => a + Object.values(rec.bandCnt?.[id] ?? {}).reduce((x, y) => x + y, 0), 0);
+              return (
+                <tr key={b.id} className={got ? undefined : "off"}>
+                  <th title={b.usage ?? undefined}>
+                    {/* 칸(th)은 표 칸 그대로 — flex 로 만들면 칸 경계가 어긋나 밑줄이 틀어진다 (사용자 지적 2026-10-18) */}
+                    <div className="me-rg-bandcell">
+                      {b.img && <img src={asset(`/rogue/relic/${b.id}.webp`)} alt="" loading="lazy" decoding="async" />}
+                      <span>{b.name}</span>
+                    </div>
+                  </th>
+                  <td className="n">{n > 0 ? t("{n}회", { n: fmt(n) }) : "·"}</td>
+                  {bandEndings.map((e) => {
+                    if (!hasGrade) {
+                      const c = cntOf(ids, e);
+                      return <td key={e} className={c ? "on ck" : undefined} title={c ? `${endName(e)} · ${t("클리어 {n}회", { n: fmt(c) })}` : endName(e)}>{c ? "✓" : "·"}</td>;
+                    }
+                    // 숫자 대신 받은 훈장 아이콘 (사용자 지시 2026-10-18 "훈장을 뭘 받았는지") — 난이도는 마우스를 올리면
+                    const g = gradeOf(ids, e);
+                    const md = g >= 0 ? medalOf(g) : 0;
+                    return <td key={e} className={g >= 0 ? (md ? "medal" : "on ck") : undefined}
+                      title={g >= 0 ? `${endName(e)} · ${t("난이도 {n}", { n: g })}${md ? ` · ${t("훈장 {n}단계", { n: md })}` : ""}` : endName(e)}>
+                      {g < 0 ? "·" : md ? (
+                        // 아이콘만으론 단계를 알기 어렵다 — 글자를 붙이고 3단계는 '코팅 완료' (사용자 지시 2026-10-18)
+                        <span className="me-rg-medal">
+                          <img src={asset(`/rogue/misc/${topic}_difficulty_${md}_light.webp?v=${MEDAL_VER}`)} alt="" loading="lazy" decoding="async" />
+                          <small>{md >= 3 ? t("코팅 완료") : t("{n}단계", { n: md })}</small>
+                        </span>
+                      ) : "✓"}
+                    </td>;
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {rec.history?.length ? (
+        <>
+          <h4 className="me-sub">{t("최근 탐험")}</h4>
+          <ul className="me-rg-hist">
+            {[...rec.history].sort((a, b) => b.endTs - a.endTs).slice(0, 8).map((h, i) => (
+              <li key={`${h.endTs}-${i}`}>
+                <span>{new Date(h.endTs * 1000).toLocaleDateString(locale === "ko" ? "ko-KR" : locale === "ja" ? "ja-JP" : "en-US", { month: "short", day: "numeric" })}</span>
+                <b>{bandName(h.bandId)}</b>
+                <em>{t("난이도 {n}", { n: h.modeGrade })}</em>
+                <span className={h.ending ? "ok" : "fail"}>{h.ending ? endName(h.ending) : t("실패")}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+
+      {endOpen && doc && (() => {
+        const e = doc.endings.find((x) => x.id === endOpen);
+        const gotBook = new Set(raw?.collect?.endBook ?? []);
+        const g = gradeOf(allBands, endOpen);
+        return (
+          <ModalWindow label={`${t("엔딩")} ${endNo(endOpen)} · ${endName(endOpen)}`} className="operator-modal me-list-modal me-rg-end-modal" onClose={() => setEndOpen(null)}>
+            <div className="me-rg-endmodal">
+              {/* 오른쪽 위 — 본문(.me-rg-endmodal) 기준으로 붙인다. 머리 그림용 me-rx-go 를 쓰면 창 머리 밖으로 삐져나갔다 (사용자 지적 2026-10-18) */}
+              <a className="act-btn me-rg-guide" href={`${locale === "ko" ? "" : `/${locale}`}/rogue/is${topic.split("_")[1]}`}>{t("이 테마 가이드로")} ›</a>
+              <h3><em>{endNo(endOpen)}</em>{endName(endOpen)}</h3>
+              <p className="me-rg-endstat">
+                {modes.map(([m, l]) => `${t(l)} ${t("{n}회", { n: fmt(rec.endingCnt?.[m]?.[endOpen] ?? 0) })}`).join(" · ")}
+                {hasGrade && g >= 0 && ` · ${t("최고 난이도 {n}", { n: String(g) })}`}
+              </p>
+              {e?.desc && <p className="me-rg-enddesc">{e.desc}</p>}
+              {e?.cond?.length ? (<><h4 className="me-sub">{t("가는 법")}</h4><ul className="me-rg-endcond">{e.cond.map((c, i) => <li key={i}>{c}</li>)}</ul></>) : null}
+              {e?.book?.length ? (
+                <>
+                  <h4 className="me-sub">{t("엔딩 기록")} <em className="me-sub-side">{fmt(e.book.filter((b) => b.rid && gotBook.has(b.rid)).length)}/{fmt(e.book.length)}</em></h4>
+                  <ul className="me-rg-endbook">
+                    {e.book.map((b, i) => {
+                      const got = !!b.rid && gotBook.has(b.rid);
+                      return <li key={i} className={got ? "got" : undefined}><b>{got ? "✓" : "·"} {b.name}</b>{b.cond && <span>{b.cond}</span>}</li>;
+                    })}
+                  </ul>
+                </>
+              ) : null}
+            </div>
+          </ModalWindow>
+        );
+      })()}
+      {relicOpen && doc && (
+        <MoreModal title={`${t("통합전략")} · ${short(topic)} · ${t("소장품")} ${fmt(relicHave)}/${fmt(relics.length)}`} onClose={() => setRelicOpen(false)}>
+          <div className="me-seg" role="group" style={{ marginBottom: 10 }}>
+            <button type="button" className={onlyMissing ? "" : "selected"} onClick={() => setOnlyMissing(false)}>{t("전체")} {fmt(relics.length)}</button>
+            <button type="button" className={onlyMissing ? "selected" : ""} onClick={() => setOnlyMissing(true)}>{t("미보유")} {fmt(relics.length - relicHave)}</button>
+          </div>
+          {relicGrid(onlyMissing ? relics.filter((r) => !ownedRelic.has(r.id)) : relics)}
+        </MoreModal>
+      )}
+      </div>
+    </ModalWindow>
+  );
+}
+
+function RogueStats({ me }: { me: MeData }) {
+  const { locale, t } = useI18n();
+  const fmt = fmtOf(locale);
+  const all = me.profile?.rogue ?? {};
+  const topics = TOPICS.filter((tp) => all[tp.id]?.record);
+  const [open, setOpen] = useState<string | null>(null);
+  if (!topics.length) return null;
+  const short = (id: string) => (ROGUE_SHORT[id] ?? [id, id, id])[locale === "en" ? 1 : locale === "ja" ? 2 : 0];
+  // 테마마다 버튼 하나 — 누르면 상세 창 (사용자 지시 2026-10-18 "이어하기처럼 각 테마별 버튼, 누르면 모달")
+  return (
+    <Card no="ROGUE" title={t("통합전략")} aside={<small>{t("테마를 누르면 엔딩·분대 훈장·소장품 기록")}</small>}>
+      <div className="me-resume me-rg-tiles">
+        {topics.map((tp) => {
+          const rec = (all[tp.id]?.record ?? {}) as RogueRec;
+          const runs = Object.values(rec.modeCnt ?? {}).reduce((a, b) => a + b, 0);
+          const ends = new Set(Object.values(rec.endingCnt ?? {}).flatMap((m) => Object.keys(m).filter((k) => m[k] > 0 && !k.endsWith("_c")))).size;
+          const best = Math.max(-1, ...Object.values(rec.bandGrade ?? {}).flatMap((m) => Object.values(m)));
+          return (
+            <button key={tp.id} type="button" className="has-bg" onClick={() => setOpen(tp.id)}
+              style={{ ["--bg" as string]: `url(${asset(`/rogue/kv${tp.id.split("_")[1]}.webp`)})` }}>
+              <b>{short(tp.id)}</b><span>{t("탐험 {n}회", { n: fmt(runs) })}</span>
+              <em>{t("엔딩 {n}종 도달", { n: fmt(ends) })}{best >= 0 ? ` · ${t("최고 난이도 {n}", { n: String(best) })}` : ""}</em>
+            </button>
+          );
+        })}
+      </div>
+      {open && <RogueTopicDetail me={me} topic={open} onClose={() => setOpen(null)} />}
     </Card>
   );
 }
