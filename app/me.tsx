@@ -1015,6 +1015,27 @@ function ProfileCard({ me, now, opById, demo }: { me: MeData; now: number; opByI
   const day = (ms: number) => new Date(ms).toLocaleDateString(DT_LOCALE[locale], { year: "numeric", month: "long", day: "numeric" });
   const days = st?.register ? Math.floor((now / 1000 - st.register) / 86400) + 1 : 0;
   // 이성 — 동기화 뒤 6분마다 1씩 찬다 (상한까지)
+  // 근무 방 피로도 — 동기화 값(lastApAddTime 시점)에서 게임이 매긴 시간당 변화(rate = changeScale/100, 제어센터·스킬 감면 반영)로
+  // 지금 값과 바닥나는 시각을 어림한다. rate 가 없는 예전 동기화는 기본 소모 1/h 로 본다. 0 이상(쉬는 방·숙소)은 닳지 않는다 (사용자 요청 2026-10-19)
+  const mood = (() => {
+    // 숙소·훈련실은 뺀다 — 훈련실 오퍼는 훈련 중일 뿐 근무가 아니다 (사용자 지적 2026-10-19)
+    const ops = (me.profile?.rooms ?? []).filter((r) => r.room !== "DORMITORY" && r.room !== "TRAINING").flatMap((r) => r.ops ?? []).filter((o) => o.ap != null);
+    if (!ops.length) return null;
+    const syncSec = (me.syncedAt || now) / 1000;
+    const rows = ops.map((o) => {
+      const per = o.rate != null ? o.rate / 100 : -1;
+      const cur = Math.min(24, o.ap! + per * Math.max(0, now / 1000 - (o.at ?? syncSec)) / 3600);
+      return { id: o.id, cur, left: per < 0 ? cur / -per : Infinity };
+    });
+    const alive = rows.filter((r) => r.cur > 0 && r.left < Infinity).sort((x, y) => x.left - y.left);
+    return { working: ops.length, empty: rows.filter((r) => r.cur <= 0).length, first: alive[0] ?? null };
+  })();
+  // 바닥나는 시각 — 오늘이면 시각만, 내일이면 '내일 …', 그 뒤면 날짜까지 (사용자 지시 2026-10-19 "몇 시 몇 분에")
+  const at = (h: number) => {
+    const d = new Date(now + h * 3600_000), tm = d.toLocaleTimeString(DT_LOCALE[locale], { hour: "numeric", minute: "2-digit" });
+    const dd = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date(now).setHours(0, 0, 0, 0)) / 86400_000);
+    return dd === 0 ? tm : dd === 1 ? `${t("내일")} ${tm}` : d.toLocaleString(DT_LOCALE[locale], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  };
   const apNow = st ? (st.ap >= st.maxAp ? st.ap : Math.min(st.maxAp, st.ap + Math.floor((now / 1000 - st.apTs) / 360))) : 0;
   // 드론 — 기본 360초에 1개(building_data laborRecoverTime), 발전소 가속(buffSpeed)만큼 빨라진다. 동기화 뒤 흐른 시간으로 어림 (상한까지)
   const lb = me.profile?.labor;
@@ -1059,6 +1080,12 @@ function ProfileCard({ me, now, opById, demo }: { me: MeData; now: number; opByI
         {monthLeft != null && <ProfileStat label={t("월정액")} value={monthLeft > 0 ? t("{n}일 남음", { n: fmt(monthLeft) }) : t("만료")}
           ratio={monthLeft > 0 ? Math.min(1, monthLeft / 30) : 0} warn={monthLeft <= 3} />}
         {me.profile?.creditSpent != null && <ProfileStat label={t("누적 소비 크레딧")} value={fmt(me.profile.creditSpent)} />}
+        {/* 기반시설 피로도 한 줄 — 누적 소비 크레딧 오른쪽 (사용자 지시 2026-10-19, 종전엔 기반시설 카드 안 문장) */}
+        {mood && (mood.empty || mood.first) && <ProfileStat label={t("기반시설 피로도")}
+          value={mood.empty ? t("{n}명 바닥", { n: mood.empty }) : at(mood.first!.left)}
+          note={mood.empty ? t("근무 {n}명 중", { n: mood.working }) : `${t("{name} 바닥 예상", { name: opById.get(mood.first!.id)?.name ?? mood.first!.id })} · ${mood.first!.left >= 1
+            ? t("약 {n}시간 후", { n: Math.round(mood.first!.left) }) : t("약 {n}분 후", { n: Math.max(1, Math.round(mood.first!.left * 60)) })}`}
+          warn={mood.empty > 0 || (mood.first?.left ?? 99) < 4} />}
       </div>
       {!demo && <p className="me-pf-sync">{t("동기화")} · {dt(me.syncedAt)}</p>}
       {!me.profile && <p className="me-note">{t("이 데이터는 오퍼 목록만 들어 있는 예전 형식입니다 — 다시 동기화하면 창고·진행 상황·친구까지 채워집니다.")}</p>}
@@ -1163,7 +1190,7 @@ function Rooms({ me, opById }: { me: MeData; opById?: Map<string, MeOp> }) {
   const rooms = me.profile?.rooms ?? [];
   // 컨디션 — 근무 방(숙소 제외)에 앉은 오퍼만. 0 = 바닥, 8 미만 = 낮음 (사용자 요청 2026-10-18 "피로도 다 단 애들 있나 간단하게").
   // 값은 동기화 시각 기준이다 — 지금은 그보다 더 떨어져 있을 수 있다
-  const working = rooms.filter((r) => r.room !== "DORMITORY").flatMap((r) => (r.ops ?? []).map((o) => ({ ...o, room: r.room })));
+  const working = rooms.filter((r) => r.room !== "DORMITORY" && r.room !== "TRAINING").flatMap((r) => (r.ops ?? []).map((o) => ({ ...o, room: r.room })));
   const hasMood = working.some((o) => o.ap != null);
   const nameOf = (id: string) => opById?.get(id)?.name ?? id;
   const empty = working.filter((o) => o.ap != null && o.ap <= 0);
@@ -1184,15 +1211,10 @@ function Rooms({ me, opById }: { me: MeData; opById?: Map<string, MeOp> }) {
           );
         })}
       </ul>
-      {hasMood && (
+      {/* 요약 문장은 프로필 칸('기반시설 피로도')으로 옮겼다 — 여기는 낮은 오퍼 목록만 (2026-10-19) */}
+      {hasMood && (empty.length > 0 || low.length > 0) && (
         <div className="me-mood">
-          <p className={`me-mood-sum${empty.length ? " bad" : low.length ? " warn" : " ok"}`}>
-            {empty.length ? t("컨디션이 바닥난 오퍼 {n}명", { n: empty.length })
-              : low.length ? t("컨디션이 낮은 오퍼 {n}명", { n: low.length })
-              : t("근무 중인 오퍼 {n}명 모두 컨디션 여유", { n: working.length })}
-            <small>{t("동기화 시점 기준")}</small>
-          </p>
-          {(empty.length > 0 || low.length > 0) && (
+          {(
             <ul className="me-mood-list">
               {[...empty, ...low].map((o) => (
                 <li key={`${o.room}-${o.id}`} className={o.ap != null && o.ap <= 0 ? "bad" : "warn"}>

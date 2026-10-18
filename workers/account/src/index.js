@@ -757,7 +757,9 @@ function profile(user, friends, shop) {
     slot, room: row?.roomId ?? "", level: num(row?.level),
     ops: (Array.isArray(row?.charInstIds) ? row.charInstIds : []).filter((iid) => iid != null && Number(iid) >= 0).map((iid) => {
       const bc = bchars[String(iid)] ?? {};
-      return { id: bc.charId ?? charOfInst(iid), ap: Number.isFinite(Number(bc.ap)) ? Math.round(Number(bc.ap) / 36000) / 10 : null, at: num(bc.lastApAddTime) || null };
+      // rate — 게임이 매긴 시간당 컨디션 변화 ×100 (changeScale). 실측 2026-10-19: 제어센터 5명 -75(= -1 + 0.05×5), 숙소 +400~465, 쉬는 방 0
+      return { id: bc.charId ?? charOfInst(iid), ap: Number.isFinite(Number(bc.ap)) ? Math.round(Number(bc.ap) / 36000) / 10 : null, at: num(bc.lastApAddTime) || null,
+        rate: Number.isFinite(Number(bc.changeScale)) ? Number(bc.changeScale) : null };
     }).filter((o) => o.id),
   })).filter((row) => row.room);
 

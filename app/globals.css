@@ -33608,3 +33608,7 @@ html.rg-theme.rg4 main.site-main {
 .rg .rg-endings .rg-ending.has-pic .rg-ending-hero,
 .rg-endmodal .rg-ending-hero,
 .me-rg-endcard { border-radius: calc(var(--r-lg) * 2); }
+/* 통합전략 가이드의 엔딩 스토리 창 — op-record-modal 클래스가 없어 '중국 서버 선행' 안내가 맨 <p> 크기로 컸다 (사용자 지적 2026-10-19) */
+.rg-modal.rg-storymodal .future-note { margin: 12px 0 2px; padding: 8px 10px; border-left: 3px solid var(--rgline); font-size: 11px; line-height: 1.6; }
+/* 같은 안내 — --rgdeep 바탕이 창 바탕과 따로 놀아 보였다 → 창 바탕 그대로 + 금색 옅게 (사용자 지적 2026-10-19) */
+.rg-modal.rg-storymodal .future-note { background: color-mix(in srgb, var(--rggold) 6%, transparent); border-left-color: color-mix(in srgb, var(--rggold) 55%, transparent); }

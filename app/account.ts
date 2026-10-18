@@ -86,7 +86,7 @@ export type AccountProfile = {
   campaigns: Record<string, number>;
   recruit: { slot: number; state: number; tags: number[]; picked: number[]; finish: number }[];
   assist: { id: string; skillIndex: number; equip: string | null }[];
-  rooms: { slot: string; room: string; level: number; /** 배치 오퍼·컨디션(0~24, 동기화 시점) — 2026-10-18 워커부터 */ ops?: { id: string; ap: number | null; at: number | null }[] }[];
+  rooms: { slot: string; room: string; level: number; /** 배치 오퍼·컨디션(0~24, 동기화 시점) — 2026-10-18 워커부터 */ ops?: { id: string; ap: number | null; at: number | null; /** 시간당 컨디션 변화 ×100 (게임 changeScale, 음수 = 소모) — 2026-10-19 워커부터 */ rate?: number | null }[] }[];
   skins: number;
   /** 보유 스킨 id (skin_table charSkins 키, 기본 복장 제외 — 2026-10-11~ 워커. 옛 동기화엔 없다) */
   skinIds?: string[];
