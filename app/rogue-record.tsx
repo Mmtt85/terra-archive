@@ -14,6 +14,27 @@ import { ModalWindow } from "./modal-window";
 // 2026-09-06 "팬텀록라 전시관 방문객 기록이 뭔가 이상하다").
 type RecLine = string | { c?: string; n?: string; x: string };
 
+// 긴 산문 문단은 문장 경계에서 끊어 여러 문단으로 보인다 (사용자 지적 2026-10-18 "눈아파 줄바꿈좀") —
+// 원문은 한 문단 600자 넘는 것도 있다. 따옴표 안에서는 끊지 않고, 조각이 너무 짧아지지 않게 문장을 모은다.
+const SPLIT_OVER = 220, CHUNK_MIN = 110;
+function splitPara(p: string): string[] {
+  if (p.length <= SPLIT_OVER) return [p];
+  const out: string[] = [];
+  let cur = "", depth = 0;
+  for (let i = 0; i < p.length; i++) {
+    const ch = p[i];
+    cur += ch;
+    if ("“「『（(".includes(ch)) depth++;
+    else if ("”」』）)".includes(ch)) depth = Math.max(0, depth - 1);
+    const end = /[.!?。！？]/.test(ch) && !/[.!?。！？…”」』）)]/.test(p[i + 1] ?? "");
+    if (end && depth === 0 && cur.trim().length >= CHUNK_MIN && p.length - i - 1 >= CHUNK_MIN / 2) {
+      out.push(cur.trim()); cur = "";
+    }
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
 // kind = 머리의 작은 꼬리표 — 기본 '기록', 엔딩 연출 스토리는 '엔딩 스토리' (2026-10-18)
 export function RecordModal({ rid, title, sub, kind, onClose }: { rid: string; title: string; sub?: string; kind?: string; onClose: () => void }) {
   const { t, locale } = useI18n();
@@ -45,7 +66,7 @@ export function RecordModal({ rid, title, sub, kind, onClose }: { rid: string; t
         {err ? <p className="rg-rec-status">{t("기록을 불러오지 못했습니다.")}</p>
           : paras === null ? <p className="rg-rec-status">{t("기록 불러오는 중…")}</p>
             : paras.map((p, i) => {
-              if (typeof p === "string") return <p key={i}>{p}</p>;
+              if (typeof p === "string") return splitPara(p).map((s, j) => <p key={`${i}.${j}`}>{s}</p>);
               if (!p.n) return <p key={i}>{p.x}</p>;
               // 같은 화자가 이어지면 이름을 생략한다 (스토리 전문 뷰 .sc-line.cont 와 같은 규약)
               const prev = paras[i - 1];
