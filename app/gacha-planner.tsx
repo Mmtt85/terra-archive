@@ -23,7 +23,7 @@ import { DatePicker } from "./date-picker";
 import { Dropdown } from "./dropdown";
 import poolData from "./data/gacha-pool.json";
 
-type PlanRow = { id: string; n: Record<"ko" | "en" | "ja", string>; start?: string | null; end?: string | null; eta?: string; fut?: 1; ops?: string[]; lim?: 1; prime?: number };
+type PlanRow = { id: string; n: Record<"ko" | "en" | "ja", string>; start?: string | null; end?: string | null; eta?: string; fut?: 1; ops?: string[]; lim?: 1; collab?: 1; prime?: number };
 const PLAN = ((poolData as unknown as { plan?: PlanRow[] }).plan ?? []);
 
 type Income = { daily: number; weekly: number; anni: number; card: boolean; monthPermit: number; monthOrundum: number; monthPrime: number; useOP: boolean; cert: boolean };
@@ -45,6 +45,8 @@ const KEY = "ta:gacha-plan";
 const CERT_PULLS = 38;
 const LIM_FREE_DAYS = 14, LIM_TICKET = 10;
 const LIM_ONLY = LIM_FREE_DAYS + LIM_TICKET;
+// 콜라보 배너(포영창정·월행수상 등)는 한정이지만 **매일 무료 1회가 없다** — 전용 10회권만 (사용자 지적 2026-10-19)
+const onlyOf = (r: { lim: boolean; collab: boolean }) => (!r.lim ? 0 : r.collab ? LIM_TICKET : LIM_ONLY);
 const DAY = 86400000;
 const SIM_EVENTS = new Set(((poolData as unknown as { events?: { id: string }[] }).events ?? []).map((e) => e.id));
 const LIMITED = new Set(POOL.limited);
@@ -103,16 +105,16 @@ export function GachaPlanner({ operators, onShowOperator }: { operators: Operato
   const today = todayKst();
   // 줄 — 데이터 일정 + 사용자 줄, 날짜순
   const rows = useMemo(() => {
-    const out: { id: string; name: string; day: number; est: boolean; fut: boolean; ops: string[]; lim: boolean; prime: number; custom?: boolean }[] = [];
+    const out: { id: string; name: string; day: number; est: boolean; fut: boolean; ops: string[]; lim: boolean; collab: boolean; prime: number; custom?: boolean }[] = [];
     for (const r of PLAN) {
       const conf = confirmedDay(r.id);
       const d = r.start ? dayOf(r.start) : conf ? dayOf(conf) : r.eta ? dayOf(`${r.eta}-15`) : NaN;
       if (!Number.isFinite(d)) continue;
-      out.push({ id: r.id, name: r.n[locale] ?? r.n.ko, day: Math.max(d, today), est: !r.start && !conf, fut: !!r.fut, ops: r.ops ?? [], lim: !!r.lim, prime: r.prime ?? 0 });
+      out.push({ id: r.id, name: r.n[locale] ?? r.n.ko, day: Math.max(d, today), est: !r.start && !conf, fut: !!r.fut, ops: r.ops ?? [], lim: !!r.lim, collab: !!r.collab, prime: r.prime ?? 0 });
     }
     for (const c of saved.custom ?? []) {
       const d = dayOf(c.date);
-      if (Number.isFinite(d)) out.push({ id: c.id, name: c.name || t("직접 추가한 일정"), day: d, est: false, fut: false, ops: [], lim: false, prime: 0, custom: true });
+      if (Number.isFinite(d)) out.push({ id: c.id, name: c.name || t("직접 추가한 일정"), day: d, est: false, fut: false, ops: [], lim: false, collab: false, prime: 0, custom: true });
     }
     return out.sort((a, b) => a.day - b.day || a.name.localeCompare(b.name));
   }, [saved.custom, locale, today, t]);
@@ -153,7 +155,7 @@ export function GachaPlanner({ operators, onShowOperator }: { operators: Operato
       const before = Math.floor(orundumBefore / 600) + permitBefore;
       const spend = Math.max(0, saved.spend?.[r.id] ?? 0);
       // 한정 배너는 전용 연차(무료 + 전용권)부터 쓰고, 넘는 만큼만 일반 재화에서 — 쓸 때는 허가증부터
-      const only = r.lim ? LIM_ONLY : 0;
+      const only = onlyOf(r);
       const general = Math.max(0, spend - only);
       const usePermit = Math.min(Math.max(0, permitBefore), general);
       acc.permit += usePermit;
@@ -272,7 +274,7 @@ export function GachaPlanner({ operators, onShowOperator }: { operators: Operato
                 {((saved.targets?.[r.id] ?? []).length > 0 || r.ops.length > 0) && (() => { const href = simHref(locale, r, saved.targets?.[r.id] ?? [], byId); return href && <a className="gp-link gp-sim" href={href}>{t("가챠하러 가기")} <span aria-hidden>→</span></a>; })()}
               </div>
               <div className="gp-have"><small>{t("그날 연차")}</small><b>{r.before}</b>
-                {r.only > 0 && <em className="gp-only" title={t("이 한정 배너에서만 — 매일 무료 1회 × {d}일 + 한정 10회 헤드헌팅권", { d: String(LIM_FREE_DAYS) })}>{t("+전용 {n}", { n: String(r.only) })}</em>}
+                {r.only > 0 && <em className="gp-only" title={r.collab ? t("이 콜라보 배너에서만 — 한정 10회 헤드헌팅권 (콜라보 배너는 매일 무료 1회가 없습니다)") : t("이 한정 배너에서만 — 매일 무료 1회 × {d}일 + 한정 10회 헤드헌팅권", { d: String(LIM_FREE_DAYS) })}>{t("+전용 {n}", { n: String(r.only) })}</em>}
                 {r.gain > 0 && <button type="button" className="gp-gain" title={t("늘어난 내역 보기")} onClick={() => setWhyOpen(r.id)}>+{r.gain}</button>}
               </div>
               <div className="gp-spend"><small>{t("쓸 연차")}</small>
@@ -322,7 +324,7 @@ export function GachaPlanner({ operators, onShowOperator }: { operators: Operato
           [t("그 밖의 순오리지늄"), w.monthPrime ? t("순오리지늄 {n}", { n: f(w.monthPrime) }) + (income.useOP ? ` (${t("합성옥 {n}", { n: f(w.monthPrime * 180) })})` : "") : "", t("한 달 {n}", { n: f(income.monthPrime) })],
           [t("그 밖의 허가증"), w.permit ? t("{n}장", { n: f(w.permit) }) : "", t("한 달 {n}장", { n: f(income.monthPermit) })],
           [t("이 이벤트 첫 클리어"), w.eventPrime ? t("순오리지늄 {n}", { n: f(w.eventPrime) }) + (income.useOP ? ` (${t("합성옥 {n}", { n: f(w.eventPrime * 180) })})` : "") : "", t("작전 첫 3성 보상 — 게임 데이터")],
-          [t("한정 배너 전용"), r.only ? t("{n}회 (이 배너에서만)", { n: String(r.only) }) : "", t("매일 무료 1회 × {d}일 + 한정 10회 헤드헌팅권 1장", { d: String(LIM_FREE_DAYS) })],
+          [t("한정 배너 전용"), r.only ? t("{n}회 (이 배너에서만)", { n: String(r.only) }) : "", r.collab ? t("한정 10회 헤드헌팅권 1장 — 콜라보 배너는 매일 무료 1회가 없습니다") : t("매일 무료 1회 × {d}일 + 한정 10회 헤드헌팅권 1장", { d: String(LIM_FREE_DAYS) })],
         ].filter((x) => x[1]) as [string, string, string][];
         return (
           <ModalWindow label={`${r.name} · +${r.gain}`} className="operator-modal gp-why-modal" onClose={() => setWhyOpen(null)}>

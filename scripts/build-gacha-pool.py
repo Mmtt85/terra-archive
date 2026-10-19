@@ -152,6 +152,8 @@ for e in ev_ko:
         row["ops"] = picks
         if any(x in limited or x in collab_set for x in picks):   # 콜라보 배너도 한정 배너다
             row["lim"] = 1
+        if any(x in collab_set for x in picks):   # 콜라보 배너는 매일 무료 1회가 없다 (사용자 지적 2026-10-19) — 플래너가 전용 연차를 뺀다
+            row["collab"] = 1
     if e.get("prime"):
         row["prime"] = e["prime"]
     plan.append(row)

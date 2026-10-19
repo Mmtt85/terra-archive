@@ -4111,6 +4111,8 @@ const D: Record<string, Pair> = {
   "이동": ["Jumped", "移動"],
   "테마 되묻기": ["Asking which theme", "テーマ確認"],
   "못 찾음": ["Nothing matched", "見つからず"],
+  "이 콜라보 배너에서만 — 한정 10회 헤드헌팅권 (콜라보 배너는 매일 무료 1회가 없습니다)": ["This collab banner only — one limited 10-roll ticket (collab banners have no daily free roll)", "このコラボバナー限定 — 限定10連スカウト券（コラボバナーには毎日の無料1回がありません）"],
+  "한정 10회 헤드헌팅권 1장 — 콜라보 배너는 매일 무료 1회가 없습니다": ["One limited 10-roll ticket — collab banners have no daily free roll", "限定10連スカウト券1枚 — コラボバナーには毎日の無料1回がありません"],
   "한글 없음": ["No Korean text", "ハングルなし"],
   "글자는 읽었지만 한글이 없습니다 — 중국 서버 화면이라면 위쪽 서버 선택에서 '중국섭'으로 바꿔 주세요. 그래야 중국어로 읽습니다.": ["Text was read but none of it is Korean — if this is the CN client, switch the server selector at the top to 'CN' so it reads Chinese.", "文字は読めましたがハングルがありません — 中国サーバーの画面なら、上のサーバー選択で「中国」に切り替えてください。中国語で読み取ります。"],
   "리플레이": ["Replay", "リプレイ"],
