@@ -78,6 +78,10 @@ export type LensOutcome = {
   hud?: LensHud;
   // 전투 중 화면 (배치 UI 문구 검출) — 브리지가 전투 홀드(큰 전환까지 인식 중단)에 쓴다
   battle?: boolean;
+  /** 한국어 화면(ko)인데 글자는 여러 줄 읽혔고 한글이 거의 없다 — 중국 서버 클라이언트 화면일 가능성. 중국어 패스는 그 테마의
+   *  '중국 서버' 탭을 켰을 때만 도니(run.ts zhPossible) 화면이 탭을 바꾸라고 안내한다 (PRTS 틀렸어요 640cdd14, 2026-10-19).
+   *  자동으로 중국어로 넘기지는 않는다 — 글자 적은 화면에서 잘못 넘어갈 수 있어서 (사용자 결정) */
+  foreignText?: boolean;
   /** 통합전략 화면 종류 (PaddleOCR HUD 판독, run.ts) — map: 위쪽 HUD 에 층 이름이 보이는 지도·노드 화면 · runStart: '초기 모집'
    *  (분대·난이도가 왼쪽 아래에 이미 정해져 있다) · squadSelect: '분대 선택' (새 판). 상시 창이 노드 비우기·분대 확정에 쓴다 */
   rogueScreen?: "map" | "runStart" | "squadSelect" | "lobby";

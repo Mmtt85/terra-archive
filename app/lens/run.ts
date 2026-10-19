@@ -692,6 +692,10 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       // 폴백까지 실패(무신호)면 마지막으로 중국어를 시도한다 (zhRan이면 이미 돌려 스킵)
       if (zhPossible && oc.target.kind === "none") await tryZh();
     }
+    // 한글 없는 화면 — 중국어 패스를 못 돌렸고(탭이 한국 서버) 아무것도 못 찾았는데, 읽은 줄은 여럿이고 한글은 거의 없다.
+    // 한국어 모델은 한자를 숫자·기호·엉뚱한 한 글자로 읽는다(실측: 16/20 · 4/40 · +150%) · 구 · X)
+    if (locale === "ko" && !zhRan && oc.target.kind === "none" && lines.length >= 6
+      && (lines.join("").match(/[가-힣]/g)?.length ?? 0) <= 2) oc.foreignText = true;
     // ── 색 글씨 밴드 패스 (제보 16138722, 2026-09-05) ────────────────────────────
     // 조우 선택지가 주는 소장품은 **판마다 랜덤**이라 우리 데이터엔 "소장품 1개 획득"으로만
     // 적혀 있다 — 이름은 화면에서 읽어야 안다. 그런데 그 이름만 **분홍 글씨**라 휘도

@@ -2803,8 +2803,11 @@ export default function RogueGuide({ initialTopic }: {
         noteBridge(t("탐험 로비"));
         flashLensMsg(t("탐험 로비 화면입니다 — 탐험을 시작하면 그때부터 화면을 인식합니다."), 4000);
       } else {
-        noteBridge(oc.battle ? t("전투 중") : t("못 찾음"));
-        flashLensMsg(t("인식된 정보가 없습니다 — 분대·유물·조우·작전 화면을 캡처해 보세요."), 3000);
+        noteBridge(oc.battle ? t("전투 중") : oc.foreignText ? t("한글 없음") : t("못 찾음"));
+        // 글자는 읽었는데 한글이 없다 — 중국 서버 화면이면 '중국섭' 탭으로 바꿔야 중국어로 읽는다 (PRTS 틀렸어요 640cdd14)
+        flashLensMsg(!oc.battle && oc.foreignText
+          ? t("글자는 읽었지만 한글이 없습니다 — 중국 서버 화면이라면 위쪽 서버 선택에서 '중국섭'으로 바꿔 주세요. 그래야 중국어로 읽습니다.")
+          : t("인식된 정보가 없습니다 — 분대·유물·조우·작전 화면을 캡처해 보세요."), oc.foreignText ? 6000 : 3000);
       }
     } catch {
       flashLensMsg(t("인식에 실패했습니다 — 다른 스크린샷으로 다시 시도해 주세요."), 3000);

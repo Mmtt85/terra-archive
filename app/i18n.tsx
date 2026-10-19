@@ -4111,6 +4111,8 @@ const D: Record<string, Pair> = {
   "이동": ["Jumped", "移動"],
   "테마 되묻기": ["Asking which theme", "テーマ確認"],
   "못 찾음": ["Nothing matched", "見つからず"],
+  "한글 없음": ["No Korean text", "ハングルなし"],
+  "글자는 읽었지만 한글이 없습니다 — 중국 서버 화면이라면 위쪽 서버 선택에서 '중국섭'으로 바꿔 주세요. 그래야 중국어로 읽습니다.": ["Text was read but none of it is Korean — if this is the CN client, switch the server selector at the top to 'CN' so it reads Chinese.", "文字は読めましたがハングルがありません — 中国サーバーの画面なら、上のサーバー選択で「中国」に切り替えてください。中国語で読み取ります。"],
   "리플레이": ["Replay", "リプレイ"],
   "연결 끊기": ["Disconnect", "接続解除"],
   "플레이 기록을 미리 보고 JSON으로 가져오거나 내보냅니다": [
