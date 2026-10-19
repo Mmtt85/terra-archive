@@ -857,7 +857,7 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
             const rel = relicById.get(id);
             return (
               <li key={i}>
-                <button type="button" title={rel?.usage ?? rel?.func ?? undefined} onClick={() => setPickRelic(i)}>
+                <button type="button" onClick={() => setPickRelic(i)}>
                   <span className="ico"><img src={asset(`/rogue/relic/${rel?.iconId ?? id}.webp`)} alt="" loading="lazy" decoding="async"
                     onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} /></span>
                   <span className="nm">{rel?.name ?? id}</span>
@@ -1809,7 +1809,7 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
       {list.map((r) => (
         <li key={r.id} className={ownedRelic.has(r.id) ? undefined : "off"}>
           {/* 누르면 상세 창 (사용자 요청 2026-10-18 "보유 소장품도 클릭하면 모달로 상세") */}
-          <button type="button" onClick={() => setRelicDetail(r)} title={`${r.name}${r.usage ? `\n${r.usage}` : ""}`}>
+          <button type="button" onClick={() => setRelicDetail(r)} aria-label={r.name}>{/* 툴팁은 뺐다 — 누르면 상세 창이 뜬다 (사용자 지시 2026-10-19) */}
             {r.img && <img src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" loading="lazy" decoding="async" />}
             <span>{r.name}</span>
           </button>
