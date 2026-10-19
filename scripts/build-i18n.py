@@ -490,7 +490,20 @@ def build_locale(prefix):
     recruit_tags = {str(t["tagId"]): t["tagName"] for t in gacha.get("gachaTags") or []}
     # 로케일 테이블에 없는 CN 전용 시설(재활용소 回收站)은 infra.json 한국어 이름을 수동 사전(ko→로케일)으로
     rooms_out = {rid: room_names.get(rid) or manual2.get(r.get("name") or "") or rid for rid, r in infra["rooms"].items()}
-    extra = {"names": names, "recruitTags": recruit_tags, "buffs": buffs_out, "rooms": rooms_out}
+    # 소속·출신지·종족·직군 이름표 (한국어 → 이 언어) — 인프라 플래너 후보 검색이 화면 언어로 이것들까지 찾게
+    # (제안 7df7d7e3 2026-10-19 "이름·소속으로라고 적혀 있지만 이름만 된다 — 라테라노·이에라그·펠린으로도"). 플래너의 오퍼 표는
+    # 구조 필드가 한국어 원문이라, 같은 오퍼의 한국어·이 언어 값을 짝지어 낸다. 처음 본 짝이 이긴다
+    loc_by_id = {o["id"]: o for o in ops_out}
+    labels = {}
+    for kop in kr_ops:
+        lop = loc_by_id.get(kop["id"])
+        if not lop: continue
+        pairs = [(kop.get(f), lop.get(f)) for f in ("faction", "birthplace", "race", "job", "subProfession")]
+        pairs += list(zip(kop.get("factions") or [], lop.get("factions") or []))
+        for kv, lv in pairs:
+            if isinstance(kv, str) and isinstance(lv, str) and kv and lv and kv != lv and kv not in labels:
+                labels[kv] = lv
+    extra = {"names": names, "recruitTags": recruit_tags, "buffs": buffs_out, "rooms": rooms_out, "labels": labels}
     json.dump(extra, open(f"{REPO}/app/data/extra-i18n.{out_suffix}.json", "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
     print(f"{prefix}: {len(ops_out)} ops, {len(buffs_out)} infra buffs, {len(recruit_tags)} recruit tags → operators.{out_suffix}.json / extra-i18n.{out_suffix}.json")

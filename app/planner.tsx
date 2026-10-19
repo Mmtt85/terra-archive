@@ -92,8 +92,19 @@ function diffPlans(prev: Plan | null, next: Plan): PlanDiff | null {
   return Object.keys(out).length ? out : null;
 }
 
+// 후보 검색 — 이름·모든 소속·출신지·종족·직군을, 한국어 원문과 화면 언어 둘 다로 찾는다 (제안 7df7d7e3 2026-10-19 "이름·소속으로라고
+// 적혀 있는데 이름만 된다 — 라테라노·이에라그·펠린·歳로도"). 플래너 오퍼 표의 소속 등은 한국어 원문이라 일본어·영어로 쳐도 안 걸렸다.
+// 화면 언어 이름표는 extra-i18n labels. 모듈 값으로 두는 건 방 창·보유 설정 창이 따로 받지 않게
+let SEARCH_LABELS: Record<string, string> = {};
+const searchKey = (op: InfraOp): string => {
+  const parts = [op.name, (op as { krName?: string }).krName, ...factionsOf(op), op.birthplace, op.race, op.job, op.subProfession].filter((v): v is string => !!v);
+  return parts.flatMap((v) => [v, SEARCH_LABELS[v]]).filter(Boolean).map((v) => normSearch(v as string)).join("|");
+};
+const opMatches = (op: InfraOp, keyword: string) => !keyword || searchKey(op).includes(normSearch(keyword));
+
 export default function InfraPlanner({ onShowOperator, extra, includeFuture }: { onShowOperator?: (id: string) => void; extra?: ExtraI18n | null; includeFuture?: boolean } = {}) {
   const { locale, t } = useI18n();
+  SEARCH_LABELS = locale === "ko" ? {} : extra?.labels ?? {};   // 후보 검색 이름표 (위 searchKey)
   // 로케일 표시 오버레이: 이름·스킬명·설명만 교체하고(krName에 원본 보존),
   // 엔진이 쓰는 구조 필드(unlock·kind·token 등)는 KR 원본 그대로 둔다
   const lops = useMemo(() => {
@@ -2939,7 +2950,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   }, [plan, shiftIndex, roster, rawIds.join(","), cell.room]); // eslint-disable-line react-hooks/exhaustive-deps
   const benchKeyword = normSearch(benchTerm);
   const benchFiltered = benchKeyword
-    ? benchFull.filter(({ op }) => normSearch(op.name).includes(benchKeyword) || normSearch(op.faction).includes(benchKeyword))
+    ? benchFull.filter(({ op }) => opMatches(op, benchKeyword))
     : benchFull;
   const bench = benchAll ? benchFiltered : benchFiltered.slice(0, 12);
   // 보유했지만 이 시설 스킬이 정예화·레벨로 잠긴 오퍼 — 후보 목록에 이미 떠 있으면
@@ -2947,7 +2958,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   const blockedMatches = !benchKeyword ? [] : roster
     .filter((op) => blocked.has(op.id)
       && !bench.some((row) => row.op.id === op.id)
-      && (normSearch(op.name).includes(benchKeyword) || normSearch(op.faction).includes(benchKeyword)))
+      && opMatches(op, benchKeyword))
     .sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name))
     .slice(0, 12);
   // 검색어에 걸렸지만 **보유 목록에 없어** 후보에 아예 안 잡히는 오퍼 (6성 기본 미보유).
@@ -3597,7 +3608,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                   : cell.room === "DORMITORY"
                   ? t("빈 자리에 추가 — 클릭 시 즉시 배치 (다른 방의 조건을 켜 주는 오퍼·토큰 짝이 맨 앞):")
                   : t("빈 자리에 추가 — 클릭 시 즉시 배치 (토큰 짝이 맨 앞, 숫자는 기여 예상):")}</span>
-                <input className="bench-search" {...benchProps} placeholder={t("이름·소속으로 후보 검색")} />
+                <input className="bench-search" {...benchProps} placeholder={t("이름·소속·출신·종족·직군으로 후보 검색")} />
                 {bench.length > 0 ? (
                   <div className="bench-chips">
                     {bench.map(({ op, delta, own }) => {
@@ -3919,7 +3930,7 @@ function RosterModal({ allOps, lockFuture, ownedIds, eliteById, levelById, onApp
   // **검색어·정렬이 그대로면 다시 계산하지 않는다** — 체크 한 번마다 405개를 필터 + 두 번
   // 정렬하던 것이 클릭 응답(INP)의 최대 비용이었다 (2026-07-26 실측).
   const { futureOps, releasedOps, visible } = useMemo(() => {
-    const filtered = allOps.filter((op) => !keyword || op.name.toLowerCase().includes(keyword) || op.faction.toLowerCase().includes(keyword));
+    const filtered = allOps.filter((op) => opMatches(op, keyword));
     const sortOps = (list: InfraOp[]): InfraOp[] => {
       if (sortKey === "기본") {
         const base = [...list].sort((a, b) => b.rarity - a.rarity || b.seq - a.seq);
@@ -4140,7 +4151,7 @@ function RosterModal({ allOps, lockFuture, ownedIds, eliteById, levelById, onApp
               검색·일괄·적용 버튼은 그쪽에서만 닿는다 (사용자 지적 2026-07-26) */}
           {mode === "direct" && (
           <div className="roster-tools">
-            <input {...searchProps} placeholder={t("이름·소속 검색")} />
+            <input {...searchProps} placeholder={t("이름·소속·출신·종족·직군 검색")} />
             {/* 검색란 제안 (사용자 확정 2026-08-10) — 설정 모달 맥락이라 상세가 아니라
                 **보유 토글**이 pick 동작이다. ✓가 곧바로 바뀌어 토글됐음이 보인다. */}
             <SearchSuggest query={searchTerm}

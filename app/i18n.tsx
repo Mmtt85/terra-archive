@@ -1542,7 +1542,7 @@ const D: Record<string, Pair> = {
     "Excluded from auto-assign — too condition-dependent and burns morale too fast, so the planner never places them automatically. You can still add them by hand",
     "自動編成から除外 — 条件に左右されやすくコンディション消費が大きいため、自動では配置しません。手動での配置は可能です",
   ],
-  "이름·소속으로 후보 검색": ["Search candidates by name or affiliation", "名前・所属で候補検索"],
+  "이름·소속·출신·종족·직군으로 후보 검색": ["Search by name, affiliation, origin, race or class", "名前・所属・出身・種族・職業で候補検索"],
   // 보이스 대사 (오퍼 상세 VOICE/10) — 언어 이름은 build-voicelines.py의 LANG_NAME 키
   "보이스 대사": ["Voice Lines", "ボイス"],
   "등록된 보이스 대사가 없습니다.": ["No voice lines on record.", "登録されたボイスがありません。"],
@@ -1593,7 +1593,7 @@ const D: Record<string, Pair> = {
   // 보유 오퍼 설정
   "{n}/{m} 보유": ["{n}/{m} owned", "所持 {n}/{m}"],
   "보유 오퍼레이터 설정": ["Set Owned Operators", "所持オペレーター設定"],
-  "이름·소속 검색": ["Search name/affiliation", "名前・所属で検索"],
+  "이름·소속·출신·종족·직군 검색": ["Search name, affiliation, origin, race, class", "名前・所属・出身・種族・職業で検索"],
   "전체 선택": ["Select all", "全選択"],
   "전체 해제": ["Clear all", "全解除"],
   "적용 및 자동편성 실행": ["Apply & run auto-assign", "適用して自動編成を実行"],
@@ -4872,6 +4872,8 @@ export const useI18n = () => useContext(I18nContext);
 // 정적 import해 prop으로 내려준다 — 라우트별 번들에만 포함된다.
 export type ExtraI18n = {
   names: Record<string, string>;
+  /** 소속·출신지·종족·직군 한국어 → 이 언어 (build-i18n.py, 2026-10-19) — 인프라 플래너 후보 검색용 */
+  labels?: Record<string, string>;
   recruitTags: Record<string, string>;
   buffs: Record<string, { name: string; desc: string }>;
   rooms: Record<string, string>;
