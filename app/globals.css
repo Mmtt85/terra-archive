@@ -33731,3 +33731,12 @@ html.rg-theme.rg4 main.site-main {
 .om-edit button { padding: 3px 8px; border: 1px solid var(--btn-line); border-radius: var(--r-sm); background: var(--btn-bg); color: var(--btn-ink); font-size: 12px; cursor: pointer; }
 .om-err { color: var(--danger); }
 .om-table tr.om-miss td:first-child code { color: var(--gold-ink); }
+/* 새로고침 단추 — 갱신 시각을 안에 넣으며 글자가 두 줄로 꺾였다 → 한 줄 고정 (사용자 지적 2026-10-19) */
+.vz-refresh, .vz-refresh > span { white-space: nowrap; }
+/* 새로고침 단추가 기간 줄에서 밀려 다음 줄로 떨어졌다 (1920 폭에서 43px 넘침) — 왼쪽 여백을 빼고 갱신 문구를 '18:01 · 22초'로 줄인다 */
+.vz-controls .vz-refresh { margin-left: 0; }
+.vz-refresh .vz-refresh-at { margin-left: 4px; }
+/* 새로고침 단추 폭 고정 — 초가 두 자리가 되거나 '불러오는 중'으로 바뀔 때 폭이 늘어 기간 줄 끝에서 다음 줄로 떨어졌다 (사용자 지적 2026-10-19).
+   기간 줄 남는 자리가 142px 남짓이라 그 안의 고정 폭, 숫자는 고정폭 글리프 */
+.vz-controls .vz-refresh { width: 128px; flex: none; padding-left: 6px; padding-right: 6px; overflow: hidden; }
+.vz-refresh .vz-refresh-at { font-size: 10px; font-variant-numeric: tabular-nums; }

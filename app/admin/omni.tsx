@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { normSearch } from "../search";
 import { Who } from "./who";
+import { Dropdown } from "../dropdown";
 
 type Row = { at: string; visitor: string | null; detail: string | null; target: string | null; n: number | null };
 type Answer = { q: string; url: string; label: string | null; updated_at?: string };
@@ -54,7 +55,8 @@ function AnswerEditor({ q, cur, onSaved }: { q: string; cur?: Answer; onSaved: (
   );
 }
 
-export default function OmniPanel() {
+/** tick = 방문 통계 새로고침·자동 갱신 신호 — 이 탭이 열려 있을 때만 다시 받는다 */
+export default function OmniPanel({ tick = 0 }: { tick?: number }) {
   const [days, setDays] = useState<number>(7);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [answers, setAnswers] = useState<Answer[]>([]);
@@ -73,9 +75,8 @@ export default function OmniPanel() {
     ]).then(([d, a]) => { if (!alive) return; setRows(Array.isArray(d) ? d : []); setAnswers(Array.isArray(a) ? a : []); setErr(""); })
       .catch((e) => { if (alive) setErr(String((e as Error).message ?? e)); });
     void load();
-    const id = days === 1 ? window.setInterval(load, 30_000) : 0;   // 오늘 보기면 30초마다
-    return () => { alive = false; if (id) window.clearInterval(id); };
-  }, [from, days, rev]);
+    return () => { alive = false; };
+  }, [from, days, rev, tick]);   // 자동 갱신은 방문 통계의 새로고침 시계(tick)가 맡는다
   const answerOf = useMemo(() => new Map(answers.map((a) => [a.q, a])), [answers]);
   const groups = useMemo(() => {
     const m = new Map<string, { q: string; n: number; people: Set<string>; zero: number; none: number; targets: Map<string, number> }>();
@@ -102,10 +103,11 @@ export default function OmniPanel() {
       <div className="vz-head">
         <h3 className="vz-h">만능검색 검색 내역</h3>
         <span className="vz-note">{rows.length ? `검색 ${rows.length.toLocaleString()}회 · ${people}명 · 골라서 이동 ${Math.round((picked / rows.length) * 100)}% · 결과 0건 ${zero}회 · 직접 연결 ${answers.length}개` : "이 기간에는 기록이 없습니다 (2026-10-19부터 기록)"}</span>
-        <div className="vz-head-tools">
+        <div className="vz-head-tools admin-tools">
           {PERIODS.map((p) => <button key={p.k} type="button" className={`tab-btn${days === p.k ? " selected" : ""}`} onClick={() => setDays(p.k)}>{p.label}</button>)}
           <label className="om-check"><input type="checkbox" checked={onlyMiss} onChange={(e) => setOnlyMiss(e.target.checked)} /> 못 찾은 말만</label>
-          <select value={top} onChange={(e) => setTop(Number(e.target.value))}>{[30, 100, 500].map((n) => <option key={n} value={n}>상위 {n}</option>)}</select>
+          <Dropdown ariaLabel="보일 줄 수" label={`상위 ${top}`} selected={[String(top)]}
+            items={[30, 100, 500].map((n) => ({ value: String(n), label: `상위 ${n}` }))} onPick={(v) => setTop(Number(v))} />
         </div>
       </div>
       <p className="vz-note">0건이었거나 안 고르고 닫은 검색어에 주소를 달면, 다음부터 그 말로 검색할 때 맨 위에 '바로가기'가 뜹니다. 주소는 사이트 경로(<code>/me#stages</code>)로 적으면 영어·일본어 화면에선 그 언어 경로로 바뀝니다. 비우고 저장하면 지웁니다.</p>

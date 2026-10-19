@@ -821,3 +821,195 @@ create policy "anon read omni answer" on public.omni_answer for select to anon u
 drop policy if exists "admin write omni answer" on public.omni_answer;
 create policy "admin write omni answer" on public.omni_answer for all to anon
   using ((select public.visits_is_admin())) with check ((select public.visits_is_admin()));
+
+-- ── 탭별 집계 (2026-10-19, 사용자 지시 "새로고침하면 지금 열린 탭만") ─────────────────────────────────────────
+-- visits_summary_range 와 같은 본문을 칸마다 "p_keys 에 있을 때만" 세도록 감쌌다(스크립트로 변환 — 손으로 옮기지 않았다).
+-- 관리 화면 서브 탭이 그 탭에 필요한 칸만 넘긴다. p_keys 가 null 이면 전부(종전과 같다). 며칠 단위는 visits_summary_days(5분 캐시, 칸 묶음별)
+create or replace function public.visits_summary_keys(p_from timestamptz, p_to timestamptz,
+  p_human boolean default true, p_hourly boolean default false, p_kinds text[] default null, p_keys text[] default null)
+returns json language sql stable security definer set search_path = public as $$
+  with v as (
+    select * from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day')
+  ),
+  sh as (
+    -- 머문 시간(visible_ms)·조작 시간 — 화면 하나당 **1시간 상한**을 둘 다에 (2026-10-07, 3시간 → 1시간: 사용자 "1시간 넘게
+    -- 켜 둔 건 게임 안 하고 그냥 켜 둔 것"). 종전 3시간 사유: 통합전략은 한 판에
+    -- 1시간씩 띄워 두고 참고하니 30분 상한은 진짜 사용을 잘랐다(사용자 지적). 밤새 켜 둔 탭 같은 극단값만 자른다.
+    -- 같은 상한이라 화면마다 조작 ≤ 머문 이 늘 성립한다(수집이 '보일 때만 조작을 센다'이므로)
+    select v.session, bool_or(v.interacted) as human, count(*) as views, sum(least(v.active_ms, 3600000)) as active_ms,
+           sum(least(v.visible_ms, 3600000)) as visible_ms
+    from v group by v.session
+  ),
+  s as (
+    select vs.*, public.visit_src(vs.ref_host) as src,
+           (vs.started_at at time zone 'Asia/Seoul') as kst,
+           public.visit_kind(sh.human, sh.visible_ms, vs.tz) as kind, coalesce(sh.views, 0) as views, coalesce(sh.active_ms, 0) as active_ms,
+           coalesce(sh.visible_ms, 0) as visible_ms
+    from public.visit_session vs left join sh on sh.session = vs.id
+    where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'  -- 로컬 dev 에서 넘어온 운영자 (2026-10-06)
+      -- p_human: true 사람만 · false 봇만 · null 둘 다 (사용자 지시 2026-10-05 — 종전 false 는 '둘 다'였다)
+      and public.visit_pick(public.visit_kind(sh.human, sh.visible_ms, vs.tz), p_kinds, p_human)
+  ),
+  -- 기간 안 세션 종류별 수 (고른 종류와 무관하게 셋 다)
+  k as (
+    select public.visit_kind(sh.human, sh.visible_ms, x.tz) as kind, count(*) as n
+    from public.visit_session x left join sh on sh.session = x.id
+    where x.started_at >= p_from and x.started_at < p_to and x.env = 'live'
+      and coalesce(x.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'
+    group by 1),
+  sv as (select v.* from v join s on s.id = v.session),
+  -- 동선 흐름용 — 갈래만(모달·해시 없이) 보고 같은 갈래가 이어지면 한 칸으로 접는다 (사용자 지시 2026-10-04
+  -- "인프라는 인프라로 합쳐줘. 모달을 굳이 나눌 필요 없음"). 통합전략은 테마 번호까지가 갈래다.
+  fl as (
+    select session, row_number() over (partition by session order by n) as k, sec from (
+      select session, n, sec, lag(sec) over (partition by session order by n) as prev
+      from (select session, n, public.visit_section(path, null) as sec from sv) x
+    ) y where prev is distinct from sec)
+  select json_build_object(
+    'total', case when p_keys is null or 'total' = any(p_keys) then (select json_build_object(
+        'sessions', count(*), 'visitors', count(distinct visitor), 'views', coalesce(sum(views), 0),
+        'active_ms', coalesce(sum(active_ms), 0), 'visible_ms', coalesce(sum(visible_ms), 0),
+        'med_active', coalesce(percentile_cont(0.5) within group (order by active_ms), 0)::bigint,
+        'med_visible', coalesce(percentile_cont(0.5) within group (order by visible_ms), 0)::bigint,
+        'med_views', coalesce(percentile_cont(0.5) within group (order by views), 0),
+        'revisit', count(*) filter (where revisit),
+        'bounce', count(*) filter (where views <= 1),
+        'bots', coalesce((select n from k where kind = 'bot'), 0),
+        'kinds', (select json_build_object('human', coalesce(sum(n) filter (where kind = 'human'), 0),
+                                           'skim', coalesce(sum(n) filter (where kind = 'skim'), 0),
+                                           'bot', coalesce(sum(n) filter (where kind = 'bot'), 0)) from k))
+      from s) end,
+    'days', case when p_keys is null or 'days' = any(p_keys) then (select coalesce(json_agg(d order by d.day), '[]') from (
+        select kst::date as day, count(*) as sessions, count(distinct visitor) as visitors,
+               sum(views) as views, sum(active_ms) as active_ms, sum(visible_ms) as visible_ms
+        from s group by 1) d) end,
+    'src', case when p_keys is null or 'src' = any(p_keys) then (select coalesce(json_agg(d order by d.sessions desc), '[]') from (
+        select public.visit_host(ref_host) as src, count(*) as sessions, sum(views) as views, sum(active_ms) as active_ms, sum(visible_ms) as visible_ms,
+               percentile_cont(0.5) within group (order by active_ms)::bigint as med_active,
+               percentile_cont(0.5) within group (order by visible_ms)::bigint as med_visible
+        from s group by 1) d) end,
+    'ref', case when p_keys is null or 'ref' = any(p_keys) then (select coalesce(json_agg(d order by d.sessions desc), '[]') from (
+        select ref, count(*) as sessions from s where ref is not null and ref ~ '^https?://[^/]+/.' group by 1) d) end,
+    'landing', case when p_keys is null or 'landing' = any(p_keys) then (select coalesce(json_agg(d order by d.sessions desc), '[]') from (
+        select public.visit_path(split_part(landing, '#', 1)) as path, count(*) as sessions,
+               count(*) filter (where views <= 1) as bounces
+        from s group by 1) d) end,
+    'pages', case when p_keys is null or 'pages' = any(p_keys) then (select coalesce(json_agg(d order by d.views desc), '[]') from (
+        select public.visit_path(path) as path, count(*) as views, count(distinct session) as sessions,
+               avg(least(active_ms, 3600000))::bigint as avg_active,
+               percentile_cont(0.5) within group (order by least(active_ms, 3600000))::bigint as med_active,
+               avg(least(visible_ms, 3600000))::bigint as avg_visible,
+               percentile_cont(0.5) within group (order by least(visible_ms, 3600000))::bigint as med_visible,
+               -- 스크롤은 평균 (2026-10-07 — 한때 중앙값이었다가 지표 전부 평균으로 되돌렸다)
+               count(*) filter (where last) as exits, avg(scroll)::int as scroll
+        from sv group by 1) d) end,
+    'sections', case when p_keys is null or 'sections' = any(p_keys) then (select coalesce(json_agg(d order by d.views desc), '[]') from (
+        select public.visit_section(path, hash) as section, count(*) as views,
+               avg(least(active_ms, 3600000))::bigint as avg_active,
+               percentile_cont(0.5) within group (order by least(active_ms, 3600000))::bigint as med_active,
+               percentile_cont(0.5) within group (order by least(visible_ms, 3600000))::bigint as med_visible,
+               avg(least(visible_ms, 3600000))::bigint as avg_visible,
+               count(*) filter (where last) as exits
+        from sv group by 1) d) end,
+    -- 오늘 보기의 시간대별 추이 — 시작 시각(KST)의 시로 세션·방문자·화면 조회 (기간이 하루를 넘으면 비운다)
+    -- '내 정보' 동기화 — 횟수·사람 수, 사람(익명 방문자)별 횟수, 최근 기록 (사람만 보기와 무관하게 전부)
+    'me_sync', case when p_keys is null or 'me_sync' = any(p_keys) then (select json_build_object(
+        'n', count(*), 'people', count(distinct e.visitor),
+        'login', count(*) filter (where e.kind = 'me_login'), 'sync', count(*) filter (where e.kind = 'me_sync'),
+        -- 유입(src·ref) = 그 사람이 이 기간에 처음 로그인한(없으면 처음 동기화한) 세션이 어디서 왔는가 (2026-10-05)
+        'by', (select coalesce(json_agg(b order by b.n desc, b.last desc), '[]') from (
+            -- logout·reset = 로그아웃·설정 완전 초기화 횟수, browser = 유입과 같은 세션의 브라우저 (2026-10-19)
+            select g.*, f.src, f.ref, f.browser from (
+              select x.visitor, count(*) filter (where x.kind in ('me_login', 'me_sync')) as n, count(*) filter (where x.kind = 'me_login') as login,
+                     count(*) filter (where x.kind = 'me_sync') as sync, count(*) filter (where x.kind = 'me_logout') as logout,
+                     count(*) filter (where x.kind = 'me_reset') as reset, max(x.at) as last, max(x.server) as server
+              from public.visit_event x where x.at >= p_from and x.at < p_to and x.env = 'live' and x.kind in ('me_login', 'me_sync', 'me_logout', 'me_reset') group by 1) g
+            left join lateral (
+              select public.visit_src(vs.ref_host) as src, coalesce(vs.ref, vs.ref_host) as ref, vs.browser
+              from public.visit_event y join public.visit_session vs on vs.id = y.session
+              where y.visitor is not distinct from g.visitor and y.at >= p_from and y.at < p_to and y.env = 'live' and y.kind in ('me_login', 'me_sync', 'me_logout', 'me_reset')
+              order by (y.kind = 'me_login') desc, (y.kind = 'me_sync') desc, y.at asc limit 1) f on true) b),
+        'recent', (select coalesce(json_agg(r order by r.at desc), '[]') from (
+            select x.at, x.visitor, x.kind, x.server, public.visit_src(vs.ref_host) as src, coalesce(vs.ref, vs.ref_host) as ref
+            from public.visit_event x left join public.visit_session vs on vs.id = x.session
+            where x.at >= p_from and x.at < p_to and x.env = 'live' and x.kind in ('me_login', 'me_sync') order by x.at desc limit 100) r))
+      from public.visit_event e where e.at >= p_from and e.at < p_to and e.env = 'live' and e.kind in ('me_login', 'me_sync')) end,
+    -- PRTS 링크 사용 (2026-10-11) — 연결 횟수·쓴 사람·연결 시간 합(해제 기록의 dur_ms)·어디서(detail)별·최근 기록
+    'prts', case when p_keys is null or 'prts' = any(p_keys) then (select json_build_object(
+        'n', count(*) filter (where e.kind = 'prts_start'), 'people', count(distinct e.visitor) filter (where e.kind = 'prts_start'),
+        'ms', coalesce(sum(e.dur_ms) filter (where e.kind = 'prts_end'), 0),
+        'ended', count(*) filter (where e.kind = 'prts_end'),
+        'by', (select coalesce(json_agg(d order by d.n desc), '[]') from (
+            select coalesce(x.detail, '?') as k, count(*) filter (where x.kind = 'prts_start') as n,
+                   coalesce(sum(x.dur_ms) filter (where x.kind = 'prts_end'), 0) as ms
+            from public.visit_event x where x.at >= p_from and x.at < p_to and x.env = 'live' and x.kind in ('prts_start', 'prts_end')
+            group by 1) d),
+        'recent', (select coalesce(json_agg(r order by r.at desc), '[]') from (
+            select x.at, x.visitor, x.kind, x.detail, x.dur_ms, public.visit_src(vs.ref_host) as src
+            from public.visit_event x left join public.visit_session vs on vs.id = x.session
+            where x.at >= p_from and x.at < p_to and x.env = 'live' and x.kind in ('prts_start', 'prts_end')
+            order by x.at desc limit 200) r))
+      from public.visit_event e where e.at >= p_from and e.at < p_to and e.env = 'live' and e.kind in ('prts_start', 'prts_end')) end,
+    'hourly', case when p_keys is null or 'hourly' = any(p_keys) then (select coalesce(json_agg(d order by d.hr), '[]') from (
+        select extract(hour from kst)::int as hr, count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
+        from s where p_hourly group by 1) d) end,
+    -- 15분 칸 (하루 보기 그래프, 2026-10-07 사용자 지시 — 1시간 칸은 너무 뭉툭했다). q = 시×4 + 분÷15 (0~95)
+    'quarter', case when p_keys is null or 'quarter' = any(p_keys) then (select coalesce(json_agg(d order by d.q), '[]') from (
+        select (extract(hour from kst)::int * 4 + floor(extract(minute from kst) / 15)::int) as q,
+               count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
+        from s where p_hourly group by 1) d) end,
+    -- 시각 칸 (2026-10-08) — 15·30·60분, t = 칸 시작 epoch 초. 기간을 시각까지 고를 수 있어 날짜를 넘는 칸도 겹치지 않게
+    -- 하루 안의 순번(q) 대신 절대 시각으로 센다. 방문자는 칸마다 따로 중복 제외(합쳐서 내면 겹쳐 센다)
+    'b15', case when p_keys is null or 'b15' = any(p_keys) then (select coalesce(json_agg(d order by d.t), '[]') from (
+        select (floor(extract(epoch from started_at) / 900) * 900)::bigint as t,
+               count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
+        from s where p_hourly group by 1) d) end,
+    'b30', case when p_keys is null or 'b30' = any(p_keys) then (select coalesce(json_agg(d order by d.t), '[]') from (
+        select (floor(extract(epoch from started_at) / 1800) * 1800)::bigint as t,
+               count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
+        from s where p_hourly group by 1) d) end,
+    'b60', case when p_keys is null or 'b60' = any(p_keys) then (select coalesce(json_agg(d order by d.t), '[]') from (
+        select (floor(extract(epoch from started_at) / 3600) * 3600)::bigint as t,
+               count(*) as sessions, count(distinct visitor) as visitors, sum(views) as views
+        from s where p_hourly group by 1) d) end,
+    'hours', case when p_keys is null or 'hours' = any(p_keys) then (select coalesce(json_agg(json_build_array(dow, hr, n)), '[]') from (
+        select extract(isodow from kst)::int - 1 as dow, extract(hour from kst)::int as hr, count(*) as n
+        from s group by 1, 2) d) end,
+    'device', case when p_keys is null or 'device' = any(p_keys) then (select coalesce(json_agg(d order by d.n desc), '[]') from (select device as k, count(*) as n from s group by 1) d) end,
+    'site_lang', case when p_keys is null or 'site_lang' = any(p_keys) then (select coalesce(json_agg(d order by d.n desc), '[]') from (select site_lang as k, count(*) as n from s group by 1) d) end,
+    'tz', case when p_keys is null or 'tz' = any(p_keys) then (select coalesce(json_agg(d order by d.n desc), '[]') from (select tz as k, count(*) as n from s group by 1) d) end,
+    'out', case when p_keys is null or 'out' = any(p_keys) then (select coalesce(json_agg(d order by d.n desc), '[]') from (
+        select substring(out_href from '^https?://([^/?#]+)') as host, count(*) as n
+        from sv where out_href is not null group by 1) d) end,
+    -- 흐름도: 유입원 → 1번째 화면 → 2번째 → 3번째 (그 뒤는 끊는다). '이탈' 은 거기서 끝난 세션.
+    'flow', case when p_keys is null or 'flow' = any(p_keys) then (select coalesce(json_agg(d), '[]') from (
+        select step, src, dst, count(*) as n from (
+          select 0 as step, s.src as src, a.sec as dst
+          from s join fl a on a.session = s.id and a.k = 1
+          union all
+          select a.k as step, a.sec as src, case when b.session is null then '이탈' else b.sec end as dst
+          from fl a left join fl b on b.session = a.session and b.k = a.k + 1
+          where a.k between 1 and 3
+        ) e group by 1, 2, 3) d) end
+  )
+  where (select public.visits_is_admin())   -- 소유자 권한으로 돌므로 관리자 확인은 여기서 한 번
+$$;
+create or replace function public.visits_summary_days(p_days int default 30, p_human boolean default true, p_kinds text[] default null, p_keys text[] default null)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare
+  k text;
+  r json;
+begin
+  if not (select public.visits_is_admin()) then return null; end if;
+  if p_days <= 1 then
+    return public.visits_summary_keys(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_days <= 0, p_kinds, p_keys);
+  end if;
+  k := format('summary:%s:%s:%s:%s', p_days, p_human, coalesce(array_to_string(p_kinds, ','), ''), coalesce(array_to_string(p_keys, ','), '*'));
+  select c.body into r from public.visit_cache c where c.key = k and c.at > now() - interval '5 minutes';
+  if r is not null then return r; end if;
+  r := public.visits_summary_keys(public.visits_from(p_days), 'infinity'::timestamptz, p_human, false, p_kinds, p_keys);
+  insert into public.visit_cache (key, at, body) values (k, now(), r)
+    on conflict (key) do update set at = excluded.at, body = excluded.body;
+  return r;
+end $$;
+grant execute on function public.visits_summary_days(int, boolean, text[], text[]) to anon;

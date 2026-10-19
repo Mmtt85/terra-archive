@@ -613,6 +613,16 @@ const isLead = () => {
 const SESSIONS_ALL = 1000;                // 세션 타임라인 '전체 보기'의 상한 (2026-10-12 5,000 → 1,000 — 위와 같은 까닭, 한 번에 만드는 JSON 이 컸다)
 const ALL_STEP = 50;                      // 전체 보기 창에서 한 번에 더 그리는 줄 수
 
+// 탭마다 받을 집계 칸 — DB 함수 visits_summary_keys 의 최상위 키. total 은 위 세션 종류 드롭다운 숫자에도 쓴다
+const TAB_KEYS: Record<string, string[]> = {
+  overview: ["total", "days", "me_sync", "hourly", "quarter", "b15", "b30", "b60", "src", "out"],   // src·out 은 세션 타임라인 거르기
+  screens: ["total", "pages", "sections", "landing", "flow"],
+  prts: ["total", "prts"],
+  etc: ["total", "src", "ref", "hours", "device", "site_lang", "tz", "out"],
+  search: [],
+};
+const EMPTY_SUMMARY = { total: { sessions: 0, visitors: 0, views: 0, active_ms: 0, revisit: 0, bounce: 0, bots: 0 },
+  days: [], src: [], ref: [], landing: [], pages: [], sections: [], hours: [], device: [], site_lang: [], tz: [], out: [], flow: [] } as unknown as Summary;
 const VTABS = [{ k: "overview", label: "개요" }, { k: "screens", label: "화면" }, { k: "prts", label: "PRTS" }, { k: "search", label: "검색" }, { k: "etc", label: "그 외" }] as const;
 type VTab = (typeof VTABS)[number]["k"];
 
@@ -1036,10 +1046,31 @@ export function VisitsPanel() {
     };
   }, []);
 
+  // 탭별 불러오기 (사용자 지시 2026-10-19 "새로고침하면 지금 열린 탭만") — 그 탭에 필요한 칸만 DB 함수(visits_summary_keys·
+  // visits_summary_days)에 넘기고, 받은 칸을 지금 데이터에 덮는다. 기간·종류·칸을 바꾸면 처음부터 다시 받고, 탭만 바꾸면
+  // 아직 안 받은 칸이 있을 때만 받는다. 새로고침·자동 갱신(tick)은 지금 탭만
+  const loadedRef = useRef<{ sig: string; keys: Set<string>; tick: number }>({ sig: "", keys: new Set(), tick: -1 });
   useEffect(() => {
+    if (vtab === "search") return;   // 검색 탭은 자기 표를 따로 받는다 (app/admin/omni.tsx)
+    const keys = TAB_KEYS[vtab];
+    const sig = JSON.stringify([days, range, slot, kinds]);
+    const L = loadedRef.current;
+    const fresh = L.sig !== sig;
+    if (!fresh && L.tick === tick && keys.every((k) => L.keys.has(k))) return;   // 탭만 바꿨고 이미 다 받았다
+    if (fresh) loadedRef.current = { sig, keys: new Set(), tick };
+    loadedRef.current.tick = tick;
     let alive = true;
     setLoadMain(true);
     inflight.current += 1;
+    const merge = (d: Summary) => {
+      setData((prev) => {
+        const base = (fresh || !prev ? EMPTY_SUMMARY : prev) as Record<string, unknown>;
+        const next = { ...base } as Record<string, unknown>;
+        for (const [k, v] of Object.entries(d ?? {})) if (v != null) next[k] = v;
+        return next as Summary;
+      });
+      for (const k of keys) loadedRef.current.keys.add(k);
+    };
     const fail = (e: unknown) => {
       if (!alive) return;
       if ((e as Error).message === "not-configured") { setMissing(true); setStatus(""); }
@@ -1047,19 +1078,19 @@ export function VisitsPanel() {
     };
     const done = () => { inflight.current -= 1; doneAt.current = Date.now(); if (alive) setLoadMain(false); };
     if (rangeArgs) {
-      rpc<Summary>("visits_summary_range", { ...rangeArgs, ...kindArgs, p_hourly: oneDay })
-        .then((d) => { if (alive) { setData(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
+      rpc<Summary>("visits_summary_keys", { ...rangeArgs, ...kindArgs, p_hourly: oneDay, p_keys: keys })
+        .then((d) => { if (alive) { merge(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
     } else if (days === 365) {
       rpc<TrendRow[]>("visits_trend", { p_days: 365 })
         .then((t) => { if (alive) { setTrend(t); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
     } else {
-      rpc<Summary>("visits_summary", { p_days: days, ...kindArgs })
-        .then((d) => { if (alive) { setData(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
+      rpc<Summary>("visits_summary_days", { p_days: days, ...kindArgs, p_keys: keys })
+        .then((d) => { if (alive) { merge(d); setStatus(""); setLoadedAt(new Date()); } }).catch(fail).finally(done);
     }
     return () => { alive = false; };
     // rangeArgs 는 range 에서 나온다
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, human, tick, range, slot]);
+  }, [days, human, tick, range, slot, vtab]);
 
   const [liveOnly, setLiveOnlyState] = useState(() => {
     try { return localStorage.getItem("ta-admin-visit-liveonly") === "1"; } catch { return false; }
@@ -1074,6 +1105,7 @@ export function VisitsPanel() {
   const fetchN = liveOnly || outFilter ? Math.max(limit, 200) : limit;   // 2026-10-12 500 → 200 (메모리 절약)
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
+    if (vtab !== "overview") return;   // 세션 타임라인은 개요 탭에만 있다
     let alive = true;
     const silent = sessSilent.current;
     sessSilent.current = false;
@@ -1086,7 +1118,7 @@ export function VisitsPanel() {
       .finally(() => { inflight.current -= 1; doneAt.current = Date.now(); if (alive && !silent) setLoadSess(false); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, human, srcFilter, fetchN, tick, range, slot]);
+  }, [days, human, srcFilter, fetchN, tick, range, slot, vtab]);
 
   // 구간 시작 전에 들어와 **지금도 조작 중인** 세션 — '오늘'처럼 지금이 든 구간이면 자정을 넘겨도 계속 보여야 한다
   // (사용자 지시 2026-10-12 "날짜가 바껴도 지금도 조작중일테니 보여야"). DB 는 시작 시각으로만 거르므로 시작 전 하루치를 따로 받아
@@ -1094,13 +1126,13 @@ export function VisitsPanel() {
   const carryFrom = !slot && spanStart != null && spanEnd != null && spanEnd >= Date.now() - 120_000 ? spanStart : null;
   const [carry, setCarry] = useState<SessRow[]>([]);
   useEffect(() => {
-    if (carryFrom == null) { setCarry([]); return; }
+    if (carryFrom == null || vtab !== "overview") { setCarry([]); return; }
     let alive = true;
     rpc<SessRow[]>("visits_sessions_range", { p_from: isoAt(carryFrom - 86400_000), p_to: isoAt(carryFrom), ...kindArgs, p_src: srcFilter || null, p_limit: 300 })
       .then((rows) => { if (alive) setCarry(rows.filter(sessLive)); }).catch(() => { if (alive) setCarry([]); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carryFrom, human, srcFilter, tick]);
+  }, [carryFrom, human, srcFilter, tick, vtab]);
   const sessions = sessFetched && (carry.length ? [...sessFetched, ...carry.filter((c) => !sessFetched.some((x) => x.id === c.id))] : sessFetched);
 
   // 세션 타임라인 '전체 보기' — 창을 열 때 상한(SESSIONS_ALL)까지 따로 받는다
@@ -1320,17 +1352,17 @@ export function VisitsPanel() {
           onPick={(v) => pickKinds(v.split("+") as Kind[])} disabled={days === 365 && !range} />
         {/* 갱신 시각·다음 갱신은 단추 안에 (사용자 지시 2026-10-19). 리포트 이미지는 걷었다 (같은 날 "이제 필요 없다") */}
         <button className={`vz-refresh${busy ? " busy" : ""}`} onClick={() => setTick((n) => n + 1)} disabled={busy} aria-busy={busy}>
-          <span>새로고침{loadedAt && <small className="vz-refresh-at"> · {loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신{left === -2 ? " · 다른 관리 창이 갱신 중 — 누르면 이 창이 맡음" : left >= 0 ? ` · ${left}초 후` : ""}</small>}</span>
+          <span>새로고침{loadedAt && <small className="vz-refresh-at" title={left === -2 ? "다른 관리 창이 갱신 중 — 누르면 이 창이 맡는다" : "마지막 갱신 시각 · 다음 자동 갱신까지"}>{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })}{left === -2 ? " · 다른 창" : left >= 0 ? ` · ${left}초` : ""}</small>}</span>
           <span role="status"><i className="vz-spin" aria-hidden />불러오는 중</span>
         </button>
       </div>
       {status && <p className="admin-status">{status}</p>}
       {/* 서브 탭 (사용자 지시 2026-10-19) — 개요: 요약·내 정보 동기화·시간별·세션 타임라인 · 화면: 순위·첫 화면·갈래·동선 ·
           PRTS · 검색: 만능검색 내역(app/admin/omni.tsx) · 그 외: 나머지. 고른 탭은 이 브라우저에 남긴다 */}
-      <div className="vz-subtabs" role="tablist">
+      <div className="admin-tools vz-subtabs" role="tablist">
         {VTABS.map((v) => <button key={v.k} type="button" role="tab" aria-selected={vtab === v.k} className={vtab === v.k ? "tab-btn selected" : "tab-btn"} onClick={() => pickVtab(v.k)}>{v.label}</button>)}
       </div>
-      {vtab === "search" && <OmniPanel />}
+      {vtab === "search" && <OmniPanel tick={tick} />}
 
       {vtab === "search" ? null : days === 365 && !range ? (
         vtab === "overview" && trend && (
