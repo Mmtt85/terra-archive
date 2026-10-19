@@ -510,6 +510,8 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     let hudGrade: number | null = null;
     let comboScreen = false;
     let rogueScreen: "map" | "runStart" | "squadSelect" | "lobby" | undefined;
+    // 탐험 로비에서 읽은 진행 중 판 — 현재 층·난이도 (아래 판정 끝에서 이동 목표로 쓴다)
+    let lobbyRun: { zone: (typeof index.entries)[number] | null; grade: number | null } | null = null;
     {
       const bx = session.boxes();
       const topN = bx.filter((b) => b.y1 < 0.2).map((b) => normText(b.text));
@@ -523,7 +525,19 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       else {
         const all = bx.map((b) => normText(b.text)).join("|");
         const LOBBY = ["계속탐험", "탐험시작", "탐험포기", "심층탐험", "방문객명단", "정기작전", "안내책자"];
-        if (LOBBY.filter((k) => all.includes(k)).length >= 2) { rogueScreen = "lobby"; comboScreen = true; }
+        if (LOBBY.filter((k) => all.includes(k)).length >= 2) {
+          rogueScreen = "lobby"; comboScreen = true;
+          // 진행 중인 판이 있는 로비(탐험 포기·계속하기가 보인다) — 오른쪽 아래에 '현재 <층>'과 '<난이도 숫자> <난이도 이름>'이 있다.
+          // 종전엔 로비면 아무것도 안 해서 '왜 안 잡히냐'는 틀렸어요가 이어졌다 (제보 d903baa5 2026-10-20, 메모 "난이도")
+          if (all.includes("탐험포기") || all.includes("계속하기")) {
+            const zEnt = index.entries.filter((e) => e.section === "zone" && (!topic || e.topic === topic));
+            const zone = bx.map((b) => zEnt.find((e) => e.nameN === normText(b.text))).find(Boolean) ?? null;
+            const mid = (b: { y0: number; y1: number }) => (b.y0 + b.y1) / 2;
+            const num = bx.find((b) => /^\d{1,2}$/.test(b.text.trim()) && b.x0 > 0.7 && b.y0 > 0.45 && b.y1 < 0.92
+              && bx.some((c) => c !== b && c.x0 >= b.x1 - 0.01 && Math.abs(mid(c) - mid(b)) < 0.03 && /[가-힣]{2,}/.test(c.text)));
+            lobbyRun = { zone, grade: num ? Number(num.text.trim()) : null };
+          }
+        }
       }
       const zoneEntries = index.entries.filter((e) => e.section === "zone" && (!topic || e.topic === topic));
       const drop = new Set<string>();
@@ -765,6 +779,22 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // 분대 선택·초기 모집 화면에는 고를 노드가 없다 — 거기서 잡힌 작전·조우는 버린다
     // (틀렸어요 2026-10-13 쉐이 분대 선택 화면에 '차근차근 유도' 작전이 떴다)
     if (comboScreen) { oc.target = { kind: "none" }; oc.section = null; oc.entities = []; }
+    // 탐험 로비 — 진행 중인 판이면 그 판으로: PRTS 링크는 페이지를 옮기지 않으므로(2026-10-12 규칙) 층 창에 현재 층을 띄우고
+    // 난이도 선택값만 맞춘다. 스크린샷 레이더는 그 테마의 난이도 탭(그 난이도). 판이 없는 로비는 스크린샷 레이더만 지도 탭으로
+    if (rogueScreenOut === "lobby") {
+      const tp = lobbyRun?.zone?.topic ?? oc.anchor ?? oc.topics[0]?.topic ?? topic;
+      if (tp && lobbyRun && (lobbyRun.zone || lobbyRun.grade != null)) {
+        const grade = lobbyRun.grade != null ? { grade: lobbyRun.grade } : {};
+        oc.target = { kind: "goto", goto: opts?.live
+          ? { page: "rogue", topic: tp, view: "map", ...(lobbyRun.zone ? { modal: { type: "zone", id: lobbyRun.zone.id } } : {}), ...grade }
+          : { page: "rogue", topic: tp, view: "diff", ...grade } };
+        oc.section = "zone";
+        if (opts?.live && lobbyRun.zone) setBridgePipFloor({ floor: Number(lobbyRun.zone.id.replace(/\D/g, "")) || undefined, place: "", name: lobbyRun.zone.name });
+        if (opts?.live && lobbyRun.grade != null) setBridgePipFloor({ grade: lobbyRun.grade });
+      } else if (tp && !opts?.live) {
+        oc.target = { kind: "goto", goto: { page: "rogue", topic: tp, view: "map" } };
+      }
+    }
     if ((rogueScreenOut === "squadSelect" || rogueScreenOut === "runStart")
       && oc.target.kind === "goto" && oc.target.goto.page === "rogue" && (oc.target.goto.modal?.type === "stage" || oc.target.goto.modal?.type === "enc")) {
       oc.target = { kind: "none" }; oc.section = null;
