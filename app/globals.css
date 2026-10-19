@@ -34121,3 +34121,45 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
   :is(.me-wallet, .me-wallet-top, .me-depot-grid) button:hover:not(:disabled) { border-color: var(--border-hover); background: var(--bg-faint); }
 }
 :is(.me-wallet, .me-wallet-top, .me-depot-grid) button::before { inset: 0; }
+
+/* ── 영어·일본어 넘침 점검 (2026-10-19, 사용자 지시 "언어별 문장 길이 때문에 버튼에서 삐져나가는 곳 전수 검사") ──
+   playwright 로 24화면 × 3언어 × PC·모바일을 재서 한국어보다 더 넘치는 곳만 고쳤다. 한국어 화면은 바꾸지 않도록 대부분 :lang 으로 좁혔다 */
+/* ① 머리 만능검색 단추 — 일본어 'ユニバーサルサーチ ⌘K'가 고정 폭(160~220px)에서 6px 넘쳤다 → 이름표만 말줄임 */
+.omni-trigger-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* ④ 인프라 배치도 방 이름 — 영어 모바일에서 'Workshop'·'Factory 3 · Battle Records'가 칸 밖으로(5~18px) → 한국어 밖에선 머리 줄이 꺾이게 */
+@media (max-width: 640px) {
+  :root:not(:lang(ko)) .ship-room-head { flex-wrap: wrap; column-gap: 4px; }
+  :root:not(:lang(ko)) .ship-room-head b { min-width: 0; overflow-wrap: anywhere; }
+}
+/* ③ 육성 추천 단추 — 영어 모바일에서 화면 밖으로(21px). 이름은 짧게 바꿨고(Raise advisor), 그래도 넘치면 단추 안에서 줄바꿈 */
+@media (max-width: 640px) {
+  :root:not(:lang(ko)) .srb-run { max-width: 100%; white-space: normal; }
+}
+/* ⑦ 파밍 — 상시 이벤트 배지(영어 'Grani and the Knights' Treasure' 등)가 칸 밖으로 잘렸다(11~43px) → 줄어들며 말줄임 */
+.farm-badges > .kind-badge.perm { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* 인프라 하루 산출 칸 — 재활용소가 켜지면 2열 3줄이 됐다 (사용자 지시 2026-10-19). 6칸 격자로:
+   첫 줄 = 순금 생산/소모 · 드론 (반반), 둘째 줄 = 용문폐 · 작전기록 · 재활용소 (셋). 재활용소가 없으면 둘째 줄은 반반 */
+.plan-sum-yield { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.plan-sum-yield > li { grid-column: span 2; }
+.plan-sum-yield > li:nth-child(1) { grid-column: span 3; order: 1; }   /* 순금 생산 / 소모 */
+.plan-sum-yield > li:nth-child(4) { grid-column: span 3; order: 2; }   /* 드론 */
+.plan-sum-yield > li:nth-child(2) { order: 3; }                        /* 용문폐 */
+.plan-sum-yield > li:nth-child(3) { order: 4; }                        /* 작전기록 */
+.plan-sum-yield > li:nth-child(5) { order: 5; }                        /* 재활용소 */
+.plan-sum-yield:not(:has(> li:nth-child(5))) > li:is(:nth-child(2), :nth-child(3)) { grid-column: span 3; }
+
+/* 가챠 플래너 모바일 — 한 줄에 날짜·이벤트·쓸 연차·남는 연차를 다 넣어 이벤트 칸이 64px 로 쪼그라들고, 그 안 이름·오퍼 칩 칸은 0폭이었다
+   (모바일 전수 점검 2026-10-20, 언어 무관). 두 줄로: 위 = 날짜 · 이벤트(나머지 폭 전부), 아래 = 쓸 연차 · 남는 연차 (오른쪽) */
+@media (max-width: 720px) {
+  .gp-rows > li { grid-template-columns: 64px minmax(0, 1fr) 108px 44px; grid-template-areas: "when what what what" ". . spend left"; row-gap: 6px; }
+  .gp-rows > li > .gp-when { grid-area: when; }
+  .gp-rows > li > .gp-what { grid-area: what; }
+  .gp-rows > li > .gp-spend { grid-area: spend; }
+  .gp-rows > li > .gp-left { grid-area: left; }
+}
+/* 인프라 모바일 단추 줄 — 360px 폰에서 '임시 편성 해보기 NEW'가 칸보다 44px 넓었다(한국어 포함), 일본어 '空きスロットのみ自動編成'도 9px.
+   셋째·넷째 줄 단추는 칸 안에서 두 줄로 꺾이게 (모바일 전수 점검 2026-10-20) */
+@media (max-width: 640px) {
+  .planner-buttons > :is(.pl-sandbox-btn, .pl-fill-btn, .planner-image-btn, .pl-clear-btn, .pl-revert-btn) { white-space: normal; line-height: 1.2; min-height: 100%; }
+}
