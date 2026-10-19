@@ -33716,3 +33716,5 @@ html.rg-theme.rg4 main.site-main {
   .pl-start-acts > .pl-start-main:hover { border-color: var(--btn-pri-bg-hover); background: var(--btn-pri-bg-hover); color: var(--on-lime); }   /* 라임 채움 위 글자는 on-lime — 라임 글자 그대로면 사라진다 */
 }
 @media (max-width: 640px) { .pl-start-acts > * { flex: 1 1 100%; justify-content: center; } }
+/* 임시 편성 '적용할까요?' 창 — 공용 창 판(.operator-modal)을 안 받아 바탕이 없어 어두운 덮개 위에 글자가 투명하게 떴다 (제안 7cfbaed0 2026-10-19) */
+.mw-window.pl-apply-check { background: var(--white); border-radius: var(--r-lg); }

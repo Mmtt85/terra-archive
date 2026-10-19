@@ -834,6 +834,7 @@ const D: Record<string, Pair> = {
   "전체 자동편성": ["Auto-assign all", "全自動編成"],
   "빈 자리만 자동편성": ["Fill empty slots", "空きスロットのみ自動編成"],
   "인프라 오퍼 육성 추천": ["Operator raise advisor (RIIC)", "インフラ オペレーター育成おすすめ"],
+  "{shift} 같은 방 자리가 차 있어 그 조에는 넣지 못했습니다 — 한 명을 빼고 다시 고정해 주세요": ["The same room on {shift} is full, so they weren't added there — remove someone and pin again", "{shift}の同じ部屋が満員のため、その班には配置できませんでした — 1人外してからもう一度固定してください"],
   "인프라 자동편성 시작하기": ["Getting started with the base planner", "インフラ自動編成をはじめる"],
   "보유 오퍼부터 알려 주세요": ["First, tell us which operators you have", "まず手持ちのオペレーターを教えてください"],
   "자동편성은 가진 오퍼로만 짭니다. 게임 계정으로 로그인하면 보유·정예화·레벨을 한 번에 가져옵니다.": ["The auto-planner only uses operators you own. Log in with your game account to import ownership, promotions and levels in one go.", "自動編成は手持ちのオペレーターだけで組みます。ゲームアカウントでログインすると、所持・昇進・レベルを一度に取り込めます。"],
@@ -1027,9 +1028,9 @@ const D: Record<string, Pair> = {
   ],
   "이 창에서 바꾼 편성을 되돌렸습니다": ["Reverted the changes made in this window", "このウィンドウで変えた編成を元に戻しました"],
   // ── 조별 고정 (제보 2026-09-12) ──
-  "이 방에 고정 — 자동편성이 A조·B조 모두 이 자리에 유지합니다 (교대 휴식 없음, 컨디션 관리는 직접). 한 번 더 누르면 지금 보고 있는 조에만 고정됩니다": [
-    "Pin to this room — auto-planning keeps them here on both shifts (no rest rotation, so manage Morale yourself). Press again to pin them to the shift you are viewing only.",
-    "この部屋に固定 — 自動編成がA班・B班の両方でこの席に残します（交代休憩なし、体力管理はご自身で）。もう一度押すと今見ている班だけに固定されます。",
+  "이 방에 고정 — 다른 조의 같은 방에도 바로 앉히고, 자동편성도 A조·B조 모두 이 자리에 유지합니다 (교대 휴식 없음, 컨디션 관리는 직접). 한 번 더 누르면 지금 보고 있는 조에만 고정됩니다": [
+    "Pin to this room — also seats them in the same room on the other shift right away, and auto-planning keeps them here on both shifts (no rest rotation, so manage Morale yourself). Press again to pin them to the shift you are viewing only.",
+    "この部屋に固定 — もう一方の班の同じ部屋にもすぐ配置し、自動編成でもA班・B班の両方でこの席に残します（交代休憩なし、体力管理はご自身で）。もう一度押すと今見ている班だけに固定されます。",
   ],
   "지금은 A조·B조 모두 고정 — 누르면 지금 보고 있는 조에만 고정합니다": [
     "Currently pinned on both shifts — press to pin to the shift you are viewing only",

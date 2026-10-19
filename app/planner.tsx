@@ -515,13 +515,17 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   //   왕을 손으로 넣어도 총웨의 속세의 화식이 그대로였고, 화식을 먹는 무역소 효율도 안 올랐다
   //   (제보 2026-09-12). 이제 자동편성과 **같은 함수**(recountTokens)로 다시 센다.
   //   다만 원장에 없던 생성원은 되살아나지 않는다(그건 전체 자동편성이 할 일) — 엔진 주석 참고.
-  const updateTeam = (cellKey: string, shiftIdx: number, ids: string[], pins?: Record<string, string[]>, rpins?: Record<string, RoomPin[]>) => {
+  // extra = 같은 번에 함께 바꿀 다른 칸·조 (양조 고정을 다른 조에도 앉힐 때, 2026-10-19) — 한 번에 세워야 편성이 한 번만 바뀐다
+  const updateTeam = (cellKey: string, shiftIdx: number, ids: string[], pins?: Record<string, string[]>, rpins?: Record<string, RoomPin[]>,
+    extra: { cellKey: string; shiftIdx: number; ids: string[] }[] = []) => {
     if (!plan) return;
     // 되돌릴 스냅샷 — 편성만이 아니라 고정 목록까지 함께 되살려야 원래 상태다
     const undoTo = { plan, dormPins, roomPins };
     const removed = (plan.assignments[cellKey]?.[shiftIdx] ?? []).filter((id) => !ids.includes(id));
-    const shifts = (plan.assignments[cellKey] ?? []).map((team, index) => (index === shiftIdx ? ids : team));
-    const assignments = { ...plan.assignments, [cellKey]: shifts };
+    const assignments = { ...plan.assignments };
+    for (const ch of [{ cellKey, shiftIdx, ids }, ...extra]) {
+      assignments[ch.cellKey] = (assignments[ch.cellKey] ?? []).map((team, index) => (index === ch.shiftIdx ? ch.ids : team));
+    }
     const factionCounts = [0, 1].map((s) => {
       const counts: Record<string, number> = {};
       for (const c of LAYOUT) {
@@ -644,9 +648,34 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         : cur.filter((pin) => pinId(pin) !== opId);                      // 이 조만 → 해제
     const pinning = at === undefined;
     const pins = Object.fromEntries(Object.entries({ ...roomPins, [cellKey]: next }).filter(([, list]) => list.length));
-    setRoomPinsState(pins);
-    persist(ownedIds, plan, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, dormPins, pins);
-    setDirty(true);
+    // 양조 고정을 켜면 **다른 조의 같은 방에도 바로 앉힌다** — 재편성 없이 (제안 7cfbaed0 2026-10-19 "고정한 프로바이조를
+    // A·B 양쪽에(피아메타로 회복), 훈련실 고정 2명도 양쪽에 — 다시 짜지 말고 고정 멤버만"). 종전엔 고정이 다음 자동편성 때만
+    // 쓰여서, 손 배치·임시 편성으로는 A조에 있는 오퍼를 B조에 넣을 길이 없었다. 그 조에서 다른 방에 있으면 거기서 옮겨 오고,
+    // 자리가 차 있으면 넣지 않고 알린다. 숙소는 조 구분이 없는 칸이라 건드리지 않는다
+    const mirror: { cellKey: string; shiftIdx: number; ids: string[] }[] = [];
+    const full: number[] = [];
+    const shiftsHere = plan?.assignments[cellKey] ?? [];
+    if (pinning && plan && shiftsHere.some((team) => team.includes(opId))) {
+      for (let sh = 0; sh < shiftsHere.length; sh += 1) {
+        const team = shiftsHere[sh] ?? [];
+        if (team.includes(opId)) continue;
+        if (team.length >= slotsFor(cellKey)) { full.push(sh); continue; }
+        for (const [k, ks] of Object.entries(plan.assignments)) {
+          if (k === cellKey || k.startsWith("DORM")) continue;
+          if (ks[sh]?.includes(opId)) mirror.push({ cellKey: k, shiftIdx: sh, ids: ks[sh].filter((id) => id !== opId) });
+        }
+        mirror.push({ cellKey, shiftIdx: sh, ids: [...team, opId] });
+      }
+    }
+    if (mirror.length) {
+      const [first, ...rest] = mirror;
+      updateTeam(first.cellKey, first.shiftIdx, first.ids, undefined, pins, rest);
+    } else {
+      setRoomPinsState(pins);
+      persist(ownedIds, plan, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, dormPins, pins);
+      setDirty(true);
+    }
+    if (full.length) showToast(t("{shift} 같은 방 자리가 차 있어 그 조에는 넣지 못했습니다 — 한 명을 빼고 다시 고정해 주세요", { shift: full.map((sh) => (sh === 0 ? t("A조") : t("B조"))).join("·") }));
     // 재편성 여부는 고정할 때마다가 아니라 **방 창을 닫을 때 한 번** 묻는다 (사용자 지시 2026-10-18)
     if (pinning) pinAskRef.current = true;
   };
@@ -3424,7 +3453,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                       <button type="button" className={`crew-pin${pin !== undefined ? " on" : ""}${only !== null && only !== undefined ? " shift-only" : ""}`}
                         title={cell.room === "DORMITORY"
                           ? (pin !== undefined ? t("숙소 고정 해제 — 다음 자동편성이 이 자리를 다시 짤 수 있습니다") : t("숙소에 고정 — 자동편성이 이 인원을 그대로 둡니다"))
-                          : pin === undefined ? t("이 방에 고정 — 자동편성이 A조·B조 모두 이 자리에 유지합니다 (교대 휴식 없음, 컨디션 관리는 직접). 한 번 더 누르면 지금 보고 있는 조에만 고정됩니다")
+                          : pin === undefined ? t("이 방에 고정 — 다른 조의 같은 방에도 바로 앉히고, 자동편성도 A조·B조 모두 이 자리에 유지합니다 (교대 휴식 없음, 컨디션 관리는 직접). 한 번 더 누르면 지금 보고 있는 조에만 고정됩니다")
                             : only === null ? t("지금은 A조·B조 모두 고정 — 누르면 지금 보고 있는 조에만 고정합니다")
                               : t("지금은 {n}조에만 고정 — 누르면 고정을 해제합니다", { n: only === 0 ? "A" : "B" })}
                         onClick={() => onTogglePin(op.id, shiftIndex)}>{label}</button>

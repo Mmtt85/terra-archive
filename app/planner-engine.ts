@@ -1615,10 +1615,17 @@ export function shiftAssignments(assignments: Record<string, string[][]>, shift:
   for (const [key, shifts] of Object.entries(assignments)) out[key] = [shifts[Math.min(shift, shifts.length - 1)] ?? []];
   return out;
 }
+// B조 장부 — A조 장부(flows)를 B조 인원으로 다시 세되, **A조 장부에 없는 토큰은 B조 배치로 장부를 새로 세워 더한다**
+// (제안 25ded691 2026-10-19: 마르실을 B조에만, 센시는 숙소 → A조에 받는 사람이 없어 마물 요리 장부가 아예 없었고,
+// B조 마르실이 +5 없이 30%로 잡혀 미즈키와 동점 → 자동편성이 미즈키로 바꿨다). A조에 같은 토큰이 있으면 종전 그대로다
 export function tokensAt(shift: number, assignments: Record<string, string[][]>, byId: Map<string, InfraOp>, flows: TokenFlow[] | undefined, tokenPoints: Record<string, number>): Record<string, number> {
   if (shift === 0) return tokenPoints;
-  if (!flows?.length) return {};
-  return recountTokens(shiftAssignments(assignments, shift), byId, flows).tokenPoints;
+  const shifted = shiftAssignments(assignments, shift);
+  const have = new Set((flows ?? []).map((f) => f.token));
+  const own = flowsFromAssignments(shifted, byId).filter((f) => !have.has(f.token) && f.generators.length);
+  const merged = own.length ? [...(flows ?? []), ...own] : flows ?? [];
+  if (!merged.length) return {};
+  return recountTokens(shifted, byId, merged).tokenPoints;
 }
 export function planTokensAt(plan: Plan, byId: Map<string, InfraOp>, shift: number): Record<string, number> {
   return tokensAt(shift, plan.assignments, byId, plan.flows, plan.tokenPoints);
@@ -1751,10 +1758,12 @@ export function flowsFromAssignments(assignments: Record<string, string[][]>, by
 export type TokenPartner = { token: string; withIds: string[]; room: string; role: "gen" | "use" };
 export function tokenPartners(assignments: Record<string, string[][]>, byId: Map<string, InfraOp>, pool: InfraOp[]): Map<string, TokenPartner[]> {
   const keys = [...PRODUCTION_KEYS, ...SUPPORT_KEYS, "DORM-0", "DORM-1", "DORM-2", "DORM-3"];
+  // A·B 두 조를 다 본다 — 종전엔 A조만 봐서 B조에만 있는 마르실을 '기지에 없다'로 안내했다 (제안 25ded691 2026-10-19)
   const seated: { op: InfraOp; room: string; product?: string }[] = [];
   for (const key of keys) {
     const cell = cellByKey.get(key);
-    for (const id of assignments[key]?.[0] ?? []) {
+    const shifts = assignments[key] ?? [];
+    for (const id of new Set(shifts.flat())) {
       const op = byId.get(id);
       if (op) seated.push({ op, room: cell?.room ?? key, product: cell?.product });
     }
@@ -1769,7 +1778,8 @@ export function tokenPartners(assignments: Record<string, string[][]>, byId: Map
     }
   }
   // 전환으로 들어오는 몫까지 '만드는 사람이 있다'로 친다 — flowsFromAssignments 의 생성원이 곧 그 답이다
-  const live = new Set(flowsFromAssignments(assignments, byId).filter((f) => f.generators.length).map((f) => f.token));
+  const live = new Set(Array.from({ length: SHIFT_COUNT }, (_, sh) => flowsFromAssignments(shiftAssignments(assignments, sh), byId))
+    .flat().filter((f) => f.generators.length).map((f) => f.token));
   const out = new Map<string, TokenPartner[]>();
   const add = (id: string, p: TokenPartner) => {
     const list = out.get(id) ?? [];
