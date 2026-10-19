@@ -112,11 +112,15 @@ def load_events(suffix):
     p = ROOT / "app" / "data" / f"events{suffix}.json"
     return json.loads(p.read_text(encoding="utf-8"))["events"] if p.exists() else []
 ev_ko = load_events("")
+collab_set = set(collab)
 names = {loc: {e["id"]: e.get("n") for e in load_events(f".{loc}")} for loc in ("en", "ja")}
 events = []
 for e in ev_ko:
     # 헤드헌팅으로 얻는 오퍼만 — 이벤트와 같이 데뷔해도 배포 오퍼(획득 경로 '이벤트')는 픽업이 아니다 (제안 75286c14)
-    gachaable = lambda cid: ("인재 채용" in ((ct.get(cid) or {}).get("itemObtainApproach") or "")) or cid in future or cid in limited
+    # 콜라보 헤드헌팅 오퍼도 뽑는 오퍼다 — 빠져 있어 포영창정(몬스터 헌터)·월행수상(페르소나 3)의 신규 오퍼가 플래너·시뮬레이터
+    # 이벤트 배너에 안 나왔다 (사용자 지적 2026-10-19). collab 목록은 헤드헌팅 콜라보만 담는다(배포 오퍼는 위에서 '인재 채용' 경로로 걸렀고,
+    # 중섭 전용은 'new'·5성 이상 조건이 이벤트 배포 오퍼(코로마루 등 1성)를 거른다)
+    gachaable = lambda cid: ("인재 채용" in ((ct.get(cid) or {}).get("itemObtainApproach") or "")) or cid in future or cid in limited or cid in collab_set
     picks = [o[0] for o in e.get("ops", []) if o[3] == "new" and o[2] >= 5 and gachaable(o[0]) and o[0] not in kernel]
     if not picks:
         continue
@@ -146,7 +150,7 @@ for e in ev_ko:
         row["start"], row["end"] = e.get("start"), e.get("end")
     if picks:
         row["ops"] = picks
-        if any(x in limited for x in picks):
+        if any(x in limited or x in collab_set for x in picks):   # 콜라보 배너도 한정 배너다
             row["lim"] = 1
     if e.get("prime"):
         row["prime"] = e["prime"]

@@ -32,8 +32,9 @@ type Custom = { id: string; name: string; date: string };
 // targets = 일정마다 뽑을 오퍼(목표) — 사용자 지시 2026-10-17 "무슨 오퍼 뽑을건지 지정하는 기능도 필요"
 type Saved = { income?: Partial<Income>; start?: Start | null; spend?: Record<string, number>; custom?: Custom[]; targets?: Record<string, string[]> };
 // 헤드헌팅으로 얻는 오퍼 — 목표 고르기 창의 검색 후보 (통상 풀 + 한정 + 커널 + 미실장 헤드헌팅 오퍼)
-const POOL = poolData as unknown as { pool: Record<string, string[]>; limited: string[]; kernel: string[]; future: string[] };
-const GACHAABLE = new Set([...Object.values(POOL.pool).flat(), ...POOL.limited, ...POOL.kernel, ...POOL.future]);
+const POOL = poolData as unknown as { pool: Record<string, string[]>; limited: string[]; kernel: string[]; future: string[]; collab: string[] };
+// 콜라보 헤드헌팅 오퍼도 뽑을 오퍼다 (2026-10-19 — 포영창정·월행수상 신규 오퍼가 빠져 있었다)
+const GACHAABLE = new Set([...Object.values(POOL.pool).flat(), ...POOL.limited, ...POOL.kernel, ...POOL.future, ...POOL.collab]);
 
 // 기본 수입 — 일일 임무 합성옥 100 · 주간 임무 500 · 섬멸 작전 주 1,800 (주간 상한) · 월정액 켬 · 순오리지늄 환산 켬
 // (사용자 지시 2026-10-17 "기본적으로 월정액이랑 오리지늄도 합성옥 바꾼다 체크돼 있어야 함")
