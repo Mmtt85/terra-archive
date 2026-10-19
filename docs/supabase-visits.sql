@@ -95,7 +95,10 @@ alter table public.visit_event add column if not exists detail text check (char_
 alter table public.visit_event add column if not exists dur_ms int check (dur_ms between 0 and 86400000);
 alter table public.visit_event drop constraint if exists visit_event_kind_check;
 -- leave(2026-10-11) = 탭을 닫거나 페이지를 떠날 때 — 뒤에 같은 세션의 화면 기록이 이어지면 사이트 안 이동이라 무시(어드민 '조작 중' 판정)
-alter table public.visit_event add constraint visit_event_kind_check check (kind in ('me_login', 'me_sync', 'me_logout', 'me_reset', 'prts_start', 'prts_end', 'leave', 'ev_chip'));
+alter table public.visit_event add constraint visit_event_kind_check check (kind in ('me_login', 'me_sync', 'me_logout', 'me_reset', 'prts_start', 'prts_end', 'leave', 'ev_chip', 'omni'));
+-- omni(2026-10-19) = 만능검색 한 번(창을 열고 닫을 때까지). detail = 검색어, target = 고른 항목 '종류:이름'(안 고르고 닫으면 비움), n = 결과 수
+alter table public.visit_event add column if not exists target text check (char_length(target) <= 80);
+alter table public.visit_event add column if not exists n int check (n between 0 and 9999);
 -- me_logout·me_reset(2026-10-19) = 내 정보 '로그아웃'·'저장된 설정 완전 초기화' — 관리자 동기화 표의 이력 칸
 -- ev_chip(2026-10-14) = 헤더 진행 중 이벤트 칩·이벤트 목록 줄을 눌렀다. detail = 이벤트 id(위수 협의 칩 'promo:<탭>', 중섭 칩 'cn:<id>', 펼친 목록 줄 'menu:<id>')
 
@@ -802,3 +805,19 @@ begin
   return r;
 end $$;
 grant execute on function public.visits_summary(int, boolean, text[]) to anon;
+
+-- ── 만능검색 바로가기 (2026-10-19, 사용자 지시 "검색에서 히트 안 했거나 안 들어간 건 내가 직접 URL 을") ──────────────
+-- 운영자가 관리 › 방문 통계 › 검색(app/admin/omni.tsx)에서 검색어(정규화 — 소문자·공백 제거)에 주소를 단다.
+-- 사이트 만능검색(app/omni-search.tsx)이 익명 키로 읽어 맨 위에 '바로가기'로 띄운다. 쓰기는 관리자만
+create table if not exists public.omni_answer (
+  q text primary key check (char_length(q) between 1 and 41),
+  url text not null check (char_length(url) between 1 and 300),
+  label text check (char_length(label) <= 80),
+  updated_at timestamptz not null default now()
+);
+alter table public.omni_answer enable row level security;
+drop policy if exists "anon read omni answer" on public.omni_answer;
+create policy "anon read omni answer" on public.omni_answer for select to anon using (true);
+drop policy if exists "admin write omni answer" on public.omni_answer;
+create policy "admin write omni answer" on public.omni_answer for all to anon
+  using ((select public.visits_is_admin())) with check ((select public.visits_is_admin()));

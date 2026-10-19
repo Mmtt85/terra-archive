@@ -17,7 +17,7 @@ import { Dropdown } from "../dropdown";
 import { DatePicker } from "../date-picker";
 import { ACCOUNT_SERVERS } from "../account";
 import { ModalWindow } from "../modal-window";
-import { VisitsReport } from "./visits-report";
+import OmniPanel from "./omni";
 import operatorsData from "../data/operators.json";
 import storiesData from "../data/stories.json";
 
@@ -613,6 +613,9 @@ const isLead = () => {
 const SESSIONS_ALL = 1000;                // 세션 타임라인 '전체 보기'의 상한 (2026-10-12 5,000 → 1,000 — 위와 같은 까닭, 한 번에 만드는 JSON 이 컸다)
 const ALL_STEP = 50;                      // 전체 보기 창에서 한 번에 더 그리는 줄 수
 
+const VTABS = [{ k: "overview", label: "개요" }, { k: "screens", label: "화면" }, { k: "prts", label: "PRTS" }, { k: "search", label: "검색" }, { k: "etc", label: "그 외" }] as const;
+type VTab = (typeof VTABS)[number]["k"];
+
 function TopPick({ value, onChange, onAll, what }: { value: number; onChange: (n: number) => void; onAll?: () => void; what: string }) {
   return (
     <Dropdown
@@ -967,7 +970,9 @@ export function VisitsPanel() {
   const [data, setData] = useState<Summary | null>(null);
   const [, setNamesReady] = useState(false);
   useEffect(() => { void loadDexNames().then(() => setNamesReady(true)); }, []);
-  const [report, setReport] = useState(false);   // 이미지 리포트 창 (visits-report.tsx)
+  // 서브 탭 (2026-10-19) — 이 브라우저에 남긴다
+  const [vtab, setVtab] = useState<VTab>(() => { try { const v = localStorage.getItem("ta-admin-vtab") as VTab | null; if (v && VTABS.some((x) => x.k === v)) return v; } catch { /* 무시 */ } return "overview"; });
+  const pickVtab = (v: VTab) => { setVtab(v); try { localStorage.setItem("ta-admin-vtab", v); } catch { /* 무시 */ } };
   const [trend, setTrend] = useState<TrendRow[] | null>(null);
   const [sessFetched, setSessions] = useState<SessRow[] | null>(null);
   const [srcFilter, setSrcFilter] = useState<string>("");
@@ -1274,14 +1279,6 @@ export function VisitsPanel() {
     setRange(next);
   };
   const canNext = !!range && range.to < today;
-  // 리포트 기간 = 지금 고른 기간. 최근 N일은 수집 첫날(데이터가 있는 첫 날)보다 앞으로 늘리지 않는다
-  const reportSpan = (() => {
-    if (range) return range;
-    if (days === 0) return { from: today, to: today };
-    const start = new Date(Date.parse(`${today}T00:00:00Z`) - (days - 1) * 86400_000).toISOString().slice(0, 10);
-    const first = data?.days.find((x) => x.sessions > 0)?.day.slice(0, 10);
-    return { from: first && first > start ? first : start, to: today };
-  })();
   return (
     <section className="vz">
       <div className="admin-tools vz-controls">
@@ -1321,19 +1318,22 @@ export function VisitsPanel() {
             return { value: c.join("+"), label: c.map((k) => KIND_LABEL[k]).join(" + "), ...(n != null ? { count: n } : {}) };
           })}
           onPick={(v) => pickKinds(v.split("+") as Kind[])} disabled={days === 365 && !range} />
+        {/* 갱신 시각·다음 갱신은 단추 안에 (사용자 지시 2026-10-19). 리포트 이미지는 걷었다 (같은 날 "이제 필요 없다") */}
         <button className={`vz-refresh${busy ? " busy" : ""}`} onClick={() => setTick((n) => n + 1)} disabled={busy} aria-busy={busy}>
-          <span>새로고침</span>
+          <span>새로고침{loadedAt && <small className="vz-refresh-at"> · {loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신{left === -2 ? " · 다른 관리 창이 갱신 중 — 누르면 이 창이 맡음" : left >= 0 ? ` · ${left}초 후` : ""}</small>}</span>
           <span role="status"><i className="vz-spin" aria-hidden />불러오는 중</span>
         </button>
-        {/* 이미지 리포트 — 지금 고른 기간·사람만/봇 포함 그대로 (사용자 지시 2026-10-05). 1년 보기는 일별 집계라 빠진다 */}
-        <button className="vz-report-btn" onClick={() => setReport(true)} disabled={!data || busy || (days === 365 && !range) || !!slot} title={slot ? "칸을 고른 동안은 리포트를 뽑지 않습니다" : undefined}>리포트 이미지</button>
-        {loadedAt && <span className="vz-muted vz-loaded">{loadedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })} 갱신 · {left === -2 ? "다른 관리 창에서 갱신 중 — 누르면 이 창이 맡음" : left < 0 ? "불러오는 중" : `${left}초 후 갱신`}</span>}
       </div>
       {status && <p className="admin-status">{status}</p>}
-      {report && data && <VisitsReport data={data} from={reportSpan.from} to={reportSpan.to} who={whoLabel} onlyHuman={!kinds.includes("bot")} tops={tops} onClose={() => setReport(false)} />}
+      {/* 서브 탭 (사용자 지시 2026-10-19) — 개요: 요약·내 정보 동기화·시간별·세션 타임라인 · 화면: 순위·첫 화면·갈래·동선 ·
+          PRTS · 검색: 만능검색 내역(app/admin/omni.tsx) · 그 외: 나머지. 고른 탭은 이 브라우저에 남긴다 */}
+      <div className="vz-subtabs" role="tablist">
+        {VTABS.map((v) => <button key={v.k} type="button" role="tab" aria-selected={vtab === v.k} className={vtab === v.k ? "tab-btn selected" : "tab-btn"} onClick={() => pickVtab(v.k)}>{v.label}</button>)}
+      </div>
+      {vtab === "search" && <OmniPanel />}
 
-      {days === 365 && !range ? (
-        trend && (
+      {vtab === "search" ? null : days === 365 && !range ? (
+        vtab === "overview" && trend && (
           <>
             <h3 className="vz-h">일별 추이 (최근 1년 · 매일 밤 말아 둔 집계 — 오늘은 내일 반영)</h3>
             <LineChart days={trend.map((r) => r.day)} series={[
@@ -1346,6 +1346,7 @@ export function VisitsPanel() {
         )
       ) : data && t && (
         <>
+          {vtab === "overview" && (<>
           <div className="vz-kpis">
             <div><b>{num(t.visitors)}</b><span>방문자</span></div>
             <div><b>{num(t.sessions)}</b><span>세션</span></div>
@@ -1490,12 +1491,31 @@ export function VisitsPanel() {
             </>
           )}
 
+          </>)}
+
+          {vtab === "screens" && (<>
           <Head title="화면 순위" sub={`${data.pages.length}개 화면`} {...top("pages", "화면 순위")} />
           {pageTable(tops.pages)}
 
+          <div className="vz-cols">
+            <div>
+              <Head title="첫 화면 (랜딩)" {...top("landing", "첫 화면 (랜딩)")} />
+              <BarList top={tops.landing} rows={barRows.landing} />
+            </div>
+            <div>
+              <Head title="갈래별 (모달 포함)" {...top("sections", "갈래별 (모달 포함)")} />
+              <BarList top={tops.sections} rows={barRows.sections} />
+            </div>
+          </div>
+
+          <Head title="동선 흐름" sub="띠 굵기 = 세션 수. 갈래 단위라 모달·같은 갈래 안의 이동은 한 칸으로 친다. 줄에 올리면 수가 나온다" />
+          <Sankey flow={data.flow} />
+          </>)}
+
           {/* PRTS 링크(게임 연결) 사용 기록 (사용자 요청 2026-10-11) — 연결·해제 이벤트. 2026-10-11 전에는 기록하지 않았다.
               목록은 최신 10줄만 (사용자 지시 2026-10-12 "세로로 너무 길다") */}
-          {data.prts && (
+          {vtab === "prts" && !data.prts && <p className="vz-note">PRTS 링크 기록이 없습니다.</p>}
+          {vtab === "prts" && data.prts && (
             <>
               <Head title="PRTS 링크" {...top("prtsBy", "PRTS 링크 — 어디서")} sub={`연결 ${num(data.prts.n)}회 · ${num(data.prts.people)}명 · 연결 시간 합 ${fmtDur(data.prts.ms)}${data.prts.ended ? ` (해제 ${num(data.prts.ended)}회 평균 ${fmtDur(data.prts.ms / data.prts.ended)})` : ""}`} />
               {data.prts.n === 0 ? <p className="vz-note">이 기간에는 PRTS 링크 기록이 없습니다 (2026-10-11부터 기록).</p> : (
@@ -1510,6 +1530,7 @@ export function VisitsPanel() {
 
           {/* PRTS 틀렸어요는 피드백 탭으로 옮겼다 (사용자 지시 2026-10-15 "방문 통계가 아니라 피드백으로", app/lens/bridge.ts markBridgeWrong) */}
 
+          {vtab === "etc" && (<>
           <div className="vz-cols">
             <div>
               <Head title="유입원" {...top("src", "유입원")} />
@@ -1520,21 +1541,6 @@ export function VisitsPanel() {
                   <BarList top={tops.ref} rows={barRows.ref} />
                 </>
               )}
-            </div>
-            <div>
-              <Head title="첫 화면 (랜딩)" {...top("landing", "첫 화면 (랜딩)")} />
-              <BarList top={tops.landing} rows={barRows.landing} />
-            </div>
-          </div>
-
-          <Head title="동선 흐름" sub="띠 굵기 = 세션 수. 갈래 단위라 모달·같은 갈래 안의 이동은 한 칸으로 친다. 줄에 올리면 수가 나온다" />
-          <Sankey flow={data.flow} />
-
-
-          <div className="vz-cols">
-            <div>
-              <Head title="갈래별 (모달 포함)" {...top("sections", "갈래별 (모달 포함)")} />
-              <BarList top={tops.sections} rows={barRows.sections} />
             </div>
             <div>
               <Head title="요일·시간 (KST)" />
@@ -1564,6 +1570,7 @@ export function VisitsPanel() {
               <BarList top={tops.out} rows={barRows.out} />
             </div>
           </div>
+          </>)}
 
         </>
       )}

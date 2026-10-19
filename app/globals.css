@@ -33718,3 +33718,16 @@ html.rg-theme.rg4 main.site-main {
 @media (max-width: 640px) { .pl-start-acts > * { flex: 1 1 100%; justify-content: center; } }
 /* 임시 편성 '적용할까요?' 창 — 공용 창 판(.operator-modal)을 안 받아 바탕이 없어 어두운 덮개 위에 글자가 투명하게 떴다 (제안 7cfbaed0 2026-10-19) */
 .mw-window.pl-apply-check { background: var(--white); border-radius: var(--r-lg); }
+
+/* 관리 — 방문 통계 서브 탭 · 새로고침 단추 안 갱신 시각 · 검색 내역 (2026-10-19) */
+.vz-subtabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0 14px; border-bottom: 1px solid var(--line); }
+.vz-refresh-at { font-size: 11px; font-weight: 500; color: var(--muted); }
+.om-panel .vz-head-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.om-check { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink3); }
+.om-edit { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.om-edit input { padding: 3px 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-soft); color: var(--ink); font-size: 12px; }
+.om-edit .om-url { width: 200px; }
+.om-edit .om-name { width: 120px; }
+.om-edit button { padding: 3px 8px; border: 1px solid var(--btn-line); border-radius: var(--r-sm); background: var(--btn-bg); color: var(--btn-ink); font-size: 12px; cursor: pointer; }
+.om-err { color: var(--danger); }
+.om-table tr.om-miss td:first-child code { color: var(--gold-ink); }

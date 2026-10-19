@@ -230,7 +230,7 @@ function notePlayer(given?: { server: string; uid: string }): void {
   } catch { /* 저장 막힘 */ }
 }
 
-export function noteVisitEvent(kind: "me_login" | "me_sync" | "me_logout" | "me_reset" | "prts_start" | "prts_end" | "leave" | "ev_chip", server?: string, extra?: { detail?: string; dur?: number; uid?: string }): void {
+export function noteVisitEvent(kind: "me_login" | "me_sync" | "me_logout" | "me_reset" | "prts_start" | "prts_end" | "leave" | "ev_chip" | "omni", server?: string, extra?: { detail?: string; dur?: number; uid?: string; target?: string; n?: number }): void {
   if (!started) return;
   const visitor = visitorId();
   // 로그인·동기화 — 계정을 넘겨받았으면 바로, 아니면 saveMe 가 저장한 뒤(한 박자 늦게) 읽어서 잇는다
@@ -239,7 +239,10 @@ export function noteVisitEvent(kind: "me_login" | "me_sync" | "me_logout" | "me_
   }
   post("visit_event", [{ session: sess?.id ?? uuid(), visitor: clip(visitor, 64), kind, server: clip(server ?? null, 8), env,
     ...(extra?.detail ? { detail: clip(extra.detail, 40) } : {}),
-    ...(extra?.dur != null ? { dur_ms: Math.max(0, Math.min(86_400_000, Math.round(extra.dur))) } : {}) }]);
+    ...(extra?.dur != null ? { dur_ms: Math.max(0, Math.min(86_400_000, Math.round(extra.dur))) } : {}),
+    // 만능검색(omni, 2026-10-19) — target = 고른 항목 '종류:이름'(안 고르고 닫으면 없음), n = 그때 결과 수
+    ...(extra?.target ? { target: clip(extra.target, 80) } : {}),
+    ...(extra?.n != null ? { n: Math.max(0, Math.min(9999, Math.round(extra.n))) } : {}) }]);
 }
 
 // PRTS 링크 인식 기록 (2026-10-12, 사용자 지시 "얼마나 걸렸나 제대로 인식이 됐나") — 인식 1번 = scan 한 줄,

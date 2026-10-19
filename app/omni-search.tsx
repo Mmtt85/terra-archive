@@ -16,6 +16,15 @@ import { NewBadge } from "./new-badge";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { OmniHit, OmniItem, OmniKind, OmniTarget } from "./omni";
+import { noteVisitEvent, VISITS_URL, VISITS_ANON_KEY } from "./visit-track";
+
+// 운영자가 직접 단 바로가기 (관리 › 방문 통계 › 검색, app/admin/omni.tsx — 2026-10-19 "검색에서 히트 안 했거나 안 들어간 건 내가 직접 URL 을").
+// 방문 기록 DB 의 omni_answer(q 정규화 검색어 → url·label)를 세션 1회 받는다. 검색어가 그 말과 같거나 그 말을 품으면 맨 위에 띄운다
+type OmniAnswer = { q: string; url: string; label: string | null };
+let answersP: Promise<OmniAnswer[]> | null = null;
+const loadAnswers = () => (answersP ??= fetch(`${VISITS_URL}/rest/v1/omni_answer?select=q,url,label&limit=2000`, {
+  headers: { apikey: VISITS_ANON_KEY, Authorization: `Bearer ${VISITS_ANON_KEY}` },
+}).then((r) => (r.ok ? r.json() : [])).then((d) => (Array.isArray(d) ? d as OmniAnswer[] : [])).catch(() => []));
 import { crowdPicks, fetchCrowdPicks, learnedHints, picksFor, recordHint, recordPick, type PickIndex } from "./omni-picks";
 import { normSearch, SEARCH_DEBOUNCE_MS } from "./search";
 import { consumeMiss, noteAction, noteMiss, recentMissQ } from "./trail";
@@ -59,6 +68,7 @@ export default function OmniSearch({ roster, extra, onGo }: {
   // 전역 집계(사람들의 표) — 학습은 전부 DB에 쌓이고, 여기선 세션 1회 받아 온 지도를 읽는다.
   // tick은 내 표를 낙관적으로 얹은 뒤 다시 그리기 위한 신호 (지도 자체는 omni-picks 모듈 소유).
   const [crowd, setCrowd] = useState<PickIndex>({});
+  const [answers, setAnswers] = useState<OmniAnswer[]>([]);
   const [, setTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);   // 'stale'(대기 중) 표시는 클래스만 직접 토글
@@ -77,13 +87,25 @@ export default function OmniSearch({ roster, extra, onGo }: {
     [engine, items, term, picks, hints]);
 
   const openPanel = () => {
+    loggedRef.current = false;
+    void loadAnswers().then(setAnswers);
     warm();
     setOpen(true);
     setCrowd({ ...crowdPicks() });                          // 이미 받아 둔 집계 즉시 반영
     void fetchCrowdPicks().then((index) => setCrowd({ ...index })).catch(() => { /* 테이블 미설치 */ });
   };
   // 상태 리셋은 이펙트가 아니라 닫기·입력 핸들러에서 직접 한다 (이펙트 setState = 연쇄 렌더)
+  // 이용 기록 (사용자 지시 2026-10-19 "유니버셜 서치 이용 내역도 통계로") — 창을 열고 닫을 때까지 검색 한 번 = 한 줄.
+  // 고르고 나가면 go 가, 안 고르고 닫으면 close 가 남긴다. 검색어 없이 열었다 닫은 건 남기지 않는다
+  const loggedRef = useRef(false);
+  const logSearch = (q: string, n: number, hit?: OmniHit | string) => {
+    if (loggedRef.current || !q.trim()) return;
+    loggedRef.current = true;
+    const target = typeof hit === "string" ? hit : hit ? `${hit.kind}:${hit.name}` : undefined;
+    noteVisitEvent("omni", undefined, { detail: q.trim(), n, ...(target ? { target } : {}) });
+  };
   const close = () => {
+    logSearch(term || rawRef.current, hits.length);
     window.clearTimeout(timerRef.current);
     rawRef.current = "";
     setOpen(false); setTerm(""); setAsk(false); setActive(-1); setMsg(null);
@@ -151,6 +173,7 @@ export default function OmniSearch({ roster, extra, onGo }: {
    *  "크슬"의 유일 후보 크라운슬레이어를 클릭해도 candidates=1이라 학습이 안 쌓여,
    *  확장 색인이 없는 다음 세션엔 재검색이 실패했다 (사용자 제보 2026-07-26). */
   const go = (hit: OmniHit, learn: boolean, candidates: number, rawQuery: string, rank?: number) => {
+    logSearch(rawQuery, candidates, hit);
     const q = normSearch(rawQuery);
     const informative = candidates >= 2 || hit.fuzzy || hit.learned || !hit.keys.includes(q);
     if (learn && q && informative) {
@@ -229,6 +252,21 @@ export default function OmniSearch({ roster, extra, onGo }: {
     noteMiss(normSearch(term), locale);
   }, [open, engine, busy, term, hits, rogueItems, locale]);
 
+  // 직접 단 바로가기 — 같은 말이면 먼저, 그 말을 품은 검색어도 (최대 3개). 사이트 경로는 지금 언어 경로로
+  const answerHits = (q: string) => {
+    const n = normSearch(q);
+    if (!n) return [];
+    return answers.filter((a) => a.q === n || (a.q.length >= 2 && n.includes(a.q)))
+      .sort((a, b) => (b.q === n ? 1 : 0) - (a.q === n ? 1 : 0) || b.q.length - a.q.length).slice(0, 3);
+  };
+  const shownAnswers = useMemo(() => answerHits(term), [term, answers]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const answerHref = (url: string) => (url.startsWith("/") && locale !== "ko" && !/^\/(en|ja)(\/|$)/.test(url) ? `/${locale}${url}` : url);
+  const followAnswer = (a: OmniAnswer, q: string) => {
+    logSearch(q, hits.length, `answer:${a.label || a.url}`);
+    close();
+    window.location.assign(answerHref(a.url));
+  };
+
   // 되묻기로 전환 — 포커스를 입력란으로 되돌려 ↑↓·⏎로 바로 고를 수 있게 한다
   const askUser = () => { setAsk(true); setActive(0); inputRef.current?.focus(); };
 
@@ -237,6 +275,9 @@ export default function OmniSearch({ roster, extra, onGo }: {
     const query = rawRef.current;
     const raw = query.trim();
     if (!raw || busy) return;
+    // 운영자가 이 말에 바로가기를 달아 뒀으면 그리로 (같은 말일 때만 — 품기만 한 건 목록에서 고르게)
+    const exact = answerHits(query).find((a) => a.q === normSearch(query));
+    if (exact) { followAnswer(exact, query); return; }
     window.clearTimeout(timerRef.current);
     listRef.current?.classList.remove("stale");
     setTerm(query);                                   // 화면 목록도 이 검색어에 맞춘다
@@ -297,6 +338,20 @@ export default function OmniSearch({ roster, extra, onGo }: {
 
         {ask && <p className="omni-ask">{t("이 중에 무엇인가요?")}<em>{t("고른 항목을 기억해 다음엔 바로 이동해요")}</em></p>}
         {msg && <p className="omni-msg">{msg}</p>}
+
+        {shownAnswers.length > 0 && (
+          <ul className="omni-list omni-answers" aria-label={t("바로가기")}>
+            {shownAnswers.map((a) => (
+              <li key={a.q}>
+                <button type="button" onClick={() => followAnswer(a, term || rawRef.current)}>
+                  <span className="omni-icon" data-kind="answer"><em aria-hidden>↗</em></span>
+                  <span className="omni-name">{a.label || a.url}</span>
+                  <span className="omni-sub">{t("바로가기")}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {hits.length > 0 && (
           <ul className="omni-list" ref={listRef} role="listbox" aria-label={t("검색 결과")}>

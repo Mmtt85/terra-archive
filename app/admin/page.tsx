@@ -12,7 +12,6 @@ import { ModalWindow } from "../modal-window";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
 import { RULES as bundledRules } from "../rules";
 import { DatePicker } from "../date-picker";
-import PrefsPanel from "./prefs";
 import { Who } from "./who";
 import { FbReadCard } from "./fb-card";
 import operatorsData from "../data/operators.json";
@@ -242,7 +241,7 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
-  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "files" | "visits" | "prefs">("visits"); // 상단 탭 — 처음은 방문 통계 (사용자 지시 2026-10-05)
+  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "files" | "visits">("visits"); // 상단 탭 — 처음은 방문 통계 (사용자 지시 2026-10-05)
   // 파일 저장소(R2) — 워커 미배포·비밀번호 불일치면 null + 안내
   const [files, setFiles] = useState<StoredFile[] | null>(null); // uploads/ + feedback/
   // 사이트 에셋(assets/)은 4만 개가 넘어 따로, 그 탭을 열 때만 받는다 (2026-10-06 — 한꺼번에 받다 목록 전체가 끊겼다)
@@ -685,7 +684,7 @@ export default function AdminPage() {
           <button className={tab === "files" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("files")}>
             파일{files ? ` (${uploadRows.length})` : ""}
           </button>
-          <button className={tab === "prefs" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("prefs")}>UID 설정</button>
+          
         </div>
       </header>
       {status && <p className="admin-status">{status}</p>}
@@ -734,7 +733,8 @@ export default function AdminPage() {
       )}
 
       {tab === "visits" && <FbLinkCtx.Provider value={fbLink}><VisitsPanel /></FbLinkCtx.Provider>}
-      {tab === "prefs" && <PrefsPanel />}
+      {/* UID 설정 탭은 걷었다 (사용자 지시 2026-10-19) — 방문 통계의 UID 를 누르면 같은 설정 창(PrefsModal)이 뜬다.
+          만능검색 검색 내역은 방문 통계의 '검색' 칸에 있다 (app/admin/omni.tsx) */}
 
       {tab === "feedback" && (<>
       <div className="admin-tools admin-status-tools">
