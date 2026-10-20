@@ -1383,6 +1383,8 @@ const D: Record<string, Pair> = {
   "기반시설 피로도": ["Base morale", "基地の体力"],
   "친구 매칭": ["Friend matching", "フレンドマッチング"],
   "친구 찾기": ["Find friends", "フレンド探し"],
+  "닉네임 · 번호": ["Nickname · number", "ニックネーム · 番号"],
+  "친구 검색": ["Search friends", "フレンド検索"],
   "새로고침하는 중…": ["Refreshing…", "更新中…"],
   "이미 친구": ["Already friends", "フレンド済み"],
   "내 정보를 90일 동안 동기화하지 않으면 등록 정보(닉네임 포함)는 자동으로 삭제됩니다.": ["If you don't sync My Info for 90 days, your registration (including your nickname) is deleted automatically.", "マイ情報を90日間同期しないと、登録情報(ニックネームを含む)は自動で削除されます。"],

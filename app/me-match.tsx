@@ -5,7 +5,7 @@
 // 2주 넘게 동기화가 없거나 친구 자리가 꽉 찬 줄은 목록에서 빠진다(워커 matchList). 신고 기능은 만들지 않는다 (사용자 결정).
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useI18n } from "./i18n";
+import { useI18n, DT_LOCALE } from "./i18n";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
 import { useConfirm } from "./confirm";
@@ -97,6 +97,7 @@ function MatchOp({ a, op }: { a: MatchAssist; op: MeOp }) {
 }
 
 function MatchRowView({ r, opById, now, mine, full, friend }: { r: MatchRow; opById: Map<string, MeOp>; now: number; mine?: boolean; full?: boolean; friend?: boolean }) {
+  const { locale } = useI18n();
   // 배경 — 부관(과 그 스킨) 일러를 은은하게. 스킨 그림이 없으면 정예화 일러, 그것도 없으면 그림을 뺀다
   const sec = r.sec && opById.has(r.sec) ? r.sec : null;
   const { t } = useI18n();
@@ -108,15 +109,17 @@ function MatchRowView({ r, opById, now, mine, full, friend }: { r: MatchRow; opB
       {sec && <img className="mm-art" src={artOf(sec, r.secSkin ?? null)} alt="" aria-hidden decoding="async" loading="lazy"
         onError={(e) => { const el = e.currentTarget; const fb = artOf(sec, null); if (el.src !== new URL(fb, location.href).href) el.src = fb; else el.remove(); }} />}
       <div className="mm-who">
-        <b>{nick || "Dr."}{num && <small>#{num}</small>}</b>
+        {/* 이미 친구 — 닉네임#번호 바로 오른쪽에, 조금 더 눈에 띄게 (사용자 지시 2026-10-20) */}
+        <b>{nick || "Dr."}{num && <small>#{num}</small>}{friend && <em className="mm-friend">{t("이미 친구")}</em>}</b>
         {/* 'N분 전' 은 친구 카드(전부 보기 — 게임의 마지막 접속)에만. 매칭 카드의 시각은 마지막 '동기화'라 접속 안 한 사람처럼 보였다 (사용자 지적 2026-10-20) */}
         <span>Lv.{r.level}{r.friends != null && r.flimit ? ` · ${t("친구 {a}/{b}", { a: r.friends, b: r.flimit })}` : ""}{!r.server && ` · ${ago(t, now, r.t)}`}</span>
+        {/* 입사일 (사용자 지시 2026-10-20) — 박사 카드의 '입사'와 같은 글 */}
+        {!!r.register && <span className="mm-reg-day">{t("{date} 입사", { date: new Date(r.register * 1000).toLocaleDateString(DT_LOCALE[locale], { year: "numeric", month: "short", day: "numeric" }) })}</span>}
         {r.resume && <q className="mm-resume" title={r.resume}>{r.resume}</q>}
         {r.uid && <button type="button" className="me-pf-uid" onClick={copy} title={t("UID 복사")}>
           UID <code>{r.uid}</code><span aria-hidden>{copied ? "✓" : "⧉"}</span>
         </button>}
         {/* 마지막 동기화가 1주일 넘음 — 2주가 넘으면 목록에서 빠진다. UID 밑에 (사용자 지시 2026-10-20) */}
-        {friend && <em className="mm-stale mm-friend">{t("이미 친구")}</em>}
         {full && <em className="mm-stale">{t("친구 꽉 참")}</em>}
         {r.server && now - r.t > 7 * 86400_000 && <em className="mm-stale">{t("동기화 1주일 넘음")}</em>}
       </div>
@@ -146,11 +149,12 @@ export function MatchJobToast() {
 }
 
 export function FriendCards({ list, opById, now }: { list: AccountFriend[]; opById: Map<string, MeOp>; now: number }) {
+  const { t } = useI18n();
   return (
     <ul className="mm-list mm-friends">
       {list.map((f) => {
-        const r: MatchRow = { server: "", uid: "", nick: `${f.nickName}#${f.nickNumber}`, level: f.level, friends: null, flimit: null,
-          t: f.lastOnline * 1000, created: 0, sec: f.secretary, secSkin: f.secretarySkin, resume: f.resume,
+        const r: MatchRow = { server: "", uid: f.uid ?? "", nick: `${f.nickName}#${f.nickNumber}`, level: f.level, friends: null, flimit: null,
+          t: f.lastOnline * 1000, created: 0, sec: f.secretary, secSkin: f.secretarySkin, resume: f.resume, register: f.register ?? null,
           assist: f.assist.map((a) => ({ id: a.id, elite: a.elite, level: a.level, potential: a.potential, skill: a.skill, skillIndex: a.skillIndex,
             mastery: a.skillIndex >= 0 ? a.mastery[a.skillIndex] ?? 0 : 0, equip: a.equip, equipLevel: a.equipLevel })) };
         return <MatchRowView key={r.nick} r={r} opById={opById} now={now} />;

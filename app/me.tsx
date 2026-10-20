@@ -2174,6 +2174,7 @@ function Friends({ me, now, opById, onShowOperator, full }: { me: MeData; now: n
   // 정렬 — 접속·이름·레벨, 방향 뒤집기 (사용자 지시 2026-10-11). 친구가 된 날은 게임이 주지 않아 정렬 기준에 없다
   const [sortKey, setSortKey] = useState<FriendSort>("online");
   const [rev, setRev] = useState(false);
+  const [fq, setFq] = useState("");
   const list = me.profile?.friends;
   if (!me.profile) return null;
   const daysOff = (f: AccountFriend) => (f.lastOnline ? Math.floor((now / 1000 - f.lastOnline) / 86400) : -1);
@@ -2186,7 +2187,10 @@ function Friends({ me, now, opById, onShowOperator, full }: { me: MeData; now: n
     name: (a, b) => a.nickName.localeCompare(b.nickName, DT_LOCALE[locale]) || a.nickNumber.localeCompare(b.nickNumber),
     level: (a, b) => b.level - a.level || b.lastOnline - a.lastOnline,
   };
-  const sorted = [...(list ?? [])].filter((f) => awayOk(f, away)).sort((a, b) => (rev ? -1 : 1) * cmp[sortKey](a, b));
+  // 닉네임·번호로 찾기 — 도구 줄 맨 오른쪽 검색란 (사용자 지시 2026-10-20). 게임 친구 목록엔 친구의 UID 가 없다
+  const nq = normSearch(fq.trim().replace(/^#/, ""));
+  const sorted = [...(list ?? [])].filter((f) => awayOk(f, away) && (!nq || normSearch(`${f.nickName}#${f.nickNumber}`).includes(nq)))
+    .sort((a, b) => (rev ? -1 : 1) * cmp[sortKey](a, b));
   // 목록 그리기 — 본문(앞 몇 줄)과 '전부 보기' 창(전체)이 같이 쓴다 (사용자 2026-10-07 "페이지가 너무 길어진다")
   const friendList = (items: typeof sorted) => (
     <ul className="me-friends">
@@ -2225,6 +2229,7 @@ function Friends({ me, now, opById, onShowOperator, full }: { me: MeData; now: n
           <button type="button" className={`me-sort${rev ? " selected" : ""}`} onClick={() => setRev((v) => !v)} title={t("정렬 뒤집기")}>
             <span aria-hidden>⇅</span>{t("뒤집기")}
           </button>
+          <input type="search" className="me-friend-q" value={fq} onChange={(e) => setFq(e.target.value)} placeholder={t("닉네임 · 번호")} aria-label={t("친구 검색")} />
         </div>
       )}
       {list === null ? <p className="me-note">{t("친구 목록을 받아 오지 못했습니다 — 다시 동기화해 보세요.")}</p>

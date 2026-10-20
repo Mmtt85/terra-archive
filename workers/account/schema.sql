@@ -32,7 +32,8 @@ create table if not exists match (
   created integer not null,        -- 등록 시각 ms
   sec text,                        -- 부관 오퍼 id — 목록 카드 배경 (2026-10-20 추가: alter table match add column sec text)
   sec_skin text,                   -- 부관 스킨 id (같은 날 추가: alter table match add column sec_skin text)
-  resume text                      -- 상태 문구 (같은 날 추가: alter table match add column resume text)
+  resume text,                     -- 상태 문구 (같은 날 추가: alter table match add column resume text)
+  register integer                 -- 입사일 초 (같은 날 추가: alter table match add column register integer)
 ) without rowid;
 create index if not exists match_server_t on match (server, t desc);
 

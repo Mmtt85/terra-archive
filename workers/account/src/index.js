@@ -766,11 +766,13 @@ function profile(user, friends, shop) {
   const friendRows = Array.isArray(friends) ? friends.map((f) => ({
     nickName: f?.nickName ?? "",
     nickNumber: f?.nickNumber ?? "",
+    uid: f?.uid != null ? String(f.uid) : null,   // 친구 UID — 내 브라우저로만 간다(서버에 안 남김), 친구 카드 복사용 (2026-10-20)
     level: num(f?.level),
     avatar: f?.avatar?.id ?? f?.avatarId ?? null,
     secretary: f?.secretary ?? null,
     secretarySkin: f?.secretarySkinId ?? null,
     lastOnline: num(f?.lastOnlineTime),
+    register: num(f?.registerTs) || null,   // 입사일(초) — 게임이 친구 정보에 주면 (2026-10-20)
     resume: f?.resume ?? "",
     charCnt: num(f?.charCnt),
     progress: f?.mainStageProgress ?? null,
@@ -945,6 +947,7 @@ function matchEntry(r, prof, server) {
     sec: prof.status?.secretary ?? null, secSkin: prof.status?.secretarySkin ?? null,
     // 상태 문구(게임 프로필 한 줄) — 목록 카드에 (사용자 지시 2026-10-20)
     resume: String(prof.status?.resume ?? "").slice(0, 120),
+    register: num(prof.status?.register) || null,   // 입사일(초) — 카드에 (사용자 지시 2026-10-20)
   };
 }
 async function matchSigned(entry) {
@@ -953,17 +956,17 @@ async function matchSigned(entry) {
   return { body, sig: b64url(await hmac(`m.${body}`)) };
 }
 async function matchUpsert(owner, e, keepCreated = true) {
-  await DB.prepare(`insert into match (owner, server, uid, nick, level, assist, friends, flimit, t, created, sec, sec_skin, resume) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11, ?12)
-    on conflict(owner) do update set nick = ?4, level = ?5, assist = ?6, friends = ?7, flimit = ?8, t = ?9, sec = ?10, sec_skin = ?11, resume = ?12${keepCreated ? "" : ", created = ?9"}`)
-    .bind(owner, e.server, e.uid, e.nick, e.level, JSON.stringify(e.assist), e.friends, e.flimit, e.t, e.sec ?? null, e.secSkin ?? null, e.resume ?? null).run();
+  await DB.prepare(`insert into match (owner, server, uid, nick, level, assist, friends, flimit, t, created, sec, sec_skin, resume, register) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11, ?12, ?13)
+    on conflict(owner) do update set nick = ?4, level = ?5, assist = ?6, friends = ?7, flimit = ?8, t = ?9, sec = ?10, sec_skin = ?11, resume = ?12, register = ?13${keepCreated ? "" : ", created = ?9"}`)
+    .bind(owner, e.server, e.uid, e.nick, e.level, JSON.stringify(e.assist), e.friends, e.flimit, e.t, e.sec ?? null, e.secSkin ?? null, e.resume ?? null, e.register ?? null).run();
   await noteWrite("put", 1);
 }
 /** 동기화 때 — 등록 중인 계정이면 줄을 새 정보로 (등록 안 했으면 아무것도 안 쓴다: update 는 0줄) */
 async function matchRefresh(e) {
   if (!DB || !e?.uid) return;
   const owner = `p:${e.server}:${e.uid}`;
-  const r = await DB.prepare("update match set nick = ?2, level = ?3, assist = ?4, friends = ?5, flimit = ?6, t = ?7, sec = ?8, sec_skin = ?9, resume = ?10 where owner = ?1")
-    .bind(owner, e.nick, e.level, JSON.stringify(e.assist), e.friends, e.flimit, e.t, e.sec ?? null, e.secSkin ?? null, e.resume ?? null).run().catch(() => null);
+  const r = await DB.prepare("update match set nick = ?2, level = ?3, assist = ?4, friends = ?5, flimit = ?6, t = ?7, sec = ?8, sec_skin = ?9, resume = ?10, register = ?11 where owner = ?1")
+    .bind(owner, e.nick, e.level, JSON.stringify(e.assist), e.friends, e.flimit, e.t, e.sec ?? null, e.secSkin ?? null, e.resume ?? null, e.register ?? null).run().catch(() => null);
   if (r?.meta?.changes) await noteWrite("put", r.meta.changes);
 }
 async function matchPut(token, signed) {
@@ -1020,7 +1023,7 @@ async function matchMine(token) {
   return { ok: true, registered: !!row, t: row?.t ?? null, created: row?.created ?? null };
 }
 const matchRow = (r) => ({ server: r.server, uid: r.uid, nick: r.nick, level: r.level, assist: JSON.parse(r.assist || "[]"),
-  friends: r.friends, flimit: r.flimit, t: r.t, created: r.created, sec: r.sec ?? null, secSkin: r.sec_skin ?? null, resume: r.resume ?? "" });
+  friends: r.friends, flimit: r.flimit, t: r.t, created: r.created, sec: r.sec ?? null, secSkin: r.sec_skin ?? null, resume: r.resume ?? "", register: r.register ?? null });
 async function matchList(server, all = false) {
   if (!DB) throw new HttpError(503, "pref-store");
   await matchSweep();

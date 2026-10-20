@@ -66,7 +66,11 @@ export type AccountAssist = {
 
 export type AccountFriend = {
   nickName: string; nickNumber: string; level: number; avatar: string | null;
+  /** 친구 UID — 2026-10-20~ 워커 (그 전 동기화엔 없다) */
+  uid?: string | null;
   secretary: string | null; secretarySkin: string | null; lastOnline: number; resume: string;
+  /** 입사일 (초) — 게임이 친구 정보에 줄 때만 (2026-10-20~ 워커) */
+  register?: number | null;
   charCnt: number; progress: string | null; assist: AccountAssist[];
 };
 
@@ -152,7 +156,9 @@ export type MatchSigned = { body: string; sig: string };
 export type MatchAssist = { id: string; elite: number; level: number; potential: number; skill: number; skillIndex: number; mastery: number; equip: string | null; equipLevel: number };
 export type MatchRow = { server: string; uid: string; nick: string; level: number; assist: MatchAssist[]; friends: number | null; flimit: number | null; t: number; created: number;
   /** 부관·스킨 — 목록 카드 배경 (2026-10-20~, 그 전 등록분엔 없다) */
-  sec?: string | null; secSkin?: string | null; resume?: string };
+  sec?: string | null; secSkin?: string | null; resume?: string;
+  /** 입사일 (초) — 2026-10-20~ */
+  register?: number | null };
 /** 등록 — 내 정보의 설정용 표(prefToken)로 본인 확인, 동기화 때 받은 서명된 정보를 그대로 */
 export async function matchRegister(prefToken: string, match: MatchSigned): Promise<void> {
   await post("/match/put", { token: prefToken, match });
