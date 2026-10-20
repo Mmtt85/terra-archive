@@ -1383,6 +1383,7 @@ const D: Record<string, Pair> = {
   "기반시설 피로도": ["Base morale", "基地の体力"],
   "친구 매칭": ["Friend matching", "フレンドマッチング"],
   "친구 찾기": ["Find friends", "フレンド探し"],
+  "닉네임#번호 복사": ["Copy nickname#number", "ニックネーム#番号をコピー"],
   "닉네임 · 번호": ["Nickname · number", "ニックネーム · 番号"],
   "친구 검색": ["Search friends", "フレンド検索"],
   "새로고침하는 중…": ["Refreshing…", "更新中…"],

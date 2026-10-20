@@ -31575,6 +31575,12 @@ html.dark .mm-art { opacity: .25; }
 .mm-who { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .mm-who > span { font-size: 11px; color: var(--muted); }
 .mm-who > .mm-reg-day { font-size: 10px; }
+/* 닉네임#번호 — 눌러서 복사 (2026-10-21) */
+.mm-nick { display: inline-flex; align-items: baseline; gap: 1px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.mm-nick:disabled { cursor: default; }
+.mm-nick > i { margin-left: 5px; font-style: normal; font-size: 11px; font-weight: 400; color: var(--muted); }
+.mm-nick:hover > i { color: var(--ink); }
+.mm-servers { align-self: flex-end; margin-bottom: 4px; }   /* 운영자 전용 서버 고르기 (2026-10-21) */
 .mm-uid-row { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px; }
 /* 박사 레벨 — 한눈에 보이게 크게 (사용자 지시 2026-10-21) */
 .mm-lv { margin-left: 8px; font-size: 14px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }

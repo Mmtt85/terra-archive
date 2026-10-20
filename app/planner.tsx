@@ -1467,7 +1467,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const drainClock = useMemo(() => {
     if (!plan) return null;
     const present = presentIdsFor(plan, activeShift);
-    const amb = aurasOf(teamFor("CONTROL", activeShift), ctxFor("CONTROL", pointsFor(activeShift), plan.factionCounts[activeShift], plantsFor(plan, activeShift, effectiveOpById), present));
+    const rOf = roomOfFor(plan, activeShift), cOf = cellOfFor(plan, activeShift);   // 배치 지도 — 시설 수 스킬을 실제 수로 (제보 4f3a8eee)
+    const amb = aurasOf(teamFor("CONTROL", activeShift), ctxFor("CONTROL", pointsFor(activeShift), plan.factionCounts[activeShift], plantsFor(plan, activeShift, effectiveOpById), present, undefined, rOf, cOf));
     const rooms = new Map<string, number>();
     let worst = 0;
     let worstKey: string | null = null;
@@ -1477,7 +1478,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       if (PARK_KEYS.includes(cell.key) || cell.key === "TRAINING" || cell.key.startsWith("DORM") || cell.room === "RECYCLE") continue;
       const team = teamFor(cell.key, activeShift);
       if (!team.length) continue;
-      const ctx = { ...ctxFor(cell.key, pointsFor(activeShift), plan.factionCounts[activeShift], plantsFor(plan, activeShift, effectiveOpById), present, amb), shift: activeShift };
+      const ctx = { ...ctxFor(cell.key, pointsFor(activeShift), plan.factionCounts[activeShift], plantsFor(plan, activeShift, effectiveOpById), present, amb, rOf, cOf), shift: activeShift };
       const net = roomMaxNetDrain(team, cell.room, ctx);
       if (net == null) continue;
       rooms.set(cell.key, net);
@@ -2243,11 +2244,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           }
           const team = teamFor(cell.key, activeShift);
           const spec = infra.rooms[cell.room];
-          const cellCtx = { ...ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan ? plantsFor(plan, activeShift, effectiveOpById) : undefined, presentIds, ambient, roomOf), shiftHours: plan?.shiftHours?.[activeShift] };
+          const cellCtx = { ...ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan ? plantsFor(plan, activeShift, effectiveOpById) : undefined, presentIds, ambient, roomOf, cellOf), shiftHours: plan?.shiftHours?.[activeShift] };
+          // ⚠ cellOf(배치 지도)를 꼭 넘긴다 — 없으면 '정예 오퍼가 앉은 시설 1개당 +4%'(켈시 에스페란타) 같은 시설 수 스킬을 상한으로 낙관해
+          //   카드만 +50% 로 보였다(상세 창은 +30%). 제보 4f3a8eee (2026-10-21)
           const score = Math.round(teamScore(team, cell.room, cellCtx));
           // 제어센터 오라 수신분 — 카드 총점이 "오퍼 스킬 합과 달라 보이는" 이유를 명시
           // (플레임테일 B조: 작전기록 +30 / 순금 -30 등. 사용자 지적 2026-07-19)
-          const ambientPart = score - Math.round(teamScore(team, cell.room, { ...ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan ? plantsFor(plan, activeShift, effectiveOpById) : undefined, presentIds, undefined, roomOf), shiftHours: plan?.shiftHours?.[activeShift] }));
+          const ambientPart = score - Math.round(teamScore(team, cell.room, { ...ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan ? plantsFor(plan, activeShift, effectiveOpById) : undefined, presentIds, undefined, roomOf, cellOf), shiftHours: plan?.shiftHours?.[activeShift] }));
           // 임시 적용 중이면 원래(스냅샷·커밋 정예화) 효율 대비 변화를 방 카드에 인플레이스 표시
           const cellDiff = diffAt(cell.key, activeShift);
           const raiseBefore = tempApplied.size > 0 && tempBasePlan && cell.room !== "CONTROL" && !PARK_KEYS.includes(cell.key)
@@ -3525,7 +3528,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                             <small key={sub.id} className={`sub-chip${onUpdateTeam ? " swappable" : ""}`}
                               title={`${t("클릭하면 {name} 자리에 교체", { name: op.name })}\n${sub.skills.filter((skill) => skill.room === cell.room).map((skill) => `${skill.name}: ${skill.description}`).join("\n")}`}
                               onClick={() => onUpdateTeam && setIds(rawIds.map((id) => (id === op.id ? sub.id : id)))}>
-                              <img src={sub.image} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(sub.id); }} />{sub.name} <em>{score >= currentScore ? t("동급") : `-${currentScore - score}`}</em>
+                              <img src={sub.image} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(sub.id); }} />{sub.name} <em>{score === currentScore ? t("동급") : score > currentScore ? `+${score - currentScore}` : `-${currentScore - score}`}</em>
                             </small>
                           ))}
                         </div>

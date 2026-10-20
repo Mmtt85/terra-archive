@@ -12,6 +12,7 @@ import { useConfirm } from "./confirm";
 import { normSearch } from "./search";
 import { AttributeFilter } from "./attr-filter";
 import { eliteText, masteryText, mePrefToken, meToken, potText, saveMe, type MeData } from "./me-store";
+import { getBoardAdminKey } from "./feedback";
 import { AccountError, ACCOUNT_SERVERS, ACCOUNT_STEPS, syncAccount, type AccountFriend, type AccountStep, type MatchSigned, matchCancel, matchList, matchMine, matchRegister, matchSearchLog, type MatchAssist, type MatchRow } from "./account";
 import type { MeOp } from "./me";
 
@@ -102,6 +103,9 @@ function MatchRowView({ r, opById, now, mine, full, friend }: { r: MatchRow; opB
   const sec = r.sec && opById.has(r.sec) ? r.sec : null;
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
+  // 닉네임#번호 복사 — 게임 친구 검색은 닉네임#번호로도 된다 (사용자 지시 2026-10-21)
+  const [nickCopied, setNickCopied] = useState(false);
+  const copyNick = () => { void navigator.clipboard?.writeText(r.nick).then(() => { setNickCopied(true); setTimeout(() => setNickCopied(false), 1500); }); };
   const copy = () => { void navigator.clipboard?.writeText(r.uid).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }); };
   const [nick, num] = r.nick.split("#");
   return (
@@ -121,7 +125,8 @@ function MatchRowView({ r, opById, now, mine, full, friend }: { r: MatchRow; opB
           return parts.length || friend ? <span className="mm-reg-day">{parts.join(" · ")}{friend && <em className="mm-friend">{t("이미 친구")}</em>}</span> : null;
         })()}
         {/* 닉네임#번호 · 레벨(크게) (사용자 지시 2026-10-21) */}
-        <b>{nick || "Dr."}{num && <small>#{num}</small>}<span className="mm-lv">Lv.{r.level}</span></b>
+        <b><button type="button" className="mm-nick" onClick={copyNick} title={t("닉네임#번호 복사")} disabled={!r.nick}>
+          {nick || "Dr."}{num && <small>#{num}</small>}{r.nick && <i aria-hidden>{nickCopied ? "✓" : "⧉"}</i>}</button><span className="mm-lv">Lv.{r.level}</span></b>
         {/* UID · 동기화 1주일 넘음 배지 (사용자 지시 2026-10-21 — 배지는 UID 오른쪽, '친구 꽉 참'은 친구 수 125/125 로 보여 뺐다) */}
         <span className="mm-uid-row">
           {r.uid && <button type="button" className="me-pf-uid" onClick={copy} title={t("UID 복사")}>
@@ -186,16 +191,19 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
   const [sel, setSel] = useState<Record<Cond, string[]>>({ rar: [], job: [], elite: [], pot: [], mastery: [], module: [] });
   const pick = (k: Cond) => (v: string) => setSel((c) => ({ ...c, [k]: c[k].includes(v) ? c[k].filter((x) => x !== v) : [...c[k], v] }));
   const [now] = useState(() => Date.now());
-  const server = ACCOUNT_SERVERS.find((s) => s.code === me.server)?.label ?? me.server;
+  // 운영자(관리자 키가 있는 브라우저)만 — 한·일·글 서버 목록을 골라 본다 (사용자 지시 2026-10-21). 다른 사람은 늘 내 서버
+  const [admin] = useState(() => !!getBoardAdminKey());
+  const [view, setView] = useState<string>(me.server);
+  const server = ACCOUNT_SERVERS.find((s) => s.code === view)?.label ?? view;
 
-  const load = () => { matchList(me.server).then(setRows).catch(() => setRows([])); };
+  const load = () => { matchList(view).then(setRows).catch(() => setRows([])); };
   // 새로고침 단추 — 받는 동안 돌고, 빨리 끝나도 적어도 한 바퀴(0.7초)는 채운다. 바퀴 중간에 멈추지 않게 0.7초 단위로 맞춘다 (사용자 지시 2026-10-20)
   const [spin, setSpin] = useState(false);
   const refresh = () => {
     if (spin) return;
     setSpin(true);
     const t0 = Date.now();
-    matchList(me.server).then(setRows).catch(() => null).finally(() => {
+    matchList(view).then(setRows).catch(() => null).finally(() => {
       const el = Date.now() - t0;
       setTimeout(() => setSpin(false), Math.max(1, Math.ceil(el / 700)) * 700 - el);
     });
@@ -204,7 +212,7 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
     load();
     if (token) matchMine(token).then((r) => setRegistered(r.registered)).catch(() => setRegistered(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me.server, token]);
+  }, [view, token]);
 
   // 작업이 끝나면(창을 닫았다 다시 열었어도) 등록 상태·목록을 다시 받는다
   const doneN = cur && !cur.running ? cur.n : 0;
@@ -311,6 +319,15 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
             {/* 검색란은 모듈 버튼 오른쪽 (사용자 지시 2026-10-20) */}
             <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("오퍼 · 닉네임 · UID")} aria-label={t("검색")} />
             {/* 0명이면 아래 '없습니다' 안내 하나만 (사용자 지적 2026-10-20 — 두 줄이 같은 말을 했다) */}
+          {admin && (
+            <div className="me-seg mm-servers" role="group" aria-label={t("서버")}>
+              {(["kr", "jp", "en"] as const).map((c) => (
+                <button key={c} type="button" className={view === c ? "selected" : ""} onClick={() => { setRows(null); setView(c); }}>
+                  {t(ACCOUNT_SERVERS.find((x) => x.code === c)?.label ?? c)}
+                </button>
+              ))}
+            </div>
+          )}
           {(rows == null || others.length > 0) && <p className="mm-sub mm-count">{rows == null ? t("불러오는 중…") : t("{server} · 등록한 박사 {n}명", { server: t(server), n: others.length })}
             {/* 목록 다시 받기 (사용자 지시 2026-10-20) */}
             {rows != null && <button type="button" className={`mm-refresh${spin ? " spin" : ""}`} onClick={refresh} aria-busy={spin}

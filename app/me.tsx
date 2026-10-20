@@ -167,9 +167,15 @@ function hash(str: string): number {
 }
 const SAMPLE_UID = "00000000";   // 예시 계정 표식 — 통합전략 상세가 이걸 보고 분대·소장품을 지어낸다
 const SAMPLE_TS = 1790000000; // 고정 시각 (초) — 예시 화면의 날짜가 렌더마다 흔들리지 않게
-const sampleCache = new WeakMap<MeOp[], MeData>();
-function sampleMe(operators: MeOp[]): MeData {
-  const hit = sampleCache.get(operators);
+const sampleCache = new WeakMap<MeOp[], Map<string, MeData>>();   // 오퍼 목록 × 언어(상태 문구가 언어마다 다르다)
+// 예시 계정의 상태 문구 — 언어마다 (사용자 지시 2026-10-21). [박사 본인, 친구들…]
+const SAMPLE_RESUME: Record<string, { me: string; friends: string[] }> = {
+  ko: { me: "로도스 아일랜드 소속 박사입니다", friends: ["매일 접속합니다", "지원 자유롭게 쓰세요", "위기협약 18등급", "통합전략 하는 중", "친구 삭제 안 해요", "", "뉴비 환영합니다", ""] },
+  en: { me: "A Doctor of Rhodes Island", friends: ["Online every day", "Feel free to use my supports", "Contingency Contract risk 18", "Grinding Integrated Strategies", "I never remove friends", "", "New players welcome", ""] },
+  ja: { me: "ロドス・アイランド所属のドクターです", friends: ["毎日ログインしています", "サポートご自由にどうぞ", "危機契約 等級18", "統合戦略プレイ中", "フレンド削除しません", "", "初心者歓迎です", ""] },
+};
+function sampleMe(operators: MeOp[], locale = "ko"): MeData {
+  const hit = sampleCache.get(operators)?.get(locale);
   if (hit) return hit;
   const CAPS: Record<number, number[]> = { 1: [30], 2: [30], 3: [40, 55], 4: [45, 60, 70], 5: [50, 70, 80], 6: [50, 80, 90] };
   const chars: AccountChar[] = [];
@@ -200,7 +206,7 @@ function sampleMe(operators: MeOp[]): MeData {
     return { id: c.id, elite: c.elite, level: c.level, potential: c.potential, skin: null, skillIndex: c.skillIndex ?? 0, mastery: c.mastery, skill: c.skill, equip: eq?.[0] ?? null, equipLevel: eq?.[1] ?? 0 }; };
   // 시각이 흐르는 칸(이성·드론·기반시설 피로도·월정액·동기화)은 '방금 동기화한' 계정처럼 지금 기준으로 — 고정 시각이면 늘 '가득 참'·'바닥'만 보인다
   const NOW = Math.floor(Date.now() / 1000) - 1800;
-  const RESUMES = ["매일 접속합니다", "지원 자유롭게 쓰세요", "위기협약 18등급", "통합전략 하는 중", "친구 삭제 안 해요", "", "뉴비 환영합니다", ""];
+  const RESUMES = (SAMPLE_RESUME[locale] ?? SAMPLE_RESUME.ko).friends;
   // 기반시설 배치 — 방마다 일하는 오퍼와 컨디션(시간당 소모 1, 숙소는 회복)
   const ROOMS: [string, number, number][] = [["CONTROL", 5, 5], ["MANUFACTURE", 3, 3], ["MANUFACTURE", 3, 3], ["MANUFACTURE", 3, 3], ["TRADING", 3, 3], ["TRADING", 3, 3],
     ["POWER", 3, 1], ["POWER", 3, 1], ["POWER", 3, 1], ["DORMITORY", 5, 5], ["DORMITORY", 5, 5], ["DORMITORY", 5, 5], ["DORMITORY", 5, 5], ["MEETING", 3, 2], ["HIRE", 3, 1], ["WORKSHOP", 3, 1], ["TRAINING", 3, 1]];
@@ -211,7 +217,7 @@ function sampleMe(operators: MeOp[]): MeData {
     chars,
     profile: {
       status: { level: 120, exp: 0, ap: 98, maxAp: 135, apTs: NOW, register: SAMPLE_TS - 86400 * 1100, lastOnline: SAMPLE_TS,
-        progress: "main_15-08", secretary: "char_002_amiya", secretarySkin: null, avatar: null, resume: "로도스 아일랜드 소속 박사입니다", friendLimit: 125, monthlyEnd: NOW + 86400 * 21 },
+        progress: "main_15-08", secretary: "char_002_amiya", secretarySkin: null, avatar: null, resume: (SAMPLE_RESUME[locale] ?? SAMPLE_RESUME.ko).me, friendLimit: 125, monthlyEnd: NOW + 86400 * 21 },
       creditSpent: 2_480_300,
       // 창고·작전 기록은 데이터가 도착한 뒤 Dashboard 가 채운다 (sampleFill)
       inventory: { 4002: 35, 4003: 28150, 7003: 42, 7004: 3, 4001: 3820000, 7001: 512, 7002: 220, 4004: 118, 4005: 3200, SOCIAL_PT: 290, classic_normal_ticket: 12 },
@@ -259,7 +265,8 @@ function sampleMe(operators: MeOp[]): MeData {
       })),
     },
   };
-  sampleCache.set(operators, data);
+  if (!sampleCache.has(operators)) sampleCache.set(operators, new Map());
+  sampleCache.get(operators)!.set(locale, data);
   return data;
 }
 
@@ -280,7 +287,7 @@ function sampleFill(me: MeData, items: ItemDoc | null, stages: StageDoc | null):
 }
 
 export default function MyInfo({ operators, extra, onShowOperator }: Props) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
   const me = useMe();
   const [login, setLogin] = useState(false);
@@ -333,7 +340,7 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
           <div className="me-sample">
             <p className="me-sample-bar"><b>{t("예시 화면")}</b>{t("아래는 가상의 계정으로 채운 예시입니다 — 로그인하면 내 계정의 실제 데이터로 이렇게 정리됩니다.")}</p>
             {/* 로그인 화면과 똑같이 — 내보내기·친구 찾기도 예시 계정으로 열린다 (사용자 지시 2026-10-20 "데이터만 더미로") */}
-            <Dashboard me={sampleMe(operators)} demo operators={operators} extra={extra} onShowOperator={onShowOperator}
+            <Dashboard me={sampleMe(operators, locale)} demo operators={operators} extra={extra} onShowOperator={onShowOperator}
               share={share} onShareOpen={() => setShare(true)} onShareClose={() => setShare(false)} match={match} onMatchClose={() => setMatch(false)} />
           </div>
         )}

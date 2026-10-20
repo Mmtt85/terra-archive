@@ -200,6 +200,7 @@ const HASH_KIND_KO: Record<string, string> = {
   release: "출시순", chronicle: "연대기", story: "스토리", sprite: "스탠딩", illust: "일러스트", op: "오퍼 상세",
   en: "적 상세", st: "작전 상세", it: "아이템 상세", item: "아이템", ev: "이벤트 상세", ra: "탭", bond: "맹약", band: "전략",
   misc: "게임 정보", prts: "PRTS 연결 도움말", replay: "리플레이", lore: "이벤트 기록", top: "맨 위",
+  friends: "친구 매칭",   // 내 정보 친구 매칭 창 (/me#friends, 2026-10-21 — 종전엔 '#friends' 날것으로 나와 못 알아봤다)
 };
 const STORY_VIEW_KO: Record<string, string> = { summary: "AI 요약", scene: "리더기", script: "전문", lore: "이벤트 기록" };
 function hashLabel(head: string, hash: string): string {

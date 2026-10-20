@@ -3655,14 +3655,16 @@ export function polishPlan(plan: Plan, roster: InfraOp[], pinnedDorms: Record<st
     const room = cellByKey.get(k)?.room;
     return [k, new Set(roster.filter((op) => op.skills.some((sk) => sk.room === room)).map((op) => op.id))];
   }));
-  for (let sweep = 0; sweep < maxSweeps; sweep += 1) {
+  // 시도 횟수가 다 차도 마지막 '효율 높은 팀 A조로'(tidy)는 돈다 — 종전엔 그 자리에서 결과를 돌려줘 tidy 를 건너뛰었다
+  // (역검증 2026-10-21: 사무실 A +38% · B +60% 를 맞바꿔도 총점 0.0 인데 그대로였다)
+  sweeps: for (let sweep = 0; sweep < maxSweeps; sweep += 1) {
     let improved = false;
     for (let sh = 0; sh < SHIFT_COUNT; sh += 1) {
       for (const k of keys) {
         const team = cur[k]?.[sh];
         if (!team) continue;
         for (let i = 0; i < team.length; i += 1) {
-          if (evals > maxEvals || Date.now() - t0 > budgetMs) return best > start + 0.5 ? finalize(cur) : plan;
+          if (evals > maxEvals || Date.now() - t0 > budgetMs) break sweeps;
           const x = cur[k][sh][i];
           if (pinned.has(x)) continue;
           const where = new Map<string, { k: string; s: number; j: number }>();
@@ -3682,6 +3684,24 @@ export function polishPlan(plan: Plan, roster: InfraOp[], pinnedDorms: Record<st
           if (move) { cur = move.next; best = move.v; improved = true; }
         }
       }
+    }
+    // 같은 방 A조 한 명 ↔ B조 한 명 맞바꾸기 — 위 한 명씩 교체는 '같은 방·다른 조'를 건너뛰어 닿지 않았다.
+    // 제보 a8507f71: 제어센터 A조 시빌라이트 에테르나 ↔ B조 리 를 바꾸면 총점이 오르는데(+4.1) 엔진이 그대로 두었다 (2026-10-21).
+    // 고정된 사람은 움직이지 않는다
+    for (const k of keys) {
+      const t = cur[k];
+      if (!t || t.length < 2 || !t[0].length || !t[1].length) continue;
+      let move: { v: number; next: Record<string, string[][]> } | null = null;
+      for (let i = 0; i < t[0].length; i += 1) for (let j = 0; j < t[1].length; j += 1) {
+        const a = t[0][i], b = t[1][j];
+        if (pinned.has(a) || pinned.has(b) || a === b) continue;   // 고정(조 지정 포함)은 pinned 에 다 들어 있다
+        if (evals > maxEvals || Date.now() - t0 > budgetMs) break;
+        evals += 1;
+        const next = { ...cur, [k]: [t[0].map((id, x) => (x === i ? b : id)), t[1].map((id, x) => (x === j ? a : id)), ...t.slice(2)] };
+        const v = planScore(rebuilt(next), byId);
+        if (v > best + 0.5 && (!move || v > move.v)) move = { v, next };
+      }
+      if (move) { cur = move.next; best = move.v; improved = true; }
     }
     // 방의 A조 팀 ↔ B조 팀 통째로 맞바꾸기 — 한 명씩 교체로는 닿지 않는다(두 조를 한꺼번에 바꿔야 한다). 역검증 상식 검사에서
     // 'A조가 B조보다 크게 낮은 방' 148곳 중 32곳이 맞바꾸기만으로 총점이 올랐다(2026-10-20). 조별 고정이 걸린 방은 건너뛴다
