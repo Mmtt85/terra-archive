@@ -143,7 +143,39 @@ export type AccountProfile = {
 
 export type AccountRoster = { player: AccountPlayer; chars: AccountChar[]; token: AccountToken; profile?: AccountProfile;
   /** 사이트 설정 동기화용 표 — 워커가 [서버, UID] 를 서명한 것 (app/cloud-prefs.ts, 2026-10-14~). 옛 워커면 없다 */
-  prefToken?: string | null };
+  prefToken?: string | null;
+  /** 친구 매칭 등록용 — 워커가 만든 내 매칭 정보(지원 오퍼·친구 수·닉네임)를 서명한 것 (2026-10-20~). 등록할 때 그대로 돌려준다 */
+  match?: MatchSigned | null };
+
+// ── 친구 매칭 (2026-10-20) — 워커 /match/* ─────────────────────────────
+export type MatchSigned = { body: string; sig: string };
+export type MatchAssist = { id: string; elite: number; level: number; potential: number; skill: number; skillIndex: number; mastery: number; equip: string | null; equipLevel: number };
+export type MatchRow = { server: string; uid: string; nick: string; level: number; assist: MatchAssist[]; friends: number | null; flimit: number | null; t: number; created: number;
+  /** 부관·스킨 — 목록 카드 배경 (2026-10-20~, 그 전 등록분엔 없다) */
+  sec?: string | null; secSkin?: string | null; resume?: string };
+/** 등록 — 내 정보의 설정용 표(prefToken)로 본인 확인, 동기화 때 받은 서명된 정보를 그대로 */
+export async function matchRegister(prefToken: string, match: MatchSigned): Promise<void> {
+  await post("/match/put", { token: prefToken, match });
+}
+/** 취소 — 줄째(닉네임 포함) 즉시 삭제 */
+export async function matchCancel(prefToken: string): Promise<void> {
+  await post("/match/delete", { token: prefToken });
+}
+export async function matchMine(prefToken: string): Promise<{ registered: boolean; t: number | null; created: number | null }> {
+  const r = await post("/match/mine", { token: prefToken });
+  return { registered: !!r.registered, t: (r.t as number) ?? null, created: (r.created as number) ?? null };
+}
+/** 관리 사이트 '많이 찾은 오퍼' 집계용 — 목록에서 오퍼로 거른 것만 (누가 찾았는지는 안 보낸다) */
+export function matchSearchLog(server: string, ops: string[]): void {
+  void post("/match/search", { server, ops }).catch(() => null);
+}
+/** 공개 목록 — 그 서버에 등록한 사람(2주 안에 동기화·친구 자리 남음), 최근 동기화 순 */
+export async function matchList(server: string): Promise<MatchRow[]> {
+  const res = await fetch(`${apiBase()}/match/list?server=${encodeURIComponent(server)}`, { cache: "no-store" });
+  const j = await res.json().catch(() => null) as { ok?: boolean; rows?: MatchRow[]; error?: string } | null;
+  if (!res.ok || !j?.ok) throw new AccountError(j?.error ?? "network");
+  return j.rows ?? [];
+}
 
 /** 관리자 키 — 설정용 표의 UID 가 관리자면 계정 워커가 내준다 (워커 /admin/key, 2026-10-14). 아니면 AccountError("not-admin") */
 export async function adminKeyGet(token: string): Promise<string> {

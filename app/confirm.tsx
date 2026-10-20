@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "./i18n";
 
@@ -16,6 +16,7 @@ export type ConfirmOptions = {
   danger?: boolean; // 되돌릴 수 없는 파괴적 동작이면 확인 버튼을 경고색으로
   altLabel?: string; // 취소·확인 사이의 세 번째 버튼 — 누르면 confirm() 이 "alt" 를 돌려준다
   alert?: boolean; // 알림만 — 취소 버튼 없이 확인 하나 (게임 점검 안내, 2026-10-14)
+  extra?: ReactNode; // 문구 아래 덧붙이는 그림·미리보기 (친구 찾기 '등록하면 이렇게 보입니다' 카드, 2026-10-20)
 };
 
 function ConfirmDialog({
@@ -26,6 +27,7 @@ function ConfirmDialog({
   danger,
   altLabel,
   alert,
+  extra,
   onConfirm,
   onCancel,
   onAlt,
@@ -50,6 +52,7 @@ function ConfirmDialog({
       <section className="confirm-modal" role="alertdialog" aria-modal="true" aria-label={title ?? message}>
         {title && <h3 className="confirm-title">{title}</h3>}
         <p className="confirm-message">{message}</p>
+        {extra && <div className="confirm-extra">{extra}</div>}
         <div className="confirm-actions">
           {!alert && <button type="button" ref={cancelRef} className="confirm-cancel" onClick={onCancel}>{cancelLabel ?? t("취소")}</button>}
           {altLabel && <button type="button" className="confirm-cancel" onClick={onAlt}>{altLabel}</button>}

@@ -2416,14 +2416,14 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       <header ref={headerRef} id="top"
         className={`site-header${headerCls}${drag ? " dragging" : ""}`}
         style={drag ? { maxHeight: `${drag.h}px` } : undefined}>
+        {/* 업데이트 내역 — 헤더 로고 바로 왼쪽 (사용자 지시 2026-10-20 "헤더 안쪽에서 자리 차지 — 원래 왼쪽에 있던 게 오른쪽으로 가면 이상하니
+            로고 바로 왼쪽으로"). 종전엔 로고 바로 오른쪽(2026-07-27). 1줄 소속이라 헤더를 접어도 보인다 */}
+        <ChangelogButton />
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("portal"); scrollMainTop(); }}>
           <span className="brand-mark"><img src={asset("/avatars/char_1012_skadi2.webp")} alt="" width={180} height={180} /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) 팬사이트")}</small></span>
         </a>
-        {/* 업데이트 내역 — 로고 바로 오른쪽 1줄 소속: 헤더를 접어도 보인다
-            (사용자 요청 2026-07-27: "헤더를 열어보지 않으면 알 수가 없으니") */}
-        <ChangelogButton />
         {/* 진행중 이벤트 그룹 — 위수 협의(기간 한정 바로가기)와 지금 도는 이벤트 **전부**를 한 묶음으로
             (사용자 요청 2026-09-23 "진행중 이벤트 그룹을 만들어서 위수협의·사람들, 우리들·듀얼채널 세 개 다
             헤더에"). 종전엔 위수 협의 칩 + 대표 이벤트 칩 하나뿐이라 나머지는 확장부 목록에서만 보였다.

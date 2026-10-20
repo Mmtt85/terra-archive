@@ -896,6 +896,116 @@ async function adminKeyFor(token) {
   if (!ADMIN_KEY) throw new HttpError(503, "admin-key-missing");
   return { ok: true, key: ADMIN_KEY };
 }
+// ── 친구 매칭 (2026-10-20) ─────────────────────────────────────────────
+// 내 정보에서 '매칭 등록'을 켠 사람만 표 match 에 한 줄. 지원 오퍼(상세)·박사 레벨·친구 수/상한·닉네임#번호를 공개 목록에 싣는다.
+// 닉네임은 **등록한 사람만** 여기 저장하고, 등록을 끄면 줄째 즉시 지운다(사용자 결정). 다른 기록에는 닉네임을 두지 않는다.
+// 정보는 로그인·동기화 때 워커가 만든다(matchEntry) — 등록 중이면 그 자리에서 줄을 덮어써 지원 오퍼를 바꾸고 동기화만 해도 바로 반영
+// (사용자 지시 "매칭 걸어둔 상태에서 동기화해 내 정보가 바뀌면 목록도 자동으로"). 등록할 때는 동기화 응답에 실린 서명된 정보를
+// 그대로 돌려받아(위조 불가) 게임에 다시 접속하지 않는다. 2주 넘게 동기화가 없거나 친구 자리가 꽉 차면 목록에서 뺀다
+const MATCH_STALE_MS = 14 * 86400_000;
+function matchEntry(r, prof, server) {
+  const byId = new Map((r.chars ?? []).map((c) => [c.id, c]));
+  const assist = (prof.assist ?? []).map((a) => {
+    const c = byId.get(a.id);
+    if (!c) return null;
+    const si = a.skillIndex ?? 0;
+    return { id: a.id, elite: c.elite, level: c.level, potential: c.potential, skill: c.skill, skillIndex: si,
+      mastery: c.mastery?.[si] ?? 0, equip: a.equip ?? null, equipLevel: a.equip ? (c.modules?.[a.equip] ?? 0) : 0 };
+  }).filter(Boolean);
+  return {
+    server, uid: String(r.player?.uid ?? ""), nick: r.player?.nickName ? `${r.player.nickName}#${r.player.nickNumber ?? ""}` : "",
+    level: num(prof.status?.level), assist, friends: Array.isArray(prof.friends) ? prof.friends.length : null,
+    flimit: num(prof.status?.friendLimit) || null, t: Date.now(),
+    // 부관과 그 스킨 — 목록 카드 배경 그림 (사용자 지시 2026-10-20. 게임 명함·로비 배경은 사이트에 그림이 없어 부관으로)
+    sec: prof.status?.secretary ?? null, secSkin: prof.status?.secretarySkin ?? null,
+    // 상태 문구(게임 프로필 한 줄) — 목록 카드에 (사용자 지시 2026-10-20)
+    resume: String(prof.status?.resume ?? "").slice(0, 120),
+  };
+}
+async function matchSigned(entry) {
+  if (!SIGN_KEY) return null;
+  const body = b64url(new TextEncoder().encode(JSON.stringify(entry)));
+  return { body, sig: b64url(await hmac(`m.${body}`)) };
+}
+async function matchUpsert(owner, e, keepCreated = true) {
+  await DB.prepare(`insert into match (owner, server, uid, nick, level, assist, friends, flimit, t, created, sec, sec_skin, resume) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11, ?12)
+    on conflict(owner) do update set nick = ?4, level = ?5, assist = ?6, friends = ?7, flimit = ?8, t = ?9, sec = ?10, sec_skin = ?11, resume = ?12${keepCreated ? "" : ", created = ?9"}`)
+    .bind(owner, e.server, e.uid, e.nick, e.level, JSON.stringify(e.assist), e.friends, e.flimit, e.t, e.sec ?? null, e.secSkin ?? null, e.resume ?? null).run();
+  await noteWrite("put", 1);
+}
+/** 동기화 때 — 등록 중인 계정이면 줄을 새 정보로 (등록 안 했으면 아무것도 안 쓴다: update 는 0줄) */
+async function matchRefresh(e) {
+  if (!DB || !e?.uid) return;
+  const owner = `p:${e.server}:${e.uid}`;
+  const r = await DB.prepare("update match set nick = ?2, level = ?3, assist = ?4, friends = ?5, flimit = ?6, t = ?7, sec = ?8, sec_skin = ?9, resume = ?10 where owner = ?1")
+    .bind(owner, e.nick, e.level, JSON.stringify(e.assist), e.friends, e.flimit, e.t, e.sec ?? null, e.secSkin ?? null, e.resume ?? null).run().catch(() => null);
+  if (r?.meta?.changes) await noteWrite("put", r.meta.changes);
+}
+async function matchPut(token, signed) {
+  const owner = await prefOwner(token);
+  if (!owner) throw new HttpError(401, "pref-token");
+  if (!DB) throw new HttpError(503, "pref-store");
+  if (!signed || typeof signed.body !== "string" || typeof signed.sig !== "string" || signed.body.length > 8000) throw new HttpError(400, "bad-request");
+  if (b64url(await hmac(`m.${signed.body}`)) !== signed.sig) throw new HttpError(400, "bad-sig");
+  const e = JSON.parse(new TextDecoder().decode(unb64url(signed.body)));
+  if (`p:${e.server}:${e.uid}` !== owner) throw new HttpError(403, "not-owner");
+  // 너무 오래된 동기화 정보로는 등록하지 않는다 — 목록에 실리자마자 '2주 넘음'으로 빠진다. 다시 동기화하고 등록하게
+  if (!(Date.now() - (e.t ?? 0) < MATCH_STALE_MS)) throw new HttpError(409, "stale-sync");
+  const had = await DB.prepare("select 1 from match where owner = ?1").bind(owner).first();
+  await matchUpsert(owner, e, false);
+  if (!had) await matchLog("put", e.server);
+  return { ok: true };
+}
+/** 관리 사이트 추이용 기록 — 등록(put)·취소(delete)·검색(search, op = 찾은 오퍼 id). 누가 했는지는 남기지 않는다 */
+function matchLog(kind, server, op = null) {
+  return DB.prepare("insert into match_log (at, kind, server, op) values (?1, ?2, ?3, ?4)")
+    .bind(Date.now(), kind, String(server ?? "").slice(0, 8), op ? String(op).slice(0, 40) : null).run().catch(() => null);
+}
+async function matchSearch(server, ops) {
+  if (!DB) throw new HttpError(503, "pref-store");
+  if (!validServer(String(server ?? ""))) throw new HttpError(400, "bad-request");
+  const list = (Array.isArray(ops) ? ops : []).filter((o) => typeof o === "string" && /^char_\w{1,36}$/.test(o)).slice(0, 3);
+  for (const op of list) await matchLog("search", server, op);
+  return { ok: true };
+}
+/** 관리 — 등록 목록 + 하루별 등록·취소·검색 수 + 많이 찾은 오퍼 (최근 60일) */
+async function matchAdmin() {
+  const { rows } = await matchList("", true);
+  const since = Date.now() - 60 * 86400_000;
+  const { results: days } = await DB.prepare(`select date(at / 1000, 'unixepoch', '+9 hours') as day, kind, server, count(*) as n
+    from match_log where at > ?1 group by 1, 2, 3 order by 1`).bind(since).all();
+  const { results: ops } = await DB.prepare(`select op, server, count(*) as n from match_log where kind = 'search' and at > ?1 and op is not null
+    group by 1, 2 order by n desc limit 200`).bind(since).all();
+  return { ok: true, rows, days, ops };
+}
+async function matchDelete(token) {
+  const owner = await prefOwner(token);
+  if (!owner) throw new HttpError(401, "pref-token");
+  if (!DB) throw new HttpError(503, "pref-store");
+  const r = await DB.prepare("delete from match where owner = ?1").bind(owner).run();   // 닉네임까지 줄째 즉시 삭제
+  await noteWrite("delete", r.meta?.changes ?? 0);
+  if (r.meta?.changes) await matchLog("delete", owner.split(":")[1]);
+  return { ok: true };
+}
+async function matchMine(token) {
+  const owner = await prefOwner(token);
+  if (!owner) throw new HttpError(401, "pref-token");
+  if (!DB) throw new HttpError(503, "pref-store");
+  const row = await DB.prepare("select t, created from match where owner = ?1").bind(owner).first();
+  return { ok: true, registered: !!row, t: row?.t ?? null, created: row?.created ?? null };
+}
+const matchRow = (r) => ({ server: r.server, uid: r.uid, nick: r.nick, level: r.level, assist: JSON.parse(r.assist || "[]"),
+  friends: r.friends, flimit: r.flimit, t: r.t, created: r.created, sec: r.sec ?? null, secSkin: r.sec_skin ?? null, resume: r.resume ?? "" });
+async function matchList(server, all = false) {
+  if (!DB) throw new HttpError(503, "pref-store");
+  const since = Date.now() - MATCH_STALE_MS;
+  const sql = all ? "select * from match order by t desc limit 2000"
+    // 친구 꽉 찬 줄도 싣는다 — 사이트가 흐리게 맨 뒤로 보낸다 (사용자 지시 2026-10-20, 종전엔 여기서 뺐다)
+    : "select * from match where server = ?1 and t > ?2 order by t desc limit 500";
+  const { results } = all ? await DB.prepare(sql).all() : await DB.prepare(sql).bind(server, since).all();
+  return { ok: true, rows: results.map(matchRow) };
+}
+
 // 하루(UTC) 쓰기 기록 — 관리 화면 방문 통계 '설정 저장소 쓰기' (2026-10-15). D1 무료는 하루 쓴 줄 10만이라 줄 수(rows)를 센다
 const D1_DAILY_ROWS = 100_000;
 function noteWrite(kind, rows) {
@@ -1077,7 +1187,9 @@ async function handleLogin({ email, code, server, phone, password, username, hgT
   step("digest");
   const r = roster(fetched.user), prof = profile(fetched.user, fetched.friends, fetched.shop);
   prof.seal = raw ? null : await sealOf(r, prof, server);
-  return withRaw({ ok: true, ...r, profile: prof, token: { uid: cred.uid, token: cred.token, deviceId }, prefToken: raw ? null : await prefTokenOf(server, r.player?.uid) }, fetched, raw);
+  const me = matchEntry(r, prof, server);
+  if (!raw) await matchRefresh(me);
+  return withRaw({ ok: true, ...r, profile: prof, token: { uid: cred.uid, token: cred.token, deviceId }, prefToken: raw ? null : await prefTokenOf(server, r.player?.uid), match: raw ? null : await matchSigned(me) }, fetched, raw);
 }
 
 // 저장된 토큰으로 재동기화 (이메일 코드 불필요)
@@ -1088,7 +1200,9 @@ async function handleSync({ token, server, raw }, step = noStep) {
   step("digest");
   const r = roster(fetched.user), prof = profile(fetched.user, fetched.friends, fetched.shop);
   prof.seal = raw ? null : await sealOf(r, prof, server);
-  return withRaw({ ok: true, ...r, profile: prof, token, prefToken: raw ? null : await prefTokenOf(server, r.player?.uid) }, fetched, raw);
+  const me = matchEntry(r, prof, server);
+  if (!raw) await matchRefresh(me);   // 매칭 등록 중이면 목록 줄을 방금 받은 정보로 (지원 오퍼를 바꾸고 동기화만 해도 반영)
+  return withRaw({ ok: true, ...r, profile: prof, token, prefToken: raw ? null : await prefTokenOf(server, r.player?.uid), match: raw ? null : await matchSigned(me) }, fetched, raw);
 }
 
 // 크레딧 상점 — 게임에서 상점을 열 때 받는 정보. '오퍼레이터 언락'의 누적 소비 크레딧이 syncData 에는 없어서
@@ -1145,6 +1259,13 @@ export default {
         return json({ ok: false, error: String(error?.code ?? error?.message ?? error) }, origin, 502);
       }
     }
+    // 친구 매칭 공개 목록 — GET /match/list?server=kr (누구나 읽는다, 등록한 사람만 실린다)
+    if (url.pathname === "/match/list" && request.method === "GET") {
+      const server = url.searchParams.get("server") ?? "kr";
+      if (!validServer(server)) return json({ ok: false, error: "bad-server" }, origin, 400);
+      try { return json(await matchList(server), origin); }
+      catch (error) { return json({ ok: false, error: error?.code ?? "internal" }, origin, error instanceof HttpError ? error.status : 500); }
+    }
     if (url.pathname === "/" && request.method === "GET") {
       return json({ ok: true, service: "terra-archive-account", servers: SERVERS }, origin);
     }
@@ -1163,6 +1284,8 @@ export default {
       if (!DB) return json({ ok: false, error: "pref-store" }, origin, 503);
       const q = await request.json().catch(() => null);
       // {usage: 14} — 하루(UTC)별 쓰기 기록, 방문 통계의 '설정 저장소 쓰기' (2026-10-15)
+      // {match: true} — 친구 매칭 등록 전체 (관리 사이트 '친구 찾기' 탭)
+      if (q?.match) return json(await matchAdmin(), origin);
       if (q?.usage) {
         const { results } = await DB.prepare("select day, puts, deletes, rows from usage order by day desc limit ?1").bind(Math.min(60, Number(q.usage) || 14)).all();
         return json({ ok: true, limit: D1_DAILY_ROWS, days: results }, origin);
@@ -1179,6 +1302,16 @@ export default {
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== "object") return json({ ok: false, error: "bad-body" }, origin, 400);
     // 사이트 설정 동기화 — 서버·UID 는 표 안에 있다 (서버 값을 따로 받지 않는다)
+    if (url.pathname === "/match/put" || url.pathname === "/match/delete" || url.pathname === "/match/mine" || url.pathname === "/match/search") {
+      try {
+        if (url.pathname === "/match/put") return json(await matchPut(body.token, body.match), origin);
+        if (url.pathname === "/match/delete") return json(await matchDelete(body.token), origin);
+        if (url.pathname === "/match/search") return json(await matchSearch(body.server, body.ops), origin);
+        return json(await matchMine(body.token), origin);
+      } catch (error) {
+        return json({ ok: false, error: error?.code ?? "internal" }, origin, error instanceof HttpError ? error.status : 500);
+      }
+    }
     if (url.pathname === "/prefs/get" || url.pathname === "/prefs/put" || url.pathname === "/prefs/delete" || url.pathname === "/admin/key") {
       try {
         if (url.pathname === "/admin/key") return json(await adminKeyFor(body.token), origin);

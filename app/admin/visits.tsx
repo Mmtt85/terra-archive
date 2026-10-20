@@ -18,6 +18,7 @@ import { DatePicker } from "../date-picker";
 import { ACCOUNT_SERVERS } from "../account";
 import { ModalWindow } from "../modal-window";
 import OmniPanel from "./omni";
+import MatchPanel from "./match";
 import operatorsData from "../data/operators.json";
 import storiesData from "../data/stories.json";
 
@@ -626,10 +627,11 @@ const TAB_KEYS: Record<string, string[]> = {
   prts: ["total", "prts"],
   etc: ["total", "src", "ref", "device", "site_lang", "tz", "out"],   // 요일·시간 칸은 뺐다 (사용자 지시 2026-10-20)
   search: [],
+  match: [],
 };
 const EMPTY_SUMMARY = { total: { sessions: 0, visitors: 0, views: 0, active_ms: 0, revisit: 0, bounce: 0, bots: 0 },
   days: [], src: [], ref: [], landing: [], pages: [], sections: [], hours: [], device: [], site_lang: [], tz: [], out: [], flow: [] } as unknown as Summary;
-const VTABS = [{ k: "overview", label: "개요" }, { k: "screens", label: "화면" }, { k: "prts", label: "PRTS" }, { k: "search", label: "검색" }, { k: "etc", label: "그 외" }] as const;
+const VTABS = [{ k: "overview", label: "개요" }, { k: "screens", label: "화면" }, { k: "prts", label: "PRTS" }, { k: "search", label: "검색" }, { k: "match", label: "친구 찾기" }, { k: "etc", label: "그 외" }] as const;
 type VTab = (typeof VTABS)[number]["k"];
 
 function TopPick({ value, onChange, onAll, what }: { value: number; onChange: (n: number) => void; onAll?: () => void; what: string }) {
@@ -1058,7 +1060,7 @@ export function VisitsPanel() {
   // 아직 안 받은 칸이 있을 때만 받는다. 새로고침·자동 갱신(tick)은 지금 탭만
   const loadedRef = useRef<{ sig: string; keys: Set<string>; tick: number }>({ sig: "", keys: new Set(), tick: -1 });
   useEffect(() => {
-    if (vtab === "search") return;   // 검색 탭은 자기 표를 따로 받는다 (app/admin/omni.tsx)
+    if (vtab === "search" || vtab === "match") return;   // 검색·친구 찾기 탭은 자기 표를 따로 받는다 (app/admin/omni.tsx·match.tsx)
     const keys = TAB_KEYS[vtab];
     const sig = JSON.stringify([days, range, slot, kinds]);
     const L = loadedRef.current;
@@ -1392,8 +1394,9 @@ export function VisitsPanel() {
         {VTABS.map((v) => <button key={v.k} type="button" role="tab" aria-selected={vtab === v.k} className={vtab === v.k ? "tab-btn selected" : "tab-btn"} onClick={() => pickVtab(v.k)}>{v.label}</button>)}
       </div>
       {vtab === "search" && <OmniPanel tick={tick} />}
+      {vtab === "match" && <MatchPanel tick={tick} />}
 
-      {vtab === "search" ? null : days === 365 && !range ? (
+      {vtab === "search" || vtab === "match" ? null : days === 365 && !range ? (
         vtab === "overview" && trend && (
           <>
             <h3 className="vz-h">일별 추이 (최근 1년 · 매일 밤 말아 둔 집계 — 오늘은 내일 반영)</h3>

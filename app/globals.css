@@ -28453,6 +28453,10 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 /* 제목 + 내보내기 버튼 (제목 바로 오른쪽) */
 .me-title-row { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
 .me-export-btn { margin-bottom: 3px; }
+/* 친구 찾기 — 제목 옆, 살짝 눈에 띄게 (사용자 지시 2026-10-20) — 라임은 선·글자 토큰으로만 */
+.me-friend-btn { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 3px; padding: 7px 14px; border: 1px solid var(--lime-line);
+  background: var(--btn-bg); color: var(--lime-ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.me-friend-btn:hover { background: var(--btn-bg-hover); border-color: var(--lime-line); }
 
 /* 한눈에 보기 — 맞춤 칸 (me-custom.tsx). 훈장 오른쪽 '+ 항목 추가' → 조건 편집 창 */
 .me-kpi-custom { position: relative; }
@@ -31510,6 +31514,72 @@ html.dark .me-pf-art { opacity: .3; }
 .me-pf-bar > i { display: block; height: 100%; background: var(--ink3); }
 .me-pf-stat.warn .me-pf-bar > i { background: #c0603c; }
 .me-pf-sync { margin: 10px 16px 14px; font-size: 11px; color: var(--muted); }
+/* 친구 찾기 (2026-10-20) — 제목 옆 버튼이 여는 창 (app/me-match.tsx) · 내보내기는 서버 뱃지 옆 */
+.me-pf-badges { align-self: flex-start; display: flex; align-items: center; gap: 6px; }
+.me-pf-export { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; font: inherit; font-size: 11px; color: var(--ink2);
+  background: color-mix(in srgb, var(--white) 80%, transparent); border: 1px solid var(--line); cursor: pointer; }
+.me-pf-export:hover { border-color: var(--btn-line-hover); color: var(--btn-ink-hover); }
+/* 창 높이 — 내용만큼 줄어들면 목록이 몇 줄 안 보여 화면 높이에 맞춰 길게 (사용자 지시 2026-10-20). 상한은 .operator-modal 과 같은 식 */
+.operator-modal.mm-modal { height: min(880px, 100svh - var(--modal-pad, 24px) * 2 - var(--modal-top)); }
+/* 카드 목록만 스크롤 — 등록·검색란·조건은 늘 위에 보인다 (사용자 지시 2026-10-20). 몸통을 창 높이에 묶고 목록에 남는 높이를 준다 */
+.mm-modal .mm-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 4px 2px; overflow: hidden; }
+.mm-modal .mm-me { flex: none; }
+.mm-modal .mm-find { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.mm-modal .mm-find > .mm-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; padding-right: 4px; }
+/* 줄 높이는 카드 내용만큼 — 카드에 overflow:hidden(배경 그림 자르기)이 있어 격자가 줄을 0까지 줄일 수 있었고,
+   목록에 높이를 묶자 카드 21장이 창 높이에 눌려 레벨·UID·오퍼 이름이 잘렸다 (사용자 지적 2026-10-20) */
+.mm-list { grid-auto-rows: max-content; }
+.mm-reg { display: flex; align-items: center; gap: 16px; }   /* 설명·미리보기·버튼 윗변 맞춤 (사용자 지시 2026-10-20) */
+.mm-reg p { margin: 4px 0 0; font-size: 13px; color: var(--ink2); line-height: 1.5; }
+.mm-toggle { flex: none; padding: 6px 14px; border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.mm-toggle:hover:not(:disabled) { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); color: var(--btn-ink-hover); }
+.mm-toggle.on { background: var(--btn-on-bg); border-color: var(--btn-on-line); color: var(--btn-on-ink); }
+.mm-toggle:disabled { opacity: .5; cursor: default; }
+.mm-sub { margin: 6px 0 0; font-size: 11px; color: var(--muted); }
+.mm-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 14px; }   /* 검색란·조건 버튼 밑변 맞춤 (사용자 지시 2026-10-20) */
+.mm-filters .attr-filter { margin: 0; }
+.mm-filters .attr-cat.drop-btn, .mm-filters input[type="search"] { box-sizing: border-box; height: 34px; }
+.mm-filters input[type="search"] { flex: 0 1 200px; width: 200px; min-width: 0; padding: 0 9px; border: 1px solid var(--btn-line); background: var(--white); color: var(--ink); font: inherit; font-size: 13px; }
+.mm-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }   /* 한 줄에 두 명 (사용자 지시 2026-10-20) */
+/* 미리보기 카드 — 등록 버튼 왼쪽에 줄여서 */
+.confirm-extra { margin: -8px 0 20px; }
+.mm-preview { width: 400px; max-width: 100%; zoom: .85; }
+.mm-preview .mm-list { grid-template-columns: minmax(0, 1fr); margin: 0; }
+.mm-preview .mm-sub { margin-top: 4px; text-align: right; }
+.mm-reg > p { flex: 1; min-width: 0; margin: 0; }
+/* 친구 꽉 찬 박사 — 흐리게 (맨 뒤로 정렬은 me-match.tsx) */
+.mm-row.full { filter: grayscale(1); opacity: .55; }
+.mm-row { position: relative; overflow: hidden; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); background: var(--white); }
+.mm-row.mine { border-color: var(--lime-line); }
+/* 부관 일러 배경 — 카드 가운데에 은은하게, 양옆으로 갈수록 사라진다 (사용자 지시 2026-10-20 — 오른쪽 → 왼쪽 → 가운데) */
+.mm-art { position: absolute; z-index: -1; left: 50%; top: -18%; width: 62%; height: auto; max-width: none; opacity: .35; pointer-events: none; transform: translateX(-50%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%, #000 70%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0%, #000 30%, #000 70%, transparent 100%); }
+html.dark .mm-art { opacity: .25; }
+.mm-toast-sub { margin-left: 4px; font-size: 11px; font-weight: 600; opacity: .75; }
+.mm-count { margin: 0 0 9px auto; white-space: nowrap; }   /* 조건 버튼 줄 오른쪽 끝, 버튼 글자와 밑줄 맞춤 (사용자 지시 2026-10-20) */
+.mm-who { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.mm-who > span { font-size: 11px; color: var(--muted); }
+.mm-stale { display: inline-block; margin-top: 2px; padding: 0 5px; font-style: normal; font-size: 10px; line-height: 15px; color: var(--ink2); border: 1px solid var(--line); white-space: nowrap; vertical-align: 1px; }   /* 배지가 글자 중간에서 줄바꿈되지 않게 */
+/* 상태 문구 — 한 줄, 넘치면 말줄임 (전문은 마우스를 올리면) */
+.mm-resume { max-width: 100%; font-size: 11px; color: var(--ink2); quotes: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mm-who .me-pf-uid { margin-left: -7px; }   /* 호버 테두리 안쪽 여백은 그대로 두고 글자만 이름과 줄을 맞춘다 (사용자 지적 2026-10-20 — 왼쪽 여백 0 이던 것) */
+/* 지원 오퍼 섬네일은 한 줄로 (사용자 지시 2026-10-20) — 이름 칸 오른쪽에 셋을 나란히, 그림은 44px 로 줄였다 */
+.mm-row > .me-ops-mini { display: flex; flex-wrap: nowrap; gap: 10px; }   /* 섬네일 사이 간격 (사용자 지시 2026-10-20) */
+.mm-row > .me-ops-mini > li { width: 58px; }
+.mm-row .me-op-face { width: 44px; height: 44px; }
+.mm-row .me-op-skill { width: 18px; height: 18px; }
+.mm-row .me-op-name { font-size: 11px; }
+.mm-row .me-ops-mini em { font-size: 10px; text-align: center; line-height: 1.3; white-space: nowrap; }
+/* 완전 풀업 지원 오퍼 — 금테 + 은은한 빛, 그 위로 빛줄기가 천천히 지나간다 (사용자 지시 2026-10-20). 움직임 줄이기 설정이면 빛줄기 없음 */
+.me-op-face.mm-maxed { border-color: #d4a646; border-bottom-color: #d4a646; box-shadow: 0 0 0 1px #d4a64666, 0 0 10px 1px #e2b85a88; overflow: hidden; }
+.me-op-face.mm-maxed::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, #fff3c870 48%, transparent 60%); background-size: 260% 100%; animation: mm-shine 3.2s ease-in-out infinite; }
+@keyframes mm-shine { 0% { background-position: 130% 0; } 55%, 100% { background-position: -130% 0; } }
+@media (prefers-reduced-motion: reduce) { .me-op-face.mm-maxed::after { animation: none; background: none; } }
+.mm-op { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 2px 0; }
+.mm-op .mm-mod { font-size: 10px; }
+.mm-none { font-size: 12px; color: var(--muted); }
+@media (max-width: 640px) { .mm-list { grid-template-columns: minmax(0, 1fr); } .mm-reg { flex-direction: column; align-items: flex-end; } }
 .me-profile > .me-note { margin: 10px 16px 14px; }
 /* 친구 칸 — 비서 얼굴이 '친구' 글자와 겹쳐 오른쪽으로 (사용자 지시 2026-10-11) */
 .me-drawers > button.art-r::before { background-position: 0% 12%; }
@@ -34163,3 +34233,26 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 @media (max-width: 640px) {
   .planner-buttons > :is(.pl-sandbox-btn, .pl-fill-btn, .planner-image-btn, .pl-clear-btn, .pl-revert-btn) { white-space: normal; line-height: 1.2; min-height: 100%; }
 }
+
+/* 업데이트 내역 — 헤더 로고 바로 왼쪽 (사용자 지시 2026-10-20 "로고는 그대로 둔 채 로고 바로 왼쪽에"). 헤더 왼쪽 여백 안에 띄운다
+   (absolute — 로고가 밀리지 않게). 오른쪽 끝을 '헤더 폭 − 왼쪽 여백 + 18px'에 맞춰 로고 바로 왼쪽에 붙인다. 여백이 좁은 PC 폭은 아이콘만,
+   폰은 로고 왼쪽에 자리가 없어 종전대로 로고 오른쪽(order 2) */
+@media (min-width: 761px) {
+  .site-header .chlog-trigger {
+    position: absolute;
+    top: 13px;
+    height: 34px;
+    right: calc(100% - clamp(22px, 5vw, 76px) + 18px);
+    margin: 0;
+  }
+  .site-header .chlog-trigger .chlog-label { display: none; }
+}
+@media (min-width: 1400px) {
+  .site-header .chlog-trigger { right: calc(85% + 18px); }
+  .site-header .chlog-trigger .chlog-label { display: inline; }
+}
+
+/* 관리 — 친구 찾기 탭 (2026-10-20, app/admin/match.tsx) */
+.vz-match h4 { margin: 18px 0 6px; font-size: 13px; }
+.vz-match-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 24px; }
+.vz-table tr.vz-dim td { color: var(--muted); }

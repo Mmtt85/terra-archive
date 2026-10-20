@@ -7,7 +7,7 @@
 
 import { useSyncExternalStore } from "react";
 import { noteVisitEvent } from "./visit-track";
-import type { AccountChar, AccountPlayer, AccountProfile, AccountRoster, AccountServer, AccountToken } from "./account";
+import type { AccountChar, AccountPlayer, AccountProfile, AccountRoster, AccountServer, AccountToken, MatchSigned } from "./account";
 
 const KEY = "ta:me";
 const EVENT = "ta:me-change";
@@ -20,6 +20,8 @@ export type MeData = {
   player: AccountPlayer;
   chars: AccountChar[];
   profile: AccountProfile | null;
+  /** 친구 매칭 등록용 서명된 내 정보 (워커가 동기화 때 만든다, 2026-10-20~). 옛 저장분엔 없다 */
+  match?: MatchSigned | null;
 };
 
 // 다시 동기화용 요스타 토큰 — 계정 데이터(ta:me)와 따로 둔다. 종전엔 탭 메모리에만 둬서 새로고침하면
@@ -99,6 +101,7 @@ export function saveMe(roster: AccountRoster, server: AccountServer, kind: "me_l
   if (roster.prefToken) setPrefToken(roster.prefToken);
   const data: MeData = {
     v: 1, server, syncedAt: Date.now(), player: roster.player, chars: roster.chars, profile: roster.profile ?? null,
+    match: roster.match ?? null,
   };
   try { window.localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* 저장 못 해도 이번 화면은 그린다 */ }
   cachedRaw = undefined;

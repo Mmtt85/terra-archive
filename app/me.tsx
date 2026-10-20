@@ -36,6 +36,10 @@ import recruitData from "./data/recruit.json";
 import paradoxData from "./data/paradox.json";
 import towerNames from "./data/towers.json";
 import { MeShare } from "./me-share";
+import { isNewFeature } from "./whats-new";
+import { NewBadge } from "./new-badge";
+import { FriendCards, MatchJobToast, MatchWindow } from "./me-match";
+import { useHashSync } from "./hash-modal";
 import { LeaderCardBody, cardArt } from "./sss";
 import { openChecker, runningChecker } from "./stage-open";
 import { resetCloudPrefs } from "./cloud-prefs";
@@ -257,18 +261,24 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
   const [login, setLogin] = useState(false);
   // 내보내기 — 공유용 요약 카드 이미지를 모달로 (me-share.tsx)
   const [share, setShare] = useState(false);
+  // 친구 매칭 창 (app/me-match.tsx, 2026-10-20) — 제목 오른쪽 버튼. 내보내기는 박사 카드 서버 뱃지 옆으로 옮겼다 (사용자 지시 2026-10-20)
+  const [match, setMatch] = useState(false);
+  // 딥링크 /me#friends — 친구 찾기 창 (사용자 지시 2026-10-20). 열면 pushState 라 뒤로가기로 닫힌다
+  useHashSync(match ? "#friends" : null, (h) => setMatch(h === "#friends"));
   if (!mounted) return <section className="me-page"><div className="tab-loading" aria-hidden /></section>;
   return (
     <section className="me-page" aria-labelledby="me-title">
       {/* 공유 카드 QR(#verify=…)로 들어오면 정품 인증 창을 띄운다 */}
       <MeVerify />
+      <MatchJobToast />
       <header className="me-head">
         <div className="me-title-row">
           <div><span className="section-no">MY ACCOUNT</span><h2 id="me-title">{t("내 정보")}</h2></div>
-          {/* 내보내기 — 제목 바로 오른쪽 (사용자 지시 2026-10-04) */}
+          {/* 친구 찾기 — 제목 바로 오른쪽, 종전 '이미지로 내보내기' 자리 (사용자 지시 2026-10-20) */}
           {me && (
-            <button type="button" className="me-sort me-export-btn" onClick={() => setShare(true)}>
-              <span aria-hidden>⤓</span>{t("이미지로 내보내기")}
+            <button type="button" className="me-friend-btn" onClick={() => setMatch(true)}>
+              {t("친구 찾기")}
+              <NewBadge id="friend-match" show={isNewFeature("friend-match")} />
             </button>
           )}
         </div>
@@ -279,7 +289,8 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
           </button>
         )}
       </header>
-      {me ? <Dashboard me={me} operators={operators} extra={extra} onShowOperator={onShowOperator} share={share} onShareClose={() => setShare(false)} />
+      {me ? <Dashboard me={me} operators={operators} extra={extra} onShowOperator={onShowOperator} share={share} onShareOpen={() => setShare(true)} onShareClose={() => setShare(false)}
+          match={match} onMatchClose={() => setMatch(false)} />
         : (
           // 로그인 전에도 무엇이 나오는지 보여 준다 — 화면을 모르면 아무도 로그인하지 않는다
           // (사용자 지적 2026-10-04). 예시 숫자는 오퍼 id 해시로 만든 가짜 계정이다.
@@ -398,7 +409,7 @@ type ListEntry = { id: string; sub: string };
 type OpenList = (title: string, entries: ListEntry[]) => void;
 
 // ── 대시보드 ────────────────────────────────────────────────
-function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareClose }: { me: MeData; demo?: boolean; share?: boolean; onShareClose?: () => void } & Props) {
+function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareOpen, onShareClose, match, onMatchClose }: { me: MeData; demo?: boolean; share?: boolean; onShareOpen?: () => void; onShareClose?: () => void; match?: boolean; onMatchClose?: () => void } & Props) {
   const { locale } = useI18n();
   const [now] = useState(() => Date.now());
   const [items, setItems] = useState<ItemDoc | null>(null);
@@ -456,7 +467,7 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
     <>
       <div className="me-grid">
         <div className="me-col me-col-side">
-          <ProfileCard me={me} now={now} opById={opById} demo={demo} />
+          <ProfileCard me={me} now={now} opById={opById} demo={demo} onShare={onShareOpen} />
           <Wallet me={me} items={items} onOpen={(i) => setOpenItem(i)} />
           <Support me={me} opById={opById} onShowOperator={onShowOperator} />
           <Rooms me={me} opById={opById} />
@@ -476,6 +487,7 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareC
         }} />
       </div>
 
+      {match && onMatchClose && <MatchWindow me={me} opById={opById} onClose={onMatchClose} />}
       {share && onShareClose && <MeShare me={me} owned={owned} released={released} opById={opById} stages={stages} items={items} onClose={onShareClose} />}
       {list && (
         <ModalWindow key={`ls-${list.key}`} label={list.title} className="operator-modal me-list-modal" onClose={() => setList(null)}>
@@ -1008,7 +1020,7 @@ function OpListBody({ title, entries, opById, chars, onShowOperator }: { title: 
 }
 
 // ── 박사 카드 ────────────────────────────────────────────────
-function ProfileCard({ me, now, opById, demo }: { me: MeData; now: number; opById: Map<string, MeOp>; demo?: boolean }) {
+function ProfileCard({ me, now, opById, demo, onShare }: { me: MeData; now: number; opById: Map<string, MeOp>; demo?: boolean; onShare?: () => void }) {
   const { locale, t } = useI18n();
   const fmt = fmtOf(locale);
   const st = me.profile?.status;
@@ -1059,7 +1071,11 @@ function ProfileCard({ me, now, opById, demo }: { me: MeData; now: number; opByI
           onError={(e) => { const el = e.currentTarget; const fb = asset(`/skin/full/${secretary}_2.webp`); if (el.src !== new URL(fb, location.href).href) el.src = fb; else el.remove(); }} />}
       {/* 머리 배너 — 비서 일러를 오른쪽에 은은하게 (사용자 지시 2026-10-11 "예쁘게") */}
       <div className="me-pf-hero">
-        <span className="me-pf-server">{t(server)}</span>
+        {/* 서버 뱃지 + 오른쪽에 작게 '이미지로 내보내기' (사용자 지시 2026-10-20, 종전엔 제목 옆) */}
+        <div className="me-pf-badges">
+          <span className="me-pf-server">{t(server)}</span>
+          {onShare && <button type="button" className="me-pf-export" onClick={onShare} title={t("이미지로 내보내기")}><span aria-hidden>⤓</span>{t("이미지로 내보내기")}</button>}
+        </div>
         <div className="me-profile-top">
           <span className="me-avatar">{secretary ? <img src={avatarOf(secretary)} alt="" width={96} height={96} /> : <b aria-hidden>Dr.</b>}</span>
           <div className="me-profile-name">
@@ -2165,10 +2181,11 @@ function Friends({ me, now, opById, onShowOperator, full }: { me: MeData; now: n
       {list === null ? <p className="me-note">{t("친구 목록을 받아 오지 못했습니다 — 다시 동기화해 보세요.")}</p>
         : !list?.length ? <p className="me-note">{t("친구가 없습니다.")}</p>
         : !sorted.length ? <p className="me-note">{t("조건에 맞는 친구가 없어요.")}</p> : (
-        friendList(full ? sorted : sorted.slice(0, FRIEND_FOLD))
+        full ? <FriendCards list={sorted} opById={opById} now={now} /> : friendList(sorted.slice(0, FRIEND_FOLD))
       )}
       {!full && sorted.length > FRIEND_FOLD && <MoreButton open={false} total={sorted.length} onToggle={() => setAll(true)} />}
-      {all && <MoreModal title={t("친구")} onClose={() => setAll(false)}>{friendList(sorted)}</MoreModal>}
+      {/* 전부 보기 — 친구 찾기 카드와 같은 모양 (사용자 지시 2026-10-20) */}
+      {all && <MoreModal title={t("친구")} onClose={() => setAll(false)}><FriendCards list={sorted} opById={opById} now={now} /></MoreModal>}
     </Card>
   );
 }

@@ -241,13 +241,26 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
   // 값 목록은 **누른 버튼 바로 밑**에 연다 (사용자 2026-10-07 — 종전엔 버튼과 무관하게 칸 왼쪽 아래였다).
   // 버튼 위치를 재서 left/top 을 주고, 오른쪽으로 넘치면 칸 안쪽으로 당긴다
   const dropRef = useRef<HTMLUListElement>(null);
-  const [dropPos, setDropPos] = useState<{ left: number; top: number } | null>(null);
+  const [dropPos, setDropPos] = useState<React.CSSProperties | null>(null);
+  // 모달 안에서는 화면 기준(position: fixed)으로 띄운다 — 모달 본문(.mw-body overflow:auto)이 absolute 목록을 잘랐다.
+  // 석 달 동안 열 번쯤 재발한 버그라 (사용자 지적 2026-10-20, 친구 찾기 창) 칸마다 땜질하지 않고 여기서 한 번에 막는다.
+  // 공용 Dropdown(app/dropdown.tsx)과 같은 방식 — 모달 조상엔 transform 이 없어 fixed 가 화면 기준으로 잡히고 창의 겹침 순서도 그대로다.
+  // 스크롤하면 버튼과 어긋나므로 그때는 닫는다(아래 effect). 페이지(도감 필터판)에서는 종전대로 칸 안 absolute
+  const fixedRef = useRef(false);
   useLayoutEffect(() => {
-    if (!open) { setDropPos(null); return; }
+    if (!open) { setDropPos(null); fixedRef.current = false; return; }
     const wrap = wrapRef.current;
     const btn = wrap?.querySelector<HTMLElement>(`.attr-cat[data-title="${CSS.escape(open)}"]`);
     if (!wrap || !btn) return;
     const dropW = dropRef.current?.offsetWidth ?? 0;
+    if (wrap.closest(".mw-window, .modal-backdrop")) {
+      const r = btn.getBoundingClientRect();
+      const top = r.bottom + 6;
+      fixedRef.current = true;
+      setDropPos({ position: "fixed", inset: "auto", left: Math.max(8, Math.min(r.left, window.innerWidth - dropW - 8)), top,
+        maxHeight: Math.max(160, Math.min(300, window.innerHeight - top - 8)) });
+      return;
+    }
     const left = Math.max(0, Math.min(btn.offsetLeft, wrap.clientWidth - dropW));
     setDropPos({ left, top: btn.offsetTop + btn.offsetHeight + 6 });
   }, [open]);
@@ -279,11 +292,22 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
       if (!el || (!wrapRef.current?.contains(el) && !el.classList.contains("attr-fly"))) close();
     };
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };
+    // 화면 기준(fixed)으로 띄운 목록은 바깥이 스크롤되면 버튼과 어긋난다 — 목록 안 스크롤만 빼고 닫는다
+    const onScroll = (event: Event) => {
+      if (!fixedRef.current) return;
+      const el = event.target as Element | null;
+      if (el?.closest?.(".attr-drop, .attr-fly")) return;
+      close();
+    };
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
+    document.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
     return () => {
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
+      document.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
     };
   }, [open]);
 
@@ -329,7 +353,7 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
           }
           return (
             <>
-              <ul className="attr-drop menu-anim" ref={dropRef} style={dropPos ? { left: dropPos.left, top: dropPos.top } : undefined}
+              <ul className="attr-drop menu-anim" ref={dropRef} style={dropPos ?? undefined}
                 role="listbox" aria-multiselectable={!active.single} aria-label={active.title}>
                 <li className="attr-search">
                   {/* 모바일은 자동 포커스하지 않는다 — 키보드가 바로 솟아 목록을 가린다 */}
