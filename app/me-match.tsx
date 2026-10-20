@@ -109,19 +109,28 @@ function MatchRowView({ r, opById, now, mine, full, friend }: { r: MatchRow; opB
       {sec && <img className="mm-art" src={artOf(sec, r.secSkin ?? null)} alt="" aria-hidden decoding="async" loading="lazy"
         onError={(e) => { const el = e.currentTarget; const fb = artOf(sec, null); if (el.src !== new URL(fb, location.href).href) el.src = fb; else el.remove(); }} />}
       <div className="mm-who">
-        {/* 입사일 — 닉네임 위 (사용자 지시 2026-10-21). 박사 카드의 '입사'와 같은 글 */}
-        {!!r.register && <span className="mm-reg-day">{t("{date} 입사", { date: new Date(r.register * 1000).toLocaleDateString(DT_LOCALE[locale], { year: "numeric", month: "short", day: "numeric" }) })}</span>}
-        {/* 이미 친구 — 닉네임#번호 바로 오른쪽에, 조금 더 눈에 띄게 (사용자 지시 2026-10-20) */}
-        <b>{nick || "Dr."}{num && <small>#{num}</small>}{friend && <em className="mm-friend">{t("이미 친구")}</em>}</b>
-        {/* 'N분 전' 은 친구 카드(전부 보기 — 게임의 마지막 접속)에만. 매칭 카드의 시각은 마지막 '동기화'라 접속 안 한 사람처럼 보였다 (사용자 지적 2026-10-20) */}
-        <span><b className="mm-lv">Lv.{r.level}</b>{r.friends != null && r.flimit ? ` · ${t("친구 {a}/{b}", { a: r.friends, b: r.flimit })}` : ""}{!r.server && ` · ${ago(t, now, r.t)}`}</span>
+        {/* 맨 윗줄 — 입사일 · (친구 카드면) 마지막 접속 'N분 전' (사용자 지시 2026-10-21).
+            매칭 카드엔 'N분 전'을 안 쓴다 — 그 시각은 마지막 '동기화'라 접속 안 한 사람처럼 보였다 (2026-10-20) */}
+        {/* 매칭 카드는 'N분 전' 대신 친구 현재/최대 (사용자 지시 2026-10-21) */}
+        {(() => {
+          const parts = [
+            r.register ? t("{date} 입사", { date: new Date(r.register * 1000).toLocaleDateString(DT_LOCALE[locale], { year: "numeric", month: "short", day: "numeric" }) }) : "",
+            !r.server ? ago(t, now, r.t) : r.friends != null && r.flimit ? t("친구 {a}/{b}", { a: r.friends, b: r.flimit }) : "",
+          ].filter(Boolean);
+          // 이미 친구 — 친구 수(121/125) 바로 오른쪽 (사용자 지시 2026-10-21)
+          return parts.length || friend ? <span className="mm-reg-day">{parts.join(" · ")}{friend && <em className="mm-friend">{t("이미 친구")}</em>}</span> : null;
+        })()}
+        {/* 닉네임#번호 · 레벨(크게) (사용자 지시 2026-10-21) */}
+        <b>{nick || "Dr."}{num && <small>#{num}</small>}<span className="mm-lv">Lv.{r.level}</span></b>
+        {/* UID · 동기화 1주일 넘음 배지 (사용자 지시 2026-10-21 — 배지는 UID 오른쪽, '친구 꽉 참'은 친구 수 125/125 로 보여 뺐다) */}
+        <span className="mm-uid-row">
+          {r.uid && <button type="button" className="me-pf-uid" onClick={copy} title={t("UID 복사")}>
+            UID <code>{r.uid}</code><span aria-hidden>{copied ? "✓" : "⧉"}</span>
+          </button>}
+          {r.server && now - r.t > 7 * 86400_000 && <em className="mm-stale">{t("동기화 1주일 넘음")}</em>}
+        </span>
+        {/* 상태 문구는 UID 밑, 옅은 바탕 (사용자 지시 2026-10-21) */}
         {r.resume && <q className="mm-resume" title={r.resume}>{r.resume}</q>}
-        {r.uid && <button type="button" className="me-pf-uid" onClick={copy} title={t("UID 복사")}>
-          UID <code>{r.uid}</code><span aria-hidden>{copied ? "✓" : "⧉"}</span>
-        </button>}
-        {/* 마지막 동기화가 1주일 넘음 — 2주가 넘으면 목록에서 빠진다. UID 밑에 (사용자 지시 2026-10-20) */}
-        {full && <em className="mm-stale">{t("친구 꽉 참")}</em>}
-        {r.server && now - r.t > 7 * 86400_000 && <em className="mm-stale">{t("동기화 1주일 넘음")}</em>}
       </div>
       <ul className="me-ops me-ops-mini">
         {r.assist.map((a, i) => { const op = opById.get(a.id); return op ? <MatchOp key={`${a.id}-${i}`} a={a} op={op} /> : null; })}
@@ -149,7 +158,6 @@ export function MatchJobToast() {
 }
 
 export function FriendCards({ list, opById, now }: { list: AccountFriend[]; opById: Map<string, MeOp>; now: number }) {
-  const { t } = useI18n();
   return (
     <ul className="mm-list mm-friends">
       {list.map((f) => {
