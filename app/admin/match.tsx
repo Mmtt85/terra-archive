@@ -62,7 +62,7 @@ export default function MatchPanel({ tick }: { tick: number }) {
     return [...m].sort((a, b) => b[1] - a[1]).slice(0, 30);
   }, [rows]);
 
-  if (err) return <p className="vz-note">친구 찾기 기록을 못 받았습니다 ({err}).</p>;
+  if (err) return <p className="vz-note">친구 매칭 기록을 못 받았습니다 ({err}).</p>;
   if (!res) return <p className="vz-note">불러오는 중…</p>;
   const total = days.reduce((s, [, d]) => ({ put: s.put + d.put, delete: s.delete + d.delete, search: s.search + d.search, expire: s.expire + d.expire }), { put: 0, delete: 0, search: 0, expire: 0 });
   return (

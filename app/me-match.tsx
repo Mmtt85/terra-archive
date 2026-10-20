@@ -109,7 +109,8 @@ function MatchRowView({ r, opById, now, mine, full, friend }: { r: MatchRow; opB
         onError={(e) => { const el = e.currentTarget; const fb = artOf(sec, null); if (el.src !== new URL(fb, location.href).href) el.src = fb; else el.remove(); }} />}
       <div className="mm-who">
         <b>{nick || "Dr."}{num && <small>#{num}</small>}</b>
-        <span>Lv.{r.level}{r.friends != null && r.flimit ? ` · ${t("친구 {a}/{b}", { a: r.friends, b: r.flimit })}` : ""} · {ago(t, now, r.t)}</span>
+        {/* 'N분 전' 은 친구 카드(전부 보기 — 게임의 마지막 접속)에만. 매칭 카드의 시각은 마지막 '동기화'라 접속 안 한 사람처럼 보였다 (사용자 지적 2026-10-20) */}
+        <span>Lv.{r.level}{r.friends != null && r.flimit ? ` · ${t("친구 {a}/{b}", { a: r.friends, b: r.flimit })}` : ""}{!r.server && ` · ${ago(t, now, r.t)}`}</span>
         {r.resume && <q className="mm-resume" title={r.resume}>{r.resume}</q>}
         {r.uid && <button type="button" className="me-pf-uid" onClick={copy} title={t("UID 복사")}>
           UID <code>{r.uid}</code><span aria-hidden>{copied ? "✓" : "⧉"}</span>
@@ -235,7 +236,6 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
   const filtered = (rows ?? []).filter((r) => passRow(r));
   // 칸마다 그 값을 골랐을 때 몇 명이 남나 (오퍼 도감 드롭다운의 숫자)
   const countFor = (k: Cond) => (v: string) => (rows ?? []).filter((r) => passRow(r, { ...sel, [k]: [v] })).length;
-  const present = (k: Cond) => [...new Set((rows ?? []).flatMap((r) => r.assist.map((a) => val(a, k))))].filter((v) => v !== "");
   const jobLabel = (code: string) => [...opById.values()].find((o) => o.jobCode === code)?.job ?? code;
   // 많이 찾은 오퍼 집계 — 이름으로 거른 결과가 오퍼 1~3명으로 좁혀졌을 때만, 입력이 1.5초 멈춘 뒤 한 번
   const logged = useRef("");
@@ -254,7 +254,7 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
   const isFull = (r: MatchRow) => r.friends != null && r.flimit != null && r.friends >= r.flimit;
   const others = [...filtered.filter((r) => !isFull(r)), ...filtered.filter(isFull)];
   return (
-    <ModalWindow label={t("친구 찾기")} className="operator-modal mm-modal" onClose={onClose}>
+    <ModalWindow label={t("친구 매칭")} className="operator-modal mm-modal" onClose={onClose}>
       <div className="mm-body">
         <section className="mm-me">
           {/* 설명은 등록 버튼 바로 왼쪽, 버튼은 오른쪽 끝 (사용자 지시 2026-10-20) */}
@@ -277,8 +277,9 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
         <section className="mm-find">
           <div className="mm-filters">
             <AttributeFilter groups={[
-              { title: t("성급"), items: present("rar").sort((a, b) => +b - +a), selected: sel.rar, onToggle: pick("rar"), labelFor: (v) => `${v}★`, countForItem: countFor("rar") },
-              { title: t("직군"), items: JOB_ORDER.filter((c) => present("job").includes(c)), selected: sel.job, onToggle: pick("job"), labelFor: jobLabel, countForItem: countFor("job") },
+              // 값은 늘 전부 — 지금 목록에 없는 값도 고를 수 있게 (사용자 지시 2026-10-20, 종전엔 있는 것만)
+              { title: t("성급"), items: ["6", "5", "4", "3", "2", "1"], selected: sel.rar, onToggle: pick("rar"), labelFor: (v) => `${v}★`, countForItem: countFor("rar") },
+              { title: t("직군"), items: JOB_ORDER, selected: sel.job, onToggle: pick("job"), labelFor: jobLabel, countForItem: countFor("job") },
               { title: t("정예화"), items: ["2", "1", "0"], selected: sel.elite, onToggle: pick("elite"), labelFor: (v) => t("정예화 {n}", { n: v }), countForItem: countFor("elite") },
               { title: t("잠재"), items: ["6", "5", "4", "3", "2", "1"], selected: sel.pot, onToggle: pick("pot"), labelFor: (v) => potText(locale, +v), countForItem: countFor("pot") },
               { title: t("특화"), items: ["3", "2", "1", "0"], selected: sel.mastery, onToggle: pick("mastery"), labelFor: (v) => (v === "0" ? t("특화 없음") : t("특화 {n}", { n: v })), countForItem: countFor("mastery") },
@@ -287,7 +288,9 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
             {/* 검색란은 모듈 버튼 오른쪽 (사용자 지시 2026-10-20) */}
             <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("오퍼 · 닉네임 · UID")} aria-label={t("검색")} />
             {/* 0명이면 아래 '없습니다' 안내 하나만 (사용자 지적 2026-10-20 — 두 줄이 같은 말을 했다) */}
-          {(rows == null || others.length > 0) && <p className="mm-sub mm-count">{rows == null ? t("불러오는 중…") : t("{server} · 등록한 박사 {n}명", { server: t(server), n: others.length })}</p>}
+          {(rows == null || others.length > 0) && <p className="mm-sub mm-count">{rows == null ? t("불러오는 중…") : t("{server} · 등록한 박사 {n}명", { server: t(server), n: others.length })}
+            {/* 목록 다시 받기 (사용자 지시 2026-10-20) */}
+            {rows != null && <button type="button" className="mm-refresh" onClick={load} title={t("새로고침")} aria-label={t("새로고침")}>↻</button>}</p>}
           </div>
           
           <ul className="mm-list">

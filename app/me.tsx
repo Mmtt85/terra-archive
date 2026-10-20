@@ -21,7 +21,7 @@ import { ModalWindow } from "./modal-window";
 import { useConfirm } from "./confirm";
 import { AccountLoginForm, AccountSteps } from "./roster-import";
 import { MeVerify } from "./me-verify";
-import { AccountError, accountErrorText, syncAccount, MAINTENANCE_TEXT, MAINTENANCE_TITLE, ACCOUNT_SERVERS, type AccountChar, type AccountFriend, type AccountProfile, type AccountStep } from "./account";
+import { AccountError, accountErrorText, matchList, syncAccount, MAINTENANCE_TEXT, MAINTENANCE_TITLE, ACCOUNT_SERVERS, type AccountChar, type AccountFriend, type AccountProfile, type AccountStep } from "./account";
 import { cnErrorText } from "./account-cn";
 import { clearMe, dropMeToken, getMe, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, mePulls, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages } from "./dex-cross";
@@ -165,6 +165,7 @@ function hash(str: string): number {
   for (let i = 0; i < str.length; i++) n = Math.imul(n ^ str.charCodeAt(i), 16777619) >>> 0;
   return n / 4294967296;
 }
+const SAMPLE_UID = "00000000";   // 예시 계정 표식 — 통합전략 상세가 이걸 보고 분대·소장품을 지어낸다
 const SAMPLE_TS = 1790000000; // 고정 시각 (초) — 예시 화면의 날짜가 렌더마다 흔들리지 않게
 const sampleCache = new WeakMap<MeOp[], MeData>();
 function sampleMe(operators: MeOp[]): MeData {
@@ -206,7 +207,7 @@ function sampleMe(operators: MeOp[]): MeData {
   let seat = 0;
   const data: MeData = {
     v: 1, server: "kr", syncedAt: NOW * 1000,
-    player: { nickName: "Doctor", nickNumber: "0000", uid: "00000000", level: 120, serverName: "", lastOnline: SAMPLE_TS },
+    player: { nickName: "Doctor", nickNumber: "0000", uid: SAMPLE_UID, level: 120, serverName: "", lastOnline: SAMPLE_TS },
     chars,
     profile: {
       status: { level: 120, exp: 0, ap: 98, maxAp: 135, apTs: NOW, register: SAMPLE_TS - 86400 * 1100, lastOnline: SAMPLE_TS,
@@ -239,6 +240,17 @@ function sampleMe(operators: MeOp[]): MeData {
           baseLv: 4, bossKill: ["enemy_1001_bigbo", "enemy_1001_bigbo_2"], portable: true, outpost: false, techToken: 3, techUnlock: 21, drink: 2,
           squads: [{ chars: [0, 1, 2, 3].map((i) => pick(`sq${i}`).id), tools: [] }], usedChars: [], best: 0 },
       },
+      // 통합전략 기록 (예시) — 팬텀~쉐이 다섯 테마. 엔딩 id 는 테마마다 규칙이 같다(ro_ending_N · roN_ending_N)
+      rogue: Object.fromEntries([[1, 4, 0], [2, 4, 0], [3, 4, 15], [4, 5, 18], [5, 5, 15]].map(([n, ends, top]) => {
+        const endId = (i: number) => (n === 1 ? `ro_ending_${i}` : `ro${n}_ending_${i}`);
+        const reached = Array.from({ length: ends }, (_, i) => i + 1).filter((i) => i <= 2 || hash(`rg${n}e${i}`) < 0.6);
+        const normal = Object.fromEntries(reached.map((i) => [endId(i), 1 + Math.floor(hash(`rg${n}c${i}`) * (i === 1 ? 40 : 12))]));
+        const runs = Object.values(normal).reduce((a, b) => a + b, 0) + 9 + Math.floor(hash(`rg${n}r`) * 30);
+        return [`rogue_${n}`, { collect: {}, record: { modeCnt: { NORMAL: runs }, endingCnt: { NORMAL: normal },
+          ...(top ? { bandGrade: { [`rogue_${n}_band_sample`]: { [endId(1)]: top - Math.floor(hash(`rg${n}g`) * 4) } } } : {}),
+          history: reached.slice(0, 3).map((i, k) => ({ bandId: "", mode: "NORMAL", modeGrade: top ? top - k : 0, ending: endId(i), result: 1, endTs: NOW - k * 86400 * 3 })) },
+          bank: { current: 120 + Math.floor(hash(`rg${n}b`) * 800), record: 999, totalPut: 3000 } }];
+      })),
       sandbox: { material: { sandbox_1_wood: 41, sandbox_1_stone: 23, sandbox_1_iron: 8, sandbox_1_water: 15 }, food: { sandbox_1_food_4: 2 }, building: {}, tactical: {}, animal: {} },
       friends: Array.from({ length: 14 }, (_, i) => ({
         nickName: `Doctor${String.fromCharCode(65 + i)}`, nickNumber: String(1000 + i * 37), level: 60 + ((i * 17) % 61),
@@ -276,6 +288,15 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
   const [share, setShare] = useState(false);
   // 친구 매칭 창 (app/me-match.tsx, 2026-10-20) — 제목 오른쪽 버튼. 내보내기는 박사 카드 서버 뱃지 옆으로 옮겼다 (사용자 지시 2026-10-20)
   const [match, setMatch] = useState(false);
+  // 제목 옆 버튼의 등록 수 — 내 서버(로그인 전 예시는 한섭) 공개 목록 길이. 창을 닫을 때(등록·취소 뒤) 다시 센다
+  const [matchCount, setMatchCount] = useState<number | null>(null);
+  const countServer = me?.server ?? "kr";
+  useEffect(() => {
+    if (match) return;
+    let alive = true;
+    matchList(countServer).then((rows) => { if (alive) setMatchCount(rows.length); }).catch(() => null);
+    return () => { alive = false; };
+  }, [countServer, match]);
   // 딥링크 /me#friends — 친구 찾기 창 (사용자 지시 2026-10-20). 열면 pushState 라 뒤로가기로 닫힌다
   useHashSync(match ? "#friends" : null, (h) => setMatch(h === "#friends"));
   if (!mounted) return <section className="me-page"><div className="tab-loading" aria-hidden /></section>;
@@ -291,7 +312,8 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
               로그인 전 예시 화면에도 같은 버튼 — 목록은 공개라 둘러볼 수 있고, 등록만 로그인해야 된다 */}
           {(
             <button type="button" className="me-friend-btn" onClick={() => setMatch(true)}>
-              {t("친구 찾기")}
+              {/* 이름은 '친구 매칭', 괄호에 내 서버 등록 수 (사용자 지시 2026-10-20) */}
+              {t("친구 매칭")}{matchCount != null && <span className="me-friend-n">({matchCount})</span>}
               <NewBadge id="friend-match" show={isNewFeature("friend-match")} />
             </button>
           )}
@@ -415,7 +437,7 @@ function LoginCard({ onDone }: { onDone: () => void }) {
       <p className="me-lead">{rich(t("로그인하면 **내 정보 맞춤 칸 구성·스토리 읽은 위치**를 이 게임 계정(UID)으로 저장해 두고, 다른 기기·브라우저에서 로그인해도 그대로 이어집니다."))}</p>
       <p className="import-warn">{rich(t("**주의: 가져오는 순간 게임 접속이 끊깁니다.** 데이터를 받으려면 게임 서버에 접속을 새로 열어야 하고, 명일방주는 계정당 접속을 하나만 허용하기 때문입니다. 게임을 하지 않을 때 쓰세요 — 계정에는 아무 문제가 없고, 다시 실행하면 그대로 접속됩니다."))}</p>
       <AccountLoginForm t={t} onAccount={onDone} submitLabel={t("로그인해서 내 정보 가져오기")}
-        privacy={t("이메일과 인증코드는 저장하지 않습니다. 받은 계정 데이터는 이 브라우저 안에만 남고, 언제든 이 화면에서 지울 수 있습니다. 90일 동안 동기화하지 않으면 이 브라우저의 내 정보와 저장된 설정·친구 찾기 등록이 모두 자동으로 삭제됩니다.")} />
+        privacy={t("이메일과 인증코드는 저장하지 않습니다. 받은 계정 데이터는 이 브라우저 안에만 남고, 언제든 이 화면에서 지울 수 있습니다. 90일 동안 동기화하지 않으면 이 브라우저의 내 정보와 저장된 설정·친구 매칭 등록이 모두 자동으로 삭제됩니다.")} />
     </div>
   );
 }
@@ -1810,7 +1832,18 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
     ? (typeof bank.current === "number" ? bank.current
       : (Object.entries(bank).find(([k, v]) => typeof v === "number" && /coin|current|gold|cnt|count|num/i.test(k))?.[1] as number | undefined)) ?? null
     : null;
-  const rec = (raw?.record ?? {}) as RogueRec;
+  // 예시 계정(로그인 전 예시 화면) — 분대 훈장·보유 소장품은 테마 데이터가 와야 id 를 알아서 여기서 지어낸다 (사용자 지시 2026-10-20 "로그인 화면과 동일하게")
+  const sample = me.player.uid === SAMPLE_UID;
+  const rec = ((): RogueRec => {
+    const base = (raw?.record ?? {}) as RogueRec;
+    if (!sample || !doc) return base;
+    const ends = Object.keys(base.endingCnt?.NORMAL ?? {});
+    const top = Math.max(0, ...doc.difficulties.filter((d) => d.mode === "NORMAL").map((d) => d.grade));
+    const pickBands = doc.bands.filter((b) => hash(`${b.id}sb`) < 0.7);
+    const grade = Object.fromEntries(pickBands.map((b) => [b.id, Object.fromEntries(ends.filter((e) => hash(`${b.id}${e}`) < 0.6).map((e) => [e, Math.max(0, top - Math.floor(hash(`${b.id}${e}g`) * 8))]))]));
+    const cnt = Object.fromEntries(pickBands.map((b) => [b.id, Object.fromEntries(ends.filter((e) => hash(`${b.id}${e}`) < 0.6).map((e) => [e, 1 + Math.floor(hash(`${b.id}${e}n`) * 6)]))]));
+    return { ...base, ...(["rogue_1", "rogue_2"].includes(topic) ? {} : { bandGrade: grade }), bandCnt: cnt };
+  })();
   const runs = Object.values(rec.modeCnt ?? {}).reduce((a, b) => a + b, 0);
   const clears = Object.values(rec.endingCnt ?? {}).reduce((a, m) => a + Object.values(m).reduce((x, y) => x + y, 0), 0);
   const gradeOf = (bandIds: string[], ending: string) => Math.max(-1, ...bandIds.map((id) => rec.bandGrade?.[id]?.[ending] ?? -1));
@@ -1823,8 +1856,8 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
   // 그 테마의 일반 모드 최고 난이도 — 거기까지 깬 칸은 진하게 (테마마다 15·18 …)
   const maxGrade = Math.max(0, ...(doc?.difficulties ?? []).filter((d) => d.mode === "NORMAL").map((d) => d.grade));
   const diffName = (g: number) => doc?.difficulties.find((d) => d.mode === "NORMAL" && d.grade === g)?.name ?? "";
-  const ownedRelic = new Set(raw?.collect?.relic ?? []);
-  const ownedBand = new Set(raw?.collect?.band ?? []);
+  const ownedRelic = new Set(sample && doc ? doc.relics.filter((r) => hash(`${r.id}own`) < 0.65).map((r) => r.id) : raw?.collect?.relic ?? []);
+  const ownedBand = new Set(sample && doc ? doc.bands.filter((b) => hash(`${b.id}sb`) < 0.7).map((b) => b.id) : raw?.collect?.band ?? []);
   const relics = doc?.relics ?? [];
   const relicHave = relics.filter((r) => ownedRelic.has(r.id)).length;
   // 기록에 나온 엔딩 — 테마 데이터 순서, 데이터에 없는 엔딩(도전 엔딩 등)은 뒤에

@@ -31557,7 +31557,10 @@ html.dark .me-pf-art { opacity: .3; }
 html.dark .mm-art { opacity: .25; }
 .mm-friend { color: var(--lime-ink); border-color: var(--lime-line); }   /* 이미 친구 (2026-10-20) */
 .mm-toast-sub { margin-left: 4px; font-size: 11px; font-weight: 600; opacity: .75; }
-.mm-count { margin: 0 0 9px auto; white-space: nowrap; }   /* 조건 버튼 줄 오른쪽 끝, 버튼 글자와 밑줄 맞춤 (사용자 지시 2026-10-20) */
+.mm-count { margin: 0 0 9px auto; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.mm-refresh { padding: 0 6px; height: 20px; border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); font: inherit; font-size: 12px; line-height: 1; cursor: pointer; }
+.mm-refresh:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); color: var(--btn-ink-hover); }
+.me-friend-n { margin-left: 4px; font-weight: 600; font-variant-numeric: tabular-nums; }   /* 조건 버튼 줄 오른쪽 끝, 버튼 글자와 밑줄 맞춤 (사용자 지시 2026-10-20) */
 .mm-who { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .mm-who > span { font-size: 11px; color: var(--muted); }
 .mm-stale { display: inline-block; margin-top: 2px; padding: 0 5px; font-style: normal; font-size: 10px; line-height: 15px; color: var(--ink2); border: 1px solid var(--line); white-space: nowrap; vertical-align: 1px; }   /* 배지가 글자 중간에서 줄바꿈되지 않게 */

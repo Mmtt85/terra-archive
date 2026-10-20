@@ -631,7 +631,7 @@ const TAB_KEYS: Record<string, string[]> = {
 };
 const EMPTY_SUMMARY = { total: { sessions: 0, visitors: 0, views: 0, active_ms: 0, revisit: 0, bounce: 0, bots: 0 },
   days: [], src: [], ref: [], landing: [], pages: [], sections: [], hours: [], device: [], site_lang: [], tz: [], out: [], flow: [] } as unknown as Summary;
-const VTABS = [{ k: "overview", label: "개요" }, { k: "screens", label: "화면" }, { k: "prts", label: "PRTS" }, { k: "search", label: "검색" }, { k: "match", label: "친구 찾기" }, { k: "etc", label: "그 외" }] as const;
+const VTABS = [{ k: "overview", label: "개요" }, { k: "screens", label: "화면" }, { k: "prts", label: "PRTS" }, { k: "search", label: "검색" }, { k: "match", label: "친구 매칭" }, { k: "etc", label: "그 외" }] as const;
 type VTab = (typeof VTABS)[number]["k"];
 
 function TopPick({ value, onChange, onAll, what }: { value: number; onChange: (n: number) => void; onAll?: () => void; what: string }) {
