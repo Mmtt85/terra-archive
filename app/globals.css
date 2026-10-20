@@ -6430,18 +6430,18 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   .ship.ship-custom {
     grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "slot0 slot1 workshop" "slot2 slot3 hire" "slot4 slot5 training" "slot6 slot7 slot8" "dorm0 dorm1 dorm2" "dorm3 . .";
   }
-  /* 재활용소는 좁은 화면에서도 훈련실 바로 밑 — 훈련실 다음에 한 줄을 끼운다 (나머지 칸 순서는 그대로) */
+  /* 재활용소는 맨 아랫줄 숙소 4 오른쪽 빈칸 — 종전엔 훈련실 밑에 혼자 한 줄을 차지했다 (사용자 지시 2026-10-20) */
   .ship.has-recycle {
-    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" ". . recycle" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . .";
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 recycle .";
   }
   .ship.ship-153.has-recycle {
-    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 mfg0 workshop" "mfg1 mfg2 hire" "mfg3 mfg4 training" ". . recycle" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . .";
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 mfg0 workshop" "mfg1 mfg2 hire" "mfg3 mfg4 training" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 recycle .";
   }
   .ship.ship-252.has-recycle {
-    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" ". . recycle" "mfg4 power0 power1" "dorm0 dorm1 dorm2" "dorm3 . .";
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" "mfg4 power0 power1" "dorm0 dorm1 dorm2" "dorm3 recycle .";
   }
   .ship.ship-custom.has-recycle {
-    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "slot0 slot1 workshop" "slot2 slot3 hire" "slot4 slot5 training" ". . recycle" "slot6 slot7 slot8" "dorm0 dorm1 dorm2" "dorm3 . .";
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "slot0 slot1 workshop" "slot2 slot3 hire" "slot4 slot5 training" "slot6 slot7 slot8" "dorm0 dorm1 dorm2" "dorm3 recycle .";
   }
   .planner-summary,
   .planner-summary-yield.has-recycle {
@@ -29168,8 +29168,10 @@ html:not(.dark):not(.rg-theme) .ev-op i { color: #b9621a; }
   .site-header::before { order: 10; }
   .site-header::after { display: none; }
   .event-group { order: 11; flex: none; }
-  .ev-group { order: 12; flex: 1 1 0; min-width: 0; }
-  .site-header .future-toggle { order: 13; margin-left: 0; }
+  /* 진행중 이벤트 칩 줄(마퀴)은 모바일에서 뺀다 — 좁아서 한두 글자만 흘러 보이지도 않았다 (사용자 지시 2026-10-20).
+     이벤트는 왼쪽 '이벤트' 드롭다운에서 고른다. 미래시·테마는 줄 오른쪽으로 민다 */
+  .ev-group { display: none; }
+  .site-header .future-toggle { order: 13; margin-left: auto; }
   .site-header .theme-toggle { order: 14; }
   .site-header .about-icon { order: 15; }
 }
@@ -32324,11 +32326,15 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
   .planner-buttons > .more-group > .drop-btn { width: 100%; justify-content: center; }
   .planner-buttons > :nth-child(n + 4) { font-size: 12px; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
   /* 설정 칸은 2열 격자 — 세로선이 줄바꿈 뒤 들여쓰기처럼 보였다 */
-  .prio-setting { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 10px; }
+  /* 한 줄에 넷 (사용자 지시 2026-10-20 "휑하다") — 2열이면 칸이 너무 비었다. 드롭다운은 한 단계 작게, 다섯째(재활용소)부터는 다음 줄 */
+  .prio-setting { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 6px; }
+  .prio-setting .prio-label { font-size: 11px; white-space: nowrap; }
+  .prio-setting .prio-field .drop-btn { gap: 4px; padding: 4px 6px; font-size: 12px; }
+  .prio-setting > .prio-field:nth-child(n + 5) { grid-column: 1 / -1; }   /* 재활용소 등 다섯째부터는 한 줄 통째로 */
   .prio-field { flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
   .prio-field + .prio-field { padding-left: 0; border-left: 0; }
-  .prio-field .drop { width: 100%; }
-  .prio-field .drop-btn { width: 100%; }
+  /* 드롭다운은 칸 폭을 꽉 채운다 — 한 줄 넷이라 칸이 좁아 저절로 글자 길이와 비슷해진다 (사용자 지시 2026-10-20) */
+  .prio-field .drop, .prio-field .drop-btn { width: 100%; }
 }
 
 /* 보안파견 가이드 전술 장비 — 내 정보의 평소 선택 (2026-10-18) */
