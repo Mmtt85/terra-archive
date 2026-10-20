@@ -31558,8 +31558,13 @@ html.dark .mm-art { opacity: .25; }
 .mm-friend { color: var(--lime-ink); border-color: var(--lime-line); }   /* 이미 친구 (2026-10-20) */
 .mm-toast-sub { margin-left: 4px; font-size: 11px; font-weight: 600; opacity: .75; }
 .mm-count { margin: 0 0 9px auto; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
-.mm-refresh { padding: 0 6px; height: 20px; border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); font: inherit; font-size: 12px; line-height: 1; cursor: pointer; }
-.mm-refresh:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); color: var(--btn-ink-hover); }
+/* 새로고침 — 테두리 없는 작은 아이콘, 올리면 진해지며 반 바퀴 (사용자 지적 2026-10-20 "못생겼다" — 종전엔 테두리 상자 + ↻ 글자) */
+.mm-refresh { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted); cursor: pointer; }
+.mm-refresh:hover { background: var(--btn-ghost-hover); color: var(--ink); }
+/* 받는 동안 빙글빙글 — 마우스를 올렸다고 돌지는 않는다 (사용자 지시 2026-10-20). 한 바퀴 0.7초 = me-match.tsx refresh 의 최소 시간 */
+.mm-refresh.spin { color: var(--ink); }
+.mm-refresh.spin svg { animation: mm-spin .7s linear infinite; }
+@keyframes mm-spin { to { transform: rotate(360deg); } }
 .me-friend-n { margin-left: 4px; font-weight: 600; font-variant-numeric: tabular-nums; }   /* 조건 버튼 줄 오른쪽 끝, 버튼 글자와 밑줄 맞춤 (사용자 지시 2026-10-20) */
 .mm-who { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .mm-who > span { font-size: 11px; color: var(--muted); }

@@ -177,6 +177,17 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
   const server = ACCOUNT_SERVERS.find((s) => s.code === me.server)?.label ?? me.server;
 
   const load = () => { matchList(me.server).then(setRows).catch(() => setRows([])); };
+  // 새로고침 단추 — 받는 동안 돌고, 빨리 끝나도 적어도 한 바퀴(0.7초)는 채운다. 바퀴 중간에 멈추지 않게 0.7초 단위로 맞춘다 (사용자 지시 2026-10-20)
+  const [spin, setSpin] = useState(false);
+  const refresh = () => {
+    if (spin) return;
+    setSpin(true);
+    const t0 = Date.now();
+    matchList(me.server).then(setRows).catch(() => null).finally(() => {
+      const el = Date.now() - t0;
+      setTimeout(() => setSpin(false), Math.max(1, Math.ceil(el / 700)) * 700 - el);
+    });
+  };
   useEffect(() => {
     load();
     if (token) matchMine(token).then((r) => setRegistered(r.registered)).catch(() => setRegistered(false));
@@ -290,7 +301,10 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
             {/* 0명이면 아래 '없습니다' 안내 하나만 (사용자 지적 2026-10-20 — 두 줄이 같은 말을 했다) */}
           {(rows == null || others.length > 0) && <p className="mm-sub mm-count">{rows == null ? t("불러오는 중…") : t("{server} · 등록한 박사 {n}명", { server: t(server), n: others.length })}
             {/* 목록 다시 받기 (사용자 지시 2026-10-20) */}
-            {rows != null && <button type="button" className="mm-refresh" onClick={load} title={t("새로고침")} aria-label={t("새로고침")}>↻</button>}</p>}
+            {rows != null && <button type="button" className={`mm-refresh${spin ? " spin" : ""}`} onClick={refresh} aria-busy={spin}
+              title={spin ? t("새로고침하는 중…") : t("새로고침")} aria-label={spin ? t("새로고침하는 중…") : t("새로고침")}>
+              <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden><path d="M13.2 6.4A5.4 5.4 0 1 0 13.5 9.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /><path d="M13.6 2.6v3.9H9.7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>}</p>}
           </div>
           
           <ul className="mm-list">
