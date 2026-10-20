@@ -669,7 +669,11 @@ export const SHIFT_COUNT = 2;
 // shift: 평가 중인 조 (0=A·1=B). endless 컨디션 보너스는 **A조에만** 적용된다 (사용자 확정
 // 2026-07-27: "A조를 최대한 오래 쓰고, B조는 그동안 휴식했다가 교대" — B조는 A조가 쉬는
 // ~12h만 뛰면 되므로 소모 무관, 남은 오퍼로 생산만 최적화). 미지정은 A조 취급.
-export type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string>; ambient?: AmbientAura[]; roomOf?: Map<string, string>; cellOf?: Map<string, string>; shiftHours?: number; shift?: number };
+export type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string>; ambient?: AmbientAura[]; roomOf?: Map<string, string>; cellOf?: Map<string, string>; shiftHours?: number; shift?: number;
+  /** 기지 총점(planScore)용 — 제어센터 오라를 '크기 × 가중치'(AURA_WEIGHT)로 제어센터 점수에 얹지 않는다. 오라는 받는 방 점수에
+   *  이미 실제로 더해지므로(ambientFor) 얹으면 두 번 센다 (2026-10-20 — 제시카 더 리버레이티드 '블랙스틸 1명당' 오라 +10 이 받는 방
+   *  +5%×인원과 제어센터 +100 으로 이중 계상, 사용자 결정 "총점은 실제로 더해진 % 로만"). 가중치는 제어센터 후보를 고를 때만 쓴다 */
+  noAuraProxy?: boolean };
 
 // 시간 성장형 스킬의 교대 주기 평균 — k시간째 값 = min(first + rate×(k−1), cap),
 // 마지막 부분 시간은 비례 (파서 grow_avg와 동일 공식, 구운 값 = 24h 기준)
@@ -1429,7 +1433,7 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const capConvEff = capConvOf(parts, room, ctx.ambient, team);
   // 제어센터 오라를 대상 방 점수에 실제 합산 — "무역소 오더 효율 +10%"면 무역소가 +10%.
   // 조건부 오라(쉐라그 3명 배치)는 조건을 채운 그 방 하나에만 붙는다
-  return efficiency + clueBaseSum + (orderFixed ? 0 : quality) + payout + auras + capConvEff + ambientFor(room, team, ctx.ambient, efficiency, ctx.product);
+  return efficiency + clueBaseSum + (orderFixed ? 0 : quality) + payout + (ctx.noAuraProxy ? 0 : auras) + capConvEff + ambientFor(room, team, ctx.ambient, efficiency, ctx.product);
 }
 
 // 비교용 팀 가치 = 생산 점수 + endless 컨디션 보너스 (생산 모드에선 teamScore와 동일).
@@ -2240,11 +2244,19 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   const roomLocked = new Set<string>();
   for (const cell of LAYOUT) {
     if (cell.room === "DORMITORY") continue;
+    // 칸 수는 **조마다** 센다 — 종전엔 방 하나에 조 구분 없이 칸 수만큼만 받아, 사무실(1칸)에 페넌스@B 를 먼저 고정하면
+    // 위스퍼레인@A 가, 제어센터(5칸)에 A·B 다섯 명이 차면 뒤의 비비아나·플레임테일@A 가 **조용히 버려졌다**
+    // (제보 6a0794b5 "A 고정이 어떤 건 지켜지고 어떤 건 매번 풀린다", 2026-10-20 역검증으로 확인). 양조 고정은 두 조 다 센다
+    const slots = slotsFor(cell.key);
+    const usedBy = [0, 0];
     for (const pin of roomPins[cell.key] ?? []) {
-      if ((roomLockOps[cell.key]?.length ?? 0) >= slotsFor(cell.key)) break;
+      const sh = pinShift(pin);
+      const shifts = sh == null ? [0, 1] : [sh];
+      if (shifts.some((s) => usedBy[s] >= slots)) continue;
       const id = pinId(pin);
       const op = roster.find((member) => member.id === id);
       if (!op || roomLocked.has(id) || dormLocked.has(id)) continue;
+      for (const s of shifts) usedBy[s] += 1;
       (roomLockOps[cell.key] = roomLockOps[cell.key] ?? []).push({ op, shift: pinShift(pin) });
       roomLocked.add(id);
       reserved.set(id, cell.key);
@@ -2261,7 +2273,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     const lockedCell = roomLocked.has(plantBooster0.id) ? reserved.get(plantBooster0.id) ?? "" : null;
     if (lockedCell !== null && cellByKey.get(lockedCell)?.room !== "POWER") return undefined;
     // ⓑ 고정이 아니면 시드로 앉을 자리(POWER-0)가 남아 있어야 한다 — 핀으로 꽉 차면 미배치가 된다
-    if (lockedCell === null && (roomLockOps["POWER-0"]?.length ?? 0) >= slotsFor("POWER-0")) return undefined;
+    if (lockedCell === null && (roomLockOps["POWER-0"] ?? []).filter((p) => p.shift == null || p.shift === 0).length >= slotsFor("POWER-0")) return undefined;
     // ⓒ 다른 발전소에 작업 플랫폼(1성 로봇)이 고정돼 있으면 원문 조건이 깨진다
     const seatKey = lockedCell ?? "POWER-0";
     if (powerKeys.some((key) => key !== seatKey && (roomLockOps[key] ?? []).some((p) => isWorkPlatform(p.op)))) return undefined;
@@ -2313,6 +2325,14 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     if (shift === 0) for (const [key, list] of Object.entries(roomLockOps)) {
       for (const { op, shift: pinned } of list) {
         if (pinned !== null && pinned !== 0) continue; // B조 전용 고정은 A조 원장에 안 실린다
+        preSeeded.add(op.id);
+        preSeededAt.set(op.id, cellByKey.get(key)?.label ?? key);
+      }
+    }
+    // 숙소 고정 인원도 같다 — 종전엔 빠져 있어서, 패키지가 고정된 아이리스·체르니·비르투오사를 다른 숙소에 앉히려다 자리가 차
+    // 그들의 생성분(생각의 사슬·무성의 공명)을 원장에서 버렸다 (역검증 2026-10-20: 엔진 70 / 배치에서 다시 세면 80·85)
+    if (shift === 0) for (const [key, list] of Object.entries(dormLockOps)) {
+      for (const op of list) {
         preSeeded.add(op.id);
         preSeededAt.set(op.id, cellByKey.get(key)?.label ?? key);
       }
@@ -2375,7 +2395,9 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
         const flow: TokenFlow = { token, total: 0, generators: [], converters: converters.map((op) => ({ opId: op.id, from: op.skills.find((skill) => skill.convert?.to === token)?.convert?.from ?? "" })), consumers: [] };
         flows.push(flow);
         const generatesFor = (op: InfraOp) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token || sources.has(g.token)));
-        const members = roster.filter((op) => !used.has(op.id) && (generatesFor(op) || op.skills.some((skill) => skill.tokenUse.some((u) => u.token === token))));
+        // 고정 인원(preSeeded — 방·숙소 고정)은 used 에 들어 있어도 참가자다 — 숙소에 고정한 아이리스·체르니·비르투오사가 빠져
+        // 그 생성분이 원장에 안 실렸다 (역검증 2026-10-20). 새로 앉히진 않는다(place 가 parked 를 거른다)
+        const members = roster.filter((op) => (!used.has(op.id) || preSeeded.has(op.id)) && (generatesFor(op) || op.skills.some((skill) => skill.tokenUse.some((u) => u.token === token))));
         // 무한동력 성립 시: 제어센터 생성분(화식 코어 링·시·총웨)은 place 가드로 앉을 수 없으니
         // 기대치에서 제외한다 — 종전엔 전량 계상돼 소비자(슈)만 예약석을 먹는 죽은 사슬이 생겼다.
         // 비제어센터 잔량(우요우 화식 등 미니 생태)은 정직하게 남아 그만큼만 시드·계상된다.
@@ -2433,6 +2455,26 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
             if (converterPlaced && !crowdedOut.some((c) => c.opId === op.id)) crowdedOut.push({ opId: op.id, room: skill.room });
           }
         }
+        // 한 번 더 — **이미 앉은(고정) 생성원** 중 처리 순서 탓에 빠진 것. 숙소에 고정한 아이리스·체르니의 생성분은 전환자(로즈몬티스·
+        // 에벤홀츠)를 거쳐야 사는데, 그들보다 먼저 훑으면 '전환자 없음'으로 넘겨 버렸다 (역검증 2026-10-20: 엔진 70 / 다시 세면 80).
+        // 이제 전환자가 다 앉았으면 그 생성분을 싣는다. 새로 앉히는 사람은 없다(이미 앉은 사람만)
+        for (const op of members) {
+          if (!parked.has(op.id) || flow.generators.some((g) => g.opId === op.id)) continue;
+          for (const skill of op.skills) {
+            const gen = skill.tokenGen.filter((g) => g.token === token || sources.has(g.token));
+            if (!gen.length) continue;
+            const needsOf = (g: TokenGen) => (g.token === token ? [] : chainNeeds.get(g.token) ?? []);
+            for (const g of gen) {
+              if (!needsOf(g).every((cid) => parked.has(cid) || cid === op.id)) continue;
+              const convRate = g.token === token ? 1 : sources.get(g.token) ?? 0;
+              const amount = genEstimate(g) * convRate;
+              if (amount <= 0) continue;
+              flow.generators.push({ opId: op.id, at: placedAt.get(op.id) ?? "기존 배치", amount, via: g.token === token ? undefined : g.token, convRate, perMember: g.perMember, need: needsOf(g) });
+              tokenPoints[token] = (tokenPoints[token] ?? 0) + amount;
+            }
+            break;
+          }
+        }
         // 가공소는 토큰 패키지가 선점하지 않는다 — 상시 슬롯(PARK_KEYS)이라 일반 방 채우기가
         // 최고 점수 가공소 오퍼(=니엔 고정, §1)를 넣는다. 예전엔 여기서 토큰 멤버·"family pin"으로
         // 가공소를 강제 배치했으나, 콜라보 토큰(아이룰루=작전팀 A4) family가 같은 진영의 무관한
@@ -2487,6 +2529,22 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   // 보고, 조건이 실제로 미충족인 오퍼는 그 자리에서 더 나은 벤치 오퍼로 교체(없으면 제거)한다.
   // 조건 미충족 오퍼만 손대므로(그리디 결과를 갈아엎지 않음) 안전. 안정될 때까지 최대 5회.
   const byIdAll = new Map(roster.map((op) => [op.id, op]));
+  // 조별 진영 인원 수를 **지금 배치에서** 다시 센다 (숙소 제외 — 그리디가 세던 규칙 그대로). 같은 객체를 비우고 채워
+  // 이미 만든 ctx 들도 새 값을 본다. 종전엔 그리디가 앉힐 때 한 번 더하기만 해서, 전수 감사·우선 생산 스왑이
+  // 사람을 바꾼 뒤에도 옛 수가 남았다 — A조에 라인 랩 2명이 앉았는데 0명으로 보고 뮤엘시스('라인 랩 1명당')를
+  // 깎거나, 최종 점수가 배치로 다시 센 값과 최대 ±90점 어긋났다 (2026-10-20 역검증 889명 중 140명, 제보 6a0794b5)
+  const refreshFactions = (shift: number) => {
+    const counts = factionCountsPerShift[shift];
+    if (!counts) return;
+    for (const k of Object.keys(counts)) delete counts[k];
+    for (const cell of LAYOUT) {
+      if (cell.room === "DORMITORY") continue;
+      for (const id of assignments[cell.key]?.[shift] ?? []) {
+        const op = byIdAll.get(id);
+        if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
+      }
+    }
+  };
 
   const teamAtKey = (key: string, shift: number): InfraOp[] =>
     (assignments[key]?.[Math.min(shift, (assignments[key]?.length ?? 1) - 1)] ?? [])
@@ -2732,6 +2790,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
           for (const id of dormIds) roomOfS.set(id, "DORMITORY");
           const cellOfS = cellMapFor(shift);
           const present = new Set<string>([...roomKeyOf.keys(), ...dormIds]);
+          refreshFactions(shift);   // 앞 방 감사가 사람을 바꿨을 수 있다
           const ctx = { ...ctxFor(aKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shiftHours: shiftClock, shift };
           const curTeam = (assignments[aKey][shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
           // 패키지 예약 해제 (사용자 통찰 2026-07-24: "쉐이가 5명까지라 슈가 필요 없다"):
@@ -3047,6 +3106,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     const dorm5 = new Set<string>();
     for (let d = 0; d < 4; d += 1) for (const id of assignments[`DORM-${d}`]?.[0] ?? []) dorm5.add(id);
     const producesInPref = (op: InfraOp) => op.skills.some((sk) => sk.room === "MANUFACTURE" && (sk.product === "any" || sk.product === preferProduct));
+    for (let sh = 0; sh < SHIFT_COUNT; sh += 1) refreshFactions(sh);
     const provPlan = { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift } as unknown as Plan;
     for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
       const team5 = (key: string) => (assignments[key]?.[shift] ?? []).map((id) => byIdAll.get(id)).filter((o): o is InfraOp => Boolean(o));
@@ -3202,6 +3262,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   const finalPlants = PLANTS_BASE_RT + plantBonusOf(powerKeys.map((key) => ({
     key, ops: (assignments[key]?.[0] ?? []).map((id) => rosterById.get(id)).filter(Boolean) as InfraOp[],
   })));
+  for (let sh = 0; sh < SHIFT_COUNT; sh += 1) refreshFactions(sh);
   return { assignments, plants: finalPlants, tokenPoints, factionCounts: factionCountsPerShift, flows, crowdedOut, strategy, strategyTokens: packageTokens, strategySet: setUsed, priority, auditRounds, shiftHours };
 }
 
@@ -3216,6 +3277,44 @@ export const SHIFT_WEIGHT: number[] = C.SHIFT_WEIGHT;
 export const ENDLESS_B_WEIGHT: number = (C as unknown as Record<string, number | undefined>).ENDLESS_B_WEIGHT ?? 0.35;
 
 // 계획 전체 총점 (양 조 전 방, 앰비언트 오라 포함) — 세트 포함/미포함 두 안 비교용
+/** 조별 기지 내 진영 인원 수 — **숙소 제외**, 그 조의 근무 방에 앉은 사람만 (엔진 그리디·refreshFactions 와 같은 규칙).
+ *  손 편집·빈 칸 채우기·안정장치가 각자 세던 것을 하나로 (2026-10-20 — 화면은 숙소까지 세서 엔진 점수와 수십 점씩 어긋났다) */
+export function factionCountsFor(assignments: Record<string, string[][]>, byId: Map<string, InfraOp>): Record<string, number>[] {
+  return Array.from({ length: SHIFT_COUNT }, (_, shift) => {
+    const counts: Record<string, number> = {};
+    for (const [key, shifts] of Object.entries(assignments)) {
+      if (key.startsWith("DORM")) continue;
+      for (const id of shifts?.[shift] ?? []) {
+        const op = byId.get(id);
+        if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
+      }
+    }
+    return counts;
+  });
+}
+
+/** 방 카드에 보이는 % (teamScore) — 조별로, planScore 와 같은 문맥(토큰·진영 수·발전소·오라·교대 시계)으로 잰다 */
+export function roomScoresFor(plan: Plan, byId: Map<string, InfraOp>, keys: string[]): Record<string, number[]> {
+  const out: Record<string, number[]> = {};
+  for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+    const teamAt = (key: string): InfraOp[] => {
+      const shifts = plan.assignments[key] ?? [];
+      return (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => byId.get(id)).filter(Boolean) as InfraOp[];
+    };
+    const points = planTokensAt(plan, byId, shift);
+    const counts = plan.factionCounts[shift] ?? {};
+    const present = presentIdsFor(plan, shift);
+    const plants = plantsFor(plan, shift, byId);
+    const ambient = aurasOf(teamAt("CONTROL"), ctxFor("CONTROL", points, counts, plants, present));
+    const clock = shiftHoursFor([...PRODUCTION_KEYS, ...SUPPORT_KEYS].map((key) => ({ room: cellByKey.get(key)!.room, ops: teamAt(key) })));
+    for (const key of keys) {
+      (out[key] ??= [])[shift] = teamScore(teamAt(key), cellByKey.get(key)!.room,
+        { ...ctxFor(key, points, counts, plants, present, ambient), roomOf: roomOfFor(plan, shift), cellOf: cellOfFor(plan, shift), shiftHours: clock, shift });
+    }
+  }
+  return out;
+}
+
 export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
   // 플랜에 모드가 실려 있으면 그 모드로 채점 — endless 플랜은 컨디션 보너스 포함 총점이
   // 채택 기준이다. buildPlan 중간의 임시 플랜(priority 미기재)은 현재 모듈 플래그 유지.
@@ -3243,7 +3342,7 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
       // "총점에 안 잡히니 남는 인원으로 채우면 공짜"도 아니다 — 훈련실도 시설로 세는 방이라
       // 잉여를 앉히면 카운터가 엉뚱하게 찬다 (buildPlan 훈련실 파킹 ⓒ 주석 참조).
       if (key === "TRAINING") continue;
-      total += shiftWeight * teamValue(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plants, present, ambient), shiftHours: clock, shift });
+      total += shiftWeight * teamValue(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plants, present, ambient), shiftHours: clock, shift, noAuraProxy: true });
     }
   }
   return total;
@@ -3256,7 +3355,34 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
 // 지금 편성은 **현재 엔진·현재 로스터로 다시 채점**해 비교한다. 기지 구성·우선 생산·보유·고정이 달라져
 // 지금 편성을 그대로 쓸 수 없으면 비교하지 않고 새 편성을 쓴다.
 export const KEEP_MARGIN = 5;
-export function keepIfClose(prev: Plan | null | undefined, next: Plan, roster: InfraOp[], pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, RoomPin[]> = {}): { plan: Plan; kept: boolean } {
+
+/** 새 편성의 방 팀을 지금 편성에 맞춰 **남는 사람은 원래 칸 그대로, 새로 온 사람만 빈 칸에** 넣는다 (사용자 지시 2026-10-20 —
+ *  "1·2·3 이 1·3·2 로 나오면 괜히 자리를 바꾸게 되고, 1·4·2 면 두 칸이나 바꿔야 한다 → 1·2·4 로"). 같은 사람 구성이면 점수는
+ *  같고 표시 순서만 다르다. 칸 수가 바뀐 방은 겹치는 칸까지만 맞춘다. 숙소도 같은 규칙 */
+export function alignToPrev(prev: Plan | null | undefined, next: Plan): Plan {
+  if (!prev) return next;
+  let changed = false;
+  const assignments: Record<string, string[][]> = {};
+  for (const [key, shifts] of Object.entries(next.assignments)) {
+    assignments[key] = shifts.map((team, sh) => {
+      const old = prev.assignments[key]?.[sh];
+      if (!old?.length || !team.length) return team;
+      const want = new Set(team);
+      const out: (string | null)[] = Array.from({ length: team.length }, (_, i) => (i < old.length && want.has(old[i]) ? old[i] : null));
+      const placed = new Set(out.filter((x): x is string => x != null));
+      const rest = team.filter((id) => !placed.has(id));
+      for (let i = 0; i < out.length; i += 1) if (out[i] == null) out[i] = rest.shift() ?? null;
+      const aligned = out.filter((x): x is string => x != null);
+      if (JSON.stringify(aligned) === JSON.stringify(team)) return team;
+      changed = true;
+      return aligned;
+    });
+  }
+  return changed ? { ...next, assignments } : next;
+}
+
+export function keepIfClose(prev: Plan | null | undefined, nextRaw: Plan, roster: InfraOp[], pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, RoomPin[]> = {}): { plan: Plan; kept: boolean } {
+  const next = alignToPrev(prev, nextRaw);   // 같은 팀이면 지금 순서 그대로 (아래 어느 갈래로 나가도)
   if (!prev || prev.priority !== next.priority) return { plan: next, kept: false };
   const byId = new Map(roster.map((op) => [op.id, op]));
   const keys = Object.keys(next.assignments);
@@ -3283,17 +3409,7 @@ export function keepIfClose(prev: Plan | null | undefined, next: Plan, roster: I
     }
   }
   // 정예화가 바뀌었을 수 있다 — 진영 수·토큰 원장을 지금 로스터로 다시 센다 (손 편집과 같은 방식)
-  const factionCounts = prev.assignments[keys[0]].map((_, s) => {
-    const counts: Record<string, number> = {};
-    for (const key of keys) {
-      const shifts = prev.assignments[key];
-      for (const id of shifts[Math.min(s, shifts.length - 1)] ?? []) {
-        const op = byId.get(id);
-        if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
-      }
-    }
-    return counts;
-  });
+  const factionCounts = factionCountsFor(prev.assignments, byId);
   const ledger = prev.flows?.length ? recountTokens(prev.assignments, byId, prev.flows) : null;
   const rescored: Plan = { ...prev, factionCounts, ...(ledger ? { tokenPoints: ledger.tokenPoints, flows: ledger.flows } : {}) };
   delete rescored.shiftHours; // 교대 시계도 지금 정예화로 다시 잰다
@@ -3490,7 +3606,9 @@ export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number
 // 똑같이 빠지니, 진짜 이득이 그보다 작은 후보는 전부 음수가 되어 추천이 0건이 됐다
 // (사용자 제보 2026-07-30 "추천 오퍼가 또 안 나온다").
 export type OptimizeResult = {
-  plan: Plan; tokenChoice: string[]; factionSets: FactionSets; park: boolean;
+  plan: Plan;
+  /** 마무리 교체(polishPlan) 전 편성 — 전략(tokenChoice·세트·시드)으로 buildPlan 을 다시 지으면 이것과 같다. 육성 추천의 반사실 기준 */
+  prePolish?: Plan; tokenChoice: string[]; factionSets: FactionSets; park: boolean;
   /** 채택안이 쓴 시드(perMember 캡 확장 · 자리에서 밀려난 생성원) */
   seeds: { opId: string; room: string }[];
   /** 채택안이 로스터에서 뺀 오퍼 id (패키지/자기 소비 사슬 전환자 제외 변형) */
@@ -3500,6 +3618,101 @@ export type OptimizeResult = {
   /** 채택안이 지속시간 타이브레이크를 켠 안인지 (동점 시 저소모 우선) */
   shiftTiebreak: boolean;
 };
+// ── 마무리 교체 (2026-10-20, 인프라 역검증 — 사람들이 저장한 편성 889개로 엔진을 대조) ──────────────────────────
+// 자동편성이 끝난 편성에서 근무 방 오퍼를 한 명씩 ① 안 쓰는 오퍼 ② 같은 조 다른 방 오퍼와 바꿔 보고, **기지 총점(배치에서
+// 다시 센 원장·진영 수 — 손 편집·임시 편성과 같은 채점)** 이 오를 때만 채택한다. 그리디·감사는 방 단위로 고르므로 방을 넘는
+// 효과(토큰 사슬·진영 수·교차방 조건)를 놓치는데, 역검증에서 손으로 짠 편성이 엔진보다 높은 사람이 42명(+20~190점)이었다.
+// 자동편성 끝에 붙는다(optimizeConfig polished — 장기 지속 모드 제외). 사용자 결정 2026-10-20: "무조건 이득인 시너지팟은 없다 —
+// 실제로 돌려 보고 높은 쪽" — 그래서 제어센터 링·시·총웨 같은 종전 정배도 점수가 지면 바뀐다.
+// 지키는 것: 고정(방·숙소)은 안 움직인다 · 숙소·가공소·훈련실·재활용소는 손대지 않는다(각자 절대룰이 있다) ·
+// 다른 조 근무자는 데려오지 않는다(이중 근무 금지) · 그 방에 스킬이 있는 오퍼만 후보 · 시간 상한(budgetMs).
+export function polishPlan(plan: Plan, roster: InfraOp[], pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, RoomPin[]> = {},
+  { maxSweeps = 4, maxEvals = 40000, budgetMs = 15000 }: { maxSweeps?: number; maxEvals?: number; budgetMs?: number } = {}): Plan {
+  // 끊는 기준은 **시도 횟수**(maxEvals) — 시간으로 자르면 컴퓨터가 바쁠수록 결과가 달라진다(역검증에서 작업자 7개가 CPU를 나눠 쓰자
+  // 2.5초 상한에 걸려 응접실 전에 멈췄다, 2026-10-20). 시간(budgetMs)은 느린 기기에서 창이 굳지 않게 하는 안전장치로만
+  const t0 = Date.now();
+  let evals = 0;
+  const byId = new Map(roster.map((op) => [op.id, op]));
+  const pinned = new Set([...Object.values(roomPins).flat().map(pinId), ...Object.values(pinnedDorms).flat()]);
+  const keys = LAYOUT.filter((c) => !["DORMITORY", "WORKSHOP", "TRAINING", "RECYCLE"].includes(c.room)).map((c) => c.key);
+  const rebuilt = (assignments: Record<string, string[][]>): Plan => {
+    const ledger = recountTokens(assignments, byId, flowsFromAssignments(assignments, byId));
+    return { ...plan, assignments, factionCounts: factionCountsFor(assignments, byId), shiftHours: undefined,
+      ...(ledger ? { tokenPoints: ledger.tokenPoints, flows: ledger.flows } : {}) };
+  };
+  // 채택한 편성은 교대 시계까지 다시 잰다 (화면이 방 효율·하루 생산을 그 값으로 보여 준다 — updateTeam 과 같은 방식)
+  const finalize = (assignments: Record<string, string[][]>): Plan => ({
+    ...rebuilt(assignments),
+    shiftHours: Array.from({ length: SHIFT_COUNT }, (_, sh) => shiftHoursFor([...PRODUCTION_KEYS, ...SUPPORT_KEYS].map((key) => {
+      const cs = assignments[key] ?? [];
+      return { room: cellByKey.get(key)!.room, ops: (cs[Math.min(sh, cs.length - 1)] ?? []).map((id) => byId.get(id)).filter((op): op is InfraOp => Boolean(op)) };
+    }))),
+  });
+  let cur = plan.assignments;
+  const start = planScore(rebuilt(cur), byId);
+  let best = start;
+  const useful = new Map(keys.map((k) => {
+    const room = cellByKey.get(k)?.room;
+    return [k, new Set(roster.filter((op) => op.skills.some((sk) => sk.room === room)).map((op) => op.id))];
+  }));
+  for (let sweep = 0; sweep < maxSweeps; sweep += 1) {
+    let improved = false;
+    for (let sh = 0; sh < SHIFT_COUNT; sh += 1) {
+      for (const k of keys) {
+        const team = cur[k]?.[sh];
+        if (!team) continue;
+        for (let i = 0; i < team.length; i += 1) {
+          if (evals > maxEvals || Date.now() - t0 > budgetMs) return best > start + 0.5 ? finalize(cur) : plan;
+          const x = cur[k][sh][i];
+          if (pinned.has(x)) continue;
+          const where = new Map<string, { k: string; s: number; j: number }>();
+          for (const [kk, shifts] of Object.entries(cur)) shifts.forEach((t, s) => t.forEach((id, j) => { if (!where.has(id) || s === sh) where.set(id, { k: kk, s, j }); }));
+          let move: { v: number; next: Record<string, string[][]> } | null = null;
+          for (const yid of useful.get(k) ?? []) {
+            if (yid === x || pinned.has(yid)) continue;
+            const w = where.get(yid);
+            if (w && (w.k.startsWith("DORM") || w.s !== sh || w.k === k)) continue;   // 숙소 · 다른 조 근무 · 같은 방
+            if (w && !(keys.includes(w.k) && useful.get(w.k)?.has(x))) continue;      // 맞바꾸기는 x 가 그 방에 쓸모 있을 때만
+            const next = { ...cur, [k]: cur[k].map((t, s) => (s === sh ? t.map((id, j) => (j === i ? yid : id)) : t)) };
+            if (w) next[w.k] = next[w.k].map((t, s) => (s === sh ? t.map((id, j) => (j === w.j ? x : id)) : t));
+            evals += 1;
+            const v = planScore(rebuilt(next), byId);
+            if (v > best + 0.5 && (!move || v > move.v)) move = { v, next };
+          }
+          if (move) { cur = move.next; best = move.v; improved = true; }
+        }
+      }
+    }
+    // 방의 A조 팀 ↔ B조 팀 통째로 맞바꾸기 — 한 명씩 교체로는 닿지 않는다(두 조를 한꺼번에 바꿔야 한다). 역검증 상식 검사에서
+    // 'A조가 B조보다 크게 낮은 방' 148곳 중 32곳이 맞바꾸기만으로 총점이 올랐다(2026-10-20). 조별 고정이 걸린 방은 건너뛴다
+    for (const k of keys) {
+      const t = cur[k];
+      if (!t || t.length < 2 || !t[0].length || !t[1].length) continue;
+      if ((roomPins[k] ?? []).some((p) => pinShift(p) != null)) continue;
+      evals += 1;
+      const next = { ...cur, [k]: [t[1], t[0], ...t.slice(2)] };
+      const v = planScore(rebuilt(next), byId);
+      if (v > best + 0.5) { cur = next; best = v; improved = true; }
+    }
+    if (!improved) break;
+  }
+  // 총점이 같으면 효율 높은 팀을 A조에 (사용자 지시 2026-10-20 "엔간하면 효율 좋은 걸 먼저 놓지") — 사무실 A조 +34% · B조 +60% 처럼
+  // 맞바꿔도 총점이 그대로인 방은 엔진이 아무렇게나 두었다. 맞바꿔 총점이 떨어지지 않으면(−0.5 이내) 방 % 가 높은 쪽을 A조로
+  let tidy = false;
+  for (const k of keys) {
+    const t = cur[k];
+    if (!t || t.length < 2 || !t[0].length || !t[1].length) continue;
+    if ((roomPins[k] ?? []).some((p) => pinShift(p) != null)) continue;
+    if (k === "CONTROL") continue;   // 제어센터 % 는 오라 가중 합이라 A·B 비교 기준이 아니다
+    const pct = roomScoresFor(rebuilt(cur), byId, [k])[k];
+    if (!(pct[1] > pct[0] + 1)) continue;
+    const next = { ...cur, [k]: [t[1], t[0], ...t.slice(2)] };
+    const v = planScore(rebuilt(next), byId);
+    if (v >= best - 0.5) { cur = next; best = Math.max(best, v); tidy = true; }
+  }
+  return best > start + 0.5 || tidy ? finalize(cur) : plan;
+}
+
 export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, RoomPin[]> = {}): Promise<OptimizeResult> {
   // 자동편성 제외 명단은 탐색 시작부터 뺀다 — 토큰 패키지·세트 성립 판정도 벤치 없는
   // 로스터 기준이어야 buildPlan(내부에서 같은 필터)과 결과가 어긋나지 않는다.
@@ -3538,8 +3751,8 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   // **planScore 비교해 이득일 때만** 포함한다 (사용자 제보 2026-07-21: 아이룰루 패키지가
   // 테라 대륙 조사단을 무역소에 시드해 프로바이조 완성형(우요우+에벤홀츠+프로바이조)을
   // 밀어내고 제어센터 2석까지 차지 — 총점 −68인데도 무조건 포함되던 문제). 다진영 콜라보라
-  // 폐쇄 팀 규칙(단일 진영)을 비켜가는 케이스다. 본편 대형 패키지(화식 등 5인 이상)는
-  // 항상 이득이라 종전대로 무조건 포함. 미니 조합은 멱집합 비교(≤3개 → ≤8안).
+  // 폐쇄 팀 규칙(단일 진영)을 비켜가는 케이스다. 미니 조합은 여기서 멱집합 비교(≤3개 → ≤8안)하고, 본편 대형 패키지
+  // (화식 등 5인 이상)도 세트가 정해진 뒤 '패키지 넣고 빼기'에서 뺀 안과 비교한다 (2026-10-20 — 종전엔 항상 이득이라며 무조건 포함).
   const isMini = (token: string) =>
     roster.filter((op) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token) || skill.tokenUse.some((u) => u.token === token))).length <= 4;
   const minis = open.filter(isMini).slice(0, 3);
@@ -3654,7 +3867,13 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
     setShiftTiebreak(true);
     return planScore(off.plan, byId) > planScore(on.plan, byId) + 1e-6 ? off : on;
   };
-  if (!variants.length) return finish(tokenChoice, {}, []);
+  // 마무리 교체 — 장기 지속(소모) 모드는 제어센터 양조 고정 같은 두 조 묶음 규칙이 있어 한 명씩 바꾸면 깨진다. 그 모드는 뺀다
+  const polished = (r: OptimizeResult): OptimizeResult => {
+    if (ENDLESS_ON) return r;
+    const plan = polishPlan(r.plan, roster, pinnedDorms, roomPins);
+    return plan === r.plan ? r : { ...r, plan, prePolish: r.plan };
+  };
+  if (!variants.length) return polished(finish(tokenChoice, {}, []));
   let best = base;
   let bestScore = planScore(base, byId);
   let bestSets: FactionSets = {};
@@ -3695,19 +3914,23 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
       if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [ex]; }
     }
   }
-  // ── 세트 확정 뒤 미니 토큰 다시 재기 (제보 6a0794b5, 2026-10-19) ─────────────────────────
-  // 미니 토큰 조합(tokenChoice)은 맨 앞 기초안(세트 없음)에서 정해지는데, 세트가 켜지면 자리 값이 달라진다 — 피누스
-  // A조판이 켜진 안에선 '생각의 사슬'(로즈몬티스·위스퍼레인)을 넣는 쪽이 이기는데, 기초안에선 빼는 쪽이 이겨
-  // 끝까지 빠진 채였다(2,192 < 같은 로스터 레드파인 고정 2,269). 밀려난 생성원이 없으면 아래 시드 블록도 안 돌아
-  // 다시 잴 기회가 없었다. 미니를 하나씩 넣고 빼 본다 (미니 ≤3개 → 최대 3회)
-  for (const mini of minis) {
-    await breathe();
-    const tokens = tokenChoice.includes(mini)
-      ? tokenChoice.filter((token) => token !== mini)
-      : open.filter((token) => token === mini || tokenChoice.includes(token));
-    const plan = buildPlan(tokens, effRoster, bestSets, priority, bestSeeds, false, false, pinnedDorms, roomPins);
-    const score = planScore(plan, byId);
-    if (score > bestScore) { best = plan; bestScore = score; tokenChoice = tokens; }
+  // ── 세트 확정 뒤 패키지 넣고 빼기 (사용자 지시 2026-10-20 "무조건 이득인 시너지팟은 없다 — 실제로 지어 보고 높은 쪽") ──
+  // 종전엔 미니(참가자 ≤4) 패키지만 넣고 빼 봤고, 큰 패키지(속세의 화식 등)는 '항상 이득'이라며 무조건 넣었다. 인프라 역검증
+  // (사용자 설정 907개)에서 그 전제가 자주 틀렸다 — 사무실 멀베리·응접실 첸·제어센터 링·시를 다른 오퍼로 바꾼 쪽이 높은 사람이 다수.
+  // 그래서 **모든** 패키지를 하나씩 넣고 빼 본다. 세트·시드가 정해진 뒤에 재는 이유: 자리 값은 그 결집이 선 다음에야 제대로 보인다
+  // (2026-10-19 피누스 A조판이 켜진 안에선 '생각의 사슬'을 넣는 쪽이 이겼는데 기초안에선 빼는 쪽이 이겼다). 나아지는 동안 되풀이(최대 2바퀴)
+  for (let pass = 0; pass < 2; pass += 1) {
+    let changed = false;
+    for (const token of open) {
+      await breathe();
+      const tokens = tokenChoice.includes(token)
+        ? tokenChoice.filter((t) => t !== token)
+        : open.filter((t) => t === token || tokenChoice.includes(t));
+      const plan = buildPlan(tokens, effRoster, bestSets, priority, bestSeeds, false, false, pinnedDorms, roomPins);
+      const score = planScore(plan, byId);
+      if (score > bestScore + 1e-6) { best = plan; bestScore = score; tokenChoice = tokens; changed = true; }
+    }
+    if (!changed) break;
   }
   // ── 자리에서 밀려난 토큰 생성원 시드 변형 (사용자 제보 2026-07-29: "로즈몬티스가 있어도
   // 위스퍼레인 대신 사무실 레퍼런스 속도 높은 오퍼가 먼저 배치됨") ────────────────────────
@@ -3792,7 +4015,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   } else {
     await tick({ phase: "final" });
   }
-  return finish(tokenChoice, bestSets, bestSeeds);
+  return polished(finish(tokenChoice, bestSets, bestSeeds));
 }
 
 // 얇은 래퍼 — 편성만 필요한 호출부(planner.tsx·verify-plan)는 종전대로 Plan을 받는다.

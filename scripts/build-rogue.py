@@ -5,6 +5,7 @@
 #   python3 scripts/build-rogue.py rogueN     # KR / rogueN-en·-ja 로케일 / rogueN-cn 중국섭
 #   python3 scripts/build-rogue.py cn         # 중국섭 변형 일괄 (rogue1~5.cn.json + EN·JA 판 rogueN.cn.en/ja.json)
 #   python3 scripts/build-rogue.py cn-i18n    # 중국섭 변형 EN·JA 판만 (받기 없이 기존 산출물로)
+#   python3 scripts/build-rogue.py dlc        # 테마·서버별 확장판(DLC) 수 → rogue-dlc.json (점검마다)
 #
 # 소스 (ArknightsAssets/ArknightsGamedata kr — PROJECT-GUIDE §2 클뜯 레포):
 #   excel/roguelike_topic_table.json  — 존·스테이지·유물·레퍼토리(음반)·환각·난이도·엔딩·조우 씬
@@ -2354,6 +2355,34 @@ def cn_koreanize(ronum, out):
 HANGUL = re.compile(r"[가-힣]")
 
 
+def build_dlc():
+    """테마·서버별 확장판(DLC) 수 → app/data/rogue-dlc.json {topic: {kr, en, jp, cn}} (2026-10-20 사용자 지시 — 업데이트로 보스가
+    더해질 때마다 DLC1·DLC2 로 부른다, 흑류수해 = DLC1·살카즈 = DLC3). 원본은 표의 details.<topic>.enrolls 중 enrollType "DLC"
+    이고, **열린 것만** 센다(enrollTime ≤ 지금 — 예고된 다음 판은 빼고). 엔딩 수로 세면 틀린다(살카즈 엔딩 5개인데 DLC3).
+    화면은 이 작은 파일을 처음부터 들고 있어 테마 본문을 받기 전후로 숫자가 바뀌지 않는다"""
+    import time
+    now = time.time()
+    out = {}
+    for branch in ("kr", "en", "jp", "cn"):
+        try:
+            table = fetch_json("excel/roguelike_topic_table.json", branch)
+        except Exception as e:  # 표를 못 받은 서버는 건너뛴다 (지난 값 유지)
+            print(f"  ⚠ {branch} 표 없음 — {e}")
+            continue
+        for tid, det in (table.get("details") or {}).items():
+            n = sum(1 for en in (det.get("enrolls") or {}).values()
+                    if en.get("enrollType") == "DLC" and 0 < (en.get("enrollTime") or 0) <= now)
+            out.setdefault(tid, {})[branch] = n
+    dest = os.path.join(REPO, "app", "data", "rogue-dlc.json")
+    old = json.load(open(dest, encoding="utf-8")) if os.path.exists(dest) else {}
+    for tid, v in old.items():
+        for b, n in v.items():
+            out.setdefault(tid, {}).setdefault(b, n)
+    out = {k: dict(sorted(out[k].items())) for k in sorted(out)}
+    json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print("rogue-dlc.json:", out)
+
+
 def cn_localize(ronum, loc):
     """중국섭 변형의 EN·JA 판 — rogueN.cn.json(한국어 표기) → rogueN.cn.<loc>.json (2026-10-20 사용자 제보:
     사이트 언어를 영어로 두고 통합전략을 중국섭으로 바꾸면 한국어가 나온다 — 종전엔 전 로케일이 한국어 cn 파일을 같이 썼다).
@@ -3685,6 +3714,7 @@ if __name__ == "__main__":
         unpack_icons(sys.argv[2] if len(sys.argv) > 2 else "rogue_1")
     elif arg == "rogue6":
         build_rogue6()
+        build_dlc()
     elif re.fullmatch(r"rogue[1-5]", arg):
         build_topic(f"rogue_{arg[-1]}")
     elif re.fullmatch(r"rogue[1-5]-(en|ja|cn)", arg):
@@ -3692,6 +3722,8 @@ if __name__ == "__main__":
         if arg.endswith("-cn"):
             for lc in ("en", "ja"):
                 cn_localize(arg[5], lc)
+    elif arg == "dlc":
+        build_dlc()
     elif arg == "cn-i18n":
         # 중국섭 변형 EN·JA 판만 다시 (원본 다시 받기 없음 — 이미 있는 rogueN.cn.json·rogueN.json·rogueN.<loc>.json 으로)
         for n in range(1, 6):
@@ -3717,6 +3749,7 @@ if __name__ == "__main__":
                 build_topic(f"rogue_{n}", lc)
             for lc in ("en", "ja"):
                 cn_localize(n, lc)
+        build_dlc()
         dump_enc_untranslated()
     else:
         build_topic("rogue_1")

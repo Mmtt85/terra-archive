@@ -120,3 +120,6 @@ public/story/audio/*.mp3
 # R2 로는 r2-sync 가 올린다. 제목·버전(app/data/story-find-meta.json)은 추적한다.
 public/story/find/
 dist-admin/
+
+# 인프라 역검증 — 남의 계정 설정·결과 (scripts/riic-audit.mjs)
+.riic-audit/

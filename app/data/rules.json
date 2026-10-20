@@ -114,20 +114,6 @@
     },
     {
       "allOf": [
-        "char_2023_ling",
-        "char_2015_dusk",
-        "char_2024_chyue"
-      ],
-      "name": "제어센터 쉐이 3인 (링·시·총웨)",
-      "note": "INFRA-RULES §6 — 속세의 화식 생성 코어",
-      "priority": "gold",
-      "roomKey": "CONTROL",
-      "roster": "full",
-      "shift": 0,
-      "type": "planContains"
-    },
-    {
-      "allOf": [
         "char_254_vodfox",
         "char_486_takila"
       ],
@@ -198,24 +184,24 @@
         "char_496_wildmn",
         "char_430_fartth"
       ],
-      "name": "피누스 세트 A조 작전기록방 결집",
-      "note": "INFRA-RULES §5 피누스 세트 — 2026-10-20 사용자 결정: A·B조 둘 다 지어 점수로 고른다(제보 6a0794b5). 보유 전원 로스터는 A조판이 +124로 이긴다",
+      "name": "피누스 세트 B조 작전기록방 결집",
+      "note": "INFRA-RULES §5 피누스 세트 — 2026-10-20 B조로 복귀: 제어센터 오라 이중 계산을 걷어내자 보유 전원 로스터는 B조판이 이긴다 (A조판도 후보로 계속 지어 본다)",
       "priority": "gold",
       "roomType": "MANUFACTURE",
       "roster": "full",
-      "shift": 0,
+      "shift": 1,
       "type": "planContains"
     },
     {
       "allOf": [
         "char_420_flamtl"
       ],
-      "name": "피누스 세트 A조 제어센터 플레임테일",
-      "note": "INFRA-RULES §5 피누스 세트 — 오라 발신원 (2026-10-20 A조판 채택)",
+      "name": "피누스 세트 B조 제어센터 플레임테일",
+      "note": "INFRA-RULES §5 피누스 세트 — 오라 발신원 (2026-10-20 B조로 복귀)",
       "priority": "gold",
       "roomKey": "CONTROL",
       "roster": "full",
-      "shift": 0,
+      "shift": 1,
       "type": "planContains"
     },
     {
@@ -616,5 +602,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 28
+  "version": 31
 }

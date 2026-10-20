@@ -18,7 +18,7 @@ import {
   ELITE_LABEL, MAX_OP_LEVEL, maxOpLevel, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, roomEfficiency, payoutMults, capConvFor, orderFixFor, roomMaxNetDrain,
-  ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, flowsFromAssignments, tokenPartners, activeSkills, tokensAt, planTokensAt, planScore, shiftHoursFor, KEEP_MARGIN, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
+  ctxFor, sanitizePlan, presentIdsFor, plantsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, flowsFromAssignments, tokenPartners, activeSkills, tokensAt, planTokensAt, planScore, factionCountsFor, shiftHoursFor, KEEP_MARGIN, pinId, pinShift, type RoomPin, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS, PLANTS_BASE_RT,
   splitPriority, joinPriority, AUTO_BENCH_IDS, genEstimate,
   setRecycle, RECYCLE_MODE, RECYCLE_SPEC, recycleRate, recycleDaily, type RecycleMode,
@@ -537,18 +537,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     for (const ch of [{ cellKey, shiftIdx, ids }, ...extra]) {
       assignments[ch.cellKey] = (assignments[ch.cellKey] ?? []).map((team, index) => (index === ch.shiftIdx ? ch.ids : team));
     }
-    const factionCounts = [0, 1].map((s) => {
-      const counts: Record<string, number> = {};
-      for (const c of LAYOUT) {
-        const cellShifts = assignments[c.key] ?? [];
-        const team = cellShifts[Math.min(s, cellShifts.length - 1)] ?? [];
-        for (const id of team) {
-          const op = effectiveOpById.get(id);
-          if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
-        }
-      }
-      return counts;
-    });
+    const factionCounts = factionCountsFor(assignments, effectiveOpById);   // 엔진과 같은 규칙(숙소 제외)
     // 토큰 원장은 **지금 편성에서 새로** 세운다 (flowsFromAssignments) — 자동편성 원장에 없던 생성원을 손으로 넣어도
     // 그 몫이 바로 잡히게 (사용자 지시 2026-10-18). 종전엔 원장에 있는 생성원만 다시 셌다
     const ledger = recountTokens(assignments, effectiveOpById, flowsFromAssignments(assignments, effectiveOpById));
@@ -1041,17 +1030,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       const trimmedCount = shifts.reduce((n, team) => n + Math.max(0, team.length - slots), 0);
       if (trimmedCount > 0) {
         const assignments = { ...plan.assignments, [key]: shifts.map((team) => team.slice(0, slots)) };
-        const factionCounts = [0, 1].map((sh) => {
-          const counts: Record<string, number> = {};
-          for (const k of Object.keys(assignments)) {
-            const cellShifts = assignments[k] ?? [];
-            for (const id of cellShifts[Math.min(sh, cellShifts.length - 1)] ?? []) {
-              const op = effectiveOpById.get(id);
-              if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
-            }
-          }
-          return counts;
-        });
+        const factionCounts = factionCountsFor(assignments, effectiveOpById);
         nextPlan = { ...plan, assignments, factionCounts };
         setPlan(nextPlan);
         showToast(t("레벨을 낮춰 슬롯이 줄었습니다 — 초과 인원 {n}명을 뺐습니다", { n: trimmedCount }));
@@ -1114,7 +1093,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           roomOf.set(id, cellByKey.get(key)?.room ?? key);
           cellOf.set(id, key);
           const op = effectiveOpById.get(id);
-          if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
+          if (op && !key.startsWith("DORM")) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;   // 숙소 제외 (엔진 규칙)
         }
       }
       for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
@@ -1152,17 +1131,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       }
     }
     if (added === 0) { showToast(t("채울 수 있는 빈 자리가 없습니다")); return; }
-    const factionCounts = [0, 1].map((shift) => {
-      const counts: Record<string, number> = {};
-      for (const cell of LAYOUT) {
-        const cellShifts = assignments[cell.key] ?? [];
-        for (const id of cellShifts[Math.min(shift, cellShifts.length - 1)] ?? []) {
-          const op = effectiveOpById.get(id);
-          if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
-        }
-      }
-      return counts;
-    });
+    const factionCounts = factionCountsFor(assignments, effectiveOpById);
     const gapLedger = plan.flows?.length ? recountTokens(assignments, effectiveOpById, plan.flows) : null;
     const next = { ...plan, assignments, factionCounts, ...(gapLedger ? { tokenPoints: gapLedger.tokenPoints, flows: gapLedger.flows } : {}) };
     setPlan(next);

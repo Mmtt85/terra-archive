@@ -17,6 +17,12 @@ import rogue1Data from "./data/rogue1.json";
 import nodeIconData from "./data/rogue-node-icons.json";
 import { useConfirm } from "./confirm";
 import rogueIndexData from "./data/rogue-index.json";
+import rogueDlcData from "./data/rogue-dlc.json";
+// 테마·서버별 확장판 수 — 사이트 언어가 그 서버다(한국어=한섭·영어=글섭·일본어=일섭), 중국섭 탭이면 중섭
+const dlcOf = (topic: string, server: string, locale: string): number => {
+  const by = (rogueDlcData as Record<string, Record<string, number>>)[topic] ?? {};
+  return by[server === "cn" ? "cn" : locale === "en" ? "en" : locale === "ja" ? "jp" : "kr"] ?? by.cn ?? 0;
+};
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest, type Suggest } from "./search-suggest";
@@ -3088,7 +3094,9 @@ export default function RogueGuide({ initialTopic }: {
             <div className="rg-hero">
               <div className="rg-hero-text">
                 <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
-                <h1 id="rg-title">{seed.name}</h1>
+                <h1 id="rg-title">{seed.name}{initialTopic && dlcOf(initialTopic, "kr", locale) > 0 && (
+                  // 정적 HTML 에도 같은 배지 — 본문을 받은 뒤 붙거나 바뀌지 않게 (서버 탭은 아직 모르니 그 언어의 서버 기준)
+                  <em className="rg-title-future">DLC{dlcOf(initialTopic, "kr", locale)}</em>)}</h1>
                 <p className="rg-line">{seed.line}</p>
               </div>
             </div>
@@ -3273,9 +3281,10 @@ export default function RogueGuide({ initialTopic }: {
                   {/* 누르면 테마가 바뀐다는 걸 글로 알린다 — 화살표는 빼라 (사용자 지시 2026-10-10) */}
                   <span className="rg-title-hint" aria-hidden>{t("테마 변경")}</span>
                 </button>
-                {TOPICS.find((tp) => tp.id === topic)?.future && <em className="rg-title-future">{t("미래시")}</em>}{(data.endings?.length ?? 0) > 3 && (
-                  // 업데이트로 보스(엔딩)가 하나 늘 때마다 DLC1·DLC2 로 부른다 (사용자 지시 2026-10-20 — 흑류수해 = DLC1). 기본 엔딩 3개 + DLC마다 1개
-                  <em className="rg-title-future" title={t("기본 엔딩 3개에 업데이트로 보스(엔딩)가 {n}개 더해졌습니다", { n: data.endings.length - 3 })}>DLC{data.endings.length - 3}</em>)}{server === "cn" && data.cnName && <span className="rg-title-cn" lang="zh">{data.cnName}</span>}</h1>
+                {TOPICS.find((tp) => tp.id === topic)?.future && <em className="rg-title-future">{t("미래시")}</em>}{dlcOf(topic, server, locale) > 0 && (
+                  // 업데이트로 보스가 더해질 때마다 DLC1·DLC2 로 부른다 (사용자 지시 2026-10-20 — 흑류수해 = DLC1·살카즈 = DLC3).
+                  // 수는 게임 표의 확장판 기록(rogue-dlc.json, build-rogue.py dlc) — 처음부터 들고 있어 본문을 받기 전후로 안 바뀐다
+                  <em className="rg-title-future" title={t("업데이트로 더해진 확장판 수 (보스가 하나씩 늘어난 판)")}>DLC{dlcOf(topic, server, locale)}</em>)}{server === "cn" && data.cnName && <span className="rg-title-cn" lang="zh">{data.cnName}</span>}</h1>
             </div>
             {data.line && <p className="rg-line">{data.line}</p>}
           </div>

@@ -462,6 +462,7 @@ function BarList({ rows, top, unit = "" }: { rows: { label: string; n: number; s
   );
 }
 
+
 /** 요일 × 시간 (KST) */
 export function Heatmap({ cells }: { cells: [number, number, number][] }) {
   const grid = Array.from({ length: 7 }, () => Array<number>(24).fill(0));
@@ -487,7 +488,6 @@ export function Heatmap({ cells }: { cells: [number, number, number][] }) {
     </svg>
   );
 }
-
 /** 흐름도 — 유입원 → 첫 화면 → 두 번째 → 세 번째. 칸마다 상위 7개만, 나머지는 '기타' */
 export function Sankey({ flow, nameOf, links = true }: { flow: FlowRow[]; nameOf?: (label: string) => string; links?: boolean }) {
   const TOP = 7;
@@ -624,7 +624,7 @@ const TAB_KEYS: Record<string, string[]> = {
   overview: ["total", "days", "me_sync", "hourly", "quarter", "b15", "b30", "b60", "src", "out"],   // src·out 은 세션 타임라인 거르기
   screens: ["total", "pages", "sections", "landing", "flow"],
   prts: ["total", "prts"],
-  etc: ["total", "src", "ref", "hours", "device", "site_lang", "tz", "out"],
+  etc: ["total", "src", "ref", "device", "site_lang", "tz", "out"],   // 요일·시간 칸은 뺐다 (사용자 지시 2026-10-20)
   search: [],
 };
 const EMPTY_SUMMARY = { total: { sessions: 0, visitors: 0, views: 0, active_ms: 0, revisit: 0, bounce: 0, bots: 0 },
@@ -1592,20 +1592,15 @@ export function VisitsPanel() {
           {/* PRTS 틀렸어요는 피드백 탭으로 옮겼다 (사용자 지시 2026-10-15 "방문 통계가 아니라 피드백으로", app/lens/bridge.ts markBridgeWrong) */}
 
           {vtab === "etc" && (<>
+          {/* 두 칸씩 세 줄 — 요일·시간 칸을 뺀 뒤 리퍼러를 유입원 옆으로 떼어 줄을 맞췄다 (사용자 지시 2026-10-20) */}
           <div className="vz-cols">
             <div>
               <Head title="유입원" {...top("src", "유입원")} />
               <BarList top={tops.src} rows={barRows.src} />
-              {data.ref.length > 0 && (
-                <>
-                  <Head title="경로까지 온 리퍼러" sub={`${data.ref.length}개`} {...top("ref", "경로까지 온 리퍼러")} />
-                  <BarList top={tops.ref} rows={barRows.ref} />
-                </>
-              )}
             </div>
             <div>
-              <Head title="요일·시간 (KST)" />
-              <Heatmap cells={data.hours} />
+              <Head title="경로까지 온 리퍼러" sub={`${data.ref.length}개`} {...top("ref", "경로까지 온 리퍼러")} />
+              {data.ref.length > 0 ? <BarList top={tops.ref} rows={barRows.ref} /> : <p className="vz-empty">이 기간에는 없습니다.</p>}
             </div>
           </div>
 

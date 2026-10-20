@@ -1335,7 +1335,7 @@ const D: Record<string, Pair> = {
   // /admin에서 새 세트를 추가하면 여기에 같은 이름 키로 EN/JA를 보충할 것 (없으면 KR 표시)
   "쉐라그 무역소 세트": ["Kjerag trading set", "イェラグ貿易セット"],
   "피누스 실베스트리스 세트": ["Pinus Sylvestris set", "ピヌス・シルウェストリスセット"],
-  "기본 엔딩 3개에 업데이트로 보스(엔딩)가 {n}개 더해졌습니다": ["{n} boss(es) and ending(s) added by updates on top of the 3 base endings", "基本エンディング3つに、アップデートでボス（エンディング）が{n}つ追加されています"],
+  "업데이트로 더해진 확장판 수 (보스가 하나씩 늘어난 판)": ["Number of content expansions added by updates (each adds a boss)", "アップデートで追加された拡張の数（ボスが1体ずつ増えた版）"],
   "품질 수익 조합": ["quality-payout combo", "品質収益コンボ"],
   "어비설 헌터스 제조소 세트": ["Abyssal Hunters factory set", "アビサルハンターズ製造所セット"],
   "제어센터 카드의 '+N 오라 가중 점수'는 %가 아니라 오라를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산한 비교용 점수입니다. 일반 방 카드에 '(오라 ±N)'이 붙어 있으면 제어센터 오라 수신분이 포함된 것으로, 방 점수가 오퍼 스킬 합과 달라 보이는 이유입니다 — 방 상세의 '제어센터 오라 수신' 항목에서 내역을 확인할 수 있습니다.": [

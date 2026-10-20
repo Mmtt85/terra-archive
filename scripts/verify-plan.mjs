@@ -243,7 +243,8 @@ console.log("");
     const byId = new Map(roster.map((o) => [o.id, o]));
     engine.setPriorityMode(priority);
     const r = await engine.optimizeConfig(roster, priority);
-    const S0 = engine.planScore(r.plan, byId);
+    // 마무리 교체(polishPlan)가 붙은 편성은 전략으로 다시 지을 수 없다 — 육성 추천이 다시 짓는 기준은 그 전 편성(prePolish)
+    const S0 = engine.planScore(r.prePolish ?? r.plan, byId);
     const drop = new Set(r.excluded);
     engine.setCapCluster(r.capCluster);
     engine.setShiftTiebreak(r.shiftTiebreak);

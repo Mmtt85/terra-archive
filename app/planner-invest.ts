@@ -360,7 +360,8 @@ export async function investPrepare(inp: InvestInput, base?: OptimizeResult | nu
   // 반사실은 베이스라인이 **실제로 쓴 전략 그대로** 지어야 한다 — 토큰·세트·파킹·시드·제외 명단·
   // 결집 on/off 중 하나라도 빠지면 모든 후보의 ΔS 가 같은 상수만큼 깎여 추천이 0건이 된다 (2026-07-30)
   const cfg = base ?? await optimizeConfig(baseRoster, priority, undefined, pinnedDorms, roomPins);
-  const baseline = cfg.plan;
+  // 마무리 교체(polishPlan) 전 편성이 기준 — 후보들도 buildPlan 으로만 지으므로 같은 조건끼리 비교해야 ΔS 가 맞다 (2026-10-20)
+  const baseline = cfg.prePolish ?? cfg.plan;
 
   type Raw = InvestCand & { gained: InfraOp["skills"] };
   const singles: Raw[] = [];
