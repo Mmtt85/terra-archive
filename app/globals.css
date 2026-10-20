@@ -31575,6 +31575,8 @@ html.dark .mm-art { opacity: .25; }
 .mm-who { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .mm-who > span { font-size: 11px; color: var(--muted); }
 .mm-who > .mm-reg-day { font-size: 10px; }
+/* 박사 레벨 — 한눈에 보이게 크게 (사용자 지시 2026-10-21) */
+.mm-lv { font-size: 14px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; margin-right: 2px; }
 .mm-stale { display: inline-block; margin-top: 2px; padding: 0 5px; font-style: normal; font-size: 10px; line-height: 15px; color: var(--ink2); border: 1px solid var(--line); white-space: nowrap; vertical-align: 1px; }   /* 배지가 글자 중간에서 줄바꿈되지 않게 */
 /* 상태 문구 — 한 줄, 넘치면 말줄임 (전문은 마우스를 올리면) */
 .mm-resume { max-width: 100%; font-size: 11px; color: var(--ink2); quotes: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

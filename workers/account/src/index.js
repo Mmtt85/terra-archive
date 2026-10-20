@@ -472,7 +472,8 @@ async function friendList(call) {
     const ids = (sorted.result ?? []).map((row) => row?.uid).filter(Boolean);
     if (!ids.length) return [];
     const data = await call("/social/getFriendList", { idList: ids });
-    return Array.isArray(data.friends) ? data.friends : [];
+    // 친구 정보에 uid 가 빠져 오면 요청한 id 순서로 채운다 (친구 카드 UID 복사, 2026-10-21)
+    return Array.isArray(data.friends) ? data.friends.map((f, i) => (f && f.uid == null && data.friends.length === ids.length ? { ...f, uid: ids[i] } : f)) : [];
   } catch {
     return null;
   }

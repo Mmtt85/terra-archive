@@ -109,12 +109,12 @@ function MatchRowView({ r, opById, now, mine, full, friend }: { r: MatchRow; opB
       {sec && <img className="mm-art" src={artOf(sec, r.secSkin ?? null)} alt="" aria-hidden decoding="async" loading="lazy"
         onError={(e) => { const el = e.currentTarget; const fb = artOf(sec, null); if (el.src !== new URL(fb, location.href).href) el.src = fb; else el.remove(); }} />}
       <div className="mm-who">
+        {/* 입사일 — 닉네임 위 (사용자 지시 2026-10-21). 박사 카드의 '입사'와 같은 글 */}
+        {!!r.register && <span className="mm-reg-day">{t("{date} 입사", { date: new Date(r.register * 1000).toLocaleDateString(DT_LOCALE[locale], { year: "numeric", month: "short", day: "numeric" }) })}</span>}
         {/* 이미 친구 — 닉네임#번호 바로 오른쪽에, 조금 더 눈에 띄게 (사용자 지시 2026-10-20) */}
         <b>{nick || "Dr."}{num && <small>#{num}</small>}{friend && <em className="mm-friend">{t("이미 친구")}</em>}</b>
         {/* 'N분 전' 은 친구 카드(전부 보기 — 게임의 마지막 접속)에만. 매칭 카드의 시각은 마지막 '동기화'라 접속 안 한 사람처럼 보였다 (사용자 지적 2026-10-20) */}
-        <span>Lv.{r.level}{r.friends != null && r.flimit ? ` · ${t("친구 {a}/{b}", { a: r.friends, b: r.flimit })}` : ""}{!r.server && ` · ${ago(t, now, r.t)}`}</span>
-        {/* 입사일 (사용자 지시 2026-10-20) — 박사 카드의 '입사'와 같은 글 */}
-        {!!r.register && <span className="mm-reg-day">{t("{date} 입사", { date: new Date(r.register * 1000).toLocaleDateString(DT_LOCALE[locale], { year: "numeric", month: "short", day: "numeric" }) })}</span>}
+        <span><b className="mm-lv">Lv.{r.level}</b>{r.friends != null && r.flimit ? ` · ${t("친구 {a}/{b}", { a: r.friends, b: r.flimit })}` : ""}{!r.server && ` · ${ago(t, now, r.t)}`}</span>
         {r.resume && <q className="mm-resume" title={r.resume}>{r.resume}</q>}
         {r.uid && <button type="button" className="me-pf-uid" onClick={copy} title={t("UID 복사")}>
           UID <code>{r.uid}</code><span aria-hidden>{copied ? "✓" : "⧉"}</span>
