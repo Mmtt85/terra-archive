@@ -599,7 +599,12 @@ const SPAN_LABEL: Record<number, string> = { 7: "최근 7일", 30: "최근 30일
 // 2026-10-15 30초로 — 방문 DB 가 아침 9시에 통째로 멈췄다(재시작으로 복구). pg_stat_statements 를 보니 DB 시간의 거의 전부가
 // 관리 화면 집계 함수였다(합계 23시간 남짓, 방문 기록 넣기는 0.15시간). 기록이 쌓여 한 번이 0.5~1초로 느려진 데다 탭 서너 개가 10초마다 불렀다
 // 2026-10-19 다시 10초 — 탭별 집계(visits_summary_keys)로 지금 연 탭의 칸만 받고, 창 하나만·앞 요청이 끝난 뒤에만 다음을 건다 (사용자 지시)
-const AUTO_EVERY = 10_000;
+// 2026-10-20 1분 — 통계 DB Egress(나가는 전송량)가 무료 한도 5GB 를 넘었다(10/11 부터 하루 0.5~1GB). 세션 목록도 바뀐 줄만 받는다 (사용자 지시)
+const AUTO_EVERY = 60_000;
+// 세션 타임라인 자동 갱신은 바뀐 줄만(p_since) 받고, 통째로는 이 주기마다 한 번 — 끝난 세션의 마지막 기록 정리·순위 밀림을 맞춘다
+const SESS_FULL_EVERY = 10 * 60_000;
+// '조작 중' 판정(sessLive 2분)에 여유를 둔 최근 활동 창 — 조작 중만·자정 넘긴 세션은 이 창에 기록이 있는 세션만 받는다
+const LIVE_WINDOW = 3 * 60_000;
 // 자동 갱신은 관리 창 하나만 — 가장 최근에 보던(보이거나 누른) 탭이 맡고, 나머지는 쉰다. 맡은 탭이 90초 넘게 소식이 없으면(닫힘) 보이는 탭이 넘겨받는다
 const LEAD_KEY = "ta-admin-visits-lead";
 const TAB_ID = Math.random().toString(36).slice(2);
@@ -1013,7 +1018,8 @@ export function VisitsPanel() {
   const [loadSess, setLoadSess] = useState(false);
   const busy = loadMain || loadSess;
 
-  // 켜 둔 동안 10초마다 새로고침 (사용자 지시 2026-10-04 5분 → 1분, 2026-10-10 1분 → 10초 "방문 통계 10초마다").
+  // 켜 둔 동안 1분마다 새로고침 (사용자 지시 2026-10-04 5분 → 1분, 2026-10-10 1분 → 10초, 2026-10-20 다시 1분 — 10초마다 세션 목록을
+  // 통째로 받아 통계 DB Egress 가 무료 한도 5GB 를 넘었다).
   // 탭이 가려져 있으면 쉬었다가, 다시 보일 때 주기가 지났으면 곧바로. 자동 갱신은 세션 목록을 조용히(로딩 표시 없이) 받는다
   // 자동 갱신이 부른 세션 목록 재요청은 로딩 표시·실패 시 비우기를 하지 않는다
   const sessSilent = useRef(false);
@@ -1101,35 +1107,57 @@ export function VisitsPanel() {
     try { localStorage.setItem("ta-admin-visit-liveonly", nv ? "1" : "0"); } catch { /* 무시 */ }
     return nv;
   });
-  // '조작 중만'이면 상위 N 과 무관하게 조작 중인 세션 전부 — 최근 세션을 넉넉히(500) 받아 그 안에서 거른다
-  // (사용자 지시 2026-10-11). 조작 중은 마지막 기록이 2분 안인 세션이라 최근 500 안에 다 든다
+  // '조작 중만'이면 상위 N 과 무관하게 조작 중인 세션 전부 (사용자 지시 2026-10-11) — 최근 3분 안에 기록이 온 세션만 받는다
+  // (2026-10-20: 종전엔 최근 200 줄을 통째로 받아 거렀다). 나간 링크 거르기는 지난 세션을 봐야 해 200 줄 그대로
   const fetchN = liveOnly || outFilter ? Math.max(limit, 200) : limit;   // 2026-10-12 500 → 200 (메모리 절약)
+  // 자동 갱신은 지난번에 받은 뒤 바뀐 세션만(p_since) 받아 목록에 덮는다 (2026-10-20 Egress) — 조건이 바뀌거나, 손으로 새로고침하거나,
+  // SESS_FULL_EVERY 가 지나면 통째로. 옛 DB 함수(p_since 모름)면 통째로 받는 쪽으로 물러선다
+  const sessLoad = useRef<{ sig: string; at: number; full: number }>({ sig: "", at: 0, full: 0 });
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
     if (vtab !== "overview") return;   // 세션 타임라인은 개요 탭에만 있다
     let alive = true;
     const silent = sessSilent.current;
     sessSilent.current = false;
+    const sig = JSON.stringify([days, human, srcFilter, fetchN, range, slot, liveOnly && !outFilter]);
+    const L = sessLoad.current;
+    const now = Date.now();
+    const delta = silent && L.sig === sig && L.at > 0 && now - L.full < SESS_FULL_EVERY;
+    const liveCut = liveOnly && !outFilter ? new Date(now - LIVE_WINDOW).toISOString() : null;
+    const since = delta ? new Date(L.at - 15_000).toISOString() : liveCut;
     if (!silent) setLoadSess(true);
     inflight.current += 1;
-    (rangeArgs
-      ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, ...kindArgs, p_src: srcFilter || null, p_limit: fetchN })
-      : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), ...kindArgs, p_src: srcFilter || null, p_limit: fetchN }))
-      .then((s) => { if (alive) setSessions(s); }).catch(() => { if (alive && !silent) setSessions(null); })
+    const call = (p_since: string | null) => rangeArgs
+      ? rpc<SessRow[]>("visits_sessions_range", { ...rangeArgs, ...kindArgs, p_src: srcFilter || null, p_limit: fetchN, ...(p_since ? { p_since } : {}) })
+      : rpc<SessRow[]>("visits_sessions", { p_days: Math.min(days, 90), ...kindArgs, p_src: srcFilter || null, p_limit: fetchN, ...(p_since ? { p_since } : {}) });
+    call(since).catch((e) => (since ? call(null) : Promise.reject(e)))
+      .then((s) => {
+        if (!alive) return;
+        sessLoad.current = { sig, at: now, full: delta ? L.full : now };
+        if (!delta) { setSessions(s); return; }
+        setSessions((prev) => {
+          const byId = new Map((prev ?? []).map((x) => [x.id, x]));
+          for (const x of s) byId.set(x.id, x);
+          return [...byId.values()].sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, fetchN);
+        });
+      })
+      .catch(() => { if (alive && !silent) setSessions(null); })
       .finally(() => { inflight.current -= 1; doneAt.current = Date.now(); if (alive && !silent) setLoadSess(false); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, human, srcFilter, fetchN, tick, range, slot, vtab]);
+  }, [days, human, srcFilter, fetchN, tick, range, slot, vtab, liveOnly]);
 
   // 구간 시작 전에 들어와 **지금도 조작 중인** 세션 — '오늘'처럼 지금이 든 구간이면 자정을 넘겨도 계속 보여야 한다
-  // (사용자 지시 2026-10-12 "날짜가 바껴도 지금도 조작중일테니 보여야"). DB 는 시작 시각으로만 거르므로 시작 전 하루치를 따로 받아
-  // 조작 중인 것만 목록 뒤에 붙인다 (시작 순으로는 가장 오래된 쪽이다)
+  // (사용자 지시 2026-10-12 "날짜가 바껴도 지금도 조작중일테니 보여야"). DB 는 시작 시각으로만 거르므로 시작 전 하루치에서
+  // 최근 3분 안에 기록이 온 세션만 받아(2026-10-20 — 종전엔 300 줄을 통째로 받아 거렀다) 조작 중인 것만 목록 뒤에 붙인다
   const carryFrom = !slot && spanStart != null && spanEnd != null && spanEnd >= Date.now() - 120_000 ? spanStart : null;
   const [carry, setCarry] = useState<SessRow[]>([]);
   useEffect(() => {
     if (carryFrom == null || vtab !== "overview") { setCarry([]); return; }
     let alive = true;
-    rpc<SessRow[]>("visits_sessions_range", { p_from: isoAt(carryFrom - 86400_000), p_to: isoAt(carryFrom), ...kindArgs, p_src: srcFilter || null, p_limit: 300 })
+    const args = { p_from: isoAt(carryFrom - 86400_000), p_to: isoAt(carryFrom), ...kindArgs, p_src: srcFilter || null, p_limit: 300 };
+    rpc<SessRow[]>("visits_sessions_range", { ...args, p_since: new Date(Date.now() - LIVE_WINDOW).toISOString() })
+      .catch(() => rpc<SessRow[]>("visits_sessions_range", args))
       .then((rows) => { if (alive) setCarry(rows.filter(sessLive)); }).catch(() => { if (alive) setCarry([]); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -2428,6 +2428,7 @@ export default function RogueGuide({ initialTopic }: {
       else if (type === "enc") { const e = encByScene.get(id); if (e) setEncOpen(e); }
       else if (type === "stage") { const s = stageById.get(id); if (s) setStageOpen({ ...pairOf(s), init: g.emergency ? "e" : undefined }); }
       else if (type === "zone") { const z = zoneById.get(id); if (z) setZoneOpen(z); }
+      else if (type === "enemy") { if (data.enemies[id]) setEnemyOpen({ key: id, ctx: dexCtx(id) }); }   // 만능검색 적 (2026-10-20)
     }
     setLensHits(g.highlight?.length ? new Set(g.highlight) : null);
     // 아이템(유물·도구·음반·시스템)이 여러 개 인식되면 모아보기 모달로 띄운다 (gather 플래그)

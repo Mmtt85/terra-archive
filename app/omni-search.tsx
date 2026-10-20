@@ -33,7 +33,7 @@ import { isNewFeature } from "./whats-new";
 import type { Operator } from "./home";
 
 // 이미지가 없는 종류의 아이콘 — 햄버거 탭 아이콘과 같은 글리프를 써서 어디로 가는지 읽히게
-const KIND_GLYPH: Record<string, string> = { story: "✦", tag: "◎", rogue: "❖", topic: "❖", tab: "◇" };
+const KIND_GLYPH: Record<string, string> = { story: "✦", tag: "◎", rogue: "❖", topic: "❖", tab: "◇", enemy: "☠" };
 const LEARNED_MIN = 3;   // 이 표수 이상이면 '자주 선택' 표시 (내 선택 1회 = 3표)
 
 // 색인·검색 엔진(omni.ts)은 무겁다 — farm.tsx → costs.json(573KB)·story.tsx·recruit까지 끌고 온다. 그래서
@@ -45,6 +45,10 @@ let enginePromise: Promise<Engine> | null = null;
 let engineMod: Engine | null = null;      // 받은 뒤엔 콜백에서 바로 쓴다 (상태 반영을 기다리지 않게)
 const loadEngine = (): Promise<Engine> =>
   (enginePromise ??= import("./omni").then((m) => (engineMod = m)).catch((err) => { enginePromise = null; throw err; }));
+// 적 이름표(enemy-names.json, 약 170KB) — 패널을 열 때 한 번 받는다 (2026-10-20 적 검색)
+let enemyNamesP: Promise<import("./omni").EnemyNames | null> | null = null;
+const loadEnemyNames = () => (enemyNamesP ??= import("./data/enemy-names.json")
+  .then((m) => m.default as import("./omni").EnemyNames).catch(() => { enemyNamesP = null; return null; }));
 
 export default function OmniSearch({ roster, extra, onGo }: {
   roster: Operator[];
@@ -65,6 +69,7 @@ export default function OmniSearch({ roster, extra, onGo }: {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [rogueItems, setRogueItems] = useState<OmniItem[] | null>(null);  // 지연 로드된 통합전략 항목
+  const [enemyNames, setEnemyNames] = useState<import("./omni").EnemyNames | null>(null);
   // 전역 집계(사람들의 표) — 학습은 전부 DB에 쌓이고, 여기선 세션 1회 받아 온 지도를 읽는다.
   // tick은 내 표를 낙관적으로 얹은 뒤 다시 그리기 위한 신호 (지도 자체는 omni-picks 모듈 소유).
   const [crowd, setCrowd] = useState<PickIndex>({});
@@ -76,8 +81,9 @@ export default function OmniSearch({ roster, extra, onGo }: {
 
   // 색인은 패널을 열고 엔진이 온 뒤에 만든다 (헤더만 있는 상태에선 아무 비용도 들이지 않는다)
   const base = useMemo(
-    () => (open && engine ? engine.buildOmniIndex({ roster, locale, t, extra }) : []),
-    [open, engine, roster, locale, t, extra]);
+    () => (open && engine ? engine.buildOmniIndex({ roster, locale, t, extra })
+      .concat(enemyNames ? engine.enemyOmniItems(enemyNames, locale, t) : []) : []),
+    [open, engine, roster, locale, t, extra, enemyNames]);
   const items = useMemo(() => (rogueItems ? base.concat(rogueItems) : base), [base, rogueItems]);
   const picks = useMemo(() => picksFor(normSearch(term), crowd), [term, crowd]);
   // 선택 학습으로 익힌 은어 사전 ("록라" → 통합전략) — 내장 사전 위에 얹힌다
@@ -89,6 +95,7 @@ export default function OmniSearch({ roster, extra, onGo }: {
   const openPanel = () => {
     loggedRef.current = false;
     void loadAnswers().then(setAnswers);
+    void loadEnemyNames().then((n) => { if (n) setEnemyNames(n); });
     warm();
     setOpen(true);
     setCrowd({ ...crowdPicks() });                          // 이미 받아 둔 집계 즉시 반영
@@ -289,7 +296,8 @@ export default function OmniSearch({ roster, extra, onGo }: {
         return;
       }
     }
-    const light = engine ? base : eng.buildOmniIndex({ roster, locale, t, extra });
+    const light = engine ? base : eng.buildOmniIndex({ roster, locale, t, extra })
+      .concat(enemyNames ? eng.enemyOmniItems(enemyNames, locale, t) : []);
     const here = eng.currentRogueTopic();             // 통합전략 가이드를 보는 중이면 그 테마를 사전확률로
     const now = picksFor(normSearch(query), crowd);
     const list = eng.searchSmart(rogueItems ? light.concat(rogueItems) : light, query, { picks: now, hints });
@@ -328,7 +336,7 @@ export default function OmniSearch({ roster, extra, onGo }: {
           {/* 비제어 입력 — value를 React가 되돌려 쓰지 않으므로 글자는 브라우저 속도로 바로 뜬다.
               지우기(×)·바로가기의 비활성 표시는 :placeholder-shown CSS로 (상태 렌더 없이). */}
           <input ref={inputRef} defaultValue="" onInput={(e) => onInput(e.currentTarget.value)} onKeyDown={onKeyDown}
-            placeholder={t("오퍼레이터 · 재료 · 스토리 · 통합전략 · 기능 검색")}
+            placeholder={t("오퍼레이터 · 적 · 재료 · 스토리 · 통합전략 · 기능 검색")}
             aria-label={t("유니버셜 서치 — 사이트 전체 검색")} enterKeyHint="go" />
           <button type="button" className="omni-clear" onClick={clearInput} aria-label={t("검색어 지우기")}>×</button>
           <button type="button" className="omni-go" onClick={() => void submit()} disabled={busy}>

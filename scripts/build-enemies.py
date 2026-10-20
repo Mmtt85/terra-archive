@@ -328,6 +328,27 @@ names = {"ids": [e["id"] for e in by_loc["ko"]],
          "ko": [e["name"] for e in by_loc["ko"]],
          "en": [e["name"] for e in by_loc["en"]],
          "ja": [e["name"] for e in by_loc["ja"]]}
+# 통합전략 전용 적(적 도감에 없는 것 — 중섭 선행 테마의 적 등)도 싣는다. topic 칸이 차 있으면 그 테마 적 도감 창으로 연다
+# (2026-10-20 만능검색 "Dark edg" → 흑류수해 黯锋助祭 를 못 찾았다). 테마 데이터(build-rogue.py 산출)를 그대로 읽는다
+names["topic"] = [""] * len(names["ids"])
+seen = set(names["ids"])
+for n in range(1, 10):
+    base = os.path.join(DATA, f"rogue{n}.json")
+    if not os.path.exists(base):
+        continue
+    loc_en = {}
+    for loc, _, suf in LOCALES:
+        f = os.path.join(DATA, f"rogue{n}{suf}.json")
+        loc_en[loc] = (json.load(open(f, encoding="utf-8")).get("enemies") or {}) if os.path.exists(f) else {}
+    for eid, e in loc_en["ko"].items():
+        if eid in seen or not e.get("name"):
+            continue
+        seen.add(eid)
+        names["ids"].append(eid); names["idx"].append(e.get("index") or ""); names["rank"].append(e.get("rank") or "")
+        names["ko"].append(e["name"])
+        for loc in ("en", "ja"):
+            names[loc].append((loc_en.get(loc, {}).get(eid) or {}).get("name") or e["name"])
+        names["topic"].append(f"rogue_{n}")
 p = os.path.join(DATA, "enemy-names.json")
 json.dump(names, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print(f"  enemy-names.json: {os.path.getsize(p)//1024}KB")

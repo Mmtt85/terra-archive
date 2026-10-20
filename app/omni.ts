@@ -10,6 +10,7 @@
 //   통합전략 테마 → /rogue?topic=isN
 //   통합전략 항목 → 유물·조우·작전·분대… (스샷 레이더 인덱스 재사용, **지연 로드 2.9MB**)
 //   기능 탭      → 인프라 자동편성기·파밍·육성 시뮬 등 (동의어: riic, base, is3 …)
+//   적           → 적 도감 #en-<id> · 통합전략 전용 적은 그 테마 적 도감 창 (enemy-names.json, 패널을 열 때 받는다 — 2026-10-20)
 //
 // 무거운 통합전략 항목은 기본 색인에서 빠져 있다 — 가벼운 색인으로 답이 안 나올 때만
 // omni.tsx가 getRogueIndex()로 받아 rogueOmniItems()로 합친다.
@@ -24,12 +25,13 @@ import { PICK_BONUS_MAX, type PickMap } from "./omni-picks";
 import type { Operator, Tab } from "./home";
 import type { ExtraI18n, Locale, T } from "./i18n";
 
-export type OmniKind = "op" | "story" | "material" | "tag" | "rogue" | "topic" | "tab";
+export type OmniKind = "op" | "story" | "material" | "tag" | "rogue" | "topic" | "tab" | "enemy";
 
 export type OmniTarget =
   | { kind: "tab"; tab: Tab }
   | { kind: "op"; id: string }
   | { kind: "story"; id: string }
+  | { kind: "enemy"; id: string }
   | { kind: "rogue"; topic: string; goto?: LensGoto }
   | { kind: "recruit"; tags: string[] }
   | { kind: "farm"; item: string };
@@ -59,7 +61,7 @@ const ALIAS_PENALTY = 8;     // 별명·코드로 잡힌 건 이름으로 잡힌
 const MIN_SCORE = 18;        // 이 밑은 잡음 (한 글자 검색어가 전 항목에 걸리는 것 방지)
 const DECIDE_GAP = 30;       // 1위-2위 점수차가 이 이상이면 되묻지 않고 바로 이동
 // 종류별 미세 가중 — 같은 점수면 사람이 먼저 떠올릴 법한 쪽을 위로
-const KIND_BONUS: Record<OmniKind, number> = { op: 3, tab: 2, topic: 2, story: 2, material: 1, tag: 0, rogue: 0 };
+const KIND_BONUS: Record<OmniKind, number> = { op: 3, tab: 2, topic: 2, story: 2, material: 1, tag: 0, rogue: 0, enemy: 0 };
 
 // 검색 정규화 + **장식 문자 제거** — 통합전략 항목 이름은 《글로리어스 카시미어》·'글로리 팩'처럼
 // 괄호·따옴표를 달고 있어서, 그대로 두면 "글로리"가 접두로 안 걸린다 (사용자 리포트 2026-07-26).
@@ -280,6 +282,31 @@ export function rogueOmniItems(index: LensIndex, t: T): OmniItem[] {
       target: { kind: "rogue", topic: e.topic, goto },
     });
   }
+  return items;
+}
+
+/** 적 — 적 도감 이름표(enemy-names.json: 적 도감 + 통합전략 전용 적, 세 언어 이름)를 받아 항목으로.
+ *  α·β 단계 적도 따로 싣는다(도감 칸이 따로다). 세 언어 이름을 다 키로 넣어 화면 언어와 무관하게 찾힌다 */
+export type EnemyNames = { ids: string[]; idx: string[]; rank: string[]; ko: string[]; en: string[]; ja: string[]; topic?: string[] };
+const RANK_LABEL: Record<string, string> = { NORMAL: "일반", ELITE: "엘리트", BOSS: "보스" };
+export function enemyOmniItems(names: EnemyNames, locale: Locale, t: T): OmniItem[] {
+  const topicName = new Map(TOPICS.map((tp) => [tp.id, t(tp.name)]));
+  const items: OmniItem[] = [];
+  names.ids.forEach((id, i) => {
+    const ko = names.ko[i];
+    const name = (locale === "ko" ? ko : names[locale][i]) || ko;
+    if (!name) return;
+    const topic = names.topic?.[i] || "";
+    const rank = RANK_LABEL[names.rank[i]];
+    const sub = [topic ? topicName.get(topic) ?? topic : null, rank ? `${t("적")} · ${t(rank)}` : t("적")].filter(Boolean).join(" · ");
+    items.push({
+      uid: `enemy:${id}`, kind: "enemy", name, sub,
+      keys: keysOf(name, ...words(name), ko, names.en[i], names.ja[i]),
+      target: topic
+        ? { kind: "rogue", topic, goto: { page: "rogue", topic, view: "enemy", modal: { type: "enemy", id } } }
+        : { kind: "enemy", id },
+    });
+  });
   return items;
 }
 

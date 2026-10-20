@@ -469,6 +469,8 @@ $$;
 
 -- 세션 타임라인 목록 — 한 사람의 동선을 한 줄로
 drop function if exists public.visits_sessions_range(timestamptz, timestamptz, boolean, text, text, int);
+drop function if exists public.visits_sessions_range(timestamptz, timestamptz, boolean, text, text, int, text[]);
+drop function if exists public.visits_sessions(int, boolean, text, text, int, text[]);
 -- ── 방문자 ↔ 게임 계정 (2026-10-14) ── 내 정보로 로그인한 사람은 세션 타임라인에 UID·닉네임으로 (사용자 지시 "로그인한 사람은 UID 로, 아닌 사람은 기존처럼")
 -- 사이트(app/visit-track.ts notePlayer)가 세션마다·로그인 때 보낸다. 같은 (방문자, 서버, UID) 는 기본키 중복으로 DB 가 거절한다(익명엔 읽기 권한이 없어 ON CONFLICT 를 못 쓴다)
 create table if not exists public.visit_player (
@@ -487,7 +489,10 @@ drop policy if exists "admin read visit player" on public.visit_player;
 create policy "admin read visit player" on public.visit_player for select to anon using ((select public.visits_is_admin()));
 
 create or replace function public.visits_sessions_range(p_from timestamptz, p_to timestamptz, p_human boolean default true,
-  p_src text default null, p_landing text default null, p_limit int default 100, p_kinds text[] default null)
+  p_src text default null, p_landing text default null, p_limit int default 100, p_kinds text[] default null,
+  -- p_since: 이 시각 뒤에 기록(화면·일 기록)이 온 세션만 — 관리 화면 자동 갱신이 바뀐 줄만 받는다 (2026-10-20 Egress 한도 초과,
+  -- 10초마다 세션 목록 전체를 다시 받아 하루 1GB 가까이 나갔다). null 이면 종전처럼 전부
+  p_since timestamptz default null)
 returns json language sql stable security definer set search_path = public as $$
   with v as (
     select * from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day')
@@ -501,6 +506,9 @@ returns json language sql stable security definer set search_path = public as $$
       and public.visit_pick(public.visit_kind(h.human, h.vis, vs.tz), p_kinds, p_human)
       and (p_src is null or public.visit_host(vs.ref_host) = p_src or public.visit_src(vs.ref_host) = p_src)
       and (p_landing is null or public.visit_path(split_part(vs.landing, '#', 1)) = p_landing)
+      and (p_since is null or vs.started_at >= p_since
+           or vs.id in (select vv.session from public.visit_view vv where vv.at >= p_since
+                        union select ev.session from public.visit_event ev where ev.at >= p_since))
     order by vs.started_at desc
     limit least(p_limit, 5000)
   )
@@ -528,9 +536,10 @@ $$;
 
 drop function if exists public.visits_sessions(int, boolean, text, text, int);
 create or replace function public.visits_sessions(p_days int default 7, p_human boolean default true,
-  p_src text default null, p_landing text default null, p_limit int default 100, p_kinds text[] default null)
+  p_src text default null, p_landing text default null, p_limit int default 100, p_kinds text[] default null,
+  p_since timestamptz default null)
 returns json language sql stable as $$
-  select public.visits_sessions_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_src, p_landing, p_limit, p_kinds)
+  select public.visits_sessions_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_src, p_landing, p_limit, p_kinds, p_since)
 $$;
 
 -- 긴 기간 추이 — 원장이 지워진 옛날도 남도록 일별 집계표에서

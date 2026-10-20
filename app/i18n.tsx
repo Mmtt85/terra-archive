@@ -4147,6 +4147,8 @@ const D: Record<string, Pair> = {
   "유니버셜 서치 — 사이트 전체 검색": ["Universal Search — search the whole site", "ユニバーサルサーチ — サイト全体を検索"],
   "유니버셜 서치 — 오퍼·재료·스토리·통합전략·기능을 한 번에 찾아 이동합니다 (⌘K)": ["Universal Search — find operators, materials, stories, IS entries and tools anywhere on the site and jump there (⌘K)", "ユニバーサルサーチ — オペレーター・素材・ストーリー・ローグライク・機能をまとめて検索して移動します（⌘K）"],
   "오퍼레이터 · 재료 · 스토리 · 통합전략 · 기능 검색": ["Operators, materials, stories, IS, tools…", "オペレーター・素材・ストーリー・ローグライク・機能を検索"],
+  "오퍼레이터 · 적 · 재료 · 스토리 · 통합전략 · 기능 검색": ["Operators, enemies, materials, stories, IS, tools…", "オペレーター・敵・素材・ストーリー・ローグライク・機能を検索"],
+  "엘리트": ["Elite", "エリート"],
   "바로가기": ["Go", "移動"],
   "찾는 중…": ["Searching…", "検索中…"],
   "이 중에 무엇인가요?": ["Which one did you mean?", "この中のどれですか？"],
