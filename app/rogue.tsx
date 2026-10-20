@@ -1395,8 +1395,9 @@ const TOPIC_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_6: () => import("./data/rogue6.json"),
 };
 // 중국섭 탭(서버 탭 '중국 서버') — CN 텍스트 테이블 + KR 공식 한국어 오버레이 빌드
-// (build-rogue.py cn — 블랙플로우처럼 중국어 원문 병기). 공식 현지화가 없는 데이터라
-// EN/JA 로케일도 이 파일을 그대로 쓴다. rogue_6은 원래 CN 빌드라 여기 없다 — 중섭 탭이
+// (build-rogue.py cn — 블랙플로우처럼 중국어 원문 병기). EN/JA 는 같은 자리의 글로벌·일섭 공식 문장으로 바꾼
+// rogueN.cn.en/ja.json (build-rogue.py cn_localize, 2026-10-20 — 종전엔 EN/JA 로케일도 한국어 파일을 썼다).
+// rogue_6은 원래 CN 빌드라 여기 없다 — 중섭 탭이
 // 강제돼도 로케일 로더(loadersFor)를 탄다 (아래 로드 effect).
 const TOPIC_LOADERS_CN: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_1: () => import("./data/rogue1.cn.json"),
@@ -1405,6 +1406,22 @@ const TOPIC_LOADERS_CN: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_4: () => import("./data/rogue4.cn.json"),
   rogue_5: () => import("./data/rogue5.cn.json"),
 };
+const TOPIC_LOADERS_CN_EN: Record<string, () => Promise<{ default: unknown }>> = {
+  rogue_1: () => import("./data/rogue1.cn.en.json"),
+  rogue_2: () => import("./data/rogue2.cn.en.json"),
+  rogue_3: () => import("./data/rogue3.cn.en.json"),
+  rogue_4: () => import("./data/rogue4.cn.en.json"),
+  rogue_5: () => import("./data/rogue5.cn.en.json"),
+};
+const TOPIC_LOADERS_CN_JA: Record<string, () => Promise<{ default: unknown }>> = {
+  rogue_1: () => import("./data/rogue1.cn.ja.json"),
+  rogue_2: () => import("./data/rogue2.cn.ja.json"),
+  rogue_3: () => import("./data/rogue3.cn.ja.json"),
+  rogue_4: () => import("./data/rogue4.cn.ja.json"),
+  rogue_5: () => import("./data/rogue5.cn.ja.json"),
+};
+const cnLoadersFor = (locale: string) =>
+  locale === "en" ? TOPIC_LOADERS_CN_EN : locale === "ja" ? TOPIC_LOADERS_CN_JA : TOPIC_LOADERS_CN;
 const TOPIC_LOADERS_EN: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_1: () => import("./data/rogue1.en.json"),
   rogue_2: () => import("./data/rogue2.en.json"),
@@ -1495,7 +1512,7 @@ export default function RogueGuide({ initialTopic }: {
   const dataKey = `${topic}:${server}:${locale}`;
   useEffect(() => {
     const key = `${topic}:${server}:${locale}`;
-    const loader = (server === "cn" && TOPIC_LOADERS_CN[topic]) || loadersFor(locale)[topic];
+    const loader = (server === "cn" && cnLoadersFor(locale)[topic]) || loadersFor(locale)[topic];
     if (!(topic === "rogue_1" && locale === "ko" && server === "kr") && !loaded[key] && loader) {
       loader().then((m) =>
         setLoaded((cur) => ({ ...cur, [key]: m.default as RogueData })));
@@ -3256,7 +3273,9 @@ export default function RogueGuide({ initialTopic }: {
                   {/* 누르면 테마가 바뀐다는 걸 글로 알린다 — 화살표는 빼라 (사용자 지시 2026-10-10) */}
                   <span className="rg-title-hint" aria-hidden>{t("테마 변경")}</span>
                 </button>
-                {TOPICS.find((tp) => tp.id === topic)?.future && <em className="rg-title-future">{t("미래시")}</em>}{server === "cn" && data.cnName && <span className="rg-title-cn" lang="zh">{data.cnName}</span>}</h1>
+                {TOPICS.find((tp) => tp.id === topic)?.future && <em className="rg-title-future">{t("미래시")}</em>}{(data.endings?.length ?? 0) > 3 && (
+                  // 업데이트로 보스(엔딩)가 하나 늘 때마다 DLC1·DLC2 로 부른다 (사용자 지시 2026-10-20 — 흑류수해 = DLC1). 기본 엔딩 3개 + DLC마다 1개
+                  <em className="rg-title-future" title={t("기본 엔딩 3개에 업데이트로 보스(엔딩)가 {n}개 더해졌습니다", { n: data.endings.length - 3 })}>DLC{data.endings.length - 3}</em>)}{server === "cn" && data.cnName && <span className="rg-title-cn" lang="zh">{data.cnName}</span>}</h1>
             </div>
             {data.line && <p className="rg-line">{data.line}</p>}
           </div>

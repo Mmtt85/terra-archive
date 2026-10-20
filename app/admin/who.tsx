@@ -21,9 +21,26 @@ function load(force = false): void {
   if (loading && !force) return;
   if (force && Date.now() - loadedAt < 5_000) return;   // 같은 순간 여러 번 불려도 한 번만
   loadedAt = Date.now();
-  loading = fetch("/api/visits/visit_player?select=visitor,server,uid,at&order=at.desc&limit=10000")
-    .then((r) => (r.ok ? r.json() : []))
-    .then((rows: { visitor: string; server: string; uid: string }[]) => {
+  // ⚠ DB(PostgREST)는 한 번에 최대 1,000줄만 준다 — limit=10000 을 줘도 1,000에서 잘린다. 표가 1,000줄을 넘긴 날(2026-10-20,
+  // 1,135줄) 가장 옛 계정들이 통째로 빠져 내 정보 동기화에 'UID 모름'이 갑자기 늘었다. 1,000줄씩 끝까지 나눠 받는다
+  type Row = { visitor: string; server: string; uid: string };
+  const PAGE = 1000;
+  const pageAt = async (from: number): Promise<Row[]> => {
+    const r = await fetch(`/api/visits/visit_player?select=visitor,server,uid,at&order=at.desc,visitor.asc&limit=${PAGE}&offset=${from}`);
+    if (!r.ok) throw new Error(String(r.status));
+    return r.json();
+  };
+  const all = async (): Promise<Row[]> => {
+    const out: Row[] = [];
+    for (let from = 0; from < 50 * PAGE; from += PAGE) {
+      const rows = await pageAt(from);
+      out.push(...rows);
+      if (rows.length < PAGE) break;
+    }
+    return out;
+  };
+  loading = all()
+    .then((rows) => {
       const m = new Map<string, Player>();
       for (const r of rows) { const k = r.visitor.slice(0, 8); if (!m.has(k)) m.set(k, { server: r.server, uid: r.uid }); }   // 최근 것 먼저
       byCode = m;

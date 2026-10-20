@@ -61,7 +61,6 @@ export default function OmniPanel({ tick = 0 }: { tick?: number }) {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [err, setErr] = useState("");
-  const [onlyMiss, setOnlyMiss] = useState(false);
   const [top, setTop] = useState(30);
   const [rev, setRev] = useState(0);
   const from = useMemo(() => new Date(kstStartOfToday() - (days - 1) * 86400_000).toISOString(), [days]);
@@ -96,8 +95,9 @@ export default function OmniPanel({ tick = 0 }: { tick?: number }) {
   const people = new Set(rows.map((r) => r.visitor).filter(Boolean)).size;
   const picked = rows.filter((r) => r.target).length;
   const zero = rows.filter((r) => (r.n ?? 0) === 0).length;
-  // '못 찾음' = 0건이었거나 안 고르고 닫은 적이 있는 말 — 직접 연결을 달 후보
-  const shown = (onlyMiss ? groups.filter((g) => g.zero || g.none) : groups).slice(0, top);
+  // 결과가 0건이었던 적이 있는 말만 (사용자 지시 2026-10-20 "결과 안 나온 애들만") — 직접 연결을 달 후보
+  const shown = groups.filter((g) => g.zero).slice(0, top);
+  const zeroRows = rows.filter((r) => (r.n ?? 0) === 0);
   return (
     <section className="om-panel">
       <div className="vz-head">
@@ -105,19 +105,18 @@ export default function OmniPanel({ tick = 0 }: { tick?: number }) {
         <span className="vz-note">{rows.length ? `검색 ${rows.length.toLocaleString()}회 · ${people}명 · 골라서 이동 ${Math.round((picked / rows.length) * 100)}% · 결과 0건 ${zero}회 · 직접 연결 ${answers.length}개` : "이 기간에는 기록이 없습니다 (2026-10-19부터 기록)"}</span>
         <div className="vz-head-tools admin-tools">
           {PERIODS.map((p) => <button key={p.k} type="button" className={`tab-btn${days === p.k ? " selected" : ""}`} onClick={() => setDays(p.k)}>{p.label}</button>)}
-          <label className="om-check"><input type="checkbox" checked={onlyMiss} onChange={(e) => setOnlyMiss(e.target.checked)} /> 못 찾은 말만</label>
           <Dropdown ariaLabel="보일 줄 수" label={`상위 ${top}`} selected={[String(top)]}
             items={[30, 100, 500].map((n) => ({ value: String(n), label: `상위 ${n}` }))} onPick={(v) => setTop(Number(v))} />
         </div>
       </div>
-      <p className="vz-note">0건이었거나 안 고르고 닫은 검색어에 주소를 달면, 다음부터 그 말로 검색할 때 맨 위에 '바로가기'가 뜹니다. 주소는 사이트 경로(<code>/me#stages</code>)로 적으면 영어·일본어 화면에선 그 언어 경로로 바뀝니다. 비우고 저장하면 지웁니다.</p>
+      <p className="vz-note">결과가 0건이었던 검색어만 보입니다. 주소를 달면, 다음부터 그 말로 검색할 때 맨 위에 '바로가기'가 뜹니다. 주소는 사이트 경로(<code>/me#stages</code>)로 적으면 영어·일본어 화면에선 그 언어 경로로 바뀝니다. 비우고 저장하면 지웁니다.</p>
       <div className="vz-tablewrap"><table className="vz-table om-table">
         <thead><tr><th>검색어</th><th>횟수</th><th>사람</th><th>0건</th><th>안 고름</th><th>가장 많이 고른 곳</th><th>직접 연결</th></tr></thead>
         <tbody>{shown.map((g) => {
           const best = [...g.targets.entries()].sort((a, b) => b[1] - a[1])[0];
           const ans = answerOf.get(normSearch(g.q));
           return (
-            <tr key={g.q} className={g.zero || g.none ? "om-miss" : undefined}>
+            <tr key={g.q} className="om-miss">
               <td><code>{g.q}</code></td><td>{g.n}</td><td>{g.people.size}</td><td>{g.zero || "—"}</td><td>{g.none || "—"}</td>
               <td title={best?.[0] ?? ""}>{best ? `${label(best[0])} (${best[1]})` : "—"}</td>
               <td><AnswerEditor key={`${g.q}|${ans?.url ?? ""}`} q={g.q} cur={ans} onSaved={() => setRev((n) => n + 1)} /></td>
@@ -126,10 +125,10 @@ export default function OmniPanel({ tick = 0 }: { tick?: number }) {
         })}</tbody>
       </table></div>
 
-      <div className="vz-head vz-subhead"><h4 className="vz-h">최근 검색</h4></div>
+      <div className="vz-head vz-subhead"><h4 className="vz-h">최근 0건 검색</h4></div>
       <div className="vz-tablewrap"><table className="vz-table">
         <thead><tr><th>시각</th><th>누구</th><th>검색어</th><th>결과</th><th>고른 곳</th></tr></thead>
-        <tbody>{rows.slice(0, top).map((r, i) => (
+        <tbody>{zeroRows.slice(0, top).map((r, i) => (
           <tr key={i}><td>{whenShort(r.at)}</td><td><Who visitor={r.visitor} /></td><td><code>{r.detail}</code></td><td>{r.n ?? "—"}</td>
             <td title={r.target ?? ""}>{r.target ? label(r.target) : <span className="vz-note">안 고르고 닫음</span>}</td></tr>
         ))}</tbody>

@@ -3,7 +3,8 @@
 # Usage:
 #   python3 scripts/build-rogue.py            # rogue_1 (팬텀 & 크림슨 솔리테어)
 #   python3 scripts/build-rogue.py rogueN     # KR / rogueN-en·-ja 로케일 / rogueN-cn 중국섭
-#   python3 scripts/build-rogue.py cn         # 중국섭 변형 일괄 (rogue1~5.cn.json)
+#   python3 scripts/build-rogue.py cn         # 중국섭 변형 일괄 (rogue1~5.cn.json + EN·JA 판 rogueN.cn.en/ja.json)
+#   python3 scripts/build-rogue.py cn-i18n    # 중국섭 변형 EN·JA 판만 (받기 없이 기존 산출물로)
 #
 # 소스 (ArknightsAssets/ArknightsGamedata kr — PROJECT-GUIDE §2 클뜯 레포):
 #   excel/roguelike_topic_table.json  — 존·스테이지·유물·레퍼토리(음반)·환각·난이도·엔딩·조우 씬
@@ -2350,6 +2351,119 @@ def cn_koreanize(ronum, out):
     return out
 
 
+HANGUL = re.compile(r"[가-힣]")
+
+
+def cn_localize(ronum, loc):
+    """중국섭 변형의 EN·JA 판 — rogueN.cn.json(한국어 표기) → rogueN.cn.<loc>.json (2026-10-20 사용자 제보:
+    사이트 언어를 영어로 두고 통합전략을 중국섭으로 바꾸면 한국어가 나온다 — 종전엔 전 로케일이 한국어 cn 파일을 같이 썼다).
+    같은 빌더가 만든 rogueN.json(KR)·rogueN.<loc>.json 은 구조가 같으므로 세 파일을 **같은 자리끼리** 맞춰,
+    cn 의 문장이 KR 과 같으면 그 자리의 EN·JA 공식 문장으로 바꾼다. 목록은 id·scene 등으로 짝짓고, 없으면 같은 길이일 때 위치로.
+    자리가 안 맞은 문장은 KR→로케일 전역 사전(같은 두 파일에서 뽑은 것)으로 한 번 더. 그래도 한글이 남으면
+    (중섭 선행 신규 콘텐츠 — rogue-cn-ko.json 수동 한국어) 리포트로 남긴다. cn·cnName(중국어 원문 병기)은 건드리지 않는다."""
+    suf = {"en": ".en", "ja": ".ja"}[loc]
+    p_cn = os.path.join(REPO, "app", "data", f"rogue{ronum}.cn.json")
+    p_kr = os.path.join(REPO, "app", "data", f"rogue{ronum}.json")
+    p_lc = os.path.join(REPO, "app", "data", f"rogue{ronum}{suf}.json")
+    for p in (p_cn, p_kr, p_lc):
+        if not os.path.exists(p):
+            raise SystemExit(f"{os.path.basename(p)}이 없음 — 먼저 빌드")
+    cn, kr, lc = (json.load(open(p, encoding="utf-8")) for p in (p_cn, p_kr, p_lc))
+    KEEP = {"cn", "cnName"}
+
+    def ident(x):
+        if not isinstance(x, dict):
+            return None
+        for k in ("id", "scene", "key"):
+            if isinstance(x.get(k), (str, int)):
+                return (k, x[k])
+        if "mode" in x and "grade" in x:
+            return ("mg", x["mode"], x["grade"])
+        return None
+
+    def pairs(a_list, b_list):
+        """a 목록의 각 원소에 짝인 b 원소(없으면 None)"""
+        if not isinstance(b_list, list):
+            return [None] * len(a_list)
+        by = {}
+        for y in b_list:
+            i = ident(y)
+            if i is not None:
+                by.setdefault(i, y)
+        out = []
+        for i, x in enumerate(a_list):
+            k = ident(x)
+            if k is not None and by:
+                out.append(by.get(k))
+            else:
+                out.append(b_list[i] if len(a_list) == len(b_list) else None)
+        return out
+
+    # ① KR→로케일 전역 사전 (KR·로케일 파일을 같은 자리끼리)
+    glossary = {}
+    def learn(k, e):
+        if isinstance(k, str) and isinstance(e, str):
+            if HANGUL.search(k) and k != e:
+                glossary.setdefault(k.strip(), e.strip())
+        elif isinstance(k, dict) and isinstance(e, dict):
+            for key, v in k.items():
+                if key not in KEEP and key in e:
+                    learn(v, e[key])
+        elif isinstance(k, list) and isinstance(e, list):
+            for v, w in zip(k, pairs(k, e)):
+                if w is not None:
+                    learn(v, w)
+    learn(kr, lc)
+    # 수동 사전 — 중섭 선행 신규 콘텐츠(공식 EN·JA 가 없는 것)를 한국어 문장 → 로케일로 (rogue-cn-ko.json 의 짝, AI 번역)
+    man_path = os.path.join(REPO, "scripts", f"rogue-cn-{loc}.json")
+    if os.path.exists(man_path):
+        glossary.update({k.strip(): v for k, v in json.load(open(man_path, encoding="utf-8")).items()})
+
+    # ② 세 파일을 같은 자리끼리 — cn 문장이 KR 과 같으면 로케일 문장으로
+    def walk(c, k, e):
+        if isinstance(c, str):
+            if isinstance(k, str) and isinstance(e, str) and c == k:
+                return e
+            s = c.strip()
+            if HANGUL.search(c) and s in glossary:
+                return c.replace(s, glossary[s])
+            return c
+        if isinstance(c, dict):
+            return {key: (v if key in KEEP else walk(v, (k or {}).get(key) if isinstance(k, dict) else None,
+                                                     (e or {}).get(key) if isinstance(e, dict) else None))
+                    for key, v in c.items()}
+        if isinstance(c, list):
+            ks = pairs(c, k) if isinstance(k, list) else [None] * len(c)
+            es = pairs(c, e) if isinstance(e, list) else [None] * len(c)
+            return [walk(v, kv, ev) for v, kv, ev in zip(c, ks, es)]
+        return c
+    out = walk(cn, kr, lc)
+
+    # ③ 남은 한글 리포트 — 시스템 묶음 이름(mechanics.label)·작전 변형(stages.var)은 EN·JA 파일에도 한국어 키로 들어 있고
+    #   화면이 t() 로 옮기는 값이라 뺀다
+    left = {}
+    def scan(v, path=""):
+        if isinstance(v, str):
+            if HANGUL.search(v) and not (path == "mechanics.label" or path.endswith(".var")):
+                left.setdefault(v.strip(), path)
+        elif isinstance(v, dict):
+            for key, x in v.items():
+                if key not in KEEP:
+                    scan(x, f"{path}.{key}" if path else key)
+        elif isinstance(v, list):
+            for x in v:
+                scan(x, path)
+    scan(out)
+    dest = os.path.join(REPO, "app", "data", f"rogue{ronum}.cn{suf}.json")
+    json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+    rep_path = os.path.join(REPO, "scripts", "rogue-cn-untranslated.json")
+    rep = json.load(open(rep_path, encoding="utf-8")) if os.path.exists(rep_path) else {}
+    rep[f"rogue{ronum}-{loc}"] = left
+    json.dump(rep, open(rep_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"rogue{ronum}.cn{suf}.json → {os.path.getsize(dest) // 1024}KB · 한글 남음 {len(left)}건")
+    return left
+
+
 def load_auto_tr_details():
     """rogue_1~5 상세 테이블 id 교차 확장 사전 — 스테이지·존·엔딩·조우 씬·선택지·난이도.
     cn_koreanize ②(구조 오버레이)가 놓친 잔여 문자열의 폴백. 존 설명은 첫 줄(탐사 시간)과
@@ -3575,6 +3689,14 @@ if __name__ == "__main__":
         build_topic(f"rogue_{arg[-1]}")
     elif re.fullmatch(r"rogue[1-5]-(en|ja|cn)", arg):
         build_topic(f"rogue_{arg[5]}", arg.rsplit("-", 1)[1])
+        if arg.endswith("-cn"):
+            for lc in ("en", "ja"):
+                cn_localize(arg[5], lc)
+    elif arg == "cn-i18n":
+        # 중국섭 변형 EN·JA 판만 다시 (원본 다시 받기 없음 — 이미 있는 rogueN.cn.json·rogueN.json·rogueN.<loc>.json 으로)
+        for n in range(1, 6):
+            for lc in ("en", "ja"):
+                cn_localize(n, lc)
     elif arg == "i18n":
         # EN/JA 데이터 — rogue_1~5 (rogue_6은 CN 선행이라 공식 현지화가 없음)
         for n in range(1, 6):
@@ -3584,6 +3706,8 @@ if __name__ == "__main__":
         # 중국섭 변형 — rogue_1~5 (rogue_6은 원래 CN 빌드라 별도 변형 불필요)
         for n in range(1, 6):
             build_topic(f"rogue_{n}", "cn")
+            for lc in ("en", "ja"):
+                cn_localize(n, lc)
     elif arg == "all":
         for n in range(1, 6):
             build_topic(f"rogue_{n}")
@@ -3591,6 +3715,8 @@ if __name__ == "__main__":
         for n in range(1, 6):
             for lc in ("en", "ja", "cn"):
                 build_topic(f"rogue_{n}", lc)
+            for lc in ("en", "ja"):
+                cn_localize(n, lc)
         dump_enc_untranslated()
     else:
         build_topic("rogue_1")
