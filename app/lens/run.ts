@@ -6,6 +6,7 @@ import { createOcrSession } from "./ocr";
 import { traceOcr } from "./ocr-trace";
 import { setBridgePipFloor } from "./bridge";
 import { asset } from "../assets";
+import { TOPICS } from "../rogue-topics";
 import { buildIndex, normText, analyzeLines, analyzeChinese, analyzeRecruit, recruitLayoutOk, type RecruitLang, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
 import { buildAcIndex, bondOfLine, parseSeats, isAcInfoScreen, classifyAcScreen, parseAcMode, badgeRectFromTitle,
@@ -690,8 +691,13 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // IS1~5를 중섭으로 놓고 PRTS 링크를 걸면 chi_sim 패스가 아예 안 돌았다(사용자 지적).
     const zhPossible = !opts?.lock || topic === "rogue_6"
       || (!!opts?.cnTopic && topic === opts.cnTopic);
+    // 중섭에만 있는 테마(지금은 흑류수해)는 게임 화면이 **중국어뿐**이다 — 한국어 판정이 확신 이동이 아니면 곧장 중국어로 본다.
+    // 종전엔 가짜 한글('음음음음')이 약한 테마·화면 후보를 만들어 1차 게이트를 막았고, PRTS 링크(live)는 폴백도 안 돌아
+    // 중국어 패스가 끝내 안 돌았다 (틀렸어요 c085cd2c·b703c448·845dec32, 2026-10-19 — 사용자 "흑류수해는 중국어밖에 없잖아")
+    const cnOnlyTopic = !!topic && !!TOPICS.find((tp) => tp.id === topic)?.future;
     if (zhPossible && ((oc.target.kind === "none" && !oc.topics.length && !oc.screens.length)
-        || (locale !== "ko" && oc.target.kind !== "goto"))) {
+        || (locale !== "ko" && oc.target.kind !== "goto")
+        || (cnOnlyTopic && oc.target.kind !== "goto"))) {
       await tryZh();
     }
     // 폴백 패스: none·tie(판정 미완) 또는 하이라이트형 goto(목록 표시 — 엔티티 완성도가 중요,
@@ -708,8 +714,11 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     }
     // 한글 없는 화면 — 중국어 패스를 못 돌렸고(탭이 한국 서버) 아무것도 못 찾았는데, 읽은 줄은 여럿이고 한글은 거의 없다.
     // 한국어 모델은 한자를 숫자·기호·엉뚱한 한 글자로 읽는다(실측: 16/20 · 4/40 · +150%) · 구 · X)
-    if (locale === "ko" && !zhRan && oc.target.kind === "none" && lines.length >= 6
-      && (lines.join("").match(/[가-힣]/g)?.length ?? 0) <= 2) oc.foreignText = true;
+    // 한글 글자 수가 아니라 **말이 되는 한글 낱말**(두 글자 이상, 같은 글자 되풀이 아님)로 센다 — 중섭 지도 화면은 한자를
+    // '음음음음'·'유은'·'M스N' 처럼 가짜 한글로 읽어 글자 수 기준(≤2)을 넘겼다 (틀렸어요 c085cd2c·b703c448·845dec32, 2026-10-19).
+    // 진짜 한국어 화면은 작전·행동력·소장품·편성 같은 낱말이 여럿 나온다
+    const koWords = (lines.join(" ").match(/[가-힣]{2,}/g) ?? []).filter((w) => !/^(.)\1+$/.test(w)).length;
+    if (locale === "ko" && !zhRan && oc.target.kind === "none" && lines.length >= 6 && koWords <= 2) oc.foreignText = true;
     // ── 색 글씨 밴드 패스 (제보 16138722, 2026-09-05) ────────────────────────────
     // 조우 선택지가 주는 소장품은 **판마다 랜덤**이라 우리 데이터엔 "소장품 1개 획득"으로만
     // 적혀 있다 — 이름은 화면에서 읽어야 안다. 그런데 그 이름만 **분홍 글씨**라 휘도
