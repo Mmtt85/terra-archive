@@ -44,3 +44,9 @@ create table if not exists match_log (
   op text                          -- search 때 찾은 오퍼 id
 );
 create index if not exists match_log_at on match_log (at);
+
+-- 마지막 내 정보 로그인·동기화 시각 (2026-10-20) — 90일 넘게 없으면 그 계정의 사이트 설정(prefs)·친구 찾기 등록(match)을 지운다
+create table if not exists seen (
+  owner text primary key,          -- p:<서버>:<UID>
+  t integer not null               -- ms
+) without rowid;

@@ -903,6 +903,31 @@ async function adminKeyFor(token) {
 // (사용자 지시 "매칭 걸어둔 상태에서 동기화해 내 정보가 바뀌면 목록도 자동으로"). 등록할 때는 동기화 응답에 실린 서명된 정보를
 // 그대로 돌려받아(위조 불가) 게임에 다시 접속하지 않는다. 2주 넘게 동기화가 없거나 친구 자리가 꽉 차면 목록에서 뺀다
 const MATCH_STALE_MS = 14 * 86400_000;
+// 내 정보를 90일 동안 동기화하지 않은 등록은 줄째(닉네임 포함) 지운다 (사용자 지시 2026-10-20). 목록을 받을 때 한 시간에 한 번쯤 쓸어 낸다
+const MATCH_EXPIRE_MS = 90 * 86400_000;
+// 사이트 설정(prefs)도 같은 90일 — 마지막 내 정보 로그인·동기화 시각(seen)이 기준. seen 이 없는 계정(이 기능 전 저장분)은 설정을 마지막으로 고친 시각으로 본다
+let matchSweptAt = 0;
+async function matchSweep() {
+  if (!DB || Date.now() - matchSweptAt < 3600_000) return;
+  matchSweptAt = Date.now();
+  const cutoff = Date.now() - MATCH_EXPIRE_MS;
+  const { results } = await DB.prepare("delete from match where t < ?1 returning server").bind(cutoff).all().catch(() => ({ results: [] }));
+  if (results?.length) {
+    await noteWrite("delete", results.length);
+    for (const r of results) await matchLog("expire", r.server);
+  }
+  const gone = await DB.prepare(`delete from prefs where owner in (
+      select p.owner from prefs p left join seen s on s.owner = p.owner group by p.owner
+      having coalesce(max(s.t), max(p.t)) < ?1)`).bind(cutoff).run().catch(() => null);
+  if (gone?.meta?.changes) await noteWrite("delete", gone.meta.changes);
+  await DB.prepare("delete from seen where t < ?1").bind(cutoff).run().catch(() => null);
+}
+/** 내 정보 로그인·동기화 시각 — 90일 자동 삭제의 기준 (2026-10-20) */
+async function noteSeen(server, uid) {
+  if (!DB || !uid) return;
+  await DB.prepare("insert into seen (owner, t) values (?1, ?2) on conflict(owner) do update set t = ?2")
+    .bind(`p:${server}:${uid}`, Date.now()).run().catch(() => null);
+}
 function matchEntry(r, prof, server) {
   const byId = new Map((r.chars ?? []).map((c) => [c.id, c]));
   const assist = (prof.assist ?? []).map((a) => {
@@ -998,6 +1023,7 @@ const matchRow = (r) => ({ server: r.server, uid: r.uid, nick: r.nick, level: r.
   friends: r.friends, flimit: r.flimit, t: r.t, created: r.created, sec: r.sec ?? null, secSkin: r.sec_skin ?? null, resume: r.resume ?? "" });
 async function matchList(server, all = false) {
   if (!DB) throw new HttpError(503, "pref-store");
+  await matchSweep();
   const since = Date.now() - MATCH_STALE_MS;
   const sql = all ? "select * from match order by t desc limit 2000"
     // 친구 꽉 찬 줄도 싣는다 — 사이트가 흐리게 맨 뒤로 보낸다 (사용자 지시 2026-10-20, 종전엔 여기서 뺐다)
@@ -1188,7 +1214,7 @@ async function handleLogin({ email, code, server, phone, password, username, hgT
   const r = roster(fetched.user), prof = profile(fetched.user, fetched.friends, fetched.shop);
   prof.seal = raw ? null : await sealOf(r, prof, server);
   const me = matchEntry(r, prof, server);
-  if (!raw) await matchRefresh(me);
+  if (!raw) { await matchRefresh(me); await noteSeen(server, r.player?.uid); }
   return withRaw({ ok: true, ...r, profile: prof, token: { uid: cred.uid, token: cred.token, deviceId }, prefToken: raw ? null : await prefTokenOf(server, r.player?.uid), match: raw ? null : await matchSigned(me) }, fetched, raw);
 }
 
@@ -1201,7 +1227,7 @@ async function handleSync({ token, server, raw }, step = noStep) {
   const r = roster(fetched.user), prof = profile(fetched.user, fetched.friends, fetched.shop);
   prof.seal = raw ? null : await sealOf(r, prof, server);
   const me = matchEntry(r, prof, server);
-  if (!raw) await matchRefresh(me);   // 매칭 등록 중이면 목록 줄을 방금 받은 정보로 (지원 오퍼를 바꾸고 동기화만 해도 반영)
+  if (!raw) { await matchRefresh(me); await noteSeen(server, r.player?.uid); }   // 매칭 등록 중이면 목록 줄을 방금 받은 정보로 (지원 오퍼를 바꾸고 동기화만 해도 반영)
   return withRaw({ ok: true, ...r, profile: prof, token, prefToken: raw ? null : await prefTokenOf(server, r.player?.uid), match: raw ? null : await matchSigned(me) }, fetched, raw);
 }
 
@@ -1316,6 +1342,7 @@ export default {
       try {
         if (url.pathname === "/admin/key") return json(await adminKeyFor(body.token), origin);
         if (url.pathname === "/prefs/delete") return json(await prefsDelete(body.token), origin);
+        if (url.pathname === "/prefs/get") await matchSweep();   // 90일 미동기화 정리 — 한 시간에 한 번만 실제로 돈다
         return json(url.pathname === "/prefs/get" ? await prefsGet(body.token) : await prefsPut(body.token, body.keys), origin);
       } catch (error) {
         return json({ ok: false, error: error?.code ?? "internal" }, origin, error instanceof HttpError ? error.status : 500);

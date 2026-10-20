@@ -62,6 +62,8 @@ function setPrefToken(next: string | null) {
 /** 토큰이 만료됐을 때 — 다음엔 로그인 창으로 보낸다 */
 export const dropMeToken = () => setToken(null);
 
+/** 내 정보 보관 기한 — 마지막 동기화 뒤 90일 (사용자 지시 2026-10-20) */
+export const ME_EXPIRE_MS = 90 * 86400_000;
 let cachedRaw: string | null | undefined;
 let cached: MeData | null = null;
 
@@ -74,6 +76,12 @@ function read(): MeData | null {
     const parsed = raw ? JSON.parse(raw) as MeData : null;
     cached = parsed && parsed.v === 1 && Array.isArray(parsed.chars) ? parsed : null;
   } catch { cached = null; }
+  // 90일 넘게 동기화하지 않은 내 정보는 이 브라우저에서도 지운다 — 서버의 사이트 설정·친구 찾기 등록도 같은 기준으로 지워진다
+  // (계정 워커 matchSweep, 사용자 지시 2026-10-20). 읽는 중엔 지우지 않고 다음 틱에 로그아웃과 같은 길(clearMe)로
+  if (cached && Date.now() - (cached.syncedAt || 0) > ME_EXPIRE_MS) {
+    cached = null;
+    setTimeout(() => clearMe(), 0);
+  }
   return cached;
 }
 

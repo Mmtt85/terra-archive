@@ -191,14 +191,27 @@ function sampleMe(operators: MeOp[]): MeData {
     });
   }
   const pick = (k: string) => chars[Math.floor(hash(k) * chars.length)];
-  const assist = (k: string) => { const c = pick(k); return { id: c.id, elite: c.elite, level: c.level, potential: c.potential, skin: null, skillIndex: c.skillIndex ?? 0, mastery: c.mastery, skill: c.skill, equip: null, equipLevel: 0 }; };
+  // 지원 오퍼는 2정 오퍼 중에서, 단 모듈이 있으면 그것까지 (로그인 화면의 지원 칸·친구 카드와 같은 모양이 되게)
+  const e2 = chars.filter((c) => c.elite === 2);
+  const pickE2 = (k: string) => e2[Math.floor(hash(k) * e2.length)] ?? pick(k);
+  const equipOf = (c: AccountChar) => Object.entries(c.modules).find(([, lv]) => lv > 0) ?? null;
+  const assist = (k: string) => { const c = pickE2(k); const eq = equipOf(c);
+    return { id: c.id, elite: c.elite, level: c.level, potential: c.potential, skin: null, skillIndex: c.skillIndex ?? 0, mastery: c.mastery, skill: c.skill, equip: eq?.[0] ?? null, equipLevel: eq?.[1] ?? 0 }; };
+  // 시각이 흐르는 칸(이성·드론·기반시설 피로도·월정액·동기화)은 '방금 동기화한' 계정처럼 지금 기준으로 — 고정 시각이면 늘 '가득 참'·'바닥'만 보인다
+  const NOW = Math.floor(Date.now() / 1000) - 1800;
+  const RESUMES = ["매일 접속합니다", "지원 자유롭게 쓰세요", "위기협약 18등급", "통합전략 하는 중", "친구 삭제 안 해요", "", "뉴비 환영합니다", ""];
+  // 기반시설 배치 — 방마다 일하는 오퍼와 컨디션(시간당 소모 1, 숙소는 회복)
+  const ROOMS: [string, number, number][] = [["CONTROL", 5, 5], ["MANUFACTURE", 3, 3], ["MANUFACTURE", 3, 3], ["MANUFACTURE", 3, 3], ["TRADING", 3, 3], ["TRADING", 3, 3],
+    ["POWER", 3, 1], ["POWER", 3, 1], ["POWER", 3, 1], ["DORMITORY", 5, 5], ["DORMITORY", 5, 5], ["DORMITORY", 5, 5], ["DORMITORY", 5, 5], ["MEETING", 3, 2], ["HIRE", 3, 1], ["WORKSHOP", 3, 1], ["TRAINING", 3, 1]];
+  let seat = 0;
   const data: MeData = {
-    v: 1, server: "kr", syncedAt: SAMPLE_TS * 1000,
+    v: 1, server: "kr", syncedAt: NOW * 1000,
     player: { nickName: "Doctor", nickNumber: "0000", uid: "00000000", level: 120, serverName: "", lastOnline: SAMPLE_TS },
     chars,
     profile: {
-      status: { level: 120, exp: 0, ap: 98, maxAp: 135, apTs: SAMPLE_TS, register: SAMPLE_TS - 86400 * 1100, lastOnline: SAMPLE_TS,
-        progress: "main_15-08", secretary: "char_002_amiya", secretarySkin: null, avatar: null, resume: "", friendLimit: 60, monthlyEnd: 0 },
+      status: { level: 120, exp: 0, ap: 98, maxAp: 135, apTs: NOW, register: SAMPLE_TS - 86400 * 1100, lastOnline: SAMPLE_TS,
+        progress: "main_15-08", secretary: "char_002_amiya", secretarySkin: null, avatar: null, resume: "로도스 아일랜드 소속 박사입니다", friendLimit: 125, monthlyEnd: NOW + 86400 * 21 },
+      creditSpent: 2_480_300,
       // 창고·작전 기록은 데이터가 도착한 뒤 Dashboard 가 채운다 (sampleFill)
       inventory: { 4002: 35, 4003: 28150, 7003: 42, 7004: 3, 4001: 3820000, 7001: 512, 7002: 220, 4004: 118, 4005: 3200, SOCIAL_PT: 290, classic_normal_ticket: 12 },
       stages: {}, campaigns: {},
@@ -208,14 +221,14 @@ function sampleMe(operators: MeOp[]): MeData {
         { slot: 2, state: 1, tags: [], picked: [], finish: 0 },
         { slot: 3, state: 1, tags: [], picked: [], finish: 0 },
       ],
-      assist: [0, 1, 2].map((i) => { const c = pick(`as${i}`); return { id: c.id, skillIndex: c.skillIndex ?? 0, equip: null }; }),
-      rooms: [["CONTROL", 5], ["MANUFACTURE", 3], ["MANUFACTURE", 3], ["MANUFACTURE", 3], ["TRADING", 3], ["TRADING", 3], ["POWER", 3], ["POWER", 3], ["POWER", 3],
-        ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["DORMITORY", 5], ["MEETING", 3], ["HIRE", 3], ["WORKSHOP", 3], ["TRAINING", 3]]
-        .map(([room, level], i) => ({ slot: String(i), room: String(room), level: Number(level) })),
+      assist: [0, 1, 2].map((i) => { const c = pickE2(`as${i}`); return { id: c.id, skillIndex: c.skillIndex ?? 0, equip: equipOf(c)?.[0] ?? null }; }),
+      rooms: ROOMS.map(([room, level, n], i) => ({ slot: String(i), room, level,
+        ops: Array.from({ length: n }, () => { const c = e2[seat++ % Math.max(1, e2.length)] ?? pick(`rm${seat}`); const dorm = room === "DORMITORY";
+          return { id: c.id, ap: dorm ? 8 + Math.floor(hash(`${c.id}ap`) * 12) : 6 + Math.floor(hash(`${c.id}ap`) * 18), at: NOW, rate: dorm ? 200 : room === "TRAINING" ? null : -100 }; }) })),
       skins: 87, medals: 140, medalTotal: 1402, furniture: 620,
       // 예시 패러독스 — 2정 오퍼의 70% 쯤을 깬 것으로
       paradox: chars.filter((c) => c.elite === 2 && hash(`${c.id}px`) < 0.7).map((c) => c.id),
-      labor: { value: 132, max: 192, ts: SAMPLE_TS, speed: 0.3, point: 0 },
+      labor: { value: 132, max: 192, ts: NOW, speed: 0.3, point: 0 },
       // 예시 화면의 '이어하기' (2026-10-11) — 흑류수해 3층 진행 중 + 생존연산 12일째
       progress: {
         rogue: { state: "PENDING", theme: "rogue_6", mode: "NORMAL", grade: 8, start: SAMPLE_TS - 5400, zone: 2, zoneId: "zone_3", level: 7, hp: 4, maxHp: 6,
@@ -227,9 +240,9 @@ function sampleMe(operators: MeOp[]): MeData {
           squads: [{ chars: [0, 1, 2, 3].map((i) => pick(`sq${i}`).id), tools: [] }], usedChars: [], best: 0 },
       },
       sandbox: { material: { sandbox_1_wood: 41, sandbox_1_stone: 23, sandbox_1_iron: 8, sandbox_1_water: 15 }, food: { sandbox_1_food_4: 2 }, building: {}, tactical: {}, animal: {} },
-      friends: Array.from({ length: 6 }, (_, i) => ({
-        nickName: `Doctor${String.fromCharCode(65 + i)}`, nickNumber: String(1000 + i * 37), level: 80 + i * 7,
-        avatar: null, secretary: pick(`fs${i}`).id, secretarySkin: null, lastOnline: SAMPLE_TS - i * 86400 * 2, resume: "",
+      friends: Array.from({ length: 14 }, (_, i) => ({
+        nickName: `Doctor${String.fromCharCode(65 + i)}`, nickNumber: String(1000 + i * 37), level: 60 + ((i * 17) % 61),
+        avatar: null, secretary: pickE2(`fs${i}`).id, secretarySkin: null, lastOnline: NOW - Math.floor(hash(`fo${i}`) * 86400 * 5), resume: RESUMES[i % RESUMES.length],
         charCnt: 300, progress: null, assist: [0, 1, 2].map((j) => assist(`f${i}${j}`)),
       })),
     },
@@ -274,8 +287,9 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
       <header className="me-head">
         <div className="me-title-row">
           <div><span className="section-no">MY ACCOUNT</span><h2 id="me-title">{t("내 정보")}</h2></div>
-          {/* 친구 찾기 — 제목 바로 오른쪽, 종전 '이미지로 내보내기' 자리 (사용자 지시 2026-10-20) */}
-          {me && (
+          {/* 친구 찾기 — 제목 바로 오른쪽, 종전 '이미지로 내보내기' 자리 (사용자 지시 2026-10-20).
+              로그인 전 예시 화면에도 같은 버튼 — 목록은 공개라 둘러볼 수 있고, 등록만 로그인해야 된다 */}
+          {(
             <button type="button" className="me-friend-btn" onClick={() => setMatch(true)}>
               {t("친구 찾기")}
               <NewBadge id="friend-match" show={isNewFeature("friend-match")} />
@@ -296,7 +310,9 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
           // (사용자 지적 2026-10-04). 예시 숫자는 오퍼 id 해시로 만든 가짜 계정이다.
           <div className="me-sample">
             <p className="me-sample-bar"><b>{t("예시 화면")}</b>{t("아래는 가상의 계정으로 채운 예시입니다 — 로그인하면 내 계정의 실제 데이터로 이렇게 정리됩니다.")}</p>
-            <Dashboard me={sampleMe(operators)} demo operators={operators} extra={extra} onShowOperator={onShowOperator} />
+            {/* 로그인 화면과 똑같이 — 내보내기·친구 찾기도 예시 계정으로 열린다 (사용자 지시 2026-10-20 "데이터만 더미로") */}
+            <Dashboard me={sampleMe(operators)} demo operators={operators} extra={extra} onShowOperator={onShowOperator}
+              share={share} onShareOpen={() => setShare(true)} onShareClose={() => setShare(false)} match={match} onMatchClose={() => setMatch(false)} />
           </div>
         )}
       {login && (
@@ -399,7 +415,7 @@ function LoginCard({ onDone }: { onDone: () => void }) {
       <p className="me-lead">{rich(t("로그인하면 **내 정보 맞춤 칸 구성·스토리 읽은 위치**를 이 게임 계정(UID)으로 저장해 두고, 다른 기기·브라우저에서 로그인해도 그대로 이어집니다."))}</p>
       <p className="import-warn">{rich(t("**주의: 가져오는 순간 게임 접속이 끊깁니다.** 데이터를 받으려면 게임 서버에 접속을 새로 열어야 하고, 명일방주는 계정당 접속을 하나만 허용하기 때문입니다. 게임을 하지 않을 때 쓰세요 — 계정에는 아무 문제가 없고, 다시 실행하면 그대로 접속됩니다."))}</p>
       <AccountLoginForm t={t} onAccount={onDone} submitLabel={t("로그인해서 내 정보 가져오기")}
-        privacy={t("이메일과 인증코드는 저장하지 않습니다. 받은 계정 데이터는 이 브라우저 안에만 남고, 언제든 이 화면에서 지울 수 있습니다.")} />
+        privacy={t("이메일과 인증코드는 저장하지 않습니다. 받은 계정 데이터는 이 브라우저 안에만 남고, 언제든 이 화면에서 지울 수 있습니다. 90일 동안 동기화하지 않으면 이 브라우저의 내 정보와 저장된 설정·친구 찾기 등록이 모두 자동으로 삭제됩니다.")} />
     </div>
   );
 }
@@ -1106,7 +1122,7 @@ function ProfileCard({ me, now, opById, demo, onShare }: { me: MeData; now: numb
             ? t("약 {n}시간 후", { n: Math.round(mood.first!.left) }) : t("약 {n}분 후", { n: Math.max(1, Math.round(mood.first!.left * 60)) })}`}
           warn={mood.empty > 0 || (mood.first?.left ?? 99) < 4} />}
       </div>
-      {!demo && <p className="me-pf-sync">{t("동기화")} · {dt(me.syncedAt)}</p>}
+      <p className="me-pf-sync">{t("동기화")} · {dt(me.syncedAt)}</p>
       {!me.profile && <p className="me-note">{t("이 데이터는 오퍼 목록만 들어 있는 예전 형식입니다 — 다시 동기화하면 창고·진행 상황·친구까지 채워집니다.")}</p>}
     </section>
   );

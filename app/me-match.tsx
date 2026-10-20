@@ -96,7 +96,7 @@ function MatchOp({ a, op }: { a: MatchAssist; op: MeOp }) {
   );
 }
 
-function MatchRowView({ r, opById, now, mine, full }: { r: MatchRow; opById: Map<string, MeOp>; now: number; mine?: boolean; full?: boolean }) {
+function MatchRowView({ r, opById, now, mine, full, friend }: { r: MatchRow; opById: Map<string, MeOp>; now: number; mine?: boolean; full?: boolean; friend?: boolean }) {
   // 배경 — 부관(과 그 스킨) 일러를 은은하게. 스킨 그림이 없으면 정예화 일러, 그것도 없으면 그림을 뺀다
   const sec = r.sec && opById.has(r.sec) ? r.sec : null;
   const { t } = useI18n();
@@ -115,6 +115,7 @@ function MatchRowView({ r, opById, now, mine, full }: { r: MatchRow; opById: Map
           UID <code>{r.uid}</code><span aria-hidden>{copied ? "✓" : "⧉"}</span>
         </button>}
         {/* 마지막 동기화가 1주일 넘음 — 2주가 넘으면 목록에서 빠진다. UID 밑에 (사용자 지시 2026-10-20) */}
+        {friend && <em className="mm-stale mm-friend">{t("이미 친구")}</em>}
         {full && <em className="mm-stale">{t("친구 꽉 참")}</em>}
         {r.server && now - r.t > 7 * 86400_000 && <em className="mm-stale">{t("동기화 1주일 넘음")}</em>}
       </div>
@@ -203,6 +204,7 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
         t("공개 항목: 서버 · UID · 닉네임#번호 · 박사 레벨 · 지원 오퍼(정예화·레벨·잠재·스킬·특화·모듈) · 친구 수 · 마지막 동기화"),
         t("닉네임은 매칭 등록할 때만 저장하고, 매칭을 취소하면 즉시 삭제합니다."),
         t("등록해 두면 동기화할 때마다 목록의 내 정보도 바뀝니다. 2주 넘게 동기화하지 않거나 친구 자리가 다 차면 목록에서 숨겨집니다."),
+        t("내 정보를 90일 동안 동기화하지 않으면 등록 정보(닉네임 포함)는 자동으로 삭제됩니다."),
       ].join("\n\n"),
         // 등록하면 목록에 이렇게 보인다 — 확인 창 안에서 미리 보여 준다 (사용자 지시 2026-10-20, 종전엔 창 본문 등록 버튼 옆)
         extra: mine ? <div className="mm-preview"><ul className="mm-list"><MatchRowView r={mine} opById={opById} now={me.syncedAt} mine /></ul>
@@ -247,6 +249,8 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
 
   // 등록했으면 목록에 나도 나온다(표시만 다르게) — 종전엔 빼서 "등록했는데 안 나온다"로 보였다 (사용자 지적 2026-10-20)
   // 친구 자리가 꽉 찬 박사는 흐리게 맨 뒤로 (사용자 지시 2026-10-20 — 종전엔 목록에서 뺐다). 그 안에서는 받은 순서(최근 동기화 순) 그대로
+  // 이미 내 친구 — 내 정보 친구 목록의 닉네임#번호와 맞춘다 (사용자 지시 2026-10-20, 게임 친구 목록엔 UID 가 없다)
+  const myFriends = useMemo(() => new Set((me.profile?.friends ?? []).map((f) => `${f.nickName}#${f.nickNumber}`)), [me]);
   const isFull = (r: MatchRow) => r.friends != null && r.flimit != null && r.friends >= r.flimit;
   const others = [...filtered.filter((r) => !isFull(r)), ...filtered.filter(isFull)];
   return (
@@ -267,7 +271,7 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
             && <p className="me-note warn">{t("친구 자리가 꽉 찼어요 ({a}/{b}) — 목록 맨 뒤에 흐리게 보입니다. 친구를 정리하고 동기화하면 다시 앞으로 올라갑니다.", { a: mine.friends, b: mine.flimit })}</p>}
           {registered && !busy && now - me.syncedAt > 7 * 86400_000
             && <p className="me-note warn">{now - me.syncedAt > 14 * 86400_000
-              ? t("마지막 동기화가 2주를 넘어 목록에서 숨겨졌어요 — 다시 동기화하면 올라갑니다.")
+              ? t("마지막 동기화가 2주를 넘어 목록에서 숨겨졌어요 — 다시 동기화하면 올라갑니다. 90일이 지나면 등록이 자동으로 삭제됩니다.")
               : t("마지막 동기화가 1주일이 넘었어요 — 2주가 넘으면 목록에서 숨겨집니다.")}</p>}
         </section>
         <section className="mm-find">
@@ -287,7 +291,7 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
           </div>
           
           <ul className="mm-list">
-            {others.map((r) => <MatchRowView key={r.uid} r={r} opById={opById} now={now} mine={!!mine && r.uid === mine.uid} full={isFull(r)} />)}
+            {others.map((r) => <MatchRowView key={r.uid} r={r} opById={opById} now={now} mine={!!mine && r.uid === mine.uid} full={isFull(r)} friend={myFriends.has(r.nick)} />)}
           </ul>
           {rows != null && !others.length && <p className="me-note">{rows.length ? t("조건에 맞는 박사가 없습니다.") : t("아직 등록한 박사가 없습니다.")}</p>}
         </section>

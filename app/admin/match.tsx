@@ -8,7 +8,7 @@ import operatorsData from "../data/operators.json";
 
 type Assist = { id: string; elite: number; level: number; potential: number; skill: number; skillIndex: number; mastery: number; equip: string | null; equipLevel: number };
 type Row = { server: string; uid: string; nick: string; level: number; assist: Assist[]; friends: number | null; flimit: number | null; t: number; created: number };
-type Day = { day: string; kind: "put" | "delete" | "search"; server: string; n: number };
+type Day = { day: string; kind: "put" | "delete" | "search" | "expire"; server: string; n: number };
 type Res = { ok: boolean; rows: Row[]; days: Day[]; ops: { op: string; server: string; n: number }[] };
 
 const OP_NAME = new Map((operatorsData as { id: string; name: string }[]).map((o) => [o.id, o.name]));
@@ -41,10 +41,10 @@ export default function MatchPanel({ tick }: { tick: number }) {
   }, [res, now]);
   // 하루별 등록·취소·검색 (최근 60일, 한국 날짜) — 서버 고르면 그 서버만
   const days = useMemo(() => {
-    const m = new Map<string, { put: number; delete: number; search: number }>();
+    const m = new Map<string, { put: number; delete: number; search: number; expire: number }>();
     for (const d of res?.days ?? []) {
       if (server !== "all" && d.server !== server) continue;
-      const e = m.get(d.day) ?? { put: 0, delete: 0, search: 0 };
+      const e = m.get(d.day) ?? { put: 0, delete: 0, search: 0, expire: 0 };
       e[d.kind] += d.n;
       m.set(d.day, e);
     }
@@ -64,7 +64,7 @@ export default function MatchPanel({ tick }: { tick: number }) {
 
   if (err) return <p className="vz-note">친구 찾기 기록을 못 받았습니다 ({err}).</p>;
   if (!res) return <p className="vz-note">불러오는 중…</p>;
-  const total = days.reduce((s, [, d]) => ({ put: s.put + d.put, delete: s.delete + d.delete, search: s.search + d.search }), { put: 0, delete: 0, search: 0 });
+  const total = days.reduce((s, [, d]) => ({ put: s.put + d.put, delete: s.delete + d.delete, search: s.search + d.search, expire: s.expire + d.expire }), { put: 0, delete: 0, search: 0, expire: 0 });
   return (
     <div className="vz-match">
       <div className="admin-tools">
@@ -75,16 +75,17 @@ export default function MatchPanel({ tick }: { tick: number }) {
       <div className="vz-kpis">
         <div><span>등록 중</span><b>{rows.length}</b></div>
         {perServer.map(([s, e]) => <div key={s}><span>{SERVER_LABEL[s] ?? s} (목록에 보임)</span><b>{e.all} ({e.shown})</b></div>)}
-        <div><span>60일 등록</span><b>{total.put}</b></div>
-        <div><span>60일 취소</span><b>{total.delete}</b></div>
-        <div><span>60일 오퍼 검색</span><b>{total.search}</b></div>
+        <div><span>최근 60일 등록</span><b>{total.put}</b></div>
+        <div><span>최근 60일 취소</span><b>{total.delete}</b></div>
+        <div><span>최근 60일 자동 삭제 (90일 미동기화)</span><b>{total.expire}</b></div>
+        <div><span>최근 60일 오퍼 검색</span><b>{total.search}</b></div>
       </div>
 
       <h4>날짜별 등록·취소·검색</h4>
       {days.length ? (
         <div className="vz-tablewrap"><table className="vz-table">
-          <thead><tr><th>날짜</th><th>등록</th><th>취소</th><th>검색</th></tr></thead>
-          <tbody>{days.map(([d, e]) => <tr key={d}><td>{d}</td><td>{e.put}</td><td>{e.delete}</td><td>{e.search}</td></tr>)}</tbody>
+          <thead><tr><th>날짜</th><th>등록</th><th>취소</th><th>자동 삭제</th><th>검색</th></tr></thead>
+          <tbody>{days.map(([d, e]) => <tr key={d}><td>{d}</td><td>{e.put}</td><td>{e.delete}</td><td>{e.expire}</td><td>{e.search}</td></tr>)}</tbody>
         </table></div>
       ) : <p className="vz-note">기록이 아직 없습니다.</p>}
 

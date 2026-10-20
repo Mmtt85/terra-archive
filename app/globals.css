@@ -31555,6 +31555,7 @@ html.dark .me-pf-art { opacity: .3; }
 .mm-art { position: absolute; z-index: -1; left: 50%; top: -18%; width: 62%; height: auto; max-width: none; opacity: .35; pointer-events: none; transform: translateX(-50%);
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%, #000 70%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0%, #000 30%, #000 70%, transparent 100%); }
 html.dark .mm-art { opacity: .25; }
+.mm-friend { color: var(--lime-ink); border-color: var(--lime-line); }   /* 이미 친구 (2026-10-20) */
 .mm-toast-sub { margin-left: 4px; font-size: 11px; font-weight: 600; opacity: .75; }
 .mm-count { margin: 0 0 9px auto; white-space: nowrap; }   /* 조건 버튼 줄 오른쪽 끝, 버튼 글자와 밑줄 맞춤 (사용자 지시 2026-10-20) */
 .mm-who { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
