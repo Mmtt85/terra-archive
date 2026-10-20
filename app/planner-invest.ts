@@ -28,7 +28,7 @@ import sanityData from "./data/sanity.json";
 import {
   optimizeConfig, buildPlan, planScore, setPriorityMode, teamScore, opSolo, withElite, maxElite, eliteLocks, setCapCluster, setShiftTiebreak,
   availableSetKeys, synergySetMembers, cellByKey, LAYOUT, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT, AUTO_BENCH_IDS,
-  apPerPctDay, planTokensAt,
+  apPerPctDay, planTokensAt, setActive,
   type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets, type RoomPin, type OptimizeResult,
 } from "./planner-engine";
 
@@ -444,7 +444,7 @@ export function investEvaluate(inp: InvestInput, setup: InvestSetup, onEach?: (d
   // 세트 활성안은 **그 후보가 실제로 참가하는** 휴면 세트 + 완성으로 새로 가용해지는 세트만 추가 비교
   const baselineAvail = new Set(availableSetKeys(baseRoster));
   const setMembers = synergySetMembers(baseRoster);
-  const dormantSets = [...baselineAvail].filter((key) => !factionSets[key]);
+  const dormantSets = [...baselineAvail].filter((key) => !setActive(factionSets, key));   // A조판(<키>@A)으로 켜진 세트도 켜진 것
   const evalCandidate = (upRoster: InfraOp[], byId1: Map<string, InfraOp>, ids: Set<string>): { plan: Plan; score: number } => {
     const configs: FactionSets[] = [factionSets];
     const seen = new Set(Object.keys(factionSets));

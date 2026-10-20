@@ -1986,6 +1986,17 @@ export function cellOfFor(plan: Plan, shift: number): Map<string, string> {
 // 각 팟은 **개별 후보**로 평가한다(멱집합) — 단일 플래그로 묶으면 한 세트의 이득에 다른
 // 세트가 무임승차로 채택되는 얽힘이 생긴다. 채택은 항상 planScore 비교 (L2는 점수 불간섭).
 const SYNERGY_SETS: SynergySetDef[] = RULES.synergySets ?? [];
+// B조로 지정된 세트(피누스 — 'A조 제조소·제어센터는 화식 세트 몫')의 **A조판 쌍둥이**. 키는 `<원래 키>@A`.
+// 화식 패키지가 약하거나 레드파인을 A조에 고정한 로스터에선 A조 결집이 기지 총점에서 이긴다 — 제보 6a0794b5 (2026-10-19):
+// 직접 짠 A조 레드파인 + 제어센터 플레임테일·비비아나 편성이 자동편성보다 270점 높았는데, B조판만 후보라 그 안을
+// 아예 짓지 않았다. 후보만 늘리고 채택은 종전대로 planScore (한 후보안에선 원판·쌍둥이 중 하나만 켠다)
+const FLIP_SUFFIX = "@A";
+const SYNERGY_ALL: SynergySetDef[] = [
+  ...SYNERGY_SETS,
+  ...SYNERGY_SETS.filter((def) => def.shift === 1).map((def) => ({ ...def, key: `${def.key}${FLIP_SUFFIX}`, shift: 0 })),
+];
+/** 이 후보안에서 세트가 (원판이든 A조판이든) 켜져 있나 — 육성 추천의 '쉬는 세트' 판정용 */
+export const setActive = (sets: FactionSets, key: string): boolean => Boolean(sets[key] || sets[`${key}${FLIP_SUFFIX}`]);
 
 export type FactionSets = Record<string, boolean>; // def.key → 이 후보안에 세트 포함 여부
 
@@ -2276,7 +2287,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     }
     // ── 시너지 세트 시딩 — 카탈로그(rules.json synergySets)의 이 조(shift) 팟 중,
     // 이 후보안(factionSets)에 포함된 것만 연다. 도메인 근거는 INFRA-RULES §4·§5.
-    for (const def of SYNERGY_SETS) {
+    for (const def of SYNERGY_ALL) {
       if ((def.shift ?? 0) === shift && factionSets[def.key]) seedSynergySet(def, roster, used, reserved, seeds);
     }
     // perMember 캡 확장 시드 (optimizeConfig 변형 전용, 2026-07-24) — 카운터 진영의 오라
@@ -3178,7 +3189,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   const ledger = recountTokens(assignments, rosterById, flows);
   Object.assign(tokenPoints, ledger.tokenPoints);
   flows.splice(0, flows.length, ...ledger.flows);
-  const setUsed = SYNERGY_SETS.some((def) => def.badge && factionSets[def.key]);
+  const setUsed = SYNERGY_ALL.some((def) => def.badge && factionSets[def.key]);
   const strategy = (packageTokens.length ? `${packageTokens.join(" + ")} 패키지` : "기본 편성") + (setUsed ? " + 진영 세트" : "");
   // 조별 교대 시계 — 최종 편성 기준. 성장형 평균의 근거 주기이며 planScore·UI가 재사용한다
   const shiftHours = [0, 1].map((shift) => shiftHoursFor([...prodKeys, ...SUPPORT_KEYS].map((k) => ({
@@ -3253,8 +3264,11 @@ export function keepIfClose(prev: Plan | null | undefined, next: Plan, roster: I
   for (const key of keys) {
     const a = prev.assignments[key], b = next.assignments[key];
     if (!a || a.length !== b.length) return { plan: next, kept: false };
-    // 생산·지원 방은 꽉 채운다(절대룰) — 칸 수가 다르면 시설 레벨·훈련실 설정이 바뀐 것
-    if (!key.startsWith("DORM") && a.some((team, i) => team.length !== b[i].length)) return { plan: next, kept: false };
+    // 생산·지원 방은 꽉 채운다(절대룰) — 칸 수가 다르면 시설 레벨·훈련실 설정이 바뀐 것.
+    // 훈련실·재활용소는 비워 두는 운용이 흔해 사람 수가 달라도 비교한다 — 손으로 훈련실에 둘을 앉힌 편성(2,300점)이
+    // 비교 없이 자동편성(1,600점)으로 덮였다 (제보 6a0794b5, 2026-10-19)
+    const optional = key.startsWith("DORM") || key === "TRAINING" || key === "RECYCLE";
+    if (!optional && a.some((team, i) => team.length !== b[i].length)) return { plan: next, kept: false };
     if (a.some((team) => team.some((id) => !byId.has(id)))) return { plan: next, kept: false };
   }
   for (const [key, ids] of Object.entries(pinnedDorms)) {
@@ -3569,15 +3583,17 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   // (사용자 확정 2026-07-19). 귀금속 감산 등 세트의 비용도 planScore에 그대로 반영되며,
   // 동률이면 세트 없는 안 유지(쉐라그 "이득일 때만" 규칙).
   const flags = SYNERGY_SETS.filter((def) => synergySetAvailable(def, effRoster)).map((def) => def.key);
+  // 세트마다 끔·켬(·A조판 켬 — SYNERGY_ALL 쌍둥이가 있는 세트만)의 모든 조합. 지금 카탈로그는 피누스 하나만 세 갈래라
+  // 4종 다 가용이어도 2·2·2·3 − 1 = 23안
+  const choices = flags.map((flag) => [null, flag, ...(SYNERGY_ALL.some((def) => def.key === `${flag}${FLIP_SUFFIX}`) ? [`${flag}${FLIP_SUFFIX}`] : [])]);
   const variants: FactionSets[] = [];
-  for (let mask = 1; mask < (1 << flags.length); mask += 1) {
-    const sets: FactionSets = {};
-    flags.forEach((flag, index) => { if (mask & (1 << index)) sets[flag] = true; });
-    variants.push(sets);
-  }
-  // 조합 폭발 가드 — 카탈로그가 5종 이상이면 후보 상한 15안 (2^4-1). 넘게 등록할 일이
-  // 생기면 세트 우선순위 필드를 도입할 것 (지금은 3종 = 최대 7안)
-  if (variants.length > 15) variants.length = 15;
+  const walk = (i: number, sets: FactionSets) => {
+    if (i === choices.length) { if (Object.keys(sets).length) variants.push(sets); return; }
+    for (const key of choices[i]) walk(i + 1, key ? { ...sets, [key]: true } : sets);
+  };
+  walk(0, {});
+  // 조합 폭발 가드 — 카탈로그가 더 늘면 상한 31안. 넘게 등록할 일이 생기면 세트 우선순위 필드를 도입할 것
+  if (variants.length > 31) variants.length = 31;
   // 채택 config에 최종 ⑤(우선 생산 집중)를 입혀 반환 — 탐색은 ⑤-무관이라 선택이 원래대로 유지되고,
   // 여기서만 planScore 단조 개선(무승부 이상)을 얹는다. 밸런스는 ⑤가 no-op이라 그대로.
   const concentrates = splitPriority(priority).prod !== "balance"; // 생산 축 기준 — 장기 지속과 직교
@@ -3678,6 +3694,20 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
       const score = planScore(plan, byId);
       if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [ex]; }
     }
+  }
+  // ── 세트 확정 뒤 미니 토큰 다시 재기 (제보 6a0794b5, 2026-10-19) ─────────────────────────
+  // 미니 토큰 조합(tokenChoice)은 맨 앞 기초안(세트 없음)에서 정해지는데, 세트가 켜지면 자리 값이 달라진다 — 피누스
+  // A조판이 켜진 안에선 '생각의 사슬'(로즈몬티스·위스퍼레인)을 넣는 쪽이 이기는데, 기초안에선 빼는 쪽이 이겨
+  // 끝까지 빠진 채였다(2,192 < 같은 로스터 레드파인 고정 2,269). 밀려난 생성원이 없으면 아래 시드 블록도 안 돌아
+  // 다시 잴 기회가 없었다. 미니를 하나씩 넣고 빼 본다 (미니 ≤3개 → 최대 3회)
+  for (const mini of minis) {
+    await breathe();
+    const tokens = tokenChoice.includes(mini)
+      ? tokenChoice.filter((token) => token !== mini)
+      : open.filter((token) => token === mini || tokenChoice.includes(token));
+    const plan = buildPlan(tokens, effRoster, bestSets, priority, bestSeeds, false, false, pinnedDorms, roomPins);
+    const score = planScore(plan, byId);
+    if (score > bestScore) { best = plan; bestScore = score; tokenChoice = tokens; }
   }
   // ── 자리에서 밀려난 토큰 생성원 시드 변형 (사용자 제보 2026-07-29: "로즈몬티스가 있어도
   // 위스퍼레인 대신 사무실 레퍼런스 속도 높은 오퍼가 먼저 배치됨") ────────────────────────

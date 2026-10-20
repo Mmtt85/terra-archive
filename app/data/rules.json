@@ -198,24 +198,24 @@
         "char_496_wildmn",
         "char_430_fartth"
       ],
-      "name": "피누스 세트 B조 작전기록방 결집",
-      "note": "INFRA-RULES §5 피누스 세트 — 사용자 확정 2026-07-19",
+      "name": "피누스 세트 A조 작전기록방 결집",
+      "note": "INFRA-RULES §5 피누스 세트 — 2026-10-20 사용자 결정: A·B조 둘 다 지어 점수로 고른다(제보 6a0794b5). 보유 전원 로스터는 A조판이 +124로 이긴다",
       "priority": "gold",
       "roomType": "MANUFACTURE",
       "roster": "full",
-      "shift": 1,
+      "shift": 0,
       "type": "planContains"
     },
     {
       "allOf": [
         "char_420_flamtl"
       ],
-      "name": "피누스 세트 B조 제어센터 플레임테일",
-      "note": "INFRA-RULES §5 피누스 세트 — 오라 발신원",
+      "name": "피누스 세트 A조 제어센터 플레임테일",
+      "note": "INFRA-RULES §5 피누스 세트 — 오라 발신원 (2026-10-20 A조판 채택)",
       "priority": "gold",
       "roomKey": "CONTROL",
       "roster": "full",
-      "shift": 1,
+      "shift": 0,
       "type": "planContains"
     },
     {
@@ -579,7 +579,7 @@
       },
       "key": "pinus",
       "name": "피누스 실베스트리스 세트",
-      "note": "오라는 방 단위(사용자 정정 2026-07-19): 기사단원이 앉은 제조소에만 작전기록 +10/명·귀금속 -10/명 — 작전기록방 결집 시 감산 없음. A조 제조소·제어센터는 화식 세트 몫이라 B조 결집.",
+      "note": "오라는 방 단위(사용자 정정 2026-07-19): 기사단원이 앉은 제조소에만 작전기록 +10/명·귀금속 -10/명 — 작전기록방 결집 시 감산 없음. 기본은 B조 결집이고, 엔진이 A조판(pinus@A)도 함께 지어 planScore로 고른다 (2026-10-20 사용자 결정, 제보 6a0794b5).",
       "shift": 1,
       "target": {
         "cell": "byAnchorProduct"
@@ -616,5 +616,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 27
+  "version": 28
 }
