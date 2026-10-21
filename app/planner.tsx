@@ -1450,6 +1450,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const roomOf = useMemo(() => (plan ? roomOfFor(plan, activeShift) : undefined), [plan, activeShift]);
   // 칸 지도 — 시설 **개수** 조건(타락사쿰 '쉐이가 배치된 시설 1개당') 판정용
   const cellOf = useMemo(() => (plan ? cellOfFor(plan, activeShift) : undefined), [plan, activeShift]);
+  // 제어센터 카드 — 이 조 방마다 실제로 더해 준 % (가중 점수 대신, 2026-10-21)
+  const ctrlEffects = useMemo(() => (plan ? controlEffectsFor(plan, activeShift, effectiveOpById) : []), [plan, activeShift, effectiveOpById]);
 
   // 제어센터 오라 — 대상 방(제조·무역·사무·응접) 점수와 서머리에 실제 합산된다
   const ambient = useMemo(() => {
@@ -2333,9 +2335,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 }) : <i>{cell.key === "TRAINING" ? t("비워둠 · 특화 훈련 시 사용") : plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
               </div>
               {plan && team.length > 0 && !PARK_KEYS.includes(cell.key) && (
-                <small title={cell.room === "CONTROL"
-                  ? t("제어센터 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산해 합한 비교용 점수입니다 — %가 아니며, 실제 효과는 각 방의 '제어센터 효과'로 그 방 %에 더해집니다.")
-                  : ambientPart !== 0 ? t("제어센터 효과 {n} 포함 — 방을 눌러 상세 내역을 확인하세요", { n: `${ambientPart > 0 ? "+" : ""}${ambientPart}%` }) : undefined}>
+                cell.room === "CONTROL" ? (
+                  <small className="ctrl-effects" title={t("이 조 제어센터가 각 방에 실제로 더해 주는 % — 방마다 다르면 범위로 보여 줍니다")}>
+                    {ctrlEffects.length ? ctrlEffectParts(t, ctrlEffects).join(" · ") : t("다른 방에 주는 효과 없음")}
+                  </small>
+                ) :
+                <small title={ambientPart !== 0 ? t("제어센터 효과 {n} 포함 — 방을 눌러 상세 내역을 확인하세요", { n: `${ambientPart > 0 ? "+" : ""}${ambientPart}%` }) : undefined}>
                   +{score}{cell.room === "CONTROL" ? "" : "%"} {cell.room === "CONTROL" ? t("제어센터 효과 점수") : t(UNIT[cell.room])}
                   {ambientPart !== 0 && cell.room !== "CONTROL" && <em className="ambient-note"> ({t("제어센터")} {ambientPart > 0 ? "+" : ""}{ambientPart}%)</em>}
                   {raiseBefore != null && raiseBefore !== score && <em className={`raise-delta ${score >= raiseBefore ? "up" : "down"}`}> · {t("원래 {b}%", { b: raiseBefore })} ({score >= raiseBefore ? "+" : ""}{score - raiseBefore})</em>}
@@ -2768,6 +2773,37 @@ function josa(locale: string, word: string, withB: string, withoutB: string): st
   const c = word.charCodeAt(word.length - 1);
   if (c < 0xac00 || c > 0xd7a3) return `${word}${withB}(${withoutB})`;
   return word + ((c - 0xac00) % 28 !== 0 ? withB : withoutB);
+}
+
+// ── 제어센터가 다른 방에 실제로 더해 준 % (사용자 지시 2026-10-21 "단위가 대체 뭐냐") ─────────────
+// 종전 제어센터 카드·상세는 효과를 가중치(제조소 ×10 > 무역소 ×2 …)로 합친 내부 비교 점수(+608 등)를 보여 줬다 — 게임에 없는
+// 숫자라 단위가 없었다. 그 조의 방마다 '제어센터 효과 있음 − 없음'을 재서 방 종류별로 모은다. 방마다 다르면 범위로
+const CTRL_EFFECT_LABEL: Record<string, string> = { MANUFACTURE: "제조소 생산력", TRADING: "무역소 오더 수주 효율", HIRE: "사무실 인맥 레퍼런스 누적 속도", MEETING: "응접실 단서 수집 속도", POWER: "발전소 드론 회복 속도" };
+function controlEffectsFor(plan: Plan, shift: number, opMap: Map<string, InfraOp>): { room: string; values: number[] }[] {
+  const teamAt = (key: string) => {
+    const shifts = plan.assignments[key] ?? [];
+    return (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => opMap.get(id)).filter(Boolean) as InfraOp[];
+  };
+  const roomOf = roomOfFor(plan, shift), cellOf = cellOfFor(plan, shift);
+  const pts = planTokensAt(plan, opMap, shift), fc = plan.factionCounts[shift] ?? {}, plants = plantsFor(plan, shift, opMap), present = presentIdsFor(plan, shift);
+  const amb = aurasOf(teamAt("CONTROL"), ctxFor("CONTROL", pts, fc, plants, present, undefined, roomOf, cellOf));
+  const by = new Map<string, number[]>();
+  for (const cell of LAYOUT) {
+    if (cell.room === "CONTROL" || cell.room === "DORMITORY" || cell.room === "RECYCLE" || cell.key === "TRAINING" || PARK_KEYS.includes(cell.key)) continue;
+    const team = teamAt(cell.key);
+    if (!team.length) continue;
+    const base = { ...ctxFor(cell.key, pts, fc, plants, present, undefined, roomOf, cellOf), shiftHours: plan.shiftHours?.[shift], shift };
+    const v = Math.round(teamScore(team, cell.room, { ...base, ambient: amb }) - teamScore(team, cell.room, base));
+    if (v) by.set(cell.room, [...(by.get(cell.room) ?? []), v]);
+  }
+  return [...by].map(([room, values]) => ({ room, values }));
+}
+function ctrlEffectParts(t: (key: string, vars?: Record<string, string | number>) => string, list: { room: string; values: number[] }[]): string[] {
+  return list.map(({ room, values }) => {
+    const lo = Math.min(...values), hi = Math.max(...values);
+    const f = (n: number) => `${n > 0 ? "+" : ""}${n}%`;
+    return `${t(CTRL_EFFECT_LABEL[room] ?? room)} ${lo === hi ? f(lo) : `${f(lo)}~${f(hi).replace(/^\+/, "")}`}`;
+  });
 }
 
 function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, canRevert, onRevert, onOpenRoom, onShowOperator, onUpdateTeam, eliteById, onSetElite, onUnlockElite, blocked, unowned, onOpenRoster, tempIds, onRevertTempOne, onSetLevel, pins, onTogglePin, diff }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; /** 이 창을 연 뒤 편성을 바꿨는가 — 창 안 되돌리기 버튼 표시 */ canRevert?: boolean; onRevert?: () => void; onOpenRoom?: (key: string, shift: number) => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; /** 잠긴 스킬 열기 — 정예화를 올리고 자동편성까지 다시 돌린다 */ onUnlockElite?: (id: string, elite: Elite) => void; /** 보유했지만 이 방 스킬이 정예화·레벨로 잠긴 오퍼 → 필요 조건 */ blocked: Map<string, string>; /** 이 방 스킬이 있는데 아직 보유로 안 켠 오퍼 */ unowned: InfraOp[]; onOpenRoster?: () => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; pins?: RoomPin[]; onTogglePin?: (opId: string, shiftIdx?: number) => void; /** 직전 편성 ↔ 자동편성 결과 차이 (제안 5e1364b5) */ diff?: { add: string[][]; drop: string[][] } | null }) {
@@ -3333,7 +3369,16 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                   <button key={i} className={shift === i ? "selected" : ""} onClick={() => setShift(i)}>{[t("A조"), t("B조")][i]}</button>
                 ))}
               </div>
-              {scored && (
+              {scored && cell.room === "CONTROL" && (
+                <div className="room-head-eff">
+                  {/* 제어센터는 자기 생산이 없다 — 이 조 다른 방에 실제로 더해 준 %를 방 종류별로 (사용자 지시 2026-10-21, 종전엔 가중 점수 +608) */}
+                  <span className="rh-eff-total">{t("다른 방에 주는 효과")}</span>
+                  <span className="rh-eff-parts">
+                    {(() => { const parts = ctrlEffectParts(t, controlEffectsFor(plan, shiftIndex, opMap)); return parts.length ? parts.map((x) => <span key={x}><b>{x}</b></span>) : <span>{t("다른 방에 주는 효과 없음")}</span>; })()}
+                  </span>
+                </div>
+              )}
+              {scored && cell.room !== "CONTROL" && (
                 <div className="room-head-eff">
                   <span className="rh-eff-total">
                     {t("종합 효율")}{cell.product ? ` · ${t(cell.product === "gold" ? "순금" : "작전기록")}` : ""}
