@@ -88,7 +88,9 @@ export async function paddleReadBoxes(src: CanvasImageSource, boxes: { x: number
 
 /** 화면 전체 읽기 (통합전략 1차 판독, 2026-10-13 — tesseract PSM11 자리) — 검출로 글자 줄 상자를 찾고 줄마다 인식.
  *  돌려주는 줄은 위→아래, 같은 줄은 왼→오 순서이고 좌표는 src 기준. 검출 모델을 못 쓰면 null */
-export async function paddleReadFrame(src: HTMLCanvasElement, lang: RecLang = "kor"): Promise<{ text: string; conf: number; x0: number; y0: number; x1: number; y1: number }[] | null> {
+/** keepEmpty — 글자가 빈 상자도 돌려준다. 한국어 모델은 한자를 빈 글자로 내서, 버리면 중국어 화면의 이름표 상자가 통째로 사라진다
+ *  (ocr.ts zh() 가 그 상자들을 중국어 모델로 다시 읽는다 — 틀렸어요 088cc·69a23927, 2026-10-22) */
+export async function paddleReadFrame(src: HTMLCanvasElement, lang: RecLang = "kor", opts?: { keepEmpty?: boolean }): Promise<{ text: string; conf: number; x0: number; y0: number; x1: number; y1: number }[] | null> {
   if (!getWorker()) return null;
   const SW = src.width, SH = src.height;
   // 긴 변 960 (모델 설정 DetResizeForTest resize_long), 32 의 배수
@@ -125,5 +127,5 @@ export async function paddleReadFrame(src: HTMLCanvasElement, lang: RecLang = "k
   const got = await paddleReadBoxes(src, rects, 2000, lang);
   if (!got) return null;
   return got.map((g, i) => ({ ...g, x0: rects[i].x, y0: rects[i].y, x1: rects[i].x + rects[i].w, y1: rects[i].y + rects[i].h }))
-    .filter((l) => l.text);
+    .filter((l) => opts?.keepEmpty || l.text);
 }

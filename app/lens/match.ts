@@ -113,7 +113,7 @@ type Entry = {
   cnAltN?: string[];
 };
 /** 기타 노드(교활한 상인·앞서 출발 등, nodeTypes) — 일반 매칭엔 안 넣고 run.ts 가 '이름 줄 + 설명 줄'이 같이 보일 때만 쓴다 (2026-10-13) */
-export type LensNodeType = { topic: string; id: string; name: string; nameN: string; descN: string };
+export type LensNodeType = { topic: string; id: string; name: string; nameN: string; descN: string; cnN?: string };
 export type LensIndex = { entries: Entry[]; nodes?: LensNodeType[] };
 
 // ── 텍스트 정규화 ────────────────────────────────────────────────────────────
@@ -177,7 +177,19 @@ const contain = (lineNG: Set<string>, bodyNG: Set<string>): number => {
 
 // ── 화면 타이틀 키워드 (수동 사전 — 표시용 라벨은 i18n 키) ───────────────────
 // 전투 진행 중 화면의 배치 UI 문구 (KR/EN/JA 클라) — 이게 보이면 판정을 포기한다
-const BATTLE_WORDS = ["배치가능인원", "배치코스트", "deployable", "deploymentpoints", "配置可能人数"];
+// 전투 진행 중 화면의 배치 UI 표시 — **표시 모양으로만** 본다 (틀렸어요 879cb, 2026-10-22). 종전엔 낱말이 들어 있기만 하면 전투로 봐서
+// 소장품 효과 '배치 가능 인원수 +1'(순금의 원정 등 — 한국어 데이터 약 130곳, 일본어 '配置可能人数+1' 100곳 넘게)·'배치 코스트 -2'가
+// 보이는 소장품 고르기·상점·보상 화면이 통째로 '전투 중'이 됐다. 전투 화면 표시는 "배치 가능 인원: 4" — 낱말 뒤에 숫자가 바로 붙거나
+// 그 낱말만 따로 읽힌 상자다. 효과 문구는 뒤에 '수'·'+'·'-'·다른 말이 붙는다
+const BATTLE_LABELS = new Set(["배치가능인원", "配置可能人数", "deployable", "deployableunits", "deploymentpoints"]);
+function isBattleHud(rawLines: string[]): boolean {
+  return rawLines.some((raw) => {
+    const l = raw.trim();
+    return /배치\s*가능\s*인원\s*[:：]?\s*\d/.test(l) || /配置可能人数\s*[:：]?\s*\d/.test(l) || /배치\s*코스트\s*[:：]\s*\d/.test(l)
+      || /deployable\s*(units?)?\s*[:：]?\s*\d/i.test(l) || /deployment\s*points?\s*[:：]?\s*\d/i.test(l)
+      || BATTLE_LABELS.has(l.replace(/[^0-9a-zA-Z가-힣一-鿿]/g, "").toLowerCase());
+  });
+}
 const SCREEN_KEYWORDS: { key: string; label: string }[] = [
   { key: "분대선택", label: "분대 선택 화면" },
   { key: "받는다", label: "전리품 획득 화면" },
@@ -349,8 +361,9 @@ export function buildIndex(topics: any[], norm: Normalizer = normText, cnOnlyTop
     // 기타 노드 — 작전 노드(작전·긴급 작전·험난한 길)는 작전 이름으로 잡히고, STORY_HIDDEN 은 STORY 와 이름·설명이 같다
     if (!forceCnOnly) for (const n of d.nodeTypes ?? []) {
       if (/^BATTLE_(NORMAL|ELITE|BOSS)$/.test(n.id) || n.id === "STORY_HIDDEN") continue;   // 상점은 BATTLE_SHOP 이라 남긴다
-      const nameN = norm(n.name), descN = norm(n.desc || "");
-      if (nameN.length >= 3 && descN.length >= 10) nodes.push({ topic, id: n.id, name: n.name, nameN, descN });
+      const nameN = norm(n.name), descN = norm(n.desc || ""), cnN = normTextCn(n.cn);
+      // cnN — 중국어 지도 화면에서 고른 노드의 오른쪽 설명 창 제목 (cnMapScreen, 흑류수해 등 중국어 클라)
+      if (nameN.length >= 3 && descN.length >= 10) nodes.push({ topic, id: n.id, name: n.name, nameN, descN, ...(cnN ? { cnN } : {}) });
     }
     // 쉐이의 잔식(정사각형 지도) 노드 — 이름이 전부 두 글자(회수·전설·소란…)라 설명 줄 조건이 더 중요하다. 회수·여흥은 갈래 설명(subs)도 설명으로.
     // id 는 계원 노드와 겹쳐서(INCIDENT 등) 'sky:' 를 붙인다 (사용자 제보 2026-10-13 "잔식 안에서 회수·전설 노드 아무것도 인식 못 함")
@@ -421,9 +434,8 @@ export function analyzeLines(
   // 사미 전투 도중에 갑자기 '대이동' 작전으로 튀었다. 전투 화면에는 매칭할 이름이
   // 하나도 없고("17/22", "2X", "99", "배치 가능 인원: 4"), OCR 잡음이 약한 항목
   // 하나에 붙으면 그대로 확신 이동해버린다. 배치 UI 문구로 통째로 걸러낸다.
-  // normText는 대소문자를 보존하므로 라틴 키워드는 소문자로 접어서 본다
-  const allL = allN.toLowerCase();
-  if (BATTLE_WORDS.some((k) => allL.includes(k))) {
+  // 판정은 정규화 전 원시 줄로 — 콜론·'수'·부호를 봐야 효과 문구와 가른다 (isBattleHud 주석)
+  if (isBattleHud(rawLines)) {
     // battle 표식 — 브리지가 이걸 보고 전투 홀드에 들어간다 (큰 화면 전환까지 OCR 중단)
     return { screens, entities: [], topics: [], section: null, target: { kind: "none" }, battle: true };
   }
@@ -702,6 +714,48 @@ export function analyzeChinese(rawLines: string[], index: LensIndex,
   const section = topSection(hits);
   const g = section ? gotoFor(topics[0].topic, section, entities) : null;
   return { screens: [], entities, topics, section, target: g ? { kind: "goto", goto: g } : { kind: "none" } };
+}
+
+/** 중국어(CN 클라) 지도 화면 — 한국어 패스(run.ts)의 지도 규칙을 중국어 줄 상자에 그대로 (틀렸어요 088cc·69a23927, 2026-10-22).
+ *  위쪽 띠에 층 이름이 보이면 지도 화면이다. 층 이름은 층 정보로만 쓰고, 지도 아이콘 밑 이름표(노드 종류·조우 이름)는 판정에서 뺀다.
+ *  노드는 **오른쪽 설명 창**(이름 + 바로 밑 긴 설명 글)이 뜬 것만 고른 것으로 본다. 종전엔 중국어 판정(analyzeChinese)에 이 규칙이 없어
+ *  아무것도 안 고른 지도에서 이름표 '险路尽头'가 같은 이름의 조우 '험난한 길의 끝'으로 열렸다.
+ *  지도가 아니면 null — 일반 중국어 판정에 맡긴다. boxes 는 0~1 정규화 좌표 (ocr.ts zhBoxes) */
+export function cnMapScreen(boxes: { text: string; x0: number; y0: number; x1: number; y1: number }[], index: LensIndex, topic?: string):
+  { zone: { id: string; name: string; topic: string }; pick: { kind: "stage" | "enc" | "node"; id: string; topic: string; emergency?: boolean } | null } | null {
+  const inTopic = (t: string) => !topic || t === topic;
+  const bx = boxes.map((b) => ({ ...b, n: normTextCn(b.text) })).filter((b) => b.n.length);
+  // ① 층 이름 — 위쪽 띠(세로 14% 안). 상자 하나로 읽히거나, 쪼개진 조각을 왼→오로 이어 붙여서 (한국어 패스와 같은 두 길)
+  const zones = index.entries.filter((e) => e.section === "zone" && (e.cnN?.length ?? 0) >= 3 && inTopic(e.topic));
+  const top = bx.filter((b) => b.y1 <= 0.14).sort((a, b) => a.x0 - b.x0);
+  const joined = top.map((b) => b.n).join("");
+  const zone = zones.find((z) => top.some((b) => b.n === z.cnN) || joined.includes(z.cnN!));
+  if (!zone) return null;
+  // ② 오른쪽 설명 창 — 화면 오른쪽 절반의 긴 설명 글(10자 넘게)마다, 바로 위(세로 15% 안)에서 가장 가까운 이름 상자가 고른 노드다.
+  //    제목은 창 안 — 설명 글 왼쪽 끝보다 오른쪽에서 시작한다(창 왼쪽에 노드 아이콘이 있어 제목이 더 오른쪽이다. 실측 제목 x 0.77 · 설명 0.71).
+  //    창 왼쪽 바깥의 지도 이름표(应急助力 x 0.53)는 설명 글과 세로로 더 가까워도 빠진다. 지도 이름표는 짧고 밑에 설명 글이 없다
+  const stages = index.entries.filter((e) => e.section === "stage" && e.cnN && inTopic(e.topic));
+  const encs = index.entries.filter((e) => e.section === "enc" && e.cnN && inTopic(e.topic));
+  const nodes = (index.nodes ?? []).filter((n) => n.cnN && inTopic(n.topic));
+  for (const d of bx.filter((b) => b.n.length >= 10 && b.x0 >= 0.5 && b.y0 < 0.6)) {
+    const above = bx.filter((t) => t !== d && t.y1 > 0.14 && t.y1 <= d.y0 + 0.01 && d.y0 - t.y1 < 0.15 && t.x0 >= d.x0 - 0.03 && t.x0 < d.x1)
+      .sort((a, b) => (d.y0 - a.y1) - (d.y0 - b.y1));
+    for (const t of above) {
+      // 제목 바로 위 작은 꼬리표가 '紧急作战'이면 긴급 작전 — 화면 아무 데서나 찾으면 지도 이름표(紧急作战)에 걸린다
+      const emergency = bx.some((b) => b !== t && b.n === "紧急作战" && b.y1 <= t.y0 + 0.01 && t.y0 - b.y1 < 0.06 && Math.abs(b.x0 - t.x0) < 0.15);
+      const st = stages.filter((e) => e.cnN === t.n);
+      if (st.length) {
+        // 일반·긴급이 같은 이름 — 모달은 일반 작전 id 로 열고 긴급이면 긴급 탭 (한국어 패스와 같은 꼴)
+        const s = st.find((e) => /_n_/.test(e.id)) ?? st[0];
+        return { zone, pick: { kind: "stage", id: s.id, topic: s.topic, ...(emergency ? { emergency: true } : {}) } };
+      }
+      const nd = nodes.find((n) => n.cnN === t.n);
+      if (nd) return { zone, pick: { kind: "node", id: nd.id, topic: nd.topic } };
+      const en = encs.find((e) => e.cnN === t.n);
+      if (en) return { zone, pick: { kind: "enc", id: en.id, topic: en.topic } };
+    }
+  }
+  return { zone, pick: null };
 }
 
 // 라인 ↔ 엔트리 매칭 (IDF는 "전달된 엔트리 집합" 안에서 분산된다)

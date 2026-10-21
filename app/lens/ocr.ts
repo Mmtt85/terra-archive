@@ -117,6 +117,8 @@ export type OcrSession = {
   auto(): Promise<string[]>;
   /** 중국어(chi_sim) PSM11 전체 프레임 — kor 매칭이 무신호일 때만 (블랙플로우 CN 스크린샷) */
   zh(): Promise<string[]>;
+  /** 마지막 zh() 가 읽은 줄 상자 — **0~1 정규화 좌표**. 중국어 지도 화면 규칙(match.ts cnMapScreen)이 층 이름·설명 창 자리를 본다 */
+  zhBoxes(): OcrBox[];
   /** **색 글씨 밴드** — 직전 패스에서 test에 걸린 줄 바로 아래를 채널최댓값 전처리로 다시
    *  읽는다. 조우 선택지가 주는 소장품 이름(분홍)이 대상 (제보 16138722, 2026-09-05).
    *  zh=true 면 chi_sim 워커. 걸린 줄이 없으면 아무것도 안 하고 빈 배열. */
@@ -228,6 +230,12 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
   // (캔버스 좌표계 = 업스케일 후 좌표라 크롭에 그대로 쓸 수 있다)
   type LineBox = { text: string; x0: number; y0: number; x1: number; y1: number };
   let lastBoxes: LineBox[] = [];
+  // 화면 전체 읽기(PaddleOCR)가 **검출한 상자 전부** — 글자가 빈 것까지. 한국어 모델은 한자를 빈 글자로 내서 lastBoxes 에서 빠지는데,
+  // 중국어 패스(zh)는 이 상자들을 중국어 모델로 다시 읽어야 한다 (틀렸어요 088cc·69a23927, 2026-10-22 — 종전엔 lastBoxes 만 다시 읽어
+  // 흑류수해 지도의 중국어 이름표가 통째로 빠졌다). 캔버스 좌표
+  let detRects: { x: number; y: number; w: number; h: number }[] = [];
+  // 마지막 중국어 패스가 읽은 줄과 자리 — run.ts 가 지도 화면 규칙(match.ts cnMapScreen)에 쓴다. 캔버스 좌표
+  let zhLast: LineBox[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const takeLines = (lines: any[]): string[] => {
     lastBoxes = (lines ?? []).map((l) => ({
@@ -352,11 +360,13 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
     async sparse() {
       // 통합전략(한국어): PaddleOCR 화면 전체 읽기 — 줄 글자 + 줄 상자를 tesseract 와 같은 모양으로 (colorBand 가 상자를 쓴다)
       if (colorC && opts?.paddleFull) {
-        const got = await paddleReadFrame(colorC, pl ?? "kor");
-        if (got) {
+        const all = await paddleReadFrame(colorC, pl ?? "kor", { keepEmpty: true });
+        if (all) {
           paddleFullOk = true;
+          detRects = all.map((g) => ({ x: g.x0, y: g.y0, w: g.x1 - g.x0, h: g.y1 - g.y0 }));
+          const got = all.filter((g) => g.text);
           lastBoxes = got.map((g) => ({ text: g.text, x0: g.x0, y0: g.y0, x1: g.x1, y1: g.y1 }));
-          console.debug(`[lens] 전체 PaddleOCR ${got.length}줄:`, got.map((g) => g.text).join(" | ").slice(0, 400));
+          console.debug(`[lens] 전체 PaddleOCR ${got.length}줄 (검출 ${all.length}칸):`, got.map((g) => g.text).join(" | ").slice(0, 400));
           return lastBoxes.map((l) => l.text);
         }
       }
@@ -373,18 +383,30 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
     async zh() {
       // 중국어 화면(흑류수해·중섭) — 색 사본이 있으면 PaddleOCR 중국어 모델로 (2026-10-13). 못 쓰면 tesseract chi_sim
       if (colorC) {
-        // 화면 전체 읽기를 이미 했으면 그때 찾은 줄 상자를 그대로 중국어 모델에 — 검출을 두 번 돌리지 않는다
-        if (paddleFullOk && lastBoxes.length) {
-          const rects = lastBoxes.map((l) => ({ x: l.x0, y: l.y0, w: l.x1 - l.x0, h: l.y1 - l.y0 })).filter((r) => r.w >= 6 && r.h >= 6);
+        // 화면 전체 읽기를 이미 했으면 그때 **검출한 상자 전부**(detRects)를 중국어 모델에 — 검출을 두 번 돌리지 않는다.
+        // 검출 모델은 언어마다 같다(paddle.ts). 한국어 글자가 빈 상자를 빼면 안 된다 — 한자 상자가 바로 그것이다
+        if (paddleFullOk && detRects.length) {
+          const rects = detRects.filter((r) => r.w >= 6 && r.h >= 6);
           const got = await paddleReadBoxes(colorC, rects, 2000, "ch");
-          if (got) return got.map((g) => g.text).filter(Boolean);
+          if (got) {
+            zhLast = got.map((g, i) => ({ text: g.text, x0: rects[i].x, y0: rects[i].y, x1: rects[i].x + rects[i].w, y1: rects[i].y + rects[i].h })).filter((b) => b.text);
+            return zhLast.map((b) => b.text);
+          }
         }
         const got = await paddleReadFrame(colorC, "ch");
-        if (got) return got.map((g) => g.text);
+        if (got) {
+          zhLast = got.map((g) => ({ text: g.text, x0: g.x0, y0: g.y0, x1: g.x1, y1: g.y1 }));
+          return got.map((g) => g.text);
+        }
       }
       const zw = await getChiWorker();
       const r = await zw.recognize(c, {}, OUT);
-      return takeLines(r.data.lines ?? []);
+      const out = takeLines(r.data.lines ?? []);
+      zhLast = lastBoxes.slice();
+      return out;
+    },
+    zhBoxes() {
+      return zhLast.map((l) => ({ text: l.text, x0: l.x0 / W, y0: l.y0 / H, x1: l.x1 / W, y1: l.y1 / H }));
     },
     async colorBand(test, zh) {
       const hits = lastBoxes.filter((l) => l.x1 > l.x0 && l.y1 > l.y0 && test(l.text));

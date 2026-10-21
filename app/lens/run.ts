@@ -7,7 +7,7 @@ import { traceOcr } from "./ocr-trace";
 import { setBridgePipFloor } from "./bridge";
 import { asset } from "../assets";
 import { TOPICS } from "../rogue-topics";
-import { buildIndex, normText, analyzeLines, analyzeChinese, analyzeRecruit, recruitLayoutOk, type RecruitLang, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
+import { buildIndex, normText, analyzeLines, analyzeChinese, cnMapScreen, analyzeRecruit, recruitLayoutOk, type RecruitLang, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
 import { buildAcIndex, bondOfLine, parseSeats, isAcInfoScreen, classifyAcScreen, parseAcMode, badgeRectFromTitle,
   parseAcBand, parseDeployLeft, parseAcHud, findAcRings, ringNameRect, ringNumRect, RING_DIGITS, parseRingStack,
@@ -40,6 +40,20 @@ let runGrade: number | null = null;
 // 전투 입장 암전 화면의 평균 밝기 상한. 사미 지도·모달은 아트가 깔려 훨씬 밝고, 입장
 // 로딩은 검은 배경에 작전 이름만 뜬다 (2026-07-26). 여유를 두되 지도가 걸리지 않는 값.
 const DARK_LUMA = 46;
+
+/** 왼쪽 아래 난이도 배지 숫자 (화면 전체 읽기의 상자, 0~1 좌표). 배지 숫자가 '1'·'2' 두 상자로 쪼개져 오기도 해서 같은 줄의 숫자 상자는
+ *  왼→오로 이어 붙인다. **바로 밑에 '소장품'(收藏品) 이름표가 붙은 숫자는 소장품 개수**라 뺀다 — 팬텀 화면의 '9 소장품'을 난이도 9 로
+ *  읽어 소장품 탭이 열리며 난이도도 9 로 바뀌었다 (틀렸어요 879cb, 2026-10-22). labels — 이름표를 찾을 상자(중국어 화면은 중국어 판독 상자) */
+function badgeDigits(boxes: { text: string; x0: number; y0: number; x1: number; y1: number }[], labels: { text: string; x0: number; y0: number; x1: number; y1: number }[]): number | null {
+  const mid = (b: { x0: number; x1: number }) => (b.x0 + b.x1) / 2;
+  const digs = boxes.filter((b) => b.x1 < 0.12 && b.y0 > 0.82 && /^\d{1,2}$/.test(b.text.trim())
+    && !labels.some((c) => /소장품|收藏品/.test(c.text) && c.y0 >= b.y1 - 0.01 && c.y0 - b.y1 < 0.06 && Math.abs(mid(c) - mid(b)) < 0.05))
+    .sort((a, b) => a.x0 - b.x0);
+  let txt = "";
+  for (const b of digs) { if (txt && b.x0 - digs[digs.indexOf(b) - 1].x1 > 0.02) txt = ""; txt += b.text.trim(); }
+  const g = Number(txt.slice(-2));
+  return txt && g <= 18 ? g : null;
+}
 
 /** 게임 HUD 수치 파싱 (원시 OCR 라인) — 브리지 플레이 로그용 추정치 */
 function parseHud(rawLines: string[]): LensHud {
@@ -587,12 +601,8 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       if (drop.size && !rogueScreen) rogueScreen = "map";
       if (rogueScreen === "squadSelect") runGrade = null;
       if (drop.size || rogueScreen === "runStart") {
-        // 배지 숫자가 '1'·'2' 두 상자로 쪼개져 오기도 해서 같은 줄의 숫자 상자는 왼→오로 이어 붙인다
-        const digs = bx.filter((b) => b.x1 < 0.12 && b.y0 > 0.82 && /^\d{1,2}$/.test(b.text.trim())).sort((a, b) => a.x0 - b.x0);
-        let txt = "";
-        for (const b of digs) { if (txt && b.x0 - digs[digs.indexOf(b) - 1].x1 > 0.02) txt = ""; txt += b.text.trim(); }
-        const g = Number(txt.slice(-2));
-        if (txt && g <= 18) hudGrade = g;
+        const g = badgeDigits(bx, bx);
+        if (g !== null) hudGrade = g;
         // 화면 전체 읽기의 검출은 작은 빨간 육각형 숫자를 자주 놓치고('12' → 없음·'2'), 배지만 잘라 키워 읽으면 맞게 나온다 —
         // 배지 판독을 우선한다. 판 난이도가 두 자리로 정해진 뒤에는 건너뛴다 (2026-10-13)
         if (!(runGrade !== null && runGrade >= 10)) { const bg = await session.gradeBadge(); if (bg !== null) hudGrade = bg; }
@@ -673,11 +683,36 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // 중국어(CN 클라) 분기 — chi_sim으로 cn 이름을 매칭한다. 이미지가 고정이라 zh 패스는
     // 결정적 → 한 번만 돌리고 캐시(zhRan). 예전엔 "cn 화면은 무조건 블랙플로우"였지만,
     // 중섭 탭을 켠 테마도 이제 여기서 잡힌다 (2026-08-13 — 아래 zhPossible 참조).
-    let zhRan = false, zhHit = false;
+    let zhRan = false, zhHit = false, cnMapDone = false;
     const tryZh = async () => {
       if (zhRan) return;
       zhRan = true;
       const zlines = await session.zh();
+      // 중국어 지도 화면 — 한국어 패스와 같은 지도 규칙 (match.ts cnMapScreen, 틀렸어요 088cc·69a23927 2026-10-22). 층 이름은 층 정보로만,
+      // 지도 이름표는 무시하고, 오른쪽 설명 창이 뜬 노드만 고른다. 지도로 판정되면 일반 중국어 판정(섹션 투표)은 쓰지 않는다
+      const cnMap = cnMapScreen(session.zhBoxes(), index, topic);
+      if (cnMap) {
+        zhHit = true; cnMapDone = true; lines = zlines;
+        rogueScreenOut = "map";
+        const z = cnMap.zone;
+        if (opts?.live) setBridgePipFloor(/^zone_sky_/.test(z.id) ? { floor: 0, place: z.name, name: z.name }
+          : { floor: Number(z.id.replace(/\D/g, "")) || undefined, place: "", name: z.name });
+        const p = cnMap.pick;
+        if (p?.kind === "node") rogueNodeOut = p.id;
+        oc = p && p.kind !== "node"
+          ? { screens: [], entities: [], topics: [], section: p.kind,
+            target: { kind: "goto", goto: { page: "rogue", topic: p.topic, view: "map", modal: { type: p.kind, id: p.id }, ...(p.emergency ? { emergency: true } : {}) } } }
+          : { screens: [], entities: [], topics: [], section: null, target: { kind: "none" } };
+        // 난이도 배지 — 지도 화면에만 있다 (한국어 패스와 같은 자리: 왼쪽 아래 숫자). 숫자는 한국어 판독 상자에, '收藏品' 이름표는
+        // 중국어 판독 상자에 있다. 배지를 잘라 읽은 값을 우선
+        const g0 = badgeDigits(session.boxes(), session.zhBoxes());
+        if (g0 !== null) hudGrade = g0;
+        if (!(runGrade !== null && runGrade >= 10)) { const bg = await session.gradeBadge(); if (bg !== null) hudGrade = bg; }
+        if (runGrade !== null) hudGrade = runGrade;
+        if (opts?.live && hudGrade !== null) setBridgePipFloor({ grade: hudGrade });
+        console.debug(`[lens] 중국어 지도: ${z.name}${p ? ` · 고른 ${p.kind} ${p.id}${p.emergency ? " (긴급)" : ""}` : " · 고른 노드 없음"}`);
+        return;
+      }
       // 문맥(테마·잠금)을 한국어 패스와 똑같이 넘긴다 — 시리즈 공통 유물의 중국어 이름이
       // IS5·IS6에 154개 겹쳐서, 문맥 없이는 중섭 IS5 화면이 블랙플로우로 샌다 (2026-08-13).
       const zoc = analyzeChinese(zlines, index, { topic, lock: opts?.lock });
@@ -757,7 +792,7 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // 지도 화면의 작전 — 지도 아이콘 밑에 작전 이름표가 늘 붙어 있어서, 작전 노드가 하나뿐이면 다른 노드를 골라도 그 작전으로
     // 고정됐다 (틀렸어요 2026-10-13 "작전 노드가 셋 중 하나밖에 없으면 고정"). 작전을 **골랐을 때만** 오른쪽 패널에 작전 설명 글이
     // 뜨므로, 지도 화면에서는 설명 글이 읽힌 작전만 노드로 친다. 셋이 다 이름표로 보여도 고른 하나로 정해진다
-    if (rogueScreenOut === "map") {
+    if (rogueScreenOut === "map" && !cnMapDone) {   // 중국어 지도는 위 tryZh 가 같은 규칙으로 이미 정했다 — 한국어 이름으로 다시 보면 지운다
       const ns = lines.map((l) => normText(l));
       const descHit = (d: string) => ns.reduce((a, n) => {
         if (n.length < 6) return a;
@@ -834,7 +869,8 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     oc.hud = parseHud(lines);
     // 긴급 작전 화면 색 감지 — 붉은 배너 위 '긴급 작전' 글자는 OCR이 자주 놓친다
     // (2026-07-26 영상3 실측: 텍스트 0회 검출). 강한 빨강 비율 1.1% 이상이면 긴급으로 본다 (영상5에서 1.4 미달 사례 → 하향, 음성 최대 0.9%).
-    if (session.redness >= 0.011) {
+    // 중국어 지도는 설명 창 꼬리표(紧急作战)로 이미 정했다 — 지도 위 붉은 아이콘에 일반 작전이 긴급으로 뒤집히지 않게 건너뛴다
+    if (session.redness >= 0.011 && !cnMapDone) {
       if (oc.target.kind === "goto" && oc.target.goto.page === "rogue" && oc.target.goto.modal?.type === "stage") oc.target.goto.emergency = true;
       else if (oc.target.kind === "tie") for (const o of oc.target.options) { if (o.goto.page === "rogue" && o.goto.modal?.type === "stage") o.goto.emergency = true; }
     }
