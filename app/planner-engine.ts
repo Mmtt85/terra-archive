@@ -947,7 +947,8 @@ export type OpBreakdown = {
 // control auras: only the highest of a kind counts, ranked by the user's
 // priority — factories > trading posts > hire contacts > clue speed
 export const AURA_WEIGHT: Record<string, number> = C.AURA_WEIGHT;
-export const AURA_LABEL: Record<string, string> = { ctrl_mfg: "제조소 생산력 오라", ctrl_trade: "무역소 오더 효율 오라", ctrl_hire: "인맥 레퍼런스 오라", ctrl_clue: "단서 수집 오라" };
+// 화면 이름 — 게임에 없는 말 '오라'는 쓰지 않는다 (사용자 지시 2026-10-21)
+export const AURA_LABEL: Record<string, string> = { ctrl_mfg: "제어센터 효과 · 제조소 생산력", ctrl_trade: "제어센터 효과 · 무역소 오더 수주 효율", ctrl_hire: "제어센터 효과 · 인맥 레퍼런스", ctrl_clue: "제어센터 효과 · 단서 수집" };
 // 제어센터 오라가 실제로 더해지는 대상 방 — 방 점수·서머리에 합산된다
 export const AURA_TARGET: Record<string, string> = { MANUFACTURE: "ctrl_mfg", TRADING: "ctrl_trade", HIRE: "ctrl_hire", MEETING: "ctrl_clue" };
 

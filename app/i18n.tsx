@@ -1316,9 +1316,7 @@ const D: Record<string, Pair> = {
   "계산 중…": ["Computing…", "計算中…"],
   "자동편성 엔진 계산 중 — 채택안 전수 감사 {crew}조 {i}/{n}회차 검수…": ["Auto-assign engine running — full audit of the chosen plan, Shift {crew} round {i}/{n}…", "自動編成エンジン計算中 — 採用案の全数検査 {crew}班 {i}/{n}回目…"],
   "제어센터 효과 점수": ["weighted Control Center bonus score", "制御中枢効果スコア"],
-  "오라": ["aura", "オーラ"],
   "제어센터 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산해 합한 비교용 점수입니다 — %가 아니며, 실제 효과는 각 방의 '제어센터 효과'로 그 방 %에 더해집니다.": ["A comparison score: Control Center bonus effects weighted by the priority multipliers (Factory ×10 > Trading Post ×2 > HR ×0.6 > Clue ×0.2). It is not a %, and the actual effect is added to each target room's score as received Control Center bonus.", "制御中枢の効果効果を優先度加重（製造所×10＞貿易所×2＞人脈×0.6＞手がかり×0.2）で換算した比較用スコアです — %ではなく、実際の効果は対象部屋のスコアに受信制御中枢の効果として加算されます。"],
-  "제어센터 오라 수신 {n} 포함 — 방을 눌러 상세 내역을 확인하세요": ["Includes {n} received from Control Center auras — click the room for the breakdown", "制御中枢オーラ受信 {n} を含みます — 部屋をクリックして内訳を確認"],
   // 시너지 세트 표시명 — rules.json synergySets의 name(KR)이 그대로 키가 된다.
   // /admin에서 새 세트를 추가하면 여기에 같은 이름 키로 EN/JA를 보충할 것 (없으면 KR 표시)
   "쉐라그 무역소 세트": ["Kjerag trading set", "イェラグ貿易セット"],
@@ -1326,7 +1324,7 @@ const D: Record<string, Pair> = {
   "업데이트로 더해진 확장판 수 (보스가 하나씩 늘어난 판)": ["Number of content expansions added by updates (each adds a boss)", "アップデートで追加された拡張の数（ボスが1体ずつ増えた版）"],
   "품질 수익 조합": ["quality-payout combo", "品質収益コンボ"],
   "어비설 헌터스 제조소 세트": ["Abyssal Hunters factory set", "アビサルハンターズ製造所セット"],
-  "제어센터 카드의 '+N 제어센터 효과 점수'는 %가 아니라 제어센터 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산한 비교용 점수입니다. 일반 방 카드에 '(제어센터 ±N%)'이 붙어 있으면 제어센터 효과가 포함된 것으로, 방 점수가 오퍼 스킬 합과 달라 보이는 이유입니다 — 방 상세의 '제어센터 오라 수신' 항목에서 내역을 확인할 수 있습니다.": ["The Control Center card's '+N weighted Control Center bonus score' is not a % — it converts Control Center bonuses with the priority multipliers (Factory ×10 > Trading Post ×2 > HR ×0.6 > Clue ×0.2) into a comparison score. When a room card shows '(Control Center bonus ±N)', received Control Center Control Center bonuses are included — that's why a room score can differ from the sum of operator skills. See 'Received Control Center Control Center bonuses' in the room details.", "制御中枢カードの「+N 制御中枢効果スコア」は%ではなく、制御中枢の効果を優先度加重（製造所×10＞貿易所×2＞人脈×0.6＞手がかり×0.2）で換算した比較用スコアです。部屋カードに「(制御中枢の効果 ±N)」が付いていれば制御中枢制御中枢の効果の受信分が含まれており、部屋スコアがオペレータースキルの合計と違って見える理由です — 部屋詳細の「制御中枢の効果」で内訳を確認できます。"],
+  "제어센터 카드의 '+N 제어센터 효과 점수'는 %가 아니라 제어센터 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산한 비교용 점수입니다. 일반 방 카드에 '(제어센터 ±N%)'이 붙어 있으면 제어센터 효과가 포함된 것으로, 방 점수가 오퍼 스킬 합과 달라 보이는 이유입니다 — 방 상세의 '제어센터 효과' 항목에서 내역을 확인할 수 있습니다.": ["The Control Center card's '+N weighted Control Center bonus score' is not a % — it converts Control Center bonuses with the priority multipliers (Factory ×10 > Trading Post ×2 > HR ×0.6 > Clue ×0.2) into a comparison score. When a room card shows '(Control Center bonus ±N)', Control Center bonuses are included — that's why a room score can differ from the sum of operator skills. See 'Received Control Center bonuses' in the room details.", "制御中枢カードの「+N 制御中枢効果スコア」は%ではなく、制御中枢の効果を優先度加重（製造所×10＞貿易所×2＞人脈×0.6＞手がかり×0.2）で換算した比較用スコアです。部屋カードに「(制御中枢の効果 ±N)」が付いていれば制御中枢制御中枢の効果の受信分が含まれており、部屋スコアがオペレータースキルの合計と違って見える理由です — 部屋詳細の「制御中枢の効果」で内訳を確認できます。"],
   "A조 (풀파워)": ["Shift A (full power)", "A班（フルパワー）"],
   "B조 (회복 교대)": ["Shift B (recovery)", "B班（回復交代）"],
   "동기화한 계정이 중국 서버가 아니라 재활용소는 비워 둡니다 — 아직 그 서버에 없는 시설입니다": ["Your synced account isn't on the CN server, so the Recycling facility stays empty — it doesn't exist there yet", "同期したアカウントが中国サーバーではないため、リサイクル施設は空けておきます — まだそのサーバーにない施設です"],
@@ -1501,10 +1499,10 @@ const D: Record<string, Pair> = {
   "지원": ["support", "サポート"],
   "회복": ["recovery", "回復"],
   "효율": ["efficiency", "効率"],
-  "제조소 생산력 오라": ["Factory productivity aura", "製造所生産力オーラ"],
-  "무역소 오더 효율 오라": ["Trading order efficiency aura", "貿易所受注効率オーラ"],
-  "인맥 레퍼런스 오라": ["HR contact aura", "人脈オーラ"],
-  "단서 수집 오라": ["Clue collection aura", "手がかり収集オーラ"],
+  "제어센터 효과 · 제조소 생산력": ["Control Center bonus · factory productivity", "制御中枢の効果 · 製造所生産力"],
+  "제어센터 효과 · 무역소 오더 수주 효율": ["Control Center bonus · trading order efficiency", "制御中枢の効果 · 貿易所受注効率"],
+  "제어센터 효과 · 인맥 레퍼런스": ["Control Center bonus · HR contacts", "制御中枢の効果 · 人脈"],
+  "제어센터 효과 · 단서 수집": ["Control Center bonus · clue collection", "制御中枢の効果 · 手がかり収集"],
   // 토스트
   "현재 상태를 파일로 저장했습니다": ["Saved the current state to a file", "現在の状態をファイルに保存しました"],
   "저장된 상태를 불러왔습니다 · 보유 {n}명 복원": ["Loaded saved state · restored {n} owned operators", "保存した状態を読み込みました · 所持{n}名を復元"],
@@ -1540,8 +1538,7 @@ const D: Record<string, Pair> = {
   "효율 오버라이드": ["Efficiency override", "効率オーバーライド"],
   "동료 보너스": ["Coworker bonus", "同僚ボーナス"],
   "레어도 기본": ["Rarity base", "レア度基本"],
-  "제어 오라(가중)": ["Control auras (weighted)", "管制オーラ（加重）"],
-  "제어센터 오라 수신": ["Aura received from Control", "制御中枢オーラ受信"],
+
   "제어센터 효과": ["Control Center bonus", "制御中枢の効果"],
   "제어센터 효과 {n} 포함 — 방을 눌러 상세 내역을 확인하세요": ["Includes {n} from the Control Center — click the room for the breakdown", "制御中枢の効果 {n} を含みます — 部屋をクリックすると内訳を確認できます"],
   "제어센터": ["Control Center", "制御中枢"],
@@ -1797,7 +1794,7 @@ const D: Record<string, Pair> = {
     "The Workshop is a passive slot, so only one Shift A team (Nian, fixed) is assigned and the Shift B slot stays empty — the recovery crew doesn't need a separate workshop member.",
     "加工所は常時スロットなので、A班の1チーム（ニェン固定）だけを編成し、B班の枠は空けておきます — 回復交代に加工要員を別途置く必要はありません。",
   ],
-  "플레임테일(피누스 실베스트리스 기사)은 제조소에 배치된 기사단원 1명당, 그 기사단원이 일하는 제조소에 작전기록 +10%·귀금속 -10%를 주는 제어센터 효과입니다 — 기지 전체 일률이 아니라 방 단위라, 기사단을 작전기록방에 모으면 감산은 발생하지 않습니다. 보유 시 애쉬락·와일드메인·파투스(각 +25%)를 한 작전기록방에 결집하고 플레임테일을 같은 조 제어센터에 앉히는 세트안을 A조·B조로 하나씩 만들어, 세트 없는 편성과 기지 총점을 비교해 가장 이득인 안을 채택합니다.": ["Flametail (Knight of Pinus Sylvestris) is a Control Center Control Center bonus applied per Knights operator to the factory that operator works in: +10% for Battle Records, -10% for Pure Gold. It is room-scoped, not base-wide — gather the Knights in a Battle Record factory and no penalty occurs. When owned, set plans gather Ashlock, Wild Mane and Fartooth (+25% each) into one Battle Record factory with Flametail in the same shift's Control Center — one for Shift A and one for Shift B — and the best is adopted only if its total base score beats the no-set plan.", "フレイムテイル（ピヌス・シルウェストリスの騎士）の制御中枢の効果は、製造所で稼働する騎士団オペレーター1人につき**その騎士が働く製造所に**作戦記録+10%・純金-10%を与えます — 基地全体ではなく部屋単位なので、騎士団を作戦記録部屋に集めれば減算は発生しません。所持時はアッシュロック・ワイルドメイン・ファートゥース（各+25%）を1つの作戦記録製造所に集め、フレイムテイルを同じ班の制御中枢に置くセット案をA班・B班それぞれ作り、セットなしの編成と基地総合スコアを比較して最も得な案を採用します。"],
+  "플레임테일(피누스 실베스트리스 기사)은 제조소에 배치된 기사단원 1명당, 그 기사단원이 일하는 제조소에 작전기록 +10%·귀금속 -10%를 주는 제어센터 효과입니다 — 기지 전체 일률이 아니라 방 단위라, 기사단을 작전기록방에 모으면 감산은 발생하지 않습니다. 보유 시 애쉬락·와일드메인·파투스(각 +25%)를 한 작전기록방에 결집하고 플레임테일을 같은 조 제어센터에 앉히는 세트안을 A조·B조로 하나씩 만들어, 세트 없는 편성과 기지 총점을 비교해 가장 이득인 안을 채택합니다.": ["Flametail (Knight of Pinus Sylvestris) is a Control Center bonus applied per Knights operator to the factory that operator works in: +10% for Battle Records, -10% for Pure Gold. It is room-scoped, not base-wide — gather the Knights in a Battle Record factory and no penalty occurs. When owned, set plans gather Ashlock, Wild Mane and Fartooth (+25% each) into one Battle Record factory with Flametail in the same shift's Control Center — one for Shift A and one for Shift B — and the best is adopted only if its total base score beats the no-set plan.", "フレイムテイル（ピヌス・シルウェストリスの騎士）の制御中枢の効果は、製造所で稼働する騎士団オペレーター1人につき**その騎士が働く製造所に**作戦記録+10%・純金-10%を与えます — 基地全体ではなく部屋単位なので、騎士団を作戦記録部屋に集めれば減算は発生しません。所持時はアッシュロック・ワイルドメイン・ファートゥース（各+25%）を1つの作戦記録製造所に集め、フレイムテイルを同じ班の制御中枢に置くセット案をA班・B班それぞれ作り、セットなしの編成と基地総合スコアを比較して最も得な案を採用します。"],
   "같은 오퍼를 A조·B조에 동시 배치하지 않는 것이 기본 원칙입니다 — 근무를 이중으로 서면 못 쉬고 24시간 돌아야 하기 때문입니다. 사기를 소모하지 않는 숙소(휴식)·가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정됩니다.": [
     "As a base rule, the same operator is never placed in both Shift A and Shift B — pulling a double shift means working 24 hours with no rest. Only the Dormitory (rest) and Workshop (passive slot), which don't drain morale, may stay fixed across shifts.",
     "同じオペレーターをA班・B班に同時配置しないのが基本原則です — 二重勤務は休めず24時間稼働になるためです。士気を消費しない宿舎（休息）・加工所（常時スロット）のみ、交代と無関係に固定できます。",
@@ -1972,7 +1969,7 @@ const D: Record<string, Pair> = {
     "ワイフー（協同意識）・スノウサント（勤勉）は増幅型です — 同じ部屋の他オペレーターが提供した効率（施設ベース除く）の5%ごとに5%を、最大+40%（スノウサントは+35%）まで返します。生産力の高いオペレーターと組んでこそ価値が出るため、アロマ（貴金属25+清掃20）＋30%級オペレーターのような強い生産チームに乗せると純金部屋が約115%になります。毎時成長型（アロマ・クルース・シーン・ファン・ケオベ）とВий（訓練室レベル成長）は満期基地の上限値で計算します。",
   ],
   "제어센터 효과 우선순위: 제조소 생산력 > 무역소 오더 효율 > 인맥 레퍼런스 > 단서 수집. '동종 효과 중 최고만 적용' 규칙을 따릅니다.": ["Control Center bonus priority: factory productivity > trading order efficiency > HR contacts > clue collection. Only the strongest of each kind applies.", "制御中枢の効果優先度：製造所生産力 > 貿易所受注効率 > 人脈 > 手がかり収集。「同種効果は最高のみ適用」ルールに従います。"],
-  "제어센터 효과는 대상 방 %에 실제로 합산됩니다 — '무역소 오더 수주 효율 +10%'면 무역소 %와 상단 서머리에 +10%가 더해집니다 (방 상세의 '제어센터 효과'). 단 이격 실버애쉬처럼 조건이 붙은 효과는 조건을 채운 그 방 하나에만 적용됩니다.": ["Control Center Control Center bonuses are actually added to the target room's score — a +10% trading Control Center bonus raises the trading score and the top summary ('Control Center bonus' in room details). Conditional Control Center bonuses (e.g. SilverAsh alter) apply only to the single room meeting the condition.", "制御中枢制御中枢の効果は対象部屋のスコアに実際に加算されます — 貿易所受注効率+10%の制御中枢の効果なら貿易所スコアと上部サマリーに加算（部屋詳細の「制御中枢の効果」）。ただし異格シルバーアッシュのような条件付き制御中枢の効果は、条件を満たしたその1部屋にのみ適用されます。"],
+  "제어센터 효과는 대상 방 %에 실제로 합산됩니다 — '무역소 오더 수주 효율 +10%'면 무역소 %와 상단 서머리에 +10%가 더해집니다 (방 상세의 '제어센터 효과'). 단 이격 실버애쉬처럼 조건이 붙은 효과는 조건을 채운 그 방 하나에만 적용됩니다.": ["Control Center bonuses are actually added to the target room's score — a +10% trading Control Center bonus raises the trading score and the top summary ('Control Center bonus' in room details). Conditional Control Center bonuses (e.g. SilverAsh alter) apply only to the single room meeting the condition.", "制御中枢制御中枢の効果は対象部屋のスコアに実際に加算されます — 貿易所受注効率+10%の制御中枢の効果なら貿易所スコアと上部サマリーに加算（部屋詳細の「制御中枢の効果」）。ただし異格シルバーアッシュのような条件付き制御中枢の効果は、条件を満たしたその1部屋にのみ適用されます。"],
   "'용문근위국 오퍼와 함께'류 동반 조건, '미노스 1명당'류 카운트 조건은 실제 배치를 기준으로만 인정합니다.": [
     "Companion conditions ('together with an L.G.D. operator') and count conditions ('per Minos operator') are honored only against actual placements.",
     "「龍門近衛局オペレーターと共に」系の同伴条件、「ミノス1人につき」系のカウント条件は実際の配置のみを基準に認めます。",
