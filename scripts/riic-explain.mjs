@@ -54,12 +54,13 @@ async function optimize(E, r, sd) {
 // 스킬 문구로 따로 세기 — 엔진 필드(perFaction 등)는 '누구를 세는지'만 빌리고, **어디서 세는지·상한**은 문구에서 읽는다
 function independent(E, skill, op, cellKey, team, place) {
   const d = skill.description ?? "";
-  const kindOk = ["output", "trade", "hire", "clue", "power"].includes(skill.kind) || /생산력|오더 수주 효율|누적 속도|수집 속도|회복 속도/.test(d);
-  if (!kindOk) return null;
+  const kindOk = ["output", "trade", "hire", "clue", "power"].includes(skill.kind) || /생산력|오더 수주 효율|누적 속도|수집 속도|회복 속도|충전 속도/.test(d);
+  if (!kindOk) return /[+\-]\d+(?:\.\d+)?%/.test(d) ? { kind: "효과 종류 모름", value: null } : null;   // %가 있는데 종류를 모르면 '못 셈'으로 (아이기스 '드론 충전 속도')
   const capM = /최대\s*\+?(\d+)\s*명/.exec(d) ?? /\(최대\s*(\d+)명/.exec(d);
   const cap = capM ? Number(capM[1]) : Infinity;
   const selfEx = /자신을 제외/.test(d);
-  const noTraining = /활동실/.test(d);
+  // '활동실 사용자 미포함'의 활동실은 훈련실이 아니다 — 훈련실에 앉힌 라인 랩도 내스티·뮤엘시스가 센다 (사용자 확정 2026-10-18 훈련실 운용 규칙)
+  const noTraining = false;
   // 조건·변환이 붙은 스킬은 이 계산기로 못 센다 — 종류만 적어 둔다
   if (skill.tokenUse?.length || skill.tokenGen?.length || skill.convert || skill.override || skill.automation || skill.partners?.length || skill.basePartners?.length
     || skill.roomPartner || skill.gateFaction || skill.belowThreshold != null || skill.perSkillTag != null || skill.reqFaction || skill.reqGroup || skill.workPartners?.length
@@ -86,6 +87,19 @@ function independent(E, skill, op, cellKey, team, place) {
     return { kind: "같은 방 진영 1명당", value: skill.value * n, why: `같은 방 ${skill.perFaction} ${n}명 × ${skill.value}%` };
   }
   if (skill.perFaction) return { kind: "진영 1명당(다른 범위)", value: null };
+  // 같은 방 동료 1명당 (키치세이 '무역소 내 자신을 제외한 작업 중인 오퍼레이터 1명당 +20%')
+  if (/자신을 제외한[^.]*오퍼레이터 1명당/.test(d) && !/기반시설/.test(d)) {
+    const per = Number((/1명당[^+\-]*([+\-]?\d+(?:\.\d+)?)%/.exec(d) ?? [])[1] ?? skill.value);
+    const n = Math.min(cap, team.length - 1);
+    return { kind: "같은 방 동료 1명당", value: per * n, why: `같은 방 동료 ${n}명 × ${per}%` };
+  }
+  // 시설 수 (퓨어스트림 '각각의 무역소가 해당 제조소의 귀금속류에 대한 생산력 +20%') — 그 배치의 그 종류 방 수
+  const eachM = /각각의 (무역소|제조소|발전소)가[^+\-]*([+\-]?\d+(?:\.\d+)?)%/.exec(d);
+  if (eachM) {
+    const room = { 무역소: "TRADING", 제조소: "MANUFACTURE", 발전소: "POWER" }[eachM[1]];
+    const n = E.LAYOUT.filter((c) => c.room === room).length;
+    return { kind: "시설 수", value: Number(eachM[2]) * n, why: `${eachM[1]} ${n}곳 × ${eachM[2]}%` };
+  }
   // 고정 % 는 조건 없는 문구만 — '…경우·있으면·함께·시간·컨디션' 이 붙으면 조건부로 둔다
   if (/경우|있으면|함께|때마다|시간이|시간당|컨디션|만약|이상|미만|이하/.test(d) || (d.match(/[+\-]\d+(?:\.\d+)?%/g) ?? []).length > 1) return { kind: "조건부 문구", value: null };
   return { kind: "고정", value: skill.value, why: `${skill.value}%` };
