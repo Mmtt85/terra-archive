@@ -34,7 +34,8 @@ function d1(sql) {
 }
 const q = (s) => `'${String(s).replace(/'/g, "''")}'`;
 
-const runs = fs.readdirSync(path.join(DIR, "runs")).sort();
+// 끝까지 간 판(결과 res.jsonl 이 있는 판)만 '지난 판'으로 — 중간에 멈춘 판을 고르면 보고서 단계에서 죽었다 (2026-10-21)
+const runs = fs.readdirSync(path.join(DIR, "runs")).sort().filter((d) => fs.existsSync(path.join(DIR, "runs", d, "res.jsonl")));
 const prevRun = runs.at(-1);
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 const runDir = path.join(DIR, "runs", stamp);

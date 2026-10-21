@@ -708,10 +708,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 엔진이 후보안 사이마다 진행 단계를 알려주면 로케일 문구로 표시한다
   const [optimizing, setOptimizing] = useState<string | null>(null);
   const stepMessage = (step: OptimizeStep): string => {
+    // 두 번째 탐색(고정 비중) — 다른 방식으로 한 번 더 짜서 첫 결과와 비교한다 (2026-10-21)
+    if (step.second) return step.phase === "variant"
+      ? t("자동편성 엔진 계산 중 — 다른 방식으로 한 번 더 짜서 비교 {i}/{n}…", { i: step.index ?? 0, n: step.total ?? 0 })
+      : t("자동편성 엔진 계산 중 — 다른 방식으로 한 번 더 짜서 비교…");
+    if (step.phase === "polish") return t("자동편성 엔진 계산 중 — 마무리 다듬기(오퍼를 바꿔 보며 더 오르는지 확인)…");
     if (step.phase === "base") return t("자동편성 엔진 계산 중 — 기본 편성 조립·전수 감사…");
     if (step.phase === "variant") return t("자동편성 엔진 계산 중 — 시너지 세트 후보안 {i}/{n} 평가…", { i: step.index ?? 0, n: step.total ?? 0 });
-    if (step.index) return t("자동편성 엔진 계산 중 — 채택안 전수 감사 {crew}조 {i}/{n}회차 검수…", { crew: step.crew ?? "A", i: step.index, n: step.total ?? step.index });
-    return t("자동편성 엔진 계산 중 — 최적안 비교·마무리 검증…");
+    return t("자동편성 엔진 계산 중 — 채택안 전수 감사 중…");
   };
 
   // 자동편성 스냅샷과 달라진 칸 수 (조별로 센다) — 0이면 되돌릴 게 없다
@@ -2282,7 +2286,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                     return (
                       <em className="room-clock" title={net <= 1e-9
                         ? t("순소모 0 — 무한동력, 이 방은 교대가 필요 없습니다")
-                        : t("A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 완전 소진 시간 (총웨류 회복 오라·제어센터 인원당 -0.05 반영). 실제 교대는 컨디션 12(지침 신호)쯤에서 이르게 하는 게 보통입니다. 전원 풀 컨디션 가정이라 오퍼별 현재 피로도에 따라 실제 시간은 달라집니다", { d: net.toFixed(2) })}>
+                        : t("A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 완전 소진 시간 (총웨류 컨디션 회복 효과·제어센터 인원당 -0.05 반영). 실제 교대는 컨디션 12(지침 신호)쯤에서 이르게 하는 게 보통입니다. 전원 풀 컨디션 가정이라 오퍼별 현재 피로도에 따라 실제 시간은 달라집니다", { d: net.toFixed(2) })}>
                         {net <= 1e-9 ? "∞" : t("{n}시간", { n: Math.round(24 / net) })}
                       </em>
                     );
@@ -2330,10 +2334,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               </div>
               {plan && team.length > 0 && !PARK_KEYS.includes(cell.key) && (
                 <small title={cell.room === "CONTROL"
-                  ? t("오라 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산해 합한 비교용 점수입니다 — %가 아니며, 실제 효과는 대상 방 점수에 '오라' 수신분으로 더해집니다.")
-                  : ambientPart !== 0 ? t("제어센터 오라 수신 {n} 포함 — 방을 눌러 상세 내역을 확인하세요", { n: `${ambientPart > 0 ? "+" : ""}${ambientPart}` }) : undefined}>
-                  +{score}{cell.room === "CONTROL" ? "" : "%"} {cell.room === "CONTROL" ? t("오라 가중 점수") : t(UNIT[cell.room])}
-                  {ambientPart !== 0 && cell.room !== "CONTROL" && <em className="ambient-note"> ({t("오라")} {ambientPart > 0 ? "+" : ""}{ambientPart})</em>}
+                  ? t("제어센터 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산해 합한 비교용 점수입니다 — %가 아니며, 실제 효과는 각 방의 '제어센터 효과'로 그 방 %에 더해집니다.")
+                  : ambientPart !== 0 ? t("제어센터 효과 {n} 포함 — 방을 눌러 상세 내역을 확인하세요", { n: `${ambientPart > 0 ? "+" : ""}${ambientPart}%` }) : undefined}>
+                  +{score}{cell.room === "CONTROL" ? "" : "%"} {cell.room === "CONTROL" ? t("제어센터 효과 점수") : t(UNIT[cell.room])}
+                  {ambientPart !== 0 && cell.room !== "CONTROL" && <em className="ambient-note"> ({t("제어센터")} {ambientPart > 0 ? "+" : ""}{ambientPart}%)</em>}
                   {raiseBefore != null && raiseBefore !== score && <em className={`raise-delta ${score >= raiseBefore ? "up" : "down"}`}> · {t("원래 {b}%", { b: raiseBefore })} ({score >= raiseBefore ? "+" : ""}{score - raiseBefore})</em>}
                   {cell.room === "RECYCLE" && <em className="ambient-note"> · {t("≈{n} 이성/일", { n: Math.round(recycleRate(team, cell.key)?.apPerDay ?? 0) })}</em>}
                 </small>
@@ -2796,7 +2800,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
         const named = g.term ? TERMS[g.term]?.ops : null;
         const isMember = (op: InfraOp) => (named ? named.includes(op.id) : memberOf(op, g.faction));
         if (!team.some(isMember)) continue; // 이 방에 진영원이 없으면 안내할 것도 없다
-        return t("**{faction} 오라는 제어 센터에 {anchor} 배치가 필요합니다** — 이 조의 제어 센터에 없어서, 이 방의 {faction} 오퍼레이터에게 지금은 붙지 않습니다.", { faction: g.faction, anchor: anchor.name });
+        return t("**{faction} 효과는 제어 센터에 {anchor} 배치가 필요합니다** — 이 조의 제어 센터에 없어서, 이 방의 {faction} 오퍼레이터에게 지금은 붙지 않습니다.", { faction: g.faction, anchor: anchor.name });
       }
     }
     return null;
@@ -2834,7 +2838,8 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   const orderFixedRoom = parts0.some((p) => p.orderFixed);
   const payoutOf = (b: { payout: number; payoutViolation: number }) => (orderFixedRoom ? 0 : b.payout * mult0.quality + b.payoutViolation * mult0.violation);
   agg["오더 수익"] = parts0.reduce((sum, p) => sum + payoutOf(p), 0);
-  agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, replaced ? roomEfficiency(parts0, team) : agg["스킬 효율"], ctx.product);
+  // '오라 수신'은 무슨 말인지 모르겠다고 해 '제어센터 효과'로 (사용자 지적 2026-10-21)
+  agg["제어센터 효과"] = ambientFor(cell.room, team, ambient, replaced ? roomEfficiency(parts0, team) : agg["스킬 효율"], ctx.product, overrideVal > 0);   // 샤마르 방엔 인원 수 오라 0 (엔진과 같게, 제보 79dada62)
   // 용량 변환 — 팀이 쌓은 오더 상한/창고 용량을 변환기가 되돌린 효율/생산력 (베나벌컨버블·데겐블레허·제이)
   agg["용량 변환"] = capConvFor(team, cell.room, ctx);
   // 특별 오더(클로저·U-Official) — 스킬에 적힌 +10%가 아니라 **이 방에서 실제로 오르는 %p**를
@@ -3336,7 +3341,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                   </span>
                   <span className="rh-eff-parts">
                     {Object.entries(agg).filter(([, value]) => Math.round(value) !== 0).map(([name, value]) => (
-                      <span key={name}>{t(name)} <b>{Math.round(value) >= 0 ? "+" : ""}{Math.round(value)}</b></span>
+                      <span key={name}>{t(name)} <b>{Math.round(value) >= 0 ? "+" : ""}{Math.round(value)}{cell.room === "CONTROL" ? "" : "%"}</b></span>
                     ))}
                     {team.length === 0 && <span>{t("편성 없음")}</span>}
                   </span>
@@ -4240,7 +4245,7 @@ export type ShiftNoteKind = "drain" | "policy" | "power" | "gold" | "lmd" | "exp
 const DRAIN_NOTE_ITEMS = [
   "표시된 시간은 **전원이 풀 컨디션 24로 근무를 시작한다**고 본 계산값입니다. 실제 오퍼는 저마다 남은 컨디션이 다르므로, 이미 지친 인원이 섞여 있으면 그만큼 교대가 앞당겨집니다.",
   "특히 **제어센터가 먼저 지치면 기지 전체가 함께 빨라집니다**. 제어센터에 앉은 인원은 다른 모든 작업 시설의 시간당 컨디션 소모를 1명당 0.05씩 깎아 주는데, 제어센터 크루가 먼저 소진돼 자리가 비면 그 감면이 사라져 제조소·무역소·발전소가 일제히 더 빨리 닳습니다. 표시된 시간은 감면이 계속 걸려 있다고 보고 계산한 값입니다.",
-  "같은 방 동료 시너지(동료 1명당 -0.05)와 회복 오라(총웨·위셔델·무에나)도 표시값에 반영돼 있지만, 이 역시 **그 배치가 그대로 유지될 때**의 값입니다. 오퍼를 빼거나 옮기면 남은 인원의 소모가 즉시 올라갑니다.",
+  "같은 방 동료 시너지(동료 1명당 -0.05)와 컨디션 회복 효과(총웨·위셔델·무에나)도 표시값에 반영돼 있지만, 이 역시 **그 배치가 그대로 유지될 때**의 값입니다. 오퍼를 빼거나 옮기면 남은 인원의 소모가 즉시 올라갑니다.",
   "그래서 이 숫자는 상한이 아니라 기준점으로 보세요. 병목(가장 빨리 닳는 방)보다 늦게 교대하면 안 되고, 보통은 컨디션 12(지침 신호)쯤에서 A조 전체를 한 번에 B조로 바꿉니다.",
 ];
 
@@ -4328,6 +4333,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
   ]},
   { title: "무역소 조합", items: [
     "샤마르(속삭임)는 다른 인원의 효율을 0으로 만들고 인당 +45%를 주므로, 효율이 없어도 되는 품질 요원과 묶습니다: 샤마르 + 테킬라(투자β: 고품질 순금 오더 수익) + 확률 요원(카프카·디아만테·바이비크 — 전부 동급).",
+    "샤마르(속삭임)가 있는 무역소에서는 '무역소 내 ○○ 1명당'처럼 방 안 인원 수로 세는 제어센터 효과(야하타 우미리 '시라쿠사 1명당 +5%' 등)가 적용되지 않습니다 — 샤마르 본인이 시라쿠사여도 0입니다. 아미야 같은 일반 효과(+7%)는 그대로 받습니다(실측: 샤마르 방 90 + 7 = 97%). 그래서 우미리는 다른 시라쿠사 오퍼가 있는 무역소 조로 보냅니다.",
     "프로바이조는 반대로 저품질 오더를 위약 처리해 수익을 내므로 고품질 확률과는 반시너지입니다. 처리량이 높은 우요우+에벤홀츠 방에 넣습니다.",
     "레벨 성장형은 만렙 기지 기준 상한으로 계산합니다: 비질 +40%(응접실 Lv3), 아르케토 +40%(숙소 20레벨), 미틈 +30%.",
     "언더플로우(+30%)는 울피아누스가 기지 어디든(숙소 포함) 있으면 +40%가 됩니다 — 울피아누스를 숙소에 고정해 두세요. B조 무역소 정배: 비질+아르케토+언더플로우.",
@@ -4342,12 +4348,12 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "와이후(협동의식)·스노우상트(근면성실)는 증폭형입니다 — 같은 방 다른 오퍼가 제공한 효율(시설 기반 제외)의 5%당 5%를 최대 +40%(스노우상트 +35%)까지 되돌립니다. 생산력 높은 오퍼와 묶어야 값이 나오므로, 아로마(귀금속 25+청소 20)+30%급 오퍼 같은 강한 생산팀에 얹으면 순금방이 ~115%가 됩니다. 시간당 성장형(아로마·크루스·씬·팽·케오베)과 Вий(훈련실 레벨 성장)는 만렙 기지 상한값으로 계산합니다.",
   ]},
   { title: "제어 센터", items: [
-    "오라 우선순위: 제조소 생산력 > 무역소 오더 효율 > 인맥 레퍼런스 > 단서 수집. '동종 효과 중 최고만 적용' 규칙을 따릅니다.",
-    "제어센터 오라는 대상 방 점수에 실제로 합산됩니다 — 무역소 오더 효율 +10% 오라면 무역소 점수와 상단 서머리에 더해집니다 (방 상세의 '제어센터 오라 수신'). 단 이격 실버애쉬처럼 조건이 붙은 오라는 조건을 채운 그 방 하나에만 적용됩니다.",
+    "제어센터 효과 우선순위: 제조소 생산력 > 무역소 오더 효율 > 인맥 레퍼런스 > 단서 수집. '동종 효과 중 최고만 적용' 규칙을 따릅니다.",
+    "제어센터 효과는 대상 방 %에 실제로 합산됩니다 — '무역소 오더 수주 효율 +10%'면 무역소 %와 상단 서머리에 +10%가 더해집니다 (방 상세의 '제어센터 효과'). 단 이격 실버애쉬처럼 조건이 붙은 효과는 조건을 채운 그 방 하나에만 적용됩니다.",
     "'용문근위국 오퍼와 함께'류 동반 조건, '미노스 1명당'류 카운트 조건은 실제 배치를 기준으로만 인정합니다.",
     "이격 실버애쉬 보유 시 쉐라그 3명(무역 스킬 강한 순)을 무역소 한 곳에 모으는 세트안을 만들되, 세트 없는 편성과 기지 총점을 비교해 이득일 때만 채택합니다. 진영 판정은 다중 소속 기준(카란 무역회사 오퍼도 쉐라그로 인정).",
-    "플레임테일(피누스 실베스트리스 기사)은 제조소에 배치된 기사단원 1명당, 그 기사단원이 일하는 제조소에 작전기록 +10%·귀금속 -10%를 주는 오라입니다 — 기지 전체 일률이 아니라 방 단위라, 기사단을 작전기록방에 모으면 감산은 발생하지 않습니다. 보유 시 애쉬락·와일드메인·파투스(각 +25%)를 한 작전기록방에 결집하고 플레임테일을 같은 조 제어센터에 앉히는 세트안을 A조·B조로 하나씩 만들어, 세트 없는 편성과 기지 총점을 비교해 가장 이득인 안을 채택합니다.",
-    "제어센터 카드의 '+N 오라 가중 점수'는 %가 아니라 오라를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산한 비교용 점수입니다. 일반 방 카드에 '(오라 ±N)'이 붙어 있으면 제어센터 오라 수신분이 포함된 것으로, 방 점수가 오퍼 스킬 합과 달라 보이는 이유입니다 — 방 상세의 '제어센터 오라 수신' 항목에서 내역을 확인할 수 있습니다.",
+    "플레임테일(피누스 실베스트리스 기사)은 제조소에 배치된 기사단원 1명당, 그 기사단원이 일하는 제조소에 작전기록 +10%·귀금속 -10%를 주는 제어센터 효과입니다 — 기지 전체 일률이 아니라 방 단위라, 기사단을 작전기록방에 모으면 감산은 발생하지 않습니다. 보유 시 애쉬락·와일드메인·파투스(각 +25%)를 한 작전기록방에 결집하고 플레임테일을 같은 조 제어센터에 앉히는 세트안을 A조·B조로 하나씩 만들어, 세트 없는 편성과 기지 총점을 비교해 가장 이득인 안을 채택합니다.",
+    "제어센터 카드의 '+N 제어센터 효과 점수'는 %가 아니라 제어센터 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산한 비교용 점수입니다. 일반 방 카드에 '(제어센터 ±N%)'이 붙어 있으면 제어센터 효과가 포함된 것으로, 방 점수가 오퍼 스킬 합과 달라 보이는 이유입니다 — 방 상세의 '제어센터 오라 수신' 항목에서 내역을 확인할 수 있습니다.",
     "시설 카운트 스킬(타락사쿰 '쉐이'·만트라 '정예 오퍼레이터')은 그 그룹원이 실제로 앉은 시설 수만큼만 붙습니다 — 한 방에 둘이 앉아도 1개로 세고, 숙소·가공소도 시설로 셉니다. 상한은 게임 상한과 실존 오퍼 수 중 작은 쪽입니다 (만트라는 정예 6명이라 최대 6개 = +12%).",
   ]},
   { title: "정예화 단계 (1정/2정)", items: [

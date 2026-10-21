@@ -1044,10 +1044,7 @@ const D: Record<string, Pair> = {
     "**Pinned operators are kept in this room on both shifts by auto-planning** — there is no rest rotation, so manage Morale (uptime) yourself with Fiammetta or similar. Press 📌 again to pin them to **the shift you are viewing only** (📌A / 📌B); they are then placed on that shift alone. Press once more to unpin. Removing with ✕ also clears the pin.",
     "**固定したオペレーターは自動編成がこの部屋のA班・B班の両方にそのまま配置します** — 交代休憩がなくなるため、体力（稼働時間）の管理はフィアメッタ等でご自身で行ってください。📌をもう一度押すと**今見ている班だけ**（📌A・📌B）に固定され、その班にのみ配置されます。さらに押すと解除されます。✕で外しても固定は解けます。",
   ],
-  "**{faction} 오라는 제어 센터에 {anchor} 배치가 필요합니다** — 이 조의 제어 센터에 없어서, 이 방의 {faction} 오퍼레이터에게 지금은 붙지 않습니다.": [
-    "**The {faction} aura needs {anchor} in the Control Center** — they are not there on this shift, so it is not applying to the {faction} operators in this room.",
-    "**{faction}のオーラは制御中枢に{anchor}の配置が必要です** — この班の制御中枢にいないため、この部屋の{faction}オペレーターには今は付きません。",
-  ],
+  "**{faction} 효과는 제어 센터에 {anchor} 배치가 필요합니다** — 이 조의 제어 센터에 없어서, 이 방의 {faction} 오퍼레이터에게 지금은 붙지 않습니다.": ["**The {faction} Control Center bonus needs {anchor} in the Control Center** — they are not there on this shift, so it is not applying to the {faction} operators in this room.", "**{faction}の制御中枢の効果は制御中枢に{anchor}の配置が必要です** — この班の制御中枢にいないため、この部屋の{faction}オペレーターには今は付きません。"],
   "추천 열기": ["Open list", "リストを開く"],
   "추천 열기 ({n})": ["Open list ({n})", "リストを開く（{n}）"],
   "임시 적용을 모두 취소하고 이전 편성으로 되돌립니다": ["Cancels all temporary applies and restores the previous plan", "一時適用を全て取消し、以前の編成に戻します"],
@@ -1242,10 +1239,7 @@ const D: Record<string, Pair> = {
     "Zero net drain — perpetual; this room never needs a swap",
     "実質消費0 — 永久機関。この部屋は交代不要です",
   ],
-  "A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 완전 소진 시간 (총웨류 회복 오라·제어센터 인원당 -0.05 반영). 실제 교대는 컨디션 12(지침 신호)쯤에서 이르게 하는 게 보통입니다. 전원 풀 컨디션 가정이라 오퍼별 현재 피로도에 따라 실제 시간은 달라집니다": [
-    "Shift A duration — full morale 24 divided by this room's net drain of {d}/h (Chongyue-type recovery auras and the Control Center's -0.05 per member included). In practice you usually swap earlier, around morale 12. It assumes everyone starts at full morale, so the real duration shifts with each operator's current fatigue",
-    "A班の持続時間 — 満タンのコンディション24をこの部屋の実質消費{d}/hで割った完全消耗時間（重岳系回復オーラ・制御中枢の1人あたり-0.05を反映）。実際の交代はコンディション12（疲労サイン）頃に早めに行うのが普通です。全員フルコンディション前提の値なので、オペレーターごとの現在の疲労度によって実際の時間は変わります",
-  ],
+  "A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 완전 소진 시간 (총웨류 컨디션 회복 효과·제어센터 인원당 -0.05 반영). 실제 교대는 컨디션 12(지침 신호)쯤에서 이르게 하는 게 보통입니다. 전원 풀 컨디션 가정이라 오퍼별 현재 피로도에 따라 실제 시간은 달라집니다": ["Shift A duration — full morale 24 divided by this room's net drain of {d}/h (Chongyue-type recovery Control Center bonuses and the Control Center's -0.05 per member included). In practice you usually swap earlier, around morale 12. It assumes everyone starts at full morale, so the real duration shifts with each operator's current fatigue", "A班の持続時間 — 満タンのコンディション24をこの部屋の実質消費{d}/hで割った完全消耗時間（重岳系回復制御中枢の効果・制御中枢の1人あたり-0.05を反映）。実際の交代はコンディション12（疲労サイン）頃に早めに行うのが普通です。全員フルコンディション前提の値なので、オペレーターごとの現在の疲労度によって実際の時間は変わります"],
   "제일 빨리 닳는 시설의 완전 소진 기준 — 그 전에(대개 컨디션 12 신호쯤) A조 전체를 B조로 한 번에 교대합니다. 특히 제어센터가 먼저 지치면 감면이 꺼져 전 방이 가속되니 병목보다 늦으면 안 됩니다. 전원이 풀 컨디션(24)에서 시작한다고 본 추정치라, 오퍼별 현재 피로도에 따라 실제 시간은 달라집니다": [
     "Based on full depletion of the fastest-draining room — swap all of Shift A to Shift B before that (usually around the morale-12 fatigue sign). If the Control Center tires first its relief turns off and every room accelerates, so never run past the bottleneck. It is an estimate that assumes everyone starts at full morale (24), so the real duration shifts with each operator's current fatigue",
     "最も早く消耗する施設の完全消耗基準 — その前（通常はコンディション12の疲労サイン頃）にA班全体を一斉にB班へ交代します。制御中枢が先に疲れると軽減が切れて全部屋が加速するため、ボトルネックより遅らせないこと。全員がフルコンディション（24）で始まる前提の推定値なので、オペレーターごとの現在の疲労度によって実際の時間は変わります",
@@ -1265,10 +1259,7 @@ const D: Record<string, Pair> = {
     "In particular, **if the Control Center tires first the whole base speeds up**. Each operator seated in the Control Center cuts hourly morale drain in every other work facility by 0.05, so when that crew burns out and the seats empty, the relief disappears and factories, trading posts and power plants all drain faster at once. The figure shown assumes the relief stays on the whole time.",
     "特に**制御中枢が先に疲れると基地全体が一緒に速くなります**。制御中枢に座った人員は他のすべての作業施設の毎時コンディション消費を1人あたり0.05軽減しますが、制御中枢のクルーが先に消耗して席が空くとその軽減が消え、製造所・貿易所・発電所が一斉に速く消耗します。表示時間は軽減がかかり続ける前提の値です。",
   ],
-  "같은 방 동료 시너지(동료 1명당 -0.05)와 회복 오라(총웨·위셔델·무에나)도 표시값에 반영돼 있지만, 이 역시 **그 배치가 그대로 유지될 때**의 값입니다. 오퍼를 빼거나 옮기면 남은 인원의 소모가 즉시 올라갑니다.": [
-    "Same-room crew synergy (-0.05 per co-worker) and recovery auras (Chongyue, Wis'adel, Muelsyse) are included in the figure too, but again only **while that assignment stays intact**. Pull someone out or move them and the remaining crew's drain rises immediately.",
-    "同じ部屋の同僚シナジー（同僚1人あたり-0.05）と回復オーラ（重岳・ウィスデル・ミュルジス）も表示値に反映されていますが、これも**その配置が保たれている間**の値です。オペレーターを外したり移したりすると、残った人員の消費がすぐ上がります。",
-  ],
+  "같은 방 동료 시너지(동료 1명당 -0.05)와 컨디션 회복 효과(총웨·위셔델·무에나)도 표시값에 반영돼 있지만, 이 역시 **그 배치가 그대로 유지될 때**의 값입니다. 오퍼를 빼거나 옮기면 남은 인원의 소모가 즉시 올라갑니다.": ["Same-room crew synergy (-0.05 per co-worker) and recovery Control Center bonuses (Chongyue, Wis'adel, Muelsyse) are included in the figure too, but again only **while that assignment stays intact**. Pull someone out or move them and the remaining crew's drain rises immediately.", "同じ部屋の同僚シナジー（同僚1人あたり-0.05）と回復制御中枢の効果（重岳・ウィスデル・ミュルジス）も表示値に反映されていますが、これも**その配置が保たれている間**の値です。オペレーターを外したり移したりすると、残った人員の消費がすぐ上がります。"],
   "그래서 이 숫자는 상한이 아니라 기준점으로 보세요. 병목(가장 빨리 닳는 방)보다 늦게 교대하면 안 되고, 보통은 컨디션 12(지침 신호)쯤에서 A조 전체를 한 번에 B조로 바꿉니다.": [
     "So treat the number as a reference point, not a ceiling. Never swap later than the bottleneck (the fastest-draining room); in practice you swap all of Shift A to Shift B at once around morale 12, the fatigue sign.",
     "そのため、この数字は上限ではなく目安として見てください。ボトルネック（最も早く消耗する部屋）より遅く交代してはいけません。通常はコンディション12（疲労サイン）頃にA班全体を一斉にB班へ切り替えます。",
@@ -1324,12 +1315,9 @@ const D: Record<string, Pair> = {
   "자동편성 엔진 계산 중 — 최적안 비교·마무리 검증…": ["Auto-assign engine running — comparing candidates and final checks…", "自動編成エンジン計算中 — 最適案の比較・最終検証…"],
   "계산 중…": ["Computing…", "計算中…"],
   "자동편성 엔진 계산 중 — 채택안 전수 감사 {crew}조 {i}/{n}회차 검수…": ["Auto-assign engine running — full audit of the chosen plan, Shift {crew} round {i}/{n}…", "自動編成エンジン計算中 — 採用案の全数検査 {crew}班 {i}/{n}回目…"],
-  "오라 가중 점수": ["weighted aura score", "オーラ加重スコア"],
+  "제어센터 효과 점수": ["weighted Control Center bonus score", "制御中枢効果スコア"],
   "오라": ["aura", "オーラ"],
-  "오라 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산해 합한 비교용 점수입니다 — %가 아니며, 실제 효과는 대상 방 점수에 '오라' 수신분으로 더해집니다.": [
-    "A comparison score: aura effects weighted by the priority multipliers (Factory ×10 > Trading Post ×2 > HR ×0.6 > Clue ×0.2). It is not a %, and the actual effect is added to each target room's score as received aura.",
-    "オーラ効果を優先度加重（製造所×10＞貿易所×2＞人脈×0.6＞手がかり×0.2）で換算した比較用スコアです — %ではなく、実際の効果は対象部屋のスコアに受信オーラとして加算されます。",
-  ],
+  "제어센터 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산해 합한 비교용 점수입니다 — %가 아니며, 실제 효과는 각 방의 '제어센터 효과'로 그 방 %에 더해집니다.": ["A comparison score: Control Center bonus effects weighted by the priority multipliers (Factory ×10 > Trading Post ×2 > HR ×0.6 > Clue ×0.2). It is not a %, and the actual effect is added to each target room's score as received Control Center bonus.", "制御中枢の効果効果を優先度加重（製造所×10＞貿易所×2＞人脈×0.6＞手がかり×0.2）で換算した比較用スコアです — %ではなく、実際の効果は対象部屋のスコアに受信制御中枢の効果として加算されます。"],
   "제어센터 오라 수신 {n} 포함 — 방을 눌러 상세 내역을 확인하세요": ["Includes {n} received from Control Center auras — click the room for the breakdown", "制御中枢オーラ受信 {n} を含みます — 部屋をクリックして内訳を確認"],
   // 시너지 세트 표시명 — rules.json synergySets의 name(KR)이 그대로 키가 된다.
   // /admin에서 새 세트를 추가하면 여기에 같은 이름 키로 EN/JA를 보충할 것 (없으면 KR 표시)
@@ -1338,10 +1326,7 @@ const D: Record<string, Pair> = {
   "업데이트로 더해진 확장판 수 (보스가 하나씩 늘어난 판)": ["Number of content expansions added by updates (each adds a boss)", "アップデートで追加された拡張の数（ボスが1体ずつ増えた版）"],
   "품질 수익 조합": ["quality-payout combo", "品質収益コンボ"],
   "어비설 헌터스 제조소 세트": ["Abyssal Hunters factory set", "アビサルハンターズ製造所セット"],
-  "제어센터 카드의 '+N 오라 가중 점수'는 %가 아니라 오라를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산한 비교용 점수입니다. 일반 방 카드에 '(오라 ±N)'이 붙어 있으면 제어센터 오라 수신분이 포함된 것으로, 방 점수가 오퍼 스킬 합과 달라 보이는 이유입니다 — 방 상세의 '제어센터 오라 수신' 항목에서 내역을 확인할 수 있습니다.": [
-    "The Control Center card's '+N weighted aura score' is not a % — it converts auras with the priority multipliers (Factory ×10 > Trading Post ×2 > HR ×0.6 > Clue ×0.2) into a comparison score. When a room card shows '(aura ±N)', received Control Center auras are included — that's why a room score can differ from the sum of operator skills. See 'Received Control Center auras' in the room details.",
-    "制御中枢カードの「+N オーラ加重スコア」は%ではなく、オーラを優先度加重（製造所×10＞貿易所×2＞人脈×0.6＞手がかり×0.2）で換算した比較用スコアです。部屋カードに「(オーラ ±N)」が付いていれば制御中枢オーラの受信分が含まれており、部屋スコアがオペレータースキルの合計と違って見える理由です — 部屋詳細の「制御中枢オーラ受信」で内訳を確認できます。",
-  ],
+  "제어센터 카드의 '+N 제어센터 효과 점수'는 %가 아니라 제어센터 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산한 비교용 점수입니다. 일반 방 카드에 '(제어센터 ±N%)'이 붙어 있으면 제어센터 효과가 포함된 것으로, 방 점수가 오퍼 스킬 합과 달라 보이는 이유입니다 — 방 상세의 '제어센터 오라 수신' 항목에서 내역을 확인할 수 있습니다.": ["The Control Center card's '+N weighted Control Center bonus score' is not a % — it converts Control Center bonuses with the priority multipliers (Factory ×10 > Trading Post ×2 > HR ×0.6 > Clue ×0.2) into a comparison score. When a room card shows '(Control Center bonus ±N)', received Control Center Control Center bonuses are included — that's why a room score can differ from the sum of operator skills. See 'Received Control Center Control Center bonuses' in the room details.", "制御中枢カードの「+N 制御中枢効果スコア」は%ではなく、制御中枢の効果を優先度加重（製造所×10＞貿易所×2＞人脈×0.6＞手がかり×0.2）で換算した比較用スコアです。部屋カードに「(制御中枢の効果 ±N)」が付いていれば制御中枢制御中枢の効果の受信分が含まれており、部屋スコアがオペレータースキルの合計と違って見える理由です — 部屋詳細の「制御中枢の効果」で内訳を確認できます。"],
   "A조 (풀파워)": ["Shift A (full power)", "A班（フルパワー）"],
   "B조 (회복 교대)": ["Shift B (recovery)", "B班（回復交代）"],
   "동기화한 계정이 중국 서버가 아니라 재활용소는 비워 둡니다 — 아직 그 서버에 없는 시설입니다": ["Your synced account isn't on the CN server, so the Recycling facility stays empty — it doesn't exist there yet", "同期したアカウントが中国サーバーではないため、リサイクル施設は空けておきます — まだそのサーバーにない施設です"],
@@ -1383,6 +1368,11 @@ const D: Record<string, Pair> = {
   "기반시설 피로도": ["Base morale", "基地の体力"],
   "친구 매칭": ["Friend matching", "フレンドマッチング"],
   "친구 찾기": ["Find friends", "フレンド探し"],
+  "자동편성 엔진 계산 중 — 채택안 전수 감사 중…": ["Auto-planner working — full audit of the chosen plan…", "自動編成エンジン計算中 — 採用案を全数監査中…"],
+  "자동편성 엔진 계산 중 — 다른 방식으로 한 번 더 짜서 비교 {i}/{n}…": ["Auto-planner working — building it a second way to compare {i}/{n}…", "自動編成エンジン計算中 — 別の方法でもう一度組んで比較 {i}/{n}…"],
+  "자동편성 엔진 계산 중 — 다른 방식으로 한 번 더 짜서 비교…": ["Auto-planner working — building it a second way to compare…", "自動編成エンジン計算中 — 別の方法でもう一度組んで比較…"],
+  "자동편성 엔진 계산 중 — 마무리 다듬기(오퍼를 바꿔 보며 더 오르는지 확인)…": ["Auto-planner working — final polish (trying swaps to see if the score improves)…", "自動編成エンジン計算中 — 仕上げ(オペレーターを入れ替えて改善するか確認)…"],
+  "샤마르(속삭임)가 있는 무역소에서는 '무역소 내 ○○ 1명당'처럼 방 안 인원 수로 세는 제어센터 효과(야하타 우미리 '시라쿠사 1명당 +5%' 등)가 적용되지 않습니다 — 샤마르 본인이 시라쿠사여도 0입니다. 아미야 같은 일반 효과(+7%)는 그대로 받습니다(실측: 샤마르 방 90 + 7 = 97%). 그래서 우미리는 다른 시라쿠사 오퍼가 있는 무역소 조로 보냅니다.": ["In a Trading Post with Shamare (Whisper), Control Center bonuses that scale with the number of operators in that post (e.g. Yahata Umiri's per-Siracusan bonus) do not apply — even if Shamare herself is Siracusan. General bonuses such as Amiya's +7% still apply (measured: Shamare post 90 + 7 = 97%). So Umiri is sent to a shift whose Trading Post has other Siracusans.", "シャマレ(ささやき)がいる貿易所では、「貿易所内の○○1人につき」のように部屋の人数で数える制御中枢の効果(八幡海鈴の「シラクーザ1人につき」など)は適用されません — シャマレ本人がシラクーザでも0です。アーミヤのような一般効果(+7%)はそのまま受けます(実測: シャマレの部屋 90 + 7 = 97%)。そのため海鈴は他のシラクーザがいる貿易所の組に回します。"],
   "닉네임#번호 복사": ["Copy nickname#number", "ニックネーム#番号をコピー"],
   "닉네임 · 번호": ["Nickname · number", "ニックネーム · 番号"],
   "친구 검색": ["Search friends", "フレンド検索"],
@@ -1552,6 +1542,9 @@ const D: Record<string, Pair> = {
   "레어도 기본": ["Rarity base", "レア度基本"],
   "제어 오라(가중)": ["Control auras (weighted)", "管制オーラ（加重）"],
   "제어센터 오라 수신": ["Aura received from Control", "制御中枢オーラ受信"],
+  "제어센터 효과": ["Control Center bonus", "制御中枢の効果"],
+  "제어센터 효과 {n} 포함 — 방을 눌러 상세 내역을 확인하세요": ["Includes {n} from the Control Center — click the room for the breakdown", "制御中枢の効果 {n} を含みます — 部屋をクリックすると内訳を確認できます"],
+  "제어센터": ["Control Center", "制御中枢"],
   // 다른 방 오퍼가 이 방에 넣어 준 몫 (저스티스 나이트 → 와일드메인이 앉은 제조소)
   "타 시설에서 받음": ["Received from another facility", "他施設から受領"],
   "{name}({room})에게 받음 +{n}%": ["+{n}% from {name} ({room})", "{name}（{room}）から+{n}%"],
@@ -1804,10 +1797,7 @@ const D: Record<string, Pair> = {
     "The Workshop is a passive slot, so only one Shift A team (Nian, fixed) is assigned and the Shift B slot stays empty — the recovery crew doesn't need a separate workshop member.",
     "加工所は常時スロットなので、A班の1チーム（ニェン固定）だけを編成し、B班の枠は空けておきます — 回復交代に加工要員を別途置く必要はありません。",
   ],
-  "플레임테일(피누스 실베스트리스 기사)은 제조소에 배치된 기사단원 1명당, 그 기사단원이 일하는 제조소에 작전기록 +10%·귀금속 -10%를 주는 오라입니다 — 기지 전체 일률이 아니라 방 단위라, 기사단을 작전기록방에 모으면 감산은 발생하지 않습니다. 보유 시 애쉬락·와일드메인·파투스(각 +25%)를 한 작전기록방에 결집하고 플레임테일을 같은 조 제어센터에 앉히는 세트안을 A조·B조로 하나씩 만들어, 세트 없는 편성과 기지 총점을 비교해 가장 이득인 안을 채택합니다.": [
-    "Flametail (Knight of Pinus Sylvestris) is a Control Center aura applied per Knights operator to the factory that operator works in: +10% for Battle Records, -10% for Pure Gold. It is room-scoped, not base-wide — gather the Knights in a Battle Record factory and no penalty occurs. When owned, set plans gather Ashlock, Wild Mane and Fartooth (+25% each) into one Battle Record factory with Flametail in the same shift's Control Center — one for Shift A and one for Shift B — and the best is adopted only if its total base score beats the no-set plan.",
-    "フレイムテイル（ピヌス・シルウェストリスの騎士）のオーラは、製造所で稼働する騎士団オペレーター1人につき**その騎士が働く製造所に**作戦記録+10%・純金-10%を与えます — 基地全体ではなく部屋単位なので、騎士団を作戦記録部屋に集めれば減算は発生しません。所持時はアッシュロック・ワイルドメイン・ファートゥース（各+25%）を1つの作戦記録製造所に集め、フレイムテイルを同じ班の制御中枢に置くセット案をA班・B班それぞれ作り、セットなしの編成と基地総合スコアを比較して最も得な案を採用します。",
-  ],
+  "플레임테일(피누스 실베스트리스 기사)은 제조소에 배치된 기사단원 1명당, 그 기사단원이 일하는 제조소에 작전기록 +10%·귀금속 -10%를 주는 제어센터 효과입니다 — 기지 전체 일률이 아니라 방 단위라, 기사단을 작전기록방에 모으면 감산은 발생하지 않습니다. 보유 시 애쉬락·와일드메인·파투스(각 +25%)를 한 작전기록방에 결집하고 플레임테일을 같은 조 제어센터에 앉히는 세트안을 A조·B조로 하나씩 만들어, 세트 없는 편성과 기지 총점을 비교해 가장 이득인 안을 채택합니다.": ["Flametail (Knight of Pinus Sylvestris) is a Control Center Control Center bonus applied per Knights operator to the factory that operator works in: +10% for Battle Records, -10% for Pure Gold. It is room-scoped, not base-wide — gather the Knights in a Battle Record factory and no penalty occurs. When owned, set plans gather Ashlock, Wild Mane and Fartooth (+25% each) into one Battle Record factory with Flametail in the same shift's Control Center — one for Shift A and one for Shift B — and the best is adopted only if its total base score beats the no-set plan.", "フレイムテイル（ピヌス・シルウェストリスの騎士）の制御中枢の効果は、製造所で稼働する騎士団オペレーター1人につき**その騎士が働く製造所に**作戦記録+10%・純金-10%を与えます — 基地全体ではなく部屋単位なので、騎士団を作戦記録部屋に集めれば減算は発生しません。所持時はアッシュロック・ワイルドメイン・ファートゥース（各+25%）を1つの作戦記録製造所に集め、フレイムテイルを同じ班の制御中枢に置くセット案をA班・B班それぞれ作り、セットなしの編成と基地総合スコアを比較して最も得な案を採用します。"],
   "같은 오퍼를 A조·B조에 동시 배치하지 않는 것이 기본 원칙입니다 — 근무를 이중으로 서면 못 쉬고 24시간 돌아야 하기 때문입니다. 사기를 소모하지 않는 숙소(휴식)·가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정됩니다.": [
     "As a base rule, the same operator is never placed in both Shift A and Shift B — pulling a double shift means working 24 hours with no rest. Only the Dormitory (rest) and Workshop (passive slot), which don't drain morale, may stay fixed across shifts.",
     "同じオペレーターをA班・B班に同時配置しないのが基本原則です — 二重勤務は休めず24時間稼働になるためです。士気を消費しない宿舎（休息）・加工所（常時スロット）のみ、交代と無関係に固定できます。",
@@ -1981,14 +1971,8 @@ const D: Record<string, Pair> = {
     "Waai Fu (Teamwork Consciousness) and Snowsant (Diligence) are amplifiers — they return 5% for every 5% of efficiency the other crew in the room provide (facility-based excluded), up to +40% (+35% for Snowsant). They only pay off stacked on high-output crews: on a strong team like Aroma (25 precious-metal + 20 upkeep) plus a ~30% operator, a gold room reaches ~115%. Hourly growth skills (Aroma, Kroos, Scene, Fang, Keobe and the like) and Vigil (training-room-level scaling) are all scored at their max-level base cap.",
     "ワイフー（協同意識）・スノウサント（勤勉）は増幅型です — 同じ部屋の他オペレーターが提供した効率（施設ベース除く）の5%ごとに5%を、最大+40%（スノウサントは+35%）まで返します。生産力の高いオペレーターと組んでこそ価値が出るため、アロマ（貴金属25+清掃20）＋30%級オペレーターのような強い生産チームに乗せると純金部屋が約115%になります。毎時成長型（アロマ・クルース・シーン・ファン・ケオベ）とВий（訓練室レベル成長）は満期基地の上限値で計算します。",
   ],
-  "오라 우선순위: 제조소 생산력 > 무역소 오더 효율 > 인맥 레퍼런스 > 단서 수집. '동종 효과 중 최고만 적용' 규칙을 따릅니다.": [
-    "Aura priority: factory productivity > trading order efficiency > HR contacts > clue collection. Only the strongest of each kind applies.",
-    "オーラ優先度：製造所生産力 > 貿易所受注効率 > 人脈 > 手がかり収集。「同種効果は最高のみ適用」ルールに従います。",
-  ],
-  "제어센터 오라는 대상 방 점수에 실제로 합산됩니다 — 무역소 오더 효율 +10% 오라면 무역소 점수와 상단 서머리에 더해집니다 (방 상세의 '제어센터 오라 수신'). 단 이격 실버애쉬처럼 조건이 붙은 오라는 조건을 채운 그 방 하나에만 적용됩니다.": [
-    "Control Center auras are actually added to the target room's score — a +10% trading aura raises the trading score and the top summary ('Aura received from Control' in room details). Conditional auras (e.g. SilverAsh alter) apply only to the single room meeting the condition.",
-    "制御中枢オーラは対象部屋のスコアに実際に加算されます — 貿易所受注効率+10%のオーラなら貿易所スコアと上部サマリーに加算（部屋詳細の「制御中枢オーラ受信」）。ただし異格シルバーアッシュのような条件付きオーラは、条件を満たしたその1部屋にのみ適用されます。",
-  ],
+  "제어센터 효과 우선순위: 제조소 생산력 > 무역소 오더 효율 > 인맥 레퍼런스 > 단서 수집. '동종 효과 중 최고만 적용' 규칙을 따릅니다.": ["Control Center bonus priority: factory productivity > trading order efficiency > HR contacts > clue collection. Only the strongest of each kind applies.", "制御中枢の効果優先度：製造所生産力 > 貿易所受注効率 > 人脈 > 手がかり収集。「同種効果は最高のみ適用」ルールに従います。"],
+  "제어센터 효과는 대상 방 %에 실제로 합산됩니다 — '무역소 오더 수주 효율 +10%'면 무역소 %와 상단 서머리에 +10%가 더해집니다 (방 상세의 '제어센터 효과'). 단 이격 실버애쉬처럼 조건이 붙은 효과는 조건을 채운 그 방 하나에만 적용됩니다.": ["Control Center Control Center bonuses are actually added to the target room's score — a +10% trading Control Center bonus raises the trading score and the top summary ('Control Center bonus' in room details). Conditional Control Center bonuses (e.g. SilverAsh alter) apply only to the single room meeting the condition.", "制御中枢制御中枢の効果は対象部屋のスコアに実際に加算されます — 貿易所受注効率+10%の制御中枢の効果なら貿易所スコアと上部サマリーに加算（部屋詳細の「制御中枢の効果」）。ただし異格シルバーアッシュのような条件付き制御中枢の効果は、条件を満たしたその1部屋にのみ適用されます。"],
   "'용문근위국 오퍼와 함께'류 동반 조건, '미노스 1명당'류 카운트 조건은 실제 배치를 기준으로만 인정합니다.": [
     "Companion conditions ('together with an L.G.D. operator') and count conditions ('per Minos operator') are honored only against actual placements.",
     "「龍門近衛局オペレーターと共に」系の同伴条件、「ミノス1人につき」系のカウント条件は実際の配置のみを基準に認めます。",

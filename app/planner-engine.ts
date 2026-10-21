@@ -1024,7 +1024,11 @@ export function aurasOf(controlTeam: InfraOp[], ctx: Ctx): AmbientAura[] {
 
 // 이 방이 실제로 받는 오라 (동종 최고만) — 조건부 오라는 방 구성원·수치가 조건을 채울 때만.
 // roomEfficiency: 방 자체 크루가 내는 효율 (사일라흐 임계값 판정: 기본 속도 + 크루 효율 < 임계)
-export function ambientFor(room: string, team: InfraOp[], ambient?: AmbientAura[], roomEfficiency = 0, product?: string): number {
+// overridden — 방 안에 '다른 인원이 제공하는 효율 0' 덮어쓰기(샤마르 속삭임)가 걸렸다. 그 방에선 **방 안 인원 수로 세는** 제어센터 오라
+// (야하타 우미리 '무역소 내 시라쿠사 1명당')가 0 이 된다 — 그 몫이 방 안 오퍼에게 붙는 버프라서. 일반 오라(아미야 +7)는 그대로.
+// 실측(제보 79dada62 · 디시 6016217, 2026-10-21): 샤마르 방 97% = 90 + 아미야 7 (우미리 +5 없음, 샤마르 본인이 시라쿠사여도).
+// 라플란드 방 112% = 100 + 7 + 5 · 비질 방 92% = 80 + 7 + 5 — 덮어쓰기가 없는 방은 받는다
+export function ambientFor(room: string, team: InfraOp[], ambient?: AmbientAura[], roomEfficiency = 0, product?: string, overridden = false): number {
   if (!team.length || !ambient) return 0;
   const target = AURA_TARGET[room] ?? "";
   let best = 0;
@@ -1033,6 +1037,7 @@ export function ambientFor(room: string, team: InfraOp[], ambient?: AmbientAura[
   for (const aura of ambient) {
     if (aura.kind !== target) continue;
     if (aura.perProduct) {
+      if (overridden) continue;
       // 이 방에 실제로 앉은 해당 진영·그룹원 수 × 이 방 생산품의 1명당 가감치 (any = 생산품 무관)
       const members = aura.perFaction ? team.filter((member) => memberOf(member, aura.perFaction!)).length : 0;
       if (members > 0) productAdd += ((product ? aura.perProduct[product] : undefined) ?? aura.perProduct.any ?? 0) * members;
@@ -1433,7 +1438,7 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const capConvEff = capConvOf(parts, room, ctx.ambient, team);
   // 제어센터 오라를 대상 방 점수에 실제 합산 — "무역소 오더 효율 +10%"면 무역소가 +10%.
   // 조건부 오라(쉐라그 3명 배치)는 조건을 채운 그 방 하나에만 붙는다
-  return efficiency + clueBaseSum + (orderFixed ? 0 : quality) + payout + (ctx.noAuraProxy ? 0 : auras) + capConvEff + ambientFor(room, team, ctx.ambient, efficiency, ctx.product);
+  return efficiency + clueBaseSum + (orderFixed ? 0 : quality) + payout + (ctx.noAuraProxy ? 0 : auras) + capConvEff + ambientFor(room, team, ctx.ambient, efficiency, ctx.product, parts.some((p) => p.override > 0));
 }
 
 // 비교용 팀 가치 = 생산 점수 + endless 컨디션 보너스 (생산 모드에선 teamScore와 동일).
@@ -3270,6 +3275,52 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
 // 약한 쉐라그 세트를 A조에 앉히고 강한 샤마르 조합을 B조로 밀어도 총점이 같아 세트가 잘못
 // 채택된다(사용자 지적 2026-07). A조를 더 높게 쳐서 강조합이 A조에 남게 한다.
 export const SHIFT_WEIGHT: number[] = C.SHIFT_WEIGHT;
+
+// ── 조별 비중 = 실제 근무·회복 시간 (사용자 지시 2026-10-20 "A조는 풀파워, B조는 A조가 회복될 때까지만") ─────────────
+// A조는 컨디션이 다할 때까지 일하고, 숙소에서 회복하는 동안 B조가 일한다. 그래서 하루 중 A조 몫 = 근무 ÷ (근무 + 회복),
+// B조 몫 = 회복 ÷ (근무 + 회복). 종전엔 고정 1 : 0.6 이었다.
+// · 근무 시간은 **방 기본 소모(시간당 1)** 로만 잡는다 — 오퍼별 소모를 넣으면 '덜 지치는 약한 오퍼를 A조에' 쪽으로 쏠린다
+//   (사용자 지시 같은 날 "시간이 길다고 효율이 낮아도 갖다 박는 짓 그만" — 아주 심한 경우 말고는 효율이 먼저다)
+// · 회복 속도 = 숙소 레벨 기본 회복(게임 데이터 manpowerRecover/100: 1.6~2.0) + 분위기(최대치로 가정, 1000당 DORM_AMBIENCE_PER_1K —
+//   **추정**, rules 상수로 조정) + 숙소에 앉은 회복 스킬(‘모든 오퍼’형은 가장 큰 값 하나, ‘1명’·자기형은 5명에 나눠). 숙소 네 곳 평균
+// · 점수 크기가 종전과 비슷하도록, 기준 숙소(만렙·분위기 최대·회복 스킬 없음)에서 A조 비중이 1 이 되게 나눈다
+const DORM_AMBIENCE_PER_1K: number = (C as unknown as Record<string, number | undefined>).DORM_AMBIENCE_PER_1K ?? 0.1;
+const DORM_SLOTS = 5;
+function dormRecoverRate(plan: Plan, byId: Map<string, InfraOp>): number {
+  const phases = infra.rooms.DORMITORY?.phases ?? [];
+  const keys = LAYOUT.filter((c) => c.room === "DORMITORY").map((c) => c.key);
+  if (!keys.length || !phases.length) return 2.5;
+  let sum = 0;
+  for (const key of keys) {
+    const ph = phases[Math.min(levelOf(key), phases.length) - 1] ?? phases[phases.length - 1];
+    let rate = (ph.recover ?? 200) / 100 + ((ph.ambience ?? 5000) / 1000) * DORM_AMBIENCE_PER_1K;
+    let roomWide = 0, shared = 0;
+    for (const id of plan.assignments[key]?.[0] ?? []) {
+      const op = byId.get(id);
+      if (!op) continue;
+      for (const sk of activeSkills(op, "DORMITORY")) {
+        if (sk.kind !== "morale" || !(sk.value > 0)) continue;
+        if (/모든 오퍼레이터/.test(sk.description)) roomWide = Math.max(roomWide, sk.value);
+        else shared += sk.value / DORM_SLOTS;
+      }
+    }
+    rate += roomWide + shared;
+    sum += rate;
+  }
+  return sum / keys.length;
+}
+const WORK_HOURS = 24;   // 컨디션 24 ÷ 방 기본 소모 1/시간
+const shareA = (rate: number) => WORK_HOURS / (WORK_HOURS + 24 / Math.max(rate, 0.1));
+const REF_SHARE_A = shareA(200 / 100 + 5 * DORM_AMBIENCE_PER_1K);
+/** 조별 비중 [A, B] — 장기 지속 모드는 따로(ENDLESS_B_WEIGHT) */
+// 고정 비중 탐색 — 라이브 엔진(v2)처럼 조별 비중을 SHIFT_WEIGHT 로 고정하고 한 번 더 짜 본다(optimizeConfig 안에서만 켠다).
+// 비중이 숙소 회복으로 편성마다 달라지자 탐색 중 후보 비교 기준이 바뀌어, 라이브 엔진이 찾던 봉우리(예: 제어센터 A조 왕)에 아예
+// 가지 않는 사람이 생겼다 — 역의 역검증 2026-10-21: 907명 중 20명이 라이브 엔진보다 낮음(최대 −26점). 두 결과를 새 채점으로 비교해 높은 쪽
+let LEGACY_WEIGHTS = false;
+export function shiftWeightsFor(plan: Plan, byId: Map<string, InfraOp>): number[] {
+  const a = shareA(dormRecoverRate(plan, byId));
+  return [a / REF_SHARE_A, (1 - a) / REF_SHARE_A];
+}
 // 소모 모드의 B조 가중 (사용자 확정 2026-07-27: "샤마르 조합이 피로도 이득 없어도 무조건 A조 —
 // 희생하는 효율이 너무 높다"): A조가 주력(~32h 근무), B조는 A조 휴식(~12h)만 메우는 커버라
 // 듀티 비율(≈12/32)로 가중한다. 생산 모드 0.6이면 210짜리 팀을 B에 보관하는 게 이득으로
@@ -3320,8 +3371,9 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
   // 채택 기준이다. buildPlan 중간의 임시 플랜(priority 미기재)은 현재 모듈 플래그 유지.
   if (plan.priority) setPriorityMode(plan.priority);
   let total = 0;
+  const weights = ENDLESS_ON ? null : LEGACY_WEIGHTS ? SHIFT_WEIGHT : shiftWeightsFor(plan, byId);
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
-    const shiftWeight = ENDLESS_ON && shift === 1 ? ENDLESS_B_WEIGHT : SHIFT_WEIGHT[shift] ?? 1;
+    const shiftWeight = ENDLESS_ON ? (shift === 1 ? ENDLESS_B_WEIGHT : SHIFT_WEIGHT[shift] ?? 1) : weights![shift] ?? 1;
     const teamAt = (key: string): InfraOp[] => {
       const shifts = plan.assignments[key] ?? [];
       return (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => byId.get(id)).filter(Boolean) as InfraOp[];
@@ -3402,9 +3454,15 @@ export function keepIfClose(prev: Plan | null | undefined, nextRaw: Plan, roster
   }
   for (const [key, pins] of Object.entries(roomPins)) {
     const shifts = prev.assignments[key] ?? [];
+    const nextShifts = next.assignments[key] ?? [];
     for (const pin of pins) {
       const s = pinShift(pin);
-      const want = s == null ? shifts : [shifts[Math.min(s, shifts.length - 1)] ?? []];
+      const pick = (sh: string[][]) => (s == null ? sh : [sh[Math.min(s, sh.length - 1)] ?? []]);
+      const want = pick(shifts);
+      // 새 결과도 못 지키는 고정(훈련실 '비워 둔다'인데 훈련실 고정 등)은 지금 편성을 버리는 이유가 안 된다 —
+      // 종전엔 이 때문에 지금 편성이 비교도 없이 버려졌다 (사용자 계정 2026-10-21: 센시 훈련실 고정 + 훈련실 비움 → 1498.3 편성이 1497.8 로 바뀜)
+      const nextKeeps = pick(nextShifts).length > 0 && pick(nextShifts).every((team) => team.includes(pinId(pin)));
+      if (!nextKeeps) continue;
       if (!want.length || want.some((team) => !team.includes(pinId(pin)))) return { plan: next, kept: false };
     }
   }
@@ -3414,8 +3472,17 @@ export function keepIfClose(prev: Plan | null | undefined, nextRaw: Plan, roster
   const rescored: Plan = { ...prev, factionCounts, ...(ledger ? { tokenPoints: ledger.tokenPoints, flows: ledger.flows } : {}) };
   delete rescored.shiftHours; // 교대 시계도 지금 정예화로 다시 잰다
   const before = planScore(rescored, byId);
-  const after = planScore(next, byId);
-  return after > before + KEEP_MARGIN ? { plan: next, kept: false } : { plan: { ...rescored, kept: { before, after, next } }, kept: true };
+  let after = planScore(next, byId);
+  // 지금 편성에서 출발해 다듬은 안도 후보로 (사용자 결정 2026-10-20) — 엔진은 처음부터 짜므로 지금 편성과 다른 '봉우리'에 서는 일이
+  // 있다(역검증: 지난 판 엔진 편성 1,527.7 > 새 엔진 1,521.2, 한 명씩 바꿔서는 못 건너간다). 지금 편성을 마무리 교체로 다듬어
+  // 새 엔진 결과보다 높으면 그쪽을 새 편성으로 낸다 — 이미 편성이 있는 사람은 자동편성을 눌러 나빠지지 않고 지금 편성에서 더 좋아진다
+  let next2 = next;
+  if (!ENDLESS_ON) {   // 장기 지속 모드는 위 polished 와 같은 이유로 아직 끈다
+    const pol = polishPlan(rescored, autoRoster(roster, pinnedDorms, roomPins), pinnedDorms, roomPins);
+    const v = planScore(pol, byId);
+    if (pol !== rescored && v > after + 0.5) { next2 = alignToPrev(prev, { ...pol, priority: next.priority, strategy: next.strategy, strategyTokens: next.strategyTokens, strategySet: next.strategySet }); after = v; }
+  }
+  return after > before + KEEP_MARGIN ? { plan: next2, kept: false } : { plan: { ...rescored, kept: { before, after, next: next2 } }, kept: true };
 }
 
 // ── 재활용소(回收站) — 하루 이성 환산과 배치 (사용자 규칙 2026-10-09, INFRA-RULES §11) ─────────
@@ -3594,7 +3661,9 @@ function fillRecycle(
 // 콜백이 Promise를 돌려주면 기다린다 — UI가 단계별 최소 표시 시간(페이싱)을 넣을 수 있게
 // (사용자 확정 2026-07-19: 안내 문구를 읽을 수 있도록 전체 3~5초). 콜백이 없으면(초기 로드·
 // 검증 스크립트) 페이싱 없이 전속력으로 돈다.
-export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number; total?: number; sets?: string[]; crew?: "A" | "B" };
+// polish = 마무리 다듬기(봉우리 여러 개) · second = 고정 비중으로 한 번 더 짜는 두 번째 탐색 — 종전엔 둘 다 안내가 없어
+// '3/3회차 검수'에서 15초쯤 멈춘 것처럼 보였다 (사용자 지적 2026-10-21)
+export type OptimizeStep = { phase: "base" | "variant" | "final" | "polish"; index?: number; total?: number; sets?: string[]; crew?: "A" | "B"; second?: boolean };
 
 // optimize가 고른 전략(토큰 패키지·시너지 세트)까지 함께 반환 — 육성 추천(planner-invest)이
 // 후보마다 전체 재탐색을 반복하지 않고, 이 config를 재사용해 buildPlan을 1회만 돌려 빠르게
@@ -3634,7 +3703,14 @@ export function polishPlan(plan: Plan, roster: InfraOp[], pinnedDorms: Record<st
   let evals = 0;
   const byId = new Map(roster.map((op) => [op.id, op]));
   const pinned = new Set([...Object.values(roomPins).flat().map(pinId), ...Object.values(pinnedDorms).flat()]);
-  const keys = LAYOUT.filter((c) => !["DORMITORY", "WORKSHOP", "TRAINING", "RECYCLE"].includes(c.room)).map((c) => c.key);
+  // 장기 지속(소모) 모드 — 두 조 묶음 규칙을 지킨다 (사용자 지시 2026-10-20 "그것도 해 보자"): 제어센터는 양 조 고정이라 통째로 빼고,
+  // 같은 방 두 조에 다 앉은 오퍼(양 조 고정)는 고정으로 본다. '동점이면 효율 높은 팀을 A조로' 정리도 안 한다(이 모드는 A조에 덜 지치는
+  // 팀을 일부러 둔다). 나머지는 이 모드의 채점(컨디션 보너스 포함 planScore)으로 오를 때만 바꾼다
+  if (ENDLESS_ON) for (const [key, shifts] of Object.entries(plan.assignments)) {
+    if (shifts.length < 2) continue;
+    for (const id of shifts[0] ?? []) if ((shifts[1] ?? []).includes(id)) pinned.add(id);
+  }
+  const keys = LAYOUT.filter((c) => !["DORMITORY", "WORKSHOP", "TRAINING", "RECYCLE"].includes(c.room) && !(ENDLESS_ON && c.room === "CONTROL")).map((c) => c.key);
   const rebuilt = (assignments: Record<string, string[][]>): Plan => {
     const ledger = recountTokens(assignments, byId, flowsFromAssignments(assignments, byId));
     return { ...plan, assignments, factionCounts: factionCountsFor(assignments, byId), shiftHours: undefined,
@@ -3719,7 +3795,7 @@ export function polishPlan(plan: Plan, roster: InfraOp[], pinnedDorms: Record<st
   // 총점이 같으면 효율 높은 팀을 A조에 (사용자 지시 2026-10-20 "엔간하면 효율 좋은 걸 먼저 놓지") — 사무실 A조 +34% · B조 +60% 처럼
   // 맞바꿔도 총점이 그대로인 방은 엔진이 아무렇게나 두었다. 맞바꿔 총점이 떨어지지 않으면(−0.5 이내) 방 % 가 높은 쪽을 A조로
   let tidy = false;
-  for (const k of keys) {
+  if (!ENDLESS_ON) for (const k of keys) {
     const t = cur[k];
     if (!t || t.length < 2 || !t[0].length || !t[1].length) continue;
     if ((roomPins[k] ?? []).some((p) => pinShift(p) != null)) continue;
@@ -3734,6 +3810,19 @@ export function polishPlan(plan: Plan, roster: InfraOp[], pinnedDorms: Record<st
 }
 
 export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, RoomPin[]> = {}): Promise<OptimizeResult> {
+  const fresh = await optimizeConfigCore(fullRoster, priority, onStep, pinnedDorms, roomPins);
+  if (ENDLESS_ON) return fresh;   // 장기 지속 모드는 비중이 따로다(ENDLESS_B_WEIGHT)
+  // 고정 비중으로 한 번 더 — 진행 안내는 '한 번 더 짜서 비교 중'으로 따로 보여 준다
+  let legacy: OptimizeResult;
+  LEGACY_WEIGHTS = true;
+  const second = onStep ? (st: OptimizeStep) => onStep({ ...st, second: true }) : undefined;
+  try { legacy = await optimizeConfigCore(fullRoster, priority, second, pinnedDorms, roomPins); } finally { LEGACY_WEIGHTS = false; }
+  setPriorityMode(priority);
+  const byId = new Map(fullRoster.map((op) => [op.id, op]));
+  return planScore(legacy.plan, byId) > planScore(fresh.plan, byId) + 0.5 ? legacy : fresh;
+}
+
+async function optimizeConfigCore(fullRoster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, RoomPin[]> = {}): Promise<OptimizeResult> {
   // 자동편성 제외 명단은 탐색 시작부터 뺀다 — 토큰 패키지·세트 성립 판정도 벤치 없는
   // 로스터 기준이어야 buildPlan(내부에서 같은 필터)과 결과가 어긋나지 않는다.
   const roster = autoRoster(fullRoster, pinnedDorms, roomPins);
@@ -3887,13 +3976,45 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
     setShiftTiebreak(true);
     return planScore(off.plan, byId) > planScore(on.plan, byId) + 1e-6 ? off : on;
   };
-  // 마무리 교체 — 장기 지속(소모) 모드는 제어센터 양조 고정 같은 두 조 묶음 규칙이 있어 한 명씩 바꾸면 깨진다. 그 모드는 뺀다
+  // 마무리 교체 — polishPlan 은 장기 지속 모드의 두 조 묶음 규칙(제어센터·양 조 고정)도 지키게 만들어 두었지만, 그 모드는 채점 개편과 함께 켠다
+  // 패키지 구성이 다른 2등 후보(tokenAlt)도 다듬어 보고 더 높은 쪽 — 패키지를 넣을지 뺄지를 다듬기 전 점수로만 고르면, 다듬은 뒤엔
+  // 지는 쪽을 고를 수 있다 (역검증 2026-10-20: 쉐이 화식을 뺀 안이 다듬기 전엔 이겼지만 다듬은 뒤엔 6.4점 졌다)
+  let tokenAlt: { plan: Plan; tokens: string[]; score: number } | null = null;
+  // ── 여러 봉우리 (사용자 제안 2026-10-20 "봉우리를 각각 다 저장해 두고 마지막에 제일 높은 하나") ─────────────
+  // 탐색 중에 지은 후보(세트 조합·캡 확장·패키지 넣고 빼기·밀려난 생성원 시드·전환자 제외)를 전부 기억해 두고, 다듬기 전 점수
+  // 상위 POLISH_TOP 개를 각각 마무리 교체로 다듬어 가장 높은 것을 고른다. 다듬기 전 순위와 다듬은 뒤 순위가 달라서, 1등만 다듬으면
+  // 다른 봉우리를 놓쳤다 (역검증: 조별 비중을 바꾸자 지난 엔진 편성이 새 엔진보다 높은 사람 49명). 같은 배치는 한 번만 다듬는다
+  const POLISH_TOP = 4;
+  const peaks: { plan: Plan; score: number; tokens: string[]; sets: FactionSets; seeds: { opId: string; room: string }[]; excluded: string[] }[] = [];
+  const remember = (plan: Plan, score: number, tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[], rosterUsed: InfraOp[]) => {
+    peaks.push({ plan, score, tokens, sets, seeds, excluded: roster.filter((op) => !rosterUsed.includes(op)).map((op) => op.id) });
+  };
   const polished = (r: OptimizeResult): OptimizeResult => {
+    // 장기 지속 모드는 아직 끈다 — 이 모드 채점(컨디션 보너스)을 '하루 실제 생산량'으로 바꾸면서 함께 켜고 다시 검증한다 (2026-10-20)
     if (ENDLESS_ON) return r;
     const plan = polishPlan(r.plan, roster, pinnedDorms, roomPins);
-    return plan === r.plan ? r : { ...r, plan, prePolish: r.plan };
+    let out: OptimizeResult = plan === r.plan ? r : { ...r, plan, prePolish: r.plan };
+    let bestV = planScore(out.plan, byId);
+    const seen = new Set<string>([JSON.stringify(r.plan.assignments)]);
+    const alts = [...peaks, ...(tokenAlt ? [{ plan: tokenAlt.plan, score: tokenAlt.score, tokens: tokenAlt.tokens, sets: r.factionSets, seeds: r.seeds, excluded: r.excluded }] : [])]
+      .sort((a, b) => b.score - a.score);
+    let tried = 0;
+    for (const alt of alts) {
+      if (tried >= POLISH_TOP - 1 || LEGACY_WEIGHTS) break;   // 고정 비중 탐색은 라이브 엔진처럼 1등만 다듬는다(시간)
+      const sig = JSON.stringify(alt.plan.assignments);
+      if (seen.has(sig)) continue;
+      seen.add(sig);
+      tried += 1;
+      const p = polishPlan(alt.plan, roster, pinnedDorms, roomPins);
+      const v = planScore(p, byId);
+      if (v > bestV + 0.5) {
+        bestV = v;
+        out = { ...r, plan: p, prePolish: alt.plan, tokenChoice: alt.tokens, factionSets: alt.sets, seeds: alt.seeds, excluded: alt.excluded, park: false };
+      }
+    }
+    return out;
   };
-  if (!variants.length) return polished(finish(tokenChoice, {}, []));
+  if (!variants.length) { await tick({ phase: "polish" }); return polished(finish(tokenChoice, {}, [])); }
   let best = base;
   let bestScore = planScore(base, byId);
   let bestSets: FactionSets = {};
@@ -3902,6 +4023,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
     await tick({ phase: "variant", index: i + 1, total: variants.length, sets: Object.keys(variants[i]) });
     const plan = buildPlan(tokenChoice, effRoster, variants[i], priority, [], false, false, pinnedDorms, roomPins);
     const score = planScore(plan, byId);
+    remember(plan, score, tokenChoice, variants[i], [], effRoster);
     if (score > bestScore) { best = plan; bestScore = score; bestSets = variants[i]; bestSeeds = []; }
   }
   // ── perMember 캡 확장 변형 (사용자 통찰 2026-07-24: "왕을 앉히면 슈가 풀린다") ────────
@@ -3931,6 +4053,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
       await breathe();
       const plan = buildPlan(tokenChoice, effRoster, bestSets, priority, [ex], false, false, pinnedDorms, roomPins);
       const score = planScore(plan, byId);
+      remember(plan, score, tokenChoice, bestSets, [ex], effRoster);
       if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [ex]; }
     }
   }
@@ -3948,7 +4071,10 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
         : open.filter((t) => t === token || tokenChoice.includes(t));
       const plan = buildPlan(tokens, effRoster, bestSets, priority, bestSeeds, false, false, pinnedDorms, roomPins);
       const score = planScore(plan, byId);
-      if (score > bestScore + 1e-6) { best = plan; bestScore = score; tokenChoice = tokens; changed = true; }
+      remember(plan, score, tokens, bestSets, bestSeeds, effRoster);
+      // 진 후보도 기억한다 — 다듬기(마무리 교체) 전엔 졌어도 다듬고 나면 이기는 패키지 구성이 있다(아래 polished)
+      if (score > bestScore + 1e-6) { tokenAlt = { plan: best, tokens: tokenChoice, score: bestScore }; best = plan; bestScore = score; tokenChoice = tokens; changed = true; }
+      else if (!tokenAlt || score > tokenAlt.score) tokenAlt = { plan, tokens, score };
     }
     if (!changed) break;
   }
@@ -3986,6 +4112,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
         await breathe();
         const plan = buildPlan(trial.tokens, effRoster, bestSets, priority, trial.seeds, false, false, pinnedDorms, roomPins);
         const score = planScore(plan, byId);
+        remember(plan, score, trial.tokens, bestSets, trial.seeds, effRoster);
         if (score > bestScore) { best = plan; bestScore = score; bestSeeds = trial.seeds; tokenChoice = trial.tokens; }
       }
     }
@@ -4016,25 +4143,15 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
       const sub = effRoster.filter((op) => op.id !== cid);
       const plan = buildPlan(tokenChoice, sub, bestSets, priority, bestSeeds, false, false, pinnedDorms, roomPins);
       const score = planScore(plan, byId);
+      remember(plan, score, tokenChoice, bestSets, bestSeeds, sub);
       if (score > bestScore) { best = plan; bestScore = score; effRoster = sub; }
     }
   }
   // 채택안의 전수 감사 수렴 회차를 조별로 재생 — "몇 회 반복으로 최선을 확인했는지"를
   // 보여준다 (사용자 확정 2026-07-19). 페이싱(랜덤 간격)은 UI 콜백 몫.
-  const rounds = best.auditRounds ?? [];
-  const totalTicks = Math.min(rounds.reduce((sum, n) => sum + n, 0), 6);
-  if (totalTicks > 0) {
-    let tickNo = 0;
-    replay: for (let crew = 0; crew < rounds.length; crew += 1) {
-      for (let round = 1; round <= rounds[crew]; round += 1) {
-        tickNo += 1;
-        await tick({ phase: "final", index: tickNo, total: totalTicks, crew: crew === 0 ? "A" : "B" });
-        if (tickNo >= totalTicks) break replay;
-      }
-    }
-  } else {
-    await tick({ phase: "final" });
-  }
+  // 회차(1/3·2/3·3/3) 재생은 화면 연출이었다 — '채택안 전수 감사 중' 한 번으로 퉁친다 (사용자 지시 2026-10-21)
+  await tick({ phase: "final" });
+  await tick({ phase: "polish" });
   return polished(finish(tokenChoice, bestSets, bestSeeds));
 }
 
