@@ -2539,13 +2539,15 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   // 이미 만든 ctx 들도 새 값을 본다. 종전엔 그리디가 앉힐 때 한 번 더하기만 해서, 전수 감사·우선 생산 스왑이
   // 사람을 바꾼 뒤에도 옛 수가 남았다 — A조에 라인 랩 2명이 앉았는데 0명으로 보고 뮤엘시스('라인 랩 1명당')를
   // 깎거나, 최종 점수가 배치로 다시 센 값과 최대 ±90점 어긋났다 (2026-10-20 역검증 889명 중 140명, 제보 6a0794b5)
-  const refreshFactions = (shift: number) => {
+  const refreshFactions = (shift: number, withDorm = false) => {
     const counts = factionCountsPerShift[shift];
     if (!counts) return;
     for (const k of Object.keys(counts)) delete counts[k];
     for (const cell of LAYOUT) {
-      // 숙소도 센다 — '기반시설(어시스턴트·활동실 사용자 제외) 내 ○○ 1명당'(내스티·뮤엘시스·바르카리스 …)은 숙소에 앉은 사람도 친다.
-      // 종전엔 숙소를 빼 내스티가 라인 랩 5명 중 4명만 세어 +37% (게임 +40%, 제보 8a92310b 2026-10-21). 숙소는 조가 하나라 그 줄을 양 조에 쓴다
+      // 최종 수는 숙소도 센다 — '기반시설(어시스턴트·활동실 사용자 제외) 내 ○○ 1명당'(내스티·뮤엘시스·바르카리스 …)은 숙소에 앉은 사람도 친다.
+      // 종전엔 숙소를 빼 내스티가 라인 랩 5명 중 4명만 세어 +37% (게임 +40%, 제보 8a92310b 2026-10-21). 숙소는 조가 하나라 그 줄을 양 조에 쓴다.
+      // 짜는 도중엔 숙소를 뺀다 — 숙소는 다 짜기 전 임시 명단이라 탐색 중에 세자 역검증 7명이 지난 판보다 최대 −9.8점 (2026-10-21)
+      if (!withDorm && cell.room === "DORMITORY") continue;
       const sh = assignments[cell.key] ?? [];
       for (const id of sh[Math.min(shift, sh.length - 1)] ?? []) {
         const op = byIdAll.get(id);
@@ -3270,7 +3272,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   const finalPlants = PLANTS_BASE_RT + plantBonusOf(powerKeys.map((key) => ({
     key, ops: (assignments[key]?.[0] ?? []).map((id) => rosterById.get(id)).filter(Boolean) as InfraOp[],
   })));
-  for (let sh = 0; sh < SHIFT_COUNT; sh += 1) refreshFactions(sh);
+  for (let sh = 0; sh < SHIFT_COUNT; sh += 1) refreshFactions(sh, true);
   return { assignments, plants: finalPlants, tokenPoints, factionCounts: factionCountsPerShift, flows, crowdedOut, strategy, strategyTokens: packageTokens, strategySet: setUsed, priority, auditRounds, shiftHours };
 }
 
