@@ -2337,7 +2337,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               {plan && team.length > 0 && !PARK_KEYS.includes(cell.key) && (
                 cell.room === "CONTROL" ? (
                   <small className="ctrl-effects" title={t("이 조 제어센터가 각 방에 실제로 더해 주는 % — 방마다 다르면 범위로 보여 줍니다")}>
-                    {ctrlEffects.length ? ctrlEffectParts(t, ctrlEffects).join(" · ") : t("다른 방에 주는 효과 없음")}
+                    {ctrlEffects.length ? ctrlEffectParts(t, ctrlEffects, true).join(" · ") : t("다른 방에 주는 효과 없음")}
                   </small>
                 ) :
                 <small title={ambientPart !== 0 ? t("제어센터 효과 {n} 포함 — 방을 눌러 상세 내역을 확인하세요", { n: `${ambientPart > 0 ? "+" : ""}${ambientPart}%` }) : undefined}>
@@ -2798,11 +2798,13 @@ function controlEffectsFor(plan: Plan, shift: number, opMap: Map<string, InfraOp
   }
   return [...by].map(([room, values]) => ({ room, values }));
 }
-function ctrlEffectParts(t: (key: string, vars?: Record<string, string | number>) => string, list: { room: string; values: number[] }[]): string[] {
+// 카드엔 방 이름만 짧게 — 자세한 효과 이름은 방 상세 창에서 (사용자 지시 2026-10-21 "제어센터 너무 길다")
+const CTRL_EFFECT_SHORT: Record<string, string> = { MANUFACTURE: "제조소", TRADING: "무역소", HIRE: "사무실", MEETING: "응접실", POWER: "발전소" };
+function ctrlEffectParts(t: (key: string, vars?: Record<string, string | number>) => string, list: { room: string; values: number[] }[], short = false): string[] {
   return list.map(({ room, values }) => {
     const lo = Math.min(...values), hi = Math.max(...values);
     const f = (n: number) => `${n > 0 ? "+" : ""}${n}%`;
-    return `${t(CTRL_EFFECT_LABEL[room] ?? room)} ${lo === hi ? f(lo) : `${f(lo)}~${f(hi).replace(/^\+/, "")}`}`;
+    return `${t((short ? CTRL_EFFECT_SHORT : CTRL_EFFECT_LABEL)[room] ?? room)} ${lo === hi ? f(lo) : `${f(lo)}~${f(hi).replace(/^\+/, "")}`}`;
   });
 }
 
@@ -2836,7 +2838,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
         const named = g.term ? TERMS[g.term]?.ops : null;
         const isMember = (op: InfraOp) => (named ? named.includes(op.id) : memberOf(op, g.faction));
         if (!team.some(isMember)) continue; // 이 방에 진영원이 없으면 안내할 것도 없다
-        return t("**{faction} 효과는 제어 센터에 {anchor} 배치가 필요합니다** — 이 조의 제어 센터에 없어서, 이 방의 {faction} 오퍼레이터에게 지금은 붙지 않습니다.", { faction: g.faction, anchor: anchor.name });
+        return t("**{faction} 효과는 제어 센터에 {anchor} 배치가 필요합니다** — 이 조의 제어 센터에 없어서, 이 방의 {faction} 오퍼레이터에게 지금은 붙지 않습니다.", { faction: SEARCH_LABELS[g.faction] ?? g.faction, anchor: anchor.name });
       }
     }
     return null;
@@ -3091,7 +3093,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
       const total = skill.value > 0 && skill.perCap != null ? Math.min(skill.value * n, skill.perCap) : skill.value * n;
       const where = t(scope === "TRADING" ? "무역소" : scope === "MANUFACTURE" ? "제조소" : scope === "room" ? "이 방" : "기지 전체");
       rels.push({
-        note: t("{faction} 1명당 {per}% — 현재 {where} {n}명 · {total}% 적용", { faction: skill.perFaction, per: skill.value, where, n, total: Math.round(total) }),
+        note: t("{faction} 1명당 {per}% — 현재 {where} {n}명 · {total}% 적용", { faction: SEARCH_LABELS[skill.perFaction] ?? skill.perFaction, per: skill.value, where, n, total: Math.round(total) }),   // 진영 이름도 화면 언어로 (제보 8a92310b — 일본어 화면에 '라인 랩')
         chips: chipSort(members.map((member) => ({ op: member, on: inScope.has(member.id) }))),
       });
     }

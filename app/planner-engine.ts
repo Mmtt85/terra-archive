@@ -2544,8 +2544,10 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     if (!counts) return;
     for (const k of Object.keys(counts)) delete counts[k];
     for (const cell of LAYOUT) {
-      if (cell.room === "DORMITORY") continue;
-      for (const id of assignments[cell.key]?.[shift] ?? []) {
+      // 숙소도 센다 — '기반시설(어시스턴트·활동실 사용자 제외) 내 ○○ 1명당'(내스티·뮤엘시스·바르카리스 …)은 숙소에 앉은 사람도 친다.
+      // 종전엔 숙소를 빼 내스티가 라인 랩 5명 중 4명만 세어 +37% (게임 +40%, 제보 8a92310b 2026-10-21). 숙소는 조가 하나라 그 줄을 양 조에 쓴다
+      const sh = assignments[cell.key] ?? [];
+      for (const id of sh[Math.min(shift, sh.length - 1)] ?? []) {
         const op = byIdAll.get(id);
         if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
       }
@@ -3318,6 +3320,9 @@ const REF_SHARE_A = shareA(200 / 100 + 5 * DORM_AMBIENCE_PER_1K);
 // 비중이 숙소 회복으로 편성마다 달라지자 탐색 중 후보 비교 기준이 바뀌어, 라이브 엔진이 찾던 봉우리(예: 제어센터 A조 왕)에 아예
 // 가지 않는 사람이 생겼다 — 역의 역검증 2026-10-21: 907명 중 20명이 라이브 엔진보다 낮음(최대 −26점). 두 결과를 새 채점으로 비교해 높은 쪽
 let LEGACY_WEIGHTS = false;
+// 마무리 다듬기 양 — 봉우리 몇 개를 다듬을지·각각 시도 횟수. 사용자 지적(2026-10-21 "다듬기가 10배쯤 늘어 1분") 뒤 시간·점수를 재서 정한다
+export const POLISH_TUNING = { top: 4, mainEvals: 40000, altEvals: 40000, legacyEvals: 40000 };
+export function setPolishTuning(t: Partial<typeof POLISH_TUNING>) { Object.assign(POLISH_TUNING, t); }
 export function shiftWeightsFor(plan: Plan, byId: Map<string, InfraOp>): number[] {
   const a = shareA(dormRecoverRate(plan, byId));
   return [a / REF_SHARE_A, (1 - a) / REF_SHARE_A];
@@ -3329,14 +3334,14 @@ export function shiftWeightsFor(plan: Plan, byId: Map<string, InfraOp>): number[
 export const ENDLESS_B_WEIGHT: number = (C as unknown as Record<string, number | undefined>).ENDLESS_B_WEIGHT ?? 0.35;
 
 // 계획 전체 총점 (양 조 전 방, 앰비언트 오라 포함) — 세트 포함/미포함 두 안 비교용
-/** 조별 기지 내 진영 인원 수 — **숙소 제외**, 그 조의 근무 방에 앉은 사람만 (엔진 그리디·refreshFactions 와 같은 규칙).
+/** 조별 기지 내 진영 인원 수 — 그 조의 근무 방 + **숙소**(조가 하나라 양 조 공통) (엔진 그리디·refreshFactions 와 같은 규칙).
+ *  2026-10-21 숙소 포함으로 바꿈: '기반시설 내 ○○ 1명당' 스킬은 숙소 인원도 센다 (제보 8a92310b — 내스티 +37% → 게임 +40%).
  *  손 편집·빈 칸 채우기·안정장치가 각자 세던 것을 하나로 (2026-10-20 — 화면은 숙소까지 세서 엔진 점수와 수십 점씩 어긋났다) */
 export function factionCountsFor(assignments: Record<string, string[][]>, byId: Map<string, InfraOp>): Record<string, number>[] {
   return Array.from({ length: SHIFT_COUNT }, (_, shift) => {
     const counts: Record<string, number> = {};
     for (const [key, shifts] of Object.entries(assignments)) {
-      if (key.startsWith("DORM")) continue;
-      for (const id of shifts?.[shift] ?? []) {
+      for (const id of shifts?.[Math.min(shift, (shifts?.length ?? 1) - 1)] ?? []) {
         const op = byId.get(id);
         if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
       }
@@ -3793,9 +3798,46 @@ export function polishPlan(plan: Plan, roster: InfraOp[], pinnedDorms: Record<st
     }
     if (!improved) break;
   }
+  // 총점이 같으면 같은 진영을 한 방에 (사용자 지시 2026-10-21 "같으면 자연스럽게") — 기사단 셋 중 한 명만 다른 제조소로 빼고
+  // 그 자리에 이격 사일런스를 넣은 편성이 셋을 모은 편성과 총점이 같았다(두 방 합 218% = 218%). 같은 조·같은 종류 방 사이에서
+  // 한 명씩 맞바꿔 총점이 떨어지지 않으면(−0.5 이내) 방마다 같은 진영끼리 앉은 쌍이 많아지는 쪽으로. 흔한 큰 진영(로도스 아일랜드 등)은 세지 않는다
+  const commonFaction = (() => {
+    const n = new Map<string, number>();
+    for (const op of ops) for (const f of factionsOf(op)) n.set(f, (n.get(f) ?? 0) + 1);
+    return (f: string) => (n.get(f) ?? 0) > 40;
+  })();
+  const pairs = (team: string[]) => {
+    let c = 0;
+    for (let i = 0; i < team.length; i += 1) for (let j = i + 1; j < team.length; j += 1) {
+      const a = byId.get(team[i]), b = byId.get(team[j]);
+      if (a && b && factionsOf(a).some((f) => !commonFaction(f) && factionsOf(b).includes(f))) c += 1;
+    }
+    return c;
+  };
+  let tidy = false;
+  if (!ENDLESS_ON) for (let sh = 0; sh < SHIFT_COUNT; sh += 1) {
+    for (let round = 0; round < 3; round += 1) {
+      let moved = false;
+      for (let x = 0; x < keys.length; x += 1) for (let y = x + 1; y < keys.length; y += 1) {
+        const k1 = keys[x], k2 = keys[y];
+        if (cellByKey.get(k1)?.room !== cellByKey.get(k2)?.room || k1 === "CONTROL") continue;
+        const t1 = cur[k1]?.[sh], t2 = cur[k2]?.[sh];
+        if (!t1?.length || !t2?.length) continue;
+        const before = pairs(t1) + pairs(t2);
+        for (let i = 0; i < t1.length && !moved; i += 1) for (let j = 0; j < t2.length && !moved; j += 1) {
+          if (pinned.has(t1[i]) || pinned.has(t2[j])) continue;
+          const n1 = t1.map((id, q) => (q === i ? t2[j] : id)), n2 = t2.map((id, q) => (q === j ? t1[i] : id));
+          if (pairs(n1) + pairs(n2) <= before) continue;
+          const next = { ...cur, [k1]: cur[k1].map((t, q) => (q === sh ? n1 : t)), [k2]: cur[k2].map((t, q) => (q === sh ? n2 : t)) };
+          const v = planScore(rebuilt(next), byId);
+          if (v >= best - 0.5) { cur = next; best = Math.max(best, v); tidy = true; moved = true; }
+        }
+      }
+      if (!moved) break;
+    }
+  }
   // 총점이 같으면 효율 높은 팀을 A조에 (사용자 지시 2026-10-20 "엔간하면 효율 좋은 걸 먼저 놓지") — 사무실 A조 +34% · B조 +60% 처럼
   // 맞바꿔도 총점이 그대로인 방은 엔진이 아무렇게나 두었다. 맞바꿔 총점이 떨어지지 않으면(−0.5 이내) 방 % 가 높은 쪽을 A조로
-  let tidy = false;
   if (!ENDLESS_ON) for (const k of keys) {
     const t = cur[k];
     if (!t || t.length < 2 || !t[0].length || !t[1].length) continue;
@@ -3985,7 +4027,7 @@ async function optimizeConfigCore(fullRoster: InfraOp[], priority: ProdPriority 
   // 탐색 중에 지은 후보(세트 조합·캡 확장·패키지 넣고 빼기·밀려난 생성원 시드·전환자 제외)를 전부 기억해 두고, 다듬기 전 점수
   // 상위 POLISH_TOP 개를 각각 마무리 교체로 다듬어 가장 높은 것을 고른다. 다듬기 전 순위와 다듬은 뒤 순위가 달라서, 1등만 다듬으면
   // 다른 봉우리를 놓쳤다 (역검증: 조별 비중을 바꾸자 지난 엔진 편성이 새 엔진보다 높은 사람 49명). 같은 배치는 한 번만 다듬는다
-  const POLISH_TOP = 4;
+  const POLISH_TOP = POLISH_TUNING.top;
   const peaks: { plan: Plan; score: number; tokens: string[]; sets: FactionSets; seeds: { opId: string; room: string }[]; excluded: string[] }[] = [];
   const remember = (plan: Plan, score: number, tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[], rosterUsed: InfraOp[]) => {
     peaks.push({ plan, score, tokens, sets, seeds, excluded: roster.filter((op) => !rosterUsed.includes(op)).map((op) => op.id) });
@@ -3993,7 +4035,7 @@ async function optimizeConfigCore(fullRoster: InfraOp[], priority: ProdPriority 
   const polished = (r: OptimizeResult): OptimizeResult => {
     // 장기 지속 모드는 아직 끈다 — 이 모드 채점(컨디션 보너스)을 '하루 실제 생산량'으로 바꾸면서 함께 켜고 다시 검증한다 (2026-10-20)
     if (ENDLESS_ON) return r;
-    const plan = polishPlan(r.plan, roster, pinnedDorms, roomPins);
+    const plan = polishPlan(r.plan, roster, pinnedDorms, roomPins, { maxEvals: LEGACY_WEIGHTS ? POLISH_TUNING.legacyEvals : POLISH_TUNING.mainEvals });
     let out: OptimizeResult = plan === r.plan ? r : { ...r, plan, prePolish: r.plan };
     let bestV = planScore(out.plan, byId);
     const seen = new Set<string>([JSON.stringify(r.plan.assignments)]);
@@ -4006,7 +4048,7 @@ async function optimizeConfigCore(fullRoster: InfraOp[], priority: ProdPriority 
       if (seen.has(sig)) continue;
       seen.add(sig);
       tried += 1;
-      const p = polishPlan(alt.plan, roster, pinnedDorms, roomPins);
+      const p = polishPlan(alt.plan, roster, pinnedDorms, roomPins, { maxEvals: POLISH_TUNING.altEvals });
       const v = planScore(p, byId);
       if (v > bestV + 0.5) {
         bestV = v;
