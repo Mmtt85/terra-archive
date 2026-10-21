@@ -12,7 +12,7 @@
 import { Who, PlayerButton, refreshPlayers, usePlayerMap } from "./who";
 import { KvWrites } from "./prefs";
 import { createPortal } from "react-dom";
-import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
 import { DatePicker } from "../date-picker";
 import { ACCOUNT_SERVERS } from "../account";
@@ -623,8 +623,8 @@ const ALL_STEP = 50;                      // 전체 보기 창에서 한 번에 
 
 // 탭마다 받을 집계 칸 — DB 함수 visits_summary_keys 의 최상위 키. total 은 위 세션 종류 드롭다운 숫자에도 쓴다
 const TAB_KEYS: Record<string, string[]> = {
-  overview: ["total", "days", "me_sync", "hourly", "quarter", "b15", "b30", "b60", "src", "out"],   // src·out 은 세션 타임라인 거르기
-  screens: ["total", "pages", "sections", "landing", "flow"],
+  overview: ["total", "days", "me_sync", "hourly", "quarter", "b15", "b30", "b60"],
+  screens: ["total", "pages", "sections", "landing", "flow", "src", "out"],   // src·out 은 세션 타임라인 거르기 (2026-10-21 화면 탭으로 옮김)
   prts: ["total", "prts"],
   etc: ["total", "src", "ref", "device", "site_lang", "tz", "out"],   // 요일·시간 칸은 뺐다 (사용자 지시 2026-10-20)
   search: [],
@@ -1116,18 +1116,9 @@ export function VisitsPanel() {
   // 자동 갱신은 지난번에 받은 뒤 바뀐 세션만(p_since) 받아 목록에 덮는다 (2026-10-20 Egress) — 조건이 바뀌거나, 손으로 새로고침하거나,
   // SESS_FULL_EVERY 가 지나면 통째로. 옛 DB 함수(p_since 모름)면 통째로 받는 쪽으로 물러선다
   const sessLoad = useRef<{ sig: string; at: number; full: number }>({ sig: "", at: 0, full: 0 });
-  // 세션 타임라인은 처음엔 안 받는다 — 화면 아래 타임라인 자리가 보이면 그때 DB 에서 받는다 (사용자 지시 2026-10-21, DB 읽기 줄이기).
-  // 한 번 받기 시작하면 그 뒤로는 종전대로 자동 갱신
-  const [sessWanted, setSessWanted] = useState(false);
-  const sessSentinel = useCallback((el: HTMLElement | null) => {
-    if (!el) return;
-    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { setSessWanted(true); io.disconnect(); } }, { rootMargin: "200px" });
-    io.observe(el);
-  }, []);
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
-    if (vtab !== "overview") return;   // 세션 타임라인은 개요 탭에만 있다
-    if (!sessWanted) return;            // 아래로 내려 타임라인 자리가 보일 때만
+    if (vtab !== "screens") return;   // 세션 타임라인은 화면 탭에만 있다 (2026-10-21 개요 → 화면)
     let alive = true;
     const silent = sessSilent.current;
     sessSilent.current = false;
@@ -1157,7 +1148,7 @@ export function VisitsPanel() {
       .finally(() => { inflight.current -= 1; doneAt.current = Date.now(); if (alive && !silent) setLoadSess(false); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, human, srcFilter, fetchN, tick, range, slot, vtab, liveOnly, sessWanted]);
+  }, [days, human, srcFilter, fetchN, tick, range, slot, vtab, liveOnly]);
 
   // 구간 시작 전에 들어와 **지금도 조작 중인** 세션 — '오늘'처럼 지금이 든 구간이면 자정을 넘겨도 계속 보여야 한다
   // (사용자 지시 2026-10-12 "날짜가 바껴도 지금도 조작중일테니 보여야"). DB 는 시작 시각으로만 거르므로 시작 전 하루치에서
@@ -1165,7 +1156,7 @@ export function VisitsPanel() {
   const carryFrom = !slot && spanStart != null && spanEnd != null && spanEnd >= Date.now() - 120_000 ? spanStart : null;
   const [carry, setCarry] = useState<SessRow[]>([]);
   useEffect(() => {
-    if (carryFrom == null || vtab !== "overview") { setCarry([]); return; }
+    if (carryFrom == null || vtab !== "screens") { setCarry([]); return; }
     let alive = true;
     const args = { p_from: isoAt(carryFrom - 86400_000), p_to: isoAt(carryFrom), ...kindArgs, p_src: srcFilter || null, p_limit: 300 };
     rpc<SessRow[]>("visits_sessions_range", { ...args, p_since: new Date(Date.now() - LIVE_WINDOW).toISOString() })
@@ -1529,7 +1520,10 @@ export function VisitsPanel() {
             </>
           )}
 
-          {/* 순서 — 내 정보 동기화 · 오늘 N분별 · 세션 타임라인 · 화면 순위 · 나머지 (사용자 지시 2026-10-10 "세션 타임라인이 더 궁금하다") */}
+          </>)}
+
+          {vtab === "screens" && (<>
+          {/* 세션 타임라인 — 화면 탭 맨 위 (사용자 지시 2026-10-21 — 개요 탭에 있으면 열자마자 받아 DB 를 읽었다) */}
           <Head title="세션 타임라인" sub="한 줄이 한 사람의 동선 · 최근 순. 시간은 조작 시간(없으면 보인 시간)" {...top("sessions", "세션 타임라인")}>
             <Dropdown
               label={srcFilter || "유입원 전체"}
@@ -1555,8 +1549,7 @@ export function VisitsPanel() {
               조작 중만{sessions ? ` ${sessions.filter(sessLive).length}` : ""}
             </button>
           </Head>
-          {!sessWanted ? <p className="vz-empty" ref={sessSentinel}>아래로 내리면 세션 타임라인을 불러옵니다</p>
-            : sessions == null ? <p className="vz-empty">불러오는 중…</p> : (
+          {sessions == null ? <p className="vz-empty">불러오는 중…</p> : (
             <>
               {liveOnly && !sessions.some(sessLive) && <p className="vz-empty">지금 조작 중인 세션이 없습니다.</p>}
               {outFilter && !sessions.some((x) => sessOutHit(x, outFilter)) && <p className="vz-empty">최근 세션 중 {outFilter} 로 나간 세션이 없습니다.</p>}
@@ -1566,9 +1559,6 @@ export function VisitsPanel() {
             </>
           )}
 
-          </>)}
-
-          {vtab === "screens" && (<>
           <Head title="화면 순위" sub={`${data.pages.length}개 화면`} {...top("pages", "화면 순위")} />
           {pageTable(tops.pages)}
 
