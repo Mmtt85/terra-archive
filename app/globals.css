@@ -34284,4 +34284,6 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 /* 관리 — 친구 찾기 탭 (2026-10-20, app/admin/match.tsx) */
 .vz-match h4 { margin: 18px 0 6px; font-size: 13px; }
 .vz-match-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 24px; }
+/* 순위가 길어져도 아래 등록 목록이 밀려나지 않게 — 목록 안에서만 스크롤 */
+.vz-match-two .ap-list { max-height: 220px; overflow-y: auto; }
 .vz-table tr.vz-dim td { color: var(--muted); }
