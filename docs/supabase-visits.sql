@@ -1022,3 +1022,19 @@ begin
   return r;
 end $$;
 grant execute on function public.visits_summary_days(int, boolean, text[], text[]) to anon;
+
+-- 표 권한 (Supabase 2026-10-30 변경 대비) — 그날부터 public 에 새로 만든 표는 Data API 권한이 자동으로 붙지 않는다.
+-- 지금까지 자동으로 주던 권한과 같게 직접 준다 (실제 접근 제한은 위 RLS 정책이 맡는다). 이 문서로 표를 다시 만들 때 꼭 함께 실행
+grant select, insert, update, delete on public.visit_session to anon, authenticated, service_role;
+grant select, insert, update, delete on public.visit_view to anon, authenticated, service_role;
+grant select, insert, update, delete on public.visit_event to anon, authenticated, service_role;
+grant select, insert, update, delete on public.visit_day to anon, authenticated, service_role;
+grant select, insert, update, delete on public.visit_src_day to anon, authenticated, service_role;
+grant select, insert, update, delete on public.visit_page_day to anon, authenticated, service_role;
+grant select, insert, update, delete on public.visit_player to anon, authenticated, service_role;
+grant select, insert, update, delete on public.visit_cap to anon, authenticated, service_role;
+grant select, insert, update, delete on public.prts_scan to anon, authenticated, service_role;
+grant select, insert, update, delete on public.kv_write to anon, authenticated, service_role;
+grant select, insert, update, delete on public.slow_activity to anon, authenticated, service_role;
+grant select, insert, update, delete on public.visit_cache to anon, authenticated, service_role;
+grant select, insert, update, delete on public.omni_answer to anon, authenticated, service_role;

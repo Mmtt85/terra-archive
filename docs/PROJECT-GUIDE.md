@@ -1093,6 +1093,11 @@ python3 scripts/download-avatars.py       # 8. 신규 아바타 다운로드 (�
 
 ## 7. Supabase 피드백 (제안·오류 리포트·편성 제안)
 
+- **⚠ 새 표는 권한(GRANT)을 직접 준다 (Supabase 2026-10-30 변경)**: 그날부터 `public` 에 새로 만든 표는 Data API 권한이
+  자동으로 붙지 않아, 권한 없이 만들면 REST 호출이 "permission denied" 로 실패한다(본사이트·통계 두 프로젝트 모두). 표를 만드는
+  SQL 에는 `grant select, insert, update, delete on public.<표> to anon, authenticated, service_role;` 를 꼭 함께 넣는다 — 종전 자동 권한과
+  같은 값이라 접근 제한은 RLS 정책이 그대로 맡는다. 기존 표는 영향 없음. `docs/supabase-*.sql` 마다 끝에 표 권한 묶음을 넣어 두었다
+  (지웠다 다시 만들 때도 함께 실행).
 - 프로젝트: Mmtt85's Org / `exirlkhpkgxsflbglhld.supabase.co`. 테이블 생성 SQL은
   [supabase-setup.sql](supabase-setup.sql) — `feedback` 테이블 하나, **익명은 INSERT만**(RLS),
   조회는 Supabase 대시보드 Table Editor에서.
