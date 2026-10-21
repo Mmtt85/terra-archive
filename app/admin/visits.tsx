@@ -12,7 +12,7 @@
 import { Who, PlayerButton, refreshPlayers, usePlayerMap } from "./who";
 import { KvWrites } from "./prefs";
 import { createPortal } from "react-dom";
-import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
 import { DatePicker } from "../date-picker";
 import { ACCOUNT_SERVERS } from "../account";
@@ -1116,9 +1116,18 @@ export function VisitsPanel() {
   // 자동 갱신은 지난번에 받은 뒤 바뀐 세션만(p_since) 받아 목록에 덮는다 (2026-10-20 Egress) — 조건이 바뀌거나, 손으로 새로고침하거나,
   // SESS_FULL_EVERY 가 지나면 통째로. 옛 DB 함수(p_since 모름)면 통째로 받는 쪽으로 물러선다
   const sessLoad = useRef<{ sig: string; at: number; full: number }>({ sig: "", at: 0, full: 0 });
+  // 세션 타임라인은 처음엔 안 받는다 — 화면 아래 타임라인 자리가 보이면 그때 DB 에서 받는다 (사용자 지시 2026-10-21, DB 읽기 줄이기).
+  // 한 번 받기 시작하면 그 뒤로는 종전대로 자동 갱신
+  const [sessWanted, setSessWanted] = useState(false);
+  const sessSentinel = useCallback((el: HTMLElement | null) => {
+    if (!el) return;
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { setSessWanted(true); io.disconnect(); } }, { rootMargin: "200px" });
+    io.observe(el);
+  }, []);
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
     if (vtab !== "overview") return;   // 세션 타임라인은 개요 탭에만 있다
+    if (!sessWanted) return;            // 아래로 내려 타임라인 자리가 보일 때만
     let alive = true;
     const silent = sessSilent.current;
     sessSilent.current = false;
@@ -1148,7 +1157,7 @@ export function VisitsPanel() {
       .finally(() => { inflight.current -= 1; doneAt.current = Date.now(); if (alive && !silent) setLoadSess(false); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, human, srcFilter, fetchN, tick, range, slot, vtab, liveOnly]);
+  }, [days, human, srcFilter, fetchN, tick, range, slot, vtab, liveOnly, sessWanted]);
 
   // 구간 시작 전에 들어와 **지금도 조작 중인** 세션 — '오늘'처럼 지금이 든 구간이면 자정을 넘겨도 계속 보여야 한다
   // (사용자 지시 2026-10-12 "날짜가 바껴도 지금도 조작중일테니 보여야"). DB 는 시작 시각으로만 거르므로 시작 전 하루치에서
@@ -1546,7 +1555,8 @@ export function VisitsPanel() {
               조작 중만{sessions ? ` ${sessions.filter(sessLive).length}` : ""}
             </button>
           </Head>
-          {sessions == null ? <p className="vz-empty">불러오는 중…</p> : (
+          {!sessWanted ? <p className="vz-empty" ref={sessSentinel}>아래로 내리면 세션 타임라인을 불러옵니다</p>
+            : sessions == null ? <p className="vz-empty">불러오는 중…</p> : (
             <>
               {liveOnly && !sessions.some(sessLive) && <p className="vz-empty">지금 조작 중인 세션이 없습니다.</p>}
               {outFilter && !sessions.some((x) => sessOutHit(x, outFilter)) && <p className="vz-empty">최근 세션 중 {outFilter} 로 나간 세션이 없습니다.</p>}
