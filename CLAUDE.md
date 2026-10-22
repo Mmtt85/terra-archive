@@ -52,3 +52,6 @@
 - 사용자가 교정해준 도메인 규칙(가짜 게스트 오퍼 제외, KR 출시순 seq, 시너지 팟 판정,
   인프라 buffChar 슬롯 규칙 등)은 PROJECT-GUIDE/INFRA-RULES에 기록되어 있다 — 어기지 말 것.
   새 규칙이 확정되면 해당 문서와 도움말 모달을 함께 갱신한다.
+- **자동편성 엔진(`app/planner-engine.ts`)을 고치면 배포 전에 관문** — `node scripts/riic-one.mjs`(운영자 계정 전후 점수) →
+  `node scripts/riic-audit.mjs --quick`. 통과한 엔진이 아니면 ship.sh·deploy.sh 가 멈춘다 (`riic-audit` 스킬 —
+  2026-10-21 하루에 "됐다" 했다가 배포 뒤 드러난 실패가 17건, [docs/INFRA-FAILURES.md](docs/INFRA-FAILURES.md)).

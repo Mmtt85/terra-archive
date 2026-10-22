@@ -248,10 +248,12 @@ console.log("");
     const drop = new Set(r.excluded);
     engine.setCapCluster(r.capCluster);
     engine.setShiftTiebreak(r.shiftTiebreak);
+    engine.setOverrideSeed(r.overrideSeed ?? false);   // 덮어쓰기(샤마르) 시드 A/B — 육성 추천(planner-invest)과 같은 재현 (2026-10-21)
     const redone = engine.buildPlan(r.tokenChoice, roster.filter((o) => !drop.has(o.id)),
       r.factionSets, priority, r.seeds, false, r.park, {});
     engine.setCapCluster(true);
     engine.setShiftTiebreak(true);
+    engine.setOverrideSeed(false);
     const gap = engine.planScore(redone, byId) - S0;
     const ok = Math.abs(gap) < 1e-6;
     console.log(`${ok ? "✓" : "✗"} 반사실이 베이스라인 전략을 재현 (${rosterName}/${priority}) `

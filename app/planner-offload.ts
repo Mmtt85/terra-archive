@@ -2,7 +2,7 @@
 // Web Worker(planner-worker.ts)로 id·정예화만 보내 계산하고, 진행 콜백(step/progress)은
 // postMessage로 돌려받아 메인 스레드는 상태 갱신·리페인트만 한다 (INP 근본 해결, 2026-07-22).
 // 워커 생성 실패·미지원(구형 브라우저)이면 종전대로 메인 스레드에서 직접 계산(폴백).
-import { ops, withElite, optimizeConfig, setLayoutPreset, setLevels, setRecycle, setTrainingUse, keepIfClose, type RecycleMode, type Elite, type Plan, type OptimizeResult, type ProdPriority, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct, type RoomPin } from "./planner-engine";
+import { ops, withElite, optimizeConfig, setLayoutPreset, setLevels, setRecycle, setTrainingUse, setPolishTuning, keepIfClose, type RecycleMode, type Elite, type Plan, type OptimizeResult, type ProdPriority, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct, type RoomPin } from "./planner-engine";
 import { recommendRaises, rankRaises, type RaiseRec, type InvestProgress, type InvestSetup, type InvestCand } from "./planner-invest";
 
 export type PlannerJob = {
@@ -99,6 +99,8 @@ export async function optimizeOff(job: PlannerJob, onStep?: (step: OptimizeStep)
   setTrainingUse(!!job.training);
   setLayoutPreset(job.layout ?? "243", job.customRooms ?? null, job.customProducts ?? null); // 폴백(메인 스레드)도 워커와 동일하게 프리셋 동기화
   setLevels(job.levels ?? null);
+  // 메인 스레드에서는 다듬기 한 번이 창을 통째로 붙잡는다 — 여기서만 시간 상한을 건다(워커는 상한 없음 — 기기마다 결과가 같게, POLISH_TUNING 주석)
+  setPolishTuning({ budgetMs: 15000 });
   const roster = rosterOf(job);
   const cfg = await optimizeConfig(roster, job.priority, onStep && (async (step) => { onStep(step); }), job.dormPins ?? {}, job.roomPins ?? {});
   rememberBase(job, cfg);

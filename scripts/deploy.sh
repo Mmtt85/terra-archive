@@ -158,6 +158,10 @@ if [ -z "${GITHUB_ACTIONS:-}" ]; then
       exit 1
     fi
   fi
+  # ── 엔진 관문 (2026-10-21) — 자동편성 엔진(app/planner-engine.ts)이 마지막 배포 판과 다르면, **그 엔진으로 돈** 역검증
+  # (riic-audit --quick·--rerun)이 통과해야 배포한다. 그날 역검증을 배포 뒤에 돌려 회귀(7명 최대 −9.8)를 늦게 찾았고,
+  # '배포 전에 역검증' 다짐은 또 어겨졌다 (docs/INFRA-FAILURES.md). 엔진을 안 건드린 배포는 그냥 지나간다.
+  node scripts/riic-audit.mjs --gate-check || exit 1
 fi
 
 if [ ! -f .r2-sync-key ] && [ -z "${R2_SYNC_KEY:-}" ] && [ -z "$SKIP_R2" ]; then
@@ -373,5 +377,12 @@ step "색인 통보 (IndexNow)"
 # 관리자 사이트(admin.terra-archive.net)는 **별도 배포**다 (2026-07-28 재분리 — 한때 여기서
 # deploy-admin.sh를 이어 불렀지만, 본사이트 배포마다 관리자까지 딸려 나갈 이유가 없다).
 # 관리자 UI를 고쳤을 때만: bash scripts/deploy-admin.sh
+# 배포한 엔진을 적어 둔다 — 다음 배포·푸시의 엔진 관문이 이것과 비교한다. 관문을 통과한 판이 이 엔진이면 그 판의 자동편성을
+# 역검증 기준선에 올린다(계정마다 기준선과 높은 쪽). 부가 작업이라 실패해도 배포는 성공이다
+if [ -z "${GITHUB_ACTIONS:-}" ]; then
+  run_to 300 node scripts/riic-audit.mjs --deployed || echo "⚠ 배포된 엔진 기록 실패 — 다음 배포 때 엔진 관문이 다시 물을 수 있습니다" >&2
+  step "엔진 기록 (riic-audit --deployed)"
+fi
+
 echo ""
 echo "✓ 본사이트 배포 완료 — 관리자 사이트는 별도입니다: bash scripts/deploy-admin.sh"

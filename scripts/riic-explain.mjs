@@ -147,9 +147,16 @@ function explainOne(E, r, sd, plan) {
 
 // ── 본체 ───────────────────────────────────────────────────────────────
 const N = Number(arg("--n", 100));
-const runs = fs.readdirSync(path.join(DIR, "runs")).sort().filter((d) => fs.existsSync(path.join(DIR, "runs", d, "input.json")));
-if (!runs.length) throw new Error("역검증 입력이 없습니다 — 먼저 node scripts/riic-audit.mjs");
-const src = JSON.parse(fs.readFileSync(path.join(DIR, "runs", runs.at(-1), "input.json"), "utf8"));
+// 역검증과 동시에 돌지 않는다 — 둘 다 코어를 다 써서 서로 느려지고, 시간 상한이 있던 때는 역검증 결과까지 바뀌었다 (#15)
+const { acquireHeavyLock } = await import("./riic-lib.mjs");
+acquireHeavyLock(`riic-explain --n ${N}`);
+// 입력은 역검증 기준 입력(전원) — 관문 판(--quick)은 문제 났던 계정만이라 무작위로 뽑기엔 치우친다
+const runs = fs.readdirSync(path.join(DIR, "runs")).sort().filter((d) => fs.existsSync(path.join(DIR, "runs", d, "input.json"))
+  && !["quick", "pending"].includes(JSON.parse((() => { try { return fs.readFileSync(path.join(DIR, "runs", d, "meta.json"), "utf8"); } catch { return "{}"; } })()).mode));
+const basePath = (() => { try { return JSON.parse(fs.readFileSync(path.join(DIR, "baseline.json"), "utf8")).input; } catch { return null; } })();
+const srcPath = basePath && fs.existsSync(basePath) ? basePath : runs.length ? path.join(DIR, "runs", runs.at(-1), "input.json") : null;
+if (!srcPath) throw new Error("역검증 입력이 없습니다 — 먼저 node scripts/riic-audit.mjs");
+const src = JSON.parse(fs.readFileSync(srcPath, "utf8"));
 let seed = Number(arg("--seed", new Date().toISOString().slice(0, 10).replace(/-/g, "")));
 const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 const pool = [...src.rows];
@@ -162,7 +169,7 @@ fs.writeFileSync(path.join(outDir, "input.json"), JSON.stringify({ rows: picked,
 const bundle = path.join(outDir, "engine.mjs");
 execFileSync(path.join(ROOT, "node_modules/.bin/esbuild"), [path.join(ROOT, "app/planner-engine.ts"), "--bundle", "--format=esm", "--platform=node", `--outfile=${bundle}`, "--log-level=warning"]);
 const shards = Math.max(1, Math.min(picked.length, os.cpus().length - 1));
-console.log(`${picked.length}명 (입력 ${runs.at(-1)}) · 작업자 ${shards}`);
+console.log(`${picked.length}명 (입력 ${path.relative(DIR, srcPath)}) · 작업자 ${shards}`);
 const t0 = Date.now();
 const tick = setInterval(() => {
   const done = new Set();

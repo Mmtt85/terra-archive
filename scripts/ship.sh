@@ -119,6 +119,13 @@ sync_main() {
   return 1
 }
 
+# ── 엔진 관문 — 자동편성 엔진을 바꾼 커밋은 역검증을 통과한 엔진만 올린다. 푸시하면 CI 배포가 그 엔진을 내보낼 수 있다
+# (deploy.sh 도 같은 관문을 본다 — docs/INFRA-FAILURES.md). 엔진을 안 건드렸으면 그냥 지나간다
+if ! node scripts/riic-audit.mjs --gate-check --rev HEAD; then
+  echo "  (커밋은 그대로 두었습니다 — 관문을 통과한 뒤 bash scripts/ship.sh 로 이어서 푸시·배포)" >&2
+  exit 1
+fi
+
 # ── 3. 푸시 — 그새 CI 가 커밋을 올렸으면(거부) 다시 rebase 해서 ──
 pushed=""
 for attempt in 1 2 3; do

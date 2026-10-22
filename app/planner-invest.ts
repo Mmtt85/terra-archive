@@ -26,7 +26,7 @@ import obtainData from "./data/op-obtain.json";
 import { acquireOf } from "./op-acquire";
 import sanityData from "./data/sanity.json";
 import {
-  optimizeConfig, buildPlan, planScore, setPriorityMode, teamScore, opSolo, withElite, maxElite, eliteLocks, setCapCluster, setShiftTiebreak,
+  optimizeConfig, buildPlan, planScore, setPriorityMode, teamScore, opSolo, withElite, maxElite, eliteLocks, setCapCluster, setShiftTiebreak, setOverrideSeed,
   availableSetKeys, synergySetMembers, cellByKey, LAYOUT, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT, AUTO_BENCH_IDS,
   apPerPctDay, planTokensAt, setActive,
   type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets, type RoomPin, type OptimizeResult,
@@ -439,6 +439,7 @@ export function investEvaluate(inp: InvestInput, setup: InvestSetup, onEach?: (d
   const { visibleOps, ownedIds, eliteById, priority, pinnedDorms, levelById, roomPins } = inp;
   const { base, cands } = setup;
   const { tokenChoice, factionSets, park, seeds, excluded, capCluster, shiftTiebreak } = base;
+  const overrideSeed = base.overrideSeed ?? false;  // 덮어쓰기(샤마르) 시드 A/B — 기준 편성과 같은 조건으로. 예전 저장분은 시드 없이 지었다 (2026-10-21)
   setPriorityMode(priority);
   const { roster: baseRoster, byId: byId0 } = stampRoster(visibleOps, ownedIds, eliteById, undefined, levelById);
   const droppedIds = new Set(excluded);
@@ -457,6 +458,7 @@ export function investEvaluate(inp: InvestInput, setup: InvestSetup, onEach?: (d
     const roster1 = droppedIds.size ? upRoster.filter((op) => ids.has(op.id) || !droppedIds.has(op.id)) : upRoster;
     setCapCluster(capCluster);
     setShiftTiebreak(shiftTiebreak);
+    setOverrideSeed(overrideSeed);
     for (const cfg of configs) {
       // ⑤(우선 생산 집중)는 planScore 중립이라 육성 이득 델타를 안 바꾸고 config 비교만 교란하므로 끈다
       const plan = buildPlan(tokenChoice, roster1, cfg, priority, seeds, false, park, pinnedDorms, roomPins);
@@ -465,6 +467,7 @@ export function investEvaluate(inp: InvestInput, setup: InvestSetup, onEach?: (d
     }
     setCapCluster(true);
     setShiftTiebreak(true);
+    setOverrideSeed(false);
     return { plan: best!, score: bestS };
   };
 
@@ -473,9 +476,11 @@ export function investEvaluate(inp: InvestInput, setup: InvestSetup, onEach?: (d
   const roster0 = droppedIds.size ? baseRoster.filter((op) => !droppedIds.has(op.id)) : baseRoster;
   setCapCluster(capCluster);
   setShiftTiebreak(shiftTiebreak);
+  setOverrideSeed(overrideSeed);
   const baseline = buildPlan(tokenChoice, roster0, factionSets, priority, seeds, false, park, pinnedDorms, roomPins);
   setCapCluster(true);
   setShiftTiebreak(true);
+  setOverrideSeed(false);
   const S0 = planScore(baseline, byId0);
   const effs0 = effsOf(baseline, byId0);
 

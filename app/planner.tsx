@@ -787,26 +787,45 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
       let next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, recycle: recycleJob, training: trainingUse, priority: prio, layout, levels, customRooms, customProducts, dormPins, roomPins: rpins, prev: planEmpty ? null : plan }, paced);
-      // 안정장치 — 새 편성이 KEEP_MARGIN 점 넘게 낫지 않으면 총점을 보여 주고 바꿀지 묻는다 (사용자 요청 2026-10-18)
+      // 안정장치 — 새 편성이 KEEP_MARGIN 점 넘게 낫지 않으면 지금 편성을 남긴다 (사용자 요청 2026-10-18).
+      // 바꿀지 묻는 건 **새 편성이 더 높을 때만** — 낮거나 같은데도 물었더니 Enter 한 번에 더 낮은 편성으로 바뀌었다(2026-10-21 #17:
+      // 지금 1500.0 → 새 1497.8). 훈련실·재활용소는 총점에 안 잡혀(따로 잰다) 그 방이 달라지면 점수와 상관없이 묻는다
       const kept = next.kept;
       delete next.kept;
+      const stab = next.stability;   // 안정장치가 한 일(사유·두 총점) — 아래 토스트 꼬리로
+      delete next.stability;
       let keptCurrent = false;
+      let keepNote = "";
       if (kept) {
         setOptimizing(null);
         const d = kept.after - kept.before;
         const nd = diffPlans(plan, kept.next);
         const cells = nd ? Object.keys(nd).length : 0;
         const moved = nd ? Object.values(nd).reduce((a, x) => a + x.add.reduce((b, y) => b + y.length, 0), 0) : 0;
+        const unscored = !!nd && Object.keys(nd).some((key) => key === "TRAINING" || key === "RECYCLE");
         // 새 편성이 지금과 똑같으면 물을 것도 없다
-        const go = cells > 0 && await confirm({
+        const ask = cells > 0 && (d > 0.05 || unscored);
+        const go = ask && await confirm({
           title: t("편성이 거의 달라지지 않습니다"),
           message: t("지금 편성 총점 {a}점 → 새 편성 {b}점 ({d}점). 바꾸면 {c}곳에서 오퍼 {n}명이 자리를 옮깁니다. 차이가 {m}점 이하라 게임에서 옮겨 앉혀도 얻는 게 거의 없습니다. 새 편성으로 바꾸시겠어요?",
             { a: kept.before.toFixed(1), b: kept.after.toFixed(1), d: `${d >= 0 ? "+" : ""}${d.toFixed(1)}`, c: cells, n: moved, m: KEEP_MARGIN }),
           confirmLabel: t("새 편성으로 바꾸기"),
           cancelLabel: t("지금 편성 유지"),
         });
-        if (go) next = kept.next;
-        else keptCurrent = cells > 0;
+        if (go) { next = kept.next; keepNote = t("총점 {a} → {b}", { a: kept.before.toFixed(1), b: kept.after.toFixed(1) }); }
+        else {
+          keptCurrent = cells > 0;
+          if (keptCurrent && !ask) keepNote = t("새 편성이 지금보다 높지 않습니다 (지금 {a}점 · 새 편성 {b}점)", { a: kept.before.toFixed(1), b: kept.after.toFixed(1) });
+        }
+      } else if (stab?.reason === "better" && stab.before != null && stab.after != null) {
+        keepNote = t("총점 {a} → {b}", { a: stab.before.toFixed(1), b: stab.after.toFixed(1) });
+      } else if (stab) {
+        // 비교 없이 새 편성 — 지금 편성을 게임에서 그대로 쓸 수 없는 사유 (engine keepIfClose). 종전엔 아무 데도 안 남았다
+        const why = ({
+          priority: t("우선 생산이 바뀌었습니다"), layout: t("기지 구성이 바뀌었습니다"), slots: t("시설 레벨이 낮아져 자리가 모자랍니다"),
+          roster: t("지금 편성에 보유하지 않은 오퍼가 있습니다"), pin: t("지금 편성이 고정을 지키지 않습니다"),
+        } as Record<string, string>)[stab.reason];
+        if (why) keepNote = t("지금 편성과 비교하지 않았습니다 — {why}", { why });
       }
       const diff = diffPlans(plan, next);
       setPlan(next);
@@ -826,7 +845,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       const diffOps = diff ? Object.values(diff).reduce((a, d) => a + d.add.reduce((b, x) => b + x.length, 0), 0) : 0;
       showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: usedCount })
         + (diffCells ? ` · ${t("전과 달라진 곳 {c}곳 · 새로 들어간 오퍼 {n}명", { c: diffCells, n: diffOps })}`
-          : keptCurrent ? ` · ${t("지금 편성을 그대로 두었습니다")}` : ""));
+          : keptCurrent ? ` · ${t("지금 편성을 그대로 두었습니다")}` : "")
+        + (keepNote ? ` · ${keepNote}` : ""));
     } finally {
       setOptimizing(null);
     }
