@@ -14,17 +14,22 @@ import { dynPoster, hasDyn } from "./dyn-illust";
 type L10n = Partial<Record<Locale, string>> & { ko?: string };
 const pick = (m: L10n | undefined, locale: Locale) => (m ? m[locale] ?? m.ko ?? "" : "");
 type SkinIdx = Record<string, { c: string; p: string; n: L10n; g: L10n; v?: string[] }>;
-type MedalIdx = { groups: { id: string; n: L10n }[]; medals: Record<string, { g: string; n: L10n; m: L10n; r: string }> };
+type MedalIdx = { groups: { id: string; n: L10n; sets?: { id: string; n: L10n; ids: string[] }[] }[]; medals: Record<string, { g: string; n: L10n; m: L10n; r: string }> };
 
 /** 목록 자료 캐시 키 — build-collect.py 로 다시 만들어 R2 에 올리면 올린다 (엣지가 옛 파일을 붙들지 않게) */
-const COLLECT_VER = "2026102204";
+const COLLECT_VER = "2026102210";
 let skinIdx: Promise<SkinIdx> | null = null;
 let medalIdx: Promise<MedalIdx> | null = null;
 // 실패하면 다음에 다시 받게 비운다 (자료가 R2 에 아직 없을 때 등)
 const loadSkins = () => (skinIdx ??= fetch(`${asset("/skins/owned-index.json")}?v=${COLLECT_VER}`).then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); }).catch((e) => { skinIdx = null; throw e; }));
 const loadMedals = () => (medalIdx ??= fetch(`${asset("/medals/index.json")}?v=${COLLECT_VER}`).then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); }).catch((e) => { medalIdx = null; throw e; }));
+// 훈장 설명 — 언어별 파일, 상세 창을 열 때만
+const descIdx: Partial<Record<Locale, Promise<Record<string, string>>>> = {};
+const loadDesc = (loc: Locale) => (descIdx[loc] ??= fetch(`${asset(`/medals/desc.${loc}.json`)}?v=${COLLECT_VER}`).then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
 // 게임 '수집' 수에 안 드는 훈장 — 숨김·금장 (워커 countedMedal 과 같은 규칙)
-const counted = (id: string) => !id.startsWith("medal_hidden_") && !/_\d{2}5$/.test(id);
+const countedMedal = (id: string) => !id.startsWith("medal_hidden_") && !coated(id);
+// 코팅된 훈장 — 원래 훈장을 금테로 올린 판(id 끝이 세 자리 …5). 수집 수에는 안 들고, 목록·상세에 '코팅된 훈장'으로 표시 (사용자 지시 2026-10-22)
+const coated = (id: string) => /_\d{2}5$/.test(id);
 
 export function SkinsWindow({ skinIds, server, opName, onShowOperator, onClose }: {
   skinIds: string[] | undefined; server: string; opName: (id: string) => string; onShowOperator?: (id: string) => void; onClose: () => void;
@@ -62,9 +67,9 @@ export function SkinsWindow({ skinIds, server, opName, onShowOperator, onClose }
         <p className="me-note">{!skinIds ? t("목록은 다시 동기화하면 보입니다.") : failed ? t("스킨 정보를 불러오지 못했습니다.") : idx ? t("기본 복장을 뺀 스킨 {n} / {all}벌", { n, all }) : t("불러오는 중…")}</p>
         {groups.length > 1 && (
           <div className="me-seg me-skin-tabs" role="tablist">
-            <button type="button" role="tab" aria-selected={!brand} className={!brand ? "selected" : ""} onClick={() => setBrand(null)}>{t("전체")} <small>{n}</small></button>
+            <button type="button" role="tab" aria-selected={!brand} className={!brand ? "selected" : ""} onClick={() => setBrand(null)}>{t("전체")} <small>{n} / {all}</small></button>
             {groups.map((g) => (
-              <button key={g.g} type="button" role="tab" aria-selected={brand === g.g} className={brand === g.g ? "selected" : ""} onClick={() => setBrand(g.g)}>{g.g} <small>{g.own}</small></button>
+              <button key={g.g} type="button" role="tab" aria-selected={brand === g.g} className={brand === g.g ? "selected" : ""} onClick={() => setBrand(g.g)}>{g.g} <small>{g.own} / {g.list.length}</small></button>
             ))}
           </div>
         )}
@@ -95,48 +100,108 @@ export function SkinsWindow({ skinIds, server, opName, onShowOperator, onClose }
 export function MedalsWindow({ medalList, onClose }: { medalList: [string, number][] | undefined; onClose: () => void }) {
   const { locale, t } = useI18n();
   const [idx, setIdx] = useState<MedalIdx | null>(null);
-  const [show, setShow] = useState<"got" | "all">("got");
+  // 묶음 탭 (사용자 지시 2026-10-22 "훈장도 탭으로") — null = 전체
+  const [tab, setTab] = useState<string | null>(null);
+  // 전체 / 보유만 / 미보유만 (사용자 지시 2026-10-22) — 탭의 '현재 / 최대'는 거르기와 상관없이 그대로
+  const [show, setShow] = useState<"all" | "got" | "not">("all");
+  // 누르면 그 훈장 상세 (사용자 요청 2026-10-22)
+  const [open, setOpen] = useState<string | null>(null);
+  const [desc, setDesc] = useState<Record<string, string> | null>(null);
+  useEffect(() => { if (open && !desc) void loadDesc(locale).then(setDesc); }, [open, desc, locale]);
   const [failed, setFailed] = useState(false);
   useEffect(() => { void loadMedals().then(setIdx, () => setFailed(true)); }, []);
   const got = useMemo(() => new Map(medalList ?? []), [medalList]);
   const fmtDate = (sec: number) => new Date(sec * 1000).toLocaleDateString(DT_LOCALE[locale]);
-  const groups = useMemo(() => {
-    if (!idx) return [];
-    return idx.groups.map((g) => {
-      const all = Object.entries(idx.medals).filter(([id, m]) => m.g === g.id && (got.has(id) || counted(id)));
-      const mine = all.filter(([id]) => got.has(id));
-      const list = (show === "got" ? mine : all).sort(([a], [b]) => (got.get(b) ?? 0) - (got.get(a) ?? 0) || a.localeCompare(b));
-      return { id: g.id, name: pick(g.n, locale), mine: mine.length, total: all.filter(([id]) => counted(id)).length, list };
-    }).filter((g) => g.list.length > 0);
-  }, [idx, got, show, locale]);
-  return (
-    <ModalWindow label={t("훈장")} className="operator-modal me-collect-modal" onClose={onClose}>
-      <div className="me-collect">
-        <div className="me-collect-head">
-          <p className="me-note">{!medalList ? t("목록은 다시 동기화하면 보입니다.") : t("얻은 훈장 {n}개", { n: medalList.length })}</p>
-          <Dropdown ariaLabel={t("훈장 보기")} label={show === "got" ? t("얻은 것만") : t("못 얻은 것도")} selected={[show]}
-            items={[{ value: "got", label: t("얻은 것만") }, { value: "all", label: t("못 얻은 것도") }]} onPick={(v) => setShow(v as "got" | "all")} />
-        </div>
-        {!idx && <p className="me-note">{failed ? t("훈장 정보를 불러오지 못했습니다.") : t("불러오는 중…")}</p>}
-        {groups.map((g) => (
-          <section key={g.id} className="me-collect-group">
-            <h4>{g.name} <small>{g.mine} / {g.total}</small></h4>
-            <ul className="me-medal-grid">
-              {g.list.map(([id, m]) => {
+  const medalGrid = (list: [string, MedalIdx["medals"][string]][]) => (
+    <ul className="me-medal-grid">
+              {list.map(([id, m]) => {
                 const at = got.get(id);
                 return (
-                  <li key={id} className={at ? undefined : "off"} title={`${pick(m.n, locale)}\n${pick(m.m, locale)}`}>
+                  <li key={id} className={at ? undefined : "off"}>
+                    <button type="button" onClick={() => setOpen(id)} title={pick(m.n, locale)}>
                     <img src={asset(`/medals/icon/${id}.webp`)} alt="" width={56} height={56} loading="lazy" decoding="async"
                       onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
                     <b>{pick(m.n, locale)}</b>
-                    <small>{at ? fmtDate(at) : pick(m.m, locale)}</small>
+                    {/* 코팅 뱃지는 날짜 줄 오른쪽 끝에 고정 (사용자 지시 2026-10-22) */}
+                    <small className="me-medal-meta"><span>{at ? fmtDate(at) : pick(m.m, locale)}</span>{coated(id) && <em className="me-medal-coat">{t("코팅된 훈장")}</em>}</small>
+                    </button>
                   </li>
                 );
               })}
             </ul>
+  );
+
+  const groups = useMemo(() => {
+    if (!idx) return [];
+    return idx.groups.map((g) => {
+      // 암호화된(숨김) 훈장 탭은 수집 수에서 빠지는 훈장뿐이라 수집 기준으로 세면 0 / 0 — 그 탭만 실제 개수로 (사용자 지적 2026-10-22)
+      const counted = g.id === "hiddenMedal" ? (id: string) => !coated(id) : countedMedal;
+      const all = Object.entries(idx.medals).filter(([id, m]) => m.g === g.id && (got.has(id) || counted(id)));
+      // 얻은 수도 '전체'와 같은 기준(게임 수집 수 — 숨김·금장 제외). 금장까지 세서 에피소드 훈장이 66 / 63 이 됐다 (사용자 지적 2026-10-22)
+      const mine = all.filter(([id]) => got.has(id) && counted(id));
+      // 얻었는지와 상관없이 훈장 순서대로 (사용자 지시 2026-10-22 "못 얻은 걸 맨 뒤로 보내지 말고") — id 의 숫자까지 순서대로.
+      // 못 얻은 훈장은 흐리게(전체), 거르기를 고르면 그쪽만
+      const list = all.filter(([id]) => show === "all" || (show === "got") === got.has(id)).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
+      // 이벤트·원정 훈장은 세트(이벤트)별 섹션 — 세트에 없는 훈장은 맨 끝 '기타'
+      const inSet = new Set((g.sets ?? []).flatMap((x) => x.ids));
+      const shown = new Map(list);
+      const sets = g.sets ? [
+        ...g.sets.map((x) => ({ id: x.id, name: pick(x.n, locale), list: x.ids.filter((id) => shown.has(id)).map((id) => [id, shown.get(id)!] as [string, typeof idx.medals[string]]),
+          mine: x.ids.filter((id) => got.has(id) && counted(id)).length, total: x.ids.filter(counted).length })),
+        { id: "etc", name: t("기타"), list: list.filter(([id]) => !inSet.has(id)), mine: 0, total: 0 },
+      ].filter((x) => x.list.length > 0) : null;
+      return { id: g.id, name: pick(g.n, locale), mine: mine.length, total: all.filter(([id]) => counted(id)).length, list, sets, hidden: g.id === "hiddenMedal" };
+    }).filter((g) => g.list.length > 0 || g.total > 0);
+  }, [idx, got, locale, t, show]);
+  return (
+    <ModalWindow label={t("훈장")} className="operator-modal me-collect-modal" onClose={onClose}>
+      <div className="me-collect">
+        <div className="me-collect-head">
+          <p className="me-note">{!medalList ? t("목록은 다시 동기화하면 보입니다.") : t("얻은 훈장 {n}개", { n: medalList.filter(([id]) => countedMedal(id)).length })}</p>
+          {/* 드롭다운으로 (사용자 지시 2026-10-22) */}
+          <Dropdown ariaLabel={t("훈장 보기")} label={t(show === "got" ? "보유만" : show === "not" ? "미보유만" : "전체")} selected={[show]}
+            items={[{ value: "all", label: t("전체") }, { value: "got", label: t("보유만") }, { value: "not", label: t("미보유만") }]}
+            onPick={(v) => setShow(v as "all" | "got" | "not")} />
+        </div>
+        {!idx && <p className="me-note">{failed ? t("훈장 정보를 불러오지 못했습니다.") : t("불러오는 중…")}</p>}
+        {groups.length > 1 && (
+          <div className="me-seg me-skin-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected={!tab} className={!tab ? "selected" : ""} onClick={() => setTab(null)}>{t("전체")} <small>{groups.reduce((a, g) => a + (g.hidden ? 0 : g.mine), 0)} / {groups.reduce((a, g) => a + (g.hidden ? 0 : g.total), 0)}</small></button>
+            {groups.map((g) => (
+              <button key={g.id} type="button" role="tab" aria-selected={tab === g.id} className={tab === g.id ? "selected" : ""} onClick={() => setTab(g.id)}>{g.name} <small>{g.mine} / {g.total}</small></button>
+            ))}
+          </div>
+        )}
+        {groups.filter((g) => !tab || g.id === tab).map((g) => (
+          <section key={g.id} className="me-collect-group">
+            <h4>{g.name} <small>{g.mine} / {g.total}</small></h4>
+            {g.sets ? g.sets.map((x) => (
+              <div key={x.id} className="me-medal-set">
+                <h5>{x.name}{x.total > 0 && <small>{x.mine} / {x.total}</small>}</h5>
+                {medalGrid(x.list)}
+              </div>
+            )) : medalGrid(g.list)}
           </section>
         ))}
       </div>
+      {open && idx?.medals[open] && (() => {
+        const m = idx.medals[open], at = got.get(open);
+        const group = idx.groups.find((g) => g.id === m.g);
+        return (
+          <ModalWindow label={pick(m.n, locale)} className="operator-modal me-medal-modal" onClose={() => setOpen(null)}>
+            <div className="me-medal-detail">
+              <img src={asset(`/medals/icon/${open}.webp`)} alt="" width={96} height={96} className={at ? undefined : "off"} />
+              <div>
+                <span className="me-medal-kicker">{group ? pick(group.n, locale) : ""}{m.r ? ` · ${m.r}` : ""}</span>
+                <h3>{pick(m.n, locale)}{coated(open) && <em className="me-medal-coat">{t("코팅된 훈장")}</em>}</h3>
+                <p className="me-medal-got">{at ? t("{date} 획득", { date: fmtDate(at) }) : t("아직 얻지 못함")}</p>
+                {pick(m.m, locale) && <p><b>{t("얻는 법")}</b> {pick(m.m, locale)}</p>}
+                {desc?.[open] && <p className="me-medal-desc">{desc[open]}</p>}
+              </div>
+            </div>
+          </ModalWindow>
+        );
+      })()}
     </ModalWindow>
   );
 }

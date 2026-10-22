@@ -8,6 +8,7 @@ Usage: python3 scripts/build-collect.py [--no-icons]
   public/skins/owned-index.json  — { 스킨id: {c: 오퍼id, p: 그림 이름(skin/full/<p>.webp), n: {ko,en,ja}, g: {ko,en,ja} 브랜드(없으면 비움)} }
                                     기본 복장(#1·#2, id 에 '@' 없음)은 뺀다 — 계정 profile.skinIds 와 같은 범위
   public/medals/index.json       — { groups: [{id, n:{…}}…(게임 순서)], medals: { 훈장id: {g, n:{…}, m:{…} 얻는 법, r: 등급} } }
+  public/medals/desc.<ko|en|ja>.json — { 훈장id: 설명 } (상세 창을 열 때만)
   public/medals/icon/<id>.webp   — 훈장 아이콘 96px. 출처 fexli/ArknightsResource medal/<id>.png (게임 클라이언트 추출본,
                                     2026-10 기준 갱신 중). 이미 받은 건 건너뛴다. 못 받은 건 끝에 적는다 (화면은 아이콘 없이 이름만)
 한·영·일 이름은 각 서버 표의 공식 번역, 없으면 한국어.
@@ -15,6 +16,7 @@ Usage: python3 scripts/build-collect.py [--no-icons]
 import io
 import json
 import os
+import re
 import sys
 import urllib.parse
 import urllib.request
@@ -71,8 +73,57 @@ medal = {loc: load(srv, "medal_table") for loc, srv in SERVERS.items()}
 mlist = {loc: {m["medalId"]: m for m in (t.get("medalList") or [])} for loc, t in medal.items()}
 types = medal["ko"].get("medalTypeData") or {}
 groups = sorted(types.values(), key=lambda g: g.get("sortId", 0))
-group_out = [{"id": g["medalGroupId"], "n": by_locale(lambda loc: ((medal[loc].get("medalTypeData") or {}).get(g["medalGroupId"]) or {}).get("medalName"))}
-             for g in groups]
+def sets_of(gid):
+    """이벤트·원정 훈장의 세트(이벤트별 묶음, groupData) — 이벤트별 섹션 (사용자 요청 2026-10-22). 게임 표 순서 그대로"""
+    sets = ((medal["ko"].get("medalTypeData") or {}).get(gid) or {}).get("groupData") or []
+    loc_sets = {loc: {x["groupId"]: x for x in (((medal[loc].get("medalTypeData") or {}).get(gid) or {}).get("groupData") or [])} for loc in SERVERS}
+    return [{"id": x["groupId"], "n": by_locale(lambda loc: (loc_sets[loc].get(x["groupId"]) or {}).get("groupName")), "ids": x.get("medalId") or []} for x in sets]
+
+
+acts = {loc: load(srv, "activity_table").get("basicInfo", {}) for loc, srv in SERVERS.items()}
+
+
+def act_name(loc, key):
+    """세트 없는 이벤트 훈장의 이벤트 이름 — medal_activity_<key> → 이벤트 표(actXXX). 사이드 이벤트(10d0 → act10d5)는 같은 번호의 첫 이벤트"""
+    a = acts[loc]
+    for cand in (key, f"act{key}"):
+        if cand in a:
+            return a[cand].get("name")
+    m = re.match(r"^(\d+)d\d+$", key)
+    if m:
+        for aid in sorted(a):
+            if re.match(rf"^act{m.group(1)}d\d", aid):
+                return a[aid].get("name")
+    return None
+
+
+def extra_sets(gid, covered):
+    """게임 표 세트(groupData)에 안 든 훈장 — 기타로 두지 않고 제 이벤트·테마로 (사용자 지적 2026-10-22 "다 각각 테마가 있는 애들")"""
+    rest = [mid for mid in medal_out if medal_out[mid]["g"] == gid and mid not in covered]
+    by = {}
+    for mid in rest:
+        by.setdefault(re.sub(r"_\d+$", "", mid), []).append(mid)
+    out = []
+    for prefix, ids in by.items():
+        key = prefix.replace("medal_activity_", "")
+        first = medal_out[sorted(ids)[0]]["n"]
+        rune = re.match(r"^(\d+)(rune|crisisv2)$", key)
+
+        def nm(loc):
+            if rune:   # 위기협약 시즌 — 작전명(첫 훈장 이름의 첫 낱말)
+                word = (first.get(loc) or first.get("ko") or "").split(" ")[0]
+                return f"{CC_NAME[loc]} · {word}" if word else CC_NAME[loc]
+            return act_name(loc, key) or (first.get(loc) or first.get("ko"))
+        n = by_locale(nm)
+        same = next((x for x in out if x["n"].get("ko") == n.get("ko")), None)   # 같은 이벤트로 풀린 접두어끼리는 한 섹션
+        if same:
+            same["ids"] = sorted(same["ids"] + ids)
+        else:
+            out.append({"id": prefix, "n": n, "ids": sorted(ids)})
+    return out
+
+
+CC_NAME = {"ko": "위기협약", "en": "Contingency Contract", "ja": "危機契約"}
 medal_out = {}
 for mid in sorted(set().union(*[set(t) for t in mlist.values()])):
     base = next(t[mid] for t in (mlist["ko"], mlist["en"], mlist["ja"]) if mid in t)
@@ -82,10 +133,54 @@ for mid in sorted(set().union(*[set(t) for t in mlist.values()])):
         "m": by_locale(lambda loc: (mlist[loc].get(mid) or {}).get("getMethod")),
         "r": base.get("rarity"),
     }
+group_out = []
+for g in groups:
+    item = {"id": g["medalGroupId"], "n": by_locale(lambda loc: ((medal[loc].get("medalTypeData") or {}).get(g["medalGroupId"]) or {}).get("medalName"))}
+    if g["medalGroupId"] == "rogueMedal":   # 게임 이름은 '원정 훈장' — 사이트에선 '통합전략 훈장' (사용자 지시 2026-10-22)
+        item["n"]["ko"] = "통합전략 훈장"
+    sets = sets_of(g["medalGroupId"])
+    if g["medalGroupId"] == "rogueMedal":
+        # 통합전략 — 세트에 빠진 훈장(코팅판 등)은 id 의 테마 번호로 그 세트에 (medal_rogue_3_xx → medalGroupRogue03, sandbox_1 → Sandbox01)
+        by_id = {x["id"]: x for x in sets}
+        for mid in [m for m in medal_out if medal_out[m]["g"] == "rogueMedal" and not any(m in x["ids"] for x in sets)]:
+            mm = re.match(r"^medal_(rogue|sandbox)_(\d+)_", mid)
+            target = by_id.get(f"medalGroup{'Rogue' if mm and mm.group(1) == 'rogue' else 'Sandbox'}{int(mm.group(2)):02d}") if mm else None
+            if target:
+                target["ids"].append(mid)
+    if g["medalGroupId"] == "stageMedal":
+        # 에피소드 훈장은 에피소드별 (사용자 지시 2026-10-22) — 조건 스테이지(main_NN-·tough_NN-)의 가장 큰 에피소드 번호로.
+        # 스테이지 조건이 없는 훈장(소생·주간 등)은 '그 밖'
+        EP = {"ko": "에피소드 {n}", "en": "Episode {n}", "ja": "エピソード{n}"}
+        ETC = {"ko": "그 밖", "en": "Other", "ja": "その他"}
+        by_ep = {}
+        for mid in [m for m in medal_out if medal_out[m]["g"] == "stageMedal"]:
+            params = " ".join((mlist["ko"].get(mid) or {}).get("unlockParam") or [])
+            # main_NN-·tough_NN-(하드)·hard_NN-(익스트림)·main_NN(모의 훈련 점수) 다 에피소드 번호로
+            eps = [int(x) for x in re.findall(r"(?:main|tough|hard)_(\d+)(?:-|\b)", params)]
+            by_ep.setdefault(max(eps) if eps else -1, []).append(mid)
+        sets = [{"id": f"ep{ep}", "n": dict((ETC if ep < 0 else {k: v.format(n=ep) for k, v in EP.items()})), "ids": sorted(ids)}
+                for ep, ids in sorted(by_ep.items(), key=lambda kv: (kv[0] < 0, kv[0]))]
+    if g["medalGroupId"] == "activityMedal":
+        sets = sets + extra_sets("activityMedal", {x for st in sets for x in st["ids"]} | {m for m in medal_out if "recalrune" in m})
+    if sets:
+        item["sets"] = sets
+    group_out.append(item)
+# 홀로그램 매트릭스(recalrune) 훈장은 따로 탭 — 게임 표에선 이벤트 훈장이지만 세트가 없어 '기타'에 섞였다 (사용자 지시 2026-10-22).
+# 이벤트 훈장 바로 뒤에 둔다
+RECALRUNE = {"id": "recalruneMedal", "n": {"ko": "홀로그램 매트릭스 훈장", "en": "Hologram Matrix Medals", "ja": "ホログラムマトリックス勲章"}}
+for mid, m in medal_out.items():
+    if "recalrune" in mid:
+        m["g"] = RECALRUNE["id"]
+at = next((i for i, g in enumerate(group_out) if g["id"] == "activityMedal"), len(group_out) - 1)
+group_out.insert(at + 1, RECALRUNE)
 os.makedirs(f"{REPO}/public/medals/icon", exist_ok=True)
 json.dump({"groups": group_out, "medals": medal_out}, open(f"{REPO}/public/medals/index.json", "w", encoding="utf-8"),
           ensure_ascii=False, separators=(",", ":"))
 print(f"medals/index.json: 묶음 {len(group_out)} · 훈장 {len(medal_out)}개")
+# 설명은 언어별 따로 — 훈장을 누를 때만 받는다 (목록 파일에 같이 넣으니 2MB 가 됐다, 2026-10-22)
+for loc in ("ko", "en", "ja"):
+    desc = {mid: (mlist[loc].get(mid) or mlist["ko"].get(mid) or {}).get("description") for mid in medal_out}
+    json.dump({k: v for k, v in desc.items() if v}, open(f"{REPO}/public/medals/desc.{loc}.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 
 if "--no-icons" in sys.argv:
     sys.exit(0)

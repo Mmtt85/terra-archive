@@ -28567,12 +28567,35 @@ html.dark .me-tile-art { opacity: .3; }
 .me-skin-grid b, .me-skin-grid small { padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .me-skin-grid b { font-size: 12px; }
 .me-skin-grid small { font-size: 11px; color: var(--muted); }
-.me-medal-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-.me-medal-grid li { display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--line); background: var(--bg-faint); }
+/* 한 줄 네 개, 이름은 줄을 넘겨 다 보이게 (사용자 지시 2026-10-22) */
+.me-medal-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 640px) { .me-medal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.me-medal-grid li { display: flex; }
+.me-medal-grid li > button { flex: 1; min-width: 0; display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--line); background: var(--bg-faint); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.me-medal-grid li > button:hover { border-color: var(--border-strong); }
 .me-medal-grid img { grid-row: span 2; width: 44px; height: 44px; object-fit: contain; }
-.me-medal-grid b { font-size: 12px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me-medal-grid b { font-size: 12px; line-height: 1.3; overflow-wrap: anywhere; }
 .me-medal-grid small { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .me-medal-grid li.off { opacity: .45; }
+/* 이벤트·원정 훈장 세트(이벤트별) 섹션 */
+.me-medal-set + .me-medal-set { margin-top: 12px; }
+.me-medal-set h5 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--ink); }
+.me-medal-set h5 small { margin-left: 6px; font-weight: 500; color: var(--muted); }
+.me-medal-grid small.me-medal-meta { display: flex; align-items: center; gap: 6px; }
+.me-medal-meta > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me-medal-meta .me-medal-coat { flex: none; margin-left: auto; }
+.me-medal-coat { display: inline-block; margin-left: 6px; padding: 0 5px; border: 1px solid var(--lime-line); color: var(--lime-ink); font-size: 10px; font-style: normal; font-weight: 600; line-height: 1.5; vertical-align: 1px; }
+/* 훈장 상세 */
+.me-medal-modal { width: min(460px, calc(100vw - 32px)); }
+.me-medal-detail { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items: start; }
+.me-medal-detail img { width: 96px; height: 96px; object-fit: contain; }
+.me-medal-detail img.off { filter: grayscale(1); opacity: .5; }
+.me-medal-detail h3 { margin: 2px 0 6px; font-size: 18px; }
+.me-medal-detail p { margin: 0 0 8px; font-size: 13px; line-height: 1.55; }
+.me-medal-detail p b { margin-right: 6px; color: var(--muted); font-weight: 600; }
+.me-medal-kicker { font-size: 11px; color: var(--muted); }
+.me-medal-got { color: var(--lime-ink); font-weight: 600; }
+.me-medal-desc { color: var(--muted); white-space: pre-line; }
 .me-medal-grid li.off img { filter: grayscale(1); }
 .me-cm-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: -6px; font-size: 12px; font-weight: 600; }
 .me-cm-head .me-sort:disabled { opacity: .45; cursor: default; }
