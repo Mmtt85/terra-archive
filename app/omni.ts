@@ -25,13 +25,14 @@ import { PICK_BONUS_MAX, type PickMap } from "./omni-picks";
 import type { Operator, Tab } from "./home";
 import type { ExtraI18n, Locale, T } from "./i18n";
 
-export type OmniKind = "op" | "story" | "material" | "tag" | "rogue" | "topic" | "tab" | "enemy";
+export type OmniKind = "op" | "story" | "material" | "tag" | "rogue" | "topic" | "tab" | "enemy" | "stage";
 
 export type OmniTarget =
   | { kind: "tab"; tab: Tab }
   | { kind: "op"; id: string }
   | { kind: "story"; id: string }
   | { kind: "enemy"; id: string }
+  | { kind: "stage"; id: string }
   | { kind: "rogue"; topic: string; goto?: LensGoto }
   | { kind: "recruit"; tags: string[] }
   | { kind: "farm"; item: string };
@@ -61,7 +62,7 @@ const ALIAS_PENALTY = 8;     // 별명·코드로 잡힌 건 이름으로 잡힌
 const MIN_SCORE = 18;        // 이 밑은 잡음 (한 글자 검색어가 전 항목에 걸리는 것 방지)
 const DECIDE_GAP = 30;       // 1위-2위 점수차가 이 이상이면 되묻지 않고 바로 이동
 // 종류별 미세 가중 — 같은 점수면 사람이 먼저 떠올릴 법한 쪽을 위로
-const KIND_BONUS: Record<OmniKind, number> = { op: 3, tab: 2, topic: 2, story: 2, material: 1, tag: 0, rogue: 0, enemy: 0 };
+const KIND_BONUS: Record<OmniKind, number> = { op: 3, tab: 2, topic: 2, story: 2, material: 1, tag: 0, rogue: 0, enemy: 0, stage: 1 };
 
 // 검색 정규화 + **장식 문자 제거** — 통합전략 항목 이름은 《글로리어스 카시미어》·'글로리 팩'처럼
 // 괄호·따옴표를 달고 있어서, 그대로 두면 "글로리"가 접두로 안 걸린다 (사용자 리포트 2026-07-26).
@@ -305,6 +306,25 @@ export function enemyOmniItems(names: EnemyNames, locale: Locale, t: T): OmniIte
       target: topic
         ? { kind: "rogue", topic, goto: { page: "rogue", topic, view: "enemy", modal: { type: "enemy", id } } }
         : { kind: "enemy", id },
+    });
+  });
+  return items;
+}
+
+/** 작전 — 작전 이름표(stage-names.json: 메인·이벤트·하드 등 작전 도감 전부, 세 언어 이름)를 받아 항목으로 (사용자 제보 2026-10-22
+ *  "H17-4 검색했는데 아무것도 안 나온다"). 코드(H17-4)와 붙여 쓴 코드(h174)·이름을 키로. 누르면 작전 도감 #st-<id> */
+export type StageNames = { ids: string[]; code: string[]; ko: string[]; en: string[]; ja: string[]; zone: string[] };
+export function stageOmniItems(names: StageNames, locale: Locale, t: T): OmniItem[] {
+  const items: OmniItem[] = [];
+  names.ids.forEach((id, i) => {
+    const ko = names.ko[i], code = names.code[i];
+    const nm = (locale === "ko" ? ko : names[locale][i]) || ko;
+    if (!code && !nm) return;
+    items.push({
+      uid: `stage:${id}`, kind: "stage", name: code ? `${code} ${nm}` : nm,
+      sub: [names.zone[i], t("작전")].filter(Boolean).join(" · "),
+      keys: keysOf(code, code.replace(/[-\s]/g, ""), nm, ...words(nm), ko, names.en[i], names.ja[i]),
+      target: { kind: "stage", id },
     });
   });
   return items;

@@ -681,3 +681,6 @@ for loc in ("en", "ja"):
 n_enemy = sum(1 for e in by_loc["ko"]["stages"] if e.get("e"))
 print(f"등장 적이 붙은 작전: {n_enemy}/{len(stages)} · 도면 보유 {sum(1 for e in by_loc['ko']['stages'] if e.get('map'))}")
 print("완료 — app/data/stages*.json")
+# 만능검색용 작전 이름표 (2026-10-22)
+import subprocess
+subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "build-stage-names.py")], check=True)

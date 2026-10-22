@@ -2202,6 +2202,12 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         history.replaceState(null, "", `${tabPath("enemy")}#en-${target.id}`);
         window.dispatchEvent(new Event("hashchange"));
         break;
+      case "stage":
+        // 작전 도감 상세도 해시로 연다 (적과 같은 방식 — stages.tsx useHashSync 가 hashchange 를 받는다, 2026-10-22 작전 검색)
+        switchTab("stage");
+        history.replaceState(null, "", `${tabPath("stage")}#st-${target.id}`);
+        window.dispatchEvent(new Event("hashchange"));
+        break;
       case "rogue":
         // 세부 항목(유물·조우…)은 스샷 레이더와 같은 우편함으로 넘긴다 — rogue.tsx가 소비
         if (target.goto) { try { sessionStorage.setItem("ta:lens-handoff", JSON.stringify(target.goto)); } catch { /* ignore */ } }

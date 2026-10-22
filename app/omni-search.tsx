@@ -33,7 +33,7 @@ import { isNewFeature } from "./whats-new";
 import type { Operator } from "./home";
 
 // 이미지가 없는 종류의 아이콘 — 햄버거 탭 아이콘과 같은 글리프를 써서 어디로 가는지 읽히게
-const KIND_GLYPH: Record<string, string> = { story: "✦", tag: "◎", rogue: "❖", topic: "❖", tab: "◇", enemy: "☠" };
+const KIND_GLYPH: Record<string, string> = { story: "✦", tag: "◎", rogue: "❖", topic: "❖", tab: "◇", enemy: "☠", stage: "▦" };
 const LEARNED_MIN = 3;   // 이 표수 이상이면 '자주 선택' 표시 (내 선택 1회 = 3표)
 
 // 색인·검색 엔진(omni.ts)은 무겁다 — farm.tsx → costs.json(573KB)·story.tsx·recruit까지 끌고 온다. 그래서
@@ -49,6 +49,11 @@ const loadEngine = (): Promise<Engine> =>
 let enemyNamesP: Promise<import("./omni").EnemyNames | null> | null = null;
 const loadEnemyNames = () => (enemyNamesP ??= import("./data/enemy-names.json")
   .then((m) => m.default as import("./omni").EnemyNames).catch(() => { enemyNamesP = null; return null; }));
+
+// 작전 이름표(stage-names.json, 약 230KB) — 적 이름표와 같이 패널을 열 때 한 번 받는다 (2026-10-22 작전 검색)
+let stageNamesP: Promise<import("./omni").StageNames | null> | null = null;
+const loadStageNames = () => (stageNamesP ??= import("./data/stage-names.json")
+  .then((m) => m.default as import("./omni").StageNames).catch(() => { stageNamesP = null; return null; }));
 
 export default function OmniSearch({ roster, extra, onGo }: {
   roster: Operator[];
@@ -70,6 +75,7 @@ export default function OmniSearch({ roster, extra, onGo }: {
   const [msg, setMsg] = useState<string | null>(null);
   const [rogueItems, setRogueItems] = useState<OmniItem[] | null>(null);  // 지연 로드된 통합전략 항목
   const [enemyNames, setEnemyNames] = useState<import("./omni").EnemyNames | null>(null);
+  const [stageNames, setStageNames] = useState<import("./omni").StageNames | null>(null);
   // 전역 집계(사람들의 표) — 학습은 전부 DB에 쌓이고, 여기선 세션 1회 받아 온 지도를 읽는다.
   // tick은 내 표를 낙관적으로 얹은 뒤 다시 그리기 위한 신호 (지도 자체는 omni-picks 모듈 소유).
   const [crowd, setCrowd] = useState<PickIndex>({});
@@ -82,8 +88,9 @@ export default function OmniSearch({ roster, extra, onGo }: {
   // 색인은 패널을 열고 엔진이 온 뒤에 만든다 (헤더만 있는 상태에선 아무 비용도 들이지 않는다)
   const base = useMemo(
     () => (open && engine ? engine.buildOmniIndex({ roster, locale, t, extra })
-      .concat(enemyNames ? engine.enemyOmniItems(enemyNames, locale, t) : []) : []),
-    [open, engine, roster, locale, t, extra, enemyNames]);
+      .concat(enemyNames ? engine.enemyOmniItems(enemyNames, locale, t) : [])
+      .concat(stageNames ? engine.stageOmniItems(stageNames, locale, t) : []) : []),
+    [open, engine, roster, locale, t, extra, enemyNames, stageNames]);
   const items = useMemo(() => (rogueItems ? base.concat(rogueItems) : base), [base, rogueItems]);
   const picks = useMemo(() => picksFor(normSearch(term), crowd), [term, crowd]);
   // 선택 학습으로 익힌 은어 사전 ("록라" → 통합전략) — 내장 사전 위에 얹힌다
@@ -96,6 +103,7 @@ export default function OmniSearch({ roster, extra, onGo }: {
     loggedRef.current = false;
     void loadAnswers().then(setAnswers);
     void loadEnemyNames().then((n) => { if (n) setEnemyNames(n); });
+    void loadStageNames().then((n) => { if (n) setStageNames(n); });
     warm();
     setOpen(true);
     setCrowd({ ...crowdPicks() });                          // 이미 받아 둔 집계 즉시 반영
@@ -297,7 +305,8 @@ export default function OmniSearch({ roster, extra, onGo }: {
       }
     }
     const light = engine ? base : eng.buildOmniIndex({ roster, locale, t, extra })
-      .concat(enemyNames ? eng.enemyOmniItems(enemyNames, locale, t) : []);
+      .concat(enemyNames ? eng.enemyOmniItems(enemyNames, locale, t) : [])
+      .concat(stageNames ? eng.stageOmniItems(stageNames, locale, t) : []);
     const here = eng.currentRogueTopic();             // 통합전략 가이드를 보는 중이면 그 테마를 사전확률로
     const now = picksFor(normSearch(query), crowd);
     const list = eng.searchSmart(rogueItems ? light.concat(rogueItems) : light, query, { picks: now, hints });
