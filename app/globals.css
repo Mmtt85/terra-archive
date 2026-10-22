@@ -19032,7 +19032,8 @@ main.site-main > .site-header {
 .term-modal .term-ops { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0 10px; }
 .term-modal .term-ops img { width: 34px; height: 34px; }
 .term-modal .term-flow { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
-.term-modal .term-flow h4 { margin: 0 0 8px; font-size: 13px; }
+.term-modal .term-flow h4 { margin: 10px 0 6px; font-size: 13px; }
+.term-modal .term-flow-kicker { margin: 0; font-size: 11px; color: var(--muted); }
 .term-modal .term-flow ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 
 /* ── 다단계 시스템 카드(붕괴 패러다임) — 카드 1장 안 단계별 [섬네일+이름+효과] 행 ── */

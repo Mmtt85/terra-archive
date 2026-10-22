@@ -1,7 +1,7 @@
 "use client";
 
 import { NewBadge } from "./new-badge";
-import { lazy, memo, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, lazy, memo, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
 import { Dropdown } from "./dropdown";
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
@@ -2748,16 +2748,90 @@ function TermText({ text, refs, onTerm }: { text: string; refs?: [string, string
       : seg;
   })}</>;
 }
-function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose, flows, opMap }: {
+/** 포인트 하나가 이 편성에서 어떻게 오가는지 — 생성(직접·다른 포인트에서 전환돼 온 몫)·전환(이 포인트를 원료로 다른 포인트로)·사용.
+ *  원장(plan.flows)은 '바뀐 뒤 포인트' 기준이라, 감지 정보 같은 원료는 그 포인트 줄들의 via 생성원에서 모은다 (같은 생성원은 한 번만) */
+function tokenFlowParts(token: string, flows: TokenFlow[], opMap?: Map<string, InfraOp>) {
+  const skillOf = (opId: string, pick: (s: InfraSkill) => boolean) => opMap?.get(opId)?.skills.find(pick)?.name ?? null;
+  const gens: { opId: string; at: string; amount: number; via?: string; skill: string | null }[] = [];
+  const seen = new Set<string>();
+  for (const f of flows) for (const g of f.generators) {
+    const own = f.token === token ? g.via ?? token : g.via === token ? token : null;   // 이 줄이 만든 원래 포인트
+    if (!own) continue;
+    const key = `${g.opId}|${g.at}|${f.token === token ? `via:${g.via ?? ""}` : "src"}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    // 원료 쪽에서 보면 전환 전 양(÷ 전환 비율), 결과 쪽에서 보면 들어온 양 그대로
+    gens.push(f.token === token
+      ? { opId: g.opId, at: g.at, amount: g.amount, via: g.via, skill: skillOf(g.opId, (s) => s.tokenGen.some((x) => x.token === own)) }
+      : { opId: g.opId, at: g.at, amount: g.amount / (g.convRate || 1), skill: skillOf(g.opId, (s) => s.tokenGen.some((x) => x.token === token)) });
+  }
+  const convs = flows.filter((f) => f.token !== token && f.converters.some((c) => c.from === token)).map((f) => ({
+    to: f.token,
+    total: f.generators.filter((g) => g.via === token).reduce((a, g) => a + g.amount, 0),
+    ops: f.converters.filter((c) => c.from === token).map((c) => ({ opId: c.opId, skill: skillOf(c.opId, (s) => s.convert?.from === token) })),
+  }));
+  const uses = flows.filter((f) => f.token === token).flatMap((f) => f.consumers)
+    .map((u) => ({ ...u, skill: skillOf(u.opId, (s) => s.tokenUse.some((x) => x.token === token)) }));
+  return { gens, convs, uses };
+}
+function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose, plan, opMap }: {
   termKey: string; presentIds: Set<string>; onNavigate: (k: string) => void;
   onShowOperator?: (id: string) => void; onClose: () => void;
-  /** 편성의 토큰 원장 — 용어가 포인트(속세의 화식 등)면 누가 몇 점을 만드는지 아래에 편다 (사용자 지시 2026-10-22) */
-  flows?: TokenFlow[]; opMap?: Map<string, InfraOp>;
+  /** 지금 편성 — 용어마다 이 편성에서 주고받는 값을 아래에 편다 (사용자 지시 2026-10-22 "모든 것에 대해") */
+  plan?: Plan; opMap?: Map<string, InfraOp>;
 }) {
   const { t, locale } = useI18n();
   const term = TERMS[termKey];
   if (!term) return null;
-  const flow = flows?.find((f) => f.token === term.name && f.generators.length > 0);
+  const flows = plan?.flows;
+  const flowParts = flows ? tokenFlowParts(term.name, flows, opMap) : null;
+  const hasFlow = !!flowParts && (flowParts.gens.length > 0 || flowParts.convs.length > 0 || flowParts.uses.length > 0);
+  // 포인트가 아닌 용어(진영·스킬 이름·꿈나라 같은 스택) — 명단 오퍼가 지금 어디 있고, 원장에서 무엇을 주고받는지
+  const placesOf = (id: string): string[] => !plan ? [] : LAYOUT.flatMap((cell) => {
+    const shifts = plan.assignments[cell.key] ?? [];
+    const hit = shifts.map((team, i) => (team.includes(id) ? i : -1)).filter((i) => i >= 0);
+    if (!hit.length) return [];
+    return [`${t(cell.label)}${shifts.length > 1 && hit.length === 1 ? (hit[0] === 0 ? ` ${t("A조")}` : ` ${t("B조")}`) : ""}`];
+  });
+  const tradeOf = (id: string): string[] => {
+    if (!flows) return [];
+    const out: string[] = [], seen = new Set<string>();
+    for (const f of flows) for (const g of f.generators) {
+      if (g.opId !== id) continue;
+      const own = g.via ?? f.token;
+      if (seen.has(`g${own}`)) continue;
+      seen.add(`g${own}`);
+      out.push(t("{token} +{n} 생성", { token: tokenName(locale, own), n: num(g.via ? g.amount / (g.convRate || 1) : g.amount) }));
+    }
+    for (const f of flows) for (const u of f.consumers) if (u.opId === id) out.push(t("{token} 받아 +{n}{unit}", { token: tokenName(locale, f.token), n: num(u.gain), unit: u.percent ? "%" : "" }));
+    // 원장에 없는 생성 — 원장은 A조 배치·쓰는 오퍼가 있는 포인트만 센다. B조에만 있거나(야하타 우미리 열정 등) 받는 오퍼가
+    // 없으면 스킬 추정치로 적고 왜 효과가 없는지 붙인다 (사용자 지적 2026-10-22 "야하타 우미리의 열정은?")
+    const op = opMap?.get(id);
+    const rooms = new Set(LAYOUT.filter((cell) => (plan?.assignments[cell.key] ?? []).some((team) => team.includes(id))).map((cell) => cell.room));
+    for (const skill of op?.skills ?? []) {
+      if (!rooms.has(skill.room)) continue;
+      for (const g of skill.tokenGen) {
+        if (seen.has(`g${g.token}`)) continue;
+        seen.add(`g${g.token}`);
+        const used = flows.some((f) => f.token === g.token && f.consumers.length > 0);
+        out.push(`${t("{token} +{n} 생성", { token: tokenName(locale, g.token), n: num(genEstimate(g)) })} (${used ? t("A조에 없어 원장 밖") : t("받는 오퍼가 배치되지 않음")})`);
+      }
+    }
+    return out;
+  };
+  const members = !hasFlow && plan ? (term.ops ?? []).map((id) => ({ id, places: placesOf(id) })).filter((m) => m.places.length > 0) : [];
+  const num = (v: number, d = 2) => String(Number(v.toFixed(d)));
+  const row = (key: string, opId: string, at: string | null, skill: string | null, sub: string | null, value: string) => {
+    const op = opMap?.get(opId);
+    return (
+      <li key={key} className="flow-op">
+        {op ? <img src={op.image} alt={op.name} width={32} height={32} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+          onClick={(ev) => { ev.stopPropagation(); onShowOperator?.(op.id); }} /> : <span />}
+        <span className="flow-op-txt"><b>{op?.name ?? opId}{skill && <> · {skill}</>}</b>{at && <i>{t(at)}</i>}{sub && <small>{sub}</small>}</span>
+        <em>{value}</em>
+      </li>
+    );
+  };
   return (
     <ModalWindow label={term.name} className="operator-modal term-modal" onClose={onClose}>
         <header className="term-head">
@@ -2784,24 +2858,34 @@ function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose, f
             }
             return <p key={i} className="term-line"><TermText text={line} refs={term.refs} onTerm={onNavigate} /></p>;
           })}
-          {/* 생성량은 시너지 트리와 같은 원장(A조 기준) — 같은 사람이 두 갈래로 만들면 줄이 둘 */}
-          {flow && (
+          {/* 포인트 용어면 이 편성에서 주고받는 것 전부 — 생성·전환·사용, 스킬 이름과 정확한 값 (사용자 지시 2026-10-22
+              "주고받는 모든 것에 대한 정확한 값"). 값은 시너지 트리와 같은 원장(A조 기준). 감지 정보처럼 바로 다른 포인트로
+              바뀌는 원료는 원장에 제 줄이 없어, 바뀐 포인트 줄의 생성원(via)에서 거꾸로 모은다 */}
+          {members.length > 0 && (
             <div className="term-flow">
-              <h4>{t("이 편성에서 생성 (A조 기준) — 합계 {n}점", { n: Math.round(flow.generators.reduce((a, g) => a + g.amount, 0)) })}</h4>
-              <ul>
-                {flow.generators.map((gen, index) => {
-                  const op = opMap?.get(gen.opId);
-                  return (
-                    <li key={`${gen.opId}-${index}`} className="flow-op">
-                      {op ? <img src={op.image} alt={op.name} width={32} height={32} loading="lazy" className={onShowOperator ? "op-link" : undefined}
-                        onClick={(ev) => { ev.stopPropagation(); onShowOperator?.(op.id); }} /> : <span />}
-                      <span className="flow-op-txt"><b>{op?.name ?? gen.opId}</b><i>{t(gen.at)}</i>
-                        {gen.via && <small>{t("{token}에서 전환", { token: tokenName(locale, gen.via) })}</small>}</span>
-                      <em>+{Math.round(gen.amount)}</em>
-                    </li>
-                  );
-                })}
-              </ul>
+              <p className="term-flow-kicker">{t("이 편성에서 (A조 기준)")}</p>
+              <h4>{t("지금 배치 {n}명 · 명단 {m}명", { n: members.length, m: term.ops?.length ?? 0 })}</h4>
+              <ul>{members.map((m) => row(`m${m.id}`, m.id, m.places.join(" · "), null, tradeOf(m.id).join(" · ") || null, ""))}</ul>
+            </div>
+          )}
+          {hasFlow && flowParts && (
+            <div className="term-flow">
+              <p className="term-flow-kicker">{t("이 편성에서 (A조 기준)")}</p>
+              {flowParts.gens.length > 0 && (<>
+                <h4>{t("생성 — 합계 {n}점", { n: num(flowParts.gens.reduce((a, g) => a + g.amount, 0)) })}</h4>
+                <ul>{flowParts.gens.map((g, i) => row(`g${i}`, g.opId, g.at, g.skill, g.via ? t("{token}에서 전환", { token: tokenName(locale, g.via) }) : null, `+${num(g.amount)}`))}</ul>
+              </>)}
+              {flowParts.convs.map((c) => (
+                <Fragment key={`c${c.to}`}>
+                  <h4>{t("{token}(으)로 전환 — {n}점", { token: tokenName(locale, c.to), n: num(c.total) })}</h4>
+                  <ul>{c.ops.map((cv, i) => row(`c${c.to}${i}`, cv.opId, null, cv.skill, null, `→ ${num(c.total)}`))}</ul>
+                </Fragment>
+              ))}
+              {flowParts.uses.length > 0 && (<>
+                <h4>{t("사용")}</h4>
+                <ul>{flowParts.uses.map((u, i) => row(`u${i}`, u.opId, u.at, u.skill,
+                  t("1점당 +{v}{unit}", { v: num(u.rate, 4), unit: u.percent ? "%" : "" }), `+${num(u.gain)}${u.percent ? "%" : ""}`))}</ul>
+              </>)}
             </div>
           )}
         </div>
@@ -3809,7 +3893,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
           ESC 전역 핸들러(z-index 최상단)와 자기-타깃 클릭 닫기가 이 팝업만 먼저 닫는다. */}
       {termOpen && (
         <TermPopup termKey={termOpen} presentIds={presentNow} onNavigate={setTermOpen}
-          onShowOperator={onShowOperator} onClose={() => setTermOpen(null)} flows={plan.flows} opMap={opMap} />
+          onShowOperator={onShowOperator} onClose={() => setTermOpen(null)} plan={plan} opMap={opMap} />
       )}
     </ModalWindow>
   );
