@@ -31848,6 +31848,10 @@ html.dark .mm-art { opacity: .25; }
 .me-sort-handle { border: 0; background: none; padding: 0; margin: 0; color: inherit; font: inherit; line-height: inherit; letter-spacing: inherit;
   text-align: left; cursor: grab; touch-action: none; }
 .me-sort-grip { margin-right: 6px; color: var(--muted); font-size: 14px; }
+/* 제목 글자는 누르면 접기(손가락), ⠿ 는 끌기(잡기) — 제목을 끌어도 옮겨진다 (2026-10-22) */
+.me-sort-handle.with-title { cursor: pointer; }
+.me-sort-handle .me-sort-grip { cursor: grab; }
+.me-sort-handle.no-sort { touch-action: auto; }
 .me-sort-handle:hover .me-sort-grip, .me-sort-handle:focus-visible .me-sort-grip { color: var(--ink); }
 .me-sort-handle:focus-visible { outline: 2px solid var(--lime-line); outline-offset: 2px; }
 .me-sorting, .me-sorting * { cursor: grabbing !important; user-select: none; }

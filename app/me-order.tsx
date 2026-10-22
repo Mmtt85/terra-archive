@@ -66,7 +66,7 @@ export function toggleMeFolded(no: string) {
 /** 접은 칸 순서 저장 — 같은 묶음 안에서 좌우로 (사용자 지시 2026-10-15) */
 export const saveDrawerOrder = (drawers: DrawerKey[]) => save({ drawers });
 
-type Handle = { onPointerDown: (e: React.PointerEvent) => void; onKeyDown: (e: React.KeyboardEvent) => void };
+type Handle = { onPointerDown: (e: React.PointerEvent) => void; onKeyDown: (e: React.KeyboardEvent) => void; takeMoved: () => boolean };
 const HandleCtx = createContext<Handle | null>(null);
 /** 이 칸 아래의 카드(창 안 카드 등)에는 손잡이가 또 생기지 않게 끊는다 */
 export function NoSortHandle({ children }: { children: React.ReactNode }) {
@@ -74,13 +74,14 @@ export function NoSortHandle({ children }: { children: React.ReactNode }) {
 }
 /** 카드 제목 줄의 손잡이 — ⠿ 와 제목 글자까지 잡는 자리 (사용자 지시 2026-10-15 "타이틀까지도 ⠿ 영역으로").
  *  끌어 놓을 수 있는 칸 밖(창 안 카드 등)에서는 제목만 그린다 */
-export function SortHandle({ children }: { children?: React.ReactNode }) {
+export function SortHandle({ children, onClick }: { children?: React.ReactNode; onClick?: () => void }) {
   const h = useContext(HandleCtx);
   const { t } = useI18n();
-  if (!h) return <>{children}</>;
+  // 제목을 그냥 누르면 onClick(카드 접기·펼치기), 6px 넘게 끌면 옮기기 (사용자 지시 2026-10-22 "제목 누르면 아코디언 열닫")
+  if (!h) return onClick ? <button type="button" className="me-sort-handle with-title no-sort" onClick={onClick}>{children}</button> : <>{children}</>;
   return (
     <button type="button" className={`me-sort-handle${children ? " with-title" : ""}`} title={t("끌어서 순서 바꾸기 (↑↓)")}
-      onPointerDown={h.onPointerDown} onKeyDown={h.onKeyDown}><span className="me-sort-grip" aria-hidden>⠿</span>{children}</button>
+      onPointerDown={h.onPointerDown} onKeyDown={h.onKeyDown} onClick={() => { if (!h.takeMoved()) onClick?.(); }}><span className="me-sort-grip" aria-hidden>⠿</span>{children}</button>
   );
 }
 
@@ -234,9 +235,11 @@ function useLiveSort<K extends string>(keys: K[], attr: string, twoD: boolean, o
 export function SortColumn({ className, blocks }: { className: string; blocks: Record<MeBlock, React.ReactNode> }) {
   const { order, custom } = useMeOrder();
   const { t } = useI18n();
-  const { ref: colRef, display, drag, start } = useLiveSort(order, "data-sort", false, (next) => save({ blocks: next }));
+  // 6px 넘게 끌어야 옮기기 — 그냥 누르면 제목 클릭(카드 접기)으로 남는다
+  const { ref: colRef, display, drag, start, takeMoved } = useLiveSort(order, "data-sort", false, (next) => save({ blocks: next }), 6);
 
   const handleOf = (key: MeBlock): Handle => ({
+    takeMoved,
     onPointerDown: (e) => start(key, e),
     onKeyDown: (e) => {
       if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;

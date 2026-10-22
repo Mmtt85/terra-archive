@@ -961,7 +961,7 @@ function Card({ no, title, aside, className, children }: { no: string; title: st
     <section className={`me-card${className ? ` ${className}` : ""}${folded ? " folded" : ""}`}>
       <header className="me-card-head">
         {/* 접기 단추는 제목 바로 오른쪽 (사용자 지시 2026-10-22) */}
-        <div><span className="section-no">{no}</span><h3 className="me-card-title"><SortHandle>{title}</SortHandle>
+        <div><span className="section-no">{no}</span><h3 className="me-card-title"><SortHandle onClick={foldable ? () => toggleMeFolded(no) : undefined}>{title}</SortHandle>
           {foldable && (
             <button type="button" className="me-fold" aria-expanded={!folded} title={folded ? t("펼치기") : t("접기")} onClick={() => toggleMeFolded(no)}>
               <span aria-hidden>▾</span>
