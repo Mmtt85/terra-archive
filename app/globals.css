@@ -34443,3 +34443,11 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .gift-who { font-size: 12px; color: var(--muted); }
 .gift-msg { font-size: 12px; color: var(--muted); }
 .gift-msg.ok { color: var(--lime-ink); font-weight: 600; }
+
+/* 인프라 방 카드 — 드론 덤 (설정에서 고른 곳의 대상 방, 2026-10-22) */
+.ship-room .drone-note { font-style: normal; color: var(--lime-ink); font-weight: 600; }
+.ship-room .drone-toggle { margin-left: auto; align-self: flex-start; flex: none;   /* 썸네일 줄 오른쪽 끝 — 썸네일 그림(42px)과 같은 크기·위아래 (사용자 지시 2026-10-22). 아바타 칸이 그림보다 2px 커서 줄 밑(flex-end)에 맞추면 2px 내려갔다 */
+  box-sizing: border-box; width: 42px; height: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--muted); font-size: 9px; font-weight: 600; line-height: 1.1; text-align: center; cursor: pointer; }
+.ship-room .drone-toggle:hover { border-color: var(--border-strong); color: var(--ink); }
+.ship-room .drone-toggle.on { border-color: var(--lime-line); color: var(--lime-ink); }

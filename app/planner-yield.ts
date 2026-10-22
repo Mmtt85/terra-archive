@@ -72,6 +72,8 @@ export type DailyYield = {
   droneRecords: number;
   /** 전부 순금 제조소에 부었을 때의 추가 순금(개) */
   droneGold: number;
+  /** 방별 하루 평균 배수(1 + %효율/100, A·B조 시계 비율로 섞음) — 드론 덤(droneBoost)이 쓴다 */
+  roomRates: Record<string, number>;
   /** [A조, B조] 교대 시계(시간)와 그 비율 — 하루를 두 조로 섞은 근거 */
   hours: number[];
   weights: number[];
@@ -91,6 +93,7 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
 
   let gold = 0, exp = 0, lmd = 0, goldNeed = 0, dronePct = 0;
   let goldCells = 0, expCells = 0;
+  const roomRates: Record<string, number> = {};
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
     const teamAt = (key: string): InfraOp[] => {
       const shifts = plan.assignments[key] ?? [];
@@ -115,6 +118,7 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
       const ctx = { ...ctxFor(cell.key, points, counts, plan.plants, present, ambient, rooms, cells), shiftHours: plan.shiftHours?.[shift], shift };
       // 방 %효율. 무인 시설도 기본 속도 100%로 돌아가므로 배수는 (1 + %/100)이다.
       const rate = 1 + teamScore(teamAt(cell.key), cell.room, ctx) / 100;
+      roomRates[cell.key] = (roomRates[cell.key] ?? 0) + rate * w;
       if (cell.room === "TRADING") {
         lmd += ORDER_LMD_HOUR * 24 * rate * w;
         // 순금 소비는 방 %를 그대로 쓴다 — 프로바이조(위약 배상)는 오더당 납품 순금이 실제로
@@ -151,8 +155,29 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
     drones, dronePct,
     droneRecords: perDrone(exp, expCells) / EXP_PER_RECORD,
     droneGold: perDrone(gold, goldCells),
+    roomRates,
     hours, weights,
   };
+}
+
+// ── 드론 덤 (제보 554c7f80, 사용자 확정 2026-10-22) ──────────────────────────────────────────
+// 방 카드마다 '드론' 단추로 드론을 쓸 방을 고른다(여럿이면 하루 드론을 똑같이 나눈다). **자동편성이 끝난 뒤** 결과에 덤으로만 얹고
+// 자동편성 점수·비교에는 넣지 않는다 — 넣으면 엔진이 고르는 편성이 사람마다 흔들리고(드론 쓰는 곳은 정답이 없다) 역검증을 다시
+// 거쳐야 한다. 드론 1개 = 그 방 남은 시간 180초 단축 → 그 방이 180초 동안 버는 양.
+export type DroneBoost = { key: string; pct: number; amount: number; unit: "records" | "gold" | "lmd" };
+export function droneBoosts(y: DailyYield, keys: string[]): DroneBoost[] {
+  const live = keys.filter((key) => y.roomRates[key] != null);
+  if (!live.length) return [];
+  const sec = (y.drones * DRONE_REDUCE) / live.length;   // 방 하나가 받는 하루 단축 시간(초)
+  return live.map((key) => {
+    const cell = LAYOUT.find((c) => c.key === key)!;
+    const rate = y.roomRates[key];
+    const pct = (sec / DAY_SEC) * rate * 100;             // 그 방 효율에 더해지는 %p (하루 평균)
+    if (cell.room === "TRADING") return { key, pct, amount: (ORDER_LMD_HOUR / 3600) * rate * sec, unit: "lmd" as const };
+    if (cell.product === "gold") return { key, pct, amount: (rate * sec) / GOLD_PT, unit: "gold" as const };
+    const recipe = EXP_BY_LEVEL[Math.min(levelOf(key), EXP_BY_LEVEL.length) - 1];
+    return { key, pct, amount: ((rate * sec) / recipe.pt) * recipe.exp / EXP_PER_RECORD, unit: "records" as const };
+  });
 }
 
 /** 배치에 순금 제조소·무역소·작전기록 제조소가 각각 있는지 (없는 값은 카드에서 '—') */

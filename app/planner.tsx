@@ -27,7 +27,7 @@ import {
 } from "./planner-engine";
 import { recKey, recOps, rankRaises, type RaiseRec, type InvestProgress } from "./planner-invest";
 // 요약 카드의 하루 산출(용문폐·작전기록) 근사 — 상수 출처는 그 파일 머리말
-import { dailyYield, yieldCells, EXP_PER_RECORD, GOLD_LMD as YIELD_GOLD_LMD, ORDER_LMD_HOUR } from "./planner-yield";
+import { dailyYield, droneBoosts, yieldCells, EXP_PER_RECORD, GOLD_LMD as YIELD_GOLD_LMD, ORDER_LMD_HOUR } from "./planner-yield";
 // 회수일 각주가 쓰는 환산 기준 — 엔진(planner-invest)은 워커 전용 무거운 모듈이라
 // 값으로 가져오지 않고 생성 데이터만 직접 읽는다 (scripts/build-sanity.py)
 import sanityBasis from "./data/sanity.json";
@@ -67,6 +67,8 @@ const ME_APPLIED_KEY = "terra-archive-infra-me-at";
 const RECYCLE_KEY = "terra-archive-infra-recycle";
 // 훈련실 운용 — "use" = 훈련실까지 고려(2석, 조건 충족용), 그 밖 = 비워 둔다(기본). 제안 f03863ae, 2026-10-17
 const TRAINING_KEY = "terra-archive-infra-training";
+// 드론 쓰는 방 (제보 554c7f80, 2026-10-22) — 방 카드의 '드론' 단추, 칸 key 목록(JSON). 자동편성엔 안 넣고 결과에 덤으로만 (planner-yield droneBoosts)
+const DRONE_KEY = "terra-archive-infra-drone";
 // 육성 추천 표시 개수 — 엔진은 정렬 전체를 반환하고, 숨긴 오퍼 자리는 다음 순위가 채운다
 const INVEST_SHOW = 20;
 
@@ -151,6 +153,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
   // 엔진 모듈 상태(slotsFor 의 훈련실 자리 수)는 렌더 전에 맞춘다 — 표시(0/1·0/2)와 수동 편성이 같은 값을 보게
   if (TRAINING_USE !== trainingUse) setTrainingUse(trainingUse);
+  const [droneKeys, setDroneKeys] = useState<string[]>([]);
+  useEffect(() => {
+    try { const v = JSON.parse(localStorage.getItem(DRONE_KEY) ?? "[]"); if (Array.isArray(v)) setDroneKeys(v.filter((x) => typeof x === "string")); } catch { /* 무시 */ }
+  }, []);
+  const toggleDrone = (key: string) => setDroneKeys((cur) => {
+    // 한 시설에만 몰아준다 (사용자 지시 2026-10-22) — 다른 방을 켜면 앞의 방은 꺼진다
+    const next = cur.includes(key) ? [] : [key];
+    try { if (next.length) localStorage.setItem(DRONE_KEY, JSON.stringify(next)); else localStorage.removeItem(DRONE_KEY); } catch { /* 무시 */ }
+    return next;
+  });
   const setRecycleChoice = (mode: RecycleMode) => {
     setRecycleModeState(mode);
     if (sandboxRef.current) return;
@@ -1542,26 +1554,53 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 하루 산출 근사 (사용자 요청 2026-08-06: "효율 말고 하루에 용문폐·작전기록 얼마인지").
   // 조 탭과 무관하다 — A·B 두 조를 각자의 교대 시계 비율로 섞은 **하루치**이기 때문.
   const yieldDay = useMemo(() => (plan ? dailyYield(plan, effectiveOpById) : null), [plan, effectiveOpById]);
+  // 드론 덤 — 방 카드에서 고른 방들에 하루 드론을 똑같이 나눠 부었다고 본다 (자동편성 점수엔 안 넣는다)
+  const drones = useMemo(() => (yieldDay ? droneBoosts(yieldDay, droneKeys) : []), [yieldDay, droneKeys]);
+  const droneOf = (key: string) => drones.find((d) => d.key === key) ?? null;
+  // 요약은 드론 덤을 **포함해** 보여 준다 (사용자 지시 2026-10-22 "드론으로 가속하면 서머리도 변경") — 자동편성 점수엔 여전히 안 들어간다.
+  // 무역소에 쓰면 오더를 더 받아 순금도 그만큼 더 쓴다(용문폐 ÷ 순금 1개당 용문폐)
+  const yieldShown = useMemo(() => {
+    const d = drones[0];
+    if (!yieldDay || !d) return yieldDay;
+    const y = { ...yieldDay };
+    if (d.unit === "lmd") { y.lmd += d.amount; y.goldNeed += d.amount / YIELD_GOLD_LMD; }
+    else if (d.unit === "gold") y.gold += d.amount;
+    else { y.records += d.amount; y.exp += d.amount * EXP_PER_RECORD; }
+    y.goldShort = Math.max(0, y.goldNeed - y.gold);
+    return y;
+  }, [yieldDay, drones]);
+  const droneText = (d: { unit: string; amount: number }) => d.unit === "lmd" ? t("용문폐 +{n}", { n: num(d.amount) }) : d.unit === "gold" ? t("순금 +{n}", { n: num(d.amount) }) : t("작전기록 +{n}", { n: num(d.amount) });
   const yieldRooms = useMemo(() => yieldCells(), [layout, customRooms, customProducts]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 요약의 방 종류 평균도 드론 덤 포함 — 드론을 받은 방의 +%를 그 종류 방 수로 나눠 더한다
+  const sumView = useMemo(() => {
+    const d = drones[0];
+    if (!summary || !d) return summary;
+    const k = d.unit === "lmd" ? "trading" : d.unit === "gold" ? "gold" : "exp";
+    const n = d.unit === "lmd" ? yieldRooms.trade : d.unit === "gold" ? yieldRooms.gold : yieldRooms.exp;
+    return summary[k] != null && n > 0 ? { ...summary, [k]: Math.round(summary[k]! + d.pct / n) } : summary;
+  }, [summary, drones, yieldRooms]);
   // 근사치인 만큼 근거를 전부 적는다 — 상수 출처·순금 수지·교대 비율·수거 가정.
   // ⚠ title 툴팁만으로는 아무도 안 읽는다 (사용자 지적 2026-08-06: "마우스 오버하고 오래
   // 기다려야 뜨니까 사람들 아무도 안 볼 거임") — 카드의 ⓘ 버튼이 여는 모달이 정본이고,
   // title은 마우스로 스치는 사람을 위한 보조로만 남긴다.
   const num = (n: number) => Math.round(n).toLocaleString();
+  // 요약 — 고른 방들의 덤을 종류별로 합쳐 한 줄
+  const droneSum = (["lmd", "gold", "records"] as const).map((unit) => ({ unit, amount: drones.filter((d) => d.unit === unit).reduce((a, d) => a + d.amount, 0) }))
+    .filter((x) => x.amount > 0).map(droneText).join(" · ");
   const shiftMix = yieldDay
     ? t("A조 {a}시간 · B조 {b}시간 비율로 두 조를 섞은 하루 값이라, 위의 조 탭을 바꿔도 변하지 않습니다.",
         { a: Math.round(yieldDay.hours[0]), b: Math.round(yieldDay.hours[1]) })
     : "";
   const stockNote = t("창고·오더 슬롯이 차기 전에 수거한다고 봅니다 — 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.");
-  const goldBalance = yieldDay && yieldDay.goldShort > 0.5
+  const goldBalance = yieldDay && yieldShown!.goldShort > 0.5
     ? t("무역소가 하루 {n}개를 쓰는데 제조소는 {g}개만 만듭니다 — 하루 {s}개가 모자랍니다. 순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 잡은 값이라, 실제로 안 채우면 이만큼 못 받습니다.",
-        { g: num(yieldDay.gold), n: num(yieldDay.goldNeed), s: num(yieldDay.goldShort) })
+        { g: num(yieldShown!.gold), n: num(yieldShown!.goldNeed), s: num(yieldShown!.goldShort) })
     : yieldDay
       ? t("무역소가 하루 {n}개를 쓰고 제조소가 {g}개를 만듭니다 — 기지 안에서 자급됩니다.",
-          { g: num(yieldDay.gold), n: num(yieldDay.goldNeed) })
+          { g: num(yieldShown!.gold), n: num(yieldShown!.goldNeed) })
       : "";
   const yieldGoldLines = yieldDay ? [
-    t("순금 제조소는 1개당 하루 20개(순금 1개 = 4,320pt, 기본 속도 1포인트/초)를 만들고 여기에 방 %효율을 곱합니다 — 지금 하루 {g}개입니다.", { g: num(yieldDay.gold) }),
+    t("순금 제조소는 1개당 하루 20개(순금 1개 = 4,320pt, 기본 속도 1포인트/초)를 만들고 여기에 방 %효율을 곱합니다 — 지금 하루 {g}개입니다.", { g: num(yieldShown!.gold) }),
     goldBalance,
     shiftMix, stockNote,
   ] : [];
@@ -1575,9 +1614,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     t("발전소는 기본 360초에 드론 1개를 만듭니다(하루 240개). 발전소 3기의 '드론 회복' 효율은 한 개의 전역 회복 속도에 **합산**되므로 지금은 +{p}%, 하루 {n}개입니다.",
       { p: Math.round(yieldDay.dronePct), n: num(yieldDay.drones) }),
     t("드론 1개는 제조소·무역소의 남은 시간을 180초 줄입니다 — 그 방이 180초 동안 만들 양이 그대로 이득이라, **방 효율이 높을수록 드론 1개의 값도 커집니다**."),
-    t("지금 편성이면 전부 작전기록 제조소에 부었을 때 하루 {r}개, 전부 순금 제조소에 부었을 때 순금 {g}개(용문폐 {l}) 상당입니다.",
-      { r: num(yieldDay.droneRecords), g: num(yieldDay.droneGold), l: num(yieldDay.droneGold * YIELD_GOLD_LMD) }),
-    t("어디에 쓰는지는 사람마다 달라서 **위 용문폐·작전기록 숫자에는 더하지 않았습니다** — 이 칸만 따로 보세요. 드론 상한(발전소 1기당 100, 시설 인원이 차감)에 걸리기 전에 쓴다고 봅니다."),
+    t("제조소·무역소 카드 오른쪽의 **'드론 가속'**을 켜면 그 방에 하루 드론을 다 쓴다고 보고 덤(+%)을 붙입니다. 한 시설만 고를 수 있습니다."),
+    t("드론 덤은 **자동편성 점수에는 넣지 않고**, 요약의 평균 효율·순금·용문폐·작전기록에는 포함해 보여 줍니다. 드론 상한(발전소 1기당 100, 시설 인원이 차감)에 걸리기 전에 쓴다고 봅니다."),
     shiftMix,
   ] : [];
   const yieldExpLines = yieldDay ? [
@@ -1691,20 +1729,18 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     // 요약 지표도 이미지에 담는다 (사용자 요청 2026-08-06) — 편성만 캡처하면 "그래서 이
     // 편성이 하루에 뭘 얼마나 뽑는지"가 빠져서, 공유받은 쪽이 화면과 대조를 못 한다.
     const stats: { k: string; v: string }[] = [
-      { k: t("순금 평균"), v: summary?.gold != null ? `+${summary.gold}%` : "—" },
-      { k: t("작전기록 평균"), v: summary?.exp != null ? `+${summary.exp}%` : "—" },
-      { k: t("무역소 평균"), v: summary?.trading != null ? `+${summary.trading}%` : "—" },
+      { k: t("순금 평균"), v: sumView?.gold != null ? `+${sumView.gold}%` : "—" },
+      { k: t("작전기록 평균"), v: sumView?.exp != null ? `+${sumView.exp}%` : "—" },
+      { k: t("무역소 평균"), v: sumView?.trading != null ? `+${sumView.trading}%` : "—" },
       { k: t("드론 회복 효율"), v: summary ? `+${summary.power}%` : "—" },
       { k: t("전력"), v: `${power.net >= 0 ? "+" : ""}${power.net} (${power.consume}/${power.provide})` },
       { k: t("순금 생산 / 소모"), v: yieldDay && yieldRooms.gold > 0
-        ? `${num(yieldDay.gold)} / ${num(yieldDay.goldNeed)}${yieldDay.goldShort > 0.5 ? ` (−${num(yieldDay.goldShort)})` : ""}` : "—" },
-      { k: t("하루 평균 용문폐"), v: yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldDay.lmd)}` : "—" },
+        ? `${num(yieldShown!.gold)} / ${num(yieldShown!.goldNeed)}${yieldShown!.goldShort > 0.5 ? ` (−${num(yieldShown!.goldShort)})` : ""}` : "—" },
+      { k: t("하루 평균 용문폐"), v: yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldShown!.lmd)}` : "—" },
       { k: t("하루 평균 작전기록"), v: yieldDay && yieldRooms.exp > 0
-        ? `${t("≈{n}개", { n: num(yieldDay.records) })} (${num(yieldDay.exp)} exp)` : "—" },
+        ? `${t("≈{n}개", { n: num(yieldShown!.records) })} (${num(yieldShown!.exp)} exp)` : "—" },
       { k: t("하루 드론 회복"), v: yieldDay
-        ? `${t("≈{n}개", { n: num(yieldDay.drones) })} (${t("작전기록 +{r} or 순금 +{g}", {
-            r: yieldRooms.exp > 0 ? num(yieldDay.droneRecords) : "0",
-            g: yieldRooms.gold > 0 ? num(yieldDay.droneGold) : "0" })})` : "—" },
+        ? `${t("≈{n}개", { n: num(yieldDay.drones) })}${droneSum ? ` (${droneSum})` : ""}` : "—" },
       // 재활용소 (미래시 칸이 있을 때만) — 화면 요약 줄과 같은 값 (사용자 지적 2026-10-14 "재활용소가 없네")
       ...(cellByKey.has("RECYCLE") ? [{ k: `♻ ${t("재활용소")}`, v: recycleDay ? t("≈{n} 이성/일", { n: num(recycleDay.apPerDay) }) : "—" }] : []),
     ];
@@ -2106,39 +2142,38 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           </div>
         </div>
             <div className="plan-sum-tiles" aria-label={t("생산 효율")}>
-              <div><span>{t("순금")}</span><b>{summary?.gold != null ? `+${summary.gold}%` : "—"}</b></div>
-              <div><span>{t("작전기록")}</span><b>{summary?.exp != null ? `+${summary.exp}%` : "—"}</b></div>
-              <div><span>{t("무역소")}</span><b>{summary?.trading != null ? `+${summary.trading}%` : "—"}</b></div>
+              <div><span>{t("순금")}</span><b>{sumView?.gold != null ? `+${sumView.gold}%` : "—"}</b></div>
+              <div><span>{t("작전기록")}</span><b>{sumView?.exp != null ? `+${sumView.exp}%` : "—"}</b></div>
+              <div><span>{t("무역소")}</span><b>{sumView?.trading != null ? `+${sumView.trading}%` : "—"}</b></div>
               <div><span>{t("드론 회복")}</span><b>{summary ? `+${summary.power}%` : "—"}</b></div>
             </div>
           {/* 하루 산출 (사용자 요청 2026-08-06) — 근사치라 ≈, 드론은 위 셋에 더하지 않는다(쓰임이 사람마다 다르다) */}
             <ul className="plan-sum-yield" aria-label={t("하루 산출")}>
-              <li title={yieldGoldLines[0]} className={yieldDay && yieldDay.goldShort > 0.5 ? "short" : undefined}>
+              <li title={yieldGoldLines[0]} className={yieldDay && yieldShown!.goldShort > 0.5 ? "short" : undefined}>
                 <span>{t("순금 생산 / 소모")}</span>
-                <b>{yieldDay && yieldRooms.gold > 0 ? <>{num(yieldDay.gold)} <em>/ {num(yieldDay.goldNeed)}</em></> : "—"}</b>
-                {yieldDay && yieldRooms.gold > 0 && yieldDay.goldNeed > 0 && (
-                  <i className="plan-sum-bar" style={{ ["--p" as string]: `${Math.min(100, (yieldDay.gold / yieldDay.goldNeed) * 100)}%` }} />
+                <b>{yieldDay && yieldRooms.gold > 0 ? <>{num(yieldShown!.gold)} <em>/ {num(yieldShown!.goldNeed)}</em></> : "—"}</b>
+                {yieldDay && yieldRooms.gold > 0 && yieldShown!.goldNeed > 0 && (
+                  <i className="plan-sum-bar" style={{ ["--p" as string]: `${Math.min(100, (yieldShown!.gold / yieldShown!.goldNeed) * 100)}%` }} />
                 )}
-                <small>{yieldDay && yieldDay.goldShort > 0.5 ? t("{n}개 부족", { n: num(yieldDay.goldShort) }) : yieldDay && yieldRooms.gold > 0 ? t("충분") : ""}</small>
+                <small>{yieldDay && yieldShown!.goldShort > 0.5 ? t("{n}개 부족", { n: num(yieldShown!.goldShort) }) : yieldDay && yieldRooms.gold > 0 ? t("충분") : ""}</small>
                 {yieldDay && <InfoDot onClick={() => setShiftNote("gold")} t={t} />}
               </li>
               <li title={yieldLmdLines[0]}>
                 <span>{t("용문폐")}</span>
-                <b>{yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldDay.lmd)}` : "—"}</b>
+                <b>{yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldShown!.lmd)}` : "—"}</b>
                 {yieldDay && <InfoDot onClick={() => setShiftNote("lmd")} t={t} />}
               </li>
               <li title={yieldExpLines[0]}>
                 <span>{t("작전기록")}</span>
-                <b>{yieldDay && yieldRooms.exp > 0 ? t("≈{n}개", { n: num(yieldDay.records) }) : "—"}</b>
-                <small>{yieldDay && yieldRooms.exp > 0 ? `${num(yieldDay.exp)} exp` : ""}</small>
+                <b>{yieldDay && yieldRooms.exp > 0 ? t("≈{n}개", { n: num(yieldShown!.records) }) : "—"}</b>
+                <small>{yieldDay && yieldRooms.exp > 0 ? `${num(yieldShown!.exp)} exp` : ""}</small>
                 {yieldDay && <InfoDot onClick={() => setShiftNote("exp")} t={t} />}
               </li>
               <li title={yieldDroneLines[0]}>
                 <span>{t("드론")}</span>
                 <b>{yieldDay ? t("≈{n}개", { n: num(yieldDay.drones) }) : "—"}</b>
-                <small><Marquee>{yieldDay ? t("작전기록 +{r} or 순금 +{g}", {
-                  r: yieldRooms.exp > 0 ? num(yieldDay.droneRecords) : "0",
-                  g: yieldRooms.gold > 0 ? num(yieldDay.droneGold) : "0" }) : ""}</Marquee></small>
+                {/* 방 카드의 '드론 가속'을 켠 방들의 덤만 — 종전 '작전기록 +N or 순금 +N' 어림은 뺐다 (사용자 지시 2026-10-22) */}
+                <small><Marquee>{droneSum}</Marquee></small>
                 {yieldDay && <InfoDot onClick={() => setShiftNote("drone")} t={t} />}
               </li>
               {/* 재활용소 (미래시 전용, 2026-10-09) */}
@@ -2353,6 +2388,17 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                     </span>
                   );
                 }) : <i>{cell.key === "TRAINING" ? t("비워둠 · 특화 훈련 시 사용") : plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
+                {/* 드론 가속 단추 — 썸네일 줄 오른쪽 끝, 썸네일과 같은 크기·같은 밑변 (사용자 지시 2026-10-22). 켠 방들에 하루 드론을 나눠 덤으로 얹는다 (사용자 지시 2026-10-22, 중첩 button 금지라 span) */}
+                {plan && team.length > 0 && (cell.room === "MANUFACTURE" || cell.room === "TRADING") && (
+                  <span role="button" tabIndex={0} aria-pressed={droneKeys.includes(cell.key)} className={`drone-toggle${droneKeys.includes(cell.key) ? " on" : ""}`}
+                    title={t("이 방에 하루 드론을 다 씁니다 — 자동편성은 그대로, 결과에 덤으로 얹습니다. 한 시설만 고를 수 있습니다")}
+                    onClick={(event) => { event.stopPropagation(); toggleDrone(cell.key); }}
+                    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); toggleDrone(cell.key); } }}>
+                    {/* 정사각형 — 가속 아이콘(⏩ 모양 SVG) 위·글자 아래 (사용자 지시 2026-10-22) */}
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path d="M3 6l8 6-8 6zM12 6l8 6-8 6z" fill="currentColor" /></svg>
+                    <span>{t("드론 가속")}</span>
+                  </span>
+                )}
               </div>
               {plan && team.length > 0 && !PARK_KEYS.includes(cell.key) && (
                 cell.room === "CONTROL" ? (
@@ -2365,6 +2411,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   {ambientPart !== 0 && cell.room !== "CONTROL" && <em className="ambient-note"> ({t("제어센터")} {ambientPart > 0 ? "+" : ""}{ambientPart}%)</em>}
                   {raiseBefore != null && raiseBefore !== score && <em className={`raise-delta ${score >= raiseBefore ? "up" : "down"}`}> · {t("원래 {b}%", { b: raiseBefore })} ({score >= raiseBefore ? "+" : ""}{score - raiseBefore})</em>}
                   {cell.room === "RECYCLE" && <em className="ambient-note"> · {t("≈{n} 이성/일", { n: Math.round(recycleRate(team, cell.key)?.apPerDay ?? 0) })}</em>}
+                  {/* 드론 덤 — 설정에서 고른 곳의 대상 방에만, 자동편성 점수 밖 (2026-10-22) */}
+                  {droneOf(cell.key) && <em className="drone-note" title={t("드론을 이 방에 쓸 때 하루 평균으로 더해지는 효율 — 자동편성 점수에는 넣지 않은 덤입니다 ({what}/일)", { what: droneText(droneOf(cell.key)!) })}> · {t("드론 +{n}%", { n: Math.round(droneOf(cell.key)!.pct) })}</em>}
                 </small>
               )}
               {plan && PARK_KEYS.includes(cell.key) && team.length > 0 && <small>{t("세트 요원 고정 · 효율 무관")}</small>}
