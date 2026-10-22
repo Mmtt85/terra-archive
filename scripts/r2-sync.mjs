@@ -30,6 +30,8 @@ const API = "https://terra-archive-upload.nzkonaru.workers.dev";
 const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "items", "scan",
   // 오퍼 상세 모달이 열릴 때만 받아가는 지연 로딩 데이터·이미지 (2026-07-28)
   "profiles", "skins", "skin",
+  // 내 정보 훈장 목록 — 훈장 표·아이콘 (scripts/build-collect.py, 2026-10-22)
+  "medals",
   // 오퍼 보이스 대사 텍스트 — scripts/build-voicelines.py (2026-07-31)
   "voice",
   // 전투 스킬 레벨별 수치 — scripts/build-skill-levels.py (2026-08-01)

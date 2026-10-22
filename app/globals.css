@@ -20658,7 +20658,9 @@ main.site-main > .site-header {
   .feedback-panel,
   /* 2026-09-05 간이 모달 이관분 — 도움말 본문(.lens-body 16/18)과 스캐너 드롭 영역
      (.scanner-body 14/18 + .scanner-foot 12/18)은 이미 자기 여백을 갖고 있다 */
-  .lens-body, .scanner-drop)) {
+  .lens-body, .scanner-drop,
+  /* 내 정보 '한눈에 보기' 항목 편집 창 — .me-tile-edit 가 20px 22px 을 갖는다 (두 겹 지적 2026-10-22) */
+  .me-tile-edit)) {
   padding: 0;
 }
 .mw-chrome {
@@ -28237,6 +28239,23 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 .me-kpis li { display: flex; min-width: 0; }
 .me-kpis li > button, .me-kpis li > div { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--line); background: var(--bg-faint); min-width: 0; color: inherit; font: inherit; text-align: left; }
 .me-kpis li > button { cursor: pointer; }
+/* 칸 배경 일러스트 (사용자 지시 2026-10-22) — 칸 오른쪽에 흐리게, 왼쪽으로 사라지게. 글자·고리는 그 위 */
+.me-kpis li > button, .me-kpis li > div { position: relative; isolation: isolate; overflow: hidden; }
+.me-kpi-art-box { position: absolute; z-index: -1; inset: 0; pointer-events: none; }
+/* 칸 크기와 상관없이 오른쪽 칸 높이에 꽉 — 너비로 키우면 넓은 칸(보유 오퍼)에서 그림이 칸보다 훨씬 커져 위쪽만 보였다.
+   object-fit 으로 자르고 얼굴 쪽(위 22%)을 보이게 (사용자 지적 2026-10-22) */
+.me-kpi-art { position: absolute; right: 0; top: 0; width: min(70%, 220px); height: 100%; max-width: none; object-fit: cover; object-position: 50% 22%; opacity: 0;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 35%, #000 80%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 25%, #000 75%, transparent 100%); -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent 0%, #000 35%, #000 80%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 25%, #000 75%, transparent 100%); mask-composite: intersect; transition: opacity .5s ease-out; }  /* 네 방향 다 흐리게 (사용자 지시 2026-10-22) */
+/* 다 받은 뒤 서서히 (사용자 지시 2026-10-22 "페이드 살짝") */
+.me-kpi-art.on { opacity: .2; }
+.me-kpis li > button:hover .me-kpi-art.on { opacity: .32; }
+/* 훈장 칸 — 일러가 아니라 아이콘이라 자르지 않고 통째로, 오른쪽에 (사용자 요청 2026-10-22) */
+.me-kpis .me-kpi-art.medal { right: 6%; width: auto; height: 120%; top: -10%; aspect-ratio: 1; object-fit: contain; -webkit-mask-image: none; mask-image: none; }
+.me-kpis .me-kpi-art.medal.on { opacity: .3; }
+/* 넓은 칸(보유 오퍼)은 가운데에, 양옆으로 사라지게 (사용자 지시 2026-10-22) */
+.me-kpis li.big .me-kpi-art { right: auto; left: 50%; translate: -50% 0; width: min(46%, 320px);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 30%, #000 70%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 25%, #000 75%, transparent 100%); -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent 0%, #000 30%, #000 70%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 25%, #000 75%, transparent 100%); mask-composite: intersect; }
+html.dark .me-kpi-art.on { opacity: .26; }
 .me-kpis li > button:hover { border-color: var(--border-strong); background: var(--btn-bg-hover); }
 .me-kpis li span { font-size: 11px; color: var(--muted); line-height: 1.35; }
 .me-kpis li b { font-size: 22px; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
@@ -28494,21 +28513,79 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 .me-kpis li.me-kpi-add > button:hover { color: var(--ink); }
 .me-kpi-add b { font-size: 22px; line-height: 1; }
 .me-tile-modal { width: min(620px, calc(100vw - 32px)); }
-.me-tile-edit { padding: 20px 22px; display: grid; gap: 14px; overflow: auto; }
+.me-tile-edit { position: relative; isolation: isolate; padding: 20px 22px; display: grid; gap: 14px; overflow: auto; }
+/* 창 뒤 일러스트 (사용자 지시 2026-10-22) — 오른쪽에 크게, 왼쪽·아래로 사라지게. 글자는 그 위 */
+.me-tile-art-box { position: absolute; z-index: -1; inset: 0; overflow: hidden; pointer-events: none; }   /* 그림이 창 밖으로 나가도 스크롤이 안 생기게 */
+/* 창에 꽉 차게, 비율은 그대로(늘리지 않고 잘라 낸다) — 얼굴 쪽(위 20%)이 보이게 (사용자 지시 2026-10-22) */
+.me-tile-art { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 20%; opacity: .22; pointer-events: none;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 40%), linear-gradient(to bottom, #000 60%, transparent 100%);
+  -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent 0%, #000 40%), linear-gradient(to bottom, #000 60%, transparent 100%); mask-composite: intersect;
+  animation: me-tile-art-in .35s ease-out; }
+@keyframes me-tile-art-in { from { opacity: 0; translate: 12px 0; } }
+html.dark .me-tile-art { opacity: .3; }
 .me-tile-edit h3 { margin: 0; font-size: 18px; }
-.me-tile-name { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.me-tile-name { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; font-size: 12px; font-weight: 600; color: var(--ink); }
 .me-tile-name input { height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--ink); font: inherit; font-size: 13px; }
-.me-cm-cond input[type="number"] { height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--ink); font: inherit; font-size: 12px; }
-.me-tile-preview { display: flex; align-items: baseline; justify-content: space-between; margin: 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-faint); }
-.me-tile-preview span { font-size: 12px; color: var(--muted); }
+.me-tile-preview { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-sm); background: color-mix(in srgb, var(--bg-faint) 85%, transparent); }
+.me-tile-pv-l { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.me-tile-pv-l > span:first-child { font-size: 12px; color: var(--muted); }
+/* 해당 오퍼 얼굴 — 살짝 겹쳐 한 줄 */
+.me-tile-faces { display: flex; align-items: center; }
+.me-tile-faces img { width: 30px; height: 30px; margin-right: -6px; border: 2px solid var(--white); border-radius: 50%; background: var(--bg-faint); object-fit: cover; }
+.me-tile-faces em { margin-left: 12px; font-size: 11px; font-style: normal; color: var(--muted); }
 .me-tile-preview b { font-size: 22px; font-variant-numeric: tabular-nums; }
 .me-tile-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .me-tile-actions .import-action { height: 32px; padding: 0 14px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; }
-.me-cm-cond { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 6px 8px; align-items: center; margin-top: 8px; font-size: 12px; }
-.me-cm-cond > span { color: var(--muted); }
-.me-cm-cond input[type="number"] { width: 64px; }
-.me-cm-seg button { height: 24px; padding: 0 7px; font-size: 11px; }
-.me-cm-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+/* 항목 편집 조건 — 조건 하나에 카드 하나, 누르면 목록(하나만 고름). 단추 결은 공용 드롭다운이 아니라 '한눈에 보기' 칸(.me-kpis)과
+   같은 카드 — 작은 이름 위·값 아래, 오른쪽 위 작은 화살표 (사용자 지적 2026-10-22 "드롭다운 단추를 늘린 게 아니라 카드로").
+   상관없음이 아닌 값을 고른 카드는 값 글자가 라임(lime-ink), 테두리가 lime-line */
+/* 레벨·신뢰도 직접 입력 줄 */
+.me-cm-custom { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
+.me-cm-custom > span { margin-right: 4px; font-weight: 600; }
+.me-cm-custom > small { color: var(--muted); }
+/* 보유 스킨·훈장 목록 창 (2026-10-22) */
+.me-collect-modal { width: min(920px, calc(100vw - 32px)); }
+.me-collect { display: grid; gap: 14px; }
+.me-collect-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.me-collect-head .me-note { margin: 0; }
+.me-collect-group h4 { margin: 0 0 8px; font-size: 13px; }
+.me-collect-group h4 small { margin-left: 6px; font-weight: 500; color: var(--muted); }
+.me-skin-grid, .me-medal-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.me-skin-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+.me-skin-grid button { display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 0 0 8px; border: 1px solid var(--line); background: var(--bg-faint); color: inherit; font: inherit; text-align: left; cursor: pointer; overflow: hidden; }
+.me-skin-grid button:hover { border-color: var(--border-strong); }
+.me-skin-art { display: block; aspect-ratio: 3 / 4; overflow: hidden; background: var(--bg-soft); }
+.me-skin-art img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 15%; opacity: 0; transition: opacity .4s ease-out; }
+.me-skin-art img.on { opacity: 1; }   /* 받아진 뒤 서서히 (사용자 지시 2026-10-22) */
+/* 못 가진 스킨 — 흐리게, 흑백 */
+.me-skin-grid li.off button { opacity: .45; }
+.me-skin-grid li.off img { filter: grayscale(1); }
+.me-skin-grid li.off button:hover { opacity: .75; }
+.me-skin-grid b, .me-skin-grid small { padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me-skin-grid b { font-size: 12px; }
+.me-skin-grid small { font-size: 11px; color: var(--muted); }
+.me-medal-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.me-medal-grid li { display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--line); background: var(--bg-faint); }
+.me-medal-grid img { grid-row: span 2; width: 44px; height: 44px; object-fit: contain; }
+.me-medal-grid b { font-size: 12px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me-medal-grid small { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me-medal-grid li.off { opacity: .45; }
+.me-medal-grid li.off img { filter: grayscale(1); }
+.me-cm-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: -6px; font-size: 12px; font-weight: 600; }
+.me-cm-head .me-sort:disabled { opacity: .45; cursor: default; }
+.me-cm-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
+.me-cm-drop { position: relative; min-width: 0; display: flex; }
+.me-cm-card { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--line);
+  /* 반투명 + 살짝 흐림 — 창 뒤 일러스트가 비쳐 보이게 (사용자 지적 2026-10-22 "버튼들 때문에 배경이 안 보인다") */
+  background: color-mix(in srgb, var(--bg-faint) 55%, transparent); backdrop-filter: blur(3px);
+  color: inherit; font: inherit; text-align: left; cursor: pointer; transition: border-color .15s, background-color .15s; }
+.me-cm-card:hover, .me-cm-card[aria-expanded="true"] { border-color: var(--border-strong); background: color-mix(in srgb, var(--btn-bg-hover) 75%, transparent); }
+.me-cm-card:disabled { cursor: default; opacity: .55; }
+.me-cm-k { font-size: 11px; color: var(--muted); line-height: 1.35; }
+.me-cm-v { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+.me-cm-caret { position: absolute; top: 9px; right: 10px; font-size: 10px; font-style: normal; color: var(--muted); }
+.me-cm-card.on { border-color: var(--lime-line); }
+.me-cm-card.on .me-cm-v { color: var(--lime-ink); }
 /* 진행 상황 분류 (전체·메인·이벤트·섬멸) */
 .me-prog-cats { margin: 0 0 8px; }
 .me-prog-cats small { margin-left: 5px; font-weight: 500; opacity: 0.7; }
@@ -28622,7 +28699,8 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 .me-prog-note { margin: 0 0 8px; }
 .me-kpis li.big > button { padding-right: 34px; }
 /* ✎ 는 칸 버튼(.me-kpis li > button) 규칙을 덮어써야 한다 — 같은 li 의 버튼이라 테두리·여백을 물려받아 큰 상자로 보였다 */
-.me-kpis li > button.me-kpi-edit { position: absolute; top: 6px; right: 6px; flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; gap: 0; border: 1px solid transparent; border-radius: var(--r-sm); background: none; color: var(--muted); font-size: 12px; }
+/* 칸 배경 그림 위에서도 보이게 바탕을 깐다 (사용자 지적 2026-10-22 "배경 때문에 수정 단추가 안 보인다") */
+.me-kpis li > button.me-kpi-edit { position: absolute; z-index: 1; top: 6px; right: 6px; flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; gap: 0; border: 1px solid var(--line); border-radius: var(--r-sm); background: color-mix(in srgb, var(--white) 85%, transparent); color: var(--ink); font-size: 12px; }
 .me-kpis li > button.me-kpi-edit:hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover); color: var(--ink); }
 /* 한눈에 보기 윗줄 — 계정 숫자 셋(보유 오퍼 넓은 칸 · 보유 스킨 · 훈장) 고정. 아래 고칠 수 있는 칸은 5열 */
 .me-kpis.me-kpis-top { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 8px; }

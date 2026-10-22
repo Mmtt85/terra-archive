@@ -8,7 +8,7 @@
 //
 // ⚠ 여러 **축**을 한 컨트롤에 묶는 속성 필터는 attr-filter.tsx(AttributeFilter)가 따로 있다.
 //   여기는 축이 하나인 자리 전용이다. multi로 그 축 안에서 여러 값을 고를 수는 있다.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { normSearch } from "./search";
 import { useI18n } from "./i18n";
 
@@ -61,7 +61,7 @@ function clipBottom(el: HTMLElement): number {
 
 export function Dropdown({
   label, items, selected, onPick, multi, ariaLabel,
-  className, buttonClassName, scroll, disabled, actions, search, anchor, limit,
+  className, buttonClassName, scroll, disabled, actions, search, anchor, limit, bare,
 }: {
   /** 버튼에 보일 현재 상태 */
   label: React.ReactNode;
@@ -85,6 +85,9 @@ export function Dropdown({
   /** 한 번에 그리는 줄 수 상한 — 넘는 만큼은 '외 N개 · 검색으로 찾기' 한 줄로 (DPS 계산기 적 1,586종, 2026-10-17:
    *  다 그리면 여는 데 1.7초 걸렸다). 검색하면 걸러진 것 중에서 다시 상한까지 */
   limit?: number;
+  /** 단추 모양을 통째로 부르는 쪽이 그린다 — 공용 단추 결(.drop-btn: 고른 점·밑줄·캐럿)을 안 입힌다. 목록 동작은 같다
+   *  (내 정보 항목 편집 조건 카드, 사용자 지적 2026-10-22 "드롭다운처럼 움직이라 했지 드롭다운 단추를 늘리라 한 게 아니다") */
+  bare?: boolean;
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -118,7 +121,7 @@ export function Dropdown({
     // 이제 목록이 단추를 따라 움직이고, 단추가 화면 밖으로 나가면 그때 닫는다. 창 크기 변경은 그대로 닫는다
     const onScroll = (event: Event) => {
       if (rootRef.current?.contains(event.target as Node)) return;
-      const btn = rootRef.current?.querySelector<HTMLElement>(".drop-btn");
+      const btn = rootRef.current?.querySelector<HTMLElement>(".drop-btn, .drop-bare");
       if (event.type === "resize" || !btn) { setOpen(false); return; }
       const r = btn.getBoundingClientRect();
       if (r.bottom < 0 || r.top > window.innerHeight) { setOpen(false); return; }
@@ -130,6 +133,20 @@ export function Dropdown({
       window.removeEventListener("scroll", onScroll, true); window.removeEventListener("resize", onScroll);
     };
   }, [open, float]);
+
+  // 펼친 뒤 실제 높이로 한 번 더 잰다 — 여는 순간엔 줄 수로 어림해서(줄 ≈30px), 실제가 더 크면 목록 끝이 모달 바닥에 잘린 채
+  // 안에 갇혔다 (내 정보 카드 편집 '레벨', 사용자 지적 2026-10-22). 넘치면 화면 기준(fixed)으로 띄운다
+  useLayoutEffect(() => {
+    if (!open || float) return;
+    const root = rootRef.current;
+    const btn = root?.querySelector<HTMLElement>(".drop-btn, .drop-bare");
+    const menu = root?.querySelector<HTMLElement>(".drop-menu");
+    if (!btn || !menu) return;
+    const limit = clipBottom(btn);
+    if (menu.getBoundingClientRect().bottom <= limit || limit >= window.innerHeight) return;
+    const r = btn.getBoundingClientRect();
+    setFloat(alignRight ? { position: "fixed", top: r.bottom + 4, right: window.innerWidth - r.right, left: "auto" } : { position: "fixed", top: r.bottom + 4, left: r.left });
+  }, [open, float, alignRight]);
 
   // 일부 모바일 인앱 브라우저(카카오톡·카페 웹뷰)는 탭 한 번에 click 을 두 번 합성한다 — 열리자마자 닫혀
   // "안 보임"이 됐다 (플래너 '그 외'에서 2026-07-18 제보, 공용으로 옮기며 가드도 함께 옮김). 350ms 안의 재토글은 무시
@@ -158,11 +175,13 @@ export function Dropdown({
   return (
     <div className={`drop${className ? ` ${className}` : ""}`} ref={rootRef}>
       <button type="button" disabled={disabled}
-        className={`drop-btn${selected.length > 0 ? " on" : ""}${buttonClassName ? ` ${buttonClassName}` : ""}`}
+        className={bare ? `drop-bare${buttonClassName ? ` ${buttonClassName}` : ""}` : `drop-btn${selected.length > 0 ? " on" : ""}${buttonClassName ? ` ${buttonClassName}` : ""}`}
         aria-haspopup="menu" aria-expanded={open} aria-label={ariaLabel} onClick={toggle}>
-        <span className="drop-label">{label}</span>
-        {/* 캐럿은 .drop-caret이 1em 칸을 잡는다 — ▾/▴의 자체 폭이 달라 버튼이 흔들리던 문제 */}
-        <i className="drop-caret" aria-hidden>▾</i>
+        {bare ? label : <>
+          <span className="drop-label">{label}</span>
+          {/* 캐럿은 .drop-caret이 1em 칸을 잡는다 — ▾/▴의 자체 폭이 달라 버튼이 흔들리던 문제 */}
+          <i className="drop-caret" aria-hidden>▾</i>
+        </>}
       </button>
       {open && (
         <ul className={`drop-menu menu-anim${alignRight ? " align-right" : ""}${scroll ? " scroll" : ""}`} style={float ?? (anchorTop != null ? { top: anchorTop } : undefined)}

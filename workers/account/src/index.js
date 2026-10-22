@@ -807,10 +807,16 @@ function profile(user, friends, shop) {
     rooms,
     skins: Object.keys(user?.skin?.characterSkins ?? {}).length,
     // 보유 스킨 id 목록 — 오퍼 상세·갤러리에 '보유 중' 표시 (사용자 요청 2026-10-11). 기본 복장(#1·#1+·#2)은 원래 다 갖고 있어 뺀다
-    skinIds: Object.keys(user?.skin?.characterSkins ?? {}).filter((id) => id.includes("@")),
+    // 얻은 시각(skinTs)이 있으면 최근 것부터 — 내 정보 '보유 스킨' 칸 배경이 가장 최근 스킨 (사용자 요청 2026-10-22)
+    // 얻은 시각(skinTs)이 없으면 원본 순서(얻은 순)를 뒤집는다 — 원본은 처음 얻은 것부터라 칸에 가장 오래된 스킨이 보였다 (같은 날 지적)
+    skinIds: (user?.skin?.skinTs
+      ? Object.keys(user.skin.characterSkins ?? {}).sort((a, b) => num(user.skin.skinTs[b]) - num(user.skin.skinTs[a]))
+      : Object.keys(user?.skin?.characterSkins ?? {}).reverse()).filter((id) => id.includes("@")),
     // 훈장 — 원본엔 아직 못 얻은 훈장의 진행 기록도 같이 있다(실계정 1,516개). 처음 얻은 시각(fts)이 있는 것만 센다
     // (숨김·금장 훈장은 게임 '수집' 수처럼 뺀다 — countedMedal)
     medals: Object.entries(user?.medal?.medals ?? {}).filter(([id, m]) => countedMedal(id) && num(m?.fts) > 0).length,
+    // 얻은 훈장 [id, 처음 얻은 시각(초)] — 내 정보 '훈장' 칸을 누르면 목록 (사용자 요청 2026-10-22). 숨김·금장도 싣는다(화면이 묶음으로 보인다)
+    medalList: Object.entries(user?.medal?.medals ?? {}).filter(([, m]) => num(m?.fts) > 0).map(([id, m]) => [id, num(m.fts)]),
     // 전체 훈장 수 — 계정 원본은 훈장마다 기록을 하나씩 갖고 있다(medal_table 1,516개와 같다). '현재 / 최대' 표시용
     medalTotal: Object.keys(user?.medal?.medals ?? {}).filter(countedMedal).length,
     furniture: Object.keys(user?.building?.furniture ?? {}).length,

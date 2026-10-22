@@ -40,6 +40,7 @@ import { MeShare } from "./me-share";
 import { isNewFeature } from "./whats-new";
 import { NewBadge } from "./new-badge";
 import { FriendCards, MatchJobToast, MatchWindow } from "./me-match";
+import { MedalsWindow, SkinsWindow } from "./me-collect";
 import { useHashSync } from "./hash-modal";
 import { LeaderCardBody, cardArt } from "./sss";
 import { openChecker, runningChecker } from "./stage-open";
@@ -47,7 +48,7 @@ import { resetCloudPrefs } from "./cloud-prefs";
 import { Dropdown } from "./dropdown";
 import { NoSortHandle, SortColumn, SortHandle, toggleMeFolded, useDrawerDrag, useMeFolded, useMeOrder, type DrawerKey } from "./me-order";
 import { ACQUIRE_KEYS, ACQUIRE_LABEL, acquireOf, type AcquireKey } from "./op-acquire";
-import { CustomTileEditor, DEFAULT_LAYOUT, MAX_CUSTOM, evalTile, saveCustomTiles, tileLabel, useCustomTiles, useLayoutCustomized, type Cond, type CustomTile, type TileValue } from "./me-custom";
+import { CustomTileEditor, DEFAULT_LAYOUT, MAX_CUSTOM, evalTile, fullArtOf, saveCustomTiles, tileLabel, useCustomTiles, useLayoutCustomized, type Cond, type CustomTile, type TileValue } from "./me-custom";
 
 export type MeOp = {
   id: string; name: string; rarity: number; image: string; unreleased?: boolean;
@@ -521,7 +522,7 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareO
         </div>
         {/* 오른쪽 열 — 카드 머리의 손잡이(⠿)로 끌어 순서를 바꾼다, 순서는 설정 동기화로 이어진다 (사용자 지시 2026-10-15, app/me-order.tsx) */}
         <SortColumn className="me-col me-col-main" blocks={{
-          summary: <Kpis owned={owned} released={released} opById={opById} me={me} onList={openList} demo={demo} />,
+          summary: <Kpis owned={owned} released={released} opById={opById} me={me} onList={openList} demo={demo} onShowOp={onShowOperator} />,
           resume: <Paused me={me} opById={opById} onShowOperator={onShowOperator} />,
           recruit: <RecruitPool mine={mine} opById={opById} onShowOperator={onShowOperator} />,
           paradox: <Paradox me={me} mine={mine} released={released} allOps={collectible} onShowOperator={onShowOperator} />,
@@ -1332,16 +1333,21 @@ function Ring({ value, total }: { value: number; total: number }) {
 // ── 한눈에 보기 ──────────────────────────────────────────────
 // 칸 배치는 me-custom.tsx 의 배치 목록 하나 — 기본 칸도 고치고 지울 수 있다 (사용자 지시 2026-10-05).
 // 보유 오퍼·6성 보유는 넓은 칸(%)으로, 나머지는 작은 칸. 훈장 다음(맨 끝)에 '+ 항목 추가'.
-function Kpis({ owned, released, opById, me, onList, demo }: { owned: AccountChar[]; released: MeOp[]; opById: Map<string, MeOp>; me: MeData; onList: OpenList; demo?: boolean }) {
+function Kpis({ owned, released, opById, me, onList, demo, onShowOp }: { owned: AccountChar[]; released: MeOp[]; opById: Map<string, MeOp>; me: MeData; onList: OpenList; demo?: boolean; onShowOp?: (id: string) => void }) {
   const { locale, t } = useI18n();
   const layout = useCustomTiles();
   const customized = useLayoutCustomized();
   const [editing, setEditing] = useState<CustomTile | "new" | null>(null);
+  // 보유 스킨·훈장 칸 — 누르면 목록 창 (사용자 요청 2026-10-22)
+  const [collect, setCollect] = useState<"skins" | "medals" | null>(null);
   const fmt = fmtOf(locale);
   const ctx = { owned, released, opById, profile: me.profile };
-  const countOf = (cond: Cond): [number, number] => {
+  // 미리보기 — 인원·전체와 해당 오퍼(성급 → 정예화 → 레벨 높은 순). 편집 창이 얼굴 줄과 뒤 일러스트로 쓴다 (사용자 지시 2026-10-22)
+  const countOf = (cond: Cond): [number, number, AccountChar[]] => {
     const v = evalTile({ id: "", label: "", cond, total: true }, ctx);
-    return [v.value, v.total ?? 0];
+    const rar = (c: AccountChar) => opById.get(c.id)?.rarity ?? 0;
+    const chars = [...(v.chars ?? [])].sort((a, b) => rar(b) - rar(a) || b.elite - a.elite || b.level - a.level || a.id.localeCompare(b.id));
+    return [v.value, v.total ?? 0, chars];
   };
   const shown = layout.filter((tile) => tile.kind !== "builtin" || ((tile.key !== "skins" && tile.key !== "medals") || !!me.profile));
   // 윗줄 = 계정 숫자 셋(보유 오퍼·보유 스킨·훈장) 고정, 그 아래 = 고칠 수 있는 칸 한 줄에 5개 (사용자 지시 2026-10-05)
@@ -1363,12 +1369,27 @@ function Kpis({ owned, released, opById, me, onList, demo }: { owned: AccountCha
     const big = tile.kind === "builtin" && tile.key === "owned";
     // 내림 — 반올림하면 413/415 가 100% 로 보였다 (사용자 지적 2026-10-14). 100% 는 다 모았을 때만
     const pct = big && v.total ? `${Math.floor((v.value / Math.max(1, v.total)) * 100)}%` : null;
-    const clickable = !!(v.chars || v.ops);
-    const body = <><span>{label}</span><b>{fmt(v.value)}{v.total != null && <small>/{fmt(v.total)}</small>}</b>{pct && <small className="me-kpi-pct">{pct}</small>}{v.total != null && <Ring value={v.value} total={v.total} />}</>;
+    const coll = tile.kind === "builtin" && (tile.key === "skins" || tile.key === "medals") && !demo ? tile.key : null;
+    const clickable = !!(v.chars || v.ops || coll);
+    // 칸 배경 — 이 칸이 세는 내 오퍼 중 하나의 일러스트 (사용자 지시 2026-10-22, 편집 창 배경과 같은 결). 칸마다 같은 오퍼만
+    // 나오지 않게 칸 id 로 앞쪽 20명 안에서 고른다 (높은 성급·정예화 순)
+    const pool = v.chars ? [...v.chars].sort(byRarityLevel(opById)).slice(0, 20) : [];
+    const hero = pool.length ? pool[[...tile.id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % pool.length] : null;
+    // 보유 스킨 = 가장 최근에 얻은 스킨 일러, 훈장 = 가장 최근에 얻은 훈장 아이콘 (사용자 요청 2026-10-22)
+    const newSkin = tile.kind === "builtin" && tile.key === "skins" ? me.profile?.skinIds?.[0] : undefined;
+    const newMedal = tile.kind === "builtin" && tile.key === "medals" && me.profile?.medalList?.length
+      ? me.profile.medalList.reduce((a, b) => (b[1] > a[1] ? b : a))[0] : undefined;
+    const artSrc = hero ? fullArtOf(hero) : newSkin ? fullArtOf({ ...(owned[0] ?? ({} as AccountChar)), id: newSkin.split("@")[0], skin: newSkin, elite: 2 }) : newMedal ? asset(`/medals/icon/${newMedal}.webp`) : null;
+    const art = artSrc && (
+      <span className="me-kpi-art-box" aria-hidden><img className={`me-kpi-art${newMedal ? " medal" : ""}`} src={artSrc} alt="" loading="lazy" decoding="async"
+        onLoad={(e) => e.currentTarget.classList.add("on")}
+        onError={(e) => { const el = e.currentTarget; const fb = hero ? fullArtOf({ ...hero, skin: null }) : ""; if (fb && el.src !== new URL(fb, location.href).href) el.src = fb; else el.remove(); }} /></span>
+    );
+    const body = <>{art}<span>{label}</span><b>{fmt(v.value)}{v.total != null && <small>/{fmt(v.total)}</small>}</b>{pct && <small className="me-kpi-pct">{pct}</small>}{v.total != null && <Ring value={v.value} total={v.total} />}</>;
     return (
       <li key={tile.id} className={`me-kpi-custom${big ? " big" : ""}`}>
-        {clickable ? <button type="button" onClick={() => open(label, v)}>{body}</button> : <div>{body}</div>}
-        {!demo && !fixed && <button type="button" className="me-kpi-edit" aria-label={t("항목 고치기")} onClick={() => setEditing(tile)}>✎</button>}
+        {clickable ? <button type="button" onClick={() => (coll ? setCollect(coll) : open(label, v))}>{body}</button> : <div>{body}</div>}
+        {!demo && !fixed && <button type="button" className="me-kpi-edit" aria-label={t("카드 편집")} onClick={() => setEditing(tile)}>✎</button>}
       </li>
     );
   };
@@ -1383,11 +1404,13 @@ function Kpis({ owned, released, opById, me, onList, demo }: { owned: AccountCha
         {/* 맨 끝 — 칸 추가 (사용자 지시 2026-10-04) */}
         {!demo && layout.length < MAX_CUSTOM && (
           <li className="me-kpi-add">
-            <button type="button" onClick={() => setEditing("new")}><b aria-hidden>+</b><span>{t("항목 추가")}</span></button>
+            <button type="button" onClick={() => setEditing("new")}><b aria-hidden>+</b><span>{t("카드 추가")}</span></button>
           </li>
         )}
       </ul>
 
+      {collect === "skins" && <SkinsWindow skinIds={me.profile?.skinIds} server={me.server} opName={(id) => opById.get(id)?.name ?? id} onShowOperator={onShowOp} onClose={() => setCollect(null)} />}
+      {collect === "medals" && <MedalsWindow medalList={me.profile?.medalList} onClose={() => setCollect(null)} />}
       {editing && (
         <CustomTileEditor tile={editing === "new" ? null : editing} countOf={countOf}
           valueOf={(tile) => { const v = evalTile(tile, ctx); return v.total != null ? `${fmt(v.value)} / ${fmt(v.total)}` : fmt(v.value); }}

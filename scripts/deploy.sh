@@ -219,7 +219,7 @@ fi
 #   아이템 도감)이기도 하다. 지금은 목록이 `items.html` 한 파일이라 이 삭제를 안 타지만,
 #   **/items/<id> 같은 하위 라우트를 만들면 `items/` 아래로 떨어져 매 배포마다 사라진다**
 #   (아래 rogue가 2026-08-08에 당한 그 사고). 아이템 상세는 모달 + #it-<id> 로 둘 것.
-for dir in story lens tesseract avatars about og items scan profiles skins skin voice skills modules enemy stage sandbox ac records lore event tl tower; do
+for dir in story lens tesseract avatars about og items scan profiles skins skin voice skills modules enemy stage sandbox ac records lore event tl tower medals; do
   rm -rf "${STAGE:?}/$dir"
 done
 
@@ -273,6 +273,7 @@ cat > "$STAGE/_redirects" <<'EOF'
 /skins/* https://files.terra-archive.net/assets/skins/:splat 301
 /modules/* https://files.terra-archive.net/assets/modules/:splat 301
 /skin/* https://files.terra-archive.net/assets/skin/:splat 301
+/medals/* https://files.terra-archive.net/assets/medals/:splat 301
 /enemy/* https://files.terra-archive.net/assets/enemy/:splat 301
 /stage/* https://files.terra-archive.net/assets/stage/:splat 301
 /ac/* https://files.terra-archive.net/assets/ac/:splat 301

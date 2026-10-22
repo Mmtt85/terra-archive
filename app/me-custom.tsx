@@ -9,10 +9,16 @@ import { useState, useSyncExternalStore } from "react";
 import { useI18n } from "./i18n";
 import { ModalWindow } from "./modal-window";
 import { Dropdown } from "./dropdown";
+import { NumInput } from "./num-input";
 import type { AccountChar } from "./account";
 import { isMaxed, masteryText, potText, trustPct } from "./me-store";
 // '현재 / 전체'의 전체 수 — 게임 표에서 센 것 (scripts/build-me-meta.py)
 import meMeta from "./data/me-meta.json";
+import { asset } from "./assets";
+
+// 편집 창 꾸밈 — 조건에 맞는 첫 오퍼의 일러스트(창 뒤)와 얼굴 줄(미리보기). 스킨을 입혔으면 그 스킨, 없으면 정예화 단계 일러
+const faceOf = (id: string) => asset(`/avatars/${id}.webp`);
+export const fullArtOf = (c: AccountChar) => asset(`/skin/full/${encodeURIComponent(c.skin ? (c.skin.includes("@") ? c.skin.replace("@", "_") : c.skin.replace("#", "_")) : `${c.id}_${c.elite >= 2 ? 2 : 1}`)}.webp`);
 
 /** 조건 — 비어 있으면(0·빈 배열·"") 따지지 않는다 */
 export type Cond = {
@@ -27,6 +33,9 @@ export type Cond = {
   /** 모듈 종류(X·Y·α·Δ…)별 레벨 — 고른 값 중 하나면 된다(또는), 종류끼리는 모두 만족(그리고). 그 종류 모듈이 없는 오퍼는 빠진다 */
   mods: Record<string, number[]>;
   trust: number;          // 신뢰도 % 이상
+  /** 레벨·신뢰도 구간의 위끝 (2026-10-22~ "30레벨대"·"50~99%"·직접 입력). 없으면 아래끝 '이상'(옛 칸) */
+  levelMax?: number;
+  trustMax?: number;
 };
 // 잠재·스킬 레벨·마스터는 **고른 값과 같은** 오퍼만 센다 (명함·1잠…풀잠처럼 단계를 하나 고르는 방식이라, '이상'이면
 // 명함이 '상관없음'과 같아진다). 신뢰도만 연속값이라 '이상'.
@@ -46,6 +55,12 @@ const EVENT = "ta:me-tiles-change";
 export const MAX_CUSTOM = 24;
 const EMPTY: Cond = { rarity: [], elite: 0, maxed: false, level: 0, pot: 0, skill: 0, ms: [[], [], []], mods: {}, trust: 0 };
 const hasMastery = (cond: Cond) => cond.ms.some((x) => x.length > 0);
+/** 구간 글자 — 같으면 하나("Lv.55"), 다르면 "Lv.30~39" */
+const rangeText = (lo: number, hi: number, pre: string, post: string) => (lo === hi ? `${pre}${lo}${post}` : `${pre}${lo}~${hi}${post}`);
+// 레벨 구간 (사용자 지시 2026-10-22 "30레벨대·40레벨대, 만렙은 90·80과 같으니 빼고, 직접 입력도")
+const LEVEL_BANDS: [number, number][] = [[1, 9], [10, 19], [20, 29], [30, 39], [40, 49], [50, 59], [60, 69], [70, 79], [80, 89], [90, 90]];
+// 신뢰도 구간 (같은 날 "0~49 50~99 100~149 150~199, 200, 직접 입력")
+const TRUST_BANDS: [number, number][] = [[0, 49], [50, 99], [100, 149], [150, 199], [200, 200]];
 
 const B = (key: BuiltinKey, labelKey: string): CustomTile => ({ id: `b-${key}`, kind: "builtin", key, label: labelKey, labelKey });
 const C = (id: string, labelKey: string, cond: Partial<Cond>): CustomTile => ({ id, label: labelKey, labelKey, cond: { ...EMPTY, ...cond }, total: false });
@@ -122,10 +137,11 @@ export function matchesCond(c: AccountChar, op: CondOp, cond: Cond): boolean {
   if (c.elite < cond.elite) return false;
   if (cond.maxed && !isMaxed(c, rarity)) return false;
   // 레벨 조건은 정예화 단계를 넘어선 오퍼에겐 걸지 않는다 (2정 1레벨이 1정 50레벨보다 높다)
-  if (cond.level && c.level < cond.level && !(c.elite > cond.elite)) return false;
+  if ((cond.level || cond.levelMax) && !(c.elite > cond.elite) && (c.level < cond.level || (cond.levelMax != null && c.level > cond.levelMax))) return false;
   if (cond.pot && c.potential !== cond.pot) return false;
   // 마스터를 하나라도 지정했으면 스킬 레벨은 7 이 전제다 (마스터는 7레벨 다음 단계)
   const skillLv = hasMastery(cond) ? 7 : cond.skill;
+  // 스킬 레벨은 고른 값과 같은 오퍼만 (사용자 지시 2026-10-22 "3이상·4이상은 의미 없다, 3이면 3")
   if (skillLv && c.skill !== skillLv) return false;
   for (let i = 0; i < 3; i++) {
     const want = cond.ms[i];
@@ -136,7 +152,7 @@ export function matchesCond(c: AccountChar, op: CondOp, cond: Cond): boolean {
     const mod = op.modules.find((m) => modKindOf(m.type) === kind);
     if (!mod || !want.includes(c.modules[mod.id] ?? 0)) return false;
   }
-  if (cond.trust > 0 && trustPct(c.trust) < cond.trust) return false;
+  if ((cond.trust > 0 || cond.trustMax != null) && (trustPct(c.trust) < cond.trust || (cond.trustMax != null && trustPct(c.trust) > cond.trustMax))) return false;
   return true;
 }
 
@@ -148,6 +164,7 @@ export function suggestTitle(cond: Cond, locale: string, t: (k: string, v?: Reco
   if (cond.rarity.length) parts.push(`${[...cond.rarity].sort((a, b) => b - a).join("·")}★`);
   const eliteOnly = (e: number) => (locale === "en" ? `E${e}` : locale === "ja" ? `昇進${e}` : `${e}정`);
   if (cond.maxed) parts.push(cond.elite ? `${eliteOnly(cond.elite)} ${t("만렙")}` : t("만렙"));
+  else if (cond.levelMax != null) parts.push(`${cond.elite ? `${eliteOnly(cond.elite)} ` : ""}${rangeText(cond.level, cond.levelMax, "Lv.", "")}`);
   else if (cond.elite && cond.level) parts.push(`${eliteOnly(cond.elite)} ${cond.level}${cond.elite === 2 && cond.level >= 90 ? "" : "+"}`);
   else if (cond.elite) parts.push(cond.elite === 1 ? `${eliteOnly(1)}+` : eliteOnly(cond.elite));
   else if (cond.level) parts.push(`Lv.${cond.level}+`);
@@ -157,14 +174,15 @@ export function suggestTitle(cond: Cond, locale: string, t: (k: string, v?: Reco
   else ms.forEach((x, i) => { if (x.length) parts.push(`${t("{n}스킬", { n: i + 1 })} ${x.map((m) => masteryText(locale, m)).join("·")}`); });
   if (cond.skill && !hasMastery(cond)) parts.push(`${t("스킬")} Lv.${cond.skill}`);
   for (const [kind, lv] of Object.entries(cond.mods)) if (lv.length) parts.push(`${t("{k}모듈", { k: kind })} ${[...lv].sort().map((m) => `Lv.${m}`).join("·")}`);
-  if (cond.trust) parts.push(`${t("신뢰도")} ${cond.trust}%${cond.trust < 200 ? "+" : ""}`);
+  if (cond.trustMax != null) parts.push(`${t("신뢰도")} ${rangeText(cond.trust, cond.trustMax, "", "%")}`);
+  else if (cond.trust) parts.push(`${t("신뢰도")} ${cond.trust}%${cond.trust < 200 ? "+" : ""}`);
   return parts.join(" ");
 }
 
 export function CustomTileEditor({ tile, countOf, valueOf, onSave, onDelete, onClose }: {
   tile: CustomTile | null;
   /** 지금 조건으로 몇 명인지 (미리보기) — [인원, 전체] */
-  countOf: (cond: Cond) => [number, number];
+  countOf: (cond: Cond) => [number, number, AccountChar[]?];
   /** 계정 숫자 칸의 지금 값 (미리보기) */
   valueOf?: (tile: CustomTile) => string;
   onSave: (tile: CustomTile) => void;
@@ -187,12 +205,30 @@ export function CustomTileEditor({ tile, countOf, valueOf, onSave, onDelete, onC
   const setLabel = (v: string) => setTyped(v === "" ? null : v);
   const [total, setTotal] = useState(condTile?.total ?? false);
   const set = (part: Partial<Cond>) => setCond((c) => ({ ...c, ...part }));
-  const [n, all] = countOf(cond);
-  const any = t("상관없음");
-  const seg = <V extends string | number>(value: V, opts: { v: V; label: string }[], on: (v: V) => void) => (
-    <div className="me-seg me-cm-seg" role="group">
-      {opts.map((o) => <button key={String(o.v)} type="button" className={value === o.v ? "selected" : ""} onClick={() => on(o.v)}>{o.label}</button>)}
+  // 구간 목록에 없는 값(옛 칸·직접 넣은 값)이면 처음부터 직접 입력 칸을 연다
+  const [levelCustom, setLevelCustom] = useState(() => !!condTile?.cond.levelMax && !LEVEL_BANDS.some(([lo, hi]) => lo === condTile.cond.level && hi === condTile.cond.levelMax));
+  const [trustCustom, setTrustCustom] = useState(() => condTile?.cond.trustMax != null && !TRUST_BANDS.some(([lo, hi]) => lo === condTile.cond.trust && hi === condTile.cond.trustMax));
+  // 직접 입력은 공용 숫자 칸(NumInput — [−][값][+], 사용자 지적 2026-10-22 "공통 컴포넌트 있지 않냐"). 아래끝을 위끝보다 올리면 위끝도 따라간다
+  const rangeRow = (name: string, lo: number, hi: number, min: number, max: number, on: (lo: number, hi: number) => void, pre: string, post = "") => (
+    <div className="me-cm-custom">
+      <span>{t("{name} 직접 입력", { name })}</span>
+      {pre && <small>{pre}</small>}
+      <NumInput value={lo} min={min} max={max} ariaLabel={`${name} ${t("부터")}`} onChange={(a) => on(a, Math.max(a, hi))} />
+      <small>~</small>
+      <NumInput value={hi} min={min} max={max} ariaLabel={`${name} ${t("까지")}`} onChange={(b) => on(Math.min(lo, b), b)} />
+      {post && <small>{post}</small>}
     </div>
+  );
+  const [n, all, chars = []] = countOf(cond);
+  const hero = builtin ? null : chars[0] ?? null;
+  const any = t("상관없음");
+  /** 조건 카드 — 이름(위)·지금 값(아래), 누르면 목록. on = 상관없음이 아닌 값이 골라짐(명암 반전) */
+  // 목록은 하나만 고른다 (사용자 지적 2026-10-22 "왜 복수 선택이 되냐") — 성급·스킬 마스터·모듈도 하나씩. 예전에 여럿 고른 항목은 값 글자로만 보인다
+  const card = (name: string, value: string, on: boolean, _multi: boolean, items: { value: string; label: string }[], selected: string[],
+    pick: (v: string) => void, scroll = false, disabled = false) => (
+    <Dropdown bare ariaLabel={name} scroll={scroll || items.length > 10} disabled={disabled} className="me-cm-drop" buttonClassName={`me-cm-card${on ? " on" : ""}`}
+      label={<><span className="me-cm-k">{name}</span><b className="me-cm-v">{value}</b><i className="me-cm-caret" aria-hidden>▾</i></>}
+      selected={selected} items={items} onPick={pick} />
   );
   // 제목을 그대로 두면 사전 키를 유지한다(언어를 바꿔도 번역되게), 고치면 쓴 글 그대로
   const keepKey = tile?.labelKey && label === t(tile.labelKey) ? tile.labelKey : undefined;
@@ -202,90 +238,108 @@ export function CustomTileEditor({ tile, countOf, valueOf, onSave, onDelete, onC
     else onSave({ id: tile?.id ?? `c${Date.now().toString(36)}`, label: name, labelKey: keepKey, cond, total });
   };
   return (
-    <ModalWindow label={tile ? t("항목 고치기") : t("항목 추가")} className="operator-modal me-tile-modal" onClose={onClose}>
+    <ModalWindow label={tile ? t("카드 편집") : t("카드 추가")} className="operator-modal me-tile-modal" onClose={onClose}>
       <div className="me-tile-edit">
+        {/* 창 뒤 일러스트 — 조건을 바꾸면 그 조건의 첫 오퍼로 바뀐다. 그림이 없으면(스킨 그림 미수록 등) 정예화 일러, 그것도 없으면 뺀다 */}
+        {hero && <span className="me-tile-art-box" aria-hidden><img key={hero.id + (hero.skin ?? "")} className="me-tile-art" src={fullArtOf(hero)} alt="" decoding="async"
+          onError={(e) => { const el = e.currentTarget; const fb = fullArtOf({ ...hero, skin: null }); if (el.src !== new URL(fb, location.href).href) el.src = fb; else el.remove(); }} /></span>}
         <div className="me-tile-top">
-          <h3>{tile ? t("항목 고치기") : t("항목 추가")}</h3>
+          <h3>{tile ? t("카드 편집") : t("카드 추가")}</h3>
           {/* 지우기는 오른쪽 위에 따로 (사용자 지시 2026-10-04) — 아래 버튼과 붙어 있으면 잘못 누른다 */}
-          {onDelete && <button type="button" className="me-sort me-tile-del" onClick={onDelete}><span aria-hidden>✕</span>{t("지우기")}</button>}
+          {onDelete && <button type="button" className="me-sort me-tile-del" onClick={onDelete}><span aria-hidden>✕</span>{t("이 카드 지우기")}</button>}
         </div>
         <label className="me-tile-name">
           <span>{t("제목")}</span>
           <input value={label} maxLength={40} placeholder={t("예: 6성 3마 1스킬")} onChange={(e) => setLabel(e.target.value)} />
         </label>
-        {builtin ? <p className="me-note">{t("이 칸은 계정 숫자라 조건을 바꿀 수 없습니다 — 제목만 고치거나 지울 수 있습니다.")}</p> : <div className="me-cm-cond">
-          <span>{t("성급")}</span>
-          <div className="me-seg me-cm-seg" role="group">
-            {[6, 5, 4, 3, 2, 1].map((r) => (
-              <button key={r} type="button" className={cond.rarity.includes(r) ? "selected" : ""}
-                onClick={() => set({ rarity: cond.rarity.includes(r) ? cond.rarity.filter((x) => x !== r) : [...cond.rarity, r] })}>{r}★</button>
-            ))}
+        {/* 조건은 카드 하나에 하나씩 가로로 — 누르면 목록이 펼쳐진다 (사용자 지시 2026-10-22). 카드엔 이름 위·지금 값 아래.
+            스킬 마스터·모듈은 카드가 너무 늘지 않게 하나씩으로 묶고 목록에서 여럿 고른다 */}
+        {/* 조건 한 번에 비우기 (사용자 지시 2026-10-22) — 표시 방식(인원 수 / 전체)은 조건이 아니라 그대로 둔다 */}
+        {!builtin && (
+          <div className="me-cm-head">
+            <span>{t("조건")}</span>
+            <button type="button" className="me-sort" disabled={JSON.stringify(cond) === JSON.stringify(EMPTY)} onClick={() => setCond(EMPTY)}>{t("조건 초기화")}</button>
           </div>
-          <span>{t("정예화")}</span>
-          {seg(cond.elite, [{ v: 0, label: any }, { v: 1, label: t("1정 이상") }, { v: 2, label: t("2정") }], (v) => set({ elite: v }))}
-          <span>{t("레벨")}</span>
-          <div className="me-cm-inline">
-            {seg(cond.maxed ? 1 : 0, [{ v: 0, label: t("직접") }, { v: 1, label: t("만렙") }], (v) => set({ maxed: v === 1 }))}
-            {!cond.maxed && <input type="number" min={0} max={90} value={cond.level || ""} placeholder="0"
-              onChange={(e) => set({ level: Math.max(0, Math.min(90, Number(e.target.value) || 0)) })} />}
-            {!cond.maxed && <small>{t("이상")}</small>}
-          </div>
-          <span>{t("잠재")}</span>
-          {seg(cond.pot, [{ v: 0, label: any }, ...[1, 2, 3, 4, 5, 6].map((p) => ({ v: p, label: potText(locale, p) }))], (v) => set({ pot: v }))}
-          <span>{t("스킬")}</span>
-          {/* 스킬 — '아무 스킬'은 공통 스킬 레벨 1~7, 1·2·3스킬과 '모든 스킬'은 마스터 1~3마를 목록에서 고른다 (사용자 지시 2026-10-04) */}
-          <div className="me-seg me-cm-seg me-cm-skill" role="group">
-            <button type="button" className={!cond.skill && !hasMastery(cond) ? "selected" : ""} onClick={() => set({ skill: 0, ms: [[], [], []] })}>{any}</button>
-            {/* 마스터를 지정하면 공통 스킬 레벨은 7 로 고정 — 고칠 수 없다 (사용자 지시 2026-10-04) */}
-            <Dropdown ariaLabel={t("아무 스킬")} disabled={hasMastery(cond)} buttonClassName={cond.skill || hasMastery(cond) ? "selected" : ""}
-              label={hasMastery(cond) ? `${t("아무 스킬")} Lv.7` : cond.skill ? `${t("아무 스킬")} Lv.${cond.skill}` : t("아무 스킬")}
-              selected={cond.skill ? [String(cond.skill)] : []}
-              items={[1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: String(n), label: `Lv.${n}` }))}
-              onPick={(v) => set({ skill: Number(v) })} />
-            {[0, 1, 2].map((i) => {
-              const name = t("{n}스킬", { n: i + 1 });
-              const picked = cond.ms[i];
-              return (
-                <Dropdown key={i} ariaLabel={name} buttonClassName={picked.length ? "selected" : ""}
-                  label={picked.length ? `${name} ${[...picked].sort().map((m) => masteryText(locale, m)).join("·")}` : name}
-                  selected={picked.map(String)}
-                  items={[1, 2, 3].map((m) => ({ value: String(m), label: masteryText(locale, m) }))}
-                  onPick={(v) => {
-                    const m = Number(v);
-                    const next = cond.ms.map((x, j) => (j === i ? (x.includes(m) ? x.filter((y) => y !== m) : [...x, m]) : x)) as Cond["ms"];
-                    set({ ms: next });
-                  }} />
-              );
+        )}
+        {builtin ? <p className="me-note">{t("이 칸은 계정 숫자라 조건을 바꿀 수 없습니다 — 제목만 고치거나 지울 수 있습니다.")}</p> : <div className="me-cm-cards">
+          {card(t("성급"), cond.rarity.length ? [...cond.rarity].sort((a, b) => b - a).map((r) => `${r}★`).join("·") : any, cond.rarity.length > 0, true,
+            [{ value: "any", label: any }, ...[6, 5, 4, 3, 2, 1].map((r) => ({ value: String(r), label: `${r}★` }))],
+            cond.rarity.map(String),
+            (v) => set({ rarity: v === "any" ? [] : [Number(v)] }))}
+          {card(t("정예화"), cond.elite === 1 ? t("1정 이상") : cond.elite === 2 ? t("2정") : any, cond.elite > 0, false,
+            [{ value: "0", label: any }, { value: "1", label: t("1정 이상") }, { value: "2", label: t("2정") }],
+            [String(cond.elite)], (v) => set({ elite: Number(v) }))}
+          {card(t("레벨"), cond.maxed ? t("만렙") : cond.levelMax != null ? rangeText(cond.level, cond.levelMax, "Lv.", "") : cond.level ? `Lv.${cond.level}+` : any,
+            cond.maxed || cond.level > 0 || cond.levelMax != null, false,
+            [{ value: "any", label: any }, ...LEVEL_BANDS.map(([lo, hi]) => ({ value: `${lo}-${hi}`, label: lo === hi ? `Lv.${lo}` : lo < 10 ? `Lv.${lo}~${hi}` : t("{n}레벨대", { n: lo }) })),
+              { value: "custom", label: t("직접 입력") }],
+            [levelCustom ? "custom" : cond.levelMax != null ? `${cond.level}-${cond.levelMax}` : cond.level ? "" : "any"],
+            (v) => {
+              setLevelCustom(v === "custom");
+              if (v === "any") set({ maxed: false, level: 0, levelMax: undefined });
+              else if (v === "custom") set({ maxed: false, level: cond.level || 1, levelMax: cond.levelMax ?? (cond.level || 90) });
+              else { const [lo, hi] = v.split("-").map(Number); set({ maxed: false, level: lo, levelMax: hi }); }
+            }, true)}
+          {card(t("잠재"), cond.pot ? potText(locale, cond.pot) : any, cond.pot > 0, false,
+            [{ value: "0", label: any }, ...[1, 2, 3, 4, 5, 6].map((p) => ({ value: String(p), label: potText(locale, p) }))],
+            [String(cond.pot)], (v) => set({ pot: Number(v) }))}
+          {/* 마스터를 지정하면 공통 스킬 레벨은 7 로 고정 — 고칠 수 없다 (사용자 지시 2026-10-04) */}
+          {card(t("스킬 레벨"), hasMastery(cond) ? "Lv.7" : cond.skill ? `Lv.${cond.skill}` : any, cond.skill > 0 || hasMastery(cond), false,
+            [{ value: "0", label: any }, ...[1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: String(n), label: `Lv.${n}` }))],
+            [String(cond.skill)], (v) => set({ skill: Number(v) }), false, hasMastery(cond))}
+          {card(t("스킬 마스터"), hasMastery(cond)
+            ? cond.ms.map((x, i) => (x.length ? `${i + 1}S ${[...x].sort().map((m) => masteryText(locale, m)).join("·")}` : "")).filter(Boolean).join(" · ") : any,
+            hasMastery(cond), true,
+            [{ value: "any", label: any }, ...[0, 1, 2].flatMap((i) => [1, 2, 3].map((m) => ({ value: `${i}:${m}`, label: `${t("{n}스킬", { n: i + 1 })} ${masteryText(locale, m)}` })))],
+            cond.ms.flatMap((x, i) => x.map((m) => `${i}:${m}`)),
+            (v) => {
+              if (v === "any") { set({ ms: [[], [], []] }); return; }
+              const [i, m] = v.split(":").map(Number);
+              set({ ms: [0, 1, 2].map((j) => (j === i ? [m] : [])) as Cond["ms"] });
+            }, true)}
+          {card(t("모듈"), Object.values(cond.mods).some((x) => x.length)
+            ? Object.entries(cond.mods).filter(([, x]) => x.length).map(([k, x]) => `${k} ${[...x].sort().map((m) => `Lv.${m}`).join("·")}`).join(" · ") : any,
+            Object.values(cond.mods).some((x) => x.length), true,
+            [{ value: "any", label: any }, ...MOD_KINDS.flatMap((k) => [1, 2, 3].map((m) => ({ value: `${k}:${m}`, label: `${t("{k}모듈", { k })} Lv.${m}` })))],
+            Object.entries(cond.mods).flatMap(([k, x]) => x.map((m) => `${k}:${m}`)),
+            (v) => {
+              if (v === "any") { set({ mods: {} }); return; }
+              const [k, mS] = v.split(":");
+              set({ mods: { [k]: [Number(mS)] } });
+            }, true)}
+          {card(t("신뢰도"), cond.trustMax != null ? rangeText(cond.trust, cond.trustMax, "", "%") : cond.trust ? `${cond.trust}%${cond.trust < 200 ? "+" : ""}` : any,
+            cond.trust > 0 || cond.trustMax != null, false,
+            [{ value: "any", label: any }, ...TRUST_BANDS.map(([lo, hi]) => ({ value: `${lo}-${hi}`, label: rangeText(lo, hi, "", "%") })), { value: "custom", label: t("직접 입력") }],
+            [trustCustom ? "custom" : cond.trustMax != null ? `${cond.trust}-${cond.trustMax}` : cond.trust ? "" : "any"],
+            (v) => {
+              setTrustCustom(v === "custom");
+              if (v === "any") set({ trust: 0, trustMax: undefined });
+              else if (v === "custom") set({ trust: cond.trust, trustMax: cond.trustMax ?? 200 });
+              else { const [lo, hi] = v.split("-").map(Number); set({ trust: lo, trustMax: hi }); }
             })}
-          </div>
-          <span>{t("모듈")}</span>
-          {/* 모듈 — 종류별로 1~3레벨 목록 (사용자 지시 2026-10-04, 스킬 마스터와 같은 방식) */}
-          <div className="me-seg me-cm-seg me-cm-skill" role="group">
-            <button type="button" className={Object.values(cond.mods).every((x) => !x.length) ? "selected" : ""} onClick={() => set({ mods: {} })}>{any}</button>
-            {MOD_KINDS.map((kind) => {
-              const picked = cond.mods[kind] ?? [];
-              const name = t("{k}모듈", { k: kind });
-              return (
-                <Dropdown key={kind} ariaLabel={name} buttonClassName={picked.length ? "selected" : ""}
-                  label={picked.length ? `${name} ${[...picked].sort().map((m) => `Lv.${m}`).join("·")}` : name}
-                  selected={picked.map(String)}
-                  items={[1, 2, 3].map((m) => ({ value: String(m), label: `Lv.${m}` }))}
-                  onPick={(v) => {
-                    const m = Number(v);
-                    set({ mods: { ...cond.mods, [kind]: picked.includes(m) ? picked.filter((y) => y !== m) : [...picked, m] } });
-                  }} />
-              );
-            })}
-          </div>
-          <span>{t("신뢰도")}</span>
-          {seg(cond.trust, [{ v: 0, label: any }, ...[50, 100, 150].map((n) => ({ v: n, label: `${n}%+` })), { v: 200, label: "200%" }], (v) => set({ trust: v }))}
-          <span>{t("표시")}</span>
-          {seg(total ? 1 : 0, [{ v: 0, label: t("인원 수") }, { v: 1, label: t("인원 수 / 전체") }], (v) => setTotal(v === 1))}
+          {card(t("표시"), total ? t("인원 수 / 전체") : t("인원 수"), false, false,
+            [{ value: "0", label: t("인원 수") }, { value: "1", label: t("인원 수 / 전체") }],
+            [total ? "1" : "0"], (v) => setTotal(v === "1"))}
         </div>}
-        <p className="me-tile-preview"><span>{label.trim() || t("새 항목")}</span><b>{builtin ? valueOf?.(builtin) ?? "" : total ? `${n} / ${all}` : n}</b></p>
+        {/* 직접 입력 — 목록에서 '직접 입력'을 고르면 카드 아래에 범위 칸이 열린다 (같은 값이면 그 값 하나) */}
+        {!builtin && levelCustom && rangeRow(t("레벨"), cond.level, cond.levelMax ?? cond.level, 1, 90, (lo, hi) => set({ maxed: false, level: lo, levelMax: hi }), "Lv.")}
+        {!builtin && trustCustom && rangeRow(t("신뢰도"), cond.trust, cond.trustMax ?? 200, 0, 200, (lo, hi) => set({ trust: lo, trustMax: hi }), "", "%")}
+        <div className="me-tile-preview">
+          <div className="me-tile-pv-l">
+            <span>{label.trim() || t("새 항목")}</span>
+            {/* 이 조건이 세는 오퍼 — 앞에서 몇 명만 겹쳐 보이고 나머지는 +N */}
+            {!builtin && chars.length > 0 && (
+              <span className="me-tile-faces" aria-hidden>
+                {chars.slice(0, 10).map((c) => <img key={c.id} src={faceOf(c.id)} alt="" width={30} height={30} loading="lazy" />)}
+                {chars.length > 10 && <em>+{chars.length - 10}</em>}
+              </span>
+            )}
+          </div>
+          <b>{builtin ? valueOf?.(builtin) ?? "" : total ? `${n} / ${all}` : n}</b>
+        </div>
         <div className="me-tile-actions">
           <button type="button" className="import-action" onClick={onClose}>{t("취소")}</button>
-          <button type="button" className="import-action apply" onClick={save}><span className="btn-icon" aria-hidden>✓</span>{tile ? t("고치기") : t("추가")}</button>
+          <button type="button" className="import-action apply" onClick={save}><span className="btn-icon" aria-hidden>✓</span>{tile ? t("저장") : t("추가")}</button>
         </div>
       </div>
     </ModalWindow>

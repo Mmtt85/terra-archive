@@ -97,6 +97,8 @@ export type AccountProfile = {
   medals: number;
   /** 전체 훈장 수 (2026-10-05~ 워커) */
   medalTotal?: number;
+  /** 얻은 훈장 [id, 처음 얻은 시각(초)] (2026-10-22~ 워커. 옛 동기화엔 없다 — 다시 동기화하면 생긴다) */
+  medalList?: [string, number][];
   furniture: number;
   /** 기반시설 드론 — 동기화 시점 값 (2026-10-12~ 워커. 옛 동기화엔 없다) */
   labor?: { value: number; max: number; ts: number; speed: number; point: number } | null;
