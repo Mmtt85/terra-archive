@@ -841,6 +841,29 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
     if (!raw) return;
     const ids = raw.split(",").filter((id) => byId.has(id) && costs.ops[id]);
     if (ids.length) setPicked(ids);
+    // ?to=char_x:2.1,char_y:0.30 — 정예화.레벨까지만 목표로 (내 정보 패러독스·레코드에서 담아 올 때, 2026-10-22).
+    // 그 오퍼는 레벨·정예화를 그 단계까지만 잡고 스킬·특화·모듈은 0. to 가 없는 오퍼는 종전대로 전부
+    const to = new URLSearchParams(window.location.search).get("to");
+    if (to) {
+      const nextT: Record<string, number> = {}, nextL: Record<string, number> = {};
+      for (const part of to.split(",")) {
+        const m = /^([^:]+):(\d)\.(\d+)$/.exec(part);
+        const operator = m ? byId.get(m[1]) : null;
+        const entry = m ? costs.ops[m[1]] : null;
+        if (!m || !operator || !entry) continue;
+        const [, id, eS, lS] = m;
+        const e = Number(eS), l = Number(lS);
+        for (const group of buildGroups(operator, entry, t)) {
+          if (group.key !== "grow") { nextT[`${id}/${group.key}`] = 0; continue; }
+          let n = e > 0 ? group.steps.findIndex((st) => st.kind === "e" && st.phase === e - 1) + 1 : 0;
+          const lvStep = group.steps.findIndex((st) => st.kind === "lv" && st.phase === e);
+          if (l > 1 && lvStep >= 0) { n = lvStep + 1; nextL[`${id}/p${e}`] = Math.min(l, group.steps[lvStep].maxLv ?? l); }
+          nextT[`${id}/${group.key}`] = Math.max(0, n);
+        }
+      }
+      setTargets(nextT);
+      setLevelLv(nextL);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // picked → URL ?ops 동기화 (공유용). 첫 마운트의 [] 상태로 파라미터를 지우지 않도록 건너뛴다.
@@ -850,6 +873,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
     const url = new URL(window.location.href);
     if (picked.length) url.searchParams.set("ops", picked.join(","));
     else url.searchParams.delete("ops");
+    url.searchParams.delete("to");   // 목표는 처음 담을 때 한 번만 — 그 뒤 손으로 바꾼 목표와 어긋나지 않게
     window.history.replaceState(null, "", url);
   }, [picked]);
 

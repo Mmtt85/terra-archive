@@ -4,11 +4,11 @@
 // 순서는 localStorage "ta:me-order" — 내 정보로 로그인했으면 설정 동기화(app/cloud-prefs.tsx SYNC)로 다른 기기에도 이어진다.
 // 손잡이는 카드 제목 줄에 붙는다: 칸을 감싼 SortItem 이 컨텍스트로 넘기고, Card(app/me.tsx)·접은 칸 줄이 받아 그린다.
 // 카드 통째로 잡게 하지 않은 건 안의 단추·오퍼 얼굴을 누르다 끌려 버려서다
-import React, { createContext, useContext, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import React, { createContext, useContext, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useI18n } from "./i18n";
 
 const KEY = "ta:me-order";
-export const ME_ORDER_DEFAULT = ["summary", "resume", "recruit", "paradox", "rogue", "drawers", "rarity"] as const;
+export const ME_ORDER_DEFAULT = ["summary", "resume", "recruit", "paradox", "records", "rogue", "drawers", "rarity"] as const;
 export type MeBlock = (typeof ME_ORDER_DEFAULT)[number];
 
 export const DRAWER_DEFAULT = ["progress", "friends", "recent", "depot"] as const;
@@ -31,11 +31,15 @@ const subscribe = (cb: () => void) => {
   window.addEventListener("storage", on);   // 다른 탭·설정 동기화(같은 탭에 storage 이벤트를 흉내 낸다)
   return () => window.removeEventListener("storage", on);
 };
-type Saved = { blocks?: string[]; drawers?: string[] };
+/** folded — 접어 둔 카드(카드 번호 no, 예: "PARADOX"). 순서와 같은 설정에 실어 기기 사이에 이어진다 (사용자 지시 2026-10-22 "내 정보 섹션 전부 아코디언") */
+type Saved = { blocks?: string[]; drawers?: string[]; folded?: string[] };
 function parse(raw: string): Saved { try { const v = raw ? JSON.parse(raw) : null; return v && typeof v === "object" && !Array.isArray(v) ? v : {}; } catch { return {}; } }
 function save(patch: Saved | null) {
   try {
-    const next = patch ? { ...parse(read()), ...patch } : {};
+    const cur = parse(read());
+    // null = 순서 초기화 — 접어 둔 카드는 순서가 아니라 그대로 둔다
+    const next: Saved = patch ? { ...cur, ...patch } : (cur.folded?.length ? { folded: cur.folded } : {});
+    if (next.folded && !next.folded.length) delete next.folded;
     const same = (a: string[] | undefined, d: readonly string[]) => !a || a.join() === d.join();
     if (same(next.blocks, ME_ORDER_DEFAULT)) delete next.blocks;
     if (same(next.drawers, DRAWER_DEFAULT)) delete next.drawers;
@@ -48,6 +52,16 @@ function save(patch: Saved | null) {
 export function useMeOrder(): { order: MeBlock[]; drawers: DrawerKey[]; custom: boolean } {
   const saved = parse(useSyncExternalStore(subscribe, read, () => ""));
   return { order: norm(saved.blocks, ME_ORDER_DEFAULT), drawers: norm(saved.drawers, DRAWER_DEFAULT), custom: !!(saved.blocks || saved.drawers) };
+}
+/** 접어 둔 카드 — 카드 번호(no) 목록 */
+export function useMeFolded(): Set<string> {
+  const raw = useSyncExternalStore(subscribe, read, () => "");
+  return useMemo(() => new Set(parse(raw).folded ?? []), [raw]);
+}
+export function toggleMeFolded(no: string) {
+  const cur = new Set(parse(read()).folded ?? []);
+  if (cur.has(no)) cur.delete(no); else cur.add(no);
+  save({ folded: [...cur] });
 }
 /** 접은 칸 순서 저장 — 같은 묶음 안에서 좌우로 (사용자 지시 2026-10-15) */
 export const saveDrawerOrder = (drawers: DrawerKey[]) => save({ drawers });

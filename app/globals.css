@@ -28183,6 +28183,15 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 .me-card-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .me-card-head h3 { margin: 2px 0 0; font-size: 16px; letter-spacing: -0.3px; }
 .me-card-aside { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+/* 카드 접기 (사용자 지시 2026-10-22) — 머리 오른쪽 끝 작은 단추, 접으면 머리만 남는다 */
+.me-card-title { display: flex; align-items: center; gap: 8px; }
+.me-fold { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 18px; line-height: 1; cursor: pointer; }   /* 화살표만, 크게 (사용자 지시 2026-10-22) */
+.me-fold:hover { color: var(--ink); }
+.me-fold > span { display: block; transition: transform .15s; }   /* 같은 글자(▾)를 돌려 접힘(▸)을 그린다 — 글자를 바꾸면 높이가 달라 흔들렸다 */
+.me-card.folded .me-fold > span { transform: rotate(-90deg); }
+.me-card.folded .me-card-aside { visibility: hidden; }
+.me-card.folded { padding-bottom: 14px; }
+.me-card.folded .me-card-head { margin-bottom: 0; }
 .me-note { margin: 10px 0 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
 .me-depot { margin-top: 16px; }
 
@@ -28312,6 +28321,19 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 /* 촘촘한 격자 — 공개모집으로 채울 오퍼·패러독스 시뮬레이션 (사용자 지시 2026-10-17 "한 줄에 12명"). 오른쪽 열 폭(818px)에서 12칸 */
 .me-ops.dense { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px 6px; }
 .me-ops.dense .me-op-face { width: 46px; height: 46px; }
+/* 패러독스 '고르기' — 체크는 명암 반전, 담기 버튼은 라임 선 (제안 775f677e, 2026-10-22) */
+.me-ops li.picked .me-op-face { outline: 2px solid var(--ink); outline-offset: 1px; }
+.me-pick-mark { position: absolute; right: -4px; top: -4px; width: 18px; height: 18px; display: grid; place-items: center; border: 1.5px solid var(--ink); background: var(--white); color: var(--paper); font-size: 12px; font-style: normal; font-weight: 700; }
+.me-pick-mark.on { background: var(--ink); }
+.me-pick-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
+.me-pick-btn { display: inline-flex; align-items: center; box-sizing: border-box; height: 28px; padding: 0 10px; border: 1px solid var(--line); background: var(--white); color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; }
+/* 고르기 도구 줄은 버튼·드롭다운 높이를 28px 하나로 (사용자 지시 2026-10-22 "크기 좀 맞춰줘") */
+.me-para-tools .drop-btn, .me-para-tools .me-sort { box-sizing: border-box; height: 28px; padding-top: 0; padding-bottom: 0; }
+.me-pick-btn:hover { border-color: var(--border-strong); }
+.me-pick-btn:disabled, .me-pick-btn.off { opacity: .45; cursor: default; }
+.me-pick-btn.go { border-color: var(--lime-line); color: var(--lime-ink); }
+.me-pick-count { font-size: 12px; color: var(--muted); }
+.me-all-tools { display: flex; justify-content: flex-end; margin: 0 0 10px; }
 .me-ops.dense .me-op-name { font-size: 11px; }
 .me-ops.dense em { font-size: 10px; }
 .me-ops-wide { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); }

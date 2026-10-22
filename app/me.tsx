@@ -23,7 +23,7 @@ import { AccountLoginForm, AccountSteps } from "./roster-import";
 import { MeVerify } from "./me-verify";
 import { AccountError, accountErrorText, matchList, syncAccount, MAINTENANCE_TEXT, MAINTENANCE_TITLE, ACCOUNT_SERVERS, type AccountChar, type AccountFriend, type AccountProfile, type AccountStep } from "./account";
 import { cnErrorText } from "./account-cn";
-import { clearMe, dropMeToken, getMe, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, mePulls, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
+import { trustPct, clearMe, dropMeToken, getMe, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, mePulls, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages } from "./dex-cross";
 import { GROUPS, GROUP_LABEL, ItemFile, itemIcon, type DexItem, type ItemDoc, type ItemGroup } from "./items";
 import { StageFile } from "./stage-detail";
@@ -34,6 +34,7 @@ import { Marquee } from "./marquee";
 import { AttributeFilter } from "./attr-filter";
 import recruitData from "./data/recruit.json";
 import paradoxData from "./data/paradox.json";
+import recordReq from "./data/record-req.json";
 import towerNames from "./data/towers.json";
 import { MeShare } from "./me-share";
 import { isNewFeature } from "./whats-new";
@@ -44,7 +45,7 @@ import { LeaderCardBody, cardArt } from "./sss";
 import { openChecker, runningChecker } from "./stage-open";
 import { resetCloudPrefs } from "./cloud-prefs";
 import { Dropdown } from "./dropdown";
-import { NoSortHandle, SortColumn, SortHandle, useDrawerDrag, useMeOrder, type DrawerKey } from "./me-order";
+import { NoSortHandle, SortColumn, SortHandle, toggleMeFolded, useDrawerDrag, useMeFolded, useMeOrder, type DrawerKey } from "./me-order";
 import { ACQUIRE_KEYS, ACQUIRE_LABEL, acquireOf, type AcquireKey } from "./op-acquire";
 import { CustomTileEditor, DEFAULT_LAYOUT, MAX_CUSTOM, evalTile, saveCustomTiles, tileLabel, useCustomTiles, useLayoutCustomized, type Cond, type CustomTile, type TileValue } from "./me-custom";
 
@@ -504,6 +505,7 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareO
   // 전체 오퍼(보유율의 분모) — 중섭 계정은 한섭 미실장 오퍼도 갖고 있어 그것까지 센다. 안 그러면 보유 416/410 = 101% 가 됐다
   // (2026-10-06). 한·일·글섭 계정은 종전대로 한섭에 나온 오퍼만
   const released = useMemo(() => operators.filter((op) => (cnAccount || !op.unreleased) && isCollectible(op.id)), [operators, cnAccount]);
+  const collectible = useMemo(() => operators.filter((op) => isCollectible(op.id)), [operators]);
   const opById = useMemo(() => new Map(operators.map((op) => [op.id, op])), [operators]);
   const mine = meChars(me) ?? new Map<string, AccountChar>();
   const owned = me.chars.filter((c) => opById.has(c.id) && isCollectible(c.id));
@@ -522,7 +524,8 @@ function Dashboard({ me: given, demo, operators, onShowOperator, share, onShareO
           summary: <Kpis owned={owned} released={released} opById={opById} me={me} onList={openList} demo={demo} />,
           resume: <Paused me={me} opById={opById} onShowOperator={onShowOperator} />,
           recruit: <RecruitPool mine={mine} opById={opById} onShowOperator={onShowOperator} />,
-          paradox: <Paradox me={me} mine={mine} released={released} onShowOperator={onShowOperator} />,
+          paradox: <Paradox me={me} mine={mine} released={released} allOps={collectible} onShowOperator={onShowOperator} />,
+          records: <Records me={me} mine={mine} released={released} allOps={collectible} onShowOperator={onShowOperator} />,
           rogue: <RogueStats me={me} />,
           // 진행 상황·친구·최근 얻은 오퍼·창고는 바로 볼 일이 적어 버튼으로 접고 누르면 창으로 (사용자 지시 2026-10-11) — 묶음 안에서 좌우로도 옮긴다
           drawers: <Drawers me={me} now={now} owned={owned} opById={opById} stages={stages} items={items}
@@ -947,15 +950,28 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
   );
 }
 
+/** 카드 접기를 끄는 자리 — '더 보기' 창 안의 카드(진행 상황·친구 등)는 창 자체가 펼친 것이라 접지 않는다 */
+const FoldCtx = React.createContext(true);
 function Card({ no, title, aside, className, children }: { no: string; title: string; aside?: React.ReactNode; className?: string; children: React.ReactNode }) {
+  const { t } = useI18n();
+  // 내 정보 카드는 전부 접을 수 있다 (사용자 지시 2026-10-22 "아코디언으로") — 접은 상태는 카드 순서와 같이 기기 사이로 이어진다
+  const foldable = React.useContext(FoldCtx);
+  const folded = useMeFolded().has(no) && foldable;
   return (
-    <section className={`me-card${className ? ` ${className}` : ""}`}>
+    <section className={`me-card${className ? ` ${className}` : ""}${folded ? " folded" : ""}`}>
       <header className="me-card-head">
-        <div><span className="section-no">{no}</span><h3><SortHandle>{title}</SortHandle></h3></div>
-        {aside && <div className="me-card-aside">{aside}</div>}
+        {/* 접기 단추는 제목 바로 오른쪽 (사용자 지시 2026-10-22) */}
+        <div><span className="section-no">{no}</span><h3 className="me-card-title"><SortHandle>{title}</SortHandle>
+          {foldable && (
+            <button type="button" className="me-fold" aria-expanded={!folded} title={folded ? t("펼치기") : t("접기")} onClick={() => toggleMeFolded(no)}>
+              <span aria-hidden>▾</span>
+            </button>
+          )}</h3></div>
+        {/* 접어도 도구 칸은 자리를 지킨다(가리기만) — 빼면 머리 높이가 줄어 제목이 위로 튀었다 (사용자 지적 2026-10-22) */}
+        {aside && <div className="me-card-aside" aria-hidden={folded || undefined} inert={folded || undefined}>{aside}</div>}
       </header>
       {/* 손잡이는 이 카드 머리에만 — 안쪽 카드(창 안 등)엔 안 생기게 끊는다 */}
-      <NoSortHandle>{children}</NoSortHandle>
+      {!folded && <NoSortHandle><FoldCtx.Provider value={false}>{children}</FoldCtx.Provider></NoSortHandle>}
     </section>
   );
 }
@@ -1661,6 +1677,44 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
   );
 }
 
+// ── 오퍼 고르기 → 육성 계산기 (제안 775f677e, 사용자 확정 2026-10-22) ─────────────────────────────
+// '고르기'를 켜면 얼굴마다 빈 체크칸이 뜨고 누르기가 상세 대신 체크가 된다. 카드와 '전부 보기' 창이 같은 상태를 쓴다
+function usePick() {
+  const [picking, setPicking] = useState(false);
+  const [sel, setSel] = useState<Set<string>>(() => new Set());
+  const toggle = (id: string) => setSel((cur) => { const next = new Set(cur); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const stop = () => { setPicking(false); setSel(new Set()); };
+  return { picking, sel, setSel, toggle, stop, start: () => setPicking(true) };
+}
+type Pick = ReturnType<typeof usePick>;
+
+function PickMark({ pick, id }: { pick: Pick; id: string }) {
+  if (!pick.picking) return null;
+  const on = pick.sel.has(id);
+  return <i className={`me-pick-mark${on ? " on" : ""}`} aria-hidden>{on ? "✓" : ""}</i>;
+}
+/** '고르기' 버튼 — 누르면 그 자리가 전체 선택·해제·인원·계산기에 담기·취소로 바뀐다 (사용자 지시 2026-10-22).
+ *  href 는 고른 id 로 계산기 주소를 만든다 */
+function PickTools({ pick, ids, visible, href }: { pick: Pick; ids: string[]; visible?: string[]; href: (picked: string[]) => string }) {
+  const { locale, t } = useI18n();
+  if (!ids.length) return null;
+  if (!pick.picking) return <button type="button" className="me-sort" onClick={pick.start}>{t("고르기")}</button>;
+  const picked = ids.filter((id) => pick.sel.has(id));
+  return (
+    <div className="me-pick-bar">
+      {/* 전체 선택은 **지금 보이는 것만** — 접힌 카드에서 누르면 안 보이는 오퍼까지 골라지던 것 (사용자 지적 2026-10-22).
+          '전부 보기' 창에서는 전부 보이니 전부. 고른 것은 카드·창이 같이 쓴다 */}
+      <button type="button" className="me-pick-btn" onClick={() => pick.setSel((cur) => new Set([...cur, ...(visible ?? ids)]))}>{t("전체 선택")}</button>
+      <button type="button" className="me-pick-btn" onClick={() => pick.setSel(new Set())} disabled={!pick.sel.size}>{t("선택 해제")}</button>
+      <span className="me-pick-count">{t("선택 {n}명", { n: fmtOf(locale)(picked.length) })}</span>
+      {picked.length > 0
+        ? <a className="me-pick-btn go" href={href(picked)}>{t("계산기에 담기 →")}</a>
+        : <span className="me-pick-btn go off" aria-disabled>{t("계산기에 담기 →")}</span>}
+      <button type="button" className="me-pick-btn" onClick={pick.stop}>{t("취소")}</button>
+    </div>
+  );
+}
+
 // ── 공개모집으로 채울 오퍼 ───────────────────────────────────
 function RecruitPool({ mine, opById, onShowOperator }: { mine: Map<string, AccountChar>; opById: Map<string, MeOp>; onShowOperator?: (id: string) => void }) {
   const { locale, t } = useI18n();
@@ -1694,19 +1748,24 @@ function RecruitPool({ mine, opById, onShowOperator }: { mine: Map<string, Accou
       })}
     </ul>
   );
+  const SEG: ["missing" | "pot", string, number][] = [["missing", "미보유", missing.length], ["pot", "잠재 미완", notMax.length]];
+  // 구분은 드롭다운 — 카드와 '전부 보기' 창이 같은 상태 (사용자 지시 2026-10-22). 고르기는 없다(육성과 무관한 목록 — 같은 날)
+  const tools = (visible: typeof list) => (
+    <div className="me-depot-tools me-para-tools">
+      <Dropdown ariaLabel={t("공개모집 구분")} label={<>{t(SEG.find(([k]) => k === mode)![1])} <b>{fmt(list.length)}</b></>} selected={[mode]}
+        items={SEG.map(([k, label, n]) => ({ value: k, label: t(label), count: n }))}
+        onPick={(v) => setMode(v as "missing" | "pot")} />
+    </div>
+  );
+  const empty = <p className="me-note">{mode === "missing" ? t("공개모집으로 나오는 오퍼를 모두 보유하고 있습니다.") : t("공개모집 오퍼의 잠재가 모두 6입니다.")}</p>;
   return (
-    <Card no="RECRUITMENT" title={t("공개모집으로 채울 오퍼")}
-      aside={(
-        <div className="me-seg" role="group">
-          <button type="button" className={mode === "missing" ? "selected" : ""} onClick={() => { setMode("missing"); setAll(false); }}>{t("미보유")} {fmt(missing.length)}</button>
-          <button type="button" className={mode === "pot" ? "selected" : ""} onClick={() => { setMode("pot"); setAll(false); }}>{t("잠재 미완")} {fmt(notMax.length)}</button>
-        </div>
-      )}>
-      {list.length ? (
-        recList(shown, true)
-      ) : <p className="me-note">{mode === "missing" ? t("공개모집으로 나오는 오퍼를 모두 보유하고 있습니다.") : t("공개모집 오퍼의 잠재가 모두 6입니다.")}</p>}
+    <Card no="RECRUITMENT" title={t("공개모집으로 채울 오퍼")} aside={tools(shown)}>
+      {list.length ? recList(shown, true) : empty}
       {list.length > fold && <MoreButton open={false} total={list.length} onToggle={() => setAll(true)} />}
-      {all && <MoreModal title={t("공개모집으로 채울 오퍼")} onClose={() => setAll(false)}>{recList(list, false)}</MoreModal>}
+      {all && <MoreModal title={t("공개모집으로 채울 오퍼")} onClose={() => setAll(false)}>
+        <div className="me-all-tools">{tools(list)}</div>
+          {list.length ? recList(list, false) : empty}
+      </MoreModal>}
       <p className="me-note">{t("1·2성은 모집 시간을 줄여야 나옵니다 — 1성은 3시간 50분 이하, 2성은 7시간 30분 이하.")}</p>
     </Card>
   );
@@ -1716,15 +1775,25 @@ function RecruitPool({ mine, opById, onShowOperator }: { mine: Map<string, Accou
 // 해금 조건(정예화·레벨)은 app/data/paradox.json(scripts/build-paradox.py), 깬 기록은 워커가 계정 원본 troop.addon 에서 뽑는다(profile.paradox).
 // 남은 것을 셋으로 가른다: 지금 할 수 있음(조건 충족·안 깸) · 육성 필요(보유했지만 조건 미달) · 미보유
 const PARADOX = paradoxData as unknown as Record<string, [number, number, number?]>;
-type ParadoxMode = "ready" | "train" | "missing" | "clear";
-function Paradox({ me, mine, released, onShowOperator }: { me: MeData; mine: Map<string, AccountChar>; released: MeOp[]; onShowOperator?: (id: string) => void }) {
+const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
+type ParadoxMode = "ready" | "train" | "missing" | "clear" | "future";
+/** 사이트 '미래시 데이터 포함'(<html data-fut>, home.tsx) — 켜져 있을 때만 중섭 선행 항목을 보인다 */
+function useFuture(): boolean {
+  return useSyncExternalStore(
+    (cb) => { const mo = new MutationObserver(cb); mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-fut"] }); return () => mo.disconnect(); },
+    () => document.documentElement.dataset.fut === "1",
+    () => false);
+}
+function Paradox({ me, mine, released, allOps, onShowOperator }: { me: MeData; mine: Map<string, AccountChar>; released: MeOp[]; allOps: MeOp[]; onShowOperator?: (id: string) => void }) {
   const { locale, t } = useI18n();
   const fmt = fmtOf(locale);
   const done = me.profile?.paradox;
   const cnAccount = me.server === "cn" || me.server === "bili";
   const groups = useMemo(() => {
     const cleared = new Set(done ?? []);
-    const g: Record<ParadoxMode, MeOp[]> = { ready: [], train: [], missing: [], clear: [] };
+    const g: Record<ParadoxMode, MeOp[]> = { ready: [], train: [], missing: [], clear: [], future: [] };
+    // 앞으로 추가 — 중섭에만 있는 패러독스(미실장 오퍼 포함). 한·일·글섭 계정에서 미래시를 켰을 때만 (제안 775f677e, 2026-10-22)
+    if (!cnAccount) for (const op of allOps) if (PARADOX[op.id]?.[2]) g.future.push(op);
     for (const op of released) {
       const req = PARADOX[op.id];
       if (!req || (req[2] && !cnAccount)) continue;   // 중섭에만 있는 패러독스는 한·일·글섭 계정에서 뺀다
@@ -1736,28 +1805,33 @@ function Paradox({ me, mine, released, onShowOperator }: { me: MeData; mine: Map
     }
     for (const list of Object.values(g)) list.sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name, locale));
     return g;
-  }, [done, released, mine, locale, cnAccount]);
+  }, [done, released, allOps, mine, locale, cnAccount]);
+  const fut = useFuture();
   const [mode, setMode] = useState<ParadoxMode | null>(null);
   const cur: ParadoxMode = mode ?? (groups.ready.length ? "ready" : groups.train.length ? "train" : "missing");
   const [all, setAll] = useState(false);
   const [gridRef, cols] = useGridCols();
   const fold = (cols || 9) * OPS_ROWS;
   const total = groups.clear.length + groups.ready.length + groups.train.length + groups.missing.length;
+  // 육성 필요 → 육성 계산기 (제안 775f677e, 사용자 확정 2026-10-22) — '고르기'를 켜면 얼굴 누르기가 상세 대신 체크.
+  // 계산기는 패러독스 조건(정예화·레벨)까지만 목표로 연다(?to=, farm.tsx) — 스킬·특화·모듈은 0
+  const pick = usePick();
+  const calcHref = (ids: string[]) => `${LOCALE_BASE[locale]}/upgrade?ops=${ids.join(",")}&to=${ids.map((id) => `${id}:${PARADOX[id][0]}.${PARADOX[id][1]}`).join(",")}`;
   const need = (op: MeOp) => {
     const [e, l] = PARADOX[op.id];
     return l <= 1 ? t("{e}정 필요", { e }) : t("{e}정 Lv.{l} 필요", { e, l });
   };
   const sub = (op: MeOp) => {
     const c = mine.get(op.id);
-    if (curShown === "train") return need(op);
+    if (curShown === "train" || curShown === "future") return need(op);
     return c ? eliteText(locale, c.elite, c.level) : `${op.rarity}★`;
   };
   const grid = (items: MeOp[], withRef: boolean) => (
     <ul className="me-ops dense" ref={withRef ? gridRef : undefined}>
       {items.map((op) => (
-        <li key={op.id}>
-          <button type="button" onClick={() => onShowOperator?.(op.id)} title={op.name}>
-            <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(op.id)} alt="" width={56} height={56} loading="lazy" /></span>
+        <li key={op.id} className={pick.picking && pick.sel.has(op.id) ? "picked" : undefined}>
+          <button type="button" onClick={() => (pick.picking ? pick.toggle(op.id) : onShowOperator?.(op.id))} title={op.name} aria-pressed={pick.picking ? pick.sel.has(op.id) : undefined}>
+            <span className={`me-op-face r${op.rarity}`}><img src={avatarOf(op.id)} alt="" width={56} height={56} loading="lazy" /><PickMark pick={pick} id={op.id} /></span>
             <span className="me-op-name">{op.name}</span>
             <em>{sub(op)}</em>
           </button>
@@ -1765,24 +1839,120 @@ function Paradox({ me, mine, released, onShowOperator }: { me: MeData; mine: Map
       ))}
     </ul>
   );
-  const SEG: [ParadoxMode, string][] = [["ready", "지금 가능"], ["train", "육성 필요"], ["missing", "미보유"], ["clear", "클리어"]];
+  const SEG: [ParadoxMode, string][] = [["ready", "지금 가능"], ["train", "육성 필요"], ["missing", "미보유"], ["clear", "클리어"], ["future", "앞으로 추가 (중섭)"]];
   // 클리어 기록이 없는 옛 동기화 — 깼는지는 몰라도 '육성 필요'·'미보유'는 정예화만으로 가를 수 있어 그 둘은 보여 준다
-  const segs = done ? SEG : SEG.filter(([k]) => k === "train" || k === "missing");
-  const curShown: ParadoxMode = done ? cur : (mode === "missing" ? "missing" : "train");
+  const segs = (done ? SEG : SEG.filter(([k]) => k === "train" || k === "missing" || k === "future"))
+    .filter(([k]) => k !== "future" || (fut && groups.future.length > 0));
+  const curShown: ParadoxMode = mode === "future" && !segs.some(([k]) => k === "future") ? "train"
+    : done ? cur : (mode === "missing" || mode === "future" ? mode : "train");
   const shownList = groups[curShown];
+  // 구분은 드롭다운, '고르기'는 그 왼쪽 (사용자 지시 2026-10-22) — 고르기는 육성 필요에서만(계산기로 보낼 대상).
+  // 카드와 '전부 보기' 창이 같은 도구·상태를 쓴다 — 창에서 구분을 바꾸면 카드도 바뀐다
+  const canPick = curShown === "train" && shownList.length > 0;
+  const tools = (visible: MeOp[]) => (
+    <div className="me-depot-tools me-para-tools">
+      {canPick && <PickTools pick={pick} ids={shownList.map((op) => op.id)} visible={visible.map((op) => op.id)} href={calcHref} />}
+      <Dropdown ariaLabel={t("패러독스 구분")} label={<>{t(SEG.find(([k]) => k === curShown)![1])} <b>{fmt(groups[curShown].length)}</b></>} selected={[curShown]}
+        items={segs.map(([k, label]) => ({ value: k, label: t(label), count: groups[k].length }))}
+        onPick={(v) => { setMode(v as ParadoxMode); pick.stop(); }} />
+    </div>
+  );
+  const empty = <p className="me-note">{t("해당하는 오퍼가 없습니다.")}</p>;
   return (
-    <Card no="PARADOX" title={t("패러독스 시뮬레이션")}
-      aside={(
-        <div className="me-seg" role="group">
-          {segs.map(([k, label]) => (
-            <button key={k} type="button" className={curShown === k ? "selected" : ""} onClick={() => { setMode(k); setAll(false); }}>{t(label)} {fmt(groups[k].length)}</button>
-          ))}
-        </div>
-      )}>
+    <Card no="PARADOX" title={t("패러독스 시뮬레이션")} aside={tools(shownList.slice(0, fold))}>
       <p className="me-note">{done ? t("클리어 {n} / {total}", { n: fmt(groups.clear.length), total: fmt(total) }) : t("클리어 기록은 다시 동기화하면 보입니다.")}</p>
-      {shownList.length ? grid(shownList.slice(0, fold), true) : <p className="me-note">{t("해당하는 오퍼가 없습니다.")}</p>}
+      {shownList.length ? grid(shownList.slice(0, fold), true) : empty}
       {shownList.length > fold && <MoreButton open={false} total={shownList.length} onToggle={() => setAll(true)} />}
-      {all && <MoreModal title={`${t("패러독스 시뮬레이션")} · ${t(SEG.find(([k]) => k === curShown)![1])}`} onClose={() => setAll(false)}>{grid(shownList, false)}</MoreModal>}
+      {all && <MoreModal title={t("패러독스 시뮬레이션")} onClose={() => setAll(false)}>
+        <div className="me-all-tools">{tools(shownList)}</div>
+          {shownList.length ? grid(shownList, false) : empty}
+      </MoreModal>}
+    </Card>
+  );
+}
+
+// ── 오퍼레이터 레코드 (제안 775f677e, 2026-10-22) ─────────────────────────────────────────────
+// 해금 조건(정예화·레벨·신뢰도)은 app/data/record-req.json(scripts/build-record-req.py). 계정 데이터에 '읽음' 기록은 없어
+// 클리어 대신 조건 충족 여부로만 가른다. 한 오퍼에 레코드가 여럿이면 줄도 여럿이다
+type RecReq = { n: Partial<Record<Locale, string>> & { ko: string }; e: number; l: number; fv: number; f?: number };
+const RECORDS = recordReq as unknown as Record<string, RecReq[]>;
+type RecordMode = "ready" | "train" | "missing" | "future";
+type RecRow = { op: MeOp; rec: RecReq; key: string };
+function Records({ me, mine, released, allOps, onShowOperator }: { me: MeData; mine: Map<string, AccountChar>; released: MeOp[]; allOps: MeOp[]; onShowOperator?: (id: string) => void }) {
+  const { locale, t } = useI18n();
+  const fmt = fmtOf(locale);
+  const cnAccount = me.server === "cn" || me.server === "bili";
+  const fut = useFuture();
+  const groups = useMemo(() => {
+    const g: Record<RecordMode, RecRow[]> = { ready: [], train: [], missing: [], future: [] };
+    const relIds = new Set(released.map((op) => op.id));
+    for (const op of allOps) (RECORDS[op.id] ?? []).forEach((rec, i) => {
+      const row = { op, rec, key: `${op.id}#${i}` };
+      if (rec.f && !cnAccount) { g.future.push(row); return; }   // 중섭에만 있는 레코드 — 미래시를 켰을 때만
+      if (!relIds.has(op.id)) return;
+      const c = mine.get(op.id);
+      if (!c) g.missing.push(row);
+      else if ((c.elite > rec.e || (c.elite === rec.e && c.level >= rec.l)) && trustPct(c.trust) >= rec.fv) g.ready.push(row);
+      else g.train.push(row);
+    });
+    for (const list of Object.values(g)) list.sort((a, b) => b.op.rarity - a.op.rarity || a.op.name.localeCompare(b.op.name, locale));
+    return g;
+  }, [released, allOps, mine, locale, cnAccount]);
+  const SEG: [RecordMode, string][] = [["ready", "지금 가능"], ["train", "육성 필요"], ["missing", "미보유"], ["future", "앞으로 추가 (중섭)"]];
+  const segs = SEG.filter(([k]) => k !== "future" || (fut && groups.future.length > 0));
+  const [mode, setMode] = useState<RecordMode | null>(null);
+  const curShown: RecordMode = mode && segs.some(([k]) => k === mode) ? mode : groups.train.length ? "train" : groups.ready.length ? "ready" : "missing";
+  const list = groups[curShown];
+  const [all, setAll] = useState(false);
+  const [gridRef, cols] = useGridCols();
+  const fold = (cols || 9) * OPS_ROWS;
+  const pick = usePick();
+  // 계산기 목표는 그 오퍼의 레코드 조건 중 가장 높은 정예화·레벨 — 신뢰도는 계산기 밖이다
+  const calcHref = (ids: string[]) => `${LOCALE_BASE[locale]}/upgrade?ops=${ids.join(",")}&to=${ids.map((id) => {
+    const top = (RECORDS[id] ?? []).filter((r) => !r.f || cnAccount).reduce((m, r) => (r.e > m.e || (r.e === m.e && r.l > m.l) ? r : m), { e: 0, l: 1 } as { e: number; l: number });
+    return `${id}:${top.e}.${top.l}`;
+  }).join(",")}`;
+  const name = (rec: RecReq) => rec.n[locale] ?? rec.n.ko;
+  const need = (row: RecRow) => {
+    const c = mine.get(row.op.id);
+    const parts: string[] = [];
+    if (!c || c.elite < row.rec.e || (c.elite === row.rec.e && c.level < row.rec.l)) parts.push(row.rec.l <= 1 ? t("{e}정", { e: row.rec.e }) : t("{e}정 Lv.{l}", { e: row.rec.e, l: row.rec.l }));
+    if (row.rec.fv && (!c || trustPct(c.trust) < row.rec.fv)) parts.push(t("신뢰도 {n}%", { n: row.rec.fv }));
+    return parts.length ? t("{what} 필요", { what: parts.join(" · ") }) : name(row.rec);
+  };
+  const grid = (items: RecRow[], withRef: boolean) => (
+    <ul className="me-ops dense" ref={withRef ? gridRef : undefined}>
+      {items.map((row) => (
+        <li key={row.key} className={pick.picking && pick.sel.has(row.op.id) ? "picked" : undefined}>
+          <button type="button" onClick={() => (pick.picking ? pick.toggle(row.op.id) : onShowOperator?.(row.op.id))} title={`${row.op.name} — ${name(row.rec)}`} aria-pressed={pick.picking ? pick.sel.has(row.op.id) : undefined}>
+            <span className={`me-op-face r${row.op.rarity}`}><img src={avatarOf(row.op.id)} alt="" width={56} height={56} loading="lazy" /><PickMark pick={pick} id={row.op.id} /></span>
+            <span className="me-op-name">{row.op.name}</span>
+            <em>{curShown === "ready" ? name(row.rec) : need(row)}</em>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+  const ids = (rows: RecRow[]) => [...new Set(rows.map((r) => r.op.id))];
+  const canPick = curShown === "train" && list.length > 0;
+  const tools = (visible: RecRow[]) => (
+    <div className="me-depot-tools me-para-tools">
+      {canPick && <PickTools pick={pick} ids={ids(list)} visible={ids(visible)} href={calcHref} />}
+      <Dropdown ariaLabel={t("레코드 구분")} label={<>{t(SEG.find(([k]) => k === curShown)![1])} <b>{fmt(list.length)}</b></>} selected={[curShown]}
+        items={segs.map(([k, label]) => ({ value: k, label: t(label), count: groups[k].length }))}
+        onPick={(v) => { setMode(v as RecordMode); pick.stop(); }} />
+    </div>
+  );
+  const empty = <p className="me-note">{t("해당하는 레코드가 없습니다.")}</p>;
+  return (
+    <Card no="RECORDS" title={t("오퍼레이터 레코드")} aside={tools(list.slice(0, fold))}>
+      <p className="me-note">{t("해금 조건(정예화·레벨·신뢰도)만 봅니다 — 읽었는지는 계정 정보에 없습니다.")}</p>
+      {list.length ? grid(list.slice(0, fold), true) : empty}
+      {list.length > fold && <MoreButton open={false} total={list.length} onToggle={() => setAll(true)} />}
+      {all && <MoreModal title={t("오퍼레이터 레코드")} onClose={() => setAll(false)}>
+        <div className="me-all-tools">{tools(list)}</div>
+        {list.length ? grid(list, false) : empty}
+      </MoreModal>}
     </Card>
   );
 }
@@ -2318,7 +2488,7 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
       </div>
       </Card>
       {open && (
-        <NoSortHandle>
+        <NoSortHandle><FoldCtx.Provider value={false}>
         <ModalWindow label={title(open)} className={`operator-modal me-drawer-modal me-drawer-${open}`} onClose={() => setOpen(null)}>
           <div className="me-drawer-body">
             {open === "progress" && <Progress me={me} stages={stages} onOpenStage={onOpenStage} full />}
@@ -2327,7 +2497,7 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
             {open === "depot" && <Depot me={me} items={items} onOpen={onOpenItem} full />}
           </div>
         </ModalWindow>
-        </NoSortHandle>
+        </FoldCtx.Provider></NoSortHandle>
       )}
     </>
   );

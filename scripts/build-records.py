@@ -293,4 +293,7 @@ for loc, (n, fut) in written.items():
 print(f"합계 {total / 1024 / 1024:.1f} MB · record-ids {len(ids_ko)}명")
 if failed_cuts:
     print("미러에 없는 컷씬:", sorted(set(failed_cuts)))
+# 내 정보 '오퍼레이터 레코드' 카드용 해금 조건 요약 (2026-10-22)
+import subprocess
+subprocess.run([sys.executable, f"{REPO}/scripts/build-record-req.py"], check=True)
 print("→ R2 반영: node scripts/r2-sync.mjs")
