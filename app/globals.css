@@ -28186,9 +28186,11 @@ html.dark .evx-trim { color: #e6c55a; border-color: #b8952a; }
 .me-card-head h3 { margin: 2px 0 0; font-size: 16px; letter-spacing: -0.3px; }
 .me-card-aside { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
 /* 카드 접기 (사용자 지시 2026-10-22) — 머리 오른쪽 끝 작은 단추, 접으면 머리만 남는다 */
-.me-card-title { display: flex; align-items: center; gap: 8px; }
-.me-fold { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 18px; line-height: 1; cursor: pointer; }   /* 화살표만, 크게 (사용자 지시 2026-10-22) */
+.me-card-title { display: flex; align-items: center; gap: 0; }   /* 제목과 화살표 사이 빈틈도 눌리게 — 틈은 화살표 단추의 왼쪽 여백으로 (사용자 지적 2026-10-22) */
+.me-fold { display: inline-grid; place-items: center; box-sizing: content-box; width: 24px; height: 24px; padding: 0 0 0 8px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 18px; line-height: 1; cursor: pointer; }   /* 화살표만, 크게 (사용자 지시 2026-10-22) */
 .me-fold:hover { color: var(--ink); }
+/* 제목에 올려도 접기 화살표가 진해진다 — 제목을 누르면 접히니까 (사용자 지시 2026-10-22) */
+.me-card-title:has(.me-sort-handle.with-title:hover) .me-fold { color: var(--ink); }
 .me-fold > span { display: block; transition: transform .15s; }   /* 같은 글자(▾)를 돌려 접힘(▸)을 그린다 — 글자를 바꾸면 높이가 달라 흔들렸다 */
 .me-card.folded .me-fold > span { transform: rotate(-90deg); }
 .me-card.folded .me-card-aside { visibility: hidden; }
@@ -31963,7 +31965,8 @@ html.dark .mm-art { opacity: .25; }
 .me-sort-handle.with-title { cursor: pointer; }
 .me-sort-handle .me-sort-grip { cursor: grab; }
 .me-sort-handle.no-sort { touch-action: auto; }
-.me-sort-handle:hover .me-sort-grip, .me-sort-handle:focus-visible .me-sort-grip { color: var(--ink); }
+/* ⠿ 는 ⠿ 위에 올렸을 때만 진해진다 — 제목(누르면 접기)에 올렸는데 끌기 아이콘까지 빛나던 것 (사용자 지적 2026-10-22) */
+.me-sort-grip:hover, .me-sort-handle:focus-visible .me-sort-grip { color: var(--ink); }
 .me-sort-handle:focus-visible { outline: 2px solid var(--lime-line); outline-offset: 2px; }
 .me-sorting, .me-sorting * { cursor: grabbing !important; user-select: none; }
 .me-sort-reset { justify-self: end; border: 0; background: none; padding: 2px 0; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
@@ -34451,3 +34454,15 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--muted); font-size: 9px; font-weight: 600; line-height: 1.1; text-align: center; cursor: pointer; }
 .ship-room .drone-toggle:hover { border-color: var(--border-strong); color: var(--ink); }
 .ship-room .drone-toggle.on { border-color: var(--lime-line); color: var(--lime-ink); }
+
+/* ── 막대·고리가 바뀔 때 쭉 늘어나게 — 사이트 전체 (사용자 지시 2026-10-22 "그래프는 쭈우욱 올라가는 느낌, 사이트 내 모든 부분").
+   숫자 굴리기는 app/number-tween.ts. 막대는 두 방식뿐이라 둘 다 건다: ① 인라인 --p(%)로 그리는 막대 — --p 를 %로 등록해야
+   값이 보간된다 ② 인라인 width(%)로 그리는 막대(i·span). 고리(내 정보 한눈에 보기)는 stroke-dasharray.
+   처음 그려질 때는 그대로, 값이 바뀔 때만 움직인다 */
+@property --p { syntax: "<percentage>"; inherits: true; initial-value: 0%; }
+[style*="--p"] { transition: --p .7s cubic-bezier(.2, .8, .2, 1); }
+:is(i, span)[style*="width:"] { transition: width .7s cubic-bezier(.2, .8, .2, 1); }
+.me-ring-fill { transition: stroke-dasharray .7s cubic-bezier(.2, .8, .2, 1); }
+@media (prefers-reduced-motion: reduce) {
+  [style*="--p"], :is(i, span)[style*="width:"], .me-ring-fill { transition: none; }
+}
