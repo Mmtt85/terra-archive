@@ -28550,6 +28550,9 @@ html.dark .me-tile-art { opacity: .3; }
 .me-collect-head .me-note { margin: 0; }
 .me-collect-group h4 { margin: 0 0 8px; font-size: 13px; }
 .me-collect-group h4 small { margin-left: 6px; font-weight: 500; color: var(--muted); }
+/* 스킨 브랜드 탭 — 많으니 줄을 넘겨 늘어선다 */
+.me-skin-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+.me-skin-tabs button small { margin-left: 4px; font-weight: 500; opacity: .7; }
 .me-skin-grid, .me-medal-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .me-skin-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
 .me-skin-grid button { display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 0 0 8px; border: 1px solid var(--line); background: var(--bg-faint); color: inherit; font: inherit; text-align: left; cursor: pointer; overflow: hidden; }
@@ -31511,6 +31514,13 @@ button.me-resume-idle:hover { border-color: var(--border-strong); }
   opacity: .32; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 70%); mask-image: linear-gradient(90deg, transparent 0%, #000 70%); transition: opacity .3s; }
 .me-resume > button.has-bg:hover::before, .me-resume > a.has-bg:hover::before { opacity: .45; }
 html.dark .me-resume > button.has-bg::before { opacity: .26; }
+/* 라이트 모드에서도 그림 칸 글자는 흰색 (사용자 지시 2026-10-22 "현재 진행 중·통합전략 칸") — 흰 글자가 읽히게 칸 바탕을 어둡게(--ink),
+   그림은 조금 더 진하게. 다크 모드는 원래 어두워 그대로 */
+html:not(.dark) .me-resume > :is(button, a).has-bg { background: var(--ink); color: var(--white); }
+html:not(.dark) .me-resume > :is(button, a).has-bg::before { opacity: .55; }
+html:not(.dark) .me-resume > :is(button, a).has-bg:hover::before { opacity: .7; }
+html:not(.dark) .me-resume > :is(button, a).has-bg :is(b, span, em, small) { color: inherit; }
+html:not(.dark) .me-resume > :is(button, a).has-bg :is(b, em, small) { opacity: .75; }
 /* 소장품 격자 — 아이콘 + 이름 (2026-10-11 "그림만 보곤 모른다") · 상세는 모달 */
 .me-resume-relic-grid { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 5px; }
 .me-resume-relic-grid button { width: 100%; height: auto; aspect-ratio: auto; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; overflow: visible; color: inherit; font: inherit; }

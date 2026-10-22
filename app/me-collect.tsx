@@ -34,6 +34,8 @@ export function SkinsWindow({ skinIds, server, opName, onShowOperator, onClose }
   const [failed, setFailed] = useState(false);
   // 누르면 그 스킨을 크게 — 오퍼 상세와 같은 확대 창(움직이는 일러가 있으면 그것) (사용자 지적 2026-10-22 "오퍼가 아니라 스킨이 크게")
   const [zoom, setZoom] = useState<{ p: string; n: string; c: string } | null>(null);
+  // 브랜드 탭 (사용자 지시 2026-10-22 "에포크 같은 시리즈별로 탭") — null = 전체
+  const [brand, setBrand] = useState<string | null>(null);
   useEffect(() => { void loadSkins().then(setIdx, () => setFailed(true)); }, []);
   // 브랜드별로 묶는다 — 묶음은 많이 가진 순(기타는 맨 뒤), 안에서는 가진 것 먼저·이름순.
   // 못 가진 스킨도 흐리게 같이 (사용자 요청 2026-10-22) — 계정 서버에 나온 것만 (중섭 계정은 표에 없어 전부)
@@ -58,7 +60,15 @@ export function SkinsWindow({ skinIds, server, opName, onShowOperator, onClose }
     <ModalWindow label={t("보유 스킨")} className="operator-modal me-collect-modal" onClose={onClose}>
       <div className="me-collect">
         <p className="me-note">{!skinIds ? t("목록은 다시 동기화하면 보입니다.") : failed ? t("스킨 정보를 불러오지 못했습니다.") : idx ? t("기본 복장을 뺀 스킨 {n} / {all}벌", { n, all }) : t("불러오는 중…")}</p>
-        {groups.map(({ g, list }) => (
+        {groups.length > 1 && (
+          <div className="me-seg me-skin-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected={!brand} className={!brand ? "selected" : ""} onClick={() => setBrand(null)}>{t("전체")} <small>{n}</small></button>
+            {groups.map((g) => (
+              <button key={g.g} type="button" role="tab" aria-selected={brand === g.g} className={brand === g.g ? "selected" : ""} onClick={() => setBrand(g.g)}>{g.g} <small>{g.own}</small></button>
+            ))}
+          </div>
+        )}
+        {groups.filter((x) => !brand || x.g === brand).map(({ g, list }) => (
           <section key={g} className="me-collect-group">
             <h4>{g} <small>{groups.find((x) => x.g === g)!.own} / {list.length}</small></h4>
             <ul className="me-skin-grid">
