@@ -2407,12 +2407,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   </small>
                 ) :
                 <small title={ambientPart !== 0 ? t("제어센터 효과 {n} 포함 — 방을 눌러 상세 내역을 확인하세요", { n: `${ambientPart > 0 ? "+" : ""}${ambientPart}%` }) : undefined}>
-                  +{score}{cell.room === "CONTROL" ? "" : "%"} {cell.room === "CONTROL" ? t("제어센터 효과 점수") : t(UNIT[cell.room])}
+                  {/* 방 종류별 단위(오더 효율·품질·생산력…) 대신 '효율' 하나 — 무엇의 효율인지는 방 이름이 말해 준다 (사용자 지시 2026-10-23) */}
+                  +{score}{cell.room === "CONTROL" ? "" : "%"} {cell.room === "CONTROL" ? t("제어센터 효과 점수") : t("효율")}
                   {ambientPart !== 0 && cell.room !== "CONTROL" && <em className="ambient-note"> ({t("제어센터")} {ambientPart > 0 ? "+" : ""}{ambientPart}%)</em>}
                   {raiseBefore != null && raiseBefore !== score && <em className={`raise-delta ${score >= raiseBefore ? "up" : "down"}`}> · {t("원래 {b}%", { b: raiseBefore })} ({score >= raiseBefore ? "+" : ""}{score - raiseBefore})</em>}
                   {cell.room === "RECYCLE" && <em className="ambient-note"> · {t("≈{n} 이성/일", { n: Math.round(recycleRate(team, cell.key)?.apPerDay ?? 0) })}</em>}
                   {/* 드론 덤 — 설정에서 고른 곳의 대상 방에만, 자동편성 점수 밖 (2026-10-22) */}
-                  {droneOf(cell.key) && <em className="drone-note" title={t("드론을 이 방에 쓸 때 하루 평균으로 더해지는 효율 — 자동편성 점수에는 넣지 않은 덤입니다 ({what}/일)", { what: droneText(droneOf(cell.key)!) })}> · {t("드론 +{n}%", { n: Math.round(droneOf(cell.key)!.pct) })}</em>}
+                  {droneOf(cell.key) && <em className="drone-note" title={t("드론을 이 방에 쓸 때 하루 평균으로 더해지는 효율 — 자동편성 점수에는 넣지 않은 덤입니다 ({what}/일)", { what: droneText(droneOf(cell.key)!) })}>{/* '+165% 효율'과 같은 순서로 '+200% 드론' (사용자 지시 2026-10-23). 모바일은 가운뎃점을 빼고 한 줄에 */}<span className="dn-long"> · </span><span className="dn-short"> </span>+{Math.round(droneOf(cell.key)!.pct)}% {t("드론")}</em>}
                 </small>
               )}
               {plan && PARK_KEYS.includes(cell.key) && team.length > 0 && <small>{t("세트 요원 고정 · 효율 무관")}</small>}

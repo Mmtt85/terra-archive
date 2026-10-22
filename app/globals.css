@@ -34448,11 +34448,13 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .gift-msg.ok { color: var(--lime-ink); font-weight: 600; }
 
 /* 인프라 방 카드 — 드론 덤 (설정에서 고른 곳의 대상 방, 2026-10-22) */
-.ship-room .drone-note { font-style: normal; color: var(--lime-ink); font-weight: 600; }
+.ship-room .drone-note { font-style: normal; color: var(--lime-ink); font-weight: 600; white-space: nowrap; }
+.ship-room .drone-note .dn-short { display: none; }
 .ship-room .drone-toggle { margin-left: auto; align-self: flex-start; flex: none;   /* 썸네일 줄 오른쪽 끝 — 썸네일 그림(42px)과 같은 크기·위아래 (사용자 지시 2026-10-22). 아바타 칸이 그림보다 2px 커서 줄 밑(flex-end)에 맞추면 2px 내려갔다 */
   box-sizing: border-box; width: 42px; height: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--muted); font-size: 9px; font-weight: 600; line-height: 1.1; text-align: center; cursor: pointer; }
 .ship-room .drone-toggle:hover { border-color: var(--border-strong); color: var(--ink); }
+
 .ship-room .drone-toggle.on { border-color: var(--lime-line); color: var(--lime-ink); }
 
 /* ── 막대·고리가 바뀔 때 쭉 늘어나게 — 사이트 전체 (사용자 지시 2026-10-22 "그래프는 쭈우욱 올라가는 느낌, 사이트 내 모든 부분").
@@ -34465,4 +34467,27 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .me-ring-fill { transition: stroke-dasharray .7s cubic-bezier(.2, .8, .2, 1); }
 @media (prefers-reduced-motion: reduce) {
   [style*="--p"], :is(i, span)[style*="width:"], .me-ring-fill { transition: none; }
+}
+
+/* ── 인프라 시설 카드 — 모바일(640px 이하) 2열 (사용자 확정 2026-10-23 "모바일용 시설 레이아웃을 제대로"). 종전엔 PC 와 같은 3열이라
+   칸이 120px 쯤으로 좁아 제목이 세 줄로 꺾이고 썸네일이 세로로 쌓였다. 배치도 모양(격자 이름표)은 버리고 화면 순서(무역소 → 제조소 →
+   발전소 → 응접실 … 숙소)대로 2열로 흘리고, 교대 탭·육성 추천 줄과 제어센터는 두 칸을 다 쓴다.
+   카드 안: 머리는 이름·Lv 한 줄 + 시간·인원 한 줄, 썸네일은 한 줄, 효율 줄 오른쪽 끝에 작은 ⏩ 드론 단추 */
+@media (max-width: 640px) {
+  /* .ship.ship-153.has-recycle 같은 배치별 격자 이름표(3열)를 이기려고 겹쳐 쓴다 */
+  html .ship.ship.ship.ship { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: none; gap: 6px; }
+  .ship > * { grid-area: auto !important; }
+  .ship > .ship-leftcol { grid-column: 1 / -1 !important; order: -2; }
+  .ship > .pos-control { grid-column: 1 / -1 !important; order: -1; }
+  .ship-room-head { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .ship-room-head b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .ship-room-crew { gap: 4px; margin-top: 7px; min-height: 0; }
+  .ship-room-crew img, .ship-room-crew .op-av { flex: 0 1 38px; width: 38px; }
+  /* 카드 오른쪽 세로 가운데, 22px (사용자 지시 2026-10-23) */
+  .ship-room .drone-toggle { position: absolute; right: 6px; top: 50%; bottom: auto; translate: 0 -50%; width: 22px; height: 22px; margin: 0; font-size: 0; gap: 0; }
+  .ship-room .drone-toggle svg { width: 12px; height: 12px; }
+  /* 드론 단추가 세로 가운데로 올라가 효율 줄과 안 겹친다 — 오른쪽 여백을 비워 두지 않는다 (종전 24px 때문에 줄이 중간에서 잘렸다, 2026-10-23) */
+  .ship-room .drone-note .dn-long { display: none; }
+  .ship-room .drone-note .dn-short { display: inline; }
+  .ship-room:has(.drone-note) > small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
