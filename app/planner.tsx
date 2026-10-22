@@ -1939,7 +1939,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               위계를 만든다 (사용자 요청 2026-07-27: "버튼이 너무 많아 헷갈림") */}
           {/* 이미지로 보기 — '그 외'에서 꺼내 이 줄 맨 왼쪽으로 (사용자 지시 2026-10-14) */}
           <button className="planner-image-btn" onClick={() => void exportImage()} disabled={!plan} title={t("A조·B조 편성표를 이미지로 확인 (PNG)")}><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</button>
-          <button className="primary" onClick={() => startTransition(() => { setRosterMode("import"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}<NewBadge id="scanner+op-level" show={anyNewFeature("scanner", "op-level")} /></button>
+          <button className="primary" onClick={() => startTransition(() => { setRosterMode("import"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정")}<small className="btn-count">{visibleOps.filter((op) => ownedIds.has(op.id)).length}/{visibleOps.length}</small><NewBadge id="scanner+op-level" show={anyNewFeature("scanner", "op-level")} /></button>
           {/* 라벨이 '계산 중…'으로 바뀌어도 버튼 폭이 줄지 않게 원 라벨로 폭을 잡아둔다 (사용자 요청 2026-07-21) */}
           <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}>
             <span className="btn-icon" aria-hidden>⟳</span>
@@ -1969,8 +1969,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               else if (v === "import") importRef.current?.click();
               else if (v === "maa") setShowMaa(true);
               else if (v === "help") setShowHelp(true);
+              else if (v === "image" && plan) void exportImage();
             }}
             items={[
+              // 모바일은 '이미지로 보기' 단추를 숨기고 여기로 (사용자 지시 2026-10-23 — 그 자리엔 '편성 전체 비우기'). 데스크톱은 단추가 있어 숨긴다
+              { value: "image", label: <><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</>, className: "only-mobile", disabled: !plan },
               { value: "save", label: <><span className="btn-icon" aria-hidden>⤓</span>{t("현재 상태 파일로 저장")}</>,
                 className: dirty ? "save-pending" : undefined,
                 title: dirty ? t("저장 후 변경 사항이 있습니다 — 파일로 저장하세요") : t("보유 오퍼와 편성을 JSON 파일로 저장") },

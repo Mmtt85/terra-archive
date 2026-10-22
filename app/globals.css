@@ -569,6 +569,8 @@ button {
   white-space: nowrap;
 }
 .chlog-trigger { position: relative; }
+/* 업데이트 내역 버튼의 NEW 는 작게·덜 위로 — 버튼이 화면 맨 위(9px)라 기본 배지(-13px)는 윗부분이 잘렸다 (사용자 지적 2026-10-23, PC·모바일) */
+.chlog-trigger > .new-badge { top: -7px; right: -6px; padding: 1px 5px; font-size: 8px; line-height: 1.3; }
 .chlog-imp-dot {
   position: absolute;
   top: -7px;
@@ -32479,16 +32481,41 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
    폰에선 할 일 순서대로 세 줄: ① 보유 오퍼 설정(가득) ② 전체·빈 자리 자동편성(반반) ③ 이미지로 보기·비우기·그 외(작게 셋).
    데스크톱 줄은 그대로 */
 @media (max-width: 640px) {
-  .planner-buttons { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
-  .planner-buttons > * { min-width: 0; margin: 0; justify-content: center; }
-  .planner-buttons > :nth-child(2) { grid-column: 1 / -1; order: 1; }
-  .planner-buttons > :nth-child(3) { grid-column: span 3; order: 2; }
-  .planner-buttons > :nth-child(4) { grid-column: span 3; order: 3; }
-  .planner-buttons > .planner-image-btn { grid-column: span 2; order: 4; }
-  .planner-buttons > :nth-child(5) { grid-column: span 2; order: 5; }
-  .planner-buttons > .more-group { grid-column: span 2; order: 6; }
-  .planner-buttons > .more-group > .drop-btn { width: 100%; justify-content: center; }
-  .planner-buttons > :nth-child(n + 4) { font-size: 12px; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
+  /* 정사각 타일 3×2 (사용자 지적 2026-10-23 "버튼 몇 개 가지고 4줄이나" · "가로로 길다란 버튼이 맘에 안 든다") —
+     아이콘 위·글자 아래, 칸 셋이 같은 폭. ① 보유 오퍼 설정 · 전체 자동편성 · 임시 편성 ② 편성 전체 비우기 · 빈 자리만 · 그 외.
+     이미지로 보기는 '그 외' 메뉴로(only-mobile 항목). 위쪽 760px 규칙들(flex·반폭)을 이기려고 선택자를 겹쳐 쓴다 */
+  html .planner-buttons.planner-buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; align-items: stretch; }
+  html .planner-buttons.planner-buttons > * { min-width: 0; margin: 0; flex: none; }
+  html .planner-buttons.planner-buttons > button,
+  html .planner-buttons.planner-buttons > .more-group > .drop-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    width: 100%; height: 100%; min-height: 54px; padding: 6px 4px; font-size: 12px; line-height: 1.2; text-align: center; white-space: normal; }   /* 윗줄도 살짝 낮게 (2026-10-23) */
+  html .planner-buttons.planner-buttons > button .btn-icon,
+  html .planner-buttons.planner-buttons > .more-group > .drop-btn .btn-icon { display: block; margin: 0; font-size: 16px; line-height: 1; }
+  html .planner-buttons.planner-buttons > .more-group > .drop-btn .drop-label { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  html .planner-buttons.planner-buttons > .more-group > .drop-btn .drop-caret { display: none; }
+  html .planner-buttons.planner-buttons > * { grid-column: auto; }
+  html .planner-buttons.planner-buttons > button.primary:not(:has(.btn-swap)) { order: 1; }
+  html .planner-buttons.planner-buttons > button.primary:has(.btn-swap) { order: 2; }
+  /* 임시 편성은 첫 줄 오른쪽 끝 (사용자 지시 2026-10-23) — 둘째 줄은 비우기 · 빈 자리만 · 그 외 */
+  html .planner-buttons.planner-buttons > .pl-sandbox-btn { order: 3; }
+  html .planner-buttons.planner-buttons > .pl-clear-btn { order: 4; }
+  html .planner-buttons.planner-buttons > .pl-fill-btn { order: 5; }
+  html .planner-buttons.planner-buttons > .more-group { order: 6; }
+  html .planner-buttons.planner-buttons > .pl-revert-btn { grid-column: 1 / -1; order: 7; min-height: 0; flex-direction: row; }
+  /* 첫 줄 타일 — 이름은 한 줄, 보유 수는 이름 밑 작은 줄(괄호 없이) */
+  html .planner-buttons.planner-buttons > button { white-space: nowrap; }
+  html .planner-buttons.planner-buttons .btn-count { display: block; font-size: 11px; font-weight: 500; opacity: .75; }
+  html .planner-buttons.planner-buttons .btn-count::before, html .planner-buttons.planner-buttons .btn-count::after { content: none; }
+  /* 둘째 줄(비우기 · 빈 자리만 · 그 외) — 낮게, 아이콘은 글자 앞에 작게 붙여 한 줄 (사용자 지적 2026-10-23 "개행이 안 예쁘다" · "아이콘은 왜 없앴냐") */
+  html .planner-buttons.planner-buttons > :is(.pl-clear-btn, .pl-fill-btn),
+  html .planner-buttons.planner-buttons > .more-group > .drop-btn { min-height: 38px; flex-direction: row; gap: 3px; }
+  html .planner-buttons.planner-buttons > .more-group > .drop-btn .drop-label { flex-direction: row; gap: 3px; }
+  html .planner-buttons.planner-buttons > :is(.pl-clear-btn, .pl-fill-btn),
+  html .planner-buttons.planner-buttons > .more-group > .drop-btn { padding: 6px 2px; font-size: 11px; letter-spacing: -0.4px; }
+  html .planner-buttons.planner-buttons > :is(.pl-clear-btn, .pl-fill-btn) .btn-icon,
+  html .planner-buttons.planner-buttons > .more-group > .drop-btn .btn-icon { font-size: 12px; letter-spacing: 0; }
+  html .planner-buttons.planner-buttons > .planner-image-btn { display: none; }
   /* 설정 칸은 2열 격자 — 세로선이 줄바꿈 뒤 들여쓰기처럼 보였다 */
   /* 한 줄에 넷 (사용자 지시 2026-10-20 "휑하다") — 2열이면 칸이 너무 비었다. 드롭다운은 한 단계 작게, 다섯째(재활용소)부터는 다음 줄 */
   .prio-setting { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 6px; }
@@ -33924,23 +33951,7 @@ html.rg-theme.rg4 main.site-main {
   .iv-payback { flex-direction: row; align-items: baseline; gap: 6px; padding: 0; }
 }
 
-/* 인프라 모바일 단추 줄 — '임시 편성 해보기'가 끼어들며 nth-child 순번이 밀려 '편성 전체 비우기'가 맨 위 한 칸에 홀로 떨어졌다
-   (사용자 지적 2026-10-19). 순번 대신 클래스로 자리를 준다:
-   ① 보유 오퍼 설정(가득) ② 전체·빈 자리 자동편성(반반) ③ 이미지로 보기·임시 편성·그 외(셋) ④ 편성 전체 비우기(+ 자동편성 시점으로) */
-@media (max-width: 640px) {
-  .planner-buttons > * { grid-column: span 2; }
-  .planner-buttons > :nth-child(n) { order: 9; }
-  .planner-buttons > button.primary:not(:has(.btn-swap)) { grid-column: 1 / -1; order: 1; }
-  .planner-buttons > button.primary:has(.btn-swap) { grid-column: span 3; order: 2; }
-  .planner-buttons > .pl-fill-btn { grid-column: span 3; order: 3; }
-  .planner-buttons > .planner-image-btn { grid-column: span 2; order: 4; }
-  .planner-buttons > .pl-sandbox-btn { grid-column: span 2; order: 5; }
-  .planner-buttons > .more-group { grid-column: span 2; order: 6; }
-  .planner-buttons > .pl-clear-btn { grid-column: span 3; order: 7; }
-  .planner-buttons > .pl-clear-btn:not(:has(+ .pl-revert-btn)) { grid-column: 1 / -1; }
-  .planner-buttons > .pl-revert-btn { grid-column: span 3; order: 8; }
-  .planner-buttons > .planner-image-btn { font-size: 12px; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
-}
+/* (인프라 모바일 단추 줄 옛 규칙은 2026-10-23 정사각 타일 3×2 로 바꾸며 지웠다 — 위 '정사각 타일' 블록이 정본) */
 /* 육성 추천 창 — 창 판(16·18px) + 공용 본문 여백(.mw-body 12·22·24px)이 겹쳐 안쪽이 두 겹으로 비었다 (사용자 지적 2026-10-19). 판 쪽을 걷는다 */
 .invest-panel.operator-modal.iv { padding: 0; }
 /* 육성 추천 탭 — 가진 오퍼 키우기 / 새로 데려와 키우기 (2026-10-19). 공용 탭 결: 바탕 없이 밑줄 */
@@ -34491,3 +34502,19 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
   .ship-room .drone-note .dn-short { display: inline; }
   .ship-room:has(.drone-note) > small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
+
+/* 대원 카드 — 이름 줄(이름·★·정예화 단추)이 오른쪽 위 📌·✕ 단추 밑으로 들어가 겹쳤다 (모바일, 사용자 지적 2026-10-23) → 두 단추 자리를 비운다 */
+.crew-card:has(.crew-remove) > div > b:first-child { display: block; padding-right: 62px; }
+.crew-card:has(.crew-remove):not(:has(.crew-pin)) > div > b:first-child { padding-right: 32px; }
+/* 후보 검색칸 — 모바일은 입력 글자가 16px(iOS 확대 방지)라 260px 폭에 자리표시 글자가 잘렸다 → 칸 폭을 다 쓰고 공용 입력칸 모양으로 */
+@media (max-width: 640px) {
+  .bench-search { max-width: none; height: 38px; padding: 0 10px; border-radius: var(--r-sm); color: var(--ink); }
+}
+
+/* '그 외' 메뉴의 모바일 전용 항목(이미지로 보기) — 데스크톱은 단추가 따로 있어 숨긴다 */
+@media (min-width: 641px) { .drop-menu li:has(> .only-mobile), .drop-menu .only-mobile { display: none; } }
+
+/* 보유 오퍼 설정 단추의 보유 수 — 데스크톱은 종전처럼 괄호로 한 줄, 모바일 타일은 이름 밑 작은 줄 (2026-10-23) */
+.planner-buttons .btn-count { font: inherit; }
+.planner-buttons .btn-count::before { content: " ("; }
+.planner-buttons .btn-count::after { content: ")"; }

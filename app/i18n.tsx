@@ -873,6 +873,7 @@ const D: Record<string, Pair> = {
   "제조소 9 · 작전기록": ["Factory 9 · Battle Records", "製造所9・作戦記録"],
   "사용자 지정 배치: 제조소·무역소·발전소 9칸을 자유롭게 구성합니다. 방 카드의 제조소/무역소/발전소 버튼으로 각 칸의 종류를 바꾸면 순금 제조소 수는 무역소 수에 맞춰 자동 배정되고(프리셋과 동일 규칙), 전력·자동화 스케일도 발전소 수를 따라갑니다. 칸을 바꾼 뒤엔 전체 자동편성으로 재편성하세요 — 그외 배치의 편성·레벨도 별도 버킷으로 저장됩니다.": ["Custom layout: freely arrange the 9 production tiles among factories, trading posts and power plants. Switch a tile's type with the Factory/Trading/Power buttons on its card — the number of gold factories follows your trading post count (same rule as the presets), and power/automation scale with plant count. After changing tiles, run full auto-assign; the custom layout keeps its own plan/level bucket too.", "カスタム配置：製造所・貿易所・発電所の9マスを自由に構成します。カードの製造所/貿易所/発電所ボタンでタイプを切り替えると、純金製造所の数は貿易所数に合わせて自動配分され（プリセットと同じ規則）、電力・自動化も発電所数に追従します。変更後は全体自動編成で再編成を。カスタム配置の編成・レベルも専用バケットに保存されます。"],
   "기지 확장 해금 — 제어센터 레벨이 다른 시설의 최대 레벨·개수를 결정합니다": ["Base expansion gate — control center level caps every other facility's max level and count", "基地拡張の解放 — 制御センターのレベルが他施設の最大レベル・数を決めます"],
+  "보유 오퍼 설정": ["My operators", "所持オペレーター設定"],
   "보유 오퍼 설정 ({a}/{b})": ["My operators ({a}/{b})", "所持オペレーター設定（{a}/{b}）"],
   "전체 자동편성": ["Auto-assign all", "全自動編成"],
   "빈 자리만 자동편성": ["Fill empty slots", "空きスロットのみ自動編成"],
