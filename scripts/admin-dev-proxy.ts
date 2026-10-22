@@ -97,6 +97,12 @@ export function adminDevProxy(): Plugin {
             });
           }
 
+          // 한국 서버 쿠폰 — 공식 페이지(arknights.kr/gift)와 같은 요청을 중계 (관리 '그 외' 탭 줄 쿠폰 칸, 2026-10-22).
+          // UID 확인(GET playerinfo)과 교환(POST exchange) 둘만 통과시킨다
+          if (url.startsWith("/api/gift/playerinfo?") || url === "/api/gift/exchange") {
+            return relay(req, res, `https://www.arknights.kr${url}`, { Referer: "https://www.arknights.kr/gift", Origin: "https://www.arknights.kr" });
+          }
+
           // UID 별 사이트 설정 — 계정 워커 /admin/prefs (2026-10-14)
           if (url === "/api/prefs") {
             const key = readKey(root, ".supabase-admin-key");

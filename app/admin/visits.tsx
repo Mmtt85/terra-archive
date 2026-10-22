@@ -12,6 +12,7 @@
 import { Who, PlayerButton, refreshPlayers, usePlayerMap } from "./who";
 import { KvWrites } from "./prefs";
 import { createPortal } from "react-dom";
+import { GiftCoupon } from "./gift";
 import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "../dropdown";
 import { DatePicker } from "../date-picker";
@@ -1410,6 +1411,8 @@ export function VisitsPanel() {
           PRTS · 검색: 만능검색 내역(app/admin/omni.tsx) · 그 외: 나머지. 고른 탭은 이 브라우저에 남긴다 */}
       <div className="admin-tools vz-subtabs" role="tablist">
         {VTABS.map((v) => <button key={v.k} type="button" role="tab" aria-selected={vtab === v.k} className={vtab === v.k ? "tab-btn selected" : "tab-btn"} onClick={() => pickVtab(v.k)}>{v.label}</button>)}
+        {/* 탭 줄 오른쪽 끝 — 한국 서버 쿠폰 받기 (사용자 요청 2026-10-22, app/admin/gift.tsx) */}
+        <GiftCoupon />
       </div>
       {vtab === "search" && <OmniPanel tick={tick} />}
       {vtab === "match" && <MatchPanel tick={tick} />}
