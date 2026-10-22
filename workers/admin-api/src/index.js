@@ -112,6 +112,14 @@ export default {
       });
     }
 
+    // 한국 서버 쿠폰 — 공식 arknights.kr/gift 와 같은 요청을 중계 (관리 방문 통계 탭 줄 쿠폰 칸, 2026-10-22).
+    // UID 확인(GET playerinfo)과 교환(POST exchange) 둘만. dev 는 scripts/admin-dev-proxy.ts 가 같은 일을 한다
+    if ((url.pathname === "/api/gift/playerinfo" && request.method === "GET") || (url.pathname === "/api/gift/exchange" && request.method === "POST")) {
+      return proxy(request, `https://www.arknights.kr${url.pathname}${url.search}`, {
+        Referer: "https://www.arknights.kr/gift", Origin: "https://www.arknights.kr",
+      });
+    }
+
     // UID 별 사이트 설정 조회 — /api/prefs → 계정 워커 /admin/prefs (+x-admin-key) (2026-10-14)
     if (url.pathname === "/api/prefs") {
       return proxy(request, "https://terra-archive-account.nzkonaru.workers.dev/admin/prefs", {
