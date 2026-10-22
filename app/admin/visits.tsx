@@ -445,7 +445,7 @@ function LineChart({ days, series, fmt = (d) => d.slice(5).replace("-", "/"), ti
 }
 
 /** 가로 막대 목록 */
-function BarList({ rows, top, unit = "" }: { rows: { label: string; n: number; sub?: string; title?: string; href?: string | null }[]; top: number; unit?: string }) {
+function BarList({ rows, top, unit = "" }: { rows: { label: string; n: number; sub?: string; title?: string; href?: string | null; onClick?: () => void }[]; top: number; unit?: string }) {
   const total = rows.reduce((a, r) => a + r.n, 0);   // % 는 잘라 낸 뒤가 아니라 전체 기준
   rows = top ? rows.slice(0, top) : rows;
   const max = Math.max(1, ...rows.map((r) => r.n));
@@ -455,7 +455,9 @@ function BarList({ rows, top, unit = "" }: { rows: { label: string; n: number; s
       {rows.map((r) => (
         <li key={r.label} title={r.title ?? r.label}>
           <span className="vz-bar" style={{ width: `${(r.n / max) * 100}%` }} />
-          <Go className="vz-bar-label" href={r.href}>{r.label}</Go>
+          {r.onClick
+            ? <button type="button" className="vz-go vz-bar-label vz-bar-btn" onClick={r.onClick}>{r.label}</button>
+            : <Go className="vz-bar-label" href={r.href}>{r.label}</Go>}
           {r.sub && <span className="vz-bar-sub">{r.sub}</span>}
           <span className="vz-bar-n">{num(r.n)}{unit} <small>{pct(r.n, total)}</small></span>
         </li>
@@ -1001,6 +1003,9 @@ export function VisitsPanel() {
   useEffect(() => { setTops(loadTops()); }, []);   // 하이드레이션 뒤에 저장값을 읽는다
   // 전체 보기 창 — 어느 목록인지
   const [allOf, setAllOf] = useState<{ key: TopKey; title: string } | null>(null);
+  // 유입원 하나의 첫 화면 주소 — 완전히 같은 주소끼리 묶은 목록 (visits_landing_raw, 2026-10-22). 창을 열 때만 받는다
+  const [landOf, setLandOf] = useState<string | null>(null);
+  const [landRows, setLandRows] = useState<{ landing: string; sessions: number }[] | null | "err">(null);
   const top = (k: TopKey, title = "") => ({
     top: tops[k],
     onAll: () => setAllOf({ key: k, title }),
@@ -1169,6 +1174,17 @@ export function VisitsPanel() {
 
   // 세션 타임라인 '전체 보기' — 창을 열 때 상한(SESSIONS_ALL)까지 따로 받는다
   const [allSessions, setAllSessions] = useState<SessRow[] | null>(null);
+  useEffect(() => {
+    if (!landOf) return;
+    let dead = false;
+    setLandRows(null);
+    (rangeArgs
+      ? rpc<{ landing: string; sessions: number }[]>("visits_landing_raw_range", { ...rangeArgs, ...kindArgs, p_src: landOf })
+      : rpc<{ landing: string; sessions: number }[]>("visits_landing_raw", { p_days: Math.min(days, 90), ...kindArgs, p_src: landOf }))
+      .then((r) => { if (!dead) setLandRows(r); }, () => { if (!dead) setLandRows("err"); });
+    return () => { dead = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [landOf, days, human, range, slot]);
   const sessAll = allOf?.key === "sessions";
   useEffect(() => {
     if (!sessAll) return;
@@ -1196,10 +1212,11 @@ export function VisitsPanel() {
 
   const t = data?.total;
   // 막대 목록의 줄 — 본문과 '전체 보기' 창이 같이 쓴다
-  type BarRow = { label: string; n: number; sub?: string; title?: string; href?: string | null };
+  type BarRow = { label: string; n: number; sub?: string; title?: string; href?: string | null; onClick?: () => void };
   const barRows: Record<"src" | "ref" | "landing" | "sections" | "device" | "lang" | "tz" | "out", BarRow[]> = data ? {
     // 시간은 전부 **평균** (사용자 지시 2026-10-07 두 번째 — 한때 중앙값으로 바꿨다가 되돌렸다. 화면 수·시간 모두 '실제 쓴 총량 ÷ 세션'이 낫다)
-    src: data.src.map((r) => ({ label: r.src, n: r.sessions, sub: `평균 조작 ${fmtDur(r.active_ms / Math.max(1, r.sessions))}${r.visible_ms != null ? ` · 머문 ${fmtDur(r.visible_ms / Math.max(1, r.sessions))}` : ""}` })),
+    // '직접'은 리퍼러가 없어 첫 화면 주소가 유일한 단서 — 누르면 그 주소 전체 (사용자 지시 2026-10-22)
+    src: data.src.map((r) => ({ label: r.src, n: r.sessions, ...(r.src === "직접" ? { title: "눌러서 첫 화면 주소 전체 보기", onClick: () => setLandOf(r.src) } : {}), sub: `평균 조작 ${fmtDur(r.active_ms / Math.max(1, r.sessions))}${r.visible_ms != null ? ` · 머문 ${fmtDur(r.visible_ms / Math.max(1, r.sessions))}` : ""}` })),
     ref: data.ref.map((r) => ({ label: r.ref.replace(/^https?:\/\//, ""), n: r.sessions, title: r.ref, href: /^https?:\/\//.test(r.ref) ? r.ref : null })),
     landing: data.landing.map((r) => ({ label: pathLabel(r.path), n: r.sessions, sub: `바로 이탈 ${pct(r.bounces, r.sessions)}`, title: r.path, href: siteUrl(r.path) })),
     sections: data.sections.map((r) => ({ label: sectionLabel(r.section), n: r.views, sub: `평균 조작 ${fmtDur(r.avg_active)}${r.avg_visible != null ? ` · 머문 ${fmtDur(r.avg_visible)}` : ""}`, href: sectionUrl(r.section) })),
@@ -1633,6 +1650,13 @@ export function VisitsPanel() {
           </>)}
 
         </>
+      )}
+      {landOf && (
+        <AllWindow key={`land-${landOf}`} title={`${landOf} 유입 — 첫 화면 주소`} total={Array.isArray(landRows) ? landRows.length : 0}
+          loading={landRows == null}
+          render={(n) => landRows === "err" ? <p className="vz-empty">불러오지 못했습니다 — DB 함수(visits_landing_raw)가 아직 없을 수 있습니다.</p>
+            : <BarList top={n} rows={(landRows ?? []).map((r) => ({ label: r.landing, n: r.sessions, href: siteUrl(r.landing) }))} />}
+          onClose={() => setLandOf(null)} />
       )}
       {allOf && (
         <AllWindow key={allOf.key} title={allOf.title} total={allTotal} loading={allOf.key === "sessions" && allSessions == null}

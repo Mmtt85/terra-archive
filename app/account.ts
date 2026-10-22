@@ -158,7 +158,9 @@ export type MatchRow = { server: string; uid: string; nick: string; level: numbe
   /** 부관·스킨 — 목록 카드 배경 (2026-10-20~, 그 전 등록분엔 없다) */
   sec?: string | null; secSkin?: string | null; resume?: string;
   /** 입사일 (초) — 2026-10-20~ */
-  register?: number | null };
+  register?: number | null;
+  /** 닉네임·한마디가 불량 판정(match-flag 스킬) — 흐리게 맨 뒤, 눌러야 보인다 (2026-10-22) */
+  hidden?: boolean };
 /** 등록 — 내 정보의 설정용 표(prefToken)로 본인 확인, 동기화 때 받은 서명된 정보를 그대로 */
 export async function matchRegister(prefToken: string, match: MatchSigned): Promise<void> {
   await post("/match/put", { token: prefToken, match });

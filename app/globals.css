@@ -9864,6 +9864,7 @@ html.dark .vz {
 /* 화면 이름 = 라이브 사이트의 그 화면 링크(새 탭) — 겉모습은 그대로 두고 올렸을 때만 밑줄 (사용자 지시 2026-10-04) */
 .vz .vz-go { color: inherit; text-decoration: none; cursor: pointer; }
 .vz .vz-go:hover { text-decoration: underline; text-underline-offset: 2px; }
+.vz .vz-bar-btn { background: none; border: 0; padding: 0; font-family: inherit; font-size: inherit; text-align: left; text-decoration: underline dotted; text-underline-offset: 3px; }
 .vz-table td:first-child .vz-go { position: relative; }
 .vz-node .vz-go:hover text { text-decoration: underline; }
 /* 방문 통계 '전체 보기' 창 — 내릴수록 이어서 그린다 (2026-10-05). 창 안쪽이 스크롤 상자라 무한 스크롤의 기준이 된다 */
@@ -19030,6 +19031,9 @@ main.site-main > .site-header {
 .term-modal .term-line { margin: 0 0 7px; font-size: 13px; line-height: 1.6; white-space: pre-line; }
 .term-modal .term-ops { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0 10px; }
 .term-modal .term-ops img { width: 34px; height: 34px; }
+.term-modal .term-flow { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.term-modal .term-flow h4 { margin: 0 0 8px; font-size: 13px; }
+.term-modal .term-flow ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 
 /* ── 다단계 시스템 카드(붕괴 패러다임) — 카드 1장 안 단계별 [섬네일+이름+효과] 행 ── */
 .rg-stage-list { display: flex; flex-direction: column; gap: 8px; }
@@ -31550,7 +31554,12 @@ html.dark .me-pf-art { opacity: .3; }
 .mm-preview .mm-sub { margin-top: 4px; text-align: right; }
 .mm-reg > p { flex: 1; min-width: 0; margin: 0; }
 /* 친구 꽉 찬 박사 — 흐리게 (맨 뒤로 정렬은 me-match.tsx) */
-.mm-row.full { filter: grayscale(1); opacity: .55; }
+.mm-row.full > :not(.mm-full-banner) { filter: grayscale(1); opacity: .55; }   /* 띠는 흐리지 않게 줄이 아니라 내용만 흐린다 */
+.mm-row.veiled { cursor: pointer; }
+.mm-row.veiled > :not(.mm-veil-tip) { filter: blur(9px) grayscale(1); opacity: .6; pointer-events: none; user-select: none; }   /* 안의 복사 단추가 눌리지 않게 */
+.mm-veil-tip { position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: calc(100% - 24px); padding: 6px 12px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 700; text-align: center; opacity: 0; transition: opacity .15s; pointer-events: none; }
+.mm-row.veiled:hover .mm-veil-tip, .mm-row.veiled:focus-visible .mm-veil-tip { opacity: 1; }
+.mm-full-banner { position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 4px 14px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 700; white-space: nowrap; pointer-events: none; }
 .mm-row { position: relative; overflow: hidden; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); background: var(--white); }
 .mm-row.mine { border-color: var(--lime-line); }
 /* 부관 일러 배경 — 카드 가운데에 은은하게, 양옆으로 갈수록 사라진다 (사용자 지시 2026-10-20 — 오른쪽 → 왼쪽 → 가운데) */

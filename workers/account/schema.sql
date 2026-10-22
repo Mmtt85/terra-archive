@@ -46,6 +46,17 @@ create table if not exists match_log (
 );
 create index if not exists match_log_at on match_log (at);
 
+-- 친구 찾기 닉네임·한마디 판정 (2026-10-22) — match-flag 스킬이 하이쿠로 판정해 적는다. 값은 글자 그대로(닉네임은 #번호 뗀 이름)라
+-- 바꾸면 새 값이 되어 다음 판정 때 다시 본다. bad=1 이면 사이트가 흐리게 가린다(눌러야 보임)
+create table if not exists match_flag (
+  field text not null,             -- nick · resume
+  value text not null,
+  bad integer not null,            -- 1 불량 · 0 정상 · 2 애매(사람이 볼 것)
+  at integer not null,             -- 판정 시각 ms
+  by text,                         -- haiku · manual
+  primary key (field, value)
+) without rowid;
+
 -- 마지막 내 정보 로그인·동기화 시각 (2026-10-20) — 90일 넘게 없으면 그 계정의 사이트 설정(prefs)·친구 찾기 등록(match)을 지운다
 create table if not exists seen (
   owner text primary key,          -- p:<서버>:<UID>

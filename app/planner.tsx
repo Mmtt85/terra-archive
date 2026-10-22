@@ -2748,13 +2748,16 @@ function TermText({ text, refs, onTerm }: { text: string; refs?: [string, string
       : seg;
   })}</>;
 }
-function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose }: {
+function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose, flows, opMap }: {
   termKey: string; presentIds: Set<string>; onNavigate: (k: string) => void;
   onShowOperator?: (id: string) => void; onClose: () => void;
+  /** 편성의 토큰 원장 — 용어가 포인트(속세의 화식 등)면 누가 몇 점을 만드는지 아래에 편다 (사용자 지시 2026-10-22) */
+  flows?: TokenFlow[]; opMap?: Map<string, InfraOp>;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const term = TERMS[termKey];
   if (!term) return null;
+  const flow = flows?.find((f) => f.token === term.name && f.generators.length > 0);
   return (
     <ModalWindow label={term.name} className="operator-modal term-modal" onClose={onClose}>
         <header className="term-head">
@@ -2781,6 +2784,26 @@ function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose }:
             }
             return <p key={i} className="term-line"><TermText text={line} refs={term.refs} onTerm={onNavigate} /></p>;
           })}
+          {/* 생성량은 시너지 트리와 같은 원장(A조 기준) — 같은 사람이 두 갈래로 만들면 줄이 둘 */}
+          {flow && (
+            <div className="term-flow">
+              <h4>{t("이 편성에서 생성 (A조 기준) — 합계 {n}점", { n: Math.round(flow.generators.reduce((a, g) => a + g.amount, 0)) })}</h4>
+              <ul>
+                {flow.generators.map((gen, index) => {
+                  const op = opMap?.get(gen.opId);
+                  return (
+                    <li key={`${gen.opId}-${index}`} className="flow-op">
+                      {op ? <img src={op.image} alt={op.name} width={32} height={32} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+                        onClick={(ev) => { ev.stopPropagation(); onShowOperator?.(op.id); }} /> : <span />}
+                      <span className="flow-op-txt"><b>{op?.name ?? gen.opId}</b><i>{t(gen.at)}</i>
+                        {gen.via && <small>{t("{token}에서 전환", { token: tokenName(locale, gen.via) })}</small>}</span>
+                      <em>+{Math.round(gen.amount)}</em>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
     </ModalWindow>
   );
@@ -3786,7 +3809,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
           ESC 전역 핸들러(z-index 최상단)와 자기-타깃 클릭 닫기가 이 팝업만 먼저 닫는다. */}
       {termOpen && (
         <TermPopup termKey={termOpen} presentIds={presentNow} onNavigate={setTermOpen}
-          onShowOperator={onShowOperator} onClose={() => setTermOpen(null)} />
+          onShowOperator={onShowOperator} onClose={() => setTermOpen(null)} flows={plan.flows} opMap={opMap} />
       )}
     </ModalWindow>
   );

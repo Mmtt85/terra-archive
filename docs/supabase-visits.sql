@@ -542,6 +542,36 @@ returns json language sql stable as $$
   select public.visits_sessions_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_src, p_landing, p_limit, p_kinds, p_since)
 $$;
 
+-- 유입원 하나의 첫 화면 주소 — 정규화 없이 **완전히 같은 주소(경로+해시, /en·/ja 포함)끼리만** 묶어 센다 (사용자 지시 2026-10-22
+-- "유입원 직접 클릭하면 전체, 똑같은 url은 그룹바이"). 세션 목록(visits_sessions_range)은 화면·일 기록까지 실어 무거워서 따로 둔다.
+-- 거르는 조건(실서버·로컬 dev 제외·세션 종류·유입원)은 visits_sessions_range 와 같다
+create or replace function public.visits_landing_raw_range(p_from timestamptz, p_to timestamptz, p_human boolean default true,
+  p_src text default null, p_kinds text[] default null)
+returns json language sql stable security definer set search_path = public as $$
+  with h as (
+    select session, bool_or(interacted) as human, sum(visible_ms) as vis
+    from public.visits_views_range(p_from - interval '1 day', p_to + interval '1 day') group by 1
+  ),
+  s as (
+    select vs.landing
+    from public.visit_session vs
+    left join h on h.session = vs.id
+    where vs.started_at >= p_from and vs.started_at < p_to and vs.env = 'live' and coalesce(vs.ref_host, '') !~ '^(localhost|127\.0\.0\.1)(:|$)'
+      and public.visit_pick(public.visit_kind(h.human, h.vis, vs.tz), p_kinds, p_human)
+      and (p_src is null or public.visit_host(vs.ref_host) = p_src or public.visit_src(vs.ref_host) = p_src)
+  )
+  select coalesce(json_agg(d order by d.sessions desc, d.landing), '[]')
+  from (select landing, count(*) as sessions from s group by landing) d
+  where (select public.visits_is_admin())
+$$;
+create or replace function public.visits_landing_raw(p_days int default 7, p_human boolean default true,
+  p_src text default null, p_kinds text[] default null)
+returns json language sql stable as $$
+  select public.visits_landing_raw_range(public.visits_from(p_days), 'infinity'::timestamptz, p_human, p_src, p_kinds)
+$$;
+grant execute on function public.visits_landing_raw_range(timestamptz, timestamptz, boolean, text, text[]) to anon;
+grant execute on function public.visits_landing_raw(int, boolean, text, text[]) to anon;
+
 -- 긴 기간 추이 — 원장이 지워진 옛날도 남도록 일별 집계표에서
 create or replace function public.visits_trend(p_days int default 365)
 returns json language sql stable as $$

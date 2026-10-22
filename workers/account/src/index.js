@@ -1025,6 +1025,13 @@ async function matchMine(token) {
 }
 const matchRow = (r) => ({ server: r.server, uid: r.uid, nick: r.nick, level: r.level, assist: JSON.parse(r.assist || "[]"),
   friends: r.friends, flimit: r.flimit, t: r.t, created: r.created, sec: r.sec ?? null, secSkin: r.sec_skin ?? null, resume: r.resume ?? "", register: r.register ?? null });
+// 불량 판정(match_flag, match-flag 스킬이 하이쿠로 적는다 — 2026-10-22) — 닉네임(#번호 뗀 이름)이나 한마디가 불량이면 hidden.
+// 지우지 않고 사이트가 흐리게 맨 뒤로 보내, 눌러야 보이게 한다(사용자 지시). 표가 없거나 읽기 실패면 아무것도 안 가린다
+async function matchHidden() {
+  const { results } = await DB.prepare("select field, value from match_flag where bad = 1").all().catch(() => ({ results: [] }));
+  return new Set(results.map((f) => `${f.field}\u0000${f.value}`));
+}
+const isHidden = (flags, r) => flags.has(`nick\u0000${String(r.nick ?? "").replace(/#\d+$/, "").trim()}`) || flags.has(`resume\u0000${String(r.resume ?? "").trim()}`);
 async function matchList(server, all = false) {
   if (!DB) throw new HttpError(503, "pref-store");
   await matchSweep();
@@ -1033,7 +1040,8 @@ async function matchList(server, all = false) {
     // 친구 꽉 찬 줄도 싣는다 — 사이트가 흐리게 맨 뒤로 보낸다 (사용자 지시 2026-10-20, 종전엔 여기서 뺐다)
     : "select * from match where server = ?1 and t > ?2 order by t desc limit 500";
   const { results } = all ? await DB.prepare(sql).all() : await DB.prepare(sql).bind(server, since).all();
-  return { ok: true, rows: results.map(matchRow) };
+  const flags = await matchHidden();
+  return { ok: true, rows: results.map((r) => ({ ...matchRow(r), ...(isHidden(flags, r) ? { hidden: true } : {}) })) };
 }
 
 // 하루(UTC) 쓰기 기록 — 관리 화면 방문 통계 '설정 저장소 쓰기' (2026-10-15). D1 무료는 하루 쓴 줄 10만이라 줄 수(rows)를 센다

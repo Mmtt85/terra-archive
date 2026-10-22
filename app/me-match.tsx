@@ -3,7 +3,7 @@
 // 매칭 등록을 켠 박사만 목록에 실린다(서버·UID·닉네임#번호·레벨·지원 오퍼·친구 수·마지막 동기화).
 // 닉네임은 등록할 때만 저장하고, 취소하면 워커가 줄째 즉시 지운다. 등록 중엔 동기화할 때마다 워커가 줄을 새 정보로 바꾼다.
 // 2주 넘게 동기화가 없거나 친구 자리가 꽉 찬 줄은 목록에서 빠진다(워커 matchList). 신고 기능은 만들지 않는다 (사용자 결정).
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { useI18n, DT_LOCALE } from "./i18n";
 import { asset } from "./assets";
@@ -108,8 +108,13 @@ function MatchRowView({ r, opById, now, mine, full, friend }: { r: MatchRow; opB
   const copyNick = () => { void navigator.clipboard?.writeText(r.nick).then(() => { setNickCopied(true); setTimeout(() => setNickCopied(false), 1500); }); };
   const copy = () => { void navigator.clipboard?.writeText(r.uid).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }); };
   const [nick, num] = r.nick.split("#");
+  // AI 불량 판정 — 지우지 않고 흐리게 가린다. 올리면 안내, 누르면 보인다 (사용자 지시 2026-10-22)
+  const [shown, setShown] = useState(false);
+  const veiled = !!r.hidden && !shown;
+  const veilText = t("AI에 의해 감춰진 카드입니다. 보시려면 클릭해 주세요");
   return (
-    <li className={`mm-row${mine ? " mine" : ""}${full ? " full" : ""}`} title={full ? t("친구 자리가 꽉 찼어요") : undefined}>
+    <li className={`mm-row${mine ? " mine" : ""}${full ? " full" : ""}${veiled ? " veiled" : ""}`} title={veiled ? veilText : full ? t("친구 자리가 꽉 찼어요") : undefined}
+      {...(veiled ? { role: "button", tabIndex: 0, onClick: () => setShown(true), onKeyDown: (e: KeyboardEvent<HTMLLIElement>) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShown(true); } } } : {})}>
       {sec && <img className="mm-art" src={artOf(sec, r.secSkin ?? null)} alt="" aria-hidden decoding="async" loading="lazy"
         onError={(e) => { const el = e.currentTarget; const fb = artOf(sec, null); if (el.src !== new URL(fb, location.href).href) el.src = fb; else el.remove(); }} />}
       <div className="mm-who">
@@ -141,6 +146,9 @@ function MatchRowView({ r, opById, now, mine, full, friend }: { r: MatchRow; opB
         {r.assist.map((a, i) => { const op = opById.get(a.id); return op ? <MatchOp key={`${a.id}-${i}`} a={a} op={op} /> : null; })}
         {!r.assist.length && <li className="mm-none">{t("지원 오퍼 없음")}</li>}
       </ul>
+      {/* 친구 꽉 참 — 가운데 띠, 뒤 내용은 흐리게 그대로 보인다 (사용자 지시 2026-10-22) */}
+      {full && !veiled && <span className="mm-full-banner" aria-hidden>{t("친구 꽉 참")}</span>}
+      {veiled && <span className="mm-veil-tip">{veilText}</span>}
     </li>
   );
 }
@@ -283,7 +291,8 @@ export function MatchWindow({ me, opById, onClose }: { me: MeData; opById: Map<s
   // 이미 내 친구 — 내 정보 친구 목록의 닉네임#번호와 맞춘다 (사용자 지시 2026-10-20, 게임 친구 목록엔 UID 가 없다)
   const myFriends = useMemo(() => new Set((me.profile?.friends ?? []).map((f) => `${f.nickName}#${f.nickNumber}`)), [me]);
   const isFull = (r: MatchRow) => r.friends != null && r.flimit != null && r.friends >= r.flimit;
-  const others = [...filtered.filter((r) => !isFull(r)), ...filtered.filter(isFull)];
+  // AI 불량 판정으로 가린 카드는 꽉 찬 박사보다도 뒤 (사용자 지시 2026-10-22)
+  const others = [...filtered.filter((r) => !r.hidden && !isFull(r)), ...filtered.filter((r) => !r.hidden && isFull(r)), ...filtered.filter((r) => r.hidden)];
   return (
     <ModalWindow label={t("친구 매칭")} className="operator-modal mm-modal" onClose={onClose}>
       <div className="mm-body">
