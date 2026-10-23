@@ -73,6 +73,8 @@ export function SkinsWindow({ skinIds, server, opName, onShowOperator, onClose }
             ))}
           </div>
         )}
+        {/* 탭은 위에 두고 목록만 스크롤 — 내리면 탭을 못 눌렀다 (사용자 지적 2026-10-23) */}
+        <div className="me-collect-scroll">
         {groups.filter((x) => !brand || x.g === brand).map(({ g, list }) => (
           <section key={g} className="me-collect-group">
             <h4>{g} <small>{groups.find((x) => x.g === g)!.own} / {list.length}</small></h4>
@@ -90,6 +92,7 @@ export function SkinsWindow({ skinIds, server, opName, onShowOperator, onClose }
             </ul>
           </section>
         ))}
+        </div>
       </div>
       {zoom && <ZoomWindow onClose={() => setZoom(null)} alt={`${opName(zoom.c)} · ${zoom.n}`}
         src={hasDyn(zoom.p) ? dynPoster(zoom.p) : asset(`/skin/full/${encodeURIComponent(zoom.p)}.webp`)} dyn={hasDyn(zoom.p) ? zoom.p : undefined} />}
@@ -172,6 +175,7 @@ export function MedalsWindow({ medalList, onClose }: { medalList: [string, numbe
             ))}
           </div>
         )}
+        <div className="me-collect-scroll">
         {groups.filter((g) => !tab || g.id === tab).map((g) => (
           <section key={g.id} className="me-collect-group">
             <h4>{g.name} <small>{g.mine} / {g.total}</small></h4>
@@ -183,6 +187,7 @@ export function MedalsWindow({ medalList, onClose }: { medalList: [string, numbe
             )) : medalGrid(g.list)}
           </section>
         ))}
+        </div>
       </div>
       {open && idx?.medals[open] && (() => {
         const m = idx.medals[open], at = got.get(open);
