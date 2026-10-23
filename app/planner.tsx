@@ -502,7 +502,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     reader.onload = () => {
       try {
         const data = JSON.parse(String(reader.result));
-        const ids = new Set<string>((Array.isArray(data.owned) ? data.owned : []).filter((id: unknown): id is string => typeof id === "string" && opById.has(id)));
+        const rawOwned: unknown[] = Array.isArray(data.owned) ? data.owned : [];
+        const ids = new Set<string>(rawOwned.filter((id: unknown): id is string => typeof id === "string" && opById.has(id)));
         // 정예화는 [id, 0|1|2] 쌍만 인정 (손상 항목 무시)
         const elite = new Map<string, Elite>(
           (Array.isArray(data.elite) ? data.elite : [])
@@ -527,6 +528,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         setEngineLevels(lvls);
         setLevelsState(lvls);
         const plan = sanitizePlan(data.plan);
+        // 편성 속 알 수 없는 오퍼(지금 목록에 없는 id)는 걷어 낸다 — 남겨 두면 빈 얼굴 칸이 된다. 몇 명이었는지는 알림에 쓴다
+        const lostOps = plan ? new Set(Object.values(plan.assignments).flat(2).filter((id) => !opById.has(id))).size : 0;
+        if (plan && lostOps) for (const k of Object.keys(plan.assignments)) plan.assignments[k] = plan.assignments[k].map((sh) => sh.filter((id) => opById.has(id)));
         const invest = restoreInvest(data.invest);
         const hidden = restoreHidden(data.investHidden);
         const pins = restoreDormPins(fileBuckets[lay]?.dormPins ?? data.dormPins);
@@ -547,7 +551,21 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         setShowInvest(false);
         persist(ids, plan, elite, lvById, priority, invest, hidden, lay, lvls, fileCustom ?? customRooms, fileProducts ?? customProducts, pins, rpins);
         setDirty(false);
-        showToast(t("저장된 상태를 불러왔습니다 · 보유 {n}명 복원", { n: ids.size }));
+        // 옛 파일은 조용히 걸러 넣었다 — 무엇이 빠졌는지·어느 시설이 비었는지 알린다 (제안 02297685, 사용자 지시 2026-10-23
+        // "뭐뭐가 불러오기 실패했습니다 혹은 어떤 시설은 비어 있습니다 정도"). 숙소·훈련실·재활용소는 비워 두는 일이 흔해 빈 시설로 안 센다
+        const lostOwned = rawOwned.filter((id) => typeof id !== "string" || !opById.has(id)).length;
+        const rawCells = data.plan?.assignments && typeof data.plan.assignments === "object" ? data.plan.assignments as Record<string, unknown> : {};
+        const here = new Set(LAYOUT.map((c) => c.key));
+        const lostCells = Object.entries(rawCells).filter(([k, v]) => !here.has(k) && Array.isArray(v) && v.some((x) => Array.isArray(x) && x.length > 0)).length;
+        const emptyRooms = plan ? LAYOUT.filter((c) => !["DORMITORY", "TRAINING", "RECYCLE"].includes(c.room)
+          && (plan.assignments[c.key] ?? []).every((sh) => !sh.length)).map((c) => t(c.label)) : [];
+        const notes = [
+          lostOwned > 0 && t("목록에 없는 오퍼 {n}명은 보유에서 빠졌습니다", { n: lostOwned }),
+          lostCells > 0 && t("지금 배치에 없는 시설 {n}곳의 편성은 불러오지 못했습니다", { n: lostCells }),
+          lostOps > 0 && t("편성 속 알 수 없는 오퍼 {n}명은 불러오지 못했습니다", { n: lostOps }),
+          emptyRooms.length > 0 && t("비어 있는 시설: {list}", { list: emptyRooms.join(", ") }),
+        ].filter(Boolean);
+        showToast([t("저장된 상태를 불러왔습니다 · 보유 {n}명 복원", { n: ids.size }), ...notes].join(" · "));
       } catch { alert(t("가져오기 실패: 파일 형식을 확인해 주세요.")); }
     };
     reader.readAsText(file);

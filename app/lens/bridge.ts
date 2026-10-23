@@ -194,7 +194,8 @@ function finishScan(ocrStart?: number): void {
 /** 토스트의 '틀렸어요' — 마지막 인식을 틀렸다고 **제안 게시판에 피드백 한 건**으로 보낸다 (사용자 지시 2026-10-15 "PRTS 틀렸어요는 방문 통계가 아니라
  *  피드백으로 와야 한다" — 종전엔 방문 기록 DB 의 prts_scan wrong·shot 줄로 남고 관리 화면 방문 통계 탭에서 봤다).
  *  종류는 '데이터 오류', 본문 = [PRTS 인식 틀렸어요] + 메모 + 판정, 첨부 = 그 인식에 쓴 화면 한 장 + 판정·OCR 이 읽은 줄 JSON
- *  (사용자 지시 2026-10-12 "인식된 화면을 받아보는 게 낫다", 10-13 "OCR 내용 json 도"). 보낸 사람의 '내 제안'에도 보이고 답변을 받는다.
+ *  (사용자 지시 2026-10-12 "인식된 화면을 받아보는 게 낫다", 10-13 "OCR 내용 json 도"). 작성자 코드 없이 익명으로 보내 보낸 사람의 '내 제안'엔
+ *  안 뜨고, 관리 화면 'PRTS 틀렸어요' 탭에서만 본다 (사용자 지시 2026-10-23 — 처리 뒤 지우는데 보낸 사람 목록에서 사라지면 기분 나쁠 수 있다).
  *  인식 한 줄(scan)은 통계라 방문 기록에 그대로 남긴다. 같은 인식엔 한 번만 */
 export function markBridgeWrong(memo?: string): void {
   const ls = lastScan;
@@ -220,7 +221,7 @@ export function markBridgeWrong(memo?: string): void {
     if (shot) { const up = await uploadFeedbackFile(shot).catch(() => null); if (up) images.push(up.url); }
     const oj = await uploadFeedbackFile(ocrFile).catch(() => null);
     if (oj) files.push({ url: oj.url, name: oj.name, size: oj.size });
-    await sendFeedback("data_error", message, { source: "prts-wrong", scan: ls.id, topic: r?.topic ?? null, images, files });
+    await sendFeedback("data_error", message, { source: "prts-wrong", scan: ls.id, topic: r?.topic ?? null, images, files }, { anonymous: true });
   })()
     .then(() => { ls.shot = "sent"; })
     .catch(() => { ls.shot = "fail"; ls.wrong = false; })   // 못 보냈으면 다시 누를 수 있게
