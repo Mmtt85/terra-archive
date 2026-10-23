@@ -2496,7 +2496,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
-      {showMaa && <MaaExportModal plan={plan} nameOf={(id) => effectiveOpById.get(id)?.name ?? opById.get(id)?.name} toast={showToast} onClose={() => setShowMaa(false)} />}
+      {showMaa && <MaaExportModal plan={plan} nameOf={(id) => effectiveOpById.get(id)?.name ?? opById.get(id)?.name}
+        droneKeys={droneKeys}
+        // 정예화를 따로 안 정한 보유 오퍼는 최대 정예화로 본다(플래너 규칙) · 레벨은 아는 것만
+        growthOf={(id) => { const op = opById.get(id); if (!op) return undefined; const lv = levelById.get(id); return { elite: eliteById.get(id) ?? maxElite(op.rarity), ...(lv != null ? { level: lv } : {}) }; }}
+        toast={showToast} onClose={() => setShowMaa(false)} />}
 
       {shiftNote && (
         <ShiftNoteModal kind={shiftNote} lines={noteLines[shiftNote]} onClose={() => setShiftNote(null)}
@@ -4682,10 +4686,25 @@ function HelpModal({ onClose }: { onClose: () => void }) {
 // MAA 커스텀 기반시설 내보내기 (베타) — 현재 편성(A/B 2교대)을 MAA JSON으로 저장 (2026-08-02).
 // 시각 입력만 받는 이유: MAA는 벽시계(period) 기준으로 plan을 전환하지, 사이트의
 // '지치면 교대' 모델을 모른다 — 그 차이는 모달 안내문으로 명시한다.
-function MaaExportModal({ plan, nameOf, toast, onClose }: { plan: Plan | null; nameOf: (id: string) => string | undefined; toast: (message: string) => void; onClose: () => void }) {
+function MaaExportModal({ plan, nameOf, droneKeys, growthOf, toast, onClose }: {
+  plan: Plan | null; nameOf: (id: string) => string | undefined;
+  droneKeys: string[]; growthOf: (id: string) => { elite: Elite; level?: number } | undefined;
+  toast: (message: string) => void; onClose: () => void;
+}) {
   const { locale, t } = useI18n();
   const [startA, setStartA] = useState("08:00");
   const [startB, setStartB] = useState("20:00");
+  // 오퍼 이름 언어 — MAA 는 게임 화면 글자와 대조하므로 클라이언트 언어와 같아야 한다. 중국 서버 클라이언트면 中文 (2026-10-23)
+  const [nameLang, setNameLang] = useState<"site" | "cn">("site");
+  // 중국어 이름 — 中文을 고를 때만 이름표를 받는다 (app/data/op-cn-names.json, scripts/build-op-cn-names.py — 게임 중국 서버 표)
+  const [cnNames, setCnNames] = useState<Map<string, string> | null>(null);
+  useEffect(() => {
+    if (nameLang !== "cn" || cnNames) return;
+    let alive = true;
+    void import("./data/op-cn-names.json").then((m) => { if (alive) setCnNames(new Map(Object.entries(m.default as Record<string, string>))); });
+    return () => { alive = false; };
+  }, [nameLang, cnNames]);
+  const cnNameOf = (id: string) => cnNames?.get(id);
   const langLabel = locale === "ja" ? "日本語" : locale === "en" ? "English" : "한국어";
   const sameTime = startA === startB;
   const download = () => {
@@ -4693,8 +4712,11 @@ function MaaExportModal({ plan, nameOf, toast, onClose }: { plan: Plan | null; n
     const payload = buildMaaInfrast({
       assignments: plan.assignments,
       cells: LAYOUT,
-      nameOf,
+      nameOf: nameLang === "cn" ? (id) => cnNameOf(id) ?? nameOf(id) : nameOf,
       shiftStarts: [startA, startB],
+      droneKeys,
+      levelOf,
+      growthOf,
       title: t("테라 아카이브 인프라 자동편성"),
       description: t("A = 풀파워 주간조 · B = 회복 교대조 · terra-archive infra planner"),
       planNames: [t("A조"), t("B조")],
@@ -4720,6 +4742,14 @@ function MaaExportModal({ plan, nameOf, toast, onClose }: { plan: Plan | null; n
             <p>{t("현재 편성(A/B 2교대)을 MAA의 커스텀 기반시설 계획 JSON으로 저장합니다. MAA 설정 → 기반시설 → 커스텀 기반시설에서 이 파일을 선택하면 A/B조가 시각에 맞춰 자동 교대됩니다.")}</p>
           </section>
           <section className="detail-section">
+            <h3>{t("오퍼 이름 언어")}</h3>
+            <p className="maa-times">
+              <label><input type="radio" checked={nameLang === "site"} onChange={() => setNameLang("site")} /> {t("지금 언어 ({lang})", { lang: langLabel })}</label>
+              {" "}
+              <label><input type="radio" checked={nameLang === "cn"} onChange={() => setNameLang("cn")} /> 中文 ({t("중국 서버 클라이언트")})</label>
+            </p>
+          </section>
+          <section className="detail-section">
             <h3>{t("교대 시각")}</h3>
             <p className="maa-times">
               <label>{t("A조 시작")} <input type="time" value={startA} onChange={(event) => setStartA(event.target.value)} /></label>
@@ -4734,12 +4764,13 @@ function MaaExportModal({ plan, nameOf, toast, onClose }: { plan: Plan | null; n
               <li>{t("오퍼 이름은 지금 보는 언어({lang}) 그대로 담깁니다 — MAA가 화면 글자를 읽어 대조하므로 게임 클라이언트 언어와 같아야 합니다.", { lang: langLabel })}</li>
               <li>{t("게임 기지의 제조소·무역소 순서(품목 포함)가 이 편성표의 방 순서와 같아야 합니다. 품목을 함께 기록하므로 어긋나면 MAA가 감지합니다.")}</li>
               <li>{t("숙소는 고정 배치 인원만 기록하고 빈 칸은 MAA가 지친 오퍼로 채웁니다. 훈련실은 MAA 스키마에 없어 제외되고, 빈 방은 '건드리지 않음'으로 저장됩니다.")}</li>
-              <li>{t("피아메타·드론 사용은 담지 않습니다 — 필요하면 MAA에서 직접 설정하세요.")}</li>
+              <li>{t("드론 가속을 켠 조에는 드론 사용도 함께 담깁니다. 피아메타는 담지 않습니다 — 필요하면 MAA에서 직접 설정하세요.")}</li>
+              <li>{t("훈련실은 조건을 채우려고 앉힌 오퍼를 협조자 자리에 넣고, 비어 있으면 '건드리지 않음'으로 저장합니다.")}</li>
             </ul>
           </section>
           {!plan && <p className="maa-note">{t("내보낼 편성이 없습니다 — 먼저 전체 자동편성을 실행하세요.")}</p>}
           {sameTime && plan && <p className="maa-note">{t("A조와 B조 시작 시각이 같습니다 — 시간대(period) 없이 저장됩니다.")}</p>}
-          <p className="maa-download"><button className="primary" onClick={download} disabled={!plan}><span className="btn-icon" aria-hidden>⇥</span>{t("JSON 파일로 내려받기")}</button></p>
+          <p className="maa-download"><button className="primary" onClick={download} disabled={!plan || (nameLang === "cn" && !cnNames)}><span className="btn-icon" aria-hidden>⇥</span>{t("JSON 파일로 내려받기")}</button></p>
         </div>
     </ModalWindow>
   );

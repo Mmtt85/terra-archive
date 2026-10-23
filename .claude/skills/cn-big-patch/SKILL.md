@@ -122,6 +122,13 @@ KR을 재생성하면 EN/JA도 같이 나온다(`build-i18n.py`가 레인 안에
 중섭 데이터는 이 레인 안에서 `regen-operators`·`build-costs`·`build-infra`·`build-i18n`이
 **미실장 항목의 원본**으로 읽는다.
 
+레인 뒤에 **오퍼 중국어 이름표**도 다시 만든다 — 인프라 'MAA 기반시설 내보내기'의 中文(중국 서버 클라이언트) 이름이다.
+새 오퍼가 빠지면 MAA 가 그 오퍼를 못 알아본다 (2026-10-23 추가):
+
+```bash
+python3 scripts/build-op-cn-names.py   # → app/data/op-cn-names.json (infra.json 의 오퍼 전원이어야 한다)
+```
+
 ## 5. 중국어 원문 번역 — 중섭 패치의 **본론**
 
 신규 오퍼·재료의 텍스트는 KR 번역이 아직 없어 **중국어 원문 그대로** 나간다.
