@@ -288,8 +288,20 @@ export function rogueOmniItems(index: LensIndex, t: T): OmniItem[] {
       uid: `rg:${e.topic}:${e.section}:${e.id}`, kind: "rogue", name: e.name,
       // topicName은 로케일 데이터(rogueN.<loc>.json)에서 온 이름이라 그대로 쓴다
       sub: `${e.topicName} · ${t(SECTION_LABEL[e.section] ?? e.section)}`,
-      keys: [e.nameN, ...words(e.name).map(norm).filter((w) => w && w !== e.nameN)],
+      // 중국어 원문 이름(cnN)도 키로 — 중국 서버 선행 테마(흑류수해)는 중국어 이름으로 찾는 사람이 있다 (사용자 제보 2026-10-23 "迷藏 검색 0건")
+      keys: [e.nameN, ...words(e.name).map(norm).filter((w) => w && w !== e.nameN), ...(e.cnN ? [e.cnN] : [])],
       target: { kind: "rogue", topic: e.topic, goto },
+    });
+  }
+  // 기타 노드(교활한 상인·외나무다리 등) — PRTS 색인에만 있고 검색엔 없었다 (사용자 제보 2026-10-23 "狭路 검색 0건").
+  // 누르면 그 테마 지도 화면의 '기타 노드' 창에서 그 노드를 짚는다. 쉐이의 잔식 노드(sky:)는 다른 창이라 뺀다
+  for (const n of index.nodes ?? []) {
+    if (!allowed.has(n.topic) || n.id.startsWith("sky:") || !n.nameN) continue;
+    items.push({
+      uid: `rgnode:${n.topic}:${n.id}`, kind: "rogue", name: n.name,
+      sub: `${topicName.get(n.topic) ?? n.topic} · ${t("기타 노드")}`,
+      keys: [n.nameN, ...(n.cnN ? [n.cnN] : [])],
+      target: { kind: "rogue", topic: n.topic, goto: { page: "rogue", topic: n.topic, view: "map", modal: { type: "nodetype", id: n.id } } },
     });
   }
   return items;

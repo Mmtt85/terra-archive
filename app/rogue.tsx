@@ -2460,6 +2460,8 @@ export default function RogueGuide({ initialTopic }: {
       else if (type === "stage") { const s = stageById.get(id); if (s) setStageOpen({ ...pairOf(s), init: g.emergency ? "e" : undefined }); }
       else if (type === "zone") { const z = zoneById.get(id); if (z) setZoneOpen(z); }
       else if (type === "enemy") { if (data.enemies[id]) setEnemyOpen({ key: id, ctx: dexCtx(id) }); }   // 만능검색 적 (2026-10-20)
+      // 만능검색 기타 노드 (2026-10-23) — 지도 노드 칸을 누른 것과 같다: 외나무다리는 전용 창, 나머지는 '기타 노드' 창에서 그 노드를 짚는다
+      else if (type === "nodetype") { if (id === "DUEL" && duelStages.length > 0) { setNtFocus(""); setSecOpen("duel"); } else if (data.nodeTypes.some((x) => x.id === id)) { setNtFocus(id); setSecOpen("nodes"); } }
     }
     setLensHits(g.highlight?.length ? new Set(g.highlight) : null);
     // 아이템(유물·도구·음반·시스템)이 여러 개 인식되면 모아보기 모달로 띄운다 (gather 플래그)
