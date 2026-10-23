@@ -2226,6 +2226,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         switchTab("farm");
         notifyHandoff();
         break;
+      case "planner":
+        stashHandoff({ page: "planner", modal: target.modal });
+        switchTab("planner");
+        notifyHandoff();
+        break;
     }
   };
   const [sortKey, setSortKey] = useState("발매순");

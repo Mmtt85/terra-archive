@@ -9,10 +9,11 @@ const KEY = "ta:omni-handoff";
 export const HANDOFF_EVENT = "ta:omni-handoff";
 
 export type Handoff = {
-  page: "farm" | "recruit";
+  page: "farm" | "recruit" | "planner";
   item?: string;      // farm: 재료 id (상세 모달)
   query?: string;     // farm: 검색어
   tags?: string[];    // recruit: 선택할 태그 (KR 정본 이름)
+  modal?: "maa";      // planner: 열 창 (MAA 연동)
 };
 
 export function stashHandoff(h: Handoff): void {

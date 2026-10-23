@@ -35,7 +35,8 @@ export type OmniTarget =
   | { kind: "stage"; id: string }
   | { kind: "rogue"; topic: string; goto?: LensGoto }
   | { kind: "recruit"; tags: string[] }
-  | { kind: "farm"; item: string };
+  | { kind: "farm"; item: string }
+  | { kind: "planner"; modal: "maa" };
 
 export type OmniItem = {
   uid: string;        // React key
@@ -162,6 +163,13 @@ export function buildOmniIndex({ roster, locale, t, extra }: OmniSource): OmniIt
       target: { kind: "tab", tab: entry.tab },
     });
   }
+  // 인프라 안의 MAA 연동 창 — "MAA"로 찾는 사람이 많다 (사용자 지시 2026-10-23)
+  items.push({
+    uid: "feat:maa", kind: "tab", name: t("MAA 연동"), sub: t("인프라 자동편성기"),
+    keys: keysOf(t("MAA 연동"), "MAA 연동", "maa", "메이", "maa assistant arknights", "custom infrast", "커스텀 기반시설",
+      "MAA 내보내기", "MAA 불러오기", "기반시설 내보내기", "인프라 내보내기", "MAA連携", "MAA联动"),
+    target: { kind: "planner", modal: "maa" },
+  });
 
   for (const tp of TOPICS) {
     if (!tp.ready) continue;   // 미래시 토픽도 검색된다 (2026-09-04 규칙 변경)

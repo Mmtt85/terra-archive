@@ -49,6 +49,7 @@ const MAA_ROOM_REV: Record<string, string> = Object.fromEntries(Object.entries(M
 import { ModalWindow } from "./modal-window";
 import type { AccountRoster } from "./account";
 import { getMe, useMe } from "./me-store";
+import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 import costsData from "./data/costs.json";
 
 // 재료 표시용 카탈로그 (이름·아이콘) — costs.json items (build-costs.py 수확)
@@ -268,7 +269,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   // 저장·복사는 공용 단추가 WebP/PNG 를 고르게 한다 (app/image-actions.tsx, 2026-10-23) — 여기선 PNG 묶음만 들고 있다
   const [imagePng, setImagePng] = useState<Blob | null>(null);
-  const [showMaa, setShowMaa] = useState(false); // MAA 기반시설 내보내기 모달 (베타)
+  const [showMaa, setShowMaa] = useState(false); // MAA 연동 창 (내보내기·불러오기)
+  // 만능검색 'MAA 연동' → 이 창을 연다 (app/handoff.ts — 탭 전환이면 마운트 때, 이미 인프라면 이벤트로)
+  useEffect(() => {
+    const apply = () => { if (takeHandoff("planner")?.modal === "maa") setShowMaa(true); };
+    apply();
+    window.addEventListener(HANDOFF_EVENT, apply);
+    return () => window.removeEventListener(HANDOFF_EVENT, apply);
+  }, []);
   // 처음엔 **아무도 없이** 시작한다 (사용자 결정 2026-10-19 — 종전 '1~5성 기본 보유 284명'은 내 정보 동기화가 생긴 뒤로
   // 가상의 편성이 내 편성처럼 보여 헷갈렸다). 빈 상태에선 시작 안내(로그인 · 직접 고르기 · 예시 로스터)를 띄운다
   const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set());
@@ -1585,7 +1593,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       try { localStorage.setItem(WING_KEY, JSON.stringify(all)); } catch { /* 무시 */ }
       return all;
     });
-  }, 6, true);
+  }, 6); // 맞바꾸기가 아니라 끼워 넣고 밀어내기 (사용자 지시 2026-10-23)
   const wingView = wingSort.display;
   // 이름 번호는 놓인 자리 순서대로 — 칸 정보(LAYOUT)의 이름을 고쳐 두면 방 카드·상세 창·편성표 이미지가 같이 따라온다
   {
@@ -4886,7 +4894,11 @@ function MaaExportModal({ plan, cells, onImport, nameOf, droneKeys, growthOf, to
     <ModalWindow label={t("MAA 연동")} className="operator-modal room-modal maa-modal" onClose={onClose} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         <header className="room-modal-head">
           <span className="modal-kicker">MAA CUSTOM INFRAST</span>
-          <h2>{t("MAA 연동")}</h2>
+          <div className="maa-title-row">
+            <h2>{t("MAA 연동")}</h2>
+            {/* MAA 공식 문서(언어별) — 사용자 지시 2026-10-23 */}
+            <a className="maa-site" href={`https://docs.maa.plus/${locale === "ja" ? "ja-jp" : locale === "en" ? "en-us" : "ko-kr"}/`} target="_blank" rel="noopener noreferrer"><img src="/maa-logo.png" alt="" width={34} height={34} /><span className="maa-site-text">{t("MAA 공식 사이트")}{"\u00a0↗"}</span></a>
+          </div>
         </header>
         <div className="modal-scroll">
           {/* 탭은 제목 띠가 아니라 본문 맨 위 (사용자 지시 2026-10-23) */}
@@ -4923,7 +4935,7 @@ function MaaExportModal({ plan, cells, onImport, nameOf, droneKeys, growthOf, to
             <ul className="help-list">
               <li>{t("오퍼 이름은 지금 보는 언어({lang}) 그대로 담깁니다 — MAA가 화면 글자를 읽어 대조하므로 게임 클라이언트 언어와 같아야 합니다.", { lang: langLabel })}</li>
               <li>{t("게임 기지의 제조소·무역소 순서(품목 포함)가 이 편성표의 방 순서와 같아야 합니다. 품목을 함께 기록하므로 어긋나면 MAA가 감지합니다.")}</li>
-              <li>{t("숙소는 고정 배치 인원만 기록하고 빈 칸은 MAA가 지친 오퍼로 채웁니다. 훈련실은 MAA 스키마에 없어 제외되고, 빈 방은 '건드리지 않음'으로 저장됩니다.")}</li>
+              <li>{t("숙소는 고정 배치 인원만 기록하고 빈 칸은 MAA가 지친 오퍼로 채웁니다. 빈 방은 '건드리지 않음'으로 저장됩니다.")}</li>
               <li>{t("드론 가속을 켠 조에는 드론 사용도 함께 담깁니다. 피아메타는 담지 않습니다 — 필요하면 MAA에서 직접 설정하세요.")}</li>
               <li>{t("훈련실은 조건을 채우려고 앉힌 오퍼를 협조자 자리에 넣고, 비어 있으면 '건드리지 않음'으로 저장합니다.")}</li>
             </ul>
