@@ -915,10 +915,11 @@ const MATCH_STALE_MS = 14 * 86400_000;
 // 내 정보를 90일 동안 동기화하지 않은 등록은 줄째(닉네임 포함) 지운다 (사용자 지시 2026-10-20). 목록을 받을 때 한 시간에 한 번쯤 쓸어 낸다
 const MATCH_EXPIRE_MS = 90 * 86400_000;
 // 사이트 설정(prefs)도 같은 90일 — 마지막 내 정보 로그인·동기화 시각(seen)이 기준. seen 이 없는 계정(이 기능 전 저장분)은 설정을 마지막으로 고친 시각으로 본다
-let matchSweptAt = 0;
+// ⚠ 하루 한 번 예약 실행(wrangler.toml crons)으로만 돈다 (2026-10-23). 종전엔 요청 안에서 '한 시간에 한 번'이었는데, 그 기억이
+// 워커 인스턴스마다 따로라 실제로는 하루 850번 돌았고, prefs 전체를 훑는 아래 delete 가 회당 4,400줄씩 — D1 무료 읽기
+// 하루 500만 줄의 76%(375만 줄)를 이것 하나가 먹었다 (Cloudflare 경고 메일 2026-10-22). 요청 경로에 다시 넣지 말 것
 async function matchSweep() {
-  if (!DB || Date.now() - matchSweptAt < 3600_000) return;
-  matchSweptAt = Date.now();
+  if (!DB) return;
   const cutoff = Date.now() - MATCH_EXPIRE_MS;
   const { results } = await DB.prepare("delete from match where t < ?1 returning server").bind(cutoff).all().catch(() => ({ results: [] }));
   if (results?.length) {
@@ -1040,7 +1041,6 @@ async function matchHidden() {
 const isHidden = (flags, r) => flags.has(`nick\u0000${String(r.nick ?? "").replace(/#\d+$/, "").trim()}`) || flags.has(`resume\u0000${String(r.resume ?? "").trim()}`);
 async function matchList(server, all = false) {
   if (!DB) throw new HttpError(503, "pref-store");
-  await matchSweep();
   const since = Date.now() - MATCH_STALE_MS;
   const sql = all ? "select * from match order by t desc limit 2000"
     // 친구 꽉 찬 줄도 싣는다 — 사이트가 흐리게 맨 뒤로 보낸다 (사용자 지시 2026-10-20, 종전엔 여기서 뺐다)
@@ -1282,6 +1282,11 @@ async function fetchUser(cred, deviceId, network, step = noStep, server = "kr") 
 }
 
 export default {
+  // 90일 미동기화 정리 — 하루 한 번 (wrangler.toml [triggers], 위 matchSweep 주석)
+  async scheduled(_event, env) {
+    DB = env?.DB ?? null;
+    await matchSweep();
+  },
   async fetch(request, env) {
     SIGN_KEY = env?.SIGN_KEY ?? null;
     PREFS = env?.PREFS ?? null;
@@ -1360,7 +1365,6 @@ export default {
       try {
         if (url.pathname === "/admin/key") return json(await adminKeyFor(body.token), origin);
         if (url.pathname === "/prefs/delete") return json(await prefsDelete(body.token), origin);
-        if (url.pathname === "/prefs/get") await matchSweep();   // 90일 미동기화 정리 — 한 시간에 한 번만 실제로 돈다
         return json(url.pathname === "/prefs/get" ? await prefsGet(body.token) : await prefsPut(body.token, body.keys), origin);
       } catch (error) {
         return json({ ok: false, error: error?.code ?? "internal" }, origin, error instanceof HttpError ? error.status : 500);

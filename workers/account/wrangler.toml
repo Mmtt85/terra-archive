@@ -18,3 +18,7 @@ database_id = "b92f64f9-ceb5-4751-818f-b4ca72483757"
 [[kv_namespaces]]
 binding = "PREFS"
 id = "638c79d1dc7b4c31be39d12136e418e4"
+
+# 90일 미동기화 정리(matchSweep)는 하루 한 번만 — 한국 시간 새벽 4시 (2026-10-23, D1 읽기 한도 경고)
+[triggers]
+crons = ["0 19 * * *"]
