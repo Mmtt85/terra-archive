@@ -26,7 +26,7 @@ type ShotPair = { d: string; m: string };
 // 옛 캡처가 남는데, 쿼리가 바뀌면 새 캐시 키라 전부 즉시 새로 받는다 (2026-08-02).
 // ⚠ 순서 주의: 이 값을 올린 뒤 r2-sync 전에 /about을 열면, 새 쿼리 키에 옛 이미지가
 // 엣지 캐시(max-age 14400)로 4시간 박힌다. r2-sync를 먼저 돌리고 나서 올릴 것 (2026-08-13).
-const SHOT_VER = "2026101701";
+const SHOT_VER = "2026102301";   // 위기 협약 스샷 추가 (r2-sync 뒤에 올림)
 const PORTAL_SHOT: ShotPair = { d: "/about/portal.webp", m: "/about/portal-m.webp" };
 const HOME_NAME: Record<Locale, string> = { ko: "홈 화면", en: "Home", ja: "ホーム" };
 const CHRONICLE_SHOT: ShotPair = { d: "/about/chronicle.webp", m: "/about/chronicle-m.webp" };
@@ -48,6 +48,7 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   rogue: { d: "/about/rogue.webp", m: "/about/rogue-m.webp" },
   ra: { d: "/about/ra.webp", m: "/about/ra-m.webp" },
   autochess: { d: "/about/autochess.webp", m: "/about/autochess-m.webp" },
+  crisis: { d: "/about/crisis.webp", m: "/about/crisis-m.webp" },
   gallery: { d: "/about/gallery.webp", m: "/about/gallery-m.webp" },
   me: { d: "/about/me.webp", m: "/about/me-m.webp" },
 };
@@ -310,6 +311,16 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
+        tab: "crisis", icon: "\u26a0", name: "위기 협약 가이드",
+        summary: "위기 협약 시즌 1·2와 홀로그램 매트릭스의 맵·계약을 모으고, 계약을 골라 위험도와 적 능력치를 계산합니다.",
+        bullets: [
+          "시즌별 맵 — 상주·로테이션 맵의 지형과 등장 적·이동 경로, 실사 도면 위 시뮬레이션",
+          "계약 고르기 — 계약(지표) 카드를 눌러 위험 등급·점수 합계, 세트 완료, 매트릭스 훈장 기준 달성을 바로 확인",
+          "효과 모아 보기 — 고른 계약을 아군·모든 적·특정 적으로 나눠 능력치별로 모으고, 등장 적의 HP·공격력·방어력·마법 저항에 그대로 반영",
+          "중국 서버 선행 시즌도 미리 — 계약 문구는 PRTS 위키 기준 비공식 번역",
+        ],
+      },
+      {
         tab: "me", icon: "◉", name: "내 정보",
         summary: "게임 계정을 연동하면 내 오퍼·창고·진행 상황을 한 화면에 정리하고, 사이트 전체에 함께 반영합니다.",
         bullets: [
@@ -529,6 +540,16 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
+        tab: "crisis", icon: "\u26a0", name: "Contingency Contract Guide",
+        summary: "Maps and contracts of CC Seasons 1·2 and the Holographic Matrix in one place, with a calculator for risk and enemy stats.",
+        bullets: [
+          "Maps by season — terrain, enemies and routes of permanent and rotating maps, with the simulation on the real map",
+          "Pick contracts — tap contract (criteria) cards to see the total risk or score, set completion and Matrix medal thresholds",
+          "Effect summary — chosen contracts grouped by allies, all enemies and specific enemies, applied straight to the enemies' HP, ATK, DEF and RES",
+          "CN-first seasons in advance — contract text is an unofficial translation based on the PRTS wiki",
+        ],
+      },
+      {
         tab: "me", icon: "◉", name: "My Account",
         summary: "Link your game account to see your operators, depot and progress on one screen — and across the whole site.",
         bullets: [
@@ -745,6 +766,16 @@ const CONTENT: Record<Locale, Content> = {
           "敵 — リーダー級10種（隠し3種含む）と訓練用仮想敵7系統119種を肖像カードで、押すと図鑑と同じステータス・能力まで",
           "補給センター — 等級別の購入・売却価格と精鋭化・レベル・スキルの数値、モード別の昇級コストと陳列枠、自由選択枠に入れられる★6名簿",
           "アイテム59種・戦略40種・戦略戦術の効果43種・マイルストーン報酬60段階",
+        ],
+      },
+      {
+        tab: "crisis", icon: "\u26a0", name: "危機契約ガイド",
+        summary: "危機契約シーズン1・2とホログラムマトリクスのマップ・契約をまとめ、契約を選んで危機等級と敵の能力値を計算します。",
+        bullets: [
+          "シーズン別マップ — 常設・ローテーションマップの地形と登場する敵・移動ルート、実写図面上のシミュレーション",
+          "契約を選ぶ — 契約（指標）カードを押して危機等級・点数の合計、セット完了、マトリクスの勲章基準の達成をすぐ確認",
+          "効果のまとめ — 選んだ契約を味方・すべての敵・特定の敵に分けて能力値ごとにまとめ、登場する敵のHP・攻撃力・防御力・術耐性にそのまま反映",
+          "中国版先行シーズンも先取り — 契約の文言はPRTS wikiをもとにした非公式訳",
         ],
       },
       {

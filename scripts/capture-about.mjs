@@ -54,6 +54,7 @@ const SHOTS = [
   { name: "rogue", path: "/rogue" },
   { name: "ra", path: "/ra" },
   { name: "autochess", path: "/autochess" },
+  { name: "crisis", path: "/crisis" },   // 위기 협약 가이드 (2026-10-23)
   // 2026-10-05 추가 — 갤러리·내 정보 (내 정보는 로그인 전 예시 화면이 찍힌다)
   { name: "gallery", path: "/gallery" },
   { name: "me", path: "/me" },
