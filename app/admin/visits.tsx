@@ -18,6 +18,7 @@ import { Dropdown } from "../dropdown";
 import { DatePicker } from "../date-picker";
 import { ACCOUNT_SERVERS } from "../account";
 import { ModalWindow } from "../modal-window";
+import type { FeedbackRow } from "../feedback";
 import OmniPanel from "./omni";
 import MatchPanel from "./match";
 import operatorsData from "../data/operators.json";
@@ -939,7 +940,9 @@ export function VisitorSessions({ visitor, at, onClose }: { visitor: string; at:
   );
 }
 
-export function VisitsPanel() {
+/** prtsWrong — PRTS '틀렸어요' 제보(익명 제안 행)와 그 카드 그리기. PRTS 칸 맨 위에 보인다 (사용자 지시 2026-10-23).
+ *  prtsFocus — 값이 바뀌면 PRTS 칸으로 연다 (세션 창에서 그 제보를 눌렀을 때) */
+export function VisitsPanel({ prtsWrong, prtsFocus }: { prtsWrong?: { rows: FeedbackRow[]; render: (row: FeedbackRow) => ReactNode }; prtsFocus?: number } = {}) {
   const playerMap = usePlayerMap();
   const [days, setDays] = useState<0 | 7 | 30 | 90 | 365>(0);
   // 내 정보 동기화 — 서버별로 거르기 (사용자 요청 2026-10-06). 통계가 방문자별로 묶여 있어 방문자의 서버(max) 기준이다
@@ -994,6 +997,9 @@ export function VisitsPanel() {
   useEffect(() => { void loadDexNames().then(() => setNamesReady(true)); }, []);
   // 서브 탭 (2026-10-19) — 이 브라우저에 남긴다
   const [vtab, setVtab] = useState<VTab>(() => { try { const v = localStorage.getItem("ta-admin-vtab") as VTab | null; if (v && VTABS.some((x) => x.k === v)) return v; } catch { /* 무시 */ } return "overview"; });
+  // 세션 창에서 PRTS 틀렸어요 제보를 누르면 PRTS 칸으로 (prtsFocus 가 바뀔 때만 — 렌더 중 이전 값과 비교해 바로 바꾼다)
+  const [seenFocus, setSeenFocus] = useState(prtsFocus);
+  if (prtsFocus !== seenFocus) { setSeenFocus(prtsFocus); if (prtsFocus) setVtab("prts"); }
   const pickVtab = (v: VTab) => { setVtab(v); try { localStorage.setItem("ta-admin-vtab", v); } catch { /* 무시 */ } };
   const [trend, setTrend] = useState<TrendRow[] | null>(null);
   const [sessFetched, setSessions] = useState<SessRow[] | null>(null);
@@ -1613,7 +1619,14 @@ export function VisitsPanel() {
             </>
           )}
 
-          {/* PRTS 틀렸어요는 피드백 탭으로 옮겼다 (사용자 지시 2026-10-15 "방문 통계가 아니라 피드백으로", app/lens/bridge.ts markBridgeWrong) */}
+          {/* PRTS 틀렸어요 — 10-15 에 피드백 탭으로 옮겼다가, 10-23 익명으로 받으면서 여기 PRTS 칸으로 되돌렸다 (사용자 지시 "틀렸어요 섹션 자체는 있어야죠") */}
+          {vtab === "prts" && prtsWrong && (<>
+            <Head title="틀렸어요" sub={`${num(prtsWrong.rows.length)}건 · 대응미완료 ${num(prtsWrong.rows.filter((r) => !r.reviewed_at).length)}건 — 처리·배포 뒤 답변 없이 지운다`} />
+            <div className="admin-list">
+              {prtsWrong.rows.map(prtsWrong.render)}
+              {prtsWrong.rows.length === 0 && <p className="vz-note">받은 틀렸어요가 없습니다.</p>}
+            </div>
+          </>)}
 
           {vtab === "etc" && (<>
           {/* 두 칸씩 세 줄 — 요일·시간 칸을 뺀 뒤 리퍼러를 유입원 옆으로 떼어 줄을 맞췄다 (사용자 지시 2026-10-20) */}

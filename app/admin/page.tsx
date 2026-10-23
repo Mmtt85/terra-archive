@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminEditReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, visitorOf, filesOf, flagOf, fmtFileSize, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
+import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminEditReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, visitorOf, isPrtsRow, filesOf, flagOf, fmtFileSize, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKey, type StoredFile } from "../files-api";
@@ -241,7 +241,9 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
-  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "files" | "visits">("visits"); // 상단 탭 — 처음은 방문 통계 (사용자 지시 2026-10-05)
+  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "files" | "visits">("visits");
+  // 방문 통계 → PRTS 칸을 열라는 신호 (세션 창에서 PRTS 틀렸어요 제보를 눌렀을 때)
+  const [prtsFocus, setPrtsFocus] = useState(0); // 상단 탭 — 처음은 방문 통계 (사용자 지시 2026-10-05)
   // 파일 저장소(R2) — 워커 미배포·비밀번호 불일치면 null + 안내
   const [files, setFiles] = useState<StoredFile[] | null>(null); // uploads/ + feedback/
   // 사이트 에셋(assets/)은 4만 개가 넘어 따로, 그 탭을 열 때만 받는다 (2026-10-06 — 한꺼번에 받다 목록 전체가 끊겼다)
@@ -600,18 +602,22 @@ export default function AdminPage() {
       const r = rows.find((x) => x.id === id);
       setFilter("all");
       setStatusFilter(r?.reviewed_at ? "reviewed" : "open");
-      setTab("feedback");
+      if (r && isPrtsRow(r)) { setTab("visits"); setPrtsFocus((k) => k + 1); } else setTab("feedback");
       setFlashId(id);
     },
   }), [rows]);
   useEffect(() => {
-    if (!flashId || tab !== "feedback") return;
+    if (!flashId || (tab !== "feedback" && tab !== "visits")) return;
     requestAnimationFrame(() => document.getElementById(`fb-${flashId}`)?.scrollIntoView({ block: "center", behavior: "smooth" }));
     const t = setTimeout(() => setFlashId(""), 2400);
     return () => clearTimeout(t);
   }, [flashId, tab]);
 
-  const shown = rows
+  // PRTS '틀렸어요' 제보는 제안과 따로 — 방문 통계 'PRTS' 칸의 '틀렸어요'에서 본다 (사용자 지시 2026-10-23 — 보낸 사람에게 안 보이게 익명으로 받는다)
+  const fbRows = rows.filter((row) => !isPrtsRow(row));
+  const prtsRows = rows.filter(isPrtsRow).sort((a, b) => statusRank(a) - statusRank(b) || Date.parse(b.created_at) - Date.parse(a.created_at));
+  const baseRows = fbRows;
+  const shown = baseRows
     .filter((row) => (filter === "all" || row.kind === filter) && matchStatus(row))
     .sort((a, b) => statusRank(a) - statusRank(b) || Date.parse(b.created_at) - Date.parse(a.created_at));
 
@@ -665,99 +671,8 @@ export default function AdminPage() {
     );
   }
 
-  return (
-    <main className="admin">
-      {confirmDialog}
-      <header>
-        <h1>TERRA ARCHIVE 관리</h1>
-        <div className="admin-tools admin-tabs">
-          {/* 사이트 바로 가기 — 방문 통계 왼쪽 (사용자 지시 2026-10-05) */}
-          <a className="admin-site tab-btn" href="https://terra-archive.net" target="_blank" rel="noopener noreferrer">terra-archive.net ↗</a>
-          <button className={tab === "visits" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("visits")}>방문 통계</button>
-          <button className={tab === "feedback" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("feedback")}>피드백 ({rows.length})</button>
-          <button className={tab === "rules" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("rules")}>
-            플래너 규칙{release ? ` (v${release.version}${release.version !== bundledRules.version ? " ⚠" : ""})` : ""}
-          </button>
-          <button className={tab === "changelog" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("changelog")}>
-            업데이트 내역{changes ? ` (${changes.length})` : ""}
-          </button>
-          <button className={tab === "files" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("files")}>
-            파일{files ? ` (${uploadRows.length})` : ""}
-          </button>
-          
-        </div>
-      </header>
-      {status && <p className="admin-status">{status}</p>}
-
-      {/* 게임 데이터 갱신 안내는 피드백 탭에서만 (사용자 지시 2026-10-05 "통계에는 필요 없겠다") */}
-      {tab === "feedback" && (
-      <section className={`data-status ${dataCheck ? (needsUpdate ? "warn" : "ok") : ""}`}>
-        {!dataCheck ? (
-          <p>게임 데이터 확인 중… (크론 워커 응답 대기)</p>
-        ) : (
-          <>
-            <header>
-              <b>{needsUpdate ? "⚠ 게임 데이터 갱신 필요" : "✓ 게임 데이터 최신 상태"}</b>
-              <time>클뜯 레포 기준 · {new Date(dataCheck.updated).toLocaleString("ko-KR")} 확인</time>
-            </header>
-            {newOps.length > 0 && (
-              <p>
-                <b>신규 오퍼 {newOps.length}명</b> — {newOps.map((op) => `${"★".repeat(op.rarity)} ${op.name}`).join(" · ")}
-                <br /><i>Claude에서 <code>/operator-data-update</code> 실행</i>
-              </p>
-            )}
-            {newRecruit.length > 0 && (
-              <p>
-                <b>공채 풀 추가 {newRecruit.length}명</b> — {newRecruit.map((r) => `${"★".repeat(r.rarity)} ${r.name}`).join(" · ")}
-                <br /><i>Claude에서 <code>/recruit-data-update</code> 실행</i>
-              </p>
-            )}
-            {farmNeeds && (
-              <p>
-                <b>재료 파밍표 갱신 필요</b>
-                {farmOpened.length > 0 && <> — 새로 열린 파밍 스테이지 {farmOpened.length}개 ({farmOpened.slice(0, 8).join(" · ")}{farmOpened.length > 8 ? " …" : ""})</>}
-                {farmClosed.length > 0 && <> — 닫힌 스테이지 {farmClosed.length}개 ({farmClosed.slice(0, 8).join(" · ")}{farmClosed.length > 8 ? " …" : ""})</>}
-                {farmNewItems.length > 0 && <> — 신규 재료 {farmNewItems.length}종 ({farmNewItems.join(" · ")})</>}
-                <br /><i>Claude에서 <code>/farm-data-update</code> 실행 (farm.json 기준일 {farmLocal.updated})</i>
-              </p>
-            )}
-            {staleRecruit.length > 0 && (
-              <p className="data-status-minor">참고 · 사이트 공채 풀에만 있는 오퍼 (데이터마인 미반영이면 정상): {staleRecruit.join(" · ")}</p>
-            )}
-            {remoteFarm == null && (
-              <p className="data-status-minor">참고 · 파밍표 신선도는 다음 크론 수집(매일 11:41 KST) 후 표시됩니다.</p>
-            )}
-          </>
-        )}
-      </section>
-      )}
-
-      {tab === "visits" && <FbLinkCtx.Provider value={fbLink}><VisitsPanel /></FbLinkCtx.Provider>}
-      {/* UID 설정 탭은 걷었다 (사용자 지시 2026-10-19) — 방문 통계의 UID 를 누르면 같은 설정 창(PrefsModal)이 뜬다.
-          만능검색 검색 내역은 방문 통계의 '검색' 칸에 있다 (app/admin/omni.tsx) */}
-
-      {tab === "feedback" && (<>
-      <div className="admin-tools admin-status-tools">
-        {/* 'plan'(편성 제안)은 뺐다 — 더는 들어오지 않는 종류다 (사용자 지시 2026-08-29).
-            KIND_LABEL 에는 남겨 둔다: 옛 행이 그 kind 로 저장돼 있어 배지 이름이 필요하다. */}
-        {["all", "feature", "data_error"].map((kind) => (
-          <button key={kind} className={filter === kind ? "tab-btn selected" : "tab-btn"} onClick={() => setFilter(kind)}>
-            {kind === "all" ? "전체" : KIND_LABEL[kind]} ({kind === "all" ? rows.length : rows.filter((row) => row.kind === kind).length})
-          </button>
-        ))}
-        {([["open", "대응미완료"], ["reviewed", "대응완료"]] as const).map(([key, label]) => (
-          <button key={key} className={statusFilter === key ? "tab-btn selected" : "tab-btn"} onClick={() => setStatusFilter(key)}>
-            {label} ({rows.filter((row) => (key === "reviewed" ? row.reviewed_at : !row.reviewed_at)).length})
-          </button>
-        ))}
-        {/* 새로고침은 이 탭 것이라 머리글이 아니라 필터 줄에 둔다 (사용자 지시 2026-08-29) */}
-        <button className={`vz-refresh${fbBusy ? " busy" : ""}`} onClick={() => load()} disabled={fbBusy} aria-busy={fbBusy}>
-          <span>새로고침</span>
-          <span role="status"><i className="vz-spin" aria-hidden />불러오는 중</span>
-        </button>
-      </div>
-      <div className="admin-list">
-        {shown.map((row) => (
+  // 제안 카드 한 장 — 피드백 탭과 방문 통계 PRTS 칸의 '틀렸어요'가 같이 쓴다
+  const renderRow = (row: FeedbackRow) => (
           <article key={row.id} id={`fb-${row.id}`} className={`admin-row kind-${row.kind}${row.reviewed_at ? " reviewed" : ""}${handlingAt(row.payload) && !row.reviewed_at ? " handling" : ""}${flashId === row.id ? " fb-flash" : ""}`}>
             <header>
               <code className="fb-id" title={`${row.id} — 클릭하면 전체 ID 복사`}
@@ -841,7 +756,100 @@ export default function AdminPage() {
               </details>
             )}
           </article>
+  );
+  return (
+    <main className="admin">
+      {confirmDialog}
+      <header>
+        <h1>TERRA ARCHIVE 관리</h1>
+        <div className="admin-tools admin-tabs">
+          {/* 사이트 바로 가기 — 방문 통계 왼쪽 (사용자 지시 2026-10-05) */}
+          <a className="admin-site tab-btn" href="https://terra-archive.net" target="_blank" rel="noopener noreferrer">terra-archive.net ↗</a>
+          <button className={tab === "visits" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("visits")}>방문 통계</button>
+          <button className={tab === "feedback" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("feedback")}>피드백 ({fbRows.length})</button>
+          <button className={tab === "rules" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("rules")}>
+            플래너 규칙{release ? ` (v${release.version}${release.version !== bundledRules.version ? " ⚠" : ""})` : ""}
+          </button>
+          <button className={tab === "changelog" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("changelog")}>
+            업데이트 내역{changes ? ` (${changes.length})` : ""}
+          </button>
+          <button className={tab === "files" ? "tab-btn selected" : "tab-btn"} onClick={() => setTab("files")}>
+            파일{files ? ` (${uploadRows.length})` : ""}
+          </button>
+          
+        </div>
+      </header>
+      {status && <p className="admin-status">{status}</p>}
+
+      {/* 게임 데이터 갱신 안내는 피드백 탭에서만 (사용자 지시 2026-10-05 "통계에는 필요 없겠다") */}
+      {tab === "feedback" && (
+      <section className={`data-status ${dataCheck ? (needsUpdate ? "warn" : "ok") : ""}`}>
+        {!dataCheck ? (
+          <p>게임 데이터 확인 중… (크론 워커 응답 대기)</p>
+        ) : (
+          <>
+            <header>
+              <b>{needsUpdate ? "⚠ 게임 데이터 갱신 필요" : "✓ 게임 데이터 최신 상태"}</b>
+              <time>클뜯 레포 기준 · {new Date(dataCheck.updated).toLocaleString("ko-KR")} 확인</time>
+            </header>
+            {newOps.length > 0 && (
+              <p>
+                <b>신규 오퍼 {newOps.length}명</b> — {newOps.map((op) => `${"★".repeat(op.rarity)} ${op.name}`).join(" · ")}
+                <br /><i>Claude에서 <code>/operator-data-update</code> 실행</i>
+              </p>
+            )}
+            {newRecruit.length > 0 && (
+              <p>
+                <b>공채 풀 추가 {newRecruit.length}명</b> — {newRecruit.map((r) => `${"★".repeat(r.rarity)} ${r.name}`).join(" · ")}
+                <br /><i>Claude에서 <code>/recruit-data-update</code> 실행</i>
+              </p>
+            )}
+            {farmNeeds && (
+              <p>
+                <b>재료 파밍표 갱신 필요</b>
+                {farmOpened.length > 0 && <> — 새로 열린 파밍 스테이지 {farmOpened.length}개 ({farmOpened.slice(0, 8).join(" · ")}{farmOpened.length > 8 ? " …" : ""})</>}
+                {farmClosed.length > 0 && <> — 닫힌 스테이지 {farmClosed.length}개 ({farmClosed.slice(0, 8).join(" · ")}{farmClosed.length > 8 ? " …" : ""})</>}
+                {farmNewItems.length > 0 && <> — 신규 재료 {farmNewItems.length}종 ({farmNewItems.join(" · ")})</>}
+                <br /><i>Claude에서 <code>/farm-data-update</code> 실행 (farm.json 기준일 {farmLocal.updated})</i>
+              </p>
+            )}
+            {staleRecruit.length > 0 && (
+              <p className="data-status-minor">참고 · 사이트 공채 풀에만 있는 오퍼 (데이터마인 미반영이면 정상): {staleRecruit.join(" · ")}</p>
+            )}
+            {remoteFarm == null && (
+              <p className="data-status-minor">참고 · 파밍표 신선도는 다음 크론 수집(매일 11:41 KST) 후 표시됩니다.</p>
+            )}
+          </>
+        )}
+      </section>
+      )}
+
+      {tab === "visits" && <FbLinkCtx.Provider value={fbLink}><VisitsPanel prtsFocus={prtsFocus} prtsWrong={{ rows: prtsRows, render: renderRow }} /></FbLinkCtx.Provider>}
+      {/* UID 설정 탭은 걷었다 (사용자 지시 2026-10-19) — 방문 통계의 UID 를 누르면 같은 설정 창(PrefsModal)이 뜬다.
+          만능검색 검색 내역은 방문 통계의 '검색' 칸에 있다 (app/admin/omni.tsx) */}
+
+      {tab === "feedback" && (<>
+      <div className="admin-tools admin-status-tools">
+        {/* 'plan'(편성 제안)은 뺐다 — 더는 들어오지 않는 종류다 (사용자 지시 2026-08-29).
+            KIND_LABEL 에는 남겨 둔다: 옛 행이 그 kind 로 저장돼 있어 배지 이름이 필요하다. */}
+        {["all", "feature", "data_error"].map((kind) => (
+          <button key={kind} className={filter === kind ? "tab-btn selected" : "tab-btn"} onClick={() => setFilter(kind)}>
+            {kind === "all" ? "전체" : KIND_LABEL[kind]} ({kind === "all" ? fbRows.length : fbRows.filter((row) => row.kind === kind).length})
+          </button>
         ))}
+        {([["open", "대응미완료"], ["reviewed", "대응완료"]] as const).map(([key, label]) => (
+          <button key={key} className={statusFilter === key ? "tab-btn selected" : "tab-btn"} onClick={() => setStatusFilter(key)}>
+            {label} ({baseRows.filter((row) => (key === "reviewed" ? row.reviewed_at : !row.reviewed_at)).length})
+          </button>
+        ))}
+        {/* 새로고침은 이 탭 것이라 머리글이 아니라 필터 줄에 둔다 (사용자 지시 2026-08-29) */}
+        <button className={`vz-refresh${fbBusy ? " busy" : ""}`} onClick={() => load()} disabled={fbBusy} aria-busy={fbBusy}>
+          <span>새로고침</span>
+          <span role="status"><i className="vz-spin" aria-hidden />불러오는 중</span>
+        </button>
+      </div>
+      <div className="admin-list">
+        {shown.map(renderRow)}
         {shown.length === 0 && <p className="admin-status">표시할 항목이 없습니다.</p>}
       </div>
       </>)}

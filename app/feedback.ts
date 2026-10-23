@@ -346,6 +346,11 @@ export function visitorOf(payload: unknown): string | null {
   const v = payload && typeof payload === "object" ? (payload as { visitor?: unknown }).visitor : null;
   return typeof v === "string" && /^[0-9a-f]{8}$/.test(v) ? v : null;
 }
+/** PRTS '틀렸어요' 제보인가 (payload.source) — 관리 화면이 제안과 따로 'PRTS 틀렸어요' 탭에 모은다 (2026-10-23) */
+export function isPrtsRow(row: { payload?: unknown }): boolean {
+  const p = row.payload;
+  return !!p && typeof p === "object" && (p as { source?: unknown }).source === "prts-wrong";
+}
 // visit-track.ts 의 VISITOR_KEY 와 같은 칸 — 그 파일이 이 파일을 불러오므로 거꾸로 import 하지 않고 직접 읽는다
 const VISITOR_STORE = "ta-visitor";
 function visitorCode(): string | null {
@@ -357,7 +362,9 @@ export function flagOf(cc: string): string {
   return String.fromCodePoint(...[...cc].map((c) => 0x1f1a5 + c.charCodeAt(0)));
 }
 
-export async function sendFeedback(kind: FeedbackKind, message: string, payload?: unknown) {
+/** anonymous — 작성자 열람 코드(author_token)를 붙이지 않는다. 보낸 사람의 '내 제안'에 안 뜨고 관리 화면에서만 보인다
+ *  (PRTS '틀렸어요' 제보 — 답 없이 처리 뒤 지우는데, 보낸 사람 목록에서 사라지면 기분 나쁠 수 있어서. 사용자 지시 2026-10-23) */
+export async function sendFeedback(kind: FeedbackKind, message: string, payload?: unknown, opts?: { anonymous?: boolean }) {
   if (!feedbackReady) throw new Error("Supabase 키가 아직 설정되지 않았습니다");
   // 어떤 화면에서 보낸 제안인지 payload에 자동 첨부 (예: "/#infra", "/#op-char_2014_nian")
   const page = typeof window === "undefined" ? null : `${window.location.pathname}${window.location.hash}`;
@@ -372,7 +379,7 @@ export async function sendFeedback(kind: FeedbackKind, message: string, payload?
   const body = { kind, message: message.slice(0, 4000), payload: { ...(payload && typeof payload === "object" ? payload : {}), page, ...(country ? { country } : {}), ...(visitor ? { visitor } : {}) } };
   const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback`, {
     method: "POST", headers,
-    body: JSON.stringify({ ...body, author_token: ensureFeedbackToken() }),
+    body: JSON.stringify(opts?.anonymous ? body : { ...body, author_token: ensureFeedbackToken() }),
   });
   if (res.ok) return;
   // 과도기 — author_token 컬럼(supabase-feedback-board.sql)이 아직 없으면 PGRST204(400).
