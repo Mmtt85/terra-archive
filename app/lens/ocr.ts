@@ -522,9 +522,11 @@ export async function createOcrSession(blob: Blob, lang = "kor", opts?: { paddle
     async gradeBadge() {
       if (!colorC) return null;
       // 배지 자리만 6배로 키우고 **흰 숫자만** 남겨(빨간 육각형 바탕을 지움) 읽는다 — 그대로 읽으면 '12' 의 '1' 이 사라져 2 가 됐다
-      // (사용자 제보 2026-10-13 "난이도 12인데 2"). 자르는 범위 둘 × 문턱 둘로 읽어 표가 많은 값, 같으면 두 자리를 고른다
+      // (사용자 제보 2026-10-13 "난이도 12인데 2"). 자르는 범위 셋 × 문턱 둘로 읽어 표가 많은 값, 같으면 두 자리를 고른다.
+      // 셋째 범위는 화면 **맨 왼쪽 끝**부터 — 배지가 왼쪽 끝(가로 0~1.3%)에 붙은 화면에선 앞의 두 범위가 숫자를 비켜 톱니 아이콘만 잘라 와
+      // 난이도 11 을 2 로 잡았다 (틀렸어요 b68fe490, 2026-10-23 · 중국어 클라이언트 2560×1440)
       const votes = new Map<number, number>();
-      for (const [rx, ry, rw, rh] of [[0.012, 0.95, 0.032, 0.05], [0.008, 0.94, 0.04, 0.06]] as const) {
+      for (const [rx, ry, rw, rh] of [[0.012, 0.95, 0.032, 0.05], [0.008, 0.94, 0.04, 0.06], [0, 0.935, 0.024, 0.05]] as const) {
         for (const th of [150, 130]) {
           const sx = Math.round(W * rx), sy = Math.round(H * ry), sw = Math.round(W * rw), sh = Math.min(Math.round(H * rh), H - sy);
           if (sw < 4 || sh < 4) continue;
