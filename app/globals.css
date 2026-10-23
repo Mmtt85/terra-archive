@@ -23081,6 +23081,8 @@ td.sb-cn-td { display: table-cell; margin: 0; }
    .mw-body에 패딩이 없는 게 기본이라 모달마다 자기 여백을 준다 (item-modal과 같은 관례). */
 .sb-modal { max-width: 640px; }
 .sb-modal .mw-body { padding: 8px 20px 20px; }
+/* 원본 적 도감(EnemyFile)을 펼친 적 창은 적 도감 창 폭으로 — 640px 에선 능력치 표가 찌그러진다 (사용자 지적 2026-10-23) */
+.sb-modal.sb-modal-dex { max-width: 960px; }
 .sb-dt { padding: 0; }
 .sb-dt > p:first-of-type { margin-top: 8px; }
 /* ── 생존연산 상세 손질 (2026-10-17, 사용자 지시 "사막 이야기 아이템 도감도 예쁘게") — 적·아이템 상세와 같은 결.
@@ -28778,6 +28780,24 @@ html.dark .me-tile-art { opacity: .3; }
 .me-kpis li > button.me-kpi-edit:hover { border-color: var(--btn-line-hover); background: var(--btn-bg-hover); color: var(--ink); }
 /* 한눈에 보기 윗줄 — 계정 숫자 셋(보유 오퍼 넓은 칸 · 보유 스킨 · 훈장) 고정. 아래 고칠 수 있는 칸은 5열 */
 .me-kpis.me-kpis-top { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 8px; }
+/* 윗줄 기본 칸 셋 — 테두리 없이, 그림을 칸 전체에 깔고 가장자리만 흐리게 (사용자 지시 2026-10-23) */
+/* 바탕은 카드(--white)보다 살짝 어둡게, 가장자리는 통합전략 칸과 같은 9조각 페이드(아래 .me-resume 규칙에 함께 건다) — 사용자 지시 2026-10-23 */
+.me-kpis li.me-kpi-custom > :is(button, div):not(.me-kpi-edit), .me-kpis li.me-kpi-custom > :is(button, div):not(.me-kpi-edit):hover { border: 0; background: var(--paper); }  /* 맞춤 칸도 윗줄과 같게 (사용자 지시 2026-10-23) */
+/* 다크에선 페이지 바탕(--paper)이 너무 꺼져 보여 한 단계 밝은 면으로 (사용자 지시 2026-10-23) */
+html.dark .me-kpis li.me-kpi-custom > :is(button, div):not(.me-kpi-edit), html.dark .me-kpis li.me-kpi-custom > :is(button, div):not(.me-kpi-edit):hover { background: var(--bg-panel); }
+.me-kpis li.me-kpi-custom .me-kpi-art, .me-kpis li.me-kpi-custom.big .me-kpi-art { inset: 0; left: 0; right: 0; translate: none; width: 100%; height: 100%; object-position: 50% 22%;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%); -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%); mask-composite: intersect; }
+/* 훈장 아이콘은 펼치지 않고 오른쪽에 통째로, 동그라미 그래프는 윗줄에선 뺀다 (사용자 지시 2026-10-23) */
+.me-kpis.me-kpis-top .me-kpi-art.medal { inset: auto; left: auto; right: 6%; top: -4%; width: auto; height: 108%; aspect-ratio: 1; object-fit: contain; -webkit-mask-image: none; mask-image: none; }
+.me-kpis.me-kpis-top .me-ring { display: none; }
+.me-kpis li.me-kpi-custom > button .me-kpi-art { transition: opacity .25s; }
+/* 보유 오퍼(넓은 칸)는 폭을 줄여 가운데로, 보유 스킨(둘째 칸)은 폭을 줄여 오른쪽으로 (사용자 지시 2026-10-23) */
+.me-kpis.me-kpis-top li.big .me-kpi-art { left: 45%; right: auto; width: 59%; translate: -50% 0; object-position: 50% 28%; }
+.me-kpis.me-kpis-top li:nth-child(2) .me-kpi-art:not(.medal) { left: auto; right: 0; width: 62%; }
+.me-kpis li.me-kpi-custom > button:hover .me-kpi-art.on { opacity: .55; }
+/* 맞춤 칸(윗줄 밖)은 글자가 왼쪽이라 그림을 오른쪽으로 (사용자 지시 2026-10-23) */
+.me-kpis:not(.me-kpis-top) li.me-kpi-custom .me-kpi-art:not(.medal) { left: auto; right: 0; width: 70%; }
 @media (max-width: 640px) { .me-kpis.me-kpis-top { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* 재화 윗줄 — 용문폐·합성옥·순오리지늄 큰 칸 셋 */
 .me-wallet-top { list-style: none; margin: 0 0 6px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
@@ -34364,7 +34384,7 @@ html.rg-theme.rg4 main.site-main {
 
 /* 내 정보의 그림 바탕 단추 전부 같은 9조각 페이드·둥근 모서리로 (사용자 지시 2026-10-19 "내 정보에 모든 이미지 들어간 버튼들을 그렇게"):
    이어하기 칸(통합전략·보안파견·생존연산) · 통합전략 테마 칸 · 더 보기 칸 · 통합전략 창의 머리 그림·엔딩 카드 */
-:is(.me-rx-hero, .me-rg-modal .me-rg-endcard, .me-resume > button, .me-resume > a.has-bg, .me-drawers > button) {   /* .me-rx-hero = 진행 중(통합전략·보안파견·생존연산) 창의 머리 그림 전부 — 2026-10-19 "현재 진행 중 모달 안 이미지도" */   /* 더 보기 칸은 그림이 아이콘인 것(창고)도 — 2026-10-19 "창고 버튼은 왜 페이드가 안 되지" */
+:is(.me-rx-hero, .me-rg-modal .me-rg-endcard, .me-resume > button, .me-resume > a.has-bg, .me-drawers > button, .me-kpis li.me-kpi-custom > :is(button, div):not(.me-kpi-edit)) {   /* .me-kpi-custom = 한눈에 보기 칸 전부 (2026-10-23) */   /* .me-rx-hero = 진행 중(통합전략·보안파견·생존연산) 창의 머리 그림 전부 — 2026-10-19 "현재 진행 중 모달 안 이미지도" */   /* 더 보기 칸은 그림이 아이콘인 것(창고)도 — 2026-10-19 "창고 버튼은 왜 페이드가 안 되지" */
   border-width: 0;
   --fR: 14px; --fF: 6px;
   border-radius: var(--fR);

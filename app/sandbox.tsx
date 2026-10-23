@@ -22,7 +22,9 @@ import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
 import { GLOBAL_MODAL_HASH } from "./hash-modal";
-import { loadEnemies, loadEnemyStages } from "./dex-cross";
+import { isCrisisStage, loadCrisisStages, loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadStages } from "./dex-cross";
+import { StageFile } from "./stage-detail";
+import { mergeRogueDoc, viewOf, type StageView } from "./stage-data";
 import { enemyImg, enemyPath } from "./dex-paths";
 import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
@@ -308,6 +310,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   const [obPick, setObPick] = useState<string | null>(null);   // 자원 클릭 = 그것만 강조
   const [, bumpRoutes] = useState(0);
   const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
+  const [enSubRaise, setEnSubRaise] = useState(0);
   const [zoom, setZoom] = useState(false);
   // 경로 모드 = 지도에 경로가 그려져 있을 때 (칸 클릭 = 고정 · 호버 = 강조 · 경로 색 테두리). 탭이 없어진 뒤
   // (2026-09-23 한 화면 규칙)엔 경로 데이터가 있으면 늘 경로가 보이므로 모달마다 그 유무로 정한다.
@@ -369,7 +372,8 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   const rd = openSt ? sbRoutesFor(openSt[0]) : undefined;
   const routeOrder = rd ? enemyRows.filter((r) => rd.e[r[0]]?.length).map((r) => r[0]) : [];
   const openDexEnemy = (id: string, img: string) => {
-    void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(id) ?? m.get(img) ?? null); });
+    // 작전 창에서 적을 누르면 그 적 창이 앞으로 — 키를 바꿔 다시 띄운다 (창 앞뒤는 띄운 순서)
+    void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(id) ?? m.get(img) ?? null); setEnSubRaise((k) => k + 1); });
     void loadEnemyStages(locale).then(setEnStages);
   };
   // 적 도감 상세는 **모달을 열 때 바로 싣는다** — 링크를 한 번 더 누르게 하지 않는다
@@ -379,9 +383,31 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   // 사용자 제보 2026-08-13 "연계 소환이 제대로 안 나옴"). 한 번 받아 두고 재사용한다.
   const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
   // 등장 작전 역색인 — 적 상세의 '등장 작전' 절. 생존연산 적 330종 중 276종이 일반
-  // 작전에도 나온다 (사용자 지시 2026-09-17). 여기선 띄울 작전 모달이 없어
-  // onOpenStage 대신 작전 도감 딥링크로 폴백한다.
+  // 작전에도 나온다 (사용자 지시 2026-09-17). 누르면 작전 도감으로 넘어가지 않고 작전 창을 띄운다
+  // (사용자 지시 2026-10-23 — 이벤트 가이드 openStage 와 같은 방식: 본 도감 → 위기 협약 → 미래시)
   const [enStages, setEnStages] = useState<EnemyStages | null>(null);
+  const [dexStage, setDexStage] = useState<StageView | null>(null);
+  const [stRaise, setStRaise] = useState(0);
+  const openDexStage = (sid: string) => {
+    // 생존연산 자체 맵(sandbox_…)은 작전 도감에 없다 — 이 화면의 작전 창으로 (실측 2026-10-23: 이모탈 → sandbox_1_66)
+    const v2st = byStId.get(sid);
+    if (v2st) { openStage(v2st); return; }
+    const v3i = v3.stages.findIndex((s2) => s2.id === sid);
+    if (v3i >= 0) { openDetail({ k: "v3stage", i: v3i }); return; }
+    void Promise.all([loadStages(locale), loadEnemyStats()]).then(async ([d, stats]) => {
+      let doc = d;
+      let st = d.stages.find((x) => x.id === sid);
+      if (!st && isCrisisStage(sid)) {
+        doc = mergeRogueDoc(d, await loadCrisisStages(locale));
+        st = doc.stages.find((x) => x.id === sid);
+      }
+      if (!st) {
+        doc = mergeRogueDoc(d, (await loadFutureDex(locale)).stages);
+        st = doc.stages.find((x) => x.id === sid);
+      }
+      setDexStage(st ? viewOf(doc, st, stats) : null); setStRaise((k) => k + 1);
+    });
+  };
   const loadDexFull = (id: string, img: string) => {
     setDexFull(null);
     void loadEnemies(locale).then((m) => { setEnMap(m); setDexFull(m.get(id) ?? m.get(img) ?? null); });
@@ -1677,7 +1703,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
         if (detail.k !== "dex") return null;
         const e = v2.dex[detail.i];
         return (
-          <ModalWindow label={enName(e.id)} className="operator-modal sb-modal" onClose={close}>
+          <ModalWindow label={enName(e.id)} className={`operator-modal sb-modal${e.src === 0 && dexFull ? " sb-modal-dex" : ""}`} onClose={close}>
             <div className="sb-dt">
               <header className="sb-dt-head">
                 <img src={enImgOf(e.id, e.img, e.src)} alt="" aria-hidden onError={hideErr} />
@@ -1709,7 +1735,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
               {e.src === 0 && (
                 dexFull ? <div className="sb-dexfull">
                     <EnemyFile enemy={dexFull} stagesDoc={enStages} nameOf={anyEnName}
-                      onOpenEnemy={(id) => openDexEnemy(id, id)} />
+                      onOpenEnemy={(id) => openDexEnemy(id, id)} onOpenStage={openDexStage} />
                   </div>
                   : <p className="sim-note">{t("적 도감 정보를 불러오는 중…")}</p>
               )}
@@ -1976,7 +2002,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
         const close = () => setOpenV3En(null);
           const e = v3.dex.find((x) => x.id === openV3En)!;
           return (
-            <ModalWindow key={`v3en-${enRaise}`} label={v3EnName(e.id)} className="operator-modal sb-modal" onClose={close}>
+            <ModalWindow key={`v3en-${enRaise}`} label={v3EnName(e.id)} className={`operator-modal sb-modal${v3.enemySrc[e.id] === 0 && dexFull ? " sb-modal-dex" : ""}`} onClose={close}>
               <div className="sb-dt">
                 <header className="sb-dt-head">
                   <img src={v3EnImg(e.id)} alt="" aria-hidden onError={hideErr} />
@@ -2000,7 +2026,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                 {v3.enemySrc[e.id] === 0 && (
                   dexFull ? <div className="sb-dexfull">
                     <EnemyFile enemy={dexFull} stagesDoc={enStages} nameOf={anyEnName}
-                      onOpenEnemy={(id) => openDexEnemy(id, id)} />
+                      onOpenEnemy={(id) => openDexEnemy(id, id)} onOpenStage={openDexStage} />
                   </div>
                     : <p className="sim-note">{t("적 도감 정보를 불러오는 중…")}</p>
                 )}
@@ -2019,10 +2045,16 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       {matTop === "b" && matA && matModal(matA, "a")}
       {matB && matModal(matB, "b")}
       {matTop === "a" && matA && matModal(matA, "a")}
+      {dexStage && (
+        <ModalWindow key={`dst-${stRaise}`} label={`${dexStage.stage.code} ${dexStage.stage.name}`}
+          className="operator-modal st-modal" onClose={() => setDexStage(null)}>
+          <StageFile view={dexStage} onOpenEnemy={(id) => openDexEnemy(id, id)} />
+        </ModalWindow>
+      )}
       {subEnemy && (
-        <ModalWindow label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
+        <ModalWindow key={`sen-${enSubRaise}`} label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
           <EnemyFile enemy={subEnemy} stagesDoc={enStages} nameOf={anyEnName}
-            onOpenEnemy={(id) => openDexEnemy(id, id)} />
+            onOpenEnemy={(id) => openDexEnemy(id, id)} onOpenStage={openDexStage} />
         </ModalWindow>
       )}
     </section>
