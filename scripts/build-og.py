@@ -51,6 +51,7 @@ TAB_META = {
     "rogue":   ("INTEGRATED STRATEGIES", "nodes"),
     "ra":      ("RECLAMATION ALGORITHM", "hex"),
     "autochess": ("STRONGHOLD PROTOCOL", "grid"),
+    "crisis":  ("CONTINGENCY CONTRACT",  "nodes"),
     "about":   ("FEATURE GUIDE",         "info"),
 }
 
@@ -116,6 +117,9 @@ SUBLINE = {
     "autochess": {"ko": "위수 협의 — 맹약·오퍼레이터·적을 게임 데이터 그대로.",
                   "en": "Stronghold Protocol — alliances, operators & enemies from game data.",
                   "ja": "堅守協定 — 盟約・オペレーター・敵をゲームデータそのままに。"},
+    "crisis":  {"ko": "위기 협약 — 시즌별 맵·계약과 위험도·적 능력치 계산.",
+                "en": "Contingency Contract — maps, contracts, risk & enemy stat calculator.",
+                "ja": "危機契約 — シーズン別マップ・契約と危機等級・敵ステータス計算。"},
     "about":   {"ko": "테라 아카이브가 무엇이고 무엇을 할 수 있는지.",
                 "en": "What Terra Archive is, and what it can do.",
                 "ja": "テラアーカイブが何で、何ができるのか。"},

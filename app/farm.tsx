@@ -71,6 +71,8 @@ type CostEntry = {
 type CostItemMeta = {
   name: LocText; rarity: number; sortId: number; image: string;
   desc?: LocText; usage?: LocText; craft?: CostList; craftGold?: number;
+  craftAt?: "factory";     // 듀얼 칩 — 가공소가 아니라 제조소 제조식 (build-costs.py, 2026-10-23)
+  shop?: [string, number]; // 상점 교환으로만 얻는 재료 — [화폐 id, 개수] (칩 첨가제 = 고급증명서 90)
   unreleased?: boolean;   // KR 미출시(중국 선행) 재료 — 미래시 데이터 포함 시에만 노출
   gainExp?: number;       // 작전기록 — 사용 시 오르는 경험치 (build-costs.py, 2026-08-09)
 };
@@ -85,6 +87,8 @@ type CostsData = {
 
 const data = farmData as { updated: string; minTimes: number; items: FarmItem[] };
 const costs = costsData as unknown as CostsData;
+// 파밍할 수 있는 재료 — 효율표에 작전이 있는 것 + 스킬개론(물자 작전 CA, 효율표엔 안 싣는다). 가공소 트리가 조합을 강제할지 가른다
+const FARMABLE_IDS = new Set([...data.items.filter((it) => it.stages.length).map((it) => it.id), "3301", "3302", "3303"]);
 
 // 화면에 뿌릴 재료 통합 목록 — 효율표(파밍 가능) + costs 사전(칩·조합 T5 등 파밍 불가).
 // 파밍 불가 재료도 정보는 봐야 하므로(2026-07 사용자 확정) stages 없이 카드로 노출한다.
@@ -840,7 +844,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
     const raw = new URLSearchParams(window.location.search).get("ops");
     if (!raw) return;
     const ids = raw.split(",").filter((id) => byId.has(id) && costs.ops[id]);
-    if (ids.length) setPicked(ids);
+    if (ids.length) { setPicked(ids); setOpenOps(new Set([ids[ids.length - 1]])); }
     // ?to=char_x:2.1,char_y:0.30 — 정예화.레벨까지만 목표로 (내 정보 패러독스·레코드에서 담아 올 때, 2026-10-22).
     // 그 오퍼는 레벨·정예화를 그 단계까지만 잡고 스킬·특화·모듈은 0. to 가 없는 오퍼는 종전대로 전부
     const to = new URLSearchParams(window.location.search).get("to");
@@ -939,36 +943,45 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       return next;
     });
 
+  // 오퍼 한 명의 비용 — 합계(totals)와 접힌 카드 머리의 요약이 같은 계산을 쓴다 (카드 접기, 제안 7345061a 2026-10-23)
+  const opCost = (id: string): { lmd: number; map: Map<string, number> } => {
+    let lmd = 0;
+    const map = new Map<string, number>();
+    const operator = byId.get(id);
+    const entry = costs.ops[id];
+    if (!operator || !entry) return { lmd, map };
+    for (const group of buildGroups(operator, entry, t)) {
+      const target = targets[`${id}/${group.key}`] ?? group.steps.length;
+      for (let pos = 0; pos < target; pos += 1) {
+        const step = group.steps[pos];
+        const st = doneOf(id, entry, group, pos);
+        if (st.done) continue;   // 내 육성 상태에서 이미 끝난 단계
+        // '레벨·정예화' 그룹의 최상위 선택 단계가 레벨업이면 목표 레벨까지만 부분 계산.
+        // 지금 정예화 단계의 레벨업이면 현재 레벨부터만 (st.from)
+        if (step.kind === "lv" && step.phase != null && step.maxLv != null && (pos === target - 1 || st.from != null)) {
+          const lvl = pos === target - 1 ? levelLv[`${id}/p${step.phase}`] ?? step.maxLv : step.maxLv;
+          if (lvl < step.maxLv || st.from != null) {
+            const to = levelCostTo(step.phase, lvl);
+            const from = st.from != null ? levelCostTo(step.phase, st.from) : { lmd: 0, records: 0 };
+            const c = { lmd: Math.max(0, to.lmd - from.lmd), records: Math.max(0, to.records - from.records) };
+            lmd += c.lmd;
+            if (c.records > 0) addCost(map, [[EXP_CARD_ID, c.records]]);
+            continue;
+          }
+        }
+        lmd += step.lmd;
+        addCost(map, step.items);
+      }
+    }
+    return { lmd, map };
+  };
   const totals = useMemo(() => {
     let lmd = 0;
     const map = new Map<string, number>();
     for (const id of picked) {
-      const operator = byId.get(id);
-      const entry = costs.ops[id];
-      if (!operator || !entry) continue;
-      for (const group of buildGroups(operator, entry, t)) {
-        const target = targets[`${id}/${group.key}`] ?? group.steps.length;
-        for (let pos = 0; pos < target; pos += 1) {
-          const step = group.steps[pos];
-          const st = doneOf(id, entry, group, pos);
-          if (st.done) continue;   // 내 육성 상태에서 이미 끝난 단계
-          // '레벨·정예화' 그룹의 최상위 선택 단계가 레벨업이면 목표 레벨까지만 부분 계산.
-          // 지금 정예화 단계의 레벨업이면 현재 레벨부터만 (st.from)
-          if (step.kind === "lv" && step.phase != null && step.maxLv != null && (pos === target - 1 || st.from != null)) {
-            const lvl = pos === target - 1 ? levelLv[`${id}/p${step.phase}`] ?? step.maxLv : step.maxLv;
-            if (lvl < step.maxLv || st.from != null) {
-              const to = levelCostTo(step.phase, lvl);
-              const from = st.from != null ? levelCostTo(step.phase, st.from) : { lmd: 0, records: 0 };
-              const c = { lmd: Math.max(0, to.lmd - from.lmd), records: Math.max(0, to.records - from.records) };
-              lmd += c.lmd;
-              if (c.records > 0) addCost(map, [[EXP_CARD_ID, c.records]]);
-              continue;
-            }
-          }
-          lmd += step.lmd;
-          addCost(map, step.items);
-        }
-      }
+      const c = opCost(id);
+      lmd += c.lmd;
+      addCost(map, [...c.map]);
     }
     const rows = Array.from(map.entries())
       .map(([id, count]) => ({ id, count, meta: costs.items[id] }))
@@ -976,6 +989,133 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       .sort((a, b) => b.meta.rarity - a.meta.rarity || a.meta.sortId - b.meta.sortId);
     return { lmd, rows };
   }, [picked, targets, levelLv, byId, t, fromMine, mine]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 카드 접기 — 펼친 카드만 기억한다. 새로 담은 오퍼만 펼치고 앞서 작업하던 카드는 접는다 (사용자 결정 2026-10-23)
+  const [openOps, setOpenOps] = useState<Set<string>>(new Set());
+  const toggleOp = (id: string) => setOpenOps((cur) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  /** 접힌 카드 머리의 한 줄 — 'E0 Lv.1 → E2 Lv.60 · 스킬 1→7 · 특화 3/0/0 · 모듈 X3' */
+  const opSummary = (id: string, operator: Operator, entry: CostEntry, groups: CostGroup[]): string => {
+    const c = curOf(id);
+    const parts: string[] = [];
+    const grow = groups.find((g) => g.key === "grow");
+    if (grow) {
+      const n = targetOf(id, grow);
+      const from = c ? `E${c.elite} Lv.${c.level}` : "E0 Lv.1";
+      let to = from;
+      if (n > 0) {
+        const top = grow.steps[n - 1];
+        to = top.kind === "lv" ? `E${top.phase} Lv.${levelLv[`${id}/p${top.phase}`] ?? top.maxLv}` : `E${(top.phase ?? 0) + 1} Lv.1`;
+      }
+      parts.push(from === to ? from : `${from} → ${to}`);
+    }
+    const sk = groups.find((g) => g.key === "s");
+    if (sk) {
+      const from = c?.skill ?? 1, to = Math.max(from, targetOf(id, sk) + 1);
+      parts.push(from === to ? t("스킬 {n}", { n: from }) : t("스킬 {a}→{b}", { a: from, b: to }));
+    }
+    const ms = groups.filter((g) => /^m\d+$/.test(g.key));
+    if (ms.length) {
+      const lv = ms.map((g, i) => Math.max(c?.mastery[i] ?? 0, targetOf(id, g)));
+      if (lv.some((v) => v > 0)) parts.push(t("특화 {v}", { v: lv.join("/") }));
+    }
+    for (const g of groups.filter((x) => /^d\d+$/.test(x.key))) {
+      const n = targetOf(id, g);
+      const modId = entry.modules?.[Number(g.key.slice(1))]?.id;
+      const have = modId ? c?.modules[modId] ?? 0 : 0;
+      const v = Math.max(n, have);
+      if (v > 0) parts.push(`${g.label}${v}`);
+    }
+    void operator;
+    return parts.join(" · ");
+  };
+
+  // 가공소로 메우기 (제안 7345061a 2026-10-23 "티어 단위로 조합할 때 필요량과 부족량") — 단추를 누르면 창에 나무 모양으로
+  // 풀어 보인다 (사용자 지시 같은 날 "버튼으로 만들어 모달, 트리 형식으로 아주 구체적으로"). 규칙:
+  //  ① 창고는 **직접 필요한 몫부터** 잡아 둔다 — 그 재료가 직접 쓰이는 만큼은 조합 재료로 못 쓴다
+  //  ② 직접 필요가 모자란 재료(뿌리)를 위 등급부터 보고, 조합식이 있으면 모자란 만큼 조합 — 하위 재료는 남은 창고에서
+  //     꺼내 쓰고, 또 모자라면 다시 조합한다(깊이 우선). 조합식이 없거나 칩(32xx, 같은 등급끼리 바꾸는 순환 교환)이면 파밍할 몫
+  //  부산물은 세지 않는다. 합계(조합할 것·파밍할 것)는 나무의 모든 마디를 더한 것이다
+  // 가공소 트리에서 '조합으로 풀어 본' 마디 — 기본은 다 접힌 채 '파밍 N개 필요'. 열면 그 마디를 조합한다고 보고 하위 재료가 나온다
+  // (사용자 지시 2026-10-23 "포도당 번들 자체를 파밍하는 경우도 있으니" — 종전엔 조합식이 있으면 무조건 끝까지 풀었다).
+  // 경로 키 'r:<뿌리 id>/<하위 id>/…' — 같은 재료라도 자리마다 따로 연다. all = 전부 연 상태
+  // 기본은 끝까지 조합 — 파밍할지는 보고 ▾ 로 접어 고른다 (사용자 지시 2026-10-23, 잠깐 '다 접힌 채'였다가 되돌림)
+  const [craftPaths, setCraftPaths] = useState<{ all: boolean; set: Set<string> }>({ all: true, set: new Set() });
+  const craftPlan = useMemo(() => {
+    // 로그인 안 했어도 연다 — 창고를 0 으로 보고 전부 하위 재료까지 푼다 (사용자 지시 2026-10-23 "로그인 안 해도 보이게")
+    if (!totals.rows.length) return null;
+    const left = new Map<string, number>();
+    const stock = (id: string) => left.get(id) ?? Math.max(0, haveOf(id) - (totals.rows.find((row) => row.id === id)?.count ?? 0));
+    const crafted = new Map<string, number>();
+    const farm = new Map<string, number>();
+    const shop = new Map<string, number>();
+    let gold = 0;
+    // 칩·칩셋(32x1·32x2)의 조합식은 같은 등급끼리 바꾸는 순환 교환이라 뺀다 — 듀얼 칩(제조소 제조)만 푼다
+    const canCraft = (id: string) => !!costs.items[id]?.craft && (!id.startsWith("32") || costs.items[id]?.craftAt === "factory");
+    // 참고 줄 — 조합식대로 need 개를 만들 때의 하위 재료. 창고는 실제 보유를 그대로 보이고 아무것도 빼거나 더하지 않는다
+    const infoKids = (id: string, need: number, path: string, depth: number): CraftNode[] =>
+      (costs.items[id]?.craft ?? []).map(([sub, n]) => {
+        const p2 = `${path}/${sub}`, can2 = canCraft(sub) && depth < 5;
+        const kid: CraftNode = { id: sub, need: need * n, use: haveOf(sub), lack: 0, path: p2, can: can2, ref: true };
+        if (can2 && craftPaths.set.has(p2)) kid.info = infoKids(sub, need * n, p2, depth + 1);
+        return kid;
+      });
+    const expand = (id: string, need: number, depth: number, path: string): CraftNode => {
+      const use = Math.min(need, stock(id));
+      left.set(id, stock(id) - use);
+      const lack = need - use;
+      const can = canCraft(id) && depth < 6;
+      // 파밍할 곳이 없는 조합 재료(5성 재료·듀얼 칩 등)는 늘 조합으로 연다 — 닫을 수도 없다 (사용자 지시 2026-10-23 "중위상 이성질체처럼 파밍 불가능한 건")
+      const forced = can && !FARMABLE_IDS.has(id);
+      const node: CraftNode = { id, need, use, lack, path, can: can && !forced };
+      if (lack <= 0) {
+        // 창고로 충분해도 하위 재료는 보고 싶을 수 있다 — 연 자리만(기본은 닫힘), 계산엔 안 넣는 참고 줄 (사용자 지시 2026-10-23)
+        node.can = can;
+        if (can && craftPaths.set.has(path)) node.info = infoKids(id, need, path, depth);
+        return node;
+      }
+      if (can && (forced || craftPaths.all || craftPaths.set.has(path))) {
+        const meta = costs.items[id]!;
+        crafted.set(id, (crafted.get(id) ?? 0) + lack);
+        const g = lack * (meta.craftGold ?? 0);
+        gold += g;
+        node.craft = { gold: g, kids: meta.craft!.map(([sub, n]) => expand(sub, lack * n, depth + 1, `${path}/${sub}`)) };
+      } else if (costs.items[id]?.shop) shop.set(id, (shop.get(id) ?? 0) + lack);
+      else farm.set(id, (farm.get(id) ?? 0) + lack);
+      return node;
+    };
+    const roots: CraftNode[] = [];
+    for (const row of totals.rows) {
+      const direct = row.count, have = haveOf(row.id);
+      if (direct <= have) continue;
+      // 뿌리: 직접 필요 중 창고로 모자란 만큼만 — 창고 몫은 ①에서 이미 직접 필요에 썼다
+      left.set(row.id, 0);
+      const lack = direct - have;
+      const node = expand(row.id, lack, 0, `r:${row.id}`);
+      roots.push({ ...node, need: direct, use: have });
+    }
+    if (!roots.length) return null;
+    // 트리 순서 — 작전기록 → 칩·칩셋·듀얼 칩 → 스킬개론 → 나머지는 등급순 (사용자 지시 2026-10-23 "칩 같은 건 작전기록 바로 밑에", "스킬개론은 칩 밑으로")
+    const band = (id: string) => (id === EXP_CARD_ID ? 0 : id.startsWith("32") ? 1 : id.startsWith("33") ? 2 : 3);
+    roots.sort((a, b) => band(a.id) - band(b.id));
+    const byTier = (a: [string, number], b: [string, number]) => (costs.items[b[0]]?.rarity ?? 0) - (costs.items[a[0]]?.rarity ?? 0) || (costs.items[a[0]]?.sortId ?? 0) - (costs.items[b[0]]?.sortId ?? 0);
+    return { roots, crafted: [...crafted].sort(byTier), farm: [...farm].sort(byTier), shop: [...shop].sort(byTier), gold, lmdShort: Math.max(0, totals.lmd + gold - haveOf("4001")) };
+  }, [inv, totals, craftPaths]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [craftOpen, setCraftOpen] = useState(false);
+  /** 마디 하나 열고 닫기 — '전부 열기' 상태에서 닫으면 지금 열린 마디들을 낱낱이 펼쳐 둔 뒤 그것만 뺀다 */
+  const toggleCraftPath = (path: string) => setCraftPaths((cur) => {
+    let set = new Set(cur.set);
+    if (cur.all) {
+      set = new Set<string>();
+      const walk = (n: CraftNode) => {
+        if (n.craft) { set.add(n.path); n.craft.kids.forEach(walk); }
+        if (n.info) { set.add(n.path); n.info.forEach(walk); }   // 열어 둔 참고 줄도 그대로
+      };
+      craftPlan?.roots.forEach(walk);
+    }
+    if (set.has(path)) { for (const k of [...set]) if (k === path || k.startsWith(`${path}/`)) set.delete(k); }
+    else set.add(path);
+    return { all: false, set };
+  });
 
   // 레벨업 단계의 목표 레벨 변경 — [1, maxLv]로 클램프. maxLv면 상태에서 지워 기본(만렙)으로.
   const setLevel = (opId: string, phase: number, maxLv: number, raw: number) =>
@@ -1018,6 +1158,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   // 따로 만든 useRef 는 입력란에 안 붙어 blur 가 헛돌았다.
   const addOp = (id: string) => {
     setPicked((current) => [...current, id]);
+    setOpenOps(new Set([id]));
     setDraftTerm("");
     setFocused(false);
     draftRef.current?.blur();
@@ -1078,12 +1219,22 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
               const n = totals.rows.filter((row) => shortOf(row.id, row.count) > 0).length + (shortOf("4001", totals.lmd) > 0 ? 1 : 0);
               return <p className={`cost-short-sum${n ? " short" : ""}`}>{n ? t("내 창고 기준 {n}종 부족", { n }) : t("내 창고로 모두 충분합니다")}</p>;
             })()}
+            {/* 자세히 보기 — 가공소로 메우기(파밍·교환 필요한 것·용문폐·조합 트리)를 창으로 (사용자 지시 2026-10-23: 왼쪽 보기 전환·조합 반영 단추는
+                이상해 보여 뺐다). 왼쪽 목록은 로그인 전엔 절대치, 로그인하면 내 창고 대조 그대로 */}
+            {craftPlan && (
+              <button type="button" className="cost-craft-btn" onClick={() => setCraftOpen(true)}>
+                <span aria-hidden>⚒</span>
+                <b>{t("자세히 보기")}</b>
+                <small>{t("가공소로 메우면 · 파밍 {n}종", { n: craftPlan.farm.length })}</small>
+                <i aria-hidden>›</i>
+              </button>
+            )}
             <div className="cost-lmd">
               <img src={asset("/items/4001.webp")} alt="" width={183} height={183} />
               <div><span>{t("용문폐")}</span><b>{totals.lmd.toLocaleString()}</b>
                 {inv && <HaveLine t={t} need={totals.lmd} have={haveOf("4001")} />}</div>
             </div>
-            <div className="cost-items">
+              <div className="cost-items">
               {totals.rows.map((row) => {
                 const name = locText(locale, row.meta.name);
                 return (
@@ -1093,7 +1244,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                   </button>
                 );
               })}
-            </div>
+              </div>
           </div>
         )}
       </div>
@@ -1107,19 +1258,20 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
           </div>
           {picked.length > 0 && (
             <div className="cost-presets">
+              {/* 계산 기준·한 번에 맞추기는 드롭다운으로 (사용자 지시 2026-10-23 "가능한 한 드롭다운 버튼으로") — 접기는 켜고 끄는 단추라 그대로 */}
               {/* 계산 기준 — 내 정보 육성 상태부터 / 처음부터 (사용자 지시 2026-10-12 "내 오퍼 기준이 강제로 돼 버리니 임시로 끌 수 있게") */}
               {mine && (
-                <span className="cost-basis" role="radiogroup" aria-label={t("계산 기준")}
-                  title={t("내 정보의 육성 상태(정예화·레벨·스킬·특화·모듈)부터 목표까지만 계산합니다 — 보유한 오퍼에만 적용")}>
-                  <small>{t("계산 기준")}</small>
-                  <button type="button" role="radio" aria-checked={fromMine} className={fromMine ? "on" : ""} onClick={() => setFromMine(true)}>{t("내 육성 상태부터")}</button>
-                  <button type="button" role="radio" aria-checked={!fromMine} className={!fromMine ? "on" : ""} onClick={() => setFromMine(false)}>{t("처음부터{basis}", { basis: "" })}</button>
-                </span>
+                <Dropdown ariaLabel={t("계산 기준")} label={`${t("계산 기준")} · ${fromMine ? t("내 육성 상태부터") : t("처음부터{basis}", { basis: "" })}`}
+                  selected={[fromMine ? "mine" : "zero"]}
+                  items={[{ value: "mine", label: t("내 육성 상태부터") }, { value: "zero", label: t("처음부터{basis}", { basis: "" }) }]}
+                  onPick={(v) => setFromMine(v === "mine")} />
               )}
-              <button type="button" className="cost-op-all" onClick={() => presetAll("lv60")}
-                title={t("담은 오퍼 전체 — 2정예 Lv.60·스킬 7레벨까지, 특화·모듈은 빼고")}>{t("전체 2정 Lv.60 · 특화 없음")}</button>
-              <button type="button" className="cost-op-all" onClick={() => presetAll("max")}
-                title={t("담은 오퍼 전체 — 레벨·스킬·특화·모듈 모두 끝까지")}>{t("전체 최대 육성")}</button>
+              <Dropdown ariaLabel={t("한 번에 맞추기")} label={t("한 번에 맞추기")} selected={[]} actions
+                items={[{ value: "lv60", label: t("전체 2정 Lv.60 · 특화 없음") }, { value: "max", label: t("전체 최대 육성") }]}
+                onPick={(v) => presetAll(v as "lv60" | "max")} />
+              <button type="button" className="cost-op-all cost-fold-all" onClick={() => setOpenOps(openOps.size ? new Set() : new Set(picked))}>
+                {/* 두 문구를 겹쳐 두고 하나만 보인다 — 폭이 긴 쪽에 맞아 글자가 바뀌어도 단추가 안 움직인다 (사용자 지적 2026-10-23) */}
+                <span className="swap-lab"><span className={openOps.size ? "" : "off"}>{t("모두 접기")}</span><span className={openOps.size ? "off" : ""}>{t("모두 펼치기")}</span></span></button>
             </div>
           )}
         </div>
@@ -1134,18 +1286,32 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                 if (!operator || !entry) return null;
                 const groups = buildGroups(operator, entry, t);
                 const allFull = groups.every((group) => targetOf(id, group) === group.steps.length);
+                const isOpen = openOps.has(id);
+                const oc = isOpen ? null : opCost(id);
                 return (
-                  <article key={id} className="cost-op" style={{ "--accent": accentOf(operator) } as React.CSSProperties}>
-                    <header>
+                  <article key={id} className={`cost-op${isOpen ? "" : " folded"}`} style={{ "--accent": accentOf(operator) } as React.CSSProperties}>
+                    {/* 머리 빈 곳을 눌러도 접고 편다 — 이름·모두 선택·× 단추는 자기 일만 */}
+                    <header onClick={(e) => { if (!(e.target as HTMLElement).closest("button")) toggleOp(id); }}>
                       <img src={asset(operator.image)} alt="" width={180} height={180} />
                       <button type="button" className="cost-chip-name" onClick={() => onShowOperator(id)} title={t("{name} 상세 정보 열기", { name: operator.name })}>{operator.name}</button>
                       {operator.unreleased && <em className="future-badge">{t("미실장")}</em>}
-                      <button type="button" className="cost-op-all" onClick={() => setAllGroups(id, groups, !allFull)}>
+                      {/* 접힌 카드엔 단계가 안 보이니 모두 선택·해제도 뺀다 (사용자 지시 2026-10-23) */}
+                      {isOpen && <button type="button" className="cost-op-all" onClick={() => setAllGroups(id, groups, !allFull)}>
                         {allFull ? t("모두 해제") : t("모두 선택")}
-                      </button>
+                      </button>}
+                      <button type="button" className="cost-op-fold" onClick={() => toggleOp(id)} aria-expanded={isOpen}
+>
+                        {/* 화살표는 한 글자를 돌려 쓴다 — ▴·▾ 두 글자는 두께가 달랐다 (사용자 지적 2026-10-23), 글자도 함께 */}
+                        <span className="cof-ic" aria-hidden>▾</span><span className="swap-lab"><span className={isOpen ? "" : "off"}>{t("접기")}</span><span className={isOpen ? "off" : ""}>{t("펼치기")}</span></span></button>
                       <button type="button" className="cost-chip-remove" onClick={() => removeOp(id)} aria-label={t("{name} 제외", { name: operator.name })}>×</button>
+                      {!isOpen && (
+                        <p className="cost-op-sum">
+                          <span>{opSummary(id, operator, entry, groups)}</span>
+                          <small>{t("용문폐 {n}", { n: oc!.lmd.toLocaleString() })} · {t("재료 {n}종", { n: oc!.map.size })}</small>
+                        </p>
+                      )}
                     </header>
-                    <div className="cost-rows" onPointerMove={dragOver(id)}>
+                    {isOpen && <div className="cost-rows" onPointerMove={dragOver(id)}>
                       {groups.map((group) => {
                         const target = targetOf(id, group);
                         // 최상위 선택 단계가 만렙 미만 레벨업이면 그 뒤 단계는 잠근다 — E0 Lv.50을
@@ -1207,7 +1373,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                           );
                         });
                       })}
-                    </div>
+                    </div>}
                   </article>
                 );
               })}
@@ -1216,6 +1382,41 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
         </div>
       </div>
 
+      {craftOpen && craftPlan && (
+        <ModalWindow label={t("가공소로 메우면")} className="cost-craft-modal" onClose={() => setCraftOpen(false)}>
+          {!inv && <p className="cost-craft-note">{t("내 정보를 동기화하지 않아 창고를 0으로 보고 계산했습니다 — 동기화하면 내 창고에 있는 재료부터 씁니다.")}</p>}
+          <p className="cost-craft-note">{t("내 창고로 모자란 재료를 하위 재료로 조합한다고 보고 끝까지 풀었습니다. 창고는 직접 필요한 몫부터 잡고, 남는 것만 조합 재료로 씁니다 (칩 교환·조합 부산물 제외).")}</p>
+          <div className="cost-craft-sum">
+            {/* 트리 전체의 부족분 합계 — 열합금처럼 직접 쓰는 몫은 창고로 되고 조합 재료로만 모자란 것은 트리 맨 위 줄에 안 나와,
+                가지마다 흩어진 '파밍 N개 필요'를 다 더해 맨 위에 보인다 (사용자 지적 2026-10-23) */}
+            {craftPlan.farm.length + craftPlan.shop.length > 0 && (
+              <div className="cost-craft-need">
+                {/* 이름은 '파밍 필요한 것' (사용자 지시 2026-10-23) — 상점 교환할 것(칩 첨가제)은 따로 한 줄 */}
+                {craftPlan.farm.length > 0 && (<>
+                  <small className="short">{t("파밍 필요한 것")}</small>
+                  <div className="cost-craft-row">{craftPlan.farm.map(([id, n]) => <ItemChip key={id} id={id} count={n} onShowItem={onShowItem} locale={locale} />)}</div>
+                </>)}
+                {craftPlan.shop.length > 0 && (<>
+                  <small className="short">{t("교환 필요한 것")}</small>
+                  <div className="cost-craft-row">{craftPlan.shop.map(([id, n]) => <ItemChip key={id} id={id} count={n} onShowItem={onShowItem} locale={locale} />)}</div>
+                </>)}
+              </div>
+            )}
+            {/* 용문폐 — 육성에 드는 것 + 조합비, 창고와 대조 (사용자 지시 2026-10-23) */}
+            <div className="cost-craft-lmd">
+              <img src={asset("/items/4001.webp")} alt="" width={183} height={183} />
+              <span>{t("용문폐")}</span>
+              <span>{t("육성 {a} + 조합비 {b} = {c}", { a: totals.lmd.toLocaleString(), b: craftPlan.gold.toLocaleString(), c: (totals.lmd + craftPlan.gold).toLocaleString() })}</span>
+              <span className="cn-have">{t("창고 {n}", { n: haveOf("4001").toLocaleString() })}</span>
+              {craftPlan.lmdShort > 0 ? <b className="short">{t("{n} 부족", { n: craftPlan.lmdShort.toLocaleString() })}</b> : <b>✓ {t("충분")}</b>}
+            </div>
+          </div>
+          <ul className="craft-tree">
+            {craftPlan.roots.map((node, i) => <CraftTreeNode key={`${node.id}-${i}`} node={node} root onShowItem={onShowItem} onToggle={toggleCraftPath}
+              exp={node.id === EXP_CARD_ID && inv ? ["2001", "2002", "2003", "2004"].map((id) => [id, inv[id] ?? 0] as [string, number]) : undefined} />)}
+          </ul>
+        </ModalWindow>
+      )}
       {showGuide && (
         <ModalWindow label={t("육성 비용 계산기 쓰는 법")} className="farm-guide-modal" onClose={() => setShowGuide(false)}>
           <p>{t("오퍼레이터를 추가하면 레벨·정예화(게임 순서대로 E0 만렙 → 정예화1 → E1 만렙 → 정예화2 → E2 만렙), 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 레벨업 단계는 올릴 목표 레벨을 직접 입력할 수 있고, 그 레벨을 만렙보다 낮게 두면 다음 정예화는 잠깁니다(왼쪽 레일을 아래로 끌면 만렙까지 한 번에 채워집니다). 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.")}</p>
@@ -1223,6 +1424,71 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
         </ModalWindow>
       )}
     </>
+  );
+}
+
+/** 가공소로 메우기 나무의 마디 — need 개 필요 · 창고에서 use · 모자란 lack 는 조합(craft, 아래 하위 재료) 아니면 파밍 */
+type CraftNode = { id: string; need: number; use: number; lack: number; path: string; can?: boolean; craft?: { gold: number; kids: CraftNode[] };
+  /** 충분한 재료를 열어 본 하위 재료(참고) · ref = 그 참고 줄 — 계산에 안 들어간다 */
+  info?: CraftNode[]; ref?: boolean };
+/** exp — 작전기록 줄이면 창고의 네 종류 장수. 계산은 경험치를 합쳐 고급작전기록(2,000) 장수로 바꾼 값이라 그 환산을 풀어 보인다 (사용자 지시 2026-10-23) */
+function CraftTreeNode({ node, root, onShowItem, onToggle, exp }: { node: CraftNode; root?: boolean; onShowItem: (id: string) => void; onToggle: (path: string) => void; exp?: [string, number][] }) {
+  const { locale, t } = useI18n();
+  const meta = costs.items[node.id];
+  if (!meta) return null;
+  const name = locText(locale, meta.name);
+  return (
+    <li className={`craft-node${root ? " root" : ""}`}>
+      <div className="craft-line">
+        <button type="button" className="craft-ic" data-tier={meta.rarity} title={t("{name} 상세 정보 열기", { name })} onClick={() => onShowItem(node.id)}>
+          <img src={asset(meta.image)} alt="" width={183} height={183} loading="lazy" decoding="async" />
+        </button>
+        {/* 이름·화살표와 그 사이 빈 곳까지 한 덩어리로 눌린다 (사용자 지적 2026-10-23 "사이 빈 곳이 클릭 안 됨") */}
+        <span className={`craft-nm${node.can ? " tg" : ""}`} onClick={node.can ? () => onToggle(node.path) : undefined}>
+          {/* 이름을 눌러도 열고 닫는다 (사용자 지시 2026-10-23) — 열 수 없는 줄은 그냥 글자 */}
+          <b className="craft-name">{name}</b>
+          {/* 열기 — 재료 이름 바로 오른쪽 (사용자 지시 2026-10-23, 맨 앞은 들여쓴 것처럼 보였다) — 이 재료를 파밍 대신 조합한다고 보고 하위 재료를 펼친다. 조합식이 있고 모자랄 때만 */}
+          {node.can
+            ? <button type="button" className={`craft-tg${node.craft || node.info ? " on" : ""}`} aria-expanded={!!(node.craft || node.info)}
+                title={node.craft ? t("파밍으로 되돌리기") : t("조합으로 풀어 보기")}><span aria-hidden>▾</span></button>
+            : null}
+        </span>
+        <span className="craft-nums">
+          <span>{t("필요 {n}", { n: node.need.toLocaleString() })}</span>
+          <span className="cn-have">{t("창고 {n}", { n: node.use.toLocaleString() })}</span>
+          {node.ref ? <span className="cn-ref">{t("참고")}</span>
+            : node.lack <= 0 ? <span className="cn-ok">✓ {t("충분")}</span>
+            : node.craft ? <span className="cn-craft">{meta.craftAt === "factory" ? t("제조소 제조 {n}개 필요", { n: node.lack.toLocaleString() }) : t("조합 {n}개 필요", { n: node.lack.toLocaleString() })}{node.craft.gold > 0 ? ` · ${t("용문폐 {n}", { n: node.craft.gold.toLocaleString() })}` : ""}</span>
+            : meta.shop ? <span className="cn-shop">{t("교환 {n}개 필요", { n: node.lack.toLocaleString() })} · {locText(locale, costs.items[meta.shop[0]]?.name ?? { ko: "" })} {(node.lack * meta.shop[1]).toLocaleString()}</span>
+            : <span className="cn-farm">{t("파밍 {n}개 필요", { n: node.lack.toLocaleString() })}</span>}
+        </span>
+      </div>
+      {exp && (() => {
+        const unit = costs.items[EXP_CARD_ID]?.gainExp ?? 2000;
+        const total = exp.reduce((sum, [id, n]) => sum + n * (costs.items[id]?.gainExp ?? 0), 0);
+        return (
+          <div className="craft-exp">
+            {exp.map(([id, n]) => {
+              const m = costs.items[id];
+              if (!m) return null;
+              return (
+                <span key={id} className="craft-exp-card" title={`${locText(locale, m.name)} · ${(m.gainExp ?? 0).toLocaleString()} EXP`}>
+                  <img src={asset(m.image)} alt="" width={183} height={183} loading="lazy" decoding="async" />
+                  <b>{n.toLocaleString()}</b><small>×{(m.gainExp ?? 0).toLocaleString()}</small>
+                </span>
+              );
+            })}
+            <span className="craft-exp-sum">= {total.toLocaleString()} EXP → {t("고급 환산 {n}장", { n: Math.floor(total / unit).toLocaleString() })}</span>
+          </div>
+        );
+      })()}
+      {node.info && (
+        <ul className="craft-ref">{node.info.map((kid, i) => <CraftTreeNode key={`${kid.id}-${i}`} node={kid} onShowItem={onShowItem} onToggle={onToggle} />)}</ul>
+      )}
+      {node.craft && (
+        <ul>{node.craft.kids.map((kid, i) => <CraftTreeNode key={`${kid.id}-${i}`} node={kid} onShowItem={onShowItem} onToggle={onToggle} />)}</ul>
+      )}
+    </li>
   );
 }
 
@@ -1300,7 +1566,7 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
         {meta?.usage && <p className="item-usage">{locText(locale, meta.usage)}</p>}
         {meta?.craft && (
           <div className="item-craft">
-            <b>{t("가공소 조합식")}</b>
+            <b>{meta.craftAt === "factory" ? t("제조소 제조식") : t("가공소 조합식")}</b>
             <div className="item-craft-row">
               {meta.craft.map(([subId, count]) => {
                 const sub = costs.items[subId];
@@ -1318,6 +1584,19 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
                   <i>{(meta.craftGold ?? 0).toLocaleString()}</i>
                 </span>
               )}
+            </div>
+          </div>
+        )}
+        {/* 상점 교환으로만 얻는 재료 — 칩 첨가제 = 구매증명서 90 (사용자 지시 2026-10-23) */}
+        {meta?.shop && costs.items[meta.shop[0]] && (
+          <div className="item-craft item-shop">
+            <b>{t("상점 교환")}</b>
+            <div className="item-craft-row">
+              <button type="button" className="cost-mini farmable" title={locText(locale, costs.items[meta.shop[0]].name)} onClick={() => onShowItem(meta.shop![0])}>
+                <img src={asset(costs.items[meta.shop[0]].image)} alt={locText(locale, costs.items[meta.shop[0]].name)} width={183} height={183} />
+                <i>{meta.shop[1]}</i>
+              </button>
+              <span className="item-shop-txt">{t("{name} {n}개로 1개", { name: locText(locale, costs.items[meta.shop[0]].name), n: meta.shop[1] })}</span>
             </div>
           </div>
         )}

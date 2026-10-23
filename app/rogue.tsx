@@ -147,6 +147,8 @@ type RogueData = {
   skyNodes?: { id: string; name: string; desc: string | null; cn?: string; icon?: string; clr?: string; sel?: string; subs?: string[] }[];
   difficulties: Difficulty[]; stages: Stage[]; enemies: Record<string, Enemy>;
   relics: Relic[]; capsules?: Capsule[]; tools: Simple[]; bands: Simple[]; exploreTools?: Simple[];
+  // 모집권·승진권 · 판 시작 모집 조합 (2026-10-23, build-rogue.py)
+  tickets?: Simple[]; recruitGroups?: { id: string; name: string; desc: string | null; unlock: string | null; cn?: string }[];
   scraps?: Scrap[]; legacies?: Simple[]; buoys?: Simple[];
   weathers?: Weather[]; subweathers?: SubWeather[];
   variations: Variation[]; endings: Ending[]; encounters: Encounter[]; visitors?: Visitor[];
@@ -1643,7 +1645,10 @@ export default function RogueGuide({ initialTopic }: {
        ...((data.capsules?.length ?? 0) > 0 ? [["capsule", "레퍼토리 (음반)"] as [string, string]] : []),
        ...(data.mechanics ?? []).map((m) => [m.label, m.label] as [string, string]),
        ...((data.exploreTools?.length ?? 0) > 0 ? [["explore", "탐사 도구"] as [string, string]] : []),
-       ["band", "분대"], ...visitorTab];
+       ["band", "분대"],
+       // 모집 — 판 시작 모집 조합과 모집권·승진권 (2026-10-23, PRTS 틀렸어요 41974f77 · 사용자 지시 "모집권도 인식되게")
+       ...((data.tickets?.length ?? 0) > 0 ? [["recruit", "모집"] as [string, string]] : []),
+       ...visitorTab];
   const activeArc = archiveTabs.some(([id]) => id === arcTab) ? arcTab : (archiveTabs[0]?.[0] ?? "tool");
 
   // 뒤로/앞으로·햄버거 부메뉴(popstate) → 토픽 동기화. 토픽 전환은 이제 헤더 버튼이 아니라
@@ -2180,6 +2185,8 @@ export default function RogueGuide({ initialTopic }: {
     add("부품 (零件)", data.scraps, relicImg, "relic");
     add("탐사 도구", data.exploreTools, relicImg);
     add("분대", data.bands, relicImg);
+    add("모집권 · 승진권", data.tickets, relicImg);
+    add("모집 조합", data.recruitGroups?.map((g) => ({ id: g.id, name: g.name, cn: g.cn, usage: g.desc })), () => null);
     add("유산", data.legacies, relicImg);
     add("지도 마커 (부표)", data.buoys, miscImg);
     // 난이도 — 이름·규칙 문장. 누르면 난이도 탭으로 (그 탭이 규칙 전체 표)
@@ -2220,6 +2227,7 @@ export default function RogueGuide({ initialTopic }: {
     for (const c of data.tools) m.set(c.id, c);
     for (const c of data.capsules ?? []) m.set(c.id, c);
     for (const c of data.exploreTools ?? []) m.set(c.id, c);
+    for (const k of data.tickets ?? []) m.set(k.id, k);   // 모집권 — 상점·보상 화면 모아보기 (2026-10-23)
     for (const b of data.bands) m.set(b.id, b);   // 분대 — PRTS 인식은 탭 이동 대신 모아보기 모달로 띄운다 (2026-10-12)
     for (const s of data.scraps ?? []) m.set(s.id, s); // 블랙플로우 부품 — CN 상인 판매 화면 모아보기
     for (const mech of data.mechanics ?? []) for (const it of mech.items) m.set(it.id, it);
@@ -2826,6 +2834,10 @@ export default function RogueGuide({ initialTopic }: {
       } else if (oc.rogueScreen === "lobby") {
         noteBridge(t("탐험 로비"));
         flashLensMsg(t("탐험 로비 화면입니다 — 탐험을 시작하면 그때부터 화면을 인식합니다."), 4000);
+      } else if (oc.rogueScreen === "runStart" && !oc.battle) {
+        // 판 시작 화면(모집 조합 선택·초기 모집) — 알아볼 항목이 없는 게 맞다. '못 찾음' 대신 안내 (PRTS 틀렸어요 41974f77 2026-10-23)
+        noteBridge(t("판 시작"));
+        flashLensMsg(t("판 시작 화면입니다 — 모집을 마치고 지도·노드 화면이 나오면 인식합니다."), 4000);
       } else {
         noteBridge(oc.battle ? t("전투 중") : oc.foreignText ? t("한글 없음") : t("못 찾음"));
         // 글자는 읽었는데 한글이 없다 — 중국 서버 화면이면 '중국섭' 탭으로 바꿔야 중국어로 읽는다 (PRTS 틀렸어요 640cdd14)
@@ -3625,6 +3637,7 @@ export default function RogueGuide({ initialTopic }: {
                 : activeArc === "explore" ? data.exploreTools?.length ?? 0
                 : activeArc === "visitor" ? data.visitors?.length ?? 0
                 : activeArc === "band" ? data.bands.length
+                : activeArc === "recruit" ? (data.tickets?.length ?? 0) + (data.recruitGroups?.length ?? 0)
                 : activeArc === "growth" ? data.growth?.nodes.length ?? 0
                 : (data.mechanics ?? []).find((m) => m.label === activeArc)?.items.length ?? 0}
             </span>
@@ -3785,6 +3798,40 @@ export default function RogueGuide({ initialTopic }: {
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
                 </article>
               ))}
+            </div>
+          )}
+          {activeArc === "recruit" && (
+            <div className="rg-recruit-view">
+              {(data.recruitGroups?.length ?? 0) > 0 && (
+                <div className="rg-scrap-group">
+                  <h4 className="rg-scrap-type">{t("모집 조합")}<em>{data.recruitGroups!.length}</em>
+                    <span className="rg-scrap-hint">{t("분대를 고른 다음, 판 시작 때 받을 모집권 묶음")}</span></h4>
+                  <div className="rg-relic-grid">
+                    {data.recruitGroups!.map((g) => (
+                      <article key={g.id} className={`rg-relic${lensHits?.has(g.id) ? " rg-lens-hit" : ""}`}>
+                        <header><h4><Nm name={g.name} cn={g.cn} /></h4></header>
+                        {g.desc && <p className="rg-relic-usage">{hiNums(g.desc)}</p>}
+                        {g.unlock && <p className="rg-relic-desc">{t("해금 조건")}: {g.unlock}</p>}
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="rg-scrap-group">
+                <h4 className="rg-scrap-type">{t("모집권 · 승진권")}<em>{data.tickets?.length ?? 0}</em></h4>
+                <div className="rg-relic-grid">
+                  {(data.tickets ?? []).map((c) => (
+                    <article key={c.id} className={`rg-relic${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}>
+                      <header>
+                        {c.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${c.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
+                        <h4><Nm name={c.name} cn={c.cn} /></h4>
+                      </header>
+                      {c.usage && <p className="rg-relic-usage">{hiNums(c.usage)}</p>}
+                      {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
+                    </article>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
           {/* 토픽 고유 시스템 갤러리 (거부반응·암호판·붕괴 패러다임·사고·시대·주화·분노 등).

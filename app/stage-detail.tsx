@@ -6,7 +6,8 @@
 //   인라인으로 그려야 상세 페이지 HTML에 본문이 박힌다 (근거는 app/enemy-detail.tsx 머리주석).
 //   1.6MB짜리 stages.json은 지연 로드되는 목록 탭에만 있다.
 
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { CrisisCalc } from "./crisis-calc";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { stageSummary, DATA_DATE, dataDateLabel } from "./op-summary";
 import { asset } from "./assets";
@@ -211,7 +212,11 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
   ];
   // 활성 환경의 적 스탯 배수 — 고난(alt) 뷰는 자기 em, 긴급은 일반판의 chgEm.
   // 일반판이 없는 고난 전용 작전(H10-1 등)은 em이 상시 걸린다 (게임도 항상 고난이다).
-  const envMul = cur.stage.em ?? (env === 1 && !view.alt ? view.stage.chgEm : undefined);
+  const envBase = cur.stage.em ?? (env === 1 && !view.alt ? view.stage.chgEm : undefined);
+  // 위기 협약·매트릭스에서 고른 계약의 적 배수 — 등장 적 수치에 곱한다 (app/crisis-calc.tsx onMul, 2026-10-23)
+  const [ccMul, setCcMul] = useState<EnvMul[]>([]);
+  const envMul = ccMul.length ? [...(envBase ?? []), ...ccMul] : envBase;
+  const foeList = useMemo(() => cur.enemies.map((e) => ({ id: e.id, name: e.name })), [cur.enemies]);
   // **한 화면 규칙 — 탭은 없다** (사용자 확정 2026-09-23 "실사 도면이랑 이동 경로 탭을 하나로" → 같은 날
   // "앞으로 모든 작전은 합쳐진 상태로 처음부터"):
   //  · 실사 미리보기 + 전투 카메라 → 합친 도면 (실사 위에 경로·시뮬)
@@ -374,53 +379,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
             </section>
           )}
 
-          {/* 지표(계약 태그) — 홀로그램 매트릭스만 게임 표에 있다. 시즌 위기협약의 지표는 서버가 내려 줘
-              클라이언트 데이터에 없다 (scripts/build-stages-crisis.py 머리주석) */}
-          {s.rn && s.rn.r.length > 0 && (
-            <section className="st-block">
-              <h3>
-                <span className="section-no">RUNE</span>{t("지표")} <em>{s.rn.r.length}</em>
-                {s.rn.set && <span className="st-envnote">{s.rn.set}</span>}
-              </h3>
-              <ul className="st-runes">
-                {s.rn.r.map(([pt, text, must, grp], i) => (
-                  <li key={i} className={must ? "must" : undefined}>
-                    <span className="st-rune-pt">{must ? t("필수") : `+${pt}`}</span>
-                    <span className="st-rune-text">{text}</span>
-                    {grp >= 0 && <em className="st-rune-grp">{must ? t("둘 중 하나") : t("같은 묶음 중 하나")}</em>}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
 
-          {/* 위기 협약 지표·계약 — 묶음(지표 세트·계약 묶음)별로 (PRTS 위키 기준, 사용자 지시 2026-10-17 "제약도 다 표시") */}
-          {s.cr && s.cr.r.length > 0 && (
-            <section className="st-block">
-              <h3>
-                <span className="section-no">RUNE</span>{s.cr.t === 2 ? t("지표") : t("계약")} <em>{s.cr.r.length}</em>
-                <span className="st-envnote">{t("PRTS 위키 기준 · 비공식 번역")}</span>
-              </h3>
-              {[...s.cr.s.map((g, i) => [i, g] as const), [-1, null] as const].map(([gi, g]) => {
-                const rows = s.cr!.r.filter((x) => x[0] === gi);
-                if (!rows.length) return null;
-                return (
-                  <div key={gi} className="st-cr-group">
-                    <h4>{g ? g[0] : t("기타")}{g && g[1] > 0 && <em>{t("세트 완료 +{n}", { n: String(g[1]) })}</em>}</h4>
-                    <ul className="st-runes">
-                      {rows.map(([, name, desc, dim, val, cnt], i) => (
-                        <li key={i}>
-                          <span className="st-rune-pt">{s.cr!.t === 2 ? `+${val}` : `Lv${val}`}</span>
-                          <span className="st-rune-text"><b>{name}</b>{cnt > 1 && <em className="st-rune-grp"> ×{cnt}</em>}{"\n"}{desc}</span>
-                          {dim && <em className="st-rune-grp">{dim}</em>}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </section>
-          )}
 
           {byKind.length > 0 && (
             <section className="st-block">
@@ -467,6 +426,31 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
           )}
         </div>
       </div>
+      {/* 지표(계약 태그) — 두 칸 아래 폭 100% (사용자 지시 2026-10-23, 위기 협약과 같게) — 홀로그램 매트릭스만 게임 표에 있다. 시즌 위기협약의 지표는 서버가 내려 줘
+          클라이언트 데이터에 없다 (scripts/build-stages-crisis.py 머리주석) */}
+      {s.rn && s.rn.r.length > 0 && (
+        <section className="st-block">
+          <h3>
+            <span className="section-no">RUNE</span>{t("지표")} <em>{s.rn.r.length}</em>
+            {s.rn.set && <span className="st-envnote">{s.rn.set}</span>}
+          </h3>
+          {/* 매트릭스 지표도 위기 협약과 같은 고르기 카드 (사용자 지시 2026-10-23 "홀로그램 매트릭스도 똑같이") */}
+          <CrisisCalc mode="hm" medal={s.rn.medal} sets={[]} foes={foeList} onMul={setCcMul}
+            cards={s.rn.r.map(([pt, text, must, grp, icon]) => ({ g: grp, name: "", desc: text, dim: grp >= 0 && !must ? t("같은 묶음 중 하나") : "", val: pt, cnt: 0, icon: icon ?? "", must: !!must }))} />
+        </section>
+      )}
+      {/* 위기 협약 지표·계약 — 두 칸 아래 폭 100% (사용자 지시 2026-10-23, 종전 오른쪽 칸 안) — 묶음(지표 세트·계약 묶음)별로 (PRTS 위키 기준, 사용자 지시 2026-10-17 "제약도 다 표시") */}
+      {s.cr && s.cr.r.length > 0 && (
+        <section className="st-block">
+          <h3>
+            <span className="section-no">RUNE</span>{s.cr.t === 2 ? t("지표") : t("계약")} <em>{s.cr.r.length}</em>
+            <span className="st-envnote">{t("PRTS 위키 기준 · 비공식 번역")}</span>
+          </h3>
+          {/* 계약을 눌러 고르면 위험도 합계·효과 모아 보기 (위기 협약 계산기 1단계, 2026-10-23 — app/crisis-calc.tsx) */}
+          <CrisisCalc mode={s.cr.t === 2 ? "cc2" : "cc1"} sets={s.cr.s} foes={foeList} onMul={setCcMul}
+            cards={s.cr.r.map(([g, name, desc, dim, val, cnt, icon]) => ({ g, name, desc, dim, val, cnt, icon: icon ?? "" }))} />
+        </section>
+      )}
     </div>
   );
 }

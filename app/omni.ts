@@ -113,6 +113,7 @@ const TAB_ENTRIES: { tab: Tab; label: string; alt: string[] }[] = [
   { tab: "ra", label: "생존연산 가이드", alt: ["ra", "reclamation", "reclamation algorithm", "생존연산", "생존 연산", "샌드박스", "sandbox", "요리", "레시피", "生息演算"] },
   // "롤토"·"명토체스"는 커뮤니티 호칭 — 게임 안 이름(위수 협의)보다 이렇게 부르는 사람이 많다
   { tab: "sss", label: "보안파견 가이드", alt: ["sss", "stationary security service", "security service", "보안파견", "보안 파견", "보파", "보안파견 훈장", "전술 장비", "리더 카드", "保全派遣", "保全派駐"] },
+  { tab: "crisis", label: "위기 협약 가이드", alt: ["위기협약", "위기 협약", "위협", "cc", "contingency contract", "危機契約", "危机合约", "홀로그램 매트릭스", "holographic matrix", "계약", "제약", "위험도"] },
   { tab: "autochess", label: "위수 협의 가이드", alt: ["autochess", "stronghold", "stronghold protocol", "위수협의", "위수 협의", "맹약", "명토체스", "롤토", "롤토체스", "오토체스", "기물", "堅守協定"] },
   { tab: "about", label: "테라 아카이브 소개", alt: ["about", "소개", "문의", "제작", "어바웃"] },
 ];

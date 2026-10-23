@@ -3,7 +3,7 @@
 // 시즌마다 실제 정적 페이지를 둔다 (사용자 확정 2026-08-12 "한섭이랑 중섭 메뉴를
 // 아예 나눠줘 록라처럼") — 통합전략 테마(/rogue/<slug>)와 같은 규격이다.
 //   sand   = 사막 이야기 (sandbox_1, 한국 서버 상설)
-//   anchor = 재기동 앵커 (sandbox_2, 중국 서버 선행 — 미래시)
+//   anchor = 리런치 앵커 (sandbox_2, 중국 서버 선행 — 미래시)
 import type { Metadata } from "next";
 import { asset } from "./assets";
 import { SITE_URL } from "./seo";
@@ -35,7 +35,7 @@ const META: Record<SandboxSlug, Record<SeoLocale, { name: string; title: string;
   },
   anchor: {
     ko: {
-      name: "재기동 앵커",
+      name: "리런치 앵커",
       title: SANDBOX_TITLE.anchor.ko,
       desc: "중국 서버 선행 생존연산 신시즌 「重启锚点」 — 아이템 381종, 가공·건설 레시피, 지역과 날씨, 조우를 중국어 원문과 비공식 한국어 번역으로 미리 봅니다.",
     },

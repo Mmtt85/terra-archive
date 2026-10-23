@@ -5,6 +5,7 @@
 // 진행 상황 · 내가 만든 맞춤 칸 · 지원 유닛). 새 탭은 쓰지 않는다 (새 탭에서 이미지가 안 뜬 전례).
 // 카드는 사이트 테마와 무관하게 고정 색(어두운 판)으로 그린다 — 이미지가 어디에 붙든 같은 모양이어야 해서다.
 
+import { ImageActions } from "./image-actions";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { asset } from "./assets";
@@ -157,29 +158,14 @@ export function MeShare({ me, owned, released, opById, stages, items, onClose }:
     // 카드 내용은 열 때 한 번 찍는다 — 작전 데이터(stages)·아이템 표(재화 그림)가 늦게 오거나 재화 칸을 켜고 끄면 다시
   }, [stages, wallet]);
 
-  const save = () => {
-    if (!url) return;
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `terra-archive-${me.player.nickName || "doctor"}.png`;
-    a.click();
-  };
-  const copy = async () => {
-    try {
-      if (!blob) throw new Error("blob");
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-      setMsg(null);
-      setToast({ text: t("이미지를 클립보드에 복사했습니다."), key: Date.now() });
-    } catch { setMsg(t("이 브라우저에서는 복사할 수 없습니다 — PNG로 저장해 주세요.")); }
-  };
-
   return (
     <ModalWindow label={t("이미지로 내보내기")} className="operator-modal me-share-modal" onClose={onClose}>
       <div className="me-share-wrap">
         <header className="me-share-bar">
           <div className="me-share-actions">
-            <button type="button" className="import-action" disabled={!blob} onClick={() => void copy()}><span className="btn-icon" aria-hidden>⧉</span>{t("복사")}</button>
-            <button type="button" className="import-action apply" disabled={!url} onClick={save}><span className="btn-icon" aria-hidden>⤓</span>{t("PNG 저장")}</button>
+            {/* 저장·복사 ▾ — WebP / PNG (app/image-actions.tsx, 2026-10-23) */}
+            <ImageActions blob={blob} name={`terra-archive-${me.player.nickName || "doctor"}`} buttonClassName="import-action"
+              onNote={(text) => { setMsg(null); setToast({ text, key: Date.now() }); }} />
           </div>
         </header>
         {msg && <p className="me-note">{msg}</p>}

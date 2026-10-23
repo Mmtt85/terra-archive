@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageActions } from "./image-actions";
 import { NewBadge } from "./new-badge";
 import { Fragment, lazy, memo, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
@@ -27,7 +28,7 @@ import {
 } from "./planner-engine";
 import { recKey, recOps, rankRaises, type RaiseRec, type InvestProgress } from "./planner-invest";
 // 요약 카드의 하루 산출(용문폐·작전기록) 근사 — 상수 출처는 그 파일 머리말
-import { dailyYield, droneBoosts, yieldCells, EXP_PER_RECORD, GOLD_LMD as YIELD_GOLD_LMD, ORDER_LMD_HOUR } from "./planner-yield";
+import { dailyYield, droneBoosts, droneCell, yieldCells, EXP_PER_RECORD, GOLD_LMD as YIELD_GOLD_LMD, ORDER_LMD_HOUR } from "./planner-yield";
 // 회수일 각주가 쓰는 환산 기준 — 엔진(planner-invest)은 워커 전용 무거운 모듈이라
 // 값으로 가져오지 않고 생성 데이터만 직접 읽는다 (scripts/build-sanity.py)
 import sanityBasis from "./data/sanity.json";
@@ -155,7 +156,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   if (TRAINING_USE !== trainingUse) setTrainingUse(trainingUse);
   const [droneKeys, setDroneKeys] = useState<string[]>([]);
   useEffect(() => {
-    try { const v = JSON.parse(localStorage.getItem(DRONE_KEY) ?? "[]"); if (Array.isArray(v)) setDroneKeys(v.filter((x) => typeof x === "string")); } catch { /* 무시 */ }
+    // 키 = '칸@조' (2026-10-23 — 조마다 따로). 조가 없는 옛 저장값은 A조로
+    try { const v = JSON.parse(localStorage.getItem(DRONE_KEY) ?? "[]"); if (Array.isArray(v)) setDroneKeys(v.filter((x) => typeof x === "string").map((x: string) => (x.includes("@") ? x : `${x}@0`))); } catch { /* 무시 */ }
   }, []);
   const toggleDrone = (key: string) => setDroneKeys((cur) => {
     // 한 시설에만 몰아준다 (사용자 지시 2026-10-22) — 다른 방을 켜면 앞의 방은 꺼진다
@@ -250,6 +252,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   );
   const importRef = useRef<HTMLInputElement>(null); // '그 외' → 저장된 상태 파일 가져오기
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  // 저장·복사는 공용 단추가 WebP/PNG 를 고르게 한다 (app/image-actions.tsx, 2026-10-23) — 여기선 PNG 묶음만 들고 있다
+  const [imagePng, setImagePng] = useState<Blob | null>(null);
   const [showMaa, setShowMaa] = useState(false); // MAA 기반시설 내보내기 모달 (베타)
   // 처음엔 **아무도 없이** 시작한다 (사용자 결정 2026-10-19 — 종전 '1~5성 기본 보유 284명'은 내 정보 동기화가 생긴 뒤로
   // 가상의 편성이 내 편성처럼 보여 헷갈렸다). 빈 상태에선 시작 안내(로그인 · 직접 고르기 · 예시 로스터)를 띄운다
@@ -1557,6 +1561,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 드론 덤 — 방 카드에서 고른 방들에 하루 드론을 똑같이 나눠 부었다고 본다 (자동편성 점수엔 안 넣는다)
   const drones = useMemo(() => (yieldDay ? droneBoosts(yieldDay, droneKeys) : []), [yieldDay, droneKeys]);
   const droneOf = (key: string) => drones.find((d) => d.key === key) ?? null;
+  /** 지금 보고 있는 조의 드론 키 — 방 카드의 단추·덤은 그 조에서만 (A조에 켠 드론이 B조 화면에 붙지 않게) */
+  const droneKeyOf = (cellKey: string) => `${cellKey}@${activeShift}`;
   // 요약은 드론 덤을 **포함해** 보여 준다 (사용자 지시 2026-10-22 "드론으로 가속하면 서머리도 변경") — 자동편성 점수엔 여전히 안 들어간다.
   // 무역소에 쓰면 오더를 더 받아 순금도 그만큼 더 쓴다(용문폐 ÷ 순금 1개당 용문폐)
   const yieldShown = useMemo(() => {
@@ -1769,7 +1775,18 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     };
     const STAT_COLS = 5, STAT_H = 64;
     const statLines = Math.ceil(stats.length / STAT_COLS);
-    const HEADER_H = 112;
+    // 편성 설정 — 이미지만 받은 사람도 어떤 설정으로 짠 편성인지 알게 머리 아래 한 줄 (사용자 지시 2026-10-23). 값은 설정 막대 단추 문구 그대로
+    const settings: { k: string; v: string }[] = [
+      { k: t("기지 배치"), v: layout === "custom" ? t("사용자 지정") : layout },
+      ...(layout !== "custom" ? [
+        { k: t("운용 방식"), v: t(drainAxis === "off" ? "효율 우선" : "장기 지속") },
+        { k: t("우선 생산"), v: t(prodAxis === "gold" ? "순금 우선" : prodAxis === "exp" ? "작전기록 우선" : "밸런스") },
+      ] : []),
+      { k: t("훈련실"), v: t(trainingUse ? "까지 고려" : "비워 둔다") },
+      ...(recycleJob ? [{ k: t("재활용소"), v: recycleLocked ? t("비움 (중국 서버 계정만)") : t(recycleMode === "off" ? "끔" : recycleMode === "normal" ? "보통" : "우선") }] : []),
+      ...(droneKeys.length ? [{ k: t("드론 가속"), v: droneKeys.map((k) => { const d = droneCell(k); const c = cellByKey.get(d.cell); return `${c ? t(c.label) : d.cell} (${t(d.shift ? "B조" : "A조")})`; }).join(", ") }] : []),
+    ];
+    const HEADER_H = 150;
     const top = HEADER_H + 20 + statLines * (STAT_H + 10) + 6;
     const groupH = groups.map((gr) => 30 + layoutOf(gr.rows, gr.cols).reduce((sum, l) => sum + l.h + G, 0));
     const H = top + groupH.reduce((x, y) => x + y, 0) + 56;
@@ -1796,6 +1813,21 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const tokens = Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ");
     g.fillText(fit(strat, W - P * 2 - 260), P + 260, 58);
     if (tokens) g.fillText(fit(tokens, W - P * 2 - 260), P + 260, 82);
+    // 설정 칩 — '이름 값' 알약을 한 줄로
+    {
+      let sx = P;
+      for (const st of settings) {
+        g.font = font(700, 12); const kw = g.measureText(st.k).width;
+        g.font = font(800, 13); const vw = g.measureText(st.v).width;
+        const w = 12 + kw + 8 + vw + 12;
+        if (sx + w > W - P) break;
+        g.fillStyle = C.card; rr(sx, 106, w, 28, 14); g.fill();
+        g.strokeStyle = C.line; g.lineWidth = 1; rr(sx + 0.5, 106.5, w - 1, 27, 14); g.stroke();
+        g.fillStyle = C.muted; g.font = font(700, 12); g.fillText(st.k, sx + 12, 125);
+        g.fillStyle = C.ink; g.font = font(800, 13); g.fillText(st.v, sx + 12 + kw + 8, 125);
+        sx += w + 8;
+      }
+    }
     // 요약 지표 — 카드 타일
     const SW = (W - P * 2 - 10 * (STAT_COLS - 1)) / STAT_COLS;
     stats.forEach((stat, i) => {
@@ -1848,6 +1880,18 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           g.fillStyle = C.muted; g.font = font(600, 13);
           g.fillText(row.cell.key === "TRAINING" ? t("비워둠 (특화 훈련용)") : t("휴식 공간"), ax, cy + 33);
         }
+        // 드론 가속을 켠 조 — 그 줄 점수 왼쪽에 '⚡ +N% 드론' (조마다 따로, 소수점 버림 — 사용자 지시 2026-10-23)
+        const dr = crew.label === "A" || crew.label === "B" ? drones.find((d) => d.key === `${row.cell.key}@${crew.label === "B" ? 1 : 0}`) : undefined;
+        if (dr && crew.score != null) {
+          g.font = font(800, 17, true);
+          const sw = g.measureText(`+${crew.score}%`).width;
+          const tag = `⚡ +${Math.floor(dr.pct)}% ${t("드론")}`;
+          g.font = font(800, 12);
+          const tw = g.measureText(tag).width + 14;
+          const tx = x + CW - 16 - sw - 10 - tw;
+          g.fillStyle = C.lime; rr(tx, cy + 15, tw, 22, 11); g.fill();
+          g.fillStyle = C.limeInk; g.fillText(tag, tx + 7, cy + 30);
+        }
         if (crew.score != null) {
           const label = `+${crew.score}${row.cell.room === "CONTROL" ? "" : "%"}`;
           g.font = font(800, 17, true);
@@ -1871,10 +1915,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     g.font = font(700, 12, true);
     const site = "terra-archive.net/infra";
     g.fillStyle = C.lime; g.fillText(site, W - P - g.measureText(site).width, H - 24);
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      setImageUrl(URL.createObjectURL(blob)); // 미리보기 모달로 바로 표시
-    });
+    canvas.toBlob((png) => {
+      if (!png) return;
+      setImagePng(png);
+      setImageUrl(URL.createObjectURL(png)); // 미리보기 모달로 바로 표시
+    }, "image/png");
   };
 
   const openCell = LAYOUT.find((cell) => cell.key === openRoom);
@@ -1925,7 +1970,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           <span className="pl-sb-actions">
             <button type="button" className="act-btn" onClick={clearSandbox}>{t("편성 비우기")}</button>
             <button type="button" className="act-btn pl-sb-apply" onClick={applySandbox}>{t("이 편성으로 적용")}</button>
-            <button type="button" className="act-btn" onClick={() => endSandbox(false)}>{t("닫기")}</button>
+            {/* 닫기는 큼지막한 × (사용자 지시 2026-10-23) */}
+            <button type="button" className="pl-sb-close" onClick={() => endSandbox(false)} aria-label={t("닫기")} title={t("닫기")}>×</button>
           </span>
         </div>
       )}
@@ -2393,10 +2439,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 }) : <i>{cell.key === "TRAINING" ? t("비워둠 · 특화 훈련 시 사용") : plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
                 {/* 드론 가속 단추 — 썸네일 줄 오른쪽 끝, 썸네일과 같은 크기·같은 밑변 (사용자 지시 2026-10-22). 켠 방들에 하루 드론을 나눠 덤으로 얹는다 (사용자 지시 2026-10-22, 중첩 button 금지라 span) */}
                 {plan && team.length > 0 && (cell.room === "MANUFACTURE" || cell.room === "TRADING") && (
-                  <span role="button" tabIndex={0} aria-pressed={droneKeys.includes(cell.key)} className={`drone-toggle${droneKeys.includes(cell.key) ? " on" : ""}`}
+                  <span role="button" tabIndex={0} aria-pressed={droneKeys.includes(droneKeyOf(cell.key))} className={`drone-toggle${droneKeys.includes(droneKeyOf(cell.key)) ? " on" : ""}`}
                     title={t("이 방에 하루 드론을 다 씁니다 — 자동편성은 그대로, 결과에 덤으로 얹습니다. 한 시설만 고를 수 있습니다")}
-                    onClick={(event) => { event.stopPropagation(); toggleDrone(cell.key); }}
-                    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); toggleDrone(cell.key); } }}>
+                    onClick={(event) => { event.stopPropagation(); toggleDrone(droneKeyOf(cell.key)); }}
+                    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); toggleDrone(droneKeyOf(cell.key)); } }}>
                     {/* 정사각형 — 가속 아이콘(⏩ 모양 SVG) 위·글자 아래 (사용자 지시 2026-10-22) */}
                     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path d="M3 6l8 6-8 6zM12 6l8 6-8 6z" fill="currentColor" /></svg>
                     <span>{t("드론 가속")}</span>
@@ -2416,7 +2462,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   {raiseBefore != null && raiseBefore !== score && <em className={`raise-delta ${score >= raiseBefore ? "up" : "down"}`}> · {t("원래 {b}%", { b: raiseBefore })} ({score >= raiseBefore ? "+" : ""}{score - raiseBefore})</em>}
                   {cell.room === "RECYCLE" && <em className="ambient-note"> · {t("≈{n} 이성/일", { n: Math.round(recycleRate(team, cell.key)?.apPerDay ?? 0) })}</em>}
                   {/* 드론 덤 — 설정에서 고른 곳의 대상 방에만, 자동편성 점수 밖 (2026-10-22) */}
-                  {droneOf(cell.key) && <em className="drone-note" title={t("드론을 이 방에 쓸 때 하루 평균으로 더해지는 효율 — 자동편성 점수에는 넣지 않은 덤입니다 ({what}/일)", { what: droneText(droneOf(cell.key)!) })}>{/* '+165% 효율'과 같은 순서로 '+200% 드론' (사용자 지시 2026-10-23). 모바일은 가운뎃점을 빼고 한 줄에 */}<span className="dn-long"> · </span><span className="dn-short"> </span>+{Math.round(droneOf(cell.key)!.pct)}% {t("드론")}</em>}
+                  {droneOf(droneKeyOf(cell.key)) && <em className="drone-note" title={t("드론을 이 방에 쓸 때 하루 평균으로 더해지는 효율 — 자동편성 점수에는 넣지 않은 덤입니다 ({what}/일)", { what: droneText(droneOf(droneKeyOf(cell.key))!) })}>{/* '+165% 효율'과 같은 순서로 '+200% 드론' (사용자 지시 2026-10-23). 모바일은 가운뎃점을 빼고 한 줄에 */}<span className="dn-long"> · </span><span className="dn-short"> </span>+{Math.floor(droneOf(droneKeyOf(cell.key))!.pct)}% {t("드론")}</em>}
                 </small>
               )}
               {plan && PARK_KEYS.includes(cell.key) && team.length > 0 && <small>{t("세트 요원 고정 · 효율 무관")}</small>}
@@ -2469,9 +2515,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         <ModalWindow label={t("편성표 이미지")} className="operator-modal room-modal image-preview" onClose={closeImage} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
             <header className="room-modal-head">
               <span className="modal-kicker">PLAN SHEET</span>
-              <h2>{t("편성표 이미지")}</h2>
-              <div className="roster-tools">
-                <a className="apply save-image" href={imageUrl} download="terra-archive-infra.png">{t("PNG 저장")}</a>
+              {/* 저장·복사는 제목 오른쪽에 (사용자 지시 2026-10-23) — 복사는 클립보드에 그림으로 (디스코드·카톡에 바로 붙여넣기) */}
+              <div className="image-title-row">
+                <h2>{t("편성표 이미지")}</h2>
+                {/* 단추는 오른쪽 끝 — 저장 ▾ · 복사 ▾ 를 누르면 WebP / PNG 를 고른다 (사용자 지시 2026-10-23) */}
+                <ImageActions className="image-actions" blob={imagePng} name="terra-archive-infra" buttonClassName="apply save-image" />
               </div>
             </header>
             <div className="modal-scroll"><img src={imageUrl} alt={t("인프라 편성표")} /></div>

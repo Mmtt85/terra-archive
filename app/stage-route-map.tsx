@@ -83,7 +83,7 @@ const OB_STYLE: Record<string, { fill: string; label: string; shape: "diamond" |
   diam: { fill: "#6fe3d4", label: "명징석", shape: "dot" },
   wood: { fill: "#7fc46a", label: "목재", shape: "dot" },
   treasure: { fill: "#ffd166", label: "보물", shape: "star" },
-  // 신시즌(재기동 앵커) 추가분 — 종류가 45가지라 개별 색 대신 성격별로 묶는다
+  // 신시즌(리런치 앵커) 추가분 — 종류가 45가지라 개별 색 대신 성격별로 묶는다
   water: { fill: "#4fb3d9", label: "물", shape: "dot" },
   bldg: { fill: "#c9a0ff", label: "설치물", shape: "diamond" },
   obj: { fill: "#9aa0a6", label: "오브젝트", shape: "dot" },
@@ -303,6 +303,21 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
   const [simT, setSimT] = useState(0);
   const tRef = useRef(0);
   const clipId = useId();
+  // 적 사거리 — 시뮬레이트를 켜면 적 도감을 받아 달리는 말마다 공격 범위 원을 옅게 (사용자 지시 2026-10-23 "적 사거리에 맞춰 원, 살짝 적당하게").
+  // 반지름은 도감의 rangeRadius(칸). 근접(1칸 미만)은 원이 말에 묻혀 그리지 않는다. 변형 id(_2 등)는 본 id 로 찾는다
+  const [rngMap, setRngMap] = useState<Map<string, number> | null>(null);
+  useEffect(() => {
+    if (!simOn || rngMap) return;
+    let alive = true;
+    void import("./dex-cross").then((m) => m.loadEnemies(locale)).then((map) => {
+      if (!alive) return;
+      const r = new Map<string, number>();
+      for (const [id, e] of map) if (e.rng != null && e.rng >= 1) r.set(id, e.rng);
+      setRngMap(r);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [simOn, rngMap, locale]);
+  const rangeOf = (key?: string | null) => (key && rngMap ? rngMap.get(key) ?? rngMap.get(key.replace(/_\d+$/, "")) : undefined);
   // 선·말 호버 즉시 툴팁 — 브라우저 기본 title은 1초쯤 지연된다 (사용자 정책).
   // 이름 옆에 작은 섬네일도 함께 (사용자 요청 2026-08-10 "섬네일 이미지도 작게 같이").
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -788,8 +803,16 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
               const deg = vx || vy ? (Math.atan2(ay2 - sy, ax2 - sx) * 180) / Math.PI : 0;
               const dim = hl ? !(rn.key && hl.has(rn.key)) : false;
               const img = ownerImg(rn.key);
+              // 사거리 원 — 실사(원근)에선 둘레 점을 하나하나 투영해 찌그러진 원으로
+              const rr = rangeOf(rn.key);
+              const ring = rr ? Array.from({ length: 28 }, (_, j) => {
+                const a = (j / 28) * Math.PI * 2;
+                return toXY(x * cell + cell / 2 + rn.off + Math.cos(a) * rr * cell, y * cell + cell / 2 + rn.off + Math.sin(a) * rr * cell).join(",");
+              }).join(" ") : null;
               return (
-                <g key={i} className="st-simunit"
+                <g key={i}>
+                {ring && <polygon className="st-simrange" points={ring} fill={rn.color} stroke={rn.color} opacity={dim ? 0.04 : 1} />}
+                <g className="st-simunit"
                   transform={`translate(${sx},${sy})`}
                   opacity={dim ? 0.12 : 1}
                   onMouseMove={(ev) => showTip(ev, ownerName(rn.key), img)}
@@ -807,6 +830,7 @@ export function StageRouteMap({ data: dataProp, order, highlights, imgOf, nameOf
                       clipPath={`url(#${clipId}c)`} preserveAspectRatio="xMidYMid slice"
                       onError={() => markBad(img)} />
                   )}
+                </g>
                 </g>
               );
             })}

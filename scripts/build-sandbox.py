@@ -46,7 +46,7 @@ MAP_URL = ASSETS + "/ui/sandboxv2/mappreview/sandbox_1/{sid}.png"
 # 게임의 지도 화면 배경 원본 (6.6MB PNG → webp 리사이즈)
 WORLD_URL = ASSETS + "/ui/sandboxv2/topics/%5Buc%5Dsandbox_1/dungeon/mapbkg/sandbox_1_main_0.png"
 # 신시즌(V3) 전투 지형 프리뷰 — subStageData.mapPreviewId (사용자 요청 2026-08-12
-# "재기동 앵커도 맵 이미지 보여줘")
+# "리런치 앵커도 맵 이미지 보여줘")
 V3_MAP_URL = ASSETS + "/ui/sandboxv3/topics/%5Buc%5Dsandbox_2/mappreview/{sid}.png"
 # 신시즌 보조 아이콘 (사용자 요청 2026-08-12 "시나리오나 날씨 조우도 섬네일 다 만들어줘").
 # ⚠ v2와 파일명이 겹치므로(weather_normal 등) **misc2** 폴더로 분리한다.
@@ -826,7 +826,7 @@ def main():
         doc["v3"]["enemyCn"] = {i: (cn_hb.get(i) or {}).get("name") or "" for i in v3ids}
         doc["v3"]["enemySrc"] = srcs
         # 신시즌 적 도감 — 전투 지형 전수에서 모은 대표 스탯(최고 강화)·등장 지형 역색인
-        # (사용자 요청 2026-08-13 "재기동 앵커에 적 도감이 없다"). 사막 이야기 dex와 같은 꼴.
+        # (사용자 요청 2026-08-13 "리런치 앵커에 적 도감이 없다"). 사막 이야기 dex와 같은 꼴.
         v3dex = {}
         for sv in doc["v3"]["subs"]:
             for r in sv["foes"]:

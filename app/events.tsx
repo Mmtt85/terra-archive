@@ -94,9 +94,13 @@ const TYPE_LABEL: Record<string, string> = {
   BRANCHLINE: "막간 이야기",
   // 위기 협약 시즌·홀로그램 매트릭스 — 별도 목록(events-crisis*.json)이 이어 붙는다 (2026-10-16)
   CRISIS: "위기 협약",
+  "CRISIS:cc1": "위기 협약 시즌 1",
+  "CRISIS:cc2": "위기 협약 시즌 2",
+  "CRISIS:hm": "홀로그램 매트릭스",
   NONE: "기타",
 };
-const typeOf = (row: EventRow) => (row.type && TYPE_LABEL[row.type] ? row.type : "NONE");
+// 위기 협약은 시즌 1·시즌 2·홀로그램 매트릭스로 나눠 거른다 (위기 협약 가이드 '종류' 필터, 2026-10-23)
+const typeOf = (row: EventRow) => (row.type === "CRISIS" && row.ser ? `CRISIS:${row.ser}` : row.type && TYPE_LABEL[row.type] ? row.type : "NONE");
 
 // '수록 내용' 필터 — 이벤트에 무엇이 들었는지로 거른다
 /** 작전을 **같은 이름(코드 앞머리)끼리** 묶는다 (사용자 지시 2026-09-28 "사람들, 우리들이면 PA 와 PA-EX 를 따로").
@@ -512,7 +516,8 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
     </div>
   );
   const stageGroups = row.stages && row.stages.length > 0 ? groupStages(row.stages) : [];
-  const stageList = !row.stages?.length ? null : stageGroups.length < 2 ? stageCards(stageGroups[0].items) : stageGroups.map((g) => (
+  // 묶음마다 작전이 하나뿐이면(홀로그램 매트릭스 — 지난 작전 넷이 7·LS·H5·H9 로 갈린다) 묶지 않고 한 격자로 가로로 늘어놓는다 (사용자 지시 2026-10-23)
+  const stageList = !row.stages?.length ? null : stageGroups.length < 2 || stageGroups.every((g) => g.items.length === 1) ? stageCards(row.stages) : stageGroups.map((g) => (
     <div key={g.key} className="ev-stage-group">
       <span className="ev-stage-gh">{g.label}<em>{g.items.length}</em></span>
       {stageCards(g.items)}
@@ -616,7 +621,7 @@ function EventFile({ row, series, onOpenStage, onOpenEnemy, onOpenFighter, onOpe
   );
 }
 
-export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, initialId, onCloseModal }: {
+export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, initialId, onCloseModal, crisis }: {
   doc: EventDoc; onShowOperator: (id: string) => void;
   /** 전용 가이드가 있는 모드로 탭을 넘긴다 (위수 협의 등) */
   onOpenGuide: (seg: string) => void;
@@ -629,6 +634,8 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
   initialId?: string | null;
   /** modalOnly 일 때 주 모달이 닫혔음을 알린다 (호스트가 자기 상태를 지운다) */
   onCloseModal?: () => void;
+  /** 위기 협약 가이드(/crisis) — 목록 문구만 바뀐다 (2026-10-23) */
+  crisis?: boolean;
 }) {
   const { locale, t } = useI18n();
   const { term, clear, inputProps } = useSearchInput();
@@ -663,7 +670,8 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
   const seriesOf = useMemo(() => {
     const m = new Map<string, EventRow[]>();
     for (const e of events) if (e.ser) m.set(e.ser, [...(m.get(e.ser) ?? []), e]);
-    for (const list of m.values()) list.sort((a, b) => (a.start ?? "").localeCompare(b.start ?? ""));
+    // 최신이 위 (사용자 지시 2026-10-23) — 시작일 없는 미실장(중섭 선행)이 맨 위
+    for (const list of m.values()) list.sort((a, b) => (b.start ?? "9999").localeCompare(a.start ?? "9999"));
     return m;
   }, [events]);
 
@@ -856,7 +864,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
         {/* 검색란은 탐색 조건 맨 위 — 결과 머리글에는 제목·개수만 (사용자 지시 2026-09-28) */}
         <div className="search-wrap panel-search">
           <span>⌕</span>
-          <input id="event-search" {...inputProps} placeholder={t("이벤트, 재화, 오퍼 검색")} />
+          <input id="event-search" {...inputProps} placeholder={crisis ? t("시즌, 맵, 적 검색") : t("이벤트, 재화, 오퍼 검색")} />
           <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
           <SearchSuggest query={term}
             items={shown.map((e) => ({ key: e.id, label: e.n, sub: e.start ?? undefined, img: e.thumb ? asset(e.thumb) : undefined }))}
@@ -872,8 +880,8 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
 
       <div className="results">
         <div className="results-heading">
-          <div><span className="section-no">RESULT / 02</span><h2>{active ? t("탐색 결과") : t("전체 이벤트")}</h2></div>
-          <div className="results-tools"><span className="count"><b>{shown.length}</b> EVENTS</span></div>
+          <div><span className="section-no">RESULT / 02</span><h2>{active ? t("탐색 결과") : crisis ? t("전체 시즌") : t("전체 이벤트")}</h2></div>
+          <div className="results-tools"><span className="count"><b>{shown.length}</b> {crisis ? "SEASONS" : "EVENTS"}</span></div>
         </div>
         <div className="active-filters">
           {types.map((v) => <button key={`t-${v}`} onClick={() => toggle(setTypes)(v)}>{t(TYPE_LABEL[v] ?? v)} ×</button>)}
@@ -890,7 +898,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
               {futureRows.length > 0 && (
                 <section className="future-strip ev-future">
                   <h3>
-                    {t("미실장 이벤트 {n}개", { n: futureRows.length })}
+                    {crisis ? t("미실장 시즌 {n}개", { n: futureRows.length }) : t("미실장 이벤트 {n}개", { n: futureRows.length })}
                     <small>{t("중국 서버 선행 — 한국 서버엔 아직 없습니다")}</small>
                   </h3>
                   <div className="ev-grid mini">
@@ -903,7 +911,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, 
               </div>
             </>
           ) : (
-            <div className="empty"><h3>{t("조건에 맞는 이벤트가 없어요.")}</h3>
+            <div className="empty"><h3>{crisis ? t("조건에 맞는 시즌이 없어요.") : t("조건에 맞는 이벤트가 없어요.")}</h3>
               <button onClick={reset}><span className="btn-icon" aria-hidden>↻</span>{t("전체 보기")}</button></div>
           )}
         </div>

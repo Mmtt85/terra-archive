@@ -262,7 +262,7 @@ def _fix_sandbox():
 
 
 def _fix_sandbox2():
-    """생존연산 신시즌(재기동 앵커, CN 선행) sandbox2-routes.json — 이름표 = 그 전투 지형의 적(foes)."""
+    """생존연산 신시즌(리런치 앵커, CN 선행) sandbox2-routes.json — 이름표 = 그 전투 지형의 적(foes)."""
     p = f"{DATA}/sandbox2-routes.json"
     doc = _load(p)
     cn = _load(f"{GD}/cn_sandbox_perm_table.json") or {}

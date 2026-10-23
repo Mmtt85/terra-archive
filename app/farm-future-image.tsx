@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageActions } from "./image-actions";
 import { useEffect, useState } from "react";
 import { useI18n } from "./i18n";
 import { ModalWindow } from "./modal-window";
@@ -244,7 +245,6 @@ export function FutureFarmImageModal({ data, hasOwn, onClose }: { data: FfImgDat
   const [url, setUrl] = useState<string | null>(null);
   const [err, setErr] = useState(false);
   const [blob, setBlob] = useState<Blob | null>(null);
-  const [copied, setCopied] = useState<"ok" | "fail" | null>(null);
   // 창은 늘 이미지 크기에 맞춘다 (사용자 지시 2026-10-18) — 캔버스는 2배로 그렸으니 보이는 폭은 절반, 화면보다 크면 줄여 보인다
   const [dim, setDim] = useState<number | null>(null);
   useEffect(() => {
@@ -275,25 +275,8 @@ export function FutureFarmImageModal({ data, hasOwn, onClose }: { data: FfImgDat
       .catch(() => { if (alive) setErr(true); });
     return () => { alive = false; if (made) URL.revokeObjectURL(made); };
   }, [data, own, hasOwn, locale]); // eslint-disable-line react-hooks/exhaustive-deps
-  const save = () => {
-    if (!url) return;
-    const d = new Date();
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `terra-archive-farm-future-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}.png`;
-    a.click();
-  };
-  // 복사하기 — 클립보드에 PNG 그대로 (디스코드·메신저에 바로 붙여넣기)
-  const copy = async () => {
-    if (!blob) return;
-    try {
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-      setCopied("ok");
-    } catch {
-      setCopied("fail");
-    }
-    setTimeout(() => setCopied(null), 2000);
-  };
+  // 저장·복사 — 공용 단추가 WebP / PNG 를 고르게 한다 (app/image-actions.tsx, 2026-10-23)
+  const fileName = (() => { const d = new Date(); return `terra-archive-farm-future-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`; })();
   return (
     <ModalWindow label={t("파밍 미래시 이미지")} className="ff-img-modal" onClose={onClose}>
       <div className="ff-img-tools">
@@ -303,10 +286,7 @@ export function FutureFarmImageModal({ data, hasOwn, onClose }: { data: FfImgDat
             {t("내 보유 수량 표시")}
           </label>
         )}
-        <button type="button" className="act-btn farm-future-btn" disabled={!blob} onClick={() => void copy()}>
-          {copied === "ok" ? t("복사했습니다") : copied === "fail" ? t("복사하지 못했습니다") : t("복사하기")}
-        </button>
-        <button type="button" className="act-btn farm-future-btn" disabled={!url} onClick={save}>{t("다운로드")}</button>
+        <ImageActions blob={blob} name={fileName} buttonClassName="act-btn farm-future-btn" copyLabel={t("복사하기")} saveLabel={t("다운로드")} />
       </div>
       <div className="ff-img-view">
         {err ? <p className="recruit-empty">{t("이미지를 만들지 못했습니다.")}</p>

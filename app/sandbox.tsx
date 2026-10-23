@@ -9,7 +9,7 @@
 //   상세 모달 안에서 골라 본다 — 목록에 00·11·22·33이 늘어서지 않게.
 //
 // - 사막 이야기(sandbox_1): KR/EN/JA 공식 텍스트.
-// - 신시즌 「재기동 앵커」(sandbox_2): CN 선행 — **중국어 원문이 메인, 한국어 번역이 서브**
+// - 신시즌 「리런치 앵커」(sandbox_2): CN 선행 — **중국어 원문이 메인, 한국어 번역이 서브**
 //   (사용자 확정 — 뒤집지 말 것). 사이트 전역 '미래시 데이터 포함' 토글을 따른다.
 //
 // 데이터는 scripts/build-sandbox.py 산출 app/data/sandbox{,.en,.ja}.json —
@@ -755,7 +755,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
           <p className="sim-intro">{t("생존연산 상설 「사막 이야기」의 요리 조합, 제작·설치물 재료, 지역과 날씨, 조우 선택지, 균열 목표를 게임 데이터에서 그대로 정리했습니다.")}</p>
           {/* 신시즌 메뉴는 2026-09-04부터 미래시와 무관하게 늘 보인다 — 안내문도 그에 맞춘다 */}
           {!includeFuture && (
-            <p className="sim-note">{t("중국 서버 선행 신시즌 「재기동 앵커」는 메뉴에서 흑백으로 표시됩니다 — 헤더의 '미래시 데이터 포함'을 켜면 정상 표시됩니다.")}</p>
+            <p className="sim-note">{t("중국 서버 선행 신시즌 「리런치 앵커」는 메뉴에서 흑백으로 표시됩니다 — 헤더의 '미래시 데이터 포함'을 켜면 정상 표시됩니다.")}</p>
           )}
         </>
       ) : (
@@ -1881,7 +1881,11 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                         highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
                         imgOf={(id) => v3EnImg(id)} nameOf={v3EnName} onPick={togglePin}
                         obPick={obPick} obStyleOf={obStyle3}
-                        obIconOf={(k) => { const iid = v3.objKinds[k]?.[3]; return iid ? itemIcon(iid) : undefined; }} />
+                        obIconOf={(k) => { const iid = v3.objKinds[k]?.[3]; return iid ? itemIcon(iid) : undefined; }}
+                        // 실사 도면 위에 겹친다 (사용자 지시 2026-10-23 "시즌2 전투 지형도 실사 도면에 맞춰") — 리런치 앵커 도면
+                        // (sandboxv3 mappreview, 300×300)은 6×6 격자가 **그림 전체**다. 사막 이야기(가운데 5/6)와 다르다:
+                        // 벽 칸을 도면 석판에 대 보니 1 에서 딱 맞고 5/6 이면 칸마다 밀렸다 (4장 실측, 위아래 뒤집힘 없음)
+                        photo={sv?.prev ? { src: v3MapImg(sv.prev), alt: t("{code} 지형 도면", { code: openSub }), share: 1 } : undefined} />
                     ) : sv?.prev ? (
                       <button type="button" className={`st-map-zoom${zoom ? " zoom" : ""}`} onClick={() => setZoom((z) => !z)}
                         title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>

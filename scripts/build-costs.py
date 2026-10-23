@@ -147,6 +147,14 @@ formulas = {}  # itemId → formula (KR 우선, 미출시 재료는 CN)
 for src in [cn_building, kr_building]:
     for f in (src.get("workshopFormulas") or {}).values():
         formulas[f.get("itemId")] = f
+# 듀얼 칩(32x3)은 가공소가 아니라 **제조소** 제조식(manufactFormulas, formulaType F_ASC) — 칩셋 2 + 칩 첨가제(32001) 1.
+# 종전엔 조합식이 없어 '파밍할 것'으로 셌다 (사용자 지적 2026-10-23 "듀얼칩은 파밍이 아니라 제조소 제조")
+for src in [cn_building, kr_building]:
+    for f in (src.get("manufactFormulas") or {}).values():
+        if f.get("formulaType") == "F_ASC" and f.get("itemId") not in formulas:
+            formulas[f.get("itemId")] = {**f, "_factory": True}
+# 칩 첨가제는 사실상 상점 교환으로만 얻는다 — 구매증명서(4006, '빨티') 90개 (사용자 확인 2026-10-23)
+SHOP_ONLY = {"32001": ["4006", 90]}
 
 # 용문폐(4001)는 lmd로 분리되지만 모달·합계 표시는 아이템 사전을 참조하므로 항상 포함
 used_items.add("4001")
@@ -216,6 +224,7 @@ for iid in sorted(used_items):
         if craft:
             entry["craft"] = craft
             if gold > 0: entry["craftGold"] = gold
+            if f.get("_factory"): entry["craftAt"] = "factory"
             # 조합 재료도 아이템 사전에 있어야 모달에서 이름·아이콘이 나온다
             for cid2, _ in craft: used_items.add(cid2)
     items_out[iid] = entry
@@ -238,6 +247,14 @@ for iid in sorted(used_items):
     dst = f"{REPO}/public/items/{iid}.webp"
     if not os.path.exists(dst):
         missing_icons.append((iid, base.get("iconId") or iid))
+
+for iid, (cur, n) in SHOP_ONLY.items():
+    if iid in items_out:
+        items_out[iid]["shop"] = [cur, n]
+        if cur not in items_out and (kr_items.get(cur) or cn_items.get(cur)):
+            b = kr_items.get(cur) or cn_items.get(cur)
+            items_out[cur] = {"name": loc_field(cur, "name"), "rarity": tier(b.get("rarity")), "sortId": b.get("sortId", 0), "image": f"/items/{cur}.webp"}
+            if not os.path.exists(f"{REPO}/public/items/{cur}.webp"): missing_icons.append((cur, b.get("iconId") or cur))
 
 for iid, icon in missing_icons:
     url = f"{ICON_BASE}/{urllib.parse.quote(icon)}.png"

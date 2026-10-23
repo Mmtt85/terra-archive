@@ -1544,6 +1544,15 @@ def build_topic(tid="rogue_1", loc=None):
     tools = item_group("ACTIVE_TOOL")
     bands = sort_bands(item_group("BAND"), r)
     explore_tools = item_group("EXPLORE_TOOL")  # IS3 탐사 도구 (다른 토픽은 빈 배열)
+    # 모집권·승진권 — 종전엔 데이터에 없어 PRTS 가 '뱅가드 모집권' 같은 줄을 못 알아봤다 (사용자 지시 2026-10-23
+    # "모집권은 유물로 등록 안 해놔서 인식이 안 되는 것 같다"). 아이콘은 소장품 아틀라스에 같이 있어 relic 폴더에 이미 있다
+    tickets = [x for t in ("RECRUIT_TICKET", "UPGRADE_TICKET", "CUSTOM_TICKET") for x in item_group(t)]
+    # 판 시작 모집 조합(모집권 묶음) — 분대 다음 화면 '모집 조합 선택'의 카드 (PRTS 틀렸어요 41974f77 2026-10-23, 일섭 '招集券選択').
+    # 월간 분대용 '지원 작전'(recruit_group_m*)은 그 달 방문객 모드 전용이라 뺀다
+    recruit_groups = [{"id": g["id"], "name": g["name"], "desc": g.get("desc"), "unlock": g.get("unlockDesc")}
+                      for g in (r.get("recruitGrps") or {}).values() if not re.match(r"recruit_group_m\d", g["id"])]
+    _grp_order = {gid: i for i, gid in enumerate(next((m.get("initialRecruitGroup") or [] for m in r.get("init") or []), []))}
+    recruit_groups.sort(key=lambda g: _grp_order.get(g["id"], 99))
 
     # ── 토픽 고유 시스템 갤러리 (환경 탭) — 토픽마다 다른 예외 메커니즘/수집품을 이름+설명으로.
     #    미즈키=거부반응/주사위 · 사미=붕괴/토템 · 살카즈=파편/재앙 · 쉐이=주화/분노 (사용자 요청).
@@ -2052,6 +2061,8 @@ def build_topic(tid="rogue_1", loc=None):
         "capsules": capsules,
         "tools": tools,
         "bands": bands,
+        "tickets": tickets,
+        "recruitGroups": recruit_groups,
         "variations": variations,
         "endings": endings,
         "encounters": encounters,
@@ -2140,7 +2151,7 @@ def cn_koreanize(ronum, out):
         keep_cn(s)
     for e in out["enemies"].values():
         keep_cn(e)
-    for coll in ("relics", "capsules", "tools", "bands", "exploreTools", "variations",
+    for coll in ("relics", "capsules", "tools", "bands", "tickets", "recruitGroups", "exploreTools", "variations",
                  "endings", "nodeTypes", "skyNodes"):
         for x in out.get(coll) or []:
             keep_cn(x)
@@ -2170,6 +2181,8 @@ def cn_koreanize(ronum, out):
         "capsules": ("id", ("name", "en", "desc", "usage")),
         "tools": ("id", ("name", "desc", "usage")),
         "bands": ("id", ("name", "desc", "usage")),
+        "tickets": ("id", ("name", "desc", "usage")),
+        "recruitGroups": ("id", ("name", "desc", "unlock")),
         "exploreTools": ("id", ("name", "desc", "usage")),
         "variations": ("id", ("name", "func", "desc")),
         "endings": ("id", ("name", "desc", "change")),
@@ -2330,7 +2343,7 @@ def cn_koreanize(ronum, out):
         drop_same_cn(s)
     for e in out["enemies"].values():
         drop_same_cn(e)
-    for coll in ("relics", "capsules", "tools", "bands", "exploreTools", "variations",
+    for coll in ("relics", "capsules", "tools", "bands", "tickets", "recruitGroups", "exploreTools", "variations",
                  "endings", "nodeTypes"):
         for x in out.get(coll) or []:
             drop_same_cn(x)

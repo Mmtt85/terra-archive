@@ -1368,6 +1368,10 @@ button {
   margin-top: 10px;
   padding: 6px 14px 0;
 }
+/* 세로 스크롤바 자리를 늘 비워 둔다 — 내용이 늘었다 줄었다 할 때(카드 접기·보기 전환 등) 스크롤바가 생겼다 사라지며
+   본문 폭이 바뀌어 레이아웃이 좌우로 흔들렸다 (사용자 지적 2026-10-23 "스크롤바가 생겼다 사라졌다 하면서 레이아웃이 왔다갔다").
+   겹침 스크롤바(맥 기본·모바일)에선 자리를 안 차지하므로 아무것도 달라지지 않는다 */
+.results-scroll, .site-scroll, .filter-panel, .mw-body { scrollbar-gutter: stable; }
 .filter-panel::-webkit-scrollbar,
 .results-scroll::-webkit-scrollbar {
   width: 7px;
@@ -10156,9 +10160,7 @@ html.dark .vz {
 .cost-explorer .cost-ops {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.cost-explorer .cost-op:only-child {
-  grid-column: 1 / -1;
-}
+/* 한 명뿐이어도 두 명일 때와 같은 폭 — 줄 전체로 늘이지 않는다 (사용자 지시 2026-10-23, 종전 :only-child 줄 전체는 뺐다) */
 @media (max-width: 520px) {
   .cost-explorer .cost-ops {
     grid-template-columns: 1fr;
@@ -12585,6 +12587,24 @@ html.dark .modal-actions .future-note {
 .cost-op > header .cost-chip-remove {
   flex: 0 0 auto;
 }
+/* 카드 접기 (제안 7345061a 2026-10-23) — 머리 빈 곳·▾ 단추로 접고 편다, 접히면 머리 아래 요약 한 줄 */
+.cost-op > header { flex-wrap: wrap; cursor: pointer; }
+.cost-op.folded > header { border-bottom: 0; }
+/* 접히면 모두 선택 단추가 없어 접기 단추가 이름 옆에 붙었다 — 오른쪽 끝으로 (사용자 지적 2026-10-23) */
+.cost-op.folded > header .cost-op-fold { margin-left: auto; }
+.cost-op > header .cost-op-fold { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 9px; border: 1px solid var(--btn-line); border-radius: var(--r-sm);
+  background: var(--btn-bg); color: var(--btn-ink); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+/* 글자가 바뀌는 단추 — 두 문구를 한 칸에 겹치고 안 쓰는 쪽은 숨겨, 폭이 긴 문구에 맞는다 (접기·모두 접기, 2026-10-23) */
+.swap-lab { display: inline-grid; }
+.swap-lab > span { grid-area: 1 / 1; text-align: center; }
+.swap-lab > .off { visibility: hidden; }
+.cost-op-fold .cof-ic { display: inline-block; font-size: 10px; line-height: 1; transition: transform .15s; }
+.cost-op:not(.folded) .cost-op-fold .cof-ic { transform: rotate(180deg); }
+/* 요약은 늘 두 줄(육성 범위 / 비용) — 짧으면 한 줄로 붙어 카드 높이가 들쭉날쭉했다 (사용자 지적 2026-10-23). 길면 말줄임 */
+.cost-op-sum { flex: 1 1 100%; display: flex; flex-direction: column; gap: 2px; min-width: 0; margin: 0; padding-left: 39px; font-size: 12px; color: var(--ink2); line-height: 1.5; }
+.cost-op-sum > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cost-op-sum small { font-size: 11px; color: var(--muted); }
+.cost-ops { align-items: start; }
 .cost-rows {
   padding: 6px 12px 10px;
 }
@@ -22253,6 +22273,12 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .st-cr-group h4 em { font-style: normal; font-weight: 500; font-size: 11px; color: var(--muted); }
 .st-cr-group .st-rune-text b { font-weight: 700; }
 .st-cr-group .st-rune-text .st-rune-grp { display: inline; }
+/* 위기 협약 계약은 묶음마다 카드를 가로로 늘어놓는다 (사용자 지시 2026-10-23 "악적의 내용은 하나하나 카드로, 오른쪽으로") —
+   계약 칸이 두 칸 아래 폭 100% 로 내려와 세로 목록이면 오른쪽이 텅 비었다 */
+.st-cr-group .st-runes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; border-top: 0; }
+.st-cr-group .st-runes li { grid-template-columns: auto 1fr; align-content: start; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); }
+.st-cr-group .st-rune-pt { text-align: left; }
+@media (max-width: 640px) { .st-cr-group .st-runes { grid-template-columns: 1fr; } }
 .st-dropgroup h4 {
   margin: 0 0 4px;
   font-size: 12px;
@@ -28884,6 +28910,77 @@ a.fb-filechip:hover { border-color: var(--border-strong); }
 .cost-lmd .cost-have.short { color: var(--danger); opacity: 1; }
 .cost-short-sum { flex: 1 0 100%; margin: 0; font-size: 12px; font-weight: 600; color: var(--muted); }
 .cost-short-sum.short { color: var(--danger); }
+/* 가공소로 메우기 (제안 7345061a 2026-10-23) — 왼쪽 칸엔 단추 하나, 누르면 창에 나무 모양으로 (사용자 지시 같은 날) */
+.cost-craft-btn { flex: 1 1 100%; display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: var(--bg-soft); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.cost-craft-btn:hover { border-color: var(--border-hover); }
+.cost-craft-btn > span { font-size: 16px; }
+.cost-craft-btn > b { font-size: 13px; }
+.cost-craft-btn > small { font-size: 11px; color: var(--muted); margin-left: auto; }
+.cost-craft-btn > i { font-style: normal; color: var(--muted); }
+.cost-craft-note { margin: 0 0 12px; font-size: 12px; color: var(--muted); line-height: 1.55; }
+/* 창 위 요약은 용문폐 한 줄 — 위아래 선, 아래 첫 재료와의 틈은 재료 사이 틈(8px)과 같게 (사용자 지적 2026-10-23) */
+.cost-craft-sum { display: flex; flex-direction: column; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.cost-craft-sum small { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.cost-craft-sum small.short { color: var(--danger); }
+.cost-craft-need { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.cost-craft-need small { margin-bottom: 0; }
+.cost-craft-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.cost-craft-lmd { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; color: var(--muted); }
+.cost-craft-lmd img { width: 22px; height: 22px; object-fit: contain; }
+.cost-craft-lmd > span:nth-child(2) { color: var(--ink); font-weight: 600; }
+.cost-craft-lmd b { color: var(--ink2); }
+.cost-craft-lmd b.short { color: var(--danger); }
+.cost-craft-modal {
+  width: min(720px, 100%);
+  place-self: center;
+  height: fit-content;
+  max-height: min(88dvh, 860px);
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  box-shadow: var(--sh-3);
+}
+.craft-tree, .craft-tree ul { list-style: none; margin: 0; padding: 0; }
+.craft-tree ul { margin-left: 15px; padding-left: 14px; border-left: 1px dashed var(--line); }
+.craft-node.root { padding: 8px 0; }
+.craft-node.root + .craft-node.root { border-top: 1px solid var(--line); }
+.craft-line { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 3px 0; }
+.craft-nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.craft-nm .craft-tg { flex: none; }
+/* 열기 단추 — 파밍 ↔ 조합으로 풀기 (2026-10-23). 접힘 ▸ · 열림 ▾ (한 글자를 돌려 쓴다) */
+/* 테두리 없이 화살표만 (사용자 지시 2026-10-23) */
+.craft-tg { width: 22px; height: 22px; padding: 0; border: 0; border-radius: var(--r-sm); background: none; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; }
+.craft-tg > span { display: inline-block; transform: rotate(-90deg); transition: transform .15s; }
+.craft-tg.on > span { transform: none; }
+.craft-nm.tg { cursor: pointer; align-self: stretch; }
+.craft-nm.tg:hover .craft-tg { color: var(--ink); }
+
+.craft-ic { flex: none; width: 30px; height: 30px; padding: 0; border: 0; background: none; cursor: pointer; }
+.craft-ic img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.craft-name { font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.craft-node:not(.root) .craft-name { font-weight: 600; font-size: 12px; }
+/* 필요 · 창고 · 결과 세 칸은 폭을 고정해 깊이(들여쓰기)와 상관없이 세로 열이 맞게 (사용자 지적 2026-10-23 "너무 중구난방") */
+.craft-nums { display: grid; grid-template-columns: 58px 58px 196px; gap: 8px; font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .craft-nums { grid-template-columns: 50px 50px 150px; white-space: normal; } }
+.craft-nums .cn-have { color: var(--muted); }
+.craft-nums .cn-ok { color: var(--ink2); }
+.craft-nums .cn-craft { color: var(--ink); font-weight: 600; }
+.craft-nums .cn-farm { color: var(--danger); font-weight: 700; }
+.craft-nums .cn-shop { color: var(--ink); font-weight: 600; }
+/* 충분한 재료를 열어 본 하위 재료 — 계산에 안 들어가는 참고 줄이라 흐리게 (2026-10-23) */
+.craft-ref { opacity: .62; }
+.craft-nums .cn-ref { color: var(--muted); }
+/* 작전기록 줄 — 창고의 네 종류 장수와 고급 환산 (2026-10-23) */
+.craft-exp { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 2px 0 4px 38px; font-size: 12px; color: var(--muted); }
+.craft-exp-card { display: inline-flex; align-items: center; gap: 3px; }
+.craft-exp-card img { width: 22px; height: 22px; object-fit: contain; }
+.craft-exp-card b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.craft-exp-card small { font-size: 11px; }
+.craft-exp-sum { color: var(--ink2); font-weight: 600; }
+.item-shop-txt { align-self: center; font-size: 12px; color: var(--ink2); }
+/* 상점 교환 칸 — 아래 안내 상자와 붙어 보였다 (사용자 지적 2026-10-23) */
+.item-craft.item-shop { margin-bottom: 14px; }
+.cost-craft-shop { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
 
 /* 스포 가리기 '내 진행 기준' 표시 (갤러리, 2026-10-06) — 카드마다 .spoil 이 붙는다(종전엔 격자 전체) */
 .gl-spoil-mine { margin-left: 6px; padding: 1px 6px; border-radius: var(--r-xs); background: var(--tint-lime); color: var(--tint-lime-ink); font-style: normal; font-size: 11px; font-weight: 700; }
@@ -33554,7 +33651,9 @@ html.rg-theme.rg4 main.site-main {
 .pl-sb-score em { margin-left: 6px; font-style: normal; font-family: var(--mono); font-weight: 700; }
 .pl-sb-score em.up { color: var(--lime-ink); }
 .pl-sb-score em.down { color: var(--danger); }
-.pl-sb-actions { display: flex; gap: 6px; margin-left: auto; }
+.pl-sb-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.pl-sb-close { flex: none; width: 40px; height: 40px; margin-left: 4px; padding: 0; border: 1px solid var(--btn-line); border-radius: var(--r-sm); background: var(--btn-bg); color: var(--btn-ink); font-size: 26px; line-height: 1; cursor: pointer; }
+.pl-sb-close:hover { border-color: var(--border-hover); color: var(--ink); }
 .planner.sandboxing .planner-buttons { visibility: hidden; }
 .pl-sb-actions .act-btn { height: 30px; padding: 0 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
 :root .pl-sb-actions .act-btn.pl-sb-apply { background: var(--btn-pri-bg); color: var(--btn-pri-ink); }
@@ -34518,3 +34617,53 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .planner-buttons .btn-count { font: inherit; }
 .planner-buttons .btn-count::before { content: " ("; }
 .planner-buttons .btn-count::after { content: ")"; }
+
+/* 위기 협약 계산기 1단계 (2026-10-23, app/crisis-calc.tsx) — 계약 줄을 눌러 고르면 위에 위험도 합계·효과 모아 보기 */
+.cc-calc { position: sticky; top: 0; z-index: 2; margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-panel); }
+.cc-calc-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13px; }
+.cc-calc-head > span { color: var(--ink2); font-weight: 600; }
+.cc-set { font-style: normal; font-size: 11px; color: var(--muted); }
+.cc-reset { margin-left: auto; padding: 3px 9px; border: 1px solid var(--btn-line); border-radius: var(--r-sm); background: var(--btn-bg); color: var(--btn-ink); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+.cc-sum { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 16px; margin-top: 10px; }
+.cc-who h5 { margin: 0 0 4px; font-size: 12px; color: var(--muted); }
+.cc-who.rule { grid-column: 1 / -1; }
+.cc-who ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.cc-who li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 12px; }
+.cc-who .cc-stat { color: var(--ink2); }
+.cc-who b { font-variant-numeric: tabular-nums; }
+.cc-who.foe b { color: var(--danger); }
+.cc-who small { flex-basis: 100%; font-size: 11px; color: var(--muted); }
+.cc-raw { margin: 10px 0 0; padding-left: 16px; font-size: 12px; color: var(--ink2); }
+/* 계약 카드 — 아이콘 왼쪽, 점수·이름·설명 오른쪽 (사용자 지적 2026-10-23 "각 제약도 아이콘이 있었을 텐데") */
+.st-cr-group .st-runes li.cc-pick { display: flex; gap: 10px; align-items: flex-start; }
+.cc-pick .cc-ic { flex: none; width: 40px; height: 40px; border-radius: 6px; background: #1d2326; object-fit: contain; }
+.cc-pick .cc-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cc-pick .cc-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.cc-pick .cc-top b { font-weight: 700; }
+.cc-pick.must { cursor: default; }
+.cc-pick.must .st-rune-pt { color: var(--muted); font-family: inherit; font-weight: 600; }
+.cc-note { grid-column: 1 / -1; margin: 0; font-size: 11px; color: var(--muted); }
+.cc-fold { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border: 1px solid var(--btn-line); border-radius: var(--r-sm); background: var(--btn-bg); color: var(--btn-ink); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+.cc-reset + .cc-fold { margin-left: 0; }
+.cc-calc-head > .cc-fold:not(.cc-reset + .cc-fold) { margin-left: auto; }
+.cc-fold .cof-ic { display: inline-block; font-size: 10px; transform: rotate(-90deg); transition: transform .15s; }
+.cc-fold.open .cof-ic { transform: none; }
+/* 효과 모아 보기는 길어지면 안에서 스크롤 — 아래 카드가 가려지지 않게 */
+.cc-sum { max-height: 40vh; overflow-y: auto; }
+.st-runes li.cc-pick { cursor: pointer; }
+.st-runes li.cc-pick:hover { background: var(--bg-soft); }
+.st-runes li.cc-pick.on { background: var(--bg-press); border-color: var(--lime-line); box-shadow: inset 0 0 0 1px var(--lime-line); }
+
+/* 편성표 이미지 창 — 제목 오른쪽에 PNG 저장·복사 (2026-10-23) */
+.image-preview .image-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.image-preview .image-title-row h2 { margin-right: 6px; }
+.image-preview .image-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.image-preview .image-copied { font-size: 12px; font-weight: 700; color: var(--lime-ink); }
+.image-preview .image-title-row .save-image { font: inherit; font-size: 13px; cursor: pointer; }
+
+/* 이미지 저장·복사 공용 단추 (app/image-actions.tsx, 2026-10-23) — 저장 ▾ · 복사 ▾ 에서 WebP / PNG */
+.img-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.img-actions-note { font-size: 12px; font-weight: 700; color: var(--lime-ink); }
+
+/* 시뮬레이트 중 적 사거리 원 (2026-10-23) — 옅게 채우고 점선 테두리, 말을 가리지 않게 클릭은 통과 */
+.st-simrange { fill-opacity: .07; stroke-opacity: .45; stroke-width: .035; stroke-dasharray: .12 .08; pointer-events: none; }

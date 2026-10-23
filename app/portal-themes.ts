@@ -86,6 +86,9 @@ export const PORTAL_TILES: PortalTile[] = [
   // 보안파견 가이드 (2026-10-17)
   { id: "sss", label: "보안파견", tab: "sss", area: "guide", kind: "plate", group: "guide",
     desc: "맵별 층·보상·리더 카드·전술 장비와 훈장", icon: "⛨" },
+  // 위기 협약 가이드 (2026-10-23)
+  { id: "crisis", label: "위기 협약", tab: "crisis", area: "guide", kind: "plate", group: "guide",
+    desc: "시즌별 맵·계약과 위험도 계산", icon: "⚠" },
   // 이벤트도 가이드 묶음 (사용자 지시 2026-09-17) — 헤더 메뉴의 GUIDE_TABS 와 같은 구성.
   // 자료를 뒤지는 도감이 아니라 "이 콘텐츠를 보러 간다"는 결이라 여기 들어간다.
   { id: "event", label: "이벤트", tab: "event", area: "guide", kind: "plate", group: "guide",

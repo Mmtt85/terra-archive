@@ -50,6 +50,7 @@ const SEG_SOURCES = {
   ra: ["app/data/sandbox.json"], // 생존연산 가이드
   autochess: ["app/data/autochess.json", "app/data/autochess-s1.json"], // 위수 협의(오토체스) 가이드 — 지난 시즌 포함
   sss: ["app/data/towers-detail.json"], // 보안파견 가이드 (2026-10-17)
+  crisis: ["app/data/events-crisis.json", "app/data/stages-crisis.json"], // 위기 협약 가이드 (2026-10-23)
   about: ["app/about/page.tsx"],
 };
 // ⚠ 파일 하나당 git을 **한 번만** 부른다. 종전엔 URL마다 불러서, 오퍼·적·작전 상세까지
@@ -156,7 +157,7 @@ for (const route of routes) {
 // _2·_3 변형은 맨 끝). 언어도 **한국어 전부 → 영어 → 일본어** (국내 검색엔진이 한국어부터 만나게).
 // priority 는 구글은 무시하지만 네이버는 참고할 수 있어 단계별로 차등을 둔다.
 // dps·gacha·gacha-planner — 2026-10-17 (종전엔 목록에 없어 도구 단계 맨 끝이었다)
-const TOP = ["infra", "recruit", "operators", "rogue", "ra", "autochess", "sss", "upgrade", "farm", "dps", "gacha", "gacha-planner", "stories", "stages", "enemies", "events", "items", "sim", "gallery", "me", "about"];
+const TOP = ["infra", "recruit", "operators", "rogue", "ra", "autochess", "sss", "crisis", "upgrade", "farm", "dps", "gacha", "gacha-planner", "stories", "stages", "enemies", "events", "items", "sim", "gallery", "me", "about"];
 const STAGE_RANK = (() => {
   const doc = JSON.parse(readFileSync(join(ROOT, "app/data/stages.json"), "utf8"));
   const typeRank = { MAIN: 0, SUB: 1, CAMPAIGN: 2, CLIMB_TOWER: 3, SPECIAL_STORY: 4, DAILY: 5 };

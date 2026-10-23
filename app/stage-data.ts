@@ -41,10 +41,10 @@ export type Stage = {
    *  (scripts/build-stages-crisis.py, 2026-10-16). 도면은 본 도감과 같은 public/stage 폴더다 */ cc?: 1;
   /** (홀로그램 매트릭스만) 지표 — set: 지표 세트 이름, medal: 훈장 점수 [하급, 상급],
    *  r: [점수, 설명, 필수 1|0, 배타 묶음 번호(-1 = 없음)][] (게임 표 순서) */
-  rn?: { set?: string | null; medal?: (number | null)[]; r: [number, string, number, number][] };
+  rn?: { set?: string | null; medal?: (number | null)[]; r: [number, string, number, number, string?][] };
   /** (위기 협약 시즌 맵만) 지표·계약 — PRTS 위키 기준, 비공식 번역 (scripts/build-stages-crisis.py contract_runes).
    *  t: 2 = 시즌 2 지표(차원·점수), 1 = 시즌 1 계약(등급) · s: [묶음 이름, 세트 추가 점수][] · r: [묶음 번호|-1, 이름, 효과, 차원, 점수|등급, 칸 수][] */
-  cr?: { t: 1 | 2; s: [string, number][]; r: [number, string, string, string, number, number][] };
+  cr?: { t: 1 | 2; s: [string, number][]; r: [number, string, string, string, number, number, string?][] };
   /** 이벤트 도감의 미래시(중섭 선행) 작전 — 경로·시뮬 출처가 future-routes.json 이다 (scripts/build-future-dex.py) */
   fut?: 1;
 };

@@ -27,7 +27,7 @@ export const SANDBOX_TITLE: Record<"sand" | "anchor", Record<TitleLocale, string
     ja: "砂中の遺聞 - アークナイツ生息演算攻略 | テラアーカイブ",
   },
   anchor: {
-    ko: "재기동 앵커(重启锚点) - 명일방주 생존연산 신시즌 | 테라 아카이브",
+    ko: "리런치 앵커(重启锚点) - 명일방주 생존연산 신시즌 | 테라 아카이브",
     en: "重启锚点 - Arknights Reclamation Algorithm New Season | Terra Archive",
     ja: "重启锚点 - アークナイツ生息演算 新シーズン | テラアーカイブ",
   },

@@ -70,6 +70,10 @@ MAP_ROT = {"v2": {"ko": "로테이션 실험 장소", "en": "Rotating Test Site"
 NOTE = {"ko": "맵 목록(로테이션 포함)과 지표(계약)는 PRTS 위키의 중국 서버 기록을 옮긴 것이고 번역은 비공식입니다 — 한국 서버의 이름·수치와 다를 수 있습니다. 지표는 맵을 누르면 상세에 나옵니다.",
         "en": "Map lists (including rotations) and criteria (contracts) come from the PRTS wiki's CN-server records with unofficial translations — names and values may differ on Global. Open a map to see its criteria.",
         "ja": "マップ一覧（ローテーション含む）と指標（契約）はPRTS wikiの中国版の記録を移したもので、翻訳は非公式です。日本版の名称・数値と異なる場合があります。マップを開くと指標が表示されます。"}
+# 홀로그램 매트릭스 개요 — 시즌 표엔 설명문이 없어 모드 설명을 적는다 (사용자 지적 2026-10-23 "개요 탭에 적을 만한 설명이 아무것도 없어?")
+NOTE_HM = {"ko": "지난 작전을 지표를 걸어 다시 도전하는 상설 모드입니다. 작전마다 '필수' 지표는 늘 걸리고, 나머지 지표를 골라 점수를 쌓습니다. 같은 묶음의 지표는 하나만 고를 수 있고, 점수가 작전별 하급·상급 기준에 닿으면 훈장을 받습니다. 작전을 누르면 지표를 골라 점수와 적 능력치 변화를 바로 볼 수 있습니다.",
+           "en": "A permanent mode where you replay past operations with criteria applied. Each operation has mandatory criteria that are always on; pick others to build up points. Only one criterion per group can be chosen, and reaching an operation's junior or senior score earns a medal. Open an operation to pick criteria and see the score and enemy stat changes.",
+           "ja": "過去の作戦に指標をかけて再挑戦する常設モードです。作戦ごとに「必須」指標は常にかかり、残りの指標を選んで点数を積み上げます。同じグループの指標は1つだけ選べ、点数が作戦ごとの下級・上級の基準に届くと勲章がもらえます。作戦を開くと指標を選んで点数と敵の能力値の変化をすぐ確認できます。"}
 EV_ETA = {"crisis_v2_season_5_1": "2026-12"}   # 한섭 개방 예정 (사용자 제공 일정 2026-10-16 "위기협약 #5 12/10")
 FUTURE = {"ko": " (중국 서버 선행)", "en": " (CN preview)", "ja": "（中国版先行）"}
 PERIOD = {"ko": "{srv} 서버 기간 {a} ~ {b}", "en": "{srv} server: {a} – {b}", "ja": "{srv}版の開催期間 {a}～{b}"}
@@ -371,6 +375,68 @@ def matrix_stage(season_id, sid, srv):
     return own, own is None
 
 
+# 지표·계약 아이콘 (사용자 지적 2026-10-23 "각 제약도 아이콘이 있었을 텐데") — 게임 CDN 의 위기 협약 시즌 2 지표 그림
+# (arts/ui/[uc]crisisv2/runeicon) · 홀로그램 매트릭스 지표 그림(arts/ui/recalrune/runeicons) 을 public/stage/rune/<id>.webp 로.
+# 행의 마지막 칸 = 그림 id (없으면 ""). 시즌 1 계약 그림은 CDN 에 없다(PRTS 위키 그림 이름 규칙을 아직 못 찾음) — 빈칸
+RUNE_DIR = os.path.join(REPO, "public", "stage", "rune")
+_rune_names = None
+def rune_icon(rid):
+    global _rune_names
+    if not rid:
+        return ""
+    if _rune_names is None:
+        _rune_names = {}
+        try:
+            for srv in ("kr", "cn"):
+                for k in cdnassets._conn(srv).manifest():
+                    if "/runeicon" in k:
+                        _rune_names.setdefault(k.rsplit("/", 1)[-1].lower(), (k, srv))
+        except Exception as e:  # noqa: BLE001 — 못 받으면 그림 없이
+            print(f"  ⚠ 지표 그림 목록: {str(e)[:60]}", file=sys.stderr)
+    hit = _rune_names.get(str(rid).lower())
+    dest = os.path.join(RUNE_DIR, f"{rid}.webp")
+    if not hit:
+        # 시즌 1 계약 그림은 CDN 에 없다 — PRTS 위키 '文件:<계약 id>.png' (틀 危机合约词条 가 그 이름으로 부른다, 2026-10-23 확인)
+        return rid if os.path.exists(dest) or _prts_rune(rid, dest) else ""
+    if not os.path.exists(dest):
+        try:
+            png = cdnassets.png_bytes(hit[0], hit[1])
+            if not png:
+                return ""
+            os.makedirs(RUNE_DIR, exist_ok=True)
+            from imgutil import save_webp
+            save_webp(png, dest, photo=False, max_px=96)
+        except Exception as e:  # noqa: BLE001
+            print(f"  ⚠ 지표 그림 {rid}: {str(e)[:60]}", file=sys.stderr)
+            return ""
+    return rid
+
+
+_prts_dead = False
+def _prts_rune(rid, dest):
+    global _prts_dead
+    if _prts_dead:
+        return False
+    import urllib.parse as _up
+    url = "https://prts.wiki/index.php?" + _up.urlencode({"title": "Special:FilePath", "file": f"{rid}.png"})
+    hdr = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+           "Accept-Language": "ko,en;q=0.9"}
+    try:
+        import urllib.request as _ur
+        raw = _ur.urlopen(_ur.Request(url, headers=hdr), timeout=20).read()
+        if not raw[:4] == b"\x89PNG":
+            return False
+        os.makedirs(RUNE_DIR, exist_ok=True)
+        from imgutil import save_webp
+        save_webp(raw, dest, photo=False, max_px=96)
+        return True
+    except Exception as e:  # noqa: BLE001 — 404 는 그 계약만, 접속 자체가 안 되면 나머지는 건너뛴다
+        if "404" not in str(e):
+            print(f"  ⚠ PRTS 계약 그림 {rid}: {str(e)[:60]} — 나머지 PRTS 그림은 건너뜀", file=sys.stderr)
+            _prts_dead = True
+        return False
+
+
 def contract_runes(p, loc):
     """맵 상세의 지표(계약) — PRTS 표 그대로, 문구는 crisis-tl.json 으로 옮긴다 (비공식 번역).
     시즌 2: {t: 2, s: [[지표 세트, 추가 점수]], r: [[세트 번호|-1, 이름, 효과, 차원, 점수, 칸 수]]}
@@ -387,9 +453,9 @@ def contract_runes(p, loc):
                 sets.append([tk, r.get("setBonus") or 0])
             si = [x[0] for x in sets].index(tk)
         if p["gen"] == "v2":
-            rows.append([si, T(r.get("name")) or r.get("id"), T(r.get("desc")) or "", T(r.get("dim")) or "", r.get("score") or 0, r.get("count") or 0])
+            rows.append([si, T(r.get("name")) or r.get("id"), T(r.get("desc")) or "", T(r.get("dim")) or "", r.get("score") or 0, r.get("count") or 0, rune_icon(r.get("id"))])
         else:
-            rows.append([si, T(r.get("name")) or r.get("id"), T(r.get("desc")) or "", "", r.get("level") or 0, 0])
+            rows.append([si, T(r.get("name")) or r.get("id"), T(r.get("desc")) or "", "", r.get("level") or 0, 0, rune_icon(r.get("id"))])
     return {"t": 2 if p["gen"] == "v2" else 1, "s": sets, "r": rows}
 
 
@@ -437,7 +503,7 @@ def build(loc, srv):
                     if g not in groups:
                         groups.append(g)
                     gi = groups.index(g)
-                rn.append([r.get("score") or 0, d or r["runeId"], 1 if r.get("essential") else 0, gi])
+                rn.append([r.get("score") or 0, d or r["runeId"], 1 if r.get("essential") else 0, gi, rune_icon(r.get("runeIcon"))])
             rec["rn"] = {"set": T(st.get("fixedRuneSeriesName")), "medal": [st.get("juniorMedalScore"), st.get("seniorMedalScore")],
                          "r": rn}
         lv_srv, lv = LEVELS[p["rel"]]
@@ -709,8 +775,7 @@ for loc, srv, suf in LOCALES:
         if en_seen:
             row["enemies"] = [[k, v] for k, v in en_seen.items()]
         row["ser"] = SER[sid[:4]]
-        if not sid.startswith("recalRune"):
-            row["note"] = NOTE[loc]
+        row["note"] = NOTE_HM[loc] if sid.startswith("recalRune") else NOTE[loc]
         rows.append(row)
         ex = extra_of(sid, loc, srv, fut)
         xd = os.path.join(DATA, "event-extra", loc)

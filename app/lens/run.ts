@@ -7,7 +7,7 @@ import { traceOcr } from "./ocr-trace";
 import { setBridgePipFloor } from "./bridge";
 import { asset } from "../assets";
 import { TOPICS } from "../rogue-topics";
-import { buildIndex, normText, analyzeLines, analyzeChinese, cnMapScreen, analyzeRecruit, recruitLayoutOk, type RecruitLang, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
+import { buildIndex, normText, normTextJa, analyzeLines, analyzeChinese, cnMapScreen, analyzeRecruit, recruitLayoutOk, type RecruitLang, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
 import { buildAcIndex, bondOfLine, parseSeats, isAcInfoScreen, classifyAcScreen, parseAcMode, badgeRectFromTitle,
   parseAcBand, parseDeployLeft, parseAcHud, findAcRings, ringNameRect, ringNumRect, RING_DIGITS, parseRingStack,
@@ -524,15 +524,20 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // 화면 전체 읽기에 이미 잡힌 왼쪽 아래 구석 숫자를 쓴다. 좌표는 0~1 정규화 (session.boxes)
     let hudGrade: number | null = null;
     let comboScreen = false;
+    // 모집 조합 선택 화면 — 카드(모집 조합) 이름만 본다. 다른 항목은 카드 이름·잘린 설명의 오탐뿐이다 ('차근차근'→작전 '차근차근 유도')
+    let groupScreen = false;
     let rogueScreen: "map" | "runStart" | "squadSelect" | "lobby" | undefined;
     // 탐험 로비에서 읽은 진행 중 판 — 현재 층·난이도 (아래 판정 끝에서 이동 목표로 쓴다)
     let lobbyRun: { zone: (typeof index.entries)[number] | null; grade: number | null } | null = null;
     {
       const bx = session.boxes();
       const topN = bx.filter((b) => b.y1 < 0.2).map((b) => normText(b.text));
+      // 일본어판 화면 제목 — 한국어 정규화(normText)는 가나·한자를 지워 영영 안 걸렸다 (PRTS 틀렸어요 41974f77 2026-10-23, 일섭
+      // '招集券選択' = 모집 조합 선택이 '見つからず'). 화면에서 확인한 문구만 넣는다
+      const topJa = locale === "ja" ? bx.filter((b) => b.y1 < 0.2).map((b) => normTextJa(b.text)) : [];
       // 모집 조합 선택(쉐이 초기 모집 전 단계) — 카드 이름 '차근차근'이 작전 '차근차근 유도'로, 잘린 '디펜더, 캐…'가 소장품 '디펜더-2'로 잡혔다
       // (틀렸어요 2026-10-13). 이 화면엔 알아볼 항목이 없어 판정을 통째로 비운다 — 판 시작 화면이라 분대·난이도는 초기 모집처럼 다룬다
-      if (topN.some((x) => x.includes("모집조합선택"))) { rogueScreen = "runStart"; comboScreen = true; }
+      if (topN.some((x) => x.includes("모집조합선택")) || topJa.some((x) => x.includes("招集券選択"))) { rogueScreen = "runStart"; groupScreen = true; }
       else if (topN.some((x) => x.includes("초기모집"))) rogueScreen = "runStart";
       else if (topN.some((x) => x.includes("분대선택"))) rogueScreen = "squadSelect";
       // 탐험 로비(테마 첫 화면 — 계속 탐험·탐험 시작·심층 탐험·방문객 명단·정기 작전) — 판 밖이라 알아볼 게 없다.
@@ -823,6 +828,13 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // 분대 선택·초기 모집 화면에는 고를 노드가 없다 — 거기서 잡힌 작전·조우는 버린다
     // (틀렸어요 2026-10-13 쉐이 분대 선택 화면에 '차근차근 유도' 작전이 떴다)
     if (comboScreen) { oc.target = { kind: "none" }; oc.section = null; oc.entities = []; }
+    if (groupScreen) {
+      const gs = oc.entities.filter((e) => e.section === "rgrp");
+      const tp = gs[0]?.topic;
+      oc.entities = tp ? gs.filter((e) => e.topic === tp) : [];
+      oc.section = tp ? "rgrp" : null;
+      oc.target = tp ? { kind: "goto", goto: { page: "rogue", topic: tp, view: "archive", arcTab: "recruit", highlight: oc.entities.map((e) => e.id) } } : { kind: "none" };
+    }
     // 탐험 로비 — 진행 중인 판이면 그 판으로: PRTS 링크는 페이지를 옮기지 않으므로(2026-10-12 규칙) 층 창에 현재 층을 띄우고
     // 난이도 선택값만 맞춘다. 스크린샷 레이더는 그 테마의 난이도 탭(그 난이도). 판이 없는 로비는 스크린샷 레이더만 지도 탭으로
     if (rogueScreenOut === "lobby") {

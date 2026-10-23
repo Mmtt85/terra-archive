@@ -8,6 +8,7 @@
 //    게임 표에 **없다** — 게임 안 배너 '상세 정보'(서버가 내려 주는 공지)의 규칙이라 아래 상수로 둔다.
 // 풀(app/data/gacha-pool.json, scripts/build-gacha-pool.py): '인재 채용' 오퍼에서 한정·콜라보를 뺀 것.
 // ⚠ 게임 데이터에 일반·한정 배너의 픽업이 없어 픽업은 사용자가 고른다. 한정 배너의 '지난 한정 5배 가중'은 넣지 않았다.
+import { ImageActions } from "./image-actions";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usedFontCss } from "./font-css";
@@ -94,21 +95,6 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
     return () => clearTimeout(timer);
   }, [toast]);
   const closeShot = () => { if (shot) URL.revokeObjectURL(shot.url); setShot(null); setShotOpen(false); setShotFailed(false); setShotMsg(null); };
-  const saveShot = () => {
-    if (!shot) return;
-    const a = document.createElement("a");
-    a.href = shot.url;
-    a.download = `terra-archive-gacha-${new Date().toISOString().slice(0, 10)}.png`;
-    a.click();
-  };
-  const copyShot = async () => {
-    try {
-      if (!shot) throw new Error("blob");
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": shot.blob })]);
-      setShotMsg(null);
-      setToast({ text: t("이미지를 클립보드에 복사했습니다."), key: Date.now() });
-    } catch { setShotMsg(t("이 브라우저에서는 복사할 수 없습니다 — PNG로 저장해 주세요.")); }
-  };
   const exportImage = async () => {
     const el = resultsRef.current;
     if (!el || shooting) return;
@@ -408,8 +394,9 @@ export function GachaSim({ operators, onShowOperator, includeFuture }: { operato
             <div className="me-share-wrap">
               <header className="me-share-bar">
                 <div className="me-share-actions">
-                  <button type="button" className="import-action" disabled={!shot} onClick={() => void copyShot()}><span className="btn-icon" aria-hidden>⧉</span>{t("복사")}</button>
-                  <button type="button" className="import-action apply" disabled={!shot} onClick={saveShot}><span className="btn-icon" aria-hidden>⤓</span>{t("PNG 저장")}</button>
+                  {/* 저장·복사 ▾ — WebP / PNG (app/image-actions.tsx, 2026-10-23) */}
+                  <ImageActions blob={shot?.blob ?? null} name={`terra-archive-gacha-${new Date().toISOString().slice(0, 10)}`} buttonClassName="import-action"
+                    onNote={(text) => { setShotMsg(null); setToast({ text, key: Date.now() }); }} />
                 </div>
               </header>
               {shotMsg && <p className="me-note">{shotMsg}</p>}

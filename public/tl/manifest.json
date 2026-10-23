@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-16",
+ "updated": "2026-10-23",
  "files": [
   {
    "file": "op.json",
@@ -15,27 +15,27 @@
   },
   {
    "file": "enemy.json",
-   "url": "https://files.terra-archive.net/assets/tl/enemy.json?v=8f5fa743a2273961",
-   "label": "적 — 이름·설명·능력 — 공식 한국어 3,186 + 비공식 번역 362",
-   "hash": "8f5fa743a2273961"
+   "url": "https://files.terra-archive.net/assets/tl/enemy.json?v=239b04a380a2bc03",
+   "label": "적 — 이름·설명·능력 — 공식 한국어 3,186 + 비공식 번역 378",
+   "hash": "239b04a380a2bc03"
   },
   {
    "file": "stage.json",
-   "url": "https://files.terra-archive.net/assets/tl/stage.json?v=64e36ddcac89758c",
-   "label": "작전 — 이름·설명 — 공식 한국어 5,316 + 비공식 번역 315",
-   "hash": "64e36ddcac89758c"
+   "url": "https://files.terra-archive.net/assets/tl/stage.json?v=0224aee88e0cf8fa",
+   "label": "작전 — 이름·설명 — 공식 한국어 5,316 + 비공식 번역 323",
+   "hash": "0224aee88e0cf8fa"
   },
   {
    "file": "ra.json",
-   "url": "https://files.terra-archive.net/assets/tl/ra.json?v=17b99053655fd21d",
+   "url": "https://files.terra-archive.net/assets/tl/ra.json?v=a906787598d6aeb5",
    "label": "생존연산 (비공식 번역)",
-   "hash": "17b99053655fd21d"
+   "hash": "a906787598d6aeb5"
   },
   {
    "file": "is.json",
-   "url": "https://files.terra-archive.net/assets/tl/is.json?v=24f64eec1fd08223",
+   "url": "https://files.terra-archive.net/assets/tl/is.json?v=1ea3830e80134bcc",
    "label": "통합전략 1~6 — 소장품·노드·조우·엔딩·전투 (테마 구분 없이 한 벌)",
-   "hash": "24f64eec1fd08223"
+   "hash": "1ea3830e80134bcc"
   },
   {
    "file": "story.json",

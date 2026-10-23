@@ -5,6 +5,7 @@
 // 내 정보 '이미지로 내보내기'(me-share.tsx)와 같은 방식. 새 탭은 쓰지 않는다 (새 탭에서 이미지가 안 뜬 전례).
 // 판은 관리자 테마와 무관하게 고정 색(밝은 판)이다 — 어디에 붙여도 같은 모양이어야 해서.
 
+import { ImageActions } from "../image-actions";
 import { useEffect, useRef, useState } from "react";
 import { ModalWindow } from "../modal-window";
 import { usedFontCss } from "../me-share";
@@ -221,29 +222,13 @@ export function VisitsReport({ data, from, to, who, onlyHuman, tops, onClose }: 
     return () => { alive = false; if (made) URL.revokeObjectURL(made); };
   }, []);
 
-  const save = () => {
-    if (!url) return;
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `terra-archive-visits-${from}${from === to ? "" : `_${to}`}.png`;
-    a.click();
-  };
-  const copy = async () => {
-    try {
-      if (!blob) throw new Error("blob");
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-      setMsg("이미지를 클립보드에 복사했습니다.");
-    } catch { setMsg("이 브라우저에서는 복사할 수 없습니다 — PNG로 저장해 주세요."); }
-  };
-
   return (
     <ModalWindow label="방문 통계 리포트" className="operator-modal vzr-modal" onClose={onClose}>
       <div className="vzr-wrap">
         <header className="vzr-bar-top">
           {msg && <span className="vz-muted">{msg}</span>}
           <div className="admin-tools">
-            <button type="button" disabled={!blob} onClick={() => void copy()}>복사</button>
-            <button type="button" className="selected" disabled={!url} onClick={save}>PNG 저장</button>
+            <ImageActions blob={blob} name={`terra-archive-visits-${from}${from === to ? "" : `_${to}`}`} onNote={setMsg} />
           </div>
         </header>
         <div className="vzr-stage">

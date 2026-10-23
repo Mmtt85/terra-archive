@@ -339,6 +339,9 @@ export function buildIndex(topics: any[], norm: Normalizer = normText, cnOnlyTop
         ...(cnN ? { cnN } : {}), ...(alts.length ? { cnAltN: alts } : {}) });
     };
     for (const b of d.bands ?? []) add("band", b.id, b.name, `${b.usage || ""} ${b.desc || ""}`, undefined, b.cn);
+    // 모집권·승진권과 판 시작 모집 조합 (2026-10-23 — 종전엔 데이터에 없어 인식이 안 됐다, build-rogue.py tickets·recruitGroups)
+    for (const k of d.tickets ?? []) add("ticket", k.id, k.name, `${k.usage || ""} ${k.desc || ""}`, undefined, k.cn);
+    for (const g of d.recruitGroups ?? []) add("rgrp", g.id, g.name, g.desc || "", undefined, g.cn);
     for (const r of d.relics ?? []) add("relic", r.id, r.name, `${r.usage || ""} ${r.desc || ""}`, undefined, r.cn);
     for (const s of d.stages ?? []) add("stage", s.id, s.name, s.desc || "", undefined, s.cn);
     for (const z of d.zones ?? []) add("zone", z.id, z.name, z.desc || "", undefined, z.cn);
@@ -403,6 +406,8 @@ const SECTION_NAV: Record<string, { view: string; arcTab?: string; modalType?: s
   enc: { view: "map", modalType: "enc" },
   relic: { view: "relic", modalType: "relic" },
   band: { view: "archive", arcTab: "band" },
+  ticket: { view: "archive", arcTab: "recruit" },
+  rgrp: { view: "archive", arcTab: "recruit" },
   tool: { view: "archive", arcTab: "tool" },
   capsule: { view: "archive", arcTab: "capsule" },
   scrap: { view: "archive", arcTab: "scrap" }, // 부품(零件) — 블랙플로우 전시관 탭
@@ -446,6 +451,9 @@ export function analyzeLines(
   // 각뿔을 받을 때마다 암호판이 열렸다. 테마 정보가 전혀 없는 줄이므로 통째로 버린다.
   const linesM = linesN.filter((l) =>
     !l.startsWith("오리지늄각뿔") && !/모집권\d*$/.test(l) && !/1명모집$/.test(l));
+  // 테마가 정해진 뒤(한 테마 안 재채점 within)엔 모집권 줄도 본다 — 이제 모집권이 테마마다 색인돼 있다 (2026-10-23,
+  // 사용자 지적 "모집권은 등록 안 해놔서 인식이 안 된다"). 테마 투표(linesM)에선 여전히 뺀다 — 모든 테마에 같은 이름이라 표만 흐린다
+  const linesW = linesN.filter((l) => !l.startsWith("오리지늄각뿔"));
 
   // 화면에 '긴급 작전'이 보이면 스테이지 모달을 긴급 탭으로 (2026-07-26 제보:
   // 긴급 작전맵의 '긴급'이 반영 안 됨 — 일반 탭으로만 열렸다)
@@ -467,7 +475,7 @@ export function analyzeLines(
   if (opts?.context?.lock && opts.context.topic) {
     const topic = opts.context.topic;
     const name = index.entries.find((e) => e.topic === topic)?.topicName ?? topic;
-    const w = within(topic, dropTitleFrags(linesM, norm(name)), index);
+    const w = within(topic, dropTitleFrags(linesW, norm(name)), index);
     // 이름 매칭 또는 **조우 본문 우세** — 조우 스토리 화면은 제목이 장식 서체라 이름을 못
     // 읽지만, 본문 문단이 데이터의 조우 설명과 그대로 일치한다(트라이그램 포함율). 단독
     // 조우 모달 + 점수 2 이상(장문 여러 줄 일치)이면 이름 없이도 확정한다 (영상3 f172).
@@ -539,7 +547,7 @@ export function analyzeLines(
     return null;
   })();
   if (anchor) {
-    const w = within(anchor.topic, dropTitleFrags(linesM, norm(anchor.name)), index);
+    const w = within(anchor.topic, dropTitleFrags(linesW, norm(anchor.name)), index);
     // 항목은 **이름 수준 매칭**이 있을 때만 연다 — 테마 메인처럼 이름이 없는 화면에서
     // 본문 조각 잡음이 유물 모달을 여는 오작동 방지 (2026-07-26 제보: 사미 메인에서
     // '캔낫의 표식'이 뜸). 잡음뿐이면 그 테마의 지도로만 보낸다.
@@ -559,8 +567,9 @@ export function analyzeLines(
   if (ctxTopic) {
     const mineScore = topicScore.get(ctxTopic) ?? 0;
     const bestOther = Math.max(0, ...[...topicScore.entries()].filter(([tp]) => tp !== ctxTopic).map(([, s]) => s));
-    if (bestOther < mineScore * SWITCH_MARGIN) {
-      const g = within(ctxTopic, linesM, index);
+    // 다른 테마 표가 0 이면(모집권처럼 테마 투표에서 뺀 줄만 보이는 화면 — 2026-10-23) 현재 테마 안에서 본다
+    if (bestOther === 0 || bestOther < mineScore * SWITCH_MARGIN) {
+      const g = within(ctxTopic, linesW, index);
       // ⚠ 이 지름길은 토픽 투표·동점 검사를 건너뛰므로 **이름 수준 매칭**이 있을 때만
       //   쓴다. 본문 조각만으로 잡힌 것에 이 길을 열어주면 전투 화면처럼 이름이 없는
       //   화면에서 OCR 잡음이 그대로 확신 이동이 된다 (2026-07-26 오인식 사례).
@@ -597,12 +606,12 @@ export function analyzeLines(
   }
 
   // 2패스: 승자 토픽 안에서만 재채점 (within 참고)
-  const w = within(top.topic, linesM, index);
+  const w = within(top.topic, linesW, index);
   // 테마 전환 가드 — 현재 테마가 있는데 다른 테마가 이겼다면 **이름 수준 매칭**이 있어야
   // 넘어간다. 본문 조각 잡음만으로는 절대 테마를 갈아타지 않는다 (2026-07-26 제보:
   // 사미 플레이 중 쉐이·살카즈로 튐). 이름이 없으면 현재 테마 안에서 다시 시도한다.
   if (ctxTopic && top.topic !== ctxTopic && !(w && w.entities.some((e) => e.nameHit))) {
-    const g = within(ctxTopic, linesM, index);
+    const g = within(ctxTopic, linesW, index);
     return g
       ? { screens, entities: g.entities, topics, section: g.section, target: { kind: "goto", goto: markEmg(g.goto) } }
       : { screens, entities: [], topics, section: null, target: { kind: "none" } };
@@ -851,7 +860,7 @@ function dedupEntities(solids: LensEntity[]): LensEntity[] {
 /** 아이템류 섹션 — 맵 노드가 아니라 **물건**이라 이동 규칙(모아보기)이 따로다.
  *  화면(rogue.tsx)도 조우·작전 화면에 같이 떠 있는 소장품을 골라내는 데 쓴다
  *  (제보 16138722, 2026-09-05) — 그래서 여기서 내보낸다. */
-export const LENS_ITEM_SECTIONS = new Set(["relic", "tool", "capsule", "mech", "scrap"]);
+export const LENS_ITEM_SECTIONS = new Set(["relic", "tool", "capsule", "mech", "scrap", "ticket"]);
 const ITEM_SECTIONS = LENS_ITEM_SECTIONS;
 
 // 특정 토픽+섹션의 확신 엔티티들로 LensGoto 구성.

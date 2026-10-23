@@ -62,6 +62,8 @@ export default function OmniPanel({ tick = 0 }: { tick?: number }) {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [err, setErr] = useState("");
   const [top, setTop] = useState(30);
+  // 보기 — 0건만(종전) / 결과 나온 것(히트) / 전체 (사용자 지시 2026-10-23 "히트한 검색 키워드 보기도")
+  const [view, setView] = useState<"zero" | "hit" | "all">("zero");
   const [rev, setRev] = useState(0);
   const from = useMemo(() => new Date(kstStartOfToday() - (days - 1) * 86400_000).toISOString(), [days]);
   useEffect(() => {
@@ -95,28 +97,32 @@ export default function OmniPanel({ tick = 0 }: { tick?: number }) {
   const people = new Set(rows.map((r) => r.visitor).filter(Boolean)).size;
   const picked = rows.filter((r) => r.target).length;
   const zero = rows.filter((r) => (r.n ?? 0) === 0).length;
-  // 결과가 0건이었던 적이 있는 말만 (사용자 지시 2026-10-20 "결과 안 나온 애들만") — 직접 연결을 달 후보
-  const shown = groups.filter((g) => g.zero).slice(0, top);
-  const zeroRows = rows.filter((r) => (r.n ?? 0) === 0);
+  // 결과가 0건이었던 적이 있는 말만 (사용자 지시 2026-10-20 "결과 안 나온 애들만") — 직접 연결을 달 후보. '결과 나온 것'은 한 번이라도 결과가 있었던 말
+  const keep = (g: { n: number; zero: number }) => (view === "zero" ? g.zero > 0 : view === "hit" ? g.zero < g.n : true);
+  const shown = groups.filter(keep).slice(0, top);
+  const zeroRows = rows.filter((r) => (view === "zero" ? (r.n ?? 0) === 0 : view === "hit" ? (r.n ?? 0) > 0 : true));
+  const VIEWS = [{ value: "zero", label: "0건만" }, { value: "hit", label: "결과 나온 것" }, { value: "all", label: "전체" }];
   return (
     <section className="om-panel">
       <div className="vz-head">
         <h3 className="vz-h">만능검색 검색 내역</h3>
         <span className="vz-note">{rows.length ? `검색 ${rows.length.toLocaleString()}회 · ${people}명 · 골라서 이동 ${Math.round((picked / rows.length) * 100)}% · 결과 0건 ${zero}회 · 직접 연결 ${answers.length}개` : "이 기간에는 기록이 없습니다 (2026-10-19부터 기록)"}</span>
         <div className="vz-head-tools admin-tools">
+          <Dropdown ariaLabel="보기" label={VIEWS.find((v) => v.value === view)!.label} selected={[view]}
+            items={VIEWS} onPick={(v) => setView(v as "zero" | "hit" | "all")} />
           {PERIODS.map((p) => <button key={p.k} type="button" className={`tab-btn${days === p.k ? " selected" : ""}`} onClick={() => setDays(p.k)}>{p.label}</button>)}
           <Dropdown ariaLabel="보일 줄 수" label={`상위 ${top}`} selected={[String(top)]}
             items={[30, 100, 500].map((n) => ({ value: String(n), label: `상위 ${n}` }))} onPick={(v) => setTop(Number(v))} />
         </div>
       </div>
-      <p className="vz-note">결과가 0건이었던 검색어만 보입니다. 주소를 달면, 다음부터 그 말로 검색할 때 맨 위에 '바로가기'가 뜹니다. 주소는 사이트 경로(<code>/me#stages</code>)로 적으면 영어·일본어 화면에선 그 언어 경로로 바뀝니다. 비우고 저장하면 지웁니다.</p>
+      <p className="vz-note">{view === "zero" ? "결과가 0건이었던 검색어만 보입니다." : view === "hit" ? "결과가 한 번이라도 나온 검색어입니다 — '가장 많이 고른 곳'이 그 말로 사람들이 찾던 것." : "모든 검색어입니다."} 주소를 달면, 다음부터 그 말로 검색할 때 맨 위에 '바로가기'가 뜹니다. 주소는 사이트 경로(<code>/me#stages</code>)로 적으면 영어·일본어 화면에선 그 언어 경로로 바뀝니다. 비우고 저장하면 지웁니다.</p>
       <div className="vz-tablewrap"><table className="vz-table om-table">
         <thead><tr><th>검색어</th><th>횟수</th><th>사람</th><th>0건</th><th>안 고름</th><th>가장 많이 고른 곳</th><th>직접 연결</th></tr></thead>
         <tbody>{shown.map((g) => {
           const best = [...g.targets.entries()].sort((a, b) => b[1] - a[1])[0];
           const ans = answerOf.get(normSearch(g.q));
           return (
-            <tr key={g.q} className="om-miss">
+            <tr key={g.q} className={g.zero ? "om-miss" : undefined}>
               <td><code>{g.q}</code></td><td>{g.n}</td><td>{g.people.size}</td><td>{g.zero || "—"}</td><td>{g.none || "—"}</td>
               <td title={best?.[0] ?? ""}>{best ? `${label(best[0])} (${best[1]})` : "—"}</td>
               <td><AnswerEditor key={`${g.q}|${ans?.url ?? ""}`} q={g.q} cur={ans} onSaved={() => setRev((n) => n + 1)} /></td>
@@ -125,7 +131,7 @@ export default function OmniPanel({ tick = 0 }: { tick?: number }) {
         })}</tbody>
       </table></div>
 
-      <div className="vz-head vz-subhead"><h4 className="vz-h">최근 0건 검색</h4></div>
+      <div className="vz-head vz-subhead"><h4 className="vz-h">{view === "zero" ? "최근 0건 검색" : view === "hit" ? "최근 결과 나온 검색" : "최근 검색"}</h4></div>
       <div className="vz-tablewrap"><table className="vz-table">
         <thead><tr><th>시각</th><th>누구</th><th>검색어</th><th>결과</th><th>고른 곳</th></tr></thead>
         <tbody>{zeroRows.slice(0, top).map((r, i) => (

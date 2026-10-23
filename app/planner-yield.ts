@@ -74,6 +74,8 @@ export type DailyYield = {
   droneGold: number;
   /** 방별 하루 평균 배수(1 + %효율/100, A·B조 시계 비율로 섞음) — 드론 덤(droneBoost)이 쓴다 */
   roomRates: Record<string, number>;
+  /** 조마다 방 배수(섞지 않은 값) — 드론 덤은 켠 조의 효율로 센다 (사용자 지시 2026-10-23 "A조 드론 가속이 B조까지 가면 안 된다") */
+  shiftRates: Record<string, number>[];
   /** [A조, B조] 교대 시계(시간)와 그 비율 — 하루를 두 조로 섞은 근거 */
   hours: number[];
   weights: number[];
@@ -94,6 +96,7 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
   let gold = 0, exp = 0, lmd = 0, goldNeed = 0, dronePct = 0;
   let goldCells = 0, expCells = 0;
   const roomRates: Record<string, number> = {};
+  const shiftRates: Record<string, number>[] = [];
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
     const teamAt = (key: string): InfraOp[] => {
       const shifts = plan.assignments[key] ?? [];
@@ -119,6 +122,7 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
       // 방 %효율. 무인 시설도 기본 속도 100%로 돌아가므로 배수는 (1 + %/100)이다.
       const rate = 1 + teamScore(teamAt(cell.key), cell.room, ctx) / 100;
       roomRates[cell.key] = (roomRates[cell.key] ?? 0) + rate * w;
+      (shiftRates[shift] ??= {})[cell.key] = rate;
       if (cell.room === "TRADING") {
         lmd += ORDER_LMD_HOUR * 24 * rate * w;
         // 순금 소비는 방 %를 그대로 쓴다 — 프로바이조(위약 배상)는 오더당 납품 순금이 실제로
@@ -155,7 +159,7 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
     drones, dronePct,
     droneRecords: perDrone(exp, expCells) / EXP_PER_RECORD,
     droneGold: perDrone(gold, goldCells),
-    roomRates,
+    roomRates, shiftRates,
     hours, weights,
   };
 }
@@ -165,17 +169,23 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
 // 자동편성 점수·비교에는 넣지 않는다 — 넣으면 엔진이 고르는 편성이 사람마다 흔들리고(드론 쓰는 곳은 정답이 없다) 역검증을 다시
 // 거쳐야 한다. 드론 1개 = 그 방 남은 시간 180초 단축 → 그 방이 180초 동안 버는 양.
 export type DroneBoost = { key: string; pct: number; amount: number; unit: "records" | "gold" | "lmd" };
+/** 드론 키 'MANU1@0' = 칸@조(0 A · 1 B). 조가 없는 옛 저장값은 A조로 본다 */
+export const droneCell = (key: string): { cell: string; shift: number } => {
+  const [cell, s] = key.split("@");
+  return { cell, shift: Number(s) || 0 };
+};
 export function droneBoosts(y: DailyYield, keys: string[]): DroneBoost[] {
-  const live = keys.filter((key) => y.roomRates[key] != null);
+  const live = keys.filter((key) => { const d = droneCell(key); return y.shiftRates[d.shift]?.[d.cell] != null; });
   if (!live.length) return [];
   const sec = (y.drones * DRONE_REDUCE) / live.length;   // 방 하나가 받는 하루 단축 시간(초)
   return live.map((key) => {
-    const cell = LAYOUT.find((c) => c.key === key)!;
-    const rate = y.roomRates[key];
+    const d = droneCell(key);
+    const cell = LAYOUT.find((c) => c.key === d.cell)!;
+    const rate = y.shiftRates[d.shift][d.cell];             // 켠 조의 효율 — 다른 조와 섞지 않는다
     const pct = (sec / DAY_SEC) * rate * 100;             // 그 방 효율에 더해지는 %p (하루 평균)
     if (cell.room === "TRADING") return { key, pct, amount: (ORDER_LMD_HOUR / 3600) * rate * sec, unit: "lmd" as const };
     if (cell.product === "gold") return { key, pct, amount: (rate * sec) / GOLD_PT, unit: "gold" as const };
-    const recipe = EXP_BY_LEVEL[Math.min(levelOf(key), EXP_BY_LEVEL.length) - 1];
+    const recipe = EXP_BY_LEVEL[Math.min(levelOf(d.cell), EXP_BY_LEVEL.length) - 1];
     return { key, pct, amount: ((rate * sec) / recipe.pt) * recipe.exp / EXP_PER_RECORD, unit: "records" as const };
   });
 }
