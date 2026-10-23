@@ -88,13 +88,15 @@ export function SortHandle({ children, onClick }: { children?: React.ReactNode; 
 /** 끌어 옮기기 공용 — 끄는 동안 칸이 포인터를 따라오고, 나머지 칸은 놓았을 때의 자리로 미리 미끄러져 비킨다(FLIP).
  *  놓으면 끌던 칸이 제자리로 스르륵 들어간다 (사용자 지시 2026-10-15 "선 하나 생기고 툭 떨어져서 헷갈리니 미리 보여 줘").
  *  자리는 칸의 배치 위치(offsetLeft/Top — 움직이는 transform 과 무관)로 가른다. twoD 면 격자(줄을 넘김)를 읽는 순서로 */
-function useLiveSort<K extends string>(keys: K[], attr: string, twoD: boolean, onDrop: (next: K[]) => void, threshold = 0) {
+export function useLiveSort<K extends string>(keys: K[], attr: string, twoD: boolean, onDrop: (next: K[]) => void, threshold = 0, swap = false) {
+  // swap — 끼워 넣지 않고 **두 칸을 맞바꾼다** (인프라 시설 자리 바꾸기, 2026-10-23). at = 맞바꿀 상대의 원래 자리
   const ref = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<{ key: K; at: number } | null>(null);
   const st = useRef<{ key: K; gx: number; gy: number; x: number; y: number; at: number; live: boolean; av: HTMLElement | null } | null>(null);
   const moved = useRef(false);   // 끌었으면 이어지는 click 은 삼킨다 (접은 칸 단추)
   const pos = useRef(new Map<string, [number, number]>());
-  const display = drag ? (() => { const r = keys.filter((k) => k !== drag.key); r.splice(drag.at, 0, drag.key); return r; })() : keys;
+  const swapped = (at: number, key: K) => { const r = [...keys]; const i = keys.indexOf(key); [r[i], r[at]] = [r[at], r[i]]; return r; };
+  const display = drag ? (swap ? swapped(drag.at, drag.key) : (() => { const r = keys.filter((k) => k !== drag.key); r.splice(drag.at, 0, drag.key); return r; })()) : keys;
 
   const items = () => [...(ref.current?.querySelectorAll<HTMLElement>(`:scope > [${attr}]`) ?? [])];
   const elOf = (k: string) => items().find((el) => el.getAttribute(attr) === k) ?? null;
@@ -125,6 +127,20 @@ function useLiveSort<K extends string>(keys: K[], attr: string, twoD: boolean, o
     const all = items();
     const others = all.filter((it) => it !== el);
     const mine = all.indexOf(el);   // 지금 보이는 순서에서 끄는 칸의 자리
+    if (twoD && swap) {
+      // 맞바꾸기 — 반 이상 겹친 칸의 **원래 자리**와 바꾼다. 아무 데도 안 겹치면 지금 고른 자리 그대로
+      for (const it of others) {
+        if (!it.offsetParent) continue;
+        const r = home(it);
+        const ov = Math.max(0, Math.min(right, r.left + r.width) - Math.max(left, r.left)) * Math.max(0, Math.min(bottom, r.top + r.height) - Math.max(top, r.top));
+        if (ov >= (r.width * r.height) / 2) {
+          // 자리 번호 = 지금 화면 순서에서 그 칸의 번호. 화면은 이미 (끄는 칸 ↔ s.at 칸) 이 바뀐 상태라,
+          // 원래 자리로 밀려나 있는 칸 위에 올리면 그 번호가 끄는 칸의 원래 자리 = 제자리로 돌아간다
+          return swapped(s.at, s.key).indexOf(it.getAttribute(attr) as K);
+        }
+      }
+      return s.at;
+    }
     if (twoD) {
       for (const [i, it] of others.entries()) {
         if (!it.offsetParent) continue;
@@ -217,7 +233,7 @@ function useLiveSort<K extends string>(keys: K[], attr: string, twoD: boolean, o
         if (to) { av.style.left = `${to.left}px`; av.style.top = `${to.top}px`; }
         window.setTimeout(() => av.remove(), 210);
       }
-      const next = keys.filter((k) => k !== s.key); next.splice(s.at, 0, s.key);
+      const next = swap ? swapped(s.at, s.key) : (() => { const r = keys.filter((k) => k !== s.key); r.splice(s.at, 0, s.key); return r; })();
       onDrop(next);
       setDrag(null);
     };

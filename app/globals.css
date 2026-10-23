@@ -5415,8 +5415,6 @@ html[lang="ja"] .potential-detail { word-break: normal; }
   gap: 8px;
 }
 /* 이미지로 보기 — 버튼 줄을 전폭으로 펴고 그 줄 맨 왼쪽 끝에 (사용자 지시 2026-10-14). 나머지는 그대로 오른쪽 정렬 */
-.planner-buttons:has(.planner-image-btn) { flex: 1 1 100%; }
-.planner-buttons .planner-image-btn { margin-right: auto; }
 /* 보조 버튼(빈 자리만·비우기·그 외) — 핵심 2버튼과 위계를 가르려 한 톤 낮춘다 (2026-07-27) */
 .planner-buttons button {
   border: 1px solid var(--btn-line);
@@ -20254,7 +20252,7 @@ main.site-main > .site-header {
   vertical-align: middle;
 }
 
-/* MAA 기반시설 내보내기 모달 (베타, 2026-08-02) — 교대 시각 입력·주의 문구 */
+/* MAA 기반시설 내보내기 모달 (2026-08-02, 베타 뗌·모양 정리 2026-10-23) — 교대 시각 입력·주의 문구 */
 .maa-times label {
   display: inline-flex;
   align-items: center;
@@ -20263,9 +20261,29 @@ main.site-main > .site-header {
 }
 .maa-times input[type="time"] {
   font: inherit;
-  padding: 4px 8px;
-  color: inherit;
+  height: 34px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-line);
+  border-radius: var(--r-sm);
+  color-scheme: light dark;
 }
+.maa-times input[type="time"]:focus-visible { outline: 2px solid var(--lime-line); outline-offset: 1px; }
+.maa-times input[type="time"], .maa-times input[type="time"]::-webkit-calendar-picker-indicator, .maa-times input[type="time"]::-webkit-datetime-edit-fields-wrapper { cursor: pointer; }
+.maa-download .maa-dl { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px; font-weight: 700; cursor: pointer; }
+.maa-download .maa-dl:disabled { cursor: not-allowed; }
+/* 오퍼 이름 언어 | 교대 시각 — 한 줄에 두 칸, 칸마다 테두리 상자 (사용자 지시 2026-10-23 "한 줄이되 칸 구분은") */
+.maa-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.maa-field { flex: 1 1 260px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-soft); }
+.maa-field h3 { margin: 0 0 8px; }
+.maa-field .maa-times { margin: 0; }
+.maa-row + .maa-note { margin: 10px 0 0; }   /* 두 칸 상자 아래 안내 — 붙어 보였다 (사용자 지적 2026-10-23) */
+/* 글자가 다른 창보다 커 보였다 (사용자 지적 같은 날) — 본문 13 · 목록 12 · 소제목 13 */
+.maa-modal .detail-section p { font-size: 13px; line-height: 1.6; }
+.maa-modal .detail-section h3 { font-size: 16px; font-weight: 800; }   /* 소제목은 본문(13)보다 확실히 크게 — 같아 보였다 (사용자 지적 2026-10-23) */
+.maa-modal .help-list li { font-size: 12px; line-height: 1.6; }
+.maa-modal .maa-times label { font-size: 12px; }
 .maa-note {
   color: var(--muted);
   font-size: 13px;
@@ -34667,3 +34685,16 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 
 /* 시뮬레이트 중 적 사거리 원 (2026-10-23) — 옅게 채우고 점선 테두리, 말을 가리지 않게 클릭은 통과 */
 .st-simrange { fill-opacity: .07; stroke-opacity: .45; stroke-width: .035; stroke-dasharray: .12 .08; pointer-events: none; }
+
+/* 인프라 시설 자리 바꾸기 (2026-10-23, app/me-order.tsx useLiveSort swap) — 이름 줄을 잡고 끈다.
+   끄는 동안 원래 칸은 놓일 자리에 반투명, 포인터를 따라오는 건 복사본(.me-drag-avatar) — 내 정보 더 보기 칸과 같은 결 */
+.ship-room.wing-room { cursor: grab; }
+.ship.wing-sorting, .ship.wing-sorting * { cursor: grabbing !important; user-select: none; }
+.ship-room.wing-dragging { opacity: .32; }
+/* 끄는 복사본은 원래 방 색 그대로 — 라임 테두리를 씌웠더니 발전소 색과 같아 보였다 (사용자 지적 2026-10-23) */
+
+/* MAA 연동 창 — 내보내기 / 불러오기 탭 (2026-10-23) */
+/* 사이트 공용 탭 단추(.tab-btn — 바탕 없이 밑줄만)를 쓴다 (사용자 지적 2026-10-23 "탭 버튼 공통으로 쓰는 거 따로 있잖아") — 글꼴·여백만 */
+.maa-modal .maa-tabs { display: flex; gap: 4px; margin: 0 0 14px; }
+.maa-modal .maa-tabs .tab-btn { height: 40px; padding: 0 18px; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
+.maa-import-note { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-soft); font-size: 13px; line-height: 1.6; white-space: pre-line; color: var(--ink2); }

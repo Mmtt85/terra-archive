@@ -1,5 +1,7 @@
 "use client";
 
+import { useLiveSort } from "./me-order";
+import { usePageHelp } from "./page-help";
 import { ImageActions } from "./image-actions";
 import { NewBadge } from "./new-badge";
 import { Fragment, lazy, memo, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -40,7 +42,9 @@ const ScannerModal = lazy(() => import("./scan/scanner").then((m) => ({ default:
 // 보유 오퍼 가져오기(MAA 파일·스크린샷·게임 로그인) 패널 — 2026-07-26
 import { RosterImportPanel } from "./roster-import";
 // MAA 커스텀 기반시설 JSON 내보내기 (베타) — 2026-08-02
-import { buildMaaInfrast } from "./maa-export";
+import { buildMaaInfrast, MAA_ROOM } from "./maa-export";
+/** MAA 시설 키 → 사이트 방 종류 (불러오기) */
+const MAA_ROOM_REV: Record<string, string> = Object.fromEntries(Object.entries(MAA_ROOM).map(([room, maa]) => [maa, room]));
 // 공용 창형 모달 — 이동·리사이즈·고정·z순서 (2026-08-03)
 import { ModalWindow } from "./modal-window";
 import type { AccountRoster } from "./account";
@@ -70,6 +74,9 @@ const RECYCLE_KEY = "terra-archive-infra-recycle";
 const TRAINING_KEY = "terra-archive-infra-training";
 // 드론 쓰는 방 (제보 554c7f80, 2026-10-22) — 방 카드의 '드론' 단추, 칸 key 목록(JSON). 자동편성엔 안 넣고 결과에 덤으로만 (planner-yield droneBoosts)
 const DRONE_KEY = "terra-archive-infra-drone";
+// 무역소·제조소·발전소 9칸 자리 순서 — 배치별 {243: [칸 key…], …} (2026-10-23)
+const WING_KEY = "terra-archive-infra-wing";
+const WING_ROOMS = new Set(["TRADING", "MANUFACTURE", "POWER"]);
 // 육성 추천 표시 개수 — 엔진은 정렬 전체를 반환하고, 숨긴 오퍼 자리는 다음 순위가 채운다
 const INVEST_SHOW = 20;
 
@@ -159,6 +166,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     // 키 = '칸@조' (2026-10-23 — 조마다 따로). 조가 없는 옛 저장값은 A조로
     try { const v = JSON.parse(localStorage.getItem(DRONE_KEY) ?? "[]"); if (Array.isArray(v)) setDroneKeys(v.filter((x) => typeof x === "string").map((x: string) => (x.includes("@") ? x : `${x}@0`))); } catch { /* 무시 */ }
   }, []);
+  // 무역소·제조소·발전소 자리 — 방 이름을 잡고 끌어 서로 맞바꾼다 (사용자 지시 2026-10-23). 배치(243·153·252·사용자 지정)마다
+  // 9칸 자리 순서를 기억한다. 팀·품목은 방을 따라가고, 이름 번호(무역소 1·2…)와 MAA 내보내기의 방 순서는 **놓인 자리 순서**를 따른다
+  const [wingOrders, setWingOrders] = useState<Record<string, string[]>>({});
+  useEffect(() => {
+    try { const v = JSON.parse(localStorage.getItem(WING_KEY) ?? "{}"); if (v && typeof v === "object") setWingOrders(v); } catch { /* 무시 */ }
+  }, []);
   const toggleDrone = (key: string) => setDroneKeys((cur) => {
     // 한 시설에만 몰아준다 (사용자 지시 2026-10-22) — 다른 방을 켜면 앞의 방은 꺼진다
     const next = cur.includes(key) ? [] : [key];
@@ -228,6 +241,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [showFlows, setShowFlows] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  usePageHelp("planner", () => setShowHelp(true));   // 도움말은 페이지 머리의 '?' (2026-10-23, 종전 '그 외' 메뉴)
   // 교대 탭의 짧은 링크 두 개가 여는 상세 모달 (사용자 요청 2026-07-28) —
   // "drain" = 지속 시간이 달라지는 이유, "policy" = A조·B조 교대 정책
   const [shiftNote, setShiftNote] = useState<ShiftNoteKind | null>(null);
@@ -1560,6 +1574,129 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const yieldDay = useMemo(() => (plan ? dailyYield(plan, effectiveOpById) : null), [plan, effectiveOpById]);
   // 드론 덤 — 방 카드에서 고른 방들에 하루 드론을 똑같이 나눠 부었다고 본다 (자동편성 점수엔 안 넣는다)
   const drones = useMemo(() => (yieldDay ? droneBoosts(yieldDay, droneKeys) : []), [yieldDay, droneKeys]);
+  // ── 9칸 자리 (무역소·제조소·발전소) — 기본은 배치 정의 순서(사용자 지정은 칸 번호 순), 기억한 순서가 같은 방 묶음이면 그걸로 ──
+  const wingDefault = LAYOUT.map((c, i) => [c, i] as const).filter(([c]) => WING_ROOMS.has(c.room))
+    .sort((a, b) => (a[0].slot ?? a[1]) - (b[0].slot ?? b[1])).map(([c]) => c.key);
+  const wingSaved = wingOrders[layout];
+  const wingKeys = wingSaved && wingSaved.length === wingDefault.length && wingDefault.every((k) => wingSaved.includes(k)) ? wingSaved : wingDefault;
+  const wingSort = useLiveSort(wingKeys, "data-wing", true, (next) => {
+    setWingOrders((cur) => {
+      const all = { ...cur, [layout]: next };
+      try { localStorage.setItem(WING_KEY, JSON.stringify(all)); } catch { /* 무시 */ }
+      return all;
+    });
+  }, 6, true);
+  const wingView = wingSort.display;
+  // 이름 번호는 놓인 자리 순서대로 — 칸 정보(LAYOUT)의 이름을 고쳐 두면 방 카드·상세 창·편성표 이미지가 같이 따라온다
+  {
+    const n: Record<string, number> = {};
+    for (const k of wingKeys) {
+      const c = cellByKey.get(k);
+      if (!c) continue;
+      const i = (n[c.room] = (n[c.room] ?? 0) + 1);
+      c.label = c.room === "TRADING" ? `무역소 ${i}` : c.room === "POWER" ? `발전소 ${i}`
+        : `제조소 ${i}${c.product === "gold" ? " · 순금" : c.product === "exp" ? " · 작전기록" : ""}`;
+    }
+  }
+  /** 자리 순서를 반영한 칸 목록 — 9칸은 놓인 자리 순서, 나머지는 원래 순서 (이미지·MAA 내보내기·작은 화면 DOM 순서) */
+  const orderedLayout = [...wingKeys.map((k) => cellByKey.get(k)!).filter(Boolean), ...LAYOUT.filter((c) => !WING_ROOMS.has(c.room))];
+
+  // ── MAA 기반시설 파일 불러오기 (MAA 연동, 사용자 지시 2026-10-23 "MAA 에서 나오는 걸로 여기 적용도") ──
+  // 계획(조) 앞의 두 개를 A·B조로, 방은 같은 종류끼리 파일 순서 = 놓인 자리 순서로 맞춘다. 제조소는 품목(순금·작전기록)이 같은 방에
+  // 앉도록 제조소끼리 자리를 다시 맞추고, 확장 정보(layout)가 있으면 9칸 종류 배치와 시설 레벨도 따른다.
+  // 이름은 지금 언어·영어·일본어·중국어 모두로 찾는다. 모르는 이름·보유하지 않은 오퍼·자동 채우기 칸은 비우고 알려 준다
+  const importMaa = async (file: File): Promise<string> => {
+    let data: { plans?: { rooms?: Record<string, { operators?: string[]; operatorsA?: string[]; operatorsB?: string[]; skip?: boolean; product?: string; use_operator_groups?: boolean }[]> ; groups?: { name: string; operators: string[] }[] }[]; layout?: { type: string; level?: number; position?: string }[] };
+    try { data = JSON.parse(await file.text()); } catch { return t("JSON 파일이 아닙니다."); }
+    const plans = Array.isArray(data?.plans) ? data.plans.filter((p) => p && typeof p.rooms === "object") : [];
+    if (!plans.length) return t("MAA 기반시설 파일이 아닙니다 — plans 가 없습니다.");
+    // 이름 → 오퍼 id (공백·기호 무시, 대소문자 무시)
+    const norm = (x: string) => x.toLowerCase().replace(/[\s·・'’"“”().,\-–—_]/g, "");
+    const byName = new Map<string, string>();
+    const put = (name: string | undefined, id: string) => { if (name) { const k = norm(name); if (k && !byName.has(k)) byName.set(k, id); } };
+    for (const op of ops) put(effectiveOpById.get(op.id)?.name ?? op.name, op.id);
+    try {
+      const [dex, cn] = await Promise.all([import("./data/operators.json"), import("./data/op-cn-names.json")]);
+      for (const op of dex.default as unknown as { id: string; name: string; aliases?: string[] }[]) { put(op.name, op.id); for (const a of op.aliases ?? []) put(a, op.id); }
+      for (const [id, name] of Object.entries(cn.default as Record<string, string>)) put(name, id);
+    } catch { /* 지금 언어 이름만으로 */ }
+    const unknown = new Set<string>(), notOwned = new Set<string>();
+    let placed = 0, auto = 0;
+    const toIds = (names: string[] | undefined) => (names ?? []).map((n) => {
+      const id = byName.get(norm(n));
+      if (!id) { unknown.add(n); return null; }
+      if (!ownedIds.has(id)) { notOwned.add(n); return null; }
+      return id;
+    }).filter((x): x is string => !!x);
+    // 확장 정보(layout) — 9칸 종류 배치(위치순)·시설 레벨. 종류 수가 지금 배치와 같을 때만 자리를 따른다
+    let order = [...wingKeys];
+    const typeOfMaa: Record<string, string> = { trading: "TRADING", manufacture: "MANUFACTURE", power: "POWER" };
+    const lay = Array.isArray(data.layout) ? data.layout : null;
+    const wingLay = lay ? lay.filter((x) => typeOfMaa[x.type]).sort((a, b) => String(a.position ?? "").localeCompare(String(b.position ?? ""))) : [];
+    const countOf = (list: string[]) => list.reduce<Record<string, number>>((m, r) => ({ ...m, [r]: (m[r] ?? 0) + 1 }), {});
+    const mine = countOf(order.map((k) => cellByKey.get(k)!.room));
+    if (wingLay.length === order.length && wingLay.every((x) => x.position) && JSON.stringify(countOf(wingLay.map((x) => typeOfMaa[x.type]))) === JSON.stringify(mine)) {
+      const pool: Record<string, string[]> = {};
+      for (const k of order) (pool[cellByKey.get(k)!.room] ??= []).push(k);
+      order = wingLay.map((x) => pool[typeOfMaa[x.type]].shift()!);
+    }
+    // 제조소 품목 맞추기 — 첫 계획의 manufacture[i].product 와 같은 품목의 방을 i 번째 제조소 자리에
+    const want = (plans[0].rooms?.manufacture ?? []).map((r) => (r?.product === "Pure Gold" ? "gold" : r?.product === "Battle Record" ? "exp" : null));
+    const mfgPos = order.map((k, i) => [k, i] as const).filter(([k]) => cellByKey.get(k)!.room === "MANUFACTURE");
+    if (want.some(Boolean)) {
+      const left = mfgPos.map(([k]) => k);
+      const picked = mfgPos.map((_, i) => {
+        const j = left.findIndex((k) => want[i] && cellByKey.get(k)!.product === want[i]);
+        return left.splice(j >= 0 ? j : 0, 1)[0];
+      });
+      mfgPos.forEach(([, pos], i) => { order[pos] = picked[i]; });
+    }
+    // 시설 레벨 — layout 의 같은 종류 순서대로
+    const nextLevels: Levels = { ...levels };
+    if (lay) {
+      const byType: Record<string, { level?: number }[]> = {};
+      for (const x of lay) (byType[x.type] ??= []).push(x);
+      const cellsOf = (room: string) => [...order.map((k) => cellByKey.get(k)!), ...LAYOUT.filter((c) => !WING_ROOMS.has(c.room))].filter((c) => c.room === room);
+      for (const [maa, room] of Object.entries(MAA_ROOM_REV)) cellsOf(room).forEach((c, i) => { const lv = byType[maa]?.[i]?.level; if (lv && lv >= 1 && lv <= maxLevelOf(room)) nextLevels[c.key] = lv; });
+    }
+    // 방 채우기
+    const cellsByType = (room: string) => [...order.map((k) => cellByKey.get(k)!), ...LAYOUT.filter((c) => !WING_ROOMS.has(c.room))].filter((c) => c.room === room);
+    const changes: { cellKey: string; shiftIdx: number; ids: string[] }[] = [];
+    for (let shift = 0; shift < 2; shift += 1) {
+      const pl = plans[Math.min(shift, plans.length - 1)];
+      const groups = new Map((pl.groups ?? []).map((g) => [g.name, g.operators]));
+      for (const [maa, room] of Object.entries(MAA_ROOM_REV)) {
+        const list = pl.rooms?.[maa];
+        if (!Array.isArray(list)) continue;
+        cellsByType(room).forEach((cell, i) => {
+          const r = list[i];
+          const slots = plan?.assignments[cell.key]?.length ?? 1;
+          if (shift >= slots) return;   // 숙소·가공소처럼 조가 하나인 칸은 첫 계획만
+          if (!r || r.skip) return;
+          let names = room === "TRAINING" ? [...(r.operatorsA ?? []).slice(0, 1), ...(r.operatorsB ?? []).slice(0, 1)] : r.operators ?? [];
+          if (r.use_operator_groups) names = (names.map((g) => groups.get(g)).find(Boolean) ?? []) as string[];
+          if (!names.length && room !== "DORMITORY") auto += 1;   // 숙소 빈칸은 원래 자동 채우기 자리라 세지 않는다
+          const ids = toIds(names).slice(0, slotsFor(cell.key));
+          placed += ids.length;
+          changes.push({ cellKey: cell.key, shiftIdx: shift, ids });
+        });
+      }
+    }
+    if (!changes.length) return t("파일에서 불러올 방을 찾지 못했습니다.");
+    // 자리·레벨 먼저, 그다음 편성 한 번에
+    setWingOrders((cur) => { const all = { ...cur, [layout]: order }; try { localStorage.setItem(WING_KEY, JSON.stringify(all)); } catch { /* 무시 */ } return all; });
+    setEngineLevels(nextLevels); setLevelsState(nextLevels);
+    const [first, ...rest] = changes;
+    updateTeam(first.cellKey, first.shiftIdx, first.ids, undefined, undefined, rest);
+    const notes = [
+      t("오퍼 {n}명을 불러왔습니다.", { n: placed }),
+      ...(plans.length > 2 ? [t("계획이 {n}개라 앞의 두 개만 A·B조로 가져왔습니다.", { n: plans.length })] : []),
+      ...(auto ? [t("자동 채우기·예비 목록만 적힌 방 {n}곳은 비워 두었습니다.", { n: auto })] : []),
+      ...(notOwned.size ? [t("보유하지 않은 오퍼 {n}명은 뺐습니다: {list}", { n: notOwned.size, list: [...notOwned].slice(0, 8).join(", ") })] : []),
+      ...(unknown.size ? [t("이름을 찾지 못한 오퍼 {n}명: {list}", { n: unknown.size, list: [...unknown].slice(0, 8).join(", ") })] : []),
+    ];
+    return notes.join("\n");
+  };
   const droneOf = (key: string) => drones.find((d) => d.key === key) ?? null;
   /** 지금 보고 있는 조의 드론 키 — 방 카드의 단추·덤은 그 조에서만 (A조에 켠 드론이 B조 화면에 붙지 않게) */
   const droneKeyOf = (cellKey: string) => `${cellKey}@${activeShift}`;
@@ -1708,7 +1845,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const roomOfAt = [0, 1].map((shift) => roomOfFor(plan, shift));
     const cellOfAt = [0, 1].map((shift) => cellOfFor(plan, shift));
     const ambientAt = [0, 1].map((shift) => aurasOf(controlTeamAt(shift), ctxFor("CONTROL", planTokensAt(plan, effectiveOpById, shift), plan.factionCounts[shift] ?? {}, plantsFor(plan, shift, effectiveOpById), presentIdsFor(plan, shift), undefined, roomOfAt[shift], cellOfAt[shift])));
-    const rows: Row[] = LAYOUT.map((cell) => {
+    const rows: Row[] = orderedLayout.map((cell) => {   // 놓인 자리 순서 (시설 자리 바꾸기, 2026-10-23)
       const shifts = plan.assignments[cell.key] ?? [];
       const scoreFor = (team: InfraOp[], shift: number) =>
         cell.room === "DORMITORY" || PARK_KEYS.includes(cell.key) ? null
@@ -1984,7 +2121,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           {/* 보유 오퍼 설정·전체 자동편성 = 핵심 2버튼(.primary) — 나머지는 보조 톤으로 낮춰
               위계를 만든다 (사용자 요청 2026-07-27: "버튼이 너무 많아 헷갈림") */}
           {/* 이미지로 보기 — '그 외'에서 꺼내 이 줄 맨 왼쪽으로 (사용자 지시 2026-10-14) */}
-          <button className="planner-image-btn" onClick={() => void exportImage()} disabled={!plan} title={t("A조·B조 편성표를 이미지로 확인 (PNG)")}><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</button>
           <button className="primary" onClick={() => startTransition(() => { setRosterMode("import"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정")}<small className="btn-count">{visibleOps.filter((op) => ownedIds.has(op.id)).length}/{visibleOps.length}</small><NewBadge id="scanner+op-level" show={anyNewFeature("scanner", "op-level")} /></button>
           {/* 라벨이 '계산 중…'으로 바뀌어도 버튼 폭이 줄지 않게 원 라벨로 폭을 잡아둔다 (사용자 요청 2026-07-21) */}
           <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}>
@@ -2004,29 +2140,27 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               <span className="btn-icon" aria-hidden>↩</span>{t("자동편성 시점으로 ({n}곳)", { n: changedCells })}
             </button>
           )}
-          {/* 이미지·파일·도움말은 '그 외' 드롭다운으로 묶는다 (사용자 요청 2026-07) */}
+          {/* 내보내기·가져오기 — 이미지·MAA·파일 저장·파일 가져오기를 한 메뉴로 (사용자 지시 2026-10-23, 종전 '그 외' — 도움말은 페이지 머리 '?' 로) */}
           {/* 공용 드롭다운 (사용자 지시 2026-10-10 "드랍다운 버튼은 전부 공용으로"). 파일 가져오기는 숨은 input 을 대신 누른다 */}
-          <Dropdown actions className="more-group" ariaLabel={t("그 외")}
+          <Dropdown actions className="more-group" ariaLabel={t("내보내기·가져오기")}
             buttonClassName={`more-toggle${dirty ? " save-pending" : ""}`}
-            label={<><span className="btn-icon" aria-hidden>⋯</span>{t("그 외")}</>}
+            label={<><span className="btn-icon" aria-hidden>⇅</span>{t("내보내기·가져오기")}</>}
             selected={[]}
             onPick={(v) => {
               if (v === "save") exportState();
               else if (v === "import") importRef.current?.click();
               else if (v === "maa") setShowMaa(true);
-              else if (v === "help") setShowHelp(true);
               else if (v === "image" && plan) void exportImage();
             }}
             items={[
-              // 모바일은 '이미지로 보기' 단추를 숨기고 여기로 (사용자 지시 2026-10-23 — 그 자리엔 '편성 전체 비우기'). 데스크톱은 단추가 있어 숨긴다
-              { value: "image", label: <><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</>, className: "only-mobile", disabled: !plan },
+              { value: "image", label: <><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</>, disabled: !plan,
+                title: t("A조·B조 편성표를 이미지로 확인합니다 — 저장·복사는 WebP / PNG") },
+              { value: "maa", label: <><span className="btn-icon" aria-hidden>⇄</span>{t("MAA 연동")}</>,
+                title: t("MAA 기반시설 파일로 내보내거나, MAA 기반시설 파일을 불러옵니다") },
               { value: "save", label: <><span className="btn-icon" aria-hidden>⤓</span>{t("현재 상태 파일로 저장")}</>,
                 className: dirty ? "save-pending" : undefined,
                 title: dirty ? t("저장 후 변경 사항이 있습니다 — 파일로 저장하세요") : t("보유 오퍼와 편성을 JSON 파일로 저장") },
               { value: "import", label: <><span className="btn-icon" aria-hidden>⤒</span>{t("저장된 상태 파일 가져오기")}</> },
-              { value: "maa", label: <><span className="btn-icon" aria-hidden>⇥</span>{t("MAA 기반시설 내보내기")}<span className="new-badge">{t("베타")}</span></>,
-                title: t("현재 편성을 MAA 커스텀 기반시설 JSON으로 내보냅니다") },
-              { value: "help", label: <><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</> },
             ]} />
           <input ref={importRef} type="file" accept="application/json" hidden
             onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; }} />
@@ -2236,7 +2370,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </ul>
       </section>
 
-      <div className={`ship${layout !== "243" ? ` ship-${layout}` : ""}${cellByKey.has("RECYCLE") ? " has-recycle" : ""}`}>
+      {/* 모든 배치가 9칸 자리 번호(slot0~8) 템플릿 — 프리셋 셋도 놓인 순서가 같은 모양이라 ship-custom 템플릿을 같이 쓴다.
+          무역소·제조소·발전소는 자리(wingView)대로 pos-slot-N 을 붙인다 (자리 바꾸기, 2026-10-23) */}
+      <div ref={wingSort.ref} className={`ship ship-custom${wingSort.drag ? " wing-sorting" : ""}${cellByKey.has("RECYCLE") ? " has-recycle" : ""}`}>
         {/* 교대 탭 + 육성 추천을 그리드 첫 행(제어센터·응접실과 같은 행)에 세로로 쌓는다 —
             탭은 행 맨 위, 추천 바는 행 바닥(=무역소 바로 위) (사용자 요청 2026-07-27) */}
         <div className="ship-leftcol">
@@ -2327,7 +2463,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           )}
           </div>
         </div>
-        {LAYOUT.map((cell) => {
+        {[...wingView.map((k) => cellByKey.get(k)!).filter(Boolean), ...LAYOUT.filter((c) => !WING_ROOMS.has(c.room))].map((cell) => {
           if (cell.room === "DORMITORY") {
             const pinned = teamFor(cell.key, 0);
             const locked = dormPins[cell.key] ?? [];
@@ -2366,7 +2502,15 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           const raiseBefore = tempApplied.size > 0 && tempBasePlan && cell.room !== "CONTROL" && !PARK_KEYS.includes(cell.key)
             ? Math.round(scoreRoomIn(tempBasePlan, committedOpById, cell.key, activeShift)) : null;
           return (
-            <button key={cell.key} type="button" className={`ship-room ${cell.slot != null ? `pos-slot-${cell.slot}` : `pos-${cell.key.toLowerCase()}`}`} onClick={() => openRoomAt(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
+            <button key={cell.key} type="button"
+              className={`ship-room ${WING_ROOMS.has(cell.room) ? `pos-slot-${wingView.indexOf(cell.key)} wing-room${wingSort.drag?.key === cell.key ? " wing-dragging" : ""}` : cell.slot != null ? `pos-slot-${cell.slot}` : `pos-${cell.key.toLowerCase()}`}`}
+              {...(WING_ROOMS.has(cell.room) ? { "data-wing": cell.key } : {})}
+              onClickCapture={(e) => { if (WING_ROOMS.has(cell.room) && wingSort.takeMoved()) { e.preventDefault(); e.stopPropagation(); } }}
+              // 카드 아무 데나 잡고 끌면 다른 시설과 자리를 맞바꾼다 (사용자 지시 2026-10-23 — 처음엔 이름 줄만). 6px 넘게 끌어야 옮기고,
+              // 그냥 누르면 방 상세. 카드 안 단추(드론 가속·종류 전환)는 제 일만
+              onPointerDown={WING_ROOMS.has(cell.room) ? (e) => { if (!(e.target as HTMLElement).closest(".room-type-switch, .drone-toggle, [role=button]")) wingSort.start(cell.key, e); } : undefined}
+              onDragStart={(e) => e.preventDefault()}
+              onClick={() => openRoomAt(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
               {cellDiff && <span className="plan-chg plan-chg-card" title={diffTitle(cellDiff)}>{t("변경 있음")}</span>}
               <div className="ship-room-head">
                 <b>
@@ -2496,7 +2640,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
-      {showMaa && <MaaExportModal plan={plan} nameOf={(id) => effectiveOpById.get(id)?.name ?? opById.get(id)?.name}
+      {showMaa && <MaaExportModal plan={plan} cells={orderedLayout} onImport={importMaa} nameOf={(id) => effectiveOpById.get(id)?.name ?? opById.get(id)?.name}
         droneKeys={droneKeys}
         // 정예화를 따로 안 정한 보유 오퍼는 최대 정예화로 본다(플래너 규칙) · 레벨은 아는 것만
         growthOf={(id) => { const op = opById.get(id); if (!op) return undefined; const lv = levelById.get(id); return { elite: eliteById.get(id) ?? maxElite(op.rarity), ...(lv != null ? { level: lv } : {}) }; }}
@@ -4653,11 +4797,10 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 계산합니다 — 순금이 부족해도 용문폐를 깎지 않고, 옆의 '순금 생산 / 소모' 칸에 하루 몇 개가 모자라는지만 적습니다. 그 순금을 실제로 채우지 않으면 표시된 만큼 받지 못합니다.",
     "'하루 평균 작전기록'은 제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 제조소 레벨이 낮으면 만들 수 있는 등급도 낮아지므로(252 배치의 Lv2 제조소) 그 레벨의 레시피로 계산합니다.",
     "두 값 모두 A조·B조를 각 조의 교대 시계 비율로 섞은 하루치라, 조 탭을 바꿔도 변하지 않습니다. 또 창고·오더 슬롯이 차기 전에 수거한다고 보므로, 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.",
-    "'하루 드론 회복'은 발전소가 만드는 드론입니다 — 기본 360초에 1개(하루 240개)이고, 발전소 3기의 '드론 회복' 효율이 하나의 전역 속도에 **합산**됩니다(그래서 요약의 드론 칸만 평균이 아니라 합입니다). 드론 1개는 제조소·무역소의 남은 시간을 180초 줄이므로 방 효율이 높을수록 값이 큽니다. 어디에 쓸지는 사람마다 달라 위 용문폐·작전기록에는 더하지 않고 '작전기록 +N or 순금 +N'으로 환산만 적습니다.",
+    "'하루 드론 회복'은 발전소가 만드는 드론입니다 — 기본 360초에 1개(하루 240개)이고, 발전소 3기의 '드론 회복' 효율이 하나의 전역 속도에 **합산**됩니다(그래서 요약의 드론 칸만 평균이 아니라 합입니다). 드론 1개는 제조소·무역소의 남은 시간을 180초 줄이므로 방 효율이 높을수록 값이 큽니다. 방 카드의 '드론 가속'을 켜면 그 조의 그 방에 하루 드론을 쓴다고 보고 덤(+%)을 붙여 요약에도 더합니다. 자동편성 점수에는 넣지 않습니다.",
   ]},
   { title: "수치는 근사치", items: [
     "숙소는 풀 인원(20명), 모집 4칸, 발전소 3(그레이 알터 시 4) 기준의 추정 상한으로 계산합니다. 실제 게임 수치와 약간 다를 수 있습니다.",
-    "자세한 규칙 전문은 저장소의 docs/INFRA-RULES.md를 참고하세요.",
   ]},
 ];
 
@@ -4686,8 +4829,11 @@ function HelpModal({ onClose }: { onClose: () => void }) {
 // MAA 커스텀 기반시설 내보내기 (베타) — 현재 편성(A/B 2교대)을 MAA JSON으로 저장 (2026-08-02).
 // 시각 입력만 받는 이유: MAA는 벽시계(period) 기준으로 plan을 전환하지, 사이트의
 // '지치면 교대' 모델을 모른다 — 그 차이는 모달 안내문으로 명시한다.
-function MaaExportModal({ plan, nameOf, droneKeys, growthOf, toast, onClose }: {
+function MaaExportModal({ plan, cells, onImport, nameOf, droneKeys, growthOf, toast, onClose }: {
+  onImport: (file: File) => Promise<string>;
   plan: Plan | null; nameOf: (id: string) => string | undefined;
+  /** 놓인 자리 순서의 칸 — MAA 는 같은 종류 방을 게임 기지 순서로 센다 (시설 자리 바꾸기, 2026-10-23) */
+  cells: typeof LAYOUT;
   droneKeys: string[]; growthOf: (id: string) => { elite: Elite; level?: number } | undefined;
   toast: (message: string) => void; onClose: () => void;
 }) {
@@ -4696,6 +4842,11 @@ function MaaExportModal({ plan, nameOf, droneKeys, growthOf, toast, onClose }: {
   const [startB, setStartB] = useState("20:00");
   // 오퍼 이름 언어 — MAA 는 게임 화면 글자와 대조하므로 클라이언트 언어와 같아야 한다. 중국 서버 클라이언트면 中文 (2026-10-23)
   const [nameLang, setNameLang] = useState<"site" | "cn">("site");
+  // MAA 연동 — 내보내기 / 불러오기 한 창에서 (사용자 지시 2026-10-23)
+  const [tab, setTab] = useState<"export" | "import">("export");
+  const [importNote, setImportNote] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   // 중국어 이름 — 中文을 고를 때만 이름표를 받는다 (app/data/op-cn-names.json, scripts/build-op-cn-names.py — 게임 중국 서버 표)
   const [cnNames, setCnNames] = useState<Map<string, string> | null>(null);
   useEffect(() => {
@@ -4711,7 +4862,7 @@ function MaaExportModal({ plan, nameOf, droneKeys, growthOf, toast, onClose }: {
     if (!plan) return;
     const payload = buildMaaInfrast({
       assignments: plan.assignments,
-      cells: LAYOUT,
+      cells,
       nameOf: nameLang === "cn" ? (id) => cnNameOf(id) ?? nameOf(id) : nameOf,
       shiftStarts: [startA, startB],
       droneKeys,
@@ -4732,30 +4883,39 @@ function MaaExportModal({ plan, nameOf, droneKeys, growthOf, toast, onClose }: {
     onClose();
   };
   return (
-    <ModalWindow label={t("MAA 기반시설 내보내기")} className="operator-modal room-modal" onClose={onClose} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
+    <ModalWindow label={t("MAA 연동")} className="operator-modal room-modal maa-modal" onClose={onClose} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         <header className="room-modal-head">
           <span className="modal-kicker">MAA CUSTOM INFRAST</span>
-          <h2>{t("MAA 기반시설 내보내기")} <span className="new-badge">{t("베타")}</span></h2>
+          <h2>{t("MAA 연동")}</h2>
         </header>
         <div className="modal-scroll">
+          {/* 탭은 제목 띠가 아니라 본문 맨 위 (사용자 지시 2026-10-23) */}
+          <div className="maa-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected={tab === "export"} className={`tab-btn${tab === "export" ? " selected" : ""}`} onClick={() => setTab("export")}>{t("내보내기")}</button>
+            <button type="button" role="tab" aria-selected={tab === "import"} className={`tab-btn${tab === "import" ? " selected" : ""}`} onClick={() => setTab("import")}>{t("불러오기")}</button>
+          </div>
+          {tab === "export" ? (<>
           <section className="detail-section">
             <p>{t("현재 편성(A/B 2교대)을 MAA의 커스텀 기반시설 계획 JSON으로 저장합니다. MAA 설정 → 기반시설 → 커스텀 기반시설에서 이 파일을 선택하면 A/B조가 시각에 맞춰 자동 교대됩니다.")}</p>
           </section>
+          {/* 오퍼 이름 언어와 교대 시각을 한 줄에 (사용자 지시 2026-10-23) */}
           <section className="detail-section">
-            <h3>{t("오퍼 이름 언어")}</h3>
-            <p className="maa-times">
-              <label><input type="radio" checked={nameLang === "site"} onChange={() => setNameLang("site")} /> {t("지금 언어 ({lang})", { lang: langLabel })}</label>
-              {" "}
-              <label><input type="radio" checked={nameLang === "cn"} onChange={() => setNameLang("cn")} /> 中文 ({t("중국 서버 클라이언트")})</label>
-            </p>
-          </section>
-          <section className="detail-section">
-            <h3>{t("교대 시각")}</h3>
-            <p className="maa-times">
-              <label>{t("A조 시작")} <input type="time" value={startA} onChange={(event) => setStartA(event.target.value)} /></label>
-              {" "}
-              <label>{t("B조 시작")} <input type="time" value={startB} onChange={(event) => setStartB(event.target.value)} /></label>
-            </p>
+            <div className="maa-row">
+              <div className="maa-field">
+                <h3>{t("오퍼 이름 언어")}</h3>
+                <Dropdown ariaLabel={t("오퍼 이름 언어")} selected={[nameLang]}
+                  label={nameLang === "cn" ? `中文 (${t("중국 서버 클라이언트")})` : t("지금 언어 ({lang})", { lang: langLabel })}
+                  items={[{ value: "site", label: t("지금 언어 ({lang})", { lang: langLabel }) }, { value: "cn", label: `中文 (${t("중국 서버 클라이언트")})` }]}
+                  onPick={(v) => setNameLang(v as "site" | "cn")} />
+              </div>
+              <div className="maa-field">
+                <h3>{t("교대 시각")}</h3>
+                <p className="maa-times">
+                  <label>{t("A조 시작")} <input type="time" value={startA} onChange={(event) => setStartA(event.target.value)} /></label>
+                  <label>{t("B조 시작")} <input type="time" value={startB} onChange={(event) => setStartB(event.target.value)} /></label>
+                </p>
+              </div>
+            </div>
             <p className="maa-note">{t("사이트의 교대는 '지치면 교대'지만 MAA는 시각으로만 전환합니다 — 두 조의 근무 시간대를 정해 주세요.")}</p>
           </section>
           <section className="detail-section">
@@ -4770,7 +4930,32 @@ function MaaExportModal({ plan, nameOf, droneKeys, growthOf, toast, onClose }: {
           </section>
           {!plan && <p className="maa-note">{t("내보낼 편성이 없습니다 — 먼저 전체 자동편성을 실행하세요.")}</p>}
           {sameTime && plan && <p className="maa-note">{t("A조와 B조 시작 시각이 같습니다 — 시간대(period) 없이 저장됩니다.")}</p>}
-          <p className="maa-download"><button className="primary" onClick={download} disabled={!plan || (nameLang === "cn" && !cnNames)}><span className="btn-icon" aria-hidden>⇥</span>{t("JSON 파일로 내려받기")}</button></p>
+          <p className="maa-download"><button type="button" className="act-btn maa-dl" onClick={download} disabled={!plan || (nameLang === "cn" && !cnNames)}><span className="btn-icon" aria-hidden>⇥</span>{t("JSON 파일로 내려받기")}</button></p>
+          </>) : (<>
+          <section className="detail-section">
+            <p>{t("MAA 커스텀 기반시설 파일(JSON)을 불러와 지금 편성에 넣습니다. 다른 편성 도구나 커뮤니티에서 받은 편성표, 내가 MAA에 쓰던 편성표를 그대로 가져와 효율을 확인할 수 있습니다.")}</p>
+          </section>
+          <section className="detail-section">
+            <h3>{t("불러오는 방식")}</h3>
+            <ul className="help-list">
+              <li>{t("파일의 첫째·둘째 계획을 A조·B조로 넣습니다. 계획이 하나면 두 조에 같이 넣습니다.")}</li>
+              <li>{t("같은 종류의 방은 파일 순서대로 놓인 자리 순서에 맞춥니다. 제조소는 품목(순금·작전기록)이 같은 방에 앉도록 제조소끼리 자리를 다시 맞춥니다.")}</li>
+              <li>{t("파일에 기지 배치 정보(layout)가 있으면 무역소·제조소·발전소 자리와 시설 레벨도 따릅니다.")}</li>
+              <li>{t("오퍼 이름은 한국어·영어·일본어·중국어 모두로 찾습니다. 보유하지 않았거나 이름을 못 찾은 오퍼, 자동 채우기만 적힌 방은 비워 두고 알려 드립니다.")}</li>
+              <li>{t("지금 편성을 덮어씁니다 — 불러온 뒤 알림의 되돌리기로 돌아갈 수 있습니다.")}</li>
+            </ul>
+          </section>
+          <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => {
+            const f = e.target.files?.[0]; e.target.value = "";
+            if (!f) return;
+            setImporting(true); setImportNote(null);
+            void onImport(f).then((note) => setImportNote(note)).finally(() => setImporting(false));
+          }} />
+          <p className="maa-download"><button type="button" className="act-btn maa-dl" disabled={importing || !plan} onClick={() => fileRef.current?.click()}>
+            <span className="btn-icon" aria-hidden>⤒</span>{importing ? t("불러오는 중…") : t("JSON 파일 고르기")}</button></p>
+          {!plan && <p className="maa-note">{t("먼저 보유 오퍼를 설정해 편성판을 만든 뒤 불러와 주세요.")}</p>}
+          {importNote && <p className="maa-import-note" role="status">{importNote}</p>}
+          </>)}
         </div>
     </ModalWindow>
   );

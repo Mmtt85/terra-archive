@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 const PAGE_HELP = "ta:page-help";
 /** 안내 창이 있는 탭 — 머리에 '?' 를 단다 */
-export const PAGE_HELP_TABS = new Set(["story", "recruit", "farm", "upgrade", "sim", "gacha"]);
+export const PAGE_HELP_TABS = new Set(["story", "recruit", "farm", "upgrade", "sim", "gacha", "planner"]);   // planner — 인프라 도움말을 메뉴에서 옮김 (2026-10-23)
 
 export function openPageHelp(tab: string) {
   window.dispatchEvent(new CustomEvent<string>(PAGE_HELP, { detail: tab }));
