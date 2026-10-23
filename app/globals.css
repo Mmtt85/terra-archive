@@ -20796,6 +20796,9 @@ main.site-main > .site-header {
    ::-webkit-scrollbar 를 따르므로 둘을 auto 로 되돌린다. 파이어폭스는 표준 속성(thin·색)으로 */
 @media (hover: hover) and (pointer: fine) {
   .mw-window :is(.mw-body, .modal-scroll) { scrollbar-width: auto; scrollbar-color: auto; }
+  /* 창 본문은 스크롤바 자리를 비워 두지 않는다 — 막대 스크롤바(18px)로 바꾸자 스크롤할 게 없는 창(제안 쓰기 등)도 오른쪽이 18px 비었다
+     (사용자 지적 2026-10-23 "오른쪽이 왜 이렇게 패딩이 들어감"). 창 안에서 내용이 늘어 스크롤이 생길 때만 폭이 한 번 바뀐다 */
+  .mw-window .mw-body { scrollbar-gutter: auto; }
   @supports not selector(::-webkit-scrollbar) {
     .mw-window :is(.mw-body, .modal-scroll) { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
   }

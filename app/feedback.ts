@@ -334,6 +334,34 @@ async function visitorCountry(): Promise<string | null> {
   } catch { return null; }
 }
 
+/** 보낸 기기·브라우저 한 줄 — 화면 문제 제보를 재현하려면 필요하다 (사용자 지시 2026-10-23 "앞으로 제안 보낼 때 기기 및 브라우저도").
+ *  예: "iPhone · iOS 17.5 · Safari 17.5 · 390×844 @3x". 사람을 알아볼 수 있는 값(전체 UA 문자열 등)은 싣지 않는다 */
+export function deviceLine(): string | null {
+  if (typeof navigator === "undefined") return null;
+  const ua = navigator.userAgent;
+  const ver = (re: RegExp) => re.exec(ua)?.[1]?.replace(/_/g, ".");
+  const ipad = /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const device = /iPhone/.test(ua) ? "iPhone" : ipad ? "iPad" : /Android/.test(ua) ? (/Mobile/.test(ua) ? "Android 폰" : "Android 태블릿")
+    : /Mobi/.test(ua) ? "모바일" : "PC";
+  const os = /iPhone|iPad/.test(ua) || ipad ? `iOS ${ver(/OS (\d+[_.]\d+)/) ?? ""}`.trim()
+    : /Android/.test(ua) ? `Android ${ver(/Android (\d+(?:\.\d+)?)/) ?? ""}`.trim()
+    : /Windows/.test(ua) ? "Windows" : /Mac OS X/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : "";
+  const browser = /SamsungBrowser\/([\d.]+)/.test(ua) ? `Samsung ${ver(/SamsungBrowser\/(\d+)/)}`
+    : /Edg\//.test(ua) ? `Edge ${ver(/Edg\/(\d+)/)}`
+    : /Whale\//.test(ua) ? `Whale ${ver(/Whale\/(\d+)/)}`
+    : /NAVER\(/.test(ua) ? "네이버 앱" : /KAKAOTALK/.test(ua) ? "카카오톡 인앱"
+    : /CriOS\//.test(ua) ? `Chrome ${ver(/CriOS\/(\d+)/)}` : /FxiOS\/|Firefox\//.test(ua) ? `Firefox ${ver(/(?:FxiOS|Firefox)\/(\d+)/)}`
+    : /Chrome\//.test(ua) ? `Chrome ${ver(/Chrome\/(\d+)/)}`
+    : /Safari\//.test(ua) ? `Safari ${ver(/Version\/(\d+(?:\.\d+)?)/) ?? ""}`.trim() : "기타 브라우저";
+  const scr = typeof window !== "undefined" ? `${window.innerWidth}×${window.innerHeight}${window.devicePixelRatio > 1 ? ` @${Math.round(window.devicePixelRatio * 10) / 10}x` : ""}` : "";
+  return [device, os, browser, scr].filter(Boolean).join(" · ").slice(0, 120);
+}
+/** payload.device — 관리자 표시용 기기·브라우저 한 줄 (없으면 null — 2026-10-23 전에 받은 제안) */
+export function deviceOf(payload: unknown): string | null {
+  const v = payload && typeof payload === "object" ? (payload as { device?: unknown }).device : null;
+  return typeof v === "string" && v ? v : null;
+}
+
 /** payload.country — 관리자 표시용 ISO 국가 코드 (없으면 null) */
 export function countryOf(payload: unknown): string | null {
   const v = payload && typeof payload === "object" ? (payload as { country?: unknown }).country : null;
@@ -376,7 +404,8 @@ export async function sendFeedback(kind: FeedbackKind, message: string, payload?
     Prefer: "return=minimal",
   };
   const visitor = typeof window === "undefined" ? null : visitorCode();
-  const body = { kind, message: message.slice(0, 4000), payload: { ...(payload && typeof payload === "object" ? payload : {}), page, ...(country ? { country } : {}), ...(visitor ? { visitor } : {}) } };
+  const device = deviceLine();
+  const body = { kind, message: message.slice(0, 4000), payload: { ...(payload && typeof payload === "object" ? payload : {}), page, ...(country ? { country } : {}), ...(visitor ? { visitor } : {}), ...(device ? { device } : {}) } };
   const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback`, {
     method: "POST", headers,
     body: JSON.stringify(opts?.anonymous ? body : { ...body, author_token: ensureFeedbackToken() }),

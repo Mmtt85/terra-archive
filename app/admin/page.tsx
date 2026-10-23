@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminEditReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, visitorOf, isPrtsRow, filesOf, flagOf, fmtFileSize, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
+import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminEditReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, deviceOf, visitorOf, isPrtsRow, filesOf, flagOf, fmtFileSize, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKey, type StoredFile } from "../files-api";
@@ -689,6 +689,7 @@ export default function AdminPage() {
               {row.reviewed_at && <i className="reviewed-badge" title={new Date(row.reviewed_at).toLocaleString("ko-KR")}>✓ 확인됨</i>}
               <time>{new Date(row.created_at).toLocaleString("ko-KR")}</time>
               {countryOf(row.payload) && <i className="fb-geo-chip">{flagOf(countryOf(row.payload)!)} {countryOf(row.payload)}</i>}
+              {deviceOf(row.payload) && <i className="fb-geo-chip" title="보낸 기기·브라우저·창 크기">{deviceOf(row.payload)}</i>}
               {/* 방문자 코드 — 방문 통계 세션 타임라인·PRTS 표의 방문자와 같은 값 (2026-10-12~ 보낸 제안부터) */}
               {visitorOf(row.payload) && (
                 <button type="button" className="fb-geo-chip fb-visitor-btn" title="방문 통계의 방문자 코드 — 눌러서 이 사람의 세션 보기"
