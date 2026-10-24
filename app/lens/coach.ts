@@ -12,6 +12,7 @@
 //     닉네임은 각자 브라우저에 둔다(ta:coach-name). 하는 사람은 '채팅 끄기'로 막을 수 있다 (사용자 지시 2026-10-24
 //     "채팅 기능 한번 넣어볼까", "닉네임 설정은 만들자", "록라는 채팅창 볼 틈이 있다")
 
+import { asset } from "../assets";
 import { bridgeNotArknights, bridgePipFloor, bridgePipNode, bridgePipRelics, bridgeStream, onBridgeChange, setBridgeShareRate, type BridgePipCard } from "./bridge";
 
 export const COACH_WS = "wss://terra-archive-acroom.nzkonaru.workers.dev/coach/";
@@ -28,6 +29,25 @@ export const cardKey = (c: Pick<BridgePipCard, "kind" | "name">) => `${c.kind}:$
 /** 채팅 한 줄 — from = 쓴 사람 열쇠(0 = 하는 사람, 보는 사람은 연결마다 새 번호). 이름은 줄에 박지 않고 names 로 그때그때 찾는다 —
  *  중간에 닉네임을 바꾸면 지난 줄도 새 닉네임으로 보여야 한다 (사용자 지시 2026-10-24). name 은 names 에 없을 때의 대비 */
 export type CoachMsg = { id: number; from: number; name: string; text: string; at: number };
+/** 화면 반응 — 게임 '이모티콘 세트: 위수 협의' 그림 (scripts/build-emotes.py 가 public/ac/emote 에 꺼내 둔다).
+ *  보는 사람이 누르면 하는 사람 작은 창과 모두의 영상 위로 잠깐 떠오른다. 카드 추천·비추천(엄지 SVG)과는 따로다 (사용자 지시 2026-10-24) */
+export const EMOTES = ["happy", "call", "noproblem", "thanks", "respect", "thinking", "scared", "sorry", "dying", "sad"] as const;
+export type Emote = typeof EMOTES[number];
+export const EMOTE_LABEL: Record<Emote, string> = {
+  happy: "신남", call: "오오", noproblem: "문제없음", thanks: "고마워", respect: "존경",
+  thinking: "고민", scared: "허걱", sorry: "미안", dying: "기진맥진", sad: "엉엉",
+};
+/** 그림 주소 — 작은 창 문서는 about:blank 라 절대 주소로 */
+/** 보는 사람 페이지용 — 서버 렌더와 같은 주소 */
+export const emoteSrc = (e: string) => asset(`/ac/emote/${e}.webp`);
+export const emoteUrl = (e: string) => {
+  const u = emoteSrc(e);
+  return typeof location === "undefined" ? u : new URL(u, location.href).href;   // 서버 렌더엔 location 이 없다
+};
+/** 떠오른 반응 하나 — from = 쓴 사람 열쇠(채팅과 같다) */
+export type CoachReact = { id: number; e: Emote; from: number; at: number };
+export const REACT_MS = 2800;    // 떠 있는 시간
+const REACT_GAP = 600;           // 한 사람이 이보다 빨리 누르면 버린다
 /** 쓴 사람 열쇠 → 지금 이름 */
 export type CoachNames = Record<string, string>;
 export const msgName = (m: CoachMsg, names: CoachNames) => names[String(m.from)] ?? m.name;
@@ -47,7 +67,7 @@ export function setCoachName(v: string): void {
   changed();
 }
 
-type Peer = { id: number; a: number; pc: RTCPeerConnection; dc: RTCDataChannel | null; votes: Map<string, 1 | -1>; open: boolean; name: string; lastChat: number };
+type Peer = { id: number; a: number; pc: RTCPeerConnection; dc: RTCDataChannel | null; votes: Map<string, 1 | -1>; open: boolean; name: string; lastChat: number; lastReact: number };
 let ws: WebSocket | null = null;
 let code = "";
 let peers = new Map<number, Peer>();
@@ -60,6 +80,8 @@ let chatSeq = 0;
 let chatOff = false;
 let chatUnread = 0;
 let authorSeq = 0;
+let reacts: CoachReact[] = [];
+let reactSeq = 0;
 const leftNames = new Map<number, string>();   // 나간 사람의 마지막 이름 — 지난 줄이 번호로 바뀌지 않게
 const subs = new Set<() => void>();
 const changed = () => { for (const cb of subs) cb(); };
@@ -73,6 +95,16 @@ export function coachNames(): CoachNames {
   for (const [a, n] of leftNames) out[String(a)] = n;
   for (const p of peers.values()) out[String(p.a)] = p.name || anonName(p.id);
   return out;
+}
+/** 지금 떠 있는 반응들 */
+export const coachReacts = () => reacts;
+function pushReact(from: number, e: Emote): void {
+  const now = Date.now();
+  const r: CoachReact = { id: ++reactSeq, e, from, at: now };
+  reacts = [...reacts.filter((x) => now - x.at < REACT_MS), r].slice(-16);
+  sendAll({ t: "react", r });
+  changed();
+  setTimeout(() => { reacts = reacts.filter((x) => Date.now() - x.at < REACT_MS); changed(); }, REACT_MS + 50);
 }
 /** 채팅 — 지금까지 온 줄(최근 CHAT_KEEP)·꺼짐·안 읽은 수·이름표 */
 export const coachChat = () => ({ log: chatLog, off: chatOff, unread: chatUnread, names: coachNames() });
@@ -135,7 +167,7 @@ async function addPeer(id: number) {
   if (!stream || !ws) return;
   peers.get(id)?.pc.close();
   const pc = new RTCPeerConnection({ iceServers: COACH_ICE });
-  const peer: Peer = { id, a: ++authorSeq, pc, dc: null, votes: new Map(), open: false, name: "", lastChat: 0 };
+  const peer: Peer = { id, a: ++authorSeq, pc, dc: null, votes: new Map(), open: false, name: "", lastChat: 0, lastReact: 0 };
   peers.set(id, peer);
   const src = stream.getVideoTracks()[0];
   const track = src.clone();
@@ -159,7 +191,14 @@ async function addPeer(id: number) {
   };
   dc.onclose = () => { peer.open = false; changed(); };
   dc.onmessage = (e) => {
-    let m: { t?: string; key?: string | null; v?: unknown; name?: unknown; text?: unknown }; try { m = JSON.parse(String(e.data)); } catch { return; }
+    let m: { t?: string; key?: string | null; v?: unknown; name?: unknown; text?: unknown; e?: unknown }; try { m = JSON.parse(String(e.data)); } catch { return; }
+    if (m.t === "react") {
+      const now = Date.now();
+      if (!EMOTES.includes(m.e as Emote) || now - peer.lastReact < REACT_GAP) return;
+      peer.lastReact = now;
+      pushReact(peer.a, m.e as Emote);
+      return;
+    }
     if (m.t === "name") { peer.name = cleanText(m.name, NAME_MAX); sendAll({ t: "names", names: coachNames() }); changed(); return; }
     if (m.t === "chat") {
       const now = Date.now();
@@ -204,7 +243,7 @@ export function startCoach(fresh = false): void {
   stopCoach(false);
   code = newCode();
   live = true; failMsg = ""; hiddenNow = bridgeNotArknights();
-  chatLog = []; chatUnread = 0; chatOff = false; leftNames.clear();
+  chatLog = []; chatUnread = 0; chatOff = false; leftNames.clear(); reacts = [];
   setBridgeShareRate(true);
   unsub = onBridgeChange(onBridge);
   connect();

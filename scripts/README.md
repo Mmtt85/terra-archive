@@ -176,6 +176,7 @@ python3 scripts/build-event-art.py             # → public/event/ (UnityPy — 
 #   build-events.py 보다 **먼저** 돌린다(썸네일은 파일 유무로 붙는다). 끝나면 r2-sync.
 #   `--server kr,jp,en,cn` — cn 을 더하면 **한섭에 아직 없는 미래시 이벤트**의 홈 테마 그림도 (한국어 자리가 빌 때만).
 python3 scripts/build-event-duel.py            # → app/data/event-duel{,.en,.ja}.json (듀얼 채널 상세, 로컬 전용)
+python3 scripts/build-emotes.py                # → public/ac/emote/*.webp (훈수방 화면 반응 — 게임 위수 협의 이모티콘 10종, 게임 CDN)
 python3 scripts/build-event-vecbreak.py        # → app/data/event-vecbreak{,.en,.ja}.json (벡터 돌파 상세, 로컬 전용·네트워크 불필요)
 #   커널 돌파 12층·총력전·특별 전선(개방일·주둔 인원·보급)·전투 보급·돌파 마일스톤·메달·게임 안내. 1·2회차는 서버 공식 문구,
 #   중섭 선행 회차는 지난 회차 공식 짝(글자까지 같은 원문) → cn-translations.json 순. ⚠ build-event-art.py 뒤에 (그림은 파일 유무로 싣는다)

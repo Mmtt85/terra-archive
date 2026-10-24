@@ -10,7 +10,7 @@ import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } fro
 import { createPortal } from "react-dom";
 import { isOwnerUid } from "../visit-track";
 import { Thumb } from "./thumb";
-import { coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
+import { coachReacts, emoteUrl, EMOTE_LABEL, coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
 import { useBridgeStatus, connectBridge, disconnectBridge, clearBridgeError, bridgeNotArknights, bridgeArkThumb, confirmArknights, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -218,6 +218,7 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
       {bridgeNotArknights() && <ArkCheck t={t} />}
       <CoachControls t={t} />
       <CoachChat t={t} />
+      <CoachReactLayer />
       {pipLock?.topic === "recruit" || bridgePipRecruit() ? <RecruitPanes t={t} /> : external ? <div id="ta-pip-slot" className="bridge-pip-slot" /> : (<>
       {(() => {
         // 공통 정보 — 층 · 난이도 · 분대 세 칸만 (사용자 지시 2026-10-13 "N층, 난이도N, XX분대 이렇게 세 개만")
@@ -272,6 +273,23 @@ function CoachControls({ t }: { t: T }) {
       <button type="button" className="bridge-toast-node" onClick={copy} title={st.url}>{copied ? t("복사했어요") : t("링크 복사")}</button>
       <button type="button" className="bridge-toast-off" onClick={() => stopCoach()}>{t("공유 끝내기")}</button>
       <CoachVoteList t={t} />
+    </div>
+  );
+}
+
+/** 보는 사람 화면 반응 — 작은 창 아래쪽에서 떠올랐다 사라진다 (게임 위수 협의 이모티콘, 2026-10-24) */
+function CoachReactLayer() {
+  const st = useCoach();
+  if (!st.live) return null;
+  const names = coachChat().names;
+  return (
+    <div className="coach-react-layer" aria-hidden>
+      {coachReacts().map((r) => (
+        <span key={r.id} className="coach-react" style={{ left: `${12 + ((r.id * 37) % 70)}%` }}>
+          <img src={emoteUrl(r.e)} alt={EMOTE_LABEL[r.e]} width={56} height={56} />
+          <small>{names[String(r.from)] ?? ""}</small>
+        </span>
+      ))}
     </div>
   );
 }

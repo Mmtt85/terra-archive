@@ -34931,6 +34931,31 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .coach-votes li > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .coach-votes li > b { flex: none; font-size: 12px; }
 .bridge-pip-rg .coach-votes { border-top-color: var(--rgline); }
+/* 화면 반응 — 게임 위수 협의 이모티콘. 보는 사람 영상 밑 단추 줄, 영상·작은 창 위로 떠올랐다 사라진다 (2026-10-24) */
+.watch-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.watch-emotes { display: flex; flex-wrap: wrap; gap: 4px; }
+.watch-emotes button {
+  padding: 2px; border: 1px solid var(--line); border-radius: var(--r-sm); background: #0e1214; cursor: pointer; line-height: 0;
+  transition: transform .12s;
+}
+.watch-emotes button:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--lime-line); }
+.watch-emotes button:active:not(:disabled) { transform: scale(.92); }
+.watch-emotes button:disabled { opacity: .45; cursor: default; }
+.coach-react-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 3; }
+.bridge-pip .coach-react-layer { position: fixed; z-index: 40; }
+.coach-react {
+  position: absolute; bottom: 4%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px;
+  animation: coach-react-up 2.8s ease-out forwards;
+}
+.coach-react small { font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #000, 0 0 4px #000; white-space: nowrap; }
+@keyframes coach-react-up {
+  0% { opacity: 0; translate: 0 20px; scale: .6; }
+  12% { opacity: 1; translate: 0 0; scale: 1.08; }
+  20% { scale: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; translate: 0 -160px; }
+}
+@media (prefers-reduced-motion: reduce) { .coach-react { animation-duration: 2.8s; animation-timing-function: steps(1, end); } }
 /* 끝났어요 등 — 화면 전체를 흐리게 덮고 가운데 띠 (2026-10-24) */
 .watch-over {
   position: fixed; inset: 0; z-index: 50; display: flex; align-items: center;

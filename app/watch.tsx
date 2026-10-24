@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { I18nProvider, useI18n, type Locale } from "./i18n";
-import { COACH_ICE, COACH_MAX, COACH_WS, CHAT_MAX, NAME_MAX, cardKey, coachName, setCoachName, msgName, anonName, type CoachInfo, type CoachMsg, type CoachNames, type CoachVotes } from "./lens/coach";
+import { COACH_ICE, COACH_MAX, COACH_WS, CHAT_MAX, NAME_MAX, cardKey, coachName, setCoachName, msgName, anonName, EMOTES, EMOTE_LABEL, REACT_MS, emoteSrc, type CoachReact, type Emote, type CoachInfo, type CoachMsg, type CoachNames, type CoachVotes } from "./lens/coach";
 import type { BridgePipCard } from "./lens/bridge";
 import { Thumb } from "./lens/thumb";
 
@@ -38,6 +38,7 @@ function WatchInner() {
   const [myVotes, setMyVotes] = useState<Record<string, 1 | -1>>({});
   const [me, setMe] = useState<number | null>(null);   // 채팅 쓴 사람 열쇠 — 내 줄 표시용
   const [names, setNames] = useState<CoachNames>({});
+  const [reacts, setReacts] = useState<CoachReact[]>([]);
   const dcRef = useRef<RTCDataChannel | null>(null);
   // 채팅 — 하는 사람이 나눠 주는 줄을 받는다. 닉네임은 이 브라우저에 두고 연결되면 하는 사람에게 알린다 (2026-10-24)
   const [chat, setChat] = useState<CoachMsg[]>([]);
@@ -76,6 +77,11 @@ function WatchInner() {
             setMyVotes((cur) => Object.fromEntries(Object.entries(cur).filter(([k]) => vs[k] && (vs[k].up.length || vs[k].down.length))) as Record<string, 1 | -1>);
           }
           else if (m.t === "you" && typeof m.a === "number") setMe(m.a);
+          else if (m.t === "react" && (m as { r?: CoachReact }).r) {
+            const r = (m as { r: CoachReact }).r;
+            setReacts((v) => [...v.filter((x) => x.id !== r.id), r].slice(-16));
+            setTimeout(() => setReacts((v) => v.filter((x) => x.id !== r.id)), REACT_MS);
+          }
           else if (m.t === "names") setNames(m.names ?? {});
           else if (m.t === "chat" && m.m) { const one = m.m; setChat((v) => [...v.filter((x) => x.id !== one.id), one].slice(-60)); }
           else if (m.t === "chatlog") { setChat(m.log ?? []); setChatOff(!!m.off); if (m.names) setNames(m.names); }
@@ -131,6 +137,11 @@ function WatchInner() {
     setMyVotes((cur) => { const o = { ...cur }; if (next) o[key] = next; else delete o[key]; return o; });
     try { dcRef.current?.send(JSON.stringify({ t: "vote", key, v: next })); } catch { /* 아직 안 열림 */ }
   };
+  const lastReact = useRef(0);
+  const sendReact = (e: Emote, now: number) => {   // now = 클릭 이벤트 시각 (렌더 중 Date.now 경고를 피한다)
+    if (now - lastReact.current < 600) return;
+    try { dcRef.current?.send(JSON.stringify({ t: "react", e })); lastReact.current = now; } catch { /* 아직 안 열림 */ }
+  };
   const say = () => {
     const v = text.trim();
     if (!v || chatOff || Date.now() - lastSent < 1200) return;
@@ -164,11 +175,29 @@ function WatchInner() {
         {myId != null && phase === "live" && <small>{t("보는 사람 {n}번", { n: myId })}</small>}
       </header>
       <div className="watch-body">
+        <div className="watch-main">
         <section className="watch-video">
           <video ref={videoRef} autoPlay muted playsInline />
           {phase !== "live" && !OVER.includes(phase) && <p className="watch-msg">{msg[phase]}</p>}
           {phase === "live" && info?.hidden && <p className="watch-msg">{t("하는 사람이 잠시 다른 화면을 보고 있어요")}</p>}
+          <div className="coach-react-layer" aria-hidden>
+            {reacts.map((r) => (
+              <span key={r.id} className="coach-react" style={{ left: `${12 + ((r.id * 37) % 70)}%` }}>
+                <img src={emoteSrc(r.e)} alt="" width={72} height={72} />
+                <small>{names[String(r.from)] ?? ""}</small>
+              </span>
+            ))}
+          </div>
         </section>
+        {/* 화면 반응 — 누르면 하는 사람 작은 창과 모두의 영상 위로 떠오른다 (게임 위수 협의 이모티콘, 사용자 지시 2026-10-24) */}
+        <div className="watch-emotes" role="toolbar" aria-label={t("화면 반응")}>
+          {EMOTES.map((e) => (
+            <button type="button" key={e} disabled={phase !== "live"} onClick={(ev) => sendReact(e, ev.timeStamp)} title={t(EMOTE_LABEL[e])} aria-label={t(EMOTE_LABEL[e])}>
+              <img src={emoteSrc(e)} alt="" width={40} height={40} />
+            </button>
+          ))}
+        </div>
+        </div>
         <aside className="watch-side">
           {fl && (fl.floor != null || fl.name) && (
             <p className="watch-floor">{fl.floor ? t("{n}층", { n: fl.floor }) : ""}{fl.name ? ` · ${fl.name}` : ""}{fl.grade != null ? ` · ${t("난이도 {n}", { n: fl.grade })}` : ""}</p>
