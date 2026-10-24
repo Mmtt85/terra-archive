@@ -10,7 +10,7 @@ import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } fro
 import { createPortal } from "react-dom";
 import { isOwnerUid } from "../visit-track";
 import { Thumb } from "./thumb";
-import { QUALITIES, coachQuality, setCoachQuality, coachStats, coachReacts, emoteUrl, EMOTE_LABEL, coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
+import { coachTitle, setCoachTitle, TITLE_MAX, coachPublic, setCoachPublic, QUALITIES, coachQuality, setCoachQuality, coachStats, coachReacts, emoteUrl, EMOTE_LABEL, coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
 import { useBridgeStatus, connectBridge, disconnectBridge, clearBridgeError, bridgeNotArknights, bridgeArkThumb, confirmArknights, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -204,6 +204,8 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
     // 통합전략 — 작은 창 전체를 그 테마 색으로 (사용자 지시 2026-10-13 "록라 테마로 예쁘게"). 테마 변수는 .rg.rgN 에, 테마 색(--rg-hue)은 본 화면 html 에서 읽는다
     <div className={`bridge-pip${rgN ? ` rg rg${rgN} bridge-pip-rg` : ""}`}
       style={rgN ? ({ "--rg-hue": getComputedStyle(document.documentElement).getPropertyValue("--rg-hue") } as React.CSSProperties) : undefined}>
+      {/* 머리줄·공유 줄·채팅은 한 덩어리로 위에 붙여 둔다 — 노드·소장품만 그 밑으로 스크롤 (사용자 지시 2026-10-24 "채팅은 바로 그 밑에 sticky") */}
+      <div className="bridge-pip-top">
       <header className="bridge-pip-head">
         <span className="bridge-dot" aria-hidden>◉</span>
         <b>{lockName}</b>
@@ -218,6 +220,7 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
       {bridgeNotArknights() && <ArkCheck t={t} />}
       <CoachControls t={t} />
       <CoachChat t={t} />
+      </div>
       <CoachReactLayer />
       {pipLock?.topic === "recruit" || bridgePipRecruit() ? <RecruitPanes t={t} /> : external ? <div id="ta-pip-slot" className="bridge-pip-slot" /> : (<>
       {(() => {
@@ -255,12 +258,19 @@ function useCoach() {
 function CoachControls({ t }: { t: T }) {
   const st = useCoach();
   const [copied, setCopied] = useState(false);
+  // 공유 줄 접기 — 게임 중엔 채팅·노드를 더 보이게 (사용자 지시 2026-10-24 "화면 공유 중 섹션은 닫을 수 있도록"). 이 브라우저에 기억
+  // 공개방 켜기 확인 — 화면 속 닉네임·UID 가 모르는 사람에게 보일 수 있어 처음 켤 때 한 번 묻는다
+  const [pubAsk, setPubAsk] = useState(false);
+  const [folded, setFolded] = useState(() => { try { return localStorage.getItem("ta:coach-bar-folded") === "1"; } catch { return false; } });
   const [copyFail, setCopyFail] = useState(false);
   // 지금은 관리자(운영자 UID 로 내 정보 동기화한 브라우저)만 — 시험 중 (사용자 지시 2026-10-24 "화면 공유 버튼은 관리자만")
   if (!isOwnerUid() && !st.live) return null;
   if (!st.live) return (
     <div className="coach-bar">
-      <button type="button" className="bridge-toast-node coach-start" onClick={() => startCoach()}
+      {/* 방 제목 — 시작할 때 정한다 (사용자 지시 2026-10-24). 비워도 된다 */}
+      <input className="coach-title" defaultValue={coachTitle()} maxLength={TITLE_MAX} placeholder={t("방 제목 (선택)")} aria-label={t("방 제목")}
+        onBlur={(e) => setCoachTitle(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { setCoachTitle((e.target as HTMLInputElement).value); startCoach(); } }} />
+      <button type="button" className="bridge-toast-node coach-start" onMouseDown={() => { const el = document.activeElement as HTMLInputElement | null; if (el?.classList.contains("coach-title")) setCoachTitle(el.value); }} onClick={() => startCoach()}
         title={t("링크를 받은 사람이 이 게임 화면과 PRTS 인식 정보를 실시간으로 봅니다 — 영상은 사이트를 거치지 않고 직접 갑니다(녹화·저장 없음), 최대 {n}명", { n: COACH_MAX })}>
         ◉ {t("화면 공유")} <span className="beta-badge">BETA</span>
       </button>
@@ -289,15 +299,42 @@ function CoachControls({ t }: { t: T }) {
     if (cb?.writeText) void cb.writeText(st.url).then(done).catch(legacy);
     else legacy();
   };
+  const fold = () => { const v = !folded; setFolded(v); try { localStorage.setItem("ta:coach-bar-folded", v ? "1" : ""); } catch { /* */ } };
+  if (folded) return (
+    <div className="coach-bar on folded">
+      <button type="button" className="coach-fold" onClick={fold} aria-expanded={false} title={t("펼치기")}>
+        <span className="coach-live">● {t("화면 공유 중")} · {t("보는 사람 {a}/{b}", { a: st.viewers, b: COACH_MAX })}</span><i aria-hidden>▸</i>
+      </button>
+    </div>
+  );
   return (
     <div className="coach-bar on">
-      <span className="coach-live">● {t("화면 공유 중")} · {t("보는 사람 {a}/{b}", { a: st.viewers, b: COACH_MAX })}</span>
+      <button type="button" className="coach-fold" onClick={fold} aria-expanded title={t("접기")}>
+        <span className="coach-live">● {t("화면 공유 중")} · {t("보는 사람 {a}/{b}", { a: st.viewers, b: COACH_MAX })}</span><i aria-hidden>▾</i>
+      </button>
 
       <button type="button" className="bridge-toast-off" onClick={() => stopCoach()}>{t("공유 끝내기")}</button>
       {/* 링크는 단추 대신 주소 그대로 — 누르면 복사, 막혀도 끌어서 고를 수 있다 (사용자 지시 2026-10-24 "URL 직접 보여 주고 클릭하면 복사") */}
       <span className={`coach-url${copied ? " copied" : ""}`} role="button" tabIndex={0} title={t("눌러서 복사")}
         onClick={(e) => { if (!e.currentTarget.ownerDocument.defaultView?.getSelection()?.toString()) copy(e); }}
         onKeyDown={(e) => { if (e.key === "Enter") copy(e); }}>{st.url}</span>
+      <input className="coach-title on" defaultValue={coachTitle()} maxLength={TITLE_MAX} placeholder={t("방 제목 (선택)")} aria-label={t("방 제목")}
+        onBlur={(e) => { if (e.target.value.trim() !== coachTitle()) setCoachTitle(e.target.value); }} onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
+      {/* 공개방 — 켜면 내 정보 '훈수방' 공개 목록에 오른다 (사용자 지시 2026-10-24). 링크로 들어오는 건 켜든 끄든 누구나 */}
+      <div className="coach-pub">
+        <button type="button" role="switch" aria-checked={coachPublic()} className={coachPublic() ? "on" : ""}
+          onClick={() => (coachPublic() ? setCoachPublic(false) : setPubAsk(true))}>
+          {coachPublic() ? `● ${t("공개방")}` : `○ ${t("비공개방")}`}
+        </button>
+        <small>{coachPublic() ? t("공개 목록에 올라 있어요 — 누구나 들어올 수 있어요") : t("링크를 받은 사람만 들어와요")}</small>
+        {pubAsk && !coachPublic() && (
+          <div className="coach-pub-ask" role="alertdialog">
+            <p>{t("공개방으로 바꾸면 모르는 사람도 이 화면을 볼 수 있어요. 화면에 닉네임·UID 가 보이지 않는지 한번 확인해 주세요.")}</p>
+            <button type="button" className="bridge-toast-node" onClick={() => { setCoachPublic(true); setPubAsk(false); }}>{t("공개방으로")}</button>
+            <button type="button" className="bridge-toast-off" onClick={() => setPubAsk(false)}>{t("취소")}</button>
+          </div>
+        )}
+      </div>
       {/* 화질 단계 — 게임 창이 단계 해상도보다 크면 줄여 보내고 작으면 그대로 (사용자 지시 2026-10-24). 옆은 보는 사람별 실측 */}
       <div className="coach-quality" role="radiogroup" aria-label={t("화질")}>
         <span>{t("화질")}</span>
@@ -314,7 +351,7 @@ function CoachControls({ t }: { t: T }) {
           {coachStats().map((x) => <li key={x.id}>{t("보는 사람 {n}번", { n: x.id })} · {x.w && x.h ? `${x.w}×${x.h}` : "—"} · {x.fps}fps · {x.mbps}Mbps</li>)}
         </ul>
       )}
-      {copied && <span className="coach-copy-note" role="status">✓ {t("훈수방 링크를 복사했어요 — 보는 사람에게 보내 주세요")}</span>}
+      {copied && <span className="coach-copy-note" role="status">✓ {t("게임 화면 같이 보기 링크를 복사했어요 — 보는 사람에게 보내 주세요")}</span>}
       {copyFail && !copied && <span className="coach-copy-note fail" role="status">{t("자동 복사가 막혔어요 — 주소를 끌어서 복사해 주세요")}</span>}
     </div>
   );

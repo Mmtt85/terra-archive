@@ -25,6 +25,11 @@ class_name = "AcLobby"
 name = "COACH"
 class_name = "CoachRoom"
 
+# 훈수방 공개방 장부 (하나뿐, idFromName("coach-lobby")) — GET /coach-lobby 가 읽는다 (2026-10-24)
+[[durable_objects.bindings]]
+name = "COACHLOBBY"
+class_name = "CoachLobby"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["AcRoom"]
@@ -36,3 +41,7 @@ new_sqlite_classes = ["AcLobby"]
 [[migrations]]
 tag = "v3"
 new_sqlite_classes = ["CoachRoom"]
+
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = ["CoachLobby"]

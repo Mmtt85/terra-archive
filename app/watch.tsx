@@ -11,6 +11,7 @@ import { I18nProvider, useI18n, type Locale } from "./i18n";
 import { COACH_ICE, COACH_MAX, COACH_WS, CHAT_MAX, NAME_MAX, cardKey, coachName, setCoachName, msgName, anonName, EMOTES, EMOTE_LABEL, REACT_MS, emoteSrc, type CoachReact, type Emote, type CoachInfo, type CoachMsg, type CoachNames, type CoachVotes } from "./lens/coach";
 import type { BridgePipCard } from "./lens/bridge";
 import { Thumb } from "./lens/thumb";
+import { ACCOUNT_SERVERS } from "./account";
 
 type Phase = "connecting" | "waiting" | "live" | "full" | "ended" | "kicked" | "hostgone" | "failed" | "bad";
 
@@ -39,6 +40,7 @@ function WatchInner() {
   const [me, setMe] = useState<number | null>(null);   // 채팅 쓴 사람 열쇠 — 내 줄 표시용
   const [names, setNames] = useState<CoachNames>({});
   const [reacts, setReacts] = useState<CoachReact[]>([]);
+  const [eraOpen, setEraOpen] = useState(false);
   const dcRef = useRef<RTCDataChannel | null>(null);
   // 채팅 — 하는 사람이 나눠 주는 줄을 받는다. 닉네임은 이 브라우저에 두고 연결되면 하는 사람에게 알린다 (2026-10-24)
   const [chat, setChat] = useState<CoachMsg[]>([]);
@@ -162,7 +164,7 @@ function WatchInner() {
     connecting: t("하는 사람과 연결하는 중…"),
     waiting: t("하는 사람이 아직 들어오지 않았어요 — 화면 공유를 켜면 바로 보입니다"),
     full: t("자리가 다 찼어요 ({n}/{n})", { n: COACH_MAX }),
-    ended: t("이 훈수방은 끝났어요"),
+    ended: t("게임 화면 같이 보기가 끝났어요"),
     kicked: t("하는 사람이 내보냈어요"),
     hostgone: t("하는 사람의 연결이 잠깐 끊겼어요 — 돌아오면 다시 이어집니다"),
     failed: t("이 네트워크에서는 직접 연결이 안 돼요 — 와이파이로 바꾸거나 다른 네트워크에서 열어 주세요"),
@@ -175,8 +177,9 @@ function WatchInner() {
       <header className="watch-head">
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 사이트 전체가 <a> 로 이동한다(next/link 안 씀) */}
         <a href="/" className="watch-brand">TERRA ARCHIVE</a>
-        <b>{t("훈수방")}</b>
+        <b>{t("게임 화면 같이 보기")}</b>
         <span className="beta-badge">BETA</span>
+        {info?.title && <span className="watch-title">{info.title}</span>}
         {myId != null && phase === "live" && <small>{t("보는 사람 {n}번", { n: myId })}</small>}
       </header>
       <div className="watch-body">
@@ -196,9 +199,25 @@ function WatchInner() {
         </section>
         </div>
         <aside className="watch-side">
-          {fl && (fl.floor != null || fl.name) && (
-            <p className="watch-floor">{fl.floor ? t("{n}층", { n: fl.floor }) : ""}{fl.name ? ` · ${fl.name}` : ""}{fl.grade != null ? ` · ${t("난이도 {n}", { n: fl.grade })}` : ""}</p>
-          )}
+          <div className="watch-scroll">
+          {/* 공통 정보 — 하는 사람 작은 창의 띠와 같은 것: 층(또는 쉐이의 잔식)·층 이름·난이도·분대·시대 (사용자 지적 2026-10-24 "살카즈의 시대 같은 공통 정보 누락") */}
+          {fl && (() => {
+            const srv = info?.server ? t(ACCOUNT_SERVERS.find((x) => x.code === info.server)?.label ?? info.server) : "";
+            const bits = [srv, fl.place ? `${t("쉐이의 잔식")} - ${fl.place}` : fl.floor ? t("{n}층", { n: fl.floor }) : "",
+              !fl.place && fl.name ? fl.name : "", typeof fl.grade === "number" ? t("난이도 {n}", { n: fl.grade }) : "", fl.squad ?? ""].filter(Boolean);
+            if (!bits.length && !fl.era) return null;
+            return (
+              <div className="watch-floor">
+                {bits.map((b) => <span key={b}>{b}</span>)}
+                {fl.era && (
+                  <button type="button" className={`watch-era${eraOpen ? " on" : ""}`} aria-expanded={eraOpen} onClick={() => setEraOpen((o) => !o)}>
+                    {fl.era.name} <b aria-hidden>ⓘ</b>
+                  </button>
+                )}
+                {fl.era && eraOpen && <p className="watch-era-text">{fl.era.text}</p>}
+              </div>
+            );
+          })()}
           <p className="watch-hint">{t("카드마다 추천 · 비추천 — 하는 사람 화면에 몇 명이 눌렀는지 표시돼요. 다시 누르면 취소")}</p>
           <div className="watch-cards">
             {cards.map((c, i) => {
@@ -221,6 +240,7 @@ function WatchInner() {
               );
             })}
             {!cards.length && <p className="watch-empty">{t("하는 사람의 PRTS 링크가 무언가를 인식하면 여기에 카드가 뜹니다")}</p>}
+          </div>
           </div>
           <section className="watch-chat">
             <div className="watch-chat-head">

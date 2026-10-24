@@ -11,7 +11,8 @@
 // 숫자 칸(한눈에 보기·성급별 육성)은 누르면 해당 오퍼 목록이 모달로 뜬다. 긴 목록은 몇 줄만 보이고 '전부 보기'로 편다.
 // 공개모집 슬롯은 빼다 (사용자 지시 — 너무 자주 바뀌어 동기화 시점 값이 쓸모없다).
 
-import { noteVisitEvent } from "./visit-track";
+import { noteVisitEvent, isOwnerUid } from "./visit-track";
+import { CoachLobbyModal } from "./coach-lobby";
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { asset } from "./assets";
 import { TOPICS } from "./rogue-topics";
@@ -296,6 +297,8 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
   const [share, setShare] = useState(false);
   // 친구 매칭 창 (app/me-match.tsx, 2026-10-20) — 제목 오른쪽 버튼. 내보내기는 박사 카드 서버 뱃지 옆으로 옮겼다 (사용자 지시 2026-10-20)
   const [match, setMatch] = useState(false);
+  // 훈수방 공개방 목록 (app/coach-lobby.tsx, 2026-10-24) — 지금은 관리자만 단추가 보인다 (사용자 지시 "일단 나만")
+  const [coachOpen, setCoachOpen] = useState(false);
   // 제목 옆 버튼의 등록 수 — 내 서버(로그인 전 예시는 한섭) 공개 목록 길이. 창을 닫을 때(등록·취소 뒤) 다시 센다
   const [matchCount, setMatchCount] = useState<number | null>(null);
   const countServer = me?.server ?? "kr";
@@ -310,6 +313,7 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
   if (!mounted) return <section className="me-page"><div className="tab-loading" aria-hidden /></section>;
   return (
     <section className="me-page" aria-labelledby="me-title">
+      {coachOpen && <CoachLobbyModal synced={!!me} onSync={() => { setCoachOpen(false); setLogin(true); }} onClose={() => setCoachOpen(false)} />}
       {/* 공유 카드 QR(#verify=…)로 들어오면 정품 인증 창을 띄운다 */}
       <MeVerify />
       <MatchJobToast />
@@ -323,6 +327,11 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
               {/* 이름은 '친구 매칭', 괄호에 내 서버 등록 수 (사용자 지시 2026-10-20) */}
               {t("친구 매칭")}{matchCount != null && <span className="me-friend-n">({matchCount})</span>}
               <NewBadge id="friend-match" show={isNewFeature("friend-match")} />
+            </button>
+          )}
+          {isOwnerUid() && (
+            <button type="button" className="me-friend-btn" onClick={() => setCoachOpen(true)}>
+              {t("게임 화면 같이 보기")} <span className="beta-badge">BETA</span>
             </button>
           )}
         </div>

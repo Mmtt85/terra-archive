@@ -34854,7 +34854,23 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .watch-video video { width: 100%; height: 100%; max-height: calc(100dvh - 90px); object-fit: contain; display: block; }
 .watch-msg { position: absolute; inset: auto 12px 12px; margin: 0; padding: 10px 12px; border-radius: var(--r-sm); background: rgba(0, 0, 0, .72); color: #fff; font-size: 13px; line-height: 1.5; text-align: center; }
 .watch-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; }
-.watch-floor { margin: 0; font-size: 14px; font-weight: 800; }
+.watch-floor { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0; font-size: 13px; font-weight: 800; }
+.watch-floor > span { padding: 2px 8px; border-radius: var(--r-sm); background: var(--bg-soft); }
+.watch-era { padding: 2px 8px; border: 1px solid var(--bad); border-radius: var(--r-sm); background: none; color: var(--bad); font-size: 13px; font-weight: 800; cursor: pointer; }
+.watch-era.on { background: color-mix(in srgb, var(--bad) 12%, transparent); }
+.watch-era-text { flex-basis: 100%; margin: 2px 0 0; font-size: 12px; font-weight: 500; line-height: 1.5; color: var(--ink2); white-space: pre-line; }
+/* 옆줄 — 위(공통 정보·카드)만 스크롤하고 채팅은 맨 밑에 늘 붙어 있다 (사용자 지시 2026-10-24 "채팅창은 항상 sticky") */
+.watch-scroll { display: flex; flex-direction: column; gap: 8px; }
+.watch-chat { position: sticky; bottom: 0; z-index: 2; background: var(--paper); padding-bottom: 8px; }
+@media (min-width: 761px) {
+  .watch-page { height: 100dvh; min-height: 0; }
+  .watch-body { min-height: 0; overflow: hidden; }
+  .watch-side { overflow: hidden; }
+  .watch-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 2px; }
+  .watch-chat { position: static; flex: none; }
+}
+/* 폰은 페이지가 통째로 스크롤 — 옆줄이 스크롤 상자면 채팅이 화면 바닥에 안 붙는다 */
+@media (max-width: 760px) { .watch-side { overflow: visible; } }
 .watch-hint { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
 .watch-cards { display: grid; gap: 6px; }
 .watch-card { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: inherit; font: inherit; text-align: left; cursor: pointer; }
@@ -34893,11 +34909,11 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .coach-chat-off { border: 1px solid var(--line); border-radius: var(--r-sm); background: none; cursor: pointer; font-size: 11px; color: var(--muted); padding: 2px 8px; }
 .coach-chat-off.on { color: var(--bad); border-color: var(--bad); }
 /* 작은 창 안 — 다른 칸(노드·소장품)처럼 안쪽으로 띄우고 테두리를 두른다. 공유 단추 줄도 같은 여백 (사용자 지적 2026-10-24 "스타일 적용 안 됐다") */
-.bridge-pip > .coach-bar { margin: 8px 8px 0; flex-basis: auto; }   /* 꺼진 상태(화면 공유 단추만)도 같은 여백 — 왼쪽 위에 붙어 있었다 (사용자 지적 2026-10-24) */
-.bridge-pip > .coach-chat { margin: 8px 8px 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); }
+.bridge-pip-top > .coach-bar { margin: 8px 8px 0; flex-basis: auto; }   /* 꺼진 상태(화면 공유 단추만)도 같은 여백 — 왼쪽 위에 붙어 있었다 (사용자 지적 2026-10-24) */
+.bridge-pip-top > .coach-chat { margin: 8px 8px 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); }
 .bridge-pip .coach-chat-input { font-size: 12px; padding: 6px 8px; }
-.bridge-pip-rg > .coach-chat { border-color: var(--rgline); background: color-mix(in srgb, var(--rgcard) 85%, transparent); border-radius: 0; }
-.bridge-pip-rg > .coach-bar.on { border-radius: 0; }
+.bridge-pip-rg .bridge-pip-top > .coach-chat { border-color: var(--rgline); background: color-mix(in srgb, var(--rgcard) 85%, transparent); border-radius: 0; }
+.bridge-pip-rg .bridge-pip-top > .coach-bar.on { border-radius: 0; }
 .bridge-pip-rg .coach-chat-head b { color: var(--rggold); }
 .bridge-pip-rg .coach-chat-log p { color: var(--rgink); }
 .bridge-pip-rg .coach-chat-log p b, .bridge-pip-rg .coach-chat-me, .bridge-pip-rg .coach-chat-empty { color: var(--rgmut); }
@@ -34921,6 +34937,14 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .coach-copy-note { order: 2; }
 .coach-copy-note.fail { color: var(--bad); }
 .coach-bar .coach-votes { order: 3; }
+/* 작은 창 위 덩어리(머리줄·공유 줄·채팅) — 위에 붙고 노드·소장품만 밑으로 스크롤 */
+.bridge-pip-top { position: sticky; top: 0; z-index: 30; background: var(--header-solid, var(--white)); padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.bridge-pip-top > .bridge-pip-head { position: static; }
+.bridge-pip-rg .bridge-pip-top { background: var(--rgmodal, var(--rgbg, #120708)); border-bottom-color: var(--rgmodalline, var(--rgline)); }
+.coach-fold { display: flex; align-items: center; gap: 6px; margin-right: auto; padding: 0; border: 0; background: none; cursor: pointer; text-align: left; }
+.coach-fold i { font-style: normal; font-size: 11px; color: var(--muted); }
+.coach-bar.folded { padding-top: 4px; padding-bottom: 4px; }
+.bridge-pip .coach-chat-log { max-height: 110px; }
 /* 화질 단계 — 네 칸 고르기 + 보는 사람별 실측 (2026-10-24) */
 .coach-quality { order: 4; flex-basis: 100%; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .coach-quality > span { font-size: 12px; color: var(--muted); margin-right: 2px; }
@@ -34933,6 +34957,40 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .coach-quality button.on { border-color: var(--lime-line); color: var(--lime-ink); font-weight: 700; }
 .bridge-pip-rg .coach-quality button { border-color: var(--rgline); color: var(--rgink); border-radius: 0; }
 .bridge-pip-rg .coach-quality button.on { border-color: var(--rg-hue, var(--rggold)); color: var(--rggold); }
+/* 화면 같이 보기 공개방 목록 (내 정보, 2026-10-24) — 틀은 공용 창(operator-modal), 안쪽 여백은 창 본문에 맡긴다 */
+.coach-lobby-modal { width: min(576px, calc(100vw - 32px)); }   /* 480 → 576 (+20%, 사용자 지시 2026-10-24) */
+.coach-lobby-head { margin: 0 0 8px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.coach-lobby-gate { display: grid; justify-items: start; gap: 8px; }
+.coach-lobby-gate p { margin: 0; font-size: 14px; font-weight: 700; }
+.coach-lobby-gate small { font-size: 12px; color: var(--muted); }
+.coach-lobby-empty { margin: 0; padding: 12px 0; font-size: 13px; color: var(--muted); }
+.coach-lobby-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.coach-lobby-list a { display: grid; grid-template-columns: 88px 1fr auto; gap: 2px 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-md); color: var(--ink); text-decoration: none; }
+.coach-lobby-list a:hover { border-color: var(--lime-line); }
+.coach-lobby-list b { font-size: 14px; }
+.coach-lobby-list b, .coach-lobby-list span { grid-column: 2; }
+.coach-lobby-list span { font-size: 12px; color: var(--ink2); }
+.coach-lobby-kv { grid-column: 1; grid-row: 1 / span 3; width: 88px; height: 50px; object-fit: cover; border-radius: var(--r-sm); align-self: center; background: var(--bg-soft); }
+.coach-lobby-list em { grid-column: 3; grid-row: 1 / span 3; align-self: center; text-align: right; font-style: normal; font-size: 12px; line-height: 1.5; color: var(--muted); white-space: nowrap; }
+.coach-lobby-list li.full a { opacity: .5; cursor: default; }
+.coach-lobby-list span.coach-lobby-by { font-size: 11px; color: var(--muted); }
+/* 방 제목 칸 — 시작 전엔 화면 공유 단추 앞, 공유 중엔 공유 줄 안 (2026-10-24) */
+.bridge-pip input.coach-title:not([type="checkbox"]), input.coach-title:not([type="checkbox"]) {
+  flex: 1 1 140px; min-width: 0; height: 28px; padding: 0 8px; font-size: 12px !important;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--ink);
+}
+.coach-bar input.coach-title.on { order: 2; flex-basis: 100%; }
+.bridge-pip-rg input.coach-title { background: var(--rgbg, #120708); border-color: var(--rgline); color: var(--rgink); border-radius: 0; }
+.watch-title { margin-left: 8px; font-size: 14px; font-weight: 700; color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* 공개방 켜기 (2026-10-24) */
+.coach-pub { order: 3; flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.coach-pub > button { padding: 3px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: none; color: var(--ink2); font-size: 12px; font-weight: 700; cursor: pointer; }
+.coach-pub > button.on { border-color: var(--lime-line); color: var(--lime-ink); }
+.coach-pub > small { font-size: 11px; color: var(--muted); }
+.coach-pub-ask { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; border: 1px solid var(--bad); border-radius: var(--r-sm); }
+.coach-pub-ask p { flex-basis: 100%; margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink); white-space: normal; }
+.bridge-pip-rg .coach-pub > button { border-color: var(--rgline); color: var(--rgink); border-radius: 0; }
+.bridge-pip-rg .coach-pub > button.on { border-color: var(--rg-hue, var(--rggold)); color: var(--rggold); }
 .coach-stats { order: 5; flex-basis: 100%; list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .coach-copy-note { flex-basis: 100%; font-size: 12px; font-weight: 700; color: var(--lime-ink); }
 .bridge-pip input.coach-copy-url:not([type="checkbox"]) { flex-basis: 100%; font-size: 12px !important; padding: 4px 8px; border: 1px solid var(--line); background: var(--white); color: var(--ink); }

@@ -153,6 +153,8 @@ export default {
       await lobby().fetch("https://lobby/clear", { method: "POST" });
       return json({ ok: true, listed: ids.length, purged });
     }
+    // 훈수방 공개방 목록 (2026-10-24) — 하는 사람이 '공개방'으로 켠 방만. 사이트(내 정보)가 읽는다
+    if (url.pathname === "/coach-lobby") return env.COACHLOBBY.get(env.COACHLOBBY.idFromName("coach-lobby")).fetch("https://coach-lobby/list");
     // 훈수방 (2026-10-24) — 연결 중개(시그널링)만 한다. 영상은 하는 사람 ↔ 보는 사람 P2P 로 직접 간다
     const cm = url.pathname.match(/^\/coach\/([^/]+)$/);
     if (cm) {
@@ -539,8 +541,50 @@ const COACH_VIEWS = 3;
 const COACH_MSG_MAX = 16384;   // SDP 한 덩어리가 수 KB
 const COACH_TTL_MS = 6 * 3600_000;
 
+// 공개방 장부 — 하는 사람이 공개로 켠 방의 겉정보(닉네임·테마·층·난이도·보는 사람 수)만. 하는 사람이 30초마다 알려 오고,
+// 90초 넘게 소식이 없으면 목록에서 빠진다(창을 그냥 닫은 경우). 저장소는 메모리 — 워커가 내려가면 다음 알림 때 다시 찬다
+const COACH_LOBBY_STALE_MS = 90_000;
+export class CoachLobby {
+  constructor(state) { this.state = state; this.rooms = new Map(); }
+  async fetch(request) {
+    const url = new URL(request.url);
+    const now = Date.now();
+    for (const [k, r] of this.rooms) if (now - r.at > COACH_LOBBY_STALE_MS) this.rooms.delete(k);
+    if (url.pathname === "/list") return json({ ok: true, rooms: [...this.rooms.values()].sort((a, b) => a.since - b.since) });
+    if (request.method !== "POST") return json({ ok: false }, 404);
+    let body; try { body = await request.json(); } catch { return json({ ok: false }, 400); }
+    const code = String(body?.code ?? "");
+    if (!COACH_ID.test(code)) return json({ ok: false }, 400);
+    if (url.pathname === "/down") { this.rooms.delete(code); return json({ ok: true }); }
+    if (url.pathname === "/up") {
+      const cut = (v, n) => (typeof v === "string" ? v.slice(0, n) : "");
+      const num = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+      const prev = this.rooms.get(code);
+      this.rooms.set(code, {
+        code, title: cut(body.title, 40), server: cut(body.server, 8), topic: cut(body.topic, 16), name: cut(body.name, 24), theme: cut(body.theme, 40), floor: num(body.floor), grade: num(body.grade),
+        viewers: num(body.viewers) ?? 0, max: COACH_VIEWS, since: prev?.since ?? now, at: now,
+      });
+      if (this.rooms.size > 200) { const old = [...this.rooms.values()].sort((a, b) => a.at - b.at)[0]; this.rooms.delete(old.code); }
+      return json({ ok: true });
+    }
+    return json({ ok: false }, 404);
+  }
+}
+
 export class CoachRoom {
-  constructor(state) { this.state = state; }
+  constructor(state, env) { this.state = state; this.env = env; }
+  lobby() { return this.env.COACHLOBBY.get(this.env.COACHLOBBY.idFromName("coach-lobby")); }
+  /** 공개방이면 장부에 지금 상태를 알린다 (meta = 하는 사람이 보낸 겉정보, 하는 사람 소켓 attachment 에 둔다) */
+  async tellLobby(leaving = null) {
+    const h = this.host();
+    const a = h ? this.att(h) : null;
+    const code = (await this.state.storage.get("code")) ?? "";
+    if (!code) return;
+    try {
+      if (a?.pub && a.meta) await this.lobby().fetch("https://coach-lobby/up", { method: "POST", body: JSON.stringify({ code, ...a.meta, viewers: this.views().filter((w) => w !== leaving).length }) });
+      else await this.lobby().fetch("https://coach-lobby/down", { method: "POST", body: JSON.stringify({ code }) });
+    } catch { /* 장부가 잠깐 안 받아도 다음 알림에 맞춰진다 */ }
+  }
   socks() { return this.state.getWebSockets(); }
   att(ws) { try { return ws.deserializeAttachment() ?? {}; } catch { return {}; } }
   send(ws, msg) { try { ws.send(JSON.stringify(msg)); } catch { /* 닫힌 소켓 */ } }
@@ -551,6 +595,8 @@ export class CoachRoom {
     const role = url.searchParams.get("role") === "host" ? "host" : "view";
     const uid = (url.searchParams.get("uid") ?? "").slice(0, 48);
     const born = (await this.state.storage.get("born")) ?? 0;
+    const roomCode = decodeURIComponent(url.pathname.split("/").pop() ?? "").toLowerCase();
+    if (COACH_ID.test(roomCode) && !(await this.state.storage.get("code"))) await this.state.storage.put("code", roomCode);
     if (born && Date.now() - born > COACH_TTL_MS) {
       for (const w of this.socks()) { this.send(w, { t: "ended" }); try { w.close(4002, "expired"); } catch { /* */ } }
       await this.state.storage.deleteAll();
@@ -576,6 +622,7 @@ export class CoachRoom {
       const h = this.host();
       this.send(server, { t: "hello", role: "view", id, host: !!h, max: COACH_VIEWS });
       if (h) this.send(h, { t: "join", id });
+      if (h && this.att(h).pub) await this.tellLobby();
     }
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -590,21 +637,37 @@ export class CoachRoom {
       return;
     }
     if (me.role !== "host") return;
+    // 공개방 켜기·끄기와 겉정보 (하는 사람이 바뀔 때·30초마다)
+    if (msg?.t === "meta") {
+      const m = msg.meta ?? {};
+      ws.serializeAttachment({ ...me, pub: !!msg.pub, meta: { title: String(m.title ?? "").slice(0, 40), server: String(m.server ?? "").slice(0, 8), topic: String(m.topic ?? "").slice(0, 16), name: String(m.name ?? "").slice(0, 24), theme: String(m.theme ?? "").slice(0, 40), floor: typeof m.floor === "number" ? m.floor : null, grade: typeof m.grade === "number" ? m.grade : null } });
+      await this.tellLobby();
+      return;
+    }
     if (msg?.t === "kick") {   // 보는 사람 하나 내보내기 (to 없으면 모두)
       for (const v of this.views()) if (msg.to == null || this.att(v).id === msg.to) { this.send(v, { t: "kicked" }); try { v.close(4004, "kicked"); } catch { /* */ } }
       return;
     }
     if (msg?.t === "end") {    // 훈수방 닫기
       for (const v of this.views()) { this.send(v, { t: "ended" }); try { v.close(4005, "ended"); } catch { /* */ } }
+      const code = await this.state.storage.get("code");
+      if (code) { try { await this.lobby().fetch("https://coach-lobby/down", { method: "POST", body: JSON.stringify({ code }) }); } catch { /* 90초 뒤 저절로 빠진다 */ } }
       await this.state.storage.deleteAll();
       try { ws.close(1000, "ended"); } catch { /* */ }
     }
   }
-  async webSocketClose(ws) { this.drop(ws); }
-  async webSocketError(ws) { this.drop(ws); }
-  drop(ws) {
+  async webSocketClose(ws) { await this.drop(ws); }
+  async webSocketError(ws) { await this.drop(ws); }
+  async drop(ws) {
     const me = this.att(ws);
-    if (me.role === "host") { if (this.host() === ws || !this.host()) for (const v of this.views()) this.send(v, { t: "host-gone" }); }
-    else if (me.role === "view") { const h = this.host(); if (h) this.send(h, { t: "leave", id: me.id }); }
+    if (me.role === "host") {
+      if (this.host() === ws || !this.host()) {
+        for (const v of this.views()) this.send(v, { t: "host-gone" });
+        // 하는 사람이 떠났으면 목록에서 뺀다 (돌아오면 다시 알린다)
+        const code = await this.state.storage.get("code");
+        if (code && me.pub) { try { await this.lobby().fetch("https://coach-lobby/down", { method: "POST", body: JSON.stringify({ code }) }); } catch { /* */ } }
+      }
+    }
+    else if (me.role === "view") { const h = this.host(); if (h) { this.send(h, { t: "leave", id: me.id }); if (this.att(h).pub) await this.tellLobby(ws); } }
   }
 }

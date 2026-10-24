@@ -13,16 +13,24 @@
 //     "채팅 기능 한번 넣어볼까", "닉네임 설정은 만들자", "록라는 채팅창 볼 틈이 있다")
 
 import { asset } from "../assets";
-import { bridgeNotArknights, bridgePipFloor, bridgePipNode, bridgePipRelics, bridgeStream, onBridgeChange, setBridgeShareRate, type BridgePipCard } from "./bridge";
+import { getMe } from "../me-store";
+import { bridgeLock, bridgeNotArknights, bridgePipFloor, bridgePipNode, bridgePipRelics, bridgeStream, onBridgeChange, setBridgeShareRate, type BridgePipCard } from "./bridge";
 
 export const COACH_WS = "wss://terra-archive-acroom.nzkonaru.workers.dev/coach/";
 export const COACH_ICE: RTCIceServer[] = [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }];
 export const COACH_MAX = 3;
+/** 공개방 한 줄 (방 워커 /coach-lobby) */
+export type CoachLobbyRoom = { code: string; title?: string; server?: string; topic?: string; name: string; theme: string; floor: number | null; grade: number | null; viewers: number; max: number; since: number };
+export async function coachLobby(): Promise<CoachLobbyRoom[]> {
+  const r = await fetch(COACH_WS.replace(/^wss:/, "https:").replace(/\/coach\/$/, "/coach-lobby"), { cache: "no-store" });
+  const j = await r.json() as { rooms?: CoachLobbyRoom[] };
+  return j.rooms ?? [];
+}
 const CODE_CHARS = "abcdefghjkmnpqrstuvwxyz23456789";
 const UID_KEY = "ta:coach-uid";
 
 /** 보는 사람에게 보내는 인식 정보 한 덩어리 */
-export type CoachInfo = { t: "info"; node: BridgePipCard | null; relics: BridgePipCard[]; floor: ReturnType<typeof bridgePipFloor>; hidden: boolean };
+export type CoachInfo = { t: "info"; title?: string; server?: string; node: BridgePipCard | null; relics: BridgePipCard[]; floor: ReturnType<typeof bridgePipFloor>; hidden: boolean };
 /** 추천·비추천 현황 — 카드 키 → 추천한/비추천한 보는 사람 번호들. 한 사람이 카드마다 하나씩 (사용자 지시 2026-10-24 "추천 비추천 기능") */
 export type CoachVotes = Record<string, { up: number[]; down: number[] }>;
 export const cardKey = (c: Pick<BridgePipCard, "kind" | "name">) => `${c.kind}:${c.name}`;
@@ -116,12 +124,21 @@ export const anonName = (id: number) => `cannot ${id}`;
 const CHAT_KEEP = 60;            // 하는 사람이 들고 있는 최근 줄 수 — 늦게 들어온 사람에게도 보낸다
 const CHAT_GAP = 1200;           // 한 사람이 이 간격(ms)보다 빨리 보내면 버린다
 const NAME_KEY = "ta:coach-name";
+const TITLE_KEY = "ta:coach-title";
+export const TITLE_MAX = 40;
+/** 방 제목 — 공유를 시작할 때 정한다(공유 중에도 바꿀 수 있다). 공개방 목록·보는 사람 화면 머리에 나온다 (사용자 지시 2026-10-24) */
+export function coachTitle(): string { try { return cleanText(localStorage.getItem(TITLE_KEY), TITLE_MAX); } catch { return ""; } }
+export function setCoachTitle(v: string): void {
+  try { localStorage.setItem(TITLE_KEY, cleanText(v, TITLE_MAX)); } catch { /* 이번만 */ }
+  if (live) { sendAll(infoNow()); if (pub) sendMeta(); }
+  changed();
+}
 /** 글 다듬기 — 제어 문자를 빼고 줄바꿈은 띄어쓰기로, 길이 제한 */
 export const cleanText = (v: unknown, max: number) => typeof v === "string" ? v.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max) : "";
 export function coachName(): string { try { return cleanText(localStorage.getItem(NAME_KEY), NAME_MAX); } catch { return ""; } }
 export function setCoachName(v: string): void {
   try { localStorage.setItem(NAME_KEY, cleanText(v, NAME_MAX)); } catch { /* 이번만 */ }
-  if (live) sendAll({ t: "names", names: coachNames() });
+  if (live) { sendAll({ t: "names", names: coachNames() }); if (pub) sendMeta(); }
   changed();
 }
 
@@ -139,6 +156,10 @@ let chatOff = false;
 let chatUnread = 0;
 let authorSeq = 0;
 let reacts: CoachReact[] = [];
+// 공개방 — 켜면 방 워커 장부(공개방 목록)에 겉정보를 알린다. 공유를 새로 켤 때마다 비공개로 시작 (사용자 지시 2026-10-24)
+let pub = false;
+let metaTimer: number | undefined;
+let lastMeta = "";
 let reactSeq = 0;
 const leftNames = new Map<number, string>();   // 나간 사람의 마지막 이름 — 지난 줄이 번호로 바뀌지 않게
 const subs = new Set<() => void>();
@@ -153,6 +174,27 @@ export function coachNames(): CoachNames {
   for (const [a, n] of leftNames) out[String(a)] = n;
   for (const p of peers.values()) out[String(p.a)] = p.name || anonName(p.id);
   return out;
+}
+/** 공개방 여부 */
+export const coachPublic = () => pub;
+function metaNow() {
+  const f = bridgePipFloor();
+  return { title: coachTitle(), server: hostServer(), topic: bridgeLock()?.topic ?? "", name: coachName() || "", theme: bridgeLock()?.name ?? "", floor: typeof f.floor === "number" ? f.floor : null, grade: typeof f.grade === "number" ? f.grade : null };
+}
+/** 장부에 알리기 — force 가 아니면 바뀌었을 때만 */
+function sendMeta(force = false): void {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  const body = JSON.stringify({ t: "meta", pub, meta: metaNow() });
+  if (!force && body === lastMeta) return;
+  lastMeta = body;
+  try { ws.send(body); } catch { /* 다시 붙으면 보낸다 */ }
+}
+export function setCoachPublic(v: boolean): void {
+  pub = v;
+  window.clearInterval(metaTimer);
+  if (v) metaTimer = window.setInterval(() => sendMeta(true), 30_000);   // 90초 소식이 없으면 장부에서 빠진다
+  sendMeta(true);
+  changed();
 }
 /** 지금 떠 있는 반응들 */
 export const coachReacts = () => reacts;
@@ -198,7 +240,9 @@ function newCode(): string {
   return [...b].map((x) => CODE_CHARS[x % CODE_CHARS.length]).join("");
 }
 
-const infoNow = (): CoachInfo => ({ t: "info", node: bridgePipNode(), relics: bridgePipRelics(), floor: bridgePipFloor(), hidden: hiddenNow });
+/** 하는 사람이 플레이 중인 서버 — 내 정보에 동기화한 지금 계정의 서버 (사용자 지시 2026-10-24 "어느 서버 플레이 중인지") */
+const hostServer = () => getMe()?.server ?? "";
+const infoNow = (): CoachInfo => ({ t: "info", title: coachTitle(), server: hostServer(), node: bridgePipNode(), relics: bridgePipRelics(), floor: bridgePipFloor(), hidden: hiddenNow });
 function sendAll(msg: unknown) {
   const s = JSON.stringify(msg);
   for (const p of peers.values()) if (p.dc?.readyState === "open") { try { p.dc.send(s); } catch { /* 닫히는 중 */ } }
@@ -221,6 +265,7 @@ function onBridge() {
   const nk = bridgePipNode() ? cardKey(bridgePipNode()!) : "";
   if (nk !== lastNodeKey) { lastNodeKey = nk; let any = false; for (const p of peers.values()) if (p.votes.size) { p.votes.clear(); any = true; } if (any) { sendAll({ t: "votes", votes: coachVotes() }); changed(); } }
   sendAll(infoNow());
+  if (pub) sendMeta();
 }
 
 async function addPeer(id: number) {
@@ -300,7 +345,7 @@ export function startCoach(fresh = false): void {
   stopCoach(false);
   code = newCode();
   live = true; failMsg = ""; hiddenNow = bridgeNotArknights();
-  chatLog = []; chatUnread = 0; chatOff = false; leftNames.clear(); reacts = [];
+  chatLog = []; chatUnread = 0; chatOff = false; leftNames.clear(); reacts = []; pub = false; lastMeta = "";
   setBridgeShareRate(qOf(coachQuality()).fps);
   window.clearInterval(statTimer); statTimer = window.setInterval(() => void pollStats(), 2000);
   unsub = onBridgeChange(onBridge);
@@ -314,7 +359,7 @@ function connect() {
   sock.onmessage = (e) => {
     let m: { t: string; views?: number[]; id?: number; from?: number; data?: { sdp?: RTCSessionDescriptionInit; ice?: RTCIceCandidateInit } };
     try { m = JSON.parse(String(e.data)); } catch { return; }
-    if (m.t === "hello") for (const id of m.views ?? []) void addPeer(id);
+    if (m.t === "hello") { for (const id of m.views ?? []) void addPeer(id); lastMeta = ""; if (pub) sendMeta(true); }
     else if (m.t === "join" && m.id != null) void addPeer(m.id);
     else if (m.t === "leave" && m.id != null) dropPeer(m.id);
     else if (m.t === "sig" && m.from != null) {
@@ -344,6 +389,7 @@ export function stopCoach(notifyEnd = true): void {
   unsub?.(); unsub = null;
   if (live) setBridgeShareRate(0);
   window.clearInterval(statTimer); stats = []; lastBytes.clear();
+  window.clearInterval(metaTimer); pub = false; lastMeta = "";
   live = false; code = ""; lastNodeKey = "";
   changed();
 }
