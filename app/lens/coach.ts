@@ -73,8 +73,12 @@ export function coachQuality(): QualityId {
 }
 const qOf = (id: QualityId) => QUALITIES.find((q) => q.id === id) ?? QUALITIES[2];
 /** 보내는 영상 하나에 단계를 입힌다 — 연결을 끊지 않고 그 자리에서 바뀐다 */
-async function applyQuality(sender: RTCRtpSender): Promise<void> {
-  const q = qOf(coachQuality());
+/** 데이터 절약 — 보는 사람이 켜면(폰은 처음부터 켜짐) 그 사람에게만 540p 30프레임으로. 하는 사람이 고른 단계가 더 낮으면 그쪽
+ *  (사용자 지시 2026-10-25 "모바일은 해상도 낮추고"). 360p 는 게임 글자가 뭉개져서 540p 로 정했다 */
+const SAVE_Q = { h: 540, fps: 30, br: 1_500_000 };
+async function applyQuality(sender: RTCRtpSender, save = false): Promise<void> {
+  const host = qOf(coachQuality());
+  const q = save ? { h: Math.min(host.h, SAVE_Q.h), fps: Math.min(host.fps, SAVE_Q.fps), br: Math.min(host.br, SAVE_Q.br) } : host;
   const srcH = bridgeStream()?.getVideoTracks()[0]?.getSettings().height ?? 0;
   try {
     const prm = sender.getParameters();
@@ -86,11 +90,11 @@ let appliedSrcH = 0;
 /** 단계 바꾸기 — 캡처 프레임과 보는 사람 모두의 영상에 바로 반영 */
 export function setCoachQuality(id: QualityId): void {
   try { localStorage.setItem(QUALITY_KEY, id); } catch { /* 이번만 */ }
-  if (live) { setBridgeShareRate(qOf(id).fps); for (const p of peers.values()) for (const sd of p.pc.getSenders()) if (sd.track) void applyQuality(sd); }
+  if (live) { setBridgeShareRate(qOf(id).fps); for (const p of peers.values()) for (const sd of p.pc.getSenders()) if (sd.track) void applyQuality(sd, p.save); }
   changed();
 }
 /** 실측 — 보는 사람마다 지금 나가는 해상도·프레임·비트레이트 (연결 통계, 2초마다) */
-export type CoachStat = { id: number; w: number; h: number; fps: number; mbps: number };
+export type CoachStat = { id: number; w: number; h: number; fps: number; mbps: number; save: boolean };
 let stats: CoachStat[] = [];
 let statTimer: number | undefined;
 const lastBytes = new Map<number, { b: number; at: number }>();
@@ -107,7 +111,7 @@ async function pollStats(): Promise<void> {
         const b = r.bytesSent ?? 0, at = r.timestamp ?? Date.now();
         const mbps = prev && at > prev.at ? ((b - prev.b) * 8) / ((at - prev.at) / 1000) / 1e6 : 0;
         lastBytes.set(p.id, { b, at });
-        out.push({ id: p.id, w: r.frameWidth ?? 0, h: r.frameHeight ?? 0, fps: Math.round(r.framesPerSecond ?? 0), mbps: Math.round(mbps * 10) / 10 });
+        out.push({ id: p.id, w: r.frameWidth ?? 0, h: r.frameHeight ?? 0, fps: Math.round(r.framesPerSecond ?? 0), mbps: Math.round(mbps * 10) / 10, save: p.save });
       });
     } catch { /* 닫히는 중 */ }
   }
@@ -142,7 +146,7 @@ export function setCoachName(v: string): void {
   changed();
 }
 
-type Peer = { id: number; a: number; pc: RTCPeerConnection; dc: RTCDataChannel | null; votes: Map<string, 1 | -1>; open: boolean; name: string; lastChat: number; lastReact: number };
+type Peer = { id: number; a: number; save: boolean; pc: RTCPeerConnection; dc: RTCDataChannel | null; votes: Map<string, 1 | -1>; open: boolean; name: string; lastChat: number; lastReact: number };
 let ws: WebSocket | null = null;
 let code = "";
 let peers = new Map<number, Peer>();
@@ -260,7 +264,7 @@ function onBridge() {
   }
   // 게임 창 크기가 바뀌면 줄이는 비율을 다시 맞춘다
   const srcH = bridgeStream()?.getVideoTracks()[0]?.getSettings().height ?? 0;
-  if (srcH && srcH !== appliedSrcH) { appliedSrcH = srcH; for (const p of peers.values()) for (const sd of p.pc.getSenders()) if (sd.track) void applyQuality(sd); }
+  if (srcH && srcH !== appliedSrcH) { appliedSrcH = srcH; for (const p of peers.values()) for (const sd of p.pc.getSenders()) if (sd.track) void applyQuality(sd, p.save); }
   // 노드가 바뀌면 추천·비추천을 비운다 — 지난 화면의 투표가 남지 않게
   const nk = bridgePipNode() ? cardKey(bridgePipNode()!) : "";
   if (nk !== lastNodeKey) { lastNodeKey = nk; let any = false; for (const p of peers.values()) if (p.votes.size) { p.votes.clear(); any = true; } if (any) { sendAll({ t: "votes", votes: coachVotes() }); changed(); } }
@@ -273,14 +277,14 @@ async function addPeer(id: number) {
   if (!stream || !ws) return;
   peers.get(id)?.pc.close();
   const pc = new RTCPeerConnection({ iceServers: COACH_ICE });
-  const peer: Peer = { id, a: ++authorSeq, pc, dc: null, votes: new Map(), open: false, name: "", lastChat: 0, lastReact: 0 };
+  const peer: Peer = { id, a: ++authorSeq, save: false, pc, dc: null, votes: new Map(), open: false, name: "", lastChat: 0, lastReact: 0 };
   peers.set(id, peer);
   const src = stream.getVideoTracks()[0];
   const track = src.clone();
   try { (track as MediaStreamTrack & { contentHint?: string }).contentHint = "detail"; } catch { /* 글자·세부 우선 */ }
   track.enabled = !hiddenNow;
   const sender = pc.addTrack(track, new MediaStream([track]));
-  await applyQuality(sender);
+  await applyQuality(sender, peer.save);
   const dc = pc.createDataChannel("info");
   peer.dc = dc;
   dc.onopen = () => {
@@ -294,6 +298,12 @@ async function addPeer(id: number) {
   dc.onclose = () => { peer.open = false; changed(); };
   dc.onmessage = (e) => {
     let m: { t?: string; key?: string | null; v?: unknown; name?: unknown; text?: unknown; e?: unknown }; try { m = JSON.parse(String(e.data)); } catch { return; }
+    if (m.t === "save") {
+      peer.save = !!(m as { on?: unknown }).on;
+      for (const sd of pc.getSenders()) if (sd.track) void applyQuality(sd, peer.save);
+      changed();
+      return;
+    }
     if (m.t === "react") {
       const now = Date.now();
       if (!EMOTES.includes(m.e as Emote) || now - peer.lastReact < REACT_GAP) return;

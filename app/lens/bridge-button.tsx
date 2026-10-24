@@ -348,7 +348,7 @@ function CoachControls({ t }: { t: T }) {
       </div>
       {coachStats().length > 0 && (
         <ul className="coach-stats">
-          {coachStats().map((x) => <li key={x.id}>{t("보는 사람 {n}번", { n: x.id })} · {x.w && x.h ? `${x.w}×${x.h}` : "—"} · {x.fps}fps · {x.mbps}Mbps</li>)}
+          {coachStats().map((x) => <li key={x.id}>{t("보는 사람 {n}번", { n: x.id })} · {x.w && x.h ? `${x.w}×${x.h}` : "—"} · {x.fps}fps · {x.mbps}Mbps{x.save ? ` · ${t("데이터 절약")}` : ""}</li>)}
         </ul>
       )}
       {copied && <span className="coach-copy-note" role="status">✓ {t("게임 화면 같이 보기 링크를 복사했어요 — 보는 사람에게 보내 주세요")}</span>}

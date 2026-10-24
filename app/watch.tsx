@@ -42,6 +42,21 @@ function WatchInner() {
   const [reacts, setReacts] = useState<CoachReact[]>([]);
   const [eraOpen, setEraOpen] = useState(false);
   const [emoteOpen, setEmoteOpen] = useState(false);
+  // 데이터 절약 — 켜면 하는 사람이 이 사람에게만 540p 30프레임으로 보낸다. 폰이면 처음부터 켜짐, 고른 값은 이 브라우저에 기억 (2026-10-25)
+  const [save, setSave] = useState(false);
+  const saveRef = useRef(false);
+  useEffect(() => {
+    let v: boolean;
+    try { const s = localStorage.getItem("ta:coach-save"); v = s != null ? s === "1" : matchMedia("(max-width: 760px), (pointer: coarse)").matches; } catch { v = false; }
+    saveRef.current = v;
+    queueMicrotask(() => setSave(v));
+  }, []);
+  const toggleSave = () => {
+    const v = !save;
+    setSave(v); saveRef.current = v;
+    try { localStorage.setItem("ta:coach-save", v ? "1" : "0"); } catch { /* 이번만 */ }
+    try { dcRef.current?.send(JSON.stringify({ t: "save", on: v })); } catch { /* 아직 안 열림 */ }
+  };
   // 이모티콘 판 — 바깥을 누르거나 Esc 면 닫는다
   useEffect(() => {
     if (!emoteOpen) return;
@@ -80,7 +95,10 @@ function WatchInner() {
       p.ontrack = (e) => { if (over) return; const v = videoRef.current; if (v) { v.srcObject = e.streams[0] ?? new MediaStream([e.track]); void v.play().catch(() => null); } setPhase("live"); };
       p.ondatachannel = (e) => {
         const dc = e.channel; dcRef.current = dc;
-        dc.onopen = () => { const n = coachName(); if (n) dc.send(JSON.stringify({ t: "name", name: n })); };
+        dc.onopen = () => {
+          const n = coachName(); if (n) dc.send(JSON.stringify({ t: "name", name: n }));
+          if (saveRef.current) dc.send(JSON.stringify({ t: "save", on: true }));
+        };
         dc.onmessage = (ev) => {
           let m: { t?: string } & Partial<CoachInfo> & { votes?: CoachVotes; m?: CoachMsg; log?: CoachMsg[]; off?: boolean; names?: CoachNames; a?: number };
           try { m = JSON.parse(String(ev.data)); } catch { return; }
@@ -189,6 +207,8 @@ function WatchInner() {
         <b>{t("게임 화면 같이 보기")}</b>
         <span className="beta-badge">BETA</span>
         {info?.title && <span className="watch-title">{info.title}</span>}
+        <button type="button" role="switch" aria-checked={save} className={`watch-save${save ? " on" : ""}`} onClick={toggleSave}
+          title={t("켜면 이 기기로는 540p 30프레임으로 받아 데이터를 아낍니다")}>{save ? "● " : "○ "}{t("데이터 절약")}</button>
         {myId != null && phase === "live" && <small>{t("보는 사람 {n}번", { n: myId })}</small>}
       </header>
       <div className="watch-body">

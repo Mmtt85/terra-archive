@@ -4981,6 +4981,8 @@ const D: Record<string, Pair> = {
   "{n}장 합성": ["Combine {n}", "{n}体合成"],
   "골든": ["Golden", "ゴールド"],
   "아이템 끼우기": ["Equip item", "アイテムを装備"],
+  "데이터 절약": ["Data saver", "データ節約"],
+  "켜면 이 기기로는 540p 30프레임으로 받아 데이터를 아낍니다": ["When on, this device receives 540p at 30fps to save data", "オンにするとこの端末では540p・30fpsで受信してデータを節約します"],
   "방 제목 (선택)": ["Room title (optional)", "ルーム名（任意）"],
   "방 제목": ["Room title", "ルーム名"],
   "공개방": ["Public room", "公開ルーム"],
