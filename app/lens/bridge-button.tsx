@@ -269,7 +269,7 @@ function CoachControls({ t }: { t: T }) {
   );
   // 복사는 **누른 단추가 있는 창**의 클립보드로 — 작은 창(별도 창)에서 본 창 navigator 로 쓰면 '포커스 없는 문서'라 크롬이 거부하고
   // 조용히 실패했다 (사용자 지적 2026-10-24 "복사가 안 된다"). 막히면 옛 방식(execCommand)으로, 그래도 안 되면 링크를 펼쳐 직접 고르게
-  const copy = (ev: React.MouseEvent<HTMLButtonElement>) => {
+  const copy = (ev: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
     const doc = ev.currentTarget.ownerDocument;
     const win = doc.defaultView ?? window;
     const done = () => { setCopied(true); setCopyFail(false); setTimeout(() => setCopied(false), 2000); };
@@ -282,6 +282,8 @@ function CoachControls({ t }: { t: T }) {
         ta.remove();
         if (ok) done(); else setCopyFail(true);
       } catch { setCopyFail(true); }
+      // 실패해도 주소는 그대로 보이니 끌어서 고르면 된다 — 고른 상태로 둔다
+      try { const r = doc.createRange(); r.selectNodeContents(ev.currentTarget); const sel = win.getSelection(); sel?.removeAllRanges(); sel?.addRange(r); } catch { /* */ }
     };
     const cb = win.navigator.clipboard;
     if (cb?.writeText) void cb.writeText(st.url).then(done).catch(legacy);
@@ -290,10 +292,14 @@ function CoachControls({ t }: { t: T }) {
   return (
     <div className="coach-bar on">
       <span className="coach-live">● {t("화면 공유 중")} · {t("보는 사람 {a}/{b}", { a: st.viewers, b: COACH_MAX })}</span>
-      <button type="button" className={`bridge-toast-node${copied ? " coach-copied" : ""}`} onClick={copy} title={st.url}>{copied ? `✓ ${t("복사했어요")}` : t("링크 복사")}</button>
+
       <button type="button" className="bridge-toast-off" onClick={() => stopCoach()}>{t("공유 끝내기")}</button>
-      {copied && <span className="coach-copy-note" role="status">{t("훈수방 링크를 복사했어요 — 보는 사람에게 보내 주세요")}</span>}
-      {copyFail && <input className="coach-copy-url" readOnly value={st.url} aria-label={t("링크")} onFocus={(e) => e.currentTarget.select()} autoFocus />}
+      {/* 링크는 단추 대신 주소 그대로 — 누르면 복사, 막혀도 끌어서 고를 수 있다 (사용자 지시 2026-10-24 "URL 직접 보여 주고 클릭하면 복사") */}
+      <span className={`coach-url${copied ? " copied" : ""}`} role="button" tabIndex={0} title={t("눌러서 복사")}
+        onClick={(e) => { if (!e.currentTarget.ownerDocument.defaultView?.getSelection()?.toString()) copy(e); }}
+        onKeyDown={(e) => { if (e.key === "Enter") copy(e); }}>{st.url}</span>
+      {copied && <span className="coach-copy-note" role="status">✓ {t("훈수방 링크를 복사했어요 — 보는 사람에게 보내 주세요")}</span>}
+      {copyFail && !copied && <span className="coach-copy-note fail" role="status">{t("자동 복사가 막혔어요 — 주소를 끌어서 복사해 주세요")}</span>}
       <CoachVoteList t={t} />
     </div>
   );

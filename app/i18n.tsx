@@ -4981,6 +4981,8 @@ const D: Record<string, Pair> = {
   "{n}장 합성": ["Combine {n}", "{n}体合成"],
   "골든": ["Golden", "ゴールド"],
   "아이템 끼우기": ["Equip item", "アイテムを装備"],
+  "눌러서 복사": ["Click to copy", "クリックでコピー"],
+  "자동 복사가 막혔어요 — 주소를 끌어서 복사해 주세요": ["Auto copy was blocked — drag over the address to copy it", "自動コピーできませんでした — アドレスをドラッグしてコピーしてください"],
   "훈수방 링크를 복사했어요 — 보는 사람에게 보내 주세요": ["Coaching room link copied — send it to your viewers", "コーチ部屋のリンクをコピーしました — 視聴者に送ってください"],
   "링크": ["Link", "リンク"],
   "화면 반응": ["Reactions", "リアクション"],

@@ -34910,7 +34910,17 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .bridge-pip input.coach-chat-input:not([type="checkbox"]), .bridge-pip input.coach-chat-name:not([type="checkbox"]) { font-size: 12px !important; height: 28px; padding: 0 8px; line-height: 28px; }
 .bridge-pip input.coach-chat-input::placeholder { font-size: 12px; }
 /* 링크 복사 — 됐다는 표시, 막혔으면 링크를 펼쳐 직접 고르게 */
-.coach-copied { border-color: var(--lime-line) !important; color: var(--lime-ink) !important; }
+.coach-url {
+  flex-basis: 100%; order: 1; padding: 5px 8px; border: 1px dashed var(--line); border-radius: var(--r-sm);
+  font-family: var(--mono, ui-monospace, monospace); font-size: 12px; color: var(--ink); cursor: copy;
+  user-select: text; -webkit-user-select: text; overflow-wrap: anywhere;
+}
+.coach-url:hover { border-color: var(--lime-line); }
+.coach-url.copied { border-style: solid; border-color: var(--lime-line); }
+.bridge-pip-rg .coach-url { border-color: var(--rgline); color: var(--rgink); border-radius: 0; }
+.coach-copy-note { order: 2; }
+.coach-copy-note.fail { color: var(--bad); }
+.coach-bar .coach-votes { order: 3; }
 .coach-copy-note { flex-basis: 100%; font-size: 12px; font-weight: 700; color: var(--lime-ink); }
 .bridge-pip input.coach-copy-url:not([type="checkbox"]) { flex-basis: 100%; font-size: 12px !important; padding: 4px 8px; border: 1px solid var(--line); background: var(--white); color: var(--ink); }
 .watch-chat-input { height: 34px; padding: 0 10px; line-height: 34px; }
