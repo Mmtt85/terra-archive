@@ -421,10 +421,12 @@ export function onBridgeChange(cb: () => void): () => void { statusSubs.add(cb);
 /** 지금 잡고 있는 게임 화면 스트림 — 훈수방이 이 영상을 그대로 보낸다 (화면을 한 번 더 고르지 않게) */
 export const bridgeStream = (): MediaStream | null => stream;
 /** 훈수방을 켜면 프레임을 30 까지 올리고(보는 사람이 끊김 없이), 끄면 인식용 낮은 값으로 되돌린다 */
-export function setBridgeShareRate(on: boolean): void {
+/** 훈수방 화면 공유 중 캡처 프레임 — 0 이면 평소(인식용 4장), 아니면 그 수(30·60, 화질 단계). 인식은 최신 한 장만 쥐고 무거운 일은
+ *  정해진 간격으로만 해서(pump) 60장이어도 부담이 거의 늘지 않는다 */
+export function setBridgeShareRate(fps: number): void {
   const tr = stream?.getVideoTracks()[0];
   if (!tr) return;
-  void tr.applyConstraints({ frameRate: on ? { ideal: 30, max: 30 } : { ideal: FPS_IDEAL, max: 8 } }).catch(() => { /* 기기가 못 맞추면 그대로 */ });
+  void tr.applyConstraints({ frameRate: fps ? { ideal: fps, max: fps } : { ideal: FPS_IDEAL, max: 8 } }).catch(() => { /* 기기가 못 맞추면 그대로 */ });
 }
 
 // ── 맵 노드 자동 이동 (제보 f1c050b2, 2026-09-04 "노드인식이 방해되는 경우가 조금 있네요") ──

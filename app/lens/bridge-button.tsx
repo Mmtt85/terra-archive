@@ -10,7 +10,7 @@ import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } fro
 import { createPortal } from "react-dom";
 import { isOwnerUid } from "../visit-track";
 import { Thumb } from "./thumb";
-import { coachReacts, emoteUrl, EMOTE_LABEL, coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
+import { QUALITIES, coachQuality, setCoachQuality, coachStats, coachReacts, emoteUrl, EMOTE_LABEL, coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
 import { useBridgeStatus, connectBridge, disconnectBridge, clearBridgeError, bridgeNotArknights, bridgeArkThumb, confirmArknights, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -298,6 +298,22 @@ function CoachControls({ t }: { t: T }) {
       <span className={`coach-url${copied ? " copied" : ""}`} role="button" tabIndex={0} title={t("눌러서 복사")}
         onClick={(e) => { if (!e.currentTarget.ownerDocument.defaultView?.getSelection()?.toString()) copy(e); }}
         onKeyDown={(e) => { if (e.key === "Enter") copy(e); }}>{st.url}</span>
+      {/* 화질 단계 — 게임 창이 단계 해상도보다 크면 줄여 보내고 작으면 그대로 (사용자 지시 2026-10-24). 옆은 보는 사람별 실측 */}
+      <div className="coach-quality" role="radiogroup" aria-label={t("화질")}>
+        <span>{t("화질")}</span>
+        {QUALITIES.map((q) => (
+          <button type="button" key={q.id} role="radio" aria-checked={coachQuality() === q.id}
+            className={coachQuality() === q.id ? "on" : ""} onClick={() => setCoachQuality(q.id)}
+            title={`${q.h}p · ${q.fps}fps · ${t("1명당 최대 {n}Mbps", { n: q.br / 1e6 })}`}>
+            {t(q.label)}<small>{q.h}p{q.fps}</small>
+          </button>
+        ))}
+      </div>
+      {coachStats().length > 0 && (
+        <ul className="coach-stats">
+          {coachStats().map((x) => <li key={x.id}>{t("보는 사람 {n}번", { n: x.id })} · {x.w && x.h ? `${x.w}×${x.h}` : "—"} · {x.fps}fps · {x.mbps}Mbps</li>)}
+        </ul>
+      )}
       {copied && <span className="coach-copy-note" role="status">✓ {t("훈수방 링크를 복사했어요 — 보는 사람에게 보내 주세요")}</span>}
       {copyFail && !copied && <span className="coach-copy-note fail" role="status">{t("자동 복사가 막혔어요 — 주소를 끌어서 복사해 주세요")}</span>}
     </div>

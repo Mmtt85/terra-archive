@@ -34893,7 +34893,7 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .coach-chat-off { border: 1px solid var(--line); border-radius: var(--r-sm); background: none; cursor: pointer; font-size: 11px; color: var(--muted); padding: 2px 8px; }
 .coach-chat-off.on { color: var(--bad); border-color: var(--bad); }
 /* 작은 창 안 — 다른 칸(노드·소장품)처럼 안쪽으로 띄우고 테두리를 두른다. 공유 단추 줄도 같은 여백 (사용자 지적 2026-10-24 "스타일 적용 안 됐다") */
-.bridge-pip > .coach-bar.on { margin: 8px 8px 0; flex-basis: auto; }
+.bridge-pip > .coach-bar { margin: 8px 8px 0; flex-basis: auto; }   /* 꺼진 상태(화면 공유 단추만)도 같은 여백 — 왼쪽 위에 붙어 있었다 (사용자 지적 2026-10-24) */
 .bridge-pip > .coach-chat { margin: 8px 8px 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); }
 .bridge-pip .coach-chat-input { font-size: 12px; padding: 6px 8px; }
 .bridge-pip-rg > .coach-chat { border-color: var(--rgline); background: color-mix(in srgb, var(--rgcard) 85%, transparent); border-radius: 0; }
@@ -34921,6 +34921,19 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .coach-copy-note { order: 2; }
 .coach-copy-note.fail { color: var(--bad); }
 .coach-bar .coach-votes { order: 3; }
+/* 화질 단계 — 네 칸 고르기 + 보는 사람별 실측 (2026-10-24) */
+.coach-quality { order: 4; flex-basis: 100%; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.coach-quality > span { font-size: 12px; color: var(--muted); margin-right: 2px; }
+.coach-quality button {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 1px; padding: 3px 8px; line-height: 1.2;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: none; color: var(--ink2); font-size: 12px; cursor: pointer;
+}
+.coach-quality button small { font-size: 10px; color: var(--muted); }
+.coach-quality button:hover { background: var(--btn-ghost-hover); color: var(--btn-ink-hover); }
+.coach-quality button.on { border-color: var(--lime-line); color: var(--lime-ink); font-weight: 700; }
+.bridge-pip-rg .coach-quality button { border-color: var(--rgline); color: var(--rgink); border-radius: 0; }
+.bridge-pip-rg .coach-quality button.on { border-color: var(--rg-hue, var(--rggold)); color: var(--rggold); }
+.coach-stats { order: 5; flex-basis: 100%; list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .coach-copy-note { flex-basis: 100%; font-size: 12px; font-weight: 700; color: var(--lime-ink); }
 .bridge-pip input.coach-copy-url:not([type="checkbox"]) { flex-basis: 100%; font-size: 12px !important; padding: 4px 8px; border: 1px solid var(--line); background: var(--white); color: var(--ink); }
 .watch-chat-input { height: 34px; padding: 0 10px; line-height: 34px; }
