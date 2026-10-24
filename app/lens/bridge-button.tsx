@@ -300,7 +300,6 @@ function CoachControls({ t }: { t: T }) {
         onKeyDown={(e) => { if (e.key === "Enter") copy(e); }}>{st.url}</span>
       {copied && <span className="coach-copy-note" role="status">✓ {t("훈수방 링크를 복사했어요 — 보는 사람에게 보내 주세요")}</span>}
       {copyFail && !copied && <span className="coach-copy-note fail" role="status">{t("자동 복사가 막혔어요 — 주소를 끌어서 복사해 주세요")}</span>}
-      <CoachVoteList t={t} />
     </div>
   );
 }
@@ -322,19 +321,17 @@ function CoachReactLayer() {
   );
 }
 
-/** 보는 사람 추천·비추천 요약 — 통합전략 작은 창은 본 화면 창을 그대로 그려 카드에 표를 못 단다(PipCard 를 안 쓴다).
- *  그래서 공유 줄 밑에 '어느 카드에 몇 표'를 따로 띄운다 (사용자 지적 2026-10-24 "시청자가 클릭했는데 하는 사람한테 안 보임") */
-function CoachVoteList({ t }: { t: T }) {
-  const rows = Object.entries(coachVotes()).filter(([, v]) => v.up.length || v.down.length)
-    .sort((a, b) => (b[1].up.length - b[1].down.length) - (a[1].up.length - a[1].down.length));
-  if (!rows.length) return null;
+/** 보는 사람 추천·비추천 표 — 카드 열쇠(cardKey) 하나의 표를 그 자리에 단다. 통합전략 작은 창은 본 화면 창을 그대로 그려서
+ *  PipCard 를 안 쓰므로, 그 노드 칸 머리·소장품마다 이걸 직접 붙인다 (사용자 지시 2026-10-24 "노드 이름을 따로 띄우지 말고 노드·소장품에") */
+export function CoachVoteBadge({ k }: { k: string }) {
+  const st = useCoach();
+  const v = st.live && k ? coachVotes()[k] : undefined;
+  if (!v || (!v.up.length && !v.down.length)) return null;
   return (
-    <ul className="coach-votes" aria-label={t("추천·비추천")}>
-      {rows.map(([k, v]) => (
-        <li key={k}><span>{k.slice(k.indexOf(":") + 1)}</span>
-          {v.up.length > 0 && <b className="up"><Thumb size={12} />{v.up.length}</b>}{v.down.length > 0 && <b className="down"><Thumb down size={12} />{v.down.length}</b>}</li>
-      ))}
-    </ul>
+    <em className="coach-ping coach-vote-badge">
+      {v.up.length > 0 && <span className="up"><Thumb size={12} />{v.up.length}</span>}
+      {v.down.length > 0 && <span className="down"><Thumb down size={12} />{v.down.length}</span>}
+    </em>
   );
 }
 

@@ -57,12 +57,16 @@ function WatchInner() {
     let ws: WebSocket | null = null;
     let dead = false;
     let failTimer: number | undefined;
+    // 끝·내보냄·꽉 참이면 그걸로 끝 — 뒤따라 끊기는 영상 연결을 '연결 실패'로 다시 판정하지 않는다
+    // (사용자 지적 2026-10-24 "공유 끝났다고 뜨더니 직접 연결이 안 돼요로 바뀐다")
+    let over = false;
     const reset = () => { pc?.close(); pc = null; dcRef.current = null; };
+    const finish = (ph: Phase) => { over = true; window.clearTimeout(failTimer); reset(); setPhase(ph); };
     const newPc = () => {
       reset();
       const p = new RTCPeerConnection({ iceServers: COACH_ICE });
       pc = p;
-      p.ontrack = (e) => { const v = videoRef.current; if (v) { v.srcObject = e.streams[0] ?? new MediaStream([e.track]); void v.play().catch(() => null); } setPhase("live"); };
+      p.ontrack = (e) => { if (over) return; const v = videoRef.current; if (v) { v.srcObject = e.streams[0] ?? new MediaStream([e.track]); void v.play().catch(() => null); } setPhase("live"); };
       p.ondatachannel = (e) => {
         const dc = e.channel; dcRef.current = dc;
         dc.onopen = () => { const n = coachName(); if (n) dc.send(JSON.stringify({ t: "name", name: n })); };
@@ -92,10 +96,10 @@ function WatchInner() {
       p.onconnectionstatechange = () => {
         if (p.connectionState === "connected") window.clearTimeout(failTimer);
         // 직접 연결이 안 되는 망(중계 서버는 쓰지 않는다) — 한참 붙지 않거나 실패하면 알린다
-        if (p.connectionState === "failed") setPhase("failed");
+        if (p.connectionState === "failed" && !over) setPhase("failed");
       };
       window.clearTimeout(failTimer);
-      failTimer = window.setTimeout(() => { if (pc === p && p.connectionState !== "connected") setPhase("failed"); }, 20_000);
+      failTimer = window.setTimeout(() => { if (!over && pc === p && p.connectionState !== "connected") setPhase("failed"); }, 20_000);
       return p;
     };
     const connect = () => {
@@ -104,10 +108,11 @@ function WatchInner() {
       sock.onmessage = async (e) => {
         let m: { t: string; id?: number; host?: boolean; data?: { sdp?: RTCSessionDescriptionInit; ice?: RTCIceCandidateInit } };
         try { m = JSON.parse(String(e.data)); } catch { return; }
+        if (over) return;
         if (m.t === "hello") { setMyId(m.id ?? null); setPhase(m.host ? "connecting" : "waiting"); }
-        else if (m.t === "full") setPhase("full");
-        else if (m.t === "kicked") setPhase("kicked");
-        else if (m.t === "ended") setPhase("ended");
+        else if (m.t === "full") finish("full");
+        else if (m.t === "kicked") finish("kicked");
+        else if (m.t === "ended") finish("ended");
         else if (m.t === "host-gone") { setPhase("hostgone"); reset(); }
         else if (m.t === "host-back") setPhase("connecting");
         else if (m.t === "sig") {
@@ -121,7 +126,7 @@ function WatchInner() {
         }
       };
       sock.onclose = (ev) => {
-        if (dead || ws !== sock) return;
+        if (dead || over || ws !== sock) return;
         if ([4003, 4004, 4005, 4002].includes(ev.code)) return;   // 꽉 참·내보내짐·끝남·만료 — 다시 붙지 않는다
         setTimeout(() => { if (!dead) connect(); }, 2000);
       };
@@ -189,14 +194,6 @@ function WatchInner() {
             ))}
           </div>
         </section>
-        {/* 화면 반응 — 누르면 하는 사람 작은 창과 모두의 영상 위로 떠오른다 (게임 위수 협의 이모티콘, 사용자 지시 2026-10-24) */}
-        <div className="watch-emotes" role="toolbar" aria-label={t("화면 반응")}>
-          {EMOTES.map((e) => (
-            <button type="button" key={e} disabled={phase !== "live"} onClick={(ev) => sendReact(e, ev.timeStamp)} title={t(EMOTE_LABEL[e])} aria-label={t(EMOTE_LABEL[e])}>
-              <img src={emoteSrc(e)} alt="" width={40} height={40} />
-            </button>
-          ))}
-        </div>
         </div>
         <aside className="watch-side">
           {fl && (fl.floor != null || fl.name) && (
@@ -228,7 +225,8 @@ function WatchInner() {
           <section className="watch-chat">
             <div className="watch-chat-head">
               <b>{t("채팅")}</b>
-              <input className="watch-chat-name" key={name} defaultValue={name} maxLength={NAME_MAX}
+              <label className="watch-chat-namelbl" htmlFor="watch-nick">{t("닉네임")}</label>
+              <input id="watch-nick" className="watch-chat-name" key={name} defaultValue={name} maxLength={NAME_MAX}
                 placeholder={myId != null ? anonName(myId) : t("닉네임")} aria-label={t("닉네임")}
                 onBlur={(e) => { if (e.target.value.trim() !== name) saveName(e.target.value); }}
                 onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
@@ -242,6 +240,14 @@ function WatchInner() {
             <input className="watch-chat-input" value={text} maxLength={CHAT_MAX} disabled={chatOff || phase !== "live"}
               placeholder={chatOff ? t("하는 사람이 채팅을 껐어요") : t("채팅 (Enter 로 보내기)")}
               onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) say(); }} />
+            {/* 화면 반응 — 누르면 하는 사람 작은 창과 모두의 영상 위로 떠오른다 (게임 위수 협의 이모티콘, 사용자 지시 2026-10-24) */}
+            <div className="watch-emotes" role="toolbar" aria-label={t("화면 반응")}>
+              {EMOTES.map((e) => (
+                <button type="button" key={e} disabled={phase !== "live"} onClick={(ev) => sendReact(e, ev.timeStamp)} title={t(EMOTE_LABEL[e])} aria-label={t(EMOTE_LABEL[e])}>
+                  <img src={emoteSrc(e)} alt="" width={40} height={40} />
+                </button>
+              ))}
+            </div>
           </section>
         </aside>
       </div>

@@ -34,7 +34,8 @@ import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
 import { useBridgeWatch, noteBridge, bridgeLock, bridgeSession, logBridgeEvent, memoBridgeScene, setBridgePipNode, bridgePipNode, setBridgePipRelics, setBridgePipFloor, bridgePipFloor, bridgePipRelics, type BridgeLogEvent, type BridgePipCard } from "./lens/bridge";
 import { createPortal } from "react-dom";
-import { BridgeTopicButton, useBridgePipWindow, setBridgePipExternal } from "./lens/bridge-button";
+import { BridgeTopicButton, useBridgePipWindow, setBridgePipExternal, CoachVoteBadge } from "./lens/bridge-button";
+import { cardKey } from "./lens/coach";
 import { useDropWatch } from "./lens/dropwatch";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
@@ -2371,6 +2372,8 @@ export default function RogueGuide({ initialTopic }: {
               {r.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
               {r.order && <span className="rg-relic-no">{r.order}</span>}
               <h4><Nm name={r.name} cn={r.cn} /></h4>
+              {/* 훈수방 — 보는 사람이 이 소장품에 준 추천·비추천 (작은 창에 보낸 카드와 같은 열쇠) */}
+              {bridgeOn && <CoachVoteBadge k={cardKey(pipItem(r))} />}
               {/* 스샷 인식 → 바로 보유 담기 (피드백 반영 2026-07-24) */}
               {invSection(r.id) && <InvPill owned={inv.has(r.id)} onToggle={() => toggleInv(r.id)} />}
             </header>
@@ -2620,7 +2623,7 @@ export default function RogueGuide({ initialTopic }: {
               );
             })()}
             <section className="rg-prts-pane">
-              <h4 className="rg-prts-pane-h">{t("노드")}</h4>
+              <h4 className="rg-prts-pane-h">{t("노드")}{(() => { const c = bridgePipNode(); return c ? <CoachVoteBadge k={cardKey(c)} /> : null; })()}</h4>
               {n?.kind === "zone" ? (
                 <ZoneModal inline zone={n.zone} badge={zoneBadge(n.zone)}
                   pairs={n.zone.variant ? [] : (pairsByZone.get(n.zone.num) ?? []).concat(trialPairsFor(n.zone))}
