@@ -9,7 +9,7 @@ import { NewBadge } from "../new-badge";
 import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { isOwnerUid } from "../visit-track";
-import { coachPings, coachState, cardKey, kickAllViewers, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
+import { coachPings, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
 import { useBridgeStatus, connectBridge, disconnectBridge, clearBridgeError, bridgeNotArknights, bridgeArkThumb, confirmArknights, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -248,7 +248,8 @@ function useCoach() {
   useEffect(() => onCoachChange(() => bump((n) => n + 1)), []);
   return coachState();
 }
-/** 훈수방 단추 줄 — 끈 상태면 '화면 공유', 켠 상태면 링크 복사·보는 사람 수·모두 내보내기·새 링크·그만하기 (2026-10-24) */
+/** 훈수방 단추 줄 — 끈 상태면 '화면 공유', 켠 상태면 보는 사람 수·링크 복사·공유 끝내기 (2026-10-24).
+ *  '모두 내보내기'·'새 링크'는 뺐다 — 링크를 직접 준 서넛뿐이고, 링크를 바꾸려면 끝냈다 다시 켜면 된다 (사용자 지시 2026-10-24) */
 function CoachControls({ t }: { t: T }) {
   const st = useCoach();
   const [copied, setCopied] = useState(false);
@@ -268,8 +269,6 @@ function CoachControls({ t }: { t: T }) {
     <div className="coach-bar on">
       <span className="coach-live">● {t("화면 공유 중")} · {t("보는 사람 {a}/{b}", { a: st.viewers, b: COACH_MAX })}</span>
       <button type="button" className="bridge-toast-node" onClick={copy} title={st.url}>{copied ? t("복사했어요") : t("링크 복사")}</button>
-      <button type="button" className="bridge-toast-node" onClick={kickAllViewers} disabled={!st.viewers} title={t("지금 보는 사람을 모두 내보냅니다 — 같은 링크로는 다시 들어올 수 있어요")}>{t("모두 내보내기")}</button>
-      <button type="button" className="bridge-toast-node" onClick={() => startCoach(true)} title={t("새 링크를 만들어 지금 링크로는 못 들어오게 합니다")}>{t("새 링크")}</button>
       <button type="button" className="bridge-toast-off" onClick={() => stopCoach()}>{t("공유 끝내기")}</button>
     </div>
   );
