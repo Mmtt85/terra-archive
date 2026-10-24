@@ -83,6 +83,8 @@ async function applyQuality(sender: RTCRtpSender, save = false): Promise<void> {
   try {
     const prm = sender.getParameters();
     prm.encodings = [{ ...(prm.encodings?.[0] ?? {}), maxBitrate: q.br, maxFramerate: q.fps, scaleResolutionDownBy: srcH > q.h ? srcH / q.h : 1 }];
+    // 버거우면 해상도·프레임을 같이 조금씩 — 종전('글자·세부 우선')엔 해상도만 지키고 프레임을 버려 멈칫멈칫했다 (사용자 시험 2026-10-25)
+    (prm as RTCRtpSendParameters & { degradationPreference?: string }).degradationPreference = "balanced";
     await sender.setParameters(prm);
   } catch { /* 브라우저가 못 맞추면 기본값 */ }
 }
@@ -94,24 +96,59 @@ export function setCoachQuality(id: QualityId): void {
   changed();
 }
 /** 실측 — 보는 사람마다 지금 나가는 해상도·프레임·비트레이트 (연결 통계, 2초마다) */
-export type CoachStat = { id: number; w: number; h: number; fps: number; mbps: number; save: boolean };
+/** limit = 화질이 깎인 이유(cpu·bandwidth·none) · avail = 추정 업로드 여유(Mbps) · hw = 하드웨어 압축 여부(브라우저가 알려 줄 때만) */
+export type CoachStat = { id: number; w: number; h: number; fps: number; mbps: number; save: boolean; limit: string; avail: number; codec: string; hw: boolean | null };
 let stats: CoachStat[] = [];
 let statTimer: number | undefined;
 const lastBytes = new Map<number, { b: number; at: number }>();
 export const coachStats = () => stats;
+/** 영상 형식은 H.264 우선 — 맥·윈도우 대부분에서 그래픽카드가 압축해, 보는 사람마다 따로 압축해도 CPU 를 거의 안 쓴다.
+ *  크롬 기본(VP8)은 CPU 로만 압축해 셋에게 1080p 를 보내면 멈칫멈칫했다 (사용자 시험 2026-10-25). 받는 쪽(아이폰 포함)도 하드웨어로 푼다 */
+function preferH264(pc: RTCPeerConnection, sender: RTCRtpSender): void {
+  try {
+    const tr = pc.getTransceivers().find((x) => x.sender === sender);
+    const caps = RTCRtpSender.getCapabilities?.("video")?.codecs ?? [];
+    if (!tr?.setCodecPreferences || !caps.length) return;
+    const h264 = caps.filter((c) => /h264/i.test(c.mimeType));
+    if (!h264.length) return;
+    tr.setCodecPreferences([...h264, ...caps.filter((c) => !/h264/i.test(c.mimeType))]);
+  } catch { /* 못 고르면 브라우저 기본 */ }
+}
+/** 하는 사람 PC 부하 — 크롬의 Compute Pressure(PressureObserver)가 있으면 nominal·fair·serious·critical 네 단계 */
+let pcLoad = "";
+let pressure: { observe: (s: string, o?: object) => Promise<void>; disconnect: () => void } | null = null;
+export const coachPcLoad = () => pcLoad;
+function watchPressure(on: boolean): void {
+  try {
+    if (!on) { pressure?.disconnect(); pressure = null; pcLoad = ""; return; }
+    const PO = (globalThis as unknown as { PressureObserver?: new (cb: (r: { state: string }[]) => void) => typeof pressure }).PressureObserver;
+    if (!PO || pressure) return;
+    pressure = new PO((recs) => { const st = recs[recs.length - 1]?.state ?? ""; if (st !== pcLoad) { pcLoad = st; changed(); } });
+    void pressure?.observe("cpu", { sampleInterval: 2000 }).catch(() => { pressure = null; });
+  } catch { pressure = null; }
+}
 async function pollStats(): Promise<void> {
   const out: CoachStat[] = [];
   for (const p of peers.values()) {
     if (!p.open) continue;
     try {
       const rep = await p.pc.getStats();
-      rep.forEach((r: { type?: string; kind?: string; frameWidth?: number; frameHeight?: number; framesPerSecond?: number; bytesSent?: number; timestamp?: number }) => {
+      // 회선 여유(추정 업로드 가능량)·쓰는 영상 형식 — 같은 보고서의 다른 줄에서
+      let avail = 0;
+      const codecs = new Map<string, string>();
+      rep.forEach((r: { type?: string; id?: string; mimeType?: string; nominated?: boolean; state?: string; availableOutgoingBitrate?: number }) => {
+        if (r.type === "candidate-pair" && r.nominated && r.state === "succeeded" && r.availableOutgoingBitrate) avail = r.availableOutgoingBitrate;
+        if (r.type === "codec" && r.id && r.mimeType) codecs.set(r.id, r.mimeType.replace(/^video\//i, ""));
+      });
+      rep.forEach((r: { type?: string; kind?: string; frameWidth?: number; frameHeight?: number; framesPerSecond?: number; bytesSent?: number; timestamp?: number; qualityLimitationReason?: string; codecId?: string; encoderImplementation?: string; powerEfficientEncoder?: boolean }) => {
         if (r.type !== "outbound-rtp" || r.kind !== "video") return;
         const prev = lastBytes.get(p.id);
         const b = r.bytesSent ?? 0, at = r.timestamp ?? Date.now();
         const mbps = prev && at > prev.at ? ((b - prev.b) * 8) / ((at - prev.at) / 1000) / 1e6 : 0;
         lastBytes.set(p.id, { b, at });
-        out.push({ id: p.id, w: r.frameWidth ?? 0, h: r.frameHeight ?? 0, fps: Math.round(r.framesPerSecond ?? 0), mbps: Math.round(mbps * 10) / 10, save: p.save });
+        out.push({ id: p.id, w: r.frameWidth ?? 0, h: r.frameHeight ?? 0, fps: Math.round(r.framesPerSecond ?? 0), mbps: Math.round(mbps * 10) / 10, save: p.save,
+          limit: r.qualityLimitationReason ?? "none", avail: Math.round(avail / 1e5) / 10,
+          codec: (r.codecId && codecs.get(r.codecId)) || "", hw: r.powerEfficientEncoder ?? null });
       });
     } catch { /* 닫히는 중 */ }
   }
@@ -297,6 +334,7 @@ async function addPeer(id: number) {
   try { (track as MediaStreamTrack & { contentHint?: string }).contentHint = "detail"; } catch { /* 글자·세부 우선 */ }
   track.enabled = !hiddenNow;
   const sender = pc.addTrack(track, new MediaStream([track]));
+  preferH264(pc, sender);
   await applyQuality(sender, peer.save);
   const dc = pc.createDataChannel("info");
   peer.dc = dc;
@@ -371,6 +409,7 @@ export function startCoach(fresh = false): void {
   chatLog = []; chatUnread = 0; chatOff = false; leftNames.clear(); reacts = []; pub = false; lastMeta = "";
   setBridgeShareRate(qOf(coachQuality()).fps);
   window.clearInterval(statTimer); statTimer = window.setInterval(() => void pollStats(), 2000);
+  watchPressure(true);
   unsub = onBridgeChange(onBridge);
   connect();
   changed();
@@ -411,7 +450,7 @@ export function stopCoach(notifyEnd = true): void {
   peers = new Map();
   unsub?.(); unsub = null;
   if (live) setBridgeShareRate(0);
-  window.clearInterval(statTimer); stats = []; lastBytes.clear();
+  window.clearInterval(statTimer); stats = []; lastBytes.clear(); watchPressure(false);
   window.clearInterval(metaTimer); pub = false; lastMeta = "";
   live = false; code = ""; lastNodeKey = "";
   changed();

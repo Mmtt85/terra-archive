@@ -10,7 +10,7 @@ import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } fro
 import { createPortal } from "react-dom";
 import { isOwnerUid } from "../visit-track";
 import { Thumb } from "./thumb";
-import { coachReact, coachVoteFx, EMOTES, coachTitle, setCoachTitle, TITLE_MAX, coachPublic, setCoachPublic, QUALITIES, coachQuality, setCoachQuality, coachStats, coachReacts, emoteUrl, EMOTE_LABEL, coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
+import { coachPcLoad, coachReact, coachVoteFx, EMOTES, coachTitle, setCoachTitle, TITLE_MAX, coachPublic, setCoachPublic, QUALITIES, coachQuality, setCoachQuality, coachStats, coachReacts, emoteUrl, EMOTE_LABEL, coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
 import { useBridgeStatus, connectBridge, disconnectBridge, clearBridgeError, bridgeNotArknights, bridgeArkThumb, confirmArknights, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -346,9 +346,18 @@ function CoachControls({ t }: { t: T }) {
           </button>
         ))}
       </div>
-      {coachStats().length > 0 && (
+      {/* 실측 — 보는 사람별 해상도·프레임·보내는 양, 화질이 깎인 이유(CPU·대역폭), 회선 여유, 영상 형식. 맨 위는 PC 부하 (2026-10-25 "멈칫멈칫" 원인 보기) */}
+      {(coachStats().length > 0 || coachPcLoad()) && (
         <ul className="coach-stats">
-          {coachStats().map((x) => <li key={x.id}>{t("보는 사람 {n}번", { n: x.id })} · {x.w && x.h ? `${x.w}×${x.h}` : "—"} · {x.fps}fps · {x.mbps}Mbps{x.save ? ` · ${t("데이터 절약")}` : ""}</li>)}
+          {coachPcLoad() && <li className={`load-${coachPcLoad()}`}>{t("PC 부하")}: {t(({ nominal: "여유", fair: "보통", serious: "높음", critical: "한계" } as Record<string, string>)[coachPcLoad()] ?? coachPcLoad())}</li>}
+          {coachStats().map((x) => (
+            <li key={x.id} className={x.limit !== "none" ? "limited" : ""}>
+              {t("보는 사람 {n}번", { n: x.id })} · {x.w && x.h ? `${x.w}×${x.h}` : "—"} · {x.fps}fps · {x.mbps}Mbps{x.save ? ` · ${t("데이터 절약")}` : ""}
+              {x.limit === "cpu" ? ` · ⚠ ${t("CPU 부족")}` : x.limit === "bandwidth" ? ` · ⚠ ${t("대역폭 부족")}` : ""}
+              {x.avail ? ` · ${t("여유 {n}Mbps", { n: x.avail })}` : ""}
+              {x.codec ? ` · ${x.codec}${x.hw === true ? ` (${t("하드웨어")})` : x.hw === false ? ` (${t("소프트웨어")})` : ""}` : ""}
+            </li>
+          ))}
         </ul>
       )}
       {copied && <span className="coach-copy-note" role="status">✓ {t("게임 화면 같이 보기 링크를 복사했어요 — 보는 사람에게 보내 주세요")}</span>}
