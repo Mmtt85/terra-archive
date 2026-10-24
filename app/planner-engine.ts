@@ -3436,6 +3436,10 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
     // 교대 시계 — 플랜에 실린 값을 재사용하고, 없으면(구버전 저장·수기 편집) 편성에서 재계산
     const clock = plan.shiftHours?.[shift]
       ?? shiftHoursFor([...PRODUCTION_KEYS, ...SUPPORT_KEYS].map((key) => ({ room: cellByKey.get(key)!.room, ops: teamAt(key) })));
+    // 실제 배치 지도 — 조건부 보너스를 방 카드(roomScoresFor)와 같이 **엄격하게** 센다. 종전엔 안 넘겨 '지도 없으면 낙관 통과'가 걸려,
+    // 켈시 이격 '정예 오퍼가 앉은 시설 1곳당 +4%'를 실제 1곳이어도 최대 5곳으로, 프라마닉스 이격 '실버애쉬 이격이 제어센터에 있으면 +10%'를
+    // 없어도 충족으로 쳤다 → 카드 34%·35% 인 둘이 45%·40% 인 하루카·오키드를 총점에서 이겼다 (제안 e10081f4, 2026-10-25)
+    const roomOf = roomOfFor(plan, shift), cellOf = cellOfFor(plan, shift);
     for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
       const cell = cellByKey.get(key)!;
       if (PARK_KEYS.includes(key)) continue;
@@ -3444,7 +3448,7 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
       // "총점에 안 잡히니 남는 인원으로 채우면 공짜"도 아니다 — 훈련실도 시설로 세는 방이라
       // 잉여를 앉히면 카운터가 엉뚱하게 찬다 (buildPlan 훈련실 파킹 ⓒ 주석 참조).
       if (key === "TRAINING") continue;
-      total += shiftWeight * teamValue(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plants, present, ambient), shiftHours: clock, shift, noAuraProxy: true });
+      total += shiftWeight * teamValue(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plants, present, ambient), roomOf, cellOf, shiftHours: clock, shift, noAuraProxy: true });
     }
   }
   return total;

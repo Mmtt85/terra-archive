@@ -312,7 +312,8 @@ function WatchInner() {
                     : c.detailImg ? <img className="watch-card-map" src={c.detailImg} alt="" /> : null}
                   <span>
                     <small>{c.kind}{c.tag && <> · <i className="watch-tag">{c.tag}</i></>}</small><b>{c.name}</b>
-                    {c.text && <em>{c.text}</em>}
+                    {/* 노드(작전·조우) 설명문은 뺀다 — 길기만 하고 훈수엔 안 쓰인다 (사용자 지시 2026-10-25). 소장품 효과는 그대로 */}
+                    {c.text && !(info?.node && cardKey(info.node) === k) && <em>{c.text}</em>}
                     {c.list && c.list.length > 0 && (c.listImgs?.some(Boolean)
                       // 등장 적 등은 얼굴 그림으로 — 이름은 그림에 마우스를 올리면
                       ? <span className="watch-faces" aria-label={c.listLabel}>{c.list.map((n, k) => c.listImgs?.[k]

@@ -65,6 +65,8 @@ scripts/story-resum/work/
 # 점검 감시 기준선만 예외로 추적한다 (2026-09-16) — 러너 캐시는 조용히 비워져 헛발동을
 # 부르고, 레포에 두면 "언제 뭐가 움직였나"가 기록으로 남는다.
 !.ci/resversion.json
+# 무거운 단계 건너뛰기용 입력 기록 (scripts/ci-skip.py, 2026-10-25) — 산출물과 같은 커밋에 실려야 어긋나지 않는다
+!.ci/input-hashes.json
 .cache/
 .gamedata-ci/
 .r2-sync-key

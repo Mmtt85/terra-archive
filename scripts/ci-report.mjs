@@ -37,15 +37,32 @@ const farmSignature = (obj) => ({
     stages: (it.stages ?? []).map((s) => s.id).sort(),
   })).sort((x, y) => String(x.id).localeCompare(String(y.id))),
 });
-const NORMALIZERS = { "app/data/farm.json": farmSignature };
-const meaningfulChange = (path) => {
+// stages*.json(작전 도감)도 같은 펭귄 지터를 그대로 옮겨 싣는다 — 드랍 칸 d 의 원소가
+// [재료, 빈도, 종류, 실측률%, 효율순위, 순위표 크기] 인데 뒤 셋이 farm.json 에서 온다
+// (scripts/build-stages.py MEASURED). 실측률·순위는 매 실행 소수점이 흔들려서, 이것 때문에
+// 게임 데이터가 그대로인 실행도 매번 meaningful=true → 21분짜리 2단계 + 커밋·배포가 나갔다
+// (실행 40093223656, 커밋 628f31821 — 바뀐 건 드랍률 세 칸과 날짜 도장뿐, 2026-10-24).
+// 순위표 크기(재료별 추천 작전 수)는 farmSignature 의 작전 집합과 같은 정보라 남긴다.
+const stagesSignature = (obj) => {
+  const o = stripVolatile(obj);
+  if (!o || !Array.isArray(o.stages)) return o;
+  return { ...o, stages: o.stages.map((s) => (s && Array.isArray(s.d)
+    ? { ...s, d: s.d.map((e) => (Array.isArray(e) && e.length > 3 ? [...e.slice(0, 3), ...e.slice(5)] : e)) }
+    : s)) };
+};
+const NORMALIZERS = {
+  "app/data/farm.json": farmSignature,
+  "app/data/stages.json": stagesSignature,
+  "app/data/stages.en.json": stagesSignature,
+  "app/data/stages.ja.json": stagesSignature,
+};
+const meaningfulChange = (path, norm = NORMALIZERS[path] ?? stripVolatile) => {
   const oldTxt = gitShowHead(path);
   const newTxt = existsSync(path) ? readFileSync(path, "utf-8") : null;
   if (oldTxt === null) return newTxt !== null;            // 신규 파일 = 의미 있음
   if (newTxt === null) return true;                        // 삭제 = 의미 있음
   const a = parse(oldTxt), b = parse(newTxt);
   if (a === null || b === null) return oldTxt !== newTxt;  // JSON 아니면 바이트 비교
-  const norm = NORMALIZERS[path] ?? stripVolatile;
   return JSON.stringify(norm(a)) !== JSON.stringify(norm(b));
 };
 
@@ -61,7 +78,7 @@ try {
 } catch { /* noop */ }
 
 const dataFiles = [...changed].filter((f) => f.startsWith("app/data/") && f.endsWith(".json"));
-const meaningfulData = dataFiles.filter(meaningfulChange);
+const meaningfulData = dataFiles.filter((f) => meaningfulChange(f));
 // R2로 서빙되는 에셋 폴더 — 여기 새 파일이 생기면 **배포(=r2-sync)가 돌아야** 사이트에 보인다.
 // skills·profiles·voice·skins는 오퍼당 지연 로딩 파일로, 신규 오퍼가 들어오면 함께 생긴다
 // (2026-08-01: 이 넷이 빠져 있어 신규 오퍼 섬네일·레벨 탭이 R2에 안 올라갔다).
@@ -74,6 +91,17 @@ const newStory = newAssets.filter((f) => f.startsWith("public/story/"));
 const newItems = newAssets.filter((f) => f.startsWith("public/items/"));
 
 const meaningful = meaningfulData.length > 0 || newAssets.length > 0;
+
+// ── 펭귄 드랍률 지터만 있는 실행 (2026-10-25) ────────────────────────────
+// 날짜 도장(`updated`)만 바뀐 건 종전대로 아무것도 안 한다. 드랍률 실측치(farm·stages 의 수치)만
+// 바뀐 건 **하루 한 번만** 커밋·배포한다 — 워크플로가 정기 실행(04:00 UTC = 13시 KST)과 수동
+// 실행에만 DRIFT_DEPLOY=1 을 준다. 소수점 몇 칸 때문에 하루 서너 번 4~5분짜리 빌드·배포를
+// 돌릴 이유가 없고, 몇 시간 묵은 실측률은 화면에서 구별되지 않는다. 진짜 데이터 변화(meaningful)는
+// 지금처럼 바로 나간다.
+const driftData = dataFiles.filter((f) => !meaningfulData.includes(f) && meaningfulChange(f, stripVolatile));
+const drift = !meaningful && driftData.length > 0;
+const driftDeploy = process.env.DRIFT_DEPLOY === "1";
+const deploy = meaningful || (drift && driftDeploy);
 
 // ── 세부 요약: 오퍼/공채/파밍 diff ────────────────────────────────────
 const lines = [];
@@ -286,6 +314,8 @@ if (todo) {
   const bits = manual.map((m) => (m.match(/### ([^\n]+?)(?: \d+건)? →/) || [, m.split("\n")[0]])[1]);
   if (actionableWarn.length) bits.push("에셋 동기화 등 경고");
   subject = `[테라아카이브 ${laneLabel}] 🖐 손볼 것 ${todo}건 — ${bits.join(" · ").slice(0, 60)}`;
+} else if (drift) {
+  subject = `[테라아카이브 ${laneLabel}] 펭귄 드랍률 변동만${driftDeploy ? " — 하루치 반영" : " (보류)"}`;
 } else if (!meaningful) {
   subject = `[테라아카이브 ${laneLabel}] 변경 없음${heartbeat ? " · 정상 가동 확인" : ""}`;
 } else {
@@ -299,6 +329,9 @@ if (todo) {
 
 const report = `# 테라 아카이브 데이터 리프레시 — ${laneLabel}\n\n` +
   (meaningful ? "**변경 사항이 있어 커밋·배포합니다.**\n\n"
+    : drift ? (driftDeploy
+      ? `펭귄 드랍률 실측치만 바뀌었습니다 (${driftData.map((f) => f.replace("app/data/", "")).join(", ")}) — 하루 한 번 정기 실행이라 커밋·배포합니다.\n\n`
+      : `펭귄 드랍률 실측치만 바뀌었습니다 (${driftData.map((f) => f.replace("app/data/", "")).join(", ")}) — 하루 한 번(13시 KST 정기 실행) 몰아서 반영하므로 이번엔 배포하지 않습니다.\n\n`)
     : (heartbeat ? "변경 사항 없음 — 파이프라인은 정상 가동 중입니다 (초기 확인 메일, 2026-07-31까지). 8월부터는 변경/경고가 있을 때만 발송됩니다.\n\n"
       : "변경 사항 없음 (또는 날짜만 갱신) — 배포하지 않습니다.\n\n")) +
   (lines.length ? lines.join("\n\n") + "\n" : "") +
@@ -318,8 +351,11 @@ const notify = manual.length > 0 || actionableWarn.length > 0 || heartbeat;
 
 if (process.env.GITHUB_OUTPUT) {
   appendFileSync(process.env.GITHUB_OUTPUT, `meaningful=${meaningful}\n`);
+  // deploy = 진짜 변화 또는 (드랍률 지터 && 하루 한 번 창). 워크플로 2단계 커밋·배포가 이걸 본다.
+  appendFileSync(process.env.GITHUB_OUTPUT, `drift=${drift}\n`);
+  appendFileSync(process.env.GITHUB_OUTPUT, `deploy=${deploy}\n`);
   appendFileSync(process.env.GITHUB_OUTPUT, `notify=${notify}\n`);
   appendFileSync(process.env.GITHUB_OUTPUT, `subject=${subject}\n`);
 }
 console.log(subject);
-console.log(`meaningful=${meaningful} notify=${notify}  (data:${meaningfulData.length} avatars:${newAvatars.length} story:${newStory.length})`);
+console.log(`meaningful=${meaningful} drift=${drift} deploy=${deploy} notify=${notify}  (data:${meaningfulData.length} drift:${driftData.length} avatars:${newAvatars.length} story:${newStory.length})`);

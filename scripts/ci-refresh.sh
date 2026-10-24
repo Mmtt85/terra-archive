@@ -43,8 +43,15 @@ run() {
   { "$@" 2> >(sed "s/^/[$label] /" | tee -a "$WARN" >&2); }
 }
 
-# 클뜯 수신은 두 레인 모두 필요하다 (rest도 .gamedata를 읽는다). 러너가 매번 새 체크아웃이라
-# 캐시가 없어 각자 받는다 — 3초짜리라 나눠도 손해가 없다.
+# 수신은 두 레인 모두 필요하다 (rest도 .gamedata를 읽는다).
+# ⚠ 단, **무인 CI 의 rest 는 같은 실행의 fast 가 방금 CDN 에서 받은 것을 그대로 쓴다** (2026-10-25).
+#   두 단계는 같은 잡(같은 러너·같은 작업 폴더)의 연속 스텝이라 `.gamedata` 가 그대로 남아 있다 —
+#   종전엔 "러너가 새 체크아웃이라 각자 받는다"며 네 서버를 한 번 더 받아 47초를 썼다 (실행 40093223656).
+#   fast 가 CDN 수신에 **성공했을 때만** 남기는 표식(`$G/.ci-fetch.json`, 실행 번호 포함)이 있을 때만
+#   다시 받지 않는다. 레포판으로 물러났던 실행이면 표식이 없어 종전대로 다시 받는다.
+#   이 표식은 scripts/ci-skip.py 가 "이번 실행의 CDN 버전"으로도 읽는다.
+FETCH_MARK="$G/.ci-fetch.json"
+RUN_KEY="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}"
 #
 # ⚠ SKIP_FETCH=1 이면 이 단계를 건너뛰고 **`.gamedata`에 이미 있는 것을 그대로 쓴다.**
 #   CDN에서 직접 뜯어 온 뒤(`fetch-gamedata-cdn.py`, PROJECT-GUIDE §2-1) 이 스크립트를
@@ -52,7 +59,11 @@ run() {
 #   레포는 사람이 돌려야 올라와서 며칠씩 밀리므로(실측 11일), 덮이면 조용히 옛 데이터로
 #   사이트가 만들어진다 — 점검 당일에 이걸 당하면 신규 콘텐츠가 통째로 빠진다.
 #   무인 CI는 CDN 단계가 없으므로 기본값(레포에서 받기) 그대로 둔다.
-if [ "${SKIP_FETCH:-}" = "1" ]; then
+if [ "$PHASE" = "rest" ] && [ -n "${GITHUB_ACTIONS:-}" ] && [ -n "${GITHUB_RUN_ID:-}" ] \
+   && grep -q "\"run\": \"$RUN_KEY\"" "$FETCH_MARK" 2>/dev/null; then
+  echo "▶ fetch 건너뜀 — 같은 실행의 1단계(fast)가 게임 CDN 에서 받은 $G 를 그대로 쓴다 ($(cat "$FETCH_MARK"))"
+elif [ "${SKIP_FETCH:-}" = "1" ]; then
+  rm -f "$FETCH_MARK"   # CDN 버전을 보증할 수 없다 → ci-skip 도 건너뛰기를 안 한다
   echo "▶ fetch-gamedata 건너뜀 (SKIP_FETCH=1 — $G 의 기존 데이터를 쓴다)"
   ls "$G"/kr_character_table.json >/dev/null 2>&1 \
     || { echo "$G 가 비어 있다 — SKIP_FETCH 를 빼거나 fetch-gamedata-cdn.py 를 먼저 돌릴 것" >&2; exit 2; }
@@ -101,13 +112,21 @@ else
   #
   # CDN 경로가 죽으면(flatc·UnityPy 미설치, 스키마 변경 등) **레포로 물러난다** — 갱신이
   # 하루 밀리는 것보다 낫다. 다만 물러났다는 사실을 경고로 남겨 사람이 알게 한다.
+  rm -f "$FETCH_MARK"
+  mkdir -p "$G"
   if python3 -c "import UnityPy, lz4inv" 2>/dev/null && command -v flatc >/dev/null 2>&1; then
     CDN_OK=1
+    RES_JSON=""
     for srv in kr cn en jp; do
       # 종료 코드 3 = 표 몇 개만 예정에 없이 레포판으로 물러났다 — 표는 다 받았으니 이 서버 CDN 데이터를 그대로 쓴다.
       # 종전엔 0 이 아니면 전부 실패로 쳐서, 표 하나 때문에 네 서버 전체를 레포판으로 다시 받아 덮었다
       # (2026-10-09 한섭 gamedata_const 하나로 CI 가 하루 세 번 죽었다 — 레포판 item_table 의 숫자 itemType 에서).
-      rc=0; run "fetch-cdn($srv)" python3 scripts/fetch-gamedata-cdn.py --server "$srv" --out "$G" || rc=$?
+      # 표준출력을 $G/.ci-fetch-<서버>.log 에도 남긴다 — 거기서 resVersion 을 읽어 수신 표식을 쓴다.
+      rc=0; run "fetch-cdn($srv)" python3 scripts/fetch-gamedata-cdn.py --server "$srv" --out "$G" \
+        | tee "$G/.ci-fetch-$srv.log" || rc=$?
+      res=$(grep -m1 -o 'resVersion [^ ]*' "$G/.ci-fetch-$srv.log" 2>/dev/null | cut -d' ' -f2 || true)
+      RES_JSON="$RES_JSON${RES_JSON:+, }\"$srv\": \"$res\""
+      [ -n "$res" ] || CDN_OK_MARK=no
       if [ "$rc" = 3 ]; then
         echo "⚠ $srv: 표 일부가 CDN 디코딩에 실패해 그 표만 레포판으로 받았다 — scripts/fbs-repair.py 로 스키마를 볼 것" | tee -a "$WARN" >&2
       elif [ "$rc" != 0 ]; then
@@ -115,6 +134,10 @@ else
       fi
     done
     [ -n "$CDN_OK" ] || echo "⚠ CDN 수신이 실패해 클뜯 레포판으로 물러났다 — 레포가 밀려 있으면 신규 콘텐츠가 빠진다" | tee -a "$WARN" >&2
+    # 수신 표식 — 네 서버 모두 CDN 에서 받았고 resVersion 을 읽었을 때만 남긴다
+    if [ -n "$CDN_OK" ] && [ "${CDN_OK_MARK:-}" != no ]; then
+      printf '{"run": "%s", "cdn_ok": true, "res": {%s}}\n' "$RUN_KEY" "$RES_JSON" > "$FETCH_MARK"
+    fi
   else
     CDN_OK=""
     echo "⚠ flatc/UnityPy/lz4inv 가 없어 CDN 대신 클뜯 레포판을 받는다 — 레포가 밀려 있으면 신규 콘텐츠가 빠진다" | tee -a "$WARN" >&2
@@ -153,8 +176,16 @@ fi   # ── fast 끝 ──
 
 if in_phase rest; then
 # 2) 인프라 플래너 데이터 + 회귀 게이트 (실패 시 전체 중단)
-run "build-infra"      python3 scripts/build-infra.py "$G"
-run "verify-plan"      node scripts/verify-plan.mjs
+# ⚠ 무거운 셋(build-infra 3.6분 · verify-plan 5~10분 · build-stages-crisis 4.2분)은 scripts/ci-skip.py 를 거친다
+#   (2026-10-25). 무인 CI 에서 **읽은 입력(게임 표·코드·규칙·CDN 버전)이 지난 실행과 바이트 단위로 같고
+#   커밋된 출력도 그때 그대로일 때만** 건너뛴다 — 펭귄 드랍률만 바뀐 실행이 21분씩 돌던 것을 줄인다.
+#   로컬에서는 래퍼가 그냥 원래 명령을 exec 하므로 지금까지와 똑같이 돈다.
+#   verify-plan 은 엔진 번들(esbuild 메타파일)의 입력 — planner-engine·infra.json·rules.json 등 — 이
+#   지난번 **통과했을 때**와 같을 때만 건너뛴다. 실패한 판은 기록이 안 남으므로 다음에 반드시 다시 돈다.
+run "build-infra"      python3 scripts/ci-skip.py run build-infra -- scripts/build-infra.py "$G"
+run "verify-plan"      python3 scripts/ci-skip.py node verify-plan \
+                         --esbuild app/planner-engine.ts,app/planner-invest.ts \
+                         --also scripts/verify-plan.mjs,app/data/rules.json -- node scripts/verify-plan.mjs
 
 # 3) 공채 / 파밍 / 육성비용 / 스토리 목록
 run "build-recruit"    python3 scripts/build-recruit.py "$G"
@@ -221,7 +252,9 @@ run "build-event-extra"  python3 scripts/build-event-extra.py "$G"
 run "build-future-dex"   python3 scripts/build-future-dex.py "$G" --no-images
 # 작전 도감·시뮬레이터의 위기협약 색인 (시즌 맵·홀로그램 매트릭스, 2026-10-16) — 게임 CDN 의 표·레벨만 읽는다.
 # 도면은 로컬에서만 받는다 (scripts/build-stages-crisis.py 머리주석). 경로 문서(crisis-routes.json)도 여기서 나온다
-run "build-stages-crisis" python3 scripts/build-stages-crisis.py --no-images
+# ci-skip 래퍼: 입력이 지난 실행과 같으면 건너뛴다 (위 2) 머리주석). build-enemies 는 출력을 뒤 단계
+# (build-enemy-stages-extra)가 고쳐 쓰므로 래퍼를 씌우지 않는다 (scripts/ci-skip.py 머리주석).
+run "build-stages-crisis" python3 scripts/ci-skip.py run build-stages-crisis -- scripts/build-stages-crisis.py --no-images
 # 적 도감 '등장 작전'에 통합전략·생존연산·위기 협약 작전을 덧붙인다 — 위 색인들(stages-rogue·sandbox·crisis)을 읽으므로 그 뒤,
 # build-stages 가 enemy-stages 를 뒤집어 쓴 뒤라 작전 도감에는 영향이 없다 (2026-10-17, 고대의 넝쿨 등 통합전략 전용 적 80종)
 run "build-enemy-stages-extra" python3 scripts/build-enemy-stages-extra.py
