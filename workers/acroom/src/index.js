@@ -153,6 +153,13 @@ export default {
       await lobby().fetch("https://lobby/clear", { method: "POST" });
       return json({ ok: true, listed: ids.length, purged });
     }
+    // 같이 보기 관리 — 지금 열린 방(비공개 포함)·날짜별 기록. 파티 방 목록과 같은 보기 키 (방문 통계 '같이 보기' 탭, 2026-10-25)
+    if (url.pathname === "/admin/coach") {
+      const viewKey = env.VIEW_KEY || env.ADMIN_KEY;
+      if (!viewKey) return json({ ok: false, error: "no-admin-key" }, 503);
+      if ((request.headers.get("x-admin-key") ?? "") !== viewKey) return json({ ok: false, error: "forbidden" }, 403);
+      return env.COACHLOBBY.get(env.COACHLOBBY.idFromName("coach-lobby")).fetch("https://coach-lobby/admin");
+    }
     // 훈수방 공개방 목록 (2026-10-24) — 하는 사람이 '공개방'으로 켠 방만. 사이트(내 정보)가 읽는다
     if (url.pathname === "/coach-lobby") return env.COACHLOBBY.get(env.COACHLOBBY.idFromName("coach-lobby")).fetch("https://coach-lobby/list");
     // 훈수방 (2026-10-24) — 연결 중개(시그널링)만 한다. 영상은 하는 사람 ↔ 보는 사람 P2P 로 직접 간다
@@ -541,30 +548,84 @@ const COACH_VIEWS = 3;
 const COACH_MSG_MAX = 16384;   // SDP 한 덩어리가 수 KB
 const COACH_TTL_MS = 6 * 3600_000;
 
-// 공개방 장부 — 하는 사람이 공개로 켠 방의 겉정보(닉네임·테마·층·난이도·보는 사람 수)만. 하는 사람이 30초마다 알려 오고,
-// 90초 넘게 소식이 없으면 목록에서 빠진다(창을 그냥 닫은 경우). 저장소는 메모리 — 워커가 내려가면 다음 알림 때 다시 찬다
+// 같이 보기 장부 — 하는 사람이 30초마다·바뀔 때마다 알려 오는 방 겉정보(제목·닉네임·서버·테마·층·난이도·참여자 이름).
+// ① 공개 목록(/list)은 공개로 켠 방만, 이름 목록 없이. ② 관리(/admin)는 비공개까지 전부 + 날짜별 기록(누가 열고 누가 들어왔나).
+// 90초 넘게 소식이 없으면 지금 목록에서 빠진다(창을 그냥 닫은 경우). 날짜별 기록은 저장소에 14일 (사용자 지시 2026-10-25 "방문 통계에 같이 보기 탭").
+// 영상·채팅 내용은 여기 오지 않는다 — 겉정보와 이름·시각뿐
 const COACH_LOBBY_STALE_MS = 90_000;
+const COACH_HIST_DAYS = 14;
 export class CoachLobby {
   constructor(state) { this.state = state; this.rooms = new Map(); }
+  async hist(day) { return (await this.state.storage.get(`h:${day}`)) ?? {}; }
+  async record(code, room, ended) {
+    // 쓰기 줄이기 — 내용(제목·닉네임·층·참여자 등)이 바뀌었거나 닫혔을 때, 아니면 마지막 소식 시각은 5분에 한 번만 쓴다
+    // (30초마다 오는 알림마다 쓰면 방 하나가 하루 2,900번 썼다 — 무료 쓰기 한도 대비, 2026-10-25)
+    const sig = JSON.stringify([room.title, room.name, room.acct, room.server, room.theme, room.floor, room.grade, room.pub, (room.roster ?? []).map((v) => v.name)]);
+    const now = Date.now();
+    this.lastRec ??= new Map();
+    const lr = this.lastRec.get(code);
+    if (!ended && lr && lr.sig === sig && now - lr.at < 5 * 60_000) return;
+    this.lastRec.set(code, { sig, at: now });
+    if (ended) this.lastRec.delete(code);
+    const day = dayKey(room.since);
+    const h = await this.hist(day);
+    const r = h[code] ?? { code, open: room.since, people: {} };
+    Object.assign(r, { title: room.title, name: room.name, acct: room.acct, server: room.server, theme: room.theme, topic: room.topic,
+      floor: room.floor, grade: room.grade, last: now, ended: !!ended, pub: !!(r.pub || room.pub), peak: Math.max(r.peak ?? 0, room.viewers ?? 0) });
+    for (const v of room.roster ?? []) {
+      const p = r.people[v.name] ?? { first: now };
+      p.last = now;
+      r.people[v.name] = p;
+    }
+    h[code] = r;
+    await this.state.storage.put(`h:${day}`, h);
+    // 14일 넘은 날은 지운다 (하루 한 번쯤 — 그날 첫 기록 때)
+    if (!this.pruned || this.pruned !== dayKey(now)) {
+      this.pruned = dayKey(now);
+      const cut = dayKey(now - COACH_HIST_DAYS * 86400_000);
+      const keys = await this.state.storage.list({ prefix: "h:" });
+      for (const k of keys.keys()) if (k.slice(2) < cut) await this.state.storage.delete(k);
+    }
+  }
   async fetch(request) {
     const url = new URL(request.url);
     const now = Date.now();
-    for (const [k, r] of this.rooms) if (now - r.at > COACH_LOBBY_STALE_MS) this.rooms.delete(k);
-    if (url.pathname === "/list") return json({ ok: true, rooms: [...this.rooms.values()].sort((a, b) => a.since - b.since) });
+    for (const [k, r] of this.rooms) if (now - r.at > COACH_LOBBY_STALE_MS) { this.rooms.delete(k); await this.record(k, r, true).catch(() => null); }
+    if (url.pathname === "/list") {
+      // 공개 목록 — 공개방만, 참여자 이름·게임 계정은 빼고
+      const pub = [...this.rooms.values()].filter((r) => r.pub).sort((a, b) => a.since - b.since)
+        .map(({ roster: _r, acct: _a, pub: _p, ...rest }) => rest);
+      return json({ ok: true, rooms: pub });
+    }
+    if (url.pathname === "/admin") {
+      const keys = await this.state.storage.list({ prefix: "h:" });
+      const days = [...keys.entries()].map(([k, v]) => ({ day: k.slice(2), rooms: Object.values(v ?? {}).sort((a, b) => b.open - a.open) }))
+        .sort((a, b) => (a.day < b.day ? 1 : -1));
+      return json({ ok: true, live: [...this.rooms.values()].sort((a, b) => a.since - b.since), days, today: dayKey(now) });
+    }
     if (request.method !== "POST") return json({ ok: false }, 404);
     let body; try { body = await request.json(); } catch { return json({ ok: false }, 400); }
     const code = String(body?.code ?? "");
     if (!COACH_ID.test(code)) return json({ ok: false }, 400);
-    if (url.pathname === "/down") { this.rooms.delete(code); return json({ ok: true }); }
+    if (url.pathname === "/down") {
+      const r = this.rooms.get(code);
+      this.rooms.delete(code);
+      if (r) await this.record(code, r, true).catch(() => null);
+      return json({ ok: true });
+    }
     if (url.pathname === "/up") {
       const cut = (v, n) => (typeof v === "string" ? v.slice(0, n) : "");
       const num = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
       const prev = this.rooms.get(code);
-      this.rooms.set(code, {
-        code, title: cut(body.title, 40), server: cut(body.server, 8), topic: cut(body.topic, 16), name: cut(body.name, 24), theme: cut(body.theme, 40), floor: num(body.floor), grade: num(body.grade),
-        viewers: num(body.viewers) ?? 0, max: COACH_VIEWS, since: prev?.since ?? now, at: now,
-      });
+      const roster = Array.isArray(body.roster) ? body.roster.slice(0, COACH_VIEWS).map((v) => ({ id: num(v?.id) ?? 0, name: cut(v?.name, 24) })).filter((v) => v.name) : [];
+      const room = {
+        code, pub: !!body.pub, title: cut(body.title, 40), server: cut(body.server, 8), topic: cut(body.topic, 16), name: cut(body.name, 24), acct: cut(body.acct, 40),
+        theme: cut(body.theme, 40), floor: num(body.floor), grade: num(body.grade),
+        viewers: num(body.viewers) ?? 0, roster, max: COACH_VIEWS, since: prev?.since ?? now, at: now,
+      };
+      this.rooms.set(code, room);
       if (this.rooms.size > 200) { const old = [...this.rooms.values()].sort((a, b) => a.at - b.at)[0]; this.rooms.delete(old.code); }
+      await this.record(code, room, false).catch(() => null);
       return json({ ok: true });
     }
     return json({ ok: false }, 404);
@@ -581,7 +642,8 @@ export class CoachRoom {
     const code = (await this.state.storage.get("code")) ?? "";
     if (!code) return;
     try {
-      if (a?.pub && a.meta) await this.lobby().fetch("https://coach-lobby/up", { method: "POST", body: JSON.stringify({ code, ...a.meta, viewers: this.views().filter((w) => w !== leaving).length }) });
+      // 공개 여부와 상관없이 알린다 — 공개 목록은 장부가 pub 으로 거르고, 관리 기록은 비공개까지 남긴다
+      if (a?.meta) await this.lobby().fetch("https://coach-lobby/up", { method: "POST", body: JSON.stringify({ code, pub: !!a.pub, ...a.meta, viewers: this.views().filter((w) => w !== leaving).length }) });
       else await this.lobby().fetch("https://coach-lobby/down", { method: "POST", body: JSON.stringify({ code }) });
     } catch { /* 장부가 잠깐 안 받아도 다음 알림에 맞춰진다 */ }
   }
@@ -622,7 +684,7 @@ export class CoachRoom {
       const h = this.host();
       this.send(server, { t: "hello", role: "view", id, host: !!h, max: COACH_VIEWS });
       if (h) this.send(h, { t: "join", id });
-      if (h && this.att(h).pub) await this.tellLobby();
+      if (h && this.att(h).meta) await this.tellLobby();
     }
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -640,7 +702,8 @@ export class CoachRoom {
     // 공개방 켜기·끄기와 겉정보 (하는 사람이 바뀔 때·30초마다)
     if (msg?.t === "meta") {
       const m = msg.meta ?? {};
-      ws.serializeAttachment({ ...me, pub: !!msg.pub, meta: { title: String(m.title ?? "").slice(0, 40), server: String(m.server ?? "").slice(0, 8), topic: String(m.topic ?? "").slice(0, 16), name: String(m.name ?? "").slice(0, 24), theme: String(m.theme ?? "").slice(0, 40), floor: typeof m.floor === "number" ? m.floor : null, grade: typeof m.grade === "number" ? m.grade : null } });
+      const roster = Array.isArray(m.roster) ? m.roster.slice(0, COACH_VIEWS).map((v) => ({ id: Number(v?.id) || 0, name: String(v?.name ?? "").slice(0, 24) })) : [];
+      ws.serializeAttachment({ ...me, pub: !!msg.pub, meta: { roster, acct: String(m.acct ?? "").slice(0, 40), title: String(m.title ?? "").slice(0, 40), server: String(m.server ?? "").slice(0, 8), topic: String(m.topic ?? "").slice(0, 16), name: String(m.name ?? "").slice(0, 24), theme: String(m.theme ?? "").slice(0, 40), floor: typeof m.floor === "number" ? m.floor : null, grade: typeof m.grade === "number" ? m.grade : null } });
       await this.tellLobby();
       return;
     }
@@ -665,9 +728,9 @@ export class CoachRoom {
         for (const v of this.views()) this.send(v, { t: "host-gone" });
         // 하는 사람이 떠났으면 목록에서 뺀다 (돌아오면 다시 알린다)
         const code = await this.state.storage.get("code");
-        if (code && me.pub) { try { await this.lobby().fetch("https://coach-lobby/down", { method: "POST", body: JSON.stringify({ code }) }); } catch { /* */ } }
+        if (code && me.meta) { try { await this.lobby().fetch("https://coach-lobby/down", { method: "POST", body: JSON.stringify({ code }) }); } catch { /* */ } }
       }
     }
-    else if (me.role === "view") { const h = this.host(); if (h) { this.send(h, { t: "leave", id: me.id }); if (this.att(h).pub) await this.tellLobby(ws); } }
+    else if (me.role === "view") { const h = this.host(); if (h) { this.send(h, { t: "leave", id: me.id }); if (this.att(h).meta) await this.tellLobby(ws); } }
   }
 }

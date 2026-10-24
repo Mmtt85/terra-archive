@@ -191,7 +191,7 @@ export const TITLE_MAX = 40;
 export function coachTitle(): string { try { return cleanText(localStorage.getItem(TITLE_KEY), TITLE_MAX); } catch { return ""; } }
 export function setCoachTitle(v: string): void {
   try { localStorage.setItem(TITLE_KEY, cleanText(v, TITLE_MAX)); } catch { /* 이번만 */ }
-  if (live) { sendAll(infoNow()); if (pub) sendMeta(); }
+  if (live) { sendAll(infoNow()); sendMeta(); }
   changed();
 }
 /** 글 다듬기 — 제어 문자를 빼고 줄바꿈은 띄어쓰기로, 길이 제한 */
@@ -199,7 +199,7 @@ export const cleanText = (v: unknown, max: number) => typeof v === "string" ? v.
 export function coachName(): string { try { return cleanText(localStorage.getItem(NAME_KEY), NAME_MAX); } catch { return ""; } }
 export function setCoachName(v: string): void {
   try { localStorage.setItem(NAME_KEY, cleanText(v, NAME_MAX)); } catch { /* 이번만 */ }
-  if (live) { sendAll({ t: "names", names: coachNames(), present: coachPresent() }); if (pub) sendMeta(); }
+  if (live) { sendAll({ t: "names", names: coachNames(), present: coachPresent() }); sendMeta(); }
   changed();
 }
 
@@ -242,7 +242,11 @@ export function coachNames(): CoachNames {
 export const coachPublic = () => pub;
 function metaNow() {
   const f = bridgePipFloor();
-  return { title: coachTitle(), server: hostServer(), topic: bridgeLock()?.topic ?? "", name: coachName() || "", theme: bridgeLock()?.name ?? "", floor: typeof f.floor === "number" ? f.floor : null, grade: typeof f.grade === "number" ? f.grade : null };
+  // 관리 기록용(방문 통계 '같이 보기') — 동기화한 게임 계정 닉네임·지금 참여자 이름. 공개 목록에는 장부가 빼고 싣는다
+  const me = getMe();
+  const acct = me ? `${me.player.nickName}#${me.player.nickNumber}` : "";
+  const roster = [...peers.values()].filter((p) => p.open).map((p) => ({ id: p.id, name: p.name || anonName(p.id) }));
+  return { acct, roster, title: coachTitle(), server: hostServer(), topic: bridgeLock()?.topic ?? "", name: coachName() || "", theme: bridgeLock()?.name ?? "", floor: typeof f.floor === "number" ? f.floor : null, grade: typeof f.grade === "number" ? f.grade : null };
 }
 /** 장부에 알리기 — force 가 아니면 바뀌었을 때만 */
 function sendMeta(force = false): void {
@@ -254,8 +258,6 @@ function sendMeta(force = false): void {
 }
 export function setCoachPublic(v: boolean): void {
   pub = v;
-  window.clearInterval(metaTimer);
-  if (v) metaTimer = window.setInterval(() => sendMeta(true), 30_000);   // 90초 소식이 없으면 장부에서 빠진다
   sendMeta(true);
   changed();
 }
@@ -341,7 +343,7 @@ function onBridge() {
   const nk = bridgePipNode() ? cardKey(bridgePipNode()!) : "";
   if (nk !== lastNodeKey) { lastNodeKey = nk; let any = false; for (const p of peers.values()) if (p.votes.size) { p.votes.clear(); any = true; } if (any) { sendAll({ t: "votes", votes: coachVotes() }); changed(); } }
   sendAll(infoNow());
-  if (pub) sendMeta();
+  sendMeta();
 }
 
 async function addPeer(id: number) {
@@ -361,6 +363,7 @@ async function addPeer(id: number) {
   dc.onopen = () => {
     peer.open = true;
     pushChat(peer.a, peer.name || anonName(id), "", "join");   // 입장 한 줄 — 이름은 그때그때 찾아 닉네임을 바꿔도 따라간다
+    sendMeta();   // 참여자 이름 — 관리 기록용
     dc.send(JSON.stringify(infoNow())); dc.send(JSON.stringify({ t: "votes", votes: coachVotes() }));
     dc.send(JSON.stringify({ t: "you", a: peer.a }));
     dc.send(JSON.stringify({ t: "chatlog", log: chatLog, off: chatOff, names: coachNames() }));
@@ -383,7 +386,7 @@ async function addPeer(id: number) {
       pushReact(peer.a, m.e as Emote);
       return;
     }
-    if (m.t === "name") { peer.name = cleanText(m.name, NAME_MAX); sendAll({ t: "names", names: coachNames(), present: coachPresent() }); changed(); return; }
+    if (m.t === "name") { peer.name = cleanText(m.name, NAME_MAX); sendAll({ t: "names", names: coachNames(), present: coachPresent() }); sendMeta(); changed(); return; }
     if (m.t === "chat") {
       const now = Date.now();
       const text = cleanText(m.text, CHAT_MAX);
@@ -416,6 +419,7 @@ function dropPeer(id: number) {
   peers.delete(id);
   leftNames.set(p.a, p.name || anonName(p.id));
   if (p.open) pushChat(p.a, p.name || anonName(p.id), "", "leave");
+  sendMeta();
   sendAll({ t: "votes", votes: coachVotes() });
   sendAll({ t: "names", names: coachNames(), present: coachPresent() });
   changed();
@@ -429,6 +433,8 @@ export function startCoach(fresh = false): void {
   code = newCode();
   live = true; failMsg = ""; hiddenNow = bridgeNotArknights();
   chatLog = []; chatUnread = 0; chatOff = false; leftNames.clear(); reacts = []; pub = false; lastMeta = "";
+  // 공개·비공개 상관없이 30초마다 장부에 알린다 — 공개 목록은 공개방만, 관리 기록은 전부 (90초 소식이 없으면 목록에서 빠진다)
+  window.clearInterval(metaTimer); metaTimer = window.setInterval(() => sendMeta(true), 30_000);
   setBridgeShareRate(qOf(coachQuality()).fps);
   window.clearInterval(statTimer); statTimer = window.setInterval(() => void pollStats(), 2000);
   watchPressure(true);
@@ -443,7 +449,7 @@ function connect() {
   sock.onmessage = (e) => {
     let m: { t: string; views?: number[]; id?: number; from?: number; data?: { sdp?: RTCSessionDescriptionInit; ice?: RTCIceCandidateInit } };
     try { m = JSON.parse(String(e.data)); } catch { return; }
-    if (m.t === "hello") { for (const id of m.views ?? []) void addPeer(id); lastMeta = ""; if (pub) sendMeta(true); }
+    if (m.t === "hello") { for (const id of m.views ?? []) void addPeer(id); lastMeta = ""; sendMeta(true); }
     else if (m.t === "join" && m.id != null) void addPeer(m.id);
     else if (m.t === "leave" && m.id != null) dropPeer(m.id);
     else if (m.t === "sig" && m.from != null) {
