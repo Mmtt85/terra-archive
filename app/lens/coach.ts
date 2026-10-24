@@ -36,7 +36,7 @@ export type CoachVotes = Record<string, { up: number[]; down: number[] }>;
 export const cardKey = (c: Pick<BridgePipCard, "kind" | "name">) => `${c.kind}:${c.name}`;
 /** 채팅 한 줄 — from = 쓴 사람 열쇠(0 = 하는 사람, 보는 사람은 연결마다 새 번호). 이름은 줄에 박지 않고 names 로 그때그때 찾는다 —
  *  중간에 닉네임을 바꾸면 지난 줄도 새 닉네임으로 보여야 한다 (사용자 지시 2026-10-24). name 은 names 에 없을 때의 대비 */
-export type CoachMsg = { id: number; from: number; name: string; text: string; at: number };
+export type CoachMsg = { id: number; from: number; name: string; text: string; at: number; sys?: "join" | "leave" };
 /** 화면 반응 — 게임 '이모티콘 세트: 위수 협의' 그림 (scripts/build-emotes.py 가 public/ac/emote 에 꺼내 둔다).
  *  보는 사람이 누르면 하는 사람 작은 창과 모두의 영상 위로 잠깐 떠오른다. 카드 추천·비추천(엄지 SVG)과는 따로다 (사용자 지시 2026-10-24) */
 export const EMOTES = ["happy", "call", "noproblem", "thanks", "respect", "thinking", "scared", "sorry", "dying", "sad"] as const;
@@ -69,17 +69,37 @@ export type QualityId = typeof QUALITIES[number]["id"];
 const QUALITY_KEY = "ta:coach-quality";
 export function coachQuality(): QualityId {
   try { const v = localStorage.getItem(QUALITY_KEY); if (QUALITIES.some((q) => q.id === v)) return v as QualityId; } catch { /* */ }
-  return "mid";
+  return "min";   // 기본 최저사양 — 셋이 들어오면 중사양도 하는 사람 PC 가 한계까지 찼다 (사용자 시험 2026-10-25)
 }
 const qOf = (id: QualityId) => QUALITIES.find((q) => q.id === id) ?? QUALITIES[2];
 /** 보내는 영상 하나에 단계를 입힌다 — 연결을 끊지 않고 그 자리에서 바뀐다 */
 /** 데이터 절약 — 보는 사람이 켜면(폰은 처음부터 켜짐) 그 사람에게만 540p 30프레임으로. 하는 사람이 고른 단계가 더 낮으면 그쪽
  *  (사용자 지시 2026-10-25 "모바일은 해상도 낮추고"). 360p 는 게임 글자가 뭉개져서 540p 로 정했다 */
 const SAVE_Q = { h: 540, fps: 30, br: 1_500_000 };
+/** 보내는 영상 하나 — 캡처 원본(인식용, 원래 크기)을 복제해 **한 번만** 단계 크기로 줄인 것. 보는 사람 모두가 같이 쓴다.
+ *  종전엔 보는 사람마다 복제해 각자 원본에서 줄여서, 셋이면 큰 원본(레티나 창)을 세 번 줄이느라 PC 가 한계까지 찼다 (사용자 시험 2026-10-25) */
+let sendTrack: MediaStreamTrack | null = null;
+function sendTrackNow(): MediaStreamTrack | null {
+  const src = bridgeStream()?.getVideoTracks()[0];
+  if (!src) return null;
+  if (!sendTrack || sendTrack.readyState === "ended") {
+    sendTrack = src.clone();
+    try { (sendTrack as MediaStreamTrack & { contentHint?: string }).contentHint = "detail"; } catch { /* 글자·세부 우선 */ }
+    sendTrack.enabled = !hiddenNow;
+    fitSendTrack();
+  }
+  return sendTrack;
+}
+/** 단계 높이·프레임으로 줄인다 — 창이 더 작으면 그대로 (max 제약) */
+function fitSendTrack(): void {
+  const q = qOf(coachQuality());
+  void sendTrack?.applyConstraints({ height: { max: q.h }, frameRate: { max: q.fps } }).catch(() => { /* 못 맞추면 보낼 때 줄인다 */ });
+}
 async function applyQuality(sender: RTCRtpSender, save = false): Promise<void> {
   const host = qOf(coachQuality());
   const q = save ? { h: Math.min(host.h, SAVE_Q.h), fps: Math.min(host.fps, SAVE_Q.fps), br: Math.min(host.br, SAVE_Q.br) } : host;
-  const srcH = bridgeStream()?.getVideoTracks()[0]?.getSettings().height ?? 0;
+  // 이미 단계 크기로 줄인 영상 기준 — 더 줄일 건 데이터 절약뿐 (줄이기가 안 먹은 브라우저면 원본 기준으로 여기서 줄인다)
+  const srcH = (sender.track ?? sendTrack)?.getSettings().height ?? bridgeStream()?.getVideoTracks()[0]?.getSettings().height ?? 0;
   try {
     const prm = sender.getParameters();
     prm.encodings = [{ ...(prm.encodings?.[0] ?? {}), maxBitrate: q.br, maxFramerate: q.fps, scaleResolutionDownBy: srcH > q.h ? srcH / q.h : 1 }];
@@ -92,7 +112,7 @@ let appliedSrcH = 0;
 /** 단계 바꾸기 — 캡처 프레임과 보는 사람 모두의 영상에 바로 반영 */
 export function setCoachQuality(id: QualityId): void {
   try { localStorage.setItem(QUALITY_KEY, id); } catch { /* 이번만 */ }
-  if (live) { setBridgeShareRate(qOf(id).fps); for (const p of peers.values()) for (const sd of p.pc.getSenders()) if (sd.track) void applyQuality(sd, p.save); }
+  if (live) { setBridgeShareRate(qOf(id).fps); fitSendTrack(); for (const p of peers.values()) for (const sd of p.pc.getSenders()) if (sd.track) void applyQuality(sd, p.save); }
   changed();
 }
 /** 실측 — 보는 사람마다 지금 나가는 해상도·프레임·비트레이트 (연결 통계, 2초마다) */
@@ -179,7 +199,7 @@ export const cleanText = (v: unknown, max: number) => typeof v === "string" ? v.
 export function coachName(): string { try { return cleanText(localStorage.getItem(NAME_KEY), NAME_MAX); } catch { return ""; } }
 export function setCoachName(v: string): void {
   try { localStorage.setItem(NAME_KEY, cleanText(v, NAME_MAX)); } catch { /* 이번만 */ }
-  if (live) { sendAll({ t: "names", names: coachNames() }); if (pub) sendMeta(); }
+  if (live) { sendAll({ t: "names", names: coachNames(), present: coachPresent() }); if (pub) sendMeta(); }
   changed();
 }
 
@@ -209,6 +229,8 @@ const changed = () => { for (const cb of subs) cb(); };
 export function onCoachChange(cb: () => void): () => void { subs.add(cb); return () => { subs.delete(cb); }; }
 export const coachState = () => ({ live, code, url: code ? `${location.origin}${location.pathname.startsWith("/en") ? "/en" : location.pathname.startsWith("/ja") ? "/ja" : ""}/w/${code}` : "",
   viewers: [...peers.values()].filter((p) => p.open).length, error: failMsg });
+/** 지금 들어와 있는 사람 — 쓴 사람 열쇠(0 = 하는 사람). 참여자 목록용 (사용자 지시 2026-10-25 "입장한 사람 목록") */
+export function coachPresent(): number[] { return [0, ...[...peers.values()].filter((p) => p.open).sort((a, b) => a.id - b.id).map((p) => p.a)]; }
 /** 쓴 사람 열쇠 → 지금 이름 (하는 사람·지금 있는 사람·나간 사람) */
 export function coachNames(): CoachNames {
   const out: CoachNames = { "0": coachName() || "하는 사람" };
@@ -261,12 +283,12 @@ function pushReact(from: number, e: Emote): void {
   setTimeout(() => { reacts = reacts.filter((x) => Date.now() - x.at < REACT_MS); changed(); }, REACT_MS + 50);
 }
 /** 채팅 — 지금까지 온 줄(최근 CHAT_KEEP)·꺼짐·안 읽은 수·이름표 */
-export const coachChat = () => ({ log: chatLog, off: chatOff, unread: chatUnread, names: coachNames() });
+export const coachChat = () => ({ log: chatLog, off: chatOff, unread: chatUnread, names: coachNames(), present: coachPresent() });
 export function coachChatRead(): void { if (chatUnread) { chatUnread = 0; changed(); } }
-function pushChat(from: number, name: string, text: string): void {
-  const m: CoachMsg = { id: ++chatSeq, from, name, text, at: Date.now() };
+function pushChat(from: number, name: string, text: string, sys?: "join" | "leave"): void {
+  const m: CoachMsg = { id: ++chatSeq, from, name, text, at: Date.now(), ...(sys ? { sys } : {}) };
   chatLog = [...chatLog, m].slice(-CHAT_KEEP);
-  if (from !== 0) chatUnread++;
+  if (from !== 0 && !sys) chatUnread++;
   sendAll({ t: "chat", m });
   changed();
 }
@@ -310,7 +332,7 @@ function onBridge() {
   const hide = bridgeNotArknights();
   if (hide !== hiddenNow) {
     hiddenNow = hide;
-    for (const p of peers.values()) for (const s of p.pc.getSenders()) if (s.track) s.track.enabled = !hide;
+    if (sendTrack) sendTrack.enabled = !hide;   // 보는 사람 모두가 같은 영상을 쓴다
   }
   // 게임 창 크기가 바뀌면 줄이는 비율을 다시 맞춘다
   const srcH = bridgeStream()?.getVideoTracks()[0]?.getSettings().height ?? 0;
@@ -329,10 +351,8 @@ async function addPeer(id: number) {
   const pc = new RTCPeerConnection({ iceServers: COACH_ICE });
   const peer: Peer = { id, a: ++authorSeq, save: false, pc, dc: null, votes: new Map(), open: false, name: "", lastChat: 0, lastReact: 0 };
   peers.set(id, peer);
-  const src = stream.getVideoTracks()[0];
-  const track = src.clone();
-  try { (track as MediaStreamTrack & { contentHint?: string }).contentHint = "detail"; } catch { /* 글자·세부 우선 */ }
-  track.enabled = !hiddenNow;
+  const track = sendTrackNow();
+  if (!track) return;
   const sender = pc.addTrack(track, new MediaStream([track]));
   preferH264(pc, sender);
   await applyQuality(sender, peer.save);
@@ -340,10 +360,11 @@ async function addPeer(id: number) {
   peer.dc = dc;
   dc.onopen = () => {
     peer.open = true;
+    pushChat(peer.a, peer.name || anonName(id), "", "join");   // 입장 한 줄 — 이름은 그때그때 찾아 닉네임을 바꿔도 따라간다
     dc.send(JSON.stringify(infoNow())); dc.send(JSON.stringify({ t: "votes", votes: coachVotes() }));
     dc.send(JSON.stringify({ t: "you", a: peer.a }));
     dc.send(JSON.stringify({ t: "chatlog", log: chatLog, off: chatOff, names: coachNames() }));
-    sendAll({ t: "names", names: coachNames() });
+    sendAll({ t: "names", names: coachNames(), present: coachPresent() });
     changed();
   };
   dc.onclose = () => { peer.open = false; changed(); };
@@ -362,7 +383,7 @@ async function addPeer(id: number) {
       pushReact(peer.a, m.e as Emote);
       return;
     }
-    if (m.t === "name") { peer.name = cleanText(m.name, NAME_MAX); sendAll({ t: "names", names: coachNames() }); changed(); return; }
+    if (m.t === "name") { peer.name = cleanText(m.name, NAME_MAX); sendAll({ t: "names", names: coachNames(), present: coachPresent() }); changed(); return; }
     if (m.t === "chat") {
       const now = Date.now();
       const text = cleanText(m.text, CHAT_MAX);
@@ -390,12 +411,13 @@ async function addPeer(id: number) {
 function dropPeer(id: number) {
   const p = peers.get(id);
   if (!p) return;
-  p.pc.getSenders().forEach((s) => s.track?.stop());
+  // 보내는 영상은 모두가 같이 쓰므로 여기서 멈추지 않는다 — 훈수방을 닫을 때(stopCoach) 멈춘다
   p.pc.close();
   peers.delete(id);
   leftNames.set(p.a, p.name || anonName(p.id));
+  if (p.open) pushChat(p.a, p.name || anonName(p.id), "", "leave");
   sendAll({ t: "votes", votes: coachVotes() });
-  sendAll({ t: "names", names: coachNames() });
+  sendAll({ t: "names", names: coachNames(), present: coachPresent() });
   changed();
 }
 
@@ -451,6 +473,7 @@ export function stopCoach(notifyEnd = true): void {
   unsub?.(); unsub = null;
   if (live) setBridgeShareRate(0);
   window.clearInterval(statTimer); stats = []; lastBytes.clear(); watchPressure(false);
+  sendTrack?.stop(); sendTrack = null;
   window.clearInterval(metaTimer); pub = false; lastMeta = "";
   live = false; code = ""; lastNodeKey = "";
   changed();

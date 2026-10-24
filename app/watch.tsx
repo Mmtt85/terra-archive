@@ -39,6 +39,8 @@ function WatchInner() {
   const [myVotes, setMyVotes] = useState<Record<string, 1 | -1>>({});
   const [me, setMe] = useState<number | null>(null);   // 채팅 쓴 사람 열쇠 — 내 줄 표시용
   const [names, setNames] = useState<CoachNames>({});
+  const [present, setPresent] = useState<number[]>([]);
+  const [rosterOpen, setRosterOpen] = useState(false);
   const [reacts, setReacts] = useState<CoachReact[]>([]);
   const [eraOpen, setEraOpen] = useState(false);
   // 새로 인식된 카드 — 영상 위에 잠깐 겹쳐 보이고(A) 옆 목록의 그 카드는 반짝인다(C). 영상만 보다가 노드가 바뀐 걸 놓쳤다는 시험 소감
@@ -140,7 +142,7 @@ function WatchInner() {
             setReacts((v) => [...v.filter((x) => x.id !== r.id), r].slice(-16));
             setTimeout(() => setReacts((v) => v.filter((x) => x.id !== r.id)), REACT_MS);
           }
-          else if (m.t === "names") setNames(m.names ?? {});
+          else if (m.t === "names") { setNames(m.names ?? {}); if (Array.isArray((m as { present?: number[] }).present)) setPresent((m as { present: number[] }).present); }
           else if (m.t === "chat" && m.m) { const one = m.m; setChat((v) => [...v.filter((x) => x.id !== one.id), one].slice(-60)); }
           else if (m.t === "chatlog") { setChat(m.log ?? []); setChatOff(!!m.off); if (m.names) setNames(m.names); }
           else if (m.t === "chatoff") setChatOff(!!m.off);
@@ -331,16 +333,29 @@ function WatchInner() {
           <section className="watch-chat">
             <div className="watch-chat-head">
               <b>{t("채팅")}</b>
+              {/* 참여자 — 누르면 지금 들어와 있는 사람 (하는 사람 먼저) */}
+              {present.length > 0 && (
+                <button type="button" className={`coach-roster-btn${rosterOpen ? " on" : ""}`} aria-expanded={rosterOpen} onClick={() => setRosterOpen((o) => !o)}>
+                  {t("참여 {n}명", { n: present.length })} {rosterOpen ? "▴" : "▾"}
+                </button>
+              )}
               <label className="watch-chat-namelbl" htmlFor="watch-nick">{t("닉네임")}</label>
               <input id="watch-nick" className="watch-chat-name" key={name} defaultValue={name} maxLength={NAME_MAX}
                 placeholder={myId != null ? anonName(myId) : t("닉네임")} aria-label={t("닉네임")}
                 onBlur={(e) => { if (e.target.value.trim() !== name) saveName(e.target.value); }}
                 onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
             </div>
+            {rosterOpen && (
+              <ul className="coach-roster">
+                {present.map((a) => <li key={a} className={a === 0 ? "host" : a === me ? "me" : ""}>{names[String(a)] ?? (a === 0 ? t("하는 사람") : "")}{a === 0 ? ` · ${t("하는 사람")}` : ""}</li>)}
+              </ul>
+            )}
             <div className="watch-chat-log" ref={logRef}>
               {chat.length === 0 && <p className="watch-empty">{t("채팅은 저장되지 않습니다 — 방이 닫히면 사라져요")}</p>}
               {chat.map((c) => (
-                <p key={c.id} className={c.from === 0 ? "host" : c.from === me ? "me" : ""}><b>{msgName(c, names)}</b>{c.text}</p>
+                c.sys
+                  ? <p key={c.id} className="sys">{t(c.sys === "join" ? "{n} 님이 들어왔어요" : "{n} 님이 나갔어요", { n: msgName(c, names) })}</p>
+                  : <p key={c.id} className={c.from === 0 ? "host" : c.from === me ? "me" : ""}><b>{msgName(c, names)}</b>{c.text}</p>
               ))}
             </div>
             {/* 입력칸 + 이모티콘 단추 — 누르면 위로 이모티콘 판이 뜬다. 판을 늘 펼쳐 두면 폰에서 카드가 가려졌다 (사용자 지시 2026-10-24) */}

@@ -418,6 +418,7 @@ function CoachChat({ t }: { t: T }) {
   const [text, setText] = useState("");
   const [nameEdit, setNameEdit] = useState(false);
   const [emoteOpen, setEmoteOpen] = useState(false);
+  const [rosterOpen, setRosterOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const last = chat.log[chat.log.length - 1]?.id ?? 0;
   useEffect(() => {
@@ -431,6 +432,9 @@ function CoachChat({ t }: { t: T }) {
     <section className="coach-chat">
       <div className="coach-chat-head">
         <b>{t("채팅")}</b>
+        <button type="button" className={`coach-roster-btn${rosterOpen ? " on" : ""}`} aria-expanded={rosterOpen} onClick={() => setRosterOpen((o) => !o)}>
+          {t("참여 {n}명", { n: chat.present.length })} {rosterOpen ? "▴" : "▾"}
+        </button>
         {nameEdit
           ? <input className="coach-chat-name" autoFocus maxLength={NAME_MAX} defaultValue={coachName()} placeholder={t("닉네임")}
             onBlur={(e) => { setCoachName(e.target.value); setNameEdit(false); }}
@@ -439,10 +443,17 @@ function CoachChat({ t }: { t: T }) {
         <button type="button" className={`coach-chat-off${chat.off ? " on" : ""}`} aria-pressed={chat.off} onClick={() => setCoachChatOff(!chat.off)}
           title={t("끄면 보는 사람이 채팅을 보낼 수 없습니다")}>{chat.off ? t("채팅 꺼짐") : t("채팅 끄기")}</button>
       </div>
+      {rosterOpen && (
+        <ul className="coach-roster">
+          {chat.present.map((a) => <li key={a} className={a === 0 ? "host" : ""}>{chat.names[String(a)] ?? ""}{a === 0 ? ` · ${t("나")}` : ""}</li>)}
+        </ul>
+      )}
       <div className="coach-chat-log" ref={listRef}>
         {chat.log.length === 0 && <p className="coach-chat-empty">{t("보는 사람이 보낸 채팅이 여기에 뜹니다")}</p>}
         {chat.log.map((m) => (
-          <p key={m.id} className={m.from === 0 ? "me" : ""}><b>{msgName(m, chat.names)}</b>{m.text}</p>
+          m.sys
+            ? <p key={m.id} className="sys">{t(m.sys === "join" ? "{n} 님이 들어왔어요" : "{n} 님이 나갔어요", { n: msgName(m, chat.names) })}</p>
+            : <p key={m.id} className={m.from === 0 ? "me" : ""}><b>{msgName(m, chat.names)}</b>{m.text}</p>
         ))}
       </div>
       {/* 입력칸 + 이모티콘 단추 — 하는 사람도 반응을 보낸다 (보는 사람 화면과 같은 판, 2026-10-25) */}

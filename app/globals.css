@@ -34906,6 +34906,14 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .watch-chat-log p.host b, .coach-chat-log p.me b { color: var(--lime-ink); }
 .watch-chat-log p.me b { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
 .coach-chat-empty { margin: 0; font-size: 11px; color: var(--muted); }
+/* 입장·퇴장 줄과 참여자 목록 (2026-10-25) */
+.watch-chat-log p.sys, .coach-chat-log p.sys { font-size: 11px; color: var(--muted); font-style: italic; }
+.coach-roster-btn { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--muted); font-size: 11px; cursor: pointer; }
+.coach-roster-btn.on, .coach-roster-btn:hover { color: var(--ink2); border-color: var(--lime-line); }
+.coach-roster { list-style: none; margin: 0; padding: 6px 8px; display: flex; flex-wrap: wrap; gap: 4px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); font-size: 12px; }
+.coach-roster li.host { color: var(--lime-ink); font-weight: 700; }
+.coach-roster li.me { text-decoration: underline; text-underline-offset: 2px; }
+.bridge-pip-rg .coach-roster, .bridge-pip-rg .coach-roster-btn { border-color: var(--rgline); border-radius: 0; }
 .watch-chat-input, .coach-chat-input {
   width: 100%; box-sizing: border-box; padding: 7px 10px; font-size: 13px;
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--ink);
