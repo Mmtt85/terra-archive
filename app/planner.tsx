@@ -2156,10 +2156,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               {optimizing && <span className="btn-swap-over">{t("계산 중…")}</span>}
             </span>
           </button>
-          <button className="pl-fill-btn" onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
           {/* 금빛 테두리로 다른 보조 버튼보다 한 단 띄운다 — 켜면 뜨는 금색 띠와 같은 색 (사용자 지적 2026-10-18 "눈에 안 띈다") */}
           <button className="pl-sandbox-btn" onClick={startSandbox} disabled={!plan} title={t("저장된 편성은 그대로 두고, 임시로 편성을 바꿔 보며 효율을 확인합니다")}><span className="btn-icon" aria-hidden>✎</span>{t("임시 편성 해보기")}<NewBadge id="infra-sandbox" show={isNewFeature("infra-sandbox")} /></button>
-          <button className="pl-clear-btn" onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
+          {/* 편성 정리 — '빈 자리만 자동편성'·'편성 전체 비우기'를 한 메뉴로 (사용자 지시 2026-10-24, 임시 편성은 눈에 띄게 밖에 둔다) */}
+          <Dropdown actions className="more-group pl-edit-group" ariaLabel={t("편성 정리")} buttonClassName="pl-edit-toggle"
+            label={<><span className="btn-icon" aria-hidden>⊕</span>{t("편성 정리")}</>}
+            selected={[]}
+            onPick={(v) => { if (v === "fill") fillGaps(); else if (v === "clear") clearAll(); }}
+            items={[
+              { value: "fill", label: <><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</>,
+                title: t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다") },
+              { value: "clear", className: "pl-edit-sep", label: <><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</>,
+                title: t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)") },
+            ]} />
           {/* 자동편성 이후 손을 댔을 때만 뜬다 (사용자 요청 2026-09-11) */}
           {!!basePlan && changedCells > 0 && !tempApplied.size && (
             <button className="pl-revert-btn" onClick={revertToAutoPlan} title={t("자동편성 이후 손으로 바꾼 {n}곳을 그 시점의 편성으로 되돌립니다", { n: changedCells })}>

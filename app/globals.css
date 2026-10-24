@@ -32660,7 +32660,8 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
   /* 정사각 타일 3×2 (사용자 지적 2026-10-23 "버튼 몇 개 가지고 4줄이나" · "가로로 길다란 버튼이 맘에 안 든다") —
      아이콘 위·글자 아래, 칸 셋이 같은 폭. ① 보유 오퍼 설정 · 전체 자동편성 · 임시 편성 ② 편성 전체 비우기 · 빈 자리만 · 그 외.
      이미지로 보기는 '그 외' 메뉴로(only-mobile 항목). 위쪽 760px 규칙들(flex·반폭)을 이기려고 선택자를 겹쳐 쓴다 */
-  html .planner-buttons.planner-buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; align-items: stretch; }
+  /* 6칸 격자 — 첫 줄 셋은 두 칸씩, 둘째 줄(편성 정리 · 그 외) 둘은 세 칸씩 (편성 정리로 묶은 뒤, 2026-10-24) */
+  html .planner-buttons.planner-buttons { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; align-items: stretch; }
   html .planner-buttons.planner-buttons > * { min-width: 0; margin: 0; flex: none; }
   html .planner-buttons.planner-buttons > button,
   html .planner-buttons.planner-buttons > .more-group > .drop-btn {
@@ -32670,7 +32671,8 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
   html .planner-buttons.planner-buttons > .more-group > .drop-btn .btn-icon { display: block; margin: 0; font-size: 16px; line-height: 1; }
   html .planner-buttons.planner-buttons > .more-group > .drop-btn .drop-label { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   html .planner-buttons.planner-buttons > .more-group > .drop-btn .drop-caret { display: none; }
-  html .planner-buttons.planner-buttons > * { grid-column: auto; }
+  html .planner-buttons.planner-buttons > * { grid-column: span 2; }
+  html .planner-buttons.planner-buttons > .more-group { grid-column: span 3; }
   html .planner-buttons.planner-buttons > button.primary:not(:has(.btn-swap)) { order: 1; }
   html .planner-buttons.planner-buttons > button.primary:has(.btn-swap) { order: 2; }
   /* 임시 편성은 첫 줄 오른쪽 끝 (사용자 지시 2026-10-23) — 둘째 줄은 비우기 · 빈 자리만 · 그 외 */
@@ -32678,6 +32680,7 @@ button.vz-player-inline.vz-player-btn { border: 0; background: none; padding: 0;
   html .planner-buttons.planner-buttons > .pl-clear-btn { order: 4; }
   html .planner-buttons.planner-buttons > .pl-fill-btn { order: 5; }
   html .planner-buttons.planner-buttons > .more-group { order: 6; }
+  html .planner-buttons.planner-buttons > .pl-edit-group { order: 5; }
   html .planner-buttons.planner-buttons > .pl-revert-btn { grid-column: 1 / -1; order: 7; min-height: 0; flex-direction: row; }
   /* 첫 줄 타일 — 이름은 한 줄, 보유 수는 이름 밑 작은 줄(괄호 없이) */
   html .planner-buttons.planner-buttons > button { white-space: nowrap; }
@@ -34780,3 +34783,9 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 
 /* 관리 화면 제안 카드 — 기기·브라우저 칩 두 줄 (2026-10-24) */
 .fb-dev-chip { display: inline-flex; flex-direction: column; line-height: 1.35; font-size: 11px; white-space: nowrap; }
+
+/* 인프라 '편성 정리' 메뉴 — 되돌릴 수 없는 '편성 전체 비우기' 위에 가로선 (2026-10-24) */
+.pl-edit-group .drop-menu li:has(> .pl-edit-sep) { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 4px; }
+
+/* 꾹 눌러 끌기(터치) — 길게 누르면 뜨는 글자 고르기·이미지 저장 메뉴를 막는다 (2026-10-24) */
+.ship-room.wing-room, .me-drawers > button { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }

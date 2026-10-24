@@ -88,6 +88,9 @@ export function SortHandle({ children, onClick }: { children?: React.ReactNode; 
 /** 끌어 옮기기 공용 — 끄는 동안 칸이 포인터를 따라오고, 나머지 칸은 놓았을 때의 자리로 미리 미끄러져 비킨다(FLIP).
  *  놓으면 끌던 칸이 제자리로 스르륵 들어간다 (사용자 지시 2026-10-15 "선 하나 생기고 툭 떨어져서 헷갈리니 미리 보여 줘").
  *  자리는 칸의 배치 위치(offsetLeft/Top — 움직이는 transform 과 무관)로 가른다. twoD 면 격자(줄을 넘김)를 읽는 순서로 */
+/** 터치로 꾹 눌러 끌기를 시작하는 시간 (ms) */
+const LONG_PRESS_MS = 300;
+
 export function useLiveSort<K extends string>(keys: K[], attr: string, twoD: boolean, onDrop: (next: K[]) => void, threshold = 0, swap = false) {
   // swap — 끼워 넣지 않고 **두 칸을 맞바꾼다** (인프라 시설 자리 바꾸기, 2026-10-23). at = 맞바꿀 상대의 원래 자리
   const ref = useRef<HTMLDivElement>(null);
@@ -180,7 +183,10 @@ export function useLiveSort<K extends string>(keys: K[], attr: string, twoD: boo
     if (e.button !== 0) return;
     const el = elOf(key);
     if (!el) return;
-    if (!threshold) e.preventDefault();
+    // 터치는 꾹 눌러야 끈다 — 바로 밀면 화면 스크롤로 남긴다. 그러지 않으면 손가락 하나에 스크롤과 끌기가 같이 걸렸다
+    // (사용자 지적 2026-10-24 "모바일에서 잡고 끌면 시설 이동이랑 화면 이동이 같이 된다", 홈 화면 아이콘 옮기기와 같은 방식)
+    const touch = e.pointerType === "touch";
+    if (!threshold && !touch) e.preventDefault();
     const r = el.getBoundingClientRect();
     st.current = { key, gx: e.clientX - r.left, gy: e.clientY - r.top, x: e.clientX, y: e.clientY, at: keys.indexOf(key), live: false, av: null };
     moved.current = false;
@@ -198,7 +204,20 @@ export function useLiveSort<K extends string>(keys: K[], attr: string, twoD: boo
       s.av = av;
       setDrag({ key, at: s.at });
     };
-    if (!threshold) begin();
+    let lp: number | undefined;
+    // 끄는 동안만 스크롤을 막는다 — 기다리는 동안(꾹 누르기 전) 손가락이 움직이면 그대로 스크롤
+    const blockTouch = (ev: TouchEvent) => { if (st.current?.live) ev.preventDefault(); };
+    const noMenu = (ev: Event) => ev.preventDefault();   // 꾹 누르기가 길게 누르기 메뉴(이미지 저장 등)를 부르지 않게
+    if (touch) {
+      window.addEventListener("touchmove", blockTouch, { passive: false });
+      window.addEventListener("contextmenu", noMenu);
+      lp = window.setTimeout(() => {
+        if (!st.current || st.current.live) return;
+        begin();
+        st.current.x = x0; st.current.y = y0;
+        try { navigator.vibrate?.(12); } catch { /* 진동 없는 기기 */ }
+      }, LONG_PRESS_MS);
+    } else if (!threshold) begin();
     const scroller = (() => { let p = el.parentElement; while (p && p !== document.body) { const o = getComputedStyle(p).overflowY; if ((o === "auto" || o === "scroll") && p.scrollHeight > p.clientHeight) return p; p = p.parentElement; } return document.scrollingElement as HTMLElement; })();
     const step = () => {
       const s = st.current!;
@@ -209,14 +228,22 @@ export function useLiveSort<K extends string>(keys: K[], attr: string, twoD: boo
     const move = (ev: PointerEvent) => {
       const s = st.current; if (!s) return;
       s.x = ev.clientX; s.y = ev.clientY;
-      if (!s.live) { if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < threshold) return; begin(); }
+      if (!s.live) {
+        // 터치 — 꾹 누르기 전에 움직이면 스크롤하려는 것: 끌기를 접는다 (pointercancel 이 안 와도)
+        if (touch) { if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 10) up(); return; }
+        if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < threshold) return;
+        begin();
+      }
       ev.preventDefault();
       // 화면 끝에 닿으면 굴린다 — 긴 카드 너머로 옮길 때
       if (ev.clientY < 60) scroller.scrollBy(0, -16); else if (ev.clientY > window.innerHeight - 60) scroller.scrollBy(0, 16);
       step();
     };
     const onScroll = () => { if (st.current?.live) step(); };
-    const up = () => {
+    function up() {
+      window.clearTimeout(lp);
+      window.removeEventListener("touchmove", blockTouch);
+      window.removeEventListener("contextmenu", noMenu);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
@@ -236,7 +263,7 @@ export function useLiveSort<K extends string>(keys: K[], attr: string, twoD: boo
       const next = swap ? swapped(s.at, s.key) : (() => { const r = keys.filter((k) => k !== s.key); r.splice(s.at, 0, s.key); return r; })();
       onDrop(next);
       setDrag(null);
-    };
+    }
     window.addEventListener("pointermove", move, { passive: false });
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
