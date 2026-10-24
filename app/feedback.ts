@@ -377,7 +377,8 @@ export function visitorOf(payload: unknown): string | null {
 /** PRTS '틀렸어요' 제보인가 (payload.source) — 관리 화면이 제안과 따로 'PRTS 틀렸어요' 탭에 모은다 (2026-10-23) */
 export function isPrtsRow(row: { payload?: unknown }): boolean {
   const p = row.payload;
-  return !!p && typeof p === "object" && (p as { source?: unknown }).source === "prts-wrong";
+  const src = p && typeof p === "object" ? (p as { source?: unknown }).source : null;
+  return src === "prts-wrong" || src === "prts-ark";   // prts-ark = '명일방주 맞습니다' (판별 오경보, 2026-10-24)
 }
 // visit-track.ts 의 VISITOR_KEY 와 같은 칸 — 그 파일이 이 파일을 불러오므로 거꾸로 import 하지 않고 직접 읽는다
 const VISITOR_STORE = "ta-visitor";

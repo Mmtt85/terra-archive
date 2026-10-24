@@ -170,6 +170,104 @@ function gotoKey(oc: LensOutcome): string | undefined {
   return parts.filter((x) => x != null && x !== "").join(":");
 }
 
+// ── 명일방주 화면인가 (사용자 지시 2026-10-24 "명방 창인지 아닌지 검출 — 같이 하기 아니라도 필요") ──────────────
+// 따로 OCR 을 더 돌리지 않는다 — 화면이 바뀔 때마다 하던 인식 결과를 그대로 증거로 쓴다:
+// 게임 항목·화면을 맞혔으면(또는 전투·이동) 명일방주. 못 맞혔어도 읽은 글자에 게임 화면 말이 있으면 명일방주(메인·기반시설 등 사이트가 안 다루는 화면).
+// 증거 없이 인식이 헛돌면 바로 '명일방주 화면이 아닌 것 같다'고 띄운다 (로딩·암전 화면이면 다음 인식에서 걷힌다)
+const ARK_WORDS = [
+  "이성", "오퍼레이터", "편성", "기반시설", "공개모집", "헤드헌팅", "통합전략", "합성옥", "순오리지늄", "용문폐", "지휘레벨", "작전개시", "작전준비", "로도스",
+  "理智", "干员", "编队", "基建", "公开招募", "寻访", "集成战略", "合成玉", "至纯源石", "龙门币", "作战", "罗德岛", "危机合约",
+  "SANITY", "OPERATOR", "SQUAD", "RECRUIT", "HEADHUNT", "ORUNDUM", "ORIGINITE", "LMD", "RHODES",
+  "理性", "オペレーター", "編成", "基地", "公開求人", "スカウト", "合成玉", "純正源石", "龍門幣", "ロドス",
+];
+let arkSeenAt = 0;    // 마지막으로 명일방주 증거가 나온 때
+let arkMiss = 0;      // 그 뒤 증거 없이 지나간 인식 수
+let arkWarn = false;
+let firstFast = false;   // 연결 직후 첫 화면은 안착을 기다리지 않고 바로 읽는다
+// 창 이름표 — 브라우저가 고른 창의 제목을 track.label 로 주면 그걸로 바로 가른다. 크롬·엣지는 제목 대신 'window:1234:0' 같은
+// 번호만 주는 경우가 많아(개인 정보 보호) 그때는 위의 화면 내용 판정으로 물러난다 (사용자 질문 2026-10-24 "창 이름으로 판단할 수 있지 않나")
+const ARK_WINDOWS = /arknights|明日方舟|명일방주|アークナイツ|bluestacks|mumu|ldplayer|雷电|nox|memu|google play games|구글 플레이 게임즈|mumuplayer|逍遥|scrcpy|미러링|mirror|phone link|휴대폰과 연결|wsa|subsystem for android|waydroid/i;
+/** 이름표가 제목이 아니라 번호뿐인가 (크롬·엣지가 흔히 주는 'window:1234:0') — 그러면 제목으로는 가를 수 없다 */
+const OPAQUE_LABEL = /^(window|screen|web-contents-media-stream)[:/]|^$/i;
+let arkByTitle = false;   // 창 이름이 게임·앱플레이어로 확인됐다 — 내용 판정을 하지 않는다
+// '명일방주 맞습니다'로 이 브라우저가 배운 것 — 창 제목과 화면 축소 모양(96×54 회색). 같은 창·같은 화면이면 경고하지 않는다 (2026-10-24)
+const ARK_OK_KEY = "ta:prts-ark-ok";
+type ArkOk = { titles: string[]; scenes: string[] };
+function readArkOk(): ArkOk {
+  try { const v = JSON.parse(localStorage.getItem(ARK_OK_KEY) ?? "{}"); return { titles: Array.isArray(v.titles) ? v.titles : [], scenes: Array.isArray(v.scenes) ? v.scenes : [] }; }
+  catch { return { titles: [], scenes: [] }; }
+}
+const grayToB64 = (g: Uint8Array) => { let bin = ""; for (let i = 0; i < g.length; i++) bin += String.fromCharCode(g[i]); return btoa(bin); };
+const b64ToGray = (b: string) => { const bin = atob(b); const g = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) g[i] = bin.charCodeAt(i); return g; };
+let arkOkScenes: Uint8Array[] | null = null;
+function knownArkScene(g: Uint8Array | null): boolean {
+  if (!g) return false;
+  arkOkScenes ??= readArkOk().scenes.map(b64ToGray).filter((x) => x.length === g.length);
+  return arkOkScenes.some((x) => diff(g, x) < NEW_SCENE);
+}
+
+function arkVerdict(yes: boolean): void {
+  if (arkByTitle) return;
+  if (!yes && knownArkScene(lastEmitGray ?? latestGray)) yes = true;   // 전에 '명일방주 맞습니다'를 누른 화면
+  const now = Date.now();
+  if (yes) { arkSeenAt = now; arkMiss = 0; if (arkWarn) { arkWarn = false; refreshArkThumb(); notify(); } return; }
+  arkMiss++;
+  // 첫 헛돎에서 바로 (사용자 지시 2026-10-24 "첫 번째 인식 때 바로") — 로딩·암전 화면이면 잠깐 떴다가 다음 인식에서 걷힌다
+  const warn = arkMiss >= 1;
+  if (warn !== arkWarn) { arkWarn = warn; refreshArkThumb(true); notify(); }
+}
+/** '명일방주 맞습니다' — 이번 연결 동안 경고를 끄고, 이 창 제목·이 화면을 이 브라우저에 기억하고, 관리 화면으로 화면 한 장을 보낸다
+ *  (사용자 지시 2026-10-24 "누르면 이쪽으로 날아와서 학습 — 앞으로 그 화면은 경고하지 않게"). 모든 사용자 반영은 관리자가 보고 판별 규칙에 넣는다 */
+export function confirmArknights(): void {
+  arkByTitle = true; arkMiss = 0;
+  if (arkWarn) { arkWarn = false; refreshArkThumb(); notify(); }
+  const label = settings?.label?.trim() ?? "";
+  const ok = readArkOk();
+  if (label && !OPAQUE_LABEL.test(label) && !ok.titles.includes(label)) ok.titles = [label, ...ok.titles].slice(0, 20);
+  const g = latestGray;
+  if (g) { ok.scenes = [grayToB64(g), ...ok.scenes].slice(0, 40); arkOkScenes = null; }
+  try { localStorage.setItem(ARK_OK_KEY, JSON.stringify(ok)); } catch { /* 저장 못 하면 이번 연결만 */ }
+  // 관리 화면으로 — 화면 한 장(최대 1280px)·창 이름표·마지막으로 읽은 글자. PRTS 틀렸어요처럼 익명
+  const frame = heldFrame;
+  const w = Math.min(1280, latestW || 1280), h = Math.max(1, Math.round(((latestH || 720) / Math.max(1, latestW || 1280)) * w));
+  let shotP: Promise<Blob | null> = Promise.resolve(null);
+  if (frame) {
+    try { const cv = new OffscreenCanvas(w, h); cv.getContext("2d")!.drawImage(frame, 0, 0, w, h); shotP = cv.convertToBlob({ type: "image/jpeg", quality: 0.85 }); } catch { /* 프레임이 막 닫힘 */ }
+  }
+  const lines = lastOcrLines() ?? [];
+  void shotP.then(async (blob) => {
+    const images: string[] = [];
+    if (blob) { const up = await uploadFeedbackFile(new File([blob], "prts-ark.jpg", { type: "image/jpeg" })).catch(() => null); if (up) images.push(up.url); }
+    const message = [`[PRTS 명일방주 맞음] 경고가 잘못 떴다고 알려 왔습니다`, `창 이름표: ${label || "(없음)"}`, lines.length ? `읽은 글자: ${lines.slice(0, 20).join(" / ")}` : "읽은 글자: (없음)"].join("\n");
+    await sendFeedback("data_error", message, { source: "prts-ark", label, topic: lock?.topic ?? null, images }, { anonymous: true });
+  }).catch(() => { /* 못 보내도 이 브라우저 학습은 됐다 */ });
+}
+
+/** 지금 공유 중인 화면이 명일방주가 아닌 것 같은가 — 같이 하기(화면 보내기)도 이걸로 영상을 가린다 */
+export const bridgeNotArknights = () => arkWarn;
+// 경고와 함께 '지금 잡히는 화면'을 작게 보여 준다 — 맞는 창인지 눈으로 확인하게 (사용자 지시 2026-10-24). 경고 중에만 2초마다 새로 그린다
+let arkThumb: string | null = null;
+let arkThumbAt = 0;
+let thumbCv: OffscreenCanvas | null = null;
+export const bridgeArkThumb = () => arkThumb;
+function refreshArkThumb(force = false): void {
+  const now = Date.now();
+  if (!arkWarn) { if (arkThumb) { URL.revokeObjectURL(arkThumb); arkThumb = null; } return; }
+  if (!heldFrame || (!force && now - arkThumbAt < 2000)) return;
+  arkThumbAt = now;
+  const w = 320, h = Math.max(1, Math.round((latestH / Math.max(1, latestW)) * w));
+  thumbCv ??= new OffscreenCanvas(w, h);
+  if (thumbCv.width !== w || thumbCv.height !== h) { thumbCv.width = w; thumbCv.height = h; }
+  try { thumbCv.getContext("2d")!.drawImage(heldFrame, 0, 0, w, h); } catch { return; }
+  void thumbCv.convertToBlob({ type: "image/jpeg", quality: 0.7 }).then((b) => {
+    if (!arkWarn) return;
+    const prev = arkThumb;
+    arkThumb = URL.createObjectURL(b);
+    if (prev) URL.revokeObjectURL(prev);
+    notify();
+  });
+}
+
 function finishScan(ocrStart?: number): void {
   const sc = scan;
   scan = null;
@@ -185,6 +283,11 @@ function finishScan(ocrStart?: number): void {
     ms: now - sc.emitAt, ocr_ms: ocrStart != null ? now - ocrStart : 0, cached: sc.cached, w: sc.w, h: sc.h, crop: sc.crop,
   };
   lastScan = { id: sc.id, at: now, wrong: false, row, ocr: sc.cached ? undefined : lastOcrLines(), blob: sc.blob };
+  {
+    const hit = !!oc && (oc.battle || oc.entities.length > 0 || oc.screens.length > 0 || oc.target.kind !== "none");
+    const text = sc.cached ? "" : (lastOcrLines() ?? []).join("").replace(/\s+/g, "").toUpperCase();
+    arkVerdict(hit || (!!text && ARK_WORDS.some((w) => text.includes(w))));
+  }
   // 화면 모으기 — 그 화면의 판정을 옆에 남긴다 (결과·구역·대상·상태줄·판정 근거·걸린 시간)
   if (collectDir && !sc.cached) void collectWrite(`${sc.id}.txt`, JSON.stringify({ topic: row.topic, page: row.page, result, section: row.section, target: row.target, note: row.note, seen: row.seen, ms: row.ms, ocr_ms: row.ocr_ms, w: sc.w, h: sc.h, ocr: lastOcrLines() }, null, 1));
   retryAt = result === "none" && !sc.cached && !sc.retry ? now + 1500 : 0;
@@ -333,6 +436,8 @@ export function setBridgeNodeJump(on: boolean) {
 export const bridgeSettings = () => settings;
 export const bridgeGate = () => gate;
 export const bridgeError = () => error;
+/** 연결 오류 알림을 닫는다 (본 화면 알림의 ×) */
+export function clearBridgeError(): void { if (error) { error = ""; notify(); } }
 export const bridgeBusy = () => busy;
 export const bridgeLock = () => lock;
 /** 이번 연결 회차 — 연결할 때마다 바뀐다 (rogue.tsx 상시 창이 지난 회차 내용을 버리는 데 쓴다). 끊긴 동안은 "" */
@@ -422,6 +527,13 @@ let visitHeld = false;
 
 /** 창 선택 → 캡처 시작. 사용자 제스처(버튼 클릭) 안에서만 부를 수 있다.
  *  withLock을 주면 그 테마로 하드 고정 — 인식이 다른 테마로 절대 넘어가지 않는다. */
+/** 공유 대상이 '창'인가 — displaySurface 를 안 주는 브라우저는 창으로 친다 */
+const isWindowSurface = (track: MediaStreamTrack) => {
+  const ds = (track.getSettings() as MediaTrackSettings & { displaySurface?: string }).displaySurface;
+  return !ds || ds === "window";
+};
+const NOT_WINDOW = "게임 창만 연결할 수 있습니다 — 브라우저 탭 말고 앱플레이어·명일방주 창을 골라 주세요";
+
 export async function connectBridge(withLock?: BridgeLock, via?: Window): Promise<void> {
   disconnectBridge();
   lock = withLock ?? null;
@@ -436,13 +548,24 @@ export async function connectBridge(withLock?: BridgeLock, via?: Window): Promis
   runLog = []; logMeta = null; startedAt = new Date().toISOString();
   scan = null; lastScan = null; pipNode = null; pipRelics = []; pipRecruit = null; pipFloor = {};
   sceneMemos = []; lastEmitGray = null; battleHold = false;
+  arkSeenAt = 0; arkMiss = 0; arkWarn = false; arkByTitle = false; firstFast = true;
   error = ""; notify();
+  // 공유를 시작해도 고른 게임 창으로 화면이 넘어가지 않게 — 크롬·엣지는 기본으로 그 창을 앞으로 가져온다 (사용자 지적 2026-10-24).
+  // CaptureController 를 모르는 브라우저는 종전 그대로
+  type FocusCtl = { setFocusBehavior?: (b: string) => void };
+  const Ctl = (window as unknown as { CaptureController?: new () => FocusCtl }).CaptureController;
+  const controller = Ctl ? new Ctl() : null;
   const opts = {
+    ...(controller ? { controller } : {}),
     audio: false,
-    video: { frameRate: { ideal: FPS_IDEAL, max: 8 } },
+    // 기본 선택은 '창' 탭 — 앱플레이어·명일방주 PC판·맥 앱 창을 고르게
+    video: { frameRate: { ideal: FPS_IDEAL, max: 8 }, displaySurface: "window" },
     // 자기 탭은 피커에서 숨긴다(무한거울 방지). 공유 중 창을 바꿔도 다시 안 골라도 된다.
     selfBrowserSurface: "exclude",
     surfaceSwitching: "include",
+    // 화면 전체는 고를 수 없게 — 알림·다른 창까지 잡히고 인식도 흐려진다 (사용자 지시 2026-10-24 "화면 전체 캡처는 논외, 여태 안 막은 게 잘못").
+    // 크롬·엣지는 피커에서 '전체 화면' 탭이 사라진다. 이 옵션을 모르는 브라우저는 아래 displaySurface 검사로 막는다
+    monitorTypeSurfaces: "exclude",
   } as DisplayMediaStreamOptions;
   try {
     try {
@@ -453,6 +576,8 @@ export async function connectBridge(withLock?: BridgeLock, via?: Window): Promis
       if (!via || !(e instanceof Error) || e.name !== "InvalidStateError") throw e;
       stream = await via.navigator.mediaDevices.getDisplayMedia(opts);
     }
+    // 받자마자(같은 작업 안에서) 불러야 먹는다 — 늦으면 브라우저가 이미 창을 앞으로 가져온 뒤다
+    try { controller?.setFocusBehavior?.("no-focus-change"); } catch { /* 창·탭이 아니면 던진다 — 무시 */ }
   } catch (e) {
     error = e instanceof Error && e.name === "NotAllowedError"
       ? "창 선택이 취소되었습니다" : `연결 실패: ${e instanceof Error ? e.message : String(e)}`;
@@ -461,6 +586,15 @@ export async function connectBridge(withLock?: BridgeLock, via?: Window): Promis
   }
 
   const track = stream.getVideoTracks()[0];
+  // **창만** 받는다 — 화면 전체·브라우저 탭이 들어왔으면 끊고 다시 고르게 (사용자 지시 2026-10-24 "크롬 탭도 안 되고 창만").
+  // 피커에서 탭 선택지를 빼는 옵션은 없어 고른 뒤에 가른다. 값을 안 주는 브라우저(일부 사파리)는 통과
+  if (!isWindowSurface(track)) {
+    for (const tr of stream.getTracks()) tr.stop();
+    stream = null;
+    error = NOT_WINDOW;
+    notify();
+    return;
+  }
   track.addEventListener("ended", () => { disconnectBridge(); });
 
   const smallCv = new OffscreenCanvas(SMALL_W, SMALL_H);
@@ -485,6 +619,15 @@ export async function connectBridge(withLock?: BridgeLock, via?: Window): Promis
     devicePixelRatio: window.devicePixelRatio || 1,
   };
   console.debug(`[bridge] 캡처 시작 — ${latestW}×${latestH} · dpr ${settings.devicePixelRatio} · ${settings.label}`);
+  // 창 제목을 받았으면 **인식 전에** 바로 가른다 (사용자 지시 2026-10-24 "화면 인식 전에 창 이름으로 판단하는 게 낫다").
+  //   게임·앱플레이어 창이면 그 뒤 내용 판정은 하지 않는다. 제목이 있는데 아니면 처음부터 경고 — 끊지는 않는다
+  //   (휴대폰 화면 미러링 창은 제목이 기기 이름이라 목록에 없을 수 있다. 화면 내용에서 명일방주가 보이면 경고가 걷힌다).
+  //   번호뿐이면 종전대로 화면 내용으로 가른다
+  if (readArkOk().titles.includes(settings.label.trim())) arkByTitle = true;   // 전에 '명일방주 맞습니다'를 누른 창
+  else if (!OPAQUE_LABEL.test(settings.label.trim())) {
+    arkByTitle = ARK_WINDOWS.test(settings.label);
+    if (!arkByTitle) { arkWarn = true; arkMiss = 2; arkSeenAt = 0; refreshArkThumb(true); }
+  }
   timer = window.setInterval(tick, TICK_MS);
   holdLock();
   // 연결해 둔 동안은 방문 통계의 조작 시간으로 센다 (게임이 화면을 덮고 있어도 쓰는 중이다)
@@ -556,6 +699,10 @@ function holdLock(): void {
 /** 판정 — 프레임 도착과 무관하게 돈다. 그래서 정지 화면도 안착이 확정된다. */
 let lastSayAt = 0;
 function tick(): void {
+  // 공유 도중 대상을 바꿔(surfaceSwitching) 화면 전체·탭으로 옮겨 갔으면 끊는다
+  const tr = stream?.getVideoTracks()[0];
+  if (tr && !isWindowSurface(tr)) { disconnectBridge(); error = NOT_WINDOW; notify(); return; }
+  if (arkWarn) refreshArkThumb();
   if (!latestGray) return;
   const now = Date.now();
   ticks++;
@@ -570,7 +717,8 @@ function tick(): void {
     if (changed || now - lastSayAt >= 1000) { lastSayAt = now; notify(); }
   };
 
-  if (first) { lastMoveAt = now; say("settling"); return; }
+  // 연결 직후 첫 화면은 멈추길 기다리지 않는다 — 명일방주 화면인지 빨리 가리려고 (2026-10-24)
+  if (first) { lastMoveAt = firstFast ? now - SETTLE_MS : now; firstFast = false; say("settling"); return; }
   if (dMove > MOVING) { lastMoveAt = now; say("moving"); return; }
   // 시간 기준 안착 — 숨겨진 탭에서 틱 간격이 늘어도 판정이 흔들리지 않는다
   if (now - lastMoveAt < SETTLE_MS) { say("settling"); return; }
@@ -701,7 +849,7 @@ export function useBridgeStatus() {
     statusSubs.add(cb);
     return () => { statusSubs.delete(cb); };
   }, []);
-  return { settings, gate, error, busy, note, lock, nodeJump: bridgeNodeJump() };
+  return { settings, gate, error, busy, note, lock, nodeJump: bridgeNodeJump(), notArk: arkWarn };
 }
 
 /** 프레임 공급원 — useClipboardWatch와 같은 모양이라 각 탭이 그대로 갈아 끼울 수 있다.

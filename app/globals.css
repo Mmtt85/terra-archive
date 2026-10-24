@@ -34807,3 +34807,4 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .vz-acc { display: inline-flex; align-items: baseline; gap: 6px; border: 0; background: none; padding: 0; color: var(--ink); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; text-align: left; }
 .vz-acc small { font-size: 12px; font-weight: 400; color: var(--muted); }
 .vz-acc:hover { color: var(--lime-ink); }
+.bridge-ark-check .bridge-ark-ok { justify-self: start; }

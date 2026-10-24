@@ -557,8 +557,17 @@ function rogueDigest(user) {
     // 저금(bank — 판이 끝날 때 남은 오리지늄각뿔을 쌓아 두는 곳)과 바깥 성장 트리 진행(buff — 찍은 노드·포인트)도 싣는다
     // (사용자 요청 2026-10-18 "쌓아 둔 각뿔 총 몇 개", 성장 트리 탭). 필드 이름을 실계정으로 맞추려고 원본째 + 바깥 키 목록
     const small = (v) => { const j = v == null ? "" : JSON.stringify(v); return j && j.length < 8000 ? v : (v && typeof v === "object" ? { keys: Object.keys(v) } : null); };
+    // 모드별 클리어한 가장 높은 난이도 — collect.modeGrade{모드: {난이도: {state}}} 의 state 2(클리어) 중 최댓값. 위 collect 펼치기는
+    // 모드 이름만 남겨 난이도 숫자를 버렸다. 팬텀·미즈키는 분대별 기록(record.bandGrade)이 없어 최고 난이도를 이걸로만 안다
+    // (사용자 지적 2026-10-24 "미즈키는 왜 최고 난이도가 안 나와", 중섭 실계정 원본으로 state 0 잠김·1 해금·2 클리어 확인)
+    const modeBest = {};
+    for (const [mode, gs] of Object.entries(outer?.collect?.modeGrade ?? {})) {
+      let best = -1;
+      for (const [g, v] of Object.entries(gs ?? {})) if (v && typeof v === "object" && v.state === 2 && Number(g) > best) best = Number(g);
+      if (best >= 0) modeBest[mode] = best;
+    }
     out[topic] = { collect, chat, record: recordJson.length < 20000 ? record : { keys: Object.keys(record) },
-      bank: small(outer?.bank), buff: small(outer?.buff), outerKeys: Object.keys(outer ?? {}) };
+      bank: small(outer?.bank), buff: small(outer?.buff), outerKeys: Object.keys(outer ?? {}), modeBest };
   }
   return out;
 }

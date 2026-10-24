@@ -2114,7 +2114,7 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
   // 기록이 아예 없는 미실장 테마(흑류수해)는 훈장 표 모양으로 — 훈장이 없는 건 팬텀·미즈키뿐이다
   const hasGrade = allBands.length > 0 || (!raw?.record && !["rogue_1", "rogue_2"].includes(topic));
   const cntOf = (bandIds: string[], ending: string) => bandIds.reduce((a, id) => a + (rec.bandCnt?.[id]?.[ending] ?? 0), 0);
-  const bestGrade = Math.max(-1, ...allBands.flatMap((b) => Object.values(rec.bandGrade?.[b] ?? {})));
+  const bestGrade = Math.max(-1, raw?.modeBest?.NORMAL ?? -1, ...allBands.flatMap((b) => Object.values(rec.bandGrade?.[b] ?? {})));
   // 그 테마의 일반 모드 최고 난이도 — 거기까지 깬 칸은 진하게 (테마마다 15·18 …)
   const maxGrade = Math.max(0, ...(doc?.difficulties ?? []).filter((d) => d.mode === "NORMAL").map((d) => d.grade));
   const diffName = (g: number) => doc?.difficulties.find((d) => d.mode === "NORMAL" && d.grade === g)?.name ?? "";
@@ -2158,7 +2158,8 @@ function RogueTopicDetail({ me, topic, onClose }: { me: MeData; topic: string; o
           {/* '탐험 N회'는 뺐다 — 계정 기록(record)이 엔딩까지 간 판만 세서 늘 엔딩 수와 같았다. 실패 포함 탐험 수는 계정
               동기화 데이터(rlv2.outer: bank·bp·buff·collect·mission·monthTeam·record·challenge·activity)에 없다 (2026-10-18 실계정 확인) */}
           <span>{t("엔딩 {n}회 도달", { n: fmt(clears) })}</span>
-          {hasGrade && <span title={bestGrade >= 0 ? diffName(bestGrade) : undefined}>{t("최고 난이도 {n}", { n: bestGrade >= 0 ? String(bestGrade) : "—" })}</span>}
+          {/* 팬텀·미즈키도 최고 난이도는 보인다(modeBest) — 엔딩별·분대별 난이도만 게임이 기록하지 않는다 */}
+          {(hasGrade || bestGrade >= 0) && <span title={bestGrade >= 0 ? diffName(bestGrade) : undefined}>{t("최고 난이도 {n}", { n: bestGrade >= 0 ? String(bestGrade) : "—" })}</span>}
           {doc && <span>{t("분대 {a}/{b} 해금", { a: fmt(doc.bands.filter((b) => [b.id, ...(b.alt ?? [])].some((id) => ownedBand.has(id))).length), b: fmt(doc.bands.length) })}</span>}
           {doc && <button type="button" className="band" onClick={() => setRelicOpen(true)}>{t("소장품 {a}/{b} 수집", { a: fmt(relicHave), b: fmt(relics.length) })} ›</button>}
         </p>
@@ -2350,7 +2351,8 @@ function RogueStats({ me }: { me: MeData }) {
           const rec = (all[tp.id]?.record ?? {}) as RogueRec;
           const runs = Object.values(rec.modeCnt ?? {}).reduce((a, b) => a + b, 0);
           const ends = new Set(Object.values(rec.endingCnt ?? {}).flatMap((m) => Object.keys(m).filter((k) => m[k] > 0 && !k.endsWith("_c")))).size;
-          const best = Math.max(-1, ...Object.values(rec.bandGrade ?? {}).flatMap((m) => Object.values(m)));
+          // 분대별 기록이 없는 팬텀·미즈키는 모드별 클리어 난이도(modeBest)로 (2026-10-24)
+          const best = Math.max(-1, all[tp.id]?.modeBest?.NORMAL ?? -1, ...Object.values(rec.bandGrade ?? {}).flatMap((m) => Object.values(m)));
           return (
             <button key={tp.id} type="button" className="has-bg" onClick={() => setOpen(tp.id)}
               style={{ ["--bg" as string]: `url(${asset(`/rogue/kv${tp.id.split("_")[1]}.webp`)})` }}>

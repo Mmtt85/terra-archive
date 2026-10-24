@@ -8,7 +8,7 @@
 import { NewBadge } from "../new-badge";
 import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBridgeStatus, connectBridge, disconnectBridge, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
+import { useBridgeStatus, connectBridge, disconnectBridge, clearBridgeError, bridgeNotArknights, bridgeArkThumb, confirmArknights, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
 import type { T } from "../i18n";
@@ -188,7 +188,7 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
             <span aria-hidden>○</span> {t("PRTS 링크 연결")}
           </button>
           <p>{t("게임 창을 고르면 이 작은 창에 인식 결과가 나옵니다.")}</p>
-          {error && <p className="bridge-pip-err">{error}</p>}
+          {error && <p className="bridge-pip-err">{t(error)}</p>}
         </div>
       </div>
     );
@@ -208,6 +208,7 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
           : <WrongButton t={t} cls="bridge-pip-wrong" />)}
         <button type="button" className="bridge-toast-off bridge-pip-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>{t("연결 끊기")}</button>
       </header>
+      {bridgeNotArknights() && <ArkCheck t={t} />}
       {pipLock?.topic === "recruit" || bridgePipRecruit() ? <RecruitPanes t={t} /> : external ? <div id="ta-pip-slot" className="bridge-pip-slot" /> : (<>
       {(() => {
         // 공통 정보 — 층 · 난이도 · 분대 세 칸만 (사용자 지시 2026-10-13 "N층, 난이도N, XX분대 이렇게 세 개만")
@@ -233,9 +234,25 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
   );
 }
 
+/** 명일방주 화면이 아닌 것 같을 때 — 막지 않고 '한번 확인해 보라'고 하며 지금 잡히는 화면을 작게 보여 준다 (사용자 지시 2026-10-24).
+ *  연결 토스트와 작은 창이 같이 쓴다 */
+function ArkCheck({ t }: { t: T }) {
+  const thumb = bridgeArkThumb();
+  return (
+    <div className="bridge-ark-check" role="status">
+      <p>{t("지금 잡히는 화면이 명일방주가 아닌 것 같아요. 아래 화면이 게임 창이 맞는지 한번 확인해 주세요.")}</p>
+      {thumb && <img src={thumb} alt={t("지금 잡히는 화면")} />}
+      <button type="button" className="bridge-toast-node bridge-ark-ok" onClick={confirmArknights}
+        title={t("이 화면이 명일방주라면 눌러 주세요 — 이 창·이 화면은 다음부터 경고하지 않고, 판별을 고치는 데 쓰도록 화면 한 장이 전송됩니다")}>
+        ✓ {t("명일방주 맞습니다")}
+      </button>
+    </div>
+  );
+}
+
 /** 연결 상태 토스트 — 문서 최상위에 포털로 그려 모달 백드롭 위에도 항상 보인다. */
 export default function BridgeButton({ t }: { t: T }) {
-  const { settings, gate, busy, note, lock, error } = useBridgeStatus();
+  const { settings, gate, busy, note, lock, error, notArk } = useBridgeStatus();
   const pip = usePipWin();
   // 연결이 끊기면 작은 창도 닫는다 (사용자 지시 2026-10-13) — 연결돼 있다가 끊긴 순간에만 (작은 창에서 '연결'을 누르기 전 상태는 그대로)
   const wasOn = useRef(false);
@@ -250,17 +267,29 @@ export default function BridgeButton({ t }: { t: T }) {
   const pipPortal = pip ? createPortal(
     <PipView t={t} connected={!!settings} phase={phase} note={note} error={error}
       lockName={lock ? t(lock.name) : t("PRTS 링크 연결됨")} />, pip.document.body) : null;
-  if (!settings) return pipPortal;   // 연결 전·미지원 — 토스트는 그리지 않는다
+  // 연결 전·미지원 — 연결 토스트는 그리지 않는다. 다만 연결이 막혔으면(화면 전체·탭을 고름 등) 그 이유를 본 화면에도 띄운다 —
+  // 종전엔 작은 창에만 떠서 그냥 끊긴 것처럼 보였다 (사용자 지적 2026-10-24 "끊기만 하지 말고 뭐라도 띄워 줘"). 고르기 취소는 띄우지 않는다
+  if (!settings) {
+    if (!error || error === "창 선택이 취소되었습니다") return pipPortal;
+    return <>{pipPortal}{createPortal(
+      <div className="bridge-toast bridge-toast-err" role="alert">
+        <span className="bridge-dot" aria-hidden>⚠</span>
+        {/* 길어서 잘렸다 — ' — ' 앞뒤를 두 줄로 (사용자 지적 2026-10-24) */}
+        <span className="bridge-toast-text bridge-err-text">{t(error).replace(" — ", "\n")}</span>
+        <button type="button" className="bridge-err-x" aria-label={t("닫기")} onClick={clearBridgeError}>×</button>
+      </div>, document.body)}</>;
+  }
   const togglePip = () => togglePipWindow(lock);
 
   return createPortal(
     <div className={`bridge-toast${busy ? " busy" : ""}`} aria-live="polite" role="status">
       <span className="bridge-dot" aria-hidden>◉</span>
-      <span className="bridge-toast-text">
-        {lock ? <b>{t(lock.name)}</b> : <b>{t("PRTS 링크 연결됨")}</b>}
-        {` · `}<b>{phase}</b>
-        {gate ? ` · ${t("인식")} ${gate.emitted} · ${t("기록")} ${bridgeLogCount()}` : ""}
-        {note ? ` · ${note}` : ""}
+      {/* 이름 한 줄 + 상태 한 줄 — 한 줄이면 길어서 상태가 잘렸다 (사용자 지적 2026-10-24) */}
+      <span className="bridge-toast-text bridge-toast-2line">
+        <span className="bridge-toast-name">{lock ? <b>{t(lock.name)}</b> : <b>{t("PRTS 링크 연결됨")}</b>}</span>
+        <span className="bridge-toast-state"><b>{phase}</b>
+          {gate ? ` · ${t("인식")} ${gate.emitted} · ${t("기록")} ${bridgeLogCount()}` : ""}
+          {note ? ` · ${note}` : ""}</span>
       </span>
       {/* 틀렸어요 — 마지막 인식을 틀렸다고 남긴다 (사용자 지시 2026-10-12). 인식이 한 번이라도 끝난 뒤에만 보인다 */}
       {(() => {
@@ -282,6 +311,8 @@ export default function BridgeButton({ t }: { t: T }) {
       </button>
       {/* 기록 수집 안내 (사용자 지시 2026-10-12) — 토스트 둘째 줄 */}
       {pipPortal}
+      {/* 명일방주 창이 아닌 것 같을 때 (창 제목 또는 화면 내용으로 판정 — app/lens/bridge.ts arkVerdict, 2026-10-24) */}
+      {notArk && <ArkCheck t={t} />}
       <small className="bridge-toast-hint">{t("잘못 인식했다면 '틀렸어요'를 눌러 주세요 — 그때만 그 인식 결과와 화면 한 장이 전송돼요. 평소 인식은 따로 보내지 않아요.")}</small>
     </div>,
     document.body,

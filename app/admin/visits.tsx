@@ -1631,13 +1631,25 @@ export function VisitsPanel({ prtsWrong, prtsFocus }: { prtsWrong?: { rows: Feed
           )}
 
           {/* PRTS 틀렸어요 — 10-15 에 피드백 탭으로 옮겼다가, 10-23 익명으로 받으면서 여기 PRTS 칸으로 되돌렸다 (사용자 지시 "틀렸어요 섹션 자체는 있어야죠") */}
-          {vtab === "prts" && prtsWrong && (<>
-            <Head title="틀렸어요" sub={`${num(prtsWrong.rows.length)}건 · 대응미완료 ${num(prtsWrong.rows.filter((r) => !r.reviewed_at).length)}건 — 처리·배포 뒤 답변 없이 지운다`} />
-            <div className="admin-list">
-              {prtsWrong.rows.map(prtsWrong.render)}
-              {prtsWrong.rows.length === 0 && <p className="vz-note">받은 틀렸어요가 없습니다.</p>}
-            </div>
-          </>)}
+          {vtab === "prts" && prtsWrong && (() => {
+            const srcOf = (r: FeedbackRow) => (r.payload && typeof r.payload === "object" ? (r.payload as { source?: unknown }).source : null);
+            const wrong = prtsWrong.rows.filter((r) => srcOf(r) !== "prts-ark");
+            const ark = prtsWrong.rows.filter((r) => srcOf(r) === "prts-ark");
+            const sub = (rows: FeedbackRow[], tail: string) => `${num(rows.length)}건 · 대응미완료 ${num(rows.filter((r) => !r.reviewed_at).length)}건 — ${tail}`;
+            return (<>
+              <Head title="틀렸어요" sub={sub(wrong, "처리·배포 뒤 답변 없이 지운다")} />
+              <div className="admin-list">
+                {wrong.map(prtsWrong.render)}
+                {wrong.length === 0 && <p className="vz-note">받은 틀렸어요가 없습니다.</p>}
+              </div>
+              {/* '명일방주 맞습니다' — 화면 판별이 명일방주 화면을 아니라고 한 경우. 보고 직접 판단한다 (사용자 지시 2026-10-24) */}
+              <Head title="명일방주 맞습니다" sub={sub(ark, "판별이 명일방주 화면을 아니라고 한 것 — 화면·창 이름표를 보고 판단")} />
+              <div className="admin-list">
+                {ark.map(prtsWrong.render)}
+                {ark.length === 0 && <p className="vz-note">받은 명일방주 맞습니다가 없습니다.</p>}
+              </div>
+            </>);
+          })()}
 
           {vtab === "etc" && (<>
           {/* 두 칸씩 세 줄 — 요일·시간 칸을 뺀 뒤 리퍼러를 유입원 옆으로 떼어 줄을 맞췄다 (사용자 지시 2026-10-20) */}

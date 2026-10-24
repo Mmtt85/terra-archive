@@ -129,7 +129,8 @@ export type AccountProfile = {
   } | null;
   rogue?: Record<string, { collect: Record<string, string[]>; chat?: { chat?: Record<string, number>; chatV2?: Record<string, string[]> }; record: Record<string, unknown> | null;
     /** 저금 — current 지금 쌓인 각뿔 · record 역대 최고 · totalPut 넣은 총량 (2026-10-18 실계정 확인) */ bank?: { current?: number; record?: number; totalPut?: number } | null;
-    /** 바깥 성장 트리 — 가진·쓴 포인트, 찍은 노드 {노드 id: 1} (팬텀은 id 에 테마 접두어가 없다) */ buff?: { pointOwned?: number; pointCost?: number; unlocked?: Record<string, number>; score?: number } | null }>;
+    /** 바깥 성장 트리 — 가진·쓴 포인트, 찍은 노드 {노드 id: 1} (팬텀은 id 에 테마 접두어가 없다) */ buff?: { pointOwned?: number; pointCost?: number; unlocked?: Record<string, number>; score?: number } | null;
+    /** 모드별 클리어한 가장 높은 난이도 {NORMAL: 18 …} — 2026-10-24~ 워커. 팬텀·미즈키는 최고 난이도를 이걸로만 안다 */ modeBest?: Record<string, number> }>;
   /** 연 스토리 — 스토리 id → 그 안의 storyId('<스토리>_' 접두를 뗀 것, 접두가 다르면 '=' + 전체) (2026-10-06~ 워커, 갤러리 스포 방지) */
   stories?: Record<string, string[]>;
   /** 패러독스 시뮬레이션을 깬 오퍼 id (2026-10-17~ 워커 — 그 전 동기화엔 없다) */
