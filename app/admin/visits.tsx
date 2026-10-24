@@ -1031,6 +1031,9 @@ export function VisitsPanel({ prtsWrong, prtsFocus }: { prtsWrong?: { rows: Feed
   // 받아오는 중 표시 (사용자 지시 2026-10-04) — 요약·세션 두 갈래 중 하나라도 돌면 새로고침 버튼이 '불러오는 중'으로 바뀐다
   const [loadMain, setLoadMain] = useState(false);
   const [loadSess, setLoadSess] = useState(false);
+  // 세션 타임라인은 접어 둔 채로 시작하고, 눌러 펼쳐야 DB 를 읽는다 — 세션 목록 조회가 가장 무겁다 (사용자 지시 2026-10-24).
+  // 펼친 상태는 기억하지 않는다(다시 들어오면 접혀 있다)
+  const [sessOpen, setSessOpen] = useState(false);
   const busy = loadMain || loadSess;
 
   // 켜 둔 동안 1분마다 새로고침 (사용자 지시 2026-10-04 5분 → 1분, 2026-10-10 1분 → 10초, 2026-10-20 다시 1분 — 10초마다 세션 목록을
@@ -1130,7 +1133,7 @@ export function VisitsPanel({ prtsWrong, prtsFocus }: { prtsWrong?: { rows: Feed
   const sessLoad = useRef<{ sig: string; at: number; full: number }>({ sig: "", at: 0, full: 0 });
   useEffect(() => {
     if (days === 365 && !rangeArgs) return;
-    if (vtab !== "screens") return;   // 세션 타임라인은 화면 탭에만 있다 (2026-10-21 개요 → 화면)
+    if (vtab !== "screens" || !sessOpen) return;   // 세션 타임라인은 화면 탭에만, 그것도 펼쳤을 때만 (2026-10-21 개요 → 화면, 2026-10-24 접기)
     let alive = true;
     const silent = sessSilent.current;
     sessSilent.current = false;
@@ -1160,7 +1163,7 @@ export function VisitsPanel({ prtsWrong, prtsFocus }: { prtsWrong?: { rows: Feed
       .finally(() => { inflight.current -= 1; doneAt.current = Date.now(); if (alive && !silent) setLoadSess(false); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, human, srcFilter, fetchN, tick, range, slot, vtab, liveOnly]);
+  }, [days, human, srcFilter, fetchN, tick, range, slot, vtab, liveOnly, sessOpen]);
 
   // 구간 시작 전에 들어와 **지금도 조작 중인** 세션 — '오늘'처럼 지금이 든 구간이면 자정을 넘겨도 계속 보여야 한다
   // (사용자 지시 2026-10-12 "날짜가 바껴도 지금도 조작중일테니 보여야"). DB 는 시작 시각으로만 거르므로 시작 전 하루치에서
@@ -1168,7 +1171,7 @@ export function VisitsPanel({ prtsWrong, prtsFocus }: { prtsWrong?: { rows: Feed
   const carryFrom = !slot && spanStart != null && spanEnd != null && spanEnd >= Date.now() - 120_000 ? spanStart : null;
   const [carry, setCarry] = useState<SessRow[]>([]);
   useEffect(() => {
-    if (carryFrom == null || vtab !== "screens") { setCarry([]); return; }
+    if (carryFrom == null || vtab !== "screens" || !sessOpen) { setCarry([]); return; }
     let alive = true;
     const args = { p_from: isoAt(carryFrom - 86400_000), p_to: isoAt(carryFrom), ...kindArgs, p_src: srcFilter || null, p_limit: 300 };
     rpc<SessRow[]>("visits_sessions_range", { ...args, p_since: new Date(Date.now() - LIVE_WINDOW).toISOString() })
@@ -1176,7 +1179,7 @@ export function VisitsPanel({ prtsWrong, prtsFocus }: { prtsWrong?: { rows: Feed
       .then((rows) => { if (alive) setCarry(rows.filter(sessLive)); }).catch(() => { if (alive) setCarry([]); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carryFrom, human, srcFilter, tick, vtab]);
+  }, [carryFrom, human, srcFilter, tick, vtab, sessOpen]);
   const sessions = sessFetched && (carry.length ? [...sessFetched, ...carry.filter((c) => !sessFetched.some((x) => x.id === c.id))] : sessFetched);
 
   // 세션 타임라인 '전체 보기' — 창을 열 때 상한(SESSIONS_ALL)까지 따로 받는다
@@ -1550,7 +1553,14 @@ export function VisitsPanel({ prtsWrong, prtsFocus }: { prtsWrong?: { rows: Feed
 
           {vtab === "screens" && (<>
           {/* 세션 타임라인 — 화면 탭 맨 위 (사용자 지시 2026-10-21 — 개요 탭에 있으면 열자마자 받아 DB 를 읽었다) */}
-          <Head title="세션 타임라인" sub="한 줄이 한 사람의 동선 · 최근 순. 시간은 조작 시간(없으면 보인 시간)" {...top("sessions", "세션 타임라인")}>
+          {/* 접어 둔 채로 시작 — 펼쳐야 세션 목록을 받는다 (사용자 지시 2026-10-24 "부하가 크다") */}
+          <div className="vz-head vz-acc-head">
+            <button type="button" className="vz-acc" aria-expanded={sessOpen} onClick={() => setSessOpen((v) => !v)}>
+              <span aria-hidden>{sessOpen ? "▾" : "▸"}</span> 세션 타임라인 <small>— {sessOpen ? "한 줄이 한 사람의 동선 · 최근 순. 시간은 조작 시간(없으면 보인 시간)" : "눌러서 펼치면 불러옵니다"}</small>
+            </button>
+          </div>
+          {sessOpen && (<>
+          <Head title="" {...top("sessions", "세션 타임라인")}>
             <Dropdown
               label={srcFilter || "유입원 전체"}
               items={[{ value: "", label: "유입원 전체" }, ...data.src.map((r) => ({ value: r.src, label: r.src, count: r.sessions }))]}
@@ -1584,6 +1594,7 @@ export function VisitsPanel({ prtsWrong, prtsFocus }: { prtsWrong?: { rows: Feed
               
             </>
           )}
+          </>)}
 
           <Head title="화면 순위" sub={`${data.pages.length}개 화면`} {...top("pages", "화면 순위")} />
           {pageTable(tops.pages)}

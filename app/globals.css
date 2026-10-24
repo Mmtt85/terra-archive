@@ -34789,3 +34789,21 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 
 /* 꾹 눌러 끌기(터치) — 길게 누르면 뜨는 글자 고르기·이미지 저장 메뉴를 막는다 (2026-10-24) */
 .ship-room.wing-room, .me-drawers > button { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* PRTS 링크 연결이 막혔을 때의 알림 (화면 전체·탭을 고름 등, 2026-10-24) — 연결 토스트와 같은 자리, 경고 색 */
+.bridge-toast.bridge-toast-err { border-color: var(--bad); }
+.bridge-toast.bridge-toast-err .bridge-dot { color: var(--bad); }
+.bridge-err-x { border: 0; background: none; color: inherit; font-size: 18px; line-height: 1; padding: 0 2px 0 6px; cursor: pointer; opacity: .7; }
+.bridge-err-x:hover { opacity: 1; }
+.bridge-toast.bridge-toast-err .bridge-err-text { white-space: pre-line; overflow: visible; text-overflow: clip; line-height: 1.5; }
+.bridge-ark-check { flex-basis: 100%; display: grid; gap: 6px; padding: 8px 10px; border: 1px solid var(--bad); border-radius: var(--r-sm); background: var(--bg-soft); }
+.bridge-ark-check p { margin: 0; font-size: 12px; font-weight: 700; line-height: 1.5; color: var(--ink); white-space: normal; }
+.bridge-ark-check img { display: block; width: 100%; max-width: 240px; height: auto; border-radius: var(--r-sm); border: 1px solid var(--line); }
+.bridge-toast-text.bridge-toast-2line { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.bridge-toast-2line > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bridge-toast-2line .bridge-toast-state { font-size: 11px; color: var(--muted); }
+.bridge-toast-2line .bridge-toast-state b { color: var(--ink2); font-weight: 700; }
+/* 관리 화면 방문 통계 — 접어 두는 칸 머리 (세션 타임라인, 2026-10-24) */
+.vz-acc { display: inline-flex; align-items: baseline; gap: 6px; border: 0; background: none; padding: 0; color: var(--ink); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; text-align: left; }
+.vz-acc small { font-size: 12px; font-weight: 400; color: var(--muted); }
+.vz-acc:hover { color: var(--lime-ink); }
