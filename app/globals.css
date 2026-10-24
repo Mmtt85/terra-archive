@@ -34906,7 +34906,13 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .bridge-pip-rg .coach-chat-off { border-color: var(--rgline); color: var(--rgmut); border-radius: 0; }
 /* 채팅 입력칸 — 폭 760px 이하 화면은 입력 글자를 16px 로 못 박는 전역 규칙(아이폰 확대 방지)에 걸려 작은 창에서 칸이 커졌다
    (사용자 지적 2026-10-24 "엔터로 보내기 란이 너무 크다"). 작은 창은 PC 라 확대 걱정이 없어 되돌린다. 보는 사람 화면은 폰도 있어 16px 그대로 두고 높이만 */
-.bridge-pip .coach-chat-input, .bridge-pip .coach-chat-name { font-size: 12px !important; height: 28px; padding: 0 8px; line-height: 28px; }
+/* ⚠ 선택자를 전역 규칙 input:not([type="checkbox"]):not([type="radio"])(0-2-1, !important) 보다 높여야 한다 — 같거나 낮으면 16px 이 이긴다 */
+.bridge-pip input.coach-chat-input:not([type="checkbox"]), .bridge-pip input.coach-chat-name:not([type="checkbox"]) { font-size: 12px !important; height: 28px; padding: 0 8px; line-height: 28px; }
+.bridge-pip input.coach-chat-input::placeholder { font-size: 12px; }
+/* 링크 복사 — 됐다는 표시, 막혔으면 링크를 펼쳐 직접 고르게 */
+.coach-copied { border-color: var(--lime-line) !important; color: var(--lime-ink) !important; }
+.coach-copy-note { flex-basis: 100%; font-size: 12px; font-weight: 700; color: var(--lime-ink); }
+.bridge-pip input.coach-copy-url:not([type="checkbox"]) { flex-basis: 100%; font-size: 12px !important; padding: 4px 8px; border: 1px solid var(--line); background: var(--white); color: var(--ink); }
 .watch-chat-input { height: 34px; padding: 0 10px; line-height: 34px; }
 .watch-chat-name { height: 26px; }
 /* 추천·비추천 — 보는 사람 카드의 ▲▼, 하는 사람 작은 창의 요약 줄 (2026-10-24) */

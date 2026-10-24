@@ -255,6 +255,7 @@ function useCoach() {
 function CoachControls({ t }: { t: T }) {
   const st = useCoach();
   const [copied, setCopied] = useState(false);
+  const [copyFail, setCopyFail] = useState(false);
   // 지금은 관리자(운영자 UID 로 내 정보 동기화한 브라우저)만 — 시험 중 (사용자 지시 2026-10-24 "화면 공유 버튼은 관리자만")
   if (!isOwnerUid() && !st.live) return null;
   if (!st.live) return (
@@ -266,12 +267,33 @@ function CoachControls({ t }: { t: T }) {
       {st.error && <small className="coach-err">{t(st.error)}</small>}
     </div>
   );
-  const copy = () => { void navigator.clipboard?.writeText(st.url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => null); };
+  // 복사는 **누른 단추가 있는 창**의 클립보드로 — 작은 창(별도 창)에서 본 창 navigator 로 쓰면 '포커스 없는 문서'라 크롬이 거부하고
+  // 조용히 실패했다 (사용자 지적 2026-10-24 "복사가 안 된다"). 막히면 옛 방식(execCommand)으로, 그래도 안 되면 링크를 펼쳐 직접 고르게
+  const copy = (ev: React.MouseEvent<HTMLButtonElement>) => {
+    const doc = ev.currentTarget.ownerDocument;
+    const win = doc.defaultView ?? window;
+    const done = () => { setCopied(true); setCopyFail(false); setTimeout(() => setCopied(false), 2000); };
+    const legacy = () => {
+      try {
+        const ta = doc.createElement("textarea");
+        ta.value = st.url; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+        doc.body.appendChild(ta); ta.select();
+        const ok = doc.execCommand("copy");
+        ta.remove();
+        if (ok) done(); else setCopyFail(true);
+      } catch { setCopyFail(true); }
+    };
+    const cb = win.navigator.clipboard;
+    if (cb?.writeText) void cb.writeText(st.url).then(done).catch(legacy);
+    else legacy();
+  };
   return (
     <div className="coach-bar on">
       <span className="coach-live">● {t("화면 공유 중")} · {t("보는 사람 {a}/{b}", { a: st.viewers, b: COACH_MAX })}</span>
-      <button type="button" className="bridge-toast-node" onClick={copy} title={st.url}>{copied ? t("복사했어요") : t("링크 복사")}</button>
+      <button type="button" className={`bridge-toast-node${copied ? " coach-copied" : ""}`} onClick={copy} title={st.url}>{copied ? `✓ ${t("복사했어요")}` : t("링크 복사")}</button>
       <button type="button" className="bridge-toast-off" onClick={() => stopCoach()}>{t("공유 끝내기")}</button>
+      {copied && <span className="coach-copy-note" role="status">{t("훈수방 링크를 복사했어요 — 보는 사람에게 보내 주세요")}</span>}
+      {copyFail && <input className="coach-copy-url" readOnly value={st.url} aria-label={t("링크")} onFocus={(e) => e.currentTarget.select()} autoFocus />}
       <CoachVoteList t={t} />
     </div>
   );
