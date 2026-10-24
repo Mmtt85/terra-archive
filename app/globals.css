@@ -24621,28 +24621,55 @@ html.dark .ac-krfix { color: var(--gold); }
   color: var(--btn-ink-hover);
 }
 .ac-slot-act button.on { color: var(--lime-ink); font-weight: 700; }
-/* 정예화(골든) 토글 — 별표는 즐겨찾기로 읽혀서 게임 용어를 글자로 적는다 */
-/* ⚠ 켜짐/꺼짐 **둘 다** 여백을 0 으로 못 박고 가운데 정렬한다 — .on 에만 줬더니 꺼짐
-   상태가 전역 버튼 여백을 물어 글자가 아래로 밀렸다 (사용자 지적 2026-08-29).
-   선택자는 .ac-slot-act button(0-1-1) 을 이겨야 하므로 클래스를 함께 적는다. */
-.ac-slot-act button.ac-goldbtn {
+/* 골든은 왼쪽 위, 빼기(×)는 오른쪽 위 — 아래 줄은 장비 두 칸 (사용자 지시 2026-10-24) */
+.ac-slot { position: relative; }
+.ac-slot > button.ac-slotx {
+  position: absolute; top: 2px; right: 2px; z-index: 1;
+  width: 18px; height: 18px; margin: 0; padding: 0; border: 0; border-radius: var(--r-sm);
+  background: none; color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1;
   display: flex; align-items: center; justify-content: center;
-  margin: 0; padding: 0; border: 0; border-radius: 0; line-height: 1;
-  font-size: 9px; font-weight: 700; letter-spacing: -0.3px;
 }
-/* 정비구역 칸은 더 좁다 — 글자를 한 단계 줄여 × 와 나란히 들어가게 */
-.ac-slot.sm .ac-slot-act button.ac-goldbtn { font-size: 9px; }
-/* ⚠ 선택자를 .ac-slot-act button.on(0-2-1) 보다 높여야 한다 — .ac-goldbtn.on(0-2-0) 은
-   특이도에서 져서 글자색이 라임으로 남고, 라임 배경 위 라임 글자가 되어 안 읽혔다
-   (실측 2026-08-29 — 이 세션에서 같은 함정에 세 번째다). */
-.ac-slot-act button.ac-goldbtn.on {
-  background: var(--lime); color: #16181a;
-  /* 버튼이 **둥근 칩**이라 칸을 못 채우고 좌·하단에 틈이 보였다 (사용자 지적 2026-08-29).
-     여백·모서리를 지우고 칸의 왼쪽 아래 모서리만 따라가게 한다 (.ac-slot 이 10px 라운드에
-     overflow:hidden 이라 실제로는 그 곡선대로 잘린다). */
-  border-radius: 0 0 0 var(--r-md);
+.ac-slot > button.ac-slotx:hover { background: var(--btn-ghost-hover); color: var(--btn-ink-hover); }
+.ac-slot > button.ac-goldtag {
+  position: absolute; top: 3px; left: 3px; z-index: 1;
+  margin: 0; padding: 2px 4px; border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: var(--white); color: var(--muted); cursor: pointer;
+  font-size: 9px; font-weight: 700; line-height: 1; letter-spacing: -0.3px;
 }
-.ac-slot.sm .ac-slot-act button.ac-goldbtn.on { border-radius: 0 0 0 var(--r-md); }
+.ac-slot > button.ac-goldtag:hover { background: var(--btn-ghost-hover); color: var(--btn-ink-hover); }
+.ac-slot > button.ac-goldtag.on { background: var(--lime); border-color: var(--lime); color: #16181a; }
+/* 칸 장비 고르기 — 기물당 둘. 변형 구조체 + 맹약 장비 (제안 2383c050, 2026-10-24) */
+.ac-slot-act .ac-itempick { flex: 1; display: flex; min-width: 0; }
+.ac-slot-act .ac-itempick > button.ac-itembtn {
+  display: flex; align-items: center; justify-content: center;
+  margin: 0; padding: 0; border: 0; border-radius: 0;
+  line-height: 1; font-size: 10px; font-weight: 700; letter-spacing: -0.3px; color: var(--muted); width: 100%;
+  height: 24px;   /* 9px 글자 한 줄 높이라 너무 가늘었다 — 칸 높이(96·82px)가 고정이라 얼굴이 안 잘리는 만큼만 (사용자 지적 2026-10-24) */
+}
+.ac-slot.sm .ac-slot-act .ac-itempick > button.ac-itembtn { height: 22px; }
+.ac-slot-act .ac-itempick > button.ac-itembtn img { width: 18px; height: 18px; object-fit: contain; }
+.ac-slot-act .ac-itempick + .ac-itempick > button.ac-itembtn { border-left: 1px solid var(--line); }
+/* 장비 목록 — body 에 화면 기준으로 뜬다. 같은 맹약 장비 묶음은 오른쪽 하위 메뉴 (2026-10-24) */
+.ac-ip-menu {
+  position: fixed; z-index: 100000; min-width: 220px; padding: 5px;
+  background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--r-md);
+  box-shadow: var(--sh-2); display: flex; flex-direction: column;
+}
+.ac-ip-menu { max-height: calc(100vh - 16px); overflow-y: auto; }   /* '그 외' 37개 — 화면보다 길면 안에서 스크롤 */
+.ac-ip-layer { display: contents; }
+.ac-ip-row {
+  display: flex; align-items: center; gap: 8px; width: 100%; margin: 0; padding: 6px 8px;
+  border: 0; border-radius: var(--r-sm); background: none; cursor: pointer; text-align: left;
+  font-size: 12px; color: var(--ink);
+}
+.ac-ip-row:hover, .ac-ip-row.grp.open { background: var(--btn-ghost-hover); color: var(--btn-ink-hover); }
+.ac-ip-row.on { font-weight: 700; }
+.ac-ip-row.none { justify-content: center; }
+.ac-ip-row.none > span { flex: none; }
+.ac-ip-row img { width: 18px; height: 18px; object-fit: contain; flex: none; }
+.ac-ip-row > span { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-ip-row > em { flex: none; font-style: normal; font-size: 11px; color: var(--muted); }
+.ac-ip-row > i { flex: none; font-style: normal; font-size: 10px; color: var(--muted); }
 /* 제목 옆 안내문 — sb-count 바로 뒤라 숫자에 붙어 읽혔다 */
 .sb-h3 .ac-note { margin-left: 8px; font-weight: 500; }
 .ac-clear {
@@ -24941,7 +24968,7 @@ html.dark .ac-krfix { color: var(--gold); }
 .ac-facemini > .ac-banmark { top: 1px; right: 1px; width: 12px; height: 12px; border-width: 1.5px; }
 .ac-facemini > .ac-banmark::before { height: 1.5px; margin-top: -0.75px; }
 /* 배치·정비구역 칸은 얼굴이 크다 — 표식도 조금 키운다 */
-.ac-slot-face > .ac-banmark { top: 4px; right: 4px; width: 17px; height: 17px; }
+.ac-slot-face > .ac-banmark { top: 22px; right: 4px; width: 17px; height: 17px; }   /* 오른쪽 위는 빼기(×) 자리 — 그 밑으로 (2026-10-24) */
 
 /* ⚠ 표식을 담는 상자들 — **여기가 없으면 표식이 창 우상단으로 튀어나간다.**
    position:absolute 의 기준이 없어져 가장 가까운 위치 지정 조상(모달 창)으로 올라가기 때문이다

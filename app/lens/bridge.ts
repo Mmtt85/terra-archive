@@ -178,6 +178,8 @@ const ARK_WORDS = [
   // 게임 이름·타이틀 화면 말 — 타이틀 화면(로고·START·계정 연동)엔 인게임 말이 없어 경고가 잘못 떴다 ('명일방주 맞습니다' d5ea66aa, 2026-10-24).
   // OCR 이 '명'을 '평'으로 읽기도 해서 '평일방주'도 넣는다
   "명일방주", "평일방주", "ARKNIGHTS", "HYPERGRYPH", "YOSTAR", "明日方舟", "アークナイツ", "鹰角", "계정연동",
+  // 통합전략 지도 화면 말 — 팬텀 지도에서 '우연한 만남·작전'만 읽혀 경고가 잘못 떴다 ('명일방주 맞습니다' 9b2b29df, 2026-10-24)
+  "우연한만남", "COMBATOPS", "ENCOUNTER", "소장품", "목표HP",
   "이성", "오퍼레이터", "편성", "기반시설", "공개모집", "헤드헌팅", "통합전략", "합성옥", "순오리지늄", "용문폐", "지휘레벨", "작전개시", "작전준비", "로도스",
   "理智", "干员", "编队", "基建", "公开招募", "寻访", "集成战略", "合成玉", "至纯源石", "龙门币", "作战", "罗德岛", "危机合约",
   "SANITY", "OPERATOR", "SQUAD", "RECRUIT", "HEADHUNT", "ORUNDUM", "ORIGINITE", "LMD", "RHODES",
@@ -192,7 +194,7 @@ let firstFast = false;   // 연결 직후 첫 화면은 안착을 기다리지 �
 const ARK_WINDOWS = /arknights|明日方舟|명일방주|アークナイツ|bluestacks|mumu|ldplayer|雷电|nox|memu|google play games|구글 플레이 게임즈|mumuplayer|逍遥|scrcpy|미러링|mirror|phone link|휴대폰과 연결|wsa|subsystem for android|waydroid/i;
 /** 이름표가 제목이 아니라 번호뿐인가 (크롬·엣지가 흔히 주는 'window:1234:0') — 그러면 제목으로는 가를 수 없다 */
 const OPAQUE_LABEL = /^(window|screen|web-contents-media-stream)[:/]|^$/i;
-let arkByTitle = false;   // 창 이름이 게임·앱플레이어로 확인됐다 — 내용 판정을 하지 않는다
+let arkByTitle = false;   // 명일방주로 확정됐다(창 이름·한 번 맞힌 화면·'맞습니다') — 이번 연결 동안 다시 가르지 않는다
 // '명일방주 맞습니다'로 이 브라우저가 배운 것 — 창 제목과 화면 축소 모양(96×54 회색). 같은 창·같은 화면이면 경고하지 않는다 (2026-10-24)
 const ARK_OK_KEY = "ta:prts-ark-ok";
 type ArkOk = { titles: string[]; scenes: string[] };
@@ -213,7 +215,8 @@ function arkVerdict(yes: boolean): void {
   if (arkByTitle) return;
   if (!yes && knownArkScene(lastEmitGray ?? latestGray)) yes = true;   // 전에 '명일방주 맞습니다'를 누른 화면
   const now = Date.now();
-  if (yes) { arkSeenAt = now; arkMiss = 0; if (arkWarn) { arkWarn = false; refreshArkThumb(); notify(); } return; }
+  // 한 번 명일방주로 판정되면 이번 연결 동안 계속 명일방주로 본다 — 같은 창만 공유되니 다시 가를 까닭이 없다 (사용자 지시 2026-10-24)
+  if (yes) { arkSeenAt = now; arkMiss = 0; arkByTitle = true; if (arkWarn) { arkWarn = false; refreshArkThumb(); notify(); } return; }
   arkMiss++;
   // 첫 헛돎에서 바로 (사용자 지시 2026-10-24 "첫 번째 인식 때 바로") — 로딩·암전 화면이면 잠깐 떴다가 다음 인식에서 걷힌다
   const warn = arkMiss >= 1;

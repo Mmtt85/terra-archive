@@ -21,8 +21,10 @@ import type { AcBond, AcChess } from "./autochess";
 /** 단계 게이트 — build-autochess.py gate_of() 가 한국어 원문에서 읽어 넣는다 */
 export type AcGate = { k: "char" | "gold" | "stack"; n: number; rep?: 1 };
 
-/** 판에 올린 기물 한 칸 — gold = 정예화(골든) 상태 */
-export type BoardSlot = { id: string; gold?: boolean };
+/** 판에 올린 기물 한 칸 — gold = 정예화(골든) 상태, items = 끼운 장비 id (기물당 둘까지).
+ *  '변형 구조체'(뮤엘시스가 준다)와 맹약이 정해진 장비(고수 방패 등)를 **함께** 끼우면 그 맹약이 착용자에게 붙는다
+ *  — 맹약 장비 혼자서는 안 붙는다 (제안 2383c050, 사용자 지적 2026-10-24) */
+export type BoardSlot = { id: string; gold?: boolean; items?: string[] };
 
 export type StepState = {
   /** steps 안에서의 위치 */
@@ -71,9 +73,15 @@ export function computeBoard(
   board: BoardSlot[],
   deck: BoardSlot[],
   stacks?: Record<string, number>,
+  itemBonds?: (items: string[]) => string[],
 ): BondState[] {
   const goldOnBoard = board.filter((s) => s.gold).length;
-  const bondsOf = (s: BoardSlot) => byId.get(s.id)?.bonds ?? [];
+  // 기물 맹약 + 장비로 붙은 맹약 (같은 맹약이면 한 번만). 같은 기물이 여러 칸이면 칸마다 센다
+  const bondsOf = (s: BoardSlot) => {
+    const own = byId.get(s.id)?.bonds ?? [];
+    const extra = s.items?.length && itemBonds ? itemBonds(s.items).filter((b) => !own.includes(b)) : [];
+    return extra.length ? [...own, ...extra] : own;
+  };
 
   return bonds.map((b) => {
     const onBoard = board.filter((s) => bondsOf(s).includes(b.id)).length;

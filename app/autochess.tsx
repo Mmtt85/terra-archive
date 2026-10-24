@@ -26,6 +26,7 @@ import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
 import { Dropdown } from "./dropdown";
+import { ItemPick, type PickNode } from "./autochess-itempick";
 import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import { loadEnemies, loadEnemyStages } from "./dex-cross";
 import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy, type EnemyStages } from "./enemy-detail";
@@ -104,7 +105,10 @@ const CH_PRE = "chess_char_";
 const pieceCode = (id: string) => (id.startsWith(CH_PRE) ? id.slice(CH_PRE.length) : `-${id}`);
 const pieceId = (code: string) => (code.startsWith("-") ? code.slice(1) : CH_PRE + code);
 /** 칸 배열 → "1_01_a..2_04_a" (빈 칸은 빈 토막) */
-const cellsToCode = (v: AcCell[]) => trimCells(v).map((x) => (x ? pieceCode(x.id) : "")).join(".");
+// 끼운 아이템은 기물 코드 뒤에 '~<아이템 코드>' — chess_item_1_01_e_a → 1_01 (제안 2383c050, 2026-10-24)
+const itemCode = (id: string) => id.replace(/^chess_item_/, "").replace(/_e_a$/, "");
+const itemIdOf = (code: string) => `chess_item_${code}_e_a`;
+const cellsToCode = (v: AcCell[]) => trimCells(v).map((x) => (x ? pieceCode(x.id) + (x.gold ? "!" : "") + (x.items ?? []).map((it) => `~${itemCode(it)}`).join("") : "")).join(".");
 
 // ── 데이터 타입 (build-autochess.py 산출과 1:1) ──────────────────────────────
 export type AcStep = { c?: string; t: string };
@@ -160,6 +164,18 @@ export type AcTierStat = { buy: number; sell: number; ph: string; lv: number; sk
 export type AcEquip = {
   id: string; trap: string; n: string; t: number; sort: number; buy: number;
   d: string; dG: string; bond?: string | null; up?: number; hide?: boolean;
+  /** 맹약을 붙여 주는 장비(canGiveBond) — '변형 구조체'. bond 가 있는 장비와 같이 끼면 그 맹약이 착용자에게 붙는다 */
+  giveB?: 1;
+};
+/** 기물 한 칸에 끼우는 장비 수 */
+const ITEMS_PER_PIECE = 2;
+/** giveB 를 싣기 전 데이터(이번 시즌 재생성이 다른 검사에 막혀 있다, 2026-10-24)를 위한 대체 — 변형 구조체 id */
+const isGiveB = (e: AcEquip) => !!e.giveB || /^chess_item_6_09_e_[ab]$/.test(e.id);
+/** 끼운 장비들로 붙는 맹약 — 변형 구조체가 있을 때만, 함께 낀 장비의 맹약 */
+const bondsFromItems = (equips: AcEquip[], items: string[]): string[] => {
+  const es = items.map((id) => equips.find((e) => e.id === id)).filter((e): e is AcEquip => !!e);
+  if (!es.some(isGiveB)) return [];
+  return [...new Set(es.map((e) => e.bond).filter((b): b is string => !!b))];
 };
 /** 전략(밴드) — by=대표 오퍼레이터 이름, un=해금 조건 (없으면 처음부터 열려 있다) */
 export type AcBand = {
@@ -554,15 +570,25 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   //     acrun.stacks = 화면에서 읽은 값 — 인식 전용 (런바·창에 적지는 않는다)
   //   계획한 편성을 옆에 띄워 놓고 실제 판을 PRTS 로 따라가는 게 쓰임새라, 한 값을 다투면 안 된다.
   const stacks = acrun.manual;
-  // ★(정예화)는 **칸이 아니라 기물의 성질**로 든다 — 판을 비워도 남아야 한다
-  // (사용자 지시 2026-08-29 "판 비우기 할 때 스타 표시 해둔 건 지우지 말아줘").
+  // 골든(정예화)은 **칸마다** 든다(slot.gold) — 같은 기물을 여러 칸에 담을 수 있게 되자 하나만 골든으로 켜도 나머지까지
+  // 골든이 됐다 (사용자 지적 2026-10-24 "인사이더 두 개 넣고 하나 골든시켰는데 나머지도"). goldMark 는 **기억**만 한다 —
+  // 판을 비우고 그 기물을 다시 담으면 골든이 되살아난다 (사용자 지시 2026-08-29 "판 비우기 할 때 스타 표시 해둔 건 지우지 말아줘").
+  // 같은 기물이 이미 판에 있으면 되살리지 않는다(새로 담는 건 보통 일반 기물)
   const [goldMark, setGoldMark] = useState<Set<string>>(new Set());
-  const isGold = (id: string) => goldMark.has(id);
-  const toggleGoldOf = (id: string) => setGoldMark((prev) => {
-    const next = new Set(prev);
-    if (!next.delete(id)) next.add(id);
-    return next;
-  });
+  const toggleGoldAt = (z: "b" | "d", i: number) => {
+    const cur = (z === "b" ? slots : bench)[i];
+    if (!cur) return;
+    const on = !cur.gold;
+    const flip = (v: AcCell[]) => v.map((x, j) => (j !== i || !x ? x : on ? { ...x, gold: true } : { id: x.id, ...(x.items ? { items: x.items } : {}) }));
+    (z === "b" ? setSlots : setBench)(flip);
+    setGoldMark((prev) => {
+      const next = new Set(prev);
+      const others = [...slots.map((x, j) => (z === "b" && j === i ? null : x)), ...bench.map((x, j) => (z === "d" && j === i ? null : x))];
+      if (on) next.add(cur.id);
+      else if (!others.some((x) => x?.id === cur.id && x.gold)) next.delete(cur.id);
+      return next;
+    });
+  };
   const [sim, setSim] = useState(false);                 // 덱편성 시뮬레이터 모달
   /** PRTS 로 읽은 것을 보는 창 — **볼 것 하나에 창 하나**다 (사용자 지시 2026-09-07 "PRTS 모달창이
    *  굳이 필요 없겠다. 그냥 PRTS시뮬레이션 버튼 오른쪽에 밴목록, 현재 전략 버튼 만들어서, 클릭하면
@@ -646,23 +672,29 @@ export default function AutochessGuide({ doc, onShowOperator }: {
    *  ⚠ 함수 선언이라 호이스팅된다 — applyModalHash 와 같은 규약. */
   function applySimHash(p: URLSearchParams) {
     const known = new Set(doc.chess.map((c) => c.id));
-    const seen = new Set<string>();
+    const knownItem = new Set(doc.equips.map((e) => e.id));
+    const oldGold = new Set((p.get("gd") ?? "").split(".").filter(Boolean).map(pieceId));
+    // 같은 기물이 여러 칸에 있어도 된다 — 같은 기물을 여럿 두고 아이템으로 다른 맹약을 맞추는 빌드 (제안 2383c050, 2026-10-24)
     const cells = (v: string | null, cap: number): AcCell[] => {
       const out: AcCell[] = [];
-      (v ?? "").split(".").slice(0, cap).forEach((code, i) => {
-        if (!code) return;
-        const id = pieceId(code);
-        if (!known.has(id) || seen.has(id)) return;   // 같은 기물이 두 칸에 있을 수는 없다
-        seen.add(id); out[i] = { id };
+      (v ?? "").split(".").slice(0, cap).forEach((raw, i) => {
+        if (!raw) return;
+        const [code0, ...ics] = raw.split("~");
+        const id = pieceId(code0.replace(/!$/, ""));
+        if (!known.has(id)) return;
+        const gold = code0.endsWith("!") || oldGold.has(id);   // '!' = 그 칸 골든. 옛 링크(gd=기물 목록)는 그 기물 칸 전부
+        const items = ics.map(itemIdOf).filter((x) => knownItem.has(x)).slice(0, ITEMS_PER_PIECE);
+        out[i] = { id, ...(gold ? { gold: true } : {}), ...(items.length ? { items } : {}) };
       });
       return trimCells(out);
     };
     const board = cells(p.get("b"), MAX_BOARD_ITEM);
     setSlots(board);
-    setBench(cells(p.get("d"), MAX_DECK));
+    const deck = cells(p.get("d"), MAX_DECK);
+    setBench(deck);
     // 9번째 칸은 링크에 기물이 있으면 자동으로 열어 준다 — 안 그러면 그 칸이 안 그려진다
     setSlot9(p.get("s9") === "1" || Boolean(board[MAX_BOARD]));
-    setGoldMark(new Set((p.get("gd") ?? "").split(".").map(pieceId).filter((id) => known.has(id))));
+    setGoldMark(new Set([...board, ...deck].filter((x) => x?.gold).map((x) => x!.id)));
     const st: Record<string, number> = {};
     for (const pair of (p.get("k") ?? "").split(".")) {
       const [id, n] = pair.split("*");
@@ -878,10 +910,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       if (bc) p.set("b", bc);
       if (dc) p.set("d", dc);
       if (slot9On) p.set("s9", "1");
-      // 골든은 **판에 올라온 기물 것만** 싣는다 (표식은 판을 비워도 남지만 링크엔 군더더기)
-      const onBoard = new Set([...kept(slots), ...kept(bench)].map((x) => x.id));
-      const gd = [...goldMark].filter((id) => onBoard.has(id)).map(pieceCode).join(".");
-      if (gd) p.set("gd", gd);
+      // 골든은 칸 코드 뒤 '!' 로 싣는다 (cellsToCode) — 종전의 gd=기물 목록은 읽기만 한다
       const k = Object.entries(stacks).filter(([, n]) => n > 0).map(([id, n]) => `${id}*${n}`).join(".");
       if (k) p.set("k", k);
       if (simBand) p.set("bd", simBand);
@@ -906,7 +935,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     }
     prevHash.current = hash;
   }, [view, miscTab, bondN, bondT, tier, garFilter, jobFilter, subFilter, term, curModal?.[0], curModal?.[1],
-      sim, slots, bench, slot9On, goldMark, stacks, simBand, party]); // eslint-disable-line react-hooks/exhaustive-deps
+      sim, slots, bench, slot9On, stacks, simBand, party]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // 검색 입력은 비제어(useSearchInput)라 뷰가 바뀌어 입력칸이 새로 마운트되면 빈칸이 된다.
@@ -1041,6 +1070,45 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       bonds: [], gar: [], garG: [], r: s.r, job: s.job, subsOf: s.subs });
 
   const nameOfBond = (id: string) => bondById.get(id)?.n ?? id;
+  /** 칸의 장비 고르기 — 기물당 둘. 변형 구조체 + 맹약 장비를 함께 끼우면 그 맹약을 판 계산에 센다 (제안 2383c050, 2026-10-24).
+   *  같은 맹약을 주는 장비는 한 줄로 묶어 하위 메뉴로 (빅토리아 해머 5종 — 사용자 지시 2026-10-24) */
+  /** 칸에 끼울 수 있는 장비 — 아이템 → 맹약 관련(변형 구조체 + 맹약이 정해진 장비, 같은 맹약끼리 묶음) / 그 외(나머지, 계산엔 안 닿고 기록만)
+   *  (사용자 지시 2026-10-24 "아이템 → 맹약 관련 → 지금 리스트, 그 외 → 나머지"). 예순 개 남짓이라 메모하지 않는다 */
+  const shopEquips = doc.equips.filter((e) => !e.hide && !/_e_b$/.test(e.id));
+  const bondEquips = shopEquips.filter((e) => isGiveB(e) || e.bond)
+    .sort((a, b) => Number(isGiveB(b)) - Number(isGiveB(a)) || a.t - b.t || a.sort - b.sort);
+  const pickTree: PickNode[] = (() => {
+    const bondNodes: PickNode[] = [];
+    for (const e of bondEquips) {
+      const key = isGiveB(e) ? `g:${e.id}` : `b:${e.bond}`;
+      const pn: PickNode = {
+        key: e.id, id: e.id, n: e.n, icon: equipIcon(e.trap),
+        note: isGiveB(e) ? t("맹약 부여") : `+${nameOfBond(e.bond!)}`,
+        title: isGiveB(e) ? t("맹약이 정해진 장비와 함께 끼우면 그 맹약이 붙습니다") : t("변형 구조체와 함께 끼우면 이 맹약이 붙습니다"),
+      };
+      const g = bondNodes.find((x) => x.key === key);
+      if (!g) bondNodes.push({ ...pn, key });
+      else if (g.kids) g.kids.push(pn);
+      else Object.assign(g, { id: undefined, kids: [{ ...g, key: g.id! }, pn] });   // 둘째가 오면 묶음으로 — 이름은 가장 낮은 티어 장비
+    }
+    const rest = shopEquips.filter((e) => !isGiveB(e) && !e.bond).sort((a, b) => a.t - b.t || a.sort - b.sort)
+      .map((e): PickNode => ({ key: e.id, id: e.id, n: e.n, icon: equipIcon(e.trap), note: `T${e.t}` }));
+    return [
+      { key: "bond", n: t("맹약 관련"), kids: bondNodes },
+      { key: "rest", n: t("그 외"), kids: rest },
+    ];
+  })();
+  const itemPick = (z: "b" | "d", i: number, sl: BoardSlot, k: number) => {
+    const id = sl.items?.[k];
+    const cur = id ? doc.equips.find((e) => e.id === id) : undefined;
+    const got = bondsFromItems(doc.equips, sl.items ?? []);
+    return (
+      <ItemPick key={k} tree={pickTree} value={id} on={!!cur}
+        onPick={(v) => setItemOf(z, i, k, v)}
+        ariaLabel={t("아이템 끼우기")} noneLabel={t("없음")}
+        label={cur ? <img src={equipIcon(cur.trap)} alt={cur.n} title={got.length ? `${cur.n} · +${got.map(nameOfBond).join("·")}` : cur.n} /> : t("아이템 {n}", { n: k + 1 })} />
+    );
+  };
   /** 그 효과 줄에 걸린 실제 수치 — 맹약 상세와 원형 배지의 작은 창이 **같은 것**을 쓴다.
    *  중첩을 넣어 두면 "20% + 중첩당 0.35% = 34%" 처럼 푼 값을 뒤에 붙인다
    *  (사용자 지적 2026-08-30 "40중첩 설정했는데 왜 일정확률로 나옴" — 정작 중첩을 넣는
@@ -1078,11 +1146,21 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // 맞춘다 — 중첩이 전투 중에 쌓인다는 단서는 작은 창의 안내문이 계속 들고 있다.
   const stacksAll = useMemo(
     () => Object.fromEntries(doc.bonds.map((b) => [b.id, stacks[b.id] ?? 0])), [doc, stacks]);
-  const withGold = (v: BoardSlot[]) => v.map((x) => ({ ...x, gold: goldMark.has(x.id) }));
+  /** 칸 i 의 장비 k 번째를 바꾼다 ("" = 빼기) */
+  const setItemOf = (z: "b" | "d", i: number, k: number, item: string) => (z === "b" ? setSlots : setBench)((v) => {
+    const out = [...v];
+    const cur = out[i];
+    if (!cur) return v;
+    const items = [...(cur.items ?? [])];
+    if (item) items[k] = item; else items.splice(k, 1);
+    const kept2 = items.filter(Boolean).slice(0, ITEMS_PER_PIECE);
+    out[i] = { id: cur.id, ...(cur.gold ? { gold: true } : {}), ...(kept2.length ? { items: kept2 } : {}) };
+    return out;
+  });
   const boardState = useMemo(
-    () => computeBoard(doc.bonds, chessById, withGold(kept(slots)), withGold(kept(bench)), stacksAll),
+    () => computeBoard(doc.bonds, chessById, kept(slots), kept(bench), stacksAll, (items) => bondsFromItems(doc.equips, items)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [doc, chessById, slots, bench, stacksAll, goldMark]);
+    [doc, chessById, slots, bench, stacksAll]);
   /** 켜진 맹약 먼저, 그다음 인원이 많은 순 — 판을 보는 사람이 궁금한 순서다 */
   const boardBonds = useMemo(() => boardState
     .map((st, i) => ({ st, b: doc.bonds[i] }))
@@ -1101,6 +1179,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     const activeB = new Set(doc.bonds.filter((_, i) => boardState[i]?.active).map((b) => b.id));
     const onB = kept(slots).map((x) => chessById.get(x.id)).filter((c): c is AcChess => !!c);
     const onD = kept(bench).map((x) => chessById.get(x.id)).filter((c): c is AcChess => !!c);
+    const goldB = kept(slots).filter((x) => chessById.has(x.id)).map((x) => !!x.gold);
+    const goldD = kept(bench).filter((x) => chessById.has(x.id)).map((x) => !!x.gold);
     type Cond = { c: AcChess; gid: string; selfIn?: boolean };
     type Bucket = { sum: Map<string, number>; wait: Map<string, number>; top: number; topWait: number;
       conds: Cond[]; gold: number; ref: number; items: Map<string, number> };
@@ -1114,8 +1194,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     // per="tiers" — 전장의 pb 소속 기물이 가진 서로 다른 티어 수
     const tiersOf = (pb: string[]) =>
       new Set(onB.filter((c) => c.bonds.some((b) => pb.includes(b))).map((c) => c.t)).size;
-    const handle = (c: AcChess, onBoard: boolean) => {
-      for (const gid of (isGold(c.id) ? c.garG : c.gar)) {
+    const handle = (c: AcChess, onBoard: boolean, gold: boolean) => {
+      for (const gid of (gold ? c.garG : c.gar)) {
         for (const r of doc.gar[gid]?.gn ?? []) {
           // 정비 구역: 획득·판매 시점(구역 무관)과 '정비 구역에서도' 표기(bn),
           // 맹약 발동을 조건으로 정비 구역까지 미치는 것(bna — 스와이어 엘위)만 센다
@@ -1147,8 +1227,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         }
       }
     };
-    for (const c of onB) handle(c, true);
-    for (const c of onD) handle(c, false);
+    onB.forEach((c, k) => handle(c, true, goldB[k]));
+    onD.forEach((c, k) => handle(c, false, goldD[k]));
     const order = ["acq", "deploy", "restIn", "restEnd", "refresh", "battle", "down", "sell"];
     return order
       .map((w) => ({ w, b: buckets.get(w) }))
@@ -1167,19 +1247,19 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         items: [...b.items],
       }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc, chessById, slots, bench, boardState, goldMark]);
+  }, [doc, chessById, slots, bench, boardState]);
   const nBoard = kept(slots).length, nBench = kept(bench).length;
   const boardCap = slot9On ? MAX_BOARD_ITEM : MAX_BOARD;
   /** 고르기 모달에서 담기 — **누른 그 칸**에 놓는다. 그 칸이 이미 찼으면(있을 수 없지만)
    *  같은 줄의 첫 빈 칸으로 물러난다. */
   const addPieceTo = (at: { z: "b" | "d"; i: number }, c: AcChess) => {
-    if (placed.has(c.id)) return;
     const cap = at.z === "b" ? boardCap : MAX_DECK;
     if (at.i >= cap) return;
     (at.z === "b" ? setSlots : setBench)((v) => {
       const out = [...v];
-      if (!out[at.i]) { out[at.i] = { id: c.id }; return trimCells(out); }
-      for (let i = 0; i < cap; i++) if (!out[i]) { out[i] = { id: c.id }; return trimCells(out); }
+      const cell: BoardSlot = goldMark.has(c.id) && !placed.has(c.id) ? { id: c.id, gold: true } : { id: c.id };
+      if (!out[at.i]) { out[at.i] = cell; return trimCells(out); }
+      for (let i = 0; i < cap; i++) if (!out[i]) { out[i] = cell; return trimCells(out); }
       return v;                                   // 자리가 없다
     });
   };
@@ -1297,7 +1377,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       return normSearch(hay).includes(fq);
     });
     const chessRows = rowsNoGar.filter((c) => matchGarBy(c, f.gar));
-    const base = forPick ? rowsNoGar.filter((c) => !placed.has(c.id)) : rowsNoGar;
+    const base = rowsNoGar;   // 고르기 모달도 이미 담은 기물을 빼지 않는다 — 같은 기물 여러 칸 허용 (제안 2383c050)
     const nation = new Map<string, number>(), trait = new Map<string, number>(), gar = new Map<string, number>();
     const bump = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) ?? 0) + 1);
     for (const c of base) {
@@ -1331,8 +1411,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
    *  갈라지기 때문). 모달은 카드 한 벌만 쓰므로 여기서 직접 걸러야 필터가 먹는다
    *  (사용자 제보 2026-08-29 "진영맹약 특성맹약 어쩌고 바꿔도 밑에 오퍼들이 필터링이 안 됨"). */
   const pickRows = useMemo(() => pickD.chessRows.filter((c) =>
-    !placed.has(c.id)
-    && (!pickF.bondN || c.bonds.includes(pickF.bondN))
+    (!pickF.bondN || c.bonds.includes(pickF.bondN))
     && (!pickF.bondT || c.bonds.includes(pickF.bondT))), [pickD, placed, pickF.bondN, pickF.bondT]);
 
   // 맹약을 골랐을 때의 소속 그룹 (옛 시뮬레이터 로직 그대로) — 기여자 먼저, 티어순
@@ -3123,7 +3202,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 );
                 return (
                   <div key={i} draggable
-                    className={`ac-slot${isGold(sl.id) ? " gold" : ""}${dropAt === `b${i}` ? " over" : ""}`}
+                    className={`ac-slot${sl.gold ? " gold" : ""}${dropAt === `b${i}` ? " over" : ""}`}
                     onDragStart={() => { dragFrom.current = { z: "b", i }; }}
                     onDragEnd={() => { dragFrom.current = null; setDropAt(""); }}
                     {...dropProps("b", i)}>
@@ -3133,15 +3212,16 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                       <b>{c.n}</b>
                       {banMark(c.id)}
                     </button>
+                    {/* 골든은 왼쪽 위, × 는 오른쪽 위 — 아래 줄은 장비 두 칸 (사용자 지시 2026-10-24). 별표는 즐겨찾기로 읽혀 글자로 둔다(2026-08-29) */}
+                    <button type="button" className={`ac-goldtag${sl.gold ? " on" : ""}`} draggable={false}
+                      onClick={() => toggleGoldAt("b", i)}
+                      title={t("정예화(골든) 전환 — 판을 비워도 남습니다")}>{t("골든")}</button>
+                    <button type="button" className="ac-slotx" draggable={false} onClick={() => dropFrom("b", i)} title={t("빼기")}>×</button>
                     <span className="ac-slot-act"
                       draggable={false}
                       onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                      {/* ⚠ ★ 로 뒀더니 누가 봐도 즐겨찾기·고정 버튼으로 읽혔다
-                          (사용자 지적 2026-08-29) — 게임 용어 그대로 글자로 적는다. */}
-                      <button type="button" className={`ac-goldbtn${isGold(sl.id) ? " on" : ""}`}
-                        onClick={() => toggleGoldOf(sl.id)}
-                        title={t("정예화(골든) 전환 — 판을 비워도 남습니다")}>{t("골든")}</button>
-                      <button type="button" onClick={() => dropFrom("b", i)} title={t("빼기")}>×</button>
+                      {itemPick("b", i, sl, 0)}
+                      {itemPick("b", i, sl, 1)}
                     </span>
                   </div>
                 );
@@ -3162,7 +3242,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 );
                 return (
                   <div key={i} draggable
-                    className={`ac-slot sm${isGold(sl.id) ? " gold" : ""}${dropAt === `d${i}` ? " over" : ""}`}
+                    className={`ac-slot sm${sl.gold ? " gold" : ""}${dropAt === `d${i}` ? " over" : ""}`}
                     onDragStart={() => { dragFrom.current = { z: "d", i }; }}
                     onDragEnd={() => { dragFrom.current = null; setDropAt(""); }}
                     {...dropProps("d", i)}>
@@ -3172,14 +3252,16 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                       <b>{c.n}</b>
                       {banMark(c.id)}
                     </button>
+                    {/* 골든은 왼쪽 위, × 는 오른쪽 위 — 아래 줄은 장비 두 칸 (사용자 지시 2026-10-24). 별표는 즐겨찾기로 읽혀 글자로 둔다(2026-08-29) */}
+                    <button type="button" className={`ac-goldtag${sl.gold ? " on" : ""}`} draggable={false}
+                      onClick={() => toggleGoldAt("d", i)}
+                      title={t("정예화(골든) 전환 — 판을 비워도 남습니다")}>{t("골든")}</button>
+                    <button type="button" className="ac-slotx" draggable={false} onClick={() => dropFrom("d", i)} title={t("빼기")}>×</button>
                     <span className="ac-slot-act"
                       draggable={false}
                       onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                      {/* 골든은 기물의 성질이라 어느 구역에서 눌러도 같다 (사용자 지적 2026-08-29) */}
-                      <button type="button" className={`ac-goldbtn${isGold(sl.id) ? " on" : ""}`}
-                        onClick={() => toggleGoldOf(sl.id)}
-                        title={t("정예화(골든) 전환 — 판을 비워도 남습니다")}>{t("골든")}</button>
-                      <button type="button" onClick={() => dropFrom("d", i)} title={t("빼기")}>×</button>
+                      {itemPick("d", i, sl, 0)}
+                      {itemPick("d", i, sl, 1)}
                     </span>
                   </div>
                 );

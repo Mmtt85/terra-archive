@@ -1186,7 +1186,10 @@ def build_locale(loc):
             "buy": base.get("purchasePrice"),
             "d": rich(loc_desc(loc, "effectInfoDataDict", base.get("effectId"), "effectDesc", eff.get("effectDesc"))),
             "dG": rich(loc_desc(loc, "effectInfoDataDict", gold.get("effectId"), "effectDesc", effG.get("effectDesc"))),
+            # bond = 이 장비를 '변형 구조체'와 함께 꼈을 때 착용자에게 붙는 맹약(giveBondId) — 혼자서는 안 붙는다.
+            # giveB = 맹약을 붙여 주는 쪽(canGiveBond, 뮤엘시스가 주는 변형 구조체뿐) (사용자 지적 2026-10-24)
             "bond": base.get("giveBondId"),
+            **({"giveB": 1} if base.get("canGiveBond") else {}),
             "up": base.get("upgradeNum"),
             "hide": bool(s.get("hideInShop")),
         })
