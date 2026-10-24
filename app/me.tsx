@@ -23,7 +23,7 @@ import { AccountLoginForm, AccountSteps } from "./roster-import";
 import { MeVerify } from "./me-verify";
 import { AccountError, accountErrorText, matchList, prefsDelete, syncAccount, MAINTENANCE_TEXT, MAINTENANCE_TITLE, ACCOUNT_SERVERS, type AccountChar, type AccountFriend, type AccountProfile, type AccountStep } from "./account";
 import { cnErrorText } from "./account-cn";
-import { trustPct, clearMe, dropMeToken, getMe, accountTabs, switchAccount, removeAccount, accountPrefToken, freezePrefs, MAX_ACCOUNTS, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, mePulls, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
+import { trustPct, clearMe, dropMeToken, getMe, accountTabs, switchAccount, removeAccount, accountPrefToken, freezePrefs, logoutAll, MAX_ACCOUNTS, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, mePulls, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages } from "./dex-cross";
 import { GROUPS, GROUP_LABEL, ItemFile, itemIcon, type DexItem, type ItemDoc, type ItemGroup } from "./items";
 import { StageFile } from "./stage-detail";
@@ -402,14 +402,21 @@ function AccountTabsRow({ onAdd }: { onAdd: () => void }) {
   };
   const items = [
     ...tabs.map((x) => ({ value: x.id, label: label(x), title: x.active ? t("지금 보고 있는 계정") : t("이 계정으로 바꿉니다 — 그 계정의 설정으로 새로 엽니다") })),
-    ...(tabs.length < MAX_ACCOUNTS ? [{ value: "__add", label: <><span aria-hidden>+</span> {t("계정 추가")}</>, title: t("다른 서버나 다른 계정을 하나 더 동기화합니다 — 지금 계정은 탭으로 남습니다") }] : []),
-    { value: "__manage", label: t("계정 빼기 (초기화)") },
+    // 계정들과 할 일 사이에 가로선 (사용자 지시 2026-10-24) — 선은 첫 할 일 줄(me-acct-sep)이 긋는다
+    ...(tabs.length < MAX_ACCOUNTS ? [{ value: "__add", className: "me-acct-sep", label: <><span className="btn-icon" aria-hidden>+</span>{t("계정 추가")}</>, title: t("다른 서버나 다른 계정을 하나 더 동기화합니다 — 지금 계정은 탭으로 남습니다") }] : []),
+    { value: "__manage", className: tabs.length < MAX_ACCOUNTS ? undefined : "me-acct-sep", label: <><span className="btn-icon" aria-hidden>⊖</span>{t("계정 빼기 (초기화)")}</> },
+    { value: "__logout", label: <><span className="btn-icon" aria-hidden>⏻</span>{t("로그아웃")}</> },
   ];
+  const logout = async () => {
+    if (!(await confirm({ title: t("로그아웃"), message: t("이 브라우저에서 모든 계정 연결을 끊습니다. 내 정보 화면과 오퍼 도감·아이템 도감의 보유 표시가 사라지고 설정 동기화가 멈춥니다. 저장된 설정은 지워지지 않으며, 다시 동기화하면 그대로 이어집니다."), confirmLabel: t("로그아웃") }))) return;
+    noteVisitEvent("me_logout", getMe()?.server);   // 관리자 동기화 표의 로그아웃·초기화 이력 (사용자 지시 2026-10-19)
+    logoutAll();
+  };
   return (
     <div className="me-acct">
       {dialog}
       <Dropdown ariaLabel={t("계정")} label={active ? label(active) : t("계정")} selected={active ? [active.id] : []} items={items}
-        onPick={(v) => { if (v === "__add") onAdd(); else if (v === "__manage") setManage(true); else if (v !== active?.id) switchAccount(v); }} />
+        onPick={(v) => { if (v === "__add") onAdd(); else if (v === "__manage") setManage(true); else if (v === "__logout") void logout(); else if (v !== active?.id) switchAccount(v); }} />
       {manage && (
         <ModalWindow label={t("계정 빼기 (초기화)")} className="operator-modal room-modal me-acct-modal" onClose={() => setManage(false)} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
           <header className="room-modal-head">
@@ -452,12 +459,12 @@ function MeActions({ onLogin }: { onLogin: () => void }) {
     if (!tok) { onLogin(); return; }   // 로그인 창에도 같은 주의문이 있다
     // 동기화 = 게임 서버에 새 접속 → 게임 쪽 접속이 끊긴다. 바로 보내지 말고 한 번 묻는다 (사용자 요청 2026-10-05)
     // 다시 로그인 — 다른 계정·서버로 바꾸거나 저장된 로그인이 이상할 때 (사용자 요청 2026-10-06)
+    // '다시 로그인'은 뺐다 — 다른 계정은 계정 단추의 '+ 계정 추가'로 (사용자 지시 2026-10-24 "다시 동기화하겠습니까? 하고 바로 동기화")
     const choice = await confirm({
-      message: t("다시 동기화하면 게임 접속이 끊깁니다 — 게임을 하고 있다면 저장한 뒤에 진행하세요. 계정에는 아무 문제가 없고, 게임을 다시 실행하면 그대로 접속됩니다."),
+      title: t("다시 동기화"),
+      message: t("다시 동기화하겠습니까? 게임에 접속해 있다면 게임 접속이 끊깁니다."),
       confirmLabel: t("동기화하기"),
-      altLabel: t("다시 로그인"),
     });
-    if (choice === "alt") { onLogin(); return; }
     if (!choice) return;
     setErr(null); setBusy(true); setStep("start");
     try { saveMe(await syncAccount(tok.token, tok.server, setStep), tok.server, "me_sync"); }
@@ -475,17 +482,11 @@ function MeActions({ onLogin }: { onLogin: () => void }) {
       if (code === "token-expired") { dropMeToken(); onLogin(); }
     } finally { setBusy(false); }
   };
-  // 로그아웃 — 종전 '데이터 지우기'. 저장된 설정은 지우지 않는다는 걸 이름·문구로 분명히 (사용자 지시 2026-10-14)
-  const wipe = async () => {
-    if (!(await confirm({ title: t("로그아웃"), message: t("이 브라우저에서 게임 계정 연결을 끊습니다. 내 정보 화면과 오퍼 도감·아이템 도감의 보유 표시가 사라지고 설정 동기화가 멈춥니다. 저장된 설정은 지워지지 않으며, 다시 로그인하면 그대로 이어집니다."), confirmLabel: t("로그아웃") }))) return;
-    noteVisitEvent("me_logout", getMe()?.server);   // 관리자 동기화 표의 로그아웃·초기화 이력 (사용자 지시 2026-10-19)
-    clearMe();
-  };
   return (
     <div className="me-head-actions">
       {dialog}
       {/* '저장된 설정 완전 초기화'는 계정 고르기의 '계정 빼기 (초기화)'로 합쳤다 (사용자 지시 2026-10-24) */}
-      <button type="button" className="import-action" onClick={() => void wipe()}><span className="btn-icon" aria-hidden>⏻</span>{t("로그아웃")}</button>
+      {/* 로그아웃은 계정 단추 목록 맨 아래로 옮겼다 (사용자 지시 2026-10-24) */}
       <button type="button" className="import-action apply" disabled={busy} onClick={() => void resync()}>
         <span className="btn-icon" aria-hidden>⟳</span>{busy ? t("가져오는 중…") : t("다시 동기화")}
       </button>

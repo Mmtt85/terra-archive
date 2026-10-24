@@ -1177,6 +1177,8 @@ const D: Record<string, Pair> = {
   "다시 동기화하면 기본 설정으로 새로 시작합니다.": ["Syncing again starts over with default settings.", "もう一度同期すると、初期設定から始まります。"],
   "이 브라우저에서 계정을 빼고, 그 계정에 저장된 설정도 지웁니다. 게임 계정은 그대로이고, 다시 동기화하면 기본 설정으로 새로 시작합니다.": ["Removes accounts from this browser and erases the settings saved to them. Game accounts are untouched, and syncing again starts over with default settings.", "このブラウザからアカウントを外し、そのアカウントに保存された設定も消します。ゲームアカウントはそのままで、もう一度同期すると初期設定から始まります。"],
   "지우는 중…": ["Erasing…", "削除中…"],
+  "다시 동기화하겠습니까? 게임에 접속해 있다면 게임 접속이 끊깁니다.": ["Sync again? If you're in the game, it will be disconnected.", "再同期しますか？ゲームに接続中の場合、接続が切れます。"],
+  "이 브라우저에서 모든 계정 연결을 끊습니다. 내 정보 화면과 오퍼 도감·아이템 도감의 보유 표시가 사라지고 설정 동기화가 멈춥니다. 저장된 설정은 지워지지 않으며, 다시 동기화하면 그대로 이어집니다.": ["Disconnects all accounts in this browser. My Info and the owned marks in the operator and item archives disappear, and settings sync stops. Saved settings are kept and continue when you sync again.", "このブラウザのすべてのアカウント連携を解除します。マイページとオペレーター図鑑・アイテム図鑑の所持表示が消え、設定同期が止まります。保存された設定は消えず、もう一度同期すればそのまま続きます。"],
   "뺄 계정이 없습니다.": ["No accounts to remove.", "外せるアカウントはありません。"],
   "지금 보고 있는 계정": ["The account you're viewing", "表示中のアカウント"],
   "이 계정으로 바꿉니다 — 그 계정의 설정으로 새로 엽니다": ["Switch to this account — reopens with that account's settings", "このアカウントに切り替えます — そのアカウントの設定で開き直します"],

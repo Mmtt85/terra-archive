@@ -237,6 +237,14 @@ export function saveMe(roster: AccountRoster, server: AccountServer, kind: "me_l
   if (switching) setTimeout(() => location.reload(), 50);
 }
 
+/** 로그아웃 — 이 브라우저의 계정 연결을 **전부** 끊는다(지금 계정 + 보관한 계정). 계정 저장소의 설정은 그대로라 다시 동기화하면 이어진다
+ *  (사용자 지시 2026-10-24: 로그아웃은 계정 목록 맨 아래로, 여러 계정이면 '이 계정만 끊기'는 계정 빼기가 맡는다) */
+export function logoutAll() {
+  writeSlots([]);
+  lsPut(ORDER_KEY, null);
+  clearMe();
+}
+
 export function clearMe() {
   setToken(null);
   setPrefToken(null);
