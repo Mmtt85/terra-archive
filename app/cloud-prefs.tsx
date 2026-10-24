@@ -12,7 +12,7 @@ import { useEffect } from "react";
 import { adminKeyGet, prefsDelete, prefsGet, prefsPut, type PrefEntry } from "./account";
 import { getBoardAdminKey, setBoardAdminKey } from "./feedback";
 import { isOwnerUid } from "./visit-track";
-import { mePrefToken, PREF_EVENT } from "./me-store";
+import { mePrefToken, PREF_EVENT, registerPrefSwap } from "./me-store";
 
 //   token   — 제안 게시판 열람 코드: 계정에 있으면 그걸 쓰고, 이 브라우저가 따로 쓰던 코드는 예전 코드 목록으로 옮긴다 (계정에 없으면 이 브라우저 것을 올린다)
 //   union   — 예전 열람 코드 목록: 합집합 (어느 기기에서 쓴 제안이든 다 보이게)
@@ -81,6 +81,10 @@ export async function resetCloudPrefs(logout?: () => void): Promise<void> {
   try { localStorage.removeItem(META); } catch { /* 무시 */ }
   location.reload();
 }
+
+// 계정마다 따로 두는 설정 키 — 계정을 바꾸면 이 키들이 그 계정 값으로 갈아 끼워진다 (me-store 여러 계정, 2026-10-24).
+// 제안 열람 코드는 브라우저(사람) 몫이라, 화면 모드·언어는 기기 몫이라 빼 둔다
+const ACCOUNT_KEYS = [...SYNC.map((x) => x.key).filter((k) => !["ta-feedback-token", "ta-feedback-extra", "ta-theme", "ta-locale"].includes(k)), META];
 
 export default function CloudPrefs() {
   useEffect(() => {
@@ -167,6 +171,8 @@ export default function CloudPrefs() {
     void pull();
     void admin();
     const timer = window.setInterval(tick, POLL_MS);
+    // 계정 바꾸기 직전 — 이 계정에서 바뀐 것을 마지막으로 올리고(값은 지금 바로 읽어 담는다) 더는 올리지 않는다
+    registerPrefSwap({ keys: ACCOUNT_KEYS, freeze: (doPush = true) => { if (doPush) { tick(); void push(true); } alive = false; token = null; window.clearInterval(timer); } });
     // 로그인·동기화로 표가 생기거나 '데이터 지우기'로 없어지면
     const onToken = () => { token = mePrefToken(); pulled = false; seen.clear(); dirty.clear(); void pull(); void admin(); };
     const onHide = () => { if (document.visibilityState === "hidden") { tick(); void push(true); } };

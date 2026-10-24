@@ -34758,7 +34758,22 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 /* 사이트 공용 탭 단추(.tab-btn — 바탕 없이 밑줄만)를 쓴다 (사용자 지적 2026-10-23 "탭 버튼 공통으로 쓰는 거 따로 있잖아") — 글꼴·여백만 */
 .maa-modal .maa-tabs { display: flex; align-items: center; gap: 4px; margin: 0 0 14px; }
 .maa-modal .maa-title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.maa-modal .maa-site { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 700; color: var(--lime-ink); text-decoration: none; white-space: nowrap; }
+.maa-modal .maa-site { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; font-size: 16px; font-weight: 700; color: var(--lime-ink); text-decoration: none; white-space: nowrap; }
 .maa-modal .maa-site:hover .maa-site-text { text-decoration: underline; }
 .maa-modal .maa-tabs .tab-btn { height: 40px; padding: 0 18px; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
 .maa-import-note { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-soft); font-size: 13px; line-height: 1.6; white-space: pre-line; color: var(--ink2); }
+
+/* 내 정보 계정 고르기 (2026-10-24) — 드롭다운 + 계정 빼기 창 */
+.me-acct { display: flex; align-items: center; margin: 10px 0 0; }
+.me-head-actions .me-acct { margin: 0; }
+.me-acct-modal { width: min(440px, calc(100vw - 32px)); }
+.me-acct-note { margin: 0 0 12px; font-size: 13px; line-height: 1.6; color: var(--ink2); }
+.me-acct-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.me-acct-list li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-faint); font-size: 13px; }
+.me-acct-list li b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.me-acct-srv { flex: none; padding: 2px 8px; border-radius: var(--r-pill); background: var(--bg-soft); color: var(--ink2); font-size: 11px; font-weight: 700; }
+.me-acct-list li.me-note { border: 0; background: none; padding: 0; }
+.me-acct-now { flex: none; font-style: normal; font-size: 11px; font-weight: 700; color: var(--lime-ink); }
+
+/* 관리 화면 제안 카드 — 기기·브라우저 칩 두 줄 (2026-10-24) */
+.fb-dev-chip { display: inline-flex; flex-direction: column; line-height: 1.35; font-size: 11px; white-space: nowrap; }

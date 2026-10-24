@@ -101,8 +101,127 @@ export function getMe(): MeData | null {
   return typeof window === "undefined" ? null : read();
 }
 
-/** 게임 로그인 결과를 저장한다 — 인프라 '가져오기'로 로그인해도 같은 곳에 쌓인다. */
+// ── 여러 계정 (사용자 지시 2026-10-24 제안 be87b8c8 "한섭이랑 중섭을 같이") ──────────────────────────────────
+// 지금 쓰는 계정은 종전 그대로 ta:me·ta:me-token·ta:me-pref 와 각 기능의 설정 키에 있다 — 사이트 전체가 그걸 읽으니 화면 코드는 그대로다.
+// 다른 계정은 ta:me-accounts 에 통째로(게임 데이터·다시 동기화 토큰·설정용 표·설정 키 값) 넣어 두고, 바꿀 때 서로 맞바꾼 뒤 새로 연다.
+// 설정은 계정마다 따로 — 계정을 바꾸면 그 계정의 설정으로 (사용자 지시: "각각 계정별로 설정 저장하고, 계정 변경하면 그 설정에 따라가게").
+// 바꿀 설정 키 목록과 '올리기 멈추기'는 cloud-prefs 가 registerPrefSwap 으로 넘긴다 (거꾸로 import 하면 고리가 생긴다)
+const ACCOUNTS_KEY = "ta:me-accounts";
+export const MAX_ACCOUNTS = 5;   // 서버 다섯(한·일·글로벌·중국 직영·비리비리)에 하나씩 — 계정 하나 수백 KB, 다섯이면 저장 공간 2MB 안쪽 (사용자 결정 2026-10-24)
+type Slot = { id: string; at: number; me: string; token: string | null; pref: string | null; prefs: Record<string, string | null> };
+let prefSwap: { keys: string[]; freeze: (push?: boolean) => void } | null = null;
+export function registerPrefSwap(s: { keys: string[]; freeze: (push?: boolean) => void }) { prefSwap = s; }
+/** 설정 올리기를 멈춘다 — push=false 면 마지막 올리기도 없이 (계정 설정을 지우기 직전: 지운 뒤 늦게 도착한 올리기가 되살리지 않게) */
+export function freezePrefs(push = true) { prefSwap?.freeze(push); }
+/** 그 계정의 설정용 표 — 지금 계정이면 지금 것, 보관한 계정이면 보관해 둔 것 */
+export function accountPrefToken(id: string): string | null {
+  const cur = read();
+  if (cur && accountIdOf(cur.server, cur.player.uid) === id) return mePrefToken();
+  return readSlots().find((x) => x.id === id)?.pref ?? null;
+}
+export const accountIdOf = (server: string, uid: string | number) => `${server}:${uid}`;
+const ls = (k: string): string | null => { try { return window.localStorage.getItem(k); } catch { return null; } };
+const lsPut = (k: string, v: string | null) => { try { if (v === null) window.localStorage.removeItem(k); else window.localStorage.setItem(k, v); } catch { /* 무시 */ } };
+function readSlots(): Slot[] {
+  try { const v = JSON.parse(ls(ACCOUNTS_KEY) ?? "[]"); return Array.isArray(v) ? v.filter((x) => x && typeof x.id === "string" && typeof x.me === "string") : []; } catch { return []; }
+}
+function writeSlots(slots: Slot[]) { lsPut(ACCOUNTS_KEY, slots.length ? JSON.stringify(slots) : null); }
+/** 지금 계정을 보관함으로 옮기고 지금 자리(계정 키·설정 키)를 비운다. 지금 계정이 없으면 아무것도 안 한다.
+ *  keep — 보관함에 남길 최대 칸 수. 계정 바꾸기는 곧 한 칸을 꺼내므로 MAX_ACCOUNTS 칸까지 둔다 — MAX-1 로 자르면 계정이 다 찬 상태에서
+ *  바꿀 때마다 가장 오래된 계정 하나가 조용히 사라졌다 (사용자 지적 2026-10-24 "하나 지우니까 두 개 날아갔다") */
+function stashActive(keep = MAX_ACCOUNTS): void {
+  const cur = read();
+  const raw = ls(KEY);
+  if (!cur || !raw) return;
+  prefSwap?.freeze();   // 설정 올리기를 멈춘다 — 안 멈추면 바꾼 뒤의(다른 계정) 값이 이 계정 저장소로 올라간다
+  const prefs: Record<string, string | null> = {};
+  for (const k of prefSwap?.keys ?? []) prefs[k] = ls(k);
+  const id = accountIdOf(cur.server, cur.player.uid);
+  const slots = readSlots().filter((x) => x.id !== id);
+  slots.unshift({ id, at: Date.now(), me: raw, token: ls(TOKEN_KEY), pref: ls(PREF_KEY), prefs });
+  writeSlots(slots.slice(0, keep));
+  lsPut(KEY, null); lsPut(TOKEN_KEY, null); lsPut(PREF_KEY, null);
+  for (const k of prefSwap?.keys ?? []) lsPut(k, null);
+  token = undefined; cachedRaw = undefined;
+}
+/** 보관함의 계정 하나를 지금 자리로 (설정 키까지). me 를 넘기지 않으면 게임 데이터·토큰은 두고 설정만 */
+function loadSlot(slot: Slot, withMe = true): void {
+  if (withMe) { lsPut(KEY, slot.me); lsPut(TOKEN_KEY, slot.token); lsPut(PREF_KEY, slot.pref); }
+  for (const [k, v] of Object.entries(slot.prefs ?? {})) lsPut(k, v);
+  writeSlots(readSlots().filter((x) => x.id !== slot.id));
+  token = undefined; cachedRaw = undefined;
+}
+export type AccountTab = { id: string; server: AccountServer; uid: string; nick: string; level: number; active: boolean };
+// nick 은 '닉네임#번호' — 이 조합은 게임에서 겹치지 않아 탭끼리 늘 구분된다 (사용자 확인 2026-10-24)
+const nickOf = (p: MeData["player"]) => (p.nickNumber ? `${p.nickName}#${p.nickNumber}` : p.nickName);
+// 탭 순서 — 처음 들어온 순서로 고정한다. 지금 계정을 맨 앞에 두면 바꿀 때마다 탭 자리가 바뀌었다 (사용자 지적 2026-10-24)
+const ORDER_KEY = "ta:me-accounts-order";
+/** 계정 탭 목록 — 처음 들어온 순서 그대로 (어느 계정을 보고 있든 자리가 같다) */
+export function accountTabs(): AccountTab[] {
+  const out: AccountTab[] = [];
+  const cur = getMe();
+  if (cur) out.push({ id: accountIdOf(cur.server, cur.player.uid), server: cur.server, uid: String(cur.player.uid), nick: nickOf(cur.player), level: cur.player.level, active: true });
+  for (const sl of readSlots()) {
+    try {
+      const m = JSON.parse(sl.me) as MeData;
+      if (out.some((x) => x.id === sl.id)) continue;
+      out.push({ id: sl.id, server: m.server, uid: String(m.player.uid), nick: nickOf(m.player), level: m.player.level, active: false });
+    } catch { /* 깨진 칸은 건너뛴다 */ }
+  }
+  let order: string[] = [];
+  try { const v = JSON.parse(ls(ORDER_KEY) ?? "[]"); if (Array.isArray(v)) order = v.filter((x) => typeof x === "string"); } catch { /* 무시 */ }
+  // 처음 보는 계정은 뒤에 붙이고, 없어진 계정은 뺀다
+  const ids = new Set(out.map((x) => x.id));
+  const next = [...order.filter((id) => ids.has(id)), ...out.map((x) => x.id).filter((id) => !order.includes(id))];
+  if (next.join("|") !== order.join("|")) lsPut(ORDER_KEY, next.length > 1 ? JSON.stringify(next) : null);
+  return out.sort((a, b) => next.indexOf(a.id) - next.indexOf(b.id));
+}
+/** 다른 계정으로 바꾼다 — 지금 계정을 보관하고 고른 계정(게임 데이터·설정)을 꺼낸 뒤 새로 연다 */
+export function switchAccount(id: string): void {
+  const slot = readSlots().find((x) => x.id === id);
+  if (!slot) return;
+  stashActive();
+  loadSlot(slot);
+  // 주소의 미래시 표시(?future=)는 떼고 연다 — 주소가 저장값보다 우선이라, 중섭 계정에서 붙은 표시가 한섭 계정에도 남았다
+  const u = new URL(location.href);
+  u.searchParams.delete("future");
+  location.replace(u.toString());
+}
+/** 계정을 목록에서 뺀다. 지금 보고 있는 계정이면 그 자리를 비우고 목록의 첫 계정으로 옮겨 새로 연다 (남은 계정이 없으면 로그아웃과 같다).
+ *  설정은 이 브라우저에서만 지운다 — 계정 저장소엔 남아 다시 동기화하면 돌아온다 (사용자 지시 2026-10-24 "자기 자신 계정도 뺄 수 있게, 빼면 첫 계정으로") */
+export function removeAccount(id: string): void {
+  const cur = read();
+  if (!cur || accountIdOf(cur.server, cur.player.uid) !== id) {
+    writeSlots(readSlots().filter((x) => x.id !== id));
+    window.dispatchEvent(new Event(EVENT));
+    return;
+  }
+  const order = accountTabs().map((x) => x.id).filter((x) => x !== id);
+  const slots = readSlots();
+  const next = order.map((oid) => slots.find((sl) => sl.id === oid)).find((sl): sl is Slot => !!sl);
+  prefSwap?.freeze();
+  lsPut(KEY, null); lsPut(TOKEN_KEY, null); lsPut(PREF_KEY, null);
+  for (const k of prefSwap?.keys ?? []) lsPut(k, null);
+  token = undefined; cachedRaw = undefined;
+  if (next) loadSlot(next);
+  const u = new URL(location.href);
+  u.searchParams.delete("future");
+  location.replace(u.toString());
+}
+
+/** 게임 로그인 결과를 저장한다 — 인프라 '가져오기'로 로그인해도 같은 곳에 쌓인다.
+ *  지금과 다른 계정이 들어오면 지금 계정은 보관함으로 옮기고(계정 추가), 그 계정의 설정으로 새로 연다 */
 export function saveMe(roster: AccountRoster, server: AccountServer, kind: "me_login" | "me_sync" = "me_login") {
+  const cur = read();
+  const nextId = accountIdOf(server, roster.player.uid);
+  const switching = !!cur && accountIdOf(cur.server, cur.player.uid) !== nextId;
+  if (switching) {
+    // 새 계정이 들어오는 자리 — 보관함은 MAX-1 칸 (넘으면 가장 오래된 계정부터 빠진다. 화면에선 다 차면 '+ 계정 추가'를 숨긴다)
+    const known = readSlots().some((x) => x.id === nextId);
+    stashActive(known ? MAX_ACCOUNTS : MAX_ACCOUNTS - 1);
+    const back = readSlots().find((x) => x.id === nextId);
+    if (back) loadSlot(back, false);   // 예전에 쓰던 계정이면 그 계정 설정을 꺼낸다 (게임 데이터·토큰은 방금 받은 것)
+  }
   // 방문 통계 — 누가(익명 id) 몇 번 동기화했는지 · 계정(UID)도 바로 넘겨 방문자와 잇는다(저장소에 못 쓰는 브라우저에서도)
   noteVisitEvent(kind, server, roster.player?.uid != null ? { uid: String(roster.player.uid) } : undefined);
   if (roster.token) setToken({ server, token: roster.token });
@@ -114,6 +233,8 @@ export function saveMe(roster: AccountRoster, server: AccountServer, kind: "me_l
   try { window.localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* 저장 못 해도 이번 화면은 그린다 */ }
   cachedRaw = undefined;
   window.dispatchEvent(new Event(EVENT));
+  // 계정이 바뀌었으면 새로 연다 — 기능들이 새 계정 설정을 처음부터 읽고, 설정 동기화도 새 계정으로 다시 붙는다
+  if (switching) setTimeout(() => location.reload(), 50);
 }
 
 export function clearMe() {

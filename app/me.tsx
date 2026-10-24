@@ -21,9 +21,9 @@ import { ModalWindow } from "./modal-window";
 import { useConfirm } from "./confirm";
 import { AccountLoginForm, AccountSteps } from "./roster-import";
 import { MeVerify } from "./me-verify";
-import { AccountError, accountErrorText, matchList, syncAccount, MAINTENANCE_TEXT, MAINTENANCE_TITLE, ACCOUNT_SERVERS, type AccountChar, type AccountFriend, type AccountProfile, type AccountStep } from "./account";
+import { AccountError, accountErrorText, matchList, prefsDelete, syncAccount, MAINTENANCE_TEXT, MAINTENANCE_TITLE, ACCOUNT_SERVERS, type AccountChar, type AccountFriend, type AccountProfile, type AccountStep } from "./account";
 import { cnErrorText } from "./account-cn";
-import { trustPct, clearMe, dropMeToken, getMe, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, mePulls, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
+import { trustPct, clearMe, dropMeToken, getMe, accountTabs, switchAccount, removeAccount, accountPrefToken, freezePrefs, MAX_ACCOUNTS, eliteText, isCollectible, isMaxed, masteryText, maxEliteOf, meChars, meToken, mePulls, potText, saveMe, useMe, type MeData, WALLET_ROWS } from "./me-store";
 import { loadEnemies, loadEnemyStages, loadEnemyStats, loadFutureDex, loadItems, loadStages } from "./dex-cross";
 import { GROUPS, GROUP_LABEL, ItemFile, itemIcon, type DexItem, type ItemDoc, type ItemGroup } from "./items";
 import { StageFile } from "./stage-detail";
@@ -44,7 +44,6 @@ import { MedalsWindow, SkinsWindow } from "./me-collect";
 import { useHashSync } from "./hash-modal";
 import { LeaderCardBody, cardArt } from "./sss";
 import { openChecker, runningChecker } from "./stage-open";
-import { resetCloudPrefs } from "./cloud-prefs";
 import { Dropdown } from "./dropdown";
 import { NoSortHandle, SortColumn, SortHandle, toggleMeFolded, useDrawerDrag, useMeFolded, useMeOrder, type DrawerKey } from "./me-order";
 import { ACQUIRE_KEYS, ACQUIRE_LABEL, acquireOf, type AcquireKey } from "./op-acquire";
@@ -327,6 +326,9 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
             </button>
           )}
         </div>
+        {/* 계정 고르기 — 한섭·중섭처럼 여러 계정을 담아 두고 바꿔 본다 (제안 be87b8c8, 사용자 지시 2026-10-24).
+            지금 계정이 있으면 '다시 동기화' 오른쪽(MeActions 안), 없으면(로그아웃 뒤 보관 계정만 남음) 여기 */}
+        {!me && <AccountTabsRow onAdd={() => setLogin(true)} />}
         {/* 로그인 전 = '로그인해서 내 정보 가져오기' → 모달, 로그인 뒤 = [데이터 지우기][다시 동기화] (사용자 지시 2026-10-04) */}
         {me ? <MeActions onLogin={() => setLogin(true)} /> : (
           <button type="button" className="import-action apply me-login-btn" onClick={() => setLogin(true)}>
@@ -352,6 +354,83 @@ export default function MyInfo({ operators, extra, onShowOperator }: Props) {
         </ModalWindow>
       )}
     </section>
+  );
+}
+
+/** 계정 고르기 — 드롭다운 하나 (탭 줄은 이름이 길어 어지러웠다, 사용자 지시 2026-10-24). 지금 계정이 단추 이름, 목록에서 다른 계정을 고르면
+ *  그 계정(게임 데이터·설정)으로 바꿔 새로 연다. '+ 계정 추가'는 동기화 창 — 다른 계정으로 동기화하면 지금 계정은 목록에 남는다 (me-store saveMe).
+ *  '계정 빼기'는 보관한 계정을 목록에서 빼는 작은 창. 계정이 하나뿐이면 단추 이름은 그 계정, 목록엔 추가만 */
+function AccountTabsRow({ onAdd }: { onAdd: () => void }) {
+  const { t } = useI18n();
+  const { confirm, dialog } = useConfirm();
+  const me = useMe();
+  const [tabs, setTabs] = useState<ReturnType<typeof accountTabs>>([]);
+  const [manage, setManage] = useState(false);
+  const [busyDrop, setBusyDrop] = useState("");   // 지우는 중인 계정 (계정 빼기 (초기화))
+  useEffect(() => {
+    const load = () => setTabs(accountTabs());
+    load();
+    window.addEventListener("ta:me-change", load);
+    return () => window.removeEventListener("ta:me-change", load);
+  }, [me]);
+  if (!tabs.length) return null;
+  // 서버 · 닉네임#번호 — 레벨까지 붙이니 단추가 너무 길었다 (사용자 지시 2026-10-24)
+  const label = (x: (typeof tabs)[number]) => `${t(ACCOUNT_SERVERS.find((s) => s.code === x.server)?.label ?? x.server)} · ${x.nick}`;
+  const active = tabs.find((x) => x.active);
+  const others = tabs.filter((x) => !x.active);
+  // 계정 빼기 (초기화) — 종전 '저장된 설정 완전 초기화'를 합쳤다 (사용자 지시 2026-10-24 "겹친다, 초기화 버튼 없애고 계정 빼기 (초기화)로").
+  // 이 브라우저 목록에서 빼고, 그 계정 저장소의 설정도 지운다. 제안 열람 코드는 남는다(계정마다 바뀌는 설정이 아니다)
+  const drop = async (x: (typeof tabs)[number]) => {
+    const message = [
+      t("{name} 계정을 이 브라우저에서 빼고, 이 계정에 저장된 설정도 모두 지웁니다. 게임 계정은 그대로이고, 되돌릴 수 없습니다.", { name: label(x) }),
+      t("다시 동기화하면 기본 설정으로 새로 시작합니다."),
+      "",
+      t("사라지는 것"),
+      ...RESET_ITEMS.filter((it) => it !== "라이트·다크 모드" && it !== "사이트 언어").map((it) => `• ${t(it)}`),
+      ...(x.active ? ["", others.length ? t("지금 보고 있는 계정이라, 빼고 나면 목록의 첫 계정으로 바뀝니다.") : t("남는 계정이 없어 로그아웃한 것과 같아집니다.")] : []),
+    ].join("\n");
+    if (!(await confirm({ title: t("계정 빼기 (초기화)"), danger: true, message, confirmLabel: t("빼기") }))) return;
+    setBusyDrop(x.id);
+    const pt = accountPrefToken(x.id);
+    if (x.active) freezePrefs(false);   // 지우기 전에 올리기를 멈춘다 — 늦게 도착한 올리기가 지운 설정을 되살리지 않게
+    noteVisitEvent("me_reset", x.server);
+    // 로컬 개발 서버는 계정 저장소를 건드리지 않는다 — 설정 올리기를 막는 것과 같은 규칙 (시험하다 라이브 계정 설정을 지우지 않게)
+    const dev = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+    if (pt && !dev) { try { await prefsDelete(pt); } catch { setBusyDrop(""); void confirm({ alert: true, title: t("계정 빼기 (초기화)"), message: t("초기화하지 못했습니다 — 잠시 뒤 다시 시도해 주세요.") }); return; } }
+    removeAccount(x.id);
+    setBusyDrop("");
+  };
+  const items = [
+    ...tabs.map((x) => ({ value: x.id, label: label(x), title: x.active ? t("지금 보고 있는 계정") : t("이 계정으로 바꿉니다 — 그 계정의 설정으로 새로 엽니다") })),
+    ...(tabs.length < MAX_ACCOUNTS ? [{ value: "__add", label: <><span aria-hidden>+</span> {t("계정 추가")}</>, title: t("다른 서버나 다른 계정을 하나 더 동기화합니다 — 지금 계정은 탭으로 남습니다") }] : []),
+    { value: "__manage", label: t("계정 빼기 (초기화)") },
+  ];
+  return (
+    <div className="me-acct">
+      {dialog}
+      <Dropdown ariaLabel={t("계정")} label={active ? label(active) : t("계정")} selected={active ? [active.id] : []} items={items}
+        onPick={(v) => { if (v === "__add") onAdd(); else if (v === "__manage") setManage(true); else if (v !== active?.id) switchAccount(v); }} />
+      {manage && (
+        <ModalWindow label={t("계정 빼기 (초기화)")} className="operator-modal room-modal me-acct-modal" onClose={() => setManage(false)} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
+          <header className="room-modal-head">
+            <span className="modal-kicker">ACCOUNTS</span>
+            <h2>{t("계정 빼기 (초기화)")}</h2>
+          </header>
+          <div className="modal-scroll">
+            <p className="me-acct-note">{t("이 브라우저에서 계정을 빼고, 그 계정에 저장된 설정도 지웁니다. 게임 계정은 그대로이고, 다시 동기화하면 기본 설정으로 새로 시작합니다.")}</p>
+            <ul className="me-acct-list">
+              {tabs.map((x) => (
+                <li key={x.id}>
+                  <span className="me-acct-srv">{t(ACCOUNT_SERVERS.find((sv) => sv.code === x.server)?.label ?? x.server)}</span>
+                  <b>{x.nick}</b>{x.active && <em className="me-acct-now">{t("지금 계정")}</em>}
+                  <button type="button" className="import-action" disabled={!!busyDrop} onClick={() => void drop(x)}>{busyDrop === x.id ? t("지우는 중…") : t("빼기")}</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </ModalWindow>
+      )}
+    </div>
   );
 }
 
@@ -402,34 +481,16 @@ function MeActions({ onLogin }: { onLogin: () => void }) {
     noteVisitEvent("me_logout", getMe()?.server);   // 관리자 동기화 표의 로그아웃·초기화 이력 (사용자 지시 2026-10-19)
     clearMe();
   };
-  // 저장된 설정 완전 초기화 — 계정 저장소와 이 브라우저의 설정을 기본값으로 (되돌릴 수 없어 무엇이 사라지는지 다 적는다)
-  const [resetting, setResetting] = useState(false);
-  const resetAll = async () => {
-    if (!(await confirm({ title: t("저장된 설정 완전 초기화"), danger: true, confirmLabel: t("초기화"),
-      // 문단·목록으로 — 한 덩어리 줄글이라 읽히지 않았다 (사용자 지적 2026-10-14). 확인 창 본문은 pre-line 이라 \n 이 그대로 줄바꿈
-      message: [
-        t("이 계정에 저장된 UID·설정과 이 브라우저의 설정을 모두 지우고 기본값으로 되돌립니다."),
-        t("다른 기기에서도 더 이상 이어지지 않으며, 되돌릴 수 없습니다."),
-        "",
-        t("사라지는 것"),
-        ...RESET_ITEMS.map((x) => `• ${t(x)}`),
-        "",
-        t("이 브라우저는 로그아웃되고, 제안 게시판의 내 제안(열람 코드)만 남습니다."),
-      ].join("\n") }))) return;
-    setResetting(true);
-    noteVisitEvent("me_reset", getMe()?.server);
-    // 로그아웃까지 — 계정 저장소를 지운 뒤 이 브라우저의 계정 연결도 끊는다 (사용자 지시 2026-10-14 "완전 삭제는 로그아웃도")
-    try { await resetCloudPrefs(clearMe); } catch { setResetting(false); setErr(t("초기화하지 못했습니다 — 잠시 뒤 다시 시도해 주세요.")); }
-  };
   return (
     <div className="me-head-actions">
       {dialog}
-      <button type="button" className="import-action" disabled={resetting} onClick={() => void resetAll()}
-        title={t("이 계정에 저장된 설정과 이 브라우저의 설정을 모두 기본값으로 되돌립니다")}><span className="btn-icon" aria-hidden>↺</span>{t("저장된 설정 완전 초기화")}</button>
+      {/* '저장된 설정 완전 초기화'는 계정 고르기의 '계정 빼기 (초기화)'로 합쳤다 (사용자 지시 2026-10-24) */}
       <button type="button" className="import-action" onClick={() => void wipe()}><span className="btn-icon" aria-hidden>⏻</span>{t("로그아웃")}</button>
       <button type="button" className="import-action apply" disabled={busy} onClick={() => void resync()}>
         <span className="btn-icon" aria-hidden>⟳</span>{busy ? t("가져오는 중…") : t("다시 동기화")}
       </button>
+      {/* 계정 고르기는 다시 동기화 오른쪽 (사용자 지시 2026-10-24) */}
+      <AccountTabsRow onAdd={onLogin} />
       {busy && <div className="me-sync-steps"><AccountSteps t={t} step={step} sync server={meToken()?.server} /></div>}
       {err && <p className="import-msg error">{err}</p>}
     </div>
