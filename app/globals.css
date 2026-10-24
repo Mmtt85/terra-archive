@@ -34910,7 +34910,13 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .watch-chat-log p.sys, .coach-chat-log p.sys { font-size: 11px; color: var(--muted); font-style: italic; }
 .coach-roster-btn { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--muted); font-size: 11px; cursor: pointer; }
 .coach-roster-btn.on, .coach-roster-btn:hover { color: var(--ink2); border-color: var(--lime-line); }
-.coach-roster { list-style: none; margin: 0; padding: 6px 8px; display: flex; flex-wrap: wrap; gap: 4px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); font-size: 12px; }
+/* 참여자 목록 — 단추 밑에 떠 있는 드롭다운 (아래 내용을 밀지 않는다, 사용자 지시 2026-10-25) */
+.coach-roster-wrap { position: relative; display: inline-flex; }
+.coach-roster {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 20; min-width: 150px; list-style: none; margin: 0; padding: 4px;
+  display: grid; gap: 1px; background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--sh-2); font-size: 12px;
+}
+.coach-roster li { padding: 4px 8px; border-radius: var(--r-sm); white-space: nowrap; }
 .coach-roster li.host { color: var(--lime-ink); font-weight: 700; }
 .coach-roster li.me { text-decoration: underline; text-underline-offset: 2px; }
 .bridge-pip-rg .coach-roster, .bridge-pip-rg .coach-roster-btn { border-color: var(--rgline); border-radius: 0; }
@@ -34950,6 +34956,13 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .coach-url.copied { border-style: solid; border-color: var(--lime-line); }
 .bridge-pip-rg .coach-url { border-color: var(--rgline); color: var(--rgink); border-radius: 0; }
 .coach-copy-note { order: 2; }
+.coach-toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 9999; max-width: calc(100vw - 32px);
+  padding: 10px 18px; border-radius: 999px; background: rgba(16, 18, 20, .92); color: #fff; font-size: 13px; font-weight: 700;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .35); border: 1px solid var(--lime-line); animation: coach-toast-in .25s ease-out;
+}
+.coach-toast.fail { border-color: var(--bad); }
+@keyframes coach-toast-in { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
 .coach-copy-note.fail { color: var(--bad); }
 .coach-bar .coach-votes { order: 3; }
 /* 작은 창 위 덩어리(머리줄·공유 줄·채팅) — 위에 붙고 노드·소장품만 밑으로 스크롤 */
@@ -34999,12 +35012,21 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .bridge-pip-rg input.coach-title { background: var(--rgbg, #120708); border-color: var(--rgline); color: var(--rgink); border-radius: 0; }
 .watch-title { margin-left: 8px; font-size: 14px; font-weight: 700; color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 /* 공개방 켜기 (2026-10-24) */
+.coach-pub:empty { display: none; }
 .coach-pub { order: 3; flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.coach-bar button.coach-pub-btn { padding: 3px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: none; color: var(--ink2); font-size: 12px; font-weight: 700; cursor: pointer; }
+.coach-bar button.coach-pub-btn.on { border-color: var(--lime-line); color: var(--lime-ink); }
+.bridge-pip-rg .coach-bar button.coach-pub-btn { border-color: var(--rgline); color: var(--rgink); border-radius: 0; }
 .coach-pub > button { padding: 3px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: none; color: var(--ink2); font-size: 12px; font-weight: 700; cursor: pointer; }
 .coach-pub > button.on { border-color: var(--lime-line); color: var(--lime-ink); }
 .coach-pub > small { font-size: 11px; color: var(--muted); }
-.coach-pub-ask { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; border: 1px solid var(--bad); border-radius: var(--r-sm); }
-.coach-pub-ask p { flex-basis: 100%; margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink); white-space: normal; }
+.coach-pub-wrap { position: relative; display: inline-flex; }
+.coach-pub-ask {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; width: 240px; display: grid; gap: 8px; padding: 10px;
+  background: var(--bg-panel); border: 1px solid var(--bad); border-radius: var(--r-md); box-shadow: var(--sh-2);
+}
+.coach-pub-ask p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink); white-space: normal; }
+.coach-pub-ask > div { display: flex; gap: 6px; justify-content: flex-end; }
 .bridge-pip-rg .coach-pub > button { border-color: var(--rgline); color: var(--rgink); border-radius: 0; }
 .bridge-pip-rg .coach-pub > button.on { border-color: var(--rg-hue, var(--rggold)); color: var(--rggold); }
 /* 하는 사람 채팅 이모티콘 (2026-10-25) */

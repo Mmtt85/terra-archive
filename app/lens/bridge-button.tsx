@@ -10,7 +10,7 @@ import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } fro
 import { createPortal } from "react-dom";
 import { isOwnerUid } from "../visit-track";
 import { Thumb } from "./thumb";
-import { coachPcLoad, coachReact, coachVoteFx, EMOTES, coachTitle, setCoachTitle, TITLE_MAX, coachPublic, setCoachPublic, QUALITIES, coachQuality, setCoachQuality, coachStats, coachReacts, emoteUrl, EMOTE_LABEL, coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
+import { coachReact, coachVoteFx, EMOTES, coachTitle, setCoachTitle, TITLE_MAX, coachPublic, setCoachPublic, QUALITIES, coachQuality, setCoachQuality,  coachReacts, emoteUrl, EMOTE_LABEL, coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
 import { useBridgeStatus, connectBridge, disconnectBridge, clearBridgeError, bridgeNotArknights, bridgeArkThumb, confirmArknights, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -218,7 +218,7 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
         <button type="button" className="bridge-toast-off bridge-pip-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>{t("연결 끊기")}</button>
       </header>
       {bridgeNotArknights() && <ArkCheck t={t} />}
-      <CoachControls t={t} />
+      {/* 화면 공유 줄(공유 상태·링크·공개방·화질)은 본 화면 연결 알림에만 — 같은 줄이 거기 있어 작은 창은 채팅만 (사용자 지시 2026-10-25) */}
       <CoachChat t={t} />
       </div>
       <CoachReactLayer />
@@ -258,22 +258,31 @@ function useCoach() {
 function CoachControls({ t }: { t: T }) {
   const st = useCoach();
   const [copied, setCopied] = useState(false);
-  // 공유 줄 접기 — 게임 중엔 채팅·노드를 더 보이게 (사용자 지시 2026-10-24 "화면 공유 중 섹션은 닫을 수 있도록"). 이 브라우저에 기억
+  const [copyFail, setCopyFail] = useState(false);
   // 공개방 켜기 확인 — 화면 속 닉네임·UID 가 모르는 사람에게 보일 수 있어 처음 켤 때 한 번 묻는다
   const [pubAsk, setPubAsk] = useState(false);
-  const [folded, setFolded] = useState(() => { try { return localStorage.getItem("ta:coach-bar-folded") === "1"; } catch { return false; } });
-  const [copyFail, setCopyFail] = useState(false);
+  const [asking, setAsking] = useState(false);   // 화면 공유를 눌러 방 제목을 묻는 중
   // 지금은 관리자(운영자 UID 로 내 정보 동기화한 브라우저)만 — 시험 중 (사용자 지시 2026-10-24 "화면 공유 버튼은 관리자만")
   if (!isOwnerUid() && !st.live) return null;
+  // 시작 전 — '화면 공유'만 보이고, 누르면 방 제목 칸이 열린다(비워도 된다). 시작·Enter 로 공유 시작 (사용자 지시 2026-10-25)
   if (!st.live) return (
     <div className="coach-bar">
-      {/* 방 제목 — 시작할 때 정한다 (사용자 지시 2026-10-24). 비워도 된다 */}
-      <input className="coach-title" defaultValue={coachTitle()} maxLength={TITLE_MAX} placeholder={t("방 제목 (선택)")} aria-label={t("방 제목")}
-        onBlur={(e) => setCoachTitle(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { setCoachTitle((e.target as HTMLInputElement).value); startCoach(); } }} />
-      <button type="button" className="bridge-toast-node coach-start" onMouseDown={() => { const el = document.activeElement as HTMLInputElement | null; if (el?.classList.contains("coach-title")) setCoachTitle(el.value); }} onClick={() => startCoach()}
-        title={t("링크를 받은 사람이 이 게임 화면과 PRTS 인식 정보를 실시간으로 봅니다 — 영상은 사이트를 거치지 않고 직접 갑니다(녹화·저장 없음), 최대 {n}명", { n: COACH_MAX })}>
-        ◉ {t("화면 공유")} <span className="beta-badge">BETA</span>
-      </button>
+      {!asking ? (
+        <button type="button" className="bridge-toast-node coach-start" onClick={() => setAsking(true)}
+          title={t("링크를 받은 사람이 이 게임 화면과 PRTS 인식 정보를 실시간으로 봅니다 — 영상은 사이트를 거치지 않고 직접 갑니다(녹화·저장 없음), 최대 {n}명", { n: COACH_MAX })}>
+          ◉ {t("화면 공유")} <span className="beta-badge">BETA</span>
+        </button>
+      ) : (<>
+        <input className="coach-title" autoFocus defaultValue={coachTitle()} maxLength={TITLE_MAX} placeholder={t("방 제목 (선택)")} aria-label={t("방 제목")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) { setCoachTitle((e.target as HTMLInputElement).value); setAsking(false); startCoach(); }
+            else if (e.key === "Escape") setAsking(false);
+          }} />
+        <button type="button" className="bridge-toast-node coach-start"
+          onMouseDown={(e) => { const el = e.currentTarget.parentElement?.querySelector<HTMLInputElement>("input.coach-title"); if (el) setCoachTitle(el.value); }}
+          onClick={() => { setAsking(false); startCoach(); }}>◉ {t("시작")}</button>
+        <button type="button" className="bridge-toast-off" onClick={() => setAsking(false)}>{t("취소")}</button>
+      </>)}
       {st.error && <small className="coach-err">{t(st.error)}</small>}
     </div>
   );
@@ -282,7 +291,8 @@ function CoachControls({ t }: { t: T }) {
   const copy = (ev: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
     const doc = ev.currentTarget.ownerDocument;
     const win = doc.defaultView ?? window;
-    const done = () => { setCopied(true); setCopyFail(false); setTimeout(() => setCopied(false), 2000); };
+    const done = () => { setCopied(true); setCopyFail(false); setTimeout(() => setCopied(false), 2500); };
+    const failed = () => { setCopyFail(true); setTimeout(() => setCopyFail(false), 4000); };
     const legacy = () => {
       try {
         const ta = doc.createElement("textarea");
@@ -290,8 +300,8 @@ function CoachControls({ t }: { t: T }) {
         doc.body.appendChild(ta); ta.select();
         const ok = doc.execCommand("copy");
         ta.remove();
-        if (ok) done(); else setCopyFail(true);
-      } catch { setCopyFail(true); }
+        if (ok) done(); else failed();
+      } catch { failed(); }
       // 실패해도 주소는 그대로 보이니 끌어서 고르면 된다 — 고른 상태로 둔다
       try { const r = doc.createRange(); r.selectNodeContents(ev.currentTarget); const sel = win.getSelection(); sel?.removeAllRanges(); sel?.addRange(r); } catch { /* */ }
     };
@@ -299,20 +309,27 @@ function CoachControls({ t }: { t: T }) {
     if (cb?.writeText) void cb.writeText(st.url).then(done).catch(legacy);
     else legacy();
   };
-  const fold = () => { const v = !folded; setFolded(v); try { localStorage.setItem("ta:coach-bar-folded", v ? "1" : ""); } catch { /* */ } };
-  if (folded) return (
-    <div className="coach-bar on folded">
-      <button type="button" className="coach-fold" onClick={fold} aria-expanded={false} title={t("펼치기")}>
-        <span className="coach-live">● {t("화면 공유 중")} · {t("보는 사람 {a}/{b}", { a: st.viewers, b: COACH_MAX })}</span><i aria-hidden>▸</i>
-      </button>
-    </div>
-  );
   return (
     <div className="coach-bar on">
-      <button type="button" className="coach-fold" onClick={fold} aria-expanded title={t("접기")}>
-        <span className="coach-live">● {t("화면 공유 중")} · {t("보는 사람 {a}/{b}", { a: st.viewers, b: COACH_MAX })}</span><i aria-hidden>▾</i>
-      </button>
-
+      <span className="coach-live">● {t("화면 공유 중")} · {t("보는 사람 {a}/{b}", { a: st.viewers, b: COACH_MAX })}</span>
+      {/* 공개·비공개 전환은 공유 끝내기 바로 왼쪽 (사용자 지시 2026-10-25) */}
+      <span className="coach-pub-wrap">
+        <button type="button" role="switch" aria-checked={coachPublic()} className={`coach-pub-btn${coachPublic() ? " on" : ""}`}
+          title={coachPublic() ? t("공개 목록에 올라 있어요 — 누구나 들어올 수 있어요") : t("링크를 받은 사람만 들어와요")}
+          onClick={() => (coachPublic() ? setCoachPublic(false) : setPubAsk((v) => !v))}>
+          {coachPublic() ? `● ${t("공개방")}` : `○ ${t("비공개방")}`}
+        </button>
+        {/* 공개로 바꿀 때 확인 — 단추 밑에 떠 있는 상자 (공유 줄을 밀지 않는다, 사용자 지시 2026-10-25) */}
+        {pubAsk && !coachPublic() && (
+          <div className="coach-pub-ask" role="alertdialog">
+            <p>{t("공개방으로 바꾸면 내 정보의 '게임 화면 같이 보기' 목록에 이 방이 올라와, 모르는 사람도 들어와 이 화면을 볼 수 있어요. 화면에 닉네임·UID 가 보이지 않는지 한번 확인해 주세요.")}</p>
+            <div>
+              <button type="button" className="bridge-toast-node" onClick={() => { setCoachPublic(true); setPubAsk(false); }}>{t("공개방으로")}</button>
+              <button type="button" className="bridge-toast-off" onClick={() => setPubAsk(false)}>{t("취소")}</button>
+            </div>
+          </div>
+        )}
+      </span>
       <button type="button" className="bridge-toast-off" onClick={() => stopCoach()}>{t("공유 끝내기")}</button>
       {/* 링크는 단추 대신 주소 그대로 — 누르면 복사, 막혀도 끌어서 고를 수 있다 (사용자 지시 2026-10-24 "URL 직접 보여 주고 클릭하면 복사") */}
       <span className={`coach-url${copied ? " copied" : ""}`} role="button" tabIndex={0} title={t("눌러서 복사")}
@@ -320,21 +337,6 @@ function CoachControls({ t }: { t: T }) {
         onKeyDown={(e) => { if (e.key === "Enter") copy(e); }}>{st.url}</span>
       <input className="coach-title on" defaultValue={coachTitle()} maxLength={TITLE_MAX} placeholder={t("방 제목 (선택)")} aria-label={t("방 제목")}
         onBlur={(e) => { if (e.target.value.trim() !== coachTitle()) setCoachTitle(e.target.value); }} onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
-      {/* 공개방 — 켜면 내 정보 '훈수방' 공개 목록에 오른다 (사용자 지시 2026-10-24). 링크로 들어오는 건 켜든 끄든 누구나 */}
-      <div className="coach-pub">
-        <button type="button" role="switch" aria-checked={coachPublic()} className={coachPublic() ? "on" : ""}
-          onClick={() => (coachPublic() ? setCoachPublic(false) : setPubAsk(true))}>
-          {coachPublic() ? `● ${t("공개방")}` : `○ ${t("비공개방")}`}
-        </button>
-        <small>{coachPublic() ? t("공개 목록에 올라 있어요 — 누구나 들어올 수 있어요") : t("링크를 받은 사람만 들어와요")}</small>
-        {pubAsk && !coachPublic() && (
-          <div className="coach-pub-ask" role="alertdialog">
-            <p>{t("공개방으로 바꾸면 모르는 사람도 이 화면을 볼 수 있어요. 화면에 닉네임·UID 가 보이지 않는지 한번 확인해 주세요.")}</p>
-            <button type="button" className="bridge-toast-node" onClick={() => { setCoachPublic(true); setPubAsk(false); }}>{t("공개방으로")}</button>
-            <button type="button" className="bridge-toast-off" onClick={() => setPubAsk(false)}>{t("취소")}</button>
-          </div>
-        )}
-      </div>
       {/* 화질 단계 — 게임 창이 단계 해상도보다 크면 줄여 보내고 작으면 그대로 (사용자 지시 2026-10-24). 옆은 보는 사람별 실측 */}
       <div className="coach-quality" role="radiogroup" aria-label={t("화질")}>
         <span>{t("화질")}</span>
@@ -346,22 +348,11 @@ function CoachControls({ t }: { t: T }) {
           </button>
         ))}
       </div>
-      {/* 실측 — 보는 사람별 해상도·프레임·보내는 양, 화질이 깎인 이유(CPU·대역폭), 회선 여유, 영상 형식. 맨 위는 PC 부하 (2026-10-25 "멈칫멈칫" 원인 보기) */}
-      {(coachStats().length > 0 || coachPcLoad()) && (
-        <ul className="coach-stats">
-          {coachPcLoad() && <li className={`load-${coachPcLoad()}`}>{t("PC 부하")}: {t(({ nominal: "여유", fair: "보통", serious: "높음", critical: "한계" } as Record<string, string>)[coachPcLoad()] ?? coachPcLoad())}</li>}
-          {coachStats().map((x) => (
-            <li key={x.id} className={x.limit !== "none" ? "limited" : ""}>
-              {t("보는 사람 {n}번", { n: x.id })} · {x.w && x.h ? `${x.w}×${x.h}` : "—"} · {x.fps}fps · {x.mbps}Mbps{x.save ? ` · ${t("데이터 절약")}` : ""}
-              {x.limit === "cpu" ? ` · ⚠ ${t("CPU 부족")}` : x.limit === "bandwidth" ? ` · ⚠ ${t("대역폭 부족")}` : ""}
-              {x.avail ? ` · ${t("여유 {n}Mbps", { n: x.avail })}` : ""}
-              {x.codec ? ` · ${x.codec}${x.hw === true ? ` (${t("하드웨어")})` : x.hw === false ? ` (${t("소프트웨어")})` : ""}` : ""}
-            </li>
-          ))}
-        </ul>
-      )}
-      {copied && <span className="coach-copy-note" role="status">✓ {t("게임 화면 같이 보기 링크를 복사했어요 — 보는 사람에게 보내 주세요")}</span>}
-      {copyFail && !copied && <span className="coach-copy-note fail" role="status">{t("자동 복사가 막혔어요 — 주소를 끌어서 복사해 주세요")}</span>}
+      {/* 복사 알림은 화면 아래 가운데 토스트로 — 줄 안에 끼우면 공유 줄이 늘었다 줄었다 했다 (사용자 지시 2026-10-25) */}
+      {(copied || copyFail) && createPortal(
+        <div className={`coach-toast${copied ? "" : " fail"}`} role="status">
+          {copied ? `✓ ${t("게임 화면 같이 보기 링크를 복사했어요 — 보는 사람에게 보내 주세요")}` : t("자동 복사가 막혔어요 — 주소를 끌어서 복사해 주세요")}
+        </div>, document.body)}
     </div>
   );
 }
@@ -432,9 +423,17 @@ function CoachChat({ t }: { t: T }) {
     <section className="coach-chat">
       <div className="coach-chat-head">
         <b>{t("채팅")}</b>
-        <button type="button" className={`coach-roster-btn${rosterOpen ? " on" : ""}`} aria-expanded={rosterOpen} onClick={() => setRosterOpen((o) => !o)}>
-          {t("참여 {n}명", { n: chat.present.length })} {rosterOpen ? "▴" : "▾"}
-        </button>
+        <span className="coach-roster-wrap">
+          <button type="button" className={`coach-roster-btn${rosterOpen ? " on" : ""}`} aria-expanded={rosterOpen} onClick={() => setRosterOpen((o) => !o)}
+            onBlur={(e) => { if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) setRosterOpen(false); }}>
+            {t("참여 {n}명", { n: chat.present.length })} {rosterOpen ? "▴" : "▾"}
+          </button>
+          {rosterOpen && (
+            <ul className="coach-roster" role="listbox">
+              {chat.present.map((a) => <li key={a} className={a === 0 ? "host" : ""}>{chat.names[String(a)] ?? ""}{a === 0 ? ` · ${t("나")}` : ""}</li>)}
+            </ul>
+          )}
+        </span>
         {nameEdit
           ? <input className="coach-chat-name" autoFocus maxLength={NAME_MAX} defaultValue={coachName()} placeholder={t("닉네임")}
             onBlur={(e) => { setCoachName(e.target.value); setNameEdit(false); }}
@@ -443,11 +442,6 @@ function CoachChat({ t }: { t: T }) {
         <button type="button" className={`coach-chat-off${chat.off ? " on" : ""}`} aria-pressed={chat.off} onClick={() => setCoachChatOff(!chat.off)}
           title={t("끄면 보는 사람이 채팅을 보낼 수 없습니다")}>{chat.off ? t("채팅 꺼짐") : t("채팅 끄기")}</button>
       </div>
-      {rosterOpen && (
-        <ul className="coach-roster">
-          {chat.present.map((a) => <li key={a} className={a === 0 ? "host" : ""}>{chat.names[String(a)] ?? ""}{a === 0 ? ` · ${t("나")}` : ""}</li>)}
-        </ul>
-      )}
       <div className="coach-chat-log" ref={listRef}>
         {chat.log.length === 0 && <p className="coach-chat-empty">{t("보는 사람이 보낸 채팅이 여기에 뜹니다")}</p>}
         {chat.log.map((m) => (

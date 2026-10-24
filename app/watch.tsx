@@ -336,9 +336,17 @@ function WatchInner() {
               <b>{t("채팅")}</b>
               {/* 참여자 — 누르면 지금 들어와 있는 사람 (하는 사람 먼저) */}
               {present.length > 0 && (
-                <button type="button" className={`coach-roster-btn${rosterOpen ? " on" : ""}`} aria-expanded={rosterOpen} onClick={() => setRosterOpen((o) => !o)}>
-                  {t("참여 {n}명", { n: present.length })} {rosterOpen ? "▴" : "▾"}
-                </button>
+                <span className="coach-roster-wrap">
+                  <button type="button" className={`coach-roster-btn${rosterOpen ? " on" : ""}`} aria-expanded={rosterOpen} onClick={() => setRosterOpen((o) => !o)}
+                    onBlur={(e) => { if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) setRosterOpen(false); }}>
+                    {t("참여 {n}명", { n: present.length })} {rosterOpen ? "▴" : "▾"}
+                  </button>
+                  {rosterOpen && (
+                    <ul className="coach-roster" role="listbox">
+                      {present.map((a) => <li key={a} className={a === 0 ? "host" : a === me ? "me" : ""}>{names[String(a)] ?? (a === 0 ? t("하는 사람") : "")}{a === 0 ? ` · ${t("하는 사람")}` : ""}</li>)}
+                    </ul>
+                  )}
+                </span>
               )}
               <label className="watch-chat-namelbl" htmlFor="watch-nick">{t("닉네임")}</label>
               <input id="watch-nick" className="watch-chat-name" key={name} defaultValue={name} maxLength={NAME_MAX}
@@ -346,11 +354,6 @@ function WatchInner() {
                 onBlur={(e) => { if (e.target.value.trim() !== name) saveName(e.target.value); }}
                 onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
             </div>
-            {rosterOpen && (
-              <ul className="coach-roster">
-                {present.map((a) => <li key={a} className={a === 0 ? "host" : a === me ? "me" : ""}>{names[String(a)] ?? (a === 0 ? t("하는 사람") : "")}{a === 0 ? ` · ${t("하는 사람")}` : ""}</li>)}
-              </ul>
-            )}
             <div className="watch-chat-log" ref={logRef}>
               {chat.length === 0 && <p className="watch-empty">{t("채팅은 저장되지 않습니다 — 방이 닫히면 사라져요")}</p>}
               {chat.map((c) => (
