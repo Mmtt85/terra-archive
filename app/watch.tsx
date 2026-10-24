@@ -41,6 +41,15 @@ function WatchInner() {
   const [names, setNames] = useState<CoachNames>({});
   const [reacts, setReacts] = useState<CoachReact[]>([]);
   const [eraOpen, setEraOpen] = useState(false);
+  const [emoteOpen, setEmoteOpen] = useState(false);
+  // 이모티콘 판 — 바깥을 누르거나 Esc 면 닫는다
+  useEffect(() => {
+    if (!emoteOpen) return;
+    const down = (e: MouseEvent) => { if (!(e.target as Element)?.closest?.(".watch-chat-row")) setEmoteOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setEmoteOpen(false); };
+    window.addEventListener("mousedown", down); window.addEventListener("keydown", esc);
+    return () => { window.removeEventListener("mousedown", down); window.removeEventListener("keydown", esc); };
+  }, [emoteOpen]);
   const dcRef = useRef<RTCDataChannel | null>(null);
   // 채팅 — 하는 사람이 나눠 주는 줄을 받는다. 닉네임은 이 브라우저에 두고 연결되면 하는 사람에게 알린다 (2026-10-24)
   const [chat, setChat] = useState<CoachMsg[]>([]);
@@ -257,16 +266,24 @@ function WatchInner() {
                 <p key={c.id} className={c.from === 0 ? "host" : c.from === me ? "me" : ""}><b>{msgName(c, names)}</b>{c.text}</p>
               ))}
             </div>
-            <input className="watch-chat-input" value={text} maxLength={CHAT_MAX} disabled={chatOff || phase !== "live"}
-              placeholder={chatOff ? t("하는 사람이 채팅을 껐어요") : t("채팅 (Enter 로 보내기)")}
-              onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) say(); }} />
-            {/* 화면 반응 — 누르면 하는 사람 작은 창과 모두의 영상 위로 떠오른다 (게임 위수 협의 이모티콘, 사용자 지시 2026-10-24) */}
-            <div className="watch-emotes" role="toolbar" aria-label={t("화면 반응")}>
-              {EMOTES.map((e) => (
-                <button type="button" key={e} disabled={phase !== "live"} onClick={(ev) => sendReact(e, ev.timeStamp)} title={t(EMOTE_LABEL[e])} aria-label={t(EMOTE_LABEL[e])}>
-                  <img src={emoteSrc(e)} alt="" width={40} height={40} />
-                </button>
-              ))}
+            {/* 입력칸 + 이모티콘 단추 — 누르면 위로 이모티콘 판이 뜬다. 판을 늘 펼쳐 두면 폰에서 카드가 가려졌다 (사용자 지시 2026-10-24) */}
+            <div className="watch-chat-row">
+              <input className="watch-chat-input" value={text} maxLength={CHAT_MAX} disabled={chatOff || phase !== "live"}
+                placeholder={chatOff ? t("하는 사람이 채팅을 껐어요") : t("채팅 (Enter 로 보내기)")}
+                onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) say(); }} />
+              <button type="button" className={`watch-emote-btn${emoteOpen ? " on" : ""}`} disabled={phase !== "live"} aria-expanded={emoteOpen}
+                aria-label={t("화면 반응")} title={t("화면 반응")} onClick={() => setEmoteOpen((o) => !o)}>
+                <img src={emoteSrc("happy")} alt="" width={26} height={26} />
+              </button>
+              {emoteOpen && (
+                <div className="watch-emotes" role="toolbar" aria-label={t("화면 반응")}>
+                  {EMOTES.map((e) => (
+                    <button type="button" key={e} onClick={(ev) => { sendReact(e, ev.timeStamp); setEmoteOpen(false); }} title={t(EMOTE_LABEL[e])} aria-label={t(EMOTE_LABEL[e])}>
+                      <img src={emoteSrc(e)} alt="" width={40} height={40} />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         </aside>

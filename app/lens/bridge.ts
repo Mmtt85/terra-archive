@@ -205,6 +205,40 @@ function readArkOk(): ArkOk {
 const grayToB64 = (g: Uint8Array) => { let bin = ""; for (let i = 0; i < g.length; i++) bin += String.fromCharCode(g[i]); return btoa(bin); };
 const b64ToGray = (b: string) => { const bin = atob(b); const g = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) g[i] = bin.charCodeAt(i); return g; };
 let arkOkScenes: Uint8Array[] | null = null;
+// 제목 표시줄 읽기 — 창 이름표가 번호뿐('window:1234:0')이면, 연결 직후 **맨 먼저** 화면 맨 위 띠(앱 제목 표시줄)를 읽는다.
+// 인식은 창 테두리를 여백으로 잘라 내서 제목 표시줄이 안 들어간다 — 맥 앱 '명일방주' 창 타이틀 화면에서 경고가 떴다
+// ('명일방주 맞습니다' d20b1e3d, 사용자 지시 2026-10-24 "제일 먼저 맨 위 제목 표시줄을 읽어야지"). 연결마다 한 번
+let titleBarTried = false;
+async function readTitleBar(): Promise<void> {
+  if (titleBarTried || arkByTitle) return;
+  const frame = heldFrame;
+  if (!frame || !latestW || !latestH) return;
+  titleBarTried = true;
+  let cv: OffscreenCanvas;
+  try {
+    const h = Math.max(24, Math.min(96, Math.round(latestH * 0.045)));
+    cv = new OffscreenCanvas(latestW, h);
+    cv.getContext("2d")!.drawImage(frame, 0, 0, latestW, h, 0, 0, latestW, h);
+  } catch { return; }
+  const third = Math.floor(cv.width / 3);
+  const boxes = [0, 1, 2].map((k) => ({ x: k * third, y: 0, w: third, h: cv.height }));
+  const m = await import("./paddle").catch(() => null);
+  if (!m) return;
+  // 한국어 모델(한글·영문 — 명일방주·ARKNIGHTS)로 먼저, 못 맞히면 중국어 모델(한자·가나 — 明日方舟·アークナイツ)로 한 번 더
+  // (사용자 지시 2026-10-24 "중국어나 アークナイツ도 마찬가지")
+  for (const lang of ["kor", "ch"] as const) {
+    const out = await m.paddleReadBoxes(cv as unknown as CanvasImageSource, boxes, 1200, lang).catch(() => null);
+    const text = (out ?? []).map((r) => r.text).join(" ");
+    const flat = text.replace(/\s+/g, "").toUpperCase();
+    console.debug(`[bridge] 제목 표시줄(${lang}): ${text || "(못 읽음)"}`);
+    if (flat && (ARK_WINDOWS.test(text) || ARK_WORDS.some((w) => flat.includes(w)))) {
+      arkByTitle = true; arkMiss = 0;
+      if (arkWarn) { arkWarn = false; refreshArkThumb(); }
+      notify();
+      return;
+    }
+  }
+}
 function knownArkScene(g: Uint8Array | null): boolean {
   if (!g) return false;
   arkOkScenes ??= readArkOk().scenes.map(b64ToGray).filter((x) => x.length === g.length);
@@ -567,7 +601,7 @@ export async function connectBridge(withLock?: BridgeLock, via?: Window): Promis
   runLog = []; logMeta = null; startedAt = new Date().toISOString();
   scan = null; lastScan = null; pipNode = null; pipRelics = []; pipRecruit = null; pipFloor = {};
   sceneMemos = []; lastEmitGray = null; battleHold = false;
-  arkSeenAt = 0; arkMiss = 0; arkWarn = false; arkByTitle = false; firstFast = true;
+  arkSeenAt = 0; arkMiss = 0; arkWarn = false; arkByTitle = false; firstFast = true; titleBarTried = false;
   error = ""; notify();
   // 공유를 시작해도 고른 게임 창으로 화면이 넘어가지 않게 — 크롬·엣지는 기본으로 그 창을 앞으로 가져온다 (사용자 지적 2026-10-24).
   // CaptureController 를 모르는 브라우저는 종전 그대로
@@ -693,6 +727,7 @@ async function pump(): Promise<void> {
     heldFrame = frame;
     latestW = w; latestH = h;
     framesIn++;
+    if (!titleBarTried && !arkByTitle) void readTitleBar();   // 첫 화면 — 제목 표시줄부터
     const now = Date.now();
     if (now - lastGrayAt >= GRAY_MS) {
       lastGrayAt = now;
