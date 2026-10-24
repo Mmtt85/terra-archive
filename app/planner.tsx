@@ -4274,9 +4274,11 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, level, locked, o
 }) {
   const options = eliteOptions(op);
   const levelCap = maxOpLevel(op.rarity, elite);
-  // 레벨은 노정예에서만 인프라 계산에 영향을 준다('Lv.30' 해금 스킬) — 1정 이상은
-  // 그 조건을 이미 넘겼으므로 입력칸을 흐리게 두되 기록은 그대로 남긴다
-  const levelMatters = elite === 0;
+  // 레벨은 노정예에서만, 그것도 노정예 Lv.30 에 기지 스킬이 열리는 오퍼(로봇·일부 1~2성 17명)에게만 계산에 영향을 준다.
+  // 종전엔 노정예면 누구에게나 'Lv.30 스킬이 있어 반영된다'를 띄워, 해당 없는 오퍼에서 무슨 말인지 모르겠다는 제보가 왔다
+  // (제안 ea6b7397, 2026-10-25). 해당 없으면 입력칸을 흐리게 두되 기록은 그대로 남긴다
+  const hasLv30 = op.skills.some((sk) => sk.unlock === "Lv.30" || (sk.tiers ?? []).some((x) => x.unlock === "Lv.30"));
+  const levelMatters = elite === 0 && hasLv30;
   // 지금 정예화에서 **못 쓰는** 기지 스킬 — 새로 체크한 오퍼는 E0에서 시작하므로,
   // 정예화 해금 스킬만 가진 오퍼는 켜도 편성에 안 나타난다. 왜 안 뜨는지 알 길이
   // 없어 "그 오퍼가 없다"는 제보로 돌아왔다 (2026-08-24, 비질·무역소).
@@ -4320,8 +4322,9 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, level, locked, o
       {owned && (
         <label className={`roster-level${levelMatters ? "" : " dim"}`}
           title={levelMatters
-            ? t("노정예 Lv.30부터 열리는 기지 스킬이 있어 레벨이 계산에 반영됩니다")
-            : t("1정 이상은 레벨 조건을 이미 넘겨 계산에 영향이 없습니다")}>
+            ? t("이 오퍼는 노정예 Lv.30에 기지 스킬이 하나 더 열립니다 — 레벨을 넣으면 계산에 반영됩니다")
+            : hasLv30 ? t("1정 이상은 레벨 조건을 이미 넘겨 계산에 영향이 없습니다")
+            : t("이 오퍼는 레벨이 기지 스킬에 영향을 주지 않습니다")}>
           <span>Lv.</span>
           <input type="number" min={1} max={levelCap} inputMode="numeric"
             value={level == null ? "" : Math.min(level, levelCap)} placeholder="—"

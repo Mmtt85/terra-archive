@@ -4981,6 +4981,8 @@ const D: Record<string, Pair> = {
   "{n}장 합성": ["Combine {n}", "{n}体合成"],
   "골든": ["Golden", "ゴールド"],
   "아이템 끼우기": ["Equip item", "アイテムを装備"],
+  "이 오퍼는 노정예 Lv.30에 기지 스킬이 하나 더 열립니다 — 레벨을 넣으면 계산에 반영됩니다": ["This operator unlocks another RIIC skill at Lv.30 without promotion — enter the level to include it", "このオペレーターは昇進なしLv.30で基地スキルがもう1つ解放されます — レベルを入れると計算に反映されます"],
+  "이 오퍼는 레벨이 기지 스킬에 영향을 주지 않습니다": ["Level doesn't affect this operator's RIIC skills", "このオペレーターはレベルが基地スキルに影響しません"],
   "참여 {n}명": ["{n} here", "参加 {n}人"],
   "{n} 님이 들어왔어요": ["{n} joined", "{n} さんが入室しました"],
   "{n} 님이 나갔어요": ["{n} left", "{n} さんが退室しました"],

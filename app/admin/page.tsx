@@ -692,19 +692,24 @@ export default function AdminPage() {
               {/* 기기·OS / 브라우저·창 크기 두 줄 — 한 줄이면 머리 칸이 밀려 다른 칩이 세로로 찌그러졌다 (사용자 지적 2026-10-24) */}
               {deviceOf(row.payload) && (() => { const p = deviceOf(row.payload)!.split(" · "); return (
                 <i className="fb-geo-chip fb-dev-chip" title="보낸 기기·브라우저·창 크기"><span>{p.slice(0, 2).join(" · ")}</span><span>{p.slice(2).join(" · ")}</span></i>); })()}
-              {/* 방문자 코드 — 방문 통계 세션 타임라인·PRTS 표의 방문자와 같은 값 (2026-10-12~ 보낸 제안부터) */}
-              {visitorOf(row.payload) && (
-                <button type="button" className="fb-geo-chip fb-visitor-btn" title="방문 통계의 방문자 코드 — 눌러서 이 사람의 세션 보기"
-                  onClick={() => setVisitorWin({ visitor: visitorOf(row.payload)!, at: row.created_at })}><Who visitor={visitorOf(row.payload)} plain /> · 세션 보기 ▸</button>
-              )}
-              {othersOf(row).length > 0 && (
-                <button type="button" className="fb-geo-chip fb-visitor-btn" title="같은 사람(같은 열람 코드나 방문자 코드)이 보낸 다른 제안"
-                  onClick={() => setAuthorWin(row)}>✉ 이 사람의 다른 제안 {othersOf(row).length}건 ▸</button>
-              )}
               <button className="handling-btn" onClick={() => toggleHandling(row)}>{handlingAt(row.payload) ? "대응 해제" : "대응중"}</button>
               <button className="review-btn" onClick={() => toggleReviewed(row)}>{row.reviewed_at ? "대응 취소" : "대응완료"}</button>
               <button onClick={() => remove(row)}>삭제</button>
             </header>
+            {/* 방문자 세션·이 사람의 다른 제안 — 머리줄이 길어 밑줄로 내렸다 (사용자 지시 2026-10-25) */}
+            {(visitorOf(row.payload) || othersOf(row).length > 0) && (
+              <div className="fb-who-row">
+                {/* 방문자 코드 — 방문 통계 세션 타임라인·PRTS 표의 방문자와 같은 값 (2026-10-12~ 보낸 제안부터) */}
+                {visitorOf(row.payload) && (
+                  <button type="button" className="fb-geo-chip fb-visitor-btn" title="방문 통계의 방문자 코드 — 눌러서 이 사람의 세션 보기"
+                    onClick={() => setVisitorWin({ visitor: visitorOf(row.payload)!, at: row.created_at })}><Who visitor={visitorOf(row.payload)} plain /> · 세션 보기 ▸</button>
+                )}
+                {othersOf(row).length > 0 && (
+                  <button type="button" className="fb-geo-chip fb-visitor-btn" title="같은 사람(같은 열람 코드나 방문자 코드)이 보낸 다른 제안"
+                    onClick={() => setAuthorWin(row)}>✉ 이 사람의 다른 제안 {othersOf(row).length}건 ▸</button>
+                )}
+              </div>
+            )}
             {row.message && <p>{row.message}</p>}
             {imagesOf(row.payload).length > 0 && (
               <div className="fb-images">
