@@ -9,7 +9,8 @@ import { NewBadge } from "../new-badge";
 import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { isOwnerUid } from "../visit-track";
-import { coachPings, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
+import { Thumb } from "./thumb";
+import { coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
 import { useBridgeStatus, connectBridge, disconnectBridge, clearBridgeError, bridgeNotArknights, bridgeArkThumb, confirmArknights, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -117,16 +118,16 @@ function WrongButton({ t, cls }: { t: T; cls: string }) {
 function PipCard({ c }: { c: BridgePipCard }) {
   const [open, setOpen] = useState(false);
   useCoach();
-  // 훈수방 짚기 — 보는 사람이 이 카드를 짚은 수 (투표처럼, 2026-10-24)
-  const pinged = coachState().live ? coachPings()[cardKey(c)]?.length ?? 0 : 0;
+  // 훈수방 추천·비추천 — 보는 사람이 이 카드에 준 표 (2026-10-24)
+  const vote = coachState().live ? coachVotes()[cardKey(c)] : undefined;
   const more = !!c.detailImg || (c.list?.length ?? 0) > 0;
   return (
     <article className={`bridge-pip-card${more ? " more" : ""}${open ? " open" : ""}`}
       onClick={more ? () => setOpen((v) => !v) : undefined}>
       <div className="bridge-pip-card-head">
         {c.img && <img src={c.img} alt="" width={36} height={36} />}
-        <div><small>{c.kind}</small><b>{c.name}</b></div>
-        {pinged > 0 && <em className="coach-ping" title={`${pinged}`}>{"●".repeat(pinged)}</em>}
+        <div><small>{c.kind}{c.tag && <> · <span className="bridge-pip-tag">{c.tag}</span></>}</small><b>{c.name}</b></div>
+        {vote && (vote.up.length > 0 || vote.down.length > 0) && <em className="coach-ping">{vote.up.length > 0 && <span className="up"><Thumb size={12} />{vote.up.length}</span>}{vote.down.length > 0 && <span className="down"><Thumb down size={12} />{vote.down.length}</span>}</em>}
         {more && <i aria-hidden>{open ? "▴" : "▾"}</i>}
       </div>
       {c.text && <p>{c.text}</p>}
@@ -270,7 +271,24 @@ function CoachControls({ t }: { t: T }) {
       <span className="coach-live">● {t("화면 공유 중")} · {t("보는 사람 {a}/{b}", { a: st.viewers, b: COACH_MAX })}</span>
       <button type="button" className="bridge-toast-node" onClick={copy} title={st.url}>{copied ? t("복사했어요") : t("링크 복사")}</button>
       <button type="button" className="bridge-toast-off" onClick={() => stopCoach()}>{t("공유 끝내기")}</button>
+      <CoachVoteList t={t} />
     </div>
+  );
+}
+
+/** 보는 사람 추천·비추천 요약 — 통합전략 작은 창은 본 화면 창을 그대로 그려 카드에 표를 못 단다(PipCard 를 안 쓴다).
+ *  그래서 공유 줄 밑에 '어느 카드에 몇 표'를 따로 띄운다 (사용자 지적 2026-10-24 "시청자가 클릭했는데 하는 사람한테 안 보임") */
+function CoachVoteList({ t }: { t: T }) {
+  const rows = Object.entries(coachVotes()).filter(([, v]) => v.up.length || v.down.length)
+    .sort((a, b) => (b[1].up.length - b[1].down.length) - (a[1].up.length - a[1].down.length));
+  if (!rows.length) return null;
+  return (
+    <ul className="coach-votes" aria-label={t("추천·비추천")}>
+      {rows.map(([k, v]) => (
+        <li key={k}><span>{k.slice(k.indexOf(":") + 1)}</span>
+          {v.up.length > 0 && <b className="up"><Thumb size={12} />{v.up.length}</b>}{v.down.length > 0 && <b className="down"><Thumb down size={12} />{v.down.length}</b>}</li>
+      ))}
+    </ul>
   );
 }
 
@@ -305,7 +323,7 @@ function CoachChat({ t }: { t: T }) {
       <div className="coach-chat-log" ref={listRef}>
         {chat.log.length === 0 && <p className="coach-chat-empty">{t("보는 사람이 보낸 채팅이 여기에 뜹니다")}</p>}
         {chat.log.map((m) => (
-          <p key={m.id} className={m.from === 0 ? "me" : ""}><b>{m.name}</b>{m.text}</p>
+          <p key={m.id} className={m.from === 0 ? "me" : ""}><b>{msgName(m, chat.names)}</b>{m.text}</p>
         ))}
       </div>
       <input className="coach-chat-input" value={text} maxLength={CHAT_MAX} placeholder={t("채팅 (Enter 로 보내기)")}

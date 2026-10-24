@@ -8,10 +8,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { I18nProvider, useI18n, type Locale } from "./i18n";
-import { COACH_ICE, COACH_MAX, COACH_WS, CHAT_MAX, NAME_MAX, anonName, cardKey, coachName, setCoachName, type CoachInfo, type CoachMsg, type CoachPings } from "./lens/coach";
+import { COACH_ICE, COACH_MAX, COACH_WS, CHAT_MAX, NAME_MAX, cardKey, coachName, setCoachName, msgName, anonName, type CoachInfo, type CoachMsg, type CoachNames, type CoachVotes } from "./lens/coach";
 import type { BridgePipCard } from "./lens/bridge";
+import { Thumb } from "./lens/thumb";
 
 type Phase = "connecting" | "waiting" | "live" | "full" | "ended" | "kicked" | "hostgone" | "failed" | "bad";
+
+/** 다시 이어지지 않는 상태 — 화면 전체를 덮어 알린다 */
+const OVER: Phase[] = ["ended", "kicked", "full", "failed", "bad"];
 
 function codeFromUrl(): string {
   const m = location.pathname.match(/\/w\/([a-z2-9]{8})\/?$/i);
@@ -28,9 +32,12 @@ function WatchInner() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [phase, setPhase] = useState<Phase>("connecting");
   const [info, setInfo] = useState<CoachInfo | null>(null);
-  const [pings, setPings] = useState<CoachPings>({});
+  const [votes, setVotes] = useState<CoachVotes>({});
   const [myId, setMyId] = useState<number | null>(null);
-  const [myPing, setMyPing] = useState<string | null>(null);
+  // 내 표 — 카드 열쇠 → 1(추천)·-1(비추천). 하는 사람이 노드가 바뀔 때 표를 비우면 그 현황을 보고 따라 비운다
+  const [myVotes, setMyVotes] = useState<Record<string, 1 | -1>>({});
+  const [me, setMe] = useState<number | null>(null);   // 채팅 쓴 사람 열쇠 — 내 줄 표시용
+  const [names, setNames] = useState<CoachNames>({});
   const dcRef = useRef<RTCDataChannel | null>(null);
   // 채팅 — 하는 사람이 나눠 주는 줄을 받는다. 닉네임은 이 브라우저에 두고 연결되면 하는 사람에게 알린다 (2026-10-24)
   const [chat, setChat] = useState<CoachMsg[]>([]);
@@ -59,12 +66,19 @@ function WatchInner() {
         const dc = e.channel; dcRef.current = dc;
         dc.onopen = () => { const n = coachName(); if (n) dc.send(JSON.stringify({ t: "name", name: n })); };
         dc.onmessage = (ev) => {
-          let m: { t?: string } & Partial<CoachInfo> & { pings?: CoachPings; m?: CoachMsg; log?: CoachMsg[]; off?: boolean };
+          let m: { t?: string } & Partial<CoachInfo> & { votes?: CoachVotes; m?: CoachMsg; log?: CoachMsg[]; off?: boolean; names?: CoachNames; a?: number };
           try { m = JSON.parse(String(ev.data)); } catch { return; }
           if (m.t === "info") setInfo(m as CoachInfo);
-          else if (m.t === "pings") setPings(m.pings ?? {});
+          else if (m.t === "votes") {
+            const vs = m.votes ?? {};
+            setVotes(vs);
+            // 하는 사람 쪽에서 표가 비워졌으면(노드가 바뀜) 내 표시도 지운다
+            setMyVotes((cur) => Object.fromEntries(Object.entries(cur).filter(([k]) => vs[k] && (vs[k].up.length || vs[k].down.length))) as Record<string, 1 | -1>);
+          }
+          else if (m.t === "you" && typeof m.a === "number") setMe(m.a);
+          else if (m.t === "names") setNames(m.names ?? {});
           else if (m.t === "chat" && m.m) { const one = m.m; setChat((v) => [...v.filter((x) => x.id !== one.id), one].slice(-60)); }
-          else if (m.t === "chatlog") { setChat(m.log ?? []); setChatOff(!!m.off); }
+          else if (m.t === "chatlog") { setChat(m.log ?? []); setChatOff(!!m.off); if (m.names) setNames(m.names); }
           else if (m.t === "chatoff") setChatOff(!!m.off);
         };
       };
@@ -110,11 +124,12 @@ function WatchInner() {
     return () => { dead = true; window.clearTimeout(failTimer); ws?.close(); reset(); };
   }, []);
 
-  const ping = (c: BridgePipCard) => {
+  /** 추천(1)·비추천(-1) — 같은 걸 다시 누르면 취소 (사용자 지시 2026-10-24 "추천 비추천 기능") */
+  const vote = (c: BridgePipCard, v: 1 | -1) => {
     const key = cardKey(c);
-    const next = myPing === key ? null : key;
-    setMyPing(next);
-    try { dcRef.current?.send(JSON.stringify({ t: "ping", key })); } catch { /* 아직 안 열림 */ }
+    const next = myVotes[key] === v ? 0 : v;
+    setMyVotes((cur) => { const o = { ...cur }; if (next) o[key] = next; else delete o[key]; return o; });
+    try { dcRef.current?.send(JSON.stringify({ t: "vote", key, v: next })); } catch { /* 아직 안 열림 */ }
   };
   const say = () => {
     const v = text.trim();
@@ -151,24 +166,32 @@ function WatchInner() {
       <div className="watch-body">
         <section className="watch-video">
           <video ref={videoRef} autoPlay muted playsInline />
-          {phase !== "live" && <p className="watch-msg">{msg[phase]}</p>}
+          {phase !== "live" && !OVER.includes(phase) && <p className="watch-msg">{msg[phase]}</p>}
           {phase === "live" && info?.hidden && <p className="watch-msg">{t("하는 사람이 잠시 다른 화면을 보고 있어요")}</p>}
         </section>
         <aside className="watch-side">
           {fl && (fl.floor != null || fl.name) && (
             <p className="watch-floor">{fl.floor ? t("{n}층", { n: fl.floor }) : ""}{fl.name ? ` · ${fl.name}` : ""}{fl.grade != null ? ` · ${t("난이도 {n}", { n: fl.grade })}` : ""}</p>
           )}
-          <p className="watch-hint">{t("카드를 누르면 짚기 — 하는 사람 화면에 몇 명이 짚었는지 표시돼요. 다시 누르면 취소")}</p>
+          <p className="watch-hint">{t("카드마다 추천 · 비추천 — 하는 사람 화면에 몇 명이 눌렀는지 표시돼요. 다시 누르면 취소")}</p>
           <div className="watch-cards">
             {cards.map((c, i) => {
               const k = cardKey(c);
-              const n = pings[k]?.length ?? 0;
+              const v = votes[k];
+              const mine = myVotes[k];
               return (
-                <button type="button" key={`${k}:${i}`} className={`watch-card${myPing === k ? " mine" : ""}`} onClick={() => ping(c)}>
+                <div key={`${k}:${i}`} className={`watch-card${mine ? " mine" : ""}`}>
                   {c.img && <img src={c.img} alt="" width={36} height={36} />}
-                  <span><small>{c.kind}</small><b>{c.name}</b>{c.text && <em>{c.text}</em>}</span>
-                  {n > 0 && <i className="watch-ping">{"●".repeat(n)}</i>}
-                </button>
+                  <span>
+                    <small>{c.kind}{c.tag && <> · <i className="watch-tag">{c.tag}</i></>}</small><b>{c.name}</b>
+                    {c.text && <em>{c.text}</em>}
+                    {c.list && c.list.length > 0 && <em className="watch-list">{c.listLabel ? `${c.listLabel}: ` : ""}{c.list.join(", ")}</em>}
+                  </span>
+                  <span className="watch-vote">
+                    <button type="button" className={`up${mine === 1 ? " on" : ""}`} aria-pressed={mine === 1} onClick={() => vote(c, 1)} title={t("추천")}><Thumb />{v?.up.length ? <span>{v.up.length}</span> : null}</button>
+                    <button type="button" className={`down${mine === -1 ? " on" : ""}`} aria-pressed={mine === -1} onClick={() => vote(c, -1)} title={t("비추천")}><Thumb down />{v?.down.length ? <span>{v.down.length}</span> : null}</button>
+                  </span>
+                </div>
               );
             })}
             {!cards.length && <p className="watch-empty">{t("하는 사람의 PRTS 링크가 무언가를 인식하면 여기에 카드가 뜹니다")}</p>}
@@ -184,7 +207,7 @@ function WatchInner() {
             <div className="watch-chat-log" ref={logRef}>
               {chat.length === 0 && <p className="watch-empty">{t("채팅은 저장되지 않습니다 — 방이 닫히면 사라져요")}</p>}
               {chat.map((c) => (
-                <p key={c.id} className={c.from === 0 ? "host" : c.from === myId ? "me" : ""}><b>{c.name}</b>{c.text}</p>
+                <p key={c.id} className={c.from === 0 ? "host" : c.from === me ? "me" : ""}><b>{msgName(c, names)}</b>{c.text}</p>
               ))}
             </div>
             <input className="watch-chat-input" value={text} maxLength={CHAT_MAX} disabled={chatOff || phase !== "live"}
@@ -193,6 +216,12 @@ function WatchInner() {
           </section>
         </aside>
       </div>
+      {/* 끝·내보냄·꽉 참·연결 안 됨 — 화면 전체를 흐리게 덮고 가운데 띠로 (사용자 지시 2026-10-24 "너무 밑에 나와서 눈에 안 띈다") */}
+      {OVER.includes(phase) && (
+        <div className="watch-over" role="alertdialog" aria-live="assertive">
+          <p>{msg[phase]}</p>
+        </div>
+      )}
     </main>
   );
 }

@@ -32,7 +32,7 @@ import { LENS_ITEM_SECTIONS, type LensGoto, type LensOutcome } from "./lens/matc
 import { recognizeShot, warmData, ocrLangFor, resetGradeCache } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
-import { useBridgeWatch, noteBridge, bridgeLock, bridgeSession, logBridgeEvent, memoBridgeScene, setBridgePipNode, setBridgePipRelics, setBridgePipFloor, bridgePipFloor, bridgePipRelics, type BridgeLogEvent, type BridgePipCard } from "./lens/bridge";
+import { useBridgeWatch, noteBridge, bridgeLock, bridgeSession, logBridgeEvent, memoBridgeScene, setBridgePipNode, bridgePipNode, setBridgePipRelics, setBridgePipFloor, bridgePipFloor, bridgePipRelics, type BridgeLogEvent, type BridgePipCard } from "./lens/bridge";
 import { createPortal } from "react-dom";
 import { BridgeTopicButton, useBridgePipWindow, setBridgePipExternal } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
@@ -617,6 +617,18 @@ function StageModal({ pair, grade, onClose, onOpenEnemy, inline }: {
   // 받는 대미지 감소(guard)는 수치에 못 넣는 효과라 칸 대신 제목 밑 한 줄로 — 같은 값끼리 묶는다
   const guards = new Map<number, string[]>();
   for (const r of rows) if (r.s.guard > 0) guards.set(r.s.guard, [...(guards.get(r.s.guard) ?? []), nmText(r.e.name, r.e.cn)]);
+  // PRTS 창(inline)에서 일반/긴급을 바꾸면 작은 창 노드 카드(훈수방 보는 사람에게도 가는 것)도 따라 바꾼다 — 종류 옆 '긴급 작전' 표시와
+  // 교체 룬이 적용된 등장 적. 카드 열쇠(종류·이름)는 그대로라 추천·비추천이 남는다 (사용자 지적 2026-10-24 "하는 사람은 바뀌는데 시청자는 안 바뀜")
+  useEffect(() => {
+    if (!inline) return;
+    const cur = bridgePipNode();
+    if (!cur || !cur.name.endsWith(pair.n.name)) return;
+    const foes = stage.enemies.map((se) => data.enemies[isEmg ? (stage.emg?.replace?.[se.key] ?? se.key) : se.key])
+      .filter((e): e is NonNullable<typeof e> => !!e).slice(0, 8);
+    const abs = (u: string) => new URL(u, window.location.href).href;
+    setBridgePipNode({ ...cur, tag: isEmg ? t("긴급 작전") : undefined, list: foes.map((e) => e.name),
+      listImgs: foes.map((e) => (e.img ? abs(asset(`/rogue/enemy/${e.img}.webp`)) : undefined)) });
+  }, [mode, inline]); // eslint-disable-line react-hooks/exhaustive-deps
   // PRTS 창(inline)에서는 등장 적을 접어 둔다 — 적 칸이 길어 밑의 소장품이 묻혔다 (사용자 지시 2026-10-13 "열어야 열리게")
   const [foesOpen, setFoesOpen] = useState(!inline);
   return (

@@ -341,6 +341,7 @@ export const bridgeLastScan = () => lastScan;
 // ── 작은 창(문서 PiP) 카드 (2026-10-12 시험판) — 게임 위에 떠 있는 창에 '방금 인식한 것'을 보여 준다.
 // 탭(rogue.tsx)이 인식할 때마다 채우고, 토스트(bridge-button.tsx)가 PiP 창에 그린다.
 export type BridgePipCard = { kind: string; name: string; text?: string | null; list?: string[]; listLabel?: string;
+  /** 종류 옆 덧붙임 — 작전의 '긴급 작전' 등. 카드 열쇠(cardKey)에는 안 들어가 바꿔도 추천·비추천이 남는다 */ tag?: string;
   /** 섬네일 (절대 주소 — 작은 창 문서는 about:blank 라 상대 주소가 안 풀린다) */ img?: string;
   /** 눌러 펼치면 보이는 큰 그림 (작전 지도) */ detailImg?: string;
   /** list 와 같은 순서의 작은 그림 (등장 적 얼굴) */ listImgs?: (string | undefined)[] };

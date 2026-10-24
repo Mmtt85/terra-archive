@@ -22,11 +22,15 @@ const UID_KEY = "ta:coach-uid";
 
 /** 보는 사람에게 보내는 인식 정보 한 덩어리 */
 export type CoachInfo = { t: "info"; node: BridgePipCard | null; relics: BridgePipCard[]; floor: ReturnType<typeof bridgePipFloor>; hidden: boolean };
-/** 짚기 현황 — 카드 키 → 짚은 보는 사람 번호들 */
-export type CoachPings = Record<string, number[]>;
+/** 추천·비추천 현황 — 카드 키 → 추천한/비추천한 보는 사람 번호들. 한 사람이 카드마다 하나씩 (사용자 지시 2026-10-24 "추천 비추천 기능") */
+export type CoachVotes = Record<string, { up: number[]; down: number[] }>;
 export const cardKey = (c: Pick<BridgePipCard, "kind" | "name">) => `${c.kind}:${c.name}`;
-/** 채팅 한 줄 — from 0 = 하는 사람 */
+/** 채팅 한 줄 — from = 쓴 사람 열쇠(0 = 하는 사람, 보는 사람은 연결마다 새 번호). 이름은 줄에 박지 않고 names 로 그때그때 찾는다 —
+ *  중간에 닉네임을 바꾸면 지난 줄도 새 닉네임으로 보여야 한다 (사용자 지시 2026-10-24). name 은 names 에 없을 때의 대비 */
 export type CoachMsg = { id: number; from: number; name: string; text: string; at: number };
+/** 쓴 사람 열쇠 → 지금 이름 */
+export type CoachNames = Record<string, string>;
+export const msgName = (m: CoachMsg, names: CoachNames) => names[String(m.from)] ?? m.name;
 export const CHAT_MAX = 80;      // 한 줄 글자 수
 export const NAME_MAX = 12;
 /** 닉네임을 안 쓴 보는 사람 이름표 — 'cannot 1~3' (번호는 방 워커가 비어 있는 가장 작은 수로 준다. 사용자 지시 2026-10-24) */
@@ -37,9 +41,13 @@ const NAME_KEY = "ta:coach-name";
 /** 글 다듬기 — 제어 문자를 빼고 줄바꿈은 띄어쓰기로, 길이 제한 */
 export const cleanText = (v: unknown, max: number) => typeof v === "string" ? v.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max) : "";
 export function coachName(): string { try { return cleanText(localStorage.getItem(NAME_KEY), NAME_MAX); } catch { return ""; } }
-export function setCoachName(v: string): void { try { localStorage.setItem(NAME_KEY, cleanText(v, NAME_MAX)); } catch { /* 이번만 */ } changed(); }
+export function setCoachName(v: string): void {
+  try { localStorage.setItem(NAME_KEY, cleanText(v, NAME_MAX)); } catch { /* 이번만 */ }
+  if (live) sendAll({ t: "names", names: coachNames() });
+  changed();
+}
 
-type Peer = { id: number; pc: RTCPeerConnection; dc: RTCDataChannel | null; ping: string | null; open: boolean; name: string; lastChat: number };
+type Peer = { id: number; a: number; pc: RTCPeerConnection; dc: RTCDataChannel | null; votes: Map<string, 1 | -1>; open: boolean; name: string; lastChat: number };
 let ws: WebSocket | null = null;
 let code = "";
 let peers = new Map<number, Peer>();
@@ -51,14 +59,23 @@ let chatLog: CoachMsg[] = [];
 let chatSeq = 0;
 let chatOff = false;
 let chatUnread = 0;
+let authorSeq = 0;
+const leftNames = new Map<number, string>();   // 나간 사람의 마지막 이름 — 지난 줄이 번호로 바뀌지 않게
 const subs = new Set<() => void>();
 const changed = () => { for (const cb of subs) cb(); };
 
 export function onCoachChange(cb: () => void): () => void { subs.add(cb); return () => { subs.delete(cb); }; }
 export const coachState = () => ({ live, code, url: code ? `${location.origin}${location.pathname.startsWith("/en") ? "/en" : location.pathname.startsWith("/ja") ? "/ja" : ""}/w/${code}` : "",
   viewers: [...peers.values()].filter((p) => p.open).length, error: failMsg });
-/** 채팅 — 지금까지 온 줄(최근 CHAT_KEEP)·꺼짐·안 읽은 수 */
-export const coachChat = () => ({ log: chatLog, off: chatOff, unread: chatUnread });
+/** 쓴 사람 열쇠 → 지금 이름 (하는 사람·지금 있는 사람·나간 사람) */
+export function coachNames(): CoachNames {
+  const out: CoachNames = { "0": coachName() || "하는 사람" };
+  for (const [a, n] of leftNames) out[String(a)] = n;
+  for (const p of peers.values()) out[String(p.a)] = p.name || anonName(p.id);
+  return out;
+}
+/** 채팅 — 지금까지 온 줄(최근 CHAT_KEEP)·꺼짐·안 읽은 수·이름표 */
+export const coachChat = () => ({ log: chatLog, off: chatOff, unread: chatUnread, names: coachNames() });
 export function coachChatRead(): void { if (chatUnread) { chatUnread = 0; changed(); } }
 function pushChat(from: number, name: string, text: string): void {
   const m: CoachMsg = { id: ++chatSeq, from, name, text, at: Date.now() };
@@ -75,10 +92,10 @@ export function coachSay(text: string): void {
 }
 /** 채팅 끄기·켜기 — 끄면 보는 사람 글을 받지 않는다 (지난 줄은 그대로) */
 export function setCoachChatOff(v: boolean): void { chatOff = v; sendAll({ t: "chatoff", off: v }); changed(); }
-/** 카드별 짚기 수 */
-export function coachPings(): CoachPings {
-  const out: CoachPings = {};
-  for (const p of peers.values()) if (p.ping) (out[p.ping] ??= []).push(p.id);
+/** 카드별 추천·비추천 */
+export function coachVotes(): CoachVotes {
+  const out: CoachVotes = {};
+  for (const p of peers.values()) for (const [k, v] of p.votes) { const r = (out[k] ??= { up: [], down: [] }); (v > 0 ? r.up : r.down).push(p.id); }
   return out;
 }
 
@@ -107,9 +124,9 @@ function onBridge() {
     hiddenNow = hide;
     for (const p of peers.values()) for (const s of p.pc.getSenders()) if (s.track) s.track.enabled = !hide;
   }
-  // 노드가 바뀌면 짚기를 비운다 — 지난 화면의 투표가 남지 않게
+  // 노드가 바뀌면 추천·비추천을 비운다 — 지난 화면의 투표가 남지 않게
   const nk = bridgePipNode() ? cardKey(bridgePipNode()!) : "";
-  if (nk !== lastNodeKey) { lastNodeKey = nk; let any = false; for (const p of peers.values()) if (p.ping) { p.ping = null; any = true; } if (any) { sendAll({ t: "pings", pings: coachPings() }); changed(); } }
+  if (nk !== lastNodeKey) { lastNodeKey = nk; let any = false; for (const p of peers.values()) if (p.votes.size) { p.votes.clear(); any = true; } if (any) { sendAll({ t: "votes", votes: coachVotes() }); changed(); } }
   sendAll(infoNow());
 }
 
@@ -118,7 +135,7 @@ async function addPeer(id: number) {
   if (!stream || !ws) return;
   peers.get(id)?.pc.close();
   const pc = new RTCPeerConnection({ iceServers: COACH_ICE });
-  const peer: Peer = { id, pc, dc: null, ping: null, open: false, name: "", lastChat: 0 };
+  const peer: Peer = { id, a: ++authorSeq, pc, dc: null, votes: new Map(), open: false, name: "", lastChat: 0 };
   peers.set(id, peer);
   const src = stream.getVideoTracks()[0];
   const track = src.clone();
@@ -134,25 +151,29 @@ async function addPeer(id: number) {
   peer.dc = dc;
   dc.onopen = () => {
     peer.open = true;
-    dc.send(JSON.stringify(infoNow())); dc.send(JSON.stringify({ t: "pings", pings: coachPings() }));
-    dc.send(JSON.stringify({ t: "chatlog", log: chatLog, off: chatOff }));
+    dc.send(JSON.stringify(infoNow())); dc.send(JSON.stringify({ t: "votes", votes: coachVotes() }));
+    dc.send(JSON.stringify({ t: "you", a: peer.a }));
+    dc.send(JSON.stringify({ t: "chatlog", log: chatLog, off: chatOff, names: coachNames() }));
+    sendAll({ t: "names", names: coachNames() });
     changed();
   };
   dc.onclose = () => { peer.open = false; changed(); };
   dc.onmessage = (e) => {
-    let m: { t?: string; key?: string | null; name?: unknown; text?: unknown }; try { m = JSON.parse(String(e.data)); } catch { return; }
-    if (m.t === "name") { peer.name = cleanText(m.name, NAME_MAX); changed(); return; }
+    let m: { t?: string; key?: string | null; v?: unknown; name?: unknown; text?: unknown }; try { m = JSON.parse(String(e.data)); } catch { return; }
+    if (m.t === "name") { peer.name = cleanText(m.name, NAME_MAX); sendAll({ t: "names", names: coachNames() }); changed(); return; }
     if (m.t === "chat") {
       const now = Date.now();
       const text = cleanText(m.text, CHAT_MAX);
       if (chatOff || !text || now - peer.lastChat < CHAT_GAP) return;
       peer.lastChat = now;
-      pushChat(id, peer.name || anonName(id), text);
+      pushChat(peer.a, peer.name || anonName(id), text);
       return;
     }
-    if (m.t === "ping") {
-      peer.ping = typeof m.key === "string" && m.key.length < 200 ? (peer.ping === m.key ? null : m.key) : null;   // 같은 카드 다시 누르면 취소
-      sendAll({ t: "pings", pings: coachPings() });
+    // 추천(1)·비추천(-1)·취소(0) — 보는 사람이 원하는 상태를 보낸다
+    if (m.t === "vote" && typeof m.key === "string" && m.key.length < 200) {
+      if (m.v === 1 || m.v === -1) { if (!peer.votes.has(m.key) && peer.votes.size >= 40) return; peer.votes.set(m.key, m.v); }
+      else peer.votes.delete(m.key);
+      sendAll({ t: "votes", votes: coachVotes() });
       changed();
     }
   };
@@ -170,7 +191,9 @@ function dropPeer(id: number) {
   p.pc.getSenders().forEach((s) => s.track?.stop());
   p.pc.close();
   peers.delete(id);
-  sendAll({ t: "pings", pings: coachPings() });
+  leftNames.set(p.a, p.name || anonName(p.id));
+  sendAll({ t: "votes", votes: coachVotes() });
+  sendAll({ t: "names", names: coachNames() });
   changed();
 }
 
@@ -181,7 +204,7 @@ export function startCoach(fresh = false): void {
   stopCoach(false);
   code = newCode();
   live = true; failMsg = ""; hiddenNow = bridgeNotArknights();
-  chatLog = []; chatUnread = 0; chatOff = false;
+  chatLog = []; chatUnread = 0; chatOff = false; leftNames.clear();
   setBridgeShareRate(true);
   unsub = onBridgeChange(onBridge);
   connect();

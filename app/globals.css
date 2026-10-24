@@ -34904,6 +34904,42 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .bridge-pip-rg .coach-chat-log p.me b { color: var(--rggold); }
 .bridge-pip-rg .coach-chat-input, .bridge-pip-rg .coach-chat-name { background: var(--rgbg, #120708); border-color: var(--rgline); color: var(--rgink); border-radius: 0; }
 .bridge-pip-rg .coach-chat-off { border-color: var(--rgline); color: var(--rgmut); border-radius: 0; }
+/* 채팅 입력칸 — 폭 760px 이하 화면은 입력 글자를 16px 로 못 박는 전역 규칙(아이폰 확대 방지)에 걸려 작은 창에서 칸이 커졌다
+   (사용자 지적 2026-10-24 "엔터로 보내기 란이 너무 크다"). 작은 창은 PC 라 확대 걱정이 없어 되돌린다. 보는 사람 화면은 폰도 있어 16px 그대로 두고 높이만 */
+.bridge-pip .coach-chat-input, .bridge-pip .coach-chat-name { font-size: 12px !important; height: 28px; padding: 0 8px; line-height: 28px; }
+.watch-chat-input { height: 34px; padding: 0 10px; line-height: 34px; }
+.watch-chat-name { height: 26px; }
+/* 추천·비추천 — 보는 사람 카드의 ▲▼, 하는 사람 작은 창의 요약 줄 (2026-10-24) */
+.watch-vote { display: flex; flex-direction: column; gap: 4px; margin-left: auto; flex: none; }
+.watch-vote button {
+  min-width: 46px; padding: 4px 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white);
+  color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.thumb-ico { flex: none; display: inline-block; vertical-align: -2px; }
+.coach-ping .up, .coach-ping .down, .coach-votes .up, .coach-votes .down { display: inline-flex; align-items: center; gap: 3px; }
+.watch-vote button:hover { background: var(--btn-ghost-hover); color: var(--btn-ink-hover); }
+.watch-vote button.up.on { border-color: var(--lime-line); color: var(--lime-ink); }
+.watch-vote button.down.on { border-color: var(--bad); color: var(--bad); }
+.watch-tag { font-style: normal; font-weight: 700; color: var(--bad); }
+.watch-card em.watch-list { color: var(--muted); font-size: 11px; }
+.coach-ping .up, .coach-votes .up { color: var(--lime-ink); }
+.coach-ping .down, .coach-votes .down { color: var(--bad); margin-left: 4px; }
+.bridge-pip-tag { font-weight: 700; color: var(--bad); }
+.coach-votes { flex-basis: 100%; list-style: none; margin: 2px 0 0; padding: 6px 0 0; border-top: 1px solid var(--line); display: grid; gap: 2px; }
+.coach-votes li { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.coach-votes li > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.coach-votes li > b { flex: none; font-size: 12px; }
+.bridge-pip-rg .coach-votes { border-top-color: var(--rgline); }
+/* 끝났어요 등 — 화면 전체를 흐리게 덮고 가운데 띠 (2026-10-24) */
+.watch-over {
+  position: fixed; inset: 0; z-index: 50; display: flex; align-items: center;
+  background: color-mix(in srgb, #000 55%, transparent); -webkit-backdrop-filter: grayscale(1); backdrop-filter: grayscale(1);
+}
+.watch-over p {
+  width: 100%; margin: 0; padding: 22px 16px; text-align: center; font-size: 18px; font-weight: 800; line-height: 1.5;
+  background: var(--bg-panel); color: var(--ink); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
 @media (max-width: 760px) {
   .watch-body { grid-template-columns: minmax(0, 1fr); padding: 8px 12px 12px; }
   .watch-video video { max-height: 56dvh; }
