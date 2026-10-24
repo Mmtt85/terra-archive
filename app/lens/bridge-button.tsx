@@ -259,7 +259,7 @@ function CoachControls({ t }: { t: T }) {
   const st = useCoach();
   const [copied, setCopied] = useState(false);
   const [copyFail, setCopyFail] = useState(false);
-  // 공개방 켜기 확인 — 화면 속 닉네임·UID 가 모르는 사람에게 보일 수 있어 처음 켤 때 한 번 묻는다
+  // 공개방 켜기 확인 — 내 정보 '게임 화면 같이 보기' 목록에 올라 링크 없는 사람도 들어온다고 한 번 알린다 (닉네임·UID 노출은 상관없다, 사용자 2026-10-25)
   const [pubAsk, setPubAsk] = useState(false);
   const [asking, setAsking] = useState(false);   // 화면 공유를 눌러 방 제목을 묻는 중
   // 지금은 관리자(운영자 UID 로 내 정보 동기화한 브라우저)만 — 시험 중 (사용자 지시 2026-10-24 "화면 공유 버튼은 관리자만")
@@ -322,7 +322,7 @@ function CoachControls({ t }: { t: T }) {
         {/* 공개로 바꿀 때 확인 — 단추 밑에 떠 있는 상자 (공유 줄을 밀지 않는다, 사용자 지시 2026-10-25) */}
         {pubAsk && !coachPublic() && (
           <div className="coach-pub-ask" role="alertdialog">
-            <p>{t("공개방으로 바꾸면 내 정보의 '게임 화면 같이 보기' 목록에 이 방이 올라와, 모르는 사람도 들어와 이 화면을 볼 수 있어요. 화면에 닉네임·UID 가 보이지 않는지 한번 확인해 주세요.")}</p>
+            <p>{t("공개방으로 바꾸면 내 정보의 '게임 화면 같이 보기' 목록에 이 방이 올라와, 링크가 없는 사람도 들어와 볼 수 있어요.")}</p>
             <div>
               <button type="button" className="bridge-toast-node" onClick={() => { setCoachPublic(true); setPubAsk(false); }}>{t("공개방으로")}</button>
               <button type="button" className="bridge-toast-off" onClick={() => setPubAsk(false)}>{t("취소")}</button>

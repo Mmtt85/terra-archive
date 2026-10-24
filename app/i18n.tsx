@@ -5003,7 +5003,7 @@ const D: Record<string, Pair> = {
   "비공개방": ["Private room", "非公開ルーム"],
   "공개 목록에 올라 있어요 — 누구나 들어올 수 있어요": ["Listed publicly — anyone can join", "公開リストに載っています — 誰でも入れます"],
   "링크를 받은 사람만 들어와요": ["Only people with the link can join", "リンクを受け取った人だけ入れます"],
-  "공개방으로 바꾸면 내 정보의 '게임 화면 같이 보기' 목록에 이 방이 올라와, 모르는 사람도 들어와 이 화면을 볼 수 있어요. 화면에 닉네임·UID 가 보이지 않는지 한번 확인해 주세요.": ["As a public room, it's listed under 'Watch Game Together' in My Info, so strangers can join and watch this screen. Please check your nickname or UID isn't visible.", "公開ルームにするとマイ情報の「ゲーム画面を一緒に見る」一覧に載り、知らない人も入ってこの画面を見られます。ニックネーム・UIDが映っていないか確認してください。"],
+  "공개방으로 바꾸면 내 정보의 '게임 화면 같이 보기' 목록에 이 방이 올라와, 링크가 없는 사람도 들어와 볼 수 있어요.": ["As a public room, it's listed under 'Watch Game Together' in My Info, so people without the link can join too.", "公開ルームにするとマイ情報の「ゲーム画面を一緒に見る」一覧に載り、リンクがない人も入れます。"],
   "공개방으로": ["Make public", "公開にする"],
   "지금 공개로 열린 방이에요. 들어가면 하는 사람의 게임 화면을 같이 보며 채팅·추천을 보낼 수 있어요.": ["Rooms open to the public right now. Join to watch the player's game together and send chat and votes.", "いま公開中のルームです。入るとプレイヤーのゲーム画面を一緒に見ながらチャット・おすすめを送れます。"],
   "공개방 목록은 내 정보를 동기화한 뒤에 볼 수 있어요.": ["Sync My Info to see public rooms.", "公開ルーム一覧はマイ情報を同期すると見られます。"],
