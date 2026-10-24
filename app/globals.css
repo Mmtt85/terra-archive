@@ -34998,6 +34998,34 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .coach-pub-ask p { flex-basis: 100%; margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink); white-space: normal; }
 .bridge-pip-rg .coach-pub > button { border-color: var(--rgline); color: var(--rgink); border-radius: 0; }
 .bridge-pip-rg .coach-pub > button.on { border-color: var(--rg-hue, var(--rggold)); color: var(--rggold); }
+/* 하는 사람 채팅 이모티콘 (2026-10-25) */
+.coach-chat-row { position: relative; display: flex; gap: 6px; }
+.coach-chat-row .coach-chat-input { flex: 1 1 auto; min-width: 0; }
+.coach-emote-btn { flex: none; width: 32px; padding: 0; border: 1px solid var(--line); background: #0e1214; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: var(--r-sm); }
+.coach-emote-btn.on, .coach-emote-btn:hover { border-color: var(--lime-line); }
+.coach-emotes {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 45; display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; padding: 5px;
+  background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--sh-2);
+}
+.coach-emotes button { padding: 1px; border: 1px solid var(--line); border-radius: var(--r-sm); background: #0e1214; cursor: pointer; line-height: 0; }
+.coach-emotes button:hover { border-color: var(--lime-line); }
+.bridge-pip-rg .coach-emote-btn, .bridge-pip-rg .coach-emotes button { border-color: var(--rgline); border-radius: 0; }
+/* 추천·비추천 알림 — 작은 창 가운데 위쪽에 크게 떴다 사라진다, 표 숫자는 바뀔 때 반짝 (2026-10-25) */
+.coach-votefx { position: fixed; left: 50%; top: 38%; transform: translateX(-50%); z-index: 60; display: grid; gap: 6px; pointer-events: none; width: max-content; max-width: 92vw; }
+.coach-votefx > span {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 800;
+  background: color-mix(in srgb, #000 78%, transparent); color: #fff; box-shadow: 0 4px 18px rgba(0,0,0,.45);
+  animation: coach-votefx 3.4s ease-out forwards;
+}
+.coach-votefx > span.up { border: 2px solid var(--lime-line); }
+.coach-votefx > span.up svg { color: var(--lime); }
+.coach-votefx > span.down { border: 2px solid var(--bad); }
+.coach-votefx > span.down svg { color: var(--bad); }
+.coach-votefx small { font-size: 12px; font-weight: 600; color: #d8d8d8; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@keyframes coach-votefx { 0% { opacity: 0; scale: .7; } 10% { opacity: 1; scale: 1.08; } 18% { scale: 1; } 80% { opacity: 1; } 100% { opacity: 0; translate: 0 -12px; } }
+.coach-vote-badge { animation: coach-badge-pop .9s ease-out; }
+@keyframes coach-badge-pop { 0% { scale: 1.6; filter: brightness(1.8); } 100% { scale: 1; filter: none; } }
+@media (prefers-reduced-motion: reduce) { .coach-votefx > span, .coach-vote-badge { animation-timing-function: steps(1, end); } }
 .coach-stats { order: 5; flex-basis: 100%; list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .coach-copy-note { flex-basis: 100%; font-size: 12px; font-weight: 700; color: var(--lime-ink); }
 .bridge-pip input.coach-copy-url:not([type="checkbox"]) { flex-basis: 100%; font-size: 12px !important; padding: 4px 8px; border: 1px solid var(--line); background: var(--white); color: var(--ink); }
@@ -35019,6 +35047,46 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .watch-vote button.down.on { border-color: var(--bad); color: var(--bad); }
 .watch-tag { font-style: normal; font-weight: 700; color: var(--bad); }
 .watch-card em.watch-list { color: var(--muted); font-size: 11px; }
+/* 새로 인식된 카드 — 영상 위 겹침(위쪽 가운데)·접힌 칩(오른쪽 위)·옆 목록 반짝임 (2026-10-25).
+   밝은 지도 위에서도 읽히게 어두운 반투명 + 뒤 흐림 + 흰 글자 */
+.watch-ov {
+  position: absolute; top: 10%; left: 50%; transform: translateX(-50%); z-index: 4; width: min(92%, 440px);
+  display: grid; gap: 6px; padding: 8px; border-radius: var(--r-md);
+  /* 게임 화면이 비치게 옅게, 흐림은 약하게 — 글자는 그림자로 읽히게 (사용자 지시 2026-10-25 "살짝 투명하게") */
+  background: rgba(10, 12, 14, .42); -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px);
+  border: 1px solid rgba(255, 255, 255, .16); box-shadow: 0 4px 16px rgba(0, 0, 0, .3); color: #fff;
+  text-shadow: 0 1px 2px #000, 0 0 6px rgba(0, 0, 0, .8);
+  animation: watch-ov-in .35s ease-out;
+}
+.watch-ov-card { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.watch-ov-card img { flex: none; border-radius: var(--r-xs); }
+.watch-ov-card img.map { width: 64px; height: 38px; object-fit: cover; }
+.watch-ov-card > span:not(.watch-ov-vote) { display: grid; min-width: 0; }
+.watch-ov-card small { font-size: 11px; color: #c9c9c9; }
+.watch-ov-card b { font-size: 15px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.watch-ov-vote { margin-left: auto; display: flex; gap: 4px; flex: none; }
+.watch-ov-vote button {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid rgba(255,255,255,.25); border-radius: var(--r-sm);
+  background: rgba(0,0,0,.35); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.watch-ov-vote button.up.on { border-color: var(--lime); color: var(--lime); }
+.watch-ov-vote button.down.on { border-color: #ff6b6b; color: #ff6b6b; }
+.watch-ov .watch-tag { color: #ff8a8a; }
+.watch-ov-close { position: absolute; top: 2px; right: 4px; border: 0; background: none; color: #bbb; font-size: 12px; cursor: pointer; padding: 2px; }
+.watch-ov-chip {
+  position: absolute; top: 8px; right: 8px; z-index: 4; max-width: 60%; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.2); background: rgba(10, 12, 14, .45); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+  text-shadow: 0 1px 2px #000;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+@keyframes watch-ov-in { from { opacity: 0; translate: 0 -10px; } to { opacity: 1; translate: 0 0; } }
+.watch-card.fresh { animation: watch-card-fresh 1.2s ease-out 3; }
+@keyframes watch-card-fresh { 0% { border-color: var(--lime-line); box-shadow: 0 0 0 2px var(--lime-line); } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .watch-ov, .watch-card.fresh { animation: none; } .watch-card.fresh { border-color: var(--lime-line); } }
+.watch-card img.watch-card-map { width: 72px; height: 44px; object-fit: cover; border-radius: var(--r-xs); flex: none; }
+.watch-card .watch-faces { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.watch-card .watch-faces img { border-radius: var(--r-xs); background: var(--bg-soft); }
+.watch-card .watch-faces i { font-style: normal; font-size: 11px; color: var(--muted); }
 .coach-ping .up, .coach-votes .up { color: var(--lime-ink); }
 .coach-ping .down, .coach-votes .down { color: var(--bad); margin-left: 4px; }
 .bridge-pip-tag { font-weight: 700; color: var(--bad); }

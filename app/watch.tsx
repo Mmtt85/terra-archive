@@ -41,6 +41,31 @@ function WatchInner() {
   const [names, setNames] = useState<CoachNames>({});
   const [reacts, setReacts] = useState<CoachReact[]>([]);
   const [eraOpen, setEraOpen] = useState(false);
+  // 새로 인식된 카드 — 영상 위에 잠깐 겹쳐 보이고(A) 옆 목록의 그 카드는 반짝인다(C). 영상만 보다가 노드가 바뀐 걸 놓쳤다는 시험 소감
+  // (사용자 지시 2026-10-25). 겹친 카드는 5초 뒤 영상 오른쪽 위 칩으로 접히고, 칩을 누르면 다시 펼친다
+  const [ov, setOv] = useState<{ id: number; cards: BridgePipCard[]; open: boolean } | null>(null);
+  const [fresh, setFresh] = useState<Record<string, number>>({});
+  const seenKeys = useRef<Set<string> | null>(null);
+  const ovTimer = useRef<number | undefined>(undefined);
+  const ovSeq = useRef(0);
+  const openOv = (cards: BridgePipCard[]) => {
+    const id = ++ovSeq.current;
+    setOv({ id, cards, open: true });
+    window.clearTimeout(ovTimer.current);
+    ovTimer.current = window.setTimeout(() => setOv((o) => (o && o.id === id ? { ...o, open: false } : o)), 5000);
+  };
+  const noteInfo = (inf: CoachInfo) => {
+    const all = [...(inf.node ? [inf.node] : []), ...(inf.relics ?? [])];
+    const prev = seenKeys.current;
+    seenKeys.current = new Set(all.map(cardKey));
+    if (!prev) return;   // 처음 받은 건 '새로'가 아니다
+    const news = all.filter((c) => !prev.has(cardKey(c)));
+    if (!news.length) return;
+    const now = Date.now();
+    setFresh((f) => ({ ...Object.fromEntries(Object.entries(f).filter(([, at]) => now - at < 4000)), ...Object.fromEntries(news.map((c) => [cardKey(c), now])) }));
+    window.setTimeout(() => setFresh((f) => Object.fromEntries(Object.entries(f).filter(([, at]) => Date.now() - at < 4000))), 4100);
+    openOv(news.slice(0, 3));
+  };
   const [emoteOpen, setEmoteOpen] = useState(false);
   // 데이터 절약 — 켜면 하는 사람이 이 사람에게만 540p 30프레임으로 보낸다. 폰이면 처음부터 켜짐, 고른 값은 이 브라우저에 기억 (2026-10-25)
   const [save, setSave] = useState(false);
@@ -102,7 +127,7 @@ function WatchInner() {
         dc.onmessage = (ev) => {
           let m: { t?: string } & Partial<CoachInfo> & { votes?: CoachVotes; m?: CoachMsg; log?: CoachMsg[]; off?: boolean; names?: CoachNames; a?: number };
           try { m = JSON.parse(String(ev.data)); } catch { return; }
-          if (m.t === "info") setInfo(m as CoachInfo);
+          if (m.t === "info") { setInfo(m as CoachInfo); noteInfo(m as CoachInfo); }
           else if (m.t === "votes") {
             const vs = m.votes ?? {};
             setVotes(vs);
@@ -217,6 +242,31 @@ function WatchInner() {
           <video ref={videoRef} autoPlay muted playsInline />
           {phase !== "live" && !OVER.includes(phase) && <p className="watch-msg">{msg[phase]}</p>}
           {phase === "live" && info?.hidden && <p className="watch-msg">{t("하는 사람이 잠시 다른 화면을 보고 있어요")}</p>}
+          {/* 새로 인식된 노드·소장품 — 영상 위쪽 가운데에 잠깐, 그 뒤 오른쪽 위 칩 */}
+          {ov && phase === "live" && (ov.open ? (
+            <div className="watch-ov" role="status">
+              {ov.cards.map((c) => {
+                const k = cardKey(c);
+                const v = votes[k];
+                const mine = myVotes[k];
+                return (
+                  <div key={k} className="watch-ov-card">
+                    {c.img ? <img src={c.img} alt="" width={40} height={40} /> : c.detailImg ? <img className="map" src={c.detailImg} alt="" /> : null}
+                    <span><small>{c.kind}{c.tag && <> · <i className="watch-tag">{c.tag}</i></>}</small><b>{c.name}</b></span>
+                    <span className="watch-ov-vote">
+                      <button type="button" className={`up${mine === 1 ? " on" : ""}`} onClick={() => vote(c, 1)} aria-label={t("추천")}><Thumb />{v?.up.length ? v.up.length : null}</button>
+                      <button type="button" className={`down${mine === -1 ? " on" : ""}`} onClick={() => vote(c, -1)} aria-label={t("비추천")}><Thumb down />{v?.down.length ? v.down.length : null}</button>
+                    </span>
+                  </div>
+                );
+              })}
+              <button type="button" className="watch-ov-close" onClick={() => setOv((o) => (o ? { ...o, open: false } : o))} aria-label={t("접기")}>▴</button>
+            </div>
+          ) : (
+            <button type="button" className="watch-ov-chip" onClick={() => setOv((o) => (o ? { ...o, open: true } : o))} title={t("펼치기")}>
+              {ov.cards[0].kind} · {ov.cards[0].name}{ov.cards.length > 1 ? ` +${ov.cards.length - 1}` : ""}
+            </button>
+          ))}
           <div className="coach-react-layer" aria-hidden>
             {reacts.map((r) => (
               <span key={r.id} className="coach-react" style={{ left: `${12 + ((r.id * 37) % 70)}%` }}>
@@ -254,12 +304,19 @@ function WatchInner() {
               const v = votes[k];
               const mine = myVotes[k];
               return (
-                <div key={`${k}:${i}`} className={`watch-card${mine ? " mine" : ""}`}>
-                  {c.img && <img src={c.img} alt="" width={36} height={36} />}
+                <div key={`${k}:${i}`} className={`watch-card${mine ? " mine" : ""}${fresh[k] ? " fresh" : ""}`}>
+                  {/* 섬네일 — 소장품 등은 아이콘, 작전은 지도 그림 (하는 사람 작은 창과 같은 그림, 사용자 지시 2026-10-25) */}
+                  {c.img ? <img src={c.img} alt="" width={36} height={36} />
+                    : c.detailImg ? <img className="watch-card-map" src={c.detailImg} alt="" /> : null}
                   <span>
                     <small>{c.kind}{c.tag && <> · <i className="watch-tag">{c.tag}</i></>}</small><b>{c.name}</b>
                     {c.text && <em>{c.text}</em>}
-                    {c.list && c.list.length > 0 && <em className="watch-list">{c.listLabel ? `${c.listLabel}: ` : ""}{c.list.join(", ")}</em>}
+                    {c.list && c.list.length > 0 && (c.listImgs?.some(Boolean)
+                      // 등장 적 등은 얼굴 그림으로 — 이름은 그림에 마우스를 올리면
+                      ? <span className="watch-faces" aria-label={c.listLabel}>{c.list.map((n, k) => c.listImgs?.[k]
+                          ? <img key={k} src={c.listImgs[k]} alt={n} title={n} width={26} height={26} />
+                          : <i key={k}>{n}</i>)}</span>
+                      : <em className="watch-list">{c.listLabel ? `${c.listLabel}: ` : ""}{c.list.join(", ")}</em>)}
                   </span>
                   <span className="watch-vote">
                     <button type="button" className={`up${mine === 1 ? " on" : ""}`} aria-pressed={mine === 1} onClick={() => vote(c, 1)} title={t("추천")}><Thumb />{v?.up.length ? <span>{v.up.length}</span> : null}</button>

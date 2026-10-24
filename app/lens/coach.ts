@@ -202,6 +202,19 @@ export function setCoachPublic(v: boolean): void {
 }
 /** 지금 떠 있는 반응들 */
 export const coachReacts = () => reacts;
+/** 하는 사람도 반응을 보낸다 — 보는 사람 영상 위와 내 작은 창에 같이 뜬다 (사용자 지시 2026-10-25 "하는 사람은 이모지를 못 누른다") */
+export function coachReact(e: Emote): void { if (live && EMOTES.includes(e)) pushReact(0, e); }
+/** 추천·비추천이 들어온 순간 — 작은 창에 잠깐 크게 알린다 (사용자 지적 2026-10-25 "눌렀는지 티가 안 난다") */
+export type CoachVoteFx = { id: number; from: number; up: boolean; card: string; at: number };
+let voteFx: CoachVoteFx[] = [];
+let voteFxSeq = 0;
+export const coachVoteFx = () => voteFx;
+function pushVoteFx(from: number, up: boolean, key: string): void {
+  const now = Date.now();
+  const fx: CoachVoteFx = { id: ++voteFxSeq, from, up, card: key.slice(key.indexOf(":") + 1), at: now };
+  voteFx = [...voteFx.filter((x) => now - x.at < 3500), fx].slice(-4);
+  setTimeout(() => { voteFx = voteFx.filter((x) => Date.now() - x.at < 3500); changed(); }, 3550);
+}
 function pushReact(from: number, e: Emote): void {
   const now = Date.now();
   const r: CoachReact = { id: ++reactSeq, e, from, at: now };
@@ -322,7 +335,7 @@ async function addPeer(id: number) {
     }
     // 추천(1)·비추천(-1)·취소(0) — 보는 사람이 원하는 상태를 보낸다
     if (m.t === "vote" && typeof m.key === "string" && m.key.length < 200) {
-      if (m.v === 1 || m.v === -1) { if (!peer.votes.has(m.key) && peer.votes.size >= 40) return; peer.votes.set(m.key, m.v); }
+      if (m.v === 1 || m.v === -1) { if (!peer.votes.has(m.key) && peer.votes.size >= 40) return; peer.votes.set(m.key, m.v); pushVoteFx(peer.a, m.v === 1, m.key); }
       else peer.votes.delete(m.key);
       sendAll({ t: "votes", votes: coachVotes() });
       changed();

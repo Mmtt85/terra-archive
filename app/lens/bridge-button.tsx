@@ -10,7 +10,7 @@ import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } fro
 import { createPortal } from "react-dom";
 import { isOwnerUid } from "../visit-track";
 import { Thumb } from "./thumb";
-import { coachTitle, setCoachTitle, TITLE_MAX, coachPublic, setCoachPublic, QUALITIES, coachQuality, setCoachQuality, coachStats, coachReacts, emoteUrl, EMOTE_LABEL, coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
+import { coachReact, coachVoteFx, EMOTES, coachTitle, setCoachTitle, TITLE_MAX, coachPublic, setCoachPublic, QUALITIES, coachQuality, setCoachQuality, coachStats, coachReacts, emoteUrl, EMOTE_LABEL, coachVotes, msgName, coachState, cardKey, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
 import { useBridgeStatus, connectBridge, disconnectBridge, clearBridgeError, bridgeNotArknights, bridgeArkThumb, confirmArknights, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -362,7 +362,19 @@ function CoachReactLayer() {
   const st = useCoach();
   if (!st.live) return null;
   const names = coachChat().names;
+  const fx = coachVoteFx();
   return (
+    <>
+    {/* 추천·비추천 알림 — 들어온 순간 위쪽에 크게 (사용자 지적 2026-10-25 "눌렀는지 티가 안 난다") */}
+    {fx.length > 0 && (
+      <div className="coach-votefx" role="status">
+        {fx.map((x) => (
+          <span key={x.id} className={x.up ? "up" : "down"}>
+            <Thumb down={!x.up} size={18} /><b>{names[String(x.from)] ?? ""}</b><small>{x.card}</small>
+          </span>
+        ))}
+      </div>
+    )}
     <div className="coach-react-layer" aria-hidden>
       {coachReacts().map((r) => (
         <span key={r.id} className="coach-react" style={{ left: `${12 + ((r.id * 37) % 70)}%` }}>
@@ -371,6 +383,7 @@ function CoachReactLayer() {
         </span>
       ))}
     </div>
+    </>
   );
 }
 
@@ -381,7 +394,7 @@ export function CoachVoteBadge({ k }: { k: string }) {
   const v = st.live && k ? coachVotes()[k] : undefined;
   if (!v || (!v.up.length && !v.down.length)) return null;
   return (
-    <em className="coach-ping coach-vote-badge">
+    <em className="coach-ping coach-vote-badge" key={`${v.up.length}:${v.down.length}`}>
       {v.up.length > 0 && <span className="up"><Thumb size={12} />{v.up.length}</span>}
       {v.down.length > 0 && <span className="down"><Thumb down size={12} />{v.down.length}</span>}
     </em>
@@ -395,6 +408,7 @@ function CoachChat({ t }: { t: T }) {
   const chat = coachChat();
   const [text, setText] = useState("");
   const [nameEdit, setNameEdit] = useState(false);
+  const [emoteOpen, setEmoteOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const last = chat.log[chat.log.length - 1]?.id ?? 0;
   useEffect(() => {
@@ -422,8 +436,25 @@ function CoachChat({ t }: { t: T }) {
           <p key={m.id} className={m.from === 0 ? "me" : ""}><b>{msgName(m, chat.names)}</b>{m.text}</p>
         ))}
       </div>
-      <input className="coach-chat-input" value={text} maxLength={CHAT_MAX} placeholder={t("채팅 (Enter 로 보내기)")}
-        onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) send(); }} />
+      {/* 입력칸 + 이모티콘 단추 — 하는 사람도 반응을 보낸다 (보는 사람 화면과 같은 판, 2026-10-25) */}
+      <div className="coach-chat-row">
+        <input className="coach-chat-input" value={text} maxLength={CHAT_MAX} placeholder={t("채팅 (Enter 로 보내기)")}
+          onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) send(); }} />
+        <button type="button" className={`coach-emote-btn${emoteOpen ? " on" : ""}`} aria-expanded={emoteOpen} aria-label={t("화면 반응")}
+          title={t("화면 반응")} onClick={() => setEmoteOpen((o) => !o)}>
+          <img src={emoteUrl("happy")} alt="" width={22} height={22} />
+        </button>
+        {emoteOpen && (
+          <div className="coach-emotes" role="toolbar" aria-label={t("화면 반응")}>
+            {EMOTES.map((e) => (
+              <button type="button" key={e} title={t(EMOTE_LABEL[e])} aria-label={t(EMOTE_LABEL[e])}
+                onClick={() => { coachReact(e); setEmoteOpen(false); }}>
+                <img src={emoteUrl(e)} alt="" width={34} height={34} />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
