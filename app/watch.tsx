@@ -15,7 +15,7 @@ type Phase = "connecting" | "waiting" | "live" | "full" | "ended" | "kicked" | "
 
 function codeFromUrl(): string {
   const m = location.pathname.match(/\/w\/([a-z2-9]{8})\/?$/i);
-  const q = new URLSearchParams(location.search).get("c") ?? location.hash.replace(/^#/, "");
+  const q = new URLSearchParams(location.search).get("c");   // 개발 서버용 (/watch?c=<코드>) — 해시는 읽지 않는다(게시판 링크가 # 앞에서 끊기고, 해시 화면 점검 대상이 된다)
   return (m?.[1] ?? q ?? "").toLowerCase();
 }
 const uid = () => {
