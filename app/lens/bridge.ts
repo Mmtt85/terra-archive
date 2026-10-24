@@ -175,6 +175,9 @@ function gotoKey(oc: LensOutcome): string | undefined {
 // 게임 항목·화면을 맞혔으면(또는 전투·이동) 명일방주. 못 맞혔어도 읽은 글자에 게임 화면 말이 있으면 명일방주(메인·기반시설 등 사이트가 안 다루는 화면).
 // 증거 없이 인식이 헛돌면 바로 '명일방주 화면이 아닌 것 같다'고 띄운다 (로딩·암전 화면이면 다음 인식에서 걷힌다)
 const ARK_WORDS = [
+  // 게임 이름·타이틀 화면 말 — 타이틀 화면(로고·START·계정 연동)엔 인게임 말이 없어 경고가 잘못 떴다 ('명일방주 맞습니다' d5ea66aa, 2026-10-24).
+  // OCR 이 '명'을 '평'으로 읽기도 해서 '평일방주'도 넣는다
+  "명일방주", "평일방주", "ARKNIGHTS", "HYPERGRYPH", "YOSTAR", "明日方舟", "アークナイツ", "鹰角", "계정연동",
   "이성", "오퍼레이터", "편성", "기반시설", "공개모집", "헤드헌팅", "통합전략", "합성옥", "순오리지늄", "용문폐", "지휘레벨", "작전개시", "작전준비", "로도스",
   "理智", "干员", "编队", "基建", "公开招募", "寻访", "集成战略", "合成玉", "至纯源石", "龙门币", "作战", "罗德岛", "危机合约",
   "SANITY", "OPERATOR", "SQUAD", "RECRUIT", "HEADHUNT", "ORUNDUM", "ORIGINITE", "LMD", "RHODES",
@@ -409,6 +412,16 @@ const frameSubs = new Set<(f: File) => void>();
 const replaySubs = new Set<(oc: LensOutcome) => void>();
 const statusSubs = new Set<() => void>();
 const notify = () => { for (const cb of statusSubs) cb(); };
+/** 상태가 바뀔 때마다 부른다 — 훈수방(app/lens/coach.ts)이 인식 정보를 보는 사람에게 다시 보낼 때 쓴다. 돌려준 함수로 해제 */
+export function onBridgeChange(cb: () => void): () => void { statusSubs.add(cb); return () => { statusSubs.delete(cb); }; }
+/** 지금 잡고 있는 게임 화면 스트림 — 훈수방이 이 영상을 그대로 보낸다 (화면을 한 번 더 고르지 않게) */
+export const bridgeStream = (): MediaStream | null => stream;
+/** 훈수방을 켜면 프레임을 30 까지 올리고(보는 사람이 끊김 없이), 끄면 인식용 낮은 값으로 되돌린다 */
+export function setBridgeShareRate(on: boolean): void {
+  const tr = stream?.getVideoTracks()[0];
+  if (!tr) return;
+  void tr.applyConstraints({ frameRate: on ? { ideal: 30, max: 30 } : { ideal: FPS_IDEAL, max: 8 } }).catch(() => { /* 기기가 못 맞추면 그대로 */ });
+}
 
 // ── 맵 노드 자동 이동 (제보 f1c050b2, 2026-09-04 "노드인식이 방해되는 경우가 조금 있네요") ──
 // 인식을 끄는 게 아니라 **맵 노드(작전·조우·구역)로 튀는 이동만** 끈다 — 소장품·도구·분대

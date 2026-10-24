@@ -21,6 +21,10 @@ name = "LOBBY"
 class_name = "AcLobby"
 
 # SQLite 기반 클래스 — 무료 플랜에서도 Durable Object 를 쓸 수 있는 유일한 형태
+[[durable_objects.bindings]]
+name = "COACH"
+class_name = "CoachRoom"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["AcRoom"]
@@ -28,3 +32,7 @@ new_sqlite_classes = ["AcRoom"]
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["AcLobby"]
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["CoachRoom"]

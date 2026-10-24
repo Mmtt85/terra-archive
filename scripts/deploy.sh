@@ -262,6 +262,10 @@ cat > "$STAGE/_redirects" <<'EOF'
 /p/* /autochess 200
 /en/p/* /en/autochess 200
 /ja/p/* /ja/autochess 200
+# 훈수방 링크 — 같은 까닭(게시판 자동 링크가 # 앞에서 끊김)으로 `/w/<코드>` 꼴, 주소는 그대로 두고 보는 사람 화면을 내려 준다 (2026-10-24)
+/w/* /watch 200
+/en/w/* /en/watch 200
+/ja/w/* /ja/watch 200
 /story/* https://files.terra-archive.net/assets/story/:splat 301
 /avatars/* https://files.terra-archive.net/assets/avatars/:splat 301
 /items/* https://files.terra-archive.net/assets/items/:splat 301

@@ -677,7 +677,8 @@ function Paused({ me, opById, onShowOperator }: { me: MeData; opById: Map<string
   const seasonBg = towerBg((tp?.season ? tDoc?.seasons[tp.season.id]?.[1]?.[0] : null) ?? null);
   const twBg = towerBg(tw?.tower ?? null);
   return (
-    <Card no="RESUME" title={t("현재 진행 중")} aside={<small>{t("마지막 동기화 때 진행 중이던 콘텐츠")}</small>}>
+    <Card no="RESUME" title={t("현재 진행 중")} aside={<small>{t("마지막 동기화 때 진행 중이던 콘텐츠")}</small>}
+      summary={[r && [`${t("통합전략")} ${topic}`, rogueFloor(r) != null ? t("{n}층", { n: rogueFloor(r)! }) : "",   /* 층 번호는 본문과 같은 정리로 — r.zone 그대로면 1000층처럼 나왔다 (사용자 지적 2026-10-24) */ t("난이도 {n}", { n: r.grade }), r.maxHp ? `HP ${r.hp}/${r.maxHp}` : ""].filter(Boolean).join(" "), tw && `${t("보안파견")}${towerName ? ` ${towerName}` : ""}`, sb && t("생존연산")].filter(Boolean).join(" · ") || t("진행 중인 콘텐츠 없음")}>
       <div className="me-resume">
         {r && (
           // 카드 바탕에 그 테마의 대표 그림을 은은하게 (사용자 지시 2026-10-11) — 통합전략 페이지 배경과 같은 kvN
@@ -1015,7 +1016,8 @@ function ResumeRogue({ r, topic, opById, onShowOperator, onClose }: {
 
 /** 카드 접기를 끄는 자리 — '더 보기' 창 안의 카드(진행 상황·친구 등)는 창 자체가 펼친 것이라 접지 않는다 */
 const FoldCtx = React.createContext(true);
-function Card({ no, title, aside, className, children }: { no: string; title: string; aside?: React.ReactNode; className?: string; children: React.ReactNode }) {
+function Card({ no, title, aside, className, summary, children }: { no: string; title: string; aside?: React.ReactNode; className?: string;
+  /** 접었을 때 머리 밑에 보이는 한 줄 요약 (사용자 지시 2026-10-24 "아코디언 닫으면 내용을 간단히 요약한 텍스트") */ summary?: React.ReactNode; children: React.ReactNode }) {
   const { t } = useI18n();
   // 내 정보 카드는 전부 접을 수 있다 (사용자 지시 2026-10-22 "아코디언으로") — 접은 상태는 카드 순서와 같이 기기 사이로 이어진다
   const foldable = React.useContext(FoldCtx);
@@ -1034,6 +1036,7 @@ function Card({ no, title, aside, className, children }: { no: string; title: st
         {aside && <div className="me-card-aside" aria-hidden={folded || undefined} inert={folded || undefined}>{aside}</div>}
       </header>
       {/* 손잡이는 이 카드 머리에만 — 안쪽 카드(창 안 등)엔 안 생기게 끊는다 */}
+      {folded && summary ? <p className="me-card-sum">{summary}</p> : null}
       {!folded && <NoSortHandle><FoldCtx.Provider value={false}>{children}</FoldCtx.Provider></NoSortHandle>}
     </section>
   );
@@ -1260,7 +1263,7 @@ function Wallet({ me, items, onOpen }: { me: MeData; items: ItemDoc | null; onOp
   // 순오리지늄은 1개 = 합성옥 180 으로 바꿔 남은 합성옥과 합쳐 다시 600 단위로 센다 — 큰 숫자는 이 값
   const { pulls, all: pullsAll, orundum, prime, permit, permit10 } = mePulls(inv)!;
   return (
-    <Card no="WALLET" title={t("재화")}>
+    <Card no="WALLET" title={t("재화")} summary={`${t("헤드헌팅 가능 {n}회", { n: fmt(pullsAll) })} · ${t("합성옥")} ${fmt(orundum)} · ${t("순오리지늄")} ${fmt(prime)} · ${t("용문폐")} ${fmt(inv["4001"] ?? 0)}`}>
       <div className="me-pulls" title={t("합성옥 600개 = 1회 · 헤드헌팅 허가증 1장 = 1회 · 10회 허가증 1장 = 10회 · 순오리지늄 1개 = 합성옥 180개")}>
         <span>{t("헤드헌팅 가능")}</span>
         {/* 큰 숫자는 순오리지늄까지 바꾼 값 (사용자 지시 2026-10-11) — 안 바꾼 값 줄은 필요 없다고 해 뺐다 */}
@@ -1314,7 +1317,7 @@ function Support({ me, opById, onShowOperator }: { me: MeData; opById: Map<strin
   const mine = meChars(me);
   if (!list.length) return null;
   return (
-    <Card no="SUPPORT" title={t("내 지원 유닛")}>
+    <Card no="SUPPORT" title={t("내 지원 유닛")} summary={list.map((a) => opById.get(a.id)?.name ?? a.id).join(" · ")}>
       <ul className="me-ops me-ops-wide">
         {list.map((a, i) => {
           const op = opById.get(a.id);
@@ -1345,7 +1348,8 @@ function Rooms({ me, opById }: { me: MeData; opById?: Map<string, MeOp> }) {
     groups.set(r.room, [...(groups.get(r.room) ?? []), r.level]);
   }
   return (
-    <Card no="BASE" title={t("기반시설")} aside={me.profile ? <small>{t("가구 {n}종", { n: fmtOf(locale)(me.profile.furniture) })}</small> : null}>
+    <Card no="BASE" title={t("기반시설")} aside={me.profile ? <small>{t("가구 {n}종", { n: fmtOf(locale)(me.profile.furniture) })}</small> : null}
+      summary={`${t("일하는 오퍼 {n}명", { n: working.length })}${hasMood ? ` · ${t("지침 {a} · 곧 지침 {b}", { a: empty.length, b: low.length })}` : ""}`}>
       <ul className="me-rooms">
         {ROOM_ORDER.filter((k) => groups.has(k)).map((k) => {
           const lv = groups.get(k)!.sort((a, b) => b - a);
@@ -1457,6 +1461,7 @@ function Kpis({ owned, released, opById, me, onList, demo, onShowOp }: { owned: 
   };
   return (
     <Card no="SUMMARY" title={t("한눈에 보기")} className="me-kpi-card"
+      summary={top.map((tile) => { const v = evalTile(tile, ctx); return `${tileLabel(tile, t)} ${fmt(v.value)}${v.total != null ? `/${fmt(v.total)}` : ""}`; }).join(" · ")}
       aside={!demo && customized ? (
         <button type="button" className="me-sort" onClick={() => saveCustomTiles(null)}><span aria-hidden>↺</span>{t("기본 칸으로 되돌리기")}</button>
       ) : null}>
@@ -1510,7 +1515,7 @@ function RarityTable({ owned, released, opById, onList }: { owned: AccountChar[]
   const star = (r: number) => `${r}★`;
   const cell = (n: number, onClick: () => void) => <button type="button" className="me-cell" disabled={!n} onClick={onClick}>{fmt(n)}</button>;
   return (
-    <Card no="RARITY" title={t("성급별 육성")}>
+    <Card no="RARITY" title={t("성급별 육성")} summary={rows.filter((x) => x.r >= 4).map((x) => `${star(x.r)} ${fmt(x.mine.length)}/${fmt(x.all.length)}`).join(" · ")}>
       <div className="me-table-wrap">
         <table className="me-table">
           <thead>
@@ -1669,6 +1674,7 @@ function Progress({ me, stages, onOpenStage, full }: { me: MeData; stages: Stage
   );
   return (
     <Card no="PROGRESS" title={t("스테이지 클리어 현황")}
+      summary={t("남은 작전 {a} · 별 3개 미완 {b}", { a: fmt(leftTotal), b: fmt(starTotal) })}
       aside={<>
         <button type="button" className={`me-sort${pendingFirst ? " selected" : ""}`} onClick={() => setPendingFirst((v) => !v)}>
           <span aria-hidden>⇅</span>{t("미완료 먼저")}
@@ -1844,7 +1850,8 @@ function RecruitPool({ mine, opById, onShowOperator }: { mine: Map<string, Accou
   );
   const empty = <p className="me-note">{mode === "missing" ? t("공개모집으로 나오는 오퍼를 모두 보유하고 있습니다.") : t("공개모집 오퍼의 잠재가 모두 6입니다.")}</p>;
   return (
-    <Card no="RECRUITMENT" title={t("공개모집으로 채울 오퍼")} aside={tools(shown)}>
+    <Card no="RECRUITMENT" title={t("공개모집으로 채울 오퍼")} aside={tools(shown)}
+      summary={t("미보유 {a}명 · 잠재 미완 {b}명", { a: missing.length, b: notMax.length })}>
       {list.length ? recList(shown, true) : empty}
       {list.length > fold && <MoreButton open={false} total={list.length} onToggle={() => setAll(true)} />}
       {all && <MoreModal title={t("공개모집으로 채울 오퍼")} onClose={() => setAll(false)}>
@@ -1944,7 +1951,8 @@ function Paradox({ me, mine, released, allOps, onShowOperator }: { me: MeData; m
   );
   const empty = <p className="me-note">{t("해당하는 오퍼가 없습니다.")}</p>;
   return (
-    <Card no="PARADOX" title={t("패러독스 시뮬레이션")} aside={tools(shownList.slice(0, fold))}>
+    <Card no="PARADOX" title={t("패러독스 시뮬레이션")} aside={tools(shownList.slice(0, fold))}
+      summary={t("지금 가능 {a} · 육성 필요 {b} · 미보유 {c}", { a: groups.ready.length, b: groups.train.length, c: groups.missing.length })}>
       <p className="me-note">{done ? t("클리어 {n} / {total}", { n: fmt(groups.clear.length), total: fmt(total) }) : t("클리어 기록은 다시 동기화하면 보입니다.")}</p>
       {shownList.length ? grid(shownList.slice(0, fold), true) : empty}
       {shownList.length > fold && <MoreButton open={false} total={shownList.length} onToggle={() => setAll(true)} />}
@@ -2030,7 +2038,8 @@ function Records({ me, mine, released, allOps, onShowOperator }: { me: MeData; m
   );
   const empty = <p className="me-note">{t("해당하는 레코드가 없습니다.")}</p>;
   return (
-    <Card no="RECORDS" title={t("오퍼레이터 레코드")} aside={tools(list.slice(0, fold))}>
+    <Card no="RECORDS" title={t("오퍼레이터 레코드")} aside={tools(list.slice(0, fold))}
+      summary={t("지금 가능 {a} · 육성 필요 {b} · 미보유 {c}", { a: groups.ready.length, b: groups.train.length, c: groups.missing.length })}>
       <p className="me-note">{t("해금 조건(정예화·레벨·신뢰도)만 봅니다 — 읽었는지는 계정 정보에 없습니다.")}</p>
       {list.length ? grid(list.slice(0, fold), true) : empty}
       {list.length > fold && <MoreButton open={false} total={list.length} onToggle={() => setAll(true)} />}
@@ -2345,7 +2354,8 @@ function RogueStats({ me }: { me: MeData }) {
   const short = (id: string) => (ROGUE_SHORT[id] ?? [id, id, id])[locale === "en" ? 1 : locale === "ja" ? 2 : 0];
   // 테마마다 버튼 하나 — 누르면 상세 창 (사용자 지시 2026-10-18 "이어하기처럼 각 테마별 버튼, 누르면 모달")
   return (
-    <Card no="ROGUE" title={t("통합전략")} aside={<small>{t("테마를 누르면 엔딩·분대 훈장·소장품 기록")}</small>}>
+    <Card no="ROGUE" title={t("통합전략")} aside={<small>{t("테마를 누르면 엔딩·분대 훈장·소장품 기록")}</small>}
+      summary={topics.map((tp) => `${short(tp.id)} ${t("{n}회", { n: fmt(Object.values(((all[tp.id]?.record ?? {}) as RogueRec).modeCnt ?? {}).reduce((a, b) => a + b, 0)) })}`).join(" · ")}>
       <div className="me-resume me-rg-tiles">
         {topics.map((tp) => {
           const rec = (all[tp.id]?.record ?? {}) as RogueRec;
@@ -2477,7 +2487,8 @@ function Friends({ me, now, opById, onShowOperator, full }: { me: MeData; now: n
   );
   const awayCount = (a: FriendAway) => (list ?? []).filter((f) => awayOk(f, a)).length;
   return (
-    <Card no="FRIENDS" title={t("친구")} className="me-friends-card" aside={list ? <small>{fmt(list.length)} / {me.profile.status.friendLimit ? fmt(me.profile.status.friendLimit) : "—"}</small> : null}>
+    <Card no="FRIENDS" title={t("친구")} className="me-friends-card" aside={list ? <small>{fmt(list.length)} / {me.profile.status.friendLimit ? fmt(me.profile.status.friendLimit) : "—"}</small> : null}
+      summary={list ? t("친구 {n}명", { n: fmt(list.length) }) : undefined}>
       {!!list?.length && (
         <div className="me-friend-tools">
           <div className="me-seg" role="group" aria-label={t("미접속")}>
@@ -2561,7 +2572,7 @@ function Drawers({ me, now, owned, opById, stages, items, onOpenStage, onOpenIte
   return (
     <>
       {/* 다른 칸처럼 카드로 묶는다 — 제목을 잡으면 묶음째 옮겨진다 (사용자 지시 2026-10-15) */}
-      <Card no="MORE" title={t("더 보기")} className="me-drawers-card">
+      <Card no="MORE" title={t("더 보기")} className="me-drawers-card" summary={tiles.map((x) => `${x.head} ${x.sub}`).join(" · ")}>
       <div className={`me-drawers${dd.dragging ? " me-sorting" : ""}`} ref={dd.ref}>
         {tiles.map((x) => (
           <button key={x.key} type="button" className={`${x.style ? "has-bg" : ""}${x.cls ? ` ${x.cls}` : ""}${dd.cls(x.key)}`} style={x.style} onClick={() => setOpen(x.key)} {...dd.bind(x.key)}>
@@ -2633,6 +2644,7 @@ function Recent({ owned, opById, onShowOperator, full }: { owned: AccountChar[];
   );
   return (
     <Card no="RECENT" title={t("최근 얻은 오퍼")} className="me-recent"
+      summary={gained[0] ? t("최근 {name} 외 {n}명", { name: opById.get(gained[0].id)?.name ?? "", n: gained.length - 1 }) : undefined}
       aside={(
         <div className="me-recent-tools">
           <AttributeFilter groups={[
@@ -2692,6 +2704,7 @@ function Depot({ me, items, onOpen, full }: { me: MeData; items: ItemDoc | null;
   );
   return (
     <Card no="DEPOT" title={t("창고")} className="me-depot"
+      summary={rows ? t("재료·아이템 {n}종", { n: fmt(rows.length) }) : undefined}
       aside={(
         <div className="me-depot-tools">
           <div className="me-seg" role="group">

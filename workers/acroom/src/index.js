@@ -153,6 +153,15 @@ export default {
       await lobby().fetch("https://lobby/clear", { method: "POST" });
       return json({ ok: true, listed: ids.length, purged });
     }
+    // 훈수방 (2026-10-24) — 연결 중개(시그널링)만 한다. 영상은 하는 사람 ↔ 보는 사람 P2P 로 직접 간다
+    const cm = url.pathname.match(/^\/coach\/([^/]+)$/);
+    if (cm) {
+      const code = decodeURIComponent(cm[1]).toLowerCase();
+      if (!COACH_ID.test(code)) return json({ ok: false, error: "bad-room" }, 400);
+      if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") return json({ ok: false, error: "websocket-only" }, 426);
+      if (!ORIGIN_OK(request.headers.get("Origin") ?? "")) return json({ ok: false, error: "bad-origin" }, 403);
+      return env.COACH.get(env.COACH.idFromName(code)).fetch(request);
+    }
     const m = url.pathname.match(/^\/room\/([^/]+)$/);
     if (!m) return json({ ok: false, error: "not-found" }, 404);
     const id = decodeURIComponent(m[1]).toLowerCase();
@@ -515,5 +524,87 @@ export class AcRoom {
     for (const key of rows.keys()) if (!live.has(key.slice(2))) await this.storage.delete(key);
     await this.tell("/up");
     await this.storage.setAlarm(Date.now() + this.sweep);
+  }
+}
+
+
+// ── 훈수방 (2026-10-24) ─────────────────────────────────────────────────────────────────────
+// PRTS 링크로 게임 화면을 잡은 사람(host)의 화면을 보는 사람(view, 최대 3명)에게 보여 준다. 이 방은 **연결 중개만** 한다 —
+// WebRTC 의 초대(offer)·응답(answer)·주소 후보(ice)를 상대에게 넘기고, 영상·인식 정보·짚기는 브라우저끼리 직접(P2P) 오간다.
+// 그래서 Cloudflare 를 지나는 건 연결할 때의 짧은 메시지뿐이다 (사용자 조건 "클라우드플레어 트래픽이 들면 안 된다").
+// 저장은 없다 — 소켓 attachment(역할·번호)만. 하는 사람이 나가면 보는 사람에게 host-gone, 돌아오면 다시 붙는다.
+// 방은 만든 지 6시간이면 닫는다 (마지막 사람이 나가면 그대로 사라진다 — 저장소가 비어 있다).
+const COACH_ID = /^[a-z2-9]{8}$/;
+const COACH_VIEWS = 3;
+const COACH_MSG_MAX = 16384;   // SDP 한 덩어리가 수 KB
+const COACH_TTL_MS = 6 * 3600_000;
+
+export class CoachRoom {
+  constructor(state) { this.state = state; }
+  socks() { return this.state.getWebSockets(); }
+  att(ws) { try { return ws.deserializeAttachment() ?? {}; } catch { return {}; } }
+  send(ws, msg) { try { ws.send(JSON.stringify(msg)); } catch { /* 닫힌 소켓 */ } }
+  host() { return this.socks().find((w) => this.att(w).role === "host") ?? null; }
+  views() { return this.socks().filter((w) => this.att(w).role === "view"); }
+  async fetch(request) {
+    const url = new URL(request.url);
+    const role = url.searchParams.get("role") === "host" ? "host" : "view";
+    const uid = (url.searchParams.get("uid") ?? "").slice(0, 48);
+    const born = (await this.state.storage.get("born")) ?? 0;
+    if (born && Date.now() - born > COACH_TTL_MS) {
+      for (const w of this.socks()) { this.send(w, { t: "ended" }); try { w.close(4002, "expired"); } catch { /* */ } }
+      await this.state.storage.deleteAll();
+    }
+    const pair = new WebSocketPair();
+    const [client, server] = Object.values(pair);
+    this.state.acceptWebSocket(server);
+    if (role === "host") {
+      const cur = this.host();
+      // 같은 사람(uid)이 다시 붙으면(새로고침·재연결) 옛 소켓을 내보낸다. 다른 사람이 이미 하는 방이면 막는다
+      if (cur && this.att(cur).uid !== uid) { this.send(server, { t: "taken" }); server.close(4001, "taken"); return new Response(null, { status: 101, webSocket: client }); }
+      if (cur) { try { cur.close(4000, "replaced"); } catch { /* */ } }
+      if (!born) await this.state.storage.put("born", Date.now());
+      server.serializeAttachment({ role: "host", uid });
+      this.send(server, { t: "hello", role: "host", views: this.views().map((w) => this.att(w).id) });
+      for (const v of this.views()) this.send(v, { t: "host-back" });
+    } else {
+      const views = this.views().filter((w) => w !== server);
+      if (views.length >= COACH_VIEWS) { this.send(server, { t: "full", max: COACH_VIEWS }); server.close(4003, "full"); return new Response(null, { status: 101, webSocket: client }); }
+      const used = new Set(views.map((w) => this.att(w).id));
+      let id = 1; while (used.has(id)) id++;
+      server.serializeAttachment({ role: "view", uid, id });
+      const h = this.host();
+      this.send(server, { t: "hello", role: "view", id, host: !!h, max: COACH_VIEWS });
+      if (h) this.send(h, { t: "join", id });
+    }
+    return new Response(null, { status: 101, webSocket: client });
+  }
+  async webSocketMessage(ws, raw) {
+    if (typeof raw !== "string" || raw.length > COACH_MSG_MAX) return;
+    let msg; try { msg = JSON.parse(raw); } catch { return; }
+    const me = this.att(ws);
+    if (msg?.t === "sig") {
+      // 하는 사람 → 보는 사람(to = 번호), 보는 사람 → 하는 사람. 내용(data)은 들여다보지 않고 넘긴다
+      if (me.role === "host") { const v = this.views().find((w) => this.att(w).id === msg.to); if (v) this.send(v, { t: "sig", data: msg.data }); }
+      else { const h = this.host(); if (h) this.send(h, { t: "sig", from: me.id, data: msg.data }); }
+      return;
+    }
+    if (me.role !== "host") return;
+    if (msg?.t === "kick") {   // 보는 사람 하나 내보내기 (to 없으면 모두)
+      for (const v of this.views()) if (msg.to == null || this.att(v).id === msg.to) { this.send(v, { t: "kicked" }); try { v.close(4004, "kicked"); } catch { /* */ } }
+      return;
+    }
+    if (msg?.t === "end") {    // 훈수방 닫기
+      for (const v of this.views()) { this.send(v, { t: "ended" }); try { v.close(4005, "ended"); } catch { /* */ } }
+      await this.state.storage.deleteAll();
+      try { ws.close(1000, "ended"); } catch { /* */ }
+    }
+  }
+  async webSocketClose(ws) { this.drop(ws); }
+  async webSocketError(ws) { this.drop(ws); }
+  drop(ws) {
+    const me = this.att(ws);
+    if (me.role === "host") { if (this.host() === ws || !this.host()) for (const v of this.views()) this.send(v, { t: "host-gone" }); }
+    else if (me.role === "view") { const h = this.host(); if (h) this.send(h, { t: "leave", id: me.id }); }
   }
 }

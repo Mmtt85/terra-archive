@@ -8,6 +8,8 @@
 import { NewBadge } from "../new-badge";
 import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { isOwnerUid } from "../visit-track";
+import { coachPings, coachState, cardKey, kickAllViewers, onCoachChange, startCoach, stopCoach, COACH_MAX } from "./coach";
 import { useBridgeStatus, connectBridge, disconnectBridge, clearBridgeError, bridgeNotArknights, bridgeArkThumb, confirmArknights, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -114,6 +116,9 @@ function WrongButton({ t, cls }: { t: T; cls: string }) {
 
 function PipCard({ c }: { c: BridgePipCard }) {
   const [open, setOpen] = useState(false);
+  useCoach();
+  // 훈수방 짚기 — 보는 사람이 이 카드를 짚은 수 (투표처럼, 2026-10-24)
+  const pinged = coachState().live ? coachPings()[cardKey(c)]?.length ?? 0 : 0;
   const more = !!c.detailImg || (c.list?.length ?? 0) > 0;
   return (
     <article className={`bridge-pip-card${more ? " more" : ""}${open ? " open" : ""}`}
@@ -121,6 +126,7 @@ function PipCard({ c }: { c: BridgePipCard }) {
       <div className="bridge-pip-card-head">
         {c.img && <img src={c.img} alt="" width={36} height={36} />}
         <div><small>{c.kind}</small><b>{c.name}</b></div>
+        {pinged > 0 && <em className="coach-ping" title={`${pinged}`}>{"●".repeat(pinged)}</em>}
         {more && <i aria-hidden>{open ? "▴" : "▾"}</i>}
       </div>
       {c.text && <p>{c.text}</p>}
@@ -209,6 +215,7 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
         <button type="button" className="bridge-toast-off bridge-pip-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>{t("연결 끊기")}</button>
       </header>
       {bridgeNotArknights() && <ArkCheck t={t} />}
+      <CoachControls t={t} />
       {pipLock?.topic === "recruit" || bridgePipRecruit() ? <RecruitPanes t={t} /> : external ? <div id="ta-pip-slot" className="bridge-pip-slot" /> : (<>
       {(() => {
         // 공통 정보 — 층 · 난이도 · 분대 세 칸만 (사용자 지시 2026-10-13 "N층, 난이도N, XX분대 이렇게 세 개만")
@@ -230,6 +237,39 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
           : <p className="bridge-pip-empty">{t("소장품을 인식하면 여기에 표시됩니다")}</p>}
       </section>
       </>)}
+    </div>
+  );
+}
+
+/** 훈수방 상태가 바뀌면 다시 그린다 */
+function useCoach() {
+  const [, bump] = useState(0);
+  useEffect(() => onCoachChange(() => bump((n) => n + 1)), []);
+  return coachState();
+}
+/** 훈수방 단추 줄 — 끈 상태면 '화면 공유', 켠 상태면 링크 복사·보는 사람 수·모두 내보내기·새 링크·그만하기 (2026-10-24) */
+function CoachControls({ t }: { t: T }) {
+  const st = useCoach();
+  const [copied, setCopied] = useState(false);
+  // 지금은 관리자(운영자 UID 로 내 정보 동기화한 브라우저)만 — 시험 중 (사용자 지시 2026-10-24 "화면 공유 버튼은 관리자만")
+  if (!isOwnerUid() && !st.live) return null;
+  if (!st.live) return (
+    <div className="coach-bar">
+      <button type="button" className="bridge-toast-node coach-start" onClick={() => startCoach()}
+        title={t("링크를 받은 사람이 이 게임 화면과 PRTS 인식 정보를 실시간으로 봅니다 — 영상은 사이트를 거치지 않고 직접 갑니다(녹화·저장 없음), 최대 {n}명", { n: COACH_MAX })}>
+        ◉ {t("화면 공유")} <span className="beta-badge">BETA</span>
+      </button>
+      {st.error && <small className="coach-err">{t(st.error)}</small>}
+    </div>
+  );
+  const copy = () => { void navigator.clipboard?.writeText(st.url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => null); };
+  return (
+    <div className="coach-bar on">
+      <span className="coach-live">● {t("화면 공유 중")} · {t("보는 사람 {a}/{b}", { a: st.viewers, b: COACH_MAX })}</span>
+      <button type="button" className="bridge-toast-node" onClick={copy} title={st.url}>{copied ? t("복사했어요") : t("링크 복사")}</button>
+      <button type="button" className="bridge-toast-node" onClick={kickAllViewers} disabled={!st.viewers} title={t("지금 보는 사람을 모두 내보냅니다 — 같은 링크로는 다시 들어올 수 있어요")}>{t("모두 내보내기")}</button>
+      <button type="button" className="bridge-toast-node" onClick={() => startCoach(true)} title={t("새 링크를 만들어 지금 링크로는 못 들어오게 합니다")}>{t("새 링크")}</button>
+      <button type="button" className="bridge-toast-off" onClick={() => stopCoach()}>{t("공유 끝내기")}</button>
     </div>
   );
 }
@@ -313,6 +353,7 @@ export default function BridgeButton({ t }: { t: T }) {
       {pipPortal}
       {/* 명일방주 창이 아닌 것 같을 때 (창 제목 또는 화면 내용으로 판정 — app/lens/bridge.ts arkVerdict, 2026-10-24) */}
       {notArk && <ArkCheck t={t} />}
+      <CoachControls t={t} />
       <small className="bridge-toast-hint">{t("잘못 인식했다면 '틀렸어요'를 눌러 주세요 — 그때만 그 인식 결과와 화면 한 장이 전송돼요. 평소 인식은 따로 보내지 않아요.")}</small>
     </div>,
     document.body,

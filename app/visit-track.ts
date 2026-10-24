@@ -311,7 +311,8 @@ function flush(): void {
 // 통합전략 옛 링크(/rogue?topic=is3)는 경로가 /rogue 뿐이라 몇 번 테마였는지가 사라진다 — 테마 경로로 적는다
 // (사용자 지시 2026-10-04 "통합전략 몇번에 접속했는지가 제일 중요". 맨 /rogue 는 1번 테마라 그대로 둔다)
 function trackPath(): string {
-  const p = location.pathname;
+  // 훈수방 링크(/w/<코드>)는 코드를 남기지 않고 /w 로 접는다 (2026-10-24 — 방마다 코드가 통계에 쌓이지 않게)
+  const p = location.pathname.replace(/^(\/(?:en|ja))?\/w\/[^/]+\/?$/, "$1/w");
   const topic = /^\/(?:en\/|ja\/)?rogue\/?$/.test(p) ? new URLSearchParams(location.search).get("topic") : null;
   return topic && /^is\d$/.test(topic) ? p.replace(/\/?$/, `/${topic}`) : p;
 }
