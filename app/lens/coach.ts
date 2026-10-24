@@ -8,6 +8,9 @@
 //   인식 정보 = PRTS 작은 창과 같은 것(노드 카드·소장품 카드·층) — 데이터 채널로, 바뀔 때마다
 //   짚기 = 보는 사람이 카드를 누르면 그 카드 키가 온다 → 카드마다 몇 명이 짚었는지 (한 사람 한 장)
 //   명일방주 화면이 아닌 것 같으면(bridgeNotArknights) 영상을 끄고 'hidden' 을 알린다
+//   채팅 = 보는 사람 글이 하는 사람에게 오면 하는 사람이 모두에게 나눠 준다(하는 사람이 가운데). 저장하지 않는다 — 방이 닫히면 사라진다.
+//     닉네임은 각자 브라우저에 둔다(ta:coach-name). 하는 사람은 '채팅 끄기'로 막을 수 있다 (사용자 지시 2026-10-24
+//     "채팅 기능 한번 넣어볼까", "닉네임 설정은 만들자", "록라는 채팅창 볼 틈이 있다")
 
 import { bridgeNotArknights, bridgePipFloor, bridgePipNode, bridgePipRelics, bridgeStream, onBridgeChange, setBridgeShareRate, type BridgePipCard } from "./bridge";
 
@@ -22,8 +25,21 @@ export type CoachInfo = { t: "info"; node: BridgePipCard | null; relics: BridgeP
 /** 짚기 현황 — 카드 키 → 짚은 보는 사람 번호들 */
 export type CoachPings = Record<string, number[]>;
 export const cardKey = (c: Pick<BridgePipCard, "kind" | "name">) => `${c.kind}:${c.name}`;
+/** 채팅 한 줄 — from 0 = 하는 사람 */
+export type CoachMsg = { id: number; from: number; name: string; text: string; at: number };
+export const CHAT_MAX = 80;      // 한 줄 글자 수
+export const NAME_MAX = 12;
+/** 닉네임을 안 쓴 보는 사람 이름표 — 'cannot 1~3' (번호는 방 워커가 비어 있는 가장 작은 수로 준다. 사용자 지시 2026-10-24) */
+export const anonName = (id: number) => `cannot ${id}`;
+const CHAT_KEEP = 60;            // 하는 사람이 들고 있는 최근 줄 수 — 늦게 들어온 사람에게도 보낸다
+const CHAT_GAP = 1200;           // 한 사람이 이 간격(ms)보다 빨리 보내면 버린다
+const NAME_KEY = "ta:coach-name";
+/** 글 다듬기 — 제어 문자를 빼고 줄바꿈은 띄어쓰기로, 길이 제한 */
+export const cleanText = (v: unknown, max: number) => typeof v === "string" ? v.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max) : "";
+export function coachName(): string { try { return cleanText(localStorage.getItem(NAME_KEY), NAME_MAX); } catch { return ""; } }
+export function setCoachName(v: string): void { try { localStorage.setItem(NAME_KEY, cleanText(v, NAME_MAX)); } catch { /* 이번만 */ } changed(); }
 
-type Peer = { id: number; pc: RTCPeerConnection; dc: RTCDataChannel | null; ping: string | null; open: boolean };
+type Peer = { id: number; pc: RTCPeerConnection; dc: RTCDataChannel | null; ping: string | null; open: boolean; name: string; lastChat: number };
 let ws: WebSocket | null = null;
 let code = "";
 let peers = new Map<number, Peer>();
@@ -31,12 +47,34 @@ let live = false;
 let failMsg = "";
 let unsub: (() => void) | null = null;
 let hiddenNow = false;
+let chatLog: CoachMsg[] = [];
+let chatSeq = 0;
+let chatOff = false;
+let chatUnread = 0;
 const subs = new Set<() => void>();
 const changed = () => { for (const cb of subs) cb(); };
 
 export function onCoachChange(cb: () => void): () => void { subs.add(cb); return () => { subs.delete(cb); }; }
 export const coachState = () => ({ live, code, url: code ? `${location.origin}${location.pathname.startsWith("/en") ? "/en" : location.pathname.startsWith("/ja") ? "/ja" : ""}/w/${code}` : "",
   viewers: [...peers.values()].filter((p) => p.open).length, error: failMsg });
+/** 채팅 — 지금까지 온 줄(최근 CHAT_KEEP)·꺼짐·안 읽은 수 */
+export const coachChat = () => ({ log: chatLog, off: chatOff, unread: chatUnread });
+export function coachChatRead(): void { if (chatUnread) { chatUnread = 0; changed(); } }
+function pushChat(from: number, name: string, text: string): void {
+  const m: CoachMsg = { id: ++chatSeq, from, name, text, at: Date.now() };
+  chatLog = [...chatLog, m].slice(-CHAT_KEEP);
+  if (from !== 0) chatUnread++;
+  sendAll({ t: "chat", m });
+  changed();
+}
+/** 하는 사람이 채팅 치기 */
+export function coachSay(text: string): void {
+  const v = cleanText(text, CHAT_MAX);
+  if (!v || !live) return;
+  pushChat(0, coachName() || "하는 사람", v);
+}
+/** 채팅 끄기·켜기 — 끄면 보는 사람 글을 받지 않는다 (지난 줄은 그대로) */
+export function setCoachChatOff(v: boolean): void { chatOff = v; sendAll({ t: "chatoff", off: v }); changed(); }
 /** 카드별 짚기 수 */
 export function coachPings(): CoachPings {
   const out: CoachPings = {};
@@ -80,7 +118,7 @@ async function addPeer(id: number) {
   if (!stream || !ws) return;
   peers.get(id)?.pc.close();
   const pc = new RTCPeerConnection({ iceServers: COACH_ICE });
-  const peer: Peer = { id, pc, dc: null, ping: null, open: false };
+  const peer: Peer = { id, pc, dc: null, ping: null, open: false, name: "", lastChat: 0 };
   peers.set(id, peer);
   const src = stream.getVideoTracks()[0];
   const track = src.clone();
@@ -94,10 +132,24 @@ async function addPeer(id: number) {
   } catch { /* 브라우저가 못 맞추면 기본값 */ }
   const dc = pc.createDataChannel("info");
   peer.dc = dc;
-  dc.onopen = () => { peer.open = true; dc.send(JSON.stringify(infoNow())); dc.send(JSON.stringify({ t: "pings", pings: coachPings() })); changed(); };
+  dc.onopen = () => {
+    peer.open = true;
+    dc.send(JSON.stringify(infoNow())); dc.send(JSON.stringify({ t: "pings", pings: coachPings() }));
+    dc.send(JSON.stringify({ t: "chatlog", log: chatLog, off: chatOff }));
+    changed();
+  };
   dc.onclose = () => { peer.open = false; changed(); };
   dc.onmessage = (e) => {
-    let m: { t?: string; key?: string | null }; try { m = JSON.parse(String(e.data)); } catch { return; }
+    let m: { t?: string; key?: string | null; name?: unknown; text?: unknown }; try { m = JSON.parse(String(e.data)); } catch { return; }
+    if (m.t === "name") { peer.name = cleanText(m.name, NAME_MAX); changed(); return; }
+    if (m.t === "chat") {
+      const now = Date.now();
+      const text = cleanText(m.text, CHAT_MAX);
+      if (chatOff || !text || now - peer.lastChat < CHAT_GAP) return;
+      peer.lastChat = now;
+      pushChat(id, peer.name || anonName(id), text);
+      return;
+    }
     if (m.t === "ping") {
       peer.ping = typeof m.key === "string" && m.key.length < 200 ? (peer.ping === m.key ? null : m.key) : null;   // 같은 카드 다시 누르면 취소
       sendAll({ t: "pings", pings: coachPings() });
@@ -129,6 +181,7 @@ export function startCoach(fresh = false): void {
   stopCoach(false);
   code = newCode();
   live = true; failMsg = ""; hiddenNow = bridgeNotArknights();
+  chatLog = []; chatUnread = 0; chatOff = false;
   setBridgeShareRate(true);
   unsub = onBridgeChange(onBridge);
   connect();

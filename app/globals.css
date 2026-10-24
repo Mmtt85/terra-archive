@@ -34867,6 +34867,31 @@ html.dark :is(.me-resume > button.has-bg, .me-resume > a.has-bg, .me-drawers > b
 .watch-card em { font-style: normal; font-size: 12px; color: var(--ink2); line-height: 1.45; }
 .watch-ping { margin-left: auto; font-style: normal; font-size: 11px; letter-spacing: 1px; color: var(--lime-ink); }
 .watch-empty { margin: 0; font-size: 12px; color: var(--muted); }
+/* 훈수방 채팅 — 보는 사람 화면 옆줄 아래, 하는 사람 작은 창 (2026-10-24). 저장하지 않는다 */
+.watch-chat, .coach-chat { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
+.watch-chat-head, .coach-chat-head { display: flex; align-items: center; gap: 6px; }
+.watch-chat-head b, .coach-chat-head b { font-size: 13px; }
+.watch-chat-name, .coach-chat-name {
+  margin-left: auto; width: 120px; padding: 3px 8px; font-size: 12px;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--ink);
+}
+.watch-chat-log, .coach-chat-log { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; min-height: 60px; }
+.watch-chat-log { max-height: 260px; }
+.coach-chat-log { max-height: 140px; }
+.watch-chat-log p, .coach-chat-log p { margin: 0; font-size: 12px; line-height: 1.45; color: var(--ink); overflow-wrap: anywhere; }
+.watch-chat-log p b, .coach-chat-log p b { margin-right: 6px; font-weight: 700; color: var(--ink2); }
+.watch-chat-log p.host b, .coach-chat-log p.me b { color: var(--lime-ink); }
+.watch-chat-log p.me b { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.coach-chat-empty { margin: 0; font-size: 11px; color: var(--muted); }
+.watch-chat-input, .coach-chat-input {
+  width: 100%; box-sizing: border-box; padding: 7px 10px; font-size: 13px;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--white); color: var(--ink);
+}
+.watch-chat-input:focus, .coach-chat-input:focus, .watch-chat-name:focus, .coach-chat-name:focus { outline: 2px solid var(--lime-line); outline-offset: -1px; }
+.coach-chat-me { margin-left: auto; border: 0; background: none; cursor: pointer; font-size: 12px; color: var(--muted); padding: 2px 4px; }
+.coach-chat-me:hover { color: var(--btn-ink-hover); }
+.coach-chat-off { border: 1px solid var(--line); border-radius: var(--r-sm); background: none; cursor: pointer; font-size: 11px; color: var(--muted); padding: 2px 8px; }
+.coach-chat-off.on { color: var(--bad); border-color: var(--bad); }
 @media (max-width: 760px) {
   .watch-body { grid-template-columns: minmax(0, 1fr); padding: 8px 12px 12px; }
   .watch-video video { max-height: 56dvh; }

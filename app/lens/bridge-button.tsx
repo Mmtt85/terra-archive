@@ -9,7 +9,7 @@ import { NewBadge } from "../new-badge";
 import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { isOwnerUid } from "../visit-track";
-import { coachPings, coachState, cardKey, kickAllViewers, onCoachChange, startCoach, stopCoach, COACH_MAX } from "./coach";
+import { coachPings, coachState, cardKey, kickAllViewers, onCoachChange, startCoach, stopCoach, COACH_MAX, coachChat, coachChatRead, coachSay, coachName, setCoachName, setCoachChatOff, CHAT_MAX, NAME_MAX } from "./coach";
 import { useBridgeStatus, connectBridge, disconnectBridge, clearBridgeError, bridgeNotArknights, bridgeArkThumb, confirmArknights, bridgeLock, bridgeSupported, bridgeOnMobile, bridgeLogCount, bridgeLastScan, markBridgeWrong, bridgePipNode, bridgePipRelics, bridgePipRecruit, bridgePipFloor, bridgeSession, forceBridgeRescan, setBridgePipActive, type BridgeLock, type BridgePipCard } from "./bridge";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -216,6 +216,7 @@ function PipView({ t, connected, phase, note, lockName, error }: { t: T; connect
       </header>
       {bridgeNotArknights() && <ArkCheck t={t} />}
       <CoachControls t={t} />
+      <CoachChat t={t} />
       {pipLock?.topic === "recruit" || bridgePipRecruit() ? <RecruitPanes t={t} /> : external ? <div id="ta-pip-slot" className="bridge-pip-slot" /> : (<>
       {(() => {
         // 공통 정보 — 층 · 난이도 · 분대 세 칸만 (사용자 지시 2026-10-13 "N층, 난이도N, XX분대 이렇게 세 개만")
@@ -271,6 +272,46 @@ function CoachControls({ t }: { t: T }) {
       <button type="button" className="bridge-toast-node" onClick={() => startCoach(true)} title={t("새 링크를 만들어 지금 링크로는 못 들어오게 합니다")}>{t("새 링크")}</button>
       <button type="button" className="bridge-toast-off" onClick={() => stopCoach()}>{t("공유 끝내기")}</button>
     </div>
+  );
+}
+
+/** 훈수방 채팅 — 작은 창에서 하는 사람이 읽고 친다 (사용자 지시 2026-10-24 "록라는 채팅창 볼 틈이 있다").
+ *  최근 줄만 보이고 새 줄이 오면 맨 아래로. 닉네임은 보는 사람과 같은 칸(ta:coach-name) */
+function CoachChat({ t }: { t: T }) {
+  const st = useCoach();
+  const chat = coachChat();
+  const [text, setText] = useState("");
+  const [nameEdit, setNameEdit] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+  const last = chat.log[chat.log.length - 1]?.id ?? 0;
+  useEffect(() => {
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+    coachChatRead();
+  }, [last]);
+  if (!st.live) return null;
+  const send = () => { coachSay(text); setText(""); };
+  return (
+    <section className="coach-chat">
+      <div className="coach-chat-head">
+        <b>{t("채팅")}</b>
+        {nameEdit
+          ? <input className="coach-chat-name" autoFocus maxLength={NAME_MAX} defaultValue={coachName()} placeholder={t("닉네임")}
+            onBlur={(e) => { setCoachName(e.target.value); setNameEdit(false); }}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") (e.target as HTMLInputElement).blur(); }} />
+          : <button type="button" className="coach-chat-me" onClick={() => setNameEdit(true)} title={t("닉네임 바꾸기")}>{coachName() || t("하는 사람")} ✎</button>}
+        <button type="button" className={`coach-chat-off${chat.off ? " on" : ""}`} aria-pressed={chat.off} onClick={() => setCoachChatOff(!chat.off)}
+          title={t("끄면 보는 사람이 채팅을 보낼 수 없습니다")}>{chat.off ? t("채팅 꺼짐") : t("채팅 끄기")}</button>
+      </div>
+      <div className="coach-chat-log" ref={listRef}>
+        {chat.log.length === 0 && <p className="coach-chat-empty">{t("보는 사람이 보낸 채팅이 여기에 뜹니다")}</p>}
+        {chat.log.map((m) => (
+          <p key={m.id} className={m.from === 0 ? "me" : ""}><b>{m.name}</b>{m.text}</p>
+        ))}
+      </div>
+      <input className="coach-chat-input" value={text} maxLength={CHAT_MAX} placeholder={t("채팅 (Enter 로 보내기)")}
+        onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) send(); }} />
+    </section>
   );
 }
 

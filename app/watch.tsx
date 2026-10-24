@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { I18nProvider, useI18n, type Locale } from "./i18n";
-import { COACH_ICE, COACH_MAX, COACH_WS, cardKey, type CoachInfo, type CoachPings } from "./lens/coach";
+import { COACH_ICE, COACH_MAX, COACH_WS, CHAT_MAX, NAME_MAX, anonName, cardKey, coachName, setCoachName, type CoachInfo, type CoachMsg, type CoachPings } from "./lens/coach";
 import type { BridgePipCard } from "./lens/bridge";
 
 type Phase = "connecting" | "waiting" | "live" | "full" | "ended" | "kicked" | "hostgone" | "failed" | "bad";
@@ -32,6 +32,15 @@ function WatchInner() {
   const [myId, setMyId] = useState<number | null>(null);
   const [myPing, setMyPing] = useState<string | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
+  // 채팅 — 하는 사람이 나눠 주는 줄을 받는다. 닉네임은 이 브라우저에 두고 연결되면 하는 사람에게 알린다 (2026-10-24)
+  const [chat, setChat] = useState<CoachMsg[]>([]);
+  const [chatOff, setChatOff] = useState(false);
+  const [text, setText] = useState("");
+  const [name, setName] = useState("");
+  const [lastSent, setLastSent] = useState(0);
+  const logRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { queueMicrotask(() => setName(coachName())); }, []);
+  useEffect(() => { const el = logRef.current; if (el) el.scrollTop = el.scrollHeight; }, [chat]);
 
   useEffect(() => {
     const code = codeFromUrl();
@@ -48,11 +57,15 @@ function WatchInner() {
       p.ontrack = (e) => { const v = videoRef.current; if (v) { v.srcObject = e.streams[0] ?? new MediaStream([e.track]); void v.play().catch(() => null); } setPhase("live"); };
       p.ondatachannel = (e) => {
         const dc = e.channel; dcRef.current = dc;
+        dc.onopen = () => { const n = coachName(); if (n) dc.send(JSON.stringify({ t: "name", name: n })); };
         dc.onmessage = (ev) => {
-          let m: { t?: string } & Partial<CoachInfo> & { pings?: CoachPings };
+          let m: { t?: string } & Partial<CoachInfo> & { pings?: CoachPings; m?: CoachMsg; log?: CoachMsg[]; off?: boolean };
           try { m = JSON.parse(String(ev.data)); } catch { return; }
           if (m.t === "info") setInfo(m as CoachInfo);
           else if (m.t === "pings") setPings(m.pings ?? {});
+          else if (m.t === "chat" && m.m) { const one = m.m; setChat((v) => [...v.filter((x) => x.id !== one.id), one].slice(-60)); }
+          else if (m.t === "chatlog") { setChat(m.log ?? []); setChatOff(!!m.off); }
+          else if (m.t === "chatoff") setChatOff(!!m.off);
         };
       };
       p.onicecandidate = (e) => { if (e.candidate) ws?.send(JSON.stringify({ t: "sig", data: { ice: e.candidate } })); };
@@ -103,6 +116,17 @@ function WatchInner() {
     setMyPing(next);
     try { dcRef.current?.send(JSON.stringify({ t: "ping", key })); } catch { /* 아직 안 열림 */ }
   };
+  const say = () => {
+    const v = text.trim();
+    if (!v || chatOff || Date.now() - lastSent < 1200) return;
+    try { dcRef.current?.send(JSON.stringify({ t: "chat", text: v.slice(0, CHAT_MAX) })); setText(""); setLastSent(Date.now()); } catch { /* 아직 안 열림 */ }
+  };
+  const saveName = (v: string) => {
+    setCoachName(v);
+    const n = coachName();
+    setName(n);
+    try { dcRef.current?.send(JSON.stringify({ t: "name", name: n })); } catch { /* 아직 안 열림 */ }
+  };
   const msg: Partial<Record<Phase, string>> = {
     connecting: t("하는 사람과 연결하는 중…"),
     waiting: t("하는 사람이 아직 들어오지 않았어요 — 화면 공유를 켜면 바로 보입니다"),
@@ -149,6 +173,24 @@ function WatchInner() {
             })}
             {!cards.length && <p className="watch-empty">{t("하는 사람의 PRTS 링크가 무언가를 인식하면 여기에 카드가 뜹니다")}</p>}
           </div>
+          <section className="watch-chat">
+            <div className="watch-chat-head">
+              <b>{t("채팅")}</b>
+              <input className="watch-chat-name" key={name} defaultValue={name} maxLength={NAME_MAX}
+                placeholder={myId != null ? anonName(myId) : t("닉네임")} aria-label={t("닉네임")}
+                onBlur={(e) => { if (e.target.value.trim() !== name) saveName(e.target.value); }}
+                onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
+            </div>
+            <div className="watch-chat-log" ref={logRef}>
+              {chat.length === 0 && <p className="watch-empty">{t("채팅은 저장되지 않습니다 — 방이 닫히면 사라져요")}</p>}
+              {chat.map((c) => (
+                <p key={c.id} className={c.from === 0 ? "host" : c.from === myId ? "me" : ""}><b>{c.name}</b>{c.text}</p>
+              ))}
+            </div>
+            <input className="watch-chat-input" value={text} maxLength={CHAT_MAX} disabled={chatOff || phase !== "live"}
+              placeholder={chatOff ? t("하는 사람이 채팅을 껐어요") : t("채팅 (Enter 로 보내기)")}
+              onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) say(); }} />
+          </section>
         </aside>
       </div>
     </main>
