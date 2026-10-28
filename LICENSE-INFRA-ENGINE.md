@@ -55,4 +55,4 @@ terra-archive.net 밖의 도메인에서는 동작하지 않습니다. 표지를
 
 ## 문의
 
-이용 허락이 필요하면 https://terra-archive.net 의 제안 게시판으로 연락해 주십시오.
+이용 허락이 필요하면 contact@terra-archive.net 으로 메일을 보내 주십시오.
